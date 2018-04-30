@@ -1,0 +1,54 @@
+{
+  "python.unitTest.pyTestArgs": [
+    "check/check_tests",
+    "-s"
+  ],
+  "python.unitTest.pyTestEnabled": true,
+  "python.pythonPath": "/Users/schrockn/code/venvs/dagster/bin/python",
+  "python.linting.lintOnSave": true,
+  "python.linting.pep8Enabled": false,
+  "python.linting.mypyEnabled": false,
+  "python.linting.mypyArgs": [
+    "--ignore-missing-imports",
+    "--follow-imports=silent",
+    "--strict",
+    "--no-strict-optional",
+    "--allow-subclassing-any"
+  ],
+  "files.autoSave": "onFocusChange",
+  "files.exclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/CVS": true,
+    "**/.DS_Store": true,
+    "**/__pycache__": true,
+    "**/*.pyc": true,
+    "**/.cache": true,
+    "**/.runs": true,
+    "**/tags": true,
+    "**/.ropeproject": true,
+    "**/node_modules": true,
+    "**/.files": true,
+    "**/access.log": true,
+    "**/error.log": true,
+    "**/*.egg-info": true,
+    "**/settings_comments.txt": true,
+    "**/.mypy_cache": true,
+    "**/.pytest_cache": true,
+    "**/.temp": true,
+    "**/build": true,
+    "**/spark-warehouse": true,
+    "**/.ipynb_checkpoints": true
+  },
+  "python.venvPath": "/Users/schrockn/venvs",
+  "editor.formatOnSave": true,
+  "editor.formatOnPaste": true,
+  "python.formatting.provider": "yapf",
+  "python.formatting.yapfArgs": [
+    "--style",
+    "{based_on_style: pep8, column_limit: 100, dedent_closing_brackets=true}"
+  ],
+  "python.linting.pylintEnabled": true,
+  "editor.minimap.enabled": false
+}
