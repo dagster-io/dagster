@@ -9,13 +9,11 @@ else:
     import builtins
 
 setup(
-    name='<<name goes here>>',
-    author='Nicholas Schrock',
-    author_email='schrockn@gmail.com',
+    name='dagster',
     license='MIT',
     packages=find_packages(exclude=['dagster_tests']),
     install_requires=[
-        # standard python 2/3 compatabilitiy things
+        # standard python 2/3 compatability things
         'enum34>=1.1.6',
         'future>=0.16.0',
     ],
