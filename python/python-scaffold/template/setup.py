@@ -10,12 +10,10 @@ else:
 
 setup(
     name='<<name goes here>>',
-    author='Nicholas Schrock',
-    author_email='schrockn@gmail.com',
     license='MIT',
     packages=find_packages(exclude=['<<test folder>>']),
     install_requires=[
-        # standard python 2/3 compatabilitiy things
+        # standard python 2/3 compatability things
         'enum34>=1.1.6',
         'future>=0.16.0',
     ],

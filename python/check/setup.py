@@ -10,8 +10,6 @@ else:
 
 setup(
     name='check',
-    author='Nicholas Schrock',
-    author_email='schrockn@gmail.com',
     license='MIT',
     packages=find_packages(exclude=['check_tests']),
     install_requires=[
