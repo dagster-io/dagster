@@ -12,7 +12,7 @@ class SolidExecutionError(Exception):
 def materialize_input(context, input_definition, arg_dict):
     check.inst_param(context, 'context', SolidExecutionContext)
     check.inst_param(input_definition, 'input_defintion', SolidInputDefinition)
-    check.dict_param(arg_dict, 'arg_dict')
+    check.dict_param(arg_dict, 'arg_dict', key_type=str)
 
     expected_args = set(input_definition.argument_def_dict.keys())
     received_args = set(arg_dict.keys())
@@ -24,6 +24,19 @@ def materialize_input(context, input_definition, arg_dict):
                 received=repr(received_args),
             )
         )
+
+    for arg_name, arg_value in arg_dict.items():
+        arg_def_type = input_definition.argument_def_dict[arg_name]
+        if not arg_def_type.is_python_valid_value(arg_value):
+            raise SolidExecutionError(
+                'Expected type {typename} for arg {arg_name} for {input_name} but got {arg_value}'.
+                format(
+                    typename=arg_def_type.name,
+                    arg_name=arg_name,
+                    input_name=input_definition.name,
+                    arg_value=repr(arg_value),
+                )
+            )
 
     ## INTO USER SPACE
     materialized = input_definition.input_fn(arg_dict)
@@ -57,6 +70,17 @@ def execute_output(context, output_type_def, output_arg_dict, materialized_outpu
                 received=repr(received_args),
             )
         )
+
+    for arg_name, arg_value in output_arg_dict.items():
+        arg_def_type = output_type_def.argument_def_dict[arg_name]
+        if not arg_def_type.is_python_valid_value(arg_value):
+            raise SolidExecutionError(
+                'Expected type {typename} for arg {arg_name} in output but got {arg_value}'.format(
+                    typename=arg_def_type.name,
+                    arg_name=arg_name,
+                    arg_value=repr(arg_value),
+                )
+            )
 
     ## INTO USER SPACE
     output_type_def.output_fn(materialized_output, output_arg_dict)
