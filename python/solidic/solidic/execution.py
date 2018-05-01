@@ -1,3 +1,5 @@
+from contextlib import contextmanager
+
 import check
 
 from solidic.definitions import (
@@ -5,8 +7,26 @@ from solidic.definitions import (
 )
 
 
-class SolidExecutionError(Exception):
+class SolidError(Exception):
     pass
+
+
+class SolidTypeError(SolidError):
+    '''Indicates an error in the solid type system (e.g. mismatched arguments)'''
+    pass
+
+
+class SolidExecutionError(SolidError):
+    '''Indicates an error in user space code'''
+    pass
+
+
+@contextmanager
+def user_code_error_boundary(msg, **kwargs):
+    try:
+        yield
+    except Exception as e:
+        raise SolidExecutionError(msg.format(**kwargs), e)
 
 
 def materialize_input(context, input_definition, arg_dict):
@@ -17,7 +37,7 @@ def materialize_input(context, input_definition, arg_dict):
     expected_args = set(input_definition.argument_def_dict.keys())
     received_args = set(arg_dict.keys())
     if expected_args != received_args:
-        raise SolidExecutionError(
+        raise SolidTypeError(
             'Argument mismatch in input {input_name}. Expected {expected} got {received}'.format(
                 input_name=input_definition.name,
                 expected=repr(expected_args),
@@ -28,7 +48,7 @@ def materialize_input(context, input_definition, arg_dict):
     for arg_name, arg_value in arg_dict.items():
         arg_def_type = input_definition.argument_def_dict[arg_name]
         if not arg_def_type.is_python_valid_value(arg_value):
-            raise SolidExecutionError(
+            raise SolidTypeError(
                 'Expected type {typename} for arg {arg_name} for {input_name} but got {arg_value}'.
                 format(
                     typename=arg_def_type.name,
@@ -38,21 +58,19 @@ def materialize_input(context, input_definition, arg_dict):
                 )
             )
 
-    ## INTO USER SPACE
-    materialized = input_definition.input_fn(arg_dict)
+    error_str = 'Error occured while loading input "{input_name}"'
+    with user_code_error_boundary(error_str, input_name=input_definition.name):
+        return input_definition.input_fn(arg_dict)
 
-    return materialized
 
-
-def execute_core_transform(context, solid, materialized_inputs):
+def execute_core_transform(context, solid_transform_fn, materialized_inputs):
     check.inst_param(context, 'context', SolidExecutionContext)
-    check.inst_param(solid, 'solid', Solid)
+    check.callable_param(solid_transform_fn, 'solid_transform_fn')
     check.dict_param(materialized_inputs, 'materialized_inputs', key_type=str)
 
-    ## INTO USER SPACE
-    materialized_output = solid.transform_fn(**materialized_inputs)
-
-    return materialized_output
+    error_str = 'Error occured during core transform'
+    with user_code_error_boundary(error_str):
+        return solid_transform_fn(**materialized_inputs)
 
 
 def execute_output(context, output_type_def, output_arg_dict, materialized_output):
@@ -64,7 +82,7 @@ def execute_output(context, output_type_def, output_arg_dict, materialized_outpu
     received_args = set(output_arg_dict.keys())
 
     if expected_args != received_args:
-        raise SolidExecutionError(
+        raise SolidTypeError(
             'Argument mismatch in output. Expected {expected} got {received}'.format(
                 expected=repr(expected_args),
                 received=repr(received_args),
@@ -74,7 +92,7 @@ def execute_output(context, output_type_def, output_arg_dict, materialized_outpu
     for arg_name, arg_value in output_arg_dict.items():
         arg_def_type = output_type_def.argument_def_dict[arg_name]
         if not arg_def_type.is_python_valid_value(arg_value):
-            raise SolidExecutionError(
+            raise SolidTypeError(
                 'Expected type {typename} for arg {arg_name} in output but got {arg_value}'.format(
                     typename=arg_def_type.name,
                     arg_name=arg_name,
@@ -82,8 +100,9 @@ def execute_output(context, output_type_def, output_arg_dict, materialized_outpu
                 )
             )
 
-    ## INTO USER SPACE
-    output_type_def.output_fn(materialized_output, output_arg_dict)
+    error_str = 'Error during execution of output'
+    with user_code_error_boundary(error_str):
+        output_type_def.output_fn(materialized_output, output_arg_dict)
 
 
 def materialize_solid(context, solid, input_arg_dicts):
@@ -95,11 +114,10 @@ def materialize_solid(context, solid, input_arg_dicts):
 
     for input_name, arg_dict in input_arg_dicts.items():
         input_def = solid.input_def_named(input_name)
-        ## INTO USER SPACE
         materialized_input = materialize_input(context, input_def, arg_dict)
         materialized_inputs[input_name] = materialized_input
 
-    materialized_output = execute_core_transform(context, solid, materialized_inputs)
+    materialized_output = execute_core_transform(context, solid.transform_fn, materialized_inputs)
     return materialized_output
 
 

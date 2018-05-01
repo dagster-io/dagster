@@ -7,7 +7,7 @@ from solidic.definitions import (
 )
 
 from solidic.execution import (
-    materialize_input, execute_core_transform, execute_solid, execute_output, SolidExecutionError
+    materialize_input, execute_core_transform, execute_solid, execute_output, SolidTypeError
 )
 
 
@@ -31,7 +31,7 @@ def test_materialize_input_arg_mismatch():
         name='some_input', input_fn=lambda arg_dict: [], argument_def_dict={}
     )
 
-    with pytest.raises(SolidExecutionError):
+    with pytest.raises(SolidTypeError):
         materialize_input(create_test_context(), some_input, {'extra_arg': None})
 
     some_input_with_arg = SolidInputDefinition(
@@ -40,7 +40,7 @@ def test_materialize_input_arg_mismatch():
         argument_def_dict={'in_arg': SolidString}
     )
 
-    with pytest.raises(SolidExecutionError):
+    with pytest.raises(SolidTypeError):
         materialize_input(create_test_context(), some_input_with_arg, {})
 
 
@@ -51,7 +51,7 @@ def test_materialize_input_arg_type_mismatch():
         argument_def_dict={'in_arg': SolidString}
     )
 
-    with pytest.raises(SolidExecutionError):
+    with pytest.raises(SolidTypeError):
         materialize_input(create_test_context(), some_input_with_arg, {'in_arg': 1})
 
 
@@ -85,7 +85,7 @@ def test_materialize_output():
     materialized_input = materialize_input(create_test_context(), some_input, {})
 
     output = execute_core_transform(
-        create_test_context(), single_solid, {'some_input': materialized_input}
+        create_test_context(), single_solid.transform_fn, {'some_input': materialized_input}
     )
 
     assert output == [{'data_key': 'new_value'}]
@@ -166,12 +166,12 @@ def test_execute_output_arg_mismatch():
         name='CUSTOM', output_fn=lambda out, dict: [], argument_def_dict={'out_arg': SolidString}
     )
 
-    with pytest.raises(SolidExecutionError):
+    with pytest.raises(SolidTypeError):
         execute_output(
             create_test_context(), custom_output, output_arg_dict={}, materialized_output=[{}]
         )
 
-    with pytest.raises(SolidExecutionError):
+    with pytest.raises(SolidTypeError):
         execute_output(
             create_test_context(),
             custom_output,
@@ -188,7 +188,7 @@ def test_execute_output_arg_type_mismatch():
         name='CUSTOM', output_fn=lambda out, dict: [], argument_def_dict={'out_arg': SolidString}
     )
 
-    with pytest.raises(SolidExecutionError):
+    with pytest.raises(SolidTypeError):
         execute_output(
             create_test_context(),
             custom_output,
