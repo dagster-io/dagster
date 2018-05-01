@@ -1,6 +1,8 @@
 import check
 
-from .solid_defs import (Solid, SolidExecutionContext, SolidInputDefinition)
+from .solid_defs import (
+    Solid, SolidExecutionContext, SolidInputDefinition, SolidOutputTypeDefinition
+)
 
 
 def materialize_input(context, input_definition, arg_dict):
@@ -8,8 +10,10 @@ def materialize_input(context, input_definition, arg_dict):
     check.inst_param(input_definition, 'input_defintion', SolidInputDefinition)
     check.dict_param(arg_dict, 'arg_dict')
 
+    # CHECK TO SEE IF INCOMING ARG DICT MATCHES ARGUMENT DEFINITIONS
+
     ## INTO USER SPACE
-    materialized = input_definition.input_fn(**arg_dict)
+    materialized = input_definition.input_fn(arg_dict)
 
     return materialized
 
@@ -25,12 +29,23 @@ def execute_core_transform(context, solid, materialized_inputs):
     return materialized_output
 
 
+def execute_output(context, output_type_def, output_arg_dict, materialized_output):
+    check.inst_param(context, 'context', SolidExecutionContext)
+    check.inst_param(output_type_def, 'output_type_def', SolidOutputTypeDefinition)
+    check.dict_param(output_arg_dict, 'output_arg_dict', key_type=str)
+
+    # CHECK TO SEE IF INCOMING ARG DICT MATCHES OUTPUT DEFINTIION
+
+    ## INTO USER SPACE
+    output_type_def.output_fn(materialized_output, output_arg_dict)
+
+
 def execute_solid(context, solid, input_arg_dicts, output_type, output_arg_dict):
     check.inst_param(context, 'context', SolidExecutionContext)
     check.inst_param(solid, 'solid', Solid)
     check.dict_param(input_arg_dicts, 'materialized_inputs', key_type=str, value_type=dict)
     check.str_param(output_type, 'output_type')
-    check.dict_param(output_arg_dict, 'output_arg_dict')
+    check.dict_param(output_arg_dict, 'output_arg_dict', key_type=str)
 
     materialized_inputs = {}
 
@@ -44,5 +59,4 @@ def execute_solid(context, solid, input_arg_dicts, output_type, output_arg_dict)
 
     output_type_def = solid.output_type_def_named(output_type)
 
-    ## INTO USER SPACE
-    output_type_def.output_fn(materialized_output)
+    execute_output(context, output_type_def, output_arg_dict, materialized_output)

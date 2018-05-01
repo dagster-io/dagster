@@ -5,17 +5,19 @@ import check
 # to the native programming abstraction
 # Input expectations that execute *before* the core transform
 class SolidInputDefinition:
-    def __init__(self, name, input_fn):
+    def __init__(self, name, input_fn, argument_def_dict):
         self.name = check.str_param(name, 'name')
         self.input_fn = check.callable_param(input_fn, 'input_fn')
+        self.argument_def_dict = check.dict_param(argument_def_dict, 'argument_def_dict')
 
 
 # Output expectations that execute before the output computation
 # The output computation itself
 class SolidOutputTypeDefinition:
-    def __init__(self, name, output_fn):
+    def __init__(self, name, output_fn, argument_def_dict):
         self.name = check.str_param(name, 'name')
         self.output_fn = check.callable_param(output_fn, 'output_fn')
+        self.argument_def_dict = check.dict_param(argument_def_dict, 'argument_def_dict')
 
 
 # One or more inputs
