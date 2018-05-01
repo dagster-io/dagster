@@ -1,5 +1,7 @@
 import check
 
+from .solid_types import SolidType
+
 
 # The computation which translates an arbitrary set of key value pairs
 # to the native programming abstraction
@@ -8,7 +10,9 @@ class SolidInputDefinition:
     def __init__(self, name, input_fn, argument_def_dict):
         self.name = check.str_param(name, 'name')
         self.input_fn = check.callable_param(input_fn, 'input_fn')
-        self.argument_def_dict = check.dict_param(argument_def_dict, 'argument_def_dict')
+        self.argument_def_dict = check.dict_param(
+            argument_def_dict, 'argument_def_dict', key_type=str, value_type=SolidType
+        )
 
 
 # Output expectations that execute before the output computation
@@ -17,7 +21,9 @@ class SolidOutputTypeDefinition:
     def __init__(self, name, output_fn, argument_def_dict):
         self.name = check.str_param(name, 'name')
         self.output_fn = check.callable_param(output_fn, 'output_fn')
-        self.argument_def_dict = check.dict_param(argument_def_dict, 'argument_def_dict')
+        self.argument_def_dict = check.dict_param(
+            argument_def_dict, 'argument_def_dict', key_type=str, value_type=SolidType
+        )
 
 
 # One or more inputs

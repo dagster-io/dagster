@@ -16,5 +16,7 @@ setup(
         # standard python 2/3 compatability things
         'enum34>=1.1.6',
         'future>=0.16.0',
+        # Pandas kernel only
+        'pandas>=0.22.0',
     ],
 )
