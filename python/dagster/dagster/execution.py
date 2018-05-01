@@ -5,12 +5,25 @@ from .solid_defs import (
 )
 
 
+class SolidExecutionError(Exception):
+    pass
+
+
 def materialize_input(context, input_definition, arg_dict):
     check.inst_param(context, 'context', SolidExecutionContext)
     check.inst_param(input_definition, 'input_defintion', SolidInputDefinition)
     check.dict_param(arg_dict, 'arg_dict')
 
-    # CHECK TO SEE IF INCOMING ARG DICT MATCHES ARGUMENT DEFINITIONS
+    expected_args = set(input_definition.argument_def_dict.keys())
+    received_args = set(arg_dict.keys())
+    if expected_args != received_args:
+        raise SolidExecutionError(
+            'Argument mismatch in input {input_name}. Expected {expected} got {received}'.format(
+                input_name=input_definition.name,
+                expected=repr(expected_args),
+                received=repr(received_args),
+            )
+        )
 
     ## INTO USER SPACE
     materialized = input_definition.input_fn(arg_dict)
@@ -34,18 +47,25 @@ def execute_output(context, output_type_def, output_arg_dict, materialized_outpu
     check.inst_param(output_type_def, 'output_type_def', SolidOutputTypeDefinition)
     check.dict_param(output_arg_dict, 'output_arg_dict', key_type=str)
 
-    # CHECK TO SEE IF INCOMING ARG DICT MATCHES OUTPUT DEFINTIION
+    expected_args = set(output_type_def.argument_def_dict.keys())
+    received_args = set(output_arg_dict.keys())
+
+    if expected_args != received_args:
+        raise SolidExecutionError(
+            'Argument mismatch in output. Expected {expected} got {received}'.format(
+                expected=repr(expected_args),
+                received=repr(received_args),
+            )
+        )
 
     ## INTO USER SPACE
     output_type_def.output_fn(materialized_output, output_arg_dict)
 
 
-def execute_solid(context, solid, input_arg_dicts, output_type, output_arg_dict):
+def materialize_solid(context, solid, input_arg_dicts):
     check.inst_param(context, 'context', SolidExecutionContext)
     check.inst_param(solid, 'solid', Solid)
-    check.dict_param(input_arg_dicts, 'materialized_inputs', key_type=str, value_type=dict)
-    check.str_param(output_type, 'output_type')
-    check.dict_param(output_arg_dict, 'output_arg_dict', key_type=str)
+    check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
 
     materialized_inputs = {}
 
@@ -56,7 +76,16 @@ def execute_solid(context, solid, input_arg_dicts, output_type, output_arg_dict)
         materialized_inputs[input_name] = materialized_input
 
     materialized_output = execute_core_transform(context, solid, materialized_inputs)
+    return materialized_output
 
+
+def execute_solid(context, solid, input_arg_dicts, output_type, output_arg_dict):
+    check.inst_param(context, 'context', SolidExecutionContext)
+    check.inst_param(solid, 'solid', Solid)
+    check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
+    check.str_param(output_type, 'output_type')
+    check.dict_param(output_arg_dict, 'output_arg_dict', key_type=str)
+
+    materialized_output = materialize_solid(context, solid, input_arg_dicts)
     output_type_def = solid.output_type_def_named(output_type)
-
     execute_output(context, output_type_def, output_arg_dict, materialized_output)
