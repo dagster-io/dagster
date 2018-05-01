@@ -3,7 +3,12 @@ from contextlib import contextmanager
 import check
 
 from solidic.definitions import (
-    Solid, SolidExecutionContext, SolidInputDefinition, SolidOutputTypeDefinition
+    Solid,
+    SolidExecutionContext,
+    SolidInputDefinition,
+    SolidOutputTypeDefinition,
+    SolidExpectationDefinition,
+    SolidExpectationResult,
 )
 
 
@@ -61,6 +66,20 @@ def materialize_input(context, input_definition, arg_dict):
     error_str = 'Error occured while loading input "{input_name}"'
     with user_code_error_boundary(error_str, input_name=input_definition.name):
         return input_definition.input_fn(arg_dict)
+
+
+def evaluate_input_expectation(context, expectation_def, materialized_input):
+    check.inst_param(context, 'context', SolidExecutionContext)
+    check.inst_param(expectation_def, 'expectation_def', SolidExpectationDefinition)
+
+    error_str = 'Error occured while evaluation expectation "{expectation_name}"'
+    with user_code_error_boundary(error_str, expectation_name=expectation_def.name):
+        expectation_result = expectation_def.expectation_fn(materialized_input)
+
+    if not isinstance(expectation_result, SolidExpectationResult):
+        raise SolidExecutionError('Must return SolidExpectationResult from expectation function')
+
+    return expectation_result
 
 
 def execute_core_transform(context, solid_transform_fn, materialized_inputs):

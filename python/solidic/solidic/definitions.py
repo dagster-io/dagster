@@ -3,15 +3,31 @@ import check
 from solidic.types import SolidType
 
 
+class SolidExpectationResult:
+    def __init__(self, success, message, result_context=None):
+        self.success = check.bool_param(success, 'success')
+        self.message = check.str_param(message, 'message')
+        self.result_context = check.opt_dict_param(result_context, 'result_context')
+
+
+class SolidExpectationDefinition:
+    def __init__(self, name, expectation_fn):
+        self.name = check.str_param(name, 'name')
+        self.expectation_fn = check.callable_param(expectation_fn, 'expectation_fn')
+
+
 # The computation which translates an arbitrary set of key value pairs
 # to the native programming abstraction
 # Input expectations that execute *before* the core transform
 class SolidInputDefinition:
-    def __init__(self, name, input_fn, argument_def_dict):
+    def __init__(self, name, input_fn, argument_def_dict, expectations=None):
         self.name = check.str_param(name, 'name')
         self.input_fn = check.callable_param(input_fn, 'input_fn')
         self.argument_def_dict = check.dict_param(
             argument_def_dict, 'argument_def_dict', key_type=str, value_type=SolidType
+        )
+        self.expectations = check.opt_list_param(
+            expectations, 'expectations', of_type=SolidExpectationDefinition
         )
 
 
