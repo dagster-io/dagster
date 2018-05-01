@@ -6,7 +6,7 @@ from solidic.definitions import (
     Solid, SolidInputDefinition, SolidOutputTypeDefinition, SolidExecutionContext
 )
 
-from dagster.execution import (
+from solidic.execution import (
     materialize_input, execute_core_transform, execute_solid, execute_output, SolidExecutionError
 )
 
