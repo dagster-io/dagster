@@ -2,7 +2,7 @@ import pandas as pd
 
 from dagster.execution import (materialize_input, execute_solid)
 from solidic.definitions import (SolidExecutionContext, Solid, SolidOutputTypeDefinition)
-from dagster.solid_pandas_defs import create_solid_pandas_csv_input
+from solidic_pandas.definitions import create_solid_pandas_csv_input
 
 
 def script_relative_path(file_path):
