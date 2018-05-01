@@ -2,6 +2,7 @@
   "python.unitTest.pyTestArgs": [
     "check/check_tests",
     "dagster/dagster_tests",
+    "solidic/solidic_tests",
     "-s"
   ],
   "python.unitTest.pyTestEnabled": true,
