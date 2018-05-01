@@ -1,9 +1,11 @@
+import pytest
+
 from dagster.solid_defs import (
     Solid, SolidInputDefinition, SolidOutputTypeDefinition, SolidExecutionContext
 )
 
 from dagster.execution import (
-    materialize_input, execute_core_transform, execute_solid, execute_output
+    materialize_input, execute_core_transform, execute_solid, execute_output, SolidExecutionError
 )
 
 
@@ -20,6 +22,24 @@ def test_materialize_input():
     output = materialize_input(create_test_context(), some_input, {})
 
     assert output == expected_output
+
+
+def test_materialize_input_arg_mismatch():
+    some_input = SolidInputDefinition(
+        name='some_input', input_fn=lambda arg_dict: [], argument_def_dict={}
+    )
+
+    with pytest.raises(SolidExecutionError):
+        materialize_input(create_test_context(), some_input, {'extra_arg': None})
+
+    some_input_with_arg = SolidInputDefinition(
+        name='some_input_with_arg',
+        input_fn=lambda arg_dict: [],
+        argument_def_dict={'in_arg': None}
+    )
+
+    with pytest.raises(SolidExecutionError):
+        materialize_input(create_test_context(), some_input_with_arg, {})
 
 
 def test_materialize_output():
@@ -128,6 +148,28 @@ def test_execute_output_with_args():
     )
 
 
+def test_execute_output_arg_mismatch():
+    custom_output = SolidOutputTypeDefinition(
+        name='CUSTOM', output_fn=lambda out, dict: [], argument_def_dict={'out_arg': None}
+    )
+
+    with pytest.raises(SolidExecutionError):
+        execute_output(
+            create_test_context(), custom_output, output_arg_dict={}, materialized_output=[{}]
+        )
+
+    with pytest.raises(SolidExecutionError):
+        execute_output(
+            create_test_context(),
+            custom_output,
+            output_arg_dict={
+                'out_arg': 'foo',
+                'extra_arg': 'bar'
+            },
+            materialized_output=[{}]
+        )
+
+
 def test_execute_solid_with_args():
     some_input = SolidInputDefinition(
         name='some_input',
@@ -142,7 +184,7 @@ def test_execute_solid_with_args():
         test_output['thedata'] = materialized_output
 
     custom_output = SolidOutputTypeDefinition(
-        name='CUSTOM', output_fn=output_fn_inst, argument_def_dict={'out_arg': None}
+        name='CUSTOM', output_fn=output_fn_inst, argument_def_dict={'str_output_arg': None}
     )
 
     single_solid = Solid(
