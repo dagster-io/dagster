@@ -1,6 +1,6 @@
 import pandas as pd
 
-from dagster.execution import (materialize_input, execute_solid)
+from solidic.execution import (materialize_input, execute_solid)
 from solidic.definitions import (SolidExecutionContext, Solid, SolidOutputTypeDefinition)
 from solidic_pandas.definitions import create_solid_pandas_csv_input
 
