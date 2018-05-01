@@ -1,6 +1,6 @@
 import check
 
-from .solid_defs import (
+from solidic.definitions import (
     Solid, SolidExecutionContext, SolidInputDefinition, SolidOutputTypeDefinition
 )
 

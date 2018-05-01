@@ -2,8 +2,8 @@ import pandas as pd
 
 import check
 
-from .solid_defs import SolidInputDefinition
-from .solid_types import SolidPath
+from solidic.definitions import SolidInputDefinition
+from solidic.types import SolidPath
 
 
 def create_solid_pandas_csv_input(name):

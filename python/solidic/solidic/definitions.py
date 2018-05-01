@@ -1,6 +1,6 @@
 import check
 
-from .solid_types import SolidType
+from solidic.types import SolidType
 
 
 # The computation which translates an arbitrary set of key value pairs
