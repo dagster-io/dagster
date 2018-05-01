@@ -8,7 +8,7 @@ class SolidType:
         check.not_implemented('Must implement in subclass')
 
 
-class SolidScalarType(SolidType):
+class SolidStringType(SolidType):
     def __init__(self, name):
         self.name = check.str_param(name, 'name')
 
@@ -16,4 +16,5 @@ class SolidScalarType(SolidType):
         return isinstance(value, string_types)
 
 
-SolidString = SolidScalarType(name='String')
+SolidString = SolidStringType(name='String')
+SolidPath = SolidStringType(name='Path')
