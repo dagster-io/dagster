@@ -7,7 +7,8 @@ import check
 from solidic.execution import (materialize_input, execute_solid, SolidExecutionContext)
 from solidic.types import SolidPath
 from solidic.definitions import (Solid, SolidOutputTypeDefinition)
-from solidic_pandas.definitions import create_solid_pandas_csv_input
+import solidic_pandas as solidic_pd
+from solidic_pandas.definitions import create_solidic_pandas_csv_input
 
 from .test_utils import (script_relative_path, get_temp_file_name)
 
@@ -17,7 +18,7 @@ def create_test_context():
 
 
 def test_pandas_input():
-    csv_input = create_solid_pandas_csv_input(name='num_csv')
+    csv_input = create_solidic_pandas_csv_input(name='num_csv')
     df = materialize_input(
         create_test_context(), csv_input, {'path': script_relative_path('num.csv')}
     )
@@ -27,7 +28,7 @@ def test_pandas_input():
 
 
 def test_pandas_solid():
-    csv_input = create_solid_pandas_csv_input(name='num_csv')
+    csv_input = create_solidic_pandas_csv_input(name='num_csv')
 
     def transform(num_csv):
         num_csv['sum'] = num_csv['num1'] + num_csv['num2']
@@ -66,7 +67,7 @@ def test_pandas_solid():
 
 
 def test_pandas_csv_to_csv():
-    csv_input = create_solid_pandas_csv_input(name='num_csv')
+    csv_input = create_solidic_pandas_csv_input(name='num_csv')
 
     def transform(num_csv):
         num_csv['sum'] = num_csv['num1'] + num_csv['num2']
@@ -87,6 +88,12 @@ def test_pandas_csv_to_csv():
         output_type_defs=[csv_output_type_def],
     )
 
+    output_df = execute_transform_in_temp_file(solid)
+
+    assert output_df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
+
+
+def execute_transform_in_temp_file(solid):
     with get_temp_file_name() as temp_file_name:
         result = execute_solid(
             create_test_context(),
@@ -101,4 +108,21 @@ def test_pandas_csv_to_csv():
         assert result.success
 
         output_df = pd.read_csv(temp_file_name)
-        assert output_df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
+    return output_df
+
+
+def test_pandas_csv_to_csv_better_api():
+    def transform(num_csv):
+        check.inst_param(num_csv, 'num_csv', pd.DataFrame)
+        num_csv['sum'] = num_csv['num1'] + num_csv['num2']
+        return num_csv
+
+    solid = solidic_pd.tabular_solid(
+        name='sum_table',
+        inputs=[solidic_pd.csv_input('num_csv')],
+        transform_fn=transform,
+    )
+
+    output_df = execute_transform_in_temp_file(solid)
+
+    assert output_df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
