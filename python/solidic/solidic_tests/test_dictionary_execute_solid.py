@@ -117,7 +117,7 @@ def test_execute_solid_with_failed_input_expectation():
         output_type_defs=[create_noop_output(test_output)],
     )
 
-    solid_executation_result = execute_solid(
+    solid_execution_result = execute_solid(
         create_test_context(),
         single_solid,
         input_arg_dicts={'some_input': {
@@ -127,6 +127,38 @@ def test_execute_solid_with_failed_input_expectation():
         output_arg_dict={},
     )
 
-    assert isinstance(solid_executation_result, SolidExecutionResult)
-    assert solid_executation_result.success is False
-    assert solid_executation_result.reason == SolidExecutionFailureReason.EXPECTATION_FAILURE
+    assert isinstance(solid_execution_result, SolidExecutionResult)
+    assert solid_execution_result.success is False
+    assert solid_execution_result.reason == SolidExecutionFailureReason.EXPECTATION_FAILURE
+
+
+def test_execute_solid_with_failed_output_expectation():
+    test_output = {}
+
+    def failing_expectation_fn(_output):
+        return SolidExpectationResult(success=False)
+
+    output_expectation = SolidExpectationDefinition(
+        name='output failure', expectation_fn=failing_expectation_fn
+    )
+
+    single_solid = Solid(
+        name='some_node',
+        inputs=[create_single_dict_input()],
+        transform_fn=lambda some_input: some_input,
+        output_type_defs=[create_noop_output(test_output, expectations=[output_expectation])],
+    )
+
+    solid_execution_result = execute_solid(
+        create_test_context(),
+        single_solid,
+        input_arg_dicts={'some_input': {
+            'str_arg': 'an_input_arg'
+        }},
+        output_type='CUSTOM',
+        output_arg_dict={},
+    )
+
+    assert isinstance(solid_execution_result, SolidExecutionResult)
+    assert solid_execution_result.success is False
+    assert solid_execution_result.reason == SolidExecutionFailureReason.EXPECTATION_FAILURE
