@@ -213,10 +213,6 @@ def execute_solid(context, solid, input_arg_dicts, output_type, output_arg_dict)
     try:
         return inner_execute()
     except SolidExecutionError as see:
-        return SolidExecutionResult(
-            success=False, reason=SolidExecutionFailureReason.USER_CODE_ERROR, exception=see
-        )
+        raise see
     except Exception as e:  # pylint: disable=W0703
-        return SolidExecutionResult(
-            success=False, reason=SolidExecutionFailureReason.FRAMEWORK_ERROR, exception=e
-        )
+        raise e
