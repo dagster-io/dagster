@@ -1,7 +1,7 @@
 import pandas as pd
 
-from solidic.execution import (materialize_input, execute_solid)
-from solidic.definitions import (SolidExecutionContext, Solid, SolidOutputTypeDefinition)
+from solidic.execution import (materialize_input, execute_solid, SolidExecutionContext)
+from solidic.definitions import (Solid, SolidOutputTypeDefinition)
 from solidic_pandas.definitions import create_solid_pandas_csv_input
 
 

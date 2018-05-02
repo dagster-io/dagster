@@ -72,7 +72,3 @@ class Solid:
                 return output_type_def
 
         check.failed('Not found')
-
-
-class SolidExecutionContext:
-    pass
