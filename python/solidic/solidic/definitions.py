@@ -4,9 +4,9 @@ from solidic.types import SolidType
 
 
 class SolidExpectationResult:
-    def __init__(self, success, message, result_context=None):
+    def __init__(self, success, message=None, result_context=None):
         self.success = check.bool_param(success, 'success')
-        self.message = check.str_param(message, 'message')
+        self.message = check.opt_str_param(message, 'message')
         self.result_context = check.opt_dict_param(result_context, 'result_context')
 
 
@@ -34,11 +34,14 @@ class SolidInputDefinition:
 # Output expectations that execute before the output computation
 # The output computation itself
 class SolidOutputTypeDefinition:
-    def __init__(self, name, output_fn, argument_def_dict):
+    def __init__(self, name, output_fn, argument_def_dict, expectations=None):
         self.name = check.str_param(name, 'name')
         self.output_fn = check.callable_param(output_fn, 'output_fn')
         self.argument_def_dict = check.dict_param(
             argument_def_dict, 'argument_def_dict', key_type=str, value_type=SolidType
+        )
+        self.expectations = check.opt_list_param(
+            expectations, 'expectations', of_type=SolidExpectationDefinition
         )
 
 

@@ -7,7 +7,7 @@ from solidic.definitions import (
 )
 
 from solidic.execution import (
-    materialize_input, execute_core_transform, execute_solid, execute_output, SolidTypeError
+    materialize_input, execute_core_transform, execute_output, SolidTypeError
 )
 
 
@@ -66,12 +66,9 @@ def test_materialize_output():
         some_input[0]['data_key'] = 'new_value'
         return some_input
 
-    def output_fn_inst(_data, _output_arg_dict):
-        pass
-
     custom_output_type_def = SolidOutputTypeDefinition(
         name='CUSTOM',
-        output_fn=output_fn_inst,
+        output_fn=lambda _data, _output_arg_dict: None,
         argument_def_dict={},
     )
 
@@ -89,46 +86,6 @@ def test_materialize_output():
     )
 
     assert output == [{'data_key': 'new_value'}]
-
-
-def test_execute_solid_no_args():
-    some_input = SolidInputDefinition(
-        name='some_input',
-        input_fn=lambda arg_dict: [{'data_key': 'data_value'}],
-        argument_def_dict={}
-    )
-
-    def tranform_fn_inst(some_input):
-        some_input[0]['data_key'] = 'new_value'
-        return some_input
-
-    test_output = {}
-
-    def output_fn_inst(data, _output_arg_dict):
-        test_output['thedata'] = data
-
-    custom_output = SolidOutputTypeDefinition(
-        name='CUSTOM',
-        output_fn=output_fn_inst,
-        argument_def_dict={},
-    )
-
-    single_solid = Solid(
-        name='some_node',
-        inputs=[some_input],
-        transform_fn=tranform_fn_inst,
-        output_type_defs=[custom_output],
-    )
-
-    execute_solid(
-        create_test_context(),
-        single_solid,
-        input_arg_dicts={'some_input': {}},
-        output_type='CUSTOM',
-        output_arg_dict={}
-    )
-
-    assert test_output['thedata'] == [{'data_key': 'new_value'}]
 
 
 def test_materialize_input_with_args():
@@ -195,41 +152,3 @@ def test_execute_output_arg_type_mismatch():
             output_arg_dict={'out_arg': 1},
             materialized_output=[{}]
         )
-
-
-def test_execute_solid_with_args():
-    some_input = SolidInputDefinition(
-        name='some_input',
-        input_fn=lambda arg_dict: [{'key': arg_dict['str_arg']}],
-        argument_def_dict={'str_arg': SolidString}
-    )
-
-    test_output = {}
-
-    def output_fn_inst(materialized_output, output_arg_dict):
-        materialized_output[0]['output_key'] = output_arg_dict['str_output_arg']
-        test_output['thedata'] = materialized_output
-
-    custom_output = SolidOutputTypeDefinition(
-        name='CUSTOM', output_fn=output_fn_inst, argument_def_dict={'str_output_arg': SolidString}
-    )
-
-    single_solid = Solid(
-        name='some_node',
-        inputs=[some_input],
-        transform_fn=lambda some_input: some_input,
-        output_type_defs=[custom_output],
-    )
-
-    execute_solid(
-        create_test_context(),
-        single_solid,
-        input_arg_dicts={'some_input': {
-            'str_arg': 'an_input_arg'
-        }},
-        output_type='CUSTOM',
-        output_arg_dict={'str_output_arg': 'an_output_arg'},
-    )
-
-    assert test_output['thedata'][0]['key'] == 'an_input_arg'
-    assert test_output['thedata'][0]['output_key'] == 'an_output_arg'
