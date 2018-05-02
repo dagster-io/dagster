@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+from enum import Enum
 
 import check
 
@@ -10,6 +11,12 @@ from solidic.definitions import (
     SolidExpectationDefinition,
     SolidExpectationResult,
 )
+
+
+class SolidExecutionFailureReason(Enum):
+    USER_CODE_ERROR = 'USER_CODE_ERROR'
+    FRAMEWORK_ERROR = 'FRAMEWORK_ERROR'
+    EXPECTATION_FAILURE = 'EXPECATION_FAILURE'
 
 
 class SolidError(Exception):
@@ -24,6 +31,20 @@ class SolidTypeError(SolidError):
 class SolidExecutionError(SolidError):
     '''Indicates an error in user space code'''
     pass
+
+
+class SolidExecutionResult:
+    def __init__(self, success, reason=None, exception=None, failed_expectation_result=None):
+        self.success = check.bool_param(success, 'success')
+        if not success:
+            check.param_invariant(
+                isinstance(reason, SolidExecutionFailureReason), 'reason',
+                'Must provide a reason is result is a failure'
+            )
+        self.reason = reason
+        self.exception = check.opt_inst_param(exception, 'exception', Exception)
+        ## CONSIDER REMOVING THIS AND OPT FOR COLLECTION OF RESULTS
+        self.failed_expectation_result = failed_expectation_result
 
 
 @contextmanager
@@ -72,9 +93,23 @@ def evaluate_input_expectation(context, expectation_def, materialized_input):
     check.inst_param(context, 'context', SolidExecutionContext)
     check.inst_param(expectation_def, 'expectation_def', SolidExpectationDefinition)
 
-    error_str = 'Error occured while evaluation expectation "{expectation_name}"'
+    error_str = 'Error occured while evaluation expectation "{expectation_name}" in input'
     with user_code_error_boundary(error_str, expectation_name=expectation_def.name):
         expectation_result = expectation_def.expectation_fn(materialized_input)
+
+    if not isinstance(expectation_result, SolidExpectationResult):
+        raise SolidExecutionError('Must return SolidExpectationResult from expectation function')
+
+    return expectation_result
+
+
+def evaluate_output_expectation(context, expectation_def, materialized_output):
+    check.inst_param(context, 'context', SolidExecutionContext)
+    check.inst_param(expectation_def, 'expectation_def', SolidExpectationDefinition)
+
+    error_str = 'Error occured while evaluation expectation "{expectation_name}" in output'
+    with user_code_error_boundary(error_str, expectation_name=expectation_def.name):
+        expectation_result = expectation_def.expectation_fn(materialized_output)
 
     if not isinstance(expectation_result, SolidExpectationResult):
         raise SolidExecutionError('Must return SolidExpectationResult from expectation function')
@@ -124,22 +159,6 @@ def execute_output(context, output_type_def, output_arg_dict, materialized_outpu
         output_type_def.output_fn(materialized_output, output_arg_dict)
 
 
-def materialize_solid(context, solid, input_arg_dicts):
-    check.inst_param(context, 'context', SolidExecutionContext)
-    check.inst_param(solid, 'solid', Solid)
-    check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
-
-    materialized_inputs = {}
-
-    for input_name, arg_dict in input_arg_dicts.items():
-        input_def = solid.input_def_named(input_name)
-        materialized_input = materialize_input(context, input_def, arg_dict)
-        materialized_inputs[input_name] = materialized_input
-
-    materialized_output = execute_core_transform(context, solid.transform_fn, materialized_inputs)
-    return materialized_output
-
-
 def execute_solid(context, solid, input_arg_dicts, output_type, output_arg_dict):
     check.inst_param(context, 'context', SolidExecutionContext)
     check.inst_param(solid, 'solid', Solid)
@@ -147,6 +166,54 @@ def execute_solid(context, solid, input_arg_dicts, output_type, output_arg_dict)
     check.str_param(output_type, 'output_type')
     check.dict_param(output_arg_dict, 'output_arg_dict', key_type=str)
 
-    materialized_output = materialize_solid(context, solid, input_arg_dicts)
-    output_type_def = solid.output_type_def_named(output_type)
-    execute_output(context, output_type_def, output_arg_dict, materialized_output)
+    def inner_execute():
+        materialized_inputs = {}
+
+        for input_name, arg_dict in input_arg_dicts.items():
+            input_def = solid.input_def_named(input_name)
+            materialized_input = materialize_input(context, input_def, arg_dict)
+
+            for input_expectation_def in input_def.expectations:
+                input_expectation_result = evaluate_input_expectation(
+                    context, input_expectation_def, materialized_input
+                )
+                if not input_expectation_result.success:
+                    return SolidExecutionResult(
+                        success=False,
+                        reason=SolidExecutionFailureReason.EXPECTATION_FAILURE,
+                        failed_expectation_result=input_expectation_result,
+                    )
+
+            materialized_inputs[input_name] = materialized_input
+
+        materialized_output = execute_core_transform(
+            context, solid.transform_fn, materialized_inputs
+        )
+
+        output_type_def = solid.output_type_def_named(output_type)
+
+        for output_expectation_def in output_type_def.expectations:
+            output_expectation_result = evaluate_output_expectation(
+                context, output_expectation_def, materialized_output
+            )
+            if not output_expectation_result.success:
+                return SolidExecutionResult(
+                    success=False,
+                    reason=SolidExecutionFailureReason.EXPECTATION_FAILURE,
+                    failed_expectation_result=output_expectation_result,
+                )
+
+        execute_output(context, output_type_def, output_arg_dict, materialized_output)
+
+        return SolidExecutionResult(success=True)
+
+    try:
+        return inner_execute()
+    except SolidExecutionError as see:
+        return SolidExecutionResult(
+            success=False, reason=SolidExecutionFailureReason.USER_CODE_ERROR, exception=see
+        )
+    except Exception as e:  # pylint: disable=W0703
+        return SolidExecutionResult(
+            success=False, reason=SolidExecutionFailureReason.FRAMEWORK_ERROR, exception=e
+        )
