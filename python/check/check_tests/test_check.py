@@ -443,3 +443,12 @@ def test_opt_dict_elem():
 
     with pytest.raises(CheckError):
         check.opt_dict_elem(ddict, 'stringkey')
+
+
+def test_not_none_param():
+    assert check.not_none_param(1, 'fine')
+    check.not_none_param(0, 'zero is fine')
+    check.not_none_param('', 'empty str is fine')
+
+    with pytest.raises(CheckError):
+        check.not_none_param(None, 'none fails')

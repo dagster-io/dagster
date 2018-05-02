@@ -77,6 +77,16 @@ def inst(obj, ttype, desc=None):
     return obj
 
 
+def not_none_param(obj, param_name):
+    if obj is None:
+        raise_with_traceback(
+            _param_invariant_exception(
+                param_name, 'Param {param_name} cannot be none'.format(param_name=param_name)
+            )
+        )
+    return obj
+
+
 def invariant(condition, desc=None):
     if not isinstance(condition, bool):
         raise_with_traceback(CheckError('Invariant condition must be boolean'))
