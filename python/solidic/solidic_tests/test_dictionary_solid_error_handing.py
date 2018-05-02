@@ -2,12 +2,11 @@ import pytest
 
 import check
 
-from solidic.definitions import (
-    SolidInputDefinition, SolidExecutionContext, SolidOutputTypeDefinition
-)
+from solidic.definitions import (SolidInputDefinition, SolidOutputTypeDefinition)
 
 from solidic.execution import (
-    materialize_input, SolidExecutionError, execute_core_transform, execute_output
+    materialize_input, SolidExecutionError, execute_core_transform, execute_output,
+    SolidExecutionContext
 )
 
 

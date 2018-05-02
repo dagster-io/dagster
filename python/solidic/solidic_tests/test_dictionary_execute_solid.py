@@ -1,11 +1,13 @@
 from solidic.types import SolidString
 
 from solidic.definitions import (
-    Solid, SolidInputDefinition, SolidOutputTypeDefinition, SolidExecutionContext,
-    SolidExpectationDefinition, SolidExpectationResult
+    Solid, SolidInputDefinition, SolidOutputTypeDefinition, SolidExpectationDefinition,
+    SolidExpectationResult
 )
 
-from solidic.execution import (execute_solid, SolidExecutionResult, SolidExecutionFailureReason)
+from solidic.execution import (
+    execute_solid, SolidExecutionResult, SolidExecutionFailureReason, SolidExecutionContext
+)
 
 
 def create_test_context():

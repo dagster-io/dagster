@@ -2,12 +2,10 @@ import pytest
 
 from solidic.types import SolidString
 
-from solidic.definitions import (
-    Solid, SolidInputDefinition, SolidOutputTypeDefinition, SolidExecutionContext
-)
+from solidic.definitions import (Solid, SolidInputDefinition, SolidOutputTypeDefinition)
 
 from solidic.execution import (
-    materialize_input, execute_core_transform, execute_output, SolidTypeError
+    materialize_input, execute_core_transform, execute_output, SolidTypeError, SolidExecutionContext
 )
 
 

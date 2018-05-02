@@ -1,10 +1,13 @@
 import pytest
 
 from solidic.definitions import (
-    SolidOutputTypeDefinition, SolidExpectationDefinition, SolidExpectationResult,
-    SolidExecutionContext
+    SolidOutputTypeDefinition,
+    SolidExpectationDefinition,
+    SolidExpectationResult,
 )
-from solidic.execution import (evaluate_output_expectation, SolidExecutionError)
+from solidic.execution import (
+    evaluate_output_expectation, SolidExecutionError, SolidExecutionContext
+)
 from solidic.types import SolidString
 
 

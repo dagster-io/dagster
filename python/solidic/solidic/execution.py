@@ -5,7 +5,6 @@ import check
 
 from solidic.definitions import (
     Solid,
-    SolidExecutionContext,
     SolidInputDefinition,
     SolidOutputTypeDefinition,
     SolidExpectationDefinition,
@@ -30,6 +29,10 @@ class SolidTypeError(SolidError):
 
 class SolidExecutionError(SolidError):
     '''Indicates an error in user space code'''
+    pass
+
+
+class SolidExecutionContext:
     pass
 
 
