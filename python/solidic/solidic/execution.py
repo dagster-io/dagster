@@ -198,13 +198,13 @@ class SolidAllInputExpectationsRunResults:
         return not self.all_fails
 
 
-def execute_all_input_expectations(context, solid, input_arg_dicts, materialized_inputs):
+def execute_all_input_expectations(context, solid, materialized_inputs):
     check.inst_param(context, 'context', SolidExecutionContext)
-    check.dict_param(materialized_inputs, 'materialized_inputs')
+    check.dict_param(materialized_inputs, 'materialized_inputs', key_type=str)
 
     run_results_list = []
 
-    for input_name in input_arg_dicts.keys():
+    for input_name in materialized_inputs.keys():
         input_def = solid.input_def_named(input_name)
         materialized_input = materialized_inputs[input_name]
 
@@ -243,11 +243,18 @@ def materialize_all_inputs(context, solid, input_arg_dicts):
 
 def materialize_output(context, solid, input_arg_dicts):
     check.inst_param(context, 'context', SolidExecutionContext)
+    check.inst_param(solid, 'solid', Solid)
 
     materialized_inputs = materialize_all_inputs(context, solid, input_arg_dicts)
-    all_run_result = execute_all_input_expectations(
-        context, solid, input_arg_dicts, materialized_inputs
-    )
+    return materialize_outputs_from_materialized_inputs(context, solid, materialized_inputs)
+
+
+def materialize_outputs_from_materialized_inputs(context, solid, materialized_inputs):
+    check.inst_param(context, 'context', SolidExecutionContext)
+    check.inst_param(solid, 'solid', Solid)
+    check.dict_param(materialized_inputs, 'materialized_inputs', key_type=str)
+
+    all_run_result = execute_all_input_expectations(context, solid, materialized_inputs)
 
     if not all_run_result.success:
         return SolidExecutionResult(
