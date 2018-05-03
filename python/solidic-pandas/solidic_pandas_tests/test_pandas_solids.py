@@ -4,7 +4,9 @@ import pandas as pd
 
 import check
 
-from solidic.execution import (materialize_input, execute_solid, SolidExecutionContext)
+from solidic.execution import (
+    materialize_input, execute_solid, SolidExecutionContext, materialize_output
+)
 from solidic.types import SolidPath
 from solidic.definitions import (Solid, SolidOutputTypeDefinition)
 import solidic_pandas as solidic_pd
@@ -111,18 +113,35 @@ def execute_transform_in_temp_file(solid):
     return output_df
 
 
+def create_sum_table():
+    def transform(num_csv):
+        check.inst_param(num_csv, 'num_csv', pd.DataFrame)
+        num_csv['sum'] = num_csv['num1'] + num_csv['num2']
+        return num_csv
+
+    return solidic_pd.tabular_solid(
+        name='sum_table',
+        inputs=[solidic_pd.csv_input('num_csv')],
+        transform_fn=transform,
+    )
+
+
 def test_pandas_csv_to_csv_better_api():
     def transform(num_csv):
         check.inst_param(num_csv, 'num_csv', pd.DataFrame)
         num_csv['sum'] = num_csv['num1'] + num_csv['num2']
         return num_csv
 
-    solid = solidic_pd.tabular_solid(
-        name='sum_table',
-        inputs=[solidic_pd.csv_input('num_csv')],
-        transform_fn=transform,
-    )
+    solid = create_sum_table()
 
     output_df = execute_transform_in_temp_file(solid)
 
     assert output_df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
+
+
+def test_pandas_csv_in_memory():
+    solid = create_sum_table()
+    input_args = {'num_csv': {'path': script_relative_path('num.csv')}}
+    df = materialize_output(create_test_context(), solid, input_args)
+    assert isinstance(df, pd.DataFrame)
+    assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
