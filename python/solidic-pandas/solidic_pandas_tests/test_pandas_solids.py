@@ -127,15 +127,8 @@ def create_sum_table():
 
 
 def test_pandas_csv_to_csv_better_api():
-    def transform(num_csv):
-        check.inst_param(num_csv, 'num_csv', pd.DataFrame)
-        num_csv['sum'] = num_csv['num1'] + num_csv['num2']
-        return num_csv
-
     solid = create_sum_table()
-
     output_df = execute_transform_in_temp_file(solid)
-
     assert output_df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
 
 
