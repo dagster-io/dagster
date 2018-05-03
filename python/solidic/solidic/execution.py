@@ -37,7 +37,7 @@ class SolidExecutionContext:
 
 
 class SolidExecutionResult:
-    def __init__(self, success, reason=None, exception=None, failed_expectation_result=None):
+    def __init__(self, success, reason=None, exception=None, failed_expectation_results=None):
         self.success = check.bool_param(success, 'success')
         if not success:
             check.param_invariant(
@@ -46,8 +46,9 @@ class SolidExecutionResult:
             )
         self.reason = reason
         self.exception = check.opt_inst_param(exception, 'exception', Exception)
-        ## CONSIDER REMOVING THIS AND OPT FOR COLLECTION OF RESULTS
-        self.failed_expectation_result = failed_expectation_result
+        self.failed_expectation_results = check.opt_list_param(
+            failed_expectation_results, 'failed_expectation_result', of_type=SolidExpectationResult
+        )
 
 
 @contextmanager
@@ -127,7 +128,15 @@ def execute_core_transform(context, solid_transform_fn, materialized_inputs):
 
     error_str = 'Error occured during core transform'
     with user_code_error_boundary(error_str):
-        return solid_transform_fn(**materialized_inputs)
+        materialized_output = solid_transform_fn(**materialized_inputs)
+
+        check.invariant(
+            not isinstance(materialized_output, SolidExecutionResult),
+            'Tricksy hobbitess cannot return an execution result from the transform ' + \
+            'function in order to fool the framework'
+        )
+
+        return materialized_output
 
 
 def execute_output(context, output_type_def, output_arg_dict, materialized_output):
@@ -162,6 +171,94 @@ def execute_output(context, output_type_def, output_arg_dict, materialized_outpu
         output_type_def.output_fn(materialized_output, output_arg_dict)
 
 
+from collections import namedtuple
+
+SolidInputExpectationRunResults = namedtuple(
+    'SolidInputExpectationRunResults', 'input_name passes fails'
+)
+
+
+class SolidAllInputExpectationsRunResults:
+    def __init__(self, run_results_list):
+        self.run_results_list = check.list_param(
+            run_results_list, 'run_results_list', of_type=SolidInputExpectationRunResults
+        )
+
+        all_passes = []
+        all_fails = []
+        for run_results in run_results_list:
+            all_passes.extend(run_results.passes)
+            all_fails.extend(run_results.fails)
+
+        self.all_passes = all_passes
+        self.all_fails = all_fails
+
+    @property
+    def success(self):
+        return not self.all_fails
+
+
+def execute_all_input_expectations(context, solid, input_arg_dicts, materialized_inputs):
+    check.inst_param(context, 'context', SolidExecutionContext)
+    check.dict_param(materialized_inputs, 'materialized_inputs')
+
+    run_results_list = []
+
+    for input_name in input_arg_dicts.keys():
+        input_def = solid.input_def_named(input_name)
+        materialized_input = materialized_inputs[input_name]
+
+        passes = []
+        fails = []
+
+        for input_expectation_def in input_def.expectations:
+            input_expectation_result = evaluate_input_expectation(
+                context, input_expectation_def, materialized_input
+            )
+
+            if input_expectation_result.success:
+                passes.append(input_expectation_result)
+            else:
+                fails.append(input_expectation_result)
+
+        run_results_list.append(
+            SolidInputExpectationRunResults(input_name=input_name, passes=passes, fails=fails)
+        )
+
+    return SolidAllInputExpectationsRunResults(run_results_list)
+
+
+def materialize_all_inputs(context, solid, input_arg_dicts):
+    check.inst_param(context, 'context', SolidExecutionContext)
+
+    materialized_inputs = {}
+
+    for input_name, arg_dict in input_arg_dicts.items():
+        input_def = solid.input_def_named(input_name)
+        materialized_input = materialize_input(context, input_def, arg_dict)
+        materialized_inputs[input_name] = materialized_input
+
+    return materialized_inputs
+
+
+def materialize_output(context, solid, input_arg_dicts):
+    check.inst_param(context, 'context', SolidExecutionContext)
+
+    materialized_inputs = materialize_all_inputs(context, solid, input_arg_dicts)
+    all_run_result = execute_all_input_expectations(
+        context, solid, input_arg_dicts, materialized_inputs
+    )
+
+    if not all_run_result.success:
+        return SolidExecutionResult(
+            success=False,
+            reason=SolidExecutionFailureReason.EXPECTATION_FAILURE,
+            failed_expectation_results=all_run_result.all_fails,
+        )
+
+    return execute_core_transform(context, solid.transform_fn, materialized_inputs)
+
+
 def execute_solid(context, solid, input_arg_dicts, output_type, output_arg_dict):
     check.inst_param(context, 'context', SolidExecutionContext)
     check.inst_param(solid, 'solid', Solid)
@@ -170,41 +267,31 @@ def execute_solid(context, solid, input_arg_dicts, output_type, output_arg_dict)
     check.dict_param(output_arg_dict, 'output_arg_dict', key_type=str)
 
     def inner_execute():
-        materialized_inputs = {}
+        materialized_output = materialize_output(context, solid, input_arg_dicts)
 
-        for input_name, arg_dict in input_arg_dicts.items():
-            input_def = solid.input_def_named(input_name)
-            materialized_input = materialize_input(context, input_def, arg_dict)
-
-            for input_expectation_def in input_def.expectations:
-                input_expectation_result = evaluate_input_expectation(
-                    context, input_expectation_def, materialized_input
-                )
-                if not input_expectation_result.success:
-                    return SolidExecutionResult(
-                        success=False,
-                        reason=SolidExecutionFailureReason.EXPECTATION_FAILURE,
-                        failed_expectation_result=input_expectation_result,
-                    )
-
-            materialized_inputs[input_name] = materialized_input
-
-        materialized_output = execute_core_transform(
-            context, solid.transform_fn, materialized_inputs
-        )
+        if isinstance(materialized_output, SolidExecutionResult):
+            check.invariant(
+                not materialized_output.success,
+                'only failed things should return an execution result right here'
+            )
+            return materialized_output
 
         output_type_def = solid.output_type_def_named(output_type)
 
+        output_expectation_failures = []
         for output_expectation_def in output_type_def.expectations:
             output_expectation_result = evaluate_output_expectation(
                 context, output_expectation_def, materialized_output
             )
             if not output_expectation_result.success:
-                return SolidExecutionResult(
-                    success=False,
-                    reason=SolidExecutionFailureReason.EXPECTATION_FAILURE,
-                    failed_expectation_result=output_expectation_result,
-                )
+                output_expectation_failures.append(output_expectation_result)
+
+        if output_expectation_failures:
+            return SolidExecutionResult(
+                success=False,
+                reason=SolidExecutionFailureReason.EXPECTATION_FAILURE,
+                failed_expectation_results=output_expectation_failures,
+            )
 
         execute_output(context, output_type_def, output_arg_dict, materialized_output)
 
@@ -213,6 +300,7 @@ def execute_solid(context, solid, input_arg_dicts, output_type, output_arg_dict)
     try:
         return inner_execute()
     except SolidExecutionError as see:
+        # These should probably return the Result object. Still figuring this out
         raise see
     except Exception as e:  # pylint: disable=W0703
         raise e
