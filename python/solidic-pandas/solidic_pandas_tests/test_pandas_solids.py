@@ -6,7 +6,7 @@ import check
 
 from solidic.execution import (
     materialize_input, execute_solid, SolidExecutionContext, materialize_output,
-    materialize_outputs_from_materialized_inputs
+    materialize_outputs_in_memory
 )
 from solidic.types import SolidPath
 from solidic.definitions import (Solid, SolidOutputTypeDefinition)
@@ -159,9 +159,7 @@ def test_two_step_pipeline_in_memory():
     input_args = {'num_csv': {'path': script_relative_path('num.csv')}}
     context = create_test_context()
     df = materialize_output(context, sum_table_solid, input_args)
-    mult_df = materialize_outputs_from_materialized_inputs(
-        context, mult_table_solid, {'sum_table': df}
-    )
+    mult_df = materialize_outputs_in_memory(context, mult_table_solid, {'sum_table': df})
     assert mult_df.to_dict('list') == {
         'num1': [1, 3],
         'num2': [2, 4],
@@ -196,3 +194,91 @@ def test_two_input_solid():
     df = materialize_output(create_test_context(), two_input_solid, input_args)
     assert isinstance(df, pd.DataFrame)
     assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
+
+
+def test_no_transform_solid():
+    num_table = solidic_pd.tabular_solid(
+        name='num_table',
+        inputs=[solidic_pd.csv_input('num_csv')],
+    )
+    input_args = {'num_csv': {'path': script_relative_path('num.csv')}}
+    context = create_test_context()
+    df = materialize_output(context, num_table, input_args)
+    assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4]}
+
+
+def create_diamond_dag():
+    num_table = solidic_pd.tabular_solid(
+        name='num_table',
+        inputs=[solidic_pd.csv_input('num_csv')],
+    )
+
+    def sum_transform(num_table):
+        sum_table = num_table.copy()
+        sum_table['sum'] = num_table['num1'] + num_table['num2']
+        return sum_table
+
+    sum_table = solidic_pd.tabular_solid(
+        name='sum_table',
+        inputs=[solidic_pd.dependency_input(num_table)],
+        transform_fn=sum_transform,
+    )
+
+    def mult_transform(num_table):
+        mult_table = num_table.copy()
+        mult_table['mult'] = num_table['num1'] * num_table['num2']
+        return mult_table
+
+    mult_table = solidic_pd.tabular_solid(
+        name='mult_table',
+        inputs=[solidic_pd.dependency_input(num_table)],
+        transform_fn=mult_transform,
+    )
+
+    def sum_mult_transform(sum_table, mult_table):
+        sum_mult_table = sum_table.copy()
+        sum_mult_table['mult'] = mult_table['mult']
+        sum_mult_table['sum_mult'] = sum_table['sum'] * mult_table['mult']
+        return sum_mult_table
+
+    sum_mult_table = solidic_pd.tabular_solid(
+        name='sum_mult_table',
+        inputs=[solidic_pd.dependency_input(sum_table),
+                solidic_pd.dependency_input(mult_table)],
+        transform_fn=sum_mult_transform,
+    )
+
+    return (num_table, sum_table, mult_table, sum_mult_table)
+
+
+def test_diamond_dag_run():
+    num_table, sum_table, mult_table, sum_mult_table = create_diamond_dag()
+
+    input_args = {'num_csv': {'path': script_relative_path('num.csv')}}
+    context = create_test_context()
+
+    num_table_df = materialize_output(context, num_table, input_args)
+    assert num_table_df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4]}
+
+    sum_df = materialize_outputs_in_memory(context, sum_table, {'num_table': num_table_df})
+
+    assert sum_df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
+
+    mult_df = materialize_outputs_in_memory(context, mult_table, {'num_table': num_table_df})
+
+    assert mult_df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'mult': [2, 12]}
+
+    sum_mult_df = materialize_outputs_in_memory(
+        context, sum_mult_table, {
+            'sum_table': sum_df,
+            'mult_table': mult_df
+        }
+    )
+
+    assert sum_mult_df.to_dict('list') == {
+        'num1': [1, 3],
+        'num2': [2, 4],
+        'sum': [3, 7],
+        'mult': [2, 12],
+        'sum_mult': [6, 84],
+    }

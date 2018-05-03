@@ -246,10 +246,10 @@ def materialize_output(context, solid, input_arg_dicts):
     check.inst_param(solid, 'solid', Solid)
 
     materialized_inputs = materialize_all_inputs(context, solid, input_arg_dicts)
-    return materialize_outputs_from_materialized_inputs(context, solid, materialized_inputs)
+    return materialize_outputs_in_memory(context, solid, materialized_inputs)
 
 
-def materialize_outputs_from_materialized_inputs(context, solid, materialized_inputs):
+def materialize_outputs_in_memory(context, solid, materialized_inputs):
     check.inst_param(context, 'context', SolidExecutionContext)
     check.inst_param(solid, 'solid', Solid)
     check.dict_param(materialized_inputs, 'materialized_inputs', key_type=str)
