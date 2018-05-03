@@ -63,7 +63,7 @@ def create_single_dict_input(expectations=None):
     )
 
 
-def create_noop_output(test_output, expectations=None):
+def create_noop_output(test_output):
     def set_test_output(output, _arg_dict):
         test_output['thedata'] = output
 
@@ -71,7 +71,6 @@ def create_noop_output(test_output, expectations=None):
         name='CUSTOM',
         output_fn=set_test_output,
         argument_def_dict={},
-        expectations=expectations or [],
     )
 
 
@@ -100,8 +99,6 @@ def test_execute_solid_with_args():
 
 def test_execute_solid_with_failed_input_expectation():
     test_output = {}
-
-    # input_def=[create_single_dict_input(expectations=[failing_expect])
 
     def failing_expectation_fn(_some_input):
         return SolidExpectationResult(success=False)
@@ -146,7 +143,8 @@ def test_execute_solid_with_failed_output_expectation():
         name='some_node',
         inputs=[create_single_dict_input()],
         transform_fn=lambda some_input: some_input,
-        output_type_defs=[create_noop_output(test_output, expectations=[output_expectation])],
+        output_type_defs=[create_noop_output(test_output)],
+        output_expectations=[output_expectation],
     )
 
     solid_execution_result = execute_solid(

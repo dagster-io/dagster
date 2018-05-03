@@ -1,14 +1,12 @@
 import pytest
 
 from solidic.definitions import (
-    SolidOutputTypeDefinition,
     SolidExpectationDefinition,
     SolidExpectationResult,
 )
 from solidic.execution import (
     evaluate_output_expectation, SolidExecutionError, SolidExecutionContext
 )
-from solidic.types import SolidString
 
 
 def create_test_context():
@@ -22,15 +20,8 @@ def test_basic_failing_output_expectation():
             message='some message',
         )
 
-    output_type = SolidOutputTypeDefinition(
-        name='CUSTOM',
-        output_fn=lambda output: output,
-        argument_def_dict={},
-        expectations=[SolidExpectationDefinition('failing', failing)],
-    )
-
     result = evaluate_output_expectation(
-        create_test_context(), output_type.expectations[0], 'not used'
+        create_test_context(), SolidExpectationDefinition('failing', failing), 'not used'
     )
 
     assert isinstance(result, SolidExpectationResult)
@@ -45,16 +36,8 @@ def test_basic_passing_output_expectation():
             message='yay',
         )
 
-    output_type = SolidOutputTypeDefinition(
-        name='CUSTOM',
-        output_fn=lambda output: output,
-        argument_def_dict={},
-        expectations=[SolidExpectationDefinition('success', success)],
-    )
-
-    result = evaluate_output_expectation(
-        create_test_context(), output_type.expectations[0], 'not used'
-    )
+    expectation = SolidExpectationDefinition('success', success)
+    result = evaluate_output_expectation(create_test_context(), expectation, 'not used')
 
     assert isinstance(result, SolidExpectationResult)
     assert result.success
@@ -65,12 +48,7 @@ def test_output_expectation_user_error():
     def throwing(_output):
         raise Exception('user error')
 
-    output_type = SolidOutputTypeDefinition(
-        name='CUSTOM',
-        output_fn=lambda output: output,
-        argument_def_dict={},
-        expectations=[SolidExpectationDefinition('throwing', throwing)],
-    )
-
     with pytest.raises(SolidExecutionError):
-        evaluate_output_expectation(create_test_context(), output_type.expectations[0], 'not used')
+        evaluate_output_expectation(
+            create_test_context(), SolidExpectationDefinition('throwing', throwing), 'not used'
+        )

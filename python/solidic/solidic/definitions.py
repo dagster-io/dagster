@@ -43,14 +43,11 @@ def create_solidic_single_file_input(name, single_file_fn):
 # Output expectations that execute before the output computation
 # The output computation itself
 class SolidOutputTypeDefinition:
-    def __init__(self, name, output_fn, argument_def_dict, expectations=None):
+    def __init__(self, name, output_fn, argument_def_dict):
         self.name = check.str_param(name, 'name')
         self.output_fn = check.callable_param(output_fn, 'output_fn')
         self.argument_def_dict = check.dict_param(
             argument_def_dict, 'argument_def_dict', key_type=str, value_type=SolidType
-        )
-        self.expectations = check.opt_list_param(
-            expectations, 'expectations', of_type=SolidExpectationDefinition
         )
 
 
@@ -58,12 +55,15 @@ class SolidOutputTypeDefinition:
 # The core computation in the native kernel abstraction
 # The output
 class Solid:
-    def __init__(self, name, inputs, transform_fn, output_type_defs):
+    def __init__(self, name, inputs, transform_fn, output_type_defs, output_expectations=None):
         self.name = check.str_param(name, 'name')
         self.inputs = check.list_param(inputs, 'inputs', of_type=SolidInputDefinition)
         self.transform_fn = check.callable_param(transform_fn, 'transform')
         self.output_type_defs = check.list_param(
             output_type_defs, 'supported_outputs', of_type=SolidOutputTypeDefinition
+        )
+        self.output_expectations = check.opt_list_param(
+            output_expectations, 'output_expectations', of_type=SolidExpectationDefinition
         )
 
     def input_def_named(self, name):
