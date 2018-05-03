@@ -19,9 +19,26 @@ def dependency_input(solid_inst):
     return create_solid_pandas_dependency_input(solid_inst)
 
 
-def tabular_solid(**kwargs):
+def _default_passthrough_transform(*args, **kwargs):
+    check.invariant(not args, 'There should be no positional args')
+    check.invariant(len(kwargs) == 1, 'There should be only one input')
+    return list(kwargs.values())[0]
+
+
+def tabular_solid(*args, inputs, transform_fn=None, **kwargs):
+    check.invariant(not args, 'must use all keyword args')
+
     # will add parquet and other standardized formats
-    return Solid(output_type_defs=[csv_output()], **kwargs)
+    if transform_fn is None:
+        check.param_invariant(
+            len(inputs) == 1, 'inputs',
+            'If you do not specify a transform there must only be one input'
+        )
+        transform_fn = _default_passthrough_transform
+
+    return Solid(
+        inputs=inputs, output_type_defs=[csv_output()], transform_fn=transform_fn, **kwargs
+    )
 
 
 def single_path_arg(input_name, path):
