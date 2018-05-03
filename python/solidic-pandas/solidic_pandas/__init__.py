@@ -4,11 +4,19 @@ from builtins import *  # pylint: disable=W0622,W0401
 import check
 
 from solidic.definitions import Solid
-from .definitions import (create_solidic_pandas_csv_input, create_solidic_pandas_csv_output)
+from .definitions import (
+    create_solidic_pandas_csv_input, create_solidic_pandas_csv_output,
+    create_solid_pandas_dependency_input
+)
 
 
 def solid(**kwargs):
     return Solid(**kwargs)
+
+
+def dependency_input(solid_inst):
+    check.inst_param(solid_inst, 'solid_inst', Solid)
+    return create_solid_pandas_dependency_input(solid_inst)
 
 
 def tabular_solid(**kwargs):

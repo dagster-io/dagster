@@ -2,17 +2,42 @@ import pandas as pd
 
 import check
 
-from solidic.definitions import (SolidInputDefinition, SolidOutputTypeDefinition)
-from solidic.types import SolidPath
+from solidic.definitions import (
+    SolidInputDefinition, SolidOutputTypeDefinition, Solid, create_solidic_single_file_input
+)
+from solidic.types import (SolidPath, SolidString)
+
+
+def create_solid_pandas_dependency_input(solid):
+    check.inst_param(solid, 'solid', Solid)
+
+    def dependency_input_fn(arg_dict):
+        path = check.str_elem(arg_dict, 'path')
+        frmt = check.str_elem(arg_dict, 'format')
+
+        if frmt == 'CSV':
+            return pd.read_csv(path)
+        elif frmt == 'PARQUET':
+            return pd.read_parquet(path)
+        else:
+            check.not_implemented('Format {frmt} not supported'.format(frmt=frmt))
+
+    return SolidInputDefinition(
+        name=solid.name,
+        input_fn=dependency_input_fn,
+        argument_def_dict={
+            'path': SolidPath,
+            'format': SolidString,
+        }
+    )
 
 
 def create_solidic_pandas_csv_input(name):
-    check.str_param(name, 'name')
-    return SolidInputDefinition(
-        name=name,
-        input_fn=lambda arg_dict: pd.read_csv(check.str_elem(arg_dict, 'path')),
-        argument_def_dict={'path': SolidPath}
-    )
+    def check_path(path):
+        check.str_param(path, 'path')
+        return pd.read_csv(path)
+
+    return create_solidic_single_file_input(name, check_path)
 
 
 def create_solidic_pandas_csv_output():

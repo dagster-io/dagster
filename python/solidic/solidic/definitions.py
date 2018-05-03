@@ -1,6 +1,6 @@
 import check
 
-from solidic.types import SolidType
+from solidic.types import (SolidType, SolidPath)
 
 
 class SolidExpectationResult:
@@ -29,6 +29,15 @@ class SolidInputDefinition:
         self.expectations = check.opt_list_param(
             expectations, 'expectations', of_type=SolidExpectationDefinition
         )
+
+
+def create_solidic_single_file_input(name, single_file_fn):
+    check.str_param(name, 'name')
+    return SolidInputDefinition(
+        name=name,
+        input_fn=lambda arg_dict: single_file_fn(path=check.str_elem(arg_dict, 'path')),
+        argument_def_dict={'path': SolidPath}
+    )
 
 
 # Output expectations that execute before the output computation

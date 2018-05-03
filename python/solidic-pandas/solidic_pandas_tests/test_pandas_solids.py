@@ -5,7 +5,8 @@ import pandas as pd
 import check
 
 from solidic.execution import (
-    materialize_input, execute_solid, SolidExecutionContext, materialize_output
+    materialize_input, execute_solid, SolidExecutionContext, materialize_output,
+    materialize_outputs_from_materialized_inputs
 )
 from solidic.types import SolidPath
 from solidic.definitions import (Solid, SolidOutputTypeDefinition)
@@ -126,6 +127,18 @@ def create_sum_table():
     )
 
 
+def create_mult_table(sum_table_solid):
+    def transform(sum_table):
+        sum_table['sum_squared'] = sum_table['sum'] * sum_table['sum']
+        return sum_table
+
+    return solidic_pd.tabular_solid(
+        name='mult_table',
+        inputs=[solidic_pd.dependency_input(sum_table_solid)],
+        transform_fn=transform
+    )
+
+
 def test_pandas_csv_to_csv_better_api():
     solid = create_sum_table()
     output_df = execute_transform_in_temp_file(solid)
@@ -136,5 +149,50 @@ def test_pandas_csv_in_memory():
     solid = create_sum_table()
     input_args = {'num_csv': {'path': script_relative_path('num.csv')}}
     df = materialize_output(create_test_context(), solid, input_args)
+    assert isinstance(df, pd.DataFrame)
+    assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
+
+
+def test_two_step_pipeline_in_memory():
+    sum_table_solid = create_sum_table()
+    mult_table_solid = create_mult_table(sum_table_solid)
+    input_args = {'num_csv': {'path': script_relative_path('num.csv')}}
+    context = create_test_context()
+    df = materialize_output(context, sum_table_solid, input_args)
+    mult_df = materialize_outputs_from_materialized_inputs(
+        context, mult_table_solid, {'sum_table': df}
+    )
+    assert mult_df.to_dict('list') == {
+        'num1': [1, 3],
+        'num2': [2, 4],
+        'sum': [3, 7],
+        'sum_squared': [9, 49]
+    }
+
+
+def test_two_input_solid():
+    def transform(num_csv1, num_csv2):
+        check.inst_param(num_csv1, 'num_csv1', pd.DataFrame)
+        check.inst_param(num_csv2, 'num_csv2', pd.DataFrame)
+        num_csv1['sum'] = num_csv1['num1'] + num_csv2['num2']
+        return num_csv1
+
+    two_input_solid = solidic_pd.tabular_solid(
+        name='two_input_solid',
+        inputs=[solidic_pd.csv_input('num_csv1'),
+                solidic_pd.csv_input('num_csv2')],
+        transform_fn=transform,
+    )
+
+    input_args = {
+        'num_csv1': {
+            'path': script_relative_path('num.csv')
+        },
+        'num_csv2': {
+            'path': script_relative_path('num.csv')
+        },
+    }
+
+    df = materialize_output(create_test_context(), two_input_solid, input_args)
     assert isinstance(df, pd.DataFrame)
     assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
