@@ -243,6 +243,7 @@ def materialize_all_inputs(context, solid, input_arg_dicts):
 def materialize_output(context, solid, input_arg_dicts):
     check.inst_param(context, 'context', SolidExecutionContext)
     check.inst_param(solid, 'solid', Solid)
+    check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
 
     materialized_inputs = materialize_all_inputs(context, solid, input_arg_dicts)
     return materialize_outputs_in_memory(context, solid, materialized_inputs)
@@ -300,21 +301,24 @@ def execute_solid(context, solid, input_arg_dicts, output_type, output_arg_dict)
     check.str_param(output_type, 'output_type')
     check.dict_param(output_arg_dict, 'output_arg_dict', key_type=str)
 
-    def inner_execute():
+    try:
         materialized_output = materialize_output(context, solid, input_arg_dicts)
 
         if isinstance(materialized_output, SolidExecutionResult):
+            check.invariant(not materialized_output.success, 'only failures here')
             return materialized_output
 
         output_type_def = solid.output_type_def_named(output_type)
         execute_output(context, output_type_def, output_arg_dict, materialized_output)
 
         return SolidExecutionResult(success=True)
-
-    try:
-        return inner_execute()
     except SolidExecutionError as see:
-        # These should probably return the Result object. Still figuring this out
-        raise see
+        return SolidExecutionResult(
+            success=False,
+            reason=SolidExecutionFailureReason.USER_CODE_ERROR,
+            exception=see,
+        )
     except Exception as e:  # pylint: disable=W0703
-        raise e
+        return SolidExecutionResult(
+            success=False, reason=SolidExecutionFailureReason.FRAMEWORK_ERROR, exception=e
+        )
