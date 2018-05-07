@@ -20,7 +20,7 @@ class SolidExpectationDefinition:
 # to the native programming abstraction
 # Input expectations that execute *before* the core transform
 class SolidInputDefinition:
-    def __init__(self, name, input_fn, argument_def_dict, expectations=None):
+    def __init__(self, name, input_fn, argument_def_dict, expectations=None, depends_on=None):
         self.name = check.str_param(name, 'name')
         self.input_fn = check.callable_param(input_fn, 'input_fn')
         self.argument_def_dict = check.dict_param(
@@ -29,6 +29,11 @@ class SolidInputDefinition:
         self.expectations = check.opt_list_param(
             expectations, 'expectations', of_type=SolidExpectationDefinition
         )
+        self.depends_on = check.opt_inst_param(depends_on, 'depends_on', Solid)
+
+    @property
+    def is_external(self):
+        return self.depends_on is None
 
 
 def create_solidic_single_file_input(name, single_file_fn):
