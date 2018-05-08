@@ -1,6 +1,6 @@
 from solidic.definitions import (Solid, SolidInputDefinition, SolidOutputTypeDefinition)
 from solidic.graph import SolidRepo
-from solidic.execution import (execute_pipeline, SolidExecutionContext)
+from solidic.execution import (pipeline_repo, SolidExecutionContext)
 
 
 def create_test_context():
@@ -62,10 +62,9 @@ import copy
 
 
 def test_transform_failure_pipeline():
-    return
     repo = SolidRepo(solids=[create_root_transform_failure_solid('failing')])
     steps = []
-    for step in execute_pipeline(create_test_context(), repo, {'failing_input': {}}):
+    for step in pipeline_repo(create_test_context(), repo, {'failing_input': {}}):
         steps.append(copy.deepcopy(step))
 
     assert len(steps) == 1
