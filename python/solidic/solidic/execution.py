@@ -4,13 +4,15 @@ from enum import Enum
 
 import check
 
-from solidic.definitions import (
+from .definitions import (
     Solid,
     SolidInputDefinition,
     SolidOutputTypeDefinition,
     SolidExpectationDefinition,
     SolidExpectationResult,
 )
+
+from .graph import SolidRepo
 
 
 class SolidExecutionFailureReason(Enum):
@@ -246,10 +248,10 @@ def materialize_output(context, solid, input_arg_dicts):
     check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
 
     materialized_inputs = materialize_all_inputs(context, solid, input_arg_dicts)
-    return materialize_outputs_in_memory(context, solid, materialized_inputs)
+    return materialize_output_in_memory(context, solid, materialized_inputs)
 
 
-def materialize_outputs_in_memory(context, solid, materialized_inputs):
+def materialize_output_in_memory(context, solid, materialized_inputs):
     '''
     Given inputs that are already materialized in memory. Evaluation all inputs expectations,
     execute the core transform, and then evaluate all output expectations.
@@ -321,4 +323,59 @@ def execute_solid(context, solid, input_arg_dicts, output_type, output_arg_dict)
     except Exception as e:  # pylint: disable=W0703
         return SolidExecutionResult(
             success=False, reason=SolidExecutionFailureReason.FRAMEWORK_ERROR, exception=e
+        )
+
+
+def _select_keys(ddict, keys):
+    return {key: ddict[key] for key in keys}
+
+
+PipelineExecutionStepResult = namedtuple('PipelineExecutionStepResult', 'name materialized_output')
+
+
+def execute_pipeline(context, repo, input_arg_dicts, through_solids=None):
+    check.inst_param(context, 'context', SolidExecutionContext)
+    check.inst_param(repo, 'repo', SolidRepo)
+    check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
+    check.opt_list_param(through_solids, 'through_solids', of_type=str)
+
+    input_names = list(input_arg_dicts.keys())
+    output_names = repo.solid_names if not through_solids else through_solids
+
+    for output_name in output_names:
+        unprovided_inputs = repo.solid_graph.compute_unprovided_inputs(
+            input_names=input_names, output_name=output_name
+        )
+        if unprovided_inputs:
+            check.failed(
+                'Failed to provide inputs {unprovided_inputs} for solid {name}'.format(
+                    unprovided_inputs=unprovided_inputs, name=output_name
+                )
+            )
+
+    execution_graph = repo.solid_graph.create_execution_graph(output_names, input_names)
+
+    materialized_values = {}
+
+    for solid in execution_graph.topological_solids:
+
+        for inp in solid.inputs:
+            if inp.name not in materialized_values:
+                materialized = materialize_input(context, inp, input_arg_dicts[inp.name])
+                materialized_values[inp.name] = materialized
+
+        selected_inputs = _select_keys(materialized_values, solid.input_names)
+        materialized_output = materialize_output_in_memory(context, solid, selected_inputs)
+
+        if isinstance(materialized_output, SolidExecutionResult):
+            check.failed('implement error handling')
+
+        check.invariant(
+            solid.name not in materialized_values, 'should be not in materialized values'
+        )
+
+        materialized_values[solid.name] = materialized_output
+
+        yield PipelineExecutionStepResult(
+            name=solid.name, materialized_output=materialized_values[solid.name]
         )
