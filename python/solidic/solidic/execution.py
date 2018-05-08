@@ -330,7 +330,9 @@ def _select_keys(ddict, keys):
     return {key: ddict[key] for key in keys}
 
 
-PipelineExecutionStepResult = namedtuple('PipelineExecutionStepResult', 'name materialized_output')
+PipelineExecutionStepResult = namedtuple(
+    'PipelineExecutionStepResult', 'success name solid materialized_output'
+)
 
 
 def execute_single_output_pipeline(context, repo, input_arg_dicts, output_name):
@@ -388,5 +390,36 @@ def execute_pipeline(context, repo, input_arg_dicts, through_solids=None):
         materialized_values[solid.name] = materialized_output
 
         yield PipelineExecutionStepResult(
-            name=solid.name, materialized_output=materialized_values[solid.name]
+            success=True,
+            name=solid.name,
+            solid=solid,
+            materialized_output=materialized_values[solid.name]
+        )
+
+
+OutputConfig = namedtuple('OutputConfig', 'name output_type, output_args')
+
+
+def output_pipeline(context, repo, input_arg_dicts, output_configs):
+    check.inst_param(context, 'context', SolidExecutionContext)
+    check.inst_param(repo, 'repo', SolidRepo)
+    check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
+    check.list_param(output_configs, 'output_configs', of_type=OutputConfig)
+
+    output_dict = {output_config.name: output_config for output_config in output_configs}
+
+    for step in execute_pipeline(
+        context, repo, input_arg_dicts, through_solids=list(output_dict.keys())
+    ):
+        if step.name in output_dict:
+            output_type = output_dict[step.name].output_type
+            output_arg_dict = output_dict[step.name].output_args
+            output_type_def = step.solid.output_type_def_named(output_type)
+            execute_output(context, output_type_def, output_arg_dict, step.materialized_output)
+
+        yield PipelineExecutionStepResult(
+            success=True,
+            name=step.name,
+            solid=step.solid,
+            materialized_output=step.materialized_output
         )
