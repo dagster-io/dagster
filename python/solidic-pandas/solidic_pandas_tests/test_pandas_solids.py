@@ -289,7 +289,7 @@ def test_diamond_dag_run():
 
 from collections import namedtuple
 
-OutputConfig = namedtuple('OutputConfig', 'name output_type, output_args')
+from solidic.execution import (OutputConfig, output_pipeline)
 
 
 def csv_output_config(name, path):
@@ -316,7 +316,7 @@ def materialize_solid_dag(context, repo, input_args, solid_names):
     # at each node check to see if there any output configs. if so, execute them
 
 
-def test_autodag_run_in_memory():
+def test_pandas_in_memory_pipeline():
     context = create_test_context()
     input_args = {'num_csv': {'path': script_relative_path('num.csv')}}
 
@@ -332,20 +332,29 @@ def test_autodag_run_in_memory():
         'sum_mult': [6, 84],
     }
 
-    # for step in execute_pipeline(context, create_diamond_repo(), input_arg_dicts=input_args):
-    #     print(step)
 
-    # import os
-    # with get_temp_file_name() as temp_file_name:
-    #     output_solid_dag(
-    #         context,
-    #         repo=create_diamond_repo(),
-    #         input_args=input_args,
-    #         outputs=[csv_output_config('sum_mult', temp_file_name)]
-    #     )
+def test_pandas_output_csv_pipeline():
+    context = create_test_context()
+    input_args = {'num_csv': {'path': script_relative_path('num.csv')}}
 
-    #     assert os.path.exists(temp_file_name)
+    import os
 
-    #     return
+    with get_temp_file_name() as temp_file_name:
 
-    #     output_df = pd.read_csv(temp_file_name)
+        for _step in output_pipeline(
+            context,
+            repo=create_diamond_repo(),
+            input_arg_dicts=input_args,
+            output_configs=[csv_output_config('sum_mult_table', temp_file_name)]
+        ):
+            pass
+
+        assert os.path.exists(temp_file_name)
+        output_df = pd.read_csv(temp_file_name)
+        assert output_df.to_dict('list') == {
+            'num1': [1, 3],
+            'num2': [2, 4],
+            'sum': [3, 7],
+            'mult': [2, 12],
+            'sum_mult': [6, 84],
+        }
