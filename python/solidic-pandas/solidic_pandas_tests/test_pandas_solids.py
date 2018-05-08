@@ -4,10 +4,11 @@ import check
 
 from solidic.execution import (
     materialize_input, execute_solid, SolidExecutionContext, materialize_output,
-    materialize_outputs_in_memory
+    materialize_output_in_memory, execute_pipeline, execute_single_output_pipeline
 )
 from solidic.types import SolidPath
 from solidic.definitions import (Solid, SolidOutputTypeDefinition)
+from solidic.graph import SolidRepo
 import solidic_pandas as solidic_pd
 from solidic_pandas.definitions import create_solidic_pandas_csv_input
 
@@ -157,7 +158,7 @@ def test_two_step_pipeline_in_memory():
     input_args = {'num_csv': {'path': script_relative_path('num.csv')}}
     context = create_test_context()
     df = materialize_output(context, sum_table_solid, input_args)
-    mult_df = materialize_outputs_in_memory(context, mult_table_solid, {'sum_table': df})
+    mult_df = materialize_output_in_memory(context, mult_table_solid, {'sum_table': df})
     assert mult_df.to_dict('list') == {
         'num1': [1, 3],
         'num2': [2, 4],
@@ -203,6 +204,10 @@ def test_no_transform_solid():
     context = create_test_context()
     df = materialize_output(context, num_table, input_args)
     assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4]}
+
+
+def create_diamond_repo():
+    return SolidRepo(solids=list(create_diamond_dag()))
 
 
 def create_diamond_dag():
@@ -258,15 +263,15 @@ def test_diamond_dag_run():
     num_table_df = materialize_output(context, num_table, input_args)
     assert num_table_df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4]}
 
-    sum_df = materialize_outputs_in_memory(context, sum_table, {'num_table': num_table_df})
+    sum_df = materialize_output_in_memory(context, sum_table, {'num_table': num_table_df})
 
     assert sum_df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
 
-    mult_df = materialize_outputs_in_memory(context, mult_table, {'num_table': num_table_df})
+    mult_df = materialize_output_in_memory(context, mult_table, {'num_table': num_table_df})
 
     assert mult_df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'mult': [2, 12]}
 
-    sum_mult_df = materialize_outputs_in_memory(
+    sum_mult_df = materialize_output_in_memory(
         context, sum_mult_table, {
             'sum_table': sum_df,
             'mult_table': mult_df
@@ -280,3 +285,67 @@ def test_diamond_dag_run():
         'mult': [2, 12],
         'sum_mult': [6, 84],
     }
+
+
+from collections import namedtuple
+
+OutputConfig = namedtuple('OutputConfig', 'name output_type, output_args')
+
+
+def csv_output_config(name, path):
+    check.str_param(name, 'name')
+    check.str_param(path, 'path')
+    return OutputConfig(name=name, output_type='CSV', output_args={'path': path})
+
+
+def output_solid_dag(context, repo, input_args, outputs):
+    check.inst_param(context, 'context', SolidExecutionContext)
+    check.inst_param(repo, 'repo', SolidRepo)
+    check.dict_param(input_args, 'input_args', key_type=str, value_type=dict)
+    check.list_param(outputs, 'outputs', of_type=OutputConfig)
+
+    # iterate over materialize_solid_dags,
+
+
+def materialize_solid_dag(context, repo, input_args, solid_names):
+    check.inst_param(context, 'context', SolidExecutionContext)
+    check.inst_param(repo, 'repo', SolidRepo)
+    check.dict_param(input_args, 'input_args', key_type=str, value_type=dict)
+    check.list_param(solid_names, 'solid_names', of_type=str)
+
+    # at each node check to see if there any output configs. if so, execute them
+
+
+def test_autodag_run_in_memory():
+    context = create_test_context()
+    input_args = {'num_csv': {'path': script_relative_path('num.csv')}}
+
+    output_df = execute_single_output_pipeline(
+        context, create_diamond_repo(), input_arg_dicts=input_args, output_name='sum_mult_table'
+    )
+
+    assert output_df.to_dict('list') == {
+        'num1': [1, 3],
+        'num2': [2, 4],
+        'sum': [3, 7],
+        'mult': [2, 12],
+        'sum_mult': [6, 84],
+    }
+
+    # for step in execute_pipeline(context, create_diamond_repo(), input_arg_dicts=input_args):
+    #     print(step)
+
+    # import os
+    # with get_temp_file_name() as temp_file_name:
+    #     output_solid_dag(
+    #         context,
+    #         repo=create_diamond_repo(),
+    #         input_args=input_args,
+    #         outputs=[csv_output_config('sum_mult', temp_file_name)]
+    #     )
+
+    #     assert os.path.exists(temp_file_name)
+
+    #     return
+
+    #     output_df = pd.read_csv(temp_file_name)

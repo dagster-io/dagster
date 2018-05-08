@@ -83,7 +83,8 @@ class SolidGraph:
     def _check_output_name(self, output_name):
         check.str_param(output_name, 'output_name')
         check.param_invariant(
-            output_name in self._solid_dict, 'output_name', 'Output solid must exist'
+            output_name in self._solid_dict, 'output_name',
+            f'Output solid must exist in {list(self._solid_dict.keys())}'
         )
 
     def _check_input_names(self, input_names):
@@ -95,6 +96,13 @@ class SolidGraph:
             )
 
     def compute_unprovided_inputs(self, output_name, input_names):
+        '''
+        Given a single output_name and a set of input_names that represent the
+        set of inputs provided for a computation, return the inputs that are *missing*.
+        This detects the case where an upstream path in the DAG of solids does not
+        have enough information to materialize a given output.
+        '''
+
         self._check_output_name(output_name)
         self._check_input_names(input_names)
 

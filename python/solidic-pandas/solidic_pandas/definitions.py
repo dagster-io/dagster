@@ -28,7 +28,8 @@ def create_solid_pandas_dependency_input(solid):
         argument_def_dict={
             'path': SolidPath,
             'format': SolidString,
-        }
+        },
+        depends_on=solid,
     )
 
 
