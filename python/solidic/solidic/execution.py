@@ -110,7 +110,7 @@ def materialize_input(context, input_definition, arg_dict):
         return input_definition.input_fn(arg_dict)
 
 
-def evaluate_input_expectation(context, expectation_def, materialized_input):
+def execute_input_expectation(context, expectation_def, materialized_input):
     check.inst_param(context, 'context', SolidExecutionContext)
     check.inst_param(expectation_def, 'expectation_def', SolidExpectationDefinition)
 
@@ -124,7 +124,7 @@ def evaluate_input_expectation(context, expectation_def, materialized_input):
     return expectation_result
 
 
-def evaluate_output_expectation(context, expectation_def, materialized_output):
+def execute_output_expectation(context, expectation_def, materialized_output):
     check.inst_param(context, 'context', SolidExecutionContext)
     check.inst_param(expectation_def, 'expectation_def', SolidExpectationDefinition)
 
@@ -227,7 +227,7 @@ def execute_all_input_expectations(context, solid, materialized_inputs):
         fails = []
 
         for input_expectation_def in input_def.expectations:
-            input_expectation_result = evaluate_input_expectation(
+            input_expectation_result = execute_input_expectation(
                 context, input_expectation_def, materialized_input
             )
 
@@ -256,16 +256,16 @@ def materialize_all_inputs(context, solid, input_arg_dicts):
     return materialized_inputs
 
 
-def materialize_output(context, solid, input_arg_dicts):
+def pipeline_output(context, solid, input_arg_dicts):
     check.inst_param(context, 'context', SolidExecutionContext)
     check.inst_param(solid, 'solid', Solid)
     check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
 
     materialized_inputs = materialize_all_inputs(context, solid, input_arg_dicts)
-    return materialize_output_in_memory(context, solid, materialized_inputs)
+    return pipeline_output_in_memory(context, solid, materialized_inputs)
 
 
-def materialize_output_in_memory(context, solid, materialized_inputs):
+def pipeline_output_in_memory(context, solid, materialized_inputs):
     '''
     Given inputs that are already materialized in memory. Evaluation all inputs expectations,
     execute the core transform, and then evaluate all output expectations.
@@ -296,7 +296,7 @@ def materialize_output_in_memory(context, solid, materialized_inputs):
 
     output_expectation_failures = []
     for output_expectation_def in solid.output_expectations:
-        output_expectation_result = evaluate_output_expectation(
+        output_expectation_result = execute_output_expectation(
             context, output_expectation_def, materialized_output
         )
         if not output_expectation_result.success:
@@ -321,53 +321,44 @@ def execute_solid(context, solid, input_arg_dicts, output_type, output_arg_dict)
     check.str_param(output_type, 'output_type')
     check.dict_param(output_arg_dict, 'output_arg_dict', key_type=str)
 
-    try:
-        materialized_output = materialize_output(context, solid, input_arg_dicts)
-
-        if isinstance(materialized_output, SolidExecutionResult):
-            check.invariant(not materialized_output.success, 'only failures here')
-            return materialized_output
-
-        output_type_def = solid.output_type_def_named(output_type)
-        execute_output(context, output_type_def, output_arg_dict, materialized_output)
-
-        return SolidExecutionResult(
-            success=True, materialized_output=materialized_output, solid=solid
+    results = list(
+        output_pipeline(
+            context,
+            SolidRepo(solids=[solid]),
+            input_arg_dicts,
+            output_configs=[
+                OutputConfig(name=solid.name, output_type=output_type, output_args=output_arg_dict)
+            ]
         )
-    except SolidExecutionError as see:
-        return SolidExecutionResult(
-            success=False,
-            materialized_output=None,
-            solid=solid,
-            reason=SolidExecutionFailureReason.USER_CODE_ERROR,
-            exception=see,
-        )
-    except Exception as e:  # pylint: disable=W0703
-        raise e
-        # return SolidExecutionResult(
-        #     success=False,
-        #     materialized_output=None,
-        #     reason=SolidExecutionFailureReason.FRAMEWORK_ERROR,
-        #     exception=e
-        # )
+    )
+
+    check.invariant(len(results) == 1, 'must be one step got ' + str(len(results)))
+
+    execution_result = results[0]
+
+    check.invariant(execution_result.name == solid.name)
+
+    return execution_result
 
 
 def _select_keys(ddict, keys):
     return {key: ddict[key] for key in keys}
 
 
-def execute_single_output_pipeline(context, repo, input_arg_dicts, output_name):
+def pipeline_single_output(context, repo, input_arg_dicts, output_name):
     check.inst_param(context, 'context', SolidExecutionContext)
     check.inst_param(repo, 'repo', SolidRepo)
     check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
     check.str_param(output_name, 'output_name')
 
-    for step in execute_pipeline(context, repo, input_arg_dicts, [output_name]):
+    for step in pipeline_repo(context, repo, input_arg_dicts, [output_name]):
         if step.name == output_name:
             return step.materialized_output
 
+    check.failed('Step ' + output_name + ' not found!')
 
-def execute_pipeline(context, repo, input_arg_dicts, through_solids=None):
+
+def pipeline_repo(context, repo, input_arg_dicts, through_solids=None):
     check.inst_param(context, 'context', SolidExecutionContext)
     check.inst_param(repo, 'repo', SolidRepo)
     check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
@@ -400,7 +391,12 @@ def execute_pipeline(context, repo, input_arg_dicts, through_solids=None):
                     materialized_values[inp.name] = materialized
 
             selected_inputs = _select_keys(materialized_values, solid.input_names)
-            materialized_output = materialize_output_in_memory(context, solid, selected_inputs)
+
+            materialized_output = pipeline_output_in_memory(context, solid, selected_inputs)
+
+            if isinstance(materialized_output, SolidExecutionResult):
+                yield materialized_output
+                break
 
             check.invariant(
                 solid.name not in materialized_values, 'should be not in materialized values'
@@ -417,6 +413,7 @@ def execute_pipeline(context, repo, input_arg_dicts, through_solids=None):
         except SolidExecutionError as see:
             yield SolidExecutionResult(
                 success=False,
+                reason=SolidExecutionFailureReason.USER_CODE_ERROR,
                 solid=solid,
                 materialized_output=None,
                 exception=see,
@@ -434,11 +431,12 @@ def output_pipeline(context, repo, input_arg_dicts, output_configs):
 
     output_dict = {output_config.name: output_config for output_config in output_configs}
 
-    for step in execute_pipeline(
+    for step in pipeline_repo(
         context, repo, input_arg_dicts, through_solids=list(output_dict.keys())
     ):
         if not step.success:
-            return step
+            yield step
+            break
 
         if step.name in output_dict:
             output_type = output_dict[step.name].output_type

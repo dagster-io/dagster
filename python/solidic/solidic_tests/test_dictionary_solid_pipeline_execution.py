@@ -4,7 +4,7 @@ import check
 
 from solidic.definitions import (SolidInputDefinition, Solid, SolidOutputTypeDefinition)
 from solidic.graph import (create_adjacency_lists, SolidGraph, SolidRepo)
-from solidic.execution import (execute_pipeline, SolidExecutionContext, SolidExecutionResult)
+from solidic.execution import (pipeline_repo, SolidExecutionContext, SolidExecutionResult)
 
 # protected members
 # pylint: disable=W0212
@@ -250,9 +250,7 @@ def test_pipeline_execution_graph_diamond():
 
     result_steps = list()
 
-    for step in execute_pipeline(
-        create_test_context(), solid_repo, input_arg_dicts={'A_input': {}}
-    ):
+    for step in pipeline_repo(create_test_context(), solid_repo, input_arg_dicts={'A_input': {}}):
         result_steps.append(copy.deepcopy(step))
 
     assert result_steps[0].materialized_output[0] == input_set('A_input')
