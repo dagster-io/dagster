@@ -40,18 +40,32 @@ class SolidExecutionContext:
 
 
 class SolidExecutionResult:
-    def __init__(self, success, reason=None, exception=None, failed_expectation_results=None):
+    def __init__(
+        self,
+        success,
+        solid,
+        materialized_output,
+        reason=None,
+        exception=None,
+        failed_expectation_results=None
+    ):
         self.success = check.bool_param(success, 'success')
         if not success:
             check.param_invariant(
                 isinstance(reason, SolidExecutionFailureReason), 'reason',
                 'Must provide a reason is result is a failure'
             )
+        self.materialized_output = materialized_output
+        self.solid = check.inst_param(solid, 'solid', Solid)
         self.reason = reason
         self.exception = check.opt_inst_param(exception, 'exception', Exception)
         self.failed_expectation_results = check.opt_list_param(
             failed_expectation_results, 'failed_expectation_result', of_type=SolidExpectationResult
         )
+
+    @property
+    def name(self):
+        return self.solid.name
 
 
 @contextmanager
@@ -265,6 +279,8 @@ def materialize_output_in_memory(context, solid, materialized_inputs):
     if not all_run_result.success:
         return SolidExecutionResult(
             success=False,
+            materialized_output=None,
+            solid=solid,
             reason=SolidExecutionFailureReason.EXPECTATION_FAILURE,
             failed_expectation_results=all_run_result.all_fails,
         )
@@ -289,6 +305,8 @@ def materialize_output_in_memory(context, solid, materialized_inputs):
     if output_expectation_failures:
         return SolidExecutionResult(
             success=False,
+            materialized_output=None,
+            solid=solid,
             reason=SolidExecutionFailureReason.EXPECTATION_FAILURE,
             failed_expectation_results=output_expectation_failures,
         )
@@ -313,26 +331,29 @@ def execute_solid(context, solid, input_arg_dicts, output_type, output_arg_dict)
         output_type_def = solid.output_type_def_named(output_type)
         execute_output(context, output_type_def, output_arg_dict, materialized_output)
 
-        return SolidExecutionResult(success=True)
+        return SolidExecutionResult(
+            success=True, materialized_output=materialized_output, solid=solid
+        )
     except SolidExecutionError as see:
         return SolidExecutionResult(
             success=False,
+            materialized_output=None,
+            solid=solid,
             reason=SolidExecutionFailureReason.USER_CODE_ERROR,
             exception=see,
         )
     except Exception as e:  # pylint: disable=W0703
-        return SolidExecutionResult(
-            success=False, reason=SolidExecutionFailureReason.FRAMEWORK_ERROR, exception=e
-        )
+        raise e
+        # return SolidExecutionResult(
+        #     success=False,
+        #     materialized_output=None,
+        #     reason=SolidExecutionFailureReason.FRAMEWORK_ERROR,
+        #     exception=e
+        # )
 
 
 def _select_keys(ddict, keys):
     return {key: ddict[key] for key in keys}
-
-
-PipelineExecutionStepResult = namedtuple(
-    'PipelineExecutionStepResult', 'success name solid materialized_output'
-)
 
 
 def execute_single_output_pipeline(context, repo, input_arg_dicts, output_name):
@@ -372,29 +393,34 @@ def execute_pipeline(context, repo, input_arg_dicts, through_solids=None):
 
     for solid in execution_graph.topological_solids:
 
-        for inp in solid.inputs:
-            if inp.name not in materialized_values:
-                materialized = materialize_input(context, inp, input_arg_dicts[inp.name])
-                materialized_values[inp.name] = materialized
+        try:
+            for inp in solid.inputs:
+                if inp.name not in materialized_values:
+                    materialized = materialize_input(context, inp, input_arg_dicts[inp.name])
+                    materialized_values[inp.name] = materialized
 
-        selected_inputs = _select_keys(materialized_values, solid.input_names)
-        materialized_output = materialize_output_in_memory(context, solid, selected_inputs)
+            selected_inputs = _select_keys(materialized_values, solid.input_names)
+            materialized_output = materialize_output_in_memory(context, solid, selected_inputs)
 
-        if isinstance(materialized_output, SolidExecutionResult):
-            check.failed('implement error handling')
+            check.invariant(
+                solid.name not in materialized_values, 'should be not in materialized values'
+            )
 
-        check.invariant(
-            solid.name not in materialized_values, 'should be not in materialized values'
-        )
+            materialized_values[solid.name] = materialized_output
 
-        materialized_values[solid.name] = materialized_output
-
-        yield PipelineExecutionStepResult(
-            success=True,
-            name=solid.name,
-            solid=solid,
-            materialized_output=materialized_values[solid.name]
-        )
+            yield SolidExecutionResult(
+                success=True,
+                solid=solid,
+                materialized_output=materialized_values[solid.name],
+                exception=None,
+            )
+        except SolidExecutionError as see:
+            yield SolidExecutionResult(
+                success=False,
+                solid=solid,
+                materialized_output=None,
+                exception=see,
+            )
 
 
 OutputConfig = namedtuple('OutputConfig', 'name output_type, output_args')
@@ -411,15 +437,13 @@ def output_pipeline(context, repo, input_arg_dicts, output_configs):
     for step in execute_pipeline(
         context, repo, input_arg_dicts, through_solids=list(output_dict.keys())
     ):
+        if not step.success:
+            return step
+
         if step.name in output_dict:
             output_type = output_dict[step.name].output_type
             output_arg_dict = output_dict[step.name].output_args
             output_type_def = step.solid.output_type_def_named(output_type)
             execute_output(context, output_type_def, output_arg_dict, step.materialized_output)
 
-        yield PipelineExecutionStepResult(
-            success=True,
-            name=step.name,
-            solid=step.solid,
-            materialized_output=step.materialized_output
-        )
+        yield step

@@ -188,3 +188,10 @@ class SolidRepo:
     @property
     def solid_names(self):
         return [solid.name for solid in self.solids]
+
+    def solid_named(self, name):
+        check.str_param(name, 'name')
+        for solid in self.solids:
+            if solid.name == name:
+                return solid
+        check.failed('Could not find solid named ' + name)
