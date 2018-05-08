@@ -45,13 +45,6 @@ class SolidGraph:
 
         for solid in solids:
             for input_def in solid.inputs:
-                # This should be moved to the repo
-                # if input_def.depends_on:
-                #     check.invariant(
-                #         input_def.depends_on.name in solid_names,
-                #         f'dep must exist got: {input_def.depends_on.name} and set {solid_names}'
-                #     )
-
                 # if input exists should probably ensure that it is the same
                 all_inputs[input_def.name] = input_def
 
@@ -132,6 +125,11 @@ class SolidGraph:
         return unprovided_inputs
 
     def create_execution_graph(self, output_names, input_names):
+        '''Given a set of outputs that should be completed, and a
+        list input names that were provided into order to complete the execution,
+        return a copy of the SolidGraph object that represents the minimal set of
+        solids necessary to execute to satisfy the computation'''
+
         check.list_param(output_names, 'output_names', of_type=str)
 
         for output_name in output_names:
