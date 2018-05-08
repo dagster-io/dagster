@@ -71,6 +71,10 @@ class Solid:
             output_expectations, 'output_expectations', of_type=SolidExpectationDefinition
         )
 
+    @property
+    def input_names(self):
+        return [inp.name for inp in self.inputs]
+
     def input_def_named(self, name):
         check.str_param(name, 'name')
         for input_ in self.inputs:

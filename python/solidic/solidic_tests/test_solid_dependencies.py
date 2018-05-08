@@ -1,7 +1,17 @@
+import pytest
+
 import check
 
 from solidic.definitions import (SolidInputDefinition, Solid, SolidOutputTypeDefinition)
-from solidic.graph import (create_adjacency_lists, SolidGraph)
+from solidic.graph import (create_adjacency_lists, SolidGraph, SolidRepo)
+from solidic.execution import (execute_pipeline, SolidExecutionContext, PipelineExecutionStepResult)
+
+# protected members
+# pylint: disable=W0212
+
+
+def create_test_context():
+    return SolidExecutionContext()
 
 
 def create_dummy_output_def():
@@ -17,21 +27,36 @@ def _default_passthrough_transform(*args, **kwargs):
     return list(kwargs.values())[0]
 
 
-def throw_input_fn(*_args, **_kwargs):
-    raise Exception('should not be invoked')
+def create_dep_input_fn(name):
+    return lambda arg_dict: {name: 'input_set'}
+
+
+import copy
 
 
 def create_solid_with_deps(name, *solid_deps):
+    # def throw_input_fn(arg_dict):
+    #     return [{name: 'input_set'}]
+
     inputs = [
         SolidInputDefinition(
-            solid_dep.name, input_fn=throw_input_fn, argument_def_dict={}, depends_on=solid_dep
+            solid_dep.name,
+            input_fn=create_dep_input_fn(solid_dep.name),
+            argument_def_dict={},
+            depends_on=solid_dep,
         ) for solid_dep in solid_deps
     ]
+
+    def dep_transform(**kwargs):
+        passed_rows = list(kwargs.values())[0]
+        passed_rows.append({name: 'transform_called'})
+        #return copy.deepcopy(passed_rows)
+        return passed_rows
 
     return Solid(
         name=name,
         inputs=inputs,
-        transform_fn=_default_passthrough_transform,
+        transform_fn=dep_transform,
         output_type_defs=[create_dummy_output_def()],
     )
 
@@ -40,14 +65,20 @@ def create_root_solid(name):
     input_name = name + '_input'
     inp = SolidInputDefinition(
         input_name,
-        input_fn=lambda arg_dict: [{name: 'input_set'}],
+        input_fn=lambda arg_dict: [{input_name: 'input_set'}],
         argument_def_dict={},
     )
+
+    def root_transform(**kwargs):
+        passed_rows = list(kwargs.values())[0]
+        passed_rows.append({name: 'transform_called'})
+        #return copy.deepcopy(passed_rows)
+        return passed_rows
 
     return Solid(
         name=name,
         inputs=[inp],
-        transform_fn=_default_passthrough_transform,
+        transform_fn=root_transform,
         output_type_defs=[create_dummy_output_def()]
     )
 
@@ -96,12 +127,153 @@ def test_disconnected_graphs_adjaceny_lists():
     assert backwards_edges == {'B': {'A'}, 'A': set(), 'D': {'C'}, 'C': set()}
 
 
-def test_diamond_toposort():
-
+def create_diamond_graph():
     node_a = create_root_solid('A')
     node_b = create_solid_with_deps('B', node_a)
     node_c = create_solid_with_deps('C', node_a)
     node_d = create_solid_with_deps('D', node_b, node_c)
 
-    graph = SolidGraph([node_d, node_c, node_b, node_a])
+    return SolidGraph([node_d, node_c, node_b, node_a])
+
+
+def test_diamond_toposort():
+    graph = create_diamond_graph()
     assert graph.topological_order == ['A', 'B', 'C', 'D']
+
+
+def test_single_node_unprovided_inputs():
+    node_a = create_root_solid('A')
+    solid_graph = SolidGraph(solids=[node_a])
+    assert solid_graph.compute_unprovided_inputs('A', ['A_input']) == set()
+    assert solid_graph.compute_unprovided_inputs('A', []) == set(['A_input'])
+
+
+def test_diamond_toposort_unprovided_inputs():
+    solid_graph = create_diamond_graph()
+
+    # no inputs
+    assert solid_graph.compute_unprovided_inputs('A', []) == set(['A_input'])
+    assert solid_graph.compute_unprovided_inputs('B', []) == set(['A_input'])
+    assert solid_graph.compute_unprovided_inputs('C', []) == set(['A_input'])
+    assert solid_graph.compute_unprovided_inputs('D', []) == set(['A_input'])
+
+    # root input
+    assert solid_graph.compute_unprovided_inputs('A', ['A_input']) == set()
+    assert solid_graph.compute_unprovided_inputs('B', ['A_input']) == set()
+    assert solid_graph.compute_unprovided_inputs('C', ['A_input']) == set()
+    assert solid_graph.compute_unprovided_inputs('D', ['A_input']) == set()
+
+    # immediate input
+    assert solid_graph.compute_unprovided_inputs('A', ['A_input']) == set()
+    assert solid_graph.compute_unprovided_inputs('B', ['A']) == set()
+    assert solid_graph.compute_unprovided_inputs('C', ['A']) == set()
+    assert solid_graph.compute_unprovided_inputs('D', ['B', 'C']) == set()
+
+    # mixed satisified inputs
+    assert solid_graph.compute_unprovided_inputs('D', ['A_input', 'C']) == set()
+    assert solid_graph.compute_unprovided_inputs('D', ['B', 'A_input']) == set()
+
+    # mixed unsatisifed inputs
+    assert solid_graph.compute_unprovided_inputs('D', ['C']) == set(['A_input'])
+    assert solid_graph.compute_unprovided_inputs('D', ['B']) == set(['A_input'])
+
+
+def test_unprovided_input_param_invariants():
+    node_a = create_root_solid('A')
+    solid_graph = SolidGraph(solids=[node_a])
+
+    with pytest.raises(check.ParameterCheckError):
+        solid_graph.compute_unprovided_inputs('B', [])
+
+    with pytest.raises(check.ParameterCheckError):
+        solid_graph.compute_unprovided_inputs('A', ['no_input_here'])
+
+
+def test_execution_subgraph_one_node():
+    node_a = create_root_solid('A')
+    solid_graph = SolidGraph(solids=[node_a])
+
+    execution_graph = solid_graph.create_execution_graph(
+        output_names=['A'], input_names=['A_input']
+    )
+    assert execution_graph
+
+
+def test_execution_graph_diamond():
+    solid_graph = create_diamond_graph()
+
+    full_execution_graph = solid_graph.create_execution_graph(
+        output_names=['D'], input_names=['A_input']
+    )
+    assert full_execution_graph.topological_order == ['A', 'B', 'C', 'D']
+    assert len(full_execution_graph._solid_dict) == 4
+
+    d_only_graph = solid_graph.create_execution_graph(output_names=['D'], input_names=['B', 'C'])
+    assert len(d_only_graph._solid_dict) == 1
+    assert d_only_graph.topological_order == ['D']
+
+    abc_graph = solid_graph.create_execution_graph(output_names=['D'], input_names=['A'])
+    assert len(abc_graph._solid_dict) == 3
+    assert abc_graph.topological_order == ['B', 'C', 'D']
+
+
+def input_set(name):
+    return {name: 'input_set'}
+
+
+def transform_called(name):
+    return {name: 'transform_called'}
+
+
+def test_pipeline_execution_graph_diamond():
+    solid_graph = create_diamond_graph()
+
+    solid_repo = SolidRepo(solids=solid_graph.solids)
+
+    all_steps = list()
+
+    for step in execute_pipeline(
+        create_test_context(), solid_repo, input_arg_dicts={'A_input': {}}
+    ):
+        all_steps.append(copy.deepcopy(step))
+
+    assert all_steps[0].materialized_output[0] == input_set('A_input')
+    assert all_steps[0].materialized_output[1] == transform_called('A')
+
+    assert all_steps[0].materialized_output == [input_set('A_input'), transform_called('A')]
+
+    assert all_steps == [
+        PipelineExecutionStepResult(
+            name='A', materialized_output=[
+                input_set('A_input'),
+                transform_called('A'),
+            ]
+        ),
+        PipelineExecutionStepResult(
+            name='B',
+            materialized_output=[
+                input_set('A_input'),
+                transform_called('A'),
+                transform_called('B'),
+            ]
+        ),
+        PipelineExecutionStepResult(
+            name='C',
+            materialized_output=[
+                input_set('A_input'),
+                transform_called('A'),
+                transform_called('B'),
+                transform_called('C'),
+            ]
+        ),
+        PipelineExecutionStepResult(
+            name='D',
+            materialized_output=[
+                input_set('A_input'),
+                transform_called('A'),
+                transform_called('B'),
+                transform_called('C'),
+                transform_called('D'),
+            ]
+        ),
+    ]
