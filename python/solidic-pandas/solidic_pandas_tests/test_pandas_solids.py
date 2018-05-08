@@ -4,7 +4,8 @@ import check
 
 from solidic.execution import (
     materialize_input, execute_solid, SolidExecutionContext, materialize_output,
-    materialize_output_in_memory, execute_pipeline, execute_single_output_pipeline
+    materialize_output_in_memory, execute_pipeline, execute_single_output_pipeline, OutputConfig,
+    output_pipeline
 )
 from solidic.types import SolidPath
 from solidic.definitions import (Solid, SolidOutputTypeDefinition)
@@ -287,36 +288,13 @@ def test_diamond_dag_run():
     }
 
 
-from collections import namedtuple
-
-from solidic.execution import (OutputConfig, output_pipeline)
-
-
 def csv_output_config(name, path):
     check.str_param(name, 'name')
     check.str_param(path, 'path')
     return OutputConfig(name=name, output_type='CSV', output_args={'path': path})
 
 
-def output_solid_dag(context, repo, input_args, outputs):
-    check.inst_param(context, 'context', SolidExecutionContext)
-    check.inst_param(repo, 'repo', SolidRepo)
-    check.dict_param(input_args, 'input_args', key_type=str, value_type=dict)
-    check.list_param(outputs, 'outputs', of_type=OutputConfig)
-
-    # iterate over materialize_solid_dags,
-
-
-def materialize_solid_dag(context, repo, input_args, solid_names):
-    check.inst_param(context, 'context', SolidExecutionContext)
-    check.inst_param(repo, 'repo', SolidRepo)
-    check.dict_param(input_args, 'input_args', key_type=str, value_type=dict)
-    check.list_param(solid_names, 'solid_names', of_type=str)
-
-    # at each node check to see if there any output configs. if so, execute them
-
-
-def test_pandas_in_memory_pipeline():
+def test_pandas_in_memory_diamond_pipeline():
     context = create_test_context()
     input_args = {'num_csv': {'path': script_relative_path('num.csv')}}
 
@@ -358,3 +336,41 @@ def test_pandas_output_csv_pipeline():
             'mult': [2, 12],
             'sum_mult': [6, 84],
         }
+
+
+def test_pandas_multiple_inputs():
+
+    context = create_test_context()
+
+    input_args = {
+        'num_csv1': {
+            'path': script_relative_path('num.csv')
+        },
+        'num_csv2': {
+            'path': script_relative_path('num.csv')
+        },
+    }
+
+    def transform_fn(num_csv1, num_csv2):
+        return num_csv1 + num_csv2
+
+    double_sum = solidic_pd.tabular_solid(
+        name='double_sum',
+        inputs=[solidic_pd.csv_input('num_csv1'),
+                solidic_pd.csv_input('num_csv2')],
+        transform_fn=transform_fn
+    )
+
+    output_df = execute_single_output_pipeline(
+        context,
+        SolidRepo(solids=[double_sum]),
+        input_arg_dicts=input_args,
+        output_name='double_sum'
+    )
+
+    assert not output_df.empty
+
+    assert output_df.to_dict('list') == {
+        'num1': [2, 6],
+        'num2': [4, 8],
+    }

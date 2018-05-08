@@ -4,7 +4,7 @@ import check
 
 from solidic.definitions import (SolidInputDefinition, Solid, SolidOutputTypeDefinition)
 from solidic.graph import (create_adjacency_lists, SolidGraph, SolidRepo)
-from solidic.execution import (execute_pipeline, SolidExecutionContext, PipelineExecutionStepResult)
+from solidic.execution import (execute_pipeline, SolidExecutionContext, SolidExecutionResult)
 
 # protected members
 # pylint: disable=W0212
@@ -225,55 +225,84 @@ def transform_called(name):
     return {name: 'transform_called'}
 
 
+def assert_equivalent_steps(left, right):
+    check.inst_param(left, 'left', SolidExecutionResult)
+    check.inst_param(right, 'right', SolidExecutionResult)
+
+    assert left.success == right.success
+    assert left.name == right.name
+    assert left.solid.name == right.solid.name
+    assert left.materialized_output == right.materialized_output
+
+
+def assert_all_steps_equivalent(expected_steps, result_steps):
+    check.list_param(expected_steps, 'expected_steps', of_type=SolidExecutionResult)
+    check.list_param(result_steps, 'result_steps', of_type=SolidExecutionResult)
+    assert len(expected_steps) == len(result_steps)
+    for expected, result in zip(expected_steps, result_steps):
+        assert_equivalent_steps(expected, result)
+
+
 def test_pipeline_execution_graph_diamond():
     solid_graph = create_diamond_graph()
 
     solid_repo = SolidRepo(solids=solid_graph.solids)
 
-    all_steps = list()
+    result_steps = list()
 
     for step in execute_pipeline(
         create_test_context(), solid_repo, input_arg_dicts={'A_input': {}}
     ):
-        all_steps.append(copy.deepcopy(step))
+        result_steps.append(copy.deepcopy(step))
 
-    assert all_steps[0].materialized_output[0] == input_set('A_input')
-    assert all_steps[0].materialized_output[1] == transform_called('A')
+    assert result_steps[0].materialized_output[0] == input_set('A_input')
+    assert result_steps[0].materialized_output[1] == transform_called('A')
 
-    assert all_steps[0].materialized_output == [input_set('A_input'), transform_called('A')]
+    assert result_steps[0].materialized_output == [input_set('A_input'), transform_called('A')]
 
-    assert all_steps == [
-        PipelineExecutionStepResult(
-            name='A', materialized_output=[
+    expected_steps = [
+        SolidExecutionResult(
+            success=True,
+            solid=solid_repo.solid_named('A'),
+            materialized_output=[
                 input_set('A_input'),
                 transform_called('A'),
-            ]
+            ],
+            exception=None,
         ),
-        PipelineExecutionStepResult(
-            name='B',
+        SolidExecutionResult(
+            success=True,
+            solid=solid_repo.solid_named('B'),
             materialized_output=[
                 input_set('A_input'),
                 transform_called('A'),
                 transform_called('B'),
-            ]
+            ],
+            exception=None,
         ),
-        PipelineExecutionStepResult(
-            name='C',
+        SolidExecutionResult(
+            success=True,
+            solid=solid_repo.solid_named('C'),
             materialized_output=[
                 input_set('A_input'),
                 transform_called('A'),
                 transform_called('B'),
                 transform_called('C'),
-            ]
+            ],
+            exception=None,
         ),
-        PipelineExecutionStepResult(
-            name='D',
+        SolidExecutionResult(
+            success=True,
+            solid=solid_repo.solid_named('D'),
             materialized_output=[
                 input_set('A_input'),
                 transform_called('A'),
                 transform_called('B'),
                 transform_called('C'),
                 transform_called('D'),
-            ]
+            ],
+            exception=None,
         ),
     ]
+
+    assert_all_steps_equivalent(expected_steps, result_steps)
