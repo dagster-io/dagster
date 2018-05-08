@@ -333,6 +333,17 @@ def _select_keys(ddict, keys):
 PipelineExecutionStepResult = namedtuple('PipelineExecutionStepResult', 'name materialized_output')
 
 
+def execute_single_output_pipeline(context, repo, input_arg_dicts, output_name):
+    check.inst_param(context, 'context', SolidExecutionContext)
+    check.inst_param(repo, 'repo', SolidRepo)
+    check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
+    check.str_param(output_name, 'output_name')
+
+    for step in execute_pipeline(context, repo, input_arg_dicts, [output_name]):
+        if step.name == output_name:
+            return step.materialized_output
+
+
 def execute_pipeline(context, repo, input_arg_dicts, through_solids=None):
     check.inst_param(context, 'context', SolidExecutionContext)
     check.inst_param(repo, 'repo', SolidRepo)
