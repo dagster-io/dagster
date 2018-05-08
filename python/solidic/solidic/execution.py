@@ -442,6 +442,16 @@ def output_pipeline(context, repo, input_arg_dicts, output_configs):
             output_type = output_dict[step.name].output_type
             output_arg_dict = output_dict[step.name].output_args
             output_type_def = step.solid.output_type_def_named(output_type)
-            execute_output(context, output_type_def, output_arg_dict, step.materialized_output)
+            try:
+                execute_output(context, output_type_def, output_arg_dict, step.materialized_output)
+            except SolidExecutionError as see:
+                yield SolidExecutionResult(
+                    success=False,
+                    solid=step.solid,
+                    reason=SolidExecutionFailureReason.USER_CODE_ERROR,
+                    exception=see,
+                    materialized_output=step.materialized_output,
+                )
+                break
 
         yield step
