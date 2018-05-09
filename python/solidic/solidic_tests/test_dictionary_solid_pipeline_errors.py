@@ -1,8 +1,12 @@
 import copy
 
+import check
+
 from solidic.definitions import (Solid, SolidInputDefinition, SolidOutputTypeDefinition)
 from solidic.graph import SolidRepo
-from solidic.execution import (pipeline_repo, SolidExecutionContext, output_pipeline, OutputConfig)
+from solidic.execution import (
+    pipeline_repo, SolidExecutionContext, output_pipeline, OutputConfig, SolidExecutionFailureReason
+)
 
 
 def create_test_context():
@@ -108,9 +112,7 @@ def create_root_output_failure_solid(name):
 
 def test_transform_failure_pipeline():
     repo = SolidRepo(solids=[create_root_transform_failure_solid('failing')])
-    steps = []
-    for step in pipeline_repo(create_test_context(), repo, {'failing_input': {}}):
-        steps.append(copy.deepcopy(step))
+    steps = pipeline_repo_collect(create_test_context(), repo, {'failing_input': {}})
 
     assert len(steps) == 1
     assert not steps[0].success
@@ -119,9 +121,7 @@ def test_transform_failure_pipeline():
 
 def test_input_failure_pipeline():
     repo = SolidRepo(solids=[create_root_input_failure_solid('failing_input')])
-    steps = []
-    for step in pipeline_repo(create_test_context(), repo, {'failing_input_input': {}}):
-        steps.append(copy.deepcopy(step))
+    steps = pipeline_repo_collect(create_test_context(), repo, {'failing_input_input': {}})
 
     assert len(steps) == 1
     assert not steps[0].success
@@ -143,3 +143,49 @@ def test_output_failure_pipeline():
     assert len(steps) == 1
     assert not steps[0].success
     assert steps[0].exception
+
+
+def pipeline_repo_collect(context, repo, input_arg_dicts):
+    steps = []
+    for step in pipeline_repo(context, repo, input_arg_dicts):
+        steps.append(copy.deepcopy(step))
+    return steps
+
+
+def test_failure_midstream():
+    node_a = create_root_success_solid('A')
+    node_b = create_root_success_solid('B')
+
+    def not_reached_input(*_args, **_kwargs):
+        check.failed('should not reach')
+
+    def transform_fn(A, B):
+        check.failed('user error')
+        return [A, B, {'C': 'transform_called'}]
+
+    solid = Solid(
+        name='C',
+        inputs=[
+            SolidInputDefinition(
+                name='A', input_fn=not_reached_input, argument_def_dict={}, depends_on=node_a
+            ),
+            SolidInputDefinition(
+                name='B', input_fn=not_reached_input, argument_def_dict={}, depends_on=node_b
+            ),
+        ],
+        transform_fn=transform_fn,
+        output_type_defs=[]
+    )
+
+    input_arg_dicts = {'A_input': {}, 'B_input': {}}
+    steps = pipeline_repo_collect(
+        create_test_context(),
+        SolidRepo(solids=[node_a, node_b, solid]),
+        input_arg_dicts=input_arg_dicts,
+    )
+
+    assert len(steps) == 3
+    assert steps[0].success
+    assert steps[1].success
+    assert not steps[2].success
+    assert steps[2].reason == SolidExecutionFailureReason.USER_CODE_ERROR
