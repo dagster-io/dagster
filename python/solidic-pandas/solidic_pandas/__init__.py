@@ -16,7 +16,7 @@ def solid(**kwargs):
     return Solid(**kwargs)
 
 
-def dependency_input(solid_inst):
+def depends_on(solid_inst):
     check.inst_param(solid_inst, 'solid_inst', Solid)
     return create_solid_pandas_dependency_input(solid_inst)
 

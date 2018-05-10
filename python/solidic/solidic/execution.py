@@ -1,5 +1,6 @@
 from collections import namedtuple
 from contextlib import contextmanager
+import copy
 from enum import Enum
 
 import check
@@ -107,7 +108,8 @@ def materialize_input(context, input_definition, arg_dict):
 
     error_str = 'Error occured while loading input "{input_name}"'
     with user_code_error_boundary(error_str, input_name=input_definition.name):
-        return input_definition.input_fn(arg_dict)
+        materialized_input = input_definition.input_fn(arg_dict)
+        return materialized_input
 
 
 def execute_input_expectation(context, expectation_def, materialized_input):
@@ -357,7 +359,8 @@ def output_solid(context, solid, input_arg_dicts, output_type, output_arg_dict):
     return execution_result
 
 
-def _select_keys(ddict, keys):
+def _select_keys(ddict1, ddict2, keys):
+    ddict = {**ddict1, **ddict2}
     return {key: ddict[key] for key in keys}
 
 
@@ -394,21 +397,29 @@ def execute_pipeline(context, pipeline, input_arg_dicts, through_solids=None):
                 )
             )
 
+    # Given the inputs and outputs specific, create the subgraph of the pipeline
+    # necessary to complete the computation
     execution_graph = pipeline.solid_graph.create_execution_graph(output_names, input_names)
 
     materialized_values = {}
 
     for solid in execution_graph.topological_solids:
 
+        # The value produce by an inputs is potentially different per solid.
+        # This is allowed so that two solids that do different materialization of the
+        # same exact input (e.g. the same file) don't have to create additional solids
+        # to account for this.
+        input_values = {}
+
         try:
             for inp in solid.inputs:
-                if inp.name not in materialized_values:
+                if inp.name not in materialized_values and inp.name not in input_values:
                     materialized = materialize_input(context, inp, input_arg_dicts[inp.name])
-                    materialized_values[inp.name] = materialized
+                    input_values[inp.name] = materialized
 
-            selected_inputs = _select_keys(materialized_values, solid.input_names)
+            selected_values = _select_keys(input_values, materialized_values, solid.input_names)
 
-            materialized_output = pipeline_output_in_memory(context, solid, selected_inputs)
+            materialized_output = pipeline_output_in_memory(context, solid, selected_values)
 
             if isinstance(materialized_output, SolidExecutionResult):
                 yield materialized_output
@@ -424,7 +435,7 @@ def execute_pipeline(context, pipeline, input_arg_dicts, through_solids=None):
                 success=True,
                 solid=solid,
                 materialized_output=materialized_values[solid.name],
-                exception=None,
+                exception=None
             )
         except SolidExecutionError as see:
             yield SolidExecutionResult(
@@ -437,6 +448,13 @@ def execute_pipeline(context, pipeline, input_arg_dicts, through_solids=None):
 
 
 OutputConfig = namedtuple('OutputConfig', 'name output_type, output_args')
+
+
+def execute_pipeline_and_collect(context, pipeline, input_arg_dicts, through_solids=None):
+    results = []
+    for result in execute_pipeline(context, pipeline, input_arg_dicts, through_solids):
+        results.append(copy.deepcopy(result))
+    return results
 
 
 def output_pipeline(context, pipeline, input_arg_dicts, output_configs):

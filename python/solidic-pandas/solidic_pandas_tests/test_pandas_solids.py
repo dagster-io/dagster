@@ -134,9 +134,7 @@ def create_mult_table(sum_table_solid):
         return sum_table
 
     return solidic_pd.dataframe_solid(
-        name='mult_table',
-        inputs=[solidic_pd.dependency_input(sum_table_solid)],
-        transform_fn=transform
+        name='mult_table', inputs=[solidic_pd.depends_on(sum_table_solid)], transform_fn=transform
     )
 
 
@@ -225,7 +223,7 @@ def create_diamond_dag():
 
     sum_table = solidic_pd.dataframe_solid(
         name='sum_table',
-        inputs=[solidic_pd.dependency_input(num_table)],
+        inputs=[solidic_pd.depends_on(num_table)],
         transform_fn=sum_transform,
     )
 
@@ -236,7 +234,7 @@ def create_diamond_dag():
 
     mult_table = solidic_pd.dataframe_solid(
         name='mult_table',
-        inputs=[solidic_pd.dependency_input(num_table)],
+        inputs=[solidic_pd.depends_on(num_table)],
         transform_fn=mult_transform,
     )
 
@@ -248,8 +246,8 @@ def create_diamond_dag():
 
     sum_mult_table = solidic_pd.dataframe_solid(
         name='sum_mult_table',
-        inputs=[solidic_pd.dependency_input(sum_table),
-                solidic_pd.dependency_input(mult_table)],
+        inputs=[solidic_pd.depends_on(sum_table),
+                solidic_pd.depends_on(mult_table)],
         transform_fn=sum_mult_transform,
     )
 
