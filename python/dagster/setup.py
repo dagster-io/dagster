@@ -18,5 +18,6 @@ setup(
         'future>=0.16.0',
 
         # solidic (not explicitly expressed atm)
+        'graphviz>=0.8.3',
     ],
 )
