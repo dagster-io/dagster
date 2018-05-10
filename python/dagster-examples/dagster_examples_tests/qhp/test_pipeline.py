@@ -124,3 +124,26 @@ def test_practice_insurances_pipeline():
     for result in results:
         assert result.success
         assert not result.materialized_output.empty
+
+
+def test_languages_pipeline():
+    pipeline = define_pipeline()
+
+    result = execute_solid_in_pipeline(
+        SolidExecutionContext(),
+        pipeline,
+        input_arg_dicts={'languages_csv': {
+            'path': script_relative_path('Language.csv')
+        }},
+        output_name='languages',
+    )
+
+    if result.exception:
+        raise result.exception
+
+    assert result.success
+    df = result.materialized_output
+    assert list(df.columns) == [
+        'SK_Language', 'ISO639-3Code', 'ISO639-2BCode', 'ISO639-2TCode', 'ISO639-1Code',
+        'LanguageName', 'Scope', 'Type', 'MacroLanguageISO639-3Code', 'MacroLanguageName', 'IsChild'
+    ]

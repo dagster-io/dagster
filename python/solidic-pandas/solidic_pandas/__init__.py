@@ -52,8 +52,8 @@ def single_path_arg(input_name, path):
     return {input_name: {'path': path}}
 
 
-def csv_input(name):
-    return create_solidic_pandas_csv_input(name)
+def csv_input(name, delimiter=',', **read_csv_kwargs):
+    return create_solidic_pandas_csv_input(name, delimiter, **read_csv_kwargs)
 
 
 def csv_output():

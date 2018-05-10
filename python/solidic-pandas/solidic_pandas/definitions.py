@@ -33,10 +33,13 @@ def create_solid_pandas_dependency_input(solid):
     )
 
 
-def create_solidic_pandas_csv_input(name):
+def create_solidic_pandas_csv_input(name, delimiter, **read_csv_kwargs):
+    check.str_param(name, 'name')
+    check.str_param(delimiter, 'delimiter')
+
     def check_path(path):
         check.str_param(path, 'path')
-        return pd.read_csv(path)
+        return pd.read_csv(path, delimiter=delimiter, **read_csv_kwargs)
 
     return create_solidic_single_file_input(name, check_path)
 

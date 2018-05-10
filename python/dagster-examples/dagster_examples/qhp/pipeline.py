@@ -53,6 +53,11 @@ def define_pipeline():
         inputs=[define_qhp_input(table_field_expr=QhpJsonPivotPoints.PROVIDERS)],
     )
 
+    languages = solidic_pd.dataframe_solid(
+        name='languages',
+        inputs=[solidic_pd.csv_input('languages_csv', delimiter='|')],
+    )
+
     insurance = solidic_pd.dataframe_solid(
         name='insurance',
         transform_fn=insurance_tranform,
@@ -71,6 +76,11 @@ def define_pipeline():
         ]
     )
 
+    names = solidic_pd.dataframe_solid(
+        name='names',
+        inputs=[define_qhp_input(table_field_expr=QhpJsonPivotPoints.NAMES)],
+    )
+
     practice_insurances = solidic_pd.dataframe_solid(
         name='practice_insurances',
         transform_fn=transform_practice_insurances,
@@ -86,9 +96,11 @@ def define_pipeline():
             plan_years,
             addresses,
             providers,
+            languages,
             insurance,
             practices,
             practice_insurances,
+            names,
         ]
     )
 
