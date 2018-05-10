@@ -2,14 +2,14 @@ import pandas as pd
 
 import check
 
+import solidic
+
 from solidic.execution import (
     materialize_input, output_solid, SolidExecutionContext, pipeline_output,
     pipeline_output_in_memory, execute_pipeline, execute_solid_in_pipeline, OutputConfig,
     output_pipeline
 )
-from solidic.types import SolidPath
 from solidic.definitions import (Solid, SolidOutputTypeDefinition)
-from solidic.graph import SolidRepo
 import solidic_pandas as solidic_pd
 from solidic_pandas.definitions import create_solidic_pandas_csv_input
 
@@ -82,7 +82,7 @@ def test_pandas_csv_to_csv():
         df.to_csv(path, index=False)
 
     csv_output_type_def = SolidOutputTypeDefinition(
-        name='CSV', output_fn=output_fn_inst, argument_def_dict={'path': SolidPath}
+        name='CSV', output_fn=output_fn_inst, argument_def_dict={'path': solidic.PATH}
     )
 
     solid = Solid(
@@ -121,7 +121,7 @@ def create_sum_table():
         num_csv['sum'] = num_csv['num1'] + num_csv['num2']
         return num_csv
 
-    return solidic_pd.tabular_solid(
+    return solidic_pd.dataframe_solid(
         name='sum_table',
         inputs=[solidic_pd.csv_input('num_csv')],
         transform_fn=transform,
@@ -133,7 +133,7 @@ def create_mult_table(sum_table_solid):
         sum_table['sum_squared'] = sum_table['sum'] * sum_table['sum']
         return sum_table
 
-    return solidic_pd.tabular_solid(
+    return solidic_pd.dataframe_solid(
         name='mult_table',
         inputs=[solidic_pd.dependency_input(sum_table_solid)],
         transform_fn=transform
@@ -176,7 +176,7 @@ def test_two_input_solid():
         num_csv1['sum'] = num_csv1['num1'] + num_csv2['num2']
         return num_csv1
 
-    two_input_solid = solidic_pd.tabular_solid(
+    two_input_solid = solidic_pd.dataframe_solid(
         name='two_input_solid',
         inputs=[solidic_pd.csv_input('num_csv1'),
                 solidic_pd.csv_input('num_csv2')],
@@ -198,7 +198,7 @@ def test_two_input_solid():
 
 
 def test_no_transform_solid():
-    num_table = solidic_pd.tabular_solid(
+    num_table = solidic_pd.dataframe_solid(
         name='num_table',
         inputs=[solidic_pd.csv_input('num_csv')],
     )
@@ -208,12 +208,12 @@ def test_no_transform_solid():
     assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4]}
 
 
-def create_diamond_repo():
-    return SolidRepo(solids=list(create_diamond_dag()))
+def create_diamond_pipeline():
+    return solidic.pipeline(solids=list(create_diamond_dag()))
 
 
 def create_diamond_dag():
-    num_table = solidic_pd.tabular_solid(
+    num_table = solidic_pd.dataframe_solid(
         name='num_table',
         inputs=[solidic_pd.csv_input('num_csv')],
     )
@@ -223,7 +223,7 @@ def create_diamond_dag():
         sum_table['sum'] = num_table['num1'] + num_table['num2']
         return sum_table
 
-    sum_table = solidic_pd.tabular_solid(
+    sum_table = solidic_pd.dataframe_solid(
         name='sum_table',
         inputs=[solidic_pd.dependency_input(num_table)],
         transform_fn=sum_transform,
@@ -234,7 +234,7 @@ def create_diamond_dag():
         mult_table['mult'] = num_table['num1'] * num_table['num2']
         return mult_table
 
-    mult_table = solidic_pd.tabular_solid(
+    mult_table = solidic_pd.dataframe_solid(
         name='mult_table',
         inputs=[solidic_pd.dependency_input(num_table)],
         transform_fn=mult_transform,
@@ -246,7 +246,7 @@ def create_diamond_dag():
         sum_mult_table['sum_mult'] = sum_table['sum'] * mult_table['mult']
         return sum_mult_table
 
-    sum_mult_table = solidic_pd.tabular_solid(
+    sum_mult_table = solidic_pd.dataframe_solid(
         name='sum_mult_table',
         inputs=[solidic_pd.dependency_input(sum_table),
                 solidic_pd.dependency_input(mult_table)],
@@ -300,7 +300,10 @@ def test_pandas_in_memory_diamond_pipeline():
     input_args = {'num_csv': {'path': script_relative_path('num.csv')}}
 
     result = execute_solid_in_pipeline(
-        context, create_diamond_repo(), input_arg_dicts=input_args, output_name='sum_mult_table'
+        context,
+        create_diamond_pipeline(),
+        input_arg_dicts=input_args,
+        output_name='sum_mult_table'
     )
 
     assert result.materialized_output.to_dict('list') == {
@@ -322,7 +325,7 @@ def test_pandas_output_csv_pipeline():
 
         for _result in output_pipeline(
             context,
-            repo=create_diamond_repo(),
+            pipeline=create_diamond_pipeline(),
             input_arg_dicts=input_args,
             output_configs=[csv_output_config('sum_mult_table', temp_file_name)]
         ):
@@ -355,7 +358,7 @@ def test_pandas_multiple_inputs():
     def transform_fn(num_csv1, num_csv2):
         return num_csv1 + num_csv2
 
-    double_sum = solidic_pd.tabular_solid(
+    double_sum = solidic_pd.dataframe_solid(
         name='double_sum',
         inputs=[solidic_pd.csv_input('num_csv1'),
                 solidic_pd.csv_input('num_csv2')],
@@ -364,7 +367,7 @@ def test_pandas_multiple_inputs():
 
     output_df = execute_solid_in_pipeline(
         context,
-        SolidRepo(solids=[double_sum]),
+        solidic.pipeline(solids=[double_sum]),
         input_arg_dicts=input_args,
         output_name='double_sum'
     ).materialized_output

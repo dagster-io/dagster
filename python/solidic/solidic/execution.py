@@ -12,7 +12,7 @@ from .definitions import (
     SolidExpectationResult,
 )
 
-from .graph import SolidRepo
+from .graph import SolidPipeline
 
 
 class SolidExecutionFailureReason(Enum):
@@ -319,7 +319,7 @@ def execute_solid(context, solid, input_arg_dicts):
     check.inst_param(solid, 'solid', Solid)
     check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
 
-    results = list(execute_pipeline(context, SolidRepo(solids=[solid]), input_arg_dicts))
+    results = list(execute_pipeline(context, SolidPipeline(solids=[solid]), input_arg_dicts))
 
     check.invariant(len(results) == 1, 'must be one result got ' + str(len(results)))
 
@@ -340,7 +340,7 @@ def output_solid(context, solid, input_arg_dicts, output_type, output_arg_dict):
     results = list(
         output_pipeline(
             context,
-            SolidRepo(solids=[solid]),
+            SolidPipeline(solids=[solid]),
             input_arg_dicts,
             output_configs=[
                 OutputConfig(name=solid.name, output_type=output_type, output_args=output_arg_dict)
@@ -361,30 +361,30 @@ def _select_keys(ddict, keys):
     return {key: ddict[key] for key in keys}
 
 
-def execute_solid_in_pipeline(context, repo, input_arg_dicts, output_name):
+def execute_solid_in_pipeline(context, pipeline, input_arg_dicts, output_name):
     check.inst_param(context, 'context', SolidExecutionContext)
-    check.inst_param(repo, 'repo', SolidRepo)
+    check.inst_param(pipeline, 'pipeline', SolidPipeline)
     check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
     check.str_param(output_name, 'output_name')
 
-    for result in execute_pipeline(context, repo, input_arg_dicts, [output_name]):
+    for result in execute_pipeline(context, pipeline, input_arg_dicts, [output_name]):
         if result.name == output_name:
             return result
 
     check.failed('Result ' + output_name + ' not found!')
 
 
-def execute_pipeline(context, repo, input_arg_dicts, through_solids=None):
+def execute_pipeline(context, pipeline, input_arg_dicts, through_solids=None):
     check.inst_param(context, 'context', SolidExecutionContext)
-    check.inst_param(repo, 'repo', SolidRepo)
+    check.inst_param(pipeline, 'pipeline', SolidPipeline)
     check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
     check.opt_list_param(through_solids, 'through_solids', of_type=str)
 
     input_names = list(input_arg_dicts.keys())
-    output_names = repo.solid_names if not through_solids else through_solids
+    output_names = pipeline.solid_names if not through_solids else through_solids
 
     for output_name in output_names:
-        unprovided_inputs = repo.solid_graph.compute_unprovided_inputs(
+        unprovided_inputs = pipeline.solid_graph.compute_unprovided_inputs(
             input_names=input_names, output_name=output_name
         )
         if unprovided_inputs:
@@ -394,7 +394,7 @@ def execute_pipeline(context, repo, input_arg_dicts, through_solids=None):
                 )
             )
 
-    execution_graph = repo.solid_graph.create_execution_graph(output_names, input_names)
+    execution_graph = pipeline.solid_graph.create_execution_graph(output_names, input_names)
 
     materialized_values = {}
 
@@ -439,16 +439,16 @@ def execute_pipeline(context, repo, input_arg_dicts, through_solids=None):
 OutputConfig = namedtuple('OutputConfig', 'name output_type, output_args')
 
 
-def output_pipeline(context, repo, input_arg_dicts, output_configs):
+def output_pipeline(context, pipeline, input_arg_dicts, output_configs):
     check.inst_param(context, 'context', SolidExecutionContext)
-    check.inst_param(repo, 'repo', SolidRepo)
+    check.inst_param(pipeline, 'pipeline', SolidPipeline)
     check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
     check.list_param(output_configs, 'output_configs', of_type=OutputConfig)
 
     output_dict = {output_config.name: output_config for output_config in output_configs}
 
     for result in execute_pipeline(
-        context, repo, input_arg_dicts, through_solids=list(output_dict.keys())
+        context, pipeline, input_arg_dicts, through_solids=list(output_dict.keys())
     ):
         if not result.success:
             yield result

@@ -3,7 +3,7 @@ import pytest
 import check
 
 from solidic.definitions import (SolidInputDefinition, Solid, SolidOutputTypeDefinition)
-from solidic.graph import (create_adjacency_lists, SolidGraph, SolidRepo)
+from solidic.graph import (create_adjacency_lists, SolidGraph, SolidPipeline)
 from solidic.execution import (execute_pipeline, SolidExecutionContext, SolidExecutionResult)
 
 # protected members
@@ -246,12 +246,12 @@ def assert_all_results_equivalent(expected_results, result_results):
 def test_pipeline_execution_graph_diamond():
     solid_graph = create_diamond_graph()
 
-    solid_repo = SolidRepo(solids=solid_graph.solids)
+    pipeline = SolidPipeline(solids=solid_graph.solids)
 
     results = list()
 
     for result in execute_pipeline(
-        create_test_context(), solid_repo, input_arg_dicts={'A_input': {}}
+        create_test_context(), pipeline, input_arg_dicts={'A_input': {}}
     ):
         results.append(copy.deepcopy(result))
 
@@ -263,7 +263,7 @@ def test_pipeline_execution_graph_diamond():
     expected_results = [
         SolidExecutionResult(
             success=True,
-            solid=solid_repo.solid_named('A'),
+            solid=pipeline.solid_named('A'),
             materialized_output=[
                 input_set('A_input'),
                 transform_called('A'),
@@ -272,7 +272,7 @@ def test_pipeline_execution_graph_diamond():
         ),
         SolidExecutionResult(
             success=True,
-            solid=solid_repo.solid_named('B'),
+            solid=pipeline.solid_named('B'),
             materialized_output=[
                 input_set('A_input'),
                 transform_called('A'),
@@ -282,7 +282,7 @@ def test_pipeline_execution_graph_diamond():
         ),
         SolidExecutionResult(
             success=True,
-            solid=solid_repo.solid_named('C'),
+            solid=pipeline.solid_named('C'),
             materialized_output=[
                 input_set('A_input'),
                 transform_called('A'),
@@ -293,7 +293,7 @@ def test_pipeline_execution_graph_diamond():
         ),
         SolidExecutionResult(
             success=True,
-            solid=solid_repo.solid_named('D'),
+            solid=pipeline.solid_named('D'),
             materialized_output=[
                 input_set('A_input'),
                 transform_called('A'),

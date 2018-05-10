@@ -4,12 +4,12 @@ from builtins import *  # pylint: disable=W0622,W0401
 import check
 
 from .definitions import SolidInputDefinition
-from .graph import SolidRepo
+from .graph import SolidPipeline
 from .types import SolidPath
 
 
 def pipeline(**kwargs):
-    return SolidRepo(**kwargs)
+    return SolidPipeline(**kwargs)
 
 
 def input_definition(**kwargs):

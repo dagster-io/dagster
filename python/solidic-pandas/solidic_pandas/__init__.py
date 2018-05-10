@@ -27,7 +27,7 @@ def _default_passthrough_transform(*args, **kwargs):
     return list(kwargs.values())[0]
 
 
-def tabular_solid(*args, inputs, transform_fn=None, **kwargs):
+def dataframe_solid(*args, inputs, transform_fn=None, **kwargs):
     check.invariant(not args, 'must use all keyword args')
 
     # will add parquet and other standardized formats
