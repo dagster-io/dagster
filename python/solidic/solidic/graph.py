@@ -189,6 +189,13 @@ class SolidPipeline:
     def solid_names(self):
         return [solid.name for solid in self.solids]
 
+    @property
+    def external_inputs(self):
+        for solid in self.solids:
+            for input_def in solid.inputs:
+                if input_def.is_external:
+                    yield input_def
+
     def solid_named(self, name):
         check.str_param(name, 'name')
         for solid in self.solids:

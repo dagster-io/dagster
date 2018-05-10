@@ -7,7 +7,7 @@ import pandas as pd
 import solidic
 import solidic_pandas as solidic_pd
 
-from .qhp_input import (QhpJsonPivotPoints, define_qhp_input)
+from dagster_examples.qhp.qhp_input import (QhpJsonPivotPoints, define_qhp_input)
 
 
 def unpack_row(row, fields):
@@ -188,3 +188,10 @@ def transform_practice_insurances(insurance, practices):
         df_data['data_json'] = json.dumps(json_rows)
 
     return pd.DataFrame(df_data)
+
+
+if __name__ == '__main__':
+    from dagster.embedded_cli import embedded_dagster_cli_main
+    import sys
+
+    embedded_dagster_cli_main(sys.argv, define_pipeline())
