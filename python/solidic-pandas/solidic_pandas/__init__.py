@@ -5,8 +5,10 @@ import check
 
 from solidic.definitions import Solid
 from .definitions import (
-    create_solidic_pandas_csv_input, create_solidic_pandas_csv_output,
-    create_solid_pandas_dependency_input
+    create_solidic_pandas_csv_input,
+    create_solidic_pandas_csv_output,
+    create_solid_pandas_dependency_input,
+    create_solidic_pandas_parquet_output,
 )
 
 
@@ -37,7 +39,10 @@ def tabular_solid(*args, inputs, transform_fn=None, **kwargs):
         transform_fn = _default_passthrough_transform
 
     return Solid(
-        inputs=inputs, output_type_defs=[csv_output()], transform_fn=transform_fn, **kwargs
+        inputs=inputs,
+        output_type_defs=[csv_output(), parquet_output()],
+        transform_fn=transform_fn,
+        **kwargs
     )
 
 
@@ -53,3 +58,7 @@ def csv_input(name):
 
 def csv_output():
     return create_solidic_pandas_csv_output()
+
+
+def parquet_output():
+    return create_solidic_pandas_parquet_output()

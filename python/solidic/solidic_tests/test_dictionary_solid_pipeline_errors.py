@@ -5,7 +5,8 @@ import check
 from solidic.definitions import (Solid, SolidInputDefinition, SolidOutputTypeDefinition)
 from solidic.graph import SolidRepo
 from solidic.execution import (
-    pipeline_repo, SolidExecutionContext, output_pipeline, OutputConfig, SolidExecutionFailureReason
+    execute_pipeline, SolidExecutionContext, output_pipeline, OutputConfig,
+    SolidExecutionFailureReason
 )
 
 
@@ -112,44 +113,44 @@ def create_root_output_failure_solid(name):
 
 def test_transform_failure_pipeline():
     repo = SolidRepo(solids=[create_root_transform_failure_solid('failing')])
-    steps = pipeline_repo_collect(create_test_context(), repo, {'failing_input': {}})
+    results = pipeline_repo_collect(create_test_context(), repo, {'failing_input': {}})
 
-    assert len(steps) == 1
-    assert not steps[0].success
-    assert steps[0].exception
+    assert len(results) == 1
+    assert not results[0].success
+    assert results[0].exception
 
 
 def test_input_failure_pipeline():
     repo = SolidRepo(solids=[create_root_input_failure_solid('failing_input')])
-    steps = pipeline_repo_collect(create_test_context(), repo, {'failing_input_input': {}})
+    results = pipeline_repo_collect(create_test_context(), repo, {'failing_input_input': {}})
 
-    assert len(steps) == 1
-    assert not steps[0].success
-    assert steps[0].exception
+    assert len(results) == 1
+    assert not results[0].success
+    assert results[0].exception
 
 
 def test_output_failure_pipeline():
     repo = SolidRepo(solids=[create_root_output_failure_solid('failing_output')])
 
-    steps = []
-    for step in output_pipeline(
+    results = []
+    for result in output_pipeline(
         create_test_context(),
         repo,
         input_arg_dicts={'failing_output_input': {}},
         output_configs=[OutputConfig(name='failing_output', output_type='CUSTOM', output_args={})]
     ):
-        steps.append(copy.deepcopy(step))
+        results.append(copy.deepcopy(result))
 
-    assert len(steps) == 1
-    assert not steps[0].success
-    assert steps[0].exception
+    assert len(results) == 1
+    assert not results[0].success
+    assert results[0].exception
 
 
 def pipeline_repo_collect(context, repo, input_arg_dicts):
-    steps = []
-    for step in pipeline_repo(context, repo, input_arg_dicts):
-        steps.append(copy.deepcopy(step))
-    return steps
+    results = []
+    for result in execute_pipeline(context, repo, input_arg_dicts):
+        results.append(copy.deepcopy(result))
+    return results
 
 
 def test_failure_midstream():
@@ -178,14 +179,13 @@ def test_failure_midstream():
     )
 
     input_arg_dicts = {'A_input': {}, 'B_input': {}}
-    steps = pipeline_repo_collect(
+    results = pipeline_repo_collect(
         create_test_context(),
         SolidRepo(solids=[node_a, node_b, solid]),
         input_arg_dicts=input_arg_dicts,
     )
 
-    assert len(steps) == 3
-    assert steps[0].success
-    assert steps[1].success
-    assert not steps[2].success
-    assert steps[2].reason == SolidExecutionFailureReason.USER_CODE_ERROR
+    assert results[0].success
+    assert results[1].success
+    assert not results[2].success
+    assert results[2].reason == SolidExecutionFailureReason.USER_CODE_ERROR

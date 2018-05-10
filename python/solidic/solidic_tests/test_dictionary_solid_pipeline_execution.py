@@ -4,7 +4,7 @@ import check
 
 from solidic.definitions import (SolidInputDefinition, Solid, SolidOutputTypeDefinition)
 from solidic.graph import (create_adjacency_lists, SolidGraph, SolidRepo)
-from solidic.execution import (pipeline_repo, SolidExecutionContext, SolidExecutionResult)
+from solidic.execution import (execute_pipeline, SolidExecutionContext, SolidExecutionResult)
 
 # protected members
 # pylint: disable=W0212
@@ -225,7 +225,7 @@ def transform_called(name):
     return {name: 'transform_called'}
 
 
-def assert_equivalent_steps(left, right):
+def assert_equivalent_results(left, right):
     check.inst_param(left, 'left', SolidExecutionResult)
     check.inst_param(right, 'right', SolidExecutionResult)
 
@@ -235,12 +235,12 @@ def assert_equivalent_steps(left, right):
     assert left.materialized_output == right.materialized_output
 
 
-def assert_all_steps_equivalent(expected_steps, result_steps):
-    check.list_param(expected_steps, 'expected_steps', of_type=SolidExecutionResult)
-    check.list_param(result_steps, 'result_steps', of_type=SolidExecutionResult)
-    assert len(expected_steps) == len(result_steps)
-    for expected, result in zip(expected_steps, result_steps):
-        assert_equivalent_steps(expected, result)
+def assert_all_results_equivalent(expected_results, result_results):
+    check.list_param(expected_results, 'expected_results', of_type=SolidExecutionResult)
+    check.list_param(result_results, 'result_results', of_type=SolidExecutionResult)
+    assert len(expected_results) == len(result_results)
+    for expected, result in zip(expected_results, result_results):
+        assert_equivalent_results(expected, result)
 
 
 def test_pipeline_execution_graph_diamond():
@@ -248,17 +248,19 @@ def test_pipeline_execution_graph_diamond():
 
     solid_repo = SolidRepo(solids=solid_graph.solids)
 
-    result_steps = list()
+    results = list()
 
-    for step in pipeline_repo(create_test_context(), solid_repo, input_arg_dicts={'A_input': {}}):
-        result_steps.append(copy.deepcopy(step))
+    for result in execute_pipeline(
+        create_test_context(), solid_repo, input_arg_dicts={'A_input': {}}
+    ):
+        results.append(copy.deepcopy(result))
 
-    assert result_steps[0].materialized_output[0] == input_set('A_input')
-    assert result_steps[0].materialized_output[1] == transform_called('A')
+    assert results[0].materialized_output[0] == input_set('A_input')
+    assert results[0].materialized_output[1] == transform_called('A')
 
-    assert result_steps[0].materialized_output == [input_set('A_input'), transform_called('A')]
+    assert results[0].materialized_output == [input_set('A_input'), transform_called('A')]
 
-    expected_steps = [
+    expected_results = [
         SolidExecutionResult(
             success=True,
             solid=solid_repo.solid_named('A'),
@@ -303,4 +305,4 @@ def test_pipeline_execution_graph_diamond():
         ),
     ]
 
-    assert_all_steps_equivalent(expected_steps, result_steps)
+    assert_all_results_equivalent(expected_results, results)

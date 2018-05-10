@@ -3,8 +3,9 @@ import pandas as pd
 import check
 
 from solidic.execution import (
-    materialize_input, execute_solid, SolidExecutionContext, pipeline_output,
-    pipeline_output_in_memory, pipeline_repo, pipeline_single_output, OutputConfig, output_pipeline
+    materialize_input, output_solid, SolidExecutionContext, pipeline_output,
+    pipeline_output_in_memory, execute_pipeline, execute_solid_in_pipeline, OutputConfig,
+    output_pipeline
 )
 from solidic.types import SolidPath
 from solidic.definitions import (Solid, SolidOutputTypeDefinition)
@@ -55,7 +56,7 @@ def test_pandas_solid():
         output_type_defs=[custom_output_type_def],
     )
 
-    execute_solid(
+    output_solid(
         create_test_context(),
         single_solid,
         input_arg_dicts={'num_csv': {
@@ -97,7 +98,7 @@ def test_pandas_csv_to_csv():
 
 def execute_transform_in_temp_file(solid):
     with get_temp_file_name() as temp_file_name:
-        result = execute_solid(
+        result = output_solid(
             create_test_context(),
             solid,
             input_arg_dicts={'num_csv': {
@@ -297,11 +298,11 @@ def test_pandas_in_memory_diamond_pipeline():
     context = create_test_context()
     input_args = {'num_csv': {'path': script_relative_path('num.csv')}}
 
-    output_df = pipeline_single_output(
+    result = execute_solid_in_pipeline(
         context, create_diamond_repo(), input_arg_dicts=input_args, output_name='sum_mult_table'
     )
 
-    assert output_df.to_dict('list') == {
+    assert result.materialized_output.to_dict('list') == {
         'num1': [1, 3],
         'num2': [2, 4],
         'sum': [3, 7],
@@ -318,7 +319,7 @@ def test_pandas_output_csv_pipeline():
 
     with get_temp_file_name() as temp_file_name:
 
-        for _step in output_pipeline(
+        for _result in output_pipeline(
             context,
             repo=create_diamond_repo(),
             input_arg_dicts=input_args,
@@ -360,12 +361,12 @@ def test_pandas_multiple_inputs():
         transform_fn=transform_fn
     )
 
-    output_df = pipeline_single_output(
+    output_df = execute_solid_in_pipeline(
         context,
         SolidRepo(solids=[double_sum]),
         input_arg_dicts=input_args,
         output_name='double_sum'
-    )
+    ).materialized_output
 
     assert not output_df.empty
 

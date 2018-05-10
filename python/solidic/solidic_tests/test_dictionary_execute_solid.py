@@ -6,7 +6,7 @@ from solidic.definitions import (
 )
 
 from solidic.execution import (
-    execute_solid, SolidExecutionResult, SolidExecutionFailureReason, SolidExecutionContext
+    output_solid, SolidExecutionResult, SolidExecutionFailureReason, SolidExecutionContext
 )
 
 
@@ -43,7 +43,7 @@ def test_execute_solid_no_args():
         output_type_defs=[custom_output],
     )
 
-    execute_solid(
+    output_solid(
         create_test_context(),
         single_solid,
         input_arg_dicts={'some_input': {}},
@@ -84,7 +84,7 @@ def test_execute_solid_with_args():
         output_type_defs=[create_noop_output(test_output)],
     )
 
-    execute_solid(
+    output_solid(
         create_test_context(),
         single_solid,
         input_arg_dicts={'some_input': {
@@ -114,7 +114,7 @@ def test_execute_solid_with_failed_input_expectation():
         output_type_defs=[create_noop_output(test_output)],
     )
 
-    solid_execution_result = execute_solid(
+    solid_execution_result = output_solid(
         create_test_context(),
         single_solid,
         input_arg_dicts={'some_input': {
@@ -147,7 +147,7 @@ def test_execute_solid_with_failed_output_expectation():
         output_expectations=[output_expectation],
     )
 
-    solid_execution_result = execute_solid(
+    solid_execution_result = output_solid(
         create_test_context(),
         single_solid,
         input_arg_dicts={'some_input': {
