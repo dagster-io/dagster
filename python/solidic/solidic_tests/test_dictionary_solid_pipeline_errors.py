@@ -2,8 +2,8 @@ import copy
 
 import check
 
+import solidic
 from solidic.definitions import (Solid, SolidInputDefinition, SolidOutputTypeDefinition)
-from solidic.graph import SolidRepo
 from solidic.execution import (
     execute_pipeline, SolidExecutionContext, output_pipeline, OutputConfig,
     SolidExecutionFailureReason
@@ -112,8 +112,8 @@ def create_root_output_failure_solid(name):
 
 
 def test_transform_failure_pipeline():
-    repo = SolidRepo(solids=[create_root_transform_failure_solid('failing')])
-    results = pipeline_repo_collect(create_test_context(), repo, {'failing_input': {}})
+    pipeline = solidic.pipeline(solids=[create_root_transform_failure_solid('failing')])
+    results = pipeline_collect(create_test_context(), pipeline, {'failing_input': {}})
 
     assert len(results) == 1
     assert not results[0].success
@@ -121,8 +121,8 @@ def test_transform_failure_pipeline():
 
 
 def test_input_failure_pipeline():
-    repo = SolidRepo(solids=[create_root_input_failure_solid('failing_input')])
-    results = pipeline_repo_collect(create_test_context(), repo, {'failing_input_input': {}})
+    pipeline = solidic.pipeline(solids=[create_root_input_failure_solid('failing_input')])
+    results = pipeline_collect(create_test_context(), pipeline, {'failing_input_input': {}})
 
     assert len(results) == 1
     assert not results[0].success
@@ -130,12 +130,12 @@ def test_input_failure_pipeline():
 
 
 def test_output_failure_pipeline():
-    repo = SolidRepo(solids=[create_root_output_failure_solid('failing_output')])
+    pipeline = solidic.pipeline(solids=[create_root_output_failure_solid('failing_output')])
 
     results = []
     for result in output_pipeline(
         create_test_context(),
-        repo,
+        pipeline,
         input_arg_dicts={'failing_output_input': {}},
         output_configs=[OutputConfig(name='failing_output', output_type='CUSTOM', output_args={})]
     ):
@@ -146,9 +146,9 @@ def test_output_failure_pipeline():
     assert results[0].exception
 
 
-def pipeline_repo_collect(context, repo, input_arg_dicts):
+def pipeline_collect(context, pipeline, input_arg_dicts):
     results = []
-    for result in execute_pipeline(context, repo, input_arg_dicts):
+    for result in execute_pipeline(context, pipeline, input_arg_dicts):
         results.append(copy.deepcopy(result))
     return results
 
@@ -179,9 +179,9 @@ def test_failure_midstream():
     )
 
     input_arg_dicts = {'A_input': {}, 'B_input': {}}
-    results = pipeline_repo_collect(
+    results = pipeline_collect(
         create_test_context(),
-        SolidRepo(solids=[node_a, node_b, solid]),
+        solidic.pipeline(solids=[node_a, node_b, solid]),
         input_arg_dicts=input_arg_dicts,
     )
 

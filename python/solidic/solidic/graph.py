@@ -171,7 +171,7 @@ class SolidGraph:
         return SolidGraph([self._solid_dict[name] for name in involved_solids])
 
 
-class SolidRepo:
+class SolidPipeline:
     def __init__(self, solids):
         self.solids = check.list_param(solids, 'solids', of_type=Solid)
         solid_names = set([solid.name for solid in self.solids])

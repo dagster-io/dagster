@@ -8,9 +8,10 @@ import check
 
 def script_relative_path(file_path):
     '''
-    Useful for testing repos. Place a repo directory within your tests
-    directly and you can load a handle to query and manipulate it. This
-    will be relative to the *caller* of script_relative_handle.
+    Useful for testing with local files. Use a path relative to where the 
+    test resides and this function will return the absolute path 
+    of that file. Otherwise it will be relative to script that
+    ran the test
     '''
     # from http://bit.ly/2snyC6s
 
