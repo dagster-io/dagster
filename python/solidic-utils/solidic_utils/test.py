@@ -1,15 +1,15 @@
-from contextlib import contextmanager
 import inspect
 import os
 import tempfile
+from contextlib import contextmanager
 
 import check
 
 
 def script_relative_path(file_path):
     '''
-    Useful for testing with local files. Use a path relative to where the 
-    test resides and this function will return the absolute path 
+    Useful for testing with local files. Use a path relative to where the
+    test resides and this function will return the absolute path
     of that file. Otherwise it will be relative to script that
     ran the test
     '''

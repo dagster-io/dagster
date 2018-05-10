@@ -8,7 +8,7 @@ import solidic
 from .flatten import flatten_json_to_dataframes
 
 
-class QhpJsonPivotPoints:
+class QhpJsonPivotPoints(Enum):
     PROVIDERS = '@.*'
     ADDRESSES = '@.*.addresses.*'
     NAMES = '@.*.name'
@@ -25,8 +25,7 @@ qhp_json_pivot_points = [
 ]
 
 
-def define_qhp_input(input_name, table_field_expr):
-    check.str_param(input_name, 'input_name')
+def define_qhp_input(table_field_expr):
     check.str_param(table_field_expr, 'table_field_expr')
 
     def flatten_table_field(arg_dict):
@@ -38,6 +37,6 @@ def define_qhp_input(input_name, table_field_expr):
         return df
 
     return solidic.file_input_definition(
-        name=input_name,
+        name='qhp_json_input',
         input_fn=flatten_table_field,
     )

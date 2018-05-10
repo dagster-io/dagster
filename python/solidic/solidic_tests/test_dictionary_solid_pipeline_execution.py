@@ -1,3 +1,4 @@
+import copy
 import pytest
 
 import check
@@ -29,9 +30,6 @@ def _default_passthrough_transform(*args, **kwargs):
 
 def create_dep_input_fn(name):
     return lambda arg_dict: {name: 'input_set'}
-
-
-import copy
 
 
 def create_solid_with_deps(name, *solid_deps):

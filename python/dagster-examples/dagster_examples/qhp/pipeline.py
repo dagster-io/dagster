@@ -7,20 +7,12 @@ from .qhp_input import (define_qhp_input, QhpJsonPivotPoints)
 def define_pipeline():
     plans = solidic_pd.dataframe_solid(
         name='plans',
-        inputs=[
-            define_qhp_input(
-                input_name='qhp_json_input', table_field_expr=QhpJsonPivotPoints.PLANS
-            )
-        ],
+        inputs=[define_qhp_input(table_field_expr=QhpJsonPivotPoints.PLANS)],
     )
 
     plan_years = solidic_pd.dataframe_solid(
         name='plan_years',
-        inputs=[
-            define_qhp_input(
-                input_name='qhp_json_input', table_field_expr=QhpJsonPivotPoints.PLAN_YEARS
-            )
-        ],
+        inputs=[define_qhp_input(table_field_expr=QhpJsonPivotPoints.PLAN_YEARS)],
     )
 
     insurance = solidic_pd.dataframe_solid(
