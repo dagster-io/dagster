@@ -419,6 +419,7 @@ def execute_pipeline(context, pipeline, input_arg_dicts, through_solids=None):
 
             selected_values = _select_keys(input_values, materialized_values, solid.input_names)
 
+            # This call does all input and output expectations, as well as the core transform
             materialized_output = pipeline_output_in_memory(context, solid, selected_values)
 
             if isinstance(materialized_output, SolidExecutionResult):

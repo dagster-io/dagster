@@ -1,20 +1,15 @@
 import pandas as pd
 
 import check
-
 import solidic
-
+from solidic.definitions import Solid, SolidOutputTypeDefinition
 from solidic.execution import (
-    materialize_input, output_solid, SolidExecutionContext, pipeline_output,
-    pipeline_output_in_memory, execute_pipeline, execute_solid_in_pipeline, OutputConfig,
-    output_pipeline
+    OutputConfig, SolidExecutionContext, execute_solid_in_pipeline, materialize_input,
+    output_pipeline, output_solid, pipeline_output, pipeline_output_in_memory
 )
-from solidic.definitions import (Solid, SolidOutputTypeDefinition)
 import solidic_pandas as solidic_pd
 from solidic_pandas.definitions import create_solidic_pandas_csv_input
-
-import solidic_utils
-from solidic_utils.test import (script_relative_path, get_temp_file_name)
+from solidic_utils.test import get_temp_file_name, script_relative_path
 
 
 def create_test_context():

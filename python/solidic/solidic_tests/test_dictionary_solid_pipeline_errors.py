@@ -5,8 +5,8 @@ import check
 import solidic
 from solidic.definitions import (Solid, SolidInputDefinition, SolidOutputTypeDefinition)
 from solidic.execution import (
-    execute_pipeline, SolidExecutionContext, output_pipeline, OutputConfig,
-    SolidExecutionFailureReason, execute_pipeline_and_collect
+    SolidExecutionContext, output_pipeline, OutputConfig, SolidExecutionFailureReason,
+    execute_pipeline_and_collect
 )
 
 
