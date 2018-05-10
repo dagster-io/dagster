@@ -52,3 +52,16 @@ def create_solidic_pandas_csv_output():
     return SolidOutputTypeDefinition(
         name='CSV', output_fn=output_fn_inst, argument_def_dict={'path': SolidPath}
     )
+
+
+def create_solidic_pandas_parquet_output():
+    def output_fn_inst(df, output_arg_dict):
+        check.inst_param(df, 'df', pd.DataFrame)
+        check.dict_param(output_arg_dict, 'output_arg_dict')
+        path = check.str_elem(output_arg_dict, 'path')
+
+        df.to_csv(path, index=False)
+
+    return SolidOutputTypeDefinition(
+        name='PARQUET', output_fn=output_fn_inst, argument_def_dict={'path': SolidPath}
+    )

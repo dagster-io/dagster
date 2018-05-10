@@ -314,7 +314,23 @@ def pipeline_output_in_memory(context, solid, materialized_inputs):
     return materialized_output
 
 
-def execute_solid(context, solid, input_arg_dicts, output_type, output_arg_dict):
+def execute_solid(context, solid, input_arg_dicts):
+    check.inst_param(context, 'context', SolidExecutionContext)
+    check.inst_param(solid, 'solid', Solid)
+    check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
+
+    results = list(execute_pipeline(context, SolidRepo(solids=[solid]), input_arg_dicts))
+
+    check.invariant(len(results) == 1, 'must be one result got ' + str(len(results)))
+
+    execution_result = results[0]
+
+    check.invariant(execution_result.name == solid.name)
+
+    return execution_result
+
+
+def output_solid(context, solid, input_arg_dicts, output_type, output_arg_dict):
     check.inst_param(context, 'context', SolidExecutionContext)
     check.inst_param(solid, 'solid', Solid)
     check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
@@ -332,7 +348,7 @@ def execute_solid(context, solid, input_arg_dicts, output_type, output_arg_dict)
         )
     )
 
-    check.invariant(len(results) == 1, 'must be one step got ' + str(len(results)))
+    check.invariant(len(results) == 1, 'must be one result got ' + str(len(results)))
 
     execution_result = results[0]
 
@@ -345,20 +361,20 @@ def _select_keys(ddict, keys):
     return {key: ddict[key] for key in keys}
 
 
-def pipeline_single_output(context, repo, input_arg_dicts, output_name):
+def execute_solid_in_pipeline(context, repo, input_arg_dicts, output_name):
     check.inst_param(context, 'context', SolidExecutionContext)
     check.inst_param(repo, 'repo', SolidRepo)
     check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
     check.str_param(output_name, 'output_name')
 
-    for step in pipeline_repo(context, repo, input_arg_dicts, [output_name]):
-        if step.name == output_name:
-            return step.materialized_output
+    for result in execute_pipeline(context, repo, input_arg_dicts, [output_name]):
+        if result.name == output_name:
+            return result
 
-    check.failed('Step ' + output_name + ' not found!')
+    check.failed('Result ' + output_name + ' not found!')
 
 
-def pipeline_repo(context, repo, input_arg_dicts, through_solids=None):
+def execute_pipeline(context, repo, input_arg_dicts, through_solids=None):
     check.inst_param(context, 'context', SolidExecutionContext)
     check.inst_param(repo, 'repo', SolidRepo)
     check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
@@ -431,27 +447,29 @@ def output_pipeline(context, repo, input_arg_dicts, output_configs):
 
     output_dict = {output_config.name: output_config for output_config in output_configs}
 
-    for step in pipeline_repo(
+    for result in execute_pipeline(
         context, repo, input_arg_dicts, through_solids=list(output_dict.keys())
     ):
-        if not step.success:
-            yield step
+        if not result.success:
+            yield result
             break
 
-        if step.name in output_dict:
-            output_type = output_dict[step.name].output_type
-            output_arg_dict = output_dict[step.name].output_args
-            output_type_def = step.solid.output_type_def_named(output_type)
+        if result.name in output_dict:
+            output_type = output_dict[result.name].output_type
+            output_arg_dict = output_dict[result.name].output_args
+            output_type_def = result.solid.output_type_def_named(output_type)
             try:
-                execute_output(context, output_type_def, output_arg_dict, step.materialized_output)
+                execute_output(
+                    context, output_type_def, output_arg_dict, result.materialized_output
+                )
             except SolidExecutionError as see:
                 yield SolidExecutionResult(
                     success=False,
-                    solid=step.solid,
+                    solid=result.solid,
                     reason=SolidExecutionFailureReason.USER_CODE_ERROR,
                     exception=see,
-                    materialized_output=step.materialized_output,
+                    materialized_output=result.materialized_output,
                 )
                 break
 
-        yield step
+        yield result
