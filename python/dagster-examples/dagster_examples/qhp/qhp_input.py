@@ -8,7 +8,7 @@ import solidic
 from .flatten import flatten_json_to_dataframes
 
 
-class QhpJsonPivotPoints(Enum):
+class QhpJsonPivotPoints:
     PROVIDERS = '@.*'
     ADDRESSES = '@.*.addresses.*'
     NAMES = '@.*.name'

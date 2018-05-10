@@ -66,3 +66,61 @@ def test_insurance_pipeline():
     assert result.success
     assert result.name == 'insurance'
     assert not result.materialized_output.empty
+
+
+def test_practices_pipeline():
+    pipeline = define_pipeline()
+
+    # this should only execute the solids necessary
+    # to produce practices. i.e. addresses, providers and practices
+    results = execute_pipeline_and_collect(
+        SolidExecutionContext(),
+        pipeline,
+        providers_771_args(),
+        through_solids=['practices'],
+    )
+
+    assert len(results) == 3
+
+    result_names = [result.name for result in results]
+
+    executed_list = ['addresses', 'providers', 'practices']
+
+    for executed in executed_list:
+        assert executed in result_names
+
+    for result in results:
+        assert result.success
+        assert not result.materialized_output.empty
+
+
+def test_practice_insurances_pipeline():
+    pipeline = define_pipeline()
+
+    results = execute_pipeline_and_collect(
+        SolidExecutionContext(),
+        pipeline,
+        providers_771_args(),
+        through_solids=['practice_insurances'],
+    )
+
+    assert len(results) == 7
+
+    result_names = [result.name for result in results]
+
+    executed_list = [
+        'addresses',
+        'providers',
+        'practices',
+        'plans',
+        'plan_years',
+        'insurance',
+        'practice_insurances',
+    ]
+
+    for executed in executed_list:
+        assert executed in result_names
+
+    for result in results:
+        assert result.success
+        assert not result.materialized_output.empty
