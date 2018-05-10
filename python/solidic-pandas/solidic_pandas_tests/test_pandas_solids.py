@@ -13,7 +13,8 @@ from solidic.graph import SolidRepo
 import solidic_pandas as solidic_pd
 from solidic_pandas.definitions import create_solidic_pandas_csv_input
 
-from .test_utils import (script_relative_path, get_temp_file_name)
+import solidic_utils
+from solidic_utils.test import (script_relative_path, get_temp_file_name)
 
 
 def create_test_context():
