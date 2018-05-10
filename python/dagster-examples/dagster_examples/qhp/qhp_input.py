@@ -1,3 +1,4 @@
+from enum import Enum
 import json
 
 import check
@@ -6,12 +7,21 @@ import solidic
 
 from .flatten import flatten_json_to_dataframes
 
+
+class QhpJsonPivotPoints:
+    PROVIDERS = '@.*'
+    ADDRESSES = '@.*.addresses.*'
+    NAMES = '@.*.name'
+    PLANS = '@.*.plans.*'
+    PLAN_YEARS = '@.*.plans.*.years.*'
+
+
 qhp_json_pivot_points = [
-    '@.*',
-    '@.*.addresses.*',
-    '@.*.name',
-    '@.*.plans.*',
-    '@.*.plans.*.years.*',
+    QhpJsonPivotPoints.PROVIDERS,
+    QhpJsonPivotPoints.ADDRESSES,
+    QhpJsonPivotPoints.NAMES,
+    QhpJsonPivotPoints.PLANS,
+    QhpJsonPivotPoints.PLAN_YEARS,
 ]
 
 
