@@ -9,6 +9,15 @@ from solidic.execution import SolidExecutionContext
 from solidic.types import (SolidPath, SolidString)
 
 
+def _read_df(path, frmt):
+    if frmt == 'CSV':
+        return pd.read_csv(path)
+    elif frmt == 'PARQUET':
+        return pd.read_parquet(path)
+    else:
+        check.not_implemented('Format {frmt} not supported'.format(frmt=frmt))
+
+
 def create_solid_pandas_dependency_input(solid):
     check.inst_param(solid, 'solid', Solid)
 
@@ -17,12 +26,11 @@ def create_solid_pandas_dependency_input(solid):
         path = check.str_elem(arg_dict, 'path')
         frmt = check.str_elem(arg_dict, 'format')
 
-        if frmt == 'CSV':
-            return pd.read_csv(path)
-        elif frmt == 'PARQUET':
-            return pd.read_parquet(path)
-        else:
-            check.not_implemented('Format {frmt} not supported'.format(frmt=frmt))
+        df = _read_df(path, frmt)
+
+        context.info('CSV input has {N} rows', N=df.shape[0])
+
+        return df
 
     return SolidInputDefinition(
         name=solid.name,
@@ -42,7 +50,9 @@ def create_solidic_pandas_csv_input(name, delimiter=',', **read_csv_kwargs):
     def check_path(context, path):
         check.inst_param(context, 'context', SolidExecutionContext)
         check.str_param(path, 'path')
-        return pd.read_csv(path, delimiter=delimiter, **read_csv_kwargs)
+        df = pd.read_csv(path, delimiter=delimiter, **read_csv_kwargs)
+        context.info('CSV input has {N} rows', N=df.shape[0])
+        return df
 
     return create_solidic_single_file_input(name, check_path)
 
