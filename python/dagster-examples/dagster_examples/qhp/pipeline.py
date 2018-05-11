@@ -4,6 +4,8 @@ from collections import defaultdict
 import numpy as np
 import pandas as pd
 
+import check
+
 import solidic
 import solidic_pandas as solidic_pd
 
@@ -58,6 +60,11 @@ def define_pipeline():
         inputs=[solidic_pd.csv_input('languages_csv', delimiter='|')],
     )
 
+    specialities = solidic_pd.dataframe_solid(
+        name='specialities',
+        inputs=[solidic_pd.csv_input('specialities_csv')],
+    )
+
     insurance = solidic_pd.dataframe_solid(
         name='insurance',
         transform_fn=insurance_tranform,
@@ -73,6 +80,16 @@ def define_pipeline():
         inputs=[
             solidic_pd.depends_on(addresses),
             solidic_pd.depends_on(providers),
+        ]
+    )
+
+    provider_languages_specialities = solidic_pd.dataframe_solid(
+        name='provider_languages_specialities',
+        transform_fn=provider_languages_specialities_transform,
+        inputs=[
+            solidic_pd.depends_on(providers),
+            solidic_pd.depends_on(specialities),
+            solidic_pd.depends_on(languages),
         ]
     )
 
@@ -97,8 +114,10 @@ def define_pipeline():
             addresses,
             providers,
             languages,
+            specialities,
             insurance,
             practices,
+            provider_languages_specialities,
             practice_insurances,
             names,
         ]
@@ -200,6 +219,59 @@ def transform_practice_insurances(insurance, practices):
         df_data['data_json'] = json.dumps(json_rows)
 
     return pd.DataFrame(df_data)
+
+
+def map_languages(values_str, language_dict):
+    try:
+        values = json.loads(values_str)
+    except TypeError:
+        return []
+
+    try:
+        return [language_dict[v] for v in values]
+    except:
+        return []
+
+
+def create_language_dict(languages_df):
+    language_dict = {}
+    for _i, row in languages_df.iterrows():
+        language_dict[row['language_name']] = row['iso639_3_code']
+    return language_dict
+
+
+def provider_languages_specialities_transform(providers, specialities, languages):
+    check.inst_param(specialities, 'specialities', pd.DataFrame)  # kill warning
+
+    expected_columns = [
+        'gender',
+        'languages',
+        'npi',
+        'specialty',
+        'last_updated_on',
+    ]
+
+    gender_map = {
+        'Male': 'M',
+        'Female': 'F',
+        'M': 'M',
+        'F': 'F',
+        'Other': 'Other',
+        '': None,
+        None: None,
+        np.nan: None,
+    }
+
+    output_df = providers[expected_columns + ['id_']][providers["type"] == "INDIVIDUAL"]
+    output_df.rename(columns={'id_': 'qhp_provider_id'}, inplace=True)
+
+    output_df['gender'] = output_df['gender'].map(lambda x: gender_map[x])
+
+    #Replace languages with ISO codes
+    language_dict = create_language_dict(languages)
+    output_df['languages'] = output_df['languages'].map(lambda x: map_languages(x, language_dict))
+
+    return output_df
 
 
 if __name__ == '__main__':

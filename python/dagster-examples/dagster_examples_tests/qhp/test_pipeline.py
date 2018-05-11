@@ -147,3 +147,66 @@ def test_languages_pipeline():
         'SK_Language', 'ISO639-3Code', 'ISO639-2BCode', 'ISO639-2TCode', 'ISO639-1Code',
         'LanguageName', 'Scope', 'Type', 'MacroLanguageISO639-3Code', 'MacroLanguageName', 'IsChild'
     ]
+
+
+def test_specialities_pipeline():
+    pipeline = define_pipeline()
+
+    result = execute_solid_in_pipeline(
+        SolidExecutionContext(),
+        pipeline,
+        input_arg_dicts={
+            'specialities_csv': {
+                'path': script_relative_path('betterdoctor_qhp_specialities.csv')
+            }
+        },
+        output_name='specialities',
+    )
+
+    assert result.success
+    df = result.materialized_output
+    assert list(df.columns) == [
+        'betterdoctor_uid', 'client_name_org', 'client_id', 'client_name', 'mappable', 'Notes'
+    ]
+
+
+def all_external_arg_dicts():
+    return {
+        'languages_csv': {
+            'path': script_relative_path('Language.csv')
+        },
+        'specialities_csv': {
+            'path': script_relative_path('betterdoctor_qhp_specialities.csv')
+        },
+        'qhp_json_input': {
+            'path': script_relative_path('providers-771.json'),
+        },
+    }
+
+
+def test_provider_languages_specialities():
+    pipeline = define_pipeline()
+
+    results = execute_pipeline_and_collect(
+        SolidExecutionContext(),
+        pipeline,
+        input_arg_dicts=all_external_arg_dicts(),
+        through_solids=['provider_languages_specialities'],
+    )
+
+    assert len(results) == 4
+
+    for result in results:
+        assert result.success
+
+    result_names = [result.name for result in results]
+
+    executed_list = [
+        'providers',
+        'languages',
+        'specialities',
+        'provider_languages_specialities',
+    ]
+
+    for executed in executed_list:
+        assert executed in result_names
