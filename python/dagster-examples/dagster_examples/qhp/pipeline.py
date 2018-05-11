@@ -236,7 +236,7 @@ def map_languages(values_str, language_dict):
 def create_language_dict(languages_df):
     language_dict = {}
     for _i, row in languages_df.iterrows():
-        language_dict[row['language_name']] = row['iso639_3_code']
+        language_dict[row['LanguageName']] = row['ISO639-3Code']
     return language_dict
 
 
