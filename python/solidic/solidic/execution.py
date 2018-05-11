@@ -1,4 +1,4 @@
-from collections import namedtuple
+from collections import (namedtuple, OrderedDict)
 from contextlib import contextmanager
 import copy
 from enum import Enum
@@ -40,7 +40,57 @@ class SolidExecutionError(SolidError):
 
 class SolidExecutionContext:
     def __init__(self, loggers=None, log_level=ERROR):
-        self.logger = CompositeLogger(loggers=loggers, level=log_level)
+        self._logger = CompositeLogger(loggers=loggers, level=log_level)
+        self._context_dict = OrderedDict()
+
+    def _maybe_quote(self, val):
+        if ' ' in val:
+            return '"{val}"'.format(val=val)
+        return val
+
+    def _log(self, method, msg, frmtargs):
+        check.str_param(method, 'method')
+        check.str_param(msg, 'msg')
+        check.dict_param(frmtargs, 'frmtargs')
+        kv_message = ' '.join(
+            [
+                '{key}={value}'.format(key=key, value=self._maybe_quote(value))
+                for key, value in self._context_dict.items()
+            ]
+        )
+
+        full_message = 'message="{message}" {kv_message}'.format(
+            message=msg.format(**frmtargs), kv_message=kv_message
+        )
+        getattr(self._logger, method)(full_message, extra=self._context_dict)
+
+    def debug(self, msg, **frmtargs):
+        return self._log('debug', msg, frmtargs)
+
+    def info(self, msg, **frmtargs):
+        return self._log('info', msg, frmtargs)
+
+    def warn(self, msg, **frmtargs):
+        return self._log('warn', msg, frmtargs)
+
+    def error(self, msg, **frmtargs):
+        return self._log('error', msg, frmtargs)
+
+    def critical(self, msg, **frmtargs):
+        return self._log('critical', msg, frmtargs)
+
+    @contextmanager
+    def value(self, key, value):
+        check.str_param(key, 'key')
+        check.str_param(value, 'value')
+
+        check.invariant(not key in self._context_dict, 'Should not be in context')
+
+        self._context_dict[key] = value
+
+        yield
+
+        self._context_dict.pop(key)
 
 
 class SolidExecutionResult:
@@ -85,40 +135,39 @@ def materialize_input(context, input_definition, arg_dict):
     check.inst_param(input_definition, 'input_defintion', SolidInputDefinition)
     check.dict_param(arg_dict, 'arg_dict', key_type=str)
 
-    expected_args = set(input_definition.argument_def_dict.keys())
-    received_args = set(arg_dict.keys())
-    if expected_args != received_args:
-        raise SolidTypeError(
-            'Argument mismatch in input {input_name}. Expected {expected} got {received}'.format(
-                input_name=input_definition.name,
-                expected=repr(expected_args),
-                received=repr(received_args),
-            )
-        )
-
-    for arg_name, arg_value in arg_dict.items():
-        arg_def_type = input_definition.argument_def_dict[arg_name]
-        if not arg_def_type.is_python_valid_value(arg_value):
+    with context.value('input', input_definition.name), context.value('arg_dict', str(arg_dict)):
+        expected_args = set(input_definition.argument_def_dict.keys())
+        received_args = set(arg_dict.keys())
+        if expected_args != received_args:
             raise SolidTypeError(
-                'Expected type {typename} for arg {arg_name} for {input_name} but got {arg_value}'.
+                'Argument mismatch in input {input_name}. Expected {expected} got {received}'.
                 format(
-                    typename=arg_def_type.name,
-                    arg_name=arg_name,
                     input_name=input_definition.name,
-                    arg_value=repr(arg_value),
+                    expected=repr(expected_args),
+                    received=repr(received_args),
                 )
             )
 
-    error_str = 'Error occured while loading input "{input_name}"'
-    with user_code_error_boundary(error_str, input_name=input_definition.name):
-        context.logger.info(
-            'Entering implementation of input %s with args %s', input_definition.name,
-            repr(arg_dict)
-        )
+        for arg_name, arg_value in arg_dict.items():
+            arg_def_type = input_definition.argument_def_dict[arg_name]
+            if not arg_def_type.is_python_valid_value(arg_value):
+                raise SolidTypeError(
+                    'Expected type {typename} for arg {arg_name} for {input_name} but got {arg_value}'.
+                    format(
+                        typename=arg_def_type.name,
+                        arg_name=arg_name,
+                        input_name=input_definition.name,
+                        arg_value=repr(arg_value),
+                    )
+                )
 
-        materialized_input = input_definition.input_fn(arg_dict)
+        error_str = 'Error occured while loading input "{input_name}"'
+        with user_code_error_boundary(error_str, input_name=input_definition.name):
+            context.info('Entering input implementation')
 
-        return materialized_input
+            materialized_input = input_definition.input_fn(arg_dict)
+
+            return materialized_input
 
 
 def execute_input_expectation(context, expectation_def, materialized_input):
@@ -196,6 +245,7 @@ def execute_output(context, output_type_def, output_arg_dict, materialized_outpu
 
     error_str = 'Error during execution of output'
     with user_code_error_boundary(error_str):
+        context.info('Entering output implementation')
         output_type_def.output_fn(materialized_output, output_arg_dict)
 
 
@@ -296,7 +346,7 @@ def pipeline_solid_in_memory(context, solid, materialized_inputs):
             failed_expectation_results=all_run_result.all_fails,
         )
 
-    context.logger.info('Executing core transform for solid %s', solid.name)
+    context.info('Executing core transform')
 
     materialized_output = execute_core_transform(context, solid.transform_fn, materialized_inputs)
 
@@ -396,7 +446,7 @@ def _execute_pipeline_solid_step(context, solid, input_arg_dicts, materialized_v
 
     input_values = {}
 
-    context.logger.info('About to materialize and gather all inputs for solid %s', solid.name)
+    context.info('About to materialize and gather all inputs')
 
     for inp in solid.inputs:
         if inp.name not in materialized_values and inp.name not in input_values:
@@ -453,9 +503,10 @@ def execute_pipeline(context, pipeline, input_arg_dicts, through_solids=None):
     for solid in execution_graph.topological_solids:
 
         try:
-            materialized_output = _execute_pipeline_solid_step(
-                context, solid, input_arg_dicts, materialized_values
-            )
+            with context.value('solid', solid.name):
+                materialized_output = _execute_pipeline_solid_step(
+                    context, solid, input_arg_dicts, materialized_values
+                )
 
             yield materialized_output
 
@@ -513,18 +564,19 @@ def output_pipeline(context, pipeline, input_arg_dicts, output_configs):
             output_type = output_dict[result.name].output_type
             output_arg_dict = output_dict[result.name].output_args
             output_type_def = result.solid.output_type_def_named(output_type)
-            try:
-                execute_output(
-                    context, output_type_def, output_arg_dict, result.materialized_output
-                )
-            except SolidExecutionError as see:
-                yield SolidExecutionResult(
-                    success=False,
-                    solid=result.solid,
-                    reason=SolidExecutionFailureReason.USER_CODE_ERROR,
-                    exception=see,
-                    materialized_output=result.materialized_output,
-                )
-                break
+            with context.value('solid', result.name):
+                try:
+                    execute_output(
+                        context, output_type_def, output_arg_dict, result.materialized_output
+                    )
+                except SolidExecutionError as see:
+                    yield SolidExecutionResult(
+                        success=False,
+                        solid=result.solid,
+                        reason=SolidExecutionFailureReason.USER_CODE_ERROR,
+                        exception=see,
+                        materialized_output=result.materialized_output,
+                    )
+                    break
 
         yield result
