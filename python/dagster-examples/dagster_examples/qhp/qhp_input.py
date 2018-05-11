@@ -1,4 +1,3 @@
-from enum import Enum
 import json
 
 import check
@@ -28,7 +27,7 @@ qhp_json_pivot_points = [
 def define_qhp_input(table_field_expr):
     check.str_param(table_field_expr, 'table_field_expr')
 
-    def flatten_table_field(arg_dict):
+    def flatten_table_field(_context, arg_dict):
         path = check.str_elem(arg_dict, 'path')
         with open(path) as file_obj:
             json_object = json.load(file_obj)

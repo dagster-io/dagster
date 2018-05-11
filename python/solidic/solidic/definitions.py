@@ -40,7 +40,10 @@ def create_solidic_single_file_input(name, single_file_fn):
     check.str_param(name, 'name')
     return SolidInputDefinition(
         name=name,
-        input_fn=lambda arg_dict: single_file_fn(path=check.str_elem(arg_dict, 'path')),
+        input_fn=lambda context, arg_dict: single_file_fn(
+            context=context,
+            path=check.str_elem(arg_dict, 'path')
+        ),
         argument_def_dict={'path': SolidPath}
     )
 

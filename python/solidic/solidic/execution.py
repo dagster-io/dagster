@@ -168,7 +168,7 @@ def materialize_input(context, input_definition, arg_dict):
         with user_code_error_boundary(error_str, input_name=input_definition.name):
             context.info('Entering input implementation')
 
-            materialized_input = input_definition.input_fn(arg_dict)
+            materialized_input = input_definition.input_fn(context, arg_dict)
 
             return materialized_input
 

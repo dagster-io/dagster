@@ -229,7 +229,7 @@ def map_languages(values_str, language_dict):
 
     try:
         return [language_dict[v] for v in values]
-    except:
+    except:  # pylint: disable=W0702
         return []
 
 
