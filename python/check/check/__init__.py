@@ -77,6 +77,13 @@ def inst(obj, ttype, desc=None):
     return obj
 
 
+def is_callable(obj):
+    if not callable(obj):
+        raise_with_traceback(CheckError('must be callable'))
+
+    return obj
+
+
 def not_none_param(obj, param_name):
     if obj is None:
         raise_with_traceback(

@@ -172,8 +172,10 @@ class SolidGraph:
 
 
 class SolidPipeline:
-    def __init__(self, solids):
+    def __init__(self, solids, name=None):
+        self.name = check.opt_str_param(name, 'name')
         self.solids = check.list_param(solids, 'solids', of_type=Solid)
+
         solid_names = set([solid.name for solid in self.solids])
         for solid in solids:
             for input_def in solid.inputs:
