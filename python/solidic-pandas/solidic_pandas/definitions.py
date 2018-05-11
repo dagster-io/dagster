@@ -28,7 +28,7 @@ def create_solid_pandas_dependency_input(solid):
 
         df = _read_df(path, frmt)
 
-        context.info('CSV input has {N} rows', N=df.shape[0])
+        context.metric('rows', df.shape[0])
 
         return df
 
@@ -51,7 +51,7 @@ def create_solidic_pandas_csv_input(name, delimiter=',', **read_csv_kwargs):
         check.inst_param(context, 'context', SolidExecutionContext)
         check.str_param(path, 'path')
         df = pd.read_csv(path, delimiter=delimiter, **read_csv_kwargs)
-        context.info('CSV input has {N} rows', N=df.shape[0])
+        context.metric('rows', df.shape[0])
         return df
 
     return create_solidic_single_file_input(name, check_path)

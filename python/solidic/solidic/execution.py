@@ -50,20 +50,21 @@ class SolidExecutionContext:
             return '"{val}"'.format(val=str_val)
         return str_val
 
-    def _log(self, method, msg, frmtargs):
-        check.str_param(method, 'method')
-        check.str_param(msg, 'msg')
-        check.dict_param(frmtargs, 'frmtargs')
-
-        kv_message = ' '.join(
+    def _kv_message(self):
+        return ' '.join(
             [
                 '{key}={value}'.format(key=key, value=self._maybe_quote(value))
                 for key, value in self._context_dict.items()
             ]
         )
 
+    def _log(self, method, msg, frmtargs):
+        check.str_param(method, 'method')
+        check.str_param(msg, 'msg')
+        check.dict_param(frmtargs, 'frmtargs')
+
         full_message = 'message="{message}" {kv_message}'.format(
-            message=msg.format(**frmtargs), kv_message=kv_message
+            message=msg.format(**frmtargs), kv_message=self._kv_message()
         )
         getattr(self._logger, method)(full_message, extra=self._context_dict)
 
@@ -94,6 +95,19 @@ class SolidExecutionContext:
         yield
 
         self._context_dict.pop(key)
+
+    def metric(self, key, value):
+        keys = list(self._context_dict.keys())
+        keys.append(key)
+        if isinstance(value, float):
+            format_string = 'metric:{metric_name}={value:.3f} {kv_message}'
+        else:
+            format_string = 'metric:{metric_name}={value} {kv_message}'
+
+        self._logger.info(
+            format_string.format(metric_name=key, value=value, kv_message=self._kv_message()),
+            extra=self._context_dict
+        )
 
 
 class SolidExecutionResult:
@@ -214,7 +228,7 @@ def execute_core_transform(context, solid_transform_fn, materialized_inputs):
         with time_execution_scope() as timer_result:
             materialized_output = solid_transform_fn(**materialized_inputs)
 
-        context.info('Core transform took {millis:.3f} ms', millis=timer_result.millis)
+        context.metric('core_transform_time_ms', timer_result.millis)
 
         check.invariant(
             not isinstance(materialized_output, SolidExecutionResult),

@@ -67,9 +67,9 @@ def embedded_dagster_execute_command(cxt, input, through):  # pylint: disable=W0
 
     input_arg_dicts = construct_arg_dicts(input_list)
 
-    for result in execute_pipeline(
-        create_dagster_context(), pipeline, input_arg_dicts, through_solids=through_list
-    ):
+    context = create_dagster_context()
+
+    for result in execute_pipeline(context, pipeline, input_arg_dicts, through_solids=through_list):
         if not result.success:
             raise result.exception
 
