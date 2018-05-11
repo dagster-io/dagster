@@ -15,7 +15,7 @@ def create_test_context():
 
 
 def test_basic_input_error_handling():
-    def input_fn_inst(_arg_dict):
+    def input_fn_inst(_context, _arg_dict):
         raise Exception('a user error')
 
     erroring_input = SolidInputDefinition(

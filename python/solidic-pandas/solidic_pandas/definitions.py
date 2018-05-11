@@ -5,13 +5,15 @@ import check
 from solidic.definitions import (
     SolidInputDefinition, SolidOutputTypeDefinition, Solid, create_solidic_single_file_input
 )
+from solidic.execution import SolidExecutionContext
 from solidic.types import (SolidPath, SolidString)
 
 
 def create_solid_pandas_dependency_input(solid):
     check.inst_param(solid, 'solid', Solid)
 
-    def dependency_input_fn(arg_dict):
+    def dependency_input_fn(context, arg_dict):
+        check.inst_param(context, 'context', SolidExecutionContext)
         path = check.str_elem(arg_dict, 'path')
         frmt = check.str_elem(arg_dict, 'format')
 
@@ -37,7 +39,8 @@ def create_solidic_pandas_csv_input(name, delimiter=',', **read_csv_kwargs):
     check.str_param(name, 'name')
     check.str_param(delimiter, 'delimiter')
 
-    def check_path(path):
+    def check_path(context, path):
+        check.inst_param(context, 'context', SolidExecutionContext)
         check.str_param(path, 'path')
         return pd.read_csv(path, delimiter=delimiter, **read_csv_kwargs)
 

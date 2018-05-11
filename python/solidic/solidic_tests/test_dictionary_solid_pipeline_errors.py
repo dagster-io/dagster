@@ -36,7 +36,7 @@ def create_failing_output_def():
 def create_input_set_input_def(input_name):
     return SolidInputDefinition(
         input_name,
-        input_fn=lambda arg_dict: [{input_name: 'input_set'}],
+        input_fn=lambda context, arg_dict: [{input_name: 'input_set'}],
         argument_def_dict={},
     )
 
@@ -61,7 +61,7 @@ def create_root_transform_failure_solid(name):
     input_name = name + '_input'
     inp = SolidInputDefinition(
         input_name,
-        input_fn=lambda arg_dict: [{input_name: 'input_set'}],
+        input_fn=lambda context, arg_dict: [{input_name: 'input_set'}],
         argument_def_dict={},
     )
 

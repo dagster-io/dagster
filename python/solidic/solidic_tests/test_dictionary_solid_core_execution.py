@@ -16,7 +16,7 @@ def create_test_context():
 def test_materialize_input():
     expected_output = [{'data_key': 'data_value'}]
     some_input = SolidInputDefinition(
-        name='some_input', input_fn=lambda arg_dict: expected_output, argument_def_dict={}
+        name='some_input', input_fn=lambda context, arg_dict: expected_output, argument_def_dict={}
     )
 
     output = materialize_input(create_test_context(), some_input, {})
@@ -26,7 +26,7 @@ def test_materialize_input():
 
 def test_materialize_input_arg_mismatch():
     some_input = SolidInputDefinition(
-        name='some_input', input_fn=lambda arg_dict: [], argument_def_dict={}
+        name='some_input', input_fn=lambda context, arg_dict: [], argument_def_dict={}
     )
 
     with pytest.raises(SolidTypeError):
@@ -34,7 +34,7 @@ def test_materialize_input_arg_mismatch():
 
     some_input_with_arg = SolidInputDefinition(
         name='some_input_with_arg',
-        input_fn=lambda arg_dict: [],
+        input_fn=lambda context, arg_dict: [],
         argument_def_dict={'in_arg': SolidString}
     )
 
@@ -45,7 +45,7 @@ def test_materialize_input_arg_mismatch():
 def test_materialize_input_arg_type_mismatch():
     some_input_with_arg = SolidInputDefinition(
         name='some_input_with_arg',
-        input_fn=lambda arg_dict: [],
+        input_fn=lambda context, arg_dict: [],
         argument_def_dict={'in_arg': SolidString}
     )
 
@@ -56,7 +56,7 @@ def test_materialize_input_arg_type_mismatch():
 def test_materialize_output():
     some_input = SolidInputDefinition(
         name='some_input',
-        input_fn=lambda arg_dict: [{'data_key': 'data_value'}],
+        input_fn=lambda context, arg_dict: [{'data_key': 'data_value'}],
         argument_def_dict={},
     )
 
@@ -89,7 +89,7 @@ def test_materialize_output():
 def test_materialize_input_with_args():
     some_input = SolidInputDefinition(
         name='some_input',
-        input_fn=lambda arg_dict: [{'key': arg_dict['str_arg']}],
+        input_fn=lambda context, arg_dict: [{'key': arg_dict['str_arg']}],
         argument_def_dict={'str_arg': SolidString}
     )
 

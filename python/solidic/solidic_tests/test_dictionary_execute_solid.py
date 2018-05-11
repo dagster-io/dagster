@@ -17,7 +17,7 @@ def create_test_context():
 def test_execute_solid_no_args():
     some_input = SolidInputDefinition(
         name='some_input',
-        input_fn=lambda arg_dict: [{'data_key': 'data_value'}],
+        input_fn=lambda context, arg_dict: [{'data_key': 'data_value'}],
         argument_def_dict={}
     )
 
@@ -57,7 +57,7 @@ def test_execute_solid_no_args():
 def create_single_dict_input(expectations=None):
     return SolidInputDefinition(
         name='some_input',
-        input_fn=lambda arg_dict: [{'key': arg_dict['str_arg']}],
+        input_fn=lambda context, arg_dict: [{'key': arg_dict['str_arg']}],
         argument_def_dict={'str_arg': SolidString},
         expectations=expectations or [],
     )

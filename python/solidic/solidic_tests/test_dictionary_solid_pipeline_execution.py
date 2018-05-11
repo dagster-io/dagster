@@ -29,7 +29,7 @@ def _default_passthrough_transform(*args, **kwargs):
 
 
 def create_dep_input_fn(name):
-    return lambda arg_dict: {name: 'input_set'}
+    return lambda context, arg_dict: {name: 'input_set'}
 
 
 def create_solid_with_deps(name, *solid_deps):
@@ -63,7 +63,7 @@ def create_root_solid(name):
     input_name = name + '_input'
     inp = SolidInputDefinition(
         input_name,
-        input_fn=lambda arg_dict: [{input_name: 'input_set'}],
+        input_fn=lambda context, arg_dict: [{input_name: 'input_set'}],
         argument_def_dict={},
     )
 
