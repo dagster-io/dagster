@@ -1,3 +1,5 @@
+import os
+
 import pandas as pd
 
 import check
@@ -5,11 +7,12 @@ import solidic
 from solidic.definitions import Solid, SolidOutputTypeDefinition
 from solidic.execution import (
     OutputConfig, SolidExecutionContext, execute_solid_in_pipeline, materialize_input,
-    output_pipeline, output_solid, pipeline_solid, pipeline_solid_in_memory
+    output_pipeline, output_solid, pipeline_solid, pipeline_solid_in_memory,
+    output_pipeline_and_collect, execute_pipeline, execute_pipeline_and_collect
 )
 import solidic_pandas as solidic_pd
 from solidic_pandas.definitions import create_solidic_pandas_csv_input
-from solidic_utils.test import get_temp_file_name, script_relative_path
+from solidic_utils.test import (get_temp_file_name, get_temp_file_names, script_relative_path)
 
 
 def create_test_context():
@@ -312,8 +315,6 @@ def test_pandas_output_csv_pipeline():
     context = create_test_context()
     input_args = {'num_csv': {'path': script_relative_path('num.csv')}}
 
-    import os
-
     with get_temp_file_name() as temp_file_name:
 
         for _result in output_pipeline(
@@ -326,6 +327,79 @@ def test_pandas_output_csv_pipeline():
 
         assert os.path.exists(temp_file_name)
         output_df = pd.read_csv(temp_file_name)
+        assert output_df.to_dict('list') == {
+            'num1': [1, 3],
+            'num2': [2, 4],
+            'sum': [3, 7],
+            'mult': [2, 12],
+            'sum_mult': [6, 84],
+        }
+
+
+def _result_named(results, name):
+    for result in results:
+        if result.name == name:
+            return result
+
+    check.failed('could not find name')
+
+
+def test_pandas_output_intermediate_files():
+    context = create_test_context()
+    input_args = {'num_csv': {'path': script_relative_path('num.csv')}}
+    pipeline = create_diamond_pipeline()
+
+    with get_temp_file_names(3) as temp_tuple:
+        sum_file, mult_file, sum_mult_file = temp_tuple
+        subgraph_one_results = output_pipeline_and_collect(
+            context,
+            pipeline,
+            input_arg_dicts=input_args,
+            output_configs=[
+                OutputConfig(name='sum_table', output_type='CSV', output_args={'path': sum_file}),
+                OutputConfig(name='mult_table', output_type='CSV', output_args={'path': mult_file}),
+            ]
+        )
+
+        assert len(subgraph_one_results) == 3
+
+        expected_sum = {
+            'num1': [1, 3],
+            'num2': [2, 4],
+            'sum': [3, 7],
+        }
+
+        assert pd.read_csv(sum_file).to_dict('list') == expected_sum
+        assert _result_named(subgraph_one_results,
+                             'sum_table').materialized_output.to_dict('list') == expected_sum
+
+        expected_mult = {
+            'num1': [1, 3],
+            'num2': [2, 4],
+            'mult': [2, 12],
+        }
+        assert pd.read_csv(mult_file).to_dict('list') == expected_mult
+        assert _result_named(subgraph_one_results,
+                             'mult_table').materialized_output.to_dict('list') == expected_mult
+
+        subgraph_two_results = execute_pipeline_and_collect(
+            context,
+            pipeline,
+            input_arg_dicts={
+                'sum_table': {
+                    'path': sum_file,
+                    'format': 'CSV'
+                },
+                'mult_table': {
+                    'path': mult_file,
+                    'format': 'CSV'
+                },
+            },
+            through_solids=['sum_mult_table'],
+        )
+
+        assert len(subgraph_two_results) == 1
+        output_df = subgraph_two_results[0].materialized_output
         assert output_df.to_dict('list') == {
             'num1': [1, 3],
             'num2': [2, 4],

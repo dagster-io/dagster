@@ -458,6 +458,18 @@ def execute_pipeline_and_collect(context, pipeline, input_arg_dicts, through_sol
     return results
 
 
+def output_pipeline_and_collect(context, pipeline, input_arg_dicts, output_configs):
+    check.inst_param(context, 'context', SolidExecutionContext)
+    check.inst_param(pipeline, 'pipeline', SolidPipeline)
+    check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
+    check.list_param(output_configs, 'output_configs', of_type=OutputConfig)
+
+    results = []
+    for result in output_pipeline(context, pipeline, input_arg_dicts, output_configs):
+        results.append(copy.deepcopy(result))
+    return results
+
+
 def output_pipeline(context, pipeline, input_arg_dicts, output_configs):
     check.inst_param(context, 'context', SolidExecutionContext)
     check.inst_param(pipeline, 'pipeline', SolidPipeline)
