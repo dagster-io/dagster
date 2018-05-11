@@ -1,6 +1,24 @@
+import re
+
 import check
 
-from solidic.types import (SolidType, SolidPath)
+from .errors import SolidInvalidDefinition
+from .types import (SolidType, SolidPath)
+
+DISALLOWED_NAMES = set(['context'])
+
+
+def check_valid_name(name):
+    check.str_param(name, 'name')
+    if name in DISALLOWED_NAMES:
+        raise SolidInvalidDefinition('{name} is not allowed'.format(name=name))
+
+    regex = r'^[A-Za-z0-9_]+$'
+    if not re.match(regex, name):
+        raise SolidInvalidDefinition(
+            '{name} must be in regex {regex}'.format(name=name, regex=regex)
+        )
+    return name
 
 
 class SolidExpectationResult:
@@ -12,7 +30,7 @@ class SolidExpectationResult:
 
 class SolidExpectationDefinition:
     def __init__(self, name, expectation_fn):
-        self.name = check.str_param(name, 'name')
+        self.name = check_valid_name(name)
         self.expectation_fn = check.callable_param(expectation_fn, 'expectation_fn')
 
 
@@ -21,7 +39,7 @@ class SolidExpectationDefinition:
 # Input expectations that execute *before* the core transform
 class SolidInputDefinition:
     def __init__(self, name, input_fn, argument_def_dict, expectations=None, depends_on=None):
-        self.name = check.str_param(name, 'name')
+        self.name = check_valid_name(name)
         self.input_fn = check.callable_param(input_fn, 'input_fn')
         self.argument_def_dict = check.dict_param(
             argument_def_dict, 'argument_def_dict', key_type=str, value_type=SolidType
@@ -52,7 +70,7 @@ def create_solidic_single_file_input(name, single_file_fn):
 # The output computation itself
 class SolidOutputTypeDefinition:
     def __init__(self, name, output_fn, argument_def_dict):
-        self.name = check.str_param(name, 'name')
+        self.name = check_valid_name(name)
         self.output_fn = check.callable_param(output_fn, 'output_fn')
         self.argument_def_dict = check.dict_param(
             argument_def_dict, 'argument_def_dict', key_type=str, value_type=SolidType
@@ -64,7 +82,7 @@ class SolidOutputTypeDefinition:
 # The output
 class Solid:
     def __init__(self, name, inputs, transform_fn, output_type_defs, output_expectations=None):
-        self.name = check.str_param(name, 'name')
+        self.name = check_valid_name(name)
         self.inputs = check.list_param(inputs, 'inputs', of_type=SolidInputDefinition)
         self.transform_fn = check.callable_param(transform_fn, 'transform')
         self.output_type_defs = check.list_param(

@@ -141,7 +141,7 @@ def test_execute_solid_with_failed_output_expectation():
         return SolidExpectationResult(success=False)
 
     output_expectation = SolidExpectationDefinition(
-        name='output failure', expectation_fn=failing_expectation_fn
+        name='output_failure', expectation_fn=failing_expectation_fn
     )
 
     single_solid = Solid(
