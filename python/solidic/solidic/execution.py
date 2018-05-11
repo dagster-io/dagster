@@ -388,6 +388,42 @@ def execute_solid_in_pipeline(context, pipeline, input_arg_dicts, output_name):
     check.failed('Result ' + output_name + ' not found!')
 
 
+def _execute_pipeline_solid_step(context, solid, input_arg_dicts, materialized_values):
+    # The value produce by an inputs is potentially different per solid.
+    # This is allowed so that two solids that do different materialization of the
+    # same exact input (e.g. the same file) don't have to create additional solids
+    # to account for this.
+
+    input_values = {}
+
+    context.logger.info('About to materialize and gather all inputs for solid %s', solid.name)
+
+    for inp in solid.inputs:
+        if inp.name not in materialized_values and inp.name not in input_values:
+            materialized = materialize_input(context, inp, input_arg_dicts[inp.name])
+            input_values[inp.name] = materialized
+
+    selected_values = _select_keys(input_values, materialized_values, solid.input_names)
+
+    # This call does all input and output expectations, as well as the core transform
+    materialized_output = pipeline_solid_in_memory(context, solid, selected_values)
+
+    if isinstance(materialized_output, SolidExecutionResult):
+        check.invariant(not materialized_output.success, 'early return should only be failure')
+        return materialized_output
+
+    check.invariant(solid.name not in materialized_values, 'should be not in materialized values')
+
+    materialized_values[solid.name] = materialized_output
+
+    return SolidExecutionResult(
+        success=True,
+        solid=solid,
+        materialized_output=materialized_values[solid.name],
+        exception=None
+    )
+
+
 def execute_pipeline(context, pipeline, input_arg_dicts, through_solids=None):
     check.inst_param(context, 'context', SolidExecutionContext)
     check.inst_param(pipeline, 'pipeline', SolidPipeline)
@@ -416,44 +452,16 @@ def execute_pipeline(context, pipeline, input_arg_dicts, through_solids=None):
 
     for solid in execution_graph.topological_solids:
 
-        # The value produce by an inputs is potentially different per solid.
-        # This is allowed so that two solids that do different materialization of the
-        # same exact input (e.g. the same file) don't have to create additional solids
-        # to account for this.
-        input_values = {}
-
         try:
-
-            context.logger.info(
-                'About to materialize and gather all inputs for solid %s', solid.name
+            materialized_output = _execute_pipeline_solid_step(
+                context, solid, input_arg_dicts, materialized_values
             )
 
-            for inp in solid.inputs:
-                if inp.name not in materialized_values and inp.name not in input_values:
-                    materialized = materialize_input(context, inp, input_arg_dicts[inp.name])
-                    input_values[inp.name] = materialized
+            yield materialized_output
 
-            selected_values = _select_keys(input_values, materialized_values, solid.input_names)
-
-            # This call does all input and output expectations, as well as the core transform
-            materialized_output = pipeline_solid_in_memory(context, solid, selected_values)
-
-            if isinstance(materialized_output, SolidExecutionResult):
-                yield materialized_output
+            if not materialized_output.success:
                 break
 
-            check.invariant(
-                solid.name not in materialized_values, 'should be not in materialized values'
-            )
-
-            materialized_values[solid.name] = materialized_output
-
-            yield SolidExecutionResult(
-                success=True,
-                solid=solid,
-                materialized_output=materialized_values[solid.name],
-                exception=None
-            )
         except SolidExecutionError as see:
             yield SolidExecutionResult(
                 success=False,
