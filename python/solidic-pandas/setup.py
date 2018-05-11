@@ -17,5 +17,6 @@ setup(
         'enum34>=1.1.6',
         'future>=0.16.0',
         'pandas>=0.22.0',
+        'pyarrow>=0.8.0',
     ],
 )
