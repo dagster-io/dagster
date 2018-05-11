@@ -3,7 +3,9 @@ from collections import defaultdict
 import click
 
 import check
-from solidic.execution import (SolidExecutionContext, SolidPipeline, execute_pipeline)
+from solidic.execution import (
+    SolidExecutionContext, SolidPipeline, execute_pipeline, output_pipeline, OutputConfig
+)
 from solidic_utils.logging import (define_logger, INFO)
 
 from .graphviz import build_graphviz_graph
@@ -21,6 +23,35 @@ def embedded_dagster_graphviz_command(cxt):
     build_graphviz_graph(pipeline).view(cleanup=True)
 
 
+@click.command(name='output')
+@click.option('--input', multiple=True)
+@click.option('--output', multiple=True)
+@click.pass_context
+def embedded_dagster_output_command(cxt, input, output):  # pylint: disable=W0622
+    check.tuple_param(input, 'input')
+    check.tuple_param(output, 'output')
+
+    input_list = list(input)
+    output_list = list(output)
+    pipeline = check.inst(cxt.obj['pipeline'], SolidPipeline)
+
+    input_arg_dicts = construct_arg_dicts(input_list)
+    output_arg_dicts = construct_arg_dicts(output_list)
+
+    output_configs = []
+    for output_name, output_arg_dict in output_arg_dicts.items():
+        output_type = output_arg_dict.pop('type')
+        output_configs.append(
+            OutputConfig(name=output_name, output_type=output_type, output_args=output_arg_dict)
+        )
+
+    for result in output_pipeline(
+        create_dagster_context(), pipeline, input_arg_dicts, output_configs
+    ):
+        if not result.success:
+            raise result.exception
+
+
 @click.command(name='execute')
 @click.option('--input', multiple=True)
 @click.option('--through', multiple=True)
@@ -34,6 +65,16 @@ def embedded_dagster_execute_command(cxt, input, through):  # pylint: disable=W0
 
     pipeline = check.inst(cxt.obj['pipeline'], SolidPipeline)
 
+    input_arg_dicts = construct_arg_dicts(input_list)
+
+    for result in execute_pipeline(
+        create_dagster_context(), pipeline, input_arg_dicts, through_solids=through_list
+    ):
+        if not result.success:
+            raise result.exception
+
+
+def construct_arg_dicts(input_list):
     structured_flags = structure_flags(input_list)
 
     if structured_flags.single_argument or structured_flags.named_arguments:
@@ -43,12 +84,7 @@ def embedded_dagster_execute_command(cxt, input, through):  # pylint: disable=W0
 
     for nka in structured_flags.named_key_arguments:
         input_arg_dicts[nka.name][nka.key] = nka.value
-
-    for result in execute_pipeline(
-        create_dagster_context(), pipeline, input_arg_dicts, through_solids=through_list
-    ):
-        if not result.success:
-            raise result.exception
+    return input_arg_dicts
 
 
 def embedded_dagster_cli_main(argv, pipeline):
@@ -58,4 +94,5 @@ def embedded_dagster_cli_main(argv, pipeline):
     dagster_command_group = click.Group(name='dagster')
     dagster_command_group.add_command(embedded_dagster_graphviz_command)
     dagster_command_group.add_command(embedded_dagster_execute_command)
+    dagster_command_group.add_command(embedded_dagster_output_command)
     dagster_command_group(argv[1:], obj={'pipeline': pipeline})
