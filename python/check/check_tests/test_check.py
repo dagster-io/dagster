@@ -452,3 +452,17 @@ def test_not_none_param():
 
     with pytest.raises(CheckError):
         check.not_none_param(None, 'none fails')
+
+
+def test_is_callable():
+    def fn():
+        pass
+
+    assert check.is_callable(fn) == fn
+    assert check.is_callable(lambda: None)
+
+    with pytest.raises(CheckError):
+        check.is_callable(None)
+
+    with pytest.raises(CheckError):
+        check.is_callable(1)

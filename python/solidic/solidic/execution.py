@@ -5,6 +5,8 @@ from enum import Enum
 
 import check
 
+from solidic_utils.logging import (CompositeLogger, ERROR)
+
 from .definitions import (
     Solid,
     SolidInputDefinition,
@@ -37,7 +39,8 @@ class SolidExecutionError(SolidError):
 
 
 class SolidExecutionContext:
-    pass
+    def __init__(self, loggers=None, log_level=ERROR):
+        self.logger = CompositeLogger(loggers=loggers, level=log_level)
 
 
 class SolidExecutionResult:
@@ -108,7 +111,13 @@ def materialize_input(context, input_definition, arg_dict):
 
     error_str = 'Error occured while loading input "{input_name}"'
     with user_code_error_boundary(error_str, input_name=input_definition.name):
+        context.logger.info(
+            'Entering implementation of input %s with args %s', input_definition.name,
+            repr(arg_dict)
+        )
+
         materialized_input = input_definition.input_fn(arg_dict)
+
         return materialized_input
 
 
@@ -287,6 +296,8 @@ def pipeline_solid_in_memory(context, solid, materialized_inputs):
             failed_expectation_results=all_run_result.all_fails,
         )
 
+    context.logger.info('Executing core transform for solid %s', solid.name)
+
     materialized_output = execute_core_transform(context, solid.transform_fn, materialized_inputs)
 
     if isinstance(materialized_output, SolidExecutionResult):
@@ -412,6 +423,11 @@ def execute_pipeline(context, pipeline, input_arg_dicts, through_solids=None):
         input_values = {}
 
         try:
+
+            context.logger.info(
+                'About to materialize and gather all inputs for solid %s', solid.name
+            )
+
             for inp in solid.inputs:
                 if inp.name not in materialized_values and inp.name not in input_values:
                     materialized = materialize_input(context, inp, input_arg_dicts[inp.name])

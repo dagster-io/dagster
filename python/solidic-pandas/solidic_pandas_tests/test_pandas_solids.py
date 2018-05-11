@@ -350,7 +350,7 @@ def test_pandas_output_intermediate_csv_files():
     pipeline = create_diamond_pipeline()
 
     with get_temp_file_names(2) as temp_tuple:
-        sum_file, mult_file = temp_tuple
+        sum_file, mult_file = temp_tuple  # pylint: disable=E0632
         subgraph_one_results = output_pipeline_and_collect(
             context,
             pipeline,
