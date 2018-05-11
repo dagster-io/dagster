@@ -252,7 +252,7 @@ def execute_output(context, output_type_def, output_arg_dict, materialized_outpu
     error_str = 'Error during execution of output'
     with user_code_error_boundary(error_str):
         context.info('Entering output implementation')
-        output_type_def.output_fn(materialized_output, output_arg_dict)
+        output_type_def.output_fn(materialized_output, context, output_arg_dict)
 
 
 SolidInputExpectationRunResults = namedtuple(
