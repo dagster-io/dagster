@@ -344,13 +344,13 @@ def _result_named(results, name):
     check.failed('could not find name')
 
 
-def test_pandas_output_intermediate_files():
+def test_pandas_output_intermediate_csv_files():
     context = create_test_context()
     input_args = {'num_csv': {'path': script_relative_path('num.csv')}}
     pipeline = create_diamond_pipeline()
 
-    with get_temp_file_names(3) as temp_tuple:
-        sum_file, mult_file, sum_mult_file = temp_tuple
+    with get_temp_file_names(2) as temp_tuple:
+        sum_file, mult_file = temp_tuple
         subgraph_one_results = output_pipeline_and_collect(
             context,
             pipeline,
@@ -407,6 +407,37 @@ def test_pandas_output_intermediate_files():
             'mult': [2, 12],
             'sum_mult': [6, 84],
         }
+
+
+def test_pandas_output_intermediate_parquet_files():
+    context = create_test_context()
+    input_args = {'num_csv': {'path': script_relative_path('num.csv')}}
+    pipeline = create_diamond_pipeline()
+
+    with get_temp_file_names(2) as temp_tuple:
+        # false positive on pylint error
+        sum_file, mult_file = temp_tuple  # pylint: disable=E0632
+        output_pipeline_and_collect(
+            context,
+            pipeline,
+            input_arg_dicts=input_args,
+            output_configs=[
+                OutputConfig(
+                    name='sum_table', output_type='PARQUET', output_args={'path': sum_file}
+                ),
+                OutputConfig(
+                    name='mult_table', output_type='PARQUET', output_args={'path': mult_file}
+                ),
+            ]
+        )
+
+        expected_sum = {
+            'num1': [1, 3],
+            'num2': [2, 4],
+            'sum': [3, 7],
+        }
+
+        assert pd.read_parquet(sum_file).to_dict('list') == expected_sum
 
 
 def test_pandas_multiple_inputs():

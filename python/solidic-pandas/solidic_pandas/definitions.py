@@ -63,7 +63,7 @@ def create_solidic_pandas_parquet_output():
         check.dict_param(output_arg_dict, 'output_arg_dict')
         path = check.str_elem(output_arg_dict, 'path')
 
-        df.to_csv(path, index=False)
+        df.to_parquet(path)
 
     return SolidOutputTypeDefinition(
         name='PARQUET', output_fn=output_fn_inst, argument_def_dict={'path': SolidPath}
