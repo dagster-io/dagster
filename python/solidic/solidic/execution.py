@@ -198,15 +198,21 @@ def execute_output_expectation(context, expectation_def, materialized_output):
     return expectation_result
 
 
-def execute_core_transform(context, solid_transform_fn, materialized_inputs):
+def execute_core_transform(
+    context, solid_transform_fn, materialized_inputs, transform_requires_context
+):
     check.inst_param(context, 'context', SolidExecutionContext)
     check.callable_param(solid_transform_fn, 'solid_transform_fn')
     check.dict_param(materialized_inputs, 'materialized_inputs', key_type=str)
+    check.bool_param(transform_requires_context, 'transform_requires_context')
 
     error_str = 'Error occured during core transform'
     with user_code_error_boundary(error_str):
         with time_execution_scope() as timer_result:
-            materialized_output = solid_transform_fn(**materialized_inputs)
+            if transform_requires_context:
+                materialized_output = solid_transform_fn(context=context, **materialized_inputs)
+            else:
+                materialized_output = solid_transform_fn(**materialized_inputs)
 
         context.metric('core_transform_time_ms', timer_result.millis)
 
@@ -351,7 +357,9 @@ def pipeline_solid_in_memory(context, solid, materialized_inputs):
 
     context.info('Executing core transform')
 
-    materialized_output = execute_core_transform(context, solid.transform_fn, materialized_inputs)
+    materialized_output = execute_core_transform(
+        context, solid.transform_fn, materialized_inputs, solid.transform_requires_context
+    )
 
     if isinstance(materialized_output, SolidExecutionResult):
         check.invariant(

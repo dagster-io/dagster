@@ -32,7 +32,11 @@ def test_basic_core_transform_error_handling():
         raise Exception('exception during core transform')
 
     with pytest.raises(SolidExecutionError):
-        execute_core_transform(create_test_context(), transform_fn, {'an_input': 'value'})
+        execute_core_transform(
+            create_test_context(),
+            transform_fn, {'an_input': 'value'},
+            transform_requires_context=False
+        )
 
 
 def test_basic_output_transform_error_handling():

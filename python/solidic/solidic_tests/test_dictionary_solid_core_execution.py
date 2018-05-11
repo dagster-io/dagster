@@ -80,7 +80,45 @@ def test_materialize_output():
     materialized_input = materialize_input(create_test_context(), some_input, {})
 
     output = execute_core_transform(
-        create_test_context(), single_solid.transform_fn, {'some_input': materialized_input}
+        create_test_context(),
+        single_solid.transform_fn, {'some_input': materialized_input},
+        transform_requires_context=False
+    )
+
+    assert output == [{'data_key': 'new_value'}]
+
+
+def test_materialize_output_with_context():
+    some_input = SolidInputDefinition(
+        name='some_input',
+        input_fn=lambda context, arg_dict: [{'data_key': 'data_value'}],
+        argument_def_dict={},
+    )
+
+    def tranform_fn_inst(context, some_input):
+        assert isinstance(context, SolidExecutionContext)
+        some_input[0]['data_key'] = 'new_value'
+        return some_input
+
+    custom_output_type_def = SolidOutputTypeDefinition(
+        name='CUSTOM',
+        output_fn=lambda _data, _output_arg_dict: None,
+        argument_def_dict={},
+    )
+
+    single_solid = Solid(
+        name='some_node',
+        inputs=[some_input],
+        transform_fn=tranform_fn_inst,
+        output_type_defs=[custom_output_type_def],
+    )
+
+    materialized_input = materialize_input(create_test_context(), some_input, {})
+
+    output = execute_core_transform(
+        create_test_context(),
+        single_solid.transform_fn, {'some_input': materialized_input},
+        transform_requires_context=True
     )
 
     assert output == [{'data_key': 'new_value'}]
