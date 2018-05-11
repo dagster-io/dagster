@@ -1,7 +1,6 @@
 from collections import (namedtuple, OrderedDict)
 from contextlib import contextmanager
 import copy
-from enum import Enum
 
 import check
 
@@ -16,27 +15,8 @@ from .definitions import (
     SolidExpectationResult,
 )
 
+from .errors import (SolidExecutionError, SolidTypeError, SolidExecutionFailureReason)
 from .graph import SolidPipeline
-
-
-class SolidExecutionFailureReason(Enum):
-    USER_CODE_ERROR = 'USER_CODE_ERROR'
-    FRAMEWORK_ERROR = 'FRAMEWORK_ERROR'
-    EXPECTATION_FAILURE = 'EXPECATION_FAILURE'
-
-
-class SolidError(Exception):
-    pass
-
-
-class SolidTypeError(SolidError):
-    '''Indicates an error in the solid type system (e.g. mismatched arguments)'''
-    pass
-
-
-class SolidExecutionError(SolidError):
-    '''Indicates an error in user space code'''
-    pass
 
 
 class SolidExecutionContext:
