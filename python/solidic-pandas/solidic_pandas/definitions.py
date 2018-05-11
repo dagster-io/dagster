@@ -58,8 +58,9 @@ def create_solidic_pandas_csv_input(name, delimiter=',', **read_csv_kwargs):
 
 
 def create_solidic_pandas_csv_output():
-    def output_fn_inst(df, output_arg_dict):
+    def output_fn_inst(df, context, output_arg_dict):
         check.inst_param(df, 'df', pd.DataFrame)
+        check.inst_param(context, 'context', SolidExecutionContext)
         check.dict_param(output_arg_dict, 'output_arg_dict')
         path = check.str_elem(output_arg_dict, 'path')
 
@@ -71,8 +72,9 @@ def create_solidic_pandas_csv_output():
 
 
 def create_solidic_pandas_parquet_output():
-    def output_fn_inst(df, output_arg_dict):
+    def output_fn_inst(df, context, output_arg_dict):
         check.inst_param(df, 'df', pd.DataFrame)
+        check.inst_param(context, 'context', SolidExecutionContext)
         check.dict_param(output_arg_dict, 'output_arg_dict')
         path = check.str_elem(output_arg_dict, 'path')
 

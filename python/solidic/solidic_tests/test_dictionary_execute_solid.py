@@ -27,7 +27,7 @@ def test_execute_solid_no_args():
 
     test_output = {}
 
-    def output_fn_inst(data, _output_arg_dict):
+    def output_fn_inst(data, _context, _output_arg_dict):
         test_output['thedata'] = data
 
     custom_output = SolidOutputTypeDefinition(
@@ -64,7 +64,7 @@ def create_single_dict_input(expectations=None):
 
 
 def create_noop_output(test_output):
-    def set_test_output(output, _arg_dict):
+    def set_test_output(output, _context, _output_arg_dict):
         test_output['thedata'] = output
 
     return SolidOutputTypeDefinition(
@@ -84,7 +84,7 @@ def test_execute_solid_with_args():
         output_type_defs=[create_noop_output(test_output)],
     )
 
-    output_solid(
+    result = output_solid(
         create_test_context(),
         single_solid,
         input_arg_dicts={'some_input': {
@@ -93,6 +93,11 @@ def test_execute_solid_with_args():
         output_type='CUSTOM',
         output_arg_dict={},
     )
+
+    if result.exception:
+        raise result.exception
+
+    assert result.success
 
     assert test_output['thedata'][0]['key'] == 'an_input_arg'
 
