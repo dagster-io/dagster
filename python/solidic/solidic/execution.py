@@ -44,14 +44,16 @@ class SolidExecutionContext:
         self._context_dict = OrderedDict()
 
     def _maybe_quote(self, val):
-        if ' ' in val:
-            return '"{val}"'.format(val=val)
-        return val
+        str_val = str(val)
+        if ' ' in str_val:
+            return '"{val}"'.format(val=str_val)
+        return str_val
 
     def _log(self, method, msg, frmtargs):
         check.str_param(method, 'method')
         check.str_param(msg, 'msg')
         check.dict_param(frmtargs, 'frmtargs')
+
         kv_message = ' '.join(
             [
                 '{key}={value}'.format(key=key, value=self._maybe_quote(value))
@@ -82,7 +84,7 @@ class SolidExecutionContext:
     @contextmanager
     def value(self, key, value):
         check.str_param(key, 'key')
-        check.str_param(value, 'value')
+        check.not_none_param(value, 'value')
 
         check.invariant(not key in self._context_dict, 'Should not be in context')
 
@@ -135,7 +137,7 @@ def materialize_input(context, input_definition, arg_dict):
     check.inst_param(input_definition, 'input_defintion', SolidInputDefinition)
     check.dict_param(arg_dict, 'arg_dict', key_type=str)
 
-    with context.value('input', input_definition.name), context.value('arg_dict', str(arg_dict)):
+    with context.value('input', input_definition.name), context.value('arg_dict', arg_dict):
         expected_args = set(input_definition.argument_def_dict.keys())
         received_args = set(arg_dict.keys())
         if expected_args != received_args:
@@ -564,7 +566,9 @@ def output_pipeline(context, pipeline, input_arg_dicts, output_configs):
             output_type = output_dict[result.name].output_type
             output_arg_dict = output_dict[result.name].output_args
             output_type_def = result.solid.output_type_def_named(output_type)
-            with context.value('solid', result.name):
+            with context.value('solid', result.name), \
+                context.value('output_type', output_type_def.name), \
+                context.value('output_args', output_arg_dict):
                 try:
                     execute_output(
                         context, output_type_def, output_arg_dict, result.materialized_output
