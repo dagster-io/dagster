@@ -154,9 +154,12 @@ def materialize_input(context, input_definition, arg_dict):
         for arg_name, arg_value in arg_dict.items():
             arg_def_type = input_definition.argument_def_dict[arg_name]
             if not arg_def_type.is_python_valid_value(arg_value):
+                format_string = (
+                    'Expected type {typename} for arg {arg_name}' +
+                    'for {input_name} but got {arg_value}'
+                )
                 raise SolidTypeError(
-                    'Expected type {typename} for arg {arg_name} for {input_name} but got {arg_value}'.
-                    format(
+                    format_string.format(
                         typename=arg_def_type.name,
                         arg_name=arg_name,
                         input_name=input_definition.name,
