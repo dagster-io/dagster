@@ -33,7 +33,7 @@ def create_solid_pandas_dependency_input(solid):
     )
 
 
-def create_solidic_pandas_csv_input(name, delimiter, **read_csv_kwargs):
+def create_solidic_pandas_csv_input(name, delimiter=',', **read_csv_kwargs):
     check.str_param(name, 'name')
     check.str_param(delimiter, 'delimiter')
 

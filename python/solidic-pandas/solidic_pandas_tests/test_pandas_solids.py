@@ -5,7 +5,7 @@ import solidic
 from solidic.definitions import Solid, SolidOutputTypeDefinition
 from solidic.execution import (
     OutputConfig, SolidExecutionContext, execute_solid_in_pipeline, materialize_input,
-    output_pipeline, output_solid, pipeline_output, pipeline_output_in_memory
+    output_pipeline, output_solid, pipeline_solid, pipeline_solid_in_memory
 )
 import solidic_pandas as solidic_pd
 from solidic_pandas.definitions import create_solidic_pandas_csv_input
@@ -142,7 +142,7 @@ def test_pandas_csv_to_csv_better_api():
 def test_pandas_csv_in_memory():
     solid = create_sum_table()
     input_args = {'num_csv': {'path': script_relative_path('num.csv')}}
-    df = pipeline_output(create_test_context(), solid, input_args)
+    df = pipeline_solid(create_test_context(), solid, input_args)
     assert isinstance(df, pd.DataFrame)
     assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
 
@@ -152,8 +152,8 @@ def test_two_step_pipeline_in_memory():
     mult_table_solid = create_mult_table(sum_table_solid)
     input_args = {'num_csv': {'path': script_relative_path('num.csv')}}
     context = create_test_context()
-    df = pipeline_output(context, sum_table_solid, input_args)
-    mult_df = pipeline_output_in_memory(context, mult_table_solid, {'sum_table': df})
+    df = pipeline_solid(context, sum_table_solid, input_args)
+    mult_df = pipeline_solid_in_memory(context, mult_table_solid, {'sum_table': df})
     assert mult_df.to_dict('list') == {
         'num1': [1, 3],
         'num2': [2, 4],
@@ -185,7 +185,7 @@ def test_two_input_solid():
         },
     }
 
-    df = pipeline_output(create_test_context(), two_input_solid, input_args)
+    df = pipeline_solid(create_test_context(), two_input_solid, input_args)
     assert isinstance(df, pd.DataFrame)
     assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
 
@@ -197,7 +197,7 @@ def test_no_transform_solid():
     )
     input_args = {'num_csv': {'path': script_relative_path('num.csv')}}
     context = create_test_context()
-    df = pipeline_output(context, num_table, input_args)
+    df = pipeline_solid(context, num_table, input_args)
     assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4]}
 
 
@@ -255,18 +255,18 @@ def test_diamond_dag_run():
     input_args = {'num_csv': {'path': script_relative_path('num.csv')}}
     context = create_test_context()
 
-    num_table_df = pipeline_output(context, num_table, input_args)
+    num_table_df = pipeline_solid(context, num_table, input_args)
     assert num_table_df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4]}
 
-    sum_df = pipeline_output_in_memory(context, sum_table, {'num_table': num_table_df})
+    sum_df = pipeline_solid_in_memory(context, sum_table, {'num_table': num_table_df})
 
     assert sum_df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
 
-    mult_df = pipeline_output_in_memory(context, mult_table, {'num_table': num_table_df})
+    mult_df = pipeline_solid_in_memory(context, mult_table, {'num_table': num_table_df})
 
     assert mult_df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'mult': [2, 12]}
 
-    sum_mult_df = pipeline_output_in_memory(
+    sum_mult_df = pipeline_solid_in_memory(
         context, sum_mult_table, {
             'sum_table': sum_df,
             'mult_table': mult_df

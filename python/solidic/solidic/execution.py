@@ -258,16 +258,16 @@ def materialize_all_inputs(context, solid, input_arg_dicts):
     return materialized_inputs
 
 
-def pipeline_output(context, solid, input_arg_dicts):
+def pipeline_solid(context, solid, input_arg_dicts):
     check.inst_param(context, 'context', SolidExecutionContext)
     check.inst_param(solid, 'solid', Solid)
     check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
 
     materialized_inputs = materialize_all_inputs(context, solid, input_arg_dicts)
-    return pipeline_output_in_memory(context, solid, materialized_inputs)
+    return pipeline_solid_in_memory(context, solid, materialized_inputs)
 
 
-def pipeline_output_in_memory(context, solid, materialized_inputs):
+def pipeline_solid_in_memory(context, solid, materialized_inputs):
     '''
     Given inputs that are already materialized in memory. Evaluation all inputs expectations,
     execute the core transform, and then evaluate all output expectations.
@@ -420,7 +420,7 @@ def execute_pipeline(context, pipeline, input_arg_dicts, through_solids=None):
             selected_values = _select_keys(input_values, materialized_values, solid.input_names)
 
             # This call does all input and output expectations, as well as the core transform
-            materialized_output = pipeline_output_in_memory(context, solid, selected_values)
+            materialized_output = pipeline_solid_in_memory(context, solid, selected_values)
 
             if isinstance(materialized_output, SolidExecutionResult):
                 yield materialized_output
