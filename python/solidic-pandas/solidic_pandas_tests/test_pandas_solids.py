@@ -8,7 +8,7 @@ from solidic.definitions import Solid, SolidOutputTypeDefinition
 from solidic.execution import (
     OutputConfig, SolidExecutionContext, execute_solid_in_pipeline, materialize_input,
     output_pipeline, output_solid, pipeline_solid, pipeline_solid_in_memory,
-    output_pipeline_and_collect, execute_pipeline, execute_pipeline_and_collect
+    output_pipeline_and_collect, execute_pipeline_and_collect
 )
 import solidic_pandas as solidic_pd
 from solidic_pandas.definitions import create_solidic_pandas_csv_input
