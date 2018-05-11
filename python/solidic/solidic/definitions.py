@@ -1,3 +1,4 @@
+import inspect
 import re
 
 import check
@@ -6,6 +7,13 @@ from .errors import SolidInvalidDefinition
 from .types import (SolidType, SolidPath)
 
 DISALLOWED_NAMES = set(['context'])
+
+
+def has_context_variable(fn):
+    check.callable_param(fn, 'fn')
+
+    argspec = inspect.getfullargspec(fn)
+    return 'context' in argspec[0]
 
 
 def check_valid_name(name):
@@ -91,6 +99,7 @@ class Solid:
         self.output_expectations = check.opt_list_param(
             output_expectations, 'output_expectations', of_type=SolidExpectationDefinition
         )
+        self.transform_requires_context = has_context_variable(self.transform_fn)
 
     @property
     def input_names(self):
