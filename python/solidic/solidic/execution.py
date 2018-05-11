@@ -6,6 +6,7 @@ from enum import Enum
 import check
 
 from solidic_utils.logging import (CompositeLogger, ERROR)
+from solidic_utils.timing import time_execution_scope
 
 from .definitions import (
     Solid,
@@ -207,7 +208,10 @@ def execute_core_transform(context, solid_transform_fn, materialized_inputs):
 
     error_str = 'Error occured during core transform'
     with user_code_error_boundary(error_str):
-        materialized_output = solid_transform_fn(**materialized_inputs)
+        with time_execution_scope() as timer_result:
+            materialized_output = solid_transform_fn(**materialized_inputs)
+
+        context.info('Core transform took {millis:.3f} ms', millis=timer_result.millis)
 
         check.invariant(
             not isinstance(materialized_output, SolidExecutionResult),
