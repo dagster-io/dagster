@@ -90,6 +90,8 @@ def test_practices_pipeline():
         assert executed in result_names
 
     for result in results:
+        if not result.success:
+            raise result.exception
         assert result.success
         assert not result.materialized_output.empty
 
@@ -211,9 +213,9 @@ def test_provider_languages_specialities():
     for executed in executed_list:
         assert executed in result_names
 
+
 if __name__ == '__main__':
     from dagster.embedded_cli import embedded_dagster_cli_main
     import sys
 
     embedded_dagster_cli_main(sys.argv, define_pipeline())
-

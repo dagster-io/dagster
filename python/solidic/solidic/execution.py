@@ -110,6 +110,11 @@ class SolidExecutionResult:
         self.solid = check.inst_param(solid, 'solid', Solid)
         self.reason = reason
         self.exception = check.opt_inst_param(exception, 'exception', Exception)
+
+        if reason == SolidExecutionFailureReason.USER_CODE_ERROR:
+            check.inst(exception, SolidExecutionError)
+            self.user_exception = exception.user_exception
+
         self.failed_expectation_results = check.opt_list_param(
             failed_expectation_results, 'failed_expectation_result', of_type=SolidExpectationResult
         )
@@ -124,7 +129,7 @@ def user_code_error_boundary(msg, **kwargs):
     try:
         yield
     except Exception as e:
-        raise SolidExecutionError(msg.format(**kwargs), e)
+        raise SolidExecutionError(msg.format(**kwargs), e, user_exception=e)
 
 
 def materialize_input(context, input_definition, arg_dict):

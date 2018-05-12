@@ -1,3 +1,5 @@
+import check
+
 from enum import Enum
 
 
@@ -23,4 +25,7 @@ class SolidTypeError(SolidUserError):
 
 class SolidExecutionError(SolidUserError):
     '''Indicates an error in user space code'''
-    pass
+
+    def __init__(self, *args, user_exception=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.user_exception = check.inst_param(user_exception, 'user_exception', Exception)
