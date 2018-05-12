@@ -1,4 +1,5 @@
 from collections import defaultdict
+import logging
 
 import click
 
@@ -7,14 +8,22 @@ from solidic.errors import SolidExecutionFailureReason
 from solidic.execution import (
     SolidExecutionContext, SolidPipeline, execute_pipeline, output_pipeline, OutputConfig
 )
-from solidic_utils.logging import (define_logger, INFO)
+from solidic_utils.logging import define_logger
 
 from .graphviz import build_graphviz_graph
 from .structured_flags import structure_flags
 
+LOGGING_DICT = {
+    'DEBUG': logging.DEBUG,
+    'INFO': logging.INFO,
+    'WARN': logging.WARN,
+    'ERROR': logging.ERROR,
+    'CRITICAL': logging.CRITICAL,
+}
 
-def create_dagster_context():
-    return SolidExecutionContext(loggers=[define_logger('dagster')], log_level=INFO)
+
+def create_dagster_context(log_level):
+    return SolidExecutionContext(loggers=[define_logger('dagster')], log_level=log_level)
 
 
 @click.command(name='graphviz')
@@ -27,10 +36,12 @@ def embedded_dagster_graphviz_command(cxt):
 @click.command(name='output')
 @click.option('--input', multiple=True)
 @click.option('--output', multiple=True)
+@click.option('--log-level', type=click.STRING, default='INFO')
 @click.pass_context
-def embedded_dagster_output_command(cxt, input, output):  # pylint: disable=W0622
+def embedded_dagster_output_command(cxt, input, output, log_level):  # pylint: disable=W0622
     check.tuple_param(input, 'input')
     check.tuple_param(output, 'output')
+    check.opt_str_param(log_level, 'log_level')
 
     input_list = list(input)
     output_list = list(output)
@@ -46,23 +57,29 @@ def embedded_dagster_output_command(cxt, input, output):  # pylint: disable=W062
             OutputConfig(name=output_name, output_type=output_type, output_args=output_arg_dict)
         )
 
-    for result in output_pipeline(
-        create_dagster_context(), pipeline, input_arg_dicts, output_configs
-    ):
+    context = create_dagster_context(log_level=LOGGING_DICT[log_level])
+    results = []
+    for result in output_pipeline(context, pipeline, input_arg_dicts, output_configs):
         if not result.success:
             if result.reason == SolidExecutionFailureReason.USER_CODE_ERROR:
                 raise result.user_exception
             else:
                 raise result.exception
 
+        results.append(result)
+
+    print_metrics_to_console(results, context)
+
 
 @click.command(name='execute')
 @click.option('--input', multiple=True)
 @click.option('--through', multiple=True)
+@click.option('--log-level', type=click.STRING, default='INFO')
 @click.pass_context
-def embedded_dagster_execute_command(cxt, input, through):  # pylint: disable=W0622
+def embedded_dagster_execute_command(cxt, input, through, log_level):  # pylint: disable=W0622
     check.tuple_param(input, 'input')
     check.tuple_param(through, 'through')
+    check.opt_str_param(log_level, 'log_level')
 
     input_list = list(input)
     through_list = list(through)
@@ -71,7 +88,9 @@ def embedded_dagster_execute_command(cxt, input, through):  # pylint: disable=W0
 
     input_arg_dicts = construct_arg_dicts(input_list)
 
-    context = create_dagster_context()
+    context = create_dagster_context(log_level=LOGGING_DICT[log_level])
+
+    results = []
 
     for result in execute_pipeline(context, pipeline, input_arg_dicts, through_solids=through_list):
         if not result.success:
@@ -79,6 +98,40 @@ def embedded_dagster_execute_command(cxt, input, through):  # pylint: disable=W0
                 raise result.user_exception
             else:
                 raise result.exception
+
+        results.append(result)
+
+    print_metrics_to_console(results, context)
+
+
+def print_metrics_to_console(results, context):
+    for result in results:
+        metrics_of_solid = list(context.metrics_matching_context({'solid': result.name}))
+
+        print('Metrics for {name}'.format(name=result.name))
+
+        for input_def in result.solid.inputs:
+            metrics_for_input = list(
+                context.metrics_covering_context({
+                    'solid': result.name,
+                    'input': input_def.name
+                })
+            )
+            if metrics_for_input:
+                print('    Input {input_name}'.format(input_name=input_def.name))
+                for metric in metrics_for_input:
+                    print(
+                        '{indent}{metric_name}: {value}'.format(
+                            indent=' ' * 8, metric_name=metric.metric_name, value=metric.value
+                        )
+                    )
+
+        for metric in metrics_of_solid:
+            print(
+                '{indent}{metric_name}: {value}'.format(
+                    indent=' ' * 4, metric_name=metric.metric_name, value=metric.value
+                )
+            )
 
 
 def construct_arg_dicts(input_list):

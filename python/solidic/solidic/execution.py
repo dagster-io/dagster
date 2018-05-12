@@ -18,11 +18,14 @@ from .definitions import (
 from .errors import (SolidExecutionError, SolidTypeError, SolidExecutionFailureReason)
 from .graph import SolidPipeline
 
+Metric = namedtuple('Metric', 'context_dict metric_name value')
+
 
 class SolidExecutionContext:
     def __init__(self, loggers=None, log_level=ERROR):
         self._logger = CompositeLogger(loggers=loggers, level=log_level)
         self._context_dict = OrderedDict()
+        self._metrics = []
 
     def _maybe_quote(self, val):
         str_val = str(val)
@@ -63,6 +66,12 @@ class SolidExecutionContext:
     def critical(self, msg, **frmtargs):
         return self._log('critical', msg, frmtargs)
 
+    def exception(self, e):
+        check.inst_param(e, 'e', Exception)
+
+        # this is pretty lame right. should embellish with more data (stack trace?)
+        return self._log('exception', str(e), {})
+
     @contextmanager
     def value(self, key, value):
         check.str_param(key, 'key')
@@ -76,18 +85,47 @@ class SolidExecutionContext:
 
         self._context_dict.pop(key)
 
-    def metric(self, key, value):
+    def metric(self, metric_name, value):
+        check.str_param(metric_name, 'metric_name')
+        check.not_none_param(value, 'value')
+
         keys = list(self._context_dict.keys())
-        keys.append(key)
+        keys.append(metric_name)
         if isinstance(value, float):
             format_string = 'metric:{metric_name}={value:.3f} {kv_message}'
         else:
             format_string = 'metric:{metric_name}={value} {kv_message}'
 
         self._logger.info(
-            format_string.format(metric_name=key, value=value, kv_message=self._kv_message()),
+            format_string.format(
+                metric_name=metric_name, value=value, kv_message=self._kv_message()
+            ),
             extra=self._context_dict
         )
+
+        self._metrics.append(
+            Metric(
+                context_dict=copy.copy(self._context_dict), metric_name=metric_name, value=value
+            )
+        )
+
+    def _dict_covers(self, needle_dict, haystack_dict):
+        for key, value in needle_dict.items():
+            if not key in haystack_dict:
+                return False
+            if value != haystack_dict[key]:
+                return False
+        return True
+
+    def metrics_covering_context(self, needle_dict):
+        for metric in self._metrics:
+            if self._dict_covers(needle_dict, metric.context_dict):
+                yield metric
+
+    def metrics_matching_context(self, needle_dict):
+        for metric in self._metrics:
+            if needle_dict == metric.context_dict:
+                yield metric
 
 
 class SolidExecutionResult:
@@ -125,10 +163,14 @@ class SolidExecutionResult:
 
 
 @contextmanager
-def user_code_error_boundary(msg, **kwargs):
+def user_code_error_boundary(context, msg, **kwargs):
+    check.inst_param(context, 'context', SolidExecutionContext)
+    check.str_param(msg, 'msg')
+
     try:
         yield
     except Exception as e:
+        context.exception(e)
         raise SolidExecutionError(msg.format(**kwargs), e, user_exception=e)
 
 
@@ -167,10 +209,13 @@ def materialize_input(context, input_definition, arg_dict):
                 )
 
         error_str = 'Error occured while loading input "{input_name}"'
-        with user_code_error_boundary(error_str, input_name=input_definition.name):
+        with user_code_error_boundary(context, error_str, input_name=input_definition.name):
             context.info('Entering input implementation')
 
-            materialized_input = input_definition.input_fn(context, arg_dict)
+            with time_execution_scope() as timer_result:
+                materialized_input = input_definition.input_fn(context, arg_dict)
+
+            context.metric('input_load_time_ms', timer_result.millis)
 
             return materialized_input
 
@@ -180,7 +225,7 @@ def execute_input_expectation(context, expectation_def, materialized_input):
     check.inst_param(expectation_def, 'expectation_def', SolidExpectationDefinition)
 
     error_str = 'Error occured while evaluation expectation "{expectation_name}" in input'
-    with user_code_error_boundary(error_str, expectation_name=expectation_def.name):
+    with user_code_error_boundary(context, error_str, expectation_name=expectation_def.name):
         expectation_result = expectation_def.expectation_fn(materialized_input)
 
     if not isinstance(expectation_result, SolidExpectationResult):
@@ -194,7 +239,7 @@ def execute_output_expectation(context, expectation_def, materialized_output):
     check.inst_param(expectation_def, 'expectation_def', SolidExpectationDefinition)
 
     error_str = 'Error occured while evaluation expectation "{expectation_name}" in output'
-    with user_code_error_boundary(error_str, expectation_name=expectation_def.name):
+    with user_code_error_boundary(context, error_str, expectation_name=expectation_def.name):
         expectation_result = expectation_def.expectation_fn(materialized_output)
 
     if not isinstance(expectation_result, SolidExpectationResult):
@@ -212,7 +257,7 @@ def execute_core_transform(
     check.bool_param(transform_requires_context, 'transform_requires_context')
 
     error_str = 'Error occured during core transform'
-    with user_code_error_boundary(error_str):
+    with user_code_error_boundary(context, error_str):
         with time_execution_scope() as timer_result:
             if transform_requires_context:
                 materialized_output = solid_transform_fn(context=context, **materialized_inputs)
@@ -258,7 +303,7 @@ def execute_output(context, output_type_def, output_arg_dict, materialized_outpu
             )
 
     error_str = 'Error during execution of output'
-    with user_code_error_boundary(error_str):
+    with user_code_error_boundary(context, error_str):
         context.info('Entering output implementation')
         output_type_def.output_fn(materialized_output, context, output_arg_dict)
 

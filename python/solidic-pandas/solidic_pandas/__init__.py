@@ -1,9 +1,13 @@
 from __future__ import (absolute_import, division, print_function, unicode_literals)
 from builtins import *  # pylint: disable=W0622,W0401
 
+import pandas as pd
+
 import check
 
-from solidic.definitions import Solid
+from solidic.definitions import (Solid, has_context_variable)
+from solidic.execution import SolidExecutionContext
+from solidic.errors import SolidExecutionError
 from .definitions import (
     create_solidic_pandas_csv_input,
     create_solidic_pandas_csv_output,
@@ -27,6 +31,33 @@ def _default_passthrough_transform(*args, **kwargs):
     return list(kwargs.values())[0]
 
 
+def _post_process_transform(context, df):
+    check.inst_param(context, 'context', SolidExecutionContext)
+    check.inst_param(df, 'df', pd.DataFrame)
+
+    context.metric('rows', df.shape[0])
+
+
+def _dependency_transform_wrapper(transform_fn):
+    check.callable_param(transform_fn, 'transform_fn')
+    if has_context_variable(transform_fn):
+
+        def wrapper_with_context(context, **kwargs):
+            df = transform_fn(context, **kwargs)
+            _post_process_transform(context, df)
+            return df
+
+        return wrapper_with_context
+    else:
+
+        def wrapper_no_context(context, **kwargs):
+            df = transform_fn(**kwargs)
+            _post_process_transform(context, df)
+            return df
+
+        return wrapper_no_context
+
+
 def dataframe_solid(*args, inputs, transform_fn=None, **kwargs):
     check.invariant(not args, 'must use all keyword args')
 
@@ -41,7 +72,7 @@ def dataframe_solid(*args, inputs, transform_fn=None, **kwargs):
     return Solid(
         inputs=inputs,
         output_type_defs=[csv_output(), parquet_output()],
-        transform_fn=transform_fn,
+        transform_fn=_dependency_transform_wrapper(transform_fn),
         **kwargs
     )
 
