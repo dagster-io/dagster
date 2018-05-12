@@ -27,12 +27,13 @@ qhp_json_pivot_points = [
 def define_qhp_input(table_field_expr):
     check.str_param(table_field_expr, 'table_field_expr')
 
-    def flatten_table_field(_context, arg_dict):
+    def flatten_table_field(context, arg_dict):
         path = check.str_elem(arg_dict, 'path')
         with open(path) as file_obj:
             json_object = json.load(file_obj)
         qhp_providers = flatten_json_to_dataframes(json_object, qhp_json_pivot_points)
         df = qhp_providers[table_field_expr]
+        context.metric('rows', df.shape[0])
         return df
 
     return solidic.file_input_definition(

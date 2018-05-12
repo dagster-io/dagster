@@ -3,4 +3,5 @@ python test_pipeline.py output \
 --input languages_csv.path=Language.csv \
 --input specialities_csv.path=betterdoctor_qhp_specialities.csv \
 --output practice_insurances.type=CSV \
---output practice_insurances.path=/tmp/practice_insurances.csv
+--output practice_insurances.path=/tmp/practice_insurances.csv \
+--log-level INFO
