@@ -3,6 +3,7 @@ from collections import defaultdict
 import click
 
 import check
+from solidic.errors import SolidExecutionFailureReason
 from solidic.execution import (
     SolidExecutionContext, SolidPipeline, execute_pipeline, output_pipeline, OutputConfig
 )
@@ -49,7 +50,10 @@ def embedded_dagster_output_command(cxt, input, output):  # pylint: disable=W062
         create_dagster_context(), pipeline, input_arg_dicts, output_configs
     ):
         if not result.success:
-            raise result.exception
+            if result.reason == SolidExecutionFailureReason.USER_CODE_ERROR:
+                raise result.user_exception
+            else:
+                raise result.exception
 
 
 @click.command(name='execute')
@@ -71,7 +75,10 @@ def embedded_dagster_execute_command(cxt, input, through):  # pylint: disable=W0
 
     for result in execute_pipeline(context, pipeline, input_arg_dicts, through_solids=through_list):
         if not result.success:
-            raise result.exception
+            if result.reason == SolidExecutionFailureReason.USER_CODE_ERROR:
+                raise result.user_exception
+            else:
+                raise result.exception
 
 
 def construct_arg_dicts(input_list):
