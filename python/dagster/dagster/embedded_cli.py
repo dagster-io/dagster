@@ -48,18 +48,17 @@ def embedded_dagster_output_command(cxt, input, output, log_level):  # pylint: d
     pipeline = check.inst(cxt.obj['pipeline'], SolidPipeline)
 
     input_arg_dicts = construct_arg_dicts(input_list)
-    output_arg_dicts = construct_arg_dicts(output_list)
-
-    output_configs = []
-    for output_name, output_arg_dict in output_arg_dicts.items():
-        output_type = output_arg_dict.pop('type')
-        output_configs.append(
-            OutputConfig(name=output_name, output_type=output_type, output_args=output_arg_dict)
-        )
+    output_configs = _get_output_configs(output_list)
 
     context = create_dagster_context(log_level=LOGGING_DICT[log_level])
+    pipeline_iter = output_pipeline(context, pipeline, input_arg_dicts, output_configs)
+
+    process_results_for_console(pipeline_iter, context)
+
+
+def process_results_for_console(pipeline_iter, context):
     results = []
-    for result in output_pipeline(context, pipeline, input_arg_dicts, output_configs):
+    for result in pipeline_iter:
         if not result.success:
             if result.reason == SolidExecutionFailureReason.USER_CODE_ERROR:
                 raise result.user_exception
@@ -69,6 +68,19 @@ def embedded_dagster_output_command(cxt, input, output, log_level):  # pylint: d
         results.append(result)
 
     print_metrics_to_console(results, context)
+
+
+def _get_output_configs(output_list):
+    output_arg_dicts = construct_arg_dicts(output_list)
+
+    output_configs = []
+    for output_name, output_arg_dict in output_arg_dicts.items():
+        check.invariant('type' in output_arg_dict, 'must specify output type')
+        output_type = output_arg_dict.pop('type')
+        output_configs.append(
+            OutputConfig(name=output_name, output_type=output_type, output_args=output_arg_dict)
+        )
+    return output_configs
 
 
 @click.command(name='execute')
@@ -90,18 +102,9 @@ def embedded_dagster_execute_command(cxt, input, through, log_level):  # pylint:
 
     context = create_dagster_context(log_level=LOGGING_DICT[log_level])
 
-    results = []
-
-    for result in execute_pipeline(context, pipeline, input_arg_dicts, through_solids=through_list):
-        if not result.success:
-            if result.reason == SolidExecutionFailureReason.USER_CODE_ERROR:
-                raise result.user_exception
-            else:
-                raise result.exception
-
-        results.append(result)
-
-    print_metrics_to_console(results, context)
+    process_results_for_console(
+        execute_pipeline(context, pipeline, input_arg_dicts, through_solids=through_list), context
+    )
 
 
 def print_metrics_to_console(results, context):
