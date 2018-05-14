@@ -6,7 +6,8 @@ from solidic.definitions import (
 )
 
 from solidic.execution import (
-    output_solid, SolidExecutionResult, SolidExecutionFailureReason, SolidExecutionContext
+    output_solid, SolidExecutionResult, SolidExecutionFailureReason, SolidExecutionContext,
+    execute_solid
 )
 
 
@@ -72,6 +73,59 @@ def create_noop_output(test_output):
         output_fn=set_test_output,
         argument_def_dict={},
     )
+
+
+def test_hello_world():
+    def transform_fn(context, hello_world_input):
+        assert isinstance(context, SolidExecutionContext)
+        assert isinstance(hello_world_input, dict)
+        hello_world_input['hello'] = 'world'
+        return hello_world_input
+
+    output_events = {}
+
+    def output_fn(data, context, arg_dict):
+        assert data['hello'] == 'world'
+        assert isinstance(context, SolidExecutionContext)
+        assert arg_dict == {}
+        output_events['called'] = True
+
+    hello_world = Solid(
+        name='hello_world',
+        inputs=[
+            SolidInputDefinition(
+                name='hello_world_input',
+                input_fn=lambda context, arg_dict: {},
+                argument_def_dict={},
+            )
+        ],
+        transform_fn=transform_fn,
+        output_type_defs=[
+            SolidOutputTypeDefinition(name='CUSTOM', output_fn=output_fn, argument_def_dict={})
+        ]
+    )
+
+    result = execute_solid(create_test_context(), hello_world, {'hello_world_input': {}})
+
+    if result.exception:
+        raise result.exception
+
+    assert result.success
+
+    assert result.materialized_output['hello'] == 'world'
+
+    assert 'called' not in output_events
+
+    output_result = output_solid(
+        create_test_context(), hello_world, {'hello_world_input': {}}, 'CUSTOM', {}
+    )
+
+    if output_result.exception:
+        raise output_result.exception
+
+    assert output_result.success
+
+    assert 'called' in output_events
 
 
 def test_execute_solid_with_args():
