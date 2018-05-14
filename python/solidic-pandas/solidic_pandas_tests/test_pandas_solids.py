@@ -4,7 +4,7 @@ import pandas as pd
 
 import check
 import solidic
-from solidic.definitions import Solid, SolidOutputTypeDefinition
+from solidic.definitions import (Solid, SolidOutputTypeDefinition)
 from solidic.execution import (
     OutputConfig, SolidExecutionContext, execute_solid_in_pipeline, materialize_input,
     output_pipeline, output_solid, pipeline_solid, pipeline_solid_in_memory,
