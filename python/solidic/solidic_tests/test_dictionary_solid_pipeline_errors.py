@@ -1,12 +1,10 @@
-import copy
-
 import check
 
 import solidic
 from solidic.definitions import (Solid, SolidInputDefinition, SolidOutputDefinition)
 from solidic.execution import (
-    SolidExecutionContext, output_pipeline, OutputConfig, SolidExecutionFailureReason,
-    execute_pipeline_and_collect
+    SolidExecutionContext, OutputConfig, SolidExecutionFailureReason, execute_pipeline_and_collect,
+    output_pipeline_and_collect
 )
 
 
@@ -131,14 +129,12 @@ def test_input_failure_pipeline():
 def test_output_failure_pipeline():
     pipeline = solidic.pipeline(solids=[create_root_output_failure_solid('failing_output')])
 
-    results = []
-    for result in output_pipeline(
+    results = output_pipeline_and_collect(
         create_test_context(),
         pipeline,
         input_arg_dicts={'failing_output_input': {}},
         output_configs=[OutputConfig(name='failing_output', output_type='CUSTOM', output_args={})]
-    ):
-        results.append(copy.deepcopy(result))
+    )
 
     assert len(results) == 1
     assert not results[0].success
