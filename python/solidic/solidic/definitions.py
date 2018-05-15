@@ -58,13 +58,27 @@ class SolidExpectationDefinition:
         self.expectation_fn = check.callable_param(expectation_fn, 'expectation_fn')
 
 
+def _contextify_fn(fn):
+    check.callable_param(fn, 'fn')
+
+    if not has_context_variable(fn):
+
+        def wrapper_with_context(context, *args, **kwargs):
+            check.not_none_param(context, 'context')
+            return fn(*args, **kwargs)
+
+        return wrapper_with_context
+    else:
+        return fn
+
+
 # The computation which translates an arbitrary set of key value pairs
 # to the native programming abstraction
 # Input expectations that execute *before* the core transform
 class SolidInputDefinition:
     def __init__(self, name, input_fn, argument_def_dict, expectations=None, depends_on=None):
         self.name = check_valid_name(name)
-        self.input_fn = check.callable_param(input_fn, 'input_fn')
+        self.input_fn = _contextify_fn(check.callable_param(input_fn, 'input_fn'))
         self.argument_def_dict = check.dict_param(
             argument_def_dict, 'argument_def_dict', key_type=str, value_type=SolidType
         )
