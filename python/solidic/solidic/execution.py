@@ -15,7 +15,9 @@ from .definitions import (
     SolidExpectationResult,
 )
 
-from .errors import (SolidExecutionError, SolidTypeError, SolidExecutionFailureReason)
+from .errors import (
+    SolidExecutionError, SolidTypeError, SolidExecutionFailureReason, SolidExpectationFailedError
+)
 from .graph import SolidPipeline
 
 Metric = namedtuple('Metric', 'context_dict metric_name value')
@@ -152,10 +154,22 @@ class SolidExecutionResult:
         if reason == SolidExecutionFailureReason.USER_CODE_ERROR:
             check.inst(exception, SolidExecutionError)
             self.user_exception = exception.user_exception
+        else:
+            self.user_exception = None
 
-        self.failed_expectation_results = check.opt_list_param(
-            failed_expectation_results, 'failed_expectation_result', of_type=SolidExpectationResult
-        )
+        if reason == SolidExecutionFailureReason.EXPECTATION_FAILURE:
+            check.invariant(
+                failed_expectation_results is not None and failed_expectation_results != [],
+                'Must have at least one expectation failure'
+            )
+            self.failed_expectation_results = check.list_param(
+                failed_expectation_results,
+                'failed_expectation_result',
+                of_type=SolidExpectationResult
+            )
+        else:
+            check.invariant(failed_expectation_results is None)
+            self.failed_expectation_results = None
 
     @property
     def name(self):
@@ -426,7 +440,7 @@ def pipeline_solid_in_memory(context, solid, materialized_inputs):
         if not output_expectation_result.success:
             output_expectation_failures.append(output_expectation_result)
 
-    if output_expectation_failures:
+    if len(output_expectation_failures) > 0:
         return SolidExecutionResult(
             success=False,
             materialized_output=None,
@@ -438,7 +452,7 @@ def pipeline_solid_in_memory(context, solid, materialized_inputs):
     return materialized_output
 
 
-def execute_solid(context, solid, input_arg_dicts):
+def execute_solid(context, solid, input_arg_dicts, throw_on_error=True):
     check.inst_param(context, 'context', SolidExecutionContext)
     check.inst_param(solid, 'solid', Solid)
     check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
@@ -451,15 +465,40 @@ def execute_solid(context, solid, input_arg_dicts):
 
     check.invariant(execution_result.name == solid.name)
 
+    if throw_on_error:
+        _do_throw_on_error(execution_result)
+
     return execution_result
 
 
-def output_solid(context, solid, input_arg_dicts, output_type, output_arg_dict):
+def _do_throw_on_error(execution_result):
+    check.inst_param(execution_result, 'execution_result', SolidExecutionResult)
+    if not execution_result.success:
+        if execution_result.reason == SolidExecutionFailureReason.EXPECTATION_FAILURE:
+            check.invariant(
+                execution_result.failed_expectation_results is not None
+                and execution_result.failed_expectation_results != []
+            )
+            raise SolidExpectationFailedError(
+                failed_expectation_results=execution_result.failed_expectation_results
+            )
+
+        if execution_result.user_exception:
+            raise execution_result.user_exception
+
+        check.invariant(execution_result.exception)
+        raise execution_result.exception
+
+
+def output_solid(
+    context, solid, input_arg_dicts, output_type, output_arg_dict, throw_on_error=True
+):
     check.inst_param(context, 'context', SolidExecutionContext)
     check.inst_param(solid, 'solid', Solid)
     check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
     check.str_param(output_type, 'output_type')
     check.dict_param(output_arg_dict, 'output_arg_dict', key_type=str)
+    check.bool_param(throw_on_error, 'throw_on_error')
 
     results = list(
         output_pipeline(
@@ -468,7 +507,7 @@ def output_solid(context, solid, input_arg_dicts, output_type, output_arg_dict):
             input_arg_dicts,
             output_configs=[
                 OutputConfig(name=solid.name, output_type=output_type, output_args=output_arg_dict)
-            ]
+            ],
         )
     )
 
@@ -477,6 +516,9 @@ def output_solid(context, solid, input_arg_dicts, output_type, output_arg_dict):
     execution_result = results[0]
 
     check.invariant(execution_result.name == solid.name)
+
+    if throw_on_error:
+        _do_throw_on_error(execution_result)
 
     return execution_result
 

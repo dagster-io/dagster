@@ -2,6 +2,8 @@ from enum import Enum
 
 import check
 
+import solidic.definitions
+
 
 class SolidExecutionFailureReason(Enum):
     USER_CODE_ERROR = 'USER_CODE_ERROR'
@@ -9,7 +11,11 @@ class SolidExecutionFailureReason(Enum):
     EXPECTATION_FAILURE = 'EXPECATION_FAILURE'
 
 
-class SolidUserError(Exception):
+class SolidError(Exception):
+    pass
+
+
+class SolidUserError(SolidError):
     pass
 
 
@@ -29,3 +35,16 @@ class SolidExecutionError(SolidUserError):
     def __init__(self, *args, user_exception=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.user_exception = check.opt_inst_param(user_exception, 'user_exception', Exception)
+
+
+class SolidExpectationFailedError(SolidError):
+    '''Thrown with pipeline configured to throw on expectation failure'''
+
+    def __init__(self, *args, failed_expectation_results, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.failed_results = check.list_param(
+            failed_expectation_results,
+            'failed_expectation_results',
+            # fully qualified name prevents circular reference
+            solidic.definitions.SolidExpectationResult
+        )
