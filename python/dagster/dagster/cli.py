@@ -5,9 +5,8 @@ import check
 
 @click.command(name='create')
 @click.pass_context
-def dagster_pipeline_create_command(ctx):
-    print('CREATE')
-    print(ctx.obj)
+def dagster_pipeline_create_command(_ctx):
+    check.not_implemented('Not doing scaffolding for now')
 
 
 def define_pipeline_command_group():

@@ -24,17 +24,30 @@ class SolidInvalidDefinition(SolidUserError):
     pass
 
 
+class SolidInvariantViolation(SolidUserError):
+    '''Indicates the user has violated a well-defined invariant that can only be deteremined
+    at runtime.
+    '''
+    pass
+
+
 class SolidTypeError(SolidUserError):
     '''Indicates an error in the solid type system (e.g. mismatched arguments)'''
     pass
 
 
 class SolidExecutionError(SolidUserError):
-    '''Indicates an error in user space code'''
+    '''Indicates that user space code has raised an error'''
 
-    def __init__(self, *args, user_exception=None, **kwargs):
+    def __init__(self, *args, user_exception, original_exc_info, **kwargs):
+        # original_exc_info should be gotten from a sys.exc_info() call at the
+        # callsite inside of the exception handler. this will allow consuming
+        # code to *re-raise* the user error in it's original format
+        # for cleaner error reporting that does not have framework code in it
         super().__init__(*args, **kwargs)
+
         self.user_exception = check.opt_inst_param(user_exception, 'user_exception', Exception)
+        self.original_exc_info = original_exc_info
 
 
 class SolidExpectationFailedError(SolidError):

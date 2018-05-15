@@ -1,6 +1,9 @@
 from collections import (namedtuple, OrderedDict)
 from contextlib import contextmanager
 import copy
+import sys
+
+import six
 
 import check
 
@@ -16,7 +19,8 @@ from .definitions import (
 )
 
 from .errors import (
-    SolidExecutionError, SolidTypeError, SolidExecutionFailureReason, SolidExpectationFailedError
+    SolidExecutionError, SolidTypeError, SolidExecutionFailureReason, SolidExpectationFailedError,
+    SolidInvariantViolation
 )
 from .graph import SolidPipeline
 
@@ -171,9 +175,27 @@ class SolidExecutionResult:
             check.invariant(failed_expectation_results is None)
             self.failed_expectation_results = None
 
+    def reraise_user_error(self):
+        check.invariant(self.reason == SolidExecutionFailureReason.USER_CODE_ERROR)
+        check.inst(self.exception, SolidExecutionError)
+        six.reraise(*self.exception.original_exc_info)
+
     @property
     def name(self):
         return self.solid.name
+
+    def copy(self):
+        ''' This must be used instead of copy.deepcopy() because exceptions cannot
+        be deepcopied'''
+        return SolidExecutionResult(
+            success=self.success,
+            solid=self.solid,
+            materialized_output=copy.deepcopy(self.materialized_output),
+            reason=self.reason,
+            exception=self.exception,
+            failed_expectation_results=None if self.failed_expectation_results is None else
+            [result.copy() for result in self.failed_expectation_results],
+        )
 
 
 @contextmanager
@@ -185,7 +207,9 @@ def user_code_error_boundary(context, msg, **kwargs):
         yield
     except Exception as e:
         context.exception(e)
-        raise SolidExecutionError(msg.format(**kwargs), e, user_exception=e)
+        raise SolidExecutionError(
+            msg.format(**kwargs), e, user_exception=e, original_exc_info=sys.exc_info()
+        )
 
 
 def materialize_input(context, input_definition, arg_dict):
@@ -243,7 +267,9 @@ def execute_input_expectation(context, expectation_def, materialized_input):
         expectation_result = expectation_def.expectation_fn(materialized_input)
 
     if not isinstance(expectation_result, SolidExpectationResult):
-        raise SolidExecutionError('Must return SolidExpectationResult from expectation function')
+        raise SolidInvariantViolation(
+            'Must return SolidExpectationResult from expectation function'
+        )
 
     return expectation_result
 
@@ -257,7 +283,10 @@ def execute_output_expectation(context, expectation_def, materialized_output):
         expectation_result = expectation_def.expectation_fn(materialized_output)
 
     if not isinstance(expectation_result, SolidExpectationResult):
-        raise SolidExecutionError('Must return SolidExpectationResult from expectation function')
+
+        raise SolidInvariantViolation(
+            'Must return SolidExpectationResult from expectation function'
+        )
 
     return expectation_result
 
@@ -440,7 +469,7 @@ def pipeline_solid_in_memory(context, solid, materialized_inputs):
         if not output_expectation_result.success:
             output_expectation_failures.append(output_expectation_result)
 
-    if len(output_expectation_failures) > 0:
+    if output_expectation_failures:
         return SolidExecutionResult(
             success=False,
             materialized_output=None,
@@ -607,13 +636,13 @@ def execute_pipeline(context, pipeline, input_arg_dicts, through_solids=None):
 
         try:
             with context.value('solid', solid.name):
-                materialized_output = _execute_pipeline_solid_step(
+                execution_result = _execute_pipeline_solid_step(
                     context, solid, input_arg_dicts, materialized_values
                 )
 
-            yield materialized_output
+            yield execution_result
 
-            if not materialized_output.success:
+            if not execution_result.success:
                 break
 
         except SolidExecutionError as see:
@@ -624,6 +653,7 @@ def execute_pipeline(context, pipeline, input_arg_dicts, through_solids=None):
                 materialized_output=None,
                 exception=see,
             )
+            break
 
 
 OutputConfig = namedtuple('OutputConfig', 'name output_type, output_args')
@@ -632,7 +662,7 @@ OutputConfig = namedtuple('OutputConfig', 'name output_type, output_args')
 def execute_pipeline_and_collect(context, pipeline, input_arg_dicts, through_solids=None):
     results = []
     for result in execute_pipeline(context, pipeline, input_arg_dicts, through_solids):
-        results.append(copy.deepcopy(result))
+        results.append(result.copy())
     return results
 
 
@@ -644,7 +674,7 @@ def output_pipeline_and_collect(context, pipeline, input_arg_dicts, output_confi
 
     results = []
     for result in output_pipeline(context, pipeline, input_arg_dicts, output_configs):
-        results.append(copy.deepcopy(result))
+        results.append(result.copy())
     return results
 
 
