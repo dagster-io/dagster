@@ -2,7 +2,7 @@ import pytest
 
 import check
 
-from solidic.definitions import (SolidInputDefinition, SolidOutputTypeDefinition)
+from solidic.definitions import (SolidInputDefinition, SolidOutputDefinition)
 
 from solidic.execution import (
     materialize_input, SolidExecutionError, execute_core_transform, execute_output,
@@ -43,14 +43,11 @@ def test_basic_output_transform_error_handling():
     def output_fn_inst(_data, _output_arg_dict):
         raise Exception('error during output')
 
-    output_type_def = SolidOutputTypeDefinition(
+    output_def = SolidOutputDefinition(
         name='CUSTOM', output_fn=output_fn_inst, argument_def_dict={}
     )
 
     with pytest.raises(SolidExecutionError):
         execute_output(
-            create_test_context(),
-            output_type_def,
-            output_arg_dict={},
-            materialized_output='whatever'
+            create_test_context(), output_def, output_arg_dict={}, materialized_output='whatever'
         )

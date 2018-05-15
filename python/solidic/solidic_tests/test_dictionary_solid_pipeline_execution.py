@@ -3,7 +3,7 @@ import pytest
 
 import check
 
-from solidic.definitions import (SolidInputDefinition, Solid, SolidOutputTypeDefinition)
+from solidic.definitions import (SolidInputDefinition, Solid, SolidOutputDefinition)
 from solidic.graph import (create_adjacency_lists, SolidGraph, SolidPipeline)
 from solidic.execution import (execute_pipeline, SolidExecutionContext, SolidExecutionResult)
 
@@ -16,7 +16,7 @@ def create_test_context():
 
 
 def create_dummy_output_def():
-    return SolidOutputTypeDefinition(
+    return SolidOutputDefinition(
         name='CUSTOM',
         output_fn=lambda _data, _output_arg_dict: None,
         argument_def_dict={},
@@ -55,7 +55,7 @@ def create_solid_with_deps(name, *solid_deps):
         name=name,
         inputs=inputs,
         transform_fn=dep_transform,
-        output_type_defs=[create_dummy_output_def()],
+        outputs=[create_dummy_output_def()],
     )
 
 
@@ -77,7 +77,7 @@ def create_root_solid(name):
         name=name,
         inputs=[inp],
         transform_fn=root_transform,
-        output_type_defs=[create_dummy_output_def()]
+        outputs=[create_dummy_output_def()]
     )
 
 

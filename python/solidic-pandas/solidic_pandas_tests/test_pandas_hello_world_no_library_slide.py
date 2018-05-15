@@ -1,7 +1,7 @@
 import pandas as pd
 
 import solidic
-from solidic.definitions import (Solid, SolidOutputTypeDefinition, SolidInputDefinition)
+from solidic.definitions import (Solid, SolidOutputDefinition, SolidInputDefinition)
 from solidic.execution import (SolidExecutionContext, execute_solid)
 from solidic_utils.test import (script_relative_path)
 
@@ -21,7 +21,7 @@ def test_hello_world_no_library_support():
         num_csv['sum'] = num_csv['num1'] + num_csv['num2']
         return num_csv
 
-    csv_output = SolidOutputTypeDefinition(
+    csv_output = SolidOutputDefinition(
         name='CSV',
         output_fn=lambda df, context, arg_dict: df.to_csv(arg_dict['path'], index=False),
         argument_def_dict={'path': solidic.PATH}
@@ -31,7 +31,7 @@ def test_hello_world_no_library_support():
         name='hello_world',
         inputs=[csv_input],
         transform_fn=transform_fn,
-        output_type_defs=[csv_output],
+        outputs=[csv_output],
     )
 
     input_arg_dicts = {'num_csv': {'path': script_relative_path('num.csv')}}

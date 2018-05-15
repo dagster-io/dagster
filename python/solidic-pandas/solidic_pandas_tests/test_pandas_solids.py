@@ -4,7 +4,7 @@ import pandas as pd
 
 import check
 import solidic
-from solidic.definitions import (Solid, SolidOutputTypeDefinition)
+from solidic.definitions import (Solid, SolidOutputDefinition)
 from solidic.execution import (
     OutputConfig, SolidExecutionContext, execute_solid_in_pipeline, materialize_input,
     output_pipeline, output_solid, pipeline_solid, pipeline_solid_in_memory,
@@ -42,7 +42,7 @@ def test_pandas_solid():
         assert isinstance(df, pd.DataFrame)
         test_output['df'] = df
 
-    custom_output_type_def = SolidOutputTypeDefinition(
+    custom_output_def = SolidOutputDefinition(
         name='CUSTOM',
         output_fn=output_fn_inst,
         argument_def_dict={},
@@ -52,7 +52,7 @@ def test_pandas_solid():
         name='sum_table',
         inputs=[csv_input],
         transform_fn=transform,
-        output_type_defs=[custom_output_type_def],
+        outputs=[custom_output_def],
     )
 
     output_solid(
@@ -79,7 +79,7 @@ def test_pandas_csv_to_csv():
         path = check.str_elem(output_arg_dict, 'path')
         df.to_csv(path, index=False)
 
-    csv_output_type_def = SolidOutputTypeDefinition(
+    csv_output_def = SolidOutputDefinition(
         name='CSV', output_fn=output_fn_inst, argument_def_dict={'path': solidic.PATH}
     )
 
@@ -87,7 +87,7 @@ def test_pandas_csv_to_csv():
         name='sum_table',
         inputs=[csv_input],
         transform_fn=transform,
-        output_type_defs=[csv_output_type_def],
+        outputs=[csv_output_def],
     )
 
     output_df = execute_transform_in_temp_file(solid)

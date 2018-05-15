@@ -2,7 +2,7 @@ import pytest
 
 from solidic.types import SolidString
 
-from solidic.definitions import (Solid, SolidInputDefinition, SolidOutputTypeDefinition)
+from solidic.definitions import (Solid, SolidInputDefinition, SolidOutputDefinition)
 
 from solidic.execution import (
     materialize_input, execute_core_transform, execute_output, SolidTypeError, SolidExecutionContext
@@ -64,7 +64,7 @@ def test_materialize_output():
         some_input[0]['data_key'] = 'new_value'
         return some_input
 
-    custom_output_type_def = SolidOutputTypeDefinition(
+    custom_output_def = SolidOutputDefinition(
         name='CUSTOM',
         output_fn=lambda _data, _output_arg_dict: None,
         argument_def_dict={},
@@ -74,7 +74,7 @@ def test_materialize_output():
         name='some_node',
         inputs=[some_input],
         transform_fn=tranform_fn_inst,
-        output_type_defs=[custom_output_type_def],
+        outputs=[custom_output_def],
     )
 
     materialized_input = materialize_input(create_test_context(), some_input, {})
@@ -100,7 +100,7 @@ def test_materialize_output_with_context():
         some_input[0]['data_key'] = 'new_value'
         return some_input
 
-    custom_output_type_def = SolidOutputTypeDefinition(
+    custom_output_def = SolidOutputDefinition(
         name='CUSTOM',
         output_fn=lambda _data, _output_arg_dict: None,
         argument_def_dict={},
@@ -110,7 +110,7 @@ def test_materialize_output_with_context():
         name='some_node',
         inputs=[some_input],
         transform_fn=tranform_fn_inst,
-        output_type_defs=[custom_output_type_def],
+        outputs=[custom_output_def],
     )
 
     materialized_input = materialize_input(create_test_context(), some_input, {})
@@ -143,7 +143,7 @@ def test_execute_output_with_args():
         test_output['thedata'] = materialized_output
         test_output['thearg'] = output_arg_dict['out_arg']
 
-    custom_output = SolidOutputTypeDefinition(
+    custom_output = SolidOutputDefinition(
         name='CUSTOM', output_fn=output_fn_inst, argument_def_dict={'out_arg': SolidString}
     )
 
@@ -155,7 +155,7 @@ def test_execute_output_with_args():
 
 
 def test_execute_output_arg_mismatch():
-    custom_output = SolidOutputTypeDefinition(
+    custom_output = SolidOutputDefinition(
         name='CUSTOM', output_fn=lambda out, dict: [], argument_def_dict={'out_arg': SolidString}
     )
 
@@ -177,7 +177,7 @@ def test_execute_output_arg_mismatch():
 
 
 def test_execute_output_arg_type_mismatch():
-    custom_output = SolidOutputTypeDefinition(
+    custom_output = SolidOutputDefinition(
         name='CUSTOM', output_fn=lambda out, dict: [], argument_def_dict={'out_arg': SolidString}
     )
 

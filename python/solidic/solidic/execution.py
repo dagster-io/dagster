@@ -10,7 +10,7 @@ from solidic_utils.timing import time_execution_scope
 from .definitions import (
     Solid,
     SolidInputDefinition,
-    SolidOutputTypeDefinition,
+    SolidOutputDefinition,
     SolidExpectationDefinition,
     SolidExpectationResult,
 )
@@ -275,12 +275,12 @@ def execute_core_transform(
         return materialized_output
 
 
-def execute_output(context, output_type_def, output_arg_dict, materialized_output):
+def execute_output(context, output_def, output_arg_dict, materialized_output):
     check.inst_param(context, 'context', SolidExecutionContext)
-    check.inst_param(output_type_def, 'output_type_def', SolidOutputTypeDefinition)
+    check.inst_param(output_def, 'output_def', SolidOutputDefinition)
     check.dict_param(output_arg_dict, 'output_arg_dict', key_type=str)
 
-    expected_args = set(output_type_def.argument_def_dict.keys())
+    expected_args = set(output_def.argument_def_dict.keys())
     received_args = set(output_arg_dict.keys())
 
     if expected_args != received_args:
@@ -292,7 +292,7 @@ def execute_output(context, output_type_def, output_arg_dict, materialized_outpu
         )
 
     for arg_name, arg_value in output_arg_dict.items():
-        arg_def_type = output_type_def.argument_def_dict[arg_name]
+        arg_def_type = output_def.argument_def_dict[arg_name]
         if not arg_def_type.is_python_valid_value(arg_value):
             raise SolidTypeError(
                 'Expected type {typename} for arg {arg_name} in output but got {arg_value}'.format(
@@ -305,7 +305,7 @@ def execute_output(context, output_type_def, output_arg_dict, materialized_outpu
     error_str = 'Error during execution of output'
     with user_code_error_boundary(context, error_str):
         context.info('Entering output implementation')
-        output_type_def.output_fn(materialized_output, context, output_arg_dict)
+        output_def.output_fn(materialized_output, context, output_arg_dict)
 
 
 SolidInputExpectationRunResults = namedtuple(
@@ -624,14 +624,12 @@ def output_pipeline(context, pipeline, input_arg_dicts, output_configs):
         if result.name in output_dict:
             output_type = output_dict[result.name].output_type
             output_arg_dict = output_dict[result.name].output_args
-            output_type_def = result.solid.output_type_def_named(output_type)
+            output_def = result.solid.output_def_named(output_type)
             with context.value('solid', result.name), \
-                context.value('output_type', output_type_def.name), \
+                context.value('output_type', output_def.name), \
                 context.value('output_args', output_arg_dict):
                 try:
-                    execute_output(
-                        context, output_type_def, output_arg_dict, result.materialized_output
-                    )
+                    execute_output(context, output_def, output_arg_dict, result.materialized_output)
                 except SolidExecutionError as see:
                     yield SolidExecutionResult(
                         success=False,

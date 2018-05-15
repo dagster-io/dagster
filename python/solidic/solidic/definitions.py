@@ -76,7 +76,7 @@ def create_solidic_single_file_input(name, single_file_fn):
 
 # Output expectations that execute before the output computation
 # The output computation itself
-class SolidOutputTypeDefinition:
+class SolidOutputDefinition:
     def __init__(self, name, output_fn, argument_def_dict):
         self.name = check_valid_name(name)
         self.output_fn = check.callable_param(output_fn, 'output_fn')
@@ -89,13 +89,11 @@ class SolidOutputTypeDefinition:
 # The core computation in the native kernel abstraction
 # The output
 class Solid:
-    def __init__(self, name, inputs, transform_fn, output_type_defs, output_expectations=None):
+    def __init__(self, name, inputs, transform_fn, outputs, output_expectations=None):
         self.name = check_valid_name(name)
         self.inputs = check.list_param(inputs, 'inputs', of_type=SolidInputDefinition)
         self.transform_fn = check.callable_param(transform_fn, 'transform')
-        self.output_type_defs = check.list_param(
-            output_type_defs, 'supported_outputs', of_type=SolidOutputTypeDefinition
-        )
+        self.outputs = check.list_param(outputs, 'supported_outputs', of_type=SolidOutputDefinition)
         self.output_expectations = check.opt_list_param(
             output_expectations, 'output_expectations', of_type=SolidExpectationDefinition
         )
@@ -113,10 +111,10 @@ class Solid:
 
         check.failed('Not found')
 
-    def output_type_def_named(self, name):
+    def output_def_named(self, name):
         check.str_param(name, 'name')
-        for output_type_def in self.output_type_defs:
-            if output_type_def.name == name:
-                return output_type_def
+        for output_def in self.outputs:
+            if output_def.name == name:
+                return output_def
 
         check.failed('Not found')
