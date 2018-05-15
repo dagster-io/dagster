@@ -61,8 +61,6 @@ def test_insurance_pipeline():
         providers_771_args(),
         output_name='insurance',
     )
-    if result.exception:
-        raise result.exception
     assert result.success
     assert result.name == 'insurance'
     assert not result.materialized_output.empty
@@ -139,9 +137,6 @@ def test_languages_pipeline():
         }},
         output_name='languages',
     )
-
-    if result.exception:
-        raise result.exception
 
     assert result.success
     df = result.materialized_output

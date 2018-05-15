@@ -110,8 +110,5 @@ def test_no_input_fn_context():
         output_arg_dict={}
     )
 
-    if result.exception:
-        raise result.exception
-
     assert result.success
     assert test_output['thedata'] == [{'data_key': 'new_value'}]

@@ -26,9 +26,6 @@ def test_hello_world_no_library_support():
     input_arg_dicts = {'num_csv': {'path': script_relative_path('num.csv')}}
     result = execute_solid(create_test_context(), hello_world, input_arg_dicts)
 
-    if result.exception:
-        raise result.exception
-
     assert result.success
 
     assert result.materialized_output.to_dict('list') == {

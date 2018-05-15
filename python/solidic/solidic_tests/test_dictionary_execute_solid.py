@@ -1,3 +1,5 @@
+import pytest
+
 from solidic.types import SolidString
 
 from solidic.definitions import (
@@ -9,6 +11,8 @@ from solidic.execution import (
     output_solid, SolidExecutionResult, SolidExecutionFailureReason, SolidExecutionContext,
     execute_solid
 )
+
+from solidic.errors import SolidExpectationFailedError
 
 
 def create_test_context():
@@ -105,9 +109,6 @@ def test_hello_world():
 
     result = execute_solid(create_test_context(), hello_world, {'hello_world_input': {}})
 
-    if result.exception:
-        raise result.exception
-
     assert result.success
 
     assert result.materialized_output['hello'] == 'world'
@@ -154,7 +155,53 @@ def test_execute_solid_with_args():
     assert test_output['thedata'][0]['key'] == 'an_input_arg'
 
 
-def test_execute_solid_with_failed_input_expectation():
+def test_execute_solid_with_failed_input_expectation_non_throwing():
+    single_solid = create_input_failing_solid()
+
+    solid_execution_result = output_solid(
+        create_test_context(),
+        single_solid,
+        input_arg_dicts={'some_input': {
+            'str_arg': 'an_input_arg'
+        }},
+        output_type='CUSTOM',
+        output_arg_dict={},
+        throw_on_error=False,
+    )
+
+    assert isinstance(solid_execution_result, SolidExecutionResult)
+    assert solid_execution_result.success is False
+    assert solid_execution_result.reason == SolidExecutionFailureReason.EXPECTATION_FAILURE
+
+
+def test_execute_solid_with_failed_input_expectation_throwing():
+    single_solid = create_input_failing_solid()
+
+    with pytest.raises(SolidExpectationFailedError):
+        output_solid(
+            create_test_context(),
+            single_solid,
+            input_arg_dicts={'some_input': {
+                'str_arg': 'an_input_arg'
+            }},
+            output_type='CUSTOM',
+            output_arg_dict={},
+            throw_on_error=True,
+        )
+
+    with pytest.raises(SolidExpectationFailedError):
+        output_solid(
+            create_test_context(),
+            single_solid,
+            input_arg_dicts={'some_input': {
+                'str_arg': 'an_input_arg'
+            }},
+            output_type='CUSTOM',
+            output_arg_dict={},
+        )
+
+
+def create_input_failing_solid():
     test_output = {}
 
     def failing_expectation_fn(_some_input):
@@ -164,21 +211,26 @@ def test_execute_solid_with_failed_input_expectation():
         name='failing', expectation_fn=failing_expectation_fn
     )
 
-    single_solid = Solid(
+    return Solid(
         name='some_node',
         inputs=[create_single_dict_input(expectations=[failing_expect])],
         transform_fn=lambda some_input: some_input,
         outputs=[create_noop_output(test_output)],
     )
 
+
+def test_execute_solid_with_failed_output_expectation_non_throwing():
+    failing_solid = create_output_failing_solid()
+
     solid_execution_result = output_solid(
         create_test_context(),
-        single_solid,
+        failing_solid,
         input_arg_dicts={'some_input': {
             'str_arg': 'an_input_arg'
         }},
         output_type='CUSTOM',
         output_arg_dict={},
+        throw_on_error=False
     )
 
     assert isinstance(solid_execution_result, SolidExecutionResult)
@@ -186,7 +238,34 @@ def test_execute_solid_with_failed_input_expectation():
     assert solid_execution_result.reason == SolidExecutionFailureReason.EXPECTATION_FAILURE
 
 
-def test_execute_solid_with_failed_output_expectation():
+def test_execute_solid_with_failed_output_expectation_throwing():
+    failing_solid = create_output_failing_solid()
+
+    with pytest.raises(SolidExpectationFailedError):
+        output_solid(
+            create_test_context(),
+            failing_solid,
+            input_arg_dicts={'some_input': {
+                'str_arg': 'an_input_arg'
+            }},
+            output_type='CUSTOM',
+            output_arg_dict={},
+        )
+
+    with pytest.raises(SolidExpectationFailedError):
+        output_solid(
+            create_test_context(),
+            failing_solid,
+            input_arg_dicts={'some_input': {
+                'str_arg': 'an_input_arg'
+            }},
+            output_type='CUSTOM',
+            output_arg_dict={},
+            throw_on_error=True
+        )
+
+
+def create_output_failing_solid():
     test_output = {}
 
     def failing_expectation_fn(_output):
@@ -196,24 +275,10 @@ def test_execute_solid_with_failed_output_expectation():
         name='output_failure', expectation_fn=failing_expectation_fn
     )
 
-    single_solid = Solid(
+    return Solid(
         name='some_node',
         inputs=[create_single_dict_input()],
         transform_fn=lambda some_input: some_input,
         outputs=[create_noop_output(test_output)],
         output_expectations=[output_expectation],
     )
-
-    solid_execution_result = output_solid(
-        create_test_context(),
-        single_solid,
-        input_arg_dicts={'some_input': {
-            'str_arg': 'an_input_arg'
-        }},
-        output_type='CUSTOM',
-        output_arg_dict={},
-    )
-
-    assert isinstance(solid_execution_result, SolidExecutionResult)
-    assert solid_execution_result.success is False
-    assert solid_execution_result.reason == SolidExecutionFailureReason.EXPECTATION_FAILURE
