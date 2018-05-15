@@ -1,4 +1,5 @@
 import inspect
+import keyword
 import re
 
 import check
@@ -6,7 +7,22 @@ import check
 from .errors import SolidInvalidDefinition
 from .types import (SolidType, SolidPath)
 
-DISALLOWED_NAMES = set(['context'])
+DISALLOWED_NAMES = set(
+    [
+        'context',
+        'meta',
+        'arg_dict',
+        'dict',
+        'input_arg_dict',
+        'output_arg_dict',
+        'int',
+        'str',
+        'float',
+        'bool',
+        'input',
+        'output',
+    ] + keyword.kwlist  # just disallow all python keywords
+)
 
 
 def has_context_variable(fn):
