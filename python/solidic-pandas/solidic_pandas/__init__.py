@@ -71,7 +71,7 @@ def dataframe_solid(*args, inputs, transform_fn=None, **kwargs):
 
     return Solid(
         inputs=inputs,
-        output_type_defs=[csv_output(), parquet_output()],
+        outputs=[csv_output(), parquet_output()],
         transform_fn=_dependency_transform_wrapper(transform_fn),
         **kwargs
     )

@@ -3,7 +3,7 @@ import copy
 import check
 
 import solidic
-from solidic.definitions import (Solid, SolidInputDefinition, SolidOutputTypeDefinition)
+from solidic.definitions import (Solid, SolidInputDefinition, SolidOutputDefinition)
 from solidic.execution import (
     SolidExecutionContext, output_pipeline, OutputConfig, SolidExecutionFailureReason,
     execute_pipeline_and_collect
@@ -15,7 +15,7 @@ def create_test_context():
 
 
 def create_dummy_output_def():
-    return SolidOutputTypeDefinition(
+    return SolidOutputDefinition(
         name='CUSTOM',
         output_fn=lambda _data, _output_arg_dict: None,
         argument_def_dict={},
@@ -26,7 +26,7 @@ def create_failing_output_def():
     def failing_output_fn(*_args, **_kwargs):
         raise Exception('something bad happened')
 
-    return SolidOutputTypeDefinition(
+    return SolidOutputDefinition(
         name='CUSTOM',
         output_fn=failing_output_fn,
         argument_def_dict={},
@@ -53,7 +53,7 @@ def create_root_success_solid(name):
         name=name,
         inputs=[create_input_set_input_def(input_name)],
         transform_fn=root_transform,
-        output_type_defs=[create_dummy_output_def()]
+        outputs=[create_dummy_output_def()]
     )
 
 
@@ -69,10 +69,7 @@ def create_root_transform_failure_solid(name):
         raise Exception('Transform failed')
 
     return Solid(
-        name=name,
-        inputs=[inp],
-        transform_fn=failed_transform,
-        output_type_defs=[create_dummy_output_def()]
+        name=name, inputs=[inp], transform_fn=failed_transform, outputs=[create_dummy_output_def()]
     )
 
 
@@ -91,7 +88,7 @@ def create_root_input_failure_solid(name):
         name=name,
         inputs=[inp],
         transform_fn=lambda **_kwargs: {},
-        output_type_defs=[create_dummy_output_def()]
+        outputs=[create_dummy_output_def()]
     )
 
 
@@ -107,7 +104,7 @@ def create_root_output_failure_solid(name):
         name=name,
         inputs=[create_input_set_input_def(input_name)],
         transform_fn=root_transform,
-        output_type_defs=[create_failing_output_def()]
+        outputs=[create_failing_output_def()]
     )
 
 
@@ -170,7 +167,7 @@ def test_failure_midstream():
             ),
         ],
         transform_fn=transform_fn,
-        output_type_defs=[]
+        outputs=[]
     )
 
     input_arg_dicts = {'A_input': {}, 'B_input': {}}

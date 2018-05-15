@@ -3,7 +3,7 @@ import pandas as pd
 import check
 
 from solidic.definitions import (
-    SolidInputDefinition, SolidOutputTypeDefinition, Solid, create_solidic_single_file_input
+    SolidInputDefinition, SolidOutputDefinition, Solid, create_solidic_single_file_input
 )
 from solidic.execution import SolidExecutionContext
 from solidic.types import (SolidPath, SolidString)
@@ -66,7 +66,7 @@ def create_solidic_pandas_csv_output():
 
         df.to_csv(path, index=False)
 
-    return SolidOutputTypeDefinition(
+    return SolidOutputDefinition(
         name='CSV', output_fn=output_fn_inst, argument_def_dict={'path': SolidPath}
     )
 
@@ -80,6 +80,6 @@ def create_solidic_pandas_parquet_output():
 
         df.to_parquet(path)
 
-    return SolidOutputTypeDefinition(
+    return SolidOutputDefinition(
         name='PARQUET', output_fn=output_fn_inst, argument_def_dict={'path': SolidPath}
     )

@@ -1,7 +1,7 @@
 from solidic.types import SolidString
 
 from solidic.definitions import (
-    Solid, SolidInputDefinition, SolidOutputTypeDefinition, SolidExpectationDefinition,
+    Solid, SolidInputDefinition, SolidOutputDefinition, SolidExpectationDefinition,
     SolidExpectationResult
 )
 
@@ -31,7 +31,7 @@ def test_execute_solid_no_args():
     def output_fn_inst(data, _context, _output_arg_dict):
         test_output['thedata'] = data
 
-    custom_output = SolidOutputTypeDefinition(
+    custom_output = SolidOutputDefinition(
         name='CUSTOM',
         output_fn=output_fn_inst,
         argument_def_dict={},
@@ -41,7 +41,7 @@ def test_execute_solid_no_args():
         name='some_node',
         inputs=[some_input],
         transform_fn=tranform_fn_inst,
-        output_type_defs=[custom_output],
+        outputs=[custom_output],
     )
 
     output_solid(
@@ -68,7 +68,7 @@ def create_noop_output(test_output):
     def set_test_output(output, _context, _output_arg_dict):
         test_output['thedata'] = output
 
-    return SolidOutputTypeDefinition(
+    return SolidOutputDefinition(
         name='CUSTOM',
         output_fn=set_test_output,
         argument_def_dict={},
@@ -100,9 +100,7 @@ def test_hello_world():
             )
         ],
         transform_fn=transform_fn,
-        output_type_defs=[
-            SolidOutputTypeDefinition(name='CUSTOM', output_fn=output_fn, argument_def_dict={})
-        ]
+        outputs=[SolidOutputDefinition(name='CUSTOM', output_fn=output_fn, argument_def_dict={})]
     )
 
     result = execute_solid(create_test_context(), hello_world, {'hello_world_input': {}})
@@ -135,7 +133,7 @@ def test_execute_solid_with_args():
         name='some_node',
         inputs=[create_single_dict_input()],
         transform_fn=lambda some_input: some_input,
-        output_type_defs=[create_noop_output(test_output)],
+        outputs=[create_noop_output(test_output)],
     )
 
     result = output_solid(
@@ -170,7 +168,7 @@ def test_execute_solid_with_failed_input_expectation():
         name='some_node',
         inputs=[create_single_dict_input(expectations=[failing_expect])],
         transform_fn=lambda some_input: some_input,
-        output_type_defs=[create_noop_output(test_output)],
+        outputs=[create_noop_output(test_output)],
     )
 
     solid_execution_result = output_solid(
@@ -202,7 +200,7 @@ def test_execute_solid_with_failed_output_expectation():
         name='some_node',
         inputs=[create_single_dict_input()],
         transform_fn=lambda some_input: some_input,
-        output_type_defs=[create_noop_output(test_output)],
+        outputs=[create_noop_output(test_output)],
         output_expectations=[output_expectation],
     )
 
