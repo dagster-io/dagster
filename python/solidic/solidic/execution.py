@@ -168,7 +168,7 @@ class SolidExecutionResult:
             )
             self.failed_expectation_results = check.list_param(
                 failed_expectation_results,
-                'failed_expectation_result',
+                'failed_expectation_results',
                 of_type=SolidExpectationResult
             )
         else:
@@ -251,7 +251,7 @@ def materialize_input(context, input_definition, arg_dict):
             context.info('Entering input implementation')
 
             with time_execution_scope() as timer_result:
-                materialized_input = input_definition.input_fn(context, arg_dict)
+                materialized_input = input_definition.input_fn(context=context, arg_dict=arg_dict)
 
             context.metric('input_load_time_ms', timer_result.millis)
 
@@ -348,7 +348,7 @@ def execute_output(context, output_def, output_arg_dict, materialized_output):
     error_str = 'Error during execution of output'
     with user_code_error_boundary(context, error_str):
         context.info('Entering output implementation')
-        output_def.output_fn(materialized_output, context, output_arg_dict)
+        output_def.output_fn(materialized_output, context=context, arg_dict=output_arg_dict)
 
 
 SolidInputExpectationRunResults = namedtuple(

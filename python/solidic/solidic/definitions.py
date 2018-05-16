@@ -21,11 +21,12 @@ DISALLOWED_NAMES = set(
         'bool',
         'input',
         'output',
+        'result',
     ] + keyword.kwlist  # just disallow all python keywords
 )
 
 
-def has_context_variable(fn):
+def has_context_argument(fn):
     check.callable_param(fn, 'fn')
 
     argspec = inspect.getfullargspec(fn)
@@ -61,9 +62,9 @@ class SolidExpectationDefinition:
 def _contextify_fn(fn):
     check.callable_param(fn, 'fn')
 
-    if not has_context_variable(fn):
+    if not has_context_argument(fn):
 
-        def wrapper_with_context(context, *args, **kwargs):
+        def wrapper_with_context(*args, context, **kwargs):
             check.not_none_param(context, 'context')
             return fn(*args, **kwargs)
 
@@ -109,7 +110,7 @@ def create_solidic_single_file_input(name, single_file_fn):
 class SolidOutputDefinition:
     def __init__(self, name, output_fn, argument_def_dict):
         self.name = check_valid_name(name)
-        self.output_fn = check.callable_param(output_fn, 'output_fn')
+        self.output_fn = _contextify_fn(check.callable_param(output_fn, 'output_fn'))
         self.argument_def_dict = check.dict_param(
             argument_def_dict, 'argument_def_dict', key_type=str, value_type=SolidType
         )
@@ -127,7 +128,7 @@ class Solid:
         self.output_expectations = check.opt_list_param(
             output_expectations, 'output_expectations', of_type=SolidExpectationDefinition
         )
-        self.transform_requires_context = has_context_variable(self.transform_fn)
+        self.transform_requires_context = has_context_argument(self.transform_fn)
 
     @property
     def input_names(self):

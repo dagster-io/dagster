@@ -40,7 +40,8 @@ def test_basic_core_transform_error_handling():
 
 
 def test_basic_output_transform_error_handling():
-    def output_fn_inst(_data, _output_arg_dict):
+    def output_fn_inst(_data, arg_dict):
+        assert arg_dict == {}
         raise Exception('error during output')
 
     output_def = SolidOutputDefinition(

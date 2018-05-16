@@ -32,7 +32,9 @@ def test_execute_solid_no_args():
 
     test_output = {}
 
-    def output_fn_inst(data, _context, _output_arg_dict):
+    def output_fn_inst(data, context, arg_dict):
+        assert isinstance(context, SolidExecutionContext)
+        assert isinstance(arg_dict, dict)
         test_output['thedata'] = data
 
     custom_output = SolidOutputDefinition(
@@ -69,7 +71,9 @@ def create_single_dict_input(expectations=None):
 
 
 def create_noop_output(test_output):
-    def set_test_output(output, _context, _output_arg_dict):
+    def set_test_output(output, context, arg_dict):
+        assert isinstance(context, SolidExecutionContext)
+        assert arg_dict == {}
         test_output['thedata'] = output
 
     return SolidOutputDefinition(
