@@ -143,9 +143,49 @@ def create_solidic_single_file_input(name, single_file_fn):
     )
 
 
-# Output expectations that execute before the output computation
-# The output computation itself
 class SolidOutputDefinition:
+    '''
+    An output defines a way the result of a transform can be externalized. This can mean
+    writing a file, or moving a file to a well-known location, renaming a database table,
+    and so on.
+
+    Parameters
+    ----------
+
+    name: str
+
+    output_fn: callable
+
+        This function defines the actual output.
+
+        The first function argument is the output of the transform function. It can be
+        named anything.
+
+        You must specify an argument with the name "arg_dict". It will be the dictionary
+        of arguments specified by the caller of the solid
+
+        You can optionally specify a context argument. If it is specified a SolidExecutionContext
+        will be passed.
+
+        e.g.
+
+        def output_fn(the_actual_output, arg_dict):
+            pass
+
+        OR
+
+        def output_fn(actual_output, context, arg_dict):
+            pass
+
+    argument_def_dict: { str: SolidType }
+        Define the arguments expected by this output . A dictionary that maps a string
+        (argument name) to an argument type (defined in solidic.types).
+
+        e.g.:
+
+        argument_def_dict = { 'path' : SolidPath }
+    '''
+
     def __init__(self, name, output_fn, argument_def_dict):
         self.name = check_valid_name(name)
         self.output_fn = _contextify_fn(check.callable_param(output_fn, 'output_fn'))
