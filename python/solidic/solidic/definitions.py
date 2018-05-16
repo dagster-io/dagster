@@ -73,10 +73,48 @@ def _contextify_fn(fn):
         return fn
 
 
-# The computation which translates an arbitrary set of key value pairs
-# to the native programming abstraction
-# Input expectations that execute *before* the core transform
 class SolidInputDefinition:
+    '''
+    An input is a computation that takes a set of arguments (key-value pairs) and produces
+    an in-memory object to be used in a core transform function.
+
+    This should class should be used by library authors only. End users should have most
+    of these details abstracted away fromr them.
+
+    For example, pandas csv input would take single argument "path" and a produce a pandas
+    dataframe.
+
+    Parameters
+    ----------
+
+    name: str
+    input_fn: callable
+        The input function defines exactly what happens when the input is invoked. This
+        function can be one of two signatures:
+
+        def simplified_read_csv_example_no_context(arg_dict):
+            return pd.read_csv(arg_dict['path'])
+
+        OR
+
+        def simplified_read_csv_example_no_context(context, arg_dict):
+            context.info('I am in an input.') # use context for logging
+            return pd.read_csv(arg_dict['path'])
+
+    argument_def_dict: { str: SolidType }
+        Define the arguments expected by this input. A dictionary that maps a string
+        (argument name) to an argument type (defined in solidic.types) Continuing
+        the above example, the csv signature would be:
+
+        argument_def_dict = { 'path' : SolidPath }
+
+    expectations:
+        Define the list of expectations for this input (TODO)
+
+    depends_on:
+        Optionally specify that this input is in fact a dependency on another solid
+    '''
+
     def __init__(self, name, input_fn, argument_def_dict, expectations=None, depends_on=None):
         self.name = check_valid_name(name)
         self.input_fn = _contextify_fn(check.callable_param(input_fn, 'input_fn'))
