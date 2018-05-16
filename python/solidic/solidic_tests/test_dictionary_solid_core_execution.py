@@ -81,8 +81,8 @@ def test_materialize_output():
 
     output = execute_core_transform(
         create_test_context(),
-        single_solid.transform_fn, {'some_input': materialized_input},
-        transform_requires_context=False
+        single_solid.transform_fn,
+        {'some_input': materialized_input},
     )
 
     assert output == [{'data_key': 'new_value'}]
@@ -117,8 +117,8 @@ def test_materialize_output_with_context():
 
     output = execute_core_transform(
         create_test_context(),
-        single_solid.transform_fn, {'some_input': materialized_input},
-        transform_requires_context=True
+        single_solid.transform_fn,
+        {'some_input': materialized_input},
     )
 
     assert output == [{'data_key': 'new_value'}]

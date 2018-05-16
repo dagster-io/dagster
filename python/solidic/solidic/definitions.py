@@ -123,12 +123,11 @@ class Solid:
     def __init__(self, name, inputs, transform_fn, outputs, output_expectations=None):
         self.name = check_valid_name(name)
         self.inputs = check.list_param(inputs, 'inputs', of_type=SolidInputDefinition)
-        self.transform_fn = check.callable_param(transform_fn, 'transform')
+        self.transform_fn = _contextify_fn(check.callable_param(transform_fn, 'transform'))
         self.outputs = check.list_param(outputs, 'supported_outputs', of_type=SolidOutputDefinition)
         self.output_expectations = check.opt_list_param(
             output_expectations, 'output_expectations', of_type=SolidExpectationDefinition
         )
-        self.transform_requires_context = has_context_argument(self.transform_fn)
 
     @property
     def input_names(self):

@@ -127,6 +127,28 @@ def test_no_input_fn_context():
     assert test_output['thedata'] == [{'data_key': 'new_value'}]
 
 
+def test_no_transform_conteext():
+    test_output = {}
+
+    single_solid = Solid(
+        name='some_node',
+        inputs=[get_input(with_context=True)],
+        transform_fn=get_transform_fn(with_context=False),
+        outputs=[get_output(with_context=True, test_output=test_output)],
+    )
+
+    result = output_solid(
+        create_test_context(),
+        single_solid,
+        input_arg_dicts={'some_input': {}},
+        output_type='CUSTOM',
+        output_arg_dict={}
+    )
+
+    assert result.success
+    assert test_output['thedata'] == [{'data_key': 'new_value'}]
+
+
 def test_no_output_fn_context():
     test_output = {}
 
