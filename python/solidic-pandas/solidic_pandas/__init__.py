@@ -5,7 +5,7 @@ import pandas as pd
 
 import check
 
-from solidic.definitions import (Solid, has_context_variable)
+from solidic.definitions import (Solid, has_context_argument)
 from solidic.execution import SolidExecutionContext
 from solidic.errors import SolidExecutionError
 from .definitions import (
@@ -40,7 +40,7 @@ def _post_process_transform(context, df):
 
 def _dependency_transform_wrapper(transform_fn):
     check.callable_param(transform_fn, 'transform_fn')
-    if has_context_variable(transform_fn):
+    if has_context_argument(transform_fn):
 
         def wrapper_with_context(context, **kwargs):
             df = transform_fn(context, **kwargs)

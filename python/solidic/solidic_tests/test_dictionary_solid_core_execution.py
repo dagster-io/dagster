@@ -139,9 +139,11 @@ def test_materialize_input_with_args():
 def test_execute_output_with_args():
     test_output = {}
 
-    def output_fn_inst(materialized_output, _context, output_arg_dict):
+    def output_fn_inst(materialized_output, context, arg_dict):
+        assert isinstance(context, SolidExecutionContext)
+        assert isinstance(arg_dict, dict)
         test_output['thedata'] = materialized_output
-        test_output['thearg'] = output_arg_dict['out_arg']
+        test_output['thearg'] = arg_dict['out_arg']
 
     custom_output = SolidOutputDefinition(
         name='CUSTOM', output_fn=output_fn_inst, argument_def_dict={'out_arg': SolidString}

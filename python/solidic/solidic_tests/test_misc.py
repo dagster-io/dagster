@@ -1,6 +1,6 @@
 import pytest
 
-from solidic.definitions import (check_valid_name, has_context_variable)
+from solidic.definitions import (check_valid_name, has_context_argument)
 from solidic.errors import SolidInvalidDefinition
 
 
@@ -26,9 +26,9 @@ def test_has_context_variable():
     def yup(context, _bar):
         pass
 
-    assert not has_context_variable(nope)
-    assert has_context_variable(yup)
-    assert not has_context_variable(lambda: None)
-    assert not has_context_variable(lambda bar: None)
-    assert has_context_variable(lambda context: None)
-    assert has_context_variable(lambda bar, context: None)
+    assert not has_context_argument(nope)
+    assert has_context_argument(yup)
+    assert not has_context_argument(lambda: None)
+    assert not has_context_argument(lambda bar: None)
+    assert has_context_argument(lambda context: None)
+    assert has_context_argument(lambda bar, context: None)
