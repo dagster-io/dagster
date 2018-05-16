@@ -34,8 +34,8 @@ def test_basic_core_transform_error_handling():
     with pytest.raises(SolidExecutionError):
         execute_core_transform(
             create_test_context(),
-            transform_fn, {'an_input': 'value'},
-            transform_requires_context=False
+            transform_fn,
+            {'an_input': 'value'},
         )
 
 
