@@ -647,9 +647,6 @@ def execute_pipeline(context, pipeline, input_arg_dicts, through_solids=None):
             break
 
 
-_OutputConfig = namedtuple('_OutputConfig', 'name output_type, output_args')
-
-
 def execute_pipeline_and_collect(
     context, pipeline, input_arg_dicts, through_solids=None, throw_on_error=False
 ):
@@ -661,14 +658,6 @@ def execute_pipeline_and_collect(
 
         results.append(result.copy())
     return results
-
-
-def _configs_from_arg_dicts(output_arg_dicts):
-    configs = []
-    for name, dict_per_type in output_arg_dicts.items():
-        for output_type, arg_dict in dict_per_type.items():
-            configs.append(_OutputConfig(name, output_type, output_args=arg_dict))
-    return configs
 
 
 def check_output_arg_dicts(output_arg_dicts):
@@ -700,20 +689,20 @@ def output_pipeline(context, pipeline, input_arg_dicts, output_arg_dicts):
     check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
     check_output_arg_dicts(output_arg_dicts)
 
-    output_configs = _configs_from_arg_dicts(output_arg_dicts)
-
-    output_config_dict = {output_config.name: output_config for output_config in output_configs}
-
     for result in execute_pipeline(
-        context, pipeline, input_arg_dicts, through_solids=list(output_config_dict.keys())
+        context, pipeline, input_arg_dicts, through_solids=list(output_arg_dicts.keys())
     ):
         if not result.success:
             yield result
             break
 
-        if result.name in output_config_dict:
-            output_type = output_config_dict[result.name].output_type
-            output_arg_dict = output_config_dict[result.name].output_args
+        if result.name not in output_arg_dicts:
+            yield result
+            continue
+
+        output_result = result
+
+        for output_type, output_arg_dict in output_arg_dicts[result.name].items():
             output_def = result.solid.output_def_named(output_type)
             with context.value('solid', result.name), \
                 context.value('output_type', output_def.name), \
@@ -721,7 +710,7 @@ def output_pipeline(context, pipeline, input_arg_dicts, output_arg_dicts):
                 try:
                     execute_output(context, output_def, output_arg_dict, result.materialized_output)
                 except SolidExecutionError as see:
-                    yield SolidExecutionResult(
+                    output_result = SolidExecutionResult(
                         success=False,
                         solid=result.solid,
                         reason=SolidExecutionFailureReason.USER_CODE_ERROR,
@@ -730,4 +719,7 @@ def output_pipeline(context, pipeline, input_arg_dicts, output_arg_dicts):
                     )
                     break
 
-        yield result
+        yield output_result
+
+        if not output_result.success:
+            break
