@@ -217,7 +217,7 @@ class Solid:
             if input_.name == name:
                 return input_
 
-        check.failed('Not found')
+        check.failed('Input {name} not found'.format(name=name))
 
     def output_def_named(self, name):
         check.str_param(name, 'name')
@@ -225,4 +225,4 @@ class Solid:
             if output_def.name == name:
                 return output_def
 
-        check.failed('Not found')
+        check.failed('Output {name} not found'.format(name=name))

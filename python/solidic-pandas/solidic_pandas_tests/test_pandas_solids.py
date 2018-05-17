@@ -483,3 +483,50 @@ def test_pandas_multiple_inputs():
         'num1': [2, 6],
         'num2': [4, 8],
     }
+
+
+def test_pandas_multiple_outputs():
+    context = create_test_context()
+    input_arg_dicts = {'num_csv': {'path': script_relative_path('num.csv')}}
+
+    with get_temp_file_names(2) as temp_tuple:
+        # false positive on pylint error
+        csv_file, parquet_file = temp_tuple  # pylint: disable=E0632
+        output_arg_dicts = {
+            'sum_mult_table': {
+                'CSV': {
+                    'path': csv_file
+                },
+                'PARQUET': {
+                    'path': parquet_file
+                },
+            }
+        }
+
+        for _result in output_pipeline(
+            context,
+            pipeline=create_diamond_pipeline(),
+            input_arg_dicts=input_arg_dicts,
+            output_arg_dicts=output_arg_dicts,
+        ):
+            pass
+
+        assert os.path.exists(csv_file)
+        output_csv_df = pd.read_csv(csv_file)
+        assert output_csv_df.to_dict('list') == {
+            'num1': [1, 3],
+            'num2': [2, 4],
+            'sum': [3, 7],
+            'mult': [2, 12],
+            'sum_mult': [6, 84],
+        }
+
+        assert os.path.exists(parquet_file)
+        output_parquet_df = pd.read_parquet(parquet_file)
+        assert output_parquet_df.to_dict('list') == {
+            'num1': [1, 3],
+            'num2': [2, 4],
+            'sum': [3, 7],
+            'mult': [2, 12],
+            'sum_mult': [6, 84],
+        }
