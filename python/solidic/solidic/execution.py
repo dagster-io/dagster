@@ -671,23 +671,6 @@ def _configs_from_arg_dicts(output_arg_dicts):
     return configs
 
 
-def _consolidate_arg_dict_and_configs(output_configs, output_arg_dicts):
-    check.invariant(
-        bool(output_configs or output_arg_dicts),
-        'must specifcy one of output_configs and output_arg_dicts'
-    )
-
-    check.invariant(
-        bool(not (output_configs and output_arg_dicts)),
-        'do not specify both output_configs and output_arg_dicts'
-    )
-
-    if output_configs:
-        return output_configs
-
-    return _configs_from_arg_dicts(output_arg_dicts)
-
-
 def check_output_arg_dicts(output_arg_dicts):
     check.dict_param(output_arg_dicts, 'output_arg_dicts', key_type=str, value_type=dict)
     for output_arg_dict in output_arg_dicts.values():
@@ -717,9 +700,7 @@ def output_pipeline(context, pipeline, input_arg_dicts, output_arg_dicts):
     check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
     check_output_arg_dicts(output_arg_dicts)
 
-    output_configs = None
-
-    output_configs = _consolidate_arg_dict_and_configs(output_configs, output_arg_dicts)
+    output_configs = _configs_from_arg_dicts(output_arg_dicts)
 
     output_config_dict = {output_config.name: output_config for output_config in output_configs}
 
