@@ -503,9 +503,8 @@ def _do_throw_on_error(execution_result):
             raise SolidExpectationFailedError(
                 failed_expectation_results=execution_result.failed_expectation_results
             )
-
-        if execution_result.user_exception:
-            raise execution_result.user_exception
+        elif execution_result.reason == SolidExecutionFailureReason.USER_CODE_ERROR:
+            execution_result.reraise_user_error()
 
         check.invariant(execution_result.exception)
         raise execution_result.exception
@@ -651,14 +650,22 @@ def execute_pipeline(context, pipeline, input_arg_dicts, through_solids=None):
 OutputConfig = namedtuple('OutputConfig', 'name output_type, output_args')
 
 
-def execute_pipeline_and_collect(context, pipeline, input_arg_dicts, through_solids=None):
+def execute_pipeline_and_collect(
+    context, pipeline, input_arg_dicts, through_solids=None, throw_on_error=False
+):
     results = []
     for result in execute_pipeline(context, pipeline, input_arg_dicts, through_solids):
+        if throw_on_error:
+            if not result.success:
+                _do_throw_on_error(result)
+
         results.append(result.copy())
     return results
 
 
-def output_pipeline_and_collect(context, pipeline, input_arg_dicts, output_configs):
+def output_pipeline_and_collect(
+    context, pipeline, input_arg_dicts, output_configs, throw_on_error=False
+):
     check.inst_param(context, 'context', SolidExecutionContext)
     check.inst_param(pipeline, 'pipeline', SolidPipeline)
     check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
@@ -666,6 +673,9 @@ def output_pipeline_and_collect(context, pipeline, input_arg_dicts, output_confi
 
     results = []
     for result in output_pipeline(context, pipeline, input_arg_dicts, output_configs):
+        if throw_on_error:
+            if not result.success:
+                _do_throw_on_error(result)
         results.append(result.copy())
     return results
 
