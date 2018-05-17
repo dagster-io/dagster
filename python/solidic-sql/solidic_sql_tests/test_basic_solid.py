@@ -1,7 +1,6 @@
 import sqlalchemy as sa
 from solidic.execution import (
-    output_solid, SolidPipeline, execute_pipeline_and_collect, output_pipeline_and_collect,
-    OutputConfig
+    output_solid, SolidPipeline, execute_pipeline_and_collect, output_pipeline_and_collect
 )
 
 import solidic_sql
@@ -93,9 +92,7 @@ def test_output_sql_sum_sq_solid():
     engine = sa.create_engine('sqlite://')
     create_num_table(engine)
 
-    sum_sq_output_config = OutputConfig(
-        name='sum_sq_table', output_type='CREATE', output_args={'table_name': 'sum_sq_table'}
-    )
+    sum_sq_output_arg_dicts = {'sum_sq_table': {'CREATE': {'table_name': 'sum_sq_table'}}}
 
     results = output_pipeline_and_collect(
         solidic_sql.SolidicSqlExecutionContext(engine=engine),
@@ -103,7 +100,7 @@ def test_output_sql_sum_sq_solid():
         input_arg_dicts={'num_table': {
             'table_name': 'num_table'
         }},
-        output_configs=[sum_sq_output_config],
+        output_arg_dicts=sum_sq_output_arg_dicts,
         throw_on_error=True,
     )
 

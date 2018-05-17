@@ -525,9 +525,9 @@ def output_solid(
             context,
             SolidPipeline(solids=[solid]),
             input_arg_dicts,
-            output_configs=[
-                OutputConfig(name=solid.name, output_type=output_type, output_args=output_arg_dict)
-            ],
+            output_arg_dicts={solid.name: {
+                output_type: output_arg_dict
+            }},
         )
     )
 
@@ -647,7 +647,7 @@ def execute_pipeline(context, pipeline, input_arg_dicts, through_solids=None):
             break
 
 
-OutputConfig = namedtuple('OutputConfig', 'name output_type, output_args')
+_OutputConfig = namedtuple('_OutputConfig', 'name output_type, output_args')
 
 
 def execute_pipeline_and_collect(
@@ -663,16 +663,47 @@ def execute_pipeline_and_collect(
     return results
 
 
+def _configs_from_arg_dicts(output_arg_dicts):
+    configs = []
+    for name, dict_per_type in output_arg_dicts.items():
+        for output_type, arg_dict in dict_per_type.items():
+            configs.append(_OutputConfig(name, output_type, output_args=arg_dict))
+    return configs
+
+
+def _consolidate_arg_dict_and_configs(output_configs, output_arg_dicts):
+    check.invariant(
+        bool(output_configs or output_arg_dicts),
+        'must specifcy one of output_configs and output_arg_dicts'
+    )
+
+    check.invariant(
+        bool(not (output_configs and output_arg_dicts)),
+        'do not specify both output_configs and output_arg_dicts'
+    )
+
+    if output_configs:
+        return output_configs
+
+    return _configs_from_arg_dicts(output_arg_dicts)
+
+
+def check_output_arg_dicts(output_arg_dicts):
+    check.dict_param(output_arg_dicts, 'output_arg_dicts', key_type=str, value_type=dict)
+    for output_arg_dict in output_arg_dicts.values():
+        check.dict_param(output_arg_dict, 'output_arg_dict', key_type=str, value_type=dict)
+
+
 def output_pipeline_and_collect(
-    context, pipeline, input_arg_dicts, output_configs, throw_on_error=False
+    context, pipeline, input_arg_dicts, output_arg_dicts, throw_on_error=False
 ):
     check.inst_param(context, 'context', SolidExecutionContext)
     check.inst_param(pipeline, 'pipeline', SolidPipeline)
     check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
-    check.list_param(output_configs, 'output_configs', of_type=OutputConfig)
+    check_output_arg_dicts(output_arg_dicts)
 
     results = []
-    for result in output_pipeline(context, pipeline, input_arg_dicts, output_configs):
+    for result in output_pipeline(context, pipeline, input_arg_dicts, output_arg_dicts):
         if throw_on_error:
             if not result.success:
                 _do_throw_on_error(result)
@@ -680,24 +711,28 @@ def output_pipeline_and_collect(
     return results
 
 
-def output_pipeline(context, pipeline, input_arg_dicts, output_configs):
+def output_pipeline(context, pipeline, input_arg_dicts, output_arg_dicts):
     check.inst_param(context, 'context', SolidExecutionContext)
     check.inst_param(pipeline, 'pipeline', SolidPipeline)
     check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
-    check.list_param(output_configs, 'output_configs', of_type=OutputConfig)
+    check_output_arg_dicts(output_arg_dicts)
 
-    output_dict = {output_config.name: output_config for output_config in output_configs}
+    output_configs = None
+
+    output_configs = _consolidate_arg_dict_and_configs(output_configs, output_arg_dicts)
+
+    output_config_dict = {output_config.name: output_config for output_config in output_configs}
 
     for result in execute_pipeline(
-        context, pipeline, input_arg_dicts, through_solids=list(output_dict.keys())
+        context, pipeline, input_arg_dicts, through_solids=list(output_config_dict.keys())
     ):
         if not result.success:
             yield result
             break
 
-        if result.name in output_dict:
-            output_type = output_dict[result.name].output_type
-            output_arg_dict = output_dict[result.name].output_args
+        if result.name in output_config_dict:
+            output_type = output_config_dict[result.name].output_type
+            output_arg_dict = output_config_dict[result.name].output_args
             output_def = result.solid.output_def_named(output_type)
             with context.value('solid', result.name), \
                 context.value('output_type', output_def.name), \

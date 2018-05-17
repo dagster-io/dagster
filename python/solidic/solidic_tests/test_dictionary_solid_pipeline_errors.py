@@ -3,7 +3,7 @@ import check
 import solidic
 from solidic.definitions import (Solid, SolidInputDefinition, SolidOutputDefinition)
 from solidic.execution import (
-    SolidExecutionContext, OutputConfig, SolidExecutionFailureReason, execute_pipeline_and_collect,
+    SolidExecutionContext, SolidExecutionFailureReason, execute_pipeline_and_collect,
     output_pipeline_and_collect
 )
 
@@ -133,7 +133,9 @@ def test_output_failure_pipeline():
         create_test_context(),
         pipeline,
         input_arg_dicts={'failing_output_input': {}},
-        output_configs=[OutputConfig(name='failing_output', output_type='CUSTOM', output_args={})]
+        output_arg_dicts={'failing_output': {
+            'CUSTOM': {}
+        }},
     )
 
     assert len(results) == 1
