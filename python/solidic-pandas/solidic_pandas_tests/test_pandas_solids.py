@@ -6,9 +6,9 @@ import check
 import solidic
 from solidic.definitions import (Solid, SolidOutputDefinition)
 from solidic.execution import (
-    OutputConfig, SolidExecutionContext, execute_solid_in_pipeline, materialize_input,
-    output_pipeline, output_solid, pipeline_solid, pipeline_solid_in_memory,
-    output_pipeline_and_collect, execute_pipeline_and_collect
+    SolidExecutionContext, execute_solid_in_pipeline, materialize_input, output_pipeline,
+    output_solid, pipeline_solid, pipeline_solid_in_memory, output_pipeline_and_collect,
+    execute_pipeline_and_collect
 )
 import solidic_pandas as solidic_pd
 from solidic_pandas.definitions import create_solidic_pandas_csv_input
@@ -289,12 +289,6 @@ def test_diamond_dag_run():
     }
 
 
-def csv_output_config(name, path):
-    check.str_param(name, 'name')
-    check.str_param(path, 'path')
-    return OutputConfig(name=name, output_type='CSV', output_args={'path': path})
-
-
 def test_pandas_in_memory_diamond_pipeline():
     context = create_test_context()
     input_args = {'num_csv': {'path': script_relative_path('num.csv')}}
@@ -317,15 +311,16 @@ def test_pandas_in_memory_diamond_pipeline():
 
 def test_pandas_output_csv_pipeline():
     context = create_test_context()
-    input_args = {'num_csv': {'path': script_relative_path('num.csv')}}
+    input_arg_dicts = {'num_csv': {'path': script_relative_path('num.csv')}}
 
     with get_temp_file_name() as temp_file_name:
+        output_arg_dicts = {'sum_mult_table': {'CSV': {'path': temp_file_name}}}
 
         for _result in output_pipeline(
             context,
             pipeline=create_diamond_pipeline(),
-            input_arg_dicts=input_args,
-            output_configs=[csv_output_config('sum_mult_table', temp_file_name)]
+            input_arg_dicts=input_arg_dicts,
+            output_arg_dicts=output_arg_dicts,
         ):
             pass
 
@@ -348,6 +343,10 @@ def _result_named(results, name):
     check.failed('could not find name')
 
 
+def csv_output_arg_dict(path):
+    return {'CSV': {'path': path}}
+
+
 def test_pandas_output_intermediate_csv_files():
     context = create_test_context()
     input_args = {'num_csv': {'path': script_relative_path('num.csv')}}
@@ -355,14 +354,17 @@ def test_pandas_output_intermediate_csv_files():
 
     with get_temp_file_names(2) as temp_tuple:
         sum_file, mult_file = temp_tuple  # pylint: disable=E0632
+
+        output_arg_dicts = {
+            'sum_table': csv_output_arg_dict(sum_file),
+            'mult_table': csv_output_arg_dict(mult_file),
+        }
+
         subgraph_one_results = output_pipeline_and_collect(
             context,
             pipeline,
             input_arg_dicts=input_args,
-            output_configs=[
-                OutputConfig(name='sum_table', output_type='CSV', output_args={'path': sum_file}),
-                OutputConfig(name='mult_table', output_type='CSV', output_args={'path': mult_file}),
-            ]
+            output_arg_dicts=output_arg_dicts,
         )
 
         assert len(subgraph_one_results) == 3
@@ -413,6 +415,10 @@ def test_pandas_output_intermediate_csv_files():
         }
 
 
+def parquet_output_arg_dict(path):
+    return {'PARQUET': {'path': path}}
+
+
 def test_pandas_output_intermediate_parquet_files():
     context = create_test_context()
     input_args = {'num_csv': {'path': script_relative_path('num.csv')}}
@@ -421,18 +427,15 @@ def test_pandas_output_intermediate_parquet_files():
     with get_temp_file_names(2) as temp_tuple:
         # false positive on pylint error
         sum_file, mult_file = temp_tuple  # pylint: disable=E0632
+        output_arg_dicts = {
+            'sum_table': parquet_output_arg_dict(sum_file),
+            'mult_table': parquet_output_arg_dict(mult_file),
+        }
         output_pipeline_and_collect(
             context,
             pipeline,
             input_arg_dicts=input_args,
-            output_configs=[
-                OutputConfig(
-                    name='sum_table', output_type='PARQUET', output_args={'path': sum_file}
-                ),
-                OutputConfig(
-                    name='mult_table', output_type='PARQUET', output_args={'path': mult_file}
-                ),
-            ]
+            output_arg_dicts=output_arg_dicts,
         )
 
         expected_sum = {

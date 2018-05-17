@@ -6,7 +6,7 @@ import click
 import check
 from solidic.errors import SolidExecutionFailureReason
 from solidic.execution import (
-    SolidExecutionContext, SolidPipeline, execute_pipeline, output_pipeline, OutputConfig
+    SolidExecutionContext, SolidPipeline, execute_pipeline, output_pipeline
 )
 from solidic_utils.logging import define_logger
 
@@ -48,10 +48,12 @@ def embedded_dagster_output_command(cxt, input, output, log_level):  # pylint: d
     pipeline = check.inst(cxt.obj['pipeline'], SolidPipeline)
 
     input_arg_dicts = construct_arg_dicts(input_list)
-    output_configs = _get_output_configs(output_list)
+    output_arg_dicts = _get_output_arg_dicts(output_list)
 
     context = create_dagster_context(log_level=LOGGING_DICT[log_level])
-    pipeline_iter = output_pipeline(context, pipeline, input_arg_dicts, output_configs)
+    pipeline_iter = output_pipeline(
+        context, pipeline, input_arg_dicts, output_arg_dicts=output_arg_dicts
+    )
 
     process_results_for_console(pipeline_iter, context)
 
@@ -70,17 +72,17 @@ def process_results_for_console(pipeline_iter, context):
     print_metrics_to_console(results, context)
 
 
-def _get_output_configs(output_list):
-    output_arg_dicts = construct_arg_dicts(output_list)
+def _get_output_arg_dicts(output_list):
+    flat_output_arg_dicts = construct_arg_dicts(output_list)
 
-    output_configs = []
-    for output_name, output_arg_dict in output_arg_dicts.items():
+    output_arg_dicts = defaultdict(lambda: {})
+
+    for output_name, output_arg_dict in flat_output_arg_dicts.items():
         check.invariant('type' in output_arg_dict, 'must specify output type')
         output_type = output_arg_dict.pop('type')
-        output_configs.append(
-            OutputConfig(name=output_name, output_type=output_type, output_args=output_arg_dict)
-        )
-    return output_configs
+        output_arg_dicts[output_name][output_type] = output_arg_dict
+
+    return output_arg_dicts
 
 
 @click.command(name='execute')
