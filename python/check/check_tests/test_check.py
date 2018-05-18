@@ -466,3 +466,39 @@ def test_is_callable():
 
     with pytest.raises(CheckError):
         check.is_callable(1)
+
+
+def test_tuple_param():
+    assert check.tuple_param((1, 2), 'something')
+
+    with pytest.raises(CheckError):
+        assert check.tuple_param(None, 'something')
+
+    with pytest.raises(CheckError):
+        assert check.tuple_param(1, 'something')
+
+    with pytest.raises(CheckError):
+        assert check.tuple_param([1], 'something')
+
+    with pytest.raises(CheckError):
+        assert check.tuple_param({1: 2}, 'something')
+
+    with pytest.raises(CheckError):
+        assert check.tuple_param('kdjfkd', 'something')
+
+
+def test_opt_tuple_param():
+    assert check.opt_tuple_param((1, 2), 'something')
+    assert check.opt_tuple_param(None, 'something') is None
+
+    with pytest.raises(CheckError):
+        assert check.tuple_param(1, 'something')
+
+    with pytest.raises(CheckError):
+        assert check.tuple_param([1], 'something')
+
+    with pytest.raises(CheckError):
+        assert check.tuple_param({1: 2}, 'something')
+
+    with pytest.raises(CheckError):
+        assert check.tuple_param('kdjfkd', 'something')
