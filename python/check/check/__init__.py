@@ -198,6 +198,13 @@ def tuple_param(obj, param_name):
     return obj
 
 
+def opt_tuple_param(obj, param_name):
+    if obj is not None and not isinstance(obj, tuple):
+        raise_with_traceback(_param_type_mismatch_exception(obj, tuple, param_name))
+
+    return obj
+
+
 def opt_list_param(obj_list, param_name, of_type=None):
     if obj_list is not None and not isinstance(obj_list, list):
         raise_with_traceback(_param_type_mismatch_exception(obj_list, list, param_name))
