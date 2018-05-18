@@ -1,4 +1,5 @@
 from collections import defaultdict
+import json
 import logging
 
 import click
@@ -34,21 +35,30 @@ def embedded_dagster_graphviz_command(cxt):
 
 
 @click.command(name='output')
+@click.option('--json-config', type=click.Path(exists=True, dir_okay=False))
 @click.option('--input', multiple=True)
 @click.option('--output', multiple=True)
 @click.option('--log-level', type=click.STRING, default='INFO')
 @click.pass_context
-def embedded_dagster_output_command(cxt, input, output, log_level):  # pylint: disable=W0622
-    check.tuple_param(input, 'input')
-    check.tuple_param(output, 'output')
+def embedded_dagster_output_command(cxt, json_config, input, output, log_level):  # pylint: disable=W0622
+    check.opt_str_param(json_config, 'json_config')
+    check.opt_tuple_param(input, 'input')
+    check.opt_tuple_param(output, 'output')
     check.opt_str_param(log_level, 'log_level')
 
     input_list = list(input)
     output_list = list(output)
-    pipeline = check.inst(cxt.obj['pipeline'], SolidPipeline)
 
-    input_arg_dicts = construct_arg_dicts(input_list)
-    output_arg_dicts = _get_output_arg_dicts(output_list)
+    if json_config:
+        config_object = json.load(open(json_config))
+        input_arg_dicts = config_object['inputs']
+        output_arg_dicts = config_object['outputs']
+        log_level = config_object.get('log-level', 'INFO')
+    else:
+        input_arg_dicts = construct_arg_dicts(input_list)
+        output_arg_dicts = _get_output_arg_dicts(output_list)
+
+    pipeline = check.inst(cxt.obj['pipeline'], SolidPipeline)
 
     context = create_dagster_context(log_level=LOGGING_DICT[log_level])
     pipeline_iter = output_pipeline(
