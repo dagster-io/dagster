@@ -108,6 +108,7 @@ def define_pipeline():
     )
 
     return solidic.pipeline(
+        name='qhp',
         solids=[
             plans,
             plan_years,
@@ -275,7 +276,7 @@ def provider_languages_specialities_transform(providers, specialities, languages
 
 
 if __name__ == '__main__':
-    from dagster.embedded_cli import embedded_dagster_cli_main
+    from dagster.embedded_cli import embedded_dagster_single_pipeline_cli_main
     import sys
 
-    embedded_dagster_cli_main(sys.argv, define_pipeline())
+    embedded_dagster_single_pipeline_cli_main(sys.argv, define_pipeline())
