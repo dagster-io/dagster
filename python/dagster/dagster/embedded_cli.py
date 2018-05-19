@@ -29,9 +29,91 @@ def create_dagster_context(log_level):
 
 @click.command(name='graphviz')
 @click.pass_context
-def embedded_dagster_graphviz_command(cxt):
+def embedded_dagster_single_pipeline_graphviz_command(cxt):
     pipeline = check.inst(cxt.obj['pipeline'], SolidPipeline)
     build_graphviz_graph(pipeline).view(cleanup=True)
+
+
+def _pipeline_named(pipelines, name):
+    for pipeline in pipelines:
+        if pipeline.name == name:
+            return pipeline
+
+    check.failed('Could not find pipeline named {name}'.format(name=name))
+
+
+@click.command(name='pipelines')
+@click.pass_context
+def embedded_dagster_multi_pipeline_pipelines_command(cxt):
+    pipelines = check.inst(cxt.obj['pipelines'], list)
+    check.list_param(pipelines, 'pipelines', of_type=SolidPipeline)
+
+    indent = '    '
+    print('*** All Pipelines ***')
+    for pipeline in pipelines:
+        print('Pipeline: {name}'.format(name=pipeline.name))
+        for solid in pipeline.solids:
+            print('{indent}Solid: {name}'.format(indent=indent, name=solid.name))
+            print('{indent}Inputs:'.format(indent=indent * 2))
+            for input_def in solid.inputs:
+                arg_list = format_argument_dict(input_def.argument_def_dict)
+                print(
+                    '{indent}{input_name}({arg_list})'.format(
+                        indent=indent * 3, input_name=input_def.name, arg_list=arg_list
+                    )
+                )
+
+            print('{indent}Outputs:'.format(indent=indent * 2))
+            for output_def in solid.outputs:
+                arg_list = format_argument_dict(output_def.argument_def_dict)
+                print(
+                    '{indent}{output_name}({arg_list})'.format(
+                        indent=indent * 3, output_name=output_def.name, arg_list=arg_list
+                    )
+                )
+
+
+def format_argument_dict(arg_def_dict):
+    return ', '.join(
+        [
+            '{name}: {type}'.format(name=name, type=arg_type.name)
+            for name, arg_type in arg_def_dict.items()
+        ]
+    )
+
+
+@click.command(name='graphviz')
+@click.argument('pipeline_name')
+@click.pass_context
+def embedded_dagster_multi_pipeline_graphviz_command(cxt, pipeline_name):
+    pipelines = check.inst(cxt.obj['pipelines'], list)
+    check.list_param(pipelines, 'pipelines', of_type=SolidPipeline)
+    pipeline = _pipeline_named(pipelines, pipeline_name)
+    check.str_param(pipeline_name, 'pipeline_name')
+
+    build_graphviz_graph(pipeline).view(cleanup=True)
+
+
+@click.command(name='output')
+@click.argument('pipeline_name')
+@click.option('--json-config', type=click.Path(exists=True, dir_okay=False))
+@click.option('--input', multiple=True)
+@click.option('--output', multiple=True)
+@click.option('--log-level', type=click.STRING, default='INFO')
+@click.pass_context
+def embedded_dagster_multi_pipeline_output_command(
+    cxt,
+    pipeline_name,
+    json_config,
+    input,  # pylint: disable=W0622
+    output,
+    log_level
+):
+    check.str_param(pipeline_name, 'pipeline_name')
+    pipelines = check.inst(cxt.obj['pipelines'], list)
+    check.list_param(pipelines, 'pipelines', of_type=SolidPipeline)
+    pipeline = _pipeline_named(pipelines, pipeline_name)
+    run_pipeline_output_command(json_config, input, output, log_level, pipeline)
 
 
 @click.command(name='output')
@@ -40,13 +122,18 @@ def embedded_dagster_graphviz_command(cxt):
 @click.option('--output', multiple=True)
 @click.option('--log-level', type=click.STRING, default='INFO')
 @click.pass_context
-def embedded_dagster_output_command(cxt, json_config, input, output, log_level):  # pylint: disable=W0622
+def embedded_dagster_single_pipeline_output_command(cxt, json_config, input, output, log_level):  # pylint: disable=W0622
+    pipeline = check.inst(cxt.obj['pipeline'], SolidPipeline)
+    run_pipeline_output_command(json_config, input, output, log_level, pipeline)
+
+
+def run_pipeline_output_command(json_config, input_tuple, output, log_level, pipeline):
     check.opt_str_param(json_config, 'json_config')
-    check.opt_tuple_param(input, 'input')
+    check.opt_tuple_param(input_tuple, 'input_tuple')
     check.opt_tuple_param(output, 'output')
     check.opt_str_param(log_level, 'log_level')
 
-    input_list = list(input)
+    input_list = list(input_tuple)
     output_list = list(output)
 
     if json_config:
@@ -57,8 +144,6 @@ def embedded_dagster_output_command(cxt, json_config, input, output, log_level):
     else:
         input_arg_dicts = construct_arg_dicts(input_list)
         output_arg_dicts = _get_output_arg_dicts(output_list)
-
-    pipeline = check.inst(cxt.obj['pipeline'], SolidPipeline)
 
     context = create_dagster_context(log_level=LOGGING_DICT[log_level])
     pipeline_iter = output_pipeline(
@@ -100,15 +185,32 @@ def _get_output_arg_dicts(output_list):
 @click.option('--through', multiple=True)
 @click.option('--log-level', type=click.STRING, default='INFO')
 @click.pass_context
-def embedded_dagster_execute_command(cxt, input, through, log_level):  # pylint: disable=W0622
-    check.tuple_param(input, 'input')
+def embedded_dagster_single_pipeline_execute_command(cxt, input, through, log_level):  # pylint: disable=W0622
+    pipeline = check.inst(cxt.obj['pipeline'], SolidPipeline)
+    run_pipeline_execute_command(input, through, log_level, pipeline)
+
+
+@click.command(name='execute')
+@click.argument('pipeline_name')
+@click.option('--input', multiple=True)
+@click.option('--through', multiple=True)
+@click.option('--log-level', type=click.STRING, default='INFO')
+@click.pass_context
+def embedded_dagster_multi_pipeline_execute_command(cxt, pipeline_name, input, through, log_level):  # pylint: disable=W0622
+    check.str_param(pipeline_name, 'pipeline_name')
+    pipelines = check.inst(cxt.obj['pipelines'], list)
+    check.list_param(pipelines, 'pipelines', of_type=SolidPipeline)
+    pipeline = _pipeline_named(pipelines, pipeline_name)
+    run_pipeline_execute_command(input, through, log_level, pipeline)
+
+
+def run_pipeline_execute_command(input_tuple, through, log_level, pipeline):
+    check.tuple_param(input_tuple, 'input_tuple')
     check.tuple_param(through, 'through')
     check.opt_str_param(log_level, 'log_level')
 
-    input_list = list(input)
+    input_list = list(input_tuple)
     through_list = list(through)
-
-    pipeline = check.inst(cxt.obj['pipeline'], SolidPipeline)
 
     input_arg_dicts = construct_arg_dicts(input_list)
 
@@ -162,12 +264,28 @@ def construct_arg_dicts(input_list):
     return input_arg_dicts
 
 
-def embedded_dagster_cli_main(argv, pipeline):
+def embedded_dagster_single_pipeline_cli_main(argv, pipeline):
     check.list_param(argv, 'argv', of_type=str)
     check.inst_param(pipeline, 'pipeline', SolidPipeline)
 
     dagster_command_group = click.Group(name='dagster')
-    dagster_command_group.add_command(embedded_dagster_graphviz_command)
-    dagster_command_group.add_command(embedded_dagster_execute_command)
-    dagster_command_group.add_command(embedded_dagster_output_command)
+    dagster_command_group.add_command(embedded_dagster_single_pipeline_graphviz_command)
+    dagster_command_group.add_command(embedded_dagster_single_pipeline_execute_command)
+    dagster_command_group.add_command(embedded_dagster_single_pipeline_output_command)
     dagster_command_group(argv[1:], obj={'pipeline': pipeline})
+
+
+def embedded_dagster_multi_pipeline_cli_main(argv, pipelines):
+    check.list_param(argv, 'argv', of_type=str)
+    check.list_param(pipelines, 'pipelines', of_type=SolidPipeline)
+
+    for pipeline in pipelines:
+        check.param_invariant(bool(pipeline.name), 'pipelines', 'all pipelines must have names')
+
+    dagster_command_group = click.Group(name='dagster')
+    dagster_command_group.add_command(embedded_dagster_multi_pipeline_graphviz_command)
+    dagster_command_group.add_command(embedded_dagster_multi_pipeline_pipelines_command)
+    dagster_command_group.add_command(embedded_dagster_multi_pipeline_output_command)
+    dagster_command_group.add_command(embedded_dagster_multi_pipeline_execute_command)
+
+    dagster_command_group(argv[1:], obj={'pipelines': pipelines})
