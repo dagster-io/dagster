@@ -5,7 +5,9 @@ import check
 
 from solidic.definitions import (SolidInputDefinition, Solid, SolidOutputDefinition)
 from solidic.graph import (create_adjacency_lists, SolidGraph, SolidPipeline)
-from solidic.execution import (execute_pipeline, SolidExecutionContext, SolidExecutionResult)
+from solidic.execution import (
+    execute_pipeline_iterator, SolidExecutionContext, SolidExecutionResult
+)
 
 # protected members
 # pylint: disable=W0212
@@ -74,10 +76,7 @@ def create_root_solid(name):
         return passed_rows
 
     return Solid(
-        name=name,
-        inputs=[inp],
-        transform_fn=root_transform,
-        outputs=[create_dummy_output_def()]
+        name=name, inputs=[inp], transform_fn=root_transform, outputs=[create_dummy_output_def()]
     )
 
 
@@ -248,7 +247,7 @@ def test_pipeline_execution_graph_diamond():
 
     results = list()
 
-    for result in execute_pipeline(
+    for result in execute_pipeline_iterator(
         create_test_context(), pipeline, input_arg_dicts={'A_input': {}}
     ):
         results.append(copy.deepcopy(result))

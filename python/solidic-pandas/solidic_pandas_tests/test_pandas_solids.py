@@ -6,9 +6,9 @@ import check
 import solidic
 from solidic.definitions import (Solid, SolidOutputDefinition)
 from solidic.execution import (
-    SolidExecutionContext, execute_solid_in_pipeline, materialize_input, output_pipeline,
-    output_solid, pipeline_solid, pipeline_solid_in_memory, output_pipeline_and_collect,
-    execute_pipeline_and_collect
+    SolidExecutionContext, execute_pipeline_through_solid, _execute_input, output_pipeline_iterator,
+    output_single_solid, _pipeline_solid, _pipeline_solid_in_memory, output_pipeline,
+    execute_pipeline
 )
 import solidic_pandas as solidic_pd
 from solidic_pandas.definitions import create_solidic_pandas_csv_input
@@ -21,9 +21,7 @@ def create_test_context():
 
 def test_pandas_input():
     csv_input = create_solidic_pandas_csv_input(name='num_csv')
-    df = materialize_input(
-        create_test_context(), csv_input, {'path': script_relative_path('num.csv')}
-    )
+    df = _execute_input(create_test_context(), csv_input, {'path': script_relative_path('num.csv')})
 
     assert isinstance(df, pd.DataFrame)
     assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4]}
@@ -58,7 +56,7 @@ def test_pandas_solid():
         outputs=[custom_output_def],
     )
 
-    output_solid(
+    output_single_solid(
         create_test_context(),
         single_solid,
         input_arg_dicts={'num_csv': {
@@ -101,7 +99,7 @@ def test_pandas_csv_to_csv():
 
 def execute_transform_in_temp_file(solid):
     with get_temp_file_name() as temp_file_name:
-        result = output_solid(
+        result = output_single_solid(
             create_test_context(),
             solid,
             input_arg_dicts={'num_csv': {
@@ -149,7 +147,7 @@ def test_pandas_csv_to_csv_better_api():
 def test_pandas_csv_in_memory():
     solid = create_sum_table()
     input_args = {'num_csv': {'path': script_relative_path('num.csv')}}
-    df = pipeline_solid(create_test_context(), solid, input_args)
+    df = _pipeline_solid(create_test_context(), solid, input_args)
     assert isinstance(df, pd.DataFrame)
     assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
 
@@ -159,8 +157,8 @@ def test_two_step_pipeline_in_memory():
     mult_table_solid = create_mult_table(sum_table_solid)
     input_args = {'num_csv': {'path': script_relative_path('num.csv')}}
     context = create_test_context()
-    df = pipeline_solid(context, sum_table_solid, input_args)
-    mult_df = pipeline_solid_in_memory(context, mult_table_solid, {'sum_table': df})
+    df = _pipeline_solid(context, sum_table_solid, input_args)
+    mult_df = _pipeline_solid_in_memory(context, mult_table_solid, {'sum_table': df})
     assert mult_df.to_dict('list') == {
         'num1': [1, 3],
         'num2': [2, 4],
@@ -192,7 +190,7 @@ def test_two_input_solid():
         },
     }
 
-    df = pipeline_solid(create_test_context(), two_input_solid, input_args)
+    df = _pipeline_solid(create_test_context(), two_input_solid, input_args)
     assert isinstance(df, pd.DataFrame)
     assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
 
@@ -204,7 +202,7 @@ def test_no_transform_solid():
     )
     input_args = {'num_csv': {'path': script_relative_path('num.csv')}}
     context = create_test_context()
-    df = pipeline_solid(context, num_table, input_args)
+    df = _pipeline_solid(context, num_table, input_args)
     assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4]}
 
 
@@ -262,18 +260,18 @@ def test_diamond_dag_run():
     input_args = {'num_csv': {'path': script_relative_path('num.csv')}}
     context = create_test_context()
 
-    num_table_df = pipeline_solid(context, num_table, input_args)
+    num_table_df = _pipeline_solid(context, num_table, input_args)
     assert num_table_df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4]}
 
-    sum_df = pipeline_solid_in_memory(context, sum_table, {'num_table': num_table_df})
+    sum_df = _pipeline_solid_in_memory(context, sum_table, {'num_table': num_table_df})
 
     assert sum_df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
 
-    mult_df = pipeline_solid_in_memory(context, mult_table, {'num_table': num_table_df})
+    mult_df = _pipeline_solid_in_memory(context, mult_table, {'num_table': num_table_df})
 
     assert mult_df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'mult': [2, 12]}
 
-    sum_mult_df = pipeline_solid_in_memory(
+    sum_mult_df = _pipeline_solid_in_memory(
         context, sum_mult_table, {
             'sum_table': sum_df,
             'mult_table': mult_df
@@ -293,11 +291,8 @@ def test_pandas_in_memory_diamond_pipeline():
     context = create_test_context()
     input_args = {'num_csv': {'path': script_relative_path('num.csv')}}
 
-    result = execute_solid_in_pipeline(
-        context,
-        create_diamond_pipeline(),
-        input_arg_dicts=input_args,
-        output_name='sum_mult_table'
+    result = execute_pipeline_through_solid(
+        context, create_diamond_pipeline(), input_arg_dicts=input_args, solid_name='sum_mult_table'
     )
 
     assert result.materialized_output.to_dict('list') == {
@@ -316,7 +311,7 @@ def test_pandas_output_csv_pipeline():
     with get_temp_file_name() as temp_file_name:
         output_arg_dicts = {'sum_mult_table': {'CSV': {'path': temp_file_name}}}
 
-        for _result in output_pipeline(
+        for _result in output_pipeline_iterator(
             context,
             pipeline=create_diamond_pipeline(),
             input_arg_dicts=input_arg_dicts,
@@ -360,7 +355,7 @@ def test_pandas_output_intermediate_csv_files():
             'mult_table': csv_output_arg_dict(mult_file),
         }
 
-        subgraph_one_results = output_pipeline_and_collect(
+        subgraph_one_results = output_pipeline(
             context,
             pipeline,
             input_arg_dicts=input_args,
@@ -388,7 +383,7 @@ def test_pandas_output_intermediate_csv_files():
         assert _result_named(subgraph_one_results,
                              'mult_table').materialized_output.to_dict('list') == expected_mult
 
-        subgraph_two_results = execute_pipeline_and_collect(
+        subgraph_two_results = execute_pipeline(
             context,
             pipeline,
             input_arg_dicts={
@@ -431,7 +426,7 @@ def test_pandas_output_intermediate_parquet_files():
             'sum_table': parquet_output_arg_dict(sum_file),
             'mult_table': parquet_output_arg_dict(mult_file),
         }
-        output_pipeline_and_collect(
+        output_pipeline(
             context,
             pipeline,
             input_arg_dicts=input_args,
@@ -470,11 +465,11 @@ def test_pandas_multiple_inputs():
         transform_fn=transform_fn
     )
 
-    output_df = execute_solid_in_pipeline(
+    output_df = execute_pipeline_through_solid(
         context,
         solidic.pipeline(solids=[double_sum]),
         input_arg_dicts=input_args,
-        output_name='double_sum'
+        solid_name='double_sum'
     ).materialized_output
 
     assert not output_df.empty
@@ -503,7 +498,7 @@ def test_pandas_multiple_outputs():
             }
         }
 
-        for _result in output_pipeline(
+        for _result in output_pipeline_iterator(
             context,
             pipeline=create_diamond_pipeline(),
             input_arg_dicts=input_arg_dicts,

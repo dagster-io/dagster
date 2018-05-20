@@ -7,7 +7,7 @@ import click
 import check
 from solidic.errors import SolidExecutionFailureReason
 from solidic.execution import (
-    SolidExecutionContext, SolidPipeline, execute_pipeline, output_pipeline
+    SolidExecutionContext, SolidPipeline, execute_pipeline_iterator, output_pipeline_iterator
 )
 from solidic_utils.logging import define_logger
 
@@ -146,7 +146,7 @@ def run_pipeline_output_command(json_config, input_tuple, output, log_level, pip
         output_arg_dicts = _get_output_arg_dicts(output_list)
 
     context = create_dagster_context(log_level=LOGGING_DICT[log_level])
-    pipeline_iter = output_pipeline(
+    pipeline_iter = output_pipeline_iterator(
         context, pipeline, input_arg_dicts, output_arg_dicts=output_arg_dicts
     )
 
@@ -217,7 +217,8 @@ def run_pipeline_execute_command(input_tuple, through, log_level, pipeline):
     context = create_dagster_context(log_level=LOGGING_DICT[log_level])
 
     process_results_for_console(
-        execute_pipeline(context, pipeline, input_arg_dicts, through_solids=through_list), context
+        execute_pipeline_iterator(context, pipeline, input_arg_dicts, through_solids=through_list),
+        context
     )
 
 

@@ -1,6 +1,6 @@
 from dagster_examples.qhp.pipeline import define_pipeline
 from solidic.execution import (
-    execute_solid_in_pipeline, SolidExecutionContext, execute_pipeline_and_collect
+    execute_pipeline_through_solid, SolidExecutionContext, execute_pipeline
 )
 from solidic_utils.test import script_relative_path
 
@@ -16,11 +16,11 @@ def providers_771_args():
 def test_plans():
     pipeline = define_pipeline()
 
-    result = execute_solid_in_pipeline(
+    result = execute_pipeline_through_solid(
         SolidExecutionContext(),
         pipeline,
         input_arg_dicts=providers_771_args(),
-        output_name='plans',
+        solid_name='plans',
     )
 
     plans_df = result.materialized_output
@@ -31,11 +31,11 @@ def test_plans():
 def test_plan_years():
     pipeline = define_pipeline()
 
-    result = execute_solid_in_pipeline(
+    result = execute_pipeline_through_solid(
         SolidExecutionContext(),
         pipeline,
         input_arg_dicts=providers_771_args(),
-        output_name='plan_years',
+        solid_name='plan_years',
     )
 
     plan_years_df = result.materialized_output
@@ -46,7 +46,7 @@ def test_plan_years():
 def test_plan_and_plan_years_pipeline():
     pipeline = define_pipeline()
 
-    results = execute_pipeline_and_collect(
+    results = execute_pipeline(
         SolidExecutionContext(), pipeline, providers_771_args(), ['plans', 'plan_years']
     )
     assert len(results) == 2
@@ -55,11 +55,11 @@ def test_plan_and_plan_years_pipeline():
 def test_insurance_pipeline():
     pipeline = define_pipeline()
 
-    result = execute_solid_in_pipeline(
+    result = execute_pipeline_through_solid(
         SolidExecutionContext(),
         pipeline,
         providers_771_args(),
-        output_name='insurance',
+        solid_name='insurance',
     )
     assert result.success
     assert result.name == 'insurance'
@@ -71,7 +71,7 @@ def test_practices_pipeline():
 
     # this should only execute the solids necessary
     # to produce practices. i.e. addresses, providers and practices
-    results = execute_pipeline_and_collect(
+    results = execute_pipeline(
         SolidExecutionContext(),
         pipeline,
         providers_771_args(),
@@ -97,7 +97,7 @@ def test_practices_pipeline():
 def test_practice_insurances_pipeline():
     pipeline = define_pipeline()
 
-    results = execute_pipeline_and_collect(
+    results = execute_pipeline(
         SolidExecutionContext(),
         pipeline,
         providers_771_args(),
@@ -129,13 +129,13 @@ def test_practice_insurances_pipeline():
 def test_languages_pipeline():
     pipeline = define_pipeline()
 
-    result = execute_solid_in_pipeline(
+    result = execute_pipeline_through_solid(
         SolidExecutionContext(),
         pipeline,
         input_arg_dicts={'languages_csv': {
             'path': script_relative_path('Language.csv')
         }},
-        output_name='languages',
+        solid_name='languages',
     )
 
     assert result.success
@@ -149,7 +149,7 @@ def test_languages_pipeline():
 def test_specialities_pipeline():
     pipeline = define_pipeline()
 
-    result = execute_solid_in_pipeline(
+    result = execute_pipeline_through_solid(
         SolidExecutionContext(),
         pipeline,
         input_arg_dicts={
@@ -157,7 +157,7 @@ def test_specialities_pipeline():
                 'path': script_relative_path('betterdoctor_qhp_specialities.csv')
             }
         },
-        output_name='specialities',
+        solid_name='specialities',
     )
 
     assert result.success
@@ -184,7 +184,7 @@ def all_external_arg_dicts():
 def test_provider_languages_specialities():
     pipeline = define_pipeline()
 
-    results = execute_pipeline_and_collect(
+    results = execute_pipeline(
         SolidExecutionContext(),
         pipeline,
         input_arg_dicts=all_external_arg_dicts(),

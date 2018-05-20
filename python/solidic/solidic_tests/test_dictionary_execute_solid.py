@@ -8,8 +8,8 @@ from solidic.definitions import (
 )
 
 from solidic.execution import (
-    output_solid, SolidExecutionResult, SolidExecutionFailureReason, SolidExecutionContext,
-    execute_solid
+    output_single_solid, SolidExecutionResult, SolidExecutionFailureReason, SolidExecutionContext,
+    execute_single_solid
 )
 
 from solidic.errors import SolidExpectationFailedError
@@ -50,7 +50,7 @@ def test_execute_solid_no_args():
         outputs=[custom_output],
     )
 
-    output_solid(
+    output_single_solid(
         create_test_context(),
         single_solid,
         input_arg_dicts={'some_input': {}},
@@ -111,7 +111,7 @@ def test_hello_world():
         outputs=[SolidOutputDefinition(name='CUSTOM', output_fn=output_fn, argument_def_dict={})]
     )
 
-    result = execute_solid(create_test_context(), hello_world, {'hello_world_input': {}})
+    result = execute_single_solid(create_test_context(), hello_world, {'hello_world_input': {}})
 
     assert result.success
 
@@ -119,7 +119,7 @@ def test_hello_world():
 
     assert 'called' not in output_events
 
-    output_result = output_solid(
+    output_result = output_single_solid(
         create_test_context(), hello_world, {'hello_world_input': {}}, 'CUSTOM', {}
     )
 
@@ -141,7 +141,7 @@ def test_execute_solid_with_args():
         outputs=[create_noop_output(test_output)],
     )
 
-    result = output_solid(
+    result = output_single_solid(
         create_test_context(),
         single_solid,
         input_arg_dicts={'some_input': {
@@ -162,7 +162,7 @@ def test_execute_solid_with_args():
 def test_execute_solid_with_failed_input_expectation_non_throwing():
     single_solid = create_input_failing_solid()
 
-    solid_execution_result = output_solid(
+    solid_execution_result = output_single_solid(
         create_test_context(),
         single_solid,
         input_arg_dicts={'some_input': {
@@ -182,7 +182,7 @@ def test_execute_solid_with_failed_input_expectation_throwing():
     single_solid = create_input_failing_solid()
 
     with pytest.raises(SolidExpectationFailedError):
-        output_solid(
+        output_single_solid(
             create_test_context(),
             single_solid,
             input_arg_dicts={'some_input': {
@@ -194,7 +194,7 @@ def test_execute_solid_with_failed_input_expectation_throwing():
         )
 
     with pytest.raises(SolidExpectationFailedError):
-        output_solid(
+        output_single_solid(
             create_test_context(),
             single_solid,
             input_arg_dicts={'some_input': {
@@ -226,7 +226,7 @@ def create_input_failing_solid():
 def test_execute_solid_with_failed_output_expectation_non_throwing():
     failing_solid = create_output_failing_solid()
 
-    solid_execution_result = output_solid(
+    solid_execution_result = output_single_solid(
         create_test_context(),
         failing_solid,
         input_arg_dicts={'some_input': {
@@ -246,7 +246,7 @@ def test_execute_solid_with_failed_output_expectation_throwing():
     failing_solid = create_output_failing_solid()
 
     with pytest.raises(SolidExpectationFailedError):
-        output_solid(
+        output_single_solid(
             create_test_context(),
             failing_solid,
             input_arg_dicts={'some_input': {
@@ -257,7 +257,7 @@ def test_execute_solid_with_failed_output_expectation_throwing():
         )
 
     with pytest.raises(SolidExpectationFailedError):
-        output_solid(
+        output_single_solid(
             create_test_context(),
             failing_solid,
             input_arg_dicts={'some_input': {

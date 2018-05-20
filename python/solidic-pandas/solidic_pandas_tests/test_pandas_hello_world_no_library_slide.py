@@ -2,7 +2,7 @@ import pandas as pd
 
 import solidic
 from solidic.definitions import (Solid, SolidOutputDefinition, SolidInputDefinition)
-from solidic.execution import (SolidExecutionContext, execute_solid)
+from solidic.execution import (SolidExecutionContext, execute_single_solid)
 from solidic_utils.test import (script_relative_path)
 
 
@@ -35,7 +35,7 @@ def test_hello_world_no_library_support():
     )
 
     input_arg_dicts = {'num_csv': {'path': script_relative_path('num.csv')}}
-    result = execute_solid(create_test_context(), hello_world, input_arg_dicts)
+    result = execute_single_solid(create_test_context(), hello_world, input_arg_dicts)
 
     assert result.success
 

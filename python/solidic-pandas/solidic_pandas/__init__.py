@@ -7,7 +7,7 @@ import check
 
 from solidic.definitions import (Solid, has_context_argument)
 from solidic.execution import SolidExecutionContext
-from solidic.errors import SolidExecutionError
+from solidic.errors import SolidUserCodeExecutionError
 from .definitions import (
     create_solidic_pandas_csv_input,
     create_solidic_pandas_csv_output,

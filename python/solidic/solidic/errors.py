@@ -36,7 +36,7 @@ class SolidTypeError(SolidUserError):
     pass
 
 
-class SolidExecutionError(SolidUserError):
+class SolidUserCodeExecutionError(SolidUserError):
     '''Indicates that user space code has raised an error'''
 
     def __init__(self, *args, user_exception, original_exc_info, **kwargs):
