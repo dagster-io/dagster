@@ -5,7 +5,7 @@ from solidic.definitions import (
     SolidExpectationResult,
 )
 from solidic.execution import (
-    execute_output_expectation, SolidExecutionError, SolidExecutionContext
+    _execute_output_expectation, SolidUserCodeExecutionError, SolidExecutionContext
 )
 
 
@@ -20,7 +20,7 @@ def test_basic_failing_output_expectation():
             message='some message',
         )
 
-    result = execute_output_expectation(
+    result = _execute_output_expectation(
         create_test_context(), SolidExpectationDefinition('failing', failing), 'not used'
     )
 
@@ -37,7 +37,7 @@ def test_basic_passing_output_expectation():
         )
 
     expectation = SolidExpectationDefinition('success', success)
-    result = execute_output_expectation(create_test_context(), expectation, 'not used')
+    result = _execute_output_expectation(create_test_context(), expectation, 'not used')
 
     assert isinstance(result, SolidExpectationResult)
     assert result.success
@@ -48,7 +48,7 @@ def test_output_expectation_user_error():
     def throwing(_output):
         raise Exception('user error')
 
-    with pytest.raises(SolidExecutionError):
-        execute_output_expectation(
+    with pytest.raises(SolidUserCodeExecutionError):
+        _execute_output_expectation(
             create_test_context(), SolidExpectationDefinition('throwing', throwing), 'not used'
         )

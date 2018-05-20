@@ -4,7 +4,7 @@ from solidic.definitions import (
     SolidInputDefinition, SolidExpectationDefinition, SolidExpectationResult
 )
 from solidic.execution import (
-    execute_input_expectation, SolidExecutionError, SolidExecutionContext
+    _execute_input_expectation, SolidUserCodeExecutionError, SolidExecutionContext
 )
 from solidic.types import SolidString
 
@@ -26,7 +26,7 @@ def test_basic_failing_input_expectation():
         ]
     )
 
-    result = execute_input_expectation(
+    result = _execute_input_expectation(
         create_test_context(), some_input.expectations[0], 'some_value'
     )
 
@@ -48,7 +48,7 @@ def test_basic_passing_input_expectation():
         ]
     )
 
-    result = execute_input_expectation(
+    result = _execute_input_expectation(
         create_test_context(), some_input.expectations[0], 'some_value'
     )
 
@@ -70,7 +70,7 @@ def test_input_expectation_user_error():
         ]
     )
 
-    with pytest.raises(SolidExecutionError):
-        execute_input_expectation(
+    with pytest.raises(SolidUserCodeExecutionError):
+        _execute_input_expectation(
             create_test_context(), failing_during_expectation_input.expectations[0], 'some_value'
         )

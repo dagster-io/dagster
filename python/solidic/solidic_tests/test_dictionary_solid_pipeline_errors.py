@@ -3,8 +3,7 @@ import check
 import solidic
 from solidic.definitions import (Solid, SolidInputDefinition, SolidOutputDefinition)
 from solidic.execution import (
-    SolidExecutionContext, SolidExecutionFailureReason, execute_pipeline_and_collect,
-    output_pipeline_and_collect
+    SolidExecutionContext, SolidExecutionFailureReason, execute_pipeline, output_pipeline
 )
 
 
@@ -108,7 +107,7 @@ def create_root_output_failure_solid(name):
 
 def test_transform_failure_pipeline():
     pipeline = solidic.pipeline(solids=[create_root_transform_failure_solid('failing')])
-    results = execute_pipeline_and_collect(create_test_context(), pipeline, {'failing_input': {}})
+    results = execute_pipeline(create_test_context(), pipeline, {'failing_input': {}})
 
     assert len(results) == 1
     assert not results[0].success
@@ -117,9 +116,7 @@ def test_transform_failure_pipeline():
 
 def test_input_failure_pipeline():
     pipeline = solidic.pipeline(solids=[create_root_input_failure_solid('failing_input')])
-    results = execute_pipeline_and_collect(
-        create_test_context(), pipeline, {'failing_input_input': {}}
-    )
+    results = execute_pipeline(create_test_context(), pipeline, {'failing_input_input': {}})
 
     assert len(results) == 1
     assert not results[0].success
@@ -129,7 +126,7 @@ def test_input_failure_pipeline():
 def test_output_failure_pipeline():
     pipeline = solidic.pipeline(solids=[create_root_output_failure_solid('failing_output')])
 
-    results = output_pipeline_and_collect(
+    results = output_pipeline(
         create_test_context(),
         pipeline,
         input_arg_dicts={'failing_output_input': {}},
@@ -169,7 +166,7 @@ def test_failure_midstream():
     )
 
     input_arg_dicts = {'A_input': {}, 'B_input': {}}
-    results = execute_pipeline_and_collect(
+    results = execute_pipeline(
         create_test_context(),
         solidic.pipeline(solids=[node_a, node_b, solid]),
         input_arg_dicts=input_arg_dicts,

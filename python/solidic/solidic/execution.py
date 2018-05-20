@@ -1,3 +1,54 @@
+'''
+Naming conventions:
+
+For public functions:
+
+execute_*
+
+These represent functions which do purely in-memory compute. They will evaluate expectations
+the core transform, and exercise all logging and metrics tracking (outside of outputs), but they
+will not invoke *any* outputs (and their APIs don't allow the user to).
+
+output_*
+
+Output functions do execution but also allow the user to specify outputs, which create artifacts
+that are discoverable by external systems (e.g. files, database tables, and so on).
+
+Argument conventions across the file:
+
+input_arg_dicts: {string : { string: string } }
+
+A dictionary of dictionarys. The first level is indexed by input *name*. Put an entry for each
+input you want to specify. Each one of inputs in turn has an argumect dictionary, which is just
+a set of key value pairs, represented by a bare python dictionary:
+
+So for example a solid that takes two csv inputs would have the input_arg_dicts:
+
+{
+    "csv_one" : { "path" : "path/to/csv_one.csv},
+    "csv_two" : { "path" : "path/to/csv_two.csv},
+}
+
+output_arg_dicts : { string : string : string : string } } }
+
+A dictionary of dictionary of dictionarys.
+
+The first level is a solid nane. These are the solids where the user wants to output something.
+
+The next level is the output name. This level allows the user to specify multiple outputs per solid.
+
+Lastly is the arg_dict for that output in that solid
+
+Example where you want to output a csv for a single solid:
+
+{
+    "some_solid" {
+        "CSV" : {
+            "path" : "path/to/an/output.csv"
+        }
+    }
+}
+'''
 from collections import (namedtuple, OrderedDict)
 from contextlib import contextmanager
 import copy
@@ -19,8 +70,8 @@ from .definitions import (
 )
 
 from .errors import (
-    SolidExecutionError, SolidTypeError, SolidExecutionFailureReason, SolidExpectationFailedError,
-    SolidInvariantViolation
+    SolidUserCodeExecutionError, SolidTypeError, SolidExecutionFailureReason,
+    SolidExpectationFailedError, SolidInvariantViolation
 )
 from .graph import SolidPipeline
 
@@ -28,6 +79,17 @@ Metric = namedtuple('Metric', 'context_dict metric_name value')
 
 
 class SolidExecutionContext:
+    '''
+    A context object flowed through the entire scope of single execution of a
+    pipeline of solids. This is used by both framework and uesr code to log
+    messages and metrics. It also maintains a stack of context values so that
+    logs, metrics, and any future reporting are reported with a minimal, consitent 
+    level of context so that developers do not have to repeatedly log well-known
+    information (e.g. the name of the solid, the name of the pipeline, etc) when
+    logging. Additionally tool author may add their own context values to assist
+    reporting.
+    '''
+
     def __init__(self, loggers=None, log_level=ERROR):
         self._logger = CompositeLogger(loggers=loggers, level=log_level)
         self._context_dict = OrderedDict()
@@ -135,6 +197,13 @@ class SolidExecutionContext:
 
 
 class SolidExecutionResult:
+    '''
+    A class to represnet the result of the execution of a single solid. Pipeline
+    commands return iterators or lists of these results.
+
+    (TODO: explain the various error states)
+    '''
+
     def __init__(
         self,
         success,
@@ -156,7 +225,7 @@ class SolidExecutionResult:
         self.exception = check.opt_inst_param(exception, 'exception', Exception)
 
         if reason == SolidExecutionFailureReason.USER_CODE_ERROR:
-            check.inst(exception, SolidExecutionError)
+            check.inst(exception, SolidUserCodeExecutionError)
             self.user_exception = exception.user_exception
         else:
             self.user_exception = None
@@ -177,7 +246,7 @@ class SolidExecutionResult:
 
     def reraise_user_error(self):
         check.invariant(self.reason == SolidExecutionFailureReason.USER_CODE_ERROR)
-        check.inst(self.exception, SolidExecutionError)
+        check.inst(self.exception, SolidUserCodeExecutionError)
         six.reraise(*self.exception.original_exc_info)
 
     @property
@@ -199,7 +268,15 @@ class SolidExecutionResult:
 
 
 @contextmanager
-def user_code_error_boundary(context, msg, **kwargs):
+def _user_code_error_boundary(context, msg, **kwargs):
+    '''
+    Wraps the execution of user-space code in an error boundary. This places a uniform
+    policy around an user code invoked by the framework. This ensures that all user
+    errors are wrapped in the SolidUserCodeExecutionError, and that the original stack
+    trace of the user error is preserved, so that it can be reported without confusing
+    framework code in the stack trace, if a tool author wishes to do so. This has 
+    been especially help in a notebooking context.
+    '''
     check.inst_param(context, 'context', SolidExecutionContext)
     check.str_param(msg, 'msg')
 
@@ -207,12 +284,17 @@ def user_code_error_boundary(context, msg, **kwargs):
         yield
     except Exception as e:
         context.exception(e)
-        raise SolidExecutionError(
+        raise SolidUserCodeExecutionError(
             msg.format(**kwargs), e, user_exception=e, original_exc_info=sys.exc_info()
         )
 
 
-def materialize_input(context, input_definition, arg_dict):
+def _execute_input(context, input_definition, arg_dict):
+    '''
+    Check to ensure that the arguments to a particular input are valid, and then
+    execute the input functinos. Wraps that execution in appropriate logging, metrics tracking,
+    and a user-code error boundary.
+    '''
     check.inst_param(context, 'context', SolidExecutionContext)
     check.inst_param(input_definition, 'input_defintion', SolidInputDefinition)
     check.dict_param(arg_dict, 'arg_dict', key_type=str)
@@ -247,7 +329,7 @@ def materialize_input(context, input_definition, arg_dict):
                 )
 
         error_str = 'Error occured while loading input "{input_name}"'
-        with user_code_error_boundary(context, error_str, input_name=input_definition.name):
+        with _user_code_error_boundary(context, error_str, input_name=input_definition.name):
             context.info('Entering input implementation')
 
             with time_execution_scope() as timer_result:
@@ -258,12 +340,17 @@ def materialize_input(context, input_definition, arg_dict):
             return materialized_input
 
 
-def execute_input_expectation(context, expectation_def, materialized_input):
+def _execute_input_expectation(context, expectation_def, materialized_input):
+    '''
+    Execute one user-specified input expectation on an input that has been instantiated in memory
+    Wraps computation in an error boundary and performs all necessary logging and metrics tracking
+    (TODO: actually log and track metrics!)
+    '''
     check.inst_param(context, 'context', SolidExecutionContext)
     check.inst_param(expectation_def, 'expectation_def', SolidExpectationDefinition)
 
     error_str = 'Error occured while evaluation expectation "{expectation_name}" in input'
-    with user_code_error_boundary(context, error_str, expectation_name=expectation_def.name):
+    with _user_code_error_boundary(context, error_str, expectation_name=expectation_def.name):
         expectation_result = expectation_def.expectation_fn(materialized_input)
 
     if not isinstance(expectation_result, SolidExpectationResult):
@@ -274,12 +361,17 @@ def execute_input_expectation(context, expectation_def, materialized_input):
     return expectation_result
 
 
-def execute_output_expectation(context, expectation_def, materialized_output):
+def _execute_output_expectation(context, expectation_def, materialized_output):
+    '''
+    Execute one user-specified output expectation on an instantiated result of the core transform.
+    Wraps computation in an error boundary and performs all necessary logging and metrics tracking
+    (TODO: actually log and track metrics!)
+    '''
     check.inst_param(context, 'context', SolidExecutionContext)
     check.inst_param(expectation_def, 'expectation_def', SolidExpectationDefinition)
 
     error_str = 'Error occured while evaluation expectation "{expectation_name}" in output'
-    with user_code_error_boundary(context, error_str, expectation_name=expectation_def.name):
+    with _user_code_error_boundary(context, error_str, expectation_name=expectation_def.name):
         expectation_result = expectation_def.expectation_fn(materialized_output)
 
     if not isinstance(expectation_result, SolidExpectationResult):
@@ -291,13 +383,17 @@ def execute_output_expectation(context, expectation_def, materialized_output):
     return expectation_result
 
 
-def execute_core_transform(context, solid_transform_fn, materialized_inputs):
+def _execute_core_transform(context, solid_transform_fn, materialized_inputs):
+    '''
+    Execute the user-specified transform for the solid. Wrap in an error boundary and do
+    all relevant logging and metrics tracking
+    '''
     check.inst_param(context, 'context', SolidExecutionContext)
     check.callable_param(solid_transform_fn, 'solid_transform_fn')
     check.dict_param(materialized_inputs, 'materialized_inputs', key_type=str)
 
     error_str = 'Error occured during core transform'
-    with user_code_error_boundary(context, error_str):
+    with _user_code_error_boundary(context, error_str):
         with time_execution_scope() as timer_result:
             materialized_output = solid_transform_fn(context=context, **materialized_inputs)
 
@@ -312,7 +408,12 @@ def execute_core_transform(context, solid_transform_fn, materialized_inputs):
         return materialized_output
 
 
-def execute_output(context, output_def, output_arg_dict, materialized_output):
+def _execute_output(context, output_def, output_arg_dict, materialized_output):
+    '''
+    Execute a single output, calling into user-specified code. Check validity
+    of arguments into the output, do appropriate loggina and metrics tracking, and
+    actually execute the output function with an appropriate error boundary. 
+    '''
     check.inst_param(context, 'context', SolidExecutionContext)
     check.inst_param(output_def, 'output_def', SolidOutputDefinition)
     check.dict_param(output_arg_dict, 'output_arg_dict', key_type=str)
@@ -340,20 +441,18 @@ def execute_output(context, output_def, output_arg_dict, materialized_output):
             )
 
     error_str = 'Error during execution of output'
-    with user_code_error_boundary(context, error_str):
+    with _user_code_error_boundary(context, error_str):
         context.info('Entering output implementation')
         output_def.output_fn(materialized_output, context=context, arg_dict=output_arg_dict)
 
 
-SolidInputExpectationRunResults = namedtuple(
-    'SolidInputExpectationRunResults', 'input_name passes fails'
-)
+SolidInputExpectationResult = namedtuple('SolidInputExpectionResult', 'input_name passes fails')
 
 
 class SolidAllInputExpectationsRunResults:
     def __init__(self, run_results_list):
         self.run_results_list = check.list_param(
-            run_results_list, 'run_results_list', of_type=SolidInputExpectationRunResults
+            run_results_list, 'run_results_list', of_type=SolidInputExpectationResult
         )
 
         all_passes = []
@@ -370,7 +469,7 @@ class SolidAllInputExpectationsRunResults:
         return not self.all_fails
 
 
-def execute_all_input_expectations(context, solid, materialized_inputs):
+def _execute_all_input_expectations(context, solid, materialized_inputs):
     check.inst_param(context, 'context', SolidExecutionContext)
     check.dict_param(materialized_inputs, 'materialized_inputs', key_type=str)
 
@@ -384,7 +483,7 @@ def execute_all_input_expectations(context, solid, materialized_inputs):
         fails = []
 
         for input_expectation_def in input_def.expectations:
-            input_expectation_result = execute_input_expectation(
+            input_expectation_result = _execute_input_expectation(
                 context, input_expectation_def, materialized_input
             )
 
@@ -394,44 +493,51 @@ def execute_all_input_expectations(context, solid, materialized_inputs):
                 fails.append(input_expectation_result)
 
         run_results_list.append(
-            SolidInputExpectationRunResults(input_name=input_name, passes=passes, fails=fails)
+            SolidInputExpectationResult(input_name=input_name, passes=passes, fails=fails)
         )
 
     return SolidAllInputExpectationsRunResults(run_results_list)
 
 
-def materialize_all_inputs(context, solid, input_arg_dicts):
+def _materialize_all_inputs(context, solid, input_arg_dicts):
     check.inst_param(context, 'context', SolidExecutionContext)
 
     materialized_inputs = {}
 
     for input_name, arg_dict in input_arg_dicts.items():
         input_def = solid.input_def_named(input_name)
-        materialized_input = materialize_input(context, input_def, arg_dict)
+        materialized_input = _execute_input(context, input_def, arg_dict)
         materialized_inputs[input_name] = materialized_input
 
     return materialized_inputs
 
 
-def pipeline_solid(context, solid, input_arg_dicts):
+def _pipeline_solid(context, solid, input_arg_dicts):
+    '''
+    Execute the entire pipeline for a *single* solid, including input evaluation.
+    '''
+
     check.inst_param(context, 'context', SolidExecutionContext)
     check.inst_param(solid, 'solid', Solid)
     check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
 
-    materialized_inputs = materialize_all_inputs(context, solid, input_arg_dicts)
-    return pipeline_solid_in_memory(context, solid, materialized_inputs)
+    materialized_inputs = _materialize_all_inputs(context, solid, input_arg_dicts)
+    return _pipeline_solid_in_memory(context, solid, materialized_inputs)
 
 
-def pipeline_solid_in_memory(context, solid, materialized_inputs):
+def _pipeline_solid_in_memory(context, solid, materialized_inputs):
     '''
     Given inputs that are already materialized in memory. Evaluation all inputs expectations,
     execute the core transform, and then evaluate all output expectations.
+
+    This is the core of the solid execution that does not touch any extenralized state, whether
+    it be inputs or outputs.
     '''
     check.inst_param(context, 'context', SolidExecutionContext)
     check.inst_param(solid, 'solid', Solid)
     check.dict_param(materialized_inputs, 'materialized_inputs', key_type=str)
 
-    all_run_result = execute_all_input_expectations(context, solid, materialized_inputs)
+    all_run_result = _execute_all_input_expectations(context, solid, materialized_inputs)
 
     if not all_run_result.success:
         return SolidExecutionResult(
@@ -444,7 +550,7 @@ def pipeline_solid_in_memory(context, solid, materialized_inputs):
 
     context.info('Executing core transform')
 
-    materialized_output = execute_core_transform(context, solid.transform_fn, materialized_inputs)
+    materialized_output = _execute_core_transform(context, solid.transform_fn, materialized_inputs)
 
     if isinstance(materialized_output, SolidExecutionResult):
         check.invariant(
@@ -455,7 +561,7 @@ def pipeline_solid_in_memory(context, solid, materialized_inputs):
 
     output_expectation_failures = []
     for output_expectation_def in solid.output_expectations:
-        output_expectation_result = execute_output_expectation(
+        output_expectation_result = _execute_output_expectation(
             context, output_expectation_def, materialized_output
         )
         if not output_expectation_result.success:
@@ -473,12 +579,14 @@ def pipeline_solid_in_memory(context, solid, materialized_inputs):
     return materialized_output
 
 
-def execute_solid(context, solid, input_arg_dicts, throw_on_error=True):
+def execute_single_solid(context, solid, input_arg_dicts, throw_on_error=True):
     check.inst_param(context, 'context', SolidExecutionContext)
     check.inst_param(solid, 'solid', Solid)
     check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
 
-    results = list(execute_pipeline(context, SolidPipeline(solids=[solid]), input_arg_dicts))
+    results = list(
+        execute_pipeline_iterator(context, SolidPipeline(solids=[solid]), input_arg_dicts)
+    )
 
     check.invariant(len(results) == 1, 'must be one result got ' + str(len(results)))
 
@@ -510,7 +618,7 @@ def _do_throw_on_error(execution_result):
         raise execution_result.exception
 
 
-def output_solid(
+def output_single_solid(
     context, solid, input_arg_dicts, output_type, output_arg_dict, throw_on_error=True
 ):
     check.inst_param(context, 'context', SolidExecutionContext)
@@ -521,7 +629,7 @@ def output_solid(
     check.bool_param(throw_on_error, 'throw_on_error')
 
     results = list(
-        output_pipeline(
+        output_pipeline_iterator(
             context,
             SolidPipeline(solids=[solid]),
             input_arg_dicts,
@@ -548,17 +656,20 @@ def _select_keys(ddict1, ddict2, keys):
     return {key: ddict[key] for key in keys}
 
 
-def execute_solid_in_pipeline(context, pipeline, input_arg_dicts, output_name):
+def execute_pipeline_through_solid(context, pipeline, input_arg_dicts, solid_name):
+    '''
+    Execute a pipeline through a single solid, and then output *only* that result
+    '''
     check.inst_param(context, 'context', SolidExecutionContext)
     check.inst_param(pipeline, 'pipeline', SolidPipeline)
     check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
-    check.str_param(output_name, 'output_name')
+    check.str_param(solid_name, 'solid_name')
 
-    for result in execute_pipeline(context, pipeline, input_arg_dicts, [output_name]):
-        if result.name == output_name:
+    for result in execute_pipeline_iterator(context, pipeline, input_arg_dicts, [solid_name]):
+        if result.name == solid_name:
             return result
 
-    check.failed('Result ' + output_name + ' not found!')
+    check.failed('Result ' + solid_name + ' not found!')
 
 
 def _execute_pipeline_solid_step(context, solid, input_arg_dicts, materialized_values):
@@ -573,13 +684,13 @@ def _execute_pipeline_solid_step(context, solid, input_arg_dicts, materialized_v
 
     for inp in solid.inputs:
         if inp.name not in materialized_values and inp.name not in input_values:
-            materialized = materialize_input(context, inp, input_arg_dicts[inp.name])
+            materialized = _execute_input(context, inp, input_arg_dicts[inp.name])
             input_values[inp.name] = materialized
 
     selected_values = _select_keys(input_values, materialized_values, solid.input_names)
 
     # This call does all input and output expectations, as well as the core transform
-    materialized_output = pipeline_solid_in_memory(context, solid, selected_values)
+    materialized_output = _pipeline_solid_in_memory(context, solid, selected_values)
 
     if isinstance(materialized_output, SolidExecutionResult):
         check.invariant(not materialized_output.success, 'early return should only be failure')
@@ -597,7 +708,24 @@ def _execute_pipeline_solid_step(context, solid, input_arg_dicts, materialized_v
     )
 
 
-def execute_pipeline(context, pipeline, input_arg_dicts, through_solids=None):
+def execute_pipeline_iterator(context, pipeline, input_arg_dicts, through_solids=None):
+    '''
+    This is the core workhorse function of this module, iterating over the pipeline execution
+    in topological order. This allow a tool consuming this API to execute a solid one at a time
+    and then make decisions based upon the result.
+
+    If you do not specify "through_solids" it executes all the solids specified entire pipeline.
+    If through_solids is specified, it will stop executing once all of those solids in
+    through_solids have been executed.
+
+    If you want to actually output the results of the transform see output_pipeline_iterator
+
+    execute_pipeline is the "synchronous" version of this function and returns a list of results
+    once the entire pipeline has been executed.
+
+    For formats of input_arg_dicts and output_arg_dicts see docblock at the top of the module
+    '''
+
     check.inst_param(context, 'context', SolidExecutionContext)
     check.inst_param(pipeline, 'pipeline', SolidPipeline)
     check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
@@ -636,7 +764,7 @@ def execute_pipeline(context, pipeline, input_arg_dicts, through_solids=None):
             if not execution_result.success:
                 break
 
-        except SolidExecutionError as see:
+        except SolidUserCodeExecutionError as see:
             yield SolidExecutionResult(
                 success=False,
                 reason=SolidExecutionFailureReason.USER_CODE_ERROR,
@@ -647,11 +775,17 @@ def execute_pipeline(context, pipeline, input_arg_dicts, through_solids=None):
             break
 
 
-def execute_pipeline_and_collect(
-    context, pipeline, input_arg_dicts, through_solids=None, throw_on_error=False
-):
+def execute_pipeline(context, pipeline, input_arg_dicts, through_solids=None, throw_on_error=False):
+    '''
+    "Synchronous" version of execute_pipeline_iteator.
+
+    throw_on_error makes the function throw when an error is encoutered rather than returning
+    the SolidExecutionResult in an error-state.
+
+    Note: throw_on_error is very useful in testing contexts when not testing for error conditions
+    '''
     results = []
-    for result in execute_pipeline(context, pipeline, input_arg_dicts, through_solids):
+    for result in execute_pipeline_iterator(context, pipeline, input_arg_dicts, through_solids):
         if throw_on_error:
             if not result.success:
                 _do_throw_on_error(result)
@@ -660,22 +794,25 @@ def execute_pipeline_and_collect(
     return results
 
 
-def check_output_arg_dicts(output_arg_dicts):
+def _check_output_arg_dicts(output_arg_dicts):
     check.dict_param(output_arg_dicts, 'output_arg_dicts', key_type=str, value_type=dict)
     for output_arg_dict in output_arg_dicts.values():
         check.dict_param(output_arg_dict, 'output_arg_dict', key_type=str, value_type=dict)
 
 
-def output_pipeline_and_collect(
-    context, pipeline, input_arg_dicts, output_arg_dicts, throw_on_error=False
-):
+def output_pipeline(context, pipeline, input_arg_dicts, output_arg_dicts, throw_on_error=False):
+    '''
+    Synchronous version of output_pipeline_iteator. Just like execute_pipeline, you can optionally
+    specify, through thorw_on_error, that exceptions should be thrown when encountered instead
+    of returning a result in an error state. Especially useful in testing contexts.
+    '''
     check.inst_param(context, 'context', SolidExecutionContext)
     check.inst_param(pipeline, 'pipeline', SolidPipeline)
     check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
-    check_output_arg_dicts(output_arg_dicts)
+    _check_output_arg_dicts(output_arg_dicts)
 
     results = []
-    for result in output_pipeline(context, pipeline, input_arg_dicts, output_arg_dicts):
+    for result in output_pipeline_iterator(context, pipeline, input_arg_dicts, output_arg_dicts):
         if throw_on_error:
             if not result.success:
                 _do_throw_on_error(result)
@@ -683,13 +820,18 @@ def output_pipeline_and_collect(
     return results
 
 
-def output_pipeline(context, pipeline, input_arg_dicts, output_arg_dicts):
+def output_pipeline_iterator(context, pipeline, input_arg_dicts, output_arg_dicts):
+    '''
+    Similar to execute_pipeline_iterator, except that you can specify outputs (per format
+    specified in module docblock) to create externally accessible materializations of
+    the computations in pipeline.
+    '''
     check.inst_param(context, 'context', SolidExecutionContext)
     check.inst_param(pipeline, 'pipeline', SolidPipeline)
     check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
-    check_output_arg_dicts(output_arg_dicts)
+    _check_output_arg_dicts(output_arg_dicts)
 
-    for result in execute_pipeline(
+    for result in execute_pipeline_iterator(
         context, pipeline, input_arg_dicts, through_solids=list(output_arg_dicts.keys())
     ):
         if not result.success:
@@ -708,8 +850,10 @@ def output_pipeline(context, pipeline, input_arg_dicts, output_arg_dicts):
                 context.value('output_type', output_def.name), \
                 context.value('output_args', output_arg_dict):
                 try:
-                    execute_output(context, output_def, output_arg_dict, result.materialized_output)
-                except SolidExecutionError as see:
+                    _execute_output(
+                        context, output_def, output_arg_dict, result.materialized_output
+                    )
+                except SolidUserCodeExecutionError as see:
                     output_result = SolidExecutionResult(
                         success=False,
                         solid=result.solid,

@@ -1,7 +1,7 @@
 import check
 
 from solidic.definitions import (SolidInputDefinition, SolidOutputDefinition, Solid)
-from solidic.execution import (SolidExecutionContext, output_solid)
+from solidic.execution import (SolidExecutionContext, output_single_solid)
 
 
 def create_test_context():
@@ -93,7 +93,7 @@ def test_all_context():
         outputs=[get_output(with_context=True, test_output=test_output)],
     )
 
-    result = output_solid(
+    result = output_single_solid(
         create_test_context(),
         single_solid,
         input_arg_dicts={'some_input': {}},
@@ -115,7 +115,7 @@ def test_no_input_fn_context():
         outputs=[get_output(with_context=True, test_output=test_output)],
     )
 
-    result = output_solid(
+    result = output_single_solid(
         create_test_context(),
         single_solid,
         input_arg_dicts={'some_input': {}},
@@ -137,7 +137,7 @@ def test_no_transform_conteext():
         outputs=[get_output(with_context=True, test_output=test_output)],
     )
 
-    result = output_solid(
+    result = output_single_solid(
         create_test_context(),
         single_solid,
         input_arg_dicts={'some_input': {}},
@@ -159,7 +159,7 @@ def test_no_output_fn_context():
         outputs=[get_output(with_context=False, test_output=test_output)],
     )
 
-    result = output_solid(
+    result = output_single_solid(
         create_test_context(),
         single_solid,
         input_arg_dicts={'some_input': {}},
