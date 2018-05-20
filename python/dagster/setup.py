@@ -19,6 +19,6 @@ setup(
 
         # solidic (not explicitly expressed atm)
         'graphviz>=0.8.3',
-        'pyyaml-3.12',
+        'pyyaml>=3.12',
     ],
 )
