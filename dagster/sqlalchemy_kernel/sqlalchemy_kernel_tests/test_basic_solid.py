@@ -48,7 +48,7 @@ def create_sum_table_solid():
     return dagster_sa.create_sql_solid(
         name='sum_table',
         inputs=[dagster_sa.create_table_input('num_table')],
-        sql_text='SELECT num1, num2, num1 + num2 as sum FROM ({num_table})',
+        sql_text='SELECT num1, num2, num1 + num2 as sum FROM {num_table}',
     )
 
 
@@ -58,7 +58,7 @@ def create_sum_sq_pipeline():
     sum_sq_solid = dagster_sa.create_sql_solid(
         name='sum_sq_table',
         inputs=[dagster_sa.create_table_input_dependency(sum_solid)],
-        sql_text='SELECT num1, num2, sum, sum * sum as sum_sq from ({sum_table})',
+        sql_text='SELECT num1, num2, sum, sum * sum as sum_sq from {sum_table}',
     )
 
     pipeline = DagsterPipeline(solids=[sum_solid, sum_sq_solid])

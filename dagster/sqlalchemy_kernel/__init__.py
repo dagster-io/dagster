@@ -21,6 +21,10 @@ class DagsterSqlExpression:
     def __init__(self, sql_text):
         self.sql_text = check.str_param(sql_text, 'sql_text')
 
+    @property
+    def from_target(self):
+        return f'({self.sql_text})'
+
 
 def create_table_output():
     def output_fn(sql_expr, context, arg_dict):
@@ -81,7 +85,7 @@ def create_sql_transform(sql_text):
             if name == 'context':
                 continue
 
-            sql_texts[name] = sql_expr.sql_text
+            sql_texts[name] = sql_expr.from_target
 
         return DagsterSqlExpression(sql_text.format(**sql_texts))
 
