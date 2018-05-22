@@ -10,7 +10,7 @@ else:
 
 setup(
     name='dagster',
-    license='MIT',
+    license='Apache-2.0',
     packages=find_packages(exclude=['dagster_tests']),
     install_requires=[
         # standard python 2/3 compatability things
