@@ -34,6 +34,13 @@ def embedded_dagster_single_pipeline_graphviz_command(cxt):
     build_graphviz_graph(pipeline).view(cleanup=True)
 
 
+@click.command(name='meta')
+@click.pass_context
+def embedded_dagster_single_pipeline_meta_command(cxt):
+    pipeline = check.inst(cxt.obj['pipeline'], DagsterPipeline)
+    print_pipeline(pipeline)
+
+
 def _pipeline_named(pipelines, name):
     for pipeline in pipelines:
         if pipeline.name == name:
@@ -48,29 +55,33 @@ def embedded_dagster_multi_pipeline_pipelines_command(cxt):
     pipelines = check.inst(cxt.obj['pipelines'], list)
     check.list_param(pipelines, 'pipelines', of_type=DagsterPipeline)
 
-    indent = '    '
     print('*** All Pipelines ***')
     for pipeline in pipelines:
-        print('Pipeline: {name}'.format(name=pipeline.name))
-        for solid in pipeline.solids:
-            print('{indent}Solid: {name}'.format(indent=indent, name=solid.name))
-            print('{indent}Inputs:'.format(indent=indent * 2))
-            for input_def in solid.inputs:
-                arg_list = format_argument_dict(input_def.argument_def_dict)
-                print(
-                    '{indent}{input_name}({arg_list})'.format(
-                        indent=indent * 3, input_name=input_def.name, arg_list=arg_list
-                    )
-                )
+        print_pipeline(pipeline)
 
-            print('{indent}Outputs:'.format(indent=indent * 2))
-            for output_def in solid.outputs:
-                arg_list = format_argument_dict(output_def.argument_def_dict)
-                print(
-                    '{indent}{output_name}({arg_list})'.format(
-                        indent=indent * 3, output_name=output_def.name, arg_list=arg_list
-                    )
+
+def print_pipeline(pipeline):
+    indent = '    '
+    print('Pipeline: {name}'.format(name=pipeline.name))
+    for solid in pipeline.solids:
+        print('{indent}Solid: {name}'.format(indent=indent, name=solid.name))
+        print('{indent}Inputs:'.format(indent=indent * 2))
+        for input_def in solid.inputs:
+            arg_list = format_argument_dict(input_def.argument_def_dict)
+            print(
+                '{indent}{input_name}({arg_list})'.format(
+                    indent=indent * 3, input_name=input_def.name, arg_list=arg_list
                 )
+            )
+
+        print('{indent}Outputs:'.format(indent=indent * 2))
+        for output_def in solid.outputs:
+            arg_list = format_argument_dict(output_def.argument_def_dict)
+            print(
+                '{indent}{output_name}({arg_list})'.format(
+                    indent=indent * 3, output_name=output_def.name, arg_list=arg_list
+                )
+            )
 
 
 def format_argument_dict(arg_def_dict):
@@ -273,6 +284,7 @@ def embedded_dagster_single_pipeline_cli_main(argv, pipeline):
     dagster_command_group.add_command(embedded_dagster_single_pipeline_graphviz_command)
     dagster_command_group.add_command(embedded_dagster_single_pipeline_execute_command)
     dagster_command_group.add_command(embedded_dagster_single_pipeline_output_command)
+    dagster_command_group.add_command(embedded_dagster_single_pipeline_meta_command)
     dagster_command_group(argv[1:], obj={'pipeline': pipeline})
 
 
