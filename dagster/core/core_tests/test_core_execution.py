@@ -1,11 +1,12 @@
 import pytest
 
-from dagster.core.types import SolidString
+from dagster.core import types
 
 from dagster.core.definitions import (Solid, InputDefinition, OutputDefinition)
 
 from dagster.core.execution import (
-    _execute_input, _execute_core_transform, _execute_output, SolidTypeError, DagsterExecutionContext
+    _execute_input, _execute_core_transform, _execute_output, SolidTypeError,
+    DagsterExecutionContext
 )
 
 
@@ -35,7 +36,7 @@ def test_materialize_input_arg_mismatch():
     some_input_with_arg = InputDefinition(
         name='some_input_with_arg',
         input_fn=lambda context, arg_dict: [],
-        argument_def_dict={'in_arg': SolidString}
+        argument_def_dict={'in_arg': types.STRING}
     )
 
     with pytest.raises(SolidTypeError):
@@ -46,7 +47,7 @@ def test_materialize_input_arg_type_mismatch():
     some_input_with_arg = InputDefinition(
         name='some_input_with_arg',
         input_fn=lambda context, arg_dict: [],
-        argument_def_dict={'in_arg': SolidString}
+        argument_def_dict={'in_arg': types.STRING}
     )
 
     with pytest.raises(SolidTypeError):
@@ -128,7 +129,7 @@ def test_materialize_input_with_args():
     some_input = InputDefinition(
         name='some_input',
         input_fn=lambda context, arg_dict: [{'key': arg_dict['str_arg']}],
-        argument_def_dict={'str_arg': SolidString}
+        argument_def_dict={'str_arg': types.STRING}
     )
 
     output = _execute_input(create_test_context(), some_input, {'str_arg': 'passed_value'})
@@ -146,7 +147,7 @@ def test_execute_output_with_args():
         test_output['thearg'] = arg_dict['out_arg']
 
     custom_output = OutputDefinition(
-        name='CUSTOM', output_fn=output_fn_inst, argument_def_dict={'out_arg': SolidString}
+        name='CUSTOM', output_fn=output_fn_inst, argument_def_dict={'out_arg': types.STRING}
     )
 
     _execute_output(
@@ -158,7 +159,7 @@ def test_execute_output_with_args():
 
 def test_execute_output_arg_mismatch():
     custom_output = OutputDefinition(
-        name='CUSTOM', output_fn=lambda out, dict: [], argument_def_dict={'out_arg': SolidString}
+        name='CUSTOM', output_fn=lambda out, dict: [], argument_def_dict={'out_arg': types.STRING}
     )
 
     with pytest.raises(SolidTypeError):
@@ -180,7 +181,7 @@ def test_execute_output_arg_mismatch():
 
 def test_execute_output_arg_type_mismatch():
     custom_output = OutputDefinition(
-        name='CUSTOM', output_fn=lambda out, dict: [], argument_def_dict={'out_arg': SolidString}
+        name='CUSTOM', output_fn=lambda out, dict: [], argument_def_dict={'out_arg': types.STRING}
     )
 
     with pytest.raises(SolidTypeError):

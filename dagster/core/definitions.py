@@ -3,9 +3,9 @@ import keyword
 import re
 
 from dagster import check
+from dagster.core import types
 
 from .errors import SolidInvalidDefinition
-from .types import (SolidType, SolidPath)
 
 DISALLOWED_NAMES = set(
     [
@@ -107,7 +107,7 @@ class InputDefinition:
         (argument name) to an argument type (defined in dagster.core.types) Continuing
         the above example, the csv signature would be:
 
-        argument_def_dict = { 'path' : SolidPath }
+        argument_def_dict = { 'path' : dagster.core.types.PATH }
 
     expectations:
         Define the list of expectations for this input (TODO)
@@ -120,7 +120,7 @@ class InputDefinition:
         self.name = check_valid_name(name)
         self.input_fn = _contextify_fn(check.callable_param(input_fn, 'input_fn'))
         self.argument_def_dict = check.dict_param(
-            argument_def_dict, 'argument_def_dict', key_type=str, value_type=SolidType
+            argument_def_dict, 'argument_def_dict', key_type=str, value_type=types.SolidType
         )
         self.expectations = check.opt_list_param(
             expectations, 'expectations', of_type=ExpectationDefinition
@@ -140,7 +140,7 @@ def create_dagster_single_file_input(name, single_file_fn):
             context=context,
             path=check.str_elem(arg_dict, 'path')
         ),
-        argument_def_dict={'path': SolidPath}
+        argument_def_dict={'path': types.PATH}
     )
 
 
@@ -184,14 +184,14 @@ class OutputDefinition:
 
         e.g.:
 
-        argument_def_dict = { 'path' : SolidPath }
+        argument_def_dict = { 'path' : dagster.core.types.PATH}
     '''
 
     def __init__(self, name, output_fn, argument_def_dict):
         self.name = check_valid_name(name)
         self.output_fn = _contextify_fn(check.callable_param(output_fn, 'output_fn'))
         self.argument_def_dict = check.dict_param(
-            argument_def_dict, 'argument_def_dict', key_type=str, value_type=SolidType
+            argument_def_dict, 'argument_def_dict', key_type=str, value_type=types.SolidType
         )
 
 

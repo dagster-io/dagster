@@ -6,7 +6,8 @@ from dagster.core.definitions import (
     InputDefinition, OutputDefinition, Solid, create_dagster_single_file_input
 )
 from dagster.core.execution import DagsterExecutionContext
-from dagster.core.types import (SolidPath, SolidString)
+
+from dagster.core import types
 
 
 def _read_df(path, frmt):
@@ -36,8 +37,8 @@ def create_dagster_pd_dependency_input(solid):
         name=solid.name,
         input_fn=dependency_input_fn,
         argument_def_dict={
-            'path': SolidPath,
-            'format': SolidString,
+            'path': types.PATH,
+            'format': types.STRING,
         },
         depends_on=solid,
     )
@@ -67,7 +68,7 @@ def create_dagster_pd_csv_output():
         df.to_csv(path, index=False)
 
     return OutputDefinition(
-        name='CSV', output_fn=output_fn_inst, argument_def_dict={'path': SolidPath}
+        name='CSV', output_fn=output_fn_inst, argument_def_dict={'path': types.PATH}
     )
 
 
@@ -81,5 +82,5 @@ def create_dagster_pd_parquet_output():
         df.to_parquet(path)
 
     return OutputDefinition(
-        name='PARQUET', output_fn=output_fn_inst, argument_def_dict={'path': SolidPath}
+        name='PARQUET', output_fn=output_fn_inst, argument_def_dict={'path': types.PATH}
     )

@@ -1,6 +1,6 @@
 import pytest
 
-from dagster.core.types import SolidString
+from dagster.core import types
 
 from dagster.core.definitions import (
     Solid, InputDefinition, OutputDefinition, ExpectationDefinition, ExpectationResult
@@ -64,7 +64,7 @@ def create_single_dict_input(expectations=None):
     return InputDefinition(
         name='some_input',
         input_fn=lambda context, arg_dict: [{'key': arg_dict['str_arg']}],
-        argument_def_dict={'str_arg': SolidString},
+        argument_def_dict={'str_arg': types.STRING},
         expectations=expectations or [],
     )
 
