@@ -3,7 +3,7 @@ import pytest
 
 from dagster import check
 
-from dagster.core.definitions import (SolidInputDefinition, Solid, SolidOutputDefinition)
+from dagster.core.definitions import (InputDefinition, Solid, OutputDefinition)
 from dagster.core.graph import (create_adjacency_lists, SolidGraph, DagsterPipeline)
 from dagster.core.execution import (
     execute_pipeline_iterator, DagsterExecutionContext, DagsterExecutionResult
@@ -18,7 +18,7 @@ def create_test_context():
 
 
 def create_dummy_output_def():
-    return SolidOutputDefinition(
+    return OutputDefinition(
         name='CUSTOM',
         output_fn=lambda _data, _output_arg_dict: None,
         argument_def_dict={},
@@ -39,7 +39,7 @@ def create_solid_with_deps(name, *solid_deps):
     #     return [{name: 'input_set'}]
 
     inputs = [
-        SolidInputDefinition(
+        InputDefinition(
             solid_dep.name,
             input_fn=create_dep_input_fn(solid_dep.name),
             argument_def_dict={},
@@ -63,7 +63,7 @@ def create_solid_with_deps(name, *solid_deps):
 
 def create_root_solid(name):
     input_name = name + '_input'
-    inp = SolidInputDefinition(
+    inp = InputDefinition(
         input_name,
         input_fn=lambda context, arg_dict: [{input_name: 'input_set'}],
         argument_def_dict={},

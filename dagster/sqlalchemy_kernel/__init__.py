@@ -7,7 +7,7 @@ from dagster import check
 
 import dagster.core
 from dagster.core.execution import (DagsterExecutionContext)
-from dagster.core.definitions import (Solid, SolidInputDefinition, SolidOutputDefinition)
+from dagster.core.definitions import (Solid, InputDefinition, OutputDefinition)
 
 
 class DagsterSqlAlchemyExecutionContext(DagsterExecutionContext):
@@ -33,7 +33,7 @@ def create_table_output():
         )
         context.engine.connect().execute(total_sql)
 
-    return SolidOutputDefinition(
+    return OutputDefinition(
         name='CREATE',
         output_fn=output_fn,
         argument_def_dict={'table_name': dagster.core.types.SolidString},
@@ -53,7 +53,7 @@ def _table_input_fn(context, arg_dict):
 def create_table_input(name):
     check.str_param(name, 'name')
 
-    return SolidInputDefinition(
+    return InputDefinition(
         name=name,
         input_fn=_table_input_fn,
         argument_def_dict={
@@ -65,7 +65,7 @@ def create_table_input(name):
 def create_table_input_dependency(solid):
     check.inst_param(solid, 'solid', Solid)
 
-    return SolidInputDefinition(
+    return InputDefinition(
         name=solid.name,
         input_fn=_table_input_fn,
         argument_def_dict={
@@ -91,7 +91,7 @@ def create_sql_transform(sql_text):
 
 def create_sql_solid(name, inputs, sql_text):
     check.str_param(name, 'name')
-    check.list_param(inputs, 'inputs', of_type=SolidInputDefinition)
+    check.list_param(inputs, 'inputs', of_type=InputDefinition)
     check.str_param(sql_text, 'sql_text')
 
     return Solid(

@@ -63,8 +63,8 @@ from dagster.utils.timing import time_execution_scope
 
 from .definitions import (
     Solid,
-    SolidInputDefinition,
-    SolidOutputDefinition,
+    InputDefinition,
+    OutputDefinition,
     SolidExpectationDefinition,
     SolidExpectationResult,
 )
@@ -296,7 +296,7 @@ def _execute_input(context, input_definition, arg_dict):
     and a user-code error boundary.
     '''
     check.inst_param(context, 'context', DagsterExecutionContext)
-    check.inst_param(input_definition, 'input_defintion', SolidInputDefinition)
+    check.inst_param(input_definition, 'input_defintion', InputDefinition)
     check.dict_param(arg_dict, 'arg_dict', key_type=str)
 
     with context.value('input', input_definition.name), context.value('arg_dict', arg_dict):
@@ -415,7 +415,7 @@ def _execute_output(context, output_def, output_arg_dict, materialized_output):
     actually execute the output function with an appropriate error boundary. 
     '''
     check.inst_param(context, 'context', DagsterExecutionContext)
-    check.inst_param(output_def, 'output_def', SolidOutputDefinition)
+    check.inst_param(output_def, 'output_def', OutputDefinition)
     check.dict_param(output_arg_dict, 'output_arg_dict', key_type=str)
 
     expected_args = set(output_def.argument_def_dict.keys())

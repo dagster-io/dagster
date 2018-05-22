@@ -2,7 +2,7 @@ import pytest
 
 from dagster.core.types import SolidString
 
-from dagster.core.definitions import (Solid, SolidInputDefinition, SolidOutputDefinition)
+from dagster.core.definitions import (Solid, InputDefinition, OutputDefinition)
 
 from dagster.core.execution import (
     _execute_input, _execute_core_transform, _execute_output, SolidTypeError, DagsterExecutionContext
@@ -15,7 +15,7 @@ def create_test_context():
 
 def test_execute_input():
     expected_output = [{'data_key': 'data_value'}]
-    some_input = SolidInputDefinition(
+    some_input = InputDefinition(
         name='some_input', input_fn=lambda context, arg_dict: expected_output, argument_def_dict={}
     )
 
@@ -25,14 +25,14 @@ def test_execute_input():
 
 
 def test_materialize_input_arg_mismatch():
-    some_input = SolidInputDefinition(
+    some_input = InputDefinition(
         name='some_input', input_fn=lambda context, arg_dict: [], argument_def_dict={}
     )
 
     with pytest.raises(SolidTypeError):
         _execute_input(create_test_context(), some_input, {'extra_arg': None})
 
-    some_input_with_arg = SolidInputDefinition(
+    some_input_with_arg = InputDefinition(
         name='some_input_with_arg',
         input_fn=lambda context, arg_dict: [],
         argument_def_dict={'in_arg': SolidString}
@@ -43,7 +43,7 @@ def test_materialize_input_arg_mismatch():
 
 
 def test_materialize_input_arg_type_mismatch():
-    some_input_with_arg = SolidInputDefinition(
+    some_input_with_arg = InputDefinition(
         name='some_input_with_arg',
         input_fn=lambda context, arg_dict: [],
         argument_def_dict={'in_arg': SolidString}
@@ -54,7 +54,7 @@ def test_materialize_input_arg_type_mismatch():
 
 
 def test_materialize_output():
-    some_input = SolidInputDefinition(
+    some_input = InputDefinition(
         name='some_input',
         input_fn=lambda context, arg_dict: [{'data_key': 'data_value'}],
         argument_def_dict={},
@@ -64,7 +64,7 @@ def test_materialize_output():
         some_input[0]['data_key'] = 'new_value'
         return some_input
 
-    custom_output_def = SolidOutputDefinition(
+    custom_output_def = OutputDefinition(
         name='CUSTOM',
         output_fn=lambda _data, _output_arg_dict: None,
         argument_def_dict={},
@@ -89,7 +89,7 @@ def test_materialize_output():
 
 
 def test_materialize_output_with_context():
-    some_input = SolidInputDefinition(
+    some_input = InputDefinition(
         name='some_input',
         input_fn=lambda context, arg_dict: [{'data_key': 'data_value'}],
         argument_def_dict={},
@@ -100,7 +100,7 @@ def test_materialize_output_with_context():
         some_input[0]['data_key'] = 'new_value'
         return some_input
 
-    custom_output_def = SolidOutputDefinition(
+    custom_output_def = OutputDefinition(
         name='CUSTOM',
         output_fn=lambda _data, _output_arg_dict: None,
         argument_def_dict={},
@@ -125,7 +125,7 @@ def test_materialize_output_with_context():
 
 
 def test_materialize_input_with_args():
-    some_input = SolidInputDefinition(
+    some_input = InputDefinition(
         name='some_input',
         input_fn=lambda context, arg_dict: [{'key': arg_dict['str_arg']}],
         argument_def_dict={'str_arg': SolidString}
@@ -145,7 +145,7 @@ def test_execute_output_with_args():
         test_output['thedata'] = materialized_output
         test_output['thearg'] = arg_dict['out_arg']
 
-    custom_output = SolidOutputDefinition(
+    custom_output = OutputDefinition(
         name='CUSTOM', output_fn=output_fn_inst, argument_def_dict={'out_arg': SolidString}
     )
 
@@ -157,7 +157,7 @@ def test_execute_output_with_args():
 
 
 def test_execute_output_arg_mismatch():
-    custom_output = SolidOutputDefinition(
+    custom_output = OutputDefinition(
         name='CUSTOM', output_fn=lambda out, dict: [], argument_def_dict={'out_arg': SolidString}
     )
 
@@ -179,7 +179,7 @@ def test_execute_output_arg_mismatch():
 
 
 def test_execute_output_arg_type_mismatch():
-    custom_output = SolidOutputDefinition(
+    custom_output = OutputDefinition(
         name='CUSTOM', output_fn=lambda out, dict: [], argument_def_dict={'out_arg': SolidString}
     )
 

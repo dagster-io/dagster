@@ -3,7 +3,7 @@ from builtins import *  # pylint: disable=W0622,W0401
 
 from dagster import check
 
-from .definitions import SolidInputDefinition
+from .definitions import InputDefinition
 from .graph import DagsterPipeline
 from .types import SolidPath
 
@@ -13,12 +13,12 @@ def pipeline(**kwargs):
 
 
 def input_definition(**kwargs):
-    return SolidInputDefinition(**kwargs)
+    return InputDefinition(**kwargs)
 
 
 def file_input_definition(argument_def_dict=None, **kwargs):
     check.param_invariant(argument_def_dict is None, 'Should not provide argument_def_dict')
-    return SolidInputDefinition(argument_def_dict={'path': SolidPath}, **kwargs)
+    return InputDefinition(argument_def_dict={'path': SolidPath}, **kwargs)
 
 
 PATH = SolidPath

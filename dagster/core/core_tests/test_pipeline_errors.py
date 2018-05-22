@@ -1,7 +1,7 @@
 from dagster import check
 
 import dagster.core
-from dagster.core.definitions import (Solid, SolidInputDefinition, SolidOutputDefinition)
+from dagster.core.definitions import (Solid, InputDefinition, OutputDefinition)
 from dagster.core.execution import (
     DagsterExecutionContext, SolidExecutionFailureReason, execute_pipeline, output_pipeline
 )
@@ -12,7 +12,7 @@ def create_test_context():
 
 
 def create_dummy_output_def():
-    return SolidOutputDefinition(
+    return OutputDefinition(
         name='CUSTOM',
         output_fn=lambda _data, _output_arg_dict: None,
         argument_def_dict={},
@@ -23,7 +23,7 @@ def create_failing_output_def():
     def failing_output_fn(*_args, **_kwargs):
         raise Exception('something bad happened')
 
-    return SolidOutputDefinition(
+    return OutputDefinition(
         name='CUSTOM',
         output_fn=failing_output_fn,
         argument_def_dict={},
@@ -31,7 +31,7 @@ def create_failing_output_def():
 
 
 def create_input_set_input_def(input_name):
-    return SolidInputDefinition(
+    return InputDefinition(
         input_name,
         input_fn=lambda context, arg_dict: [{input_name: 'input_set'}],
         argument_def_dict={},
@@ -56,7 +56,7 @@ def create_root_success_solid(name):
 
 def create_root_transform_failure_solid(name):
     input_name = name + '_input'
-    inp = SolidInputDefinition(
+    inp = InputDefinition(
         input_name,
         input_fn=lambda context, arg_dict: [{input_name: 'input_set'}],
         argument_def_dict={},
@@ -75,7 +75,7 @@ def create_root_input_failure_solid(name):
         raise Exception('something bad happened')
 
     input_name = name + '_input'
-    inp = SolidInputDefinition(
+    inp = InputDefinition(
         input_name,
         input_fn=failed_input_fn,
         argument_def_dict={},
@@ -154,10 +154,10 @@ def test_failure_midstream():
     solid = Solid(
         name='C',
         inputs=[
-            SolidInputDefinition(
+            InputDefinition(
                 name='A', input_fn=not_reached_input, argument_def_dict={}, depends_on=node_a
             ),
-            SolidInputDefinition(
+            InputDefinition(
                 name='B', input_fn=not_reached_input, argument_def_dict={}, depends_on=node_b
             ),
         ],

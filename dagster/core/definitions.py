@@ -74,7 +74,7 @@ def _contextify_fn(fn):
         return fn
 
 
-class SolidInputDefinition:
+class InputDefinition:
     '''
     An input is a computation that takes a set of arguments (key-value pairs) and produces
     an in-memory object to be used in a core transform function.
@@ -134,7 +134,7 @@ class SolidInputDefinition:
 
 def create_dagster_single_file_input(name, single_file_fn):
     check.str_param(name, 'name')
-    return SolidInputDefinition(
+    return InputDefinition(
         name=name,
         input_fn=lambda context, arg_dict: single_file_fn(
             context=context,
@@ -144,7 +144,7 @@ def create_dagster_single_file_input(name, single_file_fn):
     )
 
 
-class SolidOutputDefinition:
+class OutputDefinition:
     '''
     An output defines a way the result of a transform can be externalized. This can mean
     writing a file, or moving a file to a well-known location, renaming a database table,
@@ -201,9 +201,9 @@ class SolidOutputDefinition:
 class Solid:
     def __init__(self, name, inputs, transform_fn, outputs, output_expectations=None):
         self.name = check_valid_name(name)
-        self.inputs = check.list_param(inputs, 'inputs', of_type=SolidInputDefinition)
+        self.inputs = check.list_param(inputs, 'inputs', of_type=InputDefinition)
         self.transform_fn = _contextify_fn(check.callable_param(transform_fn, 'transform'))
-        self.outputs = check.list_param(outputs, 'supported_outputs', of_type=SolidOutputDefinition)
+        self.outputs = check.list_param(outputs, 'supported_outputs', of_type=OutputDefinition)
         self.output_expectations = check.opt_list_param(
             output_expectations, 'output_expectations', of_type=SolidExpectationDefinition
         )
