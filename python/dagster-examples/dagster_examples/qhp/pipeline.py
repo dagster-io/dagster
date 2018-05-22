@@ -7,7 +7,7 @@ import pandas as pd
 from dagster import check
 
 import solidic
-import dagster.solidic_pandas as solidic_pd
+import dagster.pandas_kernel as solidic_pd
 
 from dagster_examples.qhp.qhp_input import (QhpJsonPivotPoints, define_qhp_input)
 

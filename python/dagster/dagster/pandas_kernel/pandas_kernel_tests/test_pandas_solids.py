@@ -10,8 +10,8 @@ from solidic.execution import (
     output_single_solid, _pipeline_solid, _pipeline_solid_in_memory, output_pipeline,
     execute_pipeline
 )
-import dagster.solidic_pandas as solidic_pd
-from dagster.solidic_pandas.definitions import create_solidic_pandas_csv_input
+import dagster.pandas_kernel as solidic_pd
+from dagster.pandas_kernel.definitions import create_solidic_pandas_csv_input
 from dagster.utils.test import (get_temp_file_name, get_temp_file_names, script_relative_path)
 
 

@@ -1,5 +1,5 @@
 import solidic
-import dagster.solidic_pandas as solidic_pd
+import dagster.pandas_kernel as solidic_pd
 
 
 def define_pipeline():

@@ -4,7 +4,7 @@ import pandas as pd
 from solidic.execution import (SolidExecutionContext, execute_single_solid, output_single_solid)
 from dagster.utils.test import (script_relative_path, get_temp_file_name)
 
-import dagster.solidic_pandas as solidic_pd
+import dagster.pandas_kernel as solidic_pd
 
 
 def create_test_context():
