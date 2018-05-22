@@ -2,7 +2,7 @@ from dagster_examples.qhp.pipeline import define_pipeline
 from solidic.execution import (
     execute_pipeline_through_solid, SolidExecutionContext, execute_pipeline
 )
-from solidic_utils.test import script_relative_path
+from dagster.solidic_utils.test import script_relative_path
 
 
 def providers_771_args():

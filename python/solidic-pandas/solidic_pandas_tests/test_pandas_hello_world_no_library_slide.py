@@ -3,7 +3,7 @@ import pandas as pd
 import solidic
 from solidic.definitions import (Solid, SolidOutputDefinition, SolidInputDefinition)
 from solidic.execution import (SolidExecutionContext, execute_single_solid)
-from solidic_utils.test import (script_relative_path)
+from dagster.solidic_utils.test import (script_relative_path)
 
 
 def create_test_context():
