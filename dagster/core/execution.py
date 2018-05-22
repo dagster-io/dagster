@@ -583,6 +583,7 @@ def execute_single_solid(context, solid, input_arg_dicts, throw_on_error=True):
     check.inst_param(context, 'context', DagsterExecutionContext)
     check.inst_param(solid, 'solid', Solid)
     check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
+    check.bool_param(throw_on_error, 'throw_on_error')
 
     results = list(
         execute_pipeline_iterator(context, DagsterPipeline(solids=[solid]), input_arg_dicts)
@@ -784,6 +785,9 @@ def execute_pipeline(context, pipeline, input_arg_dicts, through_solids=None, th
 
     Note: throw_on_error is very useful in testing contexts when not testing for error conditions
     '''
+
+    check.bool_param(throw_on_error, 'throw_on_error')
+
     results = []
     for result in execute_pipeline_iterator(context, pipeline, input_arg_dicts, through_solids):
         if throw_on_error:
@@ -810,6 +814,7 @@ def output_pipeline(context, pipeline, input_arg_dicts, output_arg_dicts, throw_
     check.inst_param(pipeline, 'pipeline', DagsterPipeline)
     check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
     _check_output_arg_dicts(output_arg_dicts)
+    check.bool_param(throw_on_error, 'throw_on_error')
 
     results = []
     for result in output_pipeline_iterator(context, pipeline, input_arg_dicts, output_arg_dicts):
