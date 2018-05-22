@@ -58,8 +58,8 @@ import six
 
 from dagster import check
 
-from dagster.solidic_utils.logging import (CompositeLogger, ERROR)
-from dagster.solidic_utils.timing import time_execution_scope
+from dagster.utils.logging import (CompositeLogger, ERROR)
+from dagster.utils.timing import time_execution_scope
 
 from .definitions import (
     Solid,
