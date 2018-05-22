@@ -1,5 +1,0 @@
-python test_pipeline.py execute \
---input qhp_json_input.path=providers-771.json \
---input languages_csv.path=Language.csv \
---input specialities_csv.path=betterdoctor_qhp_specialities.csv \
---log-level INFO

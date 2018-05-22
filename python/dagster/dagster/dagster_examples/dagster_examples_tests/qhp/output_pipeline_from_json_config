@@ -1,1 +1,0 @@
-python3 test_pipeline.py output --json-config practice_insurances_pipeline.json
