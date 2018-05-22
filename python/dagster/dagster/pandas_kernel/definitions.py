@@ -2,11 +2,11 @@ import pandas as pd
 
 from dagster import check
 
-from solidic.definitions import (
+from dagster.solidic.definitions import (
     SolidInputDefinition, SolidOutputDefinition, Solid, create_solidic_single_file_input
 )
-from solidic.execution import SolidExecutionContext
-from solidic.types import (SolidPath, SolidString)
+from dagster.solidic.execution import SolidExecutionContext
+from dagster.solidic.types import (SolidPath, SolidString)
 
 
 def _read_df(path, frmt):

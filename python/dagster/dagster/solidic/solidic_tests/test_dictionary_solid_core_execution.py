@@ -1,10 +1,10 @@
 import pytest
 
-from solidic.types import SolidString
+from dagster.solidic.types import SolidString
 
-from solidic.definitions import (Solid, SolidInputDefinition, SolidOutputDefinition)
+from dagster.solidic.definitions import (Solid, SolidInputDefinition, SolidOutputDefinition)
 
-from solidic.execution import (
+from dagster.solidic.execution import (
     _execute_input, _execute_core_transform, _execute_output, SolidTypeError, SolidExecutionContext
 )
 

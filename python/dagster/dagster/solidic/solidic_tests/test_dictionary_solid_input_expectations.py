@@ -1,12 +1,12 @@
 import pytest
 
-from solidic.definitions import (
+from dagster.solidic.definitions import (
     SolidInputDefinition, SolidExpectationDefinition, SolidExpectationResult
 )
-from solidic.execution import (
+from dagster.solidic.execution import (
     _execute_input_expectation, SolidUserCodeExecutionError, SolidExecutionContext
 )
-from solidic.types import SolidString
+from dagster.solidic.types import SolidString
 
 
 def create_test_context():

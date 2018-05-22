@@ -6,7 +6,7 @@ import pandas as pd
 
 from dagster import check
 
-import solidic
+import dagster
 import dagster.pandas_kernel as solidic_pd
 
 from dagster_examples.qhp.qhp_input import (QhpJsonPivotPoints, define_qhp_input)
@@ -107,7 +107,7 @@ def define_pipeline():
         ]
     )
 
-    return solidic.pipeline(
+    return dagster.solidic.pipeline(
         name='qhp',
         solids=[
             plans,

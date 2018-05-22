@@ -1,7 +1,7 @@
 import pandas as pd
 
-# from solidic.definitions import (Solid, SolidOutputTypeDefinition, SolidInputDefinition)
-from solidic.execution import (SolidExecutionContext, execute_single_solid, output_single_solid)
+# from dagster.solidic.definitions import (Solid, SolidOutputTypeDefinition, SolidInputDefinition)
+from dagster.solidic.execution import (SolidExecutionContext, execute_single_solid, output_single_solid)
 from dagster.utils.test import (script_relative_path, get_temp_file_name)
 
 import dagster.pandas_kernel as solidic_pd

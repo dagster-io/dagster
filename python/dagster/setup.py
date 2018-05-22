@@ -17,7 +17,9 @@ setup(
         'enum34>=1.1.6',
         'future>=0.16.0',
 
-        # solidic (not explicitly expressed atm)
+        # core (not explicitly expressed atm)
+        'six>=1.11.0',
+        'toposort>=1.5',
         'graphviz>=0.8.3',
         'pyyaml>=3.12',
 

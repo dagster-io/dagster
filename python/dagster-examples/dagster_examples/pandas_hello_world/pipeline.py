@@ -1,4 +1,4 @@
-import solidic
+import dagster.solidic
 import dagster.pandas_kernel as solidic_pd
 
 
@@ -30,7 +30,7 @@ def define_pipeline():
         transform_fn=always_fails_transform_fn
     )
 
-    return solidic.pipeline(
+    return dagster.solidic.pipeline(
         name='pandas_hello_world', solids=[sum_solid, sum_sq_solid, always_fails_solid]
     )
 

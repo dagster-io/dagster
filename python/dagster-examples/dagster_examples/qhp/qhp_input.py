@@ -2,7 +2,7 @@ import json
 
 from dagster import check
 
-import solidic
+import dagster.solidic
 
 from .flatten import flatten_json_to_dataframes
 
@@ -36,7 +36,7 @@ def define_qhp_input(table_field_expr):
         context.metric('rows', df.shape[0])
         return df
 
-    return solidic.file_input_definition(
+    return dagster.solidic.file_input_definition(
         name='qhp_json_input',
         input_fn=flatten_table_field,
     )
