@@ -9,11 +9,9 @@ import time
 import traceback
 from collections import defaultdict
 
-import great_expectations as ge
+# import great_expectations as ge
 import numpy as np
 import pandas as pd
-
-import requests
 
 DISCONNECTED_SUBTREE = -99999.12345
 
@@ -40,44 +38,44 @@ def summarize_json_tree_recursive_iterator(obj, prefix):
         yield (prefix, str(type(obj)), obj)
 
 
-def summarize_json_tree(full_json):
-    count_nested_map = defaultdict(int)
-    set_nested_map = defaultdict(set)
-    type_map = defaultdict(set)
-    for key, type_, item in summarize_json_tree_recursive_iterator(full_json, "@"):
-        count_nested_map[key] += 1
-        set_nested_map[key].update([item])
-        type_map[key].update([type_])
+# def summarize_json_tree(full_json):
+#     count_nested_map = defaultdict(int)
+#     set_nested_map = defaultdict(set)
+#     type_map = defaultdict(set)
+#     for key, type_, item in summarize_json_tree_recursive_iterator(full_json, "@"):
+#         count_nested_map[key] += 1
+#         set_nested_map[key].update([item])
+#         type_map[key].update([type_])
 
-    field_summaries = []
+#     field_summaries = []
 
-    total_occurrences = dict(count_nested_map)
-    unique_value_counts = dict([(k, len(v)) for k, v in set_nested_map.items()])
+#     total_occurrences = dict(count_nested_map)
+#     unique_value_counts = dict([(k, len(v)) for k, v in set_nested_map.items()])
 
-    for k, v in total_occurrences.items():
-        if k == '@':
-            parent = None
-        # elif k.split('.')[-2] == '*':
-        #     parent = '.'.join(k.split('.')[:-2])
-        else:
-            parent = '.'.join(k.split('.')[:-1])
+#     for k, v in total_occurrences.items():
+#         if k == '@':
+#             parent = None
+#         # elif k.split('.')[-2] == '*':
+#         #     parent = '.'.join(k.split('.')[:-2])
+#         else:
+#             parent = '.'.join(k.split('.')[:-1])
 
-        # print k, k.split('.')[-1], parent
-        field_summaries.append(
-            {
-                'field': k,
-                'depth': len(str(k).split('.')),
-                'parent': parent,
-                'data_types': type_map[k],
-                'total_touch_count': v,
-                'parent_touch_count': total_occurrences[parent] if parent != None else None,
-                'unique_value_counts': unique_value_counts[k],
-            }
-        )
+#         # print k, k.split('.')[-1], parent
+#         field_summaries.append(
+#             {
+#                 'field': k,
+#                 'depth': len(str(k).split('.')),
+#                 'parent': parent,
+#                 'data_types': type_map[k],
+#                 'total_touch_count': v,
+#                 'parent_touch_count': total_occurrences[parent] if parent != None else None,
+#                 'unique_value_counts': unique_value_counts[k],
+#             }
+#         )
 
-    df = ge.dataset.PandasDataSet(field_summaries)
-    df.sort_values(['depth', 'field'], ascending=True)
-    return df
+#     df = ge.dataset.PandasDataSet(field_summaries)
+#     df.sort_values(['depth', 'field'], ascending=True)
+#     return df
 
 
 def derive_features_from_summary(summary_df):

@@ -17,11 +17,14 @@ setup(
         'enum34>=1.1.6',
         'future>=0.16.0',
 
+        # cli
+        'coloredlogs>=10.0',
+        'graphviz>=0.8.3',
+        'pyyaml>=3.12',
+
         # core (not explicitly expressed atm)
         'six>=1.11.0',
         'toposort>=1.5',
-        'graphviz>=0.8.3',
-        'pyyaml>=3.12',
 
         # pandas kernel
         'pandas>=0.22.0',
@@ -31,10 +34,12 @@ setup(
         'sqlalchemy>=1.2.7',
 
         # examples
-        'great-expectations>=0.4.1',
-        'requests>=2.18.4',
+        # unused and very, very heavy
+        # 'great-expectations>=0.4.1',
+        # 'requests>=2.18.4',
 
         # dev/test
+        'pytest>=3.5.1',
         'pylint>=1.8.4',
         'yapf>=0.21.0',
         'rope>=0.10.7',
