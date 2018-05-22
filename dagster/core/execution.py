@@ -83,7 +83,7 @@ class DagsterExecutionContext:
     A context object flowed through the entire scope of single execution of a
     pipeline of solids. This is used by both framework and uesr code to log
     messages and metrics. It also maintains a stack of context values so that
-    logs, metrics, and any future reporting are reported with a minimal, consitent 
+    logs, metrics, and any future reporting are reported with a minimal, consistent
     level of context so that developers do not have to repeatedly log well-known
     information (e.g. the name of the solid, the name of the pipeline, etc) when
     logging. Additionally tool author may add their own context values to assist
@@ -236,9 +236,7 @@ class DagsterExecutionResult:
                 'Must have at least one expectation failure'
             )
             self.failed_expectation_results = check.list_param(
-                failed_expectation_results,
-                'failed_expectation_results',
-                of_type=ExpectationResult
+                failed_expectation_results, 'failed_expectation_results', of_type=ExpectationResult
             )
         else:
             check.invariant(failed_expectation_results is None)
@@ -274,7 +272,7 @@ def _user_code_error_boundary(context, msg, **kwargs):
     policy around an user code invoked by the framework. This ensures that all user
     errors are wrapped in the SolidUserCodeExecutionError, and that the original stack
     trace of the user error is preserved, so that it can be reported without confusing
-    framework code in the stack trace, if a tool author wishes to do so. This has 
+    framework code in the stack trace, if a tool author wishes to do so. This has
     been especially help in a notebooking context.
     '''
     check.inst_param(context, 'context', DagsterExecutionContext)
@@ -412,7 +410,7 @@ def _execute_output(context, output_def, output_arg_dict, materialized_output):
     '''
     Execute a single output, calling into user-specified code. Check validity
     of arguments into the output, do appropriate loggina and metrics tracking, and
-    actually execute the output function with an appropriate error boundary. 
+    actually execute the output function with an appropriate error boundary.
     '''
     check.inst_param(context, 'context', DagsterExecutionContext)
     check.inst_param(output_def, 'output_def', OutputDefinition)

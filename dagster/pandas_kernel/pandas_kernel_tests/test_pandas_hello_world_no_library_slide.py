@@ -1,6 +1,5 @@
 import pandas as pd
 
-import dagster.core
 from dagster.core import types
 from dagster.core.definitions import (Solid, OutputDefinition, InputDefinition)
 from dagster.core.execution import (DagsterExecutionContext, execute_single_solid)
