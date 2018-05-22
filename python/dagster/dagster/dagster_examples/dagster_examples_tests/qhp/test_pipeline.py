@@ -1,4 +1,4 @@
-from dagster_examples.qhp.pipeline import define_pipeline
+from dagster.dagster_examples.qhp.pipeline import define_pipeline
 from dagster.core.execution import (
     execute_pipeline_through_solid, SolidExecutionContext, execute_pipeline
 )

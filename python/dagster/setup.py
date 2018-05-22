@@ -29,5 +29,9 @@ setup(
 
         # sqlalchemy kernel
         'sqlalchemy>=1.2.7',
+
+        # examples
+        'great-expectations>=0.4.1',
+        'requests>=2.18.4',
     ],
 )

@@ -9,7 +9,7 @@ from dagster import check
 import dagster
 import dagster.pandas_kernel as solidic_pd
 
-from dagster_examples.qhp.qhp_input import (QhpJsonPivotPoints, define_qhp_input)
+from dagster.dagster_examples.qhp.qhp_input import (QhpJsonPivotPoints, define_qhp_input)
 
 
 def unpack_row(row, fields):

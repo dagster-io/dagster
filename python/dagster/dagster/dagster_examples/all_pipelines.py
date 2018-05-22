@@ -1,7 +1,7 @@
 import dagster.embedded_cli
-import dagster_examples.pandas_hello_world.pipeline
-import dagster_examples.qhp.pipeline
-import dagster_examples.sql_hello_world.pipeline
+import dagster_examples.dagster_examples.pandas_hello_world.pipeline
+import dagster_examples.dagster_examples.qhp.pipeline
+import dagster_examples.dagster_examples.sql_hello_world.pipeline
 
 if __name__ == '__main__':
     import sys
