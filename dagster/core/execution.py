@@ -655,7 +655,12 @@ def _select_keys(ddict1, ddict2, keys):
     return {key: ddict[key] for key in keys}
 
 
-def execute_pipeline_through_solid(context, pipeline, input_arg_dicts, solid_name):
+def execute_pipeline_through_solid(
+    context,
+    pipeline,
+    input_arg_dicts,
+    solid_name,
+):
     '''
     Execute a pipeline through a single solid, and then output *only* that result
     '''
