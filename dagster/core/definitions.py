@@ -102,7 +102,7 @@ class InputDefinition:
             context.info('I am in an input.') # use context for logging
             return pd.read_csv(arg_dict['path'])
 
-    argument_def_dict: { str: SolidType }
+    argument_def_dict: { str: DagsterType }
         Define the arguments expected by this input. A dictionary that maps a string
         (argument name) to an argument type (defined in dagster.core.types) Continuing
         the above example, the csv signature would be:
@@ -120,7 +120,7 @@ class InputDefinition:
         self.name = check_valid_name(name)
         self.input_fn = _contextify_fn(check.callable_param(input_fn, 'input_fn'))
         self.argument_def_dict = check.dict_param(
-            argument_def_dict, 'argument_def_dict', key_type=str, value_type=types.SolidType
+            argument_def_dict, 'argument_def_dict', key_type=str, value_type=types.DagsterType
         )
         self.expectations = check.opt_list_param(
             expectations, 'expectations', of_type=ExpectationDefinition
@@ -165,7 +165,7 @@ class OutputDefinition:
         You must specify an argument with the name "arg_dict". It will be the dictionary
         of arguments specified by the caller of the solid
 
-        You can optionally specify a context argument. If it is specified a SolidExecutionContext
+        You can optionally specify a context argument. If it is specified a DagsterExecutionContext
         will be passed.
 
         e.g.
@@ -178,7 +178,7 @@ class OutputDefinition:
         def output_fn(actual_output, context, arg_dict):
             pass
 
-    argument_def_dict: { str: SolidType }
+    argument_def_dict: { str: DagsterType }
         Define the arguments expected by this output . A dictionary that maps a string
         (argument name) to an argument type (defined in dagster.core.types).
 
@@ -191,7 +191,7 @@ class OutputDefinition:
         self.name = check_valid_name(name)
         self.output_fn = _contextify_fn(check.callable_param(output_fn, 'output_fn'))
         self.argument_def_dict = check.dict_param(
-            argument_def_dict, 'argument_def_dict', key_type=str, value_type=types.SolidType
+            argument_def_dict, 'argument_def_dict', key_type=str, value_type=types.DagsterType
         )
 
 
