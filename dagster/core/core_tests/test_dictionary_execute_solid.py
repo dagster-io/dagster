@@ -8,8 +8,8 @@ from dagster.core.definitions import (
 )
 
 from dagster.core.execution import (
-    output_single_solid, SolidExecutionResult, SolidExecutionFailureReason, DagsterExecutionContext,
-    execute_single_solid
+    output_single_solid, DagsterExecutionResult, SolidExecutionFailureReason,
+    DagsterExecutionContext, execute_single_solid
 )
 
 from dagster.core.errors import SolidExpectationFailedError
@@ -173,7 +173,7 @@ def test_execute_solid_with_failed_input_expectation_non_throwing():
         throw_on_error=False,
     )
 
-    assert isinstance(solid_execution_result, SolidExecutionResult)
+    assert isinstance(solid_execution_result, DagsterExecutionResult)
     assert solid_execution_result.success is False
     assert solid_execution_result.reason == SolidExecutionFailureReason.EXPECTATION_FAILURE
 
@@ -237,7 +237,7 @@ def test_execute_solid_with_failed_output_expectation_non_throwing():
         throw_on_error=False
     )
 
-    assert isinstance(solid_execution_result, SolidExecutionResult)
+    assert isinstance(solid_execution_result, DagsterExecutionResult)
     assert solid_execution_result.success is False
     assert solid_execution_result.reason == SolidExecutionFailureReason.EXPECTATION_FAILURE
 

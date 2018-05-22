@@ -6,7 +6,7 @@ from dagster import check
 from dagster.core.definitions import (SolidInputDefinition, Solid, SolidOutputDefinition)
 from dagster.core.graph import (create_adjacency_lists, SolidGraph, DagsterPipeline)
 from dagster.core.execution import (
-    execute_pipeline_iterator, DagsterExecutionContext, SolidExecutionResult
+    execute_pipeline_iterator, DagsterExecutionContext, DagsterExecutionResult
 )
 
 # protected members
@@ -223,8 +223,8 @@ def transform_called(name):
 
 
 def assert_equivalent_results(left, right):
-    check.inst_param(left, 'left', SolidExecutionResult)
-    check.inst_param(right, 'right', SolidExecutionResult)
+    check.inst_param(left, 'left', DagsterExecutionResult)
+    check.inst_param(right, 'right', DagsterExecutionResult)
 
     assert left.success == right.success
     assert left.name == right.name
@@ -233,8 +233,8 @@ def assert_equivalent_results(left, right):
 
 
 def assert_all_results_equivalent(expected_results, result_results):
-    check.list_param(expected_results, 'expected_results', of_type=SolidExecutionResult)
-    check.list_param(result_results, 'result_results', of_type=SolidExecutionResult)
+    check.list_param(expected_results, 'expected_results', of_type=DagsterExecutionResult)
+    check.list_param(result_results, 'result_results', of_type=DagsterExecutionResult)
     assert len(expected_results) == len(result_results)
     for expected, result in zip(expected_results, result_results):
         assert_equivalent_results(expected, result)
@@ -258,7 +258,7 @@ def test_pipeline_execution_graph_diamond():
     assert results[0].materialized_output == [input_set('A_input'), transform_called('A')]
 
     expected_results = [
-        SolidExecutionResult(
+        DagsterExecutionResult(
             success=True,
             solid=pipeline.solid_named('A'),
             materialized_output=[
@@ -267,7 +267,7 @@ def test_pipeline_execution_graph_diamond():
             ],
             exception=None,
         ),
-        SolidExecutionResult(
+        DagsterExecutionResult(
             success=True,
             solid=pipeline.solid_named('B'),
             materialized_output=[
@@ -277,7 +277,7 @@ def test_pipeline_execution_graph_diamond():
             ],
             exception=None,
         ),
-        SolidExecutionResult(
+        DagsterExecutionResult(
             success=True,
             solid=pipeline.solid_named('C'),
             materialized_output=[
@@ -288,7 +288,7 @@ def test_pipeline_execution_graph_diamond():
             ],
             exception=None,
         ),
-        SolidExecutionResult(
+        DagsterExecutionResult(
             success=True,
             solid=pipeline.solid_named('D'),
             materialized_output=[

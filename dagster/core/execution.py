@@ -196,7 +196,7 @@ class DagsterExecutionContext:
                 yield metric
 
 
-class SolidExecutionResult:
+class DagsterExecutionResult:
     '''
     A class to represnet the result of the execution of a single solid. Pipeline
     commands return iterators or lists of these results.
@@ -256,7 +256,7 @@ class SolidExecutionResult:
     def copy(self):
         ''' This must be used instead of copy.deepcopy() because exceptions cannot
         be deepcopied'''
-        return SolidExecutionResult(
+        return DagsterExecutionResult(
             success=self.success,
             solid=self.solid,
             materialized_output=copy.deepcopy(self.materialized_output),
@@ -400,7 +400,7 @@ def _execute_core_transform(context, solid_transform_fn, materialized_inputs):
         context.metric('core_transform_time_ms', timer_result.millis)
 
         check.invariant(
-            not isinstance(materialized_output, SolidExecutionResult),
+            not isinstance(materialized_output, DagsterExecutionResult),
             'Tricksy hobbitess cannot return an execution result from the transform ' + \
             'function in order to fool the framework'
         )
@@ -540,7 +540,7 @@ def _pipeline_solid_in_memory(context, solid, materialized_inputs):
     all_run_result = _execute_all_input_expectations(context, solid, materialized_inputs)
 
     if not all_run_result.success:
-        return SolidExecutionResult(
+        return DagsterExecutionResult(
             success=False,
             materialized_output=None,
             solid=solid,
@@ -552,7 +552,7 @@ def _pipeline_solid_in_memory(context, solid, materialized_inputs):
 
     materialized_output = _execute_core_transform(context, solid.transform_fn, materialized_inputs)
 
-    if isinstance(materialized_output, SolidExecutionResult):
+    if isinstance(materialized_output, DagsterExecutionResult):
         check.invariant(
             not materialized_output.success,
             'only failed things should return an execution result right here'
@@ -568,7 +568,7 @@ def _pipeline_solid_in_memory(context, solid, materialized_inputs):
             output_expectation_failures.append(output_expectation_result)
 
     if output_expectation_failures:
-        return SolidExecutionResult(
+        return DagsterExecutionResult(
             success=False,
             materialized_output=None,
             solid=solid,
@@ -601,7 +601,7 @@ def execute_single_solid(context, solid, input_arg_dicts, throw_on_error=True):
 
 
 def _do_throw_on_error(execution_result):
-    check.inst_param(execution_result, 'execution_result', SolidExecutionResult)
+    check.inst_param(execution_result, 'execution_result', DagsterExecutionResult)
     if not execution_result.success:
         if execution_result.reason == SolidExecutionFailureReason.EXPECTATION_FAILURE:
             check.invariant(
@@ -692,7 +692,7 @@ def _execute_pipeline_solid_step(context, solid, input_arg_dicts, materialized_v
     # This call does all input and output expectations, as well as the core transform
     materialized_output = _pipeline_solid_in_memory(context, solid, selected_values)
 
-    if isinstance(materialized_output, SolidExecutionResult):
+    if isinstance(materialized_output, DagsterExecutionResult):
         check.invariant(not materialized_output.success, 'early return should only be failure')
         return materialized_output
 
@@ -700,7 +700,7 @@ def _execute_pipeline_solid_step(context, solid, input_arg_dicts, materialized_v
 
     materialized_values[solid.name] = materialized_output
 
-    return SolidExecutionResult(
+    return DagsterExecutionResult(
         success=True,
         solid=solid,
         materialized_output=materialized_values[solid.name],
@@ -765,7 +765,7 @@ def execute_pipeline_iterator(context, pipeline, input_arg_dicts, through_solids
                 break
 
         except SolidUserCodeExecutionError as see:
-            yield SolidExecutionResult(
+            yield DagsterExecutionResult(
                 success=False,
                 reason=SolidExecutionFailureReason.USER_CODE_ERROR,
                 solid=solid,
@@ -854,7 +854,7 @@ def output_pipeline_iterator(context, pipeline, input_arg_dicts, output_arg_dict
                         context, output_def, output_arg_dict, result.materialized_output
                     )
                 except SolidUserCodeExecutionError as see:
-                    output_result = SolidExecutionResult(
+                    output_result = DagsterExecutionResult(
                         success=False,
                         solid=result.solid,
                         reason=SolidExecutionFailureReason.USER_CODE_ERROR,
