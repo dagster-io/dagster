@@ -5,7 +5,7 @@
     "solidic/solidic_tests",
     "dagster/dagster/utils/utils_tests",
     "dagster/dagster/pandas_kernel/pandas_kernel_tests",
-    "dagster/dagster/solidic_sql/solidic_sql_tests",
+    "dagster/dagster/sqlalchemy_kernel/sqlalchemy_kernel_tests",
     "dagster-examples/dagster_examples_tests",
     "-s"
   ],
