@@ -1,10 +1,12 @@
 import pandas as pd
 
 # from dagster.core.definitions import (Solid, SolidOutputTypeDefinition, SolidInputDefinition)
-from dagster.core.execution import (DagsterExecutionContext, execute_single_solid, output_single_solid)
+from dagster.core.execution import (
+    DagsterExecutionContext, execute_single_solid, output_single_solid
+)
 from dagster.utils.test import (script_relative_path, get_temp_file_name)
 
-import dagster.pandas_kernel as solidic_pd
+import dagster.pandas_kernel as dagster_pd
 
 
 def create_test_context():
@@ -12,14 +14,14 @@ def create_test_context():
 
 
 def test_hello_world_no_library_support():
-    csv_input = solidic_pd.csv_input('num_csv')
+    csv_input = dagster_pd.csv_input('num_csv')
 
     def transform_fn(num_csv):
         num_csv['sum'] = num_csv['num1'] + num_csv['num2']
         return num_csv
 
     # supports CSV and PARQUET by default
-    hello_world = solidic_pd.dataframe_solid(
+    hello_world = dagster_pd.dataframe_solid(
         name='hello_world', inputs=[csv_input], transform_fn=transform_fn
     )
 

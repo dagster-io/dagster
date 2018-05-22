@@ -7,7 +7,7 @@ import pandas as pd
 from dagster import check
 
 import dagster
-import dagster.pandas_kernel as solidic_pd
+import dagster.pandas_kernel as dagster_pd
 
 from dagster.dagster_examples.qhp.qhp_input import (QhpJsonPivotPoints, define_qhp_input)
 
@@ -35,79 +35,79 @@ def unpack_row(row, fields):
 
 
 def define_pipeline():
-    plans = solidic_pd.dataframe_solid(
+    plans = dagster_pd.dataframe_solid(
         name='plans',
         inputs=[define_qhp_input(table_field_expr=QhpJsonPivotPoints.PLANS)],
     )
 
-    plan_years = solidic_pd.dataframe_solid(
+    plan_years = dagster_pd.dataframe_solid(
         name='plan_years',
         inputs=[define_qhp_input(table_field_expr=QhpJsonPivotPoints.PLAN_YEARS)],
     )
 
-    addresses = solidic_pd.dataframe_solid(
+    addresses = dagster_pd.dataframe_solid(
         name='addresses',
         inputs=[define_qhp_input(table_field_expr=QhpJsonPivotPoints.ADDRESSES)],
     )
 
-    providers = solidic_pd.dataframe_solid(
+    providers = dagster_pd.dataframe_solid(
         name='providers',
         inputs=[define_qhp_input(table_field_expr=QhpJsonPivotPoints.PROVIDERS)],
     )
 
-    languages = solidic_pd.dataframe_solid(
+    languages = dagster_pd.dataframe_solid(
         name='languages',
-        inputs=[solidic_pd.csv_input('languages_csv', delimiter='|')],
+        inputs=[dagster_pd.csv_input('languages_csv', delimiter='|')],
     )
 
-    specialities = solidic_pd.dataframe_solid(
+    specialities = dagster_pd.dataframe_solid(
         name='specialities',
-        inputs=[solidic_pd.csv_input('specialities_csv')],
+        inputs=[dagster_pd.csv_input('specialities_csv')],
     )
 
-    insurance = solidic_pd.dataframe_solid(
+    insurance = dagster_pd.dataframe_solid(
         name='insurance',
         transform_fn=insurance_tranform,
         inputs=[
-            solidic_pd.depends_on(plans),
-            solidic_pd.depends_on(plan_years),
+            dagster_pd.depends_on(plans),
+            dagster_pd.depends_on(plan_years),
         ],
     )
 
-    practices = solidic_pd.dataframe_solid(
+    practices = dagster_pd.dataframe_solid(
         name='practices',
         transform_fn=practices_transform,
         inputs=[
-            solidic_pd.depends_on(addresses),
-            solidic_pd.depends_on(providers),
+            dagster_pd.depends_on(addresses),
+            dagster_pd.depends_on(providers),
         ]
     )
 
-    provider_languages_specialities = solidic_pd.dataframe_solid(
+    provider_languages_specialities = dagster_pd.dataframe_solid(
         name='provider_languages_specialities',
         transform_fn=provider_languages_specialities_transform,
         inputs=[
-            solidic_pd.depends_on(providers),
-            solidic_pd.depends_on(specialities),
-            solidic_pd.depends_on(languages),
+            dagster_pd.depends_on(providers),
+            dagster_pd.depends_on(specialities),
+            dagster_pd.depends_on(languages),
         ]
     )
 
-    names = solidic_pd.dataframe_solid(
+    names = dagster_pd.dataframe_solid(
         name='names',
         inputs=[define_qhp_input(table_field_expr=QhpJsonPivotPoints.NAMES)],
     )
 
-    practice_insurances = solidic_pd.dataframe_solid(
+    practice_insurances = dagster_pd.dataframe_solid(
         name='practice_insurances',
         transform_fn=transform_practice_insurances,
         inputs=[
-            solidic_pd.depends_on(insurance),
-            solidic_pd.depends_on(practices),
+            dagster_pd.depends_on(insurance),
+            dagster_pd.depends_on(practices),
         ]
     )
 
-    return dagster.core.pipeline(
+    return dagster.pipeline(
         name='qhp',
         solids=[
             plans,
