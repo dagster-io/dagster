@@ -1,6 +1,6 @@
 import pytest
 
-from dagster.structured_flags import (
+from dagster.cli.structured_flags import (
     structure_flags, SingleArgument, StructuredArguments, NamedArgument, NamedKeyArgument,
     StructuredArgumentsError
 )
