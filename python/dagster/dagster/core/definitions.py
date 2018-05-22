@@ -104,7 +104,7 @@ class SolidInputDefinition:
 
     argument_def_dict: { str: SolidType }
         Define the arguments expected by this input. A dictionary that maps a string
-        (argument name) to an argument type (defined in dagster.solidic.types) Continuing
+        (argument name) to an argument type (defined in dagster.core.types) Continuing
         the above example, the csv signature would be:
 
         argument_def_dict = { 'path' : SolidPath }
@@ -180,7 +180,7 @@ class SolidOutputDefinition:
 
     argument_def_dict: { str: SolidType }
         Define the arguments expected by this output . A dictionary that maps a string
-        (argument name) to an argument type (defined in dagster.solidic.types).
+        (argument name) to an argument type (defined in dagster.core.types).
 
         e.g.:
 

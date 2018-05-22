@@ -1,7 +1,7 @@
 from dagster import check
 
-from dagster.solidic.definitions import (SolidInputDefinition, SolidOutputDefinition, Solid)
-from dagster.solidic.execution import (SolidExecutionContext, output_single_solid)
+from dagster.core.definitions import (SolidInputDefinition, SolidOutputDefinition, Solid)
+from dagster.core.execution import (SolidExecutionContext, output_single_solid)
 
 
 def create_test_context():

@@ -3,9 +3,9 @@ import os
 import pandas as pd
 
 from dagster import check
-import dagster.solidic
-from dagster.solidic.definitions import (Solid, SolidOutputDefinition)
-from dagster.solidic.execution import (
+import dagster.core
+from dagster.core.definitions import (Solid, SolidOutputDefinition)
+from dagster.core.execution import (
     SolidExecutionContext, execute_pipeline_through_solid, _execute_input, output_pipeline_iterator,
     output_single_solid, _pipeline_solid, _pipeline_solid_in_memory, output_pipeline,
     execute_pipeline
@@ -82,7 +82,7 @@ def test_pandas_csv_to_csv():
         df.to_csv(path, index=False)
 
     csv_output_def = SolidOutputDefinition(
-        name='CSV', output_fn=output_fn_inst, argument_def_dict={'path': dagster.solidic.PATH}
+        name='CSV', output_fn=output_fn_inst, argument_def_dict={'path': dagster.core.PATH}
     )
 
     solid = Solid(
@@ -207,7 +207,7 @@ def test_no_transform_solid():
 
 
 def create_diamond_pipeline():
-    return dagster.solidic.pipeline(solids=list(create_diamond_dag()))
+    return dagster.core.pipeline(solids=list(create_diamond_dag()))
 
 
 def create_diamond_dag():
@@ -467,7 +467,7 @@ def test_pandas_multiple_inputs():
 
     output_df = execute_pipeline_through_solid(
         context,
-        dagster.solidic.pipeline(solids=[double_sum]),
+        dagster.core.pipeline(solids=[double_sum]),
         input_arg_dicts=input_args,
         solid_name='double_sum'
     ).materialized_output

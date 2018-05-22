@@ -2,7 +2,7 @@ from enum import Enum
 
 from dagster import check
 
-import dagster.solidic.definitions
+import dagster.core.definitions
 
 
 class SolidExecutionFailureReason(Enum):
@@ -59,5 +59,5 @@ class SolidExpectationFailedError(SolidError):
             failed_expectation_results,
             'failed_expectation_results',
             # fully qualified name prevents circular reference
-            dagster.solidic.definitions.SolidExpectationResult
+            dagster.core.definitions.SolidExpectationResult
         )

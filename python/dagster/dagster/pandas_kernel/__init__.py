@@ -5,9 +5,9 @@ import pandas as pd
 
 from dagster import check
 
-from dagster.solidic.definitions import (Solid, has_context_argument)
-from dagster.solidic.execution import SolidExecutionContext
-from dagster.solidic.errors import SolidUserCodeExecutionError
+from dagster.core.definitions import (Solid, has_context_argument)
+from dagster.core.execution import SolidExecutionContext
+from dagster.core.errors import SolidUserCodeExecutionError
 from .definitions import (
     create_dagster_pd_csv_input,
     create_dagster_pd_csv_output,

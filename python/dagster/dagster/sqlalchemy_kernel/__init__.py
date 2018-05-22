@@ -5,9 +5,9 @@ import sqlalchemy as sa
 
 from dagster import check
 
-import dagster.solidic
-from dagster.solidic.execution import (SolidExecutionContext)
-from dagster.solidic.definitions import (Solid, SolidInputDefinition, SolidOutputDefinition)
+import dagster.core
+from dagster.core.execution import (SolidExecutionContext)
+from dagster.core.definitions import (Solid, SolidInputDefinition, SolidOutputDefinition)
 
 
 class SolidicSqlExecutionContext(SolidExecutionContext):
@@ -36,7 +36,7 @@ def create_table_output():
     return SolidOutputDefinition(
         name='CREATE',
         output_fn=output_fn,
-        argument_def_dict={'table_name': dagster.solidic.types.SolidString},
+        argument_def_dict={'table_name': dagster.core.types.SolidString},
     )
 
 
@@ -57,7 +57,7 @@ def create_table_input(name):
         name=name,
         input_fn=_table_input_fn,
         argument_def_dict={
-            'table_name': dagster.solidic.types.SolidString,
+            'table_name': dagster.core.types.SolidString,
         }
     )
 
@@ -69,7 +69,7 @@ def create_table_input_dependency(solid):
         name=solid.name,
         input_fn=_table_input_fn,
         argument_def_dict={
-            'table_name': dagster.solidic.types.SolidString,
+            'table_name': dagster.core.types.SolidString,
         },
         depends_on=solid
     )
