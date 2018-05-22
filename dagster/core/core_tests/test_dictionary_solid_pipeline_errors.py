@@ -3,12 +3,12 @@ from dagster import check
 import dagster.core
 from dagster.core.definitions import (Solid, SolidInputDefinition, SolidOutputDefinition)
 from dagster.core.execution import (
-    SolidExecutionContext, SolidExecutionFailureReason, execute_pipeline, output_pipeline
+    DagsterExecutionContext, SolidExecutionFailureReason, execute_pipeline, output_pipeline
 )
 
 
 def create_test_context():
-    return SolidExecutionContext()
+    return DagsterExecutionContext()
 
 
 def create_dummy_output_def():

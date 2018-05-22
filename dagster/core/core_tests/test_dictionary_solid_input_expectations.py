@@ -4,13 +4,13 @@ from dagster.core.definitions import (
     SolidInputDefinition, SolidExpectationDefinition, SolidExpectationResult
 )
 from dagster.core.execution import (
-    _execute_input_expectation, SolidUserCodeExecutionError, SolidExecutionContext
+    _execute_input_expectation, SolidUserCodeExecutionError, DagsterExecutionContext
 )
 from dagster.core.types import SolidString
 
 
 def create_test_context():
-    return SolidExecutionContext()
+    return DagsterExecutionContext()
 
 
 def test_basic_failing_input_expectation():

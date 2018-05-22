@@ -6,7 +6,7 @@ from dagster import check
 import dagster.core
 from dagster.core.definitions import (Solid, SolidOutputDefinition)
 from dagster.core.execution import (
-    SolidExecutionContext, execute_pipeline_through_solid, _execute_input, output_pipeline_iterator,
+    DagsterExecutionContext, execute_pipeline_through_solid, _execute_input, output_pipeline_iterator,
     output_single_solid, _pipeline_solid, _pipeline_solid_in_memory, output_pipeline,
     execute_pipeline
 )
@@ -16,7 +16,7 @@ from dagster.utils.test import (get_temp_file_name, get_temp_file_names, script_
 
 
 def create_test_context():
-    return SolidExecutionContext()
+    return DagsterExecutionContext()
 
 
 def test_pandas_input():
@@ -38,7 +38,7 @@ def test_pandas_solid():
 
     def output_fn_inst(df, context, arg_dict):
         assert isinstance(df, pd.DataFrame)
-        assert isinstance(context, SolidExecutionContext)
+        assert isinstance(context, DagsterExecutionContext)
         assert isinstance(arg_dict, dict)
 
         test_output['df'] = df
@@ -77,7 +77,7 @@ def test_pandas_csv_to_csv():
         return num_csv
 
     def output_fn_inst(df, context, arg_dict):
-        assert isinstance(context, SolidExecutionContext)
+        assert isinstance(context, DagsterExecutionContext)
         path = check.str_elem(arg_dict, 'path')
         df.to_csv(path, index=False)
 

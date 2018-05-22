@@ -8,7 +8,7 @@ from dagster.core.definitions import (
 )
 
 from dagster.core.execution import (
-    output_single_solid, SolidExecutionResult, SolidExecutionFailureReason, SolidExecutionContext,
+    output_single_solid, SolidExecutionResult, SolidExecutionFailureReason, DagsterExecutionContext,
     execute_single_solid
 )
 
@@ -16,7 +16,7 @@ from dagster.core.errors import SolidExpectationFailedError
 
 
 def create_test_context():
-    return SolidExecutionContext()
+    return DagsterExecutionContext()
 
 
 def test_execute_solid_no_args():
@@ -33,7 +33,7 @@ def test_execute_solid_no_args():
     test_output = {}
 
     def output_fn_inst(data, context, arg_dict):
-        assert isinstance(context, SolidExecutionContext)
+        assert isinstance(context, DagsterExecutionContext)
         assert isinstance(arg_dict, dict)
         test_output['thedata'] = data
 
@@ -72,7 +72,7 @@ def create_single_dict_input(expectations=None):
 
 def create_noop_output(test_output):
     def set_test_output(output, context, arg_dict):
-        assert isinstance(context, SolidExecutionContext)
+        assert isinstance(context, DagsterExecutionContext)
         assert arg_dict == {}
         test_output['thedata'] = output
 
@@ -85,7 +85,7 @@ def create_noop_output(test_output):
 
 def test_hello_world():
     def transform_fn(context, hello_world_input):
-        assert isinstance(context, SolidExecutionContext)
+        assert isinstance(context, DagsterExecutionContext)
         assert isinstance(hello_world_input, dict)
         hello_world_input['hello'] = 'world'
         return hello_world_input
@@ -94,7 +94,7 @@ def test_hello_world():
 
     def output_fn(data, context, arg_dict):
         assert data['hello'] == 'world'
-        assert isinstance(context, SolidExecutionContext)
+        assert isinstance(context, DagsterExecutionContext)
         assert arg_dict == {}
         output_events['called'] = True
 

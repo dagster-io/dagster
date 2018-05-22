@@ -5,12 +5,12 @@ from dagster.core.types import SolidString
 from dagster.core.definitions import (Solid, SolidInputDefinition, SolidOutputDefinition)
 
 from dagster.core.execution import (
-    _execute_input, _execute_core_transform, _execute_output, SolidTypeError, SolidExecutionContext
+    _execute_input, _execute_core_transform, _execute_output, SolidTypeError, DagsterExecutionContext
 )
 
 
 def create_test_context():
-    return SolidExecutionContext()
+    return DagsterExecutionContext()
 
 
 def test_execute_input():
@@ -96,7 +96,7 @@ def test_materialize_output_with_context():
     )
 
     def tranform_fn_inst(context, some_input):
-        assert isinstance(context, SolidExecutionContext)
+        assert isinstance(context, DagsterExecutionContext)
         some_input[0]['data_key'] = 'new_value'
         return some_input
 
@@ -140,7 +140,7 @@ def test_execute_output_with_args():
     test_output = {}
 
     def output_fn_inst(materialized_output, context, arg_dict):
-        assert isinstance(context, SolidExecutionContext)
+        assert isinstance(context, DagsterExecutionContext)
         assert isinstance(arg_dict, dict)
         test_output['thedata'] = materialized_output
         test_output['thearg'] = arg_dict['out_arg']

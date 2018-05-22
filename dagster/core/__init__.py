@@ -4,12 +4,12 @@ from builtins import *  # pylint: disable=W0622,W0401
 from dagster import check
 
 from .definitions import SolidInputDefinition
-from .graph import SolidPipeline
+from .graph import DagsterPipeline
 from .types import SolidPath
 
 
 def pipeline(**kwargs):
-    return SolidPipeline(**kwargs)
+    return DagsterPipeline(**kwargs)
 
 
 def input_definition(**kwargs):

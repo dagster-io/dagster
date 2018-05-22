@@ -2,12 +2,12 @@ import pandas as pd
 
 import dagster.core
 from dagster.core.definitions import (Solid, SolidOutputDefinition, SolidInputDefinition)
-from dagster.core.execution import (SolidExecutionContext, execute_single_solid)
+from dagster.core.execution import (DagsterExecutionContext, execute_single_solid)
 from dagster.utils.test import (script_relative_path)
 
 
 def create_test_context():
-    return SolidExecutionContext()
+    return DagsterExecutionContext()
 
 
 def test_hello_world_no_library_support():

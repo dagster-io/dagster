@@ -4,9 +4,9 @@ import pytest
 from dagster import check
 
 from dagster.core.definitions import (SolidInputDefinition, Solid, SolidOutputDefinition)
-from dagster.core.graph import (create_adjacency_lists, SolidGraph, SolidPipeline)
+from dagster.core.graph import (create_adjacency_lists, SolidGraph, DagsterPipeline)
 from dagster.core.execution import (
-    execute_pipeline_iterator, SolidExecutionContext, SolidExecutionResult
+    execute_pipeline_iterator, DagsterExecutionContext, SolidExecutionResult
 )
 
 # protected members
@@ -14,7 +14,7 @@ from dagster.core.execution import (
 
 
 def create_test_context():
-    return SolidExecutionContext()
+    return DagsterExecutionContext()
 
 
 def create_dummy_output_def():
@@ -243,7 +243,7 @@ def assert_all_results_equivalent(expected_results, result_results):
 def test_pipeline_execution_graph_diamond():
     solid_graph = create_diamond_graph()
 
-    pipeline = SolidPipeline(solids=solid_graph.solids)
+    pipeline = DagsterPipeline(solids=solid_graph.solids)
 
     results = list()
 

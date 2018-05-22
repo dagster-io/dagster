@@ -7,7 +7,7 @@ import click
 from dagster import check
 from dagster.core.errors import SolidExecutionFailureReason
 from dagster.core.execution import (
-    SolidExecutionContext, SolidPipeline, execute_pipeline_iterator, output_pipeline_iterator
+    DagsterExecutionContext, DagsterPipeline, execute_pipeline_iterator, output_pipeline_iterator
 )
 from dagster.utils.logging import define_logger
 
@@ -24,13 +24,13 @@ LOGGING_DICT = {
 
 
 def create_dagster_context(log_level):
-    return SolidExecutionContext(loggers=[define_logger('dagster')], log_level=log_level)
+    return DagsterExecutionContext(loggers=[define_logger('dagster')], log_level=log_level)
 
 
 @click.command(name='graphviz')
 @click.pass_context
 def embedded_dagster_single_pipeline_graphviz_command(cxt):
-    pipeline = check.inst(cxt.obj['pipeline'], SolidPipeline)
+    pipeline = check.inst(cxt.obj['pipeline'], DagsterPipeline)
     build_graphviz_graph(pipeline).view(cleanup=True)
 
 
@@ -46,7 +46,7 @@ def _pipeline_named(pipelines, name):
 @click.pass_context
 def embedded_dagster_multi_pipeline_pipelines_command(cxt):
     pipelines = check.inst(cxt.obj['pipelines'], list)
-    check.list_param(pipelines, 'pipelines', of_type=SolidPipeline)
+    check.list_param(pipelines, 'pipelines', of_type=DagsterPipeline)
 
     indent = '    '
     print('*** All Pipelines ***')
@@ -87,7 +87,7 @@ def format_argument_dict(arg_def_dict):
 @click.pass_context
 def embedded_dagster_multi_pipeline_graphviz_command(cxt, pipeline_name):
     pipelines = check.inst(cxt.obj['pipelines'], list)
-    check.list_param(pipelines, 'pipelines', of_type=SolidPipeline)
+    check.list_param(pipelines, 'pipelines', of_type=DagsterPipeline)
     pipeline = _pipeline_named(pipelines, pipeline_name)
     check.str_param(pipeline_name, 'pipeline_name')
 
@@ -111,7 +111,7 @@ def embedded_dagster_multi_pipeline_output_command(
 ):
     check.str_param(pipeline_name, 'pipeline_name')
     pipelines = check.inst(cxt.obj['pipelines'], list)
-    check.list_param(pipelines, 'pipelines', of_type=SolidPipeline)
+    check.list_param(pipelines, 'pipelines', of_type=DagsterPipeline)
     pipeline = _pipeline_named(pipelines, pipeline_name)
     run_pipeline_output_command(json_config, input, output, log_level, pipeline)
 
@@ -123,7 +123,7 @@ def embedded_dagster_multi_pipeline_output_command(
 @click.option('--log-level', type=click.STRING, default='INFO')
 @click.pass_context
 def embedded_dagster_single_pipeline_output_command(cxt, json_config, input, output, log_level):  # pylint: disable=W0622
-    pipeline = check.inst(cxt.obj['pipeline'], SolidPipeline)
+    pipeline = check.inst(cxt.obj['pipeline'], DagsterPipeline)
     run_pipeline_output_command(json_config, input, output, log_level, pipeline)
 
 
@@ -186,7 +186,7 @@ def _get_output_arg_dicts(output_list):
 @click.option('--log-level', type=click.STRING, default='INFO')
 @click.pass_context
 def embedded_dagster_single_pipeline_execute_command(cxt, input, through, log_level):  # pylint: disable=W0622
-    pipeline = check.inst(cxt.obj['pipeline'], SolidPipeline)
+    pipeline = check.inst(cxt.obj['pipeline'], DagsterPipeline)
     run_pipeline_execute_command(input, through, log_level, pipeline)
 
 
@@ -199,7 +199,7 @@ def embedded_dagster_single_pipeline_execute_command(cxt, input, through, log_le
 def embedded_dagster_multi_pipeline_execute_command(cxt, pipeline_name, input, through, log_level):  # pylint: disable=W0622
     check.str_param(pipeline_name, 'pipeline_name')
     pipelines = check.inst(cxt.obj['pipelines'], list)
-    check.list_param(pipelines, 'pipelines', of_type=SolidPipeline)
+    check.list_param(pipelines, 'pipelines', of_type=DagsterPipeline)
     pipeline = _pipeline_named(pipelines, pipeline_name)
     run_pipeline_execute_command(input, through, log_level, pipeline)
 
@@ -267,7 +267,7 @@ def construct_arg_dicts(input_list):
 
 def embedded_dagster_single_pipeline_cli_main(argv, pipeline):
     check.list_param(argv, 'argv', of_type=str)
-    check.inst_param(pipeline, 'pipeline', SolidPipeline)
+    check.inst_param(pipeline, 'pipeline', DagsterPipeline)
 
     dagster_command_group = click.Group(name='dagster')
     dagster_command_group.add_command(embedded_dagster_single_pipeline_graphviz_command)
@@ -278,7 +278,7 @@ def embedded_dagster_single_pipeline_cli_main(argv, pipeline):
 
 def embedded_dagster_multi_pipeline_cli_main(argv, pipelines):
     check.list_param(argv, 'argv', of_type=str)
-    check.list_param(pipelines, 'pipelines', of_type=SolidPipeline)
+    check.list_param(pipelines, 'pipelines', of_type=DagsterPipeline)
 
     for pipeline in pipelines:
         check.param_invariant(bool(pipeline.name), 'pipelines', 'all pipelines must have names')

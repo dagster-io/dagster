@@ -1,11 +1,11 @@
 from dagster import check
 
 from dagster.core.definitions import (SolidInputDefinition, SolidOutputDefinition, Solid)
-from dagster.core.execution import (SolidExecutionContext, output_single_solid)
+from dagster.core.execution import (DagsterExecutionContext, output_single_solid)
 
 
 def create_test_context():
-    return SolidExecutionContext()
+    return DagsterExecutionContext()
 
 
 def get_input(with_context):
@@ -13,7 +13,7 @@ def get_input(with_context):
     if with_context:
 
         def input_fn(context, arg_dict):
-            assert isinstance(context, SolidExecutionContext)
+            assert isinstance(context, DagsterExecutionContext)
             assert arg_dict == {}
             return [{'data_key': 'data_value'}]
 
@@ -32,7 +32,7 @@ def get_transform_fn(with_context):
     if with_context:
 
         def tranform_fn_inst(context, some_input):
-            assert isinstance(context, SolidExecutionContext)
+            assert isinstance(context, DagsterExecutionContext)
             some_input[0]['data_key'] = 'new_value'
             return some_input
 
@@ -52,7 +52,7 @@ def get_output(with_context, test_output):
     if with_context:
 
         def output_fn_inst(data, context, arg_dict):
-            assert isinstance(context, SolidExecutionContext)
+            assert isinstance(context, DagsterExecutionContext)
             assert isinstance(arg_dict, dict)
             assert arg_dict == {}
             assert isinstance(data, list)

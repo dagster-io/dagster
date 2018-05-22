@@ -1,14 +1,14 @@
 import pandas as pd
 
 # from dagster.core.definitions import (Solid, SolidOutputTypeDefinition, SolidInputDefinition)
-from dagster.core.execution import (SolidExecutionContext, execute_single_solid, output_single_solid)
+from dagster.core.execution import (DagsterExecutionContext, execute_single_solid, output_single_solid)
 from dagster.utils.test import (script_relative_path, get_temp_file_name)
 
 import dagster.pandas_kernel as solidic_pd
 
 
 def create_test_context():
-    return SolidExecutionContext()
+    return DagsterExecutionContext()
 
 
 def test_hello_world_no_library_support():
