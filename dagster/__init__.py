@@ -1,9 +1,16 @@
 from __future__ import (absolute_import, division, print_function, unicode_literals)
 from builtins import *  # pylint: disable=W0622,W0401
 
-# from .solid_defs import Solid
+import dagster.core.execution
 
-# class DagsterPipeline:
-#     def __init__(self, name, solids):
-#         self.name = check.str_param(name, 'name')
-#         self.solids = check.list_param(solids, 'solids', of_type=Solid)
+from dagster.core.execution import (
+    execute_pipeline, execute_pipeline_through_solid, output_pipeline
+)
+
+
+def pipeline(**kwargs):
+    return dagster.core.execution.DagsterPipeline(**kwargs)
+
+
+def context(**kwargs):
+    return dagster.core.execution.DagsterExecutionContext(**kwargs)

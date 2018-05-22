@@ -73,12 +73,12 @@ from .errors import (
     SolidUserCodeExecutionError, SolidTypeError, SolidExecutionFailureReason,
     SolidExpectationFailedError, SolidInvariantViolation
 )
-from .graph import SolidPipeline
+from .graph import DagsterPipeline
 
 Metric = namedtuple('Metric', 'context_dict metric_name value')
 
 
-class SolidExecutionContext:
+class DagsterExecutionContext:
     '''
     A context object flowed through the entire scope of single execution of a
     pipeline of solids. This is used by both framework and uesr code to log
@@ -277,7 +277,7 @@ def _user_code_error_boundary(context, msg, **kwargs):
     framework code in the stack trace, if a tool author wishes to do so. This has 
     been especially help in a notebooking context.
     '''
-    check.inst_param(context, 'context', SolidExecutionContext)
+    check.inst_param(context, 'context', DagsterExecutionContext)
     check.str_param(msg, 'msg')
 
     try:
@@ -295,7 +295,7 @@ def _execute_input(context, input_definition, arg_dict):
     execute the input functinos. Wraps that execution in appropriate logging, metrics tracking,
     and a user-code error boundary.
     '''
-    check.inst_param(context, 'context', SolidExecutionContext)
+    check.inst_param(context, 'context', DagsterExecutionContext)
     check.inst_param(input_definition, 'input_defintion', SolidInputDefinition)
     check.dict_param(arg_dict, 'arg_dict', key_type=str)
 
@@ -346,7 +346,7 @@ def _execute_input_expectation(context, expectation_def, materialized_input):
     Wraps computation in an error boundary and performs all necessary logging and metrics tracking
     (TODO: actually log and track metrics!)
     '''
-    check.inst_param(context, 'context', SolidExecutionContext)
+    check.inst_param(context, 'context', DagsterExecutionContext)
     check.inst_param(expectation_def, 'expectation_def', SolidExpectationDefinition)
 
     error_str = 'Error occured while evaluation expectation "{expectation_name}" in input'
@@ -367,7 +367,7 @@ def _execute_output_expectation(context, expectation_def, materialized_output):
     Wraps computation in an error boundary and performs all necessary logging and metrics tracking
     (TODO: actually log and track metrics!)
     '''
-    check.inst_param(context, 'context', SolidExecutionContext)
+    check.inst_param(context, 'context', DagsterExecutionContext)
     check.inst_param(expectation_def, 'expectation_def', SolidExpectationDefinition)
 
     error_str = 'Error occured while evaluation expectation "{expectation_name}" in output'
@@ -388,7 +388,7 @@ def _execute_core_transform(context, solid_transform_fn, materialized_inputs):
     Execute the user-specified transform for the solid. Wrap in an error boundary and do
     all relevant logging and metrics tracking
     '''
-    check.inst_param(context, 'context', SolidExecutionContext)
+    check.inst_param(context, 'context', DagsterExecutionContext)
     check.callable_param(solid_transform_fn, 'solid_transform_fn')
     check.dict_param(materialized_inputs, 'materialized_inputs', key_type=str)
 
@@ -414,7 +414,7 @@ def _execute_output(context, output_def, output_arg_dict, materialized_output):
     of arguments into the output, do appropriate loggina and metrics tracking, and
     actually execute the output function with an appropriate error boundary. 
     '''
-    check.inst_param(context, 'context', SolidExecutionContext)
+    check.inst_param(context, 'context', DagsterExecutionContext)
     check.inst_param(output_def, 'output_def', SolidOutputDefinition)
     check.dict_param(output_arg_dict, 'output_arg_dict', key_type=str)
 
@@ -470,7 +470,7 @@ class SolidAllInputExpectationsRunResults:
 
 
 def _execute_all_input_expectations(context, solid, materialized_inputs):
-    check.inst_param(context, 'context', SolidExecutionContext)
+    check.inst_param(context, 'context', DagsterExecutionContext)
     check.dict_param(materialized_inputs, 'materialized_inputs', key_type=str)
 
     run_results_list = []
@@ -500,7 +500,7 @@ def _execute_all_input_expectations(context, solid, materialized_inputs):
 
 
 def _materialize_all_inputs(context, solid, input_arg_dicts):
-    check.inst_param(context, 'context', SolidExecutionContext)
+    check.inst_param(context, 'context', DagsterExecutionContext)
 
     materialized_inputs = {}
 
@@ -517,7 +517,7 @@ def _pipeline_solid(context, solid, input_arg_dicts):
     Execute the entire pipeline for a *single* solid, including input evaluation.
     '''
 
-    check.inst_param(context, 'context', SolidExecutionContext)
+    check.inst_param(context, 'context', DagsterExecutionContext)
     check.inst_param(solid, 'solid', Solid)
     check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
 
@@ -533,7 +533,7 @@ def _pipeline_solid_in_memory(context, solid, materialized_inputs):
     This is the core of the solid execution that does not touch any extenralized state, whether
     it be inputs or outputs.
     '''
-    check.inst_param(context, 'context', SolidExecutionContext)
+    check.inst_param(context, 'context', DagsterExecutionContext)
     check.inst_param(solid, 'solid', Solid)
     check.dict_param(materialized_inputs, 'materialized_inputs', key_type=str)
 
@@ -580,12 +580,12 @@ def _pipeline_solid_in_memory(context, solid, materialized_inputs):
 
 
 def execute_single_solid(context, solid, input_arg_dicts, throw_on_error=True):
-    check.inst_param(context, 'context', SolidExecutionContext)
+    check.inst_param(context, 'context', DagsterExecutionContext)
     check.inst_param(solid, 'solid', Solid)
     check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
 
     results = list(
-        execute_pipeline_iterator(context, SolidPipeline(solids=[solid]), input_arg_dicts)
+        execute_pipeline_iterator(context, DagsterPipeline(solids=[solid]), input_arg_dicts)
     )
 
     check.invariant(len(results) == 1, 'must be one result got ' + str(len(results)))
@@ -621,7 +621,7 @@ def _do_throw_on_error(execution_result):
 def output_single_solid(
     context, solid, input_arg_dicts, output_type, output_arg_dict, throw_on_error=True
 ):
-    check.inst_param(context, 'context', SolidExecutionContext)
+    check.inst_param(context, 'context', DagsterExecutionContext)
     check.inst_param(solid, 'solid', Solid)
     check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
     check.str_param(output_type, 'output_type')
@@ -631,7 +631,7 @@ def output_single_solid(
     results = list(
         output_pipeline_iterator(
             context,
-            SolidPipeline(solids=[solid]),
+            DagsterPipeline(solids=[solid]),
             input_arg_dicts,
             output_arg_dicts={solid.name: {
                 output_type: output_arg_dict
@@ -660,8 +660,8 @@ def execute_pipeline_through_solid(context, pipeline, input_arg_dicts, solid_nam
     '''
     Execute a pipeline through a single solid, and then output *only* that result
     '''
-    check.inst_param(context, 'context', SolidExecutionContext)
-    check.inst_param(pipeline, 'pipeline', SolidPipeline)
+    check.inst_param(context, 'context', DagsterExecutionContext)
+    check.inst_param(pipeline, 'pipeline', DagsterPipeline)
     check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
     check.str_param(solid_name, 'solid_name')
 
@@ -726,8 +726,8 @@ def execute_pipeline_iterator(context, pipeline, input_arg_dicts, through_solids
     For formats of input_arg_dicts and output_arg_dicts see docblock at the top of the module
     '''
 
-    check.inst_param(context, 'context', SolidExecutionContext)
-    check.inst_param(pipeline, 'pipeline', SolidPipeline)
+    check.inst_param(context, 'context', DagsterExecutionContext)
+    check.inst_param(pipeline, 'pipeline', DagsterPipeline)
     check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
     check.opt_list_param(through_solids, 'through_solids', of_type=str)
 
@@ -806,8 +806,8 @@ def output_pipeline(context, pipeline, input_arg_dicts, output_arg_dicts, throw_
     specify, through thorw_on_error, that exceptions should be thrown when encountered instead
     of returning a result in an error state. Especially useful in testing contexts.
     '''
-    check.inst_param(context, 'context', SolidExecutionContext)
-    check.inst_param(pipeline, 'pipeline', SolidPipeline)
+    check.inst_param(context, 'context', DagsterExecutionContext)
+    check.inst_param(pipeline, 'pipeline', DagsterPipeline)
     check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
     _check_output_arg_dicts(output_arg_dicts)
 
@@ -826,8 +826,8 @@ def output_pipeline_iterator(context, pipeline, input_arg_dicts, output_arg_dict
     specified in module docblock) to create externally accessible materializations of
     the computations in pipeline.
     '''
-    check.inst_param(context, 'context', SolidExecutionContext)
-    check.inst_param(pipeline, 'pipeline', SolidPipeline)
+    check.inst_param(context, 'context', DagsterExecutionContext)
+    check.inst_param(pipeline, 'pipeline', DagsterPipeline)
     check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
     _check_output_arg_dicts(output_arg_dicts)
 

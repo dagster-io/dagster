@@ -6,11 +6,11 @@ import sqlalchemy as sa
 from dagster import check
 
 import dagster.core
-from dagster.core.execution import (SolidExecutionContext)
+from dagster.core.execution import (DagsterExecutionContext)
 from dagster.core.definitions import (Solid, SolidInputDefinition, SolidOutputDefinition)
 
 
-class SolidicSqlExecutionContext(SolidExecutionContext):
+class SolidicSqlExecutionContext(DagsterExecutionContext):
     def __init__(self, engine, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.engine = check.inst_param(engine, 'engine', sa.engine.Engine)

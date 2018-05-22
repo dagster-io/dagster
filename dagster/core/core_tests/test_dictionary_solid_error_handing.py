@@ -6,12 +6,12 @@ from dagster.core.definitions import (SolidInputDefinition, SolidOutputDefinitio
 
 from dagster.core.execution import (
     _execute_input, SolidUserCodeExecutionError, _execute_core_transform, _execute_output,
-    SolidExecutionContext
+    DagsterExecutionContext
 )
 
 
 def create_test_context():
-    return SolidExecutionContext()
+    return DagsterExecutionContext()
 
 
 def test_basic_input_error_handling():

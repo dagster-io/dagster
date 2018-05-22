@@ -5,12 +5,12 @@ from dagster.core.definitions import (
     SolidExpectationResult,
 )
 from dagster.core.execution import (
-    _execute_output_expectation, SolidUserCodeExecutionError, SolidExecutionContext
+    _execute_output_expectation, SolidUserCodeExecutionError, DagsterExecutionContext
 )
 
 
 def create_test_context():
-    return SolidExecutionContext()
+    return DagsterExecutionContext()
 
 
 def test_basic_failing_output_expectation():

@@ -2,11 +2,11 @@ import graphviz
 
 from dagster import check
 
-from dagster.core.graph import SolidPipeline
+from dagster.core.graph import DagsterPipeline
 
 
 def build_graphviz_graph(pipeline):
-    check.inst_param(pipeline, 'pipeline', SolidPipeline)
+    check.inst_param(pipeline, 'pipeline', DagsterPipeline)
     graphviz_graph = graphviz.Graph('pipeline', directory='/tmp/graphviz')
     for solid in pipeline.solids:
         graphviz_graph.node(solid.name)

@@ -1,6 +1,6 @@
 from dagster.dagster_examples.qhp.pipeline import define_pipeline
 from dagster.core.execution import (
-    execute_pipeline_through_solid, SolidExecutionContext, execute_pipeline
+    execute_pipeline_through_solid, DagsterExecutionContext, execute_pipeline
 )
 from dagster.utils.test import script_relative_path
 
@@ -17,7 +17,7 @@ def test_plans():
     pipeline = define_pipeline()
 
     result = execute_pipeline_through_solid(
-        SolidExecutionContext(),
+        DagsterExecutionContext(),
         pipeline,
         input_arg_dicts=providers_771_args(),
         solid_name='plans',
@@ -32,7 +32,7 @@ def test_plan_years():
     pipeline = define_pipeline()
 
     result = execute_pipeline_through_solid(
-        SolidExecutionContext(),
+        DagsterExecutionContext(),
         pipeline,
         input_arg_dicts=providers_771_args(),
         solid_name='plan_years',
@@ -47,7 +47,7 @@ def test_plan_and_plan_years_pipeline():
     pipeline = define_pipeline()
 
     results = execute_pipeline(
-        SolidExecutionContext(), pipeline, providers_771_args(), ['plans', 'plan_years']
+        DagsterExecutionContext(), pipeline, providers_771_args(), ['plans', 'plan_years']
     )
     assert len(results) == 2
 
@@ -56,7 +56,7 @@ def test_insurance_pipeline():
     pipeline = define_pipeline()
 
     result = execute_pipeline_through_solid(
-        SolidExecutionContext(),
+        DagsterExecutionContext(),
         pipeline,
         providers_771_args(),
         solid_name='insurance',
@@ -72,7 +72,7 @@ def test_practices_pipeline():
     # this should only execute the solids necessary
     # to produce practices. i.e. addresses, providers and practices
     results = execute_pipeline(
-        SolidExecutionContext(),
+        DagsterExecutionContext(),
         pipeline,
         providers_771_args(),
         through_solids=['practices'],
@@ -98,7 +98,7 @@ def test_practice_insurances_pipeline():
     pipeline = define_pipeline()
 
     results = execute_pipeline(
-        SolidExecutionContext(),
+        DagsterExecutionContext(),
         pipeline,
         providers_771_args(),
         through_solids=['practice_insurances'],
@@ -130,7 +130,7 @@ def test_languages_pipeline():
     pipeline = define_pipeline()
 
     result = execute_pipeline_through_solid(
-        SolidExecutionContext(),
+        DagsterExecutionContext(),
         pipeline,
         input_arg_dicts={'languages_csv': {
             'path': script_relative_path('Language.csv')
@@ -150,7 +150,7 @@ def test_specialities_pipeline():
     pipeline = define_pipeline()
 
     result = execute_pipeline_through_solid(
-        SolidExecutionContext(),
+        DagsterExecutionContext(),
         pipeline,
         input_arg_dicts={
             'specialities_csv': {
@@ -185,7 +185,7 @@ def test_provider_languages_specialities():
     pipeline = define_pipeline()
 
     results = execute_pipeline(
-        SolidExecutionContext(),
+        DagsterExecutionContext(),
         pipeline,
         input_arg_dicts=all_external_arg_dicts(),
         through_solids=['provider_languages_specialities'],

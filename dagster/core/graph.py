@@ -5,6 +5,41 @@ from dagster import check
 from .definitions import Solid
 
 
+class DagsterPipeline:
+    def __init__(self, solids, name=None):
+        self.name = check.opt_str_param(name, 'name')
+        self.solids = check.list_param(solids, 'solids', of_type=Solid)
+
+        solid_names = set([solid.name for solid in self.solids])
+        for solid in solids:
+            for input_def in solid.inputs:
+                if input_def.depends_on:
+                    check.invariant(
+                        input_def.depends_on.name in solid_names,
+                        f'dep must exist got: {input_def.depends_on.name} and set {solid_names}'
+                    )
+
+        self.solid_graph = SolidGraph(solids=solids)
+
+    @property
+    def solid_names(self):
+        return [solid.name for solid in self.solids]
+
+    @property
+    def external_inputs(self):
+        for solid in self.solids:
+            for input_def in solid.inputs:
+                if input_def.is_external:
+                    yield input_def
+
+    def solid_named(self, name):
+        check.str_param(name, 'name')
+        for solid in self.solids:
+            if solid.name == name:
+                return solid
+        check.failed('Could not find solid named ' + name)
+
+
 def create_adjacency_lists(solids):
     check.list_param(solids, 'solids', of_type=Solid)
 
@@ -169,38 +204,3 @@ class SolidGraph:
             visit(self._solid_dict[output_name])
 
         return SolidGraph([self._solid_dict[name] for name in involved_solids])
-
-
-class SolidPipeline:
-    def __init__(self, solids, name=None):
-        self.name = check.opt_str_param(name, 'name')
-        self.solids = check.list_param(solids, 'solids', of_type=Solid)
-
-        solid_names = set([solid.name for solid in self.solids])
-        for solid in solids:
-            for input_def in solid.inputs:
-                if input_def.depends_on:
-                    check.invariant(
-                        input_def.depends_on.name in solid_names,
-                        f'dep must exist got: {input_def.depends_on.name} and set {solid_names}'
-                    )
-
-        self.solid_graph = SolidGraph(solids=solids)
-
-    @property
-    def solid_names(self):
-        return [solid.name for solid in self.solids]
-
-    @property
-    def external_inputs(self):
-        for solid in self.solids:
-            for input_def in solid.inputs:
-                if input_def.is_external:
-                    yield input_def
-
-    def solid_named(self, name):
-        check.str_param(name, 'name')
-        for solid in self.solids:
-            if solid.name == name:
-                return solid
-        check.failed('Could not find solid named ' + name)

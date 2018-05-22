@@ -5,7 +5,7 @@ from dagster import check
 from dagster.core.definitions import (
     SolidInputDefinition, SolidOutputDefinition, Solid, create_solidic_single_file_input
 )
-from dagster.core.execution import SolidExecutionContext
+from dagster.core.execution import DagsterExecutionContext
 from dagster.core.types import (SolidPath, SolidString)
 
 
@@ -22,7 +22,7 @@ def create_dagster_pd_dependency_input(solid):
     check.inst_param(solid, 'solid', Solid)
 
     def dependency_input_fn(context, arg_dict):
-        check.inst_param(context, 'context', SolidExecutionContext)
+        check.inst_param(context, 'context', DagsterExecutionContext)
         path = check.str_elem(arg_dict, 'path')
         frmt = check.str_elem(arg_dict, 'format')
 
@@ -48,7 +48,7 @@ def create_dagster_pd_csv_input(name, delimiter=',', **read_csv_kwargs):
     check.str_param(delimiter, 'delimiter')
 
     def check_path(context, path):
-        check.inst_param(context, 'context', SolidExecutionContext)
+        check.inst_param(context, 'context', DagsterExecutionContext)
         check.str_param(path, 'path')
         df = pd.read_csv(path, delimiter=delimiter, **read_csv_kwargs)
         context.metric('rows', df.shape[0])
@@ -60,7 +60,7 @@ def create_dagster_pd_csv_input(name, delimiter=',', **read_csv_kwargs):
 def create_dagster_pd_csv_output():
     def output_fn_inst(df, context, arg_dict):
         check.inst_param(df, 'df', pd.DataFrame)
-        check.inst_param(context, 'context', SolidExecutionContext)
+        check.inst_param(context, 'context', DagsterExecutionContext)
         check.dict_param(arg_dict, 'arg_dict')
         path = check.str_elem(arg_dict, 'path')
 
@@ -74,7 +74,7 @@ def create_dagster_pd_csv_output():
 def create_dagster_pd_parquet_output():
     def output_fn_inst(df, context, arg_dict):
         check.inst_param(df, 'df', pd.DataFrame)
-        check.inst_param(context, 'context', SolidExecutionContext)
+        check.inst_param(context, 'context', DagsterExecutionContext)
         check.dict_param(arg_dict, 'arg_dict')
         path = check.str_elem(arg_dict, 'path')
 

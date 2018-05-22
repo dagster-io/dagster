@@ -6,7 +6,7 @@ import pandas as pd
 from dagster import check
 
 from dagster.core.definitions import (Solid, has_context_argument)
-from dagster.core.execution import SolidExecutionContext
+from dagster.core.execution import DagsterExecutionContext
 from dagster.core.errors import SolidUserCodeExecutionError
 from .definitions import (
     create_dagster_pd_csv_input,
@@ -32,7 +32,7 @@ def _default_passthrough_transform(*args, **kwargs):
 
 
 def _post_process_transform(context, df):
-    check.inst_param(context, 'context', SolidExecutionContext)
+    check.inst_param(context, 'context', DagsterExecutionContext)
     check.inst_param(df, 'df', pd.DataFrame)
 
     context.metric('rows', df.shape[0])
