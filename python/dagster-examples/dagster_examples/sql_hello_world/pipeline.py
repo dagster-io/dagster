@@ -1,7 +1,7 @@
 import sqlalchemy as sa
 
 import solidic
-import solidic_sql
+from dagster import solidic_sql
 
 
 def create_engine_for_pipeline():

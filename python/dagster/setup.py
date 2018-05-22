@@ -24,5 +24,8 @@ setup(
         # pandas kernel
         'pandas>=0.22.0',
         'pyarrow>=0.8.0',
+
+        # sqlalchemy kernel
+        'sqlalchemy>=1.2.7',
     ],
 )
