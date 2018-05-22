@@ -59,5 +59,5 @@ class SolidExpectationFailedError(SolidError):
             failed_expectation_results,
             'failed_expectation_results',
             # fully qualified name prevents circular reference
-            dagster.core.definitions.SolidExpectationResult
+            dagster.core.definitions.ExpectationResult
         )
