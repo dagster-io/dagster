@@ -6,7 +6,7 @@
     "dagster/dagster/utils/utils_tests",
     "dagster/dagster/pandas_kernel/pandas_kernel_tests",
     "dagster/dagster/sqlalchemy_kernel/sqlalchemy_kernel_tests",
-    "dagster-examples/dagster_examples_tests",
+    "dagster/dagster/dagster_examples/dagster_examples_tests",
     "-s"
   ],
   "python.unitTest.pyTestEnabled": true,
