@@ -3,7 +3,7 @@ from solidic.execution import (
     output_single_solid, SolidPipeline, execute_pipeline, output_pipeline
 )
 
-import solidic_sql
+from dagster import solidic_sql
 
 
 def create_num_table(engine):
