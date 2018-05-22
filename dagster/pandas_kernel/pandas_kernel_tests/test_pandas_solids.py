@@ -6,11 +6,11 @@ from dagster import check
 import dagster.core
 from dagster.core.definitions import (Solid, SolidOutputDefinition)
 from dagster.core.execution import (
-    DagsterExecutionContext, execute_pipeline_through_solid, _execute_input, output_pipeline_iterator,
-    output_single_solid, _pipeline_solid, _pipeline_solid_in_memory, output_pipeline,
-    execute_pipeline
+    DagsterExecutionContext, execute_pipeline_through_solid, _execute_input,
+    output_pipeline_iterator, output_single_solid, _pipeline_solid, _pipeline_solid_in_memory,
+    output_pipeline, execute_pipeline
 )
-import dagster.pandas_kernel as solidic_pd
+import dagster.pandas_kernel as dagster_pd
 from dagster.pandas_kernel.definitions import create_dagster_pd_csv_input
 from dagster.utils.test import (get_temp_file_name, get_temp_file_names, script_relative_path)
 
@@ -121,9 +121,9 @@ def create_sum_table():
         num_csv['sum'] = num_csv['num1'] + num_csv['num2']
         return num_csv
 
-    return solidic_pd.dataframe_solid(
+    return dagster_pd.dataframe_solid(
         name='sum_table',
-        inputs=[solidic_pd.csv_input('num_csv')],
+        inputs=[dagster_pd.csv_input('num_csv')],
         transform_fn=transform,
     )
 
@@ -133,8 +133,8 @@ def create_mult_table(sum_table_solid):
         sum_table['sum_squared'] = sum_table['sum'] * sum_table['sum']
         return sum_table
 
-    return solidic_pd.dataframe_solid(
-        name='mult_table', inputs=[solidic_pd.depends_on(sum_table_solid)], transform_fn=transform
+    return dagster_pd.dataframe_solid(
+        name='mult_table', inputs=[dagster_pd.depends_on(sum_table_solid)], transform_fn=transform
     )
 
 
@@ -174,10 +174,10 @@ def test_two_input_solid():
         num_csv1['sum'] = num_csv1['num1'] + num_csv2['num2']
         return num_csv1
 
-    two_input_solid = solidic_pd.dataframe_solid(
+    two_input_solid = dagster_pd.dataframe_solid(
         name='two_input_solid',
-        inputs=[solidic_pd.csv_input('num_csv1'),
-                solidic_pd.csv_input('num_csv2')],
+        inputs=[dagster_pd.csv_input('num_csv1'),
+                dagster_pd.csv_input('num_csv2')],
         transform_fn=transform,
     )
 
@@ -196,9 +196,9 @@ def test_two_input_solid():
 
 
 def test_no_transform_solid():
-    num_table = solidic_pd.dataframe_solid(
+    num_table = dagster_pd.dataframe_solid(
         name='num_table',
-        inputs=[solidic_pd.csv_input('num_csv')],
+        inputs=[dagster_pd.csv_input('num_csv')],
     )
     input_args = {'num_csv': {'path': script_relative_path('num.csv')}}
     context = create_test_context()
@@ -211,9 +211,9 @@ def create_diamond_pipeline():
 
 
 def create_diamond_dag():
-    num_table = solidic_pd.dataframe_solid(
+    num_table = dagster_pd.dataframe_solid(
         name='num_table',
-        inputs=[solidic_pd.csv_input('num_csv')],
+        inputs=[dagster_pd.csv_input('num_csv')],
     )
 
     def sum_transform(num_table):
@@ -221,9 +221,9 @@ def create_diamond_dag():
         sum_table['sum'] = num_table['num1'] + num_table['num2']
         return sum_table
 
-    sum_table = solidic_pd.dataframe_solid(
+    sum_table = dagster_pd.dataframe_solid(
         name='sum_table',
-        inputs=[solidic_pd.depends_on(num_table)],
+        inputs=[dagster_pd.depends_on(num_table)],
         transform_fn=sum_transform,
     )
 
@@ -232,9 +232,9 @@ def create_diamond_dag():
         mult_table['mult'] = num_table['num1'] * num_table['num2']
         return mult_table
 
-    mult_table = solidic_pd.dataframe_solid(
+    mult_table = dagster_pd.dataframe_solid(
         name='mult_table',
-        inputs=[solidic_pd.depends_on(num_table)],
+        inputs=[dagster_pd.depends_on(num_table)],
         transform_fn=mult_transform,
     )
 
@@ -244,10 +244,10 @@ def create_diamond_dag():
         sum_mult_table['sum_mult'] = sum_table['sum'] * mult_table['mult']
         return sum_mult_table
 
-    sum_mult_table = solidic_pd.dataframe_solid(
+    sum_mult_table = dagster_pd.dataframe_solid(
         name='sum_mult_table',
-        inputs=[solidic_pd.depends_on(sum_table),
-                solidic_pd.depends_on(mult_table)],
+        inputs=[dagster_pd.depends_on(sum_table),
+                dagster_pd.depends_on(mult_table)],
         transform_fn=sum_mult_transform,
     )
 
@@ -458,10 +458,10 @@ def test_pandas_multiple_inputs():
     def transform_fn(num_csv1, num_csv2):
         return num_csv1 + num_csv2
 
-    double_sum = solidic_pd.dataframe_solid(
+    double_sum = dagster_pd.dataframe_solid(
         name='double_sum',
-        inputs=[solidic_pd.csv_input('num_csv1'),
-                solidic_pd.csv_input('num_csv2')],
+        inputs=[dagster_pd.csv_input('num_csv1'),
+                dagster_pd.csv_input('num_csv2')],
         transform_fn=transform_fn
     )
 
