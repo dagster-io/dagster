@@ -11,7 +11,7 @@ from solidic.execution import (
     execute_pipeline
 )
 import dagster.pandas_kernel as solidic_pd
-from dagster.pandas_kernel.definitions import create_solidic_pandas_csv_input
+from dagster.pandas_kernel.definitions import create_dagster_pd_csv_input
 from dagster.utils.test import (get_temp_file_name, get_temp_file_names, script_relative_path)
 
 
@@ -20,7 +20,7 @@ def create_test_context():
 
 
 def test_pandas_input():
-    csv_input = create_solidic_pandas_csv_input(name='num_csv')
+    csv_input = create_dagster_pd_csv_input(name='num_csv')
     df = _execute_input(create_test_context(), csv_input, {'path': script_relative_path('num.csv')})
 
     assert isinstance(df, pd.DataFrame)
@@ -28,7 +28,7 @@ def test_pandas_input():
 
 
 def test_pandas_solid():
-    csv_input = create_solidic_pandas_csv_input(name='num_csv')
+    csv_input = create_dagster_pd_csv_input(name='num_csv')
 
     def transform(num_csv):
         num_csv['sum'] = num_csv['num1'] + num_csv['num2']
@@ -70,7 +70,7 @@ def test_pandas_solid():
 
 
 def test_pandas_csv_to_csv():
-    csv_input = create_solidic_pandas_csv_input(name='num_csv')
+    csv_input = create_dagster_pd_csv_input(name='num_csv')
 
     def transform(num_csv):
         num_csv['sum'] = num_csv['num1'] + num_csv['num2']

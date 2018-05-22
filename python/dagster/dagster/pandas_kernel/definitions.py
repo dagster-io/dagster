@@ -18,7 +18,7 @@ def _read_df(path, frmt):
         check.not_implemented('Format {frmt} not supported'.format(frmt=frmt))
 
 
-def create_solid_pandas_dependency_input(solid):
+def create_dagster_pd_dependency_input(solid):
     check.inst_param(solid, 'solid', Solid)
 
     def dependency_input_fn(context, arg_dict):
@@ -43,7 +43,7 @@ def create_solid_pandas_dependency_input(solid):
     )
 
 
-def create_solidic_pandas_csv_input(name, delimiter=',', **read_csv_kwargs):
+def create_dagster_pd_csv_input(name, delimiter=',', **read_csv_kwargs):
     check.str_param(name, 'name')
     check.str_param(delimiter, 'delimiter')
 
@@ -57,7 +57,7 @@ def create_solidic_pandas_csv_input(name, delimiter=',', **read_csv_kwargs):
     return create_solidic_single_file_input(name, check_path)
 
 
-def create_solidic_pandas_csv_output():
+def create_dagster_pd_csv_output():
     def output_fn_inst(df, context, arg_dict):
         check.inst_param(df, 'df', pd.DataFrame)
         check.inst_param(context, 'context', SolidExecutionContext)
@@ -71,7 +71,7 @@ def create_solidic_pandas_csv_output():
     )
 
 
-def create_solidic_pandas_parquet_output():
+def create_dagster_pd_parquet_output():
     def output_fn_inst(df, context, arg_dict):
         check.inst_param(df, 'df', pd.DataFrame)
         check.inst_param(context, 'context', SolidExecutionContext)

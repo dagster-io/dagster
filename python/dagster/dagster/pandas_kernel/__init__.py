@@ -9,10 +9,10 @@ from solidic.definitions import (Solid, has_context_argument)
 from solidic.execution import SolidExecutionContext
 from solidic.errors import SolidUserCodeExecutionError
 from .definitions import (
-    create_solidic_pandas_csv_input,
-    create_solidic_pandas_csv_output,
-    create_solid_pandas_dependency_input,
-    create_solidic_pandas_parquet_output,
+    create_dagster_pd_csv_input,
+    create_dagster_pd_csv_output,
+    create_dagster_pd_dependency_input,
+    create_dagster_pd_parquet_output,
 )
 
 
@@ -22,7 +22,7 @@ def solid(**kwargs):
 
 def depends_on(solid_inst):
     check.inst_param(solid_inst, 'solid_inst', Solid)
-    return create_solid_pandas_dependency_input(solid_inst)
+    return create_dagster_pd_dependency_input(solid_inst)
 
 
 def _default_passthrough_transform(*args, **kwargs):
@@ -84,12 +84,12 @@ def single_path_arg(input_name, path):
 
 
 def csv_input(name, delimiter=',', **read_csv_kwargs):
-    return create_solidic_pandas_csv_input(name, delimiter, **read_csv_kwargs)
+    return create_dagster_pd_csv_input(name, delimiter, **read_csv_kwargs)
 
 
 def csv_output():
-    return create_solidic_pandas_csv_output()
+    return create_dagster_pd_csv_output()
 
 
 def parquet_output():
-    return create_solidic_pandas_parquet_output()
+    return create_dagster_pd_parquet_output()
