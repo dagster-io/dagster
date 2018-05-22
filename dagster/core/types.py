@@ -3,12 +3,12 @@ from six import string_types
 from dagster import check
 
 
-class SolidType:
+class DagsterType:
     def is_python_valid_value(self, _value):
         check.not_implemented('Must implement in subclass')
 
 
-class _SolidStringType(SolidType):
+class _SolidStringType(DagsterType):
     def __init__(self, name):
         self.name = check.str_param(name, 'name')
 

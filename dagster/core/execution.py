@@ -444,13 +444,13 @@ def _execute_output(context, output_def, output_arg_dict, materialized_output):
         output_def.output_fn(materialized_output, context=context, arg_dict=output_arg_dict)
 
 
-SolidInputExpectationResult = namedtuple('SolidInputExpectionResult', 'input_name passes fails')
+InputExpectationResult = namedtuple('InputExpectionResult', 'input_name passes fails')
 
 
-class SolidAllInputExpectationsRunResults:
+class AllInputExpectationsRunResults:
     def __init__(self, run_results_list):
         self.run_results_list = check.list_param(
-            run_results_list, 'run_results_list', of_type=SolidInputExpectationResult
+            run_results_list, 'run_results_list', of_type=InputExpectationResult
         )
 
         all_passes = []
@@ -491,10 +491,10 @@ def _execute_all_input_expectations(context, solid, materialized_inputs):
                 fails.append(input_expectation_result)
 
         run_results_list.append(
-            SolidInputExpectationResult(input_name=input_name, passes=passes, fails=fails)
+            InputExpectationResult(input_name=input_name, passes=passes, fails=fails)
         )
 
-    return SolidAllInputExpectationsRunResults(run_results_list)
+    return AllInputExpectationsRunResults(run_results_list)
 
 
 def _materialize_all_inputs(context, solid, input_arg_dicts):
