@@ -1,8 +1,0 @@
-SCRIPTDIR=`dirname "$BASH_SOURCE"`
-if [ -z "$VIRTUAL_ENV" ]
-then
-  python3 "$SCRIPTDIR/python_scaffold_driver.py" "$@"
-else
-  "$VIRTUAL_ENV/bin/python3" "$SCRIPTDIR/python_scaffold_driver.py" "$@"
-fi
-
