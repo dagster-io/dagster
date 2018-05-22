@@ -47,14 +47,14 @@ def check_valid_name(name):
     return name
 
 
-class SolidExpectationResult:
+class ExpectationResult:
     def __init__(self, success, message=None, result_context=None):
         self.success = check.bool_param(success, 'success')
         self.message = check.opt_str_param(message, 'message')
         self.result_context = check.opt_dict_param(result_context, 'result_context')
 
 
-class SolidExpectationDefinition:
+class ExpectationDefinition:
     def __init__(self, name, expectation_fn):
         self.name = check_valid_name(name)
         self.expectation_fn = check.callable_param(expectation_fn, 'expectation_fn')
@@ -123,7 +123,7 @@ class InputDefinition:
             argument_def_dict, 'argument_def_dict', key_type=str, value_type=SolidType
         )
         self.expectations = check.opt_list_param(
-            expectations, 'expectations', of_type=SolidExpectationDefinition
+            expectations, 'expectations', of_type=ExpectationDefinition
         )
         self.depends_on = check.opt_inst_param(depends_on, 'depends_on', Solid)
 
@@ -205,7 +205,7 @@ class Solid:
         self.transform_fn = _contextify_fn(check.callable_param(transform_fn, 'transform'))
         self.outputs = check.list_param(outputs, 'supported_outputs', of_type=OutputDefinition)
         self.output_expectations = check.opt_list_param(
-            output_expectations, 'output_expectations', of_type=SolidExpectationDefinition
+            output_expectations, 'output_expectations', of_type=ExpectationDefinition
         )
 
     @property

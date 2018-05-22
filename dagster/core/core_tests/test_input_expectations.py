@@ -1,8 +1,6 @@
 import pytest
 
-from dagster.core.definitions import (
-    InputDefinition, SolidExpectationDefinition, SolidExpectationResult
-)
+from dagster.core.definitions import (InputDefinition, ExpectationDefinition, ExpectationResult)
 from dagster.core.execution import (
     _execute_input_expectation, SolidUserCodeExecutionError, DagsterExecutionContext
 )
@@ -15,14 +13,14 @@ def create_test_context():
 
 def test_basic_failing_input_expectation():
     def failing_expectation(_some_input):
-        return SolidExpectationResult(success=False, message='Some failure')
+        return ExpectationResult(success=False, message='Some failure')
 
     some_input = InputDefinition(
         name='some_input',
         input_fn=lambda arg_dict: [{'key': arg_dict['str_arg']}],
         argument_def_dict={'str_arg': SolidString},
         expectations=[
-            SolidExpectationDefinition(name='failing', expectation_fn=failing_expectation)
+            ExpectationDefinition(name='failing', expectation_fn=failing_expectation)
         ]
     )
 
@@ -30,21 +28,21 @@ def test_basic_failing_input_expectation():
         create_test_context(), some_input.expectations[0], 'some_value'
     )
 
-    assert isinstance(result, SolidExpectationResult)
+    assert isinstance(result, ExpectationResult)
     assert not result.success
     assert result.message == 'Some failure'
 
 
 def test_basic_passing_input_expectation():
     def passing_expectation(_some_input):
-        return SolidExpectationResult(success=True, message='yayayaya')
+        return ExpectationResult(success=True, message='yayayaya')
 
     some_input = InputDefinition(
         name='some_input',
         input_fn=lambda arg_dict: [{'key': arg_dict['str_arg']}],
         argument_def_dict={'str_arg': SolidString},
         expectations=[
-            SolidExpectationDefinition(name='passing', expectation_fn=passing_expectation)
+            ExpectationDefinition(name='passing', expectation_fn=passing_expectation)
         ]
     )
 
@@ -52,7 +50,7 @@ def test_basic_passing_input_expectation():
         create_test_context(), some_input.expectations[0], 'some_value'
     )
 
-    assert isinstance(result, SolidExpectationResult)
+    assert isinstance(result, ExpectationResult)
     assert result.success
     assert result.message == 'yayayaya'
 
@@ -66,7 +64,7 @@ def test_input_expectation_user_error():
         input_fn=lambda arg_dict: [{'key': arg_dict['str_arg']}],
         argument_def_dict={'str_arg': SolidString},
         expectations=[
-            SolidExpectationDefinition(name='passing', expectation_fn=throwing)
+            ExpectationDefinition(name='passing', expectation_fn=throwing)
         ]
     )
 

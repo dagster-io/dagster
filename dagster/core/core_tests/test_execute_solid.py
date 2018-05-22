@@ -3,8 +3,7 @@ import pytest
 from dagster.core.types import SolidString
 
 from dagster.core.definitions import (
-    Solid, InputDefinition, OutputDefinition, SolidExpectationDefinition,
-    SolidExpectationResult
+    Solid, InputDefinition, OutputDefinition, ExpectationDefinition, ExpectationResult
 )
 
 from dagster.core.execution import (
@@ -209,11 +208,9 @@ def create_input_failing_solid():
     test_output = {}
 
     def failing_expectation_fn(_some_input):
-        return SolidExpectationResult(success=False)
+        return ExpectationResult(success=False)
 
-    failing_expect = SolidExpectationDefinition(
-        name='failing', expectation_fn=failing_expectation_fn
-    )
+    failing_expect = ExpectationDefinition(name='failing', expectation_fn=failing_expectation_fn)
 
     return Solid(
         name='some_node',
@@ -273,9 +270,9 @@ def create_output_failing_solid():
     test_output = {}
 
     def failing_expectation_fn(_output):
-        return SolidExpectationResult(success=False)
+        return ExpectationResult(success=False)
 
-    output_expectation = SolidExpectationDefinition(
+    output_expectation = ExpectationDefinition(
         name='output_failure', expectation_fn=failing_expectation_fn
     )
 

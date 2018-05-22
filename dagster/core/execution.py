@@ -65,8 +65,8 @@ from .definitions import (
     Solid,
     InputDefinition,
     OutputDefinition,
-    SolidExpectationDefinition,
-    SolidExpectationResult,
+    ExpectationDefinition,
+    ExpectationResult,
 )
 
 from .errors import (
@@ -238,7 +238,7 @@ class DagsterExecutionResult:
             self.failed_expectation_results = check.list_param(
                 failed_expectation_results,
                 'failed_expectation_results',
-                of_type=SolidExpectationResult
+                of_type=ExpectationResult
             )
         else:
             check.invariant(failed_expectation_results is None)
@@ -347,13 +347,13 @@ def _execute_input_expectation(context, expectation_def, materialized_input):
     (TODO: actually log and track metrics!)
     '''
     check.inst_param(context, 'context', DagsterExecutionContext)
-    check.inst_param(expectation_def, 'expectation_def', SolidExpectationDefinition)
+    check.inst_param(expectation_def, 'expectation_def', ExpectationDefinition)
 
     error_str = 'Error occured while evaluation expectation "{expectation_name}" in input'
     with _user_code_error_boundary(context, error_str, expectation_name=expectation_def.name):
         expectation_result = expectation_def.expectation_fn(materialized_input)
 
-    if not isinstance(expectation_result, SolidExpectationResult):
+    if not isinstance(expectation_result, ExpectationResult):
         raise SolidInvariantViolation(
             'Must return SolidExpectationResult from expectation function'
         )
@@ -368,13 +368,13 @@ def _execute_output_expectation(context, expectation_def, materialized_output):
     (TODO: actually log and track metrics!)
     '''
     check.inst_param(context, 'context', DagsterExecutionContext)
-    check.inst_param(expectation_def, 'expectation_def', SolidExpectationDefinition)
+    check.inst_param(expectation_def, 'expectation_def', ExpectationDefinition)
 
     error_str = 'Error occured while evaluation expectation "{expectation_name}" in output'
     with _user_code_error_boundary(context, error_str, expectation_name=expectation_def.name):
         expectation_result = expectation_def.expectation_fn(materialized_output)
 
-    if not isinstance(expectation_result, SolidExpectationResult):
+    if not isinstance(expectation_result, ExpectationResult):
 
         raise SolidInvariantViolation(
             'Must return SolidExpectationResult from expectation function'
