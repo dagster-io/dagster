@@ -4,6 +4,7 @@ import pandas as pd
 
 from dagster import check
 import dagster.core
+from dagster.core import types
 from dagster.core.definitions import (Solid, OutputDefinition)
 from dagster.core.execution import (
     DagsterExecutionContext, execute_pipeline_through_solid, _execute_input,
@@ -82,7 +83,7 @@ def test_pandas_csv_to_csv():
         df.to_csv(path, index=False)
 
     csv_output_def = OutputDefinition(
-        name='CSV', output_fn=output_fn_inst, argument_def_dict={'path': dagster.core.PATH}
+        name='CSV', output_fn=output_fn_inst, argument_def_dict={'path': types.PATH}
     )
 
     solid = Solid(

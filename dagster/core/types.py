@@ -8,7 +8,7 @@ class SolidType:
         check.not_implemented('Must implement in subclass')
 
 
-class SolidStringType(SolidType):
+class _SolidStringType(SolidType):
     def __init__(self, name):
         self.name = check.str_param(name, 'name')
 
@@ -16,5 +16,5 @@ class SolidStringType(SolidType):
         return isinstance(value, string_types)
 
 
-SolidString = SolidStringType(name='String')
-SolidPath = SolidStringType(name='Path')
+STRING = _SolidStringType(name='String')
+PATH = _SolidStringType(name='Path')

@@ -4,7 +4,7 @@ from dagster.core.definitions import (InputDefinition, ExpectationDefinition, Ex
 from dagster.core.execution import (
     _execute_input_expectation, SolidUserCodeExecutionError, DagsterExecutionContext
 )
-from dagster.core.types import SolidString
+from dagster.core import types
 
 
 def create_test_context():
@@ -18,7 +18,7 @@ def test_basic_failing_input_expectation():
     some_input = InputDefinition(
         name='some_input',
         input_fn=lambda arg_dict: [{'key': arg_dict['str_arg']}],
-        argument_def_dict={'str_arg': SolidString},
+        argument_def_dict={'str_arg': types.STRING},
         expectations=[
             ExpectationDefinition(name='failing', expectation_fn=failing_expectation)
         ]
@@ -40,7 +40,7 @@ def test_basic_passing_input_expectation():
     some_input = InputDefinition(
         name='some_input',
         input_fn=lambda arg_dict: [{'key': arg_dict['str_arg']}],
-        argument_def_dict={'str_arg': SolidString},
+        argument_def_dict={'str_arg': types.STRING},
         expectations=[
             ExpectationDefinition(name='passing', expectation_fn=passing_expectation)
         ]
@@ -62,7 +62,7 @@ def test_input_expectation_user_error():
     failing_during_expectation_input = InputDefinition(
         name='failing_during_expectation',
         input_fn=lambda arg_dict: [{'key': arg_dict['str_arg']}],
-        argument_def_dict={'str_arg': SolidString},
+        argument_def_dict={'str_arg': types.STRING},
         expectations=[
             ExpectationDefinition(name='passing', expectation_fn=throwing)
         ]
