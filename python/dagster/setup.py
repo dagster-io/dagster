@@ -33,5 +33,10 @@ setup(
         # examples
         'great-expectations>=0.4.1',
         'requests>=2.18.4',
+
+        # dev/test
+        'pylint>=1.8.4',
+        'yapf>=0.21.0',
+        'rope>=0.10.7',
     ],
 )
