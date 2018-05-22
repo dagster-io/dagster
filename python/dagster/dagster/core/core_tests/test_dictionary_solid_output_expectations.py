@@ -1,10 +1,10 @@
 import pytest
 
-from dagster.solidic.definitions import (
+from dagster.core.definitions import (
     SolidExpectationDefinition,
     SolidExpectationResult,
 )
-from dagster.solidic.execution import (
+from dagster.core.execution import (
     _execute_output_expectation, SolidUserCodeExecutionError, SolidExecutionContext
 )
 

@@ -107,7 +107,7 @@ def define_pipeline():
         ]
     )
 
-    return dagster.solidic.pipeline(
+    return dagster.core.pipeline(
         name='qhp',
         solids=[
             plans,

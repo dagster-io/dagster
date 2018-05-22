@@ -3,9 +3,9 @@ import pytest
 
 from dagster import check
 
-from dagster.solidic.definitions import (SolidInputDefinition, Solid, SolidOutputDefinition)
-from dagster.solidic.graph import (create_adjacency_lists, SolidGraph, SolidPipeline)
-from dagster.solidic.execution import (
+from dagster.core.definitions import (SolidInputDefinition, Solid, SolidOutputDefinition)
+from dagster.core.graph import (create_adjacency_lists, SolidGraph, SolidPipeline)
+from dagster.core.execution import (
     execute_pipeline_iterator, SolidExecutionContext, SolidExecutionResult
 )
 

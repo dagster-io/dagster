@@ -1,8 +1,8 @@
 from dagster import check
 
-import dagster.solidic
-from dagster.solidic.definitions import (Solid, SolidInputDefinition, SolidOutputDefinition)
-from dagster.solidic.execution import (
+import dagster.core
+from dagster.core.definitions import (Solid, SolidInputDefinition, SolidOutputDefinition)
+from dagster.core.execution import (
     SolidExecutionContext, SolidExecutionFailureReason, execute_pipeline, output_pipeline
 )
 
@@ -106,7 +106,7 @@ def create_root_output_failure_solid(name):
 
 
 def test_transform_failure_pipeline():
-    pipeline = dagster.solidic.pipeline(solids=[create_root_transform_failure_solid('failing')])
+    pipeline = dagster.core.pipeline(solids=[create_root_transform_failure_solid('failing')])
     results = execute_pipeline(create_test_context(), pipeline, {'failing_input': {}})
 
     assert len(results) == 1
@@ -115,7 +115,7 @@ def test_transform_failure_pipeline():
 
 
 def test_input_failure_pipeline():
-    pipeline = dagster.solidic.pipeline(solids=[create_root_input_failure_solid('failing_input')])
+    pipeline = dagster.core.pipeline(solids=[create_root_input_failure_solid('failing_input')])
     results = execute_pipeline(create_test_context(), pipeline, {'failing_input_input': {}})
 
     assert len(results) == 1
@@ -124,7 +124,7 @@ def test_input_failure_pipeline():
 
 
 def test_output_failure_pipeline():
-    pipeline = dagster.solidic.pipeline(solids=[create_root_output_failure_solid('failing_output')])
+    pipeline = dagster.core.pipeline(solids=[create_root_output_failure_solid('failing_output')])
 
     results = output_pipeline(
         create_test_context(),
@@ -168,7 +168,7 @@ def test_failure_midstream():
     input_arg_dicts = {'A_input': {}, 'B_input': {}}
     results = execute_pipeline(
         create_test_context(),
-        dagster.solidic.pipeline(solids=[node_a, node_b, solid]),
+        dagster.core.pipeline(solids=[node_a, node_b, solid]),
         input_arg_dicts=input_arg_dicts,
     )
 

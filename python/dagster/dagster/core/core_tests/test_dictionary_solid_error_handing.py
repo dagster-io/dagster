@@ -2,9 +2,9 @@ import pytest
 
 from dagster import check
 
-from dagster.solidic.definitions import (SolidInputDefinition, SolidOutputDefinition)
+from dagster.core.definitions import (SolidInputDefinition, SolidOutputDefinition)
 
-from dagster.solidic.execution import (
+from dagster.core.execution import (
     _execute_input, SolidUserCodeExecutionError, _execute_core_transform, _execute_output,
     SolidExecutionContext
 )

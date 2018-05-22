@@ -1,5 +1,5 @@
 import sqlalchemy as sa
-from dagster.solidic.execution import (
+from dagster.core.execution import (
     output_single_solid, SolidPipeline, execute_pipeline, output_pipeline
 )
 
