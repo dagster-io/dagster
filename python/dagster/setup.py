@@ -20,5 +20,9 @@ setup(
         # solidic (not explicitly expressed atm)
         'graphviz>=0.8.3',
         'pyyaml>=3.12',
+
+        # pandas kernel
+        'pandas>=0.22.0',
+        'pyarrow>=0.8.0',
     ],
 )
