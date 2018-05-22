@@ -2,7 +2,7 @@ import graphviz
 
 from dagster import check
 
-from solidic.graph import SolidPipeline
+from dagster.solidic.graph import SolidPipeline
 
 
 def build_graphviz_graph(pipeline):

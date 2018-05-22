@@ -1,6 +1,6 @@
 import sqlalchemy as sa
 
-import solidic
+import dagster.solidic
 import dagster.sqlalchemy_kernel as dagster_sa
 
 
@@ -41,4 +41,6 @@ def define_pipeline():
         sql_text='SELECT num1, num2, sum, sum * sum as sum_sq from ({sum_table})',
     )
 
-    return solidic.pipeline(name='sql_hello_world', solids=[sum_table_solid, sum_sq_table_solid])
+    return dagster.solidic.pipeline(
+        name='sql_hello_world', solids=[sum_table_solid, sum_sq_table_solid]
+    )

@@ -1,7 +1,7 @@
 import pytest
 
-from solidic.definitions import (check_valid_name, has_context_argument)
-from solidic.errors import SolidInvalidDefinition
+from dagster.solidic.definitions import (check_valid_name, has_context_argument)
+from dagster.solidic.errors import SolidInvalidDefinition
 
 
 def test_check_valid_name():
