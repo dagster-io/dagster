@@ -10,21 +10,21 @@ from dagster.core.execution import (DagsterExecutionContext)
 from dagster.core.definitions import (Solid, SolidInputDefinition, SolidOutputDefinition)
 
 
-class SolidicSqlExecutionContext(DagsterExecutionContext):
+class DagsterSqlAlchemyExecutionContext(DagsterExecutionContext):
     def __init__(self, engine, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.engine = check.inst_param(engine, 'engine', sa.engine.Engine)
 
 
-class SolidicSqlExpression:
+class DagsterSqlExpression:
     def __init__(self, sql_text):
         self.sql_text = check.str_param(sql_text, 'sql_text')
 
 
 def create_table_output():
     def output_fn(sql_expr, context, arg_dict):
-        check.inst_param(sql_expr, 'sql_expr', SolidicSqlExpression)
-        check.inst_param(context, 'context', SolidicSqlExecutionContext)
+        check.inst_param(sql_expr, 'sql_expr', DagsterSqlExpression)
+        check.inst_param(context, 'context', DagsterSqlAlchemyExecutionContext)
         check.dict_param(arg_dict, 'arg_dict')
 
         output_table_name = check.str_elem(arg_dict, 'table_name')
@@ -42,12 +42,12 @@ def create_table_output():
 
 def _table_input_fn(context, arg_dict):
 
-    check.inst_param(context, 'context', SolidicSqlExecutionContext)
+    check.inst_param(context, 'context', DagsterSqlAlchemyExecutionContext)
     check.dict_param(arg_dict, 'arg_dict')
 
     table_name = check.str_elem(arg_dict, 'table_name')
     # probably verify that the table name exists?
-    return SolidicSqlExpression(table_name)
+    return DagsterSqlExpression(table_name)
 
 
 def create_table_input(name):
@@ -84,7 +84,7 @@ def create_sql_transform(sql_text):
 
             sql_texts[name] = sql_expr.sql_text
 
-        return SolidicSqlExpression(sql_text.format(**sql_texts))
+        return DagsterSqlExpression(sql_text.format(**sql_texts))
 
     return transform_fn
 
