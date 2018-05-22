@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 import time
 
-import check
+from dagster import check
 
 class TimerResult:
     def __init__(self):

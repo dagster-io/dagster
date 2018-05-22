@@ -1,7 +1,7 @@
 from collections import (defaultdict, namedtuple)
 import re
 
-import check
+from dagster import check
 
 SingleArgument = namedtuple('SingleArgument', 'value')
 _StructuredArguments = namedtuple(

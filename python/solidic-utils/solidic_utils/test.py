@@ -4,7 +4,7 @@ import os
 import tempfile
 from contextlib import contextmanager
 
-import check
+from dagster import check
 
 
 def script_relative_path(file_path):

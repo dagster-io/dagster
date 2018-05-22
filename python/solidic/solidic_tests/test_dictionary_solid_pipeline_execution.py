@@ -1,7 +1,7 @@
 import copy
 import pytest
 
-import check
+from dagster import check
 
 from solidic.definitions import (SolidInputDefinition, Solid, SolidOutputDefinition)
 from solidic.graph import (create_adjacency_lists, SolidGraph, SolidPipeline)

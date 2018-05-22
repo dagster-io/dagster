@@ -1,7 +1,7 @@
 from __future__ import (absolute_import, division, print_function, unicode_literals)
 from builtins import *  # pylint: disable=W0622,W0401
 
-import check
+from dagster import check
 
 from .definitions import SolidInputDefinition
 from .graph import SolidPipeline

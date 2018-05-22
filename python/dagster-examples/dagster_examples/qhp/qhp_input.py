@@ -1,6 +1,6 @@
 import json
 
-import check
+from dagster import check
 
 import solidic
 

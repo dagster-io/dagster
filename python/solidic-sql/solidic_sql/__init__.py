@@ -3,7 +3,7 @@ from builtins import *  # pylint: disable=W0622,W0401
 
 import sqlalchemy as sa
 
-import check
+from dagster import check
 
 import solidic
 from solidic.execution import (SolidExecutionContext)

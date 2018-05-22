@@ -1,6 +1,6 @@
 {
   "python.unitTest.pyTestArgs": [
-    "check/check_tests",
+    "dagster/dagster/check/check_tests",
     "dagster/dagster_tests",
     "solidic/solidic_tests",
     "solidic-utils/solidic_utils_tests",

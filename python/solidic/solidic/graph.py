@@ -1,6 +1,6 @@
 from toposort import toposort_flatten
 
-import check
+from dagster import check
 
 from .definitions import Solid
 

@@ -4,7 +4,7 @@ import logging
 
 import click
 
-import check
+from dagster import check
 from solidic.errors import SolidExecutionFailureReason
 from solidic.execution import (
     SolidExecutionContext, SolidPipeline, execute_pipeline_iterator, output_pipeline_iterator

@@ -3,7 +3,7 @@ from logging import (DEBUG, INFO, WARNING, ERROR, CRITICAL)
 
 import coloredlogs
 
-import check
+from dagster import check
 
 # This global, while fundamentally offensive, is necessary if I want to be able
 # to apply a blanket logging level after the fact based on context

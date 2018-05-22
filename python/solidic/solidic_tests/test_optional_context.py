@@ -1,4 +1,4 @@
-import check
+from dagster import check
 
 from solidic.definitions import (SolidInputDefinition, SolidOutputDefinition, Solid)
 from solidic.execution import (SolidExecutionContext, output_single_solid)

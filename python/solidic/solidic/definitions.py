@@ -2,7 +2,7 @@ import inspect
 import keyword
 import re
 
-import check
+from dagster import check
 
 from .errors import SolidInvalidDefinition
 from .types import (SolidType, SolidPath)

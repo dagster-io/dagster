@@ -1,6 +1,6 @@
 import pandas as pd
 
-import check
+from dagster import check
 
 from solidic.definitions import (
     SolidInputDefinition, SolidOutputDefinition, Solid, create_solidic_single_file_input

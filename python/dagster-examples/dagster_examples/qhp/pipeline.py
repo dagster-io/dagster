@@ -4,7 +4,7 @@ from collections import defaultdict
 import numpy as np
 import pandas as pd
 
-import check
+from dagster import check
 
 import solidic
 import solidic_pandas as solidic_pd

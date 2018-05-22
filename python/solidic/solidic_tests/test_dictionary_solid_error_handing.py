@@ -1,6 +1,6 @@
 import pytest
 
-import check
+from dagster import check
 
 from solidic.definitions import (SolidInputDefinition, SolidOutputDefinition)
 
