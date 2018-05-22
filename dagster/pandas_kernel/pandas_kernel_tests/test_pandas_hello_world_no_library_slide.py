@@ -1,7 +1,7 @@
 import pandas as pd
 
 import dagster.core
-from dagster.core.definitions import (Solid, SolidOutputDefinition, SolidInputDefinition)
+from dagster.core.definitions import (Solid, OutputDefinition, InputDefinition)
 from dagster.core.execution import (DagsterExecutionContext, execute_single_solid)
 from dagster.utils.test import (script_relative_path)
 
@@ -11,7 +11,7 @@ def create_test_context():
 
 
 def test_hello_world_no_library_support():
-    csv_input = SolidInputDefinition(
+    csv_input = InputDefinition(
         name='num_csv',
         input_fn=lambda context, arg_dict: pd.read_csv(arg_dict['path']),
         argument_def_dict={'path': dagster.core.PATH},
@@ -21,7 +21,7 @@ def test_hello_world_no_library_support():
         num_csv['sum'] = num_csv['num1'] + num_csv['num2']
         return num_csv
 
-    csv_output = SolidOutputDefinition(
+    csv_output = OutputDefinition(
         name='CSV',
         output_fn=lambda df, context, arg_dict: df.to_csv(arg_dict['path'], index=False),
         argument_def_dict={'path': dagster.core.PATH}

@@ -3,7 +3,7 @@ import pytest
 from dagster.core.types import SolidString
 
 from dagster.core.definitions import (
-    Solid, SolidInputDefinition, SolidOutputDefinition, SolidExpectationDefinition,
+    Solid, InputDefinition, OutputDefinition, SolidExpectationDefinition,
     SolidExpectationResult
 )
 
@@ -20,7 +20,7 @@ def create_test_context():
 
 
 def test_execute_solid_no_args():
-    some_input = SolidInputDefinition(
+    some_input = InputDefinition(
         name='some_input',
         input_fn=lambda context, arg_dict: [{'data_key': 'data_value'}],
         argument_def_dict={}
@@ -37,7 +37,7 @@ def test_execute_solid_no_args():
         assert isinstance(arg_dict, dict)
         test_output['thedata'] = data
 
-    custom_output = SolidOutputDefinition(
+    custom_output = OutputDefinition(
         name='CUSTOM',
         output_fn=output_fn_inst,
         argument_def_dict={},
@@ -62,7 +62,7 @@ def test_execute_solid_no_args():
 
 
 def create_single_dict_input(expectations=None):
-    return SolidInputDefinition(
+    return InputDefinition(
         name='some_input',
         input_fn=lambda context, arg_dict: [{'key': arg_dict['str_arg']}],
         argument_def_dict={'str_arg': SolidString},
@@ -76,7 +76,7 @@ def create_noop_output(test_output):
         assert arg_dict == {}
         test_output['thedata'] = output
 
-    return SolidOutputDefinition(
+    return OutputDefinition(
         name='CUSTOM',
         output_fn=set_test_output,
         argument_def_dict={},
@@ -101,14 +101,14 @@ def test_hello_world():
     hello_world = Solid(
         name='hello_world',
         inputs=[
-            SolidInputDefinition(
+            InputDefinition(
                 name='hello_world_input',
                 input_fn=lambda context, arg_dict: {},
                 argument_def_dict={},
             )
         ],
         transform_fn=transform_fn,
-        outputs=[SolidOutputDefinition(name='CUSTOM', output_fn=output_fn, argument_def_dict={})]
+        outputs=[OutputDefinition(name='CUSTOM', output_fn=output_fn, argument_def_dict={})]
     )
 
     result = execute_single_solid(create_test_context(), hello_world, {'hello_world_input': {}})

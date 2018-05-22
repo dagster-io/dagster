@@ -4,7 +4,7 @@ import pandas as pd
 
 from dagster import check
 import dagster.core
-from dagster.core.definitions import (Solid, SolidOutputDefinition)
+from dagster.core.definitions import (Solid, OutputDefinition)
 from dagster.core.execution import (
     DagsterExecutionContext, execute_pipeline_through_solid, _execute_input,
     output_pipeline_iterator, output_single_solid, _pipeline_solid, _pipeline_solid_in_memory,
@@ -43,7 +43,7 @@ def test_pandas_solid():
 
         test_output['df'] = df
 
-    custom_output_def = SolidOutputDefinition(
+    custom_output_def = OutputDefinition(
         name='CUSTOM',
         output_fn=output_fn_inst,
         argument_def_dict={},
@@ -81,7 +81,7 @@ def test_pandas_csv_to_csv():
         path = check.str_elem(arg_dict, 'path')
         df.to_csv(path, index=False)
 
-    csv_output_def = SolidOutputDefinition(
+    csv_output_def = OutputDefinition(
         name='CSV', output_fn=output_fn_inst, argument_def_dict={'path': dagster.core.PATH}
     )
 

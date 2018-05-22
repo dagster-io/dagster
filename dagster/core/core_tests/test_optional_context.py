@@ -1,6 +1,6 @@
 from dagster import check
 
-from dagster.core.definitions import (SolidInputDefinition, SolidOutputDefinition, Solid)
+from dagster.core.definitions import (InputDefinition, OutputDefinition, Solid)
 from dagster.core.execution import (DagsterExecutionContext, output_single_solid)
 
 
@@ -17,14 +17,14 @@ def get_input(with_context):
             assert arg_dict == {}
             return [{'data_key': 'data_value'}]
 
-        return SolidInputDefinition(name='some_input', input_fn=input_fn, argument_def_dict={})
+        return InputDefinition(name='some_input', input_fn=input_fn, argument_def_dict={})
     else:
 
         def input_fn(arg_dict):
             assert arg_dict == {}
             return [{'data_key': 'data_value'}]
 
-        return SolidInputDefinition(name='some_input', input_fn=input_fn, argument_def_dict={})
+        return InputDefinition(name='some_input', input_fn=input_fn, argument_def_dict={})
 
 
 def get_transform_fn(with_context):
@@ -61,7 +61,7 @@ def get_output(with_context, test_output):
 
             test_output['thedata'] = data
 
-        return SolidOutputDefinition(
+        return OutputDefinition(
             name='CUSTOM',
             output_fn=output_fn_inst,
             argument_def_dict={},
@@ -76,7 +76,7 @@ def get_output(with_context, test_output):
             assert data[0]['data_key'] == 'new_value'
             test_output['thedata'] = data
 
-        return SolidOutputDefinition(
+        return OutputDefinition(
             name='CUSTOM',
             output_fn=output_fn_inst,
             argument_def_dict={},
