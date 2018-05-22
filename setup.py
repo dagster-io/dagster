@@ -18,6 +18,7 @@ setup(
         'future>=0.16.0',
 
         # cli
+        'click>=6.7',
         'coloredlogs>=10.0',
         'graphviz>=0.8.3',
         'pyyaml>=3.12',
