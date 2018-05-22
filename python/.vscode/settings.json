@@ -3,7 +3,7 @@
     "dagster/dagster/check/check_tests",
     "dagster/dagster_tests",
     "solidic/solidic_tests",
-    "solidic-utils/solidic_utils_tests",
+    "dagster/dagster/solidic_utils/solidic_utils_tests",
     "solidic-pandas/solidic_pandas_tests",
     "solidic-sql/solidic_sql_tests",
     "dagster-examples/dagster_examples_tests",

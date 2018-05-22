@@ -12,7 +12,7 @@ from solidic.execution import (
 )
 import solidic_pandas as solidic_pd
 from solidic_pandas.definitions import create_solidic_pandas_csv_input
-from solidic_utils.test import (get_temp_file_name, get_temp_file_names, script_relative_path)
+from dagster.solidic_utils.test import (get_temp_file_name, get_temp_file_names, script_relative_path)
 
 
 def create_test_context():

@@ -9,7 +9,7 @@ from solidic.errors import SolidExecutionFailureReason
 from solidic.execution import (
     SolidExecutionContext, SolidPipeline, execute_pipeline_iterator, output_pipeline_iterator
 )
-from solidic_utils.logging import define_logger
+from dagster.solidic_utils.logging import define_logger
 
 from .graphviz import build_graphviz_graph
 from .structured_flags import structure_flags
