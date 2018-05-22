@@ -2,7 +2,7 @@ import pytest
 
 from dagster.core.definitions import (InputDefinition, ExpectationDefinition, ExpectationResult)
 from dagster.core.execution import (
-    _execute_input_expectation, SolidUserCodeExecutionError, DagsterExecutionContext
+    _execute_input_expectation, DagsterUserCodeExecutionError, DagsterExecutionContext
 )
 from dagster.core import types
 
@@ -68,7 +68,7 @@ def test_input_expectation_user_error():
         ]
     )
 
-    with pytest.raises(SolidUserCodeExecutionError):
+    with pytest.raises(DagsterUserCodeExecutionError):
         _execute_input_expectation(
             create_test_context(), failing_during_expectation_input.expectations[0], 'some_value'
         )

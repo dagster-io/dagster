@@ -7,7 +7,7 @@ from dagster import check
 
 from dagster.core.definitions import (Solid, has_context_argument)
 from dagster.core.execution import DagsterExecutionContext
-from dagster.core.errors import SolidUserCodeExecutionError
+from dagster.core.errors import DagsterUserCodeExecutionError
 from .definitions import (
     create_dagster_pd_csv_input,
     create_dagster_pd_csv_output,

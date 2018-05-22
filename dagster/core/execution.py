@@ -70,8 +70,8 @@ from .definitions import (
 )
 
 from .errors import (
-    SolidUserCodeExecutionError, SolidTypeError, SolidExecutionFailureReason,
-    SolidExpectationFailedError, SolidInvariantViolation
+    DagsterUserCodeExecutionError, DagsterTypeError, DagsterExecutionFailureReason,
+    DagsterExpectationFailedError, DagsterInvariantViolationError
 )
 from .graph import DagsterPipeline
 
@@ -216,7 +216,7 @@ class DagsterExecutionResult:
         self.success = check.bool_param(success, 'success')
         if not success:
             check.param_invariant(
-                isinstance(reason, SolidExecutionFailureReason), 'reason',
+                isinstance(reason, DagsterExecutionFailureReason), 'reason',
                 'Must provide a reason is result is a failure'
             )
         self.materialized_output = materialized_output
@@ -224,13 +224,13 @@ class DagsterExecutionResult:
         self.reason = reason
         self.exception = check.opt_inst_param(exception, 'exception', Exception)
 
-        if reason == SolidExecutionFailureReason.USER_CODE_ERROR:
-            check.inst(exception, SolidUserCodeExecutionError)
+        if reason == DagsterExecutionFailureReason.USER_CODE_ERROR:
+            check.inst(exception, DagsterUserCodeExecutionError)
             self.user_exception = exception.user_exception
         else:
             self.user_exception = None
 
-        if reason == SolidExecutionFailureReason.EXPECTATION_FAILURE:
+        if reason == DagsterExecutionFailureReason.EXPECTATION_FAILURE:
             check.invariant(
                 failed_expectation_results is not None and failed_expectation_results != [],
                 'Must have at least one expectation failure'
@@ -243,8 +243,8 @@ class DagsterExecutionResult:
             self.failed_expectation_results = None
 
     def reraise_user_error(self):
-        check.invariant(self.reason == SolidExecutionFailureReason.USER_CODE_ERROR)
-        check.inst(self.exception, SolidUserCodeExecutionError)
+        check.invariant(self.reason == DagsterExecutionFailureReason.USER_CODE_ERROR)
+        check.inst(self.exception, DagsterUserCodeExecutionError)
         six.reraise(*self.exception.original_exc_info)
 
     @property
@@ -282,7 +282,7 @@ def _user_code_error_boundary(context, msg, **kwargs):
         yield
     except Exception as e:
         context.exception(e)
-        raise SolidUserCodeExecutionError(
+        raise DagsterUserCodeExecutionError(
             msg.format(**kwargs), e, user_exception=e, original_exc_info=sys.exc_info()
         )
 
@@ -301,7 +301,7 @@ def _execute_input(context, input_definition, arg_dict):
         expected_args = set(input_definition.argument_def_dict.keys())
         received_args = set(arg_dict.keys())
         if expected_args != received_args:
-            raise SolidTypeError(
+            raise DagsterTypeError(
                 'Argument mismatch in input {input_name}. Expected {expected} got {received}'.
                 format(
                     input_name=input_definition.name,
@@ -317,7 +317,7 @@ def _execute_input(context, input_definition, arg_dict):
                     'Expected type {typename} for arg {arg_name}' +
                     'for {input_name} but got {arg_value}'
                 )
-                raise SolidTypeError(
+                raise DagsterTypeError(
                     format_string.format(
                         typename=arg_def_type.name,
                         arg_name=arg_name,
@@ -352,7 +352,7 @@ def _execute_input_expectation(context, expectation_def, materialized_input):
         expectation_result = expectation_def.expectation_fn(materialized_input)
 
     if not isinstance(expectation_result, ExpectationResult):
-        raise SolidInvariantViolation(
+        raise DagsterInvariantViolationError(
             'Must return SolidExpectationResult from expectation function'
         )
 
@@ -374,7 +374,7 @@ def _execute_output_expectation(context, expectation_def, materialized_output):
 
     if not isinstance(expectation_result, ExpectationResult):
 
-        raise SolidInvariantViolation(
+        raise DagsterInvariantViolationError(
             'Must return SolidExpectationResult from expectation function'
         )
 
@@ -420,7 +420,7 @@ def _execute_output(context, output_def, output_arg_dict, materialized_output):
     received_args = set(output_arg_dict.keys())
 
     if expected_args != received_args:
-        raise SolidTypeError(
+        raise DagsterTypeError(
             'Argument mismatch in output. Expected {expected} got {received}'.format(
                 expected=repr(expected_args),
                 received=repr(received_args),
@@ -430,7 +430,7 @@ def _execute_output(context, output_def, output_arg_dict, materialized_output):
     for arg_name, arg_value in output_arg_dict.items():
         arg_def_type = output_def.argument_def_dict[arg_name]
         if not arg_def_type.is_python_valid_value(arg_value):
-            raise SolidTypeError(
+            raise DagsterTypeError(
                 'Expected type {typename} for arg {arg_name} in output but got {arg_value}'.format(
                     typename=arg_def_type.name,
                     arg_name=arg_name,
@@ -542,7 +542,7 @@ def _pipeline_solid_in_memory(context, solid, materialized_inputs):
             success=False,
             materialized_output=None,
             solid=solid,
-            reason=SolidExecutionFailureReason.EXPECTATION_FAILURE,
+            reason=DagsterExecutionFailureReason.EXPECTATION_FAILURE,
             failed_expectation_results=all_run_result.all_fails,
         )
 
@@ -570,7 +570,7 @@ def _pipeline_solid_in_memory(context, solid, materialized_inputs):
             success=False,
             materialized_output=None,
             solid=solid,
-            reason=SolidExecutionFailureReason.EXPECTATION_FAILURE,
+            reason=DagsterExecutionFailureReason.EXPECTATION_FAILURE,
             failed_expectation_results=output_expectation_failures,
         )
 
@@ -602,15 +602,15 @@ def execute_single_solid(context, solid, input_arg_dicts, throw_on_error=True):
 def _do_throw_on_error(execution_result):
     check.inst_param(execution_result, 'execution_result', DagsterExecutionResult)
     if not execution_result.success:
-        if execution_result.reason == SolidExecutionFailureReason.EXPECTATION_FAILURE:
+        if execution_result.reason == DagsterExecutionFailureReason.EXPECTATION_FAILURE:
             check.invariant(
                 execution_result.failed_expectation_results is not None
                 and execution_result.failed_expectation_results != []
             )
-            raise SolidExpectationFailedError(
+            raise DagsterExpectationFailedError(
                 failed_expectation_results=execution_result.failed_expectation_results
             )
-        elif execution_result.reason == SolidExecutionFailureReason.USER_CODE_ERROR:
+        elif execution_result.reason == DagsterExecutionFailureReason.USER_CODE_ERROR:
             execution_result.reraise_user_error()
 
         check.invariant(execution_result.exception)
@@ -763,10 +763,10 @@ def execute_pipeline_iterator(context, pipeline, input_arg_dicts, through_solids
             if not execution_result.success:
                 break
 
-        except SolidUserCodeExecutionError as see:
+        except DagsterUserCodeExecutionError as see:
             yield DagsterExecutionResult(
                 success=False,
-                reason=SolidExecutionFailureReason.USER_CODE_ERROR,
+                reason=DagsterExecutionFailureReason.USER_CODE_ERROR,
                 solid=solid,
                 materialized_output=None,
                 exception=see,
@@ -856,11 +856,11 @@ def output_pipeline_iterator(context, pipeline, input_arg_dicts, output_arg_dict
                     _execute_output(
                         context, output_def, output_arg_dict, result.materialized_output
                     )
-                except SolidUserCodeExecutionError as see:
+                except DagsterUserCodeExecutionError as see:
                     output_result = DagsterExecutionResult(
                         success=False,
                         solid=result.solid,
-                        reason=SolidExecutionFailureReason.USER_CODE_ERROR,
+                        reason=DagsterExecutionFailureReason.USER_CODE_ERROR,
                         exception=see,
                         materialized_output=result.materialized_output,
                     )

@@ -3,7 +3,7 @@ from dagster import check
 import dagster.core
 from dagster.core.definitions import (Solid, InputDefinition, OutputDefinition)
 from dagster.core.execution import (
-    DagsterExecutionContext, SolidExecutionFailureReason, execute_pipeline, output_pipeline
+    DagsterExecutionContext, DagsterExecutionFailureReason, execute_pipeline, output_pipeline
 )
 
 
@@ -175,4 +175,4 @@ def test_failure_midstream():
     assert results[0].success
     assert results[1].success
     assert not results[2].success
-    assert results[2].reason == SolidExecutionFailureReason.USER_CODE_ERROR
+    assert results[2].reason == DagsterExecutionFailureReason.USER_CODE_ERROR

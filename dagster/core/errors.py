@@ -5,38 +5,38 @@ from dagster import check
 import dagster.core.definitions
 
 
-class SolidExecutionFailureReason(Enum):
+class DagsterExecutionFailureReason(Enum):
     USER_CODE_ERROR = 'USER_CODE_ERROR'
     FRAMEWORK_ERROR = 'FRAMEWORK_ERROR'
     EXPECTATION_FAILURE = 'EXPECATION_FAILURE'
 
 
-class SolidError(Exception):
+class DagsterError(Exception):
     pass
 
 
-class SolidUserError(SolidError):
+class DagsterUserError(DagsterError):
     pass
 
 
-class SolidInvalidDefinition(SolidUserError):
+class DagsterInvalidDefinitionError(DagsterUserError):
     '''Indicates that some violation of the definition rules has been violated by the user'''
     pass
 
 
-class SolidInvariantViolation(SolidUserError):
+class DagsterInvariantViolationError(DagsterUserError):
     '''Indicates the user has violated a well-defined invariant that can only be deteremined
     at runtime.
     '''
     pass
 
 
-class SolidTypeError(SolidUserError):
+class DagsterTypeError(DagsterUserError):
     '''Indicates an error in the solid type system (e.g. mismatched arguments)'''
     pass
 
 
-class SolidUserCodeExecutionError(SolidUserError):
+class DagsterUserCodeExecutionError(DagsterUserError):
     '''Indicates that user space code has raised an error'''
 
     def __init__(self, *args, user_exception, original_exc_info, **kwargs):
@@ -50,7 +50,7 @@ class SolidUserCodeExecutionError(SolidUserError):
         self.original_exc_info = original_exc_info
 
 
-class SolidExpectationFailedError(SolidError):
+class DagsterExpectationFailedError(DagsterError):
     '''Thrown with pipeline configured to throw on expectation failure'''
 
     def __init__(self, *args, failed_expectation_results, **kwargs):

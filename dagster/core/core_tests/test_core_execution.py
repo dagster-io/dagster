@@ -5,7 +5,7 @@ from dagster.core import types
 from dagster.core.definitions import (Solid, InputDefinition, OutputDefinition)
 
 from dagster.core.execution import (
-    _execute_input, _execute_core_transform, _execute_output, SolidTypeError,
+    _execute_input, _execute_core_transform, _execute_output, DagsterTypeError,
     DagsterExecutionContext
 )
 
@@ -30,7 +30,7 @@ def test_materialize_input_arg_mismatch():
         name='some_input', input_fn=lambda context, arg_dict: [], argument_def_dict={}
     )
 
-    with pytest.raises(SolidTypeError):
+    with pytest.raises(DagsterTypeError):
         _execute_input(create_test_context(), some_input, {'extra_arg': None})
 
     some_input_with_arg = InputDefinition(
@@ -39,7 +39,7 @@ def test_materialize_input_arg_mismatch():
         argument_def_dict={'in_arg': types.STRING}
     )
 
-    with pytest.raises(SolidTypeError):
+    with pytest.raises(DagsterTypeError):
         _execute_input(create_test_context(), some_input_with_arg, {})
 
 
@@ -50,7 +50,7 @@ def test_materialize_input_arg_type_mismatch():
         argument_def_dict={'in_arg': types.STRING}
     )
 
-    with pytest.raises(SolidTypeError):
+    with pytest.raises(DagsterTypeError):
         _execute_input(create_test_context(), some_input_with_arg, {'in_arg': 1})
 
 
@@ -162,12 +162,12 @@ def test_execute_output_arg_mismatch():
         name='CUSTOM', output_fn=lambda out, dict: [], argument_def_dict={'out_arg': types.STRING}
     )
 
-    with pytest.raises(SolidTypeError):
+    with pytest.raises(DagsterTypeError):
         _execute_output(
             create_test_context(), custom_output, output_arg_dict={}, materialized_output=[{}]
         )
 
-    with pytest.raises(SolidTypeError):
+    with pytest.raises(DagsterTypeError):
         _execute_output(
             create_test_context(),
             custom_output,
@@ -184,7 +184,7 @@ def test_execute_output_arg_type_mismatch():
         name='CUSTOM', output_fn=lambda out, dict: [], argument_def_dict={'out_arg': types.STRING}
     )
 
-    with pytest.raises(SolidTypeError):
+    with pytest.raises(DagsterTypeError):
         _execute_output(
             create_test_context(),
             custom_output,

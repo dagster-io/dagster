@@ -7,11 +7,11 @@ from dagster.core.definitions import (
 )
 
 from dagster.core.execution import (
-    output_single_solid, DagsterExecutionResult, SolidExecutionFailureReason,
+    output_single_solid, DagsterExecutionResult, DagsterExecutionFailureReason,
     DagsterExecutionContext, execute_single_solid
 )
 
-from dagster.core.errors import SolidExpectationFailedError
+from dagster.core.errors import DagsterExpectationFailedError
 
 
 def create_test_context():
@@ -174,13 +174,13 @@ def test_execute_solid_with_failed_input_expectation_non_throwing():
 
     assert isinstance(solid_execution_result, DagsterExecutionResult)
     assert solid_execution_result.success is False
-    assert solid_execution_result.reason == SolidExecutionFailureReason.EXPECTATION_FAILURE
+    assert solid_execution_result.reason == DagsterExecutionFailureReason.EXPECTATION_FAILURE
 
 
 def test_execute_solid_with_failed_input_expectation_throwing():
     single_solid = create_input_failing_solid()
 
-    with pytest.raises(SolidExpectationFailedError):
+    with pytest.raises(DagsterExpectationFailedError):
         output_single_solid(
             create_test_context(),
             single_solid,
@@ -192,7 +192,7 @@ def test_execute_solid_with_failed_input_expectation_throwing():
             throw_on_error=True,
         )
 
-    with pytest.raises(SolidExpectationFailedError):
+    with pytest.raises(DagsterExpectationFailedError):
         output_single_solid(
             create_test_context(),
             single_solid,
@@ -236,13 +236,13 @@ def test_execute_solid_with_failed_output_expectation_non_throwing():
 
     assert isinstance(solid_execution_result, DagsterExecutionResult)
     assert solid_execution_result.success is False
-    assert solid_execution_result.reason == SolidExecutionFailureReason.EXPECTATION_FAILURE
+    assert solid_execution_result.reason == DagsterExecutionFailureReason.EXPECTATION_FAILURE
 
 
 def test_execute_solid_with_failed_output_expectation_throwing():
     failing_solid = create_output_failing_solid()
 
-    with pytest.raises(SolidExpectationFailedError):
+    with pytest.raises(DagsterExpectationFailedError):
         output_single_solid(
             create_test_context(),
             failing_solid,
@@ -253,7 +253,7 @@ def test_execute_solid_with_failed_output_expectation_throwing():
             output_arg_dict={},
         )
 
-    with pytest.raises(SolidExpectationFailedError):
+    with pytest.raises(DagsterExpectationFailedError):
         output_single_solid(
             create_test_context(),
             failing_solid,

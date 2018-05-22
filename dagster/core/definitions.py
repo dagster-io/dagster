@@ -5,7 +5,7 @@ import re
 from dagster import check
 from dagster.core import types
 
-from .errors import SolidInvalidDefinition
+from .errors import DagsterInvalidDefinitionError
 
 DISALLOWED_NAMES = set(
     [
@@ -37,11 +37,11 @@ def has_context_argument(fn):
 def check_valid_name(name):
     check.str_param(name, 'name')
     if name in DISALLOWED_NAMES:
-        raise SolidInvalidDefinition('{name} is not allowed'.format(name=name))
+        raise DagsterInvalidDefinitionError('{name} is not allowed'.format(name=name))
 
     regex = r'^[A-Za-z0-9_]+$'
     if not re.match(regex, name):
-        raise SolidInvalidDefinition(
+        raise DagsterInvalidDefinitionError(
             '{name} must be in regex {regex}'.format(name=name, regex=regex)
         )
     return name

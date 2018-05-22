@@ -5,7 +5,7 @@ import logging
 import click
 
 from dagster import check
-from dagster.core.errors import SolidExecutionFailureReason
+from dagster.core.errors import DagsterExecutionFailureReason
 from dagster.core.execution import (
     DagsterExecutionContext, DagsterPipeline, execute_pipeline_iterator, output_pipeline_iterator
 )
@@ -157,7 +157,7 @@ def process_results_for_console(pipeline_iter, context):
     results = []
     for result in pipeline_iter:
         if not result.success:
-            if result.reason == SolidExecutionFailureReason.USER_CODE_ERROR:
+            if result.reason == DagsterExecutionFailureReason.USER_CODE_ERROR:
                 raise result.user_exception
             else:
                 raise result.exception

@@ -5,7 +5,7 @@ from dagster.core.definitions import (
     ExpectationResult,
 )
 from dagster.core.execution import (
-    _execute_output_expectation, SolidUserCodeExecutionError, DagsterExecutionContext
+    _execute_output_expectation, DagsterUserCodeExecutionError, DagsterExecutionContext
 )
 
 
@@ -48,7 +48,7 @@ def test_output_expectation_user_error():
     def throwing(_output):
         raise Exception('user error')
 
-    with pytest.raises(SolidUserCodeExecutionError):
+    with pytest.raises(DagsterUserCodeExecutionError):
         _execute_output_expectation(
             create_test_context(), ExpectationDefinition('throwing', throwing), 'not used'
         )
