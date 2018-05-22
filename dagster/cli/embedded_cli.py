@@ -11,7 +11,7 @@ from dagster.core.execution import (
 )
 from dagster.utils.logging import define_logger
 
-from .graphviz import build_graphviz_graph
+from dagster.graphviz import build_graphviz_graph
 from .structured_flags import structure_flags
 
 LOGGING_DICT = {
