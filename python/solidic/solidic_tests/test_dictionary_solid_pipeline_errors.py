@@ -1,4 +1,4 @@
-import check
+from dagster import check
 
 import solidic
 from solidic.definitions import (Solid, SolidInputDefinition, SolidOutputDefinition)

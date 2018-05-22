@@ -1,6 +1,6 @@
 import graphviz
 
-import check
+from dagster import check
 
 from solidic.graph import SolidPipeline
 

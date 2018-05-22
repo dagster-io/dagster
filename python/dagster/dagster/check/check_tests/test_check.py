@@ -1,7 +1,9 @@
 import pytest
 
-import check
-from check import (ParameterCheckError, ElementCheckError, CheckError, NotImplementedCheckError)
+from dagster import check
+from dagster.check import (
+    ParameterCheckError, ElementCheckError, CheckError, NotImplementedCheckError
+)
 
 
 def test_int_param():

@@ -3,7 +3,7 @@ import importlib
 import click
 import yaml
 
-import check
+from dagster import check
 
 
 def _load_pipeline_config(pipelines_yml):

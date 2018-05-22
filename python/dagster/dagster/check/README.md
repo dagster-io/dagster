@@ -5,7 +5,7 @@ Check is a module for easy-to-use and idiomatic runtime type checking in python.
 Usage:
 
 ```
-import check
+from dagster import check
 
 def some_function(should_be_int, optional_int):
   check.int_param(should_be_int, 'should_be_int')

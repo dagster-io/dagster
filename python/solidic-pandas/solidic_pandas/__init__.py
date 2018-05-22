@@ -3,7 +3,7 @@ from builtins import *  # pylint: disable=W0622,W0401
 
 import pandas as pd
 
-import check
+from dagster import check
 
 from solidic.definitions import (Solid, has_context_argument)
 from solidic.execution import SolidExecutionContext

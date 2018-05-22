@@ -1,6 +1,6 @@
 from six import string_types
 
-import check
+from dagster import check
 
 
 class SolidType:

@@ -56,7 +56,7 @@ import sys
 
 import six
 
-import check
+from dagster import check
 
 from solidic_utils.logging import (CompositeLogger, ERROR)
 from solidic_utils.timing import time_execution_scope

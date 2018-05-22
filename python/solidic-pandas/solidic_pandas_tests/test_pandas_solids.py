@@ -2,7 +2,7 @@ import os
 
 import pandas as pd
 
-import check
+from dagster import check
 import solidic
 from solidic.definitions import (Solid, SolidOutputDefinition)
 from solidic.execution import (
