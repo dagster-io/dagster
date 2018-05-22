@@ -3,7 +3,7 @@ from solidic.execution import (
     output_single_solid, SolidPipeline, execute_pipeline, output_pipeline
 )
 
-from dagster import solidic_sql
+import dagster.sqlalchemy_kernel as dagster_sa
 
 
 def create_num_table(engine):
@@ -33,7 +33,7 @@ def test_sql_sum_solid():
     input_arg_dicts = {'num_table': {'table_name': 'num_table'}}
 
     result = output_single_solid(
-        solidic_sql.SolidicSqlExecutionContext(engine=engine),
+        dagster_sa.SolidicSqlExecutionContext(engine=engine),
         sum_table_solid,
         input_arg_dicts,
         'CREATE', {'table_name': 'sum_table'}
@@ -45,9 +45,9 @@ def test_sql_sum_solid():
 
 
 def create_sum_table_solid():
-    return solidic_sql.create_sql_solid(
+    return dagster_sa.create_sql_solid(
         name='sum_table',
-        inputs=[solidic_sql.create_table_input('num_table')],
+        inputs=[dagster_sa.create_table_input('num_table')],
         sql_text='SELECT num1, num2, num1 + num2 as sum FROM ({num_table})',
     )
 
@@ -55,9 +55,9 @@ def create_sum_table_solid():
 def create_sum_sq_pipeline():
     sum_solid = create_sum_table_solid()
 
-    sum_sq_solid = solidic_sql.create_sql_solid(
+    sum_sq_solid = dagster_sa.create_sql_solid(
         name='sum_sq_table',
-        inputs=[solidic_sql.create_table_input_dependency(sum_solid)],
+        inputs=[dagster_sa.create_table_input_dependency(sum_solid)],
         sql_text='SELECT num1, num2, sum, sum * sum as sum_sq from ({sum_table})',
     )
 
@@ -71,7 +71,7 @@ def test_execute_sql_sum_sq_solid():
     create_num_table(engine)
 
     results = execute_pipeline(
-        solidic_sql.SolidicSqlExecutionContext(engine=engine),
+        dagster_sa.SolidicSqlExecutionContext(engine=engine),
         pipeline,
         input_arg_dicts={'num_table': {
             'table_name': 'num_table'
@@ -95,7 +95,7 @@ def test_output_sql_sum_sq_solid():
     sum_sq_output_arg_dicts = {'sum_sq_table': {'CREATE': {'table_name': 'sum_sq_table'}}}
 
     results = output_pipeline(
-        solidic_sql.SolidicSqlExecutionContext(engine=engine),
+        dagster_sa.SolidicSqlExecutionContext(engine=engine),
         pipeline,
         input_arg_dicts={'num_table': {
             'table_name': 'num_table'
