@@ -276,7 +276,7 @@ def provider_languages_specialities_transform(providers, specialities, languages
 
 
 if __name__ == '__main__':
-    from dagster.embedded_cli import embedded_dagster_single_pipeline_cli_main
+    from dagster.cli.embedded_cli import embedded_dagster_single_pipeline_cli_main
     import sys
 
     embedded_dagster_single_pipeline_cli_main(sys.argv, define_pipeline())
