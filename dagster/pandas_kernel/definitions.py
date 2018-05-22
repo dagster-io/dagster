@@ -3,7 +3,7 @@ import pandas as pd
 from dagster import check
 
 from dagster.core.definitions import (
-    SolidInputDefinition, SolidOutputDefinition, Solid, create_solidic_single_file_input
+    SolidInputDefinition, SolidOutputDefinition, Solid, create_dagster_single_file_input
 )
 from dagster.core.execution import DagsterExecutionContext
 from dagster.core.types import (SolidPath, SolidString)
@@ -54,7 +54,7 @@ def create_dagster_pd_csv_input(name, delimiter=',', **read_csv_kwargs):
         context.metric('rows', df.shape[0])
         return df
 
-    return create_solidic_single_file_input(name, check_path)
+    return create_dagster_single_file_input(name, check_path)
 
 
 def create_dagster_pd_csv_output():

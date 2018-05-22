@@ -33,7 +33,7 @@ def test_sql_sum_solid():
     input_arg_dicts = {'num_table': {'table_name': 'num_table'}}
 
     result = output_single_solid(
-        dagster_sa.SolidicSqlExecutionContext(engine=engine),
+        dagster_sa.DagsterSqlAlchemyExecutionContext(engine=engine),
         sum_table_solid,
         input_arg_dicts,
         'CREATE', {'table_name': 'sum_table'}
@@ -71,7 +71,7 @@ def test_execute_sql_sum_sq_solid():
     create_num_table(engine)
 
     results = execute_pipeline(
-        dagster_sa.SolidicSqlExecutionContext(engine=engine),
+        dagster_sa.DagsterSqlAlchemyExecutionContext(engine=engine),
         pipeline,
         input_arg_dicts={'num_table': {
             'table_name': 'num_table'
@@ -95,7 +95,7 @@ def test_output_sql_sum_sq_solid():
     sum_sq_output_arg_dicts = {'sum_sq_table': {'CREATE': {'table_name': 'sum_sq_table'}}}
 
     results = output_pipeline(
-        dagster_sa.SolidicSqlExecutionContext(engine=engine),
+        dagster_sa.DagsterSqlAlchemyExecutionContext(engine=engine),
         pipeline,
         input_arg_dicts={'num_table': {
             'table_name': 'num_table'

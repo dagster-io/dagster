@@ -132,7 +132,7 @@ class SolidInputDefinition:
         return self.depends_on is None
 
 
-def create_solidic_single_file_input(name, single_file_fn):
+def create_dagster_single_file_input(name, single_file_fn):
     check.str_param(name, 'name')
     return SolidInputDefinition(
         name=name,
