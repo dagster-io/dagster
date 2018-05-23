@@ -57,14 +57,14 @@ def create_dagster_pd_csv_input(name, delimiter=',', **read_csv_kwargs):
 
     return create_dagster_single_file_input(name, check_path)
 
-def create_dagster_pd_read_table_input(name, delimiter=',', **read_csv_kwargs):
+def create_dagster_pd_read_table_input(name, delimiter=',', **read_table_kwargs):
     check.str_param(name, 'name')
     check.str_param(delimiter, 'delimiter')
 
     def check_path(context, path):
         check.inst_param(context, 'context', DagsterExecutionContext)
         check.str_param(path, 'path')
-        df = pd.read_table(path, delimiter=delimiter, **read_csv_kwargs)
+        df = pd.read_table(path, delimiter=delimiter, **read_table_kwargs)
         context.metric('rows', df.shape[0])
         return df
 
