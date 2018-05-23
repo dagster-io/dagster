@@ -7,7 +7,7 @@ from dagster import check
 from dagster.core import types
 from dagster.core.execution import DagsterExecutionContext
 
-from .definitions import (InputDefinition, Solid, create_dagster_single_file_input)
+from .definitions import (InputDefinition, create_dagster_single_file_input)
 from .graph import DagsterPipeline
 
 
