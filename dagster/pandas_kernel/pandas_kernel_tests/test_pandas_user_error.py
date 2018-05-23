@@ -4,6 +4,10 @@ import dagster.pandas_kernel as dagster_pd
 
 from dagster.utils.test import script_relative_path
 
+import pytest
+
+from dagster.core.errors import DagsterInvariantViolationError
+
 
 def test_wrong_value():
     csv_input = dagster_pd.csv_input('num_csv')
@@ -18,8 +22,9 @@ def test_wrong_value():
 
     input_arg_dicts = {'num_csv': {'path': script_relative_path('num.csv')}}
 
-    execute_single_solid(
-        dagster.context(),
-        df_solid,
-        input_arg_dicts,
-    )
+    with pytest.raises(DagsterInvariantViolationError):
+        execute_single_solid(
+            dagster.context(),
+            df_solid,
+            input_arg_dicts,
+        )
