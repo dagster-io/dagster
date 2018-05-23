@@ -14,6 +14,9 @@ from .definitions import (
     create_dagster_pd_dependency_input,
     create_dagster_pd_parquet_output,
 )
+from dagster.core import (
+    create_json_input
+)
 
 
 def solid(**kwargs):
@@ -95,10 +98,11 @@ def single_path_arg(input_name, path):
 def csv_input(name, delimiter=',', **read_csv_kwargs):
     return create_dagster_pd_csv_input(name, delimiter, **read_csv_kwargs)
 
-
 def csv_output():
     return create_dagster_pd_csv_output()
 
+def json_input(name):
+    return create_json_input(name)
 
 def parquet_output():
     return create_dagster_pd_parquet_output()

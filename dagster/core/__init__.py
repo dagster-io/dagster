@@ -4,7 +4,7 @@ from builtins import *  # pylint: disable=W0622,W0401
 from dagster import check
 from dagster.core import types
 
-from .definitions import InputDefinition
+from .definitions import InputDefinition, create_dagster_single_file_input
 from .graph import DagsterPipeline
 
 
@@ -32,4 +32,4 @@ def create_json_input(name):
         # context.metric('rows', df.shape[0])
         return json_obj
 
-    return create_dagster_json_input(name, check_path)
+    return create_dagster_single_file_input(name, check_path)
