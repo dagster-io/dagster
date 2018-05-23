@@ -26,11 +26,24 @@ class DagsterPipeline:
         return [solid.name for solid in self.solids]
 
     @property
+    def input_names(self):
+        return set([input_def.name for input_def in self.all_inputs])
+
+    @property
     def external_inputs(self):
+        for input_def in self.all_inputs:
+            if input_def.is_external:
+                yield input_def
+
+    def has_input(self, name):
+        check.str_param(name, 'name')
+        return name in [input_def.name for input_def in self.all_inputs]
+
+    @property
+    def all_inputs(self):
         for solid in self.solids:
             for input_def in solid.inputs:
-                if input_def.is_external:
-                    yield input_def
+                yield input_def
 
     def solid_named(self, name):
         check.str_param(name, 'name')
