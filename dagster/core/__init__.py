@@ -8,6 +8,8 @@ from dagster.core.execution import DagsterExecutionContext
 from .definitions import (InputDefinition, Solid, create_dagster_single_file_input)
 from .graph import DagsterPipeline
 
+from dagster.core.execution import DagsterExecutionContext
+import json
 
 def pipeline(**kwargs):
     return DagsterPipeline(**kwargs)
@@ -30,7 +32,7 @@ def create_json_input(name):
     def check_path(context, path):
         check.inst_param(context, 'context', DagsterExecutionContext)
         check.str_param(path, 'path')
-        json_obj = json.loads(path)
+        json_obj = json.load(open(path))
         # context.metric('rows', df.shape[0])
         return json_obj
 
