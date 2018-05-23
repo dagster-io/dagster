@@ -741,7 +741,7 @@ def execute_pipeline_iterator(context, pipeline, input_arg_dicts, through_solids
     for input_name in input_names:
         if not pipeline.has_input(input_name):
             raise DagsterInvariantViolationError(
-                f'Input "{input_name}"" not found in the pipeline.' + \
+                f'Input "{input_name}" not found in the pipeline.' + \
                 f'Input must be one of {repr(pipeline.input_names)}'
             )
 
