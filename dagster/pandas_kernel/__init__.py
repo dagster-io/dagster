@@ -6,6 +6,7 @@ import pandas as pd
 from dagster import check
 from dagster.utils import has_context_argument
 
+from dagster.core import create_json_input
 from dagster.core.definitions import Solid
 from dagster.core.execution import DagsterExecutionContext
 from dagster.core.errors import (DagsterUserCodeExecutionError, DagsterInvariantViolationError)
@@ -16,7 +17,6 @@ from .definitions import (
     create_dagster_pd_parquet_output,
     create_dagster_pd_read_table_input,
 )
-from dagster.core import (create_json_input)
 
 
 def solid(**kwargs):
@@ -103,6 +103,10 @@ def csv_input(name, delimiter=',', **read_csv_kwargs):
 
 def csv_output():
     return create_dagster_pd_csv_output()
+
+
+def json_input(name):
+    return create_json_input(name)
 
 
 def read_table_input(name, delimiter=',', **read_table_kwargs):
