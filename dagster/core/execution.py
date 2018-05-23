@@ -738,6 +738,13 @@ def execute_pipeline_iterator(context, pipeline, input_arg_dicts, through_solids
     input_names = list(input_arg_dicts.keys())
     output_names = pipeline.solid_names if not through_solids else through_solids
 
+    for input_name in input_names:
+        if not pipeline.has_input(input_name):
+            raise DagsterInvariantViolationError(
+                f'Input "{input_name}"" not found in the pipeline.' + \
+                f'Input must be one of {repr(pipeline.input_names)}'
+            )
+
     for output_name in output_names:
         unprovided_inputs = pipeline.solid_graph.compute_unprovided_inputs(
             input_names=input_names, output_name=output_name

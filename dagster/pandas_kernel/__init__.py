@@ -38,16 +38,21 @@ def _post_process_transform(context, df):
     context.metric('rows', df.shape[0])
 
 
+def _check_transform_output(df, name):
+    if not isinstance(df, pd.DataFrame):
+        raise DagsterInvariantViolationError(
+            f'Transform function of dataframe solid {name} ' + \
+            f'did not return a dataframe. Got {repr(df)}'
+        )
+
+
 def _dependency_transform_wrapper(name, transform_fn):
     check.callable_param(transform_fn, 'transform_fn')
     if has_context_argument(transform_fn):
 
         def wrapper_with_context(context, **kwargs):
             df = transform_fn(context, **kwargs)
-            if not isinstance(df, pd.DataFrame):
-                raise DagsterInvariantViolationError(
-                    f'Transform function of dataframe solid {name} did not return a dataframe. Got {repr(df)}'
-                )
+            _check_transform_output(df, name)
             _post_process_transform(context, df)
             return df
 
@@ -56,10 +61,7 @@ def _dependency_transform_wrapper(name, transform_fn):
 
         def wrapper_no_context(context, **kwargs):
             df = transform_fn(**kwargs)
-            if not isinstance(df, pd.DataFrame):
-                raise DagsterInvariantViolationError(
-                    f'Transform function of dataframe solid {name} did not return a dataframe. Got {repr(df)}'
-                )
+            _check_transform_output(df, name)
             _post_process_transform(context, df)
             return df
 
