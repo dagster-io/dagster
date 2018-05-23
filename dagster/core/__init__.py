@@ -19,3 +19,17 @@ def input_definition(**kwargs):
 def file_input_definition(argument_def_dict=None, **kwargs):
     check.param_invariant(argument_def_dict is None, 'Should not provide argument_def_dict')
     return InputDefinition(argument_def_dict={'path': types.PATH}, **kwargs)
+
+
+def create_json_input(name):
+    check.str_param(name, 'name')
+
+    #Note: I don't understand the function of check_path.
+    def check_path(context, path):
+        check.inst_param(context, 'context', DagsterExecutionContext)
+        check.str_param(path, 'path')
+        json_obj = json.loads(path)
+        # context.metric('rows', df.shape[0])
+        return json_obj
+
+    return create_dagster_json_input(name, check_path)
