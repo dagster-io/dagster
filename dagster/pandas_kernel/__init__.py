@@ -7,7 +7,7 @@ from dagster import check
 
 from dagster.core.definitions import (Solid, has_context_argument)
 from dagster.core.execution import DagsterExecutionContext
-from dagster.core.errors import DagsterUserCodeExecutionError
+from dagster.core.errors import (DagsterUserCodeExecutionError, DagsterInvariantViolationError)
 from .definitions import (
     create_dagster_pd_csv_input,
     create_dagster_pd_csv_output,
@@ -38,12 +38,16 @@ def _post_process_transform(context, df):
     context.metric('rows', df.shape[0])
 
 
-def _dependency_transform_wrapper(transform_fn):
+def _dependency_transform_wrapper(name, transform_fn):
     check.callable_param(transform_fn, 'transform_fn')
     if has_context_argument(transform_fn):
 
         def wrapper_with_context(context, **kwargs):
             df = transform_fn(context, **kwargs)
+            if not isinstance(df, pd.DataFrame):
+                raise DagsterInvariantViolationError(
+                    f'Transform function of dataframe solid {name} did not return a dataframe. Got {repr(df)}'
+                )
             _post_process_transform(context, df)
             return df
 
@@ -52,13 +56,17 @@ def _dependency_transform_wrapper(transform_fn):
 
         def wrapper_no_context(context, **kwargs):
             df = transform_fn(**kwargs)
+            if not isinstance(df, pd.DataFrame):
+                raise DagsterInvariantViolationError(
+                    f'Transform function of dataframe solid {name} did not return a dataframe. Got {repr(df)}'
+                )
             _post_process_transform(context, df)
             return df
 
         return wrapper_no_context
 
 
-def dataframe_solid(*args, inputs, transform_fn=None, **kwargs):
+def dataframe_solid(*args, name, inputs, transform_fn=None, **kwargs):
     check.invariant(not args, 'must use all keyword args')
 
     # will add parquet and other standardized formats
@@ -70,9 +78,10 @@ def dataframe_solid(*args, inputs, transform_fn=None, **kwargs):
         transform_fn = _default_passthrough_transform
 
     return Solid(
+        name=name,
         inputs=inputs,
         outputs=[csv_output(), parquet_output()],
-        transform_fn=_dependency_transform_wrapper(transform_fn),
+        transform_fn=_dependency_transform_wrapper(name, transform_fn),
         **kwargs
     )
 
