@@ -3,8 +3,9 @@ from builtins import *  # pylint: disable=W0622,W0401
 
 from dagster import check
 from dagster.core import types
+from dagster.core.execution import DagsterExecutionContext
 
-from .definitions import InputDefinition, Solid
+from .definitions import (InputDefinition, Solid, create_dagster_single_file_input)
 from .graph import DagsterPipeline
 
 
@@ -22,6 +23,7 @@ def file_input_definition(argument_def_dict=None, **kwargs):
 
 
 def create_json_input(name):
+    import json
     check.str_param(name, 'name')
 
     #Note: I don't understand the function of check_path.
@@ -32,4 +34,4 @@ def create_json_input(name):
         # context.metric('rows', df.shape[0])
         return json_obj
 
-    return create_dagster_json_input(name, check_path)
+    return create_dagster_single_file_input(name, check_path)
