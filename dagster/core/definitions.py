@@ -1,9 +1,9 @@
-import inspect
 import keyword
 import re
 
 from dagster import check
 from dagster.core import types
+from dagster.utils import make_context_arg_optional
 
 from .errors import DagsterInvalidDefinitionError
 
@@ -25,13 +25,6 @@ DISALLOWED_NAMES = set(
         'type',
     ] + keyword.kwlist  # just disallow all python keywords
 )
-
-
-def has_context_argument(fn):
-    check.callable_param(fn, 'fn')
-
-    argspec = inspect.getfullargspec(fn)
-    return 'context' in argspec[0]
 
 
 def check_valid_name(name):
@@ -58,20 +51,6 @@ class ExpectationDefinition:
     def __init__(self, name, expectation_fn):
         self.name = check_valid_name(name)
         self.expectation_fn = check.callable_param(expectation_fn, 'expectation_fn')
-
-
-def _contextify_fn(fn):
-    check.callable_param(fn, 'fn')
-
-    if not has_context_argument(fn):
-
-        def wrapper_with_context(*args, context, **kwargs):
-            check.not_none_param(context, 'context')
-            return fn(*args, **kwargs)
-
-        return wrapper_with_context
-    else:
-        return fn
 
 
 class InputDefinition:
@@ -118,7 +97,7 @@ class InputDefinition:
 
     def __init__(self, name, input_fn, argument_def_dict, expectations=None, depends_on=None):
         self.name = check_valid_name(name)
-        self.input_fn = _contextify_fn(check.callable_param(input_fn, 'input_fn'))
+        self.input_fn = make_context_arg_optional(check.callable_param(input_fn, 'input_fn'))
         self.argument_def_dict = check.dict_param(
             argument_def_dict, 'argument_def_dict', key_type=str, value_type=types.DagsterType
         )
@@ -189,7 +168,7 @@ class OutputDefinition:
 
     def __init__(self, name, output_fn, argument_def_dict):
         self.name = check_valid_name(name)
-        self.output_fn = _contextify_fn(check.callable_param(output_fn, 'output_fn'))
+        self.output_fn = make_context_arg_optional(check.callable_param(output_fn, 'output_fn'))
         self.argument_def_dict = check.dict_param(
             argument_def_dict, 'argument_def_dict', key_type=str, value_type=types.DagsterType
         )
@@ -202,7 +181,9 @@ class Solid:
     def __init__(self, name, inputs, transform_fn, outputs, output_expectations=None):
         self.name = check_valid_name(name)
         self.inputs = check.list_param(inputs, 'inputs', of_type=InputDefinition)
-        self.transform_fn = _contextify_fn(check.callable_param(transform_fn, 'transform'))
+        self.transform_fn = make_context_arg_optional(
+            check.callable_param(transform_fn, 'transform')
+        )
         self.outputs = check.list_param(outputs, 'supported_outputs', of_type=OutputDefinition)
         self.output_expectations = check.opt_list_param(
             output_expectations, 'output_expectations', of_type=ExpectationDefinition

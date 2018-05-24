@@ -1,5 +1,6 @@
 from dagster import check
 from dagster.core.definitions import (Solid, InputDefinition)
+from dagster.utils import make_context_arg_optional
 
 
 def dep_only_input(solid):
@@ -17,9 +18,11 @@ def no_args_transform_solid(name, no_args_transform_fn, inputs=None):
     check.opt_list_param(inputs, 'inputs', of_type=InputDefinition)
     # check that transform should not take args?
 
+    true_fn = make_context_arg_optional(no_args_transform_fn)
+
     return Solid(
         name=name,
         inputs=inputs or [],
-        transform_fn=lambda **kwargs: no_args_transform_fn(),
+        transform_fn=lambda context, **kwargs: true_fn(context=context),
         outputs=[],
     )
