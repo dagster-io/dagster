@@ -5,6 +5,8 @@ from dagster.core.execution import (
 
 import dagster.sqlalchemy_kernel as dagster_sa
 
+from .math_test_db import in_mem_engine
+
 
 def create_num_table(engine):
     metadata = sa.MetaData(engine)
@@ -67,8 +69,8 @@ def create_sum_sq_pipeline():
 
 def test_execute_sql_sum_sq_solid():
     pipeline = create_sum_sq_pipeline()
-    engine = sa.create_engine('sqlite://')
-    create_num_table(engine)
+
+    engine = in_mem_engine()
 
     results = execute_pipeline(
         dagster_sa.DagsterSqlAlchemyExecutionContext(engine=engine),
@@ -91,6 +93,7 @@ def test_output_sql_sum_sq_solid():
     pipeline = create_sum_sq_pipeline()
     engine = sa.create_engine('sqlite://')
     create_num_table(engine)
+    engine = in_mem_engine()
 
     sum_sq_output_arg_dicts = {'sum_sq_table': {'CREATE': {'table_name': 'sum_sq_table'}}}
 

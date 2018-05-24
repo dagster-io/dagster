@@ -4,8 +4,9 @@ from builtins import *  # pylint: disable=W0622,W0401
 import pandas as pd
 
 from dagster import check
+from dagster.utils import has_context_argument
 
-from dagster.core.definitions import (Solid, has_context_argument)
+from dagster.core.definitions import Solid
 from dagster.core.execution import DagsterExecutionContext
 from dagster.core.errors import (DagsterUserCodeExecutionError, DagsterInvariantViolationError)
 from .definitions import (
