@@ -702,6 +702,12 @@ def _execute_pipeline_solid_step(context, solid, input_arg_dicts, materialized_v
 
     check.invariant(solid.name not in materialized_values, 'should be not in materialized values')
 
+    context.debug(
+        'About to set {output} for {name}',
+        output=repr(materialized_output),
+        name=solid.name,
+    )
+
     materialized_values[solid.name] = materialized_output
 
     return DagsterExecutionResult(
