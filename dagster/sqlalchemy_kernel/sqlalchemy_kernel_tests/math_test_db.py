@@ -1,4 +1,5 @@
 import sqlalchemy as sa
+import dagster.sqlalchemy_kernel as dagster_sa
 
 
 def create_num_table(engine):
@@ -23,3 +24,7 @@ def in_mem_engine():
     engine = sa.create_engine('sqlite://')
     create_num_table(engine)
     return engine
+
+
+def in_mem_context():
+    return dagster_sa.DagsterSqlAlchemyExecutionContext(engine=in_mem_engine())
