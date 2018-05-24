@@ -1,6 +1,7 @@
 import dagster
 from dagster import check
 from dagster.core.definitions import (Solid, InputDefinition)
+from dagster.transform_only_solid import (dep_only_input, no_args_transform_solid)
 
 
 def _set_key_value(ddict, key, value):
@@ -51,38 +52,17 @@ def test_execute_solid_with_dep_only_inputs_no_api():
     assert did_run_dict['step_two'] is True
 
 
-def dep_only_input(solid):
-    return InputDefinition(
-        name=solid.name,
-        input_fn=lambda **kwargs: check.not_implemented('should not get here'),
-        argument_def_dict={},
-        depends_on=solid,
-    )
-
-
-def no_args_transfom_solid(name, no_args_transform, inputs=None):
-    # check arguments
-    # transform should not take args?
-
-    return Solid(
-        name=name,
-        inputs=inputs or [],
-        transform_fn=lambda **kwargs: no_args_transform(),
-        outputs=[],
-    )
-
-
 def test_execute_solid_with_dep_only_inputs_with_api():
     did_run_dict = {}
 
-    step_one_solid = no_args_transfom_solid(
+    step_one_solid = no_args_transform_solid(
         name='step_one_solid',
-        no_args_transform=lambda: _set_key_value(did_run_dict, 'step_one', True),
+        no_args_transform_fn=lambda: _set_key_value(did_run_dict, 'step_one', True),
     )
 
-    step_two_solid = no_args_transfom_solid(
+    step_two_solid = no_args_transform_solid(
         name='step_two_solid',
-        no_args_transform=lambda: _set_key_value(did_run_dict, 'step_two', True),
+        no_args_transform_fn=lambda: _set_key_value(did_run_dict, 'step_two', True),
         inputs=[dep_only_input(step_one_solid)],
     )
 
