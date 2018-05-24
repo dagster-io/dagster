@@ -266,6 +266,25 @@ def test_execute_solid_with_failed_output_expectation_throwing():
         )
 
 
+def _set_key_value(ddict, key, value):
+    ddict[key] = value
+
+
+def test_execute_solid_with_no_inputs():
+    did_run_dict = {}
+    no_args_solid = Solid(
+        name='no_args_solid',
+        inputs=[],
+        transform_fn=lambda: _set_key_value(did_run_dict, 'did_run', True),
+        outputs=[]
+    )
+
+    result = execute_single_solid(DagsterExecutionContext(), no_args_solid, {})
+
+    assert result.success
+    assert did_run_dict['did_run'] is True
+
+
 def create_output_failing_solid():
     test_output = {}
 
