@@ -46,10 +46,11 @@ def test_plan_years():
 def test_plan_and_plan_years_pipeline():
     pipeline = define_pipeline()
 
-    results = execute_pipeline(
+    pipeline_result = execute_pipeline(
         DagsterExecutionContext(), pipeline, providers_771_args(), ['plans', 'plan_years']
     )
-    assert len(results) == 2
+    assert pipeline_result.success
+    assert len(pipeline_result.result_list) == 2
 
 
 def test_insurance_pipeline():
@@ -71,23 +72,23 @@ def test_practices_pipeline():
 
     # this should only execute the solids necessary
     # to produce practices. i.e. addresses, providers and practices
-    results = execute_pipeline(
+    result_list = execute_pipeline(
         DagsterExecutionContext(),
         pipeline,
         providers_771_args(),
         through_solids=['practices'],
-    )
+    ).result_list
 
-    assert len(results) == 3
+    assert len(result_list) == 3
 
-    result_names = [result.name for result in results]
+    result_names = [result.name for result in result_list]
 
     executed_list = ['addresses', 'providers', 'practices']
 
     for executed in executed_list:
         assert executed in result_names
 
-    for result in results:
+    for result in result_list:
         if not result.success:
             raise result.exception
         assert result.success
@@ -97,16 +98,16 @@ def test_practices_pipeline():
 def test_practice_insurances_pipeline():
     pipeline = define_pipeline()
 
-    results = execute_pipeline(
+    result_list = execute_pipeline(
         DagsterExecutionContext(),
         pipeline,
         providers_771_args(),
         through_solids=['practice_insurances'],
-    )
+    ).result_list
 
-    assert len(results) == 7
+    assert len(result_list) == 7
 
-    result_names = [result.name for result in results]
+    result_names = [result.name for result in result_list]
 
     executed_list = [
         'addresses',
@@ -121,7 +122,7 @@ def test_practice_insurances_pipeline():
     for executed in executed_list:
         assert executed in result_names
 
-    for result in results:
+    for result in result_list:
         assert result.success
         assert not result.materialized_output.empty
 
@@ -184,19 +185,19 @@ def all_external_arg_dicts():
 def test_provider_languages_specialities():
     pipeline = define_pipeline()
 
-    results = execute_pipeline(
+    result_list = execute_pipeline(
         DagsterExecutionContext(),
         pipeline,
         input_arg_dicts=all_external_arg_dicts(),
         through_solids=['provider_languages_specialities'],
-    )
+    ).result_list
 
-    assert len(results) == 4
+    assert len(result_list) == 4
 
-    for result in results:
+    for result in result_list:
         assert result.success
 
-    result_names = [result.name for result in results]
+    result_names = [result.name for result in result_list]
 
     executed_list = [
         'providers',

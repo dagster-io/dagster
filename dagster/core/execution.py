@@ -196,9 +196,30 @@ class DagsterExecutionContext:
                 yield metric
 
 
+class DagsterPipelineExecutionResult:
+    def __init__(
+        self,
+        result_list,
+    ):
+        self.result_list = check.list_param(
+            result_list, 'result_list', of_type=DagsterExecutionResult
+        )
+
+    @property
+    def success(self):
+        return all([result.success for result in self.result_list])
+
+    def result_named(self, name):
+        check.str_param(name, 'name')
+        for result in self.result_list:
+            if result.name == name:
+                return result
+        check.failed('Did not find result {name} in pipeline execution result'.format(name=name))
+
+
 class DagsterExecutionResult:
     '''
-    A class to represnet the result of the execution of a single solid. Pipeline
+    A class to represent the result of the execution of a single solid. Pipeline
     commands return iterators or lists of these results.
 
     (TODO: explain the various error states)
@@ -811,7 +832,7 @@ def execute_pipeline(context, pipeline, input_arg_dicts, through_solids=None, th
                 _do_throw_on_error(result)
 
         results.append(result.copy())
-    return results
+    return DagsterPipelineExecutionResult(results)
 
 
 def _check_output_arg_dicts(output_arg_dicts):
@@ -838,7 +859,7 @@ def output_pipeline(context, pipeline, input_arg_dicts, output_arg_dicts, throw_
             if not result.success:
                 _do_throw_on_error(result)
         results.append(result.copy())
-    return results
+    return DagsterPipelineExecutionResult(results)
 
 
 def output_pipeline_iterator(context, pipeline, input_arg_dicts, output_arg_dicts):
