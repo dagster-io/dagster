@@ -62,7 +62,7 @@ def embedded_dagster_multi_pipeline_pipelines_command(cxt, full):
         print_pipeline(pipeline, full=full)
 
 
-def print_pipeline(pipeline, full):
+def print_pipeline(pipeline, full=True):
     indent = '    '
     print(
         'Pipeline: {name} Description: {desc}'.format(

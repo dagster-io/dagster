@@ -107,7 +107,9 @@ def create_root_output_failure_solid(name):
 
 def test_transform_failure_pipeline():
     pipeline = dagster.core.pipeline(solids=[create_root_transform_failure_solid('failing')])
-    results = execute_pipeline(create_test_context(), pipeline, {'failing_input': {}})
+    results = execute_pipeline(
+        create_test_context(), pipeline, {'failing_input': {}}, throw_on_error=False
+    )
 
     assert len(results) == 1
     assert not results[0].success
@@ -116,7 +118,9 @@ def test_transform_failure_pipeline():
 
 def test_input_failure_pipeline():
     pipeline = dagster.core.pipeline(solids=[create_root_input_failure_solid('failing_input')])
-    results = execute_pipeline(create_test_context(), pipeline, {'failing_input_input': {}})
+    results = execute_pipeline(
+        create_test_context(), pipeline, {'failing_input_input': {}}, throw_on_error=False
+    )
 
     assert len(results) == 1
     assert not results[0].success
@@ -133,6 +137,7 @@ def test_output_failure_pipeline():
         output_arg_dicts={'failing_output': {
             'CUSTOM': {}
         }},
+        throw_on_error=False,
     )
 
     assert len(results) == 1
@@ -170,6 +175,7 @@ def test_failure_midstream():
         create_test_context(),
         dagster.core.pipeline(solids=[node_a, node_b, solid]),
         input_arg_dicts=input_arg_dicts,
+        throw_on_error=False,
     )
 
     assert results[0].success

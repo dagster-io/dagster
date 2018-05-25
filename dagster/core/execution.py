@@ -792,7 +792,7 @@ def execute_pipeline_iterator(context, pipeline, input_arg_dicts, through_solids
             break
 
 
-def execute_pipeline(context, pipeline, input_arg_dicts, through_solids=None, throw_on_error=False):
+def execute_pipeline(context, pipeline, input_arg_dicts, through_solids=None, throw_on_error=True):
     '''
     "Synchronous" version of execute_pipeline_iteator.
 
@@ -820,7 +820,7 @@ def _check_output_arg_dicts(output_arg_dicts):
         check.dict_param(output_arg_dict, 'output_arg_dict', key_type=str, value_type=dict)
 
 
-def output_pipeline(context, pipeline, input_arg_dicts, output_arg_dicts, throw_on_error=False):
+def output_pipeline(context, pipeline, input_arg_dicts, output_arg_dicts, throw_on_error=True):
     '''
     Synchronous version of output_pipeline_iteator. Just like execute_pipeline, you can optionally
     specify, through thorw_on_error, that exceptions should be thrown when encountered instead

@@ -42,7 +42,6 @@ def test_execute_solid_with_dep_only_inputs_no_api():
         # dagster.context(loggers=[logging.define_logger('test')], log_level=logging.INFO),
         pipeline,
         {},
-        throw_on_error=True
     )
 
     for result in results:
@@ -68,7 +67,7 @@ def test_execute_solid_with_dep_only_inputs_with_api():
 
     pipeline = dagster.pipeline(solids=[step_one_solid, step_two_solid])
 
-    results = dagster.execute_pipeline(dagster.context(), pipeline, {}, throw_on_error=True)
+    results = dagster.execute_pipeline(dagster.context(), pipeline, {})
 
     for result in results:
         assert result.success
