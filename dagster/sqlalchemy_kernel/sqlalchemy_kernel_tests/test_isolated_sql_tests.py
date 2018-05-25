@@ -46,7 +46,11 @@ def test_basic_pipeline():
 
     context = in_mem_context()
 
-    exec_results = dagster.execute_pipeline(context, pipeline, {})
+    pipeline_result = dagster.execute_pipeline(context, pipeline, {})
+
+    assert pipeline_result.success
+
+    exec_results = pipeline_result.result_list
 
     assert len(exec_results) == 2
 
@@ -73,7 +77,11 @@ def test_pipeline_from_files():
     pipeline = dagster.pipeline(solids=[create_sum_table_solid, create_sum_sq_table_solid])
 
     context = in_mem_context()
-    exec_results = dagster.execute_pipeline(context, pipeline, {})
+    pipeline_result = dagster.execute_pipeline(context, pipeline, {})
+
+    assert pipeline_result.success
+
+    exec_results = pipeline_result.result_list
 
     for exec_result in exec_results:
         assert exec_result.success is True

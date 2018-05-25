@@ -356,14 +356,14 @@ def test_pandas_output_intermediate_csv_files():
             'mult_table': csv_output_arg_dict(mult_file),
         }
 
-        subgraph_one_results = output_pipeline(
+        subgraph_one_result = output_pipeline(
             context,
             pipeline,
             input_arg_dicts=input_args,
             output_arg_dicts=output_arg_dicts,
         )
 
-        assert len(subgraph_one_results) == 3
+        assert len(subgraph_one_result.result_list) == 3
 
         expected_sum = {
             'num1': [1, 3],
@@ -372,8 +372,8 @@ def test_pandas_output_intermediate_csv_files():
         }
 
         assert pd.read_csv(sum_file).to_dict('list') == expected_sum
-        assert _result_named(subgraph_one_results,
-                             'sum_table').materialized_output.to_dict('list') == expected_sum
+        sum_table_result = subgraph_one_result.result_named('sum_table')
+        assert sum_table_result.materialized_output.to_dict('list') == expected_sum
 
         expected_mult = {
             'num1': [1, 3],
@@ -381,10 +381,10 @@ def test_pandas_output_intermediate_csv_files():
             'mult': [2, 12],
         }
         assert pd.read_csv(mult_file).to_dict('list') == expected_mult
-        assert _result_named(subgraph_one_results,
-                             'mult_table').materialized_output.to_dict('list') == expected_mult
+        mult_table_result = subgraph_one_result.result_named('mult_table')
+        assert mult_table_result.materialized_output.to_dict('list') == expected_mult
 
-        subgraph_two_results = execute_pipeline(
+        pipeline_result = execute_pipeline(
             context,
             pipeline,
             input_arg_dicts={
@@ -400,8 +400,12 @@ def test_pandas_output_intermediate_csv_files():
             through_solids=['sum_mult_table'],
         )
 
-        assert len(subgraph_two_results) == 1
-        output_df = subgraph_two_results[0].materialized_output
+        assert pipeline_result.success
+
+        subgraph_two_result_list = pipeline_result.result_list
+
+        assert len(subgraph_two_result_list) == 1
+        output_df = subgraph_two_result_list[0].materialized_output
         assert output_df.to_dict('list') == {
             'num1': [1, 3],
             'num2': [2, 4],
@@ -427,12 +431,14 @@ def test_pandas_output_intermediate_parquet_files():
             'sum_table': parquet_output_arg_dict(sum_file),
             'mult_table': parquet_output_arg_dict(mult_file),
         }
-        output_pipeline(
+        pipeline_result = output_pipeline(
             context,
             pipeline,
             input_arg_dicts=input_args,
             output_arg_dicts=output_arg_dicts,
         )
+
+        assert pipeline_result.success
 
         expected_sum = {
             'num1': [1, 3],

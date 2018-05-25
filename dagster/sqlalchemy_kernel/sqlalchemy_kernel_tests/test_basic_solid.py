@@ -72,7 +72,7 @@ def test_execute_sql_sum_sq_solid():
 
     engine = in_mem_engine()
 
-    results = execute_pipeline(
+    pipeline_result = execute_pipeline(
         dagster_sa.DagsterSqlAlchemyExecutionContext(engine=engine),
         pipeline,
         input_arg_dicts={'num_table': {
@@ -80,10 +80,14 @@ def test_execute_sql_sum_sq_solid():
         }},
     )
 
-    sum_table_sql_text = results[0].materialized_output.sql_text
+    assert pipeline_result.success
+
+    result_list = pipeline_result.result_list
+
+    sum_table_sql_text = result_list[0].materialized_output.sql_text
     assert sum_table_sql_text == 'SELECT num1, num2, num1 + num2 as sum FROM (num_table)'
 
-    sum_sq_table_sql_text = results[1].materialized_output.sql_text
+    sum_sq_table_sql_text = result_list[1].materialized_output.sql_text
     assert sum_sq_table_sql_text == 'SELECT num1, num2, sum, sum * sum as sum_sq from ' + \
             '(SELECT num1, num2, num1 + num2 as sum FROM (num_table))'
 
@@ -96,7 +100,7 @@ def test_output_sql_sum_sq_solid():
 
     sum_sq_output_arg_dicts = {'sum_sq_table': {'CREATE': {'table_name': 'sum_sq_table'}}}
 
-    results = output_pipeline(
+    pipeline_result = output_pipeline(
         dagster_sa.DagsterSqlAlchemyExecutionContext(engine=engine),
         pipeline,
         input_arg_dicts={'num_table': {
@@ -105,6 +109,10 @@ def test_output_sql_sum_sq_solid():
         output_arg_dicts=sum_sq_output_arg_dicts,
     )
 
-    assert len(results) == 2
-    results = engine.connect().execute('SELECT * FROM sum_sq_table').fetchall()
-    assert results == [(1, 2, 3, 9), (3, 4, 7, 49)]
+    assert pipeline_result.success
+
+    result_list = pipeline_result.result_list
+
+    assert len(result_list) == 2
+    result_list = engine.connect().execute('SELECT * FROM sum_sq_table').fetchall()
+    assert result_list == [(1, 2, 3, 9), (3, 4, 7, 49)]
