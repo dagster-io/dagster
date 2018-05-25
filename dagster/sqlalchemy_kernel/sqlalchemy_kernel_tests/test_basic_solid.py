@@ -84,12 +84,12 @@ def test_execute_sql_sum_sq_solid():
 
     result_list = pipeline_result.result_list
 
-    sum_table_sql_text = result_list[0].materialized_output.sql_text
-    assert sum_table_sql_text == 'SELECT num1, num2, num1 + num2 as sum FROM (num_table)'
+    sum_table_sql_text = result_list[0].materialized_output.query_text
+    assert sum_table_sql_text == 'SELECT num1, num2, num1 + num2 as sum FROM num_table'
 
-    sum_sq_table_sql_text = result_list[1].materialized_output.sql_text
+    sum_sq_table_sql_text = result_list[1].materialized_output.query_text
     assert sum_sq_table_sql_text == 'SELECT num1, num2, sum, sum * sum as sum_sq from ' + \
-            '(SELECT num1, num2, num1 + num2 as sum FROM (num_table))'
+            '(SELECT num1, num2, num1 + num2 as sum FROM num_table)'
 
 
 def test_output_sql_sum_sq_solid():
