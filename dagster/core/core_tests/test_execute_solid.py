@@ -189,7 +189,6 @@ def test_execute_solid_with_failed_input_expectation_throwing():
             }},
             output_type='CUSTOM',
             output_arg_dict={},
-            throw_on_error=True,
         )
 
     with pytest.raises(DagsterExpectationFailedError):
@@ -262,7 +261,6 @@ def test_execute_solid_with_failed_output_expectation_throwing():
             }},
             output_type='CUSTOM',
             output_arg_dict={},
-            throw_on_error=True
         )
 
 

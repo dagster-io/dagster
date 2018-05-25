@@ -78,7 +78,6 @@ def test_execute_sql_sum_sq_solid():
         input_arg_dicts={'num_table': {
             'table_name': 'num_table'
         }},
-        throw_on_error=True,
     )
 
     sum_table_sql_text = results[0].materialized_output.sql_text
@@ -104,7 +103,6 @@ def test_output_sql_sum_sq_solid():
             'table_name': 'num_table'
         }},
         output_arg_dicts=sum_sq_output_arg_dicts,
-        throw_on_error=True,
     )
 
     assert len(results) == 2

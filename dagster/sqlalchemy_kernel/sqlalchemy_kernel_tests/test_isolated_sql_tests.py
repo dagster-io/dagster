@@ -19,7 +19,6 @@ def test_basic_isolated_sql_solid():
         context,
         basic_isolated_sql_solid,
         input_arg_dicts={},
-        throw_on_error=True,
     )
 
     assert result.success
@@ -47,7 +46,7 @@ def test_basic_pipeline():
 
     context = in_mem_context()
 
-    exec_results = dagster.execute_pipeline(context, pipeline, {}, throw_on_error=True)
+    exec_results = dagster.execute_pipeline(context, pipeline, {})
 
     assert len(exec_results) == 2
 
@@ -74,7 +73,7 @@ def test_pipeline_from_files():
     pipeline = dagster.pipeline(solids=[create_sum_table_solid, create_sum_sq_table_solid])
 
     context = in_mem_context()
-    exec_results = dagster.execute_pipeline(context, pipeline, {}, throw_on_error=True)
+    exec_results = dagster.execute_pipeline(context, pipeline, {})
 
     for exec_result in exec_results:
         assert exec_result.success is True

@@ -27,7 +27,7 @@ def test_sql_create_tables():
     pipeline = dagster.pipeline(solids=[create_all_tables_solids])
 
     context = in_mem_context()
-    results = dagster.execute_pipeline(context, pipeline, {}, throw_on_error=True)
+    results = dagster.execute_pipeline(context, pipeline, {})
 
     for result in results:
         assert result.success
@@ -45,7 +45,7 @@ def test_sql_populate_tables():
     pipeline = dagster.pipeline(solids=[create_all_tables_solids, populate_num_table_solid])
 
     context = in_mem_context()
-    results = dagster.execute_pipeline(context, pipeline, {}, throw_on_error=True)
+    results = dagster.execute_pipeline(context, pipeline, {})
 
     for result in results:
         assert result.success
@@ -85,7 +85,7 @@ def test_full_in_memory_pipeline():
 
     pipeline = create_full_pipeline()
     context = in_mem_context()
-    results = dagster.execute_pipeline(context, pipeline, {}, throw_on_error=True)
+    results = dagster.execute_pipeline(context, pipeline, {})
 
     for result in results:
         assert result.success
@@ -103,7 +103,7 @@ def test_full_persisted_pipeline():
     context = dagster_sa.DagsterSqlAlchemyExecutionContext(engine=engine)
 
     pipeline = create_full_pipeline()
-    results = dagster.execute_pipeline(context, pipeline, {}, throw_on_error=True)
+    results = dagster.execute_pipeline(context, pipeline, {})
 
     for result in results:
         assert result.success
