@@ -6,8 +6,9 @@ from .definitions import Solid
 
 
 class DagsterPipeline:
-    def __init__(self, solids, name=None):
+    def __init__(self, solids, name=None, description=None):
         self.name = check.opt_str_param(name, 'name')
+        self.description = check.opt_str_param(description, 'description')
         self.solids = check.list_param(solids, 'solids', of_type=Solid)
 
         solid_names = set([solid.name for solid in self.solids])

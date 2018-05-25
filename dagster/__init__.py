@@ -14,3 +14,7 @@ def pipeline(**kwargs):
 
 def context(**kwargs):
     return dagster.core.execution.DagsterExecutionContext(**kwargs)
+
+
+def dep_only_input(solid):
+    return dagster.transform_only_solid.dep_only_input(solid)
