@@ -50,19 +50,27 @@ def _pipeline_named(pipelines, name):
 
 
 @click.command(name='pipelines')
+@click.option('--full/--bare', default=False)
 @click.pass_context
-def embedded_dagster_multi_pipeline_pipelines_command(cxt):
+def embedded_dagster_multi_pipeline_pipelines_command(cxt, full):
+    check.bool_param(full, 'full')
     pipelines = check.inst(cxt.obj['pipelines'], list)
     check.list_param(pipelines, 'pipelines', of_type=DagsterPipeline)
 
     print('*** All Pipelines ***')
     for pipeline in pipelines:
-        print_pipeline(pipeline)
+        print_pipeline(pipeline, full=full)
 
 
-def print_pipeline(pipeline):
+def print_pipeline(pipeline, full):
     indent = '    '
-    print('Pipeline: {name}'.format(name=pipeline.name))
+    print(
+        'Pipeline: {name} Description: {desc}'.format(
+            name=pipeline.name, desc=pipeline.description
+        )
+    )
+    if not full:
+        return
     for solid in pipeline.solids:
         print('{indent}Solid: {name}'.format(indent=indent, name=solid.name))
         print('{indent}Inputs:'.format(indent=indent * 2))
@@ -198,7 +206,8 @@ def _get_output_arg_dicts(output_list):
 @click.pass_context
 def embedded_dagster_single_pipeline_execute_command(cxt, input, through, log_level):  # pylint: disable=W0622
     pipeline = check.inst(cxt.obj['pipeline'], DagsterPipeline)
-    run_pipeline_execute_command(input, through, log_level, pipeline)
+    context = create_dagster_context(log_level=LOGGING_DICT[log_level])
+    run_pipeline_execute_command(input, through, log_level, pipeline, context)
 
 
 @click.command(name='execute')
@@ -212,10 +221,14 @@ def embedded_dagster_multi_pipeline_execute_command(cxt, pipeline_name, input, t
     pipelines = check.inst(cxt.obj['pipelines'], list)
     check.list_param(pipelines, 'pipelines', of_type=DagsterPipeline)
     pipeline = _pipeline_named(pipelines, pipeline_name)
-    run_pipeline_execute_command(input, through, log_level, pipeline)
+    if 'execution_context' in cxt.obj:
+        context = cxt.obj['execution_context']
+    else:
+        context = create_dagster_context(log_level=LOGGING_DICT[log_level])
+    run_pipeline_execute_command(input, through, log_level, pipeline, context)
 
 
-def run_pipeline_execute_command(input_tuple, through, log_level, pipeline):
+def run_pipeline_execute_command(input_tuple, through, log_level, pipeline, context):
     check.tuple_param(input_tuple, 'input_tuple')
     check.tuple_param(through, 'through')
     check.opt_str_param(log_level, 'log_level')
@@ -224,8 +237,6 @@ def run_pipeline_execute_command(input_tuple, through, log_level, pipeline):
     through_list = list(through)
 
     input_arg_dicts = construct_arg_dicts(input_list)
-
-    context = create_dagster_context(log_level=LOGGING_DICT[log_level])
 
     process_results_for_console(
         execute_pipeline_iterator(context, pipeline, input_arg_dicts, through_solids=through_list),
@@ -266,6 +277,9 @@ def print_metrics_to_console(results, context):
 def construct_arg_dicts(input_list):
     structured_flags = structure_flags(input_list)
 
+    if structured_flags is None:
+        return {}
+
     if structured_flags.single_argument or structured_flags.named_arguments:
         check.failed('only supporting named key arguments right now')
 
@@ -288,7 +302,7 @@ def embedded_dagster_single_pipeline_cli_main(argv, pipeline):
     dagster_command_group(argv[1:], obj={'pipeline': pipeline})
 
 
-def embedded_dagster_multi_pipeline_cli_main(argv, pipelines):
+def embedded_dagster_multi_pipeline_cli_main(argv, pipelines, execution_context=None):
     check.list_param(argv, 'argv', of_type=str)
     check.list_param(pipelines, 'pipelines', of_type=DagsterPipeline)
 
@@ -301,4 +315,11 @@ def embedded_dagster_multi_pipeline_cli_main(argv, pipelines):
     dagster_command_group.add_command(embedded_dagster_multi_pipeline_output_command)
     dagster_command_group.add_command(embedded_dagster_multi_pipeline_execute_command)
 
-    dagster_command_group(argv[1:], obj={'pipelines': pipelines})
+    obj = {
+        'pipelines': pipelines,
+    }
+
+    if execution_context is not None:
+        obj['execution_context'] = execution_context
+
+    dagster_command_group(argv[1:], obj=obj)
