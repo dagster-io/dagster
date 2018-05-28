@@ -4,7 +4,7 @@ from builtins import *  # pylint: disable=W0622,W0401
 from dagster import check
 from dagster.core import types
 
-from .definitions import InputDefinition
+from .definitions import InputDefinition, Solid
 from .graph import DagsterPipeline
 
 

@@ -1,21 +1,12 @@
-import jinja2
 import dagster
 from dagster import check
 from dagster.core.definitions import (Solid, InputDefinition)
 from .math_test_db import in_mem_context
 
-
-def _render_template_string(template_text, **kwargs):
-    template = jinja2.Environment(loader=jinja2.BaseLoader).from_string(template_text)
-    return template.render(**kwargs)
-
-
-def _create_sql_transform_with_output(sql, output_table):
-    def do_transform(context, **kwargs):
-        context.engine.connect().execute(_render_template_string(sql, **kwargs))
-        return kwargs[output_table]
-
-    return do_transform
+from dagster.sqlalchemy_kernel.templated import (
+    _create_templated_sql_transform_with_output, create_templated_sql_transform_solid,
+    _render_template_string
+)
 
 
 def _load_table(context, table_name):
@@ -39,7 +30,7 @@ def test_single_templated_sql_solid_single_table_raw_api():
     sum_table_transform_solid = Solid(
         name='sum_table_transform',
         inputs=[sum_table_input],
-        transform_fn=_create_sql_transform_with_output(sql, 'sum_table'),
+        transform_fn=_create_templated_sql_transform_with_output(sql, 'sum_table'),
         outputs=[],
     )
 
@@ -52,41 +43,15 @@ def test_single_templated_sql_solid_single_table_raw_api():
     assert _load_table(context, sum_table_arg) == [(1, 2, 3), (3, 4, 7)]
 
 
-def _create_table_input(name, depends_on=None):
-    return InputDefinition(
-        name=name,
-        input_fn=lambda arg_dict: arg_dict,
-        argument_def_dict={'name': dagster.core.types.STRING},
-        depends_on=depends_on
-    )
-
-
-def _create_sql_transform_solid(name, sql, table_arguments, dependencies, output):
-    check.str_param(name, 'name')
-    check.str_param(sql, 'sql')
-    check.list_param(table_arguments, 'table_arguments', of_type=str)
-    check.list_param(dependencies, 'dependencies', of_type=Solid)
-    check.str_param(output, 'output')
-
-    table_inputs = [_create_table_input(table) for table in table_arguments]
-    dep_inputs = [_create_table_input(dep.name, depends_on=dep) for dep in dependencies]
-    return Solid(
-        name=name,
-        inputs=table_inputs + dep_inputs,
-        transform_fn=_create_sql_transform_with_output(sql, output),
-        outputs=[],
-    )
-
-
 def test_single_templated_sql_solid_single_table_with_api():
     context = in_mem_context()
 
-    sql = '''CREATE TABLE {{sum_table.name}} AS 
+    sql = '''CREATE TABLE {{sum_table.name}} AS
     SELECT num1, num2, num1 + num2 as sum FROM num_table'''
 
     sum_table_arg = 'specific_sum_table'
 
-    sum_table_transform = _create_sql_transform_solid(
+    sum_table_transform = create_templated_sql_transform_solid(
         name='sum_table_transform',
         sql=sql,
         table_arguments=['sum_table'],
@@ -131,7 +96,7 @@ def test_single_templated_sql_solid_double_table_raw_api():
     sum_solid = Solid(
         name='sum_solid',
         inputs=[sum_table_input, num_table_input],
-        transform_fn=_create_sql_transform_with_output(
+        transform_fn=_create_templated_sql_transform_with_output(
             sql,
             'sum_table',
         ),
@@ -163,7 +128,7 @@ def test_single_templated_sql_solid_double_table_with_api():
 
     sql = '''CREATE TABLE {{sum_table.name}} AS SELECT num1, num2, num1 + num2 as sum FROM {{num_table.name}}'''
 
-    sum_solid = _create_sql_transform_solid(
+    sum_solid = create_templated_sql_transform_solid(
         name='sum_solid',
         sql=sql,
         table_arguments=['sum_table', 'num_table'],
@@ -213,7 +178,7 @@ def test_templated_sql_solid_pipeline():
     sum_sq_sql_template = '''CREATE TABLE {{sum_sq_table.name}} AS
         SELECT num1, num2, sum, sum * sum as sum_sq FROM {{sum_solid.name}}'''
 
-    sum_solid = _create_sql_transform_solid(
+    sum_solid = create_templated_sql_transform_solid(
         name='sum_solid',
         sql=sum_sql_template,
         table_arguments=['sum_table'],
@@ -221,7 +186,7 @@ def test_templated_sql_solid_pipeline():
         output='sum_table',
     )
 
-    sum_sq_solid = _create_sql_transform_solid(
+    sum_sq_solid = create_templated_sql_transform_solid(
         name='sum_sq_solid',
         sql=sum_sq_sql_template,
         table_arguments=['sum_sq_table'],
@@ -276,7 +241,7 @@ def test_templated_sql_solid_with_api():
     sql_template = '''CREATE TABLE {{sum_table.name}} AS
         SELECT num1, num2, num1 + num2 as sum FROM num_table'''
 
-    sum_solid = _create_sql_transform_solid(
+    sum_solid = create_templated_sql_transform_solid(
         name='sum_solid',
         sql=sql_template,
         table_arguments=['sum_table'],
@@ -307,7 +272,7 @@ def test_multi_input():
         SELECT {{sum_solid.name}}.num1, sum, mult FROM {{sum_solid.name}}
         INNER JOIN {{mult_solid.name}} ON {{sum_solid.name}}.num1 = {{mult_solid.name}}.num1'''
 
-    sum_solid = _create_sql_transform_solid(
+    sum_solid = create_templated_sql_transform_solid(
         name='sum_solid',
         sql=sum_sql_template,
         table_arguments=['sum_table'],
@@ -315,7 +280,7 @@ def test_multi_input():
         output='sum_table',
     )
 
-    mult_solid = _create_sql_transform_solid(
+    mult_solid = create_templated_sql_transform_solid(
         name='mult_solid',
         sql=mult_sql_template,
         table_arguments=['mult_table'],
@@ -323,7 +288,7 @@ def test_multi_input():
         output='mult_table',
     )
 
-    sum_mult_solid = _create_sql_transform_solid(
+    sum_mult_solid = create_templated_sql_transform_solid(
         name='sum_mult_solid',
         sql=sum_mult_join_template,
         table_arguments=['sum_mult_table'],
