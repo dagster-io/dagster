@@ -113,6 +113,14 @@ def json_input(name):
     return create_json_input(name)
 
 
+def read_table_input(name, delimiter=',', **read_table_kwargs):
+    return create_dagster_pd_read_table_input(name, delimiter, **read_table_kwargs)
+
+
+def json_input(name):
+    return create_json_input(name)
+
+
 def parquet_output():
     return create_dagster_pd_parquet_output()
 
