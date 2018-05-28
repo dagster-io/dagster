@@ -32,19 +32,6 @@ class DagsterSqlQueryExpression(DagsterSqlExpression):
     def query_text(self):
         return self._subquery_text
 
-    # @property
-    # def from_target(self):
-    #     return f'({self.sql_text})'
-
-    #FIXME: This is the worst hack I've implemented in a long time.
-    #Without it, you get errors like this:
-    """
-E       sqlalchemy.exc.ProgrammingError: (psycopg2.ProgrammingError) syntax error at or near ")"
-E       LINE 1: ...CT num1, num2, num1 + num2 as sum FROM (abe_temp.num_table))
-E                                                                            ^
-E        [SQL: 'CREATE TABLE abe_temp.sum_sq_table AS SELECT num1, num2, sum, sum * sum as sum_sq from (SELECT num1, num2, num1 + num2 as sum FROM (abe_temp.num_table))'] (Background on this error at: http://sqlalche.me/e/f405)
-"""
-
     @property
     def from_target(self):
         return f'({self._subquery_text})'
