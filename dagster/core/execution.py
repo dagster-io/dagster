@@ -18,8 +18,8 @@ Argument conventions across the file:
 
 input_arg_dicts: {string : { string: string } }
 
-A dictionary of dictionarys. The first level is indexed by input *name*. Put an entry for each
-input you want to specify. Each one of inputs in turn has an argumect dictionary, which is just
+A dictionary of dictionaries. The first level is indexed by input *name*. Put an entry for each
+input you want to specify. Each one of inputs in turn has an argument dictionary, which is just
 a set of key value pairs, represented by a bare python dictionary:
 
 So for example a solid that takes two csv inputs would have the input_arg_dicts:
