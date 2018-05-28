@@ -109,36 +109,35 @@ class DagsterExecutionContext:
             ]
         )
 
-    def _log(self, method, msg, frmtargs):
+    def _log(self, method, msg):
         check.str_param(method, 'method')
         check.str_param(msg, 'msg')
-        check.dict_param(frmtargs, 'frmtargs')
 
         full_message = 'message="{message}" {kv_message}'.format(
-            message=msg.format(**frmtargs), kv_message=self._kv_message()
+            message=msg, kv_message=self._kv_message()
         )
         getattr(self._logger, method)(full_message, extra=self._context_dict)
 
-    def debug(self, msg, **frmtargs):
-        return self._log('debug', msg, frmtargs)
+    def debug(self, msg):
+        return self._log('debug', msg)
 
-    def info(self, msg, **frmtargs):
-        return self._log('info', msg, frmtargs)
+    def info(self, msg):
+        return self._log('info', msg)
 
-    def warn(self, msg, **frmtargs):
-        return self._log('warn', msg, frmtargs)
+    def warn(self, msg):
+        return self._log('warn', msg)
 
-    def error(self, msg, **frmtargs):
-        return self._log('error', msg, frmtargs)
+    def error(self, msg):
+        return self._log('error', msg)
 
-    def critical(self, msg, **frmtargs):
-        return self._log('critical', msg, frmtargs)
+    def critical(self, msg):
+        return self._log('critical', msg)
 
     def exception(self, e):
         check.inst_param(e, 'e', Exception)
 
         # this is pretty lame right. should embellish with more data (stack trace?)
-        return self._log('exception', str(e), {})
+        return self._log('exception', str(e))
 
     @contextmanager
     def value(self, key, value):
@@ -196,9 +195,30 @@ class DagsterExecutionContext:
                 yield metric
 
 
+class DagsterPipelineExecutionResult:
+    def __init__(
+        self,
+        result_list,
+    ):
+        self.result_list = check.list_param(
+            result_list, 'result_list', of_type=DagsterExecutionResult
+        )
+
+    @property
+    def success(self):
+        return all([result.success for result in self.result_list])
+
+    def result_named(self, name):
+        check.str_param(name, 'name')
+        for result in self.result_list:
+            if result.name == name:
+                return result
+        check.failed('Did not find result {name} in pipeline execution result'.format(name=name))
+
+
 class DagsterExecutionResult:
     '''
-    A class to represnet the result of the execution of a single solid. Pipeline
+    A class to represent the result of the execution of a single solid. Pipeline
     commands return iterators or lists of these results.
 
     (TODO: explain the various error states)
@@ -703,9 +723,10 @@ def _execute_pipeline_solid_step(context, solid, input_arg_dicts, materialized_v
     check.invariant(solid.name not in materialized_values, 'should be not in materialized values')
 
     context.debug(
-        'About to set {output} for {name}',
-        output=repr(materialized_output),
-        name=solid.name,
+        'About to set {output} for {name}'.format(
+            output=repr(materialized_output),
+            name=solid.name,
+        )
     )
 
     materialized_values[solid.name] = materialized_output
@@ -811,7 +832,7 @@ def execute_pipeline(context, pipeline, input_arg_dicts, through_solids=None, th
                 _do_throw_on_error(result)
 
         results.append(result.copy())
-    return results
+    return DagsterPipelineExecutionResult(results)
 
 
 def _check_output_arg_dicts(output_arg_dicts):
@@ -838,7 +859,7 @@ def output_pipeline(context, pipeline, input_arg_dicts, output_arg_dicts, throw_
             if not result.success:
                 _do_throw_on_error(result)
         results.append(result.copy())
-    return results
+    return DagsterPipelineExecutionResult(results)
 
 
 def output_pipeline_iterator(context, pipeline, input_arg_dicts, output_arg_dicts):

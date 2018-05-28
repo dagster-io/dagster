@@ -107,30 +107,36 @@ def create_root_output_failure_solid(name):
 
 def test_transform_failure_pipeline():
     pipeline = dagster.core.pipeline(solids=[create_root_transform_failure_solid('failing')])
-    results = execute_pipeline(
+    pipeline_result = execute_pipeline(
         create_test_context(), pipeline, {'failing_input': {}}, throw_on_error=False
     )
 
-    assert len(results) == 1
-    assert not results[0].success
-    assert results[0].exception
+    assert not pipeline_result.success
+
+    result_list = pipeline_result.result_list
+
+    assert len(result_list) == 1
+    assert not result_list[0].success
+    assert result_list[0].exception
 
 
 def test_input_failure_pipeline():
     pipeline = dagster.core.pipeline(solids=[create_root_input_failure_solid('failing_input')])
-    results = execute_pipeline(
+    pipeline_result = execute_pipeline(
         create_test_context(), pipeline, {'failing_input_input': {}}, throw_on_error=False
     )
 
-    assert len(results) == 1
-    assert not results[0].success
-    assert results[0].exception
+    result_list = pipeline_result.result_list
+
+    assert len(result_list) == 1
+    assert not result_list[0].success
+    assert result_list[0].exception
 
 
 def test_output_failure_pipeline():
     pipeline = dagster.core.pipeline(solids=[create_root_output_failure_solid('failing_output')])
 
-    results = output_pipeline(
+    pipeline_result = output_pipeline(
         create_test_context(),
         pipeline,
         input_arg_dicts={'failing_output_input': {}},
@@ -140,9 +146,13 @@ def test_output_failure_pipeline():
         throw_on_error=False,
     )
 
-    assert len(results) == 1
-    assert not results[0].success
-    assert results[0].exception
+    assert not pipeline_result.success
+
+    result_list = pipeline_result.result_list
+
+    assert len(result_list) == 1
+    assert not result_list[0].success
+    assert result_list[0].exception
 
 
 def test_failure_midstream():
@@ -171,14 +181,16 @@ def test_failure_midstream():
     )
 
     input_arg_dicts = {'A_input': {}, 'B_input': {}}
-    results = execute_pipeline(
+    pipeline_result = execute_pipeline(
         create_test_context(),
         dagster.core.pipeline(solids=[node_a, node_b, solid]),
         input_arg_dicts=input_arg_dicts,
         throw_on_error=False,
     )
 
-    assert results[0].success
-    assert results[1].success
-    assert not results[2].success
-    assert results[2].reason == DagsterExecutionFailureReason.USER_CODE_ERROR
+    result_list = pipeline_result.result_list
+
+    assert result_list[0].success
+    assert result_list[1].success
+    assert not result_list[2].success
+    assert result_list[2].reason == DagsterExecutionFailureReason.USER_CODE_ERROR

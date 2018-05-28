@@ -33,6 +33,7 @@ setup(
 
         # sqlalchemy kernel
         'sqlalchemy>=1.2.7',
+        'jinja2>=2.10',
 
         # examples
         # unused and very, very heavy
