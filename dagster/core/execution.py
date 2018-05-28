@@ -114,8 +114,14 @@ class DagsterExecutionContext:
         check.str_param(msg, 'msg')
         check.dict_param(frmtargs, 'frmtargs')
 
+        # FIXME. Recover from double-escaping error (e.g. logging sql template strings)
+        try:
+            message = msg.format(**frmtargs)
+        except:
+            message = msg
+
         full_message = 'message="{message}" {kv_message}'.format(
-            message=msg.format(**frmtargs), kv_message=self._kv_message()
+            message=message, kv_message=self._kv_message()
         )
         getattr(self._logger, method)(full_message, extra=self._context_dict)
 
@@ -123,7 +129,7 @@ class DagsterExecutionContext:
         return self._log('debug', msg, frmtargs)
 
     def info(self, msg, **frmtargs):
-        return self._log('info', msg, frmtargs)
+        return self._log('info', msg, {})
 
     def warn(self, msg, **frmtargs):
         return self._log('warn', msg, frmtargs)

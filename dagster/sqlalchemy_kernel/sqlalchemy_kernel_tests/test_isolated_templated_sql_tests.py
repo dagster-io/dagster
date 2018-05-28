@@ -18,20 +18,20 @@ def _create_sql_transform_with_output(sql, output_table):
     return do_transform
 
 
-# def get_do_test_templated_sql_solid_no_api_transform(sql, input_names, output_tables):
-#     def do_transform(context, **kwargs):
-#         args = {}
-#         for input_name in input_names:
-#             args = {**args, **kwargs[input_name]}
+def get_do_test_templated_sql_solid_no_api_transform(sql, input_names, output_tables):
+    def do_transform(context, **kwargs):
+        args = {}
+        for input_name in input_names:
+            args = {**args, **kwargs[input_name]}
 
-#         context.engine.connect().execute(_render_template_string(sql, **args))
+        context.engine.connect().execute(_render_template_string(sql, **args))
 
-#         passthrough_args = {}
-#         for output_table in output_tables:
-#             passthrough_args[output_table] = args[output_table]
-#         return passthrough_args
+        passthrough_args = {}
+        for output_table in output_tables:
+            passthrough_args[output_table] = args[output_table]
+        return passthrough_args
 
-#     return do_transform
+    return do_transform
 
 
 def _load_table(context, table_name):
@@ -78,6 +78,12 @@ def _create_table_input(name, depends_on=None):
 
 
 def _create_sql_transform_solid(name, sql, table_arguments, dependencies, output):
+    check.str_param(name, 'name')
+    check.str_param(sql, 'sql')
+    check.list_param(table_arguments, 'table_arguments', of_type=str)
+    check.list_param(dependencies, 'dependencies', of_type=Solid)
+    check.str_param(output, 'output')
+
     table_inputs = [_create_table_input(table) for table in table_arguments]
     dep_inputs = [_create_table_input(dep.name, depends_on=dep) for dep in dependencies]
     return Solid(
@@ -214,21 +220,21 @@ def _args_input(input_name, args, depends_on=None):
     )
 
 
-# def _templated_sql_solid(name, sql_template, inputs, output_tables=None):
-#     check.str_param(name, 'name')
-#     check.str_param(sql_template, 'sql_template')
-#     check.list_param(inputs, 'inputs', of_type=InputDefinition)
+def _templated_sql_solid_OLD(name, sql_template, inputs, output_tables=None):
+    check.str_param(name, 'name')
+    check.str_param(sql_template, 'sql_template')
+    check.list_param(inputs, 'inputs', of_type=InputDefinition)
 
-#     input_names = [input_def.name for input_def in inputs]
+    input_names = [input_def.name for input_def in inputs]
 
-#     return Solid(
-#         name=name,
-#         inputs=inputs,
-#         transform_fn=get_do_test_templated_sql_solid_no_api_transform(
-#             sql_template, input_names, output_tables or []
-#         ),
-#         outputs=[],
-#     )
+    return Solid(
+        name=name,
+        inputs=inputs,
+        transform_fn=get_do_test_templated_sql_solid_no_api_transform(
+            sql_template, input_names, output_tables or []
+        ),
+        outputs=[],
+    )
 
 
 def test_templated_sql_solid_pipeline():
@@ -297,128 +303,113 @@ def test_templated_sql_solid_pipeline():
     assert _load_table(context, 'second_sum_sq_table') == [(1, 2, 3, 9), (3, 4, 7, 49)]
 
 
-# def test_templated_sql_solid_with_api():
-#     context = in_mem_context()
+def test_templated_sql_solid_with_api():
+    context = in_mem_context()
 
-#     sql_template = '''CREATE TABLE {{name}} AS
-#         SELECT num1, num2, num1 + num2 as sum FROM num_table'''
+    sql_template = '''CREATE TABLE {{sum_table.name}} AS
+        SELECT num1, num2, num1 + num2 as sum FROM num_table'''
 
-#     sum_solid = _templated_sql_solid(
-#         name='sum_solid', sql_template=sql_template, inputs=[_args_input('sum_table', ['name'])]
-#     )
+    sum_solid = _create_sql_transform_solid(
+        name='sum_solid',
+        sql=sql_template,
+        table_arguments=['sum_table'],
+        dependencies=[],
+        output='sum_table',
+    )
 
-#     pipeline = dagster.pipeline(solids=[sum_solid])
+    pipeline = dagster.pipeline(solids=[sum_solid])
 
-#     sum_table_arg = 'specific_sum_table'
-#     input_arg_dict = {'sum_table': {'name': sum_table_arg}}
-#     result = dagster.execute_pipeline(context, pipeline, input_arg_dict)
-#     assert result.success
+    sum_table_arg = 'specific_sum_table'
+    input_arg_dict = {'sum_table': {'name': sum_table_arg}}
+    result = dagster.execute_pipeline(context, pipeline, input_arg_dict)
+    assert result.success
 
-#     assert _load_table(context, sum_table_arg) == [(1, 2, 3), (3, 4, 7)]
+    assert _load_table(context, sum_table_arg) == [(1, 2, 3), (3, 4, 7)]
 
-import collections
 
-TemplatedSqlSolid = collections.namedtuple('TemplatedSqlSolid', 'solid output_tables')
+def test_multi_input():
+    context = in_mem_context()
 
-# def test_multi_input_fancy_api():
-#     sum_sql_template = '''CREATE TABLE {{sum_table}} AS
-#         SELECT num1, num2, num1 + num2 as sum FROM num_table'''
+    sum_sql_template = '''CREATE TABLE {{sum_table.name}} AS
+        SELECT num1, num2, num1 + num2 as sum FROM num_table'''
 
-#     output_tables = ['sum_table']
+    mult_sql_template = '''CREATE TABLE {{mult_table.name}} AS
+        SELECT num1, num2, num1 * num2 as mult FROM num_table'''
 
-#     sum_solid = _templated_sql_solid(
-#         name='sum_solid',
-#         sql_template=sum_sql_template,
-#         inputs=[_args_input('sum_solid_input_args', ['sum_table'])],
-#         output_tables=output_tables,
-#     )
+    sum_mult_join_template = '''CREATE TABLE {{sum_mult_table.name}} AS
+        SELECT {{sum_solid.name}}.num1, sum, mult FROM {{sum_solid.name}}
+        INNER JOIN {{mult_solid.name}} ON {{sum_solid.name}}.num1 = {{mult_solid.name}}.num1'''
 
-#     tss = TemplatedSqlSolid(solid=sum_solid, output_tables=output_tables)
+    sum_solid = _create_sql_transform_solid(
+        name='sum_solid',
+        sql=sum_sql_template,
+        table_arguments=['sum_table'],
+        dependencies=[],
+        output='sum_table',
+    )
 
-# def test_multi_input():
-#     context = in_mem_context()
+    mult_solid = _create_sql_transform_solid(
+        name='mult_solid',
+        sql=mult_sql_template,
+        table_arguments=['mult_table'],
+        dependencies=[],
+        output='mult_table',
+    )
 
-#     sum_sql_template = '''CREATE TABLE {{sum_table}} AS
-#         SELECT num1, num2, num1 + num2 as sum FROM num_table'''
+    sum_mult_solid = _create_sql_transform_solid(
+        name='sum_mult_solid',
+        sql=sum_mult_join_template,
+        table_arguments=['sum_mult_table'],
+        dependencies=[sum_solid, mult_solid],
+        output='sum_mult_table',
+    )
 
-#     mult_sql_template = '''CREATE TABLE {{mult_table}} AS
-#         SELECT num1, num2, num1 * num2 as mult FROM num_table'''
+    pipeline = dagster.pipeline(solids=[sum_solid, mult_solid, sum_mult_solid])
 
-#     sum_mutl_join_template = '''CREATE TABLE {{sum_mult_table}} AS
-#         SELECT {{sum_table}}.num1, sum, mult FROM {{sum_table}}
-#         INNER JOIN {{mult_table}} ON {{sum_table}}.num1 = {{mult_table}}.num1'''
+    first_sum_table = 'first_sum_table'
+    first_mult_table = 'first_mult_table'
+    first_sum_mult_table = 'first_sum_mult_table'
 
-#     sum_solid = _templated_sql_solid(
-#         name='sum_solid',
-#         sql_template=sum_sql_template,
-#         inputs=[_args_input('sum_solid_input_args', ['sum_table'])],
-#         output_tables=['sum_table']
-#     )
+    first_input_arg_dict = {
+        'sum_table': {
+            'name': first_sum_table
+        },
+        'mult_table': {
+            'name': first_mult_table
+        },
+        'sum_mult_table': {
+            'name': first_sum_mult_table
+        },
+    }
 
-#     mult_solid = _templated_sql_solid(
-#         name='mult_solid',
-#         sql_template=mult_sql_template,
-#         inputs=[_args_input('mult_solid_input_args', ['mult_table'])],
-#         output_tables=['mult_table']
-#     )
+    first_pipeline_result = dagster.execute_pipeline(context, pipeline, first_input_arg_dict)
 
-#     sum_mult_solid = _templated_sql_solid(
-#         name='sum_mult_solid',
-#         sql_template=sum_mutl_join_template,
-#         inputs=[
-#             _args_input('sum_mult_solid_input_args', ['sum_mult_table']),
-#             _args_input('sum_solid', ['sum_table'], depends_on=sum_solid),
-#             _args_input('mult_solid', ['mult_table'], depends_on=mult_solid),
-#         ],
-#         output_tables=['sum_mult_table']
-#     )
+    assert first_pipeline_result.success
+    assert len(first_pipeline_result.result_list) == 3
+    assert _load_table(context, first_sum_table) == [(1, 2, 3), (3, 4, 7)]
+    assert _load_table(context, first_mult_table) == [(1, 2, 2), (3, 4, 12)]
+    assert _load_table(context, first_sum_mult_table) == [(1, 3, 2), (3, 7, 12)]
 
-#     pipeline = dagster.pipeline(solids=[sum_solid, mult_solid, sum_mult_solid])
+    second_sum_mult_table = 'second_sum_mult_table'
+    second_input_arg_dict = {
+        'sum_solid': {
+            'name': first_sum_table
+        },
+        'mult_solid': {
+            'name': first_mult_table
+        },
+        'sum_mult_table': {
+            'name': second_sum_mult_table
+        },
+    }
 
-#     first_sum_table = 'first_sum_table'
-#     first_mult_table = 'first_mult_table'
-#     first_sum_mult_table = 'first_sum_mult_table'
+    second_pipeline_result = dagster.execute_pipeline(
+        context, pipeline, second_input_arg_dict, through_solids=['sum_mult_solid']
+    )
 
-#     first_input_arg_dict = {
-#         'sum_solid_input_args': {
-#             'sum_table': first_sum_table
-#         },
-#         'mult_solid_input_args': {
-#             'mult_table': first_mult_table
-#         },
-#         'sum_mult_solid_input_args': {
-#             'sum_mult_table': first_sum_mult_table
-#         },
-#     }
-
-#     first_pipeline_result = dagster.execute_pipeline(context, pipeline, first_input_arg_dict)
-
-#     assert first_pipeline_result.success
-#     assert len(first_pipeline_result.result_list) == 3
-#     assert _load_table(context, first_sum_table) == [(1, 2, 3), (3, 4, 7)]
-#     assert _load_table(context, first_mult_table) == [(1, 2, 2), (3, 4, 12)]
-#     assert _load_table(context, first_sum_mult_table) == [(1, 3, 2), (3, 7, 12)]
-
-#     second_sum_mult_table = 'second_sum_mult_table'
-#     second_input_arg_dict = {
-#         'sum_solid': {
-#             'sum_table': first_sum_table
-#         },
-#         'mult_solid': {
-#             'mult_table': first_mult_table
-#         },
-#         'sum_mult_solid_input_args': {
-#             'sum_mult_table': second_sum_mult_table
-#         },
-#     }
-
-#     second_pipeline_result = dagster.execute_pipeline(
-#         context, pipeline, second_input_arg_dict, through_solids=['sum_mult_solid']
-#     )
-
-#     assert second_pipeline_result.success
-#     assert len(second_pipeline_result.result_list) == 1
-#     assert _load_table(context, second_sum_mult_table) == [(1, 3, 2), (3, 7, 12)]
+    assert second_pipeline_result.success
+    assert len(second_pipeline_result.result_list) == 1
+    assert _load_table(context, second_sum_mult_table) == [(1, 3, 2), (3, 7, 12)]
 
 
 def test_jinja():
