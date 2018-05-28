@@ -54,7 +54,7 @@ def _dependency_transform_wrapper(name, transform_fn):
     if has_context_argument(transform_fn):
 
         def wrapper_with_context(context, **kwargs):
-            df = transform_fn(context, **kwargs)
+            df = transform_fn(context=context, **kwargs)
             _check_transform_output(df, name)
             _post_process_transform(context, df)
             return df

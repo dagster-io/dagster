@@ -13,16 +13,24 @@ from dagster.core.execution import (DagsterExecutionContext)
 from dagster.core.definitions import (Solid, InputDefinition, OutputDefinition)
 from dagster.transform_only_solid import (dep_only_input, no_args_transform_solid)
 
-
-class DagsterSqlAlchemyExecutionContext(DagsterExecutionContext):
-    def __init__(self, engine, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.engine = check.inst_param(engine, 'engine', sa.engine.Engine)
+from .templated import execute_sql_text_on_context
+from .common import DagsterSqlAlchemyExecutionContext
 
 
 class DagsterSqlExpression:
-    def __init__(self, sql_text):
-        self.sql_text = check.str_param(sql_text, 'sql_text')
+    @property
+    def from_target(self):
+        check.not_implemented('must implemented in subclass')
+
+
+class DagsterSqlQueryExpression(DagsterSqlExpression):
+    def __init__(self, subquery_text):
+        super().__init__()
+        self._subquery_text = check.str_param(subquery_text, 'subquery_text')
+
+    @property
+    def query_text(self):
+        return self._subquery_text
 
     # @property
     # def from_target(self):
@@ -39,10 +47,21 @@ E        [SQL: 'CREATE TABLE abe_temp.sum_sq_table AS SELECT num1, num2, sum, su
 
     @property
     def from_target(self):
-        if ' ' in self.sql_text:
-            return f'({self.sql_text})'
-        else:
-            return f'{self.sql_text}'
+        return f'({self._subquery_text})'
+
+
+class DagsterSqlTableExpression(DagsterSqlExpression):
+    def __init__(self, table_name):
+        super().__init__()
+        self._table_name = check.str_param(table_name, 'table_name')
+
+    @property
+    def query_text(self):
+        check.not_implemented('table cannot be a standalone query')
+
+    @property
+    def from_target(self):
+        return self._table_name
 
 
 def create_table_output():
@@ -52,8 +71,8 @@ def create_table_output():
         check.dict_param(arg_dict, 'arg_dict')
 
         output_table_name = check.str_elem(arg_dict, 'table_name')
-        total_sql = '''CREATE TABLE {output_table_name} AS {sql_text}'''.format(
-            output_table_name=output_table_name, sql_text=sql_expr.sql_text
+        total_sql = '''CREATE TABLE {output_table_name} AS {query_text}'''.format(
+            output_table_name=output_table_name, query_text=sql_expr.query_text
         )
         context.engine.connect().execute(total_sql)
 
@@ -91,7 +110,7 @@ def _table_input_fn(context, arg_dict):
 
     table_name = check.str_elem(arg_dict, 'table_name')
     # probably verify that the table name exists?
-    return DagsterSqlExpression(table_name)
+    return DagsterSqlTableExpression(table_name)
 
 
 def create_table_input(name):
@@ -126,7 +145,7 @@ def create_sql_transform(sql_text):
 
             sql_texts[name] = sql_expr.from_target
 
-        return DagsterSqlExpression(sql_text.format(**sql_texts))
+        return DagsterSqlQueryExpression(sql_text.format(**sql_texts))
 
     return transform_fn
 
@@ -144,31 +163,11 @@ def create_sql_solid(name, inputs, sql_text):
     )
 
 
-def _is_sqlite_context(context):
-    raw_connection = context.engine.raw_connection()
-    if not hasattr(raw_connection, 'connection'):
-        return False
-
-    return type(raw_connection.connection).__module__ == 'sqlite3'
-
-
 def _create_sql_alchemy_transform_fn(sql_text):
     check.str_param(sql_text, 'sql_text')
 
     def transform_fn(context):
-        if _is_sqlite_context(context):
-            # sqlite3 does not support multiple statements in a single
-            # sql text and sqlalchemy does not abstract that away AFAICT
-            # so have to hack around this
-            raw_connection = context.engine.raw_connection()
-            cursor = raw_connection.cursor()
-            try:
-                cursor.executescript(sql_text)
-                raw_connection.commit()
-            finally:
-                cursor.close()
-        else:
-            context.engine.connect().execute(sql_text)
+        return execute_sql_text_on_context(context, sql_text)
 
     return transform_fn
 
