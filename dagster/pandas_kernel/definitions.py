@@ -57,6 +57,7 @@ def create_dagster_pd_csv_input(name, delimiter=',', **read_csv_kwargs):
 
     return create_dagster_single_file_input(name, check_path)
 
+
 def create_dagster_pd_read_table_input(name, delimiter=',', **read_table_kwargs):
     check.str_param(name, 'name')
     check.str_param(delimiter, 'delimiter')
@@ -96,4 +97,20 @@ def create_dagster_pd_parquet_output():
 
     return OutputDefinition(
         name='PARQUET', output_fn=output_fn_inst, argument_def_dict={'path': types.PATH}
+    )
+
+
+def create_dagster_pd_null_output():
+    def output_fn_inst(context, arg_dict):
+        # check.inst_param(df, 'df', pd.DataFrame)
+        check.inst_param(context, 'context', DagsterExecutionContext)
+        check.dict_param(arg_dict, 'arg_dict')
+        # path = check.str_elem(arg_dict, 'path')
+
+        # df.to_csv(path, index=False)
+
+    return OutputDefinition(
+        name='None',
+        output_fn=output_fn_inst,
+        # argument_def_dict={'path': types.PATH}
     )
