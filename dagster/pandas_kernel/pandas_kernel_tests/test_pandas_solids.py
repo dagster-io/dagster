@@ -73,7 +73,9 @@ def test_pandas_solid():
 def test_pandas_csv_to_csv():
     csv_input = create_dagster_pd_csv_input(name='num_csv')
 
-    def transform(num_csv):
+    # just adding a second context arg to test that
+    def transform(num_csv, context):
+        check.inst_param(context, 'context', dagster.core.execution.DagsterExecutionContext)
         num_csv['sum'] = num_csv['num1'] + num_csv['num2']
         return num_csv
 
