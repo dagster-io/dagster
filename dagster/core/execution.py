@@ -109,42 +109,35 @@ class DagsterExecutionContext:
             ]
         )
 
-    def _log(self, method, msg, frmtargs):
+    def _log(self, method, msg):
         check.str_param(method, 'method')
         check.str_param(msg, 'msg')
-        check.dict_param(frmtargs, 'frmtargs')
-
-        # FIXME. Recover from double-escaping error (e.g. logging sql template strings)
-        try:
-            message = msg.format(**frmtargs)
-        except:
-            message = msg
 
         full_message = 'message="{message}" {kv_message}'.format(
-            message=message, kv_message=self._kv_message()
+            message=msg, kv_message=self._kv_message()
         )
         getattr(self._logger, method)(full_message, extra=self._context_dict)
 
-    def debug(self, msg, **frmtargs):
-        return self._log('debug', msg, frmtargs)
+    def debug(self, msg):
+        return self._log('debug', msg)
 
-    def info(self, msg, **frmtargs):
-        return self._log('info', msg, {})
+    def info(self, msg):
+        return self._log('info', msg)
 
-    def warn(self, msg, **frmtargs):
-        return self._log('warn', msg, frmtargs)
+    def warn(self, msg):
+        return self._log('warn', msg)
 
-    def error(self, msg, **frmtargs):
-        return self._log('error', msg, frmtargs)
+    def error(self, msg):
+        return self._log('error', msg)
 
-    def critical(self, msg, **frmtargs):
-        return self._log('critical', msg, frmtargs)
+    def critical(self, msg):
+        return self._log('critical', msg)
 
     def exception(self, e):
         check.inst_param(e, 'e', Exception)
 
         # this is pretty lame right. should embellish with more data (stack trace?)
-        return self._log('exception', str(e), {})
+        return self._log('exception', str(e))
 
     @contextmanager
     def value(self, key, value):
@@ -730,9 +723,10 @@ def _execute_pipeline_solid_step(context, solid, input_arg_dicts, materialized_v
     check.invariant(solid.name not in materialized_values, 'should be not in materialized values')
 
     context.debug(
-        'About to set {output} for {name}',
-        output=repr(materialized_output),
-        name=solid.name,
+        'About to set {output} for {name}'.format(
+            output=repr(materialized_output),
+            name=solid.name,
+        )
     )
 
     materialized_values[solid.name] = materialized_output
