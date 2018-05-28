@@ -18,22 +18,6 @@ def _create_sql_transform_with_output(sql, output_table):
     return do_transform
 
 
-def get_do_test_templated_sql_solid_no_api_transform(sql, input_names, output_tables):
-    def do_transform(context, **kwargs):
-        args = {}
-        for input_name in input_names:
-            args = {**args, **kwargs[input_name]}
-
-        context.engine.connect().execute(_render_template_string(sql, **args))
-
-        passthrough_args = {}
-        for output_table in output_tables:
-            passthrough_args[output_table] = args[output_table]
-        return passthrough_args
-
-    return do_transform
-
-
 def _load_table(context, table_name):
     return context.engine.connect().execute(f'SELECT * FROM {table_name}').fetchall()
 
@@ -217,23 +201,6 @@ def _args_input(input_name, args, depends_on=None):
         argument_def_dict={arg: dagster.core.types.STRING
                            for arg in args},
         depends_on=depends_on,
-    )
-
-
-def _templated_sql_solid_OLD(name, sql_template, inputs, output_tables=None):
-    check.str_param(name, 'name')
-    check.str_param(sql_template, 'sql_template')
-    check.list_param(inputs, 'inputs', of_type=InputDefinition)
-
-    input_names = [input_def.name for input_def in inputs]
-
-    return Solid(
-        name=name,
-        inputs=inputs,
-        transform_fn=get_do_test_templated_sql_solid_no_api_transform(
-            sql_template, input_names, output_tables or []
-        ),
-        outputs=[],
     )
 
 
