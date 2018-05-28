@@ -162,8 +162,6 @@ def _args_input(input_name, args, depends_on=None):
 
 def test_templated_sql_solid_pipeline():
     context = in_mem_context()
-    foo = 'kdd' + \
-    'kdkd'
 
     sum_sql_template = '''CREATE TABLE {{sum_table.name}} AS
         SELECT num1, num2, num1 + num2 as sum FROM num_table'''
