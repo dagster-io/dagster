@@ -55,7 +55,6 @@ def test_single_templated_sql_solid_single_table_with_api():
         name='sum_table_transform',
         sql=sql,
         table_arguments=['sum_table'],
-        dependencies=[],
         output='sum_table',
     )
 
@@ -132,20 +131,12 @@ def test_single_templated_sql_solid_double_table_with_api():
         name='sum_solid',
         sql=sql,
         table_arguments=['sum_table', 'num_table'],
-        dependencies=[],
         output='sum_table',
     )
 
     pipeline = dagster.pipeline(solids=[sum_solid])
 
-    input_arg_dict = {
-        'sum_table': {
-            'name': sum_table_arg
-        },
-        'num_table': {
-            'name': num_table_arg
-        },
-    }
+    input_arg_dict = {'sum_table': {'name': sum_table_arg}, 'num_table': {'name': num_table_arg}}
 
     result = dagster.execute_pipeline(context, pipeline, input_arg_dict)
     assert result.success
@@ -171,6 +162,8 @@ def _args_input(input_name, args, depends_on=None):
 
 def test_templated_sql_solid_pipeline():
     context = in_mem_context()
+    foo = 'kdd' + \
+    'kdkd'
 
     sum_sql_template = '''CREATE TABLE {{sum_table.name}} AS
         SELECT num1, num2, num1 + num2 as sum FROM num_table'''
@@ -182,7 +175,6 @@ def test_templated_sql_solid_pipeline():
         name='sum_solid',
         sql=sum_sql_template,
         table_arguments=['sum_table'],
-        dependencies=[],
         output='sum_table',
     )
 
@@ -190,8 +182,8 @@ def test_templated_sql_solid_pipeline():
         name='sum_sq_solid',
         sql=sum_sq_sql_template,
         table_arguments=['sum_sq_table'],
-        dependencies=[sum_solid],
         output='sum_sq_table',
+        dependencies=[sum_solid],
     )
 
     pipeline = dagster.pipeline(solids=[sum_solid, sum_sq_solid])
@@ -245,7 +237,6 @@ def test_templated_sql_solid_with_api():
         name='sum_solid',
         sql=sql_template,
         table_arguments=['sum_table'],
-        dependencies=[],
         output='sum_table',
     )
 
@@ -276,7 +267,6 @@ def test_multi_input():
         name='sum_solid',
         sql=sum_sql_template,
         table_arguments=['sum_table'],
-        dependencies=[],
         output='sum_table',
     )
 
@@ -284,7 +274,6 @@ def test_multi_input():
         name='mult_solid',
         sql=mult_sql_template,
         table_arguments=['mult_table'],
-        dependencies=[],
         output='mult_table',
     )
 
