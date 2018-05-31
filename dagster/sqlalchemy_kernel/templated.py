@@ -1,3 +1,4 @@
+import logging
 import jinja2
 
 import dagster
@@ -16,7 +17,14 @@ def _create_table_input(name, depends_on=None):
     )
 
 
-def create_templated_sql_transform_solid(name, sql, table_arguments, output, dependencies=None):
+def create_templated_sql_transform_solid(
+    name,
+    sql,
+    table_arguments,
+    output,
+    dependencies=None,
+    extra_inputs=[],
+):
     '''
     Create a solid that is a templated sql statement. This assumes that the sql statement
     is creating or modifying a table, and that that table will be used downstream in the pipeline
@@ -93,7 +101,7 @@ def create_templated_sql_transform_solid(name, sql, table_arguments, output, dep
     dep_inputs = [_create_table_input(dep.name, depends_on=dep) for dep in dependencies]
     return Solid(
         name=name,
-        inputs=table_inputs + dep_inputs,
+        inputs=table_inputs + dep_inputs + extra_inputs,
         transform_fn=_create_templated_sql_transform_with_output(sql, output),
         outputs=[],
     )
@@ -107,6 +115,8 @@ def _render_template_string(template_text, **kwargs):
 def _create_templated_sql_transform_with_output(sql, output_table):
     def do_transform(context, **kwargs):
         rendered_sql = _render_template_string(sql, **kwargs)
+        # logging.info(rendered_sql)
+        print(rendered_sql[:1000])
         execute_sql_text_on_context(context, rendered_sql)
         return kwargs[output_table]
 
