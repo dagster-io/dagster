@@ -1,6 +1,8 @@
 import dagster
-from dagster.core.definitions import (Solid, InputDefinition, OutputDefinition)
-from dagster.core.execution import output_single_solid
+from dagster.core.definitions import (
+    Solid, create_single_materialization_output, create_single_source_input
+)
+from dagster.core.execution import (output_single_solid, create_single_solid_env_from_arg_dicts)
 
 
 def test_iterator_solid():
@@ -8,9 +10,9 @@ def test_iterator_solid():
         yield 1
         yield 2
 
-    some_input = InputDefinition(
+    some_input = create_single_source_input(
         name='iter_numbers',
-        input_fn=input_fn,
+        source_fn=input_fn,
         argument_def_dict={},
     )
 
@@ -20,15 +22,15 @@ def test_iterator_solid():
 
     output_spot = {}
 
-    def output_fn(data_iter, context, arg_dict):
+    def materialization_fn(data_iter, context, arg_dict):
         output_spot['list'] = list(data_iter)
 
         # in a real case we would iterate over
         # and stream to disk
 
-    custom_output = OutputDefinition(
-        name='CUSTOM',
-        output_fn=output_fn,
+    custom_output = create_single_materialization_output(
+        materialization_type='CUSTOM',
+        materialization_fn=materialization_fn,
         argument_def_dict={},
     )
 
@@ -36,15 +38,15 @@ def test_iterator_solid():
         name='some_node',
         inputs=[some_input],
         transform_fn=transform_fn,
-        outputs=[custom_output],
+        output=custom_output,
     )
 
     output_single_solid(
         dagster.context(),
         iterable_solid,
-        input_arg_dicts={'iter_numbers': {}},
-        output_type='CUSTOM',
-        output_arg_dict={}
+        environment=create_single_solid_env_from_arg_dicts(iterable_solid, {'iter_numbers': {}}),
+        materialization_type='CUSTOM',
+        arg_dict={}
     )
 
     assert output_spot['list'] == [2, 3]

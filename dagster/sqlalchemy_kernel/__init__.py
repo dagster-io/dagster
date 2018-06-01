@@ -10,7 +10,10 @@ from dagster import check
 import dagster.core
 from dagster.core import types
 from dagster.core.execution import (DagsterExecutionContext)
-from dagster.core.definitions import (Solid, InputDefinition, OutputDefinition)
+from dagster.core.definitions import (
+    Solid, InputDefinition, create_single_source_input, SourceDefinition,
+    create_single_materialization_output
+)
 from dagster.transform_only_solid import (dep_only_input, no_args_transform_solid)
 
 from .templated import execute_sql_text_on_context
@@ -52,7 +55,7 @@ class DagsterSqlTableExpression(DagsterSqlExpression):
 
 
 def create_table_output():
-    def output_fn(sql_expr, context, arg_dict):
+    def materialization_fn(sql_expr, context, arg_dict):
         check.inst_param(sql_expr, 'sql_expr', DagsterSqlExpression)
         check.inst_param(context, 'context', DagsterSqlAlchemyExecutionContext)
         check.dict_param(arg_dict, 'arg_dict')
@@ -63,35 +66,35 @@ def create_table_output():
         )
         context.engine.connect().execute(total_sql)
 
-    return OutputDefinition(
-        name='CREATE',
-        output_fn=output_fn,
-        argument_def_dict={'table_name': types.STRING},
+    return create_single_materialization_output(
+        materialization_type='CREATE',
+        materialization_fn=materialization_fn,
+        argument_def_dict={'table_name': types.STRING}
     )
 
 
-def truncate_and_insert_table_output():
-    def output_fn(sql_expr, context, arg_dict):
-        check.inst_param(sql_expr, 'sql_expr', DagsterSqlExpression)
-        check.inst_param(context, 'context', DagsterSqlAlchemyExecutionContext)
-        check.dict_param(arg_dict, 'arg_dict')
+# FIXME: convert to a MaterializationDefinition and test
+# def truncate_and_insert_table_output():
+#     def output_fn(sql_expr, context, arg_dict):
+#         check.inst_param(sql_expr, 'sql_expr', DagsterSqlExpression)
+#         check.inst_param(context, 'context', DagsterSqlAlchemyExecutionContext)
+#         check.dict_param(arg_dict, 'arg_dict')
 
-        output_table_name = check.str_elem(arg_dict, 'table_name')
-        total_sql = '''TRUNCATE TABLE {output_table_name};
-                       INSERT INTO {output_table_name} ({sql_text})'''.format(
-            output_table_name=output_table_name, sql_text=sql_expr.sql_text
-        )
-        context.engine.connect().execute(total_sql)
+#         output_table_name = check.str_elem(arg_dict, 'table_name')
+#         total_sql = '''TRUNCATE TABLE {output_table_name};
+#                        INSERT INTO {output_table_name} ({sql_text})'''.format(
+#             output_table_name=output_table_name, sql_text=sql_expr.sql_text
+#         )
+#         context.engine.connect().execute(total_sql)
 
-    return OutputDefinition(
-        name='TRUNCATE_AND_INSERT',
-        output_fn=output_fn,
-        argument_def_dict={'table_name': types.STRING},
-    )
+#     return OutputDefinition(
+#         name='TRUNCATE_AND_INSERT',
+#         output_fn=output_fn,
+#         argument_def_dict={'table_name': types.STRING},
+#     )
 
 
-def _table_input_fn(context, arg_dict):
-
+def _table_name_read_fn(context, arg_dict):
     check.inst_param(context, 'context', DagsterSqlAlchemyExecutionContext)
     check.dict_param(arg_dict, 'arg_dict')
 
@@ -100,14 +103,17 @@ def _table_input_fn(context, arg_dict):
     return DagsterSqlTableExpression(table_name)
 
 
-def create_table_input(name):
-    check.str_param(name, 'name')
-
-    return InputDefinition(
-        name=name, input_fn=_table_input_fn, argument_def_dict={
-            'table_name': types.STRING,
-        }
+def _table_name_source():
+    return SourceDefinition(
+        source_type='TABLENAME',
+        source_fn=_table_name_read_fn,
+        argument_def_dict={'table_name': types.STRING},
     )
+
+
+def create_table_expression_input(name):
+    check.str_param(name, 'name')
+    return InputDefinition(name=name, sources=[_table_name_source()])
 
 
 def create_table_input_dependency(solid):
@@ -115,10 +121,11 @@ def create_table_input_dependency(solid):
 
     return InputDefinition(
         name=solid.name,
-        input_fn=_table_input_fn,
-        argument_def_dict={
-            'table_name': types.STRING,
-        },
+        sources=[_table_name_source()],
+        # input_fn=_table_name_read_fn,
+        # argument_def_dict={
+        #     'table_name': types.STRING,
+        # },
         depends_on=solid
     )
 
@@ -146,7 +153,7 @@ def create_sql_solid(name, inputs, sql_text):
         name,
         inputs=inputs,
         transform_fn=create_sql_transform(sql_text),
-        outputs=[create_table_output(), truncate_and_insert_table_output()],
+        output=create_table_output(),
     )
 
 

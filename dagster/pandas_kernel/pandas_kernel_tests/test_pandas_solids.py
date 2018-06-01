@@ -1,19 +1,28 @@
 import os
+import pytest
 
 import pandas as pd
 
 from dagster import check
+from dagster import config
 import dagster.core
 from dagster.core import types
-from dagster.core.definitions import (Solid, OutputDefinition)
+from dagster.core.definitions import (Solid, create_single_materialization_output)
 from dagster.core.execution import (
-    DagsterExecutionContext, execute_pipeline_through_solid, _execute_input,
-    output_pipeline_iterator, output_single_solid, _pipeline_solid, _pipeline_solid_in_memory,
-    output_pipeline, execute_pipeline
+    DagsterExecutionContext, execute_pipeline_through_solid, _read_source, output_pipeline_iterator,
+    output_single_solid, _pipeline_solid_in_memory, output_pipeline, execute_pipeline,
+    execute_single_solid, create_single_solid_env_from_arg_dicts, create_pipeline_env_from_arg_dicts
 )
 import dagster.pandas_kernel as dagster_pd
 from dagster.pandas_kernel.definitions import create_dagster_pd_csv_input
 from dagster.utils.test import (get_temp_file_name, get_temp_file_names, script_relative_path)
+
+
+def get_solid_tranformed_value(context, solid, input_arg_dicts):
+    execution_result = execute_single_solid(
+        context, solid, environment=create_single_solid_env_from_arg_dicts(solid, input_arg_dicts)
+    )
+    return execution_result.transformed_value
 
 
 def create_test_context():
@@ -22,7 +31,9 @@ def create_test_context():
 
 def test_pandas_input():
     csv_input = create_dagster_pd_csv_input(name='num_csv')
-    df = _execute_input(create_test_context(), csv_input, {'path': script_relative_path('num.csv')})
+    df = _read_source(
+        create_test_context(), csv_input.sources[0], {'path': script_relative_path('num.csv')}
+    )
 
     assert isinstance(df, pd.DataFrame)
     assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4]}
@@ -37,16 +48,16 @@ def test_pandas_solid():
 
     test_output = {}
 
-    def output_fn_inst(df, context, arg_dict):
+    def materialization_fn_inst(df, context, arg_dict):
         assert isinstance(df, pd.DataFrame)
         assert isinstance(context, DagsterExecutionContext)
         assert isinstance(arg_dict, dict)
 
         test_output['df'] = df
 
-    custom_output_def = OutputDefinition(
-        name='CUSTOM',
-        output_fn=output_fn_inst,
+    custom_output_def = create_single_materialization_output(
+        materialization_type='CUSTOM',
+        materialization_fn=materialization_fn_inst,
         argument_def_dict={},
     )
 
@@ -54,17 +65,19 @@ def test_pandas_solid():
         name='sum_table',
         inputs=[csv_input],
         transform_fn=transform,
-        outputs=[custom_output_def],
+        output=custom_output_def,
     )
 
     output_single_solid(
         create_test_context(),
         single_solid,
-        input_arg_dicts={'num_csv': {
-            'path': script_relative_path('num.csv')
-        }},
-        output_type='CUSTOM',
-        output_arg_dict={},
+        environment=create_single_solid_env_from_arg_dicts(
+            single_solid, {'num_csv': {
+                'path': script_relative_path('num.csv')
+            }}
+        ),
+        materialization_type='CUSTOM',
+        arg_dict={},
     )
 
     assert test_output['df'].to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
@@ -79,20 +92,22 @@ def test_pandas_csv_to_csv():
         num_csv['sum'] = num_csv['num1'] + num_csv['num2']
         return num_csv
 
-    def output_fn_inst(df, context, arg_dict):
+    def materialization_fn_inst(df, context, arg_dict):
         assert isinstance(context, DagsterExecutionContext)
         path = check.str_elem(arg_dict, 'path')
         df.to_csv(path, index=False)
 
-    csv_output_def = OutputDefinition(
-        name='CSV', output_fn=output_fn_inst, argument_def_dict={'path': types.PATH}
+    csv_output_def = create_single_materialization_output(
+        materialization_type='CSV',
+        materialization_fn=materialization_fn_inst,
+        argument_def_dict={'path': types.PATH}
     )
 
     solid = Solid(
         name='sum_table',
         inputs=[csv_input],
         transform_fn=transform,
-        outputs=[csv_output_def],
+        output=csv_output_def,
     )
 
     output_df = execute_transform_in_temp_file(solid)
@@ -105,11 +120,13 @@ def execute_transform_in_temp_file(solid):
         result = output_single_solid(
             create_test_context(),
             solid,
-            input_arg_dicts={'num_csv': {
-                'path': script_relative_path('num.csv')
-            }},
-            output_type='CSV',
-            output_arg_dict={'path': temp_file_name},
+            environment=create_single_solid_env_from_arg_dicts(
+                solid, {'num_csv': {
+                    'path': script_relative_path('num.csv')
+                }}
+            ),
+            materialization_type='CSV',
+            arg_dict={'path': temp_file_name},
         )
 
         assert result.success
@@ -150,7 +167,7 @@ def test_pandas_csv_to_csv_better_api():
 def test_pandas_csv_in_memory():
     solid = create_sum_table()
     input_args = {'num_csv': {'path': script_relative_path('num.csv')}}
-    df = _pipeline_solid(create_test_context(), solid, input_args)
+    df = get_solid_tranformed_value(create_test_context(), solid, input_args)
     assert isinstance(df, pd.DataFrame)
     assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
 
@@ -160,7 +177,7 @@ def test_two_step_pipeline_in_memory():
     mult_table_solid = create_mult_table(sum_table_solid)
     input_args = {'num_csv': {'path': script_relative_path('num.csv')}}
     context = create_test_context()
-    df = _pipeline_solid(context, sum_table_solid, input_args)
+    df = get_solid_tranformed_value(context, sum_table_solid, input_args)
     mult_df = _pipeline_solid_in_memory(context, mult_table_solid, {'sum_table': df})
     assert mult_df.to_dict('list') == {
         'num1': [1, 3],
@@ -193,7 +210,7 @@ def test_two_input_solid():
         },
     }
 
-    df = _pipeline_solid(create_test_context(), two_input_solid, input_args)
+    df = get_solid_tranformed_value(create_test_context(), two_input_solid, input_args)
     assert isinstance(df, pd.DataFrame)
     assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
 
@@ -205,7 +222,7 @@ def test_no_transform_solid():
     )
     input_args = {'num_csv': {'path': script_relative_path('num.csv')}}
     context = create_test_context()
-    df = _pipeline_solid(context, num_table, input_args)
+    df = get_solid_tranformed_value(context, num_table, input_args)
     assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4]}
 
 
@@ -263,7 +280,7 @@ def test_diamond_dag_run():
     input_args = {'num_csv': {'path': script_relative_path('num.csv')}}
     context = create_test_context()
 
-    num_table_df = _pipeline_solid(context, num_table, input_args)
+    num_table_df = get_solid_tranformed_value(context, num_table, input_args)
     assert num_table_df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4]}
 
     sum_df = _pipeline_solid_in_memory(context, sum_table, {'num_table': num_table_df})
@@ -294,11 +311,15 @@ def test_pandas_in_memory_diamond_pipeline():
     context = create_test_context()
     input_args = {'num_csv': {'path': script_relative_path('num.csv')}}
 
+    pipeline = create_diamond_pipeline()
     result = execute_pipeline_through_solid(
-        context, create_diamond_pipeline(), input_arg_dicts=input_args, solid_name='sum_mult_table'
+        context,
+        pipeline,
+        environment=create_pipeline_env_from_arg_dicts(pipeline, input_args),
+        solid_name='sum_mult_table'
     )
 
-    assert result.materialized_output.to_dict('list') == {
+    assert result.transformed_value.to_dict('list') == {
         'num1': [1, 3],
         'num2': [2, 4],
         'sum': [3, 7],
@@ -312,13 +333,20 @@ def test_pandas_output_csv_pipeline():
     input_arg_dicts = {'num_csv': {'path': script_relative_path('num.csv')}}
 
     with get_temp_file_name() as temp_file_name:
-        output_arg_dicts = {'sum_mult_table': {'CSV': {'path': temp_file_name}}}
+        pipeline = create_diamond_pipeline()
+        environment = create_pipeline_env_from_arg_dicts(pipeline, input_arg_dicts)
 
         for _result in output_pipeline_iterator(
             context,
-            pipeline=create_diamond_pipeline(),
-            input_arg_dicts=input_arg_dicts,
-            output_arg_dicts=output_arg_dicts,
+            pipeline=pipeline,
+            environment=environment,
+            materializations=[
+                config.Materialization(
+                    solid='sum_mult_table',
+                    materialization_type='CSV',
+                    args={'path': temp_file_name},
+                )
+            ],
         ):
             pass
 
@@ -341,10 +369,6 @@ def _result_named(results, name):
     check.failed('could not find name')
 
 
-def csv_output_arg_dict(path):
-    return {'CSV': {'path': path}}
-
-
 def test_pandas_output_intermediate_csv_files():
     context = create_test_context()
     input_args = {'num_csv': {'path': script_relative_path('num.csv')}}
@@ -353,16 +377,24 @@ def test_pandas_output_intermediate_csv_files():
     with get_temp_file_names(2) as temp_tuple:
         sum_file, mult_file = temp_tuple  # pylint: disable=E0632
 
-        output_arg_dicts = {
-            'sum_table': csv_output_arg_dict(sum_file),
-            'mult_table': csv_output_arg_dict(mult_file),
-        }
+        environment = create_pipeline_env_from_arg_dicts(pipeline, input_args)
 
         subgraph_one_result = output_pipeline(
             context,
             pipeline,
-            input_arg_dicts=input_args,
-            output_arg_dicts=output_arg_dicts,
+            environment=environment,
+            materializations=[
+                config.Materialization(
+                    solid='sum_table',
+                    materialization_type='CSV',
+                    args={'path': sum_file},
+                ),
+                config.Materialization(
+                    solid='mult_table',
+                    materialization_type='CSV',
+                    args={'path': mult_file},
+                ),
+            ],
         )
 
         assert len(subgraph_one_result.result_list) == 3
@@ -375,7 +407,7 @@ def test_pandas_output_intermediate_csv_files():
 
         assert pd.read_csv(sum_file).to_dict('list') == expected_sum
         sum_table_result = subgraph_one_result.result_named('sum_table')
-        assert sum_table_result.materialized_output.to_dict('list') == expected_sum
+        assert sum_table_result.transformed_value.to_dict('list') == expected_sum
 
         expected_mult = {
             'num1': [1, 3],
@@ -384,21 +416,32 @@ def test_pandas_output_intermediate_csv_files():
         }
         assert pd.read_csv(mult_file).to_dict('list') == expected_mult
         mult_table_result = subgraph_one_result.result_named('mult_table')
-        assert mult_table_result.materialized_output.to_dict('list') == expected_mult
+        assert mult_table_result.transformed_value.to_dict('list') == expected_mult
 
         pipeline_result = execute_pipeline(
             context,
             pipeline,
-            input_arg_dicts={
-                'sum_table': {
-                    'path': sum_file,
-                    'format': 'CSV'
-                },
-                'mult_table': {
-                    'path': mult_file,
-                    'format': 'CSV'
-                },
-            },
+            environment=config.Environment(
+                input_sources=[
+                    config.InputSource(
+                        input_name='sum_table',
+                        source='CSVORPARQUET',
+                        args={
+                            'format': 'CSV',
+                            'path': sum_file,
+                        },
+                    ),
+                    config.InputSource(
+                        input_name='mult_table',
+                        source='CSVORPARQUET',
+                        args={
+                            'format': 'CSV',
+                            'path': mult_file,
+                        },
+                    ),
+                ],
+            ),
+            from_solids=['sum_mult_table'],
             through_solids=['sum_mult_table'],
         )
 
@@ -407,7 +450,7 @@ def test_pandas_output_intermediate_csv_files():
         subgraph_two_result_list = pipeline_result.result_list
 
         assert len(subgraph_two_result_list) == 1
-        output_df = subgraph_two_result_list[0].materialized_output
+        output_df = subgraph_two_result_list[0].transformed_value
         assert output_df.to_dict('list') == {
             'num1': [1, 3],
             'num2': [2, 4],
@@ -417,8 +460,20 @@ def test_pandas_output_intermediate_csv_files():
         }
 
 
-def parquet_output_arg_dict(path):
-    return {'PARQUET': {'path': path}}
+def csv_materialization(solid_name, path):
+    return config.Materialization(
+        solid=solid_name,
+        materialization_type='CSV',
+        args={'path': path},
+    )
+
+
+def parquet_materialization(solid_name, path):
+    return config.Materialization(
+        solid=solid_name,
+        materialization_type='PARQUET',
+        args={'path': path},
+    )
 
 
 def test_pandas_output_intermediate_parquet_files():
@@ -429,15 +484,14 @@ def test_pandas_output_intermediate_parquet_files():
     with get_temp_file_names(2) as temp_tuple:
         # false positive on pylint error
         sum_file, mult_file = temp_tuple  # pylint: disable=E0632
-        output_arg_dicts = {
-            'sum_table': parquet_output_arg_dict(sum_file),
-            'mult_table': parquet_output_arg_dict(mult_file),
-        }
         pipeline_result = output_pipeline(
             context,
             pipeline,
-            input_arg_dicts=input_args,
-            output_arg_dicts=output_arg_dicts,
+            environment=create_pipeline_env_from_arg_dicts(pipeline, input_args),
+            materializations=[
+                parquet_materialization('sum_table', sum_file),
+                parquet_materialization('mult_table', mult_file),
+            ],
         )
 
         assert pipeline_result.success
@@ -473,13 +527,14 @@ def test_pandas_multiple_inputs():
                 dagster_pd.csv_input('num_csv2')],
         transform_fn=transform_fn
     )
+    pipeline = dagster.core.pipeline(solids=[double_sum])
 
     output_df = execute_pipeline_through_solid(
         context,
-        dagster.core.pipeline(solids=[double_sum]),
-        input_arg_dicts=input_args,
+        pipeline,
+        environment=create_pipeline_env_from_arg_dicts(pipeline, input_args),
         solid_name='double_sum'
-    ).materialized_output
+    ).transformed_value
 
     assert not output_df.empty
 
@@ -496,22 +551,16 @@ def test_pandas_multiple_outputs():
     with get_temp_file_names(2) as temp_tuple:
         # false positive on pylint error
         csv_file, parquet_file = temp_tuple  # pylint: disable=E0632
-        output_arg_dicts = {
-            'sum_mult_table': {
-                'CSV': {
-                    'path': csv_file
-                },
-                'PARQUET': {
-                    'path': parquet_file
-                },
-            }
-        }
+        pipeline = create_diamond_pipeline()
 
         for _result in output_pipeline_iterator(
             context,
-            pipeline=create_diamond_pipeline(),
-            input_arg_dicts=input_arg_dicts,
-            output_arg_dicts=output_arg_dicts,
+            pipeline=pipeline,
+            environment=create_pipeline_env_from_arg_dicts(pipeline, input_arg_dicts),
+            materializations=[
+                csv_materialization('sum_mult_table', csv_file),
+                parquet_materialization('sum_mult_table', parquet_file),
+            ],
         ):
             pass
 

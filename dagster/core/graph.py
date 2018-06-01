@@ -30,11 +30,28 @@ class DagsterPipeline:
     def input_names(self):
         return set([input_def.name for input_def in self.all_inputs])
 
+    def get_input(self, solid_name, input_name):
+        for solid in self.solids:
+            if solid.name != solid_name:
+                continue
+            for input_def in solid.inputs:
+                if input_def.name == input_name:
+                    return input_def
+        check.failed('not found')
+
     @property
     def external_inputs(self):
         for input_def in self.all_inputs:
             if input_def.is_external:
                 yield input_def
+
+    @property
+    def externally_sourced_solids(self):
+        for solid in self.solids:
+            for input_def in solid.inputs:
+                if input_def.is_external:
+                    yield solid
+                    break
 
     def has_input(self, name):
         check.str_param(name, 'name')
@@ -52,6 +69,18 @@ class DagsterPipeline:
             if solid.name == name:
                 return solid
         check.failed('Could not find solid named ' + name)
+
+    @property
+    def all_depended_on_solids(self):
+        for input_def in self.all_inputs:
+            if input_def.depends_on:
+                yield input_def.depends_on
+
+    @property
+    def all_sink_solids(self):
+        all_names = set([solid.name for solid in self.solids])
+        all_depended_on_names = set([solid.name for solid in self.all_depended_on_solids])
+        return all_names.difference(all_depended_on_names)
 
 
 def create_adjacency_lists(solids):
@@ -111,29 +140,26 @@ class SolidGraph:
     def solids(self):
         return list(self._solid_dict.values())
 
-    def _create_visit_dict(self):
-        return {name: False for name in self._solid_dict.keys()}
+    def transitive_dependencies_of(self, solid_name):
+        check.str_param(solid_name, 'solid_name')
 
-    # def transitive_dependencies_of(self, solid_name):
-    #     check.str_param(solid_name, 'solid_name')
+        if solid_name in self._transitive_deps:
+            return self._transitive_deps[solid_name]
 
-    #     if solid_name in self._transitive_deps:
-    #         return self._transitive_deps[solid_name]
+        trans_deps = set()
+        for inp in self._solid_dict[solid_name].inputs:
+            if inp.depends_on:
+                trans_deps.add(inp.depends_on.name)
+                trans_deps.union(self.transitive_dependencies_of(inp.depends_on.name))
 
-    #     trans_deps = set()
-    #     for inp in self._solid_dict[solid_name].inputs:
-    #         if inp.depends_on:
-    #             trans_deps.add(inp.depends_on.name)
-    #             trans_deps.union(self.transitive_dependencies_of(inp.depends_on))
+        self._transitive_deps[solid_name] = trans_deps
+        return self._transitive_deps[solid_name]
 
-    #     self._transitive_deps[solid_name] = trans_deps
-    #     return self._transitive_deps[solid_name]
-
-    def _check_output_name(self, output_name):
-        check.str_param(output_name, 'output_name')
+    def _check_solid_name(self, solid_name):
+        check.str_param(solid_name, 'output_name')
         check.param_invariant(
-            output_name in self._solid_dict, 'output_name',
-            f'Output solid must exist in {list(self._solid_dict.keys())}'
+            solid_name in self._solid_dict, 'output_name',
+            f'Solid {solid_name} must exist in {list(self._solid_dict.keys())}'
         )
 
     def _check_input_names(self, input_names):
@@ -144,24 +170,24 @@ class SolidGraph:
                 input_name in self._all_inputs, 'input_names', 'Input name not found'
             )
 
-    def compute_unprovided_inputs(self, output_name, input_names):
+    def compute_unprovided_inputs(self, solid_name, input_names):
         '''
-        Given a single output_name and a set of input_names that represent the
+        Given a single solid_name and a set of input_names that represent the
         set of inputs provided for a computation, return the inputs that are *missing*.
         This detects the case where an upstream path in the DAG of solids does not
         have enough information to materialize a given output.
         '''
 
-        self._check_output_name(output_name)
+        self._check_solid_name(solid_name)
         self._check_input_names(input_names)
 
         input_set = set(input_names)
 
         unprovided_inputs = set()
 
-        visit_dict = self._create_visit_dict()
+        visit_dict = {name: False for name in self._solid_dict.keys()}
 
-        output_solid = self._solid_dict[output_name]
+        output_solid = self._solid_dict[solid_name]
 
         def visit(solid):
             if visit_dict[solid.name]:
@@ -181,40 +207,28 @@ class SolidGraph:
 
         return unprovided_inputs
 
-    def create_execution_graph(self, output_names, input_names):
-        '''Given a set of outputs that should be completed, and a
-        list input names that were provided into order to complete the execution,
-        return a copy of the SolidGraph object that represents the minimal set of
-        solids necessary to execute to satisfy the computation'''
+    def create_execution_subgraph(self, from_solids, to_solids):
+        check.list_param(from_solids, 'from_solids', of_type=str)
+        check.list_param(to_solids, 'to_solids', of_type=str)
 
-        check.list_param(output_names, 'output_names', of_type=str)
-
-        for output_name in output_names:
-            self._check_output_name(output_name)
-            # this might be excessive as we are doing a ton of graph traversals
-            # biasing towards strictness for now
-            unprovided_inputs = self.compute_unprovided_inputs(output_name, input_names)
-            check.invariant(not unprovided_inputs, 'Must provide all inputs')
-
-        self._check_input_names(input_names)
-
-        input_set = set(input_names)
-
-        involved_solids = set()
+        from_solid_set = set(from_solids)
+        involved_solids = from_solid_set
 
         def visit(solid):
             if solid.name in involved_solids:
                 return
             involved_solids.add(solid.name)
 
-            for inp in solid.inputs:
-                if inp.name in input_set:
+            for input_def in solid.inputs:
+                if input_def.is_external:
                     continue
 
-                if not inp.is_external:
-                    visit(inp.depends_on)
+                if input_def.depends_on.name in from_solid_set:
+                    continue
 
-        for output_name in output_names:
-            visit(self._solid_dict[output_name])
+                visit(input_def.depends_on)
+
+        for to_solid in to_solids:
+            visit(self._solid_dict[to_solid])
 
         return SolidGraph([self._solid_dict[name] for name in involved_solids])

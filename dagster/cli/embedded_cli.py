@@ -1,13 +1,17 @@
 from collections import defaultdict
-import json
 import logging
 
 import click
 
 from dagster import check
+from dagster import config
 from dagster.core.errors import DagsterExecutionFailureReason
 from dagster.core.execution import (
-    DagsterExecutionContext, DagsterPipeline, execute_pipeline_iterator, output_pipeline_iterator
+    DagsterExecutionContext,
+    DagsterPipeline,
+    execute_pipeline_iterator,
+    output_pipeline_iterator,
+    create_pipeline_env_from_arg_dicts,
 )
 from dagster.utils.logging import define_logger
 
@@ -75,19 +79,34 @@ def print_pipeline(pipeline, full=True):
         print('{indent}Solid: {name}'.format(indent=indent, name=solid.name))
         print('{indent}Inputs:'.format(indent=indent * 2))
         for input_def in solid.inputs:
-            arg_list = format_argument_dict(input_def.argument_def_dict)
-            print(
-                '{indent}{input_name}({arg_list})'.format(
-                    indent=indent * 3, input_name=input_def.name, arg_list=arg_list
+            if input_def.depends_on:
+                print(
+                    '{indent}Name: {name} (depends on {dep_name})'.format(
+                        name=input_def.name, indent=indent * 3, dep_name=input_def.depends_on.name
+                    )
                 )
-            )
+            else:
+                print('{indent}Name: {name}'.format(name=input_def.name, indent=indent * 3))
 
-        print('{indent}Outputs:'.format(indent=indent * 2))
-        for output_def in solid.outputs:
-            arg_list = format_argument_dict(output_def.argument_def_dict)
+            if input_def.sources:
+                print('{indent}Sources:'.format(indent=indent * 4))
+                for source_def in input_def.sources:
+                    arg_list = format_argument_dict(source_def.argument_def_dict)
+                    print(
+                        '{indent}{input_name}({arg_list})'.format(
+                            indent=indent * 5, input_name=source_def.source_type, arg_list=arg_list
+                        )
+                    )
+
+        print('{indent}Output:'.format(indent=indent * 2))
+        print('{indent}Materializations:'.format(indent=indent * 3))
+        for materialization_def in solid.output.materializations:
+            arg_list = format_argument_dict(materialization_def.argument_def_dict)
             print(
-                '{indent}{output_name}({arg_list})'.format(
-                    indent=indent * 3, output_name=output_def.name, arg_list=arg_list
+                '{indent}{name}({arg_list})'.format(
+                    indent=indent * 4,
+                    name=materialization_def.materialization_type,
+                    arg_list=arg_list
                 )
             )
 
@@ -115,7 +134,6 @@ def embedded_dagster_multi_pipeline_graphviz_command(cxt, pipeline_name):
 
 @click.command(name='output')
 @click.argument('pipeline_name')
-@click.option('--json-config', type=click.Path(exists=True, dir_okay=False))
 @click.option('--input', multiple=True)
 @click.option('--output', multiple=True)
 @click.option('--log-level', type=click.STRING, default='INFO')
@@ -123,7 +141,6 @@ def embedded_dagster_multi_pipeline_graphviz_command(cxt, pipeline_name):
 def embedded_dagster_multi_pipeline_output_command(
     cxt,
     pipeline_name,
-    json_config,
     input,  # pylint: disable=W0622
     output,
     log_level
@@ -132,22 +149,20 @@ def embedded_dagster_multi_pipeline_output_command(
     pipelines = check.inst(cxt.obj['pipelines'], list)
     check.list_param(pipelines, 'pipelines', of_type=DagsterPipeline)
     pipeline = _pipeline_named(pipelines, pipeline_name)
-    run_pipeline_output_command(json_config, input, output, log_level, pipeline)
+    run_pipeline_output_command(input, output, log_level, pipeline)
 
 
 @click.command(name='output')
-@click.option('--json-config', type=click.Path(exists=True, dir_okay=False))
 @click.option('--input', multiple=True)
 @click.option('--output', multiple=True)
 @click.option('--log-level', type=click.STRING, default='INFO')
 @click.pass_context
-def embedded_dagster_single_pipeline_output_command(cxt, json_config, input, output, log_level):  # pylint: disable=W0622
+def embedded_dagster_single_pipeline_output_command(cxt, input, output, log_level):  # pylint: disable=W0622
     pipeline = check.inst(cxt.obj['pipeline'], DagsterPipeline)
-    run_pipeline_output_command(json_config, input, output, log_level, pipeline)
+    run_pipeline_output_command(input, output, log_level, pipeline)
 
 
-def run_pipeline_output_command(json_config, input_tuple, output, log_level, pipeline):
-    check.opt_str_param(json_config, 'json_config')
+def run_pipeline_output_command(input_tuple, output, log_level, pipeline):
     check.opt_tuple_param(input_tuple, 'input_tuple')
     check.opt_tuple_param(output, 'output')
     check.opt_str_param(log_level, 'log_level')
@@ -155,18 +170,15 @@ def run_pipeline_output_command(json_config, input_tuple, output, log_level, pip
     input_list = list(input_tuple)
     output_list = list(output)
 
-    if json_config:
-        config_object = json.load(open(json_config))
-        input_arg_dicts = config_object['inputs']
-        output_arg_dicts = config_object['outputs']
-        log_level = config_object.get('log-level', 'INFO')
-    else:
-        input_arg_dicts = construct_arg_dicts(input_list)
-        output_arg_dicts = _get_output_arg_dicts(output_list)
+    input_arg_dicts = construct_arg_dicts(input_list)
+    materializations = _get_materializations(output_list)
 
     context = create_dagster_context(log_level=LOGGING_DICT[log_level])
     pipeline_iter = output_pipeline_iterator(
-        context, pipeline, input_arg_dicts, output_arg_dicts=output_arg_dicts
+        context,
+        pipeline,
+        environment=create_pipeline_env_from_arg_dicts(pipeline, input_arg_dicts),
+        materializations=materializations,
     )
 
     process_results_for_console(pipeline_iter, context)
@@ -186,17 +198,24 @@ def process_results_for_console(pipeline_iter, context):
     print_metrics_to_console(results, context)
 
 
-def _get_output_arg_dicts(output_list):
+def _get_materializations(output_list):
     flat_output_arg_dicts = construct_arg_dicts(output_list)
 
-    output_arg_dicts = defaultdict(lambda: {})
+    materializations = []
 
     for output_name, output_arg_dict in flat_output_arg_dicts.items():
         check.invariant('type' in output_arg_dict, 'must specify output type')
-        output_type = output_arg_dict.pop('type')
-        output_arg_dicts[output_name][output_type] = output_arg_dict
+        materialization_name = output_arg_dict.pop('type')
 
-    return output_arg_dicts
+        materializations.append(
+            config.Materialization(
+                solid=output_name,
+                materialization_type=materialization_name,
+                args=output_arg_dict,
+            )
+        )
+
+    return materializations
 
 
 @click.command(name='execute')
@@ -239,8 +258,12 @@ def run_pipeline_execute_command(input_tuple, through, log_level, pipeline, cont
     input_arg_dicts = construct_arg_dicts(input_list)
 
     process_results_for_console(
-        execute_pipeline_iterator(context, pipeline, input_arg_dicts, through_solids=through_list),
-        context
+        execute_pipeline_iterator(
+            context,
+            pipeline,
+            environment=create_pipeline_env_from_arg_dicts(pipeline, input_arg_dicts),
+            through_solids=through_list,
+        ), context
     )
 
 
@@ -254,7 +277,7 @@ def print_metrics_to_console(results, context):
             metrics_for_input = list(
                 context.metrics_covering_context({
                     'solid': result.name,
-                    'input': input_def.name
+                    'input': input_def.name,
                 })
             )
             if metrics_for_input:

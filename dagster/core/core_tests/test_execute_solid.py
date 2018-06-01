@@ -1,14 +1,20 @@
 import pytest
 
+from dagster import config
 from dagster.core import types
 
 from dagster.core.definitions import (
-    Solid, InputDefinition, OutputDefinition, ExpectationDefinition, ExpectationResult
+    Solid,
+    ExpectationDefinition,
+    ExpectationResult,
+    create_single_source_input,
+    create_single_materialization_output,
+    create_no_materialization_output,
 )
 
 from dagster.core.execution import (
     output_single_solid, DagsterExecutionResult, DagsterExecutionFailureReason,
-    DagsterExecutionContext, execute_single_solid
+    DagsterExecutionContext, execute_single_solid, create_single_solid_env_from_arg_dicts
 )
 
 from dagster.core.errors import DagsterExpectationFailedError
@@ -19,9 +25,9 @@ def create_test_context():
 
 
 def test_execute_solid_no_args():
-    some_input = InputDefinition(
+    some_input = create_single_source_input(
         name='some_input',
-        input_fn=lambda context, arg_dict: [{'data_key': 'data_value'}],
+        source_fn=lambda context, arg_dict: [{'data_key': 'data_value'}],
         argument_def_dict={}
     )
 
@@ -31,14 +37,14 @@ def test_execute_solid_no_args():
 
     test_output = {}
 
-    def output_fn_inst(data, context, arg_dict):
+    def materialization_fn_inst(data, context, arg_dict):
         assert isinstance(context, DagsterExecutionContext)
         assert isinstance(arg_dict, dict)
         test_output['thedata'] = data
 
-    custom_output = OutputDefinition(
-        name='CUSTOM',
-        output_fn=output_fn_inst,
+    custom_output = create_single_materialization_output(
+        materialization_type='CUSTOM',
+        materialization_fn=materialization_fn_inst,
         argument_def_dict={},
     )
 
@@ -46,39 +52,40 @@ def test_execute_solid_no_args():
         name='some_node',
         inputs=[some_input],
         transform_fn=tranform_fn_inst,
-        outputs=[custom_output],
+        output=custom_output,
     )
 
     output_single_solid(
         create_test_context(),
         single_solid,
-        input_arg_dicts={'some_input': {}},
-        output_type='CUSTOM',
-        output_arg_dict={}
+        environment=create_single_solid_env_from_arg_dicts(single_solid, {'some_input': {}}),
+        materialization_type='CUSTOM',
+        arg_dict={}
     )
 
     assert test_output['thedata'] == [{'data_key': 'new_value'}]
 
 
 def create_single_dict_input(expectations=None):
-    return InputDefinition(
+    return create_single_source_input(
         name='some_input',
-        input_fn=lambda context, arg_dict: [{'key': arg_dict['str_arg']}],
+        source_fn=lambda context, arg_dict: [{'key': arg_dict['str_arg']}],
         argument_def_dict={'str_arg': types.STRING},
         expectations=expectations or [],
     )
 
 
-def create_noop_output(test_output):
+def create_noop_output(test_output, expectations=None):
     def set_test_output(output, context, arg_dict):
         assert isinstance(context, DagsterExecutionContext)
         assert arg_dict == {}
         test_output['thedata'] = output
 
-    return OutputDefinition(
-        name='CUSTOM',
-        output_fn=set_test_output,
+    return create_single_materialization_output(
+        materialization_type='CUSTOM',
+        materialization_fn=set_test_output,
         argument_def_dict={},
+        expectations=expectations
     )
 
 
@@ -91,7 +98,7 @@ def test_hello_world():
 
     output_events = {}
 
-    def output_fn(data, context, arg_dict):
+    def materialization_fn(data, context, arg_dict):
         assert data['hello'] == 'world'
         assert isinstance(context, DagsterExecutionContext)
         assert arg_dict == {}
@@ -100,26 +107,38 @@ def test_hello_world():
     hello_world = Solid(
         name='hello_world',
         inputs=[
-            InputDefinition(
+            create_single_source_input(
                 name='hello_world_input',
-                input_fn=lambda context, arg_dict: {},
+                source_fn=lambda context, arg_dict: {},
                 argument_def_dict={},
             )
         ],
         transform_fn=transform_fn,
-        outputs=[OutputDefinition(name='CUSTOM', output_fn=output_fn, argument_def_dict={})]
+        output=create_single_materialization_output(
+            materialization_type='CUSTOM',
+            materialization_fn=materialization_fn,
+            argument_def_dict={}
+        ),
     )
 
-    result = execute_single_solid(create_test_context(), hello_world, {'hello_world_input': {}})
+    result = execute_single_solid(
+        create_test_context(),
+        hello_world,
+        environment=create_single_solid_env_from_arg_dicts(hello_world, {'hello_world_input': {}})
+    )
 
     assert result.success
 
-    assert result.materialized_output['hello'] == 'world'
+    assert result.transformed_value['hello'] == 'world'
 
     assert 'called' not in output_events
 
     output_result = output_single_solid(
-        create_test_context(), hello_world, {'hello_world_input': {}}, 'CUSTOM', {}
+        create_test_context(),
+        hello_world,
+        environment=create_single_solid_env_from_arg_dicts(hello_world, {'hello_world_input': {}}),
+        materialization_type='CUSTOM',
+        arg_dict={}
     )
 
     if output_result.exception:
@@ -137,17 +156,20 @@ def test_execute_solid_with_args():
         name='some_node',
         inputs=[create_single_dict_input()],
         transform_fn=lambda some_input: some_input,
-        outputs=[create_noop_output(test_output)],
+        output=create_noop_output(test_output),
     )
 
     result = output_single_solid(
         create_test_context(),
         single_solid,
-        input_arg_dicts={'some_input': {
-            'str_arg': 'an_input_arg'
-        }},
-        output_type='CUSTOM',
-        output_arg_dict={},
+        environment=create_single_solid_env_from_arg_dicts(
+            single_solid,
+            {'some_input': {
+                'str_arg': 'an_input_arg'
+            }},
+        ),
+        materialization_type='CUSTOM',
+        arg_dict={},
     )
 
     if result.exception:
@@ -164,11 +186,13 @@ def test_execute_solid_with_failed_input_expectation_non_throwing():
     solid_execution_result = output_single_solid(
         create_test_context(),
         single_solid,
-        input_arg_dicts={'some_input': {
-            'str_arg': 'an_input_arg'
-        }},
-        output_type='CUSTOM',
-        output_arg_dict={},
+        environment=create_single_solid_env_from_arg_dicts(
+            single_solid, {'some_input': {
+                'str_arg': 'an_input_arg'
+            }}
+        ),
+        materialization_type='CUSTOM',
+        arg_dict={},
         throw_on_error=False,
     )
 
@@ -184,22 +208,26 @@ def test_execute_solid_with_failed_input_expectation_throwing():
         output_single_solid(
             create_test_context(),
             single_solid,
-            input_arg_dicts={'some_input': {
-                'str_arg': 'an_input_arg'
-            }},
-            output_type='CUSTOM',
-            output_arg_dict={},
+            environment=create_single_solid_env_from_arg_dicts(
+                single_solid, {'some_input': {
+                    'str_arg': 'an_input_arg'
+                }}
+            ),
+            materialization_type='CUSTOM',
+            arg_dict={},
         )
 
     with pytest.raises(DagsterExpectationFailedError):
         output_single_solid(
             create_test_context(),
             single_solid,
-            input_arg_dicts={'some_input': {
-                'str_arg': 'an_input_arg'
-            }},
-            output_type='CUSTOM',
-            output_arg_dict={},
+            environment=create_single_solid_env_from_arg_dicts(
+                single_solid, {'some_input': {
+                    'str_arg': 'an_input_arg'
+                }}
+            ),
+            materialization_type='CUSTOM',
+            arg_dict={},
         )
 
 
@@ -215,7 +243,7 @@ def create_input_failing_solid():
         name='some_node',
         inputs=[create_single_dict_input(expectations=[failing_expect])],
         transform_fn=lambda some_input: some_input,
-        outputs=[create_noop_output(test_output)],
+        output=create_noop_output(test_output),
     )
 
 
@@ -225,11 +253,13 @@ def test_execute_solid_with_failed_output_expectation_non_throwing():
     solid_execution_result = output_single_solid(
         create_test_context(),
         failing_solid,
-        input_arg_dicts={'some_input': {
-            'str_arg': 'an_input_arg'
-        }},
-        output_type='CUSTOM',
-        output_arg_dict={},
+        environment=create_single_solid_env_from_arg_dicts(
+            failing_solid, {'some_input': {
+                'str_arg': 'an_input_arg'
+            }}
+        ),
+        materialization_type='CUSTOM',
+        arg_dict={},
         throw_on_error=False
     )
 
@@ -245,22 +275,26 @@ def test_execute_solid_with_failed_output_expectation_throwing():
         output_single_solid(
             create_test_context(),
             failing_solid,
-            input_arg_dicts={'some_input': {
-                'str_arg': 'an_input_arg'
-            }},
-            output_type='CUSTOM',
-            output_arg_dict={},
+            environment=create_single_solid_env_from_arg_dicts(
+                failing_solid, {'some_input': {
+                    'str_arg': 'an_input_arg'
+                }}
+            ),
+            materialization_type='CUSTOM',
+            arg_dict={},
         )
 
     with pytest.raises(DagsterExpectationFailedError):
         output_single_solid(
             create_test_context(),
             failing_solid,
-            input_arg_dicts={'some_input': {
-                'str_arg': 'an_input_arg'
-            }},
-            output_type='CUSTOM',
-            output_arg_dict={},
+            environment=create_single_solid_env_from_arg_dicts(
+                failing_solid, {'some_input': {
+                    'str_arg': 'an_input_arg'
+                }}
+            ),
+            materialization_type='CUSTOM',
+            arg_dict={},
         )
 
 
@@ -274,10 +308,12 @@ def test_execute_solid_with_no_inputs():
         name='no_args_solid',
         inputs=[],
         transform_fn=lambda: _set_key_value(did_run_dict, 'did_run', True),
-        outputs=[]
+        output=create_no_materialization_output(),
     )
 
-    result = execute_single_solid(DagsterExecutionContext(), no_args_solid, {})
+    result = execute_single_solid(
+        DagsterExecutionContext(), no_args_solid, environment=config.Environment.empty()
+    )
 
     assert result.success
     assert did_run_dict['did_run'] is True
@@ -297,6 +333,5 @@ def create_output_failing_solid():
         name='some_node',
         inputs=[create_single_dict_input()],
         transform_fn=lambda some_input: some_input,
-        outputs=[create_noop_output(test_output)],
-        output_expectations=[output_expectation],
+        output=create_noop_output(test_output, expectations=[output_expectation]),
     )

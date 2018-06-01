@@ -4,6 +4,9 @@ import click
 import yaml
 
 from dagster import check
+from dagster.graphviz import build_graphviz_graph
+
+from .embedded_cli import print_pipeline
 
 
 def _load_pipeline_config(pipelines_yml):
@@ -24,6 +27,41 @@ def dagster_list_commmand(pipelines):
 
     for pipeline in pipelines:
         print('Pipeline: {name}'.format(name=pipeline.name))
+
+
+def _get_pipeline(pipelines, name):
+    for pipeline in pipelines:
+        if pipeline.name == name:
+            return pipeline
+    check.failed(f'pipeline {name} not found')
+
+
+@click.command(name='print')
+@click.option(
+    '--pipelines',
+    type=click.Path(file_okay=True, dir_okay=False, exists=True),
+    default='pipelines.yml'
+)
+@click.argument('name')
+def dagster_print_commmand(pipelines, name):
+    pipelines_config = _load_pipeline_config(pipelines)
+    pipelines = create_pipelines_from_config_object(pipelines_config)
+    pipeline = _get_pipeline(pipelines, name)
+    print_pipeline(pipeline, full=True)
+
+
+@click.command(name='graphviz')
+@click.option(
+    '--pipelines',
+    type=click.Path(file_okay=True, dir_okay=False, exists=True),
+    default='pipelines.yml'
+)
+@click.argument('name')
+def dagster_graphviz_commmand(pipelines, name):
+    pipelines_config = _load_pipeline_config(pipelines)
+    pipelines = create_pipelines_from_config_object(pipelines_config)
+    pipeline = _get_pipeline(pipelines, name)
+    build_graphviz_graph(pipeline).view(cleanup=True)
 
 
 def create_pipelines_from_config_object(pipelines_config):
@@ -50,4 +88,6 @@ def dagster_cli_main(argv):
 
     dagster_command_group = click.Group(name='dagster')
     dagster_command_group.add_command(dagster_list_commmand)
+    dagster_command_group.add_command(dagster_print_commmand)
+    dagster_command_group.add_command(dagster_graphviz_commmand)
     dagster_command_group(argv[1:])

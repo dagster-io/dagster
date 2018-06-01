@@ -53,92 +53,123 @@ class ExpectationDefinition:
         self.expectation_fn = check.callable_param(expectation_fn, 'expectation_fn')
 
 
-class InputDefinition:
+def create_dagster_single_file_input(name, single_file_fn, source_type='UNNAMED'):
+    check.str_param(name, 'name')
+    return create_single_source_input(
+        name=name,
+        source_fn=lambda context, arg_dict: single_file_fn(
+            context=context,
+            path=check.str_elem(arg_dict, 'path')
+        ),
+        argument_def_dict={'path': types.PATH},
+        source_type=source_type,
+    )
+
+
+class SourceDefinition:
     '''
-    An input is a computation that takes a set of arguments (key-value pairs) and produces
-    an in-memory object to be used in a core transform function.
+    name: name of the source
 
-    This should class should be used by library authors only. End users should have most
-    of these details abstracted away fromr them.
+    source_fn: callable
+         The input function defines exactly what happens when the source is invoked. This
+         function can be one of two signatures:
 
-    For example, pandas csv input would take single argument "path" and a produce a pandas
-    dataframe.
+         def simplified_read_csv_example_no_context(arg_dict):
+             return pd.read_csv(arg_dict['path'])
 
-    Parameters
-    ----------
+         OR
 
-    name: str
-    input_fn: callable
-        The input function defines exactly what happens when the input is invoked. This
-        function can be one of two signatures:
-
-        def simplified_read_csv_example_no_context(arg_dict):
-            return pd.read_csv(arg_dict['path'])
-
-        OR
-
-        def simplified_read_csv_example_no_context(context, arg_dict):
-            context.info('I am in an input.') # use context for logging
-            return pd.read_csv(arg_dict['path'])
+         def simplified_read_csv_example_no_context(context, arg_dict):
+             context.info('I am in an input.') # use context for logging
+             return pd.read_csv(arg_dict['path'])
 
     argument_def_dict: { str: DagsterType }
-        Define the arguments expected by this input. A dictionary that maps a string
-        (argument name) to an argument type (defined in dagster.core.types) Continuing
-        the above example, the csv signature would be:
+         Define the arguments expected by this source . A dictionary that maps a string
+         (argument name) to an argument type (defined in dagster.core.types) Continuing
+         the above example, the csv signature would be:
 
-        argument_def_dict = { 'path' : dagster.core.types.PATH }
+         argument_def_dict = {'path' : dagster.core.types.PATH }
 
-    expectations:
-        Define the list of expectations for this input (TODO)
-
-    depends_on:
-        Optionally specify that this input is in fact a dependency on another solid
     '''
 
-    def __init__(self, name, input_fn, argument_def_dict, expectations=None, depends_on=None):
-        self.name = check_valid_name(name)
-        self.input_fn = make_context_arg_optional(check.callable_param(input_fn, 'input_fn'))
+    def __init__(self, source_type, source_fn, argument_def_dict):
+        check.callable_param(source_fn, 'source_fn')
+        self.source_type = check_valid_name(source_type)
+        self.source_fn = make_context_arg_optional(check.callable_param(source_fn, 'source_fn'))
         self.argument_def_dict = check.dict_param(
             argument_def_dict, 'argument_def_dict', key_type=str, value_type=types.DagsterType
         )
+
+
+def create_single_source_input(
+    name, source_fn, argument_def_dict, depends_on=None, expectations=None, source_type='UNNAMED'
+):
+    return InputDefinition(
+        name=name,
+        sources=[
+            SourceDefinition(
+                source_type=source_type,
+                source_fn=source_fn,
+                argument_def_dict=argument_def_dict,
+            )
+        ],
+        depends_on=depends_on,
+        expectations=check.opt_list_param(
+            expectations, 'expectations', of_type=ExpectationDefinition
+        )
+    )
+
+
+class InputDefinition:
+    '''
+    An InputDefinition instances represents an argument to a transform defined within a solid.
+
+    - name: Name of input
+
+    - sources: A list of possible sources for the input. For example, an input which is passed
+    to the transform as a pandas dataframe could have any number of different source types
+    (CSV, Parquet etc). Some inputs have zero sources, and can only be created by
+    execute a dependant solid.
+
+    - depends_on: (Optional). This input depends on another solid in the context of a
+    a pipeline.
+    '''
+
+    def __init__(self, name, sources, depends_on=None, expectations=None):
+        self.name = check_valid_name(name)
+        self.sources = check.list_param(sources, 'sources', of_type=SourceDefinition)
+        self.depends_on = check.opt_inst_param(depends_on, 'depends_on', Solid)
         self.expectations = check.opt_list_param(
             expectations, 'expectations', of_type=ExpectationDefinition
         )
-        self.depends_on = check.opt_inst_param(depends_on, 'depends_on', Solid)
 
     @property
     def is_external(self):
         return self.depends_on is None
 
+    def source_of_type(self, source_type):
+        check.str_param(source_type, 'source_type')
+        for source in self.sources:
+            if source.source_type == source_type:
+                return source
 
-def create_dagster_single_file_input(name, single_file_fn):
-    check.str_param(name, 'name')
-    return InputDefinition(
-        name=name,
-        input_fn=lambda context, arg_dict: single_file_fn(
-            context=context,
-            path=check.str_elem(arg_dict, 'path')
-        ),
-        argument_def_dict={'path': types.PATH}
-    )
+        check.failed('Source {source_type} not found.'.format(source_type=source_type))
 
 
-class OutputDefinition:
+# class TransformDefinition:
+#     def __init__(self, transform_fn):
+#         self.transform_fn = make_context_arg_optional(
+#             check.callable_param(transform_fn, 'transform_fn')
+#         )
+
+
+class MaterializationDefinition:
     '''
-    An output defines a way the result of a transform can be externalized. This can mean
-    writing a file, or moving a file to a well-known location, renaming a database table,
-    and so on.
-
-    Parameters
-    ----------
-
-    name: str
-
-    output_fn: callable
+    materialization_fn: callable
 
         This function defines the actual output.
 
-        The first function argument is the output of the transform function. It can be
+        The first function argument is the result of the transform function. It can be
         named anything.
 
         You must specify an argument with the name "arg_dict". It will be the dictionary
@@ -149,16 +180,16 @@ class OutputDefinition:
 
         e.g.
 
-        def output_fn(the_actual_output, arg_dict):
+        def materialization_fn(value, arg_dict):
             pass
 
         OR
 
-        def output_fn(actual_output, context, arg_dict):
+        def materialization_fn(value, context, arg_dict):
             pass
 
     argument_def_dict: { str: DagsterType }
-        Define the arguments expected by this output . A dictionary that maps a string
+        Define the arguments expected by this materialization. A dictionary that maps a string
         (argument name) to an argument type (defined in dagster.core.types).
 
         e.g.:
@@ -166,28 +197,83 @@ class OutputDefinition:
         argument_def_dict = { 'path' : dagster.core.types.PATH}
     '''
 
-    def __init__(self, name, output_fn, argument_def_dict):
-        self.name = check_valid_name(name)
-        self.output_fn = make_context_arg_optional(check.callable_param(output_fn, 'output_fn'))
+    def __init__(self, materialization_type, materialization_fn, argument_def_dict):
+        self.materialization_type = check_valid_name(materialization_type)
+        self.materialization_fn = make_context_arg_optional(
+            check.callable_param(materialization_fn, 'materialization_fn')
+        )
         self.argument_def_dict = check.dict_param(
             argument_def_dict, 'argument_def_dict', key_type=str, value_type=types.DagsterType
         )
+
+
+def create_no_materialization_output(expectations=None):
+    return OutputDefinition(expectations=expectations)
+
+
+def create_single_materialization_output(
+    materialization_type, materialization_fn, argument_def_dict, expectations=None
+):
+    return OutputDefinition(
+        materializations=[
+            MaterializationDefinition(
+                materialization_type=materialization_type,
+                materialization_fn=materialization_fn,
+                argument_def_dict=argument_def_dict
+            )
+        ],
+        expectations=expectations
+    )
+
+
+class OutputDefinition:
+    # runtime type info
+    def __init__(self, materializations=None, expectations=None):
+        self.materializations = check.opt_list_param(
+            materializations, 'materializations', of_type=MaterializationDefinition
+        )
+        self.expectations = check.opt_list_param(
+            expectations, 'expectations', of_type=ExpectationDefinition
+        )
+
+    def materialization_of_type(self, materialization_type):
+        for materialization in self.materializations:
+            if materialization.materialization_type == materialization_type:
+                return materialization
+
+        check.failed('Did not find materialization {type}'.format(type=materialization_type))
 
 
 # One or more inputs
 # The core computation in the native kernel abstraction
 # The output
 class Solid:
-    def __init__(self, name, inputs, transform_fn, outputs, output_expectations=None):
+    def __init__(self, name, inputs, transform_fn, output):
         self.name = check_valid_name(name)
-        self.inputs = check.list_param(inputs, 'inputs', of_type=InputDefinition)
+        self.inputs = check.list_param(inputs, 'inputs', InputDefinition)
+        self.output = check.inst_param(output, 'output', OutputDefinition)
         self.transform_fn = make_context_arg_optional(
             check.callable_param(transform_fn, 'transform')
         )
-        self.outputs = check.list_param(outputs, 'supported_outputs', of_type=OutputDefinition)
-        self.output_expectations = check.opt_list_param(
-            output_expectations, 'output_expectations', of_type=ExpectationDefinition
-        )
+
+    # Notes to self
+
+    # Input Definitions
+    #   - DematerializationDefinitions
+    #       - Arguments
+    #       - Compute (args) => Value
+    #   - Expectations
+    #   - Dependency
+
+    # Transform Definition
+    #   - Function (inputs) => Value
+    #   - Runtime Types (Inputs and Outputs)
+
+    # Output Definition
+    #   - MaterializationDefinitions
+    #       - Arguments
+    #       - Compute (value, args) => Result
+    #   - Expectations
 
     @property
     def input_names(self):
@@ -195,16 +281,8 @@ class Solid:
 
     def input_def_named(self, name):
         check.str_param(name, 'name')
-        for input_ in self.inputs:
-            if input_.name == name:
-                return input_
+        for input_def in self.inputs:
+            if input_def.name == name:
+                return input_def
 
-        check.failed('Input {name} not found'.format(name=name))
-
-    def output_def_named(self, name):
-        check.str_param(name, 'name')
-        for output_def in self.outputs:
-            if output_def.name == name:
-                return output_def
-
-        check.failed('Output {name} not found'.format(name=name))
+        check.failed('input {name} not found'.format(name=name))

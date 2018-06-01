@@ -1,5 +1,7 @@
 import json
 
+import pandas as pd
+
 from dagster import check
 
 import dagster.core
@@ -38,5 +40,6 @@ def define_qhp_input(table_field_expr):
 
     return dagster.core.file_input_definition(
         name='qhp_json_input',
-        input_fn=flatten_table_field,
+        source_fn=flatten_table_field,
+        source_type='QHPJSON',
     )

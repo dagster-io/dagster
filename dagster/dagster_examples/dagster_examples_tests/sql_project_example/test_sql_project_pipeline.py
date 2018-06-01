@@ -1,5 +1,6 @@
 import sqlalchemy as sa
 import dagster
+from dagster import config
 import dagster.sqlalchemy_kernel as dagster_sa
 from dagster.utils.test import script_relative_path
 
@@ -27,7 +28,9 @@ def test_sql_create_tables():
     pipeline = dagster.pipeline(solids=[create_all_tables_solids])
 
     context = in_mem_context()
-    pipeline_result = dagster.execute_pipeline(context, pipeline, {})
+    pipeline_result = dagster.execute_pipeline(
+        context, pipeline, environment=config.Environment.empty()
+    )
     assert pipeline_result.success
 
     assert set(context.engine.table_names()) == set(['num_table', 'sum_sq_table', 'sum_table'])
@@ -43,7 +46,9 @@ def test_sql_populate_tables():
     pipeline = dagster.pipeline(solids=[create_all_tables_solids, populate_num_table_solid])
 
     context = in_mem_context()
-    pipeline_result = dagster.execute_pipeline(context, pipeline, {})
+    pipeline_result = dagster.execute_pipeline(
+        context, pipeline, environment=config.Environment.empty()
+    )
 
     assert pipeline_result.success
 
@@ -82,7 +87,9 @@ def test_full_in_memory_pipeline():
 
     pipeline = create_full_pipeline()
     context = in_mem_context()
-    pipeline_result = dagster.execute_pipeline(context, pipeline, {})
+    pipeline_result = dagster.execute_pipeline(
+        context, pipeline, environment=config.Environment.empty()
+    )
     assert pipeline_result.success
 
     assert context.engine.execute('SELECT * FROM num_table').fetchall() == [(1, 2), (3, 4)]
@@ -98,6 +105,8 @@ def test_full_persisted_pipeline():
     context = dagster_sa.DagsterSqlAlchemyExecutionContext(engine=engine)
 
     pipeline = create_full_pipeline()
-    pipeline_result = dagster.execute_pipeline(context, pipeline, {})
+    pipeline_result = dagster.execute_pipeline(
+        context, pipeline, environment=config.Environment.empty()
+    )
 
     assert pipeline_result.success
