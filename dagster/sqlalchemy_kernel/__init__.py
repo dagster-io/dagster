@@ -32,19 +32,6 @@ class DagsterSqlQueryExpression(DagsterSqlExpression):
     def query_text(self):
         return self._subquery_text
 
-    # @property
-    # def from_target(self):
-    #     return f'({self.sql_text})'
-
-    #FIXME: This is the worst hack I've implemented in a long time.
-    #Without it, you get errors like this:
-    """
-E       sqlalchemy.exc.ProgrammingError: (psycopg2.ProgrammingError) syntax error at or near ")"
-E       LINE 1: ...CT num1, num2, num1 + num2 as sum FROM (abe_temp.num_table))
-E                                                                            ^
-E        [SQL: 'CREATE TABLE abe_temp.sum_sq_table AS SELECT num1, num2, sum, sum * sum as sum_sq from (SELECT num1, num2, num1 + num2 as sum FROM (abe_temp.num_table))'] (Background on this error at: http://sqlalche.me/e/f405)
-"""
-
     @property
     def from_target(self):
         return f'({self._subquery_text})'
@@ -78,6 +65,26 @@ def create_table_output():
 
     return OutputDefinition(
         name='CREATE',
+        output_fn=output_fn,
+        argument_def_dict={'table_name': types.STRING},
+    )
+
+
+def truncate_and_insert_table_output():
+    def output_fn(sql_expr, context, arg_dict):
+        check.inst_param(sql_expr, 'sql_expr', DagsterSqlExpression)
+        check.inst_param(context, 'context', DagsterSqlAlchemyExecutionContext)
+        check.dict_param(arg_dict, 'arg_dict')
+
+        output_table_name = check.str_elem(arg_dict, 'table_name')
+        total_sql = '''TRUNCATE TABLE {output_table_name}; INSERT INTO {output_table_name} ({sql_text})'''.format(
+            output_table_name=output_table_name, sql_text=sql_expr.sql_text
+        )
+        print(total_sql)
+        context.engine.connect().execute(total_sql)
+
+    return OutputDefinition(
+        name='TRUNCATE_AND_INSERT',
         output_fn=output_fn,
         argument_def_dict={'table_name': types.STRING},
     )
@@ -139,7 +146,7 @@ def create_sql_solid(name, inputs, sql_text):
         name,
         inputs=inputs,
         transform_fn=create_sql_transform(sql_text),
-        outputs=[create_table_output()],
+        outputs=[create_table_output(), truncate_and_insert_table_output()],
     )
 
 
