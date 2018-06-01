@@ -686,7 +686,7 @@ def output_single_solid(
     check.bool_param(throw_on_error, 'throw_on_error')
 
     results = list(
-        output_pipeline_iterator(
+        materialize_pipeline_iterator(
             context,
             DagsterPipeline(solids=[solid]),
             environment=environment,
@@ -800,9 +800,6 @@ def _execute_pipeline_solid_step(context, solid, input_args, intermediate_values
 
 
 class InputArgs:
-    pass
-
-class TypedEnvironmentInputArgs(InputArgs):
     def __init__(self, pipeline, environment):
         self.pipeline = check.inst_param(pipeline, 'pipeline', DagsterPipeline)
         self.environment = check.inst_param(environment, 'environment', config.Environment)
@@ -850,10 +847,9 @@ def execute_pipeline_iterator(
     check.opt_list_param(through_solids, 'through_solids', of_type=str)
     check.inst_param(environment, 'environment', config.Environment)
 
-    input_args = TypedEnvironmentInputArgs(pipeline, environment)
+    input_args = InputArgs(pipeline, environment)
 
     provided_input_names = input_args.input_names
-
 
     if not through_solids:
         through_solids = pipeline.all_sink_solids
@@ -917,12 +913,18 @@ def execute_pipeline(
     context,
     pipeline,
     *,
+    environment,
+    from_solids=None,
     through_solids=None,
     throw_on_error=True,
-    # variant two is below
-    environment=None,
-    from_solids=None,
 ):
+    check.inst_param(context, 'context', DagsterExecutionContext)
+    check.inst_param(pipeline, 'pipeline', DagsterPipeline)
+    check.inst_param(environment, 'environment', config.Environment)
+    from_solids = check.opt_list_param(from_solids, 'from_solids', of_type=str)
+    through_solids = check.opt_list_param(through_solids, 'through_solids', of_type=str)
+    check.bool_param(throw_on_error, 'throw_on_error')
+
     '''
     "Synchronous" version of execute_pipeline_iteator.
 
@@ -970,7 +972,7 @@ class MaterializationArgs:
                 yield materialization
 
 
-def output_pipeline(
+def materialize_pipeline(
     context,
     pipeline,
     *,
@@ -979,7 +981,7 @@ def output_pipeline(
     throw_on_error=True,
 ):
     '''
-    Synchronous version of output_pipeline_iterator. Just like execute_pipeline, you can optionally
+    Synchronous version of materialize_pipeline_iterator. Just like execute_pipeline, you can optionally
     specify, through throw_on_error, that exceptions should be thrown when encountered instead
     of returning a result in an error state. Especially useful in testing contexts.
     '''
@@ -990,7 +992,7 @@ def output_pipeline(
     check.bool_param(throw_on_error, 'throw_on_error')
 
     results = []
-    for result in output_pipeline_iterator(
+    for result in materialize_pipeline_iterator(
         context,
         pipeline,
         materializations=materializations,
@@ -1003,7 +1005,7 @@ def output_pipeline(
     return DagsterPipelineExecutionResult(results)
 
 
-def output_pipeline_iterator(
+def materialize_pipeline_iterator(
     context, pipeline, *, materializations, environment
 ):
     '''

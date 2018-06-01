@@ -204,7 +204,7 @@ def test_pipeline():
     }
 
     sum_sq_path_args = {'path': '/tmp/sum_sq.csv'}
-    materialization_pipeline_result = dagster.output_pipeline(
+    materialization_pipeline_result = dagster.materialize_pipeline(
         DagsterExecutionContext(),
         pipeline,
         environment=environment,

@@ -10,7 +10,7 @@ from dagster.core.execution import (
     DagsterExecutionContext,
     DagsterPipeline,
     execute_pipeline_iterator,
-    output_pipeline_iterator,
+    materialize_pipeline_iterator,
     create_pipeline_env_from_arg_dicts,
 )
 from dagster.utils.logging import define_logger
@@ -174,7 +174,7 @@ def run_pipeline_output_command(input_tuple, output, log_level, pipeline):
     materializations = _get_materializations(output_list)
 
     context = create_dagster_context(log_level=LOGGING_DICT[log_level])
-    pipeline_iter = output_pipeline_iterator(
+    pipeline_iter = materialize_pipeline_iterator(
         context,
         pipeline,
         environment=create_pipeline_env_from_arg_dicts(pipeline, input_arg_dicts),
