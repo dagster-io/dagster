@@ -77,10 +77,10 @@ def truncate_and_insert_table_output():
         check.dict_param(arg_dict, 'arg_dict')
 
         output_table_name = check.str_elem(arg_dict, 'table_name')
-        total_sql = '''TRUNCATE TABLE {output_table_name}; INSERT INTO {output_table_name} ({sql_text})'''.format(
+        total_sql = '''TRUNCATE TABLE {output_table_name};
+                       INSERT INTO {output_table_name} ({sql_text})'''.format(
             output_table_name=output_table_name, sql_text=sql_expr.sql_text
         )
-        print(total_sql)
         context.engine.connect().execute(total_sql)
 
     return OutputDefinition(
