@@ -11,6 +11,7 @@ from .graph import DagsterPipeline
 from dagster.core.execution import DagsterExecutionContext
 import json
 
+
 def pipeline(**kwargs):
     return DagsterPipeline(**kwargs)
 
