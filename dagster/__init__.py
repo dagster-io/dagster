@@ -4,7 +4,7 @@ from builtins import *  # pylint: disable=W0622,W0401
 import dagster.core.execution
 
 from dagster.core.execution import (
-    execute_pipeline, execute_pipeline_through_solid, output_pipeline
+    execute_pipeline, execute_pipeline_through_solid, materialize_pipeline
 )
 
 

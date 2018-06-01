@@ -9,8 +9,8 @@ import dagster.core
 from dagster.core import types
 from dagster.core.definitions import (Solid, create_single_materialization_output)
 from dagster.core.execution import (
-    DagsterExecutionContext, execute_pipeline_through_solid, _read_source, output_pipeline_iterator,
-    output_single_solid, _pipeline_solid_in_memory, output_pipeline, execute_pipeline,
+    DagsterExecutionContext, execute_pipeline_through_solid, _read_source, materialize_pipeline_iterator,
+    output_single_solid, _pipeline_solid_in_memory, materialize_pipeline, execute_pipeline,
     execute_single_solid, create_single_solid_env_from_arg_dicts, create_pipeline_env_from_arg_dicts
 )
 import dagster.pandas_kernel as dagster_pd
@@ -336,7 +336,7 @@ def test_pandas_output_csv_pipeline():
         pipeline = create_diamond_pipeline()
         environment = create_pipeline_env_from_arg_dicts(pipeline, input_arg_dicts)
 
-        for _result in output_pipeline_iterator(
+        for _result in materialize_pipeline_iterator(
             context,
             pipeline=pipeline,
             environment=environment,
@@ -379,7 +379,7 @@ def test_pandas_output_intermediate_csv_files():
 
         environment = create_pipeline_env_from_arg_dicts(pipeline, input_args)
 
-        subgraph_one_result = output_pipeline(
+        subgraph_one_result = materialize_pipeline(
             context,
             pipeline,
             environment=environment,
@@ -484,7 +484,7 @@ def test_pandas_output_intermediate_parquet_files():
     with get_temp_file_names(2) as temp_tuple:
         # false positive on pylint error
         sum_file, mult_file = temp_tuple  # pylint: disable=E0632
-        pipeline_result = output_pipeline(
+        pipeline_result = materialize_pipeline(
             context,
             pipeline,
             environment=create_pipeline_env_from_arg_dicts(pipeline, input_args),
@@ -553,7 +553,7 @@ def test_pandas_multiple_outputs():
         csv_file, parquet_file = temp_tuple  # pylint: disable=E0632
         pipeline = create_diamond_pipeline()
 
-        for _result in output_pipeline_iterator(
+        for _result in materialize_pipeline_iterator(
             context,
             pipeline=pipeline,
             environment=create_pipeline_env_from_arg_dicts(pipeline, input_arg_dicts),

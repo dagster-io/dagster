@@ -1,7 +1,7 @@
 import sqlalchemy as sa
 from dagster import config
 from dagster.core.execution import (
-    output_single_solid, DagsterPipeline, execute_pipeline, output_pipeline,
+    output_single_solid, DagsterPipeline, execute_pipeline, materialize_pipeline,
     create_single_solid_env_from_arg_dicts, create_pipeline_env_from_arg_dicts
 )
 
@@ -103,7 +103,7 @@ def test_output_sql_sum_sq_solid():
     create_num_table(engine)
     engine = in_mem_engine()
 
-    pipeline_result = output_pipeline(
+    pipeline_result = materialize_pipeline(
         dagster_sa.DagsterSqlAlchemyExecutionContext(engine=engine),
         pipeline,
         environment=create_pipeline_env_from_arg_dicts(

@@ -10,7 +10,7 @@ from dagster.core.definitions import (
     InputDefinition,
 )
 from dagster.core.execution import (
-    DagsterExecutionContext, DagsterExecutionFailureReason, execute_pipeline, output_pipeline,
+    DagsterExecutionContext, DagsterExecutionFailureReason, execute_pipeline, materialize_pipeline,
     create_pipeline_env_from_arg_dicts
 )
 
@@ -148,7 +148,7 @@ def test_output_failure_pipeline():
     input_arg_dicts = {'failing_output_input': {}}
     environment = create_pipeline_env_from_arg_dicts(pipeline, input_arg_dicts)
 
-    pipeline_result = output_pipeline(
+    pipeline_result = materialize_pipeline(
         create_test_context(),
         pipeline,
         environment=environment,
