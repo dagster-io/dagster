@@ -70,6 +70,26 @@ def create_table_output():
     )
 
 
+def truncate_and_insert_table_output():
+    def output_fn(sql_expr, context, arg_dict):
+        check.inst_param(sql_expr, 'sql_expr', DagsterSqlExpression)
+        check.inst_param(context, 'context', DagsterSqlAlchemyExecutionContext)
+        check.dict_param(arg_dict, 'arg_dict')
+
+        output_table_name = check.str_elem(arg_dict, 'table_name')
+        total_sql = '''TRUNCATE TABLE {output_table_name};
+                       INSERT INTO {output_table_name} ({sql_text})'''.format(
+            output_table_name=output_table_name, sql_text=sql_expr.sql_text
+        )
+        context.engine.connect().execute(total_sql)
+
+    return OutputDefinition(
+        name='TRUNCATE_AND_INSERT',
+        output_fn=output_fn,
+        argument_def_dict={'table_name': types.STRING},
+    )
+
+
 def _table_input_fn(context, arg_dict):
 
     check.inst_param(context, 'context', DagsterSqlAlchemyExecutionContext)
@@ -126,7 +146,7 @@ def create_sql_solid(name, inputs, sql_text):
         name,
         inputs=inputs,
         transform_fn=create_sql_transform(sql_text),
-        outputs=[create_table_output()],
+        outputs=[create_table_output(), truncate_and_insert_table_output()],
     )
 
 

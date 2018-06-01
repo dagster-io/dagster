@@ -1,3 +1,4 @@
+import logging
 import jinja2
 
 import dagster
@@ -16,7 +17,14 @@ def _create_table_input(name, depends_on=None):
     )
 
 
-def create_templated_sql_transform_solid(name, sql, table_arguments, output, dependencies=None):
+def create_templated_sql_transform_solid(
+    name,
+    sql,
+    table_arguments,
+    output,
+    dependencies=None,
+    extra_inputs=[],
+):
     '''
     Create a solid that is a templated sql statement. This assumes that the sql statement
     is creating or modifying a table, and that that table will be used downstream in the pipeline
@@ -93,7 +101,7 @@ def create_templated_sql_transform_solid(name, sql, table_arguments, output, dep
     dep_inputs = [_create_table_input(dep.name, depends_on=dep) for dep in dependencies]
     return Solid(
         name=name,
-        inputs=table_inputs + dep_inputs,
+        inputs=table_inputs + dep_inputs + extra_inputs,
         transform_fn=_create_templated_sql_transform_with_output(sql, output),
         outputs=[],
     )
