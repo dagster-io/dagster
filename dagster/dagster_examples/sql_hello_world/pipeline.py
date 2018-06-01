@@ -31,7 +31,7 @@ def create_num_table(engine):
 def define_pipeline():
     sum_table_solid = dagster_sa.create_sql_solid(
         name='sum_table',
-        inputs=[dagster_sa.create_table_input('num_table')],
+        inputs=[dagster_sa.create_table_expression_input('num_table')],
         sql_text='SELECT num1, num2, num1 + num2 as sum FROM ({num_table})',
     )
 

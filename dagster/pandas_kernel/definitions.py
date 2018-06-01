@@ -3,7 +3,12 @@ import pandas as pd
 from dagster import check
 
 from dagster.core.definitions import (
-    InputDefinition, OutputDefinition, Solid, create_dagster_single_file_input
+    Solid,
+    create_dagster_single_file_input,
+    InputDefinition,
+    create_single_source_input,
+    MaterializationDefinition,
+    OutputDefinition,
 )
 from dagster.core.execution import DagsterExecutionContext
 
@@ -33,14 +38,15 @@ def create_dagster_pd_dependency_input(solid):
 
         return df
 
-    return InputDefinition(
+    return create_single_source_input(
         name=solid.name,
-        input_fn=dependency_input_fn,
+        source_fn=dependency_input_fn,
         argument_def_dict={
             'path': types.PATH,
             'format': types.STRING,
         },
         depends_on=solid,
+        source_type='CSVORPARQUET',
     )
 
 
@@ -55,7 +61,8 @@ def create_dagster_pd_csv_input(name, delimiter=',', **read_csv_kwargs):
         context.metric('rows', df.shape[0])
         return df
 
-    return create_dagster_single_file_input(name, check_path)
+    return create_dagster_single_file_input(name, check_path, source_type='CSV')
+
 
 
 def create_dagster_pd_read_table_input(name, delimiter=',', **read_table_kwargs):
@@ -69,11 +76,11 @@ def create_dagster_pd_read_table_input(name, delimiter=',', **read_table_kwargs)
         context.metric('rows', df.shape[0])
         return df
 
-    return create_dagster_single_file_input(name, check_path)
+    return create_dagster_single_file_input(name, check_path, source_type='TABLE')
 
 
-def create_dagster_pd_csv_output():
-    def output_fn_inst(df, context, arg_dict):
+def create_dagster_pd_csv_materialization():
+    def to_csv_fn(df, context, arg_dict):
         check.inst_param(df, 'df', pd.DataFrame)
         check.inst_param(context, 'context', DagsterExecutionContext)
         check.dict_param(arg_dict, 'arg_dict')
@@ -81,13 +88,15 @@ def create_dagster_pd_csv_output():
 
         df.to_csv(path, index=False)
 
-    return OutputDefinition(
-        name='CSV', output_fn=output_fn_inst, argument_def_dict={'path': types.PATH}
+    return MaterializationDefinition(
+        materialization_type='CSV',
+        materialization_fn=to_csv_fn,
+        argument_def_dict={'path': types.PATH}
     )
 
 
-def create_dagster_pd_parquet_output():
-    def output_fn_inst(df, context, arg_dict):
+def create_dagster_pd_parquet_materialization():
+    def to_parquet_fn(df, context, arg_dict):
         check.inst_param(df, 'df', pd.DataFrame)
         check.inst_param(context, 'context', DagsterExecutionContext)
         check.dict_param(arg_dict, 'arg_dict')
@@ -95,8 +104,19 @@ def create_dagster_pd_parquet_output():
 
         df.to_parquet(path)
 
+    return MaterializationDefinition(
+        materialization_type='PARQUET',
+        materialization_fn=to_parquet_fn,
+        argument_def_dict={'path': types.PATH}
+    )
+
+
+def create_dataframe_solid_output_definition():
     return OutputDefinition(
-        name='PARQUET', output_fn=output_fn_inst, argument_def_dict={'path': types.PATH}
+        materializations=[
+            create_dagster_pd_csv_materialization(),
+            create_dagster_pd_parquet_materialization(),
+        ]
     )
 
 

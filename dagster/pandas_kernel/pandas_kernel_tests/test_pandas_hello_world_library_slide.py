@@ -1,7 +1,8 @@
 import pandas as pd
 
 from dagster.core.execution import (
-    DagsterExecutionContext, execute_single_solid, output_single_solid
+    DagsterExecutionContext, execute_single_solid, output_single_solid,
+    create_single_solid_env_from_arg_dicts
 )
 from dagster.utils.test import (script_relative_path, get_temp_file_name)
 
@@ -25,11 +26,15 @@ def test_hello_world_no_library_support():
     )
 
     input_arg_dicts = {'num_csv': {'path': script_relative_path('num.csv')}}
-    result = execute_single_solid(create_test_context(), hello_world, input_arg_dicts)
+    result = execute_single_solid(
+        create_test_context(),
+        hello_world,
+        environment=create_single_solid_env_from_arg_dicts(hello_world, input_arg_dicts)
+    )
 
     assert result.success
 
-    assert result.materialized_output.to_dict('list') == {
+    assert result.transformed_value.to_dict('list') == {
         'num1': [1, 3],
         'num2': [2, 4],
         'sum': [3, 7],
@@ -37,7 +42,11 @@ def test_hello_world_no_library_support():
 
     with get_temp_file_name() as temp_file_name:
         output_result = output_single_solid(
-            create_test_context(), hello_world, input_arg_dicts, 'CSV', {'path': temp_file_name}
+            create_test_context(),
+            hello_world,
+            environment=create_single_solid_env_from_arg_dicts(hello_world, input_arg_dicts),
+            materialization_type='CSV',
+            arg_dict={'path': temp_file_name},
         )
 
         assert output_result.success

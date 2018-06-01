@@ -1,4 +1,5 @@
 import dagster
+from dagster import config
 from dagster.core.execution import execute_single_solid
 from dagster.utils.test import script_relative_path
 import dagster.sqlalchemy_kernel as dagster_sa
@@ -16,9 +17,7 @@ def test_basic_isolated_sql_solid():
     )
 
     result = execute_single_solid(
-        context,
-        basic_isolated_sql_solid,
-        input_arg_dicts={},
+        context, basic_isolated_sql_solid, environment=config.Environment.empty()
     )
 
     assert result.success
@@ -46,7 +45,9 @@ def test_basic_pipeline():
 
     context = in_mem_context()
 
-    pipeline_result = dagster.execute_pipeline(context, pipeline, {})
+    pipeline_result = dagster.execute_pipeline(
+        context, pipeline, environment=config.Environment.empty()
+    )
 
     assert pipeline_result.success
 
@@ -77,7 +78,9 @@ def test_pipeline_from_files():
     pipeline = dagster.pipeline(solids=[create_sum_table_solid, create_sum_sq_table_solid])
 
     context = in_mem_context()
-    pipeline_result = dagster.execute_pipeline(context, pipeline, {})
+    pipeline_result = dagster.execute_pipeline(
+        context, pipeline, environment=config.Environment.empty()
+    )
 
     assert pipeline_result.success
 

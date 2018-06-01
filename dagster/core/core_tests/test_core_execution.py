@@ -2,11 +2,13 @@ import pytest
 
 from dagster.core import types
 
-from dagster.core.definitions import (Solid, InputDefinition, OutputDefinition)
+from dagster.core.definitions import (
+    Solid, OutputDefinition, create_single_source_input, MaterializationDefinition
+)
 
 from dagster.core.execution import (
-    _execute_input, _execute_core_transform, _execute_output, DagsterTypeError,
-    DagsterExecutionContext
+    _execute_core_transform, DagsterTypeError, DagsterExecutionContext, _execute_materialization,
+    _read_source
 )
 
 
@@ -14,50 +16,61 @@ def create_test_context():
     return DagsterExecutionContext()
 
 
-def test_execute_input():
+def _read_new_single_source_input(context, new_input, arg_dict):
+    assert len(new_input.sources) == 1
+    return _read_source(context, new_input.sources[0], arg_dict)
+
+
+def test_read_source():
     expected_output = [{'data_key': 'data_value'}]
-    some_input = InputDefinition(
-        name='some_input', input_fn=lambda context, arg_dict: expected_output, argument_def_dict={}
+    some_input = create_single_source_input(
+        name='some_input',
+        source_fn=lambda context, arg_dict: expected_output,
+        argument_def_dict={}
     )
 
-    output = _execute_input(create_test_context(), some_input, {})
+    output = _read_source(create_test_context(), some_input.sources[0], {})
 
     assert output == expected_output
 
 
-def test_materialize_input_arg_mismatch():
-    some_input = InputDefinition(
-        name='some_input', input_fn=lambda context, arg_dict: [], argument_def_dict={}
-    )
+def test_source_arg_mismiatch():
+    extra_arg_source = create_single_source_input(
+        name='some_input', source_fn=lambda context, arg_dict: [], argument_def_dict={}
+    ).sources[0]
 
     with pytest.raises(DagsterTypeError):
-        _execute_input(create_test_context(), some_input, {'extra_arg': None})
+        _read_source(create_test_context(), extra_arg_source, {'extra_arg': None})
 
-    some_input_with_arg = InputDefinition(
+    some_input_with_arg = create_single_source_input(
         name='some_input_with_arg',
-        input_fn=lambda context, arg_dict: [],
+        source_fn=lambda context, arg_dict: [],
         argument_def_dict={'in_arg': types.STRING}
     )
 
     with pytest.raises(DagsterTypeError):
-        _execute_input(create_test_context(), some_input_with_arg, {})
+        _read_new_single_source_input(create_test_context(), some_input_with_arg, {})
 
 
 def test_materialize_input_arg_type_mismatch():
-    some_input_with_arg = InputDefinition(
+    some_input_with_arg = create_single_source_input(
         name='some_input_with_arg',
-        input_fn=lambda context, arg_dict: [],
+        source_fn=lambda context, arg_dict: [],
         argument_def_dict={'in_arg': types.STRING}
     )
 
     with pytest.raises(DagsterTypeError):
-        _execute_input(create_test_context(), some_input_with_arg, {'in_arg': 1})
+        _read_new_single_source_input(create_test_context(), some_input_with_arg, {'in_arg': 1})
+
+
+def noop_output():
+    return OutputDefinition()
 
 
 def test_materialize_output():
-    some_input = InputDefinition(
+    some_input = create_single_source_input(
         name='some_input',
-        input_fn=lambda context, arg_dict: [{'data_key': 'data_value'}],
+        source_fn=lambda context, arg_dict: [{'data_key': 'data_value'}],
         argument_def_dict={},
     )
 
@@ -65,34 +78,28 @@ def test_materialize_output():
         some_input[0]['data_key'] = 'new_value'
         return some_input
 
-    custom_output_def = OutputDefinition(
-        name='CUSTOM',
-        output_fn=lambda _data, _output_arg_dict: None,
-        argument_def_dict={},
-    )
-
     single_solid = Solid(
         name='some_node',
         inputs=[some_input],
         transform_fn=tranform_fn_inst,
-        outputs=[custom_output_def],
+        output=noop_output(),
     )
 
-    materialized_input = _execute_input(create_test_context(), some_input, {})
+    value = _read_new_single_source_input(create_test_context(), some_input, {})
 
     output = _execute_core_transform(
         create_test_context(),
         single_solid.transform_fn,
-        {'some_input': materialized_input},
+        {'some_input': value},
     )
 
     assert output == [{'data_key': 'new_value'}]
 
 
 def test_materialize_output_with_context():
-    some_input = InputDefinition(
+    some_input = create_single_source_input(
         name='some_input',
-        input_fn=lambda context, arg_dict: [{'data_key': 'data_value'}],
+        source_fn=lambda context, arg_dict: [{'data_key': 'data_value'}],
         argument_def_dict={},
     )
 
@@ -101,93 +108,102 @@ def test_materialize_output_with_context():
         some_input[0]['data_key'] = 'new_value'
         return some_input
 
-    custom_output_def = OutputDefinition(
-        name='CUSTOM',
-        output_fn=lambda _data, _output_arg_dict: None,
-        argument_def_dict={},
-    )
-
     single_solid = Solid(
         name='some_node',
         inputs=[some_input],
         transform_fn=tranform_fn_inst,
-        outputs=[custom_output_def],
+        output=noop_output(),
     )
 
-    materialized_input = _execute_input(create_test_context(), some_input, {})
+    value = _read_new_single_source_input(create_test_context(), some_input, {})
 
     output = _execute_core_transform(
         create_test_context(),
         single_solid.transform_fn,
-        {'some_input': materialized_input},
+        {'some_input': value},
     )
 
     assert output == [{'data_key': 'new_value'}]
 
 
 def test_materialize_input_with_args():
-    some_input = InputDefinition(
+    some_input = create_single_source_input(
         name='some_input',
-        input_fn=lambda context, arg_dict: [{'key': arg_dict['str_arg']}],
+        source_fn=lambda context, arg_dict: [{'key': arg_dict['str_arg']}],
         argument_def_dict={'str_arg': types.STRING}
     )
 
-    output = _execute_input(create_test_context(), some_input, {'str_arg': 'passed_value'})
+    output = _read_new_single_source_input(
+        create_test_context(), some_input, {'str_arg': 'passed_value'}
+    )
     expected_output = [{'key': 'passed_value'}]
     assert output == expected_output
+
+
+def single_materialization_output(materialization_type, materialization_fn, argument_def_dict):
+    return OutputDefinition(
+        materializations=[
+            MaterializationDefinition(
+                materialization_type=materialization_type,
+                materialization_fn=materialization_fn,
+                argument_def_dict=argument_def_dict
+            )
+        ]
+    )
 
 
 def test_execute_output_with_args():
     test_output = {}
 
-    def output_fn_inst(materialized_output, context, arg_dict):
+    def materialization_fn_inst(value, context, arg_dict):
         assert isinstance(context, DagsterExecutionContext)
         assert isinstance(arg_dict, dict)
-        test_output['thedata'] = materialized_output
+        test_output['thedata'] = value
         test_output['thearg'] = arg_dict['out_arg']
 
-    custom_output = OutputDefinition(
-        name='CUSTOM', output_fn=output_fn_inst, argument_def_dict={'out_arg': types.STRING}
+    materialization = MaterializationDefinition(
+        materialization_type='CUSTOM',
+        materialization_fn=materialization_fn_inst,
+        argument_def_dict={'out_arg': types.STRING}
     )
 
-    _execute_output(
-        create_test_context(), custom_output, {'out_arg': 'the_out_arg'}, [{
+    _execute_materialization(
+        create_test_context(), materialization, {'out_arg': 'the_out_arg'}, [{
             'key': 'value'
         }]
     )
 
 
-def test_execute_output_arg_mismatch():
-    custom_output = OutputDefinition(
-        name='CUSTOM', output_fn=lambda out, dict: [], argument_def_dict={'out_arg': types.STRING}
+def test_execute_materialization_arg_mismatch():
+    materialization = MaterializationDefinition(
+        materialization_type='CUSTOM',
+        materialization_fn=lambda out, dict: [],
+        argument_def_dict={'out_arg': types.STRING}
     )
 
     with pytest.raises(DagsterTypeError):
-        _execute_output(
-            create_test_context(), custom_output, output_arg_dict={}, materialized_output=[{}]
-        )
+        _execute_materialization(create_test_context(), materialization, arg_dict={}, value=[{}])
 
     with pytest.raises(DagsterTypeError):
-        _execute_output(
+        _execute_materialization(
             create_test_context(),
-            custom_output,
-            output_arg_dict={
+            materialization,
+            arg_dict={
                 'out_arg': 'foo',
                 'extra_arg': 'bar'
             },
-            materialized_output=[{}]
+            value=[{}]
         )
 
 
-def test_execute_output_arg_type_mismatch():
-    custom_output = OutputDefinition(
-        name='CUSTOM', output_fn=lambda out, dict: [], argument_def_dict={'out_arg': types.STRING}
+def test_execute_materialization_arg_type_mismatch():
+    custom_output = MaterializationDefinition(
+        materialization_type='CUSTOM',
+        materialization_fn=lambda out, dict: [],
+        argument_def_dict={'out_arg': types.STRING}
     )
 
     with pytest.raises(DagsterTypeError):
-        _execute_output(
-            create_test_context(),
-            custom_output,
-            output_arg_dict={'out_arg': 1},
-            materialized_output=[{}]
+        _execute_materialization(
+            create_test_context(), custom_output, arg_dict={'out_arg': 1}, value=[{}]
         )

@@ -1,6 +1,8 @@
+from dagster import config
 from dagster.dagster_examples.qhp.pipeline import define_pipeline
 from dagster.core.execution import (
-    execute_pipeline_through_solid, DagsterExecutionContext, execute_pipeline
+    execute_pipeline_through_solid, DagsterExecutionContext, execute_pipeline,
+    create_pipeline_env_from_arg_dicts
 )
 from dagster.utils.test import script_relative_path
 
@@ -19,11 +21,19 @@ def test_plans():
     result = execute_pipeline_through_solid(
         DagsterExecutionContext(),
         pipeline,
-        input_arg_dicts=providers_771_args(),
+        environment=config.Environment(
+            input_sources=[
+                config.InputSource(
+                    input_name='qhp_json_input',
+                    source='QHPJSON',
+                    args={'path': script_relative_path('providers-771.json')},
+                )
+            ]
+        ),
         solid_name='plans',
     )
 
-    plans_df = result.materialized_output
+    plans_df = result.transformed_value
 
     assert not plans_df.empty
 
@@ -34,11 +44,11 @@ def test_plan_years():
     result = execute_pipeline_through_solid(
         DagsterExecutionContext(),
         pipeline,
-        input_arg_dicts=providers_771_args(),
+        environment=create_pipeline_env_from_arg_dicts(pipeline, providers_771_args()),
         solid_name='plan_years',
     )
 
-    plan_years_df = result.materialized_output
+    plan_years_df = result.transformed_value
 
     assert not plan_years_df.empty
 
@@ -47,7 +57,10 @@ def test_plan_and_plan_years_pipeline():
     pipeline = define_pipeline()
 
     pipeline_result = execute_pipeline(
-        DagsterExecutionContext(), pipeline, providers_771_args(), ['plans', 'plan_years']
+        DagsterExecutionContext(),
+        pipeline,
+        environment=create_pipeline_env_from_arg_dicts(pipeline, providers_771_args()),
+        through_solids=['plans', 'plan_years']
     )
     assert pipeline_result.success
     assert len(pipeline_result.result_list) == 2
@@ -59,12 +72,12 @@ def test_insurance_pipeline():
     result = execute_pipeline_through_solid(
         DagsterExecutionContext(),
         pipeline,
-        providers_771_args(),
+        environment=create_pipeline_env_from_arg_dicts(pipeline, providers_771_args()),
         solid_name='insurance',
     )
     assert result.success
     assert result.name == 'insurance'
-    assert not result.materialized_output.empty
+    assert not result.transformed_value.empty
 
 
 def test_practices_pipeline():
@@ -75,7 +88,7 @@ def test_practices_pipeline():
     result_list = execute_pipeline(
         DagsterExecutionContext(),
         pipeline,
-        providers_771_args(),
+        environment=create_pipeline_env_from_arg_dicts(pipeline, providers_771_args()),
         through_solids=['practices'],
     ).result_list
 
@@ -92,7 +105,7 @@ def test_practices_pipeline():
         if not result.success:
             raise result.exception
         assert result.success
-        assert not result.materialized_output.empty
+        assert not result.transformed_value.empty
 
 
 def test_practice_insurances_pipeline():
@@ -101,7 +114,7 @@ def test_practice_insurances_pipeline():
     result_list = execute_pipeline(
         DagsterExecutionContext(),
         pipeline,
-        providers_771_args(),
+        environment=create_pipeline_env_from_arg_dicts(pipeline, providers_771_args()),
         through_solids=['practice_insurances'],
     ).result_list
 
@@ -124,7 +137,7 @@ def test_practice_insurances_pipeline():
 
     for result in result_list:
         assert result.success
-        assert not result.materialized_output.empty
+        assert not result.transformed_value.empty
 
 
 def test_languages_pipeline():
@@ -133,14 +146,16 @@ def test_languages_pipeline():
     result = execute_pipeline_through_solid(
         DagsterExecutionContext(),
         pipeline,
-        input_arg_dicts={'languages_csv': {
-            'path': script_relative_path('Language.csv')
-        }},
+        environment=create_pipeline_env_from_arg_dicts(
+            pipeline, {'languages_csv': {
+                'path': script_relative_path('Language.csv')
+            }}
+        ),
         solid_name='languages',
     )
 
     assert result.success
-    df = result.materialized_output
+    df = result.transformed_value
     assert list(df.columns) == [
         'SK_Language', 'ISO639-3Code', 'ISO639-2BCode', 'ISO639-2TCode', 'ISO639-1Code',
         'LanguageName', 'Scope', 'Type', 'MacroLanguageISO639-3Code', 'MacroLanguageName', 'IsChild'
@@ -153,16 +168,18 @@ def test_specialities_pipeline():
     result = execute_pipeline_through_solid(
         DagsterExecutionContext(),
         pipeline,
-        input_arg_dicts={
-            'specialities_csv': {
-                'path': script_relative_path('betterdoctor_qhp_specialities.csv')
+        environment=create_pipeline_env_from_arg_dicts(
+            pipeline, {
+                'specialities_csv': {
+                    'path': script_relative_path('betterdoctor_qhp_specialities.csv')
+                }
             }
-        },
+        ),
         solid_name='specialities',
     )
 
     assert result.success
-    df = result.materialized_output
+    df = result.transformed_value
     assert list(df.columns) == [
         'betterdoctor_uid', 'client_name_org', 'client_id', 'client_name', 'mappable', 'Notes'
     ]
@@ -188,7 +205,7 @@ def test_provider_languages_specialities():
     result_list = execute_pipeline(
         DagsterExecutionContext(),
         pipeline,
-        input_arg_dicts=all_external_arg_dicts(),
+        environment=create_pipeline_env_from_arg_dicts(pipeline, all_external_arg_dicts()),
         through_solids=['provider_languages_specialities'],
     ).result_list
 
