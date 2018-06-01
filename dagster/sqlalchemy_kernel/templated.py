@@ -115,8 +115,6 @@ def _render_template_string(template_text, **kwargs):
 def _create_templated_sql_transform_with_output(sql, output_table):
     def do_transform(context, **kwargs):
         rendered_sql = _render_template_string(sql, **kwargs)
-        # logging.info(rendered_sql)
-        print(rendered_sql[:1000])
         execute_sql_text_on_context(context, rendered_sql)
         return kwargs[output_table]
 
