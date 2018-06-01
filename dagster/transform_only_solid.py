@@ -1,15 +1,12 @@
 from dagster import check
-from dagster.core.definitions import (Solid, InputDefinition)
+from dagster.core.definitions import (
+    Solid, InputDefinition, create_single_source_input, create_no_materialization_output
+)
 from dagster.utils import make_context_arg_optional
 
 
-def dep_only_input(solid):
-    return InputDefinition(
-        name=solid.name,
-        input_fn=lambda **kwargs: check.not_implemented('should not get here'),
-        argument_def_dict={},
-        depends_on=solid,
-    )
+def dep_only_input(solid, expectations=None):
+    return InputDefinition(name=solid.name, sources=[], depends_on=solid, expectations=expectations)
 
 
 def no_args_transform_solid(name, no_args_transform_fn, inputs=None):
@@ -24,5 +21,5 @@ def no_args_transform_solid(name, no_args_transform_fn, inputs=None):
         name=name,
         inputs=inputs or [],
         transform_fn=lambda context, **kwargs: true_fn(context=context),
-        outputs=[],
+        output=create_no_materialization_output(),
     )

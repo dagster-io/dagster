@@ -1,5 +1,6 @@
 import dagster
-from dagster.core.execution import execute_single_solid
+from dagster import config
+from dagster.core.execution import (execute_single_solid, create_single_solid_env_from_arg_dicts)
 import dagster.pandas_kernel as dagster_pd
 
 from dagster.utils.test import script_relative_path
@@ -25,7 +26,7 @@ def test_wrong_value():
         execute_single_solid(
             dagster.context(),
             df_solid,
-            input_arg_dicts,
+            environment=create_single_solid_env_from_arg_dicts(df_solid, input_arg_dicts),
         )
 
 
@@ -39,11 +40,19 @@ def test_wrong_input_arg_dict():
         name='test_wrong_value', inputs=[csv_input], transform_fn=transform_fn
     )
 
-    input_arg_dicts = {'num_csvdlddjd': {'path': script_relative_path('num.csv')}}
-
     with pytest.raises(DagsterInvariantViolationError):
         execute_single_solid(
             dagster.context(),
             df_solid,
-            input_arg_dicts,
+            environment=config.Environment(
+                input_sources=[
+                    config.InputSource(
+                        input_name='num_jdkfjskdfjs',
+                        source='CSV',
+                        args={
+                            'path': script_relative_path('num.csv'),
+                        }
+                    )
+                ]
+            ),
         )

@@ -1,9 +1,17 @@
 from dagster import check
+from dagster import config
 
 import dagster.core
-from dagster.core.definitions import (Solid, InputDefinition, OutputDefinition)
+from dagster.core.definitions import (
+    Solid,
+    create_single_source_input,
+    create_no_materialization_output,
+    create_single_materialization_output,
+    InputDefinition,
+)
 from dagster.core.execution import (
-    DagsterExecutionContext, DagsterExecutionFailureReason, execute_pipeline, output_pipeline
+    DagsterExecutionContext, DagsterExecutionFailureReason, execute_pipeline, materialize_pipeline,
+    create_pipeline_env_from_arg_dicts
 )
 
 
@@ -11,29 +19,21 @@ def create_test_context():
     return DagsterExecutionContext()
 
 
-def create_dummy_output_def():
-    return OutputDefinition(
-        name='CUSTOM',
-        output_fn=lambda _data, _output_arg_dict: None,
-        argument_def_dict={},
-    )
-
-
 def create_failing_output_def():
-    def failing_output_fn(*_args, **_kwargs):
+    def failing_materialization_fn(*_args, **_kwargs):
         raise Exception('something bad happened')
 
-    return OutputDefinition(
-        name='CUSTOM',
-        output_fn=failing_output_fn,
+    return create_single_materialization_output(
+        materialization_type='CUSTOM',
+        materialization_fn=failing_materialization_fn,
         argument_def_dict={},
     )
 
 
 def create_input_set_input_def(input_name):
-    return InputDefinition(
+    return create_single_source_input(
         input_name,
-        input_fn=lambda context, arg_dict: [{input_name: 'input_set'}],
+        source_fn=lambda context, arg_dict: [{input_name: 'input_set'}],
         argument_def_dict={},
     )
 
@@ -50,15 +50,15 @@ def create_root_success_solid(name):
         name=name,
         inputs=[create_input_set_input_def(input_name)],
         transform_fn=root_transform,
-        outputs=[create_dummy_output_def()]
+        output=create_no_materialization_output(),
     )
 
 
 def create_root_transform_failure_solid(name):
     input_name = name + '_input'
-    inp = InputDefinition(
+    inp = create_single_source_input(
         input_name,
-        input_fn=lambda context, arg_dict: [{input_name: 'input_set'}],
+        source_fn=lambda context, arg_dict: [{input_name: 'input_set'}],
         argument_def_dict={},
     )
 
@@ -66,7 +66,10 @@ def create_root_transform_failure_solid(name):
         raise Exception('Transform failed')
 
     return Solid(
-        name=name, inputs=[inp], transform_fn=failed_transform, outputs=[create_dummy_output_def()]
+        name=name,
+        inputs=[inp],
+        transform_fn=failed_transform,
+        output=create_no_materialization_output(),
     )
 
 
@@ -75,9 +78,9 @@ def create_root_input_failure_solid(name):
         raise Exception('something bad happened')
 
     input_name = name + '_input'
-    inp = InputDefinition(
+    inp = create_single_source_input(
         input_name,
-        input_fn=failed_input_fn,
+        source_fn=failed_input_fn,
         argument_def_dict={},
     )
 
@@ -85,7 +88,7 @@ def create_root_input_failure_solid(name):
         name=name,
         inputs=[inp],
         transform_fn=lambda **_kwargs: {},
-        outputs=[create_dummy_output_def()]
+        output=create_no_materialization_output(),
     )
 
 
@@ -101,14 +104,17 @@ def create_root_output_failure_solid(name):
         name=name,
         inputs=[create_input_set_input_def(input_name)],
         transform_fn=root_transform,
-        outputs=[create_failing_output_def()]
+        output=create_failing_output_def(),
     )
 
 
 def test_transform_failure_pipeline():
     pipeline = dagster.core.pipeline(solids=[create_root_transform_failure_solid('failing')])
     pipeline_result = execute_pipeline(
-        create_test_context(), pipeline, {'failing_input': {}}, throw_on_error=False
+        create_test_context(),
+        pipeline,
+        environment=create_pipeline_env_from_arg_dicts(pipeline, {'failing_input': {}}),
+        throw_on_error=False
     )
 
     assert not pipeline_result.success
@@ -123,7 +129,10 @@ def test_transform_failure_pipeline():
 def test_input_failure_pipeline():
     pipeline = dagster.core.pipeline(solids=[create_root_input_failure_solid('failing_input')])
     pipeline_result = execute_pipeline(
-        create_test_context(), pipeline, {'failing_input_input': {}}, throw_on_error=False
+        create_test_context(),
+        pipeline,
+        environment=create_pipeline_env_from_arg_dicts(pipeline, {'failing_input_input': {}}),
+        throw_on_error=False
     )
 
     result_list = pipeline_result.result_list
@@ -136,13 +145,16 @@ def test_input_failure_pipeline():
 def test_output_failure_pipeline():
     pipeline = dagster.core.pipeline(solids=[create_root_output_failure_solid('failing_output')])
 
-    pipeline_result = output_pipeline(
+    input_arg_dicts = {'failing_output_input': {}}
+    environment = create_pipeline_env_from_arg_dicts(pipeline, input_arg_dicts)
+
+    pipeline_result = materialize_pipeline(
         create_test_context(),
         pipeline,
-        input_arg_dicts={'failing_output_input': {}},
-        output_arg_dicts={'failing_output': {
-            'CUSTOM': {}
-        }},
+        environment=environment,
+        materializations=[
+            config.Materialization(solid='failing_output', materialization_type='CUSTOM', args={})
+        ],
         throw_on_error=False,
     )
 
@@ -156,35 +168,29 @@ def test_output_failure_pipeline():
 
 
 def test_failure_midstream():
-    node_a = create_root_success_solid('A')
-    node_b = create_root_success_solid('B')
-
-    def not_reached_input(*_args, **_kwargs):
-        check.failed('should not reach')
+    solid_a = create_root_success_solid('A')
+    solid_b = create_root_success_solid('B')
 
     def transform_fn(A, B):
         check.failed('user error')
         return [A, B, {'C': 'transform_called'}]
 
-    solid = Solid(
+    solid_c = Solid(
         name='C',
         inputs=[
-            InputDefinition(
-                name='A', input_fn=not_reached_input, argument_def_dict={}, depends_on=node_a
-            ),
-            InputDefinition(
-                name='B', input_fn=not_reached_input, argument_def_dict={}, depends_on=node_b
-            ),
+            InputDefinition(name='A', sources=[], depends_on=solid_a),
+            InputDefinition(name='B', sources=[], depends_on=solid_b),
         ],
         transform_fn=transform_fn,
-        outputs=[]
+        output=create_no_materialization_output(),
     )
 
     input_arg_dicts = {'A_input': {}, 'B_input': {}}
+    pipeline = dagster.core.pipeline(solids=[solid_a, solid_b, solid_c])
     pipeline_result = execute_pipeline(
         create_test_context(),
-        dagster.core.pipeline(solids=[node_a, node_b, solid]),
-        input_arg_dicts=input_arg_dicts,
+        pipeline,
+        environment=create_pipeline_env_from_arg_dicts(pipeline, input_arg_dicts),
         throw_on_error=False,
     )
 

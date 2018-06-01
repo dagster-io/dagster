@@ -3,7 +3,12 @@ import jinja2
 
 import dagster
 from dagster import check
-from dagster.core.definitions import (Solid, InputDefinition)
+from dagster.core.definitions import (
+    Solid,
+    InputDefinition,
+    SourceDefinition,
+    create_no_materialization_output,
+)
 
 from .common import execute_sql_text_on_context
 
@@ -11,8 +16,13 @@ from .common import execute_sql_text_on_context
 def _create_table_input(name, depends_on=None):
     return InputDefinition(
         name=name,
-        input_fn=lambda arg_dict: arg_dict,
-        argument_def_dict={'name': dagster.core.types.STRING},
+        sources=[
+            SourceDefinition(
+                source_type='TABLENAME',
+                source_fn=lambda arg_dict: arg_dict,
+                argument_def_dict={'name': dagster.core.types.STRING},
+            )
+        ],
         depends_on=depends_on
     )
 
@@ -103,7 +113,7 @@ def create_templated_sql_transform_solid(
         name=name,
         inputs=table_inputs + dep_inputs + extra_inputs,
         transform_fn=_create_templated_sql_transform_with_output(sql, output),
-        outputs=[],
+        output=create_no_materialization_output(),
     )
 
 
