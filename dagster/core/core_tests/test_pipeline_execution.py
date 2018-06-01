@@ -3,10 +3,15 @@ import pytest
 
 from dagster import check
 
-from dagster.core.definitions import (InputDefinition, Solid, OutputDefinition)
+from dagster.core.definitions import (
+    Solid,
+    create_single_source_input,
+    create_no_materialization_output,
+)
 from dagster.core.graph import (create_adjacency_lists, SolidGraph, DagsterPipeline)
 from dagster.core.execution import (
-    execute_pipeline_iterator, DagsterExecutionContext, DagsterExecutionResult
+    execute_pipeline_iterator, DagsterExecutionContext, DagsterExecutionResult,
+    create_pipeline_env_from_arg_dicts
 )
 
 # protected members
@@ -15,14 +20,6 @@ from dagster.core.execution import (
 
 def create_test_context():
     return DagsterExecutionContext()
-
-
-def create_dummy_output_def():
-    return OutputDefinition(
-        name='CUSTOM',
-        output_fn=lambda _data, _output_arg_dict: None,
-        argument_def_dict={},
-    )
 
 
 def _default_passthrough_transform(*args, **kwargs):
@@ -39,9 +36,9 @@ def create_solid_with_deps(name, *solid_deps):
     #     return [{name: 'input_set'}]
 
     inputs = [
-        InputDefinition(
+        create_single_source_input(
             solid_dep.name,
-            input_fn=create_dep_input_fn(solid_dep.name),
+            source_fn=create_dep_input_fn(solid_dep.name),
             argument_def_dict={},
             depends_on=solid_dep,
         ) for solid_dep in solid_deps
@@ -57,15 +54,15 @@ def create_solid_with_deps(name, *solid_deps):
         name=name,
         inputs=inputs,
         transform_fn=dep_transform,
-        outputs=[create_dummy_output_def()],
+        output=create_no_materialization_output(),
     )
 
 
 def create_root_solid(name):
     input_name = name + '_input'
-    inp = InputDefinition(
+    inp = create_single_source_input(
         input_name,
-        input_fn=lambda context, arg_dict: [{input_name: 'input_set'}],
+        source_fn=lambda context, arg_dict: [{input_name: 'input_set'}],
         argument_def_dict={},
     )
 
@@ -76,7 +73,10 @@ def create_root_solid(name):
         return passed_rows
 
     return Solid(
-        name=name, inputs=[inp], transform_fn=root_transform, outputs=[create_dummy_output_def()]
+        name=name,
+        inputs=[inp],
+        transform_fn=root_transform,
+        output=create_no_materialization_output(),
     )
 
 
@@ -190,8 +190,9 @@ def test_execution_subgraph_one_node():
     node_a = create_root_solid('A')
     solid_graph = SolidGraph(solids=[node_a])
 
-    execution_graph = solid_graph.create_execution_graph(
-        output_names=['A'], input_names=['A_input']
+    execution_graph = solid_graph.create_execution_subgraph(
+        from_solids=['A'],
+        to_solids=['A'],
     )
     assert execution_graph
 
@@ -199,17 +200,25 @@ def test_execution_subgraph_one_node():
 def test_execution_graph_diamond():
     solid_graph = create_diamond_graph()
 
-    full_execution_graph = solid_graph.create_execution_graph(
-        output_names=['D'], input_names=['A_input']
+    full_execution_graph = solid_graph.create_execution_subgraph(
+        from_solids=['A'],
+        to_solids=['D'],
+        # output_names=['D'], input_names=['A_input']
     )
     assert full_execution_graph.topological_order == ['A', 'B', 'C', 'D']
     assert len(full_execution_graph._solid_dict) == 4
 
-    d_only_graph = solid_graph.create_execution_graph(output_names=['D'], input_names=['B', 'C'])
+    d_only_graph = solid_graph.create_execution_subgraph(
+        from_solids=['D'],
+        to_solids=['D'],
+    )
     assert len(d_only_graph._solid_dict) == 1
     assert d_only_graph.topological_order == ['D']
 
-    abc_graph = solid_graph.create_execution_graph(output_names=['D'], input_names=['A'])
+    abc_graph = solid_graph.create_execution_subgraph(
+        from_solids=['B', 'C'],
+        to_solids=['D'],
+    )
     assert len(abc_graph._solid_dict) == 3
     assert abc_graph.topological_order == ['B', 'C', 'D']
 
@@ -229,7 +238,7 @@ def assert_equivalent_results(left, right):
     assert left.success == right.success
     assert left.name == right.name
     assert left.solid.name == right.solid.name
-    assert left.materialized_output == right.materialized_output
+    assert left.transformed_value == right.transformed_value
 
 
 def assert_all_results_equivalent(expected_results, result_results):
@@ -248,20 +257,22 @@ def test_pipeline_execution_graph_diamond():
     results = list()
 
     for result in execute_pipeline_iterator(
-        create_test_context(), pipeline, input_arg_dicts={'A_input': {}}
+        create_test_context(),
+        pipeline,
+        environment=create_pipeline_env_from_arg_dicts(pipeline, {'A_input': {}}),
     ):
         results.append(copy.deepcopy(result))
 
-    assert results[0].materialized_output[0] == input_set('A_input')
-    assert results[0].materialized_output[1] == transform_called('A')
+    assert results[0].transformed_value[0] == input_set('A_input')
+    assert results[0].transformed_value[1] == transform_called('A')
 
-    assert results[0].materialized_output == [input_set('A_input'), transform_called('A')]
+    assert results[0].transformed_value == [input_set('A_input'), transform_called('A')]
 
     expected_results = [
         DagsterExecutionResult(
             success=True,
             solid=pipeline.solid_named('A'),
-            materialized_output=[
+            transformed_value=[
                 input_set('A_input'),
                 transform_called('A'),
             ],
@@ -270,7 +281,7 @@ def test_pipeline_execution_graph_diamond():
         DagsterExecutionResult(
             success=True,
             solid=pipeline.solid_named('B'),
-            materialized_output=[
+            transformed_value=[
                 input_set('A_input'),
                 transform_called('A'),
                 transform_called('B'),
@@ -280,7 +291,7 @@ def test_pipeline_execution_graph_diamond():
         DagsterExecutionResult(
             success=True,
             solid=pipeline.solid_named('C'),
-            materialized_output=[
+            transformed_value=[
                 input_set('A_input'),
                 transform_called('A'),
                 transform_called('B'),
@@ -291,7 +302,7 @@ def test_pipeline_execution_graph_diamond():
         DagsterExecutionResult(
             success=True,
             solid=pipeline.solid_named('D'),
-            materialized_output=[
+            transformed_value=[
                 input_set('A_input'),
                 transform_called('A'),
                 transform_called('B'),

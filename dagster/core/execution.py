@@ -57,16 +57,13 @@ import sys
 import six
 
 from dagster import check
+from dagster import config
 
 from dagster.utils.logging import (CompositeLogger, ERROR)
 from dagster.utils.timing import time_execution_scope
 
 from .definitions import (
-    Solid,
-    InputDefinition,
-    OutputDefinition,
-    ExpectationDefinition,
-    ExpectationResult,
+    Solid, ExpectationDefinition, ExpectationResult, SourceDefinition, MaterializationDefinition
 )
 
 from .errors import (
@@ -228,10 +225,10 @@ class DagsterExecutionResult:
         self,
         success,
         solid,
-        materialized_output,
+        transformed_value,
         reason=None,
         exception=None,
-        failed_expectation_results=None
+        failed_expectation_results=None,
     ):
         self.success = check.bool_param(success, 'success')
         if not success:
@@ -239,7 +236,7 @@ class DagsterExecutionResult:
                 isinstance(reason, DagsterExecutionFailureReason), 'reason',
                 'Must provide a reason is result is a failure'
             )
-        self.materialized_output = materialized_output
+        self.transformed_value = transformed_value
         self.solid = check.inst_param(solid, 'solid', Solid)
         self.reason = reason
         self.exception = check.opt_inst_param(exception, 'exception', Exception)
@@ -277,7 +274,7 @@ class DagsterExecutionResult:
         return DagsterExecutionResult(
             success=self.success,
             solid=self.solid,
-            materialized_output=copy.deepcopy(self.materialized_output),
+            transformed_value=copy.deepcopy(self.transformed_value),
             reason=self.reason,
             exception=self.exception,
             failed_expectation_results=None if self.failed_expectation_results is None else
@@ -307,58 +304,63 @@ def _user_code_error_boundary(context, msg, **kwargs):
         )
 
 
-def _execute_input(context, input_definition, arg_dict):
+def _read_source(context, source_definition, arg_dict):
     '''
     Check to ensure that the arguments to a particular input are valid, and then
-    execute the input functinos. Wraps that execution in appropriate logging, metrics tracking,
+    execute the input functions. Wraps that execution in appropriate logging, metrics tracking,
     and a user-code error boundary.
     '''
     check.inst_param(context, 'context', DagsterExecutionContext)
-    check.inst_param(input_definition, 'input_defintion', InputDefinition)
+    check.inst_param(source_definition, 'source_definition', SourceDefinition)
     check.dict_param(arg_dict, 'arg_dict', key_type=str)
 
-    with context.value('input', input_definition.name), context.value('arg_dict', arg_dict):
-        expected_args = set(input_definition.argument_def_dict.keys())
+    with context.value('source_type', source_definition.source_type), \
+         context.value('arg_dict', arg_dict):
+        expected_args = set(source_definition.argument_def_dict.keys())
         received_args = set(arg_dict.keys())
         if expected_args != received_args:
             raise DagsterTypeError(
-                'Argument mismatch in input {input_name}. Expected {expected} got {received}'.
+                'Argument mismatch in source type {source}. Expected {expected} got {received}'.
                 format(
-                    input_name=input_definition.name,
+                    source=source_definition.source_type,
                     expected=repr(expected_args),
                     received=repr(received_args),
                 )
             )
 
         for arg_name, arg_value in arg_dict.items():
-            arg_def_type = input_definition.argument_def_dict[arg_name]
+            arg_def_type = source_definition.argument_def_dict[arg_name]
             if not arg_def_type.is_python_valid_value(arg_value):
                 format_string = (
                     'Expected type {typename} for arg {arg_name}' +
-                    'for {input_name} but got {arg_value}'
+                    'for {source_type} but got {arg_value}'
                 )
                 raise DagsterTypeError(
                     format_string.format(
                         typename=arg_def_type.name,
                         arg_name=arg_name,
-                        input_name=input_definition.name,
+                        source_type=source_definition.source_type,
                         arg_value=repr(arg_value),
                     )
                 )
 
-        error_str = 'Error occured while loading input "{input_name}"'
-        with _user_code_error_boundary(context, error_str, input_name=input_definition.name):
+        error_str = 'Error occured while loading source "{source_type}"'
+        with _user_code_error_boundary(
+            context,
+            error_str,
+            source_type=source_definition.source_type,
+        ):
             context.info('Entering input implementation')
 
             with time_execution_scope() as timer_result:
-                materialized_input = input_definition.input_fn(context=context, arg_dict=arg_dict)
+                value = source_definition.source_fn(context=context, arg_dict=arg_dict)
 
             context.metric('input_load_time_ms', timer_result.millis)
 
-            return materialized_input
+            return value
 
 
-def _execute_input_expectation(context, expectation_def, materialized_input):
+def _execute_input_expectation(context, expectation_def, value):
     '''
     Execute one user-specified input expectation on an input that has been instantiated in memory
     Wraps computation in an error boundary and performs all necessary logging and metrics tracking
@@ -369,7 +371,7 @@ def _execute_input_expectation(context, expectation_def, materialized_input):
 
     error_str = 'Error occured while evaluation expectation "{expectation_name}" in input'
     with _user_code_error_boundary(context, error_str, expectation_name=expectation_def.name):
-        expectation_result = expectation_def.expectation_fn(materialized_input)
+        expectation_result = expectation_def.expectation_fn(value)
 
     if not isinstance(expectation_result, ExpectationResult):
         raise DagsterInvariantViolationError(
@@ -379,7 +381,7 @@ def _execute_input_expectation(context, expectation_def, materialized_input):
     return expectation_result
 
 
-def _execute_output_expectation(context, expectation_def, materialized_output):
+def _execute_output_expectation(context, expectation_def, transformed_value):
     '''
     Execute one user-specified output expectation on an instantiated result of the core transform.
     Wraps computation in an error boundary and performs all necessary logging and metrics tracking
@@ -390,7 +392,7 @@ def _execute_output_expectation(context, expectation_def, materialized_output):
 
     error_str = 'Error occured while evaluation expectation "{expectation_name}" in output'
     with _user_code_error_boundary(context, error_str, expectation_name=expectation_def.name):
-        expectation_result = expectation_def.expectation_fn(materialized_output)
+        expectation_result = expectation_def.expectation_fn(transformed_value)
 
     if not isinstance(expectation_result, ExpectationResult):
 
@@ -401,43 +403,43 @@ def _execute_output_expectation(context, expectation_def, materialized_output):
     return expectation_result
 
 
-def _execute_core_transform(context, solid_transform_fn, materialized_inputs):
+def _execute_core_transform(context, solid_transform_fn, values_dict):
     '''
     Execute the user-specified transform for the solid. Wrap in an error boundary and do
     all relevant logging and metrics tracking
     '''
     check.inst_param(context, 'context', DagsterExecutionContext)
     check.callable_param(solid_transform_fn, 'solid_transform_fn')
-    check.dict_param(materialized_inputs, 'materialized_inputs', key_type=str)
+    check.dict_param(values_dict, 'values_dict', key_type=str)
 
     error_str = 'Error occured during core transform'
     with _user_code_error_boundary(context, error_str):
         with time_execution_scope() as timer_result:
-            materialized_output = solid_transform_fn(context=context, **materialized_inputs)
+            transformed_value = solid_transform_fn(context=context, **values_dict)
 
         context.metric('core_transform_time_ms', timer_result.millis)
 
         check.invariant(
-            not isinstance(materialized_output, DagsterExecutionResult),
+            not isinstance(transformed_value, DagsterExecutionResult),
             'Tricksy hobbitess cannot return an execution result from the transform ' + \
             'function in order to fool the framework'
         )
 
-        return materialized_output
+        return transformed_value
 
 
-def _execute_output(context, output_def, output_arg_dict, materialized_output):
+def _execute_materialization(context, materialiation_def, arg_dict, value):
     '''
     Execute a single output, calling into user-specified code. Check validity
     of arguments into the output, do appropriate loggina and metrics tracking, and
     actually execute the output function with an appropriate error boundary.
     '''
     check.inst_param(context, 'context', DagsterExecutionContext)
-    check.inst_param(output_def, 'output_def', OutputDefinition)
-    check.dict_param(output_arg_dict, 'output_arg_dict', key_type=str)
+    check.inst_param(materialiation_def, 'materialization', MaterializationDefinition)
+    check.dict_param(arg_dict, 'arg_dict', key_type=str)
 
-    expected_args = set(output_def.argument_def_dict.keys())
-    received_args = set(output_arg_dict.keys())
+    expected_args = set(materialiation_def.argument_def_dict.keys())
+    received_args = set(arg_dict.keys())
 
     if expected_args != received_args:
         raise DagsterTypeError(
@@ -447,8 +449,8 @@ def _execute_output(context, output_def, output_arg_dict, materialized_output):
             )
         )
 
-    for arg_name, arg_value in output_arg_dict.items():
-        arg_def_type = output_def.argument_def_dict[arg_name]
+    for arg_name, arg_value in arg_dict.items():
+        arg_def_type = materialiation_def.argument_def_dict[arg_name]
         if not arg_def_type.is_python_valid_value(arg_value):
             raise DagsterTypeError(
                 'Expected type {typename} for arg {arg_name} in output but got {arg_value}'.format(
@@ -458,10 +460,10 @@ def _execute_output(context, output_def, output_arg_dict, materialized_output):
                 )
             )
 
-    error_str = 'Error during execution of output'
+    error_str = 'Error during execution of materialization'
     with _user_code_error_boundary(context, error_str):
-        context.info('Entering output implementation')
-        output_def.output_fn(materialized_output, context=context, arg_dict=output_arg_dict)
+        context.info('Entering materialization implementation')
+        materialiation_def.materialization_fn(value, context=context, arg_dict=arg_dict)
 
 
 InputExpectationResult = namedtuple('InputExpectionResult', 'input_name passes fails')
@@ -487,22 +489,22 @@ class AllInputExpectationsRunResults:
         return not self.all_fails
 
 
-def _execute_all_input_expectations(context, solid, materialized_inputs):
+def _execute_all_input_expectations(context, solid, values_dict):
     check.inst_param(context, 'context', DagsterExecutionContext)
-    check.dict_param(materialized_inputs, 'materialized_inputs', key_type=str)
+    check.dict_param(values_dict, 'values_dict', key_type=str)
 
     run_results_list = []
 
-    for input_name in materialized_inputs.keys():
+    for input_name in values_dict.keys():
         input_def = solid.input_def_named(input_name)
-        materialized_input = materialized_inputs[input_name]
+        value = values_dict[input_name]
 
         passes = []
         fails = []
 
         for input_expectation_def in input_def.expectations:
             input_expectation_result = _execute_input_expectation(
-                context, input_expectation_def, materialized_input
+                context, input_expectation_def, value
             )
 
             if input_expectation_result.success:
@@ -517,35 +519,9 @@ def _execute_all_input_expectations(context, solid, materialized_inputs):
     return AllInputExpectationsRunResults(run_results_list)
 
 
-def _materialize_all_inputs(context, solid, input_arg_dicts):
-    check.inst_param(context, 'context', DagsterExecutionContext)
-
-    materialized_inputs = {}
-
-    for input_name, arg_dict in input_arg_dicts.items():
-        input_def = solid.input_def_named(input_name)
-        materialized_input = _execute_input(context, input_def, arg_dict)
-        materialized_inputs[input_name] = materialized_input
-
-    return materialized_inputs
-
-
-def _pipeline_solid(context, solid, input_arg_dicts):
+def _pipeline_solid_in_memory(context, solid, transform_values_dict):
     '''
-    Execute the entire pipeline for a *single* solid, including input evaluation.
-    '''
-
-    check.inst_param(context, 'context', DagsterExecutionContext)
-    check.inst_param(solid, 'solid', Solid)
-    check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
-
-    materialized_inputs = _materialize_all_inputs(context, solid, input_arg_dicts)
-    return _pipeline_solid_in_memory(context, solid, materialized_inputs)
-
-
-def _pipeline_solid_in_memory(context, solid, materialized_inputs):
-    '''
-    Given inputs that are already materialized in memory. Evaluation all inputs expectations,
+    Given inputs that are already in memory. Evaluation all inputs expectations,
     execute the core transform, and then evaluate all output expectations.
 
     This is the core of the solid execution that does not touch any extenralized state, whether
@@ -553,14 +529,14 @@ def _pipeline_solid_in_memory(context, solid, materialized_inputs):
     '''
     check.inst_param(context, 'context', DagsterExecutionContext)
     check.inst_param(solid, 'solid', Solid)
-    check.dict_param(materialized_inputs, 'materialized_inputs', key_type=str)
+    check.dict_param(transform_values_dict, 'transform_values_dict', key_type=str)
 
-    all_run_result = _execute_all_input_expectations(context, solid, materialized_inputs)
+    all_run_result = _execute_all_input_expectations(context, solid, transform_values_dict)
 
     if not all_run_result.success:
         return DagsterExecutionResult(
             success=False,
-            materialized_output=None,
+            transformed_value=None,
             solid=solid,
             reason=DagsterExecutionFailureReason.EXPECTATION_FAILURE,
             failed_expectation_results=all_run_result.all_fails,
@@ -568,19 +544,19 @@ def _pipeline_solid_in_memory(context, solid, materialized_inputs):
 
     context.info('Executing core transform')
 
-    materialized_output = _execute_core_transform(context, solid.transform_fn, materialized_inputs)
+    transformed_value = _execute_core_transform(context, solid.transform_fn, transform_values_dict)
 
-    if isinstance(materialized_output, DagsterExecutionResult):
+    if isinstance(transformed_value, DagsterExecutionResult):
         check.invariant(
-            not materialized_output.success,
+            not transformed_value.success,
             'only failed things should return an execution result right here'
         )
-        return materialized_output
+        return transformed_value
 
     output_expectation_failures = []
-    for output_expectation_def in solid.output_expectations:
+    for output_expectation_def in solid.output.expectations:
         output_expectation_result = _execute_output_expectation(
-            context, output_expectation_def, materialized_output
+            context, output_expectation_def, transformed_value
         )
         if not output_expectation_result.success:
             output_expectation_failures.append(output_expectation_result)
@@ -588,23 +564,23 @@ def _pipeline_solid_in_memory(context, solid, materialized_inputs):
     if output_expectation_failures:
         return DagsterExecutionResult(
             success=False,
-            materialized_output=None,
+            transformed_value=None,
             solid=solid,
             reason=DagsterExecutionFailureReason.EXPECTATION_FAILURE,
             failed_expectation_results=output_expectation_failures,
         )
 
-    return materialized_output
+    return transformed_value
 
 
-def execute_single_solid(context, solid, input_arg_dicts, throw_on_error=True):
+def execute_single_solid(context, solid, environment, throw_on_error=True):
     check.inst_param(context, 'context', DagsterExecutionContext)
     check.inst_param(solid, 'solid', Solid)
-    check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
+    check.inst_param(environment, 'environment', config.Environment)
     check.bool_param(throw_on_error, 'throw_on_error')
 
     results = list(
-        execute_pipeline_iterator(context, DagsterPipeline(solids=[solid]), input_arg_dicts)
+        execute_pipeline_iterator(context, DagsterPipeline(solids=[solid]), environment=environment)
     )
 
     check.invariant(len(results) == 1, 'must be one result got ' + str(len(results)))
@@ -637,24 +613,88 @@ def _do_throw_on_error(execution_result):
         raise execution_result.exception
 
 
+def create_single_solid_env_from_arg_dicts(solid, arg_dicts):
+    check.inst_param(solid, 'solid', Solid)
+    check.dict_param(arg_dicts, 'arg_dicts', key_type=str, value_type=dict)
+
+    input_sources = {}
+    input_to_source_type = {}
+    for input_def in solid.inputs:
+        check.invariant(len(input_def.sources) == 1)
+        input_to_source_type[input_def.name] = input_def.sources[0].source_type
+
+    input_sources = []
+
+    for input_name, arg_dict in arg_dicts.items():
+        input_sources.append(
+            config.InputSource(
+                input_name=input_name,
+                source=input_to_source_type[input_name],
+                args=arg_dict,
+            )
+        )
+
+    return config.Environment(input_sources=input_sources)
+
+
+def create_pipeline_env_from_arg_dicts(pipeline, arg_dicts):
+    check.inst_param(pipeline, 'pipeline', DagsterPipeline)
+    check.dict_param(arg_dicts, 'arg_dicts', key_type=str, value_type=dict)
+
+    input_sources = {}
+    input_to_source_type = {}
+
+    for solid in pipeline.solids:
+        for input_def in solid.inputs:
+            check.invariant(len(input_def.sources) <= 1)
+            if input_def.sources:
+                input_to_source_type[input_def.name] = input_def.sources[0].source_type
+
+    input_sources = []
+    for input_name, arg_dict in arg_dicts.items():
+        if input_name in input_to_source_type:
+            input_sources.append(
+                config.InputSource(
+                    input_name=input_name,
+                    source=input_to_source_type[input_name],
+                    args=arg_dict,
+                )
+            )
+
+    return config.Environment(input_sources=input_sources)
+
+
+def _convert_environment_dict_to_environment_namedtuple(environment_dict):
+    check.dict_param(environment_dict, 'environment_dict')
+
+    def _to_input_source(input_source_dict):
+        for input_name, source_dict in input_source_dict.items():
+            yield config.InputSource(input_name, source_dict['source_type'], source_dict['args'])
+
+    return config.Environment(
+        input_sources=list(_to_input_source(environment_dict['input_sources'])),
+    )
+
 def output_single_solid(
-    context, solid, input_arg_dicts, output_type, output_arg_dict, throw_on_error=True
+    context, solid, environment, materialization_type, arg_dict, throw_on_error=True,
 ):
     check.inst_param(context, 'context', DagsterExecutionContext)
     check.inst_param(solid, 'solid', Solid)
-    check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
-    check.str_param(output_type, 'output_type')
-    check.dict_param(output_arg_dict, 'output_arg_dict', key_type=str)
+    check.inst_param(environment, 'environment', config.Environment)
+    check.str_param(materialization_type, 'materialization_type')
+    check.dict_param(arg_dict, 'arg_dict', key_type=str)
     check.bool_param(throw_on_error, 'throw_on_error')
 
     results = list(
         output_pipeline_iterator(
             context,
             DagsterPipeline(solids=[solid]),
-            input_arg_dicts,
-            output_arg_dicts={solid.name: {
-                output_type: output_arg_dict
-            }},
+            environment=environment,
+            materializations=[config.Materialization(
+                solid=solid.name,
+                materialization_type=materialization_type,
+                args=arg_dict
+            )],
         )
     )
 
@@ -670,15 +710,11 @@ def output_single_solid(
     return execution_result
 
 
-def _select_keys(ddict1, ddict2, keys):
-    ddict = {**ddict1, **ddict2}
-    return {key: ddict[key] for key in keys}
-
-
 def execute_pipeline_through_solid(
     context,
     pipeline,
-    input_arg_dicts,
+    *,
+    environment,
     solid_name,
 ):
     '''
@@ -686,60 +722,112 @@ def execute_pipeline_through_solid(
     '''
     check.inst_param(context, 'context', DagsterExecutionContext)
     check.inst_param(pipeline, 'pipeline', DagsterPipeline)
-    check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
+    check.inst_param(environment, 'environment', config.Environment)
     check.str_param(solid_name, 'solid_name')
 
-    for result in execute_pipeline_iterator(context, pipeline, input_arg_dicts, [solid_name]):
+    for result in execute_pipeline_iterator(
+        context,
+        pipeline,
+        environment=environment,
+        through_solids=[solid_name]):
+
         if result.name == solid_name:
             return result
 
     check.failed('Result ' + solid_name + ' not found!')
 
 
-def _execute_pipeline_solid_step(context, solid, input_arg_dicts, materialized_values):
+def _gather_input_values(context, solid, input_args, intermediate_values):
+    check.inst_param(context, 'context', DagsterExecutionContext)
+    check.inst_param(solid, 'solid', Solid)
+    check.inst_param(input_args, 'input_args', InputArgs)
+    check.dict_param(intermediate_values, 'intermediate_values')
+
+    context.info('About to instantiate and gather all inputs')
+
+    input_values = {}
+    for input_def in solid.inputs:
+        with context.value('input', input_def.name):
+            if input_def.depends_on and input_def.depends_on.name in intermediate_values:
+                # grab value from dependency
+                input_values[input_def.name] = intermediate_values[input_def.depends_on.name]
+            else:
+                # must get value from source
+                source_def = input_args.source_for_input(solid.name, input_def.name)
+                new_value = _read_source(
+                    context, source_def, input_args.args_for_input(input_def.name)
+                )
+                input_values[input_def.name] = new_value
+    return input_values
+
+def _execute_pipeline_solid_step(context, solid, input_args, intermediate_values):
+    check.inst_param(context, 'context', DagsterExecutionContext)
+    check.inst_param(solid, 'solid', Solid)
+    check.inst_param(input_args, 'input_args', InputArgs)
+    check.dict_param(intermediate_values, 'intermediate_values')
+
     # The value produce by an inputs is potentially different per solid.
-    # This is allowed so that two solids that do different materialization of the
+    # This is allowed so that two solids that do different instantiation of the
     # same exact input (e.g. the same file) don't have to create additional solids
     # to account for this.
 
-    input_values = {}
-
-    context.info('About to materialize and gather all inputs')
-
-    for inp in solid.inputs:
-        if inp.name not in materialized_values and inp.name not in input_values:
-            materialized = _execute_input(context, inp, input_arg_dicts[inp.name])
-            input_values[inp.name] = materialized
-
-    selected_values = _select_keys(input_values, materialized_values, solid.input_names)
+    input_values = _gather_input_values(context, solid, input_args, intermediate_values)
 
     # This call does all input and output expectations, as well as the core transform
-    materialized_output = _pipeline_solid_in_memory(context, solid, selected_values)
+    transformed_value = _pipeline_solid_in_memory(context, solid, input_values)
 
-    if isinstance(materialized_output, DagsterExecutionResult):
-        check.invariant(not materialized_output.success, 'early return should only be failure')
-        return materialized_output
+    if isinstance(transformed_value, DagsterExecutionResult):
+        check.invariant(not transformed_value.success, 'early return should only be failure')
+        return transformed_value
 
-    check.invariant(solid.name not in materialized_values, 'should be not in materialized values')
+    check.invariant(solid.name not in intermediate_values, 'should be not in intermediate values')
 
     context.debug(
         'About to set {output} for {name}'.format(
-            output=repr(materialized_output),
+            output=repr(transformed_value),
             name=solid.name,
         )
     )
 
-    materialized_values[solid.name] = materialized_output
+    intermediate_values[solid.name] = transformed_value
 
     return DagsterExecutionResult(
         success=True,
         solid=solid,
-        materialized_output=materialized_values[solid.name],
+        transformed_value=intermediate_values[solid.name],
         exception=None
     )
 
 
-def execute_pipeline_iterator(context, pipeline, input_arg_dicts, through_solids=None):
+class InputArgs:
+    pass
+
+class TypedEnvironmentInputArgs(InputArgs):
+    def __init__(self, pipeline, environment):
+        self.pipeline = check.inst_param(pipeline, 'pipeline', DagsterPipeline)
+        self.environment = check.inst_param(environment, 'environment', config.Environment)
+
+    @property
+    def input_names(self):
+        return [input_source.input_name for input_source in self.environment.input_sources]
+
+    def source_for_input(self, solid_name, input_name):
+        input_source = self.environment.input_source_for_input(input_name)
+
+        input_def = self.pipeline.get_input(solid_name, input_name)
+        return input_def.source_of_type(input_source.source)
+
+    def args_for_input(self, input_name):
+        return self.environment.input_source_for_input(input_name).args
+
+
+def execute_pipeline_iterator(
+    context,
+    pipeline,
+    environment,
+    through_solids=None,
+    from_solids=None,
+):
     '''
     This is the core workhorse function of this module, iterating over the pipeline execution
     in topological order. This allow a tool consuming this API to execute a solid one at a time
@@ -759,42 +847,54 @@ def execute_pipeline_iterator(context, pipeline, input_arg_dicts, through_solids
 
     check.inst_param(context, 'context', DagsterExecutionContext)
     check.inst_param(pipeline, 'pipeline', DagsterPipeline)
-    check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
     check.opt_list_param(through_solids, 'through_solids', of_type=str)
+    check.inst_param(environment, 'environment', config.Environment)
 
-    input_names = list(input_arg_dicts.keys())
-    output_names = pipeline.solid_names if not through_solids else through_solids
+    input_args = TypedEnvironmentInputArgs(pipeline, environment)
 
-    for input_name in input_names:
+    provided_input_names = input_args.input_names
+
+
+    if not through_solids:
+        through_solids = pipeline.all_sink_solids
+
+    if not from_solids:
+        all_deps = set()
+        for through_solid in through_solids:
+            all_deps.union(pipeline.solid_graph.transitive_dependencies_of(through_solid))
+
+        from_solids = list(all_deps)
+
+    for input_name in provided_input_names:
         if not pipeline.has_input(input_name):
             raise DagsterInvariantViolationError(
                 f'Input "{input_name}" not found in the pipeline.' + \
                 f'Input must be one of {repr(pipeline.input_names)}'
             )
 
-    for output_name in output_names:
+    for through_solid_name in through_solids:
         unprovided_inputs = pipeline.solid_graph.compute_unprovided_inputs(
-            input_names=input_names, output_name=output_name
+            input_names=provided_input_names, solid_name=through_solid_name
         )
         if unprovided_inputs:
             check.failed(
                 'Failed to provide inputs {unprovided_inputs} for solid {name}'.format(
-                    unprovided_inputs=unprovided_inputs, name=output_name
+                    unprovided_inputs=unprovided_inputs, name=through_solid_name
                 )
             )
 
-    # Given the inputs and outputs specific, create the subgraph of the pipeline
-    # necessary to complete the computation
-    execution_graph = pipeline.solid_graph.create_execution_graph(output_names, input_names)
+    execution_graph = pipeline.solid_graph.create_execution_subgraph(
+        from_solids, list(through_solids)
+    )
 
-    materialized_values = {}
+    intermediate_values = {}
 
     for solid in execution_graph.topological_solids:
 
         try:
             with context.value('solid', solid.name):
                 execution_result = _execute_pipeline_solid_step(
-                    context, solid, input_arg_dicts, materialized_values
+                    context, solid, input_args, intermediate_values
                 )
 
             yield execution_result
@@ -807,13 +907,22 @@ def execute_pipeline_iterator(context, pipeline, input_arg_dicts, through_solids
                 success=False,
                 reason=DagsterExecutionFailureReason.USER_CODE_ERROR,
                 solid=solid,
-                materialized_output=None,
+                transformed_value=None,
                 exception=see,
             )
             break
 
 
-def execute_pipeline(context, pipeline, input_arg_dicts, through_solids=None, throw_on_error=True):
+def execute_pipeline(
+    context,
+    pipeline,
+    *,
+    through_solids=None,
+    throw_on_error=True,
+    # variant two is below
+    environment=None,
+    from_solids=None,
+):
     '''
     "Synchronous" version of execute_pipeline_iteator.
 
@@ -826,7 +935,13 @@ def execute_pipeline(context, pipeline, input_arg_dicts, through_solids=None, th
     check.bool_param(throw_on_error, 'throw_on_error')
 
     results = []
-    for result in execute_pipeline_iterator(context, pipeline, input_arg_dicts, through_solids):
+    for result in execute_pipeline_iterator(
+        context,
+        pipeline,
+        through_solids=through_solids,
+        environment=environment,
+        from_solids=from_solids,
+    ):
         if throw_on_error:
             if not result.success:
                 _do_throw_on_error(result)
@@ -835,26 +950,52 @@ def execute_pipeline(context, pipeline, input_arg_dicts, through_solids=None, th
     return DagsterPipelineExecutionResult(results)
 
 
-def _check_output_arg_dicts(output_arg_dicts):
-    check.dict_param(output_arg_dicts, 'output_arg_dicts', key_type=str, value_type=dict)
-    for output_arg_dict in output_arg_dicts.values():
-        check.dict_param(output_arg_dict, 'output_arg_dict', key_type=str, value_type=dict)
+class MaterializationArgs:
+    def __init__(self, pipeline, materializations):
+        check.inst_param(pipeline, 'pipeline', DagsterPipeline)
+        check.list_param(materializations, 'materializations', of_type=config.Materialization)
+
+        self.pipeline = pipeline
+        self.materializations = list(materializations)
+        self.through_solids = [
+            materialization.solid for materialization in self.materializations
+        ]
+
+    def should_materialize(self, solid_name):
+        return solid_name in self.through_solids
+
+    def materializations_for_solid(self, solid_name):
+        for materialization in  self.materializations:
+            if materialization.solid == solid_name:
+                yield materialization
 
 
-def output_pipeline(context, pipeline, input_arg_dicts, output_arg_dicts, throw_on_error=True):
+def output_pipeline(
+    context,
+    pipeline,
+    *,
+    environment,
+    materializations,
+    throw_on_error=True,
+):
     '''
-    Synchronous version of output_pipeline_iteator. Just like execute_pipeline, you can optionally
-    specify, through thorw_on_error, that exceptions should be thrown when encountered instead
+    Synchronous version of output_pipeline_iterator. Just like execute_pipeline, you can optionally
+    specify, through throw_on_error, that exceptions should be thrown when encountered instead
     of returning a result in an error state. Especially useful in testing contexts.
     '''
     check.inst_param(context, 'context', DagsterExecutionContext)
     check.inst_param(pipeline, 'pipeline', DagsterPipeline)
-    check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
-    _check_output_arg_dicts(output_arg_dicts)
+    check.inst_param(environment, 'environment', config.Environment)
+    check.list_param(materializations, 'materializations', of_type=config.Materialization)
     check.bool_param(throw_on_error, 'throw_on_error')
 
     results = []
-    for result in output_pipeline_iterator(context, pipeline, input_arg_dicts, output_arg_dicts):
+    for result in output_pipeline_iterator(
+        context,
+        pipeline,
+        materializations=materializations,
+        environment=environment,
+    ):
         if throw_on_error:
             if not result.success:
                 _do_throw_on_error(result)
@@ -862,7 +1003,9 @@ def output_pipeline(context, pipeline, input_arg_dicts, output_arg_dicts, throw_
     return DagsterPipelineExecutionResult(results)
 
 
-def output_pipeline_iterator(context, pipeline, input_arg_dicts, output_arg_dicts):
+def output_pipeline_iterator(
+    context, pipeline, *, materializations, environment
+):
     '''
     Similar to execute_pipeline_iterator, except that you can specify outputs (per format
     specified in module docblock) to create externally accessible materializations of
@@ -870,42 +1013,53 @@ def output_pipeline_iterator(context, pipeline, input_arg_dicts, output_arg_dict
     '''
     check.inst_param(context, 'context', DagsterExecutionContext)
     check.inst_param(pipeline, 'pipeline', DagsterPipeline)
-    check.dict_param(input_arg_dicts, 'input_arg_dicts', key_type=str, value_type=dict)
-    _check_output_arg_dicts(output_arg_dicts)
+    check.list_param(materializations, 'materializations', of_type=config.Materialization)
+    check.inst_param(environment, 'environment', config.Environment)
+
+    materialization_args = MaterializationArgs(pipeline, materializations)
 
     for result in execute_pipeline_iterator(
-        context, pipeline, input_arg_dicts, through_solids=list(output_arg_dicts.keys())
+        context,
+        pipeline,
+        through_solids=materialization_args.through_solids,
+        environment=environment
     ):
         if not result.success:
             yield result
             break
 
-        if result.name not in output_arg_dicts:
+        if not materialization_args.should_materialize(result.name):
             yield result
             continue
 
-        output_result = result
+        materialization_result = result
 
-        for output_type, output_arg_dict in output_arg_dicts[result.name].items():
-            output_def = result.solid.output_def_named(output_type)
-            with context.value('solid', result.name), \
-                context.value('output_type', output_def.name), \
-                context.value('output_args', output_arg_dict):
-                try:
-                    _execute_output(
-                        context, output_def, output_arg_dict, result.materialized_output
-                    )
-                except DagsterUserCodeExecutionError as see:
-                    output_result = DagsterExecutionResult(
-                        success=False,
-                        solid=result.solid,
-                        reason=DagsterExecutionFailureReason.USER_CODE_ERROR,
-                        exception=see,
-                        materialized_output=result.materialized_output,
-                    )
-                    break
+        materializations = materialization_args.materializations_for_solid(result.name)
 
-        yield output_result
+        solid = pipeline.solid_named(result.name)
 
-        if not output_result.success:
+        with context.value('solid', result.name):
+            for materialization in materializations:
+                arg_dict = materialization.args
+                materialization_type = materialization.materialization_type
+                with context.value('materialization_type', materialization_type), \
+                    context.value('materialization_args', arg_dict):
+                    try:
+                        mat_def = solid.output.materialization_of_type(materialization_type)
+                        _execute_materialization(
+                            context, mat_def, arg_dict, result.transformed_value
+                        )
+                    except DagsterUserCodeExecutionError as see:
+                        materialization_result = DagsterExecutionResult(
+                            success=False,
+                            solid=result.solid,
+                            reason=DagsterExecutionFailureReason.USER_CODE_ERROR,
+                            exception=see,
+                            transformed_value=result.transformed_value,
+                        )
+                        break
+
+        yield materialization_result
+
+        if not materialization_result.success:
             break
