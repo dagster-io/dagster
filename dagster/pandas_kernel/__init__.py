@@ -17,6 +17,7 @@ from .definitions import (
     create_dagster_pd_parquet_output,
     create_dagster_pd_read_table_input,
 )
+from dagster.core import (create_json_input)
 
 
 def solid(**kwargs):
