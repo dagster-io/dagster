@@ -35,4 +35,7 @@ def execute_sql_text_on_context(context, sql_text):
         finally:
             cursor.close()
     else:
-        context.engine.connect().execute(sql_text)
+        connection = context.engine.connect()
+        transaction = connection.begin()
+        connection.execute(sql_text)
+        transaction.commit()

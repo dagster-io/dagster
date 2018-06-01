@@ -10,7 +10,7 @@
     "-s"
   ],
   "python.unitTest.pyTestEnabled": true,
-  "python.pythonPath": "/Users/schrockn/code/venvs/new_env/bin/python",
+  "python.pythonPath": "/Users/schrockn/code/venvs/dagster/bin/python",
   "python.linting.lintOnSave": true,
   "python.linting.pep8Enabled": false,
   "python.linting.mypyEnabled": false,
