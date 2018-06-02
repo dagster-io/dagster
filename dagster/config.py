@@ -18,10 +18,10 @@ class Environment(namedtuple('EnvironmentData', 'input_sources')):
     def __new__(cls, input_sources):
         return super(Environment, cls).__new__(
             cls,
-            check.list_param(input_sources, 'input_sources', of_type=InputSource),
+            check.list_param(input_sources, 'input_sources', of_type=Input),
         )
 
-    def input_source_for_input(self, input_name):
+    def input_named(self, input_name):
         for input_source in self.input_sources:
             if input_source.input_name == input_name:
                 return input_source
@@ -32,11 +32,11 @@ class Environment(namedtuple('EnvironmentData', 'input_sources')):
         return Environment(input_sources=[])
 
 
-class InputSource(namedtuple('InputSourceData', 'input_name source args')):
-    def __new__(cls, input_name, source, args):
-        return super(InputSource, cls).__new__(
+class Input(namedtuple('InputData', 'input_name args source')):
+    def __new__(cls, input_name, args, source):
+        return super(Input, cls).__new__(
             cls,
             input_name=check.str_param(input_name, 'input_name'),
-            source=check.str_param(source, 'source'),
             args=check.dict_param(args, 'args', key_type=str),
+            source=check.opt_str_param(source, 'source'),
         )

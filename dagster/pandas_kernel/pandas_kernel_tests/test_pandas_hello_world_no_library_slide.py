@@ -57,7 +57,7 @@ def test_hello_world_no_library_support():
         hello_world,
         environment=config.Environment(
             input_sources=[
-                config.InputSource(
+                config.Input(
                     input_name='num_df',
                     source='CSV',
                     args={'path': script_relative_path('num.csv')},
@@ -139,7 +139,7 @@ def test_hello_world_composed():
         hello_world,
         environment=config.Environment(
             input_sources=[
-                config.InputSource(
+                config.Input(
                     input_name='num_df',
                     source='CSV',
                     args={'path': script_relative_path('num.csv')}
@@ -184,7 +184,7 @@ def test_pipeline():
 
     environment = config.Environment(
         input_sources=[
-            config.InputSource(
+            config.Input(
                 input_name='num_df', source='CSV', args={'path': script_relative_path('num.csv')}
             )
         ]

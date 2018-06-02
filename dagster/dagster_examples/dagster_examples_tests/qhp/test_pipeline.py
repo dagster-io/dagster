@@ -23,7 +23,7 @@ def test_plans():
         pipeline,
         environment=config.Environment(
             input_sources=[
-                config.InputSource(
+                config.Input(
                     input_name='qhp_json_input',
                     source='QHPJSON',
                     args={'path': script_relative_path('providers-771.json')},

@@ -46,7 +46,7 @@ def test_wrong_input_arg_dict():
             df_solid,
             environment=config.Environment(
                 input_sources=[
-                    config.InputSource(
+                    config.Input(
                         input_name='num_jdkfjskdfjs',
                         source='CSV',
                         args={

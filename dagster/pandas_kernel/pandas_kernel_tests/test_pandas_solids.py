@@ -423,7 +423,7 @@ def test_pandas_output_intermediate_csv_files():
             pipeline,
             environment=config.Environment(
                 input_sources=[
-                    config.InputSource(
+                    config.Input(
                         input_name='sum_table',
                         source='CSVORPARQUET',
                         args={
@@ -431,7 +431,7 @@ def test_pandas_output_intermediate_csv_files():
                             'path': sum_file,
                         },
                     ),
-                    config.InputSource(
+                    config.Input(
                         input_name='mult_table',
                         source='CSVORPARQUET',
                         args={

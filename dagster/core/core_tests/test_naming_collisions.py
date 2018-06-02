@@ -35,7 +35,7 @@ def test_execute_solid_with_input_same_name():
         environment=config.Environment(
             input_sources=[
                 config.
-                InputSource(input_name='a_thing', source='a_source_type', args={'an_arg': 'foo'})
+                Input(input_name='a_thing', source='a_source_type', args={'an_arg': 'foo'})
             ]
         )
     )
@@ -83,7 +83,7 @@ def test_execute_dep_solid_different_input_name():
         environment=config.Environment(
             input_sources=[
                 config.
-                InputSource(input_name='a_thing', source='a_source_type', args={'an_arg': 'bar'})
+                Input(input_name='a_thing', source='a_source_type', args={'an_arg': 'bar'})
             ]
         )
     )
@@ -156,12 +156,12 @@ def test_execute_dep_solid_same_input_name():
 
     complete_environment = config.Environment(
         input_sources=[
-            config.InputSource(
+            config.Input(
                 input_name='table_one',
                 source='TABLE',
                 args={'name': 'table_one_instance'},
             ),
-            config.InputSource(
+            config.Input(
                 input_name='table_two',
                 source='TABLE',
                 args={'name': 'table_two_instance'},

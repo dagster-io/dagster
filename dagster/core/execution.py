@@ -627,7 +627,7 @@ def create_single_solid_env_from_arg_dicts(solid, arg_dicts):
 
     for input_name, arg_dict in arg_dicts.items():
         input_sources.append(
-            config.InputSource(
+            config.Input(
                 input_name=input_name,
                 source=input_to_source_type[input_name],
                 args=arg_dict,
@@ -654,7 +654,7 @@ def create_pipeline_env_from_arg_dicts(pipeline, arg_dicts):
     for input_name, arg_dict in arg_dicts.items():
         if input_name in input_to_source_type:
             input_sources.append(
-                config.InputSource(
+                config.Input(
                     input_name=input_name,
                     source=input_to_source_type[input_name],
                     args=arg_dict,
@@ -669,7 +669,7 @@ def _convert_environment_dict_to_environment_namedtuple(environment_dict):
 
     def _to_input_source(input_source_dict):
         for input_name, source_dict in input_source_dict.items():
-            yield config.InputSource(input_name, source_dict['source_type'], source_dict['args'])
+            yield config.Input(input_name, source_dict['source_type'], source_dict['args'])
 
     return config.Environment(
         input_sources=list(_to_input_source(environment_dict['input_sources'])),
@@ -809,13 +809,18 @@ class InputArgs:
         return [input_source.input_name for input_source in self.environment.input_sources]
 
     def source_for_input(self, solid_name, input_name):
-        input_source = self.environment.input_source_for_input(input_name)
+        input_source = self.environment.input_named(input_name)
 
         input_def = self.pipeline.get_input(solid_name, input_name)
+
+        if not input_source.source:
+            check.invariant(len(input_def.sources) == 1)
+            return input_def.sources[0]
+
         return input_def.source_of_type(input_source.source)
 
     def args_for_input(self, input_name):
-        return self.environment.input_source_for_input(input_name).args
+        return self.environment.input_named(input_name).args
 
 
 def execute_pipeline_iterator(
@@ -844,8 +849,9 @@ def execute_pipeline_iterator(
 
     check.inst_param(context, 'context', DagsterExecutionContext)
     check.inst_param(pipeline, 'pipeline', DagsterPipeline)
-    check.opt_list_param(through_solids, 'through_solids', of_type=str)
     check.inst_param(environment, 'environment', config.Environment)
+    check.opt_list_param(through_solids, 'through_solids', of_type=str)
+    check.opt_list_param(from_solids, 'from_solids', of_type=str)
 
     input_args = InputArgs(pipeline, environment)
 
@@ -981,9 +987,10 @@ def materialize_pipeline(
     throw_on_error=True,
 ):
     '''
-    Synchronous version of materialize_pipeline_iterator. Just like execute_pipeline, you can optionally
-    specify, through throw_on_error, that exceptions should be thrown when encountered instead
-    of returning a result in an error state. Especially useful in testing contexts.
+    Synchronous version of materialize_pipeline_iterator. Just like execute_pipeline, you
+    can optionally specify, through throw_on_error, that exceptions should be thrown when
+    encountered instead of returning a result in an error state. Especially useful in testing
+    contexts.
     '''
     check.inst_param(context, 'context', DagsterExecutionContext)
     check.inst_param(pipeline, 'pipeline', DagsterPipeline)
