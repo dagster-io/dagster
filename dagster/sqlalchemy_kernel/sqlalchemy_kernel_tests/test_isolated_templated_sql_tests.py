@@ -20,7 +20,7 @@ def table_source(name):
 
 
 def table_input_source(input_name, table_name):
-    return config.InputSource(input_name=input_name, source='TABLENAME', args={'name': table_name})
+    return config.Input(input_name=input_name, source='TABLENAME', args={'name': table_name})
 
 
 def test_single_templated_sql_solid_single_table_raw_api():
