@@ -35,4 +35,4 @@ def create_json_input(name):
         with open(path) as ff:
             return json.load(ff)
 
-    return create_dagster_single_file_input(name, load_file)
+    return create_dagster_single_file_input(name, load_file, source_type='JSON')
