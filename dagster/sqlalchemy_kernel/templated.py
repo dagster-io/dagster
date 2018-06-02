@@ -33,7 +33,7 @@ def create_templated_sql_transform_solid(
     table_arguments,
     output,
     dependencies=None,
-    extra_inputs=[],
+    extra_inputs=None,
 ):
     '''
     Create a solid that is a templated sql statement. This assumes that the sql statement
@@ -106,6 +106,7 @@ def create_templated_sql_transform_solid(
     check.list_param(table_arguments, 'table_arguments', of_type=str)
     check.str_param(output, 'output')
     dependencies = check.opt_list_param(dependencies, 'dependencies', of_type=Solid)
+    extra_inputs = check.opt_list_param(extra_inputs, 'extra_inputs', of_type=InputDefinition)
 
     table_inputs = [_create_table_input(table) for table in table_arguments]
     dep_inputs = [_create_table_input(dep.name, depends_on=dep) for dep in dependencies]
