@@ -14,6 +14,7 @@ from .definitions import (
     create_dagster_pd_csv_input,
     create_dagster_pd_dependency_input,
     create_dataframe_solid_output_definition,
+    create_dagster_pd_read_table_input,
 )
 
 
