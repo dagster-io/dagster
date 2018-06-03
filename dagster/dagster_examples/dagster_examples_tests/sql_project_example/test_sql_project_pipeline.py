@@ -4,6 +4,8 @@ from dagster import config
 import dagster.sqlalchemy_kernel as dagster_sa
 from dagster.utils.test import script_relative_path
 
+from dagster.sqlalchemy_kernel.subquery_builder_experimental import sql_file_solid
+
 
 def in_mem_engine():
     engine = sa.create_engine('sqlite://')
@@ -19,7 +21,7 @@ def _get_sql_script_path(name):
 
 
 def _get_project_solid(name, inputs=None):
-    return dagster_sa.sql_file_solid(_get_sql_script_path(name), inputs=inputs)
+    return sql_file_solid(_get_sql_script_path(name), inputs=inputs)
 
 
 def test_sql_create_tables():
