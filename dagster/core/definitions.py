@@ -153,7 +153,12 @@ class InputDefinition:
             if source.source_type == source_type:
                 return source
 
-        check.failed('Source {source_type} not found.'.format(source_type=source_type))
+        check.failed(
+            'Source {source_type} not found in input {input_name}.'.format(
+                source_type=source_type,
+                input_name=self.name,
+            )
+        )
 
 
 # class TransformDefinition:
