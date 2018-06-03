@@ -9,45 +9,13 @@ These represent functions which do purely in-memory compute. They will evaluate 
 the core transform, and exercise all logging and metrics tracking (outside of outputs), but they
 will not invoke *any* outputs (and their APIs don't allow the user to).
 
-output_*
+materialize_*
 
-Output functions do execution but also allow the user to specify outputs, which create artifacts
-that are discoverable by external systems (e.g. files, database tables, and so on).
+Materializations functions do execution but also allow the user to specify materializations,
+which create artifacts that are discoverable by external systems (e.g. files, database
+tables, and so on).
 
-Argument conventions across the file:
 
-input_arg_dicts: {string : { string: string } }
-
-A dictionary of dictionaries. The first level is indexed by input *name*. Put an entry for each
-input you want to specify. Each one of inputs in turn has an argument dictionary, which is just
-a set of key value pairs, represented by a bare python dictionary:
-
-So for example a solid that takes two csv inputs would have the input_arg_dicts:
-
-{
-    "csv_one" : { "path" : "path/to/csv_one.csv},
-    "csv_two" : { "path" : "path/to/csv_two.csv},
-}
-
-output_arg_dicts : { string : string : string : string } } }
-
-A dictionary of dictionary of dictionarys.
-
-The first level is a solid nane. These are the solids where the user wants to output something.
-
-The next level is the output name. This level allows the user to specify multiple outputs per solid.
-
-Lastly is the arg_dict for that output in that solid
-
-Example where you want to output a csv for a single solid:
-
-{
-    "some_solid" {
-        "CSV" : {
-            "path" : "path/to/an/output.csv"
-        }
-    }
-}
 '''
 from collections import (namedtuple, OrderedDict)
 from contextlib import contextmanager
@@ -637,6 +605,25 @@ def create_single_solid_env_from_arg_dicts(solid, arg_dicts):
     return config.Environment(input_sources=input_sources)
 
 
+# This is the legacy format for specifying inputs.
+
+# Keeping this around because the clarify pipeline is still using this as we finalize
+# the real config inputs. We don't want to thrash that pipeline until we finalize
+# the input api
+
+# input_arg_dicts: {string : { string: string } }
+
+# A dictionary of dictionaries. The first level is indexed by input *name*. Put an entry for each
+# input you want to specify. Each one of inputs in turn has an argument dictionary, which is just
+# a set of key value pairs, represented by a bare python dictionary:
+
+# So for example a solid that takes two csv inputs would have the input_arg_dicts:
+
+# {
+#     "csv_one" : { "path" : "path/to/csv_one.csv},
+#     "csv_two" : { "path" : "path/to/csv_two.csv},
+# }
+
 def create_pipeline_env_from_arg_dicts(pipeline, arg_dicts):
     check.inst_param(pipeline, 'pipeline', DagsterPipeline)
     check.dict_param(arg_dicts, 'arg_dicts', key_type=str, value_type=dict)
@@ -843,8 +830,6 @@ def execute_pipeline_iterator(
 
     execute_pipeline is the "synchronous" version of this function and returns a list of results
     once the entire pipeline has been executed.
-
-    For formats of input_arg_dicts and output_arg_dicts see docblock at the top of the module
     '''
 
     check.inst_param(context, 'context', DagsterExecutionContext)
