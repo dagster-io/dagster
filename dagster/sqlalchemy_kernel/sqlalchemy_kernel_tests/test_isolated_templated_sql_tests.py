@@ -26,7 +26,7 @@ def table_input_source(input_name, table_name):
 def test_single_templated_sql_solid_single_table_raw_api():
     context = in_mem_context()
 
-    sql = '''CREATE TABLE {{sum_table.name}} 
+    sql = '''CREATE TABLE {{sum_table.name}}
     AS SELECT num1, num2, num1 + num2 as sum FROM num_table'''
 
     sum_table_arg = 'specific_sum_table'
@@ -58,6 +58,16 @@ def test_single_templated_sql_solid_single_table_raw_api():
     assert result.success
 
     assert _load_table(context, sum_table_arg) == [(1, 2, 3), (3, 4, 7)]
+
+    input_without_source = config.Input(input_name='sum_table', args={'name': 'another_table'})
+
+    environment_without_source = config.Environment(input_sources=[input_without_source])
+    result_no_source = dagster.execute_pipeline(
+        context, pipeline, environment=environment_without_source
+    )
+    assert result_no_source.success
+
+    assert _load_table(context, 'another_table') == [(1, 2, 3), (3, 4, 7)]
 
 
 def test_single_templated_sql_solid_single_table_with_api():

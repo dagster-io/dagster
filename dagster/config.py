@@ -33,7 +33,7 @@ class Environment(namedtuple('EnvironmentData', 'input_sources')):
 
 
 class Input(namedtuple('InputData', 'input_name args source')):
-    def __new__(cls, input_name, args, source):
+    def __new__(cls, input_name, args, source=None):
         return super(Input, cls).__new__(
             cls,
             input_name=check.str_param(input_name, 'input_name'),
