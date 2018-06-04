@@ -4,7 +4,8 @@ from dagster import config
 from dagster.core.definitions import (
     Solid, create_single_source_input, create_no_materialization_output
 )
-from dagster.transform_only_solid import (dep_only_input, no_args_transform_solid)
+from dagster import dep_only_input
+from dagster.transform_only_solid import no_args_transform_solid
 
 
 def _set_key_value(ddict, key, value):
