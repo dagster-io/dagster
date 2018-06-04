@@ -5,10 +5,6 @@ from dagster.core.definitions import (
 from dagster.utils import make_context_arg_optional
 
 
-def dep_only_input(solid, expectations=None):
-    return InputDefinition(name=solid.name, sources=[], depends_on=solid, expectations=expectations)
-
-
 def no_args_transform_solid(name, no_args_transform_fn, inputs=None):
     check.str_param(name, 'name')
     check.callable_param(no_args_transform_fn, 'no_args_transforn_fn')
