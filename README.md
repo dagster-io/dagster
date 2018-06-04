@@ -10,3 +10,26 @@ Dagster is an opinionated pipeline runner.
 4.  Data in data pipelines should also be under test. Data/pipeling testing is explicitly supported in a solid See https://medium.com/@expectgreatdata/down-with-pipeline-debt-introducing-great-expectations-862ddc46782a
 5.  Gradual/Optional typing
 6.  Metadata
+
+## Local development setup
+
+1. Create and activate virtualenv
+
+```
+python3 -m venv dagsterenv
+source dagsterenv/bin/activate
+```
+
+2. Install dagster locally
+
+```
+pip install -e ./dagster
+```
+
+## Running pipelines
+
+Ok, that was pretty confusing. So I guess inputs define input_sources arguments.
+
+```
+./bin/dagster pipeline pandas_hello_world execute --input num_csv.path=pandas_hello_world/num.csv
+```
