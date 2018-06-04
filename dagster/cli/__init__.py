@@ -110,6 +110,12 @@ def dagster_list_commmand(config):
 
     for pipeline in pipelines:
         click.echo('Pipeline: {name}'.format(name=pipeline.name))
+        if pipeline.description:
+            click.echo('Description: {desc}'.format(desc=pipeline.description))
+        click.echo('Solids: (Execution Order)')
+        for solid in pipeline.solid_graph.topological_solids:
+            click.echo('    ' + solid.name)
+        click.echo('*************')
 
 
 # XXX(freiksenet): Might not be a good idea UI wise
@@ -133,35 +139,35 @@ def dagster_graphviz_commmand(pipeline):
     build_graphviz_graph(pipeline).view(cleanup=True)
 
 
-@pipeline.command(name='execute')
-@click.option('--input', multiple=True)
-@click.option('--materialization', multiple=True)
-@click.option('--through', multiple=True)
-@click.option('--log-level', type=click.STRING, default='INFO')
-@pass_pipeline
-def execute(pipeline, input, through, materialization, log_level):
-    check.opt_tuple_param(input, 'input')
-    check.opt_tuple_param(materialization, 'materialization')
-    check.opt_str_param(log_level, 'log_level')
+# @pipeline.command(name='execute')
+# @click.option('--input', multiple=True)
+# @click.option('--materialization', multiple=True)
+# @click.option('--through', multiple=True)
+# @click.option('--log-level', type=click.STRING, default='INFO')
+# @pass_pipeline
+# def execute(pipeline, input, through, materialization, log_level):
+#     check.opt_tuple_param(input, 'input')
+#     check.opt_tuple_param(materialization, 'materialization')
+#     check.opt_str_param(log_level, 'log_level')
 
-    input_list = list(input)
-    through_list = list(through)
-    materialization_list = list(materialization)
+#     input_list = list(input)
+#     through_list = list(through)
+#     materialization_list = list(materialization)
 
-    input_arg_dicts = construct_arg_dicts(input_list)
-    materializations = _get_materializations(materialization_list)
+#     input_arg_dicts = construct_arg_dicts(input_list)
+#     materializations = _get_materializations(materialization_list)
 
-    context = DagsterExecutionContext(loggers=[define_logger('dagster')], log_level=log_level)
+#     context = DagsterExecutionContext(loggers=[define_logger('dagster')], log_level=log_level)
 
-    pipeline_iter = materialize_pipeline_iterator(
-        context,
-        pipeline,
-        environment=create_pipeline_env_from_arg_dicts(pipeline, input_arg_dicts),
-        materializations=materializations,
-        # XXX(freiksenet): Need to figure this out, it's currently implied from
-        # materializations, but does it mean only materialized solids get
-        # executed? that's weird
-        # through_solids=through_list
-    )
+#     pipeline_iter = materialize_pipeline_iterator(
+#         context,
+#         pipeline,
+#         environment=create_pipeline_env_from_arg_dicts(pipeline, input_arg_dicts),
+#         materializations=materializations,
+#         # XXX(freiksenet): Need to figure this out, it's currently implied from
+#         # materializations, but does it mean only materialized solids get
+#         # executed? that's weird
+#         # through_solids=through_list
+#     )
 
-    process_results_for_console(pipeline_iter, context)
+#     process_results_for_console(pipeline_iter, context)
