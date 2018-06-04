@@ -6,8 +6,8 @@ import click
 import yaml
 
 from dagster import check
+import dagster
 from dagster.graphviz import build_graphviz_graph
-from dagster import config
 from dagster.core.errors import DagsterExecutionFailureReason
 from dagster.core.execution import (
     DagsterExecutionContext,
@@ -129,7 +129,7 @@ def dagster_print_commmand(pipeline):
 
 @pipeline.command(name='graphviz')
 @pass_pipeline
-def dagster_graphviz_commmand(pipeline, name):
+def dagster_graphviz_commmand(pipeline):
     build_graphviz_graph(pipeline).view(cleanup=True)
 
 

@@ -1,7 +1,6 @@
 import sqlalchemy as sa
 
 import dagster.core
-import dagster.sqlalchemy_kernel as dagster_sa
 from dagster.sqlalchemy_kernel.subquery_builder_experimental import (
     create_sql_solid,
     create_table_input_dependency,
