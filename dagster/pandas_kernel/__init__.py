@@ -100,21 +100,9 @@ def csv_input(name, delimiter=',', **read_csv_kwargs):
     return create_dagster_pd_csv_input(name, delimiter, **read_csv_kwargs)
 
 
-def csv_output():
-    return create_dagster_pd_csv_output()
-
-
 def read_table_input(name, delimiter=',', **read_table_kwargs):
     return create_dagster_pd_read_table_input(name, delimiter, **read_table_kwargs)
 
 
 def json_input(name):
     return create_json_input(name)
-
-
-def parquet_output():
-    return create_dagster_pd_parquet_output()
-
-
-def null_output():
-    return create_dagster_pd_csv_output()
