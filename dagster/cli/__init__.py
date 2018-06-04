@@ -103,11 +103,6 @@ def dagster_cli(ctx, config):
     ctx.obj = Config.from_file(config)
 
 
-def _load_pipeline_config(pipelines_yml):
-    with open(pipelines_yml, 'r') as ff:
-        return yaml.load(ff)
-
-
 @dagster_cli.command(name='list', help="list all pipelines")
 @pass_config
 def dagster_list_commmand(config):
