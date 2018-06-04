@@ -1,6 +1,7 @@
 import importlib
 from collections import namedtuple
 import logging
+import textwrap
 
 import click
 import yaml
@@ -103,6 +104,13 @@ def dagster_cli(ctx, config):
     ctx.obj = Config.from_file(config)
 
 
+def format_description(desc):
+    dedented = textwrap.dedent(desc)
+    indent = ' ' * 4
+    wrapper = textwrap.TextWrapper(initial_indent=indent, subsequent_indent=indent)
+    return wrapper.fill(dedented)
+
+
 @dagster_cli.command(name='list', help="list all pipelines")
 @pass_config
 def dagster_list_commmand(config):
@@ -111,7 +119,8 @@ def dagster_list_commmand(config):
     for pipeline in pipelines:
         click.echo('Pipeline: {name}'.format(name=pipeline.name))
         if pipeline.description:
-            click.echo('Description: {desc}'.format(desc=pipeline.description))
+            click.echo('Description:')
+            click.echo(format_description(pipeline.description))
         click.echo('Solids: (Execution Order)')
         for solid in pipeline.solid_graph.topological_solids:
             click.echo('    ' + solid.name)
