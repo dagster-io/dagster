@@ -998,7 +998,14 @@ def materialize_pipeline(
 
 
 def materialize_pipeline_iterator(
-    context, pipeline, *, materializations, environment
+    context,
+    pipeline,
+    *,
+    materializations,
+    environment,
+    through_solids=None,
+    from_solids=None,
+    use_materialization_through_solids=True,
 ):
     '''
     Similar to execute_pipeline_iterator, except that you can specify outputs (per format
@@ -1012,10 +1019,14 @@ def materialize_pipeline_iterator(
 
     materialization_args = MaterializationArgs(pipeline, materializations)
 
+    if through_solids is None and use_materialization_through_solids:
+        through_solids = materialization_args.through_solids
+
     for result in execute_pipeline_iterator(
         context,
         pipeline,
-        through_solids=materialization_args.through_solids,
+        through_solids=through_solids,
+        from_solids=from_solids,
         environment=environment
     ):
         if not result.success:
