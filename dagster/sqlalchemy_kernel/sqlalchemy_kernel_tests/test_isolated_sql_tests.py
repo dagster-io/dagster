@@ -36,9 +36,7 @@ def test_basic_pipeline():
     sum_sql_solid = create_sql_statement_solid('sum_sql_solid', sum_sql_text)
 
     sum_sq_sql_solid = create_sql_statement_solid(
-        'sum_sq_sql_solid',
-        sum_sq_sql_text,
-        inputs=[dagster.transform_only_solid.dep_only_input(sum_sql_solid)]
+        'sum_sq_sql_solid', sum_sq_sql_text, inputs=[dagster.dep_only_input(sum_sql_solid)]
     )
 
     pipeline = dagster.pipeline(solids=[sum_sql_solid, sum_sq_sql_solid])
@@ -70,7 +68,7 @@ def test_pipeline_from_files():
 
     create_sum_sq_table_solid = sql_file_solid(
         script_relative_path('sql_files/create_sum_sq_table.sql'),
-        inputs=[dagster.transform_only_solid.dep_only_input(create_sum_table_solid)],
+        inputs=[dagster.dep_only_input(create_sum_table_solid)],
     )
 
     pipeline = dagster.pipeline(solids=[create_sum_table_solid, create_sum_sq_table_solid])
