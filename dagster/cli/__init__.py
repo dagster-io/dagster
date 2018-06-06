@@ -2,13 +2,15 @@ import importlib
 from collections import namedtuple
 import logging
 import textwrap
-
+import os
 import click
 import yaml
 
 from dagster import check
 import dagster
 from dagster.graphviz import build_graphviz_graph
+
+from dagster import config as dagster_config
 from dagster.core.errors import DagsterExecutionFailureReason
 from dagster.core.execution import (
     DagsterExecutionContext,
@@ -18,7 +20,7 @@ from dagster.core.execution import (
     create_pipeline_env_from_arg_dicts,
 )
 from dagster.utils.logging import define_logger
-from .embedded_cli import print_pipeline, construct_arg_dicts, _get_materializations, process_results_for_console
+from .embedded_cli import print_pipeline, process_results_for_console
 
 LOGGING_DICT = {
     'DEBUG': logging.DEBUG,
@@ -47,21 +49,18 @@ class Config():
         return Config(pipeline_configs=pipeline_configs)
 
     def create_pipelines(self):
-        self.pipelines = []
-
         for pipeline_config in self.pipeline_configs:
-            pipeline = pipeline_config.create_pipeline()
-            self.pipelines.append(pipeline)
+            pipeline_config.create_pipeline()
 
-        return self.pipelines
+        return self.pipeline_configs
 
     def get_pipeline(self, name):
         if not self.pipelines:
             self.create_pipelines()
 
-        for pipeline in self.pipelines:
-            if pipeline.name == name:
-                return pipeline
+        for pipeline_config in self.pipeline_configs:
+            if pipeline_config.pipeline.name == name:
+                return pipeline_config
 
         check.failed(f'pipeline {name} not found')
 
@@ -71,18 +70,18 @@ pass_config = click.make_pass_decorator(Config)
 
 class PipelineConfig():
     def __init__(self, module, fn):
-        self.module = module
-        self.fn = fn
+        self.module_name = module
+        self.fn_name = fn
+        self.module = None
+        self.fn = None
+        self.pipeline = None
 
     def create_pipeline(self):
-        pipeline_module = importlib.import_module(self.module)
-        pipeline_fn = getattr(pipeline_module, self.fn)
-        check.is_callable(pipeline_fn)
-        pipeline = pipeline_fn()
-        return pipeline
-
-
-pass_pipeline = click.make_pass_decorator(DagsterPipeline)
+        self.module = importlib.import_module(self.module_name)
+        self.fn = getattr(self.module, self.fn_name)
+        check.is_callable(self.fn)
+        self.pipeline = self.fn()
+        return self.pipeline
 
 
 @click.group()
@@ -111,12 +110,13 @@ def format_description(desc):
     return wrapper.fill(dedented)
 
 
-@dagster_cli.command(name='list', help="list all pipelines")
+@click.command(name='list', help="list all pipelines")
 @pass_config
-def dagster_list_commmand(config):
-    pipelines = config.create_pipelines()
+def list_command(config):
+    pipeline_configs = config.create_pipelines()
 
-    for pipeline in pipelines:
+    for pipeline_config in pipelines_configs:
+        pipeline = pipeline_config.pipeline
         click.echo('Pipeline: {name}'.format(name=pipeline.name))
         if pipeline.description:
             click.echo('Description:')
@@ -127,56 +127,83 @@ def dagster_list_commmand(config):
         click.echo('*************')
 
 
-# XXX(freiksenet): Might not be a good idea UI wise
-@dagster_cli.group(help="PIPELINE_NAME operate on pipeline")
-@click.argument('pipeline_name')
-@click.pass_context
-def pipeline(ctx, pipeline_name):
-    pipeline = ctx.obj.get_pipeline(pipeline_name)
-    ctx.obj = pipeline
+def set_pipeline(ctx, arg, value):
+    ctx.params['pipeline_config'] = ctx.find_object(Config).get_pipeline(value)
 
 
-@pipeline.command(name='print')
-@pass_pipeline
-def dagster_print_commmand(pipeline):
-    print_pipeline(pipeline, full=True)
+def pipeline_name_argument(f):
+    return click.argument('pipeline_name', callback=set_pipeline, expose_value=False)(f)
 
 
-@pipeline.command(name='graphviz')
-@pass_pipeline
-def dagster_graphviz_commmand(pipeline):
-    build_graphviz_graph(pipeline).view(cleanup=True)
+@click.command(name='print', help="[PIPELINE_NAME] print pipeline info")
+@pipeline_name_argument
+def print_command(pipeline_config):
+    print_pipeline(pipeline_config.pipeline, full=True)
 
 
-# @pipeline.command(name='execute')
-# @click.option('--input', multiple=True)
-# @click.option('--materialization', multiple=True)
-# @click.option('--through', multiple=True)
-# @click.option('--log-level', type=click.STRING, default='INFO')
-# @pass_pipeline
-# def execute(pipeline, input, through, materialization, log_level):
-#     check.opt_tuple_param(input, 'input')
-#     check.opt_tuple_param(materialization, 'materialization')
-#     check.opt_str_param(log_level, 'log_level')
+@click.command(name='graphviz', help="[PIPELINE_NAME] visualize pipeline")
+@pipeline_name_argument
+def graphviz_command(pipeline_config):
+    build_graphviz_graph(pipeline_config.pipeline).view(cleanup=True)
 
-#     input_list = list(input)
-#     through_list = list(through)
-#     materialization_list = list(materialization)
 
-#     input_arg_dicts = construct_arg_dicts(input_list)
-#     materializations = _get_materializations(materialization_list)
+def get_default_config_for_pipeline():
+    ctx = click.get_current_context()
+    pipeline_config = ctx.params['pipeline_config']
+    module_path = os.path.dirname(pipeline_config.module.__file__)
+    return os.path.join(module_path, 'env.yml')
 
-#     context = DagsterExecutionContext(loggers=[define_logger('dagster')], log_level=log_level)
 
-#     pipeline_iter = materialize_pipeline_iterator(
-#         context,
-#         pipeline,
-#         environment=create_pipeline_env_from_arg_dicts(pipeline, input_arg_dicts),
-#         materializations=materializations,
-#         # XXX(freiksenet): Need to figure this out, it's currently implied from
-#         # materializations, but does it mean only materialized solids get
-#         # executed? that's weird
-#         # through_solids=through_list
-#     )
+@click.command(name='execute', help="[PIPELINE_NAME] execute pipeline")
+@pipeline_name_argument
+@click.option(
+    '-e',
+    '--env',
+    type=click.Path(
+        exists=True,
+        file_okay=True,
+        dir_okay=False,
+        readable=True,
+        resolve_path=True,
+    ),
+    default=get_default_config_for_pipeline,
+    help="Path to environment file. Defaults to ./PIPELINE_DIR/env.yml."
+)
+@click.option('--from-solid', type=click.STRING, help="Solid to start execution from", default=None)
+@click.option('--log-level', type=click.STRING, default='INFO')
+def execute_command(pipeline_config, env, from_solid, log_level):
+    with open(env, 'r') as ff:
+        env_config = yaml.load(ff)
+    environment = dagster_config.Environment(
+        input_sources=[
+            dagster_config.Input(input_name=s['input_name'], args=s['args'], source=s['source'])
+            for s in check.list_elem(env_config['environment'], 'input_sources')
+        ]
+    )
 
-#     process_results_for_console(pipeline_iter, context)
+    materializations = []
+    if 'materializations' in env_config:
+        materializations = [
+            dagster_config.Materialization(
+                solid=m['solid'], materialization_type=m['type'], args=m['args']
+            ) for m in check.list_elem(env_config, 'materializations')
+        ]
+
+    context = DagsterExecutionContext(loggers=[define_logger('dagster')], log_level=log_level)
+
+    pipeline_iter = materialize_pipeline_iterator(
+        context,
+        pipeline_config.pipeline,
+        environment=environment,
+        materializations=materializations,
+        from_solids=[from_solid] if from_solid else None,
+        use_materialization_through_solids=False,
+    )
+
+    process_results_for_console(pipeline_iter, context)
+
+
+dagster_cli.add_command(list_command)
+dagster_cli.add_command(print_command)
+dagster_cli.add_command(graphviz_command)
+dagster_cli.add_command(execute_command)
