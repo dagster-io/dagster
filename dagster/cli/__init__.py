@@ -84,7 +84,6 @@ class PipelineConfig():
         return self.pipeline
 
 
-@click.group()
 @click.option(
     '--config',
     '-c',
@@ -115,7 +114,7 @@ def format_description(desc):
 def list_command(config):
     pipeline_configs = config.create_pipelines()
 
-    for pipeline_config in pipelines_configs:
+    for pipeline_config in pipeline_configs:
         pipeline = pipeline_config.pipeline
         click.echo('Pipeline: {name}'.format(name=pipeline.name))
         if pipeline.description:
@@ -203,7 +202,16 @@ def execute_command(pipeline_config, env, from_solid, log_level):
     process_results_for_console(pipeline_iter, context)
 
 
-dagster_cli.add_command(list_command)
-dagster_cli.add_command(print_command)
-dagster_cli.add_command(graphviz_command)
-dagster_cli.add_command(execute_command)
+def create_pipeline_cli():
+    group = click.Group(name="pipeline")
+    group.add_command(list_command)
+    group.add_command(print_command)
+    group.add_command(graphviz_command)
+    group.add_command(execute_command)
+    return group
+
+
+def create_dagster_cli():
+    group = click.group()(dagster_cli)
+    group.add_command(create_pipeline_cli())
+    return group
