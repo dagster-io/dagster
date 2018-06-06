@@ -176,7 +176,7 @@ def execute_command(pipeline_config, env, from_solid, log_level):
     environment = dagster_config.Environment(
         input_sources=[
             dagster_config.Input(input_name=s['input_name'], args=s['args'], source=s['source'])
-            for s in check.list_elem(env_config['environment'], 'input_sources')
+            for s in check.list_elem(env_config['environment'], 'inputs')
         ]
     )
 
