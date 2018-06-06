@@ -30,9 +30,7 @@ def define_pipeline():
         transform_fn=always_fails_transform_fn
     )
 
-    return dagster.core.pipeline(
-        name='pandas_hello_world', solids=[sum_solid, sum_sq_solid, always_fails_solid]
-    )
+    return dagster.core.pipeline(name='pandas_hello_world', solids=[sum_solid, sum_sq_solid])
 
 
 if __name__ == '__main__':
