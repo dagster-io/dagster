@@ -225,10 +225,3 @@ def test_provider_languages_specialities():
 
     for executed in executed_list:
         assert executed in result_names
-
-
-if __name__ == '__main__':
-    from dagster.cli.embedded_cli import embedded_dagster_single_pipeline_cli_main
-    import sys
-
-    embedded_dagster_single_pipeline_cli_main(sys.argv, define_pipeline())

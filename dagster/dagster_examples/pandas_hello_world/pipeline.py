@@ -31,10 +31,3 @@ def define_pipeline():
     )
 
     return dagster.core.pipeline(name='pandas_hello_world', solids=[sum_solid, sum_sq_solid])
-
-
-if __name__ == '__main__':
-    from dagster.cli.embedded_cli import embedded_dagster_single_pipeline_cli_main
-    import sys
-
-    embedded_dagster_single_pipeline_cli_main(sys.argv, define_pipeline())
