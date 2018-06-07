@@ -7,24 +7,18 @@ from dagster import check
 from dagster.utils import has_context_argument
 
 from dagster.core import create_json_input
-from dagster.core.definitions import Solid
+from dagster.core.definitions import Solid, OutputDefinition
 from dagster.core.execution import DagsterExecutionContext
 from dagster.core.errors import (DagsterUserCodeExecutionError, DagsterInvariantViolationError)
 from .definitions import (
-    create_dagster_pd_csv_input,
-    create_dagster_pd_dependency_input,
-    create_dataframe_solid_output_definition,
-    create_dagster_pd_read_table_input,
+    dataframe_dependency,
+    dataframe_input,
+    parquet_dataframe_source,
+    csv_dataframe_source,
+    table_dataframe_source,
+    dataframe_parquet_materialization,
+    dataframe_csv_materialization,
 )
-
-
-def solid(**kwargs):
-    return Solid(**kwargs)
-
-
-def depends_on(solid_inst):
-    check.inst_param(solid_inst, 'solid_inst', Solid)
-    return create_dagster_pd_dependency_input(solid_inst)
 
 
 def _default_passthrough_transform(*args, **kwargs):
@@ -70,7 +64,7 @@ def _dependency_transform_wrapper(name, transform_fn):
         return wrapper_no_context
 
 
-def dataframe_solid(*args, name, inputs, transform_fn=None, **kwargs):
+def dataframe_solid(*args, name, inputs, transform_fn=None, materializations=None, **kwargs):
     check.invariant(not args, 'must use all keyword args')
 
     # will add parquet and other standardized formats
@@ -81,11 +75,16 @@ def dataframe_solid(*args, name, inputs, transform_fn=None, **kwargs):
         )
         transform_fn = _default_passthrough_transform
 
+    if not materializations:
+        materializations = [dataframe_csv_materialization(), dataframe_parquet_materialization()]
+
+    output = OutputDefinition(materializations=materializations)
+
     return Solid(
         name=name,
         inputs=inputs,
         transform_fn=_dependency_transform_wrapper(name, transform_fn),
-        output=create_dataframe_solid_output_definition(),
+        output=output,
         **kwargs
     )
 
@@ -94,14 +93,6 @@ def single_path_arg(input_name, path):
     check.str_param(input_name, 'input_name')
     check.str_param(path, 'path')
     return {input_name: {'path': path}}
-
-
-def csv_input(name, delimiter=',', **read_csv_kwargs):
-    return create_dagster_pd_csv_input(name, delimiter, **read_csv_kwargs)
-
-
-def read_table_input(name, delimiter=',', **read_table_kwargs):
-    return create_dagster_pd_read_table_input(name, delimiter, **read_table_kwargs)
 
 
 def json_input(name):

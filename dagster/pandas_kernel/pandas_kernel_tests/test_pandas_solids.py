@@ -9,12 +9,12 @@ import dagster.core
 from dagster.core import types
 from dagster.core.definitions import (Solid, create_single_materialization_output)
 from dagster.core.execution import (
-    DagsterExecutionContext, execute_pipeline_through_solid, _read_source, materialize_pipeline_iterator,
-    output_single_solid, _pipeline_solid_in_memory, materialize_pipeline, execute_pipeline,
-    execute_single_solid, create_single_solid_env_from_arg_dicts, create_pipeline_env_from_arg_dicts
+    DagsterExecutionContext, execute_pipeline_through_solid, _read_source,
+    materialize_pipeline_iterator, output_single_solid, _pipeline_solid_in_memory,
+    materialize_pipeline, execute_pipeline, execute_single_solid,
+    create_single_solid_env_from_arg_dicts, create_pipeline_env_from_arg_dicts
 )
 import dagster.pandas_kernel as dagster_pd
-from dagster.pandas_kernel.definitions import create_dagster_pd_csv_input
 from dagster.utils.test import (get_temp_file_name, get_temp_file_names, script_relative_path)
 
 
@@ -30,7 +30,7 @@ def create_test_context():
 
 
 def test_pandas_input():
-    csv_input = create_dagster_pd_csv_input(name='num_csv')
+    csv_input = dagster_pd.dataframe_input('num_csv', sources=[dagster_pd.csv_dataframe_source()])
     df = _read_source(
         create_test_context(), csv_input.sources[0], {'path': script_relative_path('num.csv')}
     )
@@ -40,7 +40,7 @@ def test_pandas_input():
 
 
 def test_pandas_solid():
-    csv_input = create_dagster_pd_csv_input(name='num_csv')
+    csv_input = dagster_pd.dataframe_input('num_csv', sources=[dagster_pd.csv_dataframe_source()])
 
     def transform(num_csv):
         num_csv['sum'] = num_csv['num1'] + num_csv['num2']
@@ -84,7 +84,7 @@ def test_pandas_solid():
 
 
 def test_pandas_csv_to_csv():
-    csv_input = create_dagster_pd_csv_input(name='num_csv')
+    csv_input = dagster_pd.dataframe_input('num_csv', sources=[dagster_pd.csv_dataframe_source()])
 
     # just adding a second context arg to test that
     def transform(num_csv, context):
