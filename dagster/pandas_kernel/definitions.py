@@ -46,9 +46,9 @@ def csv_dataframe_source(**read_csv_kwargs):
 
 
 def table_dataframe_source(**read_table_kwargs):
-    def callback(context, path):
+    def callback(context, arg_dict):
         check.inst_param(context, 'context', DagsterExecutionContext)
-        check.str_param(path, 'path')
+        path = check.str_elem(arg_dict, 'path')
         df = pd.read_table(path, **read_table_kwargs)
         context.metric('rows', df.shape[0])
         return df
