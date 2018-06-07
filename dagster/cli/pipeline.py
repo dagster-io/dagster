@@ -1,21 +1,21 @@
 import logging
-import textwrap
 import os
+import textwrap
+
 import click
 import yaml
 
-from dagster import check
-from dagster.graphviz import build_graphviz_graph
-
 from dagster import config as dagster_config
+from dagster import check
 from dagster.core.execution import (
-    DagsterExecutionFailureReason,
     DagsterExecutionContext,
+    DagsterExecutionFailureReason,
     materialize_pipeline_iterator,
 )
+from dagster.graphviz import build_graphviz_graph
 from dagster.utils.logging import define_logger
 
-from .context import Config, PipelineConfig
+from .context import Config
 
 
 def create_pipeline_cli():
@@ -27,7 +27,7 @@ def create_pipeline_cli():
     return group
 
 
-@click.command(name='list', help="list all pipelines")
+@click.command(name='list', help="list")
 @Config.pass_object
 def list_command(config):
     pipeline_configs = config.create_pipelines()
@@ -59,7 +59,7 @@ def pipeline_name_argument(f):
     return click.argument('pipeline_name', callback=set_pipeline, expose_value=False)(f)
 
 
-@click.command(name='print', help="[PIPELINE_NAME] print pipeline info")
+@click.command(name='print', help="print <<pipeline_name>>")
 @pipeline_name_argument
 def print_command(pipeline_config):
     print_pipeline(pipeline_config.pipeline, full=True)
@@ -119,7 +119,7 @@ def format_argument_dict(arg_def_dict):
     )
 
 
-@click.command(name='graphviz', help="[PIPELINE_NAME] visualize pipeline")
+@click.command(name='graphviz', help="graphviz <<pipeline_name>>")
 @pipeline_name_argument
 def graphviz_command(pipeline_config):
     build_graphviz_graph(pipeline_config.pipeline).view(cleanup=True)
@@ -141,7 +141,7 @@ LOGGING_DICT = {
 }
 
 
-@click.command(name='execute', help="[PIPELINE_NAME] execute pipeline")
+@click.command(name='execute', help="execute <<pipeline_name>>")
 @pipeline_name_argument
 @click.option(
     '-e',
