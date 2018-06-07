@@ -27,7 +27,7 @@ import six
 from dagster import check
 from dagster import config
 
-from dagster.utils.logging import (CompositeLogger, ERROR)
+from dagster.utils.logging import (CompositeLogger, ERROR, get_formatted_stack_trace)
 from dagster.utils.timing import time_execution_scope
 
 from .definitions import (
@@ -87,7 +87,7 @@ class DagsterExecutionContext:
         log_props = copy.copy(self._context_dict)
         log_props['log_message'] = msg
 
-        getattr(self._logger, method)(full_message, extra=log_props, **kwargs)
+        getattr(self._logger, method)(full_message, extra={**log_props, **kwargs})
 
     def debug(self, msg):
         return self._log('debug', msg)
@@ -272,8 +272,8 @@ def _user_code_error_boundary(context, msg, **kwargs):
     try:
         yield
     except Exception as e:
-        #context.error(str(e)) # WORKS
-        context.error(str(e), exc_info=sys.exc_info()) 
+        stack_trace = get_formatted_stack_trace(e)
+        context.error(str(e), stack_trace=stack_trace)
         raise DagsterUserCodeExecutionError(
             msg.format(**kwargs), e, user_exception=e, original_exc_info=sys.exc_info()
         )

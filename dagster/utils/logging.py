@@ -1,5 +1,6 @@
 import logging
 from logging import (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+import traceback
 
 import coloredlogs
 
@@ -105,3 +106,8 @@ def debug_format_string():
 
 def define_debug_formatter():
     return logging.Formatter(debug_format_string())
+
+
+def get_formatted_stack_trace(exception):
+    check.inst_param(exception, 'exception', Exception)
+    return ''.join(traceback.format_tb(exception.__traceback__))
