@@ -1,5 +1,4 @@
 from dagster import check
-import dagster.cli.embedded_cli
 import dagster.sqlalchemy_kernel as dagster_sa
 
 
