@@ -74,14 +74,20 @@ class DagsterExecutionContext:
             ]
         )
 
-    def _log(self, method, msg):
+    def _log(self, method, msg, **kwargs) :
         check.str_param(method, 'method')
         check.str_param(msg, 'msg')
 
         full_message = 'message="{message}" {kv_message}'.format(
             message=msg, kv_message=self._kv_message()
         )
-        getattr(self._logger, method)(full_message, extra=self._context_dict)
+
+        import copy
+
+        log_props = copy.copy(self._context_dict)
+        log_props['log_message'] = msg
+
+        getattr(self._logger, method)(full_message, extra=log_props, **kwargs)
 
     def debug(self, msg):
         return self._log('debug', msg)
@@ -92,17 +98,17 @@ class DagsterExecutionContext:
     def warn(self, msg):
         return self._log('warn', msg)
 
-    def error(self, msg):
-        return self._log('error', msg)
+    def error(self, msg, **kwargs):
+        return self._log('error', msg, **kwargs)
 
     def critical(self, msg):
         return self._log('critical', msg)
 
-    def exception(self, e):
+    def exception(self, e, exc_info):
         check.inst_param(e, 'e', Exception)
 
         # this is pretty lame right. should embellish with more data (stack trace?)
-        return self._log('exception', str(e))
+        return self._log('error', str(e))
 
     @contextmanager
     def value(self, key, value):
@@ -266,7 +272,8 @@ def _user_code_error_boundary(context, msg, **kwargs):
     try:
         yield
     except Exception as e:
-        context.exception(e)
+        #context.error(str(e)) # WORKS
+        context.error(str(e), exc_info=sys.exc_info()) 
         raise DagsterUserCodeExecutionError(
             msg.format(**kwargs), e, user_exception=e, original_exc_info=sys.exc_info()
         )
@@ -838,66 +845,71 @@ def execute_pipeline_iterator(
     check.opt_list_param(through_solids, 'through_solids', of_type=str)
     check.opt_list_param(from_solids, 'from_solids', of_type=str)
 
-    input_args = InputArgs(pipeline, environment)
 
-    provided_input_names = input_args.input_names
+    pipeline_context_value = pipeline.name if pipeline.name else 'unnamed'
 
-    if not through_solids:
-        through_solids = pipeline.all_sink_solids
 
-    if not from_solids:
-        all_deps = set()
-        for through_solid in through_solids:
-            all_deps.union(pipeline.solid_graph.transitive_dependencies_of(through_solid))
+    with context.value('pipeline', pipeline_context_value):
+        input_args = InputArgs(pipeline, environment)
 
-        from_solids = list(all_deps)
+        provided_input_names = input_args.input_names
 
-    for input_name in provided_input_names:
-        if not pipeline.has_input(input_name):
-            raise DagsterInvariantViolationError(
-                f'Input "{input_name}" not found in the pipeline.' + \
-                f'Input must be one of {repr(pipeline.input_names)}'
+        if not through_solids:
+            through_solids = pipeline.all_sink_solids
+
+        if not from_solids:
+            all_deps = set()
+            for through_solid in through_solids:
+                all_deps.union(pipeline.solid_graph.transitive_dependencies_of(through_solid))
+
+            from_solids = list(all_deps)
+
+        for input_name in provided_input_names:
+            if not pipeline.has_input(input_name):
+                raise DagsterInvariantViolationError(
+                    f'Input "{input_name}" not found in the pipeline.' + \
+                    f'Input must be one of {repr(pipeline.input_names)}'
+                )
+
+        for through_solid_name in through_solids:
+            unprovided_inputs = pipeline.solid_graph.compute_unprovided_inputs(
+                input_names=provided_input_names, solid_name=through_solid_name
             )
+            if unprovided_inputs:
+                check.failed(
+                    'Failed to provide inputs {unprovided_inputs} for solid {name}'.format(
+                        unprovided_inputs=unprovided_inputs, name=through_solid_name
+                    )
+                )
 
-    for through_solid_name in through_solids:
-        unprovided_inputs = pipeline.solid_graph.compute_unprovided_inputs(
-            input_names=provided_input_names, solid_name=through_solid_name
+        execution_graph = pipeline.solid_graph.create_execution_subgraph(
+            from_solids, list(through_solids)
         )
-        if unprovided_inputs:
-            check.failed(
-                'Failed to provide inputs {unprovided_inputs} for solid {name}'.format(
-                    unprovided_inputs=unprovided_inputs, name=through_solid_name
+
+        intermediate_values = {}
+
+        for solid in execution_graph.topological_solids:
+
+            try:
+                with context.value('solid', solid.name):
+                    execution_result = _execute_pipeline_solid_step(
+                        context, solid, input_args, intermediate_values
+                    )
+
+                yield execution_result
+
+                if not execution_result.success:
+                    break
+
+            except DagsterUserCodeExecutionError as see:
+                yield DagsterExecutionResult(
+                    success=False,
+                    reason=DagsterExecutionFailureReason.USER_CODE_ERROR,
+                    solid=solid,
+                    transformed_value=None,
+                    exception=see,
                 )
-            )
-
-    execution_graph = pipeline.solid_graph.create_execution_subgraph(
-        from_solids, list(through_solids)
-    )
-
-    intermediate_values = {}
-
-    for solid in execution_graph.topological_solids:
-
-        try:
-            with context.value('solid', solid.name):
-                execution_result = _execute_pipeline_solid_step(
-                    context, solid, input_args, intermediate_values
-                )
-
-            yield execution_result
-
-            if not execution_result.success:
                 break
-
-        except DagsterUserCodeExecutionError as see:
-            yield DagsterExecutionResult(
-                success=False,
-                reason=DagsterExecutionFailureReason.USER_CODE_ERROR,
-                solid=solid,
-                transformed_value=None,
-                exception=see,
-            )
-            break
 
 
 def execute_pipeline(
@@ -909,13 +921,6 @@ def execute_pipeline(
     through_solids=None,
     throw_on_error=True,
 ):
-    check.inst_param(context, 'context', DagsterExecutionContext)
-    check.inst_param(pipeline, 'pipeline', DagsterPipeline)
-    check.inst_param(environment, 'environment', config.Environment)
-    from_solids = check.opt_list_param(from_solids, 'from_solids', of_type=str)
-    through_solids = check.opt_list_param(through_solids, 'through_solids', of_type=str)
-    check.bool_param(throw_on_error, 'throw_on_error')
-
     '''
     "Synchronous" version of execute_pipeline_iteator.
 
@@ -924,6 +929,13 @@ def execute_pipeline(
 
     Note: throw_on_error is very useful in testing contexts when not testing for error conditions
     '''
+    check.inst_param(context, 'context', DagsterExecutionContext)
+    check.inst_param(pipeline, 'pipeline', DagsterPipeline)
+    check.inst_param(environment, 'environment', config.Environment)
+    from_solids = check.opt_list_param(from_solids, 'from_solids', of_type=str)
+    through_solids = check.opt_list_param(through_solids, 'through_solids', of_type=str)
+    check.bool_param(throw_on_error, 'throw_on_error')
+
 
     check.bool_param(throw_on_error, 'throw_on_error')
 
