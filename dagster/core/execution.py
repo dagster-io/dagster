@@ -43,6 +43,7 @@ from .graph import DagsterPipeline
 Metric = namedtuple('Metric', 'context_dict metric_name value')
 
 
+
 class DagsterExecutionContext:
     '''
     A context object flowed through the entire scope of single execution of a
@@ -82,33 +83,32 @@ class DagsterExecutionContext:
             message=msg, kv_message=self._kv_message()
         )
 
-        import copy
-
         log_props = copy.copy(self._context_dict)
         log_props['log_message'] = msg
 
         getattr(self._logger, method)(full_message, extra={**log_props, **kwargs})
 
-    def debug(self, msg):
-        return self._log('debug', msg)
+    def debug(self, msg, **kwargs):
+        return self._log('debug', msg, **kwargs)
 
-    def info(self, msg):
-        return self._log('info', msg)
+    def info(self, msg, **kwargs):
+        return self._log('info', msg, **kwargs)
 
-    def warn(self, msg):
-        return self._log('warn', msg)
+    def warn(self, msg, **kwargs):
+        return self._log('warn', msg, **kwargs)
 
     def error(self, msg, **kwargs):
         return self._log('error', msg, **kwargs)
 
-    def critical(self, msg):
-        return self._log('critical', msg)
+    def critical(self, msg, **kwargs):
+        return self._log('critical', msg, **kwargs)
 
-    def exception(self, e, exc_info):
-        check.inst_param(e, 'e', Exception)
+    # FIXME: Actually make this work
+    # def exception(self, e):
+    #     check.inst_param(e, 'e', Exception)
 
-        # this is pretty lame right. should embellish with more data (stack trace?)
-        return self._log('error', str(e))
+    #     # this is pretty lame right. should embellish with more data (stack trace?)
+    #     return self._log('error', str(e))
 
     @contextmanager
     def value(self, key, value):
