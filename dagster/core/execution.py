@@ -640,7 +640,6 @@ def create_pipeline_env_from_arg_dicts(pipeline, arg_dicts):
 
     for solid in pipeline.solids:
         for input_def in solid.inputs:
-            check.invariant(len(input_def.sources) <= 1)
             if input_def.sources:
                 input_to_source_type[input_def.name] = input_def.sources[0].source_type
 

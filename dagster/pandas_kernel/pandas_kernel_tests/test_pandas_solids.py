@@ -425,17 +425,15 @@ def test_pandas_output_intermediate_csv_files():
                 input_sources=[
                     config.Input(
                         input_name='sum_table',
-                        source='CSVORPARQUET',
+                        source='CSV',
                         args={
-                            'format': 'CSV',
                             'path': sum_file,
                         },
                     ),
                     config.Input(
                         input_name='mult_table',
-                        source='CSVORPARQUET',
+                        source='CSV',
                         args={
-                            'format': 'CSV',
                             'path': mult_file,
                         },
                     ),
