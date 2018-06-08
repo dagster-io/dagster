@@ -62,13 +62,16 @@ def table_dataframe_source(**read_table_kwargs):
     )
 
 
-def dataframe_dependency(solid, sources=None):
+def dataframe_dependency(solid, name=None, sources=None):
     check.inst_param(solid, 'solid', Solid)
 
     if sources is None:
         sources = [parquet_dataframe_source(), csv_dataframe_source(), table_dataframe_source()]
 
-    return InputDefinition(name=solid.name, sources=sources, depends_on=solid)
+    if name is None:
+        name = solid.name
+
+    return InputDefinition(name=name, sources=sources, depends_on=solid)
 
 
 def dataframe_input(name, sources=None):

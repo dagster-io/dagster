@@ -1,3 +1,4 @@
+import dagster
 from dagster import check
 import dagster.sqlalchemy_kernel as dagster_sa
 

@@ -46,4 +46,5 @@ setup(
         'yapf>=0.21.0',
         'rope>=0.10.7',
     ],
+    scripts=['bin/dagster']
 )
