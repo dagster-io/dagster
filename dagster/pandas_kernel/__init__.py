@@ -97,15 +97,3 @@ def single_path_arg(input_name, path):
 
 def json_input(name):
     return create_json_input(name)
-
-
-# DEPRECATED
-def csv_input(name, delimiter=',', **read_csv_kwargs):
-    return dataframe_input(
-        name=name, sources=[csv_dataframe_source(delimiter=delimiter, **read_csv_kwargs)]
-    )
-
-
-# DEPRECATED
-def depends_on(solid):
-    return dataframe_dependency(solid)
