@@ -74,7 +74,7 @@ class DagsterExecutionContext:
             ]
         )
 
-    def _log(self, method, msg, **kwargs) :
+    def _log(self, method, msg, **kwargs):
         check.str_param(method, 'method')
         check.str_param(msg, 'msg')
 
@@ -555,7 +555,9 @@ def execute_single_solid(context, solid, environment, throw_on_error=True):
     check.bool_param(throw_on_error, 'throw_on_error')
 
     results = list(
-        execute_pipeline_iterator(context, DagsterPipeline(solids=[solid]), environment=environment)
+        execute_pipeline_iterator(
+            context, DagsterPipeline(solids=[solid]), environment=environment
+        )
     )
 
     check.invariant(len(results) == 1, 'must be one result got ' + str(len(results)))
@@ -631,6 +633,7 @@ def create_single_solid_env_from_arg_dicts(solid, arg_dicts):
 #     "csv_two" : { "path" : "path/to/csv_two.csv},
 # }
 
+
 def create_pipeline_env_from_arg_dicts(pipeline, arg_dicts):
     check.inst_param(pipeline, 'pipeline', DagsterPipeline)
     check.dict_param(arg_dicts, 'arg_dicts', key_type=str, value_type=dict)
@@ -668,8 +671,14 @@ def _convert_environment_dict_to_environment_namedtuple(environment_dict):
         input_sources=list(_to_input_source(environment_dict['input_sources'])),
     )
 
+
 def output_single_solid(
-    context, solid, environment, materialization_type, arg_dict, throw_on_error=True,
+    context,
+    solid,
+    environment,
+    materialization_type,
+    arg_dict,
+    throw_on_error=True,
 ):
     check.inst_param(context, 'context', DagsterExecutionContext)
     check.inst_param(solid, 'solid', Solid)
@@ -683,11 +692,11 @@ def output_single_solid(
             context,
             DagsterPipeline(solids=[solid]),
             environment=environment,
-            materializations=[config.Materialization(
-                solid=solid.name,
-                materialization_type=materialization_type,
-                args=arg_dict
-            )],
+            materializations=[
+                config.Materialization(
+                    solid=solid.name, materialization_type=materialization_type, args=arg_dict
+                )
+            ],
         )
     )
 
@@ -719,10 +728,8 @@ def execute_pipeline_through_solid(
     check.str_param(solid_name, 'solid_name')
 
     for result in execute_pipeline_iterator(
-        context,
-        pipeline,
-        environment=environment,
-        through_solids=[solid_name]):
+        context, pipeline, environment=environment, through_solids=[solid_name]
+    ):
 
         if result.name == solid_name:
             return result
@@ -752,6 +759,7 @@ def _gather_input_values(context, solid, input_args, intermediate_values):
                 )
                 input_values[input_def.name] = new_value
     return input_values
+
 
 def _execute_pipeline_solid_step(context, solid, input_args, intermediate_values):
     check.inst_param(context, 'context', DagsterExecutionContext)
@@ -844,9 +852,7 @@ def execute_pipeline_iterator(
     check.opt_list_param(through_solids, 'through_solids', of_type=str)
     check.opt_list_param(from_solids, 'from_solids', of_type=str)
 
-
     pipeline_context_value = pipeline.name if pipeline.name else 'unnamed'
-
 
     with context.value('pipeline', pipeline_context_value):
         input_args = InputArgs(pipeline, environment)
@@ -935,7 +941,6 @@ def execute_pipeline(
     through_solids = check.opt_list_param(through_solids, 'through_solids', of_type=str)
     check.bool_param(throw_on_error, 'throw_on_error')
 
-
     check.bool_param(throw_on_error, 'throw_on_error')
 
     results = []
@@ -961,15 +966,13 @@ class MaterializationArgs:
 
         self.pipeline = pipeline
         self.materializations = list(materializations)
-        self.through_solids = [
-            materialization.solid for materialization in self.materializations
-        ]
+        self.through_solids = [materialization.solid for materialization in self.materializations]
 
     def should_materialize(self, solid_name):
         return solid_name in self.through_solids
 
     def materializations_for_solid(self, solid_name):
-        for materialization in  self.materializations:
+        for materialization in self.materializations:
             if materialization.solid == solid_name:
                 yield materialization
 

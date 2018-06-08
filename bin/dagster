@@ -1,8 +1,10 @@
-SCRIPTDIR=`dirname "$BASH_SOURCE"`
-if [ -z "$VIRTUAL_ENV" ]
-then
-  python3 "$SCRIPTDIR/dagster_driver.py" "$@"
-else
-  "$VIRTUAL_ENV/bin/python3" "$SCRIPTDIR/dagster_driver.py" "$@"
-fi
+#!/usr/bin/python
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+import dagster.cli
+
+if __name__ == '__main__':
+    cli = dagster.cli.create_dagster_cli()
+    cli(obj={})
