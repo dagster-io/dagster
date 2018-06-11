@@ -27,6 +27,13 @@ pip install -e ./dagster
 pip install -r ./dagster/dev-requirements.txt
 ```
 
+## Developing docs
+
+```
+cd docs
+make livehtml
+```
+
 ## CLI
 
 ```
