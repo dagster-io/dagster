@@ -107,3 +107,5 @@ tags
 .DS_Store
 
 *.db
+
+docs/_build
