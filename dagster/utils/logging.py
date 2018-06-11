@@ -1,5 +1,8 @@
+import copy
+import json
 import logging
-from logging import (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+import traceback
+from logging import CRITICAL, DEBUG, ERROR, INFO, WARNING
 
 import coloredlogs
 
@@ -23,7 +26,41 @@ class CompositeLogger:
                 logger_method(*args, **kwargs)
         return _invoke_logger_method
 
-def define_logger(name):
+class JsonFileHandler(logging.Handler):
+    def __init__(self, json_path):
+        super().__init__()
+        self.json_path = json_path
+
+    def emit(self, record):
+        try:
+            logged_properties = copy.copy(record.__dict__)
+            del logged_properties['msg']
+            with open(self.json_path, 'a') as ff:
+                text_line = json.dumps(logged_properties)
+                ff.write(text_line + '\n')
+        except Exception as e:
+            logging.critical('Error during logging!')
+            logging.exception(str(e))
+
+
+def define_json_file_logger(name, json_path, level):
+    check.str_param(name, 'name')
+
+    if name in REGISTERED_LOGGERS:
+        return logging.getLogger(name)
+
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+
+
+    stream_handler = JsonFileHandler(json_path)
+    stream_handler.setFormatter(define_default_formatter())
+    logger.addHandler(stream_handler)
+
+    return logger
+
+
+def define_logger(name, level=INFO):
     check.str_param(name, 'name')
 
     if name in REGISTERED_LOGGERS:
@@ -37,7 +74,7 @@ def define_logger(name):
     # stream_handler.setFormatter(define_default_formatter())
     # logger.addHandler(stream_handler)
 
-    coloredlogs.install(logger=logger, level=INFO, fmt=default_format_string())
+    coloredlogs.install(logger=logger, level=level, fmt=default_format_string())
 
     REGISTERED_LOGGERS.add(name)
 
@@ -69,3 +106,8 @@ def debug_format_string():
 
 def define_debug_formatter():
     return logging.Formatter(debug_format_string())
+
+
+def get_formatted_stack_trace(exception):
+    check.inst_param(exception, 'exception', Exception)
+    return ''.join(traceback.format_tb(exception.__traceback__))

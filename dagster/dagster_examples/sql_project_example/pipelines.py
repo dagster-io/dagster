@@ -1,3 +1,4 @@
+import dagster
 from dagster import check
 import dagster.cli.embedded_cli
 import dagster.sqlalchemy_kernel as dagster_sa
@@ -91,30 +92,4 @@ def define_setup_pipeline():
             create_all_tables_solids,
             populate_num_table_solid,
         ],
-    )
-
-
-if __name__ == '__main__':
-    import sys
-    import sqlalchemy as sa
-    import dagster.utils.logging
-    import json
-    config_obj = json.load(open('config.json'))
-    engine = sa.create_engine(
-        'sqlite:///{dbname}.db'.format(dbname=check.str_elem(config_obj, 'dbname'))
-    )
-    context = dagster_sa.DagsterSqlAlchemyExecutionContext(
-        engine=engine,
-        loggers=[dagster.utils.logging.define_logger('dagster')],
-        log_level=dagster.utils.logging.INFO,
-    )
-    dagster.cli.embedded_cli.embedded_dagster_multi_pipeline_cli_main(
-        sys.argv,
-        [
-            define_full_pipeline(),
-            define_setup_pipeline(),
-            define_truncate_pipeline(),
-            define_rerun_pipeline(),
-        ],
-        execution_context=context,
     )

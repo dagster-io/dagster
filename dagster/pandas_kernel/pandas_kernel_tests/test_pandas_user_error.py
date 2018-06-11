@@ -9,9 +9,11 @@ import pytest
 
 from dagster.core.errors import DagsterInvariantViolationError
 
+from .utils import simple_csv_input
+
 
 def test_wrong_value():
-    csv_input = dagster_pd.csv_input('num_csv')
+    csv_input = simple_csv_input('num_csv')
 
     def transform_fn(num_csv):
         return 'not a dataframe'
@@ -31,7 +33,7 @@ def test_wrong_value():
 
 
 def test_wrong_input_arg_dict():
-    csv_input = dagster_pd.csv_input('num_csv')
+    csv_input = simple_csv_input('num_csv')
 
     def transform_fn(num_csv):
         return num_csv
@@ -46,7 +48,7 @@ def test_wrong_input_arg_dict():
             df_solid,
             environment=config.Environment(
                 input_sources=[
-                    config.InputSource(
+                    config.Input(
                         input_name='num_jdkfjskdfjs',
                         source='CSV',
                         args={

@@ -1,0 +1,8 @@
+-   repo: https://github.com/pre-commit/mirrors-yapf
+    sha: v0.22.0
+    hooks:
+    -   id: yapf
+# -   repo: https://github.com/pre-commit/pre-commit-hooks
+#     rev: v1.2.3
+#     hooks:
+#     -   id: flake8

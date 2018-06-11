@@ -10,3 +10,10 @@ Dagster is an opinionated pipeline runner.
 4.  Data in data pipelines should also be under test. Data/pipeling testing is explicitly supported in a solid See https://medium.com/@expectgreatdata/down-with-pipeline-debt-introducing-great-expectations-862ddc46782a
 5.  Gradual/Optional typing
 6.  Metadata
+
+
+## CLI
+
+```
+dagster pipeline execute <<PIPELINE_NAME>>
+```

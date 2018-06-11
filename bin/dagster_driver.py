@@ -6,4 +6,5 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 import dagster.cli
 
 if __name__ == '__main__':
-    dagster.cli.dagster_cli_main(sys.argv)
+    cli = dagster.cli.create_dagster_cli()
+    cli(obj={})

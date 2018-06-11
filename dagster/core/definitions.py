@@ -104,6 +104,11 @@ class SourceDefinition:
 def create_single_source_input(
     name, source_fn, argument_def_dict, depends_on=None, expectations=None, source_type='UNNAMED'
 ):
+    '''
+    This function exist and is used a lot because separation of inputs and sources used to not
+    exist so most of the unit tests in the systems were written without tha abstraction. So
+    this exists as a bridge from the old api to the new api.
+    '''
     return InputDefinition(
         name=name,
         sources=[
@@ -153,7 +158,12 @@ class InputDefinition:
             if source.source_type == source_type:
                 return source
 
-        check.failed('Source {source_type} not found.'.format(source_type=source_type))
+        check.failed(
+            'Source {source_type} not found in input {input_name}.'.format(
+                source_type=source_type,
+                input_name=self.name,
+            )
+        )
 
 
 # class TransformDefinition:
@@ -214,6 +224,12 @@ def create_no_materialization_output(expectations=None):
 def create_single_materialization_output(
     materialization_type, materialization_fn, argument_def_dict, expectations=None
 ):
+    '''
+    Similar to create_single_source_input this exists because a move in the primitive APIs.
+    Materializations and outputs used to not be separate concepts so this is a compatability
+    layer with the old api. Once the *new* api stabilizes this should be removed but it stays
+    for now.
+    '''
     return OutputDefinition(
         materializations=[
             MaterializationDefinition(
