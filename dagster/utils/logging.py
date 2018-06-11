@@ -1,6 +1,8 @@
+import copy
+import json
 import logging
-from logging import (DEBUG, INFO, WARNING, ERROR, CRITICAL)
 import traceback
+from logging import CRITICAL, DEBUG, ERROR, INFO, WARNING
 
 import coloredlogs
 
@@ -31,27 +33,25 @@ class JsonFileHandler(logging.Handler):
 
     def emit(self, record):
         try:
-            import json
-            import copy
             logged_properties = copy.copy(record.__dict__)
-            # logged_properties['msg'] = logged_properties['log_message']
             del logged_properties['msg']
-            # print('DICT')
-            # print(logged_properties)
             with open(self.json_path, 'a') as ff:
                 text_line = json.dumps(logged_properties)
                 ff.write(text_line + '\n')
         except Exception as e:
-            print('OMG ERROR DURING LOGGING')
-            print(e)
+            logging.critical('Error during logging!')
+            logging.exception(str(e))
 
-def define_json_file_logger(name, json_path):
+
+def define_json_file_logger(name, json_path, level):
     check.str_param(name, 'name')
 
     if name in REGISTERED_LOGGERS:
         return logging.getLogger(name)
 
     logger = logging.getLogger(name)
+    logger.setLevel(level)
+
 
     stream_handler = JsonFileHandler(json_path)
     stream_handler.setFormatter(define_default_formatter())
@@ -60,7 +60,7 @@ def define_json_file_logger(name, json_path):
     return logger
 
 
-def define_logger(name):
+def define_logger(name, level=INFO):
     check.str_param(name, 'name')
 
     if name in REGISTERED_LOGGERS:
@@ -74,7 +74,7 @@ def define_logger(name):
     # stream_handler.setFormatter(define_default_formatter())
     # logger.addHandler(stream_handler)
 
-    coloredlogs.install(logger=logger, level=INFO, fmt=default_format_string())
+    coloredlogs.install(logger=logger, level=level, fmt=default_format_string())
 
     REGISTERED_LOGGERS.add(name)
 
