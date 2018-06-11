@@ -10,6 +10,8 @@ Welcome to Dagster's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   developing/index
+
 
 
 Indices and tables

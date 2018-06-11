@@ -11,28 +11,6 @@ Dagster is an opinionated pipeline runner.
 5.  Gradual/Optional typing
 6.  Metadata
 
-## Local development setup
-
-1. Create and activate virtualenv
-
-```
-python3 -m venv dagsterenv
-source dagsterenv/bin/activate
-```
-
-2. Install dagster locally and install dev tools
-
-```
-pip install -e ./dagster
-pip install -r ./dagster/dev-requirements.txt
-```
-
-## Developing docs
-
-```
-cd docs
-make livehtml
-```
 
 ## CLI
 

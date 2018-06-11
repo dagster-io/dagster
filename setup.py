@@ -64,6 +64,7 @@ setup(
         # 'sphinx-autobuild>=0.7.1',
         # 'yapf>=0.22.0',
         # 'twine>=1.11.0',
+        # 'pre-commit'>=1.10.1',
     ],
     scripts=['bin/dagster']
 )
