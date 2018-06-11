@@ -20,16 +20,15 @@ python3 -m venv dagsterenv
 source dagsterenv/bin/activate
 ```
 
-2. Install dagster locally
+2. Install dagster locally and install dev tools
 
 ```
 pip install -e ./dagster
+pip install -r ./dagster/dev-requirements.txt
 ```
 
-## Running pipelines
-
-Ok, that was pretty confusing. So I guess inputs define input_sources arguments.
+## CLI
 
 ```
-./bin/dagster pipeline pandas_hello_world execute --input num_csv.path=pandas_hello_world/num.csv
+dagster pipeline execute <<PIPELINE_NAME>>
 ```

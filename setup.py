@@ -8,9 +8,24 @@ if sys.version_info[0] < 3:
 else:
     import builtins
 
+with open("README.md", "r") as fh:
+    long_description = fh.read()
+
 setup(
     name='dagster',
+    version="1.0.0-rc.1",
+    author="Elementl",
+    author_email="schrockn@elementl.com",
     license='Apache-2.0',
+    description="Dagster is an opinionated pipeline runner.",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
+    url="https://github.com/dagster-io/dagster",
+    classifiers=(
+        "Programming Language :: Python :: 3.7",
+        "License :: OSI Approved :: Apache Software License",
+        "Operating System :: OS Independent",
+    ),
     packages=find_packages(exclude=['dagster_tests']),
     install_requires=[
         # standard python 2/3 compatability things
@@ -40,11 +55,15 @@ setup(
         # 'great-expectations>=0.4.1',
         # 'requests>=2.18.4',
 
-        # dev/test
-        'pytest>=3.5.1',
-        'pylint>=1.8.4',
-        'yapf>=0.21.0',
-        'rope>=0.10.7',
+        # dev/test - Installed via dev-requirements.txt
+        # 'pylint>=1.8.4',
+        # 'pytest>=3.5.1',
+        # 'recommonmark>=0.4.0',
+        # 'rope>=0.10.7',
+        # 'Sphinx>=1.7.5',
+        # 'sphinx-autobuild>=0.7.1',
+        # 'yapf>=0.22.0',
+        # 'twine>=1.11.0',
     ],
     scripts=['bin/dagster']
 )
