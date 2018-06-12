@@ -4,13 +4,12 @@ import dagster
 from dagster import config
 from dagster.core.execution import (execute_single_solid, create_single_solid_env_from_arg_dicts)
 import dagster.pandas_kernel as dagster_pd
-from dagster.check import CheckError
 
 from dagster.utils.test import script_relative_path
 
 import pytest
 
-from dagster.core.errors import DagsterInvariantViolationError
+from dagster.core.errors import DagsterInvariantViolationError, DagsterInvalidDefinitionError
 
 from .utils import simple_csv_input
 
@@ -42,16 +41,16 @@ def test_wrong_definitions():
             name='test_transform_validation', inputs=[input_1, input_2], transform_fn=transform
         )
 
-    with pytest.raises(CheckError):
+    with pytest.raises(DagsterInvalidDefinitionError):
         make_solid(transform_varargs)
 
-    with pytest.raises(CheckError):
+    with pytest.raises(DagsterInvalidDefinitionError):
         make_solid(transform_extra_argument)
 
-    with pytest.raises(CheckError):
+    with pytest.raises(DagsterInvalidDefinitionError):
         make_solid(transform_missing)
 
-    with pytest.raises(CheckError):
+    with pytest.raises(DagsterInvalidDefinitionError):
         make_solid(transform_missing_with_context)
 
     make_solid(transform_with_context)

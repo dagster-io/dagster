@@ -10,7 +10,9 @@ from dagster.utils import has_context_argument
 from dagster.core import create_json_input
 from dagster.core.definitions import Solid, OutputDefinition
 from dagster.core.execution import DagsterExecutionContext
-from dagster.core.errors import (DagsterUserCodeExecutionError, DagsterInvariantViolationError)
+from dagster.core.errors import (
+    DagsterUserCodeExecutionError, DagsterInvariantViolationError, DagsterInvalidDefinitionError
+)
 from .definitions import (
     dataframe_dependency,
     dataframe_input,
@@ -113,7 +115,7 @@ def validate_transform_fn(solid_name, transform_fn, inputs):
         if param.kind == inspect.Parameter.VAR_KEYWORD:
             has_kwargs = True
         elif param.kind == inspect.Parameter.VAR_POSITIONAL:
-            check.failed(
+            raise DagsterInvalidDefinitionError(
                 f"solid '{solid_name}' transform function has positional vararg parameter '{param.name}'. Transform functions should only have keyword arguments that match input names and optionally a first positional parameter named 'context'."
             )
         else:
@@ -121,7 +123,7 @@ def validate_transform_fn(solid_name, transform_fn, inputs):
             if i == 0 and param.name == 'context':
                 pass
             elif param.name not in input_names:
-                check.failed(
+                raise DagsterInvalidDefinitionError(
                     f"solid '{solid_name}' transform function has parameter '{param.name}' that is not one of the solid inputs. Transform functions should only have keyword arguments that match input names and optionally a first positional parameter named 'context'."
                 )
             else:
@@ -130,6 +132,6 @@ def validate_transform_fn(solid_name, transform_fn, inputs):
     undeclared_inputs = input_names - used_inputs
     if not has_kwargs and undeclared_inputs:
         undeclared_inputs_printed = ", '".join(undeclared_inputs)
-        check.failed(
+        raise DagsterInvalidDefinitionError(
             f"solid '{solid_name}' transform function do not have parameter(s) '{undeclared_inputs_printed}', which are in solid's inputs. Transform functions should only have keyword arguments that match input names and optionally a first positional parameter named 'context'."
         )
