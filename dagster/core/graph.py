@@ -98,7 +98,7 @@ def create_adjacency_lists(solids):
 
         for inp in solid.inputs:
             if inp.depends_on is not None:
-                from_node = inp.name
+                from_node = inp.depends_on.name
                 to_node = solid.name
                 if from_node in forward_edges:
                     forward_edges[from_node].add(to_node)

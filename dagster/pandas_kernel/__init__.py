@@ -1,5 +1,6 @@
 from __future__ import (absolute_import, division, print_function, unicode_literals)
 from builtins import *  # pylint: disable=W0622,W0401
+import inspect
 
 import pandas as pd
 
@@ -74,6 +75,8 @@ def dataframe_solid(*args, name, inputs, transform_fn=None, materializations=Non
             'If you do not specify a transform there must only be one input'
         )
         transform_fn = _default_passthrough_transform
+    else:
+        validate_transform_fn(name, transform_fn, inputs)
 
     if not materializations:
         materializations = [dataframe_csv_materialization(), dataframe_parquet_materialization()]
@@ -97,3 +100,36 @@ def single_path_arg(input_name, path):
 
 def json_input(name):
     return create_json_input(name)
+
+
+# XXX(freiksenet): this should really go to main solid file
+def validate_transform_fn(solid_name, transform_fn, inputs):
+    input_names = set(inp.name for inp in inputs)
+    used_inputs = set()
+    has_kwargs = False
+
+    signature = inspect.signature(transform_fn)
+    for i, param in enumerate(signature.parameters.values()):
+        if param.kind == inspect.Parameter.VAR_KEYWORD:
+            has_kwargs = True
+        elif param.kind == inspect.Parameter.VAR_POSITIONAL:
+            check.failed(
+                f"solid '{solid_name}' transform function has positional vararg parameter '{param.name}'. Transform functions should only have keyword arguments that match input names and optionally a first positional parameter named 'context'."
+            )
+        else:
+            # XXX(freiksenet): I don't like this
+            if i == 0 and param.name == 'context':
+                pass
+            elif param.name not in input_names:
+                check.failed(
+                    f"solid '{solid_name}' transform function has parameter '{param.name}' that is not one of the solid inputs. Transform functions should only have keyword arguments that match input names and optionally a first positional parameter named 'context'."
+                )
+            else:
+                used_inputs.add(param.name)
+
+    undeclared_inputs = input_names - used_inputs
+    if not has_kwargs and undeclared_inputs:
+        undeclared_inputs_printed = ", '".join(undeclared_inputs)
+        check.failed(
+            f"solid '{solid_name}' transform function do not have parameter(s) '{undeclared_inputs_printed}', which are in solid's inputs. Transform functions should only have keyword arguments that match input names and optionally a first positional parameter named 'context'."
+        )
