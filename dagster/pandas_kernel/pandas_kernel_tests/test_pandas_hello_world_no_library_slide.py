@@ -19,6 +19,10 @@ def create_test_context():
 
 
 def create_hello_world_solid_no_api():
+    def hello_world_transform_fn(num_df):
+        num_df['sum'] = num_df['num1'] + num_df['num2']
+        return num_df
+
     csv_input = InputDefinition(
         name='num_df',
         sources=[
@@ -30,10 +34,6 @@ def create_hello_world_solid_no_api():
         ],
     )
 
-    def transform_fn(num_df):
-        num_df['sum'] = num_df['num1'] + num_df['num2']
-        return num_df
-
     csv_materialization = MaterializationDefinition(
         materialization_type='CSV',
         materialization_fn=lambda df, arg_dict: df.to_csv(arg_dict['path'], index=False),
@@ -43,7 +43,7 @@ def create_hello_world_solid_no_api():
     hello_world = Solid(
         name='hello_world',
         inputs=[csv_input],
-        transform_fn=transform_fn,
+        transform_fn=hello_world_transform_fn,
         output=OutputDefinition(materializations=[csv_materialization])
     )
     return hello_world
