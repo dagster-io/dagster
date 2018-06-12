@@ -120,7 +120,7 @@ def validate_transform_fn(solid_name, transform_fn, inputs):
             )
         else:
             # XXX(freiksenet): I don't like this
-            if i == 0 and param.name == 'context':
+            if param.name == 'context':
                 pass
             elif param.name not in input_names:
                 raise DagsterInvalidDefinitionError(
