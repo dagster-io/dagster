@@ -10,7 +10,7 @@ else:
     import builtins
 
 here = os.path.abspath(os.path.dirname(__file__))
-with open(os.path.join(here, "README.md"), "r") as fh:
+with open(os.path.join(here, "README.rst"), "r") as fh:
     long_description = fh.read()
 
 setup(
