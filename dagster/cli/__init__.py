@@ -1,4 +1,6 @@
 import click
+import os
+import sys
 from .context import Config
 from .pipeline import create_pipeline_cli
 
@@ -25,3 +27,4 @@ def create_dagster_cli():
 @click.pass_context
 def dagster_cli(ctx, config):
     ctx.obj = Config.from_file(config)
+    sys.path.append(os.getcwd())

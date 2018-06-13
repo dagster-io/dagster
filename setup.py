@@ -1,4 +1,5 @@
 import sys
+import os
 
 from setuptools import find_packages, setup
 
@@ -8,7 +9,8 @@ if sys.version_info[0] < 3:
 else:
     import builtins
 
-with open("README.md", "r") as fh:
+here = os.path.abspath(os.path.dirname(__file__))
+with open(os.path.join(here, "README.rst"), "r") as fh:
     long_description = fh.read()
 
 setup(

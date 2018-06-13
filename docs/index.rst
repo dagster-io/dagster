@@ -3,15 +3,22 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Dagster's documentation!
+Dagster's documentation!
 ===================================
+
+.. include:: ../README.rst
+  :start-after: docs-include
+
+
+
+Other docs
+==========
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
    developing/index
-
 
 
 Indices and tables
