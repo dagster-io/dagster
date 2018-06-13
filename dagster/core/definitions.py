@@ -1,5 +1,6 @@
 import keyword
 import re
+import inspect
 
 from dagster import check
 from dagster.core import types
@@ -41,8 +42,9 @@ def check_valid_name(name):
 
 
 class ExpectationResult:
-    def __init__(self, success, message=None, result_context=None):
+    def __init__(self, success, solid=None, message=None, result_context=None):
         self.success = check.bool_param(success, 'success')
+        self.solid = check.opt_inst_param(solid, Solid, 'solid')
         self.message = check.opt_str_param(message, 'message')
         self.result_context = check.opt_dict_param(result_context, 'result_context')
 
@@ -268,6 +270,7 @@ class Solid:
         self.name = check_valid_name(name)
         self.inputs = check.list_param(inputs, 'inputs', InputDefinition)
         self.output = check.inst_param(output, 'output', OutputDefinition)
+        validate_transform_fn(self.name, transform_fn, self.inputs)
         self.transform_fn = make_context_arg_optional(
             check.callable_param(transform_fn, 'transform')
         )
@@ -302,3 +305,35 @@ class Solid:
                 return input_def
 
         check.failed('input {name} not found'.format(name=name))
+
+
+def validate_transform_fn(solid_name, transform_fn, inputs):
+    input_names = set(inp.name for inp in inputs)
+    used_inputs = set()
+    has_kwargs = False
+
+    signature = inspect.signature(transform_fn)
+    for param in signature.parameters.values():
+        if param.kind == inspect.Parameter.VAR_KEYWORD:
+            has_kwargs = True
+        elif param.kind == inspect.Parameter.VAR_POSITIONAL:
+            raise DagsterInvalidDefinitionError(
+                f"solid '{solid_name}' transform function has positional vararg parameter '{param.name}'. Transform functions should only have keyword arguments that match input names and optionally a first positional parameter named 'context'."
+            )
+        else:
+            # XXX(freiksenet): I don't like this
+            if param.name == 'context':
+                pass
+            elif param.name not in input_names:
+                raise DagsterInvalidDefinitionError(
+                    f"solid '{solid_name}' transform function has parameter '{param.name}' that is not one of the solid inputs. Transform functions should only have keyword arguments that match input names and optionally a first positional parameter named 'context'."
+                )
+            else:
+                used_inputs.add(param.name)
+
+    undeclared_inputs = input_names - used_inputs
+    if not has_kwargs and undeclared_inputs:
+        undeclared_inputs_printed = ", '".join(undeclared_inputs)
+        raise DagsterInvalidDefinitionError(
+            f"solid '{solid_name}' transform function do not have parameter(s) '{undeclared_inputs_printed}', which are in solid's inputs. Transform functions should only have keyword arguments that match input names and optionally a first positional parameter named 'context'."
+        )

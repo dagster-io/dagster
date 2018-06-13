@@ -43,7 +43,6 @@ from .graph import DagsterPipeline
 Metric = namedtuple('Metric', 'context_dict metric_name value')
 
 
-
 class DagsterExecutionContext:
     '''
     A context object flowed through the entire scope of single execution of a
@@ -67,11 +66,13 @@ class DagsterExecutionContext:
             return '"{val}"'.format(val=str_val)
         return str_val
 
-    def _kv_message(self):
+    def _kv_message(self, extra=None):
+        if extra is None:
+            extra = {}
         return ' '.join(
             [
                 '{key}={value}'.format(key=key, value=self._maybe_quote(value))
-                for key, value in self._context_dict.items()
+                for key, value in [*self._context_dict.items(), *extra.items()]
             ]
         )
 
@@ -80,7 +81,7 @@ class DagsterExecutionContext:
         check.str_param(msg, 'msg')
 
         full_message = 'message="{message}" {kv_message}'.format(
-            message=msg, kv_message=self._kv_message()
+            message=msg, kv_message=self._kv_message(kwargs)
         )
 
         log_props = copy.copy(self._context_dict)
