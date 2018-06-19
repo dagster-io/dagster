@@ -118,15 +118,15 @@ def create_templated_sql_transform_solid(
     )
 
 
-def _render_template_string(template_text, **kwargs):
+def _render_template_string(template_text, args):
     template = jinja2.Environment(loader=jinja2.BaseLoader).from_string(template_text)
-    return template.render(**kwargs)
+    return template.render(**args)
 
 
 def _create_templated_sql_transform_with_output(sql, output_table):
-    def do_transform(context, **kwargs):
-        rendered_sql = _render_template_string(sql, **kwargs)
+    def do_transform(context, args):
+        rendered_sql = _render_template_string(sql, args)
         execute_sql_text_on_context(context, rendered_sql)
-        return kwargs[output_table]
+        return args[output_table]
 
     return do_transform

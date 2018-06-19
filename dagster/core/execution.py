@@ -391,7 +391,7 @@ def _execute_core_transform(context, solid_transform_fn, values_dict):
     error_str = 'Error occured during core transform'
     with _user_code_error_boundary(context, error_str):
         with time_execution_scope() as timer_result:
-            transformed_value = solid_transform_fn(context=context, **values_dict)
+            transformed_value = solid_transform_fn(context, values_dict)
 
         context.metric('core_transform_time_ms', timer_result.millis)
 

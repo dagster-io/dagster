@@ -74,39 +74,9 @@ def test_materialize_output():
         argument_def_dict={},
     )
 
-    def tranform_fn_inst(some_input):
-        some_input[0]['data_key'] = 'new_value'
-        return some_input
-
-    single_solid = Solid(
-        name='some_node',
-        inputs=[some_input],
-        transform_fn=tranform_fn_inst,
-        output=noop_output(),
-    )
-
-    value = _read_new_single_source_input(create_test_context(), some_input, {})
-
-    output = _execute_core_transform(
-        create_test_context(),
-        single_solid.transform_fn,
-        {'some_input': value},
-    )
-
-    assert output == [{'data_key': 'new_value'}]
-
-
-def test_materialize_output_with_context():
-    some_input = create_single_source_input(
-        name='some_input',
-        source_fn=lambda context, arg_dict: [{'data_key': 'data_value'}],
-        argument_def_dict={},
-    )
-
-    def tranform_fn_inst(context, some_input):
-        assert isinstance(context, DagsterExecutionContext)
-        some_input[0]['data_key'] = 'new_value'
-        return some_input
+    def tranform_fn_inst(context, args):
+        args['some_input'][0]['data_key'] = 'new_value'
+        return args['some_input']
 
     single_solid = Solid(
         name='some_node',

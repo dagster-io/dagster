@@ -35,23 +35,16 @@ def get_input(with_context):
         )
 
 
+# This function is moot now
 def get_transform_fn(with_context):
     check.bool_param(with_context, 'with_context')
-    if with_context:
 
-        def tranform_fn_inst(context, some_input):
-            assert isinstance(context, DagsterExecutionContext)
-            some_input[0]['data_key'] = 'new_value'
-            return some_input
+    def transform_fn_inst(context, args):
+        assert isinstance(context, DagsterExecutionContext)
+        args['some_input'][0]['data_key'] = 'new_value'
+        return args['some_input']
 
-        return tranform_fn_inst
-    else:
-
-        def tranform_fn_inst(some_input):
-            some_input[0]['data_key'] = 'new_value'
-            return some_input
-
-        return tranform_fn_inst
+    return transform_fn_inst
 
 
 def get_output(with_context, test_output):

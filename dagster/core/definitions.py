@@ -270,10 +270,8 @@ class Solid:
         self.name = check_valid_name(name)
         self.inputs = check.list_param(inputs, 'inputs', InputDefinition)
         self.output = check.inst_param(output, 'output', OutputDefinition)
-        validate_transform_fn(self.name, transform_fn, self.inputs)
-        self.transform_fn = make_context_arg_optional(
-            check.callable_param(transform_fn, 'transform')
-        )
+        # validate_transform_fn(self.name, transform_fn, self.inputs)
+        self.transform_fn = check.callable_param(transform_fn, 'transform')
 
     # Notes to self
 

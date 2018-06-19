@@ -16,8 +16,8 @@ def test_iterator_solid():
         argument_def_dict={},
     )
 
-    def transform_fn(iter_numbers):
-        for value in iter_numbers:
+    def transform_fn(context, args):
+        for value in args['iter_numbers']:
             yield value + 1
 
     output_spot = {}

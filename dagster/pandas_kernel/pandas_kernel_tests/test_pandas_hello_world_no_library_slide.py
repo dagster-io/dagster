@@ -19,7 +19,8 @@ def create_test_context():
 
 
 def create_hello_world_solid_no_api():
-    def hello_world_transform_fn(num_df):
+    def hello_world_transform_fn(context, args):
+        num_df = args['num_df']
         num_df['sum'] = num_df['num1'] + num_df['num2']
         return num_df
 
@@ -118,7 +119,8 @@ def create_dataframe_output():
 
 
 def create_hello_world_solid_composed_api():
-    def transform_fn(num_df):
+    def transform_fn(context, args):
+        num_df = args['num_df']
         num_df['sum'] = num_df['num1'] + num_df['num2']
         return num_df
 
@@ -158,7 +160,8 @@ def test_hello_world_composed():
 
 
 def test_pipeline():
-    def solid_one_transform(num_df):
+    def solid_one_transform(context, args):
+        num_df = args['num_df']
         num_df['sum'] = num_df['num1'] + num_df['num2']
         return num_df
 
@@ -169,7 +172,8 @@ def test_pipeline():
         output=create_dataframe_output(),
     )
 
-    def solid_two_transform(sum_df):
+    def solid_two_transform(context, args):
+        sum_df = args['sum_df']
         sum_df['sum_sq'] = sum_df['sum'] * sum_df['sum']
         return sum_df
 

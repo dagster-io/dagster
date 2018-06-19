@@ -396,6 +396,6 @@ def create_multi_input_pipeline():
 def test_jinja():
     templated_sql = '''SELECT * FROM {{some_table.name}}'''
 
-    sql = _render_template_string(templated_sql, some_table={'name': 'fill_me_in'})
+    sql = _render_template_string(templated_sql, args={'some_table': {'name': 'fill_me_in'}})
 
     assert sql == '''SELECT * FROM fill_me_in'''

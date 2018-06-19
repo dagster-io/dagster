@@ -31,9 +31,9 @@ def test_execute_solid_no_args():
         argument_def_dict={}
     )
 
-    def tranform_fn_inst(some_input):
-        some_input[0]['data_key'] = 'new_value'
-        return some_input
+    def tranform_fn_inst(context, args):
+        args['some_input'][0]['data_key'] = 'new_value'
+        return args['some_input']
 
     test_output = {}
 
@@ -90,8 +90,9 @@ def create_noop_output(test_output, expectations=None):
 
 
 def test_hello_world():
-    def transform_fn(context, hello_world_input):
+    def transform_fn(context, args):
         assert isinstance(context, DagsterExecutionContext)
+        hello_world_input = args['hello_world_input']
         assert isinstance(hello_world_input, dict)
         hello_world_input['hello'] = 'world'
         return hello_world_input
@@ -155,7 +156,7 @@ def test_execute_solid_with_args():
     single_solid = Solid(
         name='some_node',
         inputs=[create_single_dict_input()],
-        transform_fn=lambda some_input: some_input,
+        transform_fn=lambda context, args: args['some_input'],
         output=create_noop_output(test_output),
     )
 
@@ -242,7 +243,7 @@ def create_input_failing_solid():
     return Solid(
         name='some_node',
         inputs=[create_single_dict_input(expectations=[failing_expect])],
-        transform_fn=lambda some_input: some_input,
+        transform_fn=lambda context, args: args['some_input'],
         output=create_noop_output(test_output),
     )
 
@@ -307,7 +308,7 @@ def test_execute_solid_with_no_inputs():
     no_args_solid = Solid(
         name='no_args_solid',
         inputs=[],
-        transform_fn=lambda: _set_key_value(did_run_dict, 'did_run', True),
+        transform_fn=lambda context, args: _set_key_value(did_run_dict, 'did_run', True),
         output=create_no_materialization_output(),
     )
 
@@ -332,6 +333,6 @@ def create_output_failing_solid():
     return Solid(
         name='some_node',
         inputs=[create_single_dict_input()],
-        transform_fn=lambda some_input: some_input,
+        transform_fn=lambda context, args: args['some_input'],
         output=create_noop_output(test_output, expectations=[output_expectation]),
     )

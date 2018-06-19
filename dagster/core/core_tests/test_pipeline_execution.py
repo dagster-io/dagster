@@ -44,8 +44,8 @@ def create_solid_with_deps(name, *solid_deps):
         ) for solid_dep in solid_deps
     ]
 
-    def dep_transform(**kwargs):
-        passed_rows = list(kwargs.values())[0]
+    def dep_transform(context, args):
+        passed_rows = list(args.values())[0]
         passed_rows.append({name: 'transform_called'})
         #return copy.deepcopy(passed_rows)
         return passed_rows
@@ -66,8 +66,8 @@ def create_root_solid(name):
         argument_def_dict={},
     )
 
-    def root_transform(**kwargs):
-        passed_rows = list(kwargs.values())[0]
+    def root_transform(context, args):
+        passed_rows = list(args.values())[0]
         passed_rows.append({name: 'transform_called'})
         #return copy.deepcopy(passed_rows)
         return passed_rows

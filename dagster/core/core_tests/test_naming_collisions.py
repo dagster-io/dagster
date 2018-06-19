@@ -25,7 +25,7 @@ def test_execute_solid_with_input_same_name():
                 ],
             ),
         ],
-        transform_fn=lambda a_thing: a_thing + a_thing,
+        transform_fn=lambda context, args: args['a_thing'] + args['a_thing'],
         output=create_no_materialization_output(),
     )
 
@@ -34,8 +34,7 @@ def test_execute_solid_with_input_same_name():
         solid,
         environment=config.Environment(
             input_sources=[
-                config.
-                Input(input_name='a_thing', source='a_source_type', args={'an_arg': 'foo'})
+                config.Input(input_name='a_thing', source='a_source_type', args={'an_arg': 'foo'})
             ]
         )
     )
@@ -59,7 +58,7 @@ def test_execute_dep_solid_different_input_name():
                 ],
             ),
         ],
-        transform_fn=lambda a_thing: a_thing + a_thing,
+        transform_fn=lambda context, args: args['a_thing'] + args['a_thing'],
         output=create_no_materialization_output(),
     )
 
@@ -72,7 +71,7 @@ def test_execute_dep_solid_different_input_name():
                 depends_on=first_solid,
             ),
         ],
-        transform_fn=lambda a_dependency: a_dependency + a_dependency,
+        transform_fn=lambda context, args: args['a_dependency'] + args['a_dependency'],
         output=create_no_materialization_output(),
     )
 
@@ -82,8 +81,7 @@ def test_execute_dep_solid_different_input_name():
         pipeline,
         environment=config.Environment(
             input_sources=[
-                config.
-                Input(input_name='a_thing', source='a_source_type', args={'an_arg': 'bar'})
+                config.Input(input_name='a_thing', source='a_source_type', args={'an_arg': 'bar'})
             ]
         )
     )
@@ -119,7 +117,7 @@ def test_execute_dep_solid_same_input_name():
                 ],
             ),
         ],
-        transform_fn=lambda table_one: table_one,
+        transform_fn=lambda context, args: args['table_one'],
         output=create_no_materialization_output(),
     )
 
@@ -148,7 +146,7 @@ def test_execute_dep_solid_same_input_name():
                 ],
             ),
         ],
-        transform_fn=lambda table_one, table_two: table_two,
+        transform_fn=lambda context, args: args['table_two'],
         output=create_no_materialization_output(),
     )
 

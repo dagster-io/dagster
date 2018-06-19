@@ -41,8 +41,8 @@ def create_input_set_input_def(input_name):
 def create_root_success_solid(name):
     input_name = name + '_input'
 
-    def root_transform(**kwargs):
-        passed_rows = list(kwargs.values())[0]
+    def root_transform(context, args):
+        passed_rows = list(args.values())[0]
         passed_rows.append({name: 'transform_called'})
         return passed_rows
 
@@ -74,7 +74,7 @@ def create_root_transform_failure_solid(name):
 
 
 def create_root_input_failure_solid(name):
-    def failed_input_fn(**_kwargs):
+    def failed_input_fn(context, args):
         raise Exception('something bad happened')
 
     input_name = name + '_input'
@@ -171,9 +171,9 @@ def test_failure_midstream():
     solid_a = create_root_success_solid('A')
     solid_b = create_root_success_solid('B')
 
-    def transform_fn(A, B):
+    def transform_fn(context, args):
         check.failed('user error')
-        return [A, B, {'C': 'transform_called'}]
+        return [args['A'], args['B'], {'C': 'transform_called'}]
 
     solid_c = Solid(
         name='C',

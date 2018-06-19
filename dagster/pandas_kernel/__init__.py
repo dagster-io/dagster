@@ -23,10 +23,8 @@ from .definitions import (
 )
 
 
-def _default_passthrough_transform(*args, **kwargs):
-    check.invariant(not args, 'There should be no positional args')
-    check.invariant(len(kwargs) == 1, 'There should be only one input')
-    return list(kwargs.values())[0]
+def _default_passthrough_transform(context, arguments):
+    return list(arguments.values())[0]
 
 
 def _post_process_transform(context, df):
@@ -57,10 +55,6 @@ def dataframe_solid(*args, name, inputs, transform_fn=None, materializations=Non
 
     # will add parquet and other standardized formats
     if transform_fn is None:
-        check.param_invariant(
-            len(inputs) == 1, 'inputs',
-            'If you do not specify a transform there must only be one input'
-        )
         transform_fn = _default_passthrough_transform
 
     if not materializations:
