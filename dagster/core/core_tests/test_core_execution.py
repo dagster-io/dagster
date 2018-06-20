@@ -125,7 +125,7 @@ def single_materialization_output(materialization_type, materialization_fn, argu
 def test_execute_output_with_args():
     test_output = {}
 
-    def materialization_fn_inst(value, context, arg_dict):
+    def materialization_fn_inst(context, arg_dict, value):
         assert isinstance(context, DagsterExecutionContext)
         assert isinstance(arg_dict, dict)
         test_output['thedata'] = value

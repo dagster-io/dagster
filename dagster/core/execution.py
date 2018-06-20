@@ -329,7 +329,7 @@ def _read_source(context, source_definition, arg_dict):
             context.info('Entering input implementation')
 
             with time_execution_scope() as timer_result:
-                value = source_definition.source_fn(context=context, arg_dict=arg_dict)
+                value = source_definition.source_fn(context, arg_dict)
 
             context.metric('input_load_time_ms', timer_result.millis)
 
@@ -439,7 +439,7 @@ def _execute_materialization(context, materialiation_def, arg_dict, value):
     error_str = 'Error during execution of materialization'
     with _user_code_error_boundary(context, error_str):
         context.info('Entering materialization implementation')
-        materialiation_def.materialization_fn(value, context=context, arg_dict=arg_dict)
+        materialiation_def.materialization_fn(context, arg_dict, value)
 
 
 InputExpectationResult = namedtuple('InputExpectionResult', 'input_name passes fails')

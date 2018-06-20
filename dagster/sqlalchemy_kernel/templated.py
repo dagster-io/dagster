@@ -19,7 +19,7 @@ def _create_table_input(name, depends_on=None):
         sources=[
             SourceDefinition(
                 source_type='TABLENAME',
-                source_fn=lambda arg_dict: arg_dict,
+                source_fn=lambda context, arg_dict: arg_dict,
                 argument_def_dict={'name': dagster.core.types.STRING},
             )
         ],

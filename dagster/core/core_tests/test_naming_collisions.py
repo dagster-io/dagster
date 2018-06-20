@@ -19,7 +19,7 @@ def test_execute_solid_with_input_same_name():
                 sources=[
                     SourceDefinition(
                         source_type='a_source_type',
-                        source_fn=lambda arg_dict: arg_dict['an_arg'],
+                        source_fn=lambda context, arg_dict: arg_dict['an_arg'],
                         argument_def_dict={'an_arg': types.STRING},
                     ),
                 ],
@@ -52,7 +52,7 @@ def test_execute_dep_solid_different_input_name():
                 sources=[
                     SourceDefinition(
                         source_type='a_source_type',
-                        source_fn=lambda arg_dict: arg_dict['an_arg'],
+                        source_fn=lambda context, arg_dict: arg_dict['an_arg'],
                         argument_def_dict={'an_arg': types.STRING},
                     ),
                 ],
@@ -111,7 +111,8 @@ def test_execute_dep_solid_same_input_name():
                 sources=[
                     SourceDefinition(
                         source_type='TABLE',
-                        source_fn=lambda arg_dict: s_fn(arg_dict, executed, 's1_t1_source'),
+                        source_fn=
+                        lambda context, arg_dict: s_fn(arg_dict, executed, 's1_t1_source'),
                         argument_def_dict={'name': types.STRING},
                     ),
                 ],
@@ -129,7 +130,8 @@ def test_execute_dep_solid_same_input_name():
                 sources=[
                     SourceDefinition(
                         source_type='TABLE',
-                        source_fn=lambda arg_dict: s_fn(arg_dict, executed, 's2_t1_source'),
+                        source_fn=
+                        lambda context, arg_dict: s_fn(arg_dict, executed, 's2_t1_source'),
                         argument_def_dict={'name': types.STRING},
                     ),
                 ],
@@ -140,7 +142,8 @@ def test_execute_dep_solid_same_input_name():
                 sources=[
                     SourceDefinition(
                         source_type='TABLE',
-                        source_fn=lambda arg_dict: s_fn(arg_dict, executed, 's2_t2_source'),
+                        source_fn=
+                        lambda context, arg_dict: s_fn(arg_dict, executed, 's2_t2_source'),
                         argument_def_dict={'name': types.STRING},
                     ),
                 ],

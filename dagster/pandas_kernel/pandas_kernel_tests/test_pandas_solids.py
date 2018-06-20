@@ -50,7 +50,7 @@ def test_pandas_solid():
 
     test_output = {}
 
-    def materialization_fn_inst(df, context, arg_dict):
+    def materialization_fn_inst(context, arg_dict, df):
         assert isinstance(df, pd.DataFrame)
         assert isinstance(context, DagsterExecutionContext)
         assert isinstance(arg_dict, dict)
@@ -95,7 +95,7 @@ def test_pandas_csv_to_csv():
         num_csv['sum'] = num_csv['num1'] + num_csv['num2']
         return num_csv
 
-    def materialization_fn_inst(df, context, arg_dict):
+    def materialization_fn_inst(context, arg_dict, df):
         assert isinstance(context, DagsterExecutionContext)
         path = check.str_elem(arg_dict, 'path')
         df.to_csv(path, index=False)

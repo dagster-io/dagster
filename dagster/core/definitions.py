@@ -73,15 +73,9 @@ class SourceDefinition:
     name: name of the source
 
     source_fn: callable
-         The input function defines exactly what happens when the source is invoked. This
-         function can be one of two signatures:
+         The input function defines exactly what happens when the source is invoked.
 
-         def simplified_read_csv_example_no_context(arg_dict):
-             return pd.read_csv(arg_dict['path'])
-
-         OR
-
-         def simplified_read_csv_example_no_context(context, arg_dict):
+         def simplified_read_csv_example(context, arg_dict):
              context.info('I am in an input.') # use context for logging
              return pd.read_csv(arg_dict['path'])
 
@@ -97,7 +91,7 @@ class SourceDefinition:
     def __init__(self, source_type, source_fn, argument_def_dict):
         check.callable_param(source_fn, 'source_fn')
         self.source_type = check_valid_name(source_type)
-        self.source_fn = make_context_arg_optional(check.callable_param(source_fn, 'source_fn'))
+        self.source_fn = check.callable_param(source_fn, 'source_fn')
         self.argument_def_dict = check.dict_param(
             argument_def_dict, 'argument_def_dict', key_type=str, value_type=types.DagsterType
         )
@@ -187,17 +181,7 @@ class MaterializationDefinition:
         You must specify an argument with the name "arg_dict". It will be the dictionary
         of arguments specified by the caller of the solid
 
-        You can optionally specify a context argument. If it is specified a DagsterExecutionContext
-        will be passed.
-
-        e.g.
-
-        def materialization_fn(value, arg_dict):
-            pass
-
-        OR
-
-        def materialization_fn(value, context, arg_dict):
+        def materialization_fn(context, args, value):
             pass
 
     argument_def_dict: { str: DagsterType }
@@ -211,9 +195,7 @@ class MaterializationDefinition:
 
     def __init__(self, materialization_type, materialization_fn, argument_def_dict):
         self.materialization_type = check_valid_name(materialization_type)
-        self.materialization_fn = make_context_arg_optional(
-            check.callable_param(materialization_fn, 'materialization_fn')
-        )
+        self.materialization_fn = check.callable_param(materialization_fn, 'materialization_fn')
         self.argument_def_dict = check.dict_param(
             argument_def_dict, 'argument_def_dict', key_type=str, value_type=types.DagsterType
         )

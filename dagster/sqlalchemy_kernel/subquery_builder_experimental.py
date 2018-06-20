@@ -50,7 +50,7 @@ class DagsterSqlTableExpression(DagsterSqlExpression):
 
 
 def create_table_output():
-    def materialization_fn(sql_expr, context, arg_dict):
+    def materialization_fn(context, arg_dict, sql_expr):
         check.inst_param(sql_expr, 'sql_expr', DagsterSqlExpression)
         check.inst_param(context, 'context', DagsterSqlAlchemyExecutionContext)
         check.dict_param(arg_dict, 'arg_dict')

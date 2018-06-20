@@ -82,7 +82,7 @@ def dataframe_input(name, sources=None):
 
 
 def dataframe_csv_materialization():
-    def to_csv_fn(df, context, arg_dict):
+    def to_csv_fn(context, arg_dict, df):
         check.inst_param(df, 'df', pd.DataFrame)
         check.inst_param(context, 'context', DagsterExecutionContext)
         check.dict_param(arg_dict, 'arg_dict')
@@ -98,7 +98,7 @@ def dataframe_csv_materialization():
 
 
 def dataframe_parquet_materialization():
-    def to_parquet_fn(df, context, arg_dict):
+    def to_parquet_fn(context, arg_dict, df):
         check.inst_param(df, 'df', pd.DataFrame)
         check.inst_param(context, 'context', DagsterExecutionContext)
         check.dict_param(arg_dict, 'arg_dict')

@@ -30,7 +30,7 @@ def create_hello_world_solid_no_api():
             SourceDefinition(
                 source_type='CSV',
                 argument_def_dict={'path': types.PATH},
-                source_fn=lambda arg_dict: pd.read_csv(arg_dict['path']),
+                source_fn=lambda context, arg_dict: pd.read_csv(arg_dict['path']),
             ),
         ],
     )
@@ -83,7 +83,7 @@ def create_dataframe_input(name):
             SourceDefinition(
                 source_type='CSV',
                 argument_def_dict={'path': types.PATH},
-                source_fn=lambda arg_dict: pd.read_csv(arg_dict['path']),
+                source_fn=lambda context, arg_dict: pd.read_csv(arg_dict['path']),
             ),
         ],
     )
@@ -96,7 +96,7 @@ def create_dataframe_dependency(name, depends_on):
             SourceDefinition(
                 source_type='CSV',
                 argument_def_dict={'path': types.PATH},
-                source_fn=lambda arg_dict: pd.read_csv(arg_dict['path']),
+                source_fn=lambda context, arg_dict: pd.read_csv(arg_dict['path']),
             ),
         ],
         depends_on=depends_on,
@@ -104,7 +104,7 @@ def create_dataframe_dependency(name, depends_on):
 
 
 def create_dataframe_output():
-    def mat_fn(df, arg_dict):
+    def mat_fn(context, arg_dict, df):
         df.to_csv(arg_dict['path'], index=False),
 
     return OutputDefinition(

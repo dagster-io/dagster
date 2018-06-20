@@ -37,7 +37,7 @@ def test_execute_solid_no_args():
 
     test_output = {}
 
-    def materialization_fn_inst(data, context, arg_dict):
+    def materialization_fn_inst(context, arg_dict, data):
         assert isinstance(context, DagsterExecutionContext)
         assert isinstance(arg_dict, dict)
         test_output['thedata'] = data
@@ -76,7 +76,7 @@ def create_single_dict_input(expectations=None):
 
 
 def create_noop_output(test_output, expectations=None):
-    def set_test_output(output, context, arg_dict):
+    def set_test_output(context, arg_dict, output):
         assert isinstance(context, DagsterExecutionContext)
         assert arg_dict == {}
         test_output['thedata'] = output
@@ -99,7 +99,7 @@ def test_hello_world():
 
     output_events = {}
 
-    def materialization_fn(data, context, arg_dict):
+    def materialization_fn(context, arg_dict, data):
         assert data['hello'] == 'world'
         assert isinstance(context, DagsterExecutionContext)
         assert arg_dict == {}

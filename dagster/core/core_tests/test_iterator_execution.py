@@ -22,7 +22,7 @@ def test_iterator_solid():
 
     output_spot = {}
 
-    def materialization_fn(data_iter, context, arg_dict):
+    def materialization_fn(context, arg_dict, data_iter):
         output_spot['list'] = list(data_iter)
 
         # in a real case we would iterate over
