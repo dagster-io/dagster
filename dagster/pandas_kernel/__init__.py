@@ -50,6 +50,15 @@ def dataframe_output_expectation():
     return ExpectationDefinition(name='DataframeOutput', expectation_fn=_check_transform_output)
 
 
+def dataframe_output(materializations=None):
+    if materializations is None:
+        materializations = [dataframe_csv_materialization(), dataframe_parquet_materialization()]
+
+    return OutputDefinition(
+        materializations=materializations, expectations=[dataframe_output_expectation()]
+    )
+
+
 def dataframe_solid(*args, name, inputs, transform_fn=None, materializations=None, **kwargs):
     check.invariant(not args, 'must use all keyword args')
 
@@ -57,12 +66,7 @@ def dataframe_solid(*args, name, inputs, transform_fn=None, materializations=Non
     if transform_fn is None:
         transform_fn = _default_passthrough_transform
 
-    if not materializations:
-        materializations = [dataframe_csv_materialization(), dataframe_parquet_materialization()]
-
-    output = OutputDefinition(
-        materializations=materializations, expectations=[dataframe_output_expectation()]
-    )
+    output = dataframe_output(materializations)
 
     return Solid(name=name, inputs=inputs, transform_fn=transform_fn, output=output, **kwargs)
 
