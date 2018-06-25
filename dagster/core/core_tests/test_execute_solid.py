@@ -4,7 +4,7 @@ from dagster import config
 from dagster.core import types
 
 from dagster.core.definitions import (
-    Solid,
+    SolidDefinition,
     ExpectationDefinition,
     ExpectationResult,
     create_single_source_input,
@@ -48,7 +48,7 @@ def test_execute_solid_no_args():
         argument_def_dict={},
     )
 
-    single_solid = Solid(
+    single_solid = SolidDefinition(
         name='some_node',
         inputs=[some_input],
         transform_fn=tranform_fn_inst,
@@ -105,7 +105,7 @@ def test_hello_world():
         assert arg_dict == {}
         output_events['called'] = True
 
-    hello_world = Solid(
+    hello_world = SolidDefinition(
         name='hello_world',
         inputs=[
             create_single_source_input(
@@ -153,7 +153,7 @@ def test_hello_world():
 def test_execute_solid_with_args():
     test_output = {}
 
-    single_solid = Solid(
+    single_solid = SolidDefinition(
         name='some_node',
         inputs=[create_single_dict_input()],
         transform_fn=lambda context, args: args['some_input'],
@@ -240,7 +240,7 @@ def create_input_failing_solid():
 
     failing_expect = ExpectationDefinition(name='failing', expectation_fn=failing_expectation_fn)
 
-    return Solid(
+    return SolidDefinition(
         name='some_node',
         inputs=[create_single_dict_input(expectations=[failing_expect])],
         transform_fn=lambda context, args: args['some_input'],
@@ -305,7 +305,7 @@ def _set_key_value(ddict, key, value):
 
 def test_execute_solid_with_no_inputs():
     did_run_dict = {}
-    no_args_solid = Solid(
+    no_args_solid = SolidDefinition(
         name='no_args_solid',
         inputs=[],
         transform_fn=lambda context, args: _set_key_value(did_run_dict, 'did_run', True),
@@ -330,7 +330,7 @@ def create_output_failing_solid():
         name='output_failure', expectation_fn=failing_expectation_fn
     )
 
-    return Solid(
+    return SolidDefinition(
         name='some_node',
         inputs=[create_single_dict_input()],
         transform_fn=lambda context, args: args['some_input'],

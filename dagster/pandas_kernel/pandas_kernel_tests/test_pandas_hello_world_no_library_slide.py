@@ -4,7 +4,7 @@ import dagster
 from dagster import config
 from dagster.core import types
 from dagster.core.definitions import (
-    InputDefinition, MaterializationDefinition, OutputDefinition, Solid, SourceDefinition,
+    InputDefinition, MaterializationDefinition, OutputDefinition, SolidDefinition, SourceDefinition,
     create_single_materialization_output, create_single_source_input
 )
 from dagster.core.execution import (
@@ -41,7 +41,7 @@ def create_hello_world_solid_no_api():
         argument_def_dict={'path': types.PATH}
     )
 
-    hello_world = Solid(
+    hello_world = SolidDefinition(
         name='hello_world',
         inputs=[csv_input],
         transform_fn=hello_world_transform_fn,
@@ -124,7 +124,7 @@ def create_hello_world_solid_composed_api():
         num_df['sum'] = num_df['num1'] + num_df['num2']
         return num_df
 
-    hello_world = Solid(
+    hello_world = SolidDefinition(
         name='hello_world',
         inputs=[create_dataframe_input(name='num_df')],
         transform_fn=transform_fn,
@@ -165,7 +165,7 @@ def test_pipeline():
         num_df['sum'] = num_df['num1'] + num_df['num2']
         return num_df
 
-    solid_one = Solid(
+    solid_one = SolidDefinition(
         name='solid_one',
         inputs=[create_dataframe_input(name='num_df')],
         transform_fn=solid_one_transform,
@@ -177,7 +177,7 @@ def test_pipeline():
         sum_df['sum_sq'] = sum_df['sum'] * sum_df['sum']
         return sum_df
 
-    solid_two = Solid(
+    solid_two = SolidDefinition(
         name='solid_two',
         inputs=[create_dataframe_dependency(name='sum_df', depends_on=solid_one)],
         transform_fn=solid_two_transform,

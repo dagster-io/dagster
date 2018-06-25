@@ -67,7 +67,7 @@ illustrate the core concepts.
         argument_def_dict={'path': types.PATH}
     )
 
-    hello_world = Solid(
+    hello_world = SolidDefinition(
         name='hello_world',
         inputs=[csv_input],
         transform_fn=hello_world_transform_fn,
@@ -150,7 +150,7 @@ pandas kernel. (Note: the "kernel" terminology is not settled)
         num_df['sum'] = num_df['num1'] + num_df['num2']
         return num_df
 
-    sum_solid = Solid(
+    sum_solid = SolidDefinition(
         name='sum',
         description='This computes the sum of two numbers.'
         inputs=[dagster_pd.dataframe_csv_input(name='num_df')],
@@ -247,7 +247,7 @@ and squared that value. (Fancy!)
         depends_on=sum_solid,
     )
 
-    sum_sq_solid = Solid(
+    sum_sq_solid = SolidDefinition(
         name='sum_sq',
         inputs=[sum_sq_input],
         transform_fn=sum_sq_transform,

@@ -1,11 +1,11 @@
+import os
 import dagster
 from dagster import check
-import dagster.cli.embedded_cli
 import dagster.sqlalchemy_kernel as dagster_sa
 
 
 def _get_sql_script_path(name):
-    return f'sql_files/{name}.sql'
+    return os.path.join(os.path.dirname(__file__), 'sql_files', f'{name}.sql')
 
 
 def _get_project_solid(name, inputs=None):

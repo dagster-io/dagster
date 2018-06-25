@@ -3,7 +3,7 @@ import pytest
 from dagster.core import types
 
 from dagster.core.definitions import (
-    Solid, OutputDefinition, create_single_source_input, MaterializationDefinition
+    SolidDefinition, OutputDefinition, create_single_source_input, MaterializationDefinition
 )
 
 from dagster.core.execution import (
@@ -78,7 +78,7 @@ def test_materialize_output():
         args['some_input'][0]['data_key'] = 'new_value'
         return args['some_input']
 
-    single_solid = Solid(
+    single_solid = SolidDefinition(
         name='some_node',
         inputs=[some_input],
         transform_fn=tranform_fn_inst,

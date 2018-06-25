@@ -7,7 +7,7 @@ from dagster import check
 from dagster import config
 import dagster.core
 from dagster.core import types
-from dagster.core.definitions import (Solid, create_single_materialization_output)
+from dagster.core.definitions import (SolidDefinition, create_single_materialization_output)
 from dagster.core.execution import (
     DagsterExecutionContext, execute_pipeline_through_solid, _read_source,
     materialize_pipeline_iterator, output_single_solid, _pipeline_solid_in_memory,
@@ -63,7 +63,7 @@ def test_pandas_solid():
         argument_def_dict={},
     )
 
-    single_solid = Solid(
+    single_solid = SolidDefinition(
         name='sum_table',
         inputs=[csv_input],
         transform_fn=transform,
@@ -106,7 +106,7 @@ def test_pandas_csv_to_csv():
         argument_def_dict={'path': types.PATH}
     )
 
-    solid = Solid(
+    solid = SolidDefinition(
         name='sum_table',
         inputs=[csv_input],
         transform_fn=transform,

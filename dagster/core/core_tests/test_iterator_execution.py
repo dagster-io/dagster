@@ -1,6 +1,6 @@
 import dagster
 from dagster.core.definitions import (
-    Solid, create_single_materialization_output, create_single_source_input
+    SolidDefinition, create_single_materialization_output, create_single_source_input
 )
 from dagster.core.execution import (output_single_solid, create_single_solid_env_from_arg_dicts)
 
@@ -34,7 +34,7 @@ def test_iterator_solid():
         argument_def_dict={},
     )
 
-    iterable_solid = Solid(
+    iterable_solid = SolidDefinition(
         name='some_node',
         inputs=[some_input],
         transform_fn=transform_fn,

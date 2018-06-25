@@ -31,7 +31,8 @@ from dagster.utils.logging import (CompositeLogger, ERROR, get_formatted_stack_t
 from dagster.utils.timing import time_execution_scope
 
 from .definitions import (
-    Solid, ExpectationDefinition, ExpectationResult, SourceDefinition, MaterializationDefinition
+    SolidDefinition, ExpectationDefinition, ExpectationResult, SourceDefinition,
+    MaterializationDefinition
 )
 
 from .errors import (
@@ -212,7 +213,7 @@ class DagsterExecutionResult:
                 'Must provide a reason is result is a failure'
             )
         self.transformed_value = transformed_value
-        self.solid = check.inst_param(solid, 'solid', Solid)
+        self.solid = check.inst_param(solid, 'solid', SolidDefinition)
         self.reason = reason
         self.exception = check.opt_inst_param(exception, 'exception', Exception)
 
@@ -504,7 +505,7 @@ def _pipeline_solid_in_memory(context, solid, transform_values_dict):
     it be inputs or outputs.
     '''
     check.inst_param(context, 'context', DagsterExecutionContext)
-    check.inst_param(solid, 'solid', Solid)
+    check.inst_param(solid, 'solid', SolidDefinition)
     check.dict_param(transform_values_dict, 'transform_values_dict', key_type=str)
 
     all_run_result = _execute_all_input_expectations(context, solid, transform_values_dict)
@@ -551,7 +552,7 @@ def _pipeline_solid_in_memory(context, solid, transform_values_dict):
 
 def execute_single_solid(context, solid, environment, throw_on_error=True):
     check.inst_param(context, 'context', DagsterExecutionContext)
-    check.inst_param(solid, 'solid', Solid)
+    check.inst_param(solid, 'solid', SolidDefinition)
     check.inst_param(environment, 'environment', config.Environment)
     check.bool_param(throw_on_error, 'throw_on_error')
 
@@ -592,7 +593,7 @@ def _do_throw_on_error(execution_result):
 
 
 def create_single_solid_env_from_arg_dicts(solid, arg_dicts):
-    check.inst_param(solid, 'solid', Solid)
+    check.inst_param(solid, 'solid', SolidDefinition)
     check.dict_param(arg_dicts, 'arg_dicts', key_type=str, value_type=dict)
 
     input_sources = {}
@@ -682,7 +683,7 @@ def output_single_solid(
     throw_on_error=True,
 ):
     check.inst_param(context, 'context', DagsterExecutionContext)
-    check.inst_param(solid, 'solid', Solid)
+    check.inst_param(solid, 'solid', SolidDefinition)
     check.inst_param(environment, 'environment', config.Environment)
     check.str_param(materialization_type, 'materialization_type')
     check.dict_param(arg_dict, 'arg_dict', key_type=str)
@@ -740,7 +741,7 @@ def execute_pipeline_through_solid(
 
 def _gather_input_values(context, solid, input_args, intermediate_values):
     check.inst_param(context, 'context', DagsterExecutionContext)
-    check.inst_param(solid, 'solid', Solid)
+    check.inst_param(solid, 'solid', SolidDefinition)
     check.inst_param(input_args, 'input_args', InputArgs)
     check.dict_param(intermediate_values, 'intermediate_values')
 
@@ -764,7 +765,7 @@ def _gather_input_values(context, solid, input_args, intermediate_values):
 
 def _execute_pipeline_solid_step(context, solid, input_args, intermediate_values):
     check.inst_param(context, 'context', DagsterExecutionContext)
-    check.inst_param(solid, 'solid', Solid)
+    check.inst_param(solid, 'solid', SolidDefinition)
     check.inst_param(input_args, 'input_args', InputArgs)
     check.dict_param(intermediate_values, 'intermediate_values')
 

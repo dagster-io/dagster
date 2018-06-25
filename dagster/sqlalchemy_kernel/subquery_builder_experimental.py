@@ -5,7 +5,7 @@ from dagster import check
 from dagster.core import types
 
 from dagster.core.definitions import (
-    Solid, InputDefinition, SourceDefinition, create_single_materialization_output,
+    SolidDefinition, InputDefinition, SourceDefinition, create_single_materialization_output,
     create_no_materialization_output
 )
 
@@ -112,7 +112,7 @@ def create_table_expression_input(name):
 
 
 def create_table_input_dependency(solid):
-    check.inst_param(solid, 'solid', Solid)
+    check.inst_param(solid, 'solid', SolidDefinition)
 
     return InputDefinition(
         name=solid.name,
@@ -141,7 +141,7 @@ def create_sql_solid(name, inputs, sql_text):
     check.list_param(inputs, 'inputs', of_type=InputDefinition)
     check.str_param(sql_text, 'sql_text')
 
-    return Solid(
+    return SolidDefinition(
         name,
         inputs=inputs,
         transform_fn=create_sql_transform(sql_text),
@@ -166,7 +166,7 @@ def create_sql_statement_solid(name, sql_text, inputs=None):
     if inputs is None:
         inputs = []
 
-    return Solid(
+    return SolidDefinition(
         name=name,
         transform_fn=_create_sql_alchemy_transform_fn(sql_text),
         inputs=inputs,

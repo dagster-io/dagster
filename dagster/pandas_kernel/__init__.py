@@ -7,7 +7,7 @@ from dagster import check
 from dagster.utils import has_context_argument
 
 from dagster.core import create_json_input
-from dagster.core.definitions import Solid, OutputDefinition, ExpectationDefinition, ExpectationResult
+from dagster.core.definitions import SolidDefinition, OutputDefinition, ExpectationDefinition, ExpectationResult
 from dagster.core.execution import DagsterExecutionContext
 from dagster.core.errors import (
     DagsterUserCodeExecutionError, DagsterInvariantViolationError, DagsterInvalidDefinitionError
@@ -68,7 +68,9 @@ def dataframe_solid(*args, name, inputs, transform_fn=None, materializations=Non
 
     output = dataframe_output(materializations)
 
-    return Solid(name=name, inputs=inputs, transform_fn=transform_fn, output=output, **kwargs)
+    return SolidDefinition(
+        name=name, inputs=inputs, transform_fn=transform_fn, output=output, **kwargs
+    )
 
 
 def single_path_arg(input_name, path):

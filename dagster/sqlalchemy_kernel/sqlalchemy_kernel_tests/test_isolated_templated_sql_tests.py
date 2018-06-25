@@ -1,7 +1,7 @@
 import dagster
 from dagster import config
 from dagster.core.definitions import (
-    InputDefinition, Solid, SourceDefinition, create_no_materialization_output
+    InputDefinition, SolidDefinition, SourceDefinition, create_no_materialization_output
 )
 from dagster.sqlalchemy_kernel.templated import (
     _create_templated_sql_transform_with_output, _render_template_string,
@@ -44,7 +44,7 @@ def test_single_templated_sql_solid_single_table_raw_api():
         ]
     )
 
-    sum_table_transform_solid = Solid(
+    sum_table_transform_solid = SolidDefinition(
         name='sum_table_transform',
         inputs=[sum_table_input],
         transform_fn=_create_templated_sql_transform_with_output(sql, 'sum_table'),
@@ -130,7 +130,7 @@ def test_single_templated_sql_solid_double_table_raw_api():
         ]
     )
 
-    sum_solid = Solid(
+    sum_solid = SolidDefinition(
         name='sum_solid',
         inputs=[sum_table_input, num_table_input],
         transform_fn=_create_templated_sql_transform_with_output(

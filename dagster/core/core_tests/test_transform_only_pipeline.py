@@ -2,7 +2,7 @@ import dagster
 from dagster import check
 from dagster import config
 from dagster.core.definitions import (
-    Solid, create_single_source_input, create_no_materialization_output
+    SolidDefinition, create_single_source_input, create_no_materialization_output
 )
 from dagster import dep_only_input
 
@@ -15,7 +15,7 @@ def _set_key_value(ddict, key, value):
 def test_execute_solid_with_dep_only_inputs_no_api():
     did_run_dict = {}
 
-    step_one_solid = Solid(
+    step_one_solid = SolidDefinition(
         name='step_one_solid',
         inputs=[],
         transform_fn=lambda context, args: _set_key_value(did_run_dict, 'step_one', True),
@@ -29,7 +29,7 @@ def test_execute_solid_with_dep_only_inputs_no_api():
         depends_on=step_one_solid
     )
 
-    step_two_solid = Solid(
+    step_two_solid = SolidDefinition(
         name='step_two_solid',
         inputs=[only_dep_input],
         transform_fn=lambda context, args: _set_key_value(did_run_dict, 'step_two', True),
@@ -56,14 +56,14 @@ def test_execute_solid_with_dep_only_inputs_no_api():
 def test_execute_solid_with_dep_only_inputs_with_api():
     did_run_dict = {}
 
-    step_one_solid = Solid(
+    step_one_solid = SolidDefinition(
         name='step_one_solid',
         inputs=[],
         transform_fn=lambda context, args: _set_key_value(did_run_dict, 'step_one', True),
         output=create_no_materialization_output(),
     )
 
-    step_two_solid = Solid(
+    step_two_solid = SolidDefinition(
         name='step_two_solid',
         transform_fn=lambda context, args: _set_key_value(did_run_dict, 'step_two', True),
         inputs=[dep_only_input(step_one_solid)],

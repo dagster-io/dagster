@@ -3,7 +3,7 @@ import pandas as pd
 from dagster import check
 
 from dagster.core.definitions import (
-    Solid, create_dagster_single_file_input, InputDefinition, create_single_source_input,
+    SolidDefinition, create_dagster_single_file_input, InputDefinition, create_single_source_input,
     MaterializationDefinition, OutputDefinition, SourceDefinition
 )
 from dagster.core.execution import DagsterExecutionContext
@@ -63,7 +63,7 @@ def table_dataframe_source(**read_table_kwargs):
 
 
 def dataframe_dependency(solid, name=None, sources=None):
-    check.inst_param(solid, 'solid', Solid)
+    check.inst_param(solid, 'solid', SolidDefinition)
 
     if sources is None:
         sources = [parquet_dataframe_source(), csv_dataframe_source(), table_dataframe_source()]

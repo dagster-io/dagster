@@ -3,7 +3,7 @@ from dagster import config
 
 import dagster.core
 from dagster.core.definitions import (
-    Solid,
+    SolidDefinition,
     create_single_source_input,
     create_no_materialization_output,
     create_single_materialization_output,
@@ -46,7 +46,7 @@ def create_root_success_solid(name):
         passed_rows.append({name: 'transform_called'})
         return passed_rows
 
-    return Solid(
+    return SolidDefinition(
         name=name,
         inputs=[create_input_set_input_def(input_name)],
         transform_fn=root_transform,
@@ -65,7 +65,7 @@ def create_root_transform_failure_solid(name):
     def failed_transform(**_kwargs):
         raise Exception('Transform failed')
 
-    return Solid(
+    return SolidDefinition(
         name=name,
         inputs=[inp],
         transform_fn=failed_transform,
@@ -84,7 +84,7 @@ def create_root_input_failure_solid(name):
         argument_def_dict={},
     )
 
-    return Solid(
+    return SolidDefinition(
         name=name,
         inputs=[inp],
         transform_fn=lambda **_kwargs: {},
@@ -100,7 +100,7 @@ def create_root_output_failure_solid(name):
         passed_rows.append({name: 'transform_called'})
         return passed_rows
 
-    return Solid(
+    return SolidDefinition(
         name=name,
         inputs=[create_input_set_input_def(input_name)],
         transform_fn=root_transform,
@@ -175,7 +175,7 @@ def test_failure_midstream():
         check.failed('user error')
         return [args['A'], args['B'], {'C': 'transform_called'}]
 
-    solid_c = Solid(
+    solid_c = SolidDefinition(
         name='C',
         inputs=[
             InputDefinition(name='A', sources=[], depends_on=solid_a),
