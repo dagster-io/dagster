@@ -4,7 +4,7 @@ import dagster
 from dagster import config
 from dagster.core import types
 from dagster.core.definitions import (
-    InputDefinition, MaterializationDefinition, OutputDefinition, Solid, SourceDefinition,
+    InputDefinition, MaterializationDefinition, OutputDefinition, SolidDefinition, SourceDefinition,
     create_single_materialization_output, create_single_source_input
 )
 from dagster.core.execution import (
@@ -19,7 +19,8 @@ def create_test_context():
 
 
 def create_hello_world_solid_no_api():
-    def hello_world_transform_fn(num_df):
+    def hello_world_transform_fn(context, args):
+        num_df = args['num_df']
         num_df['sum'] = num_df['num1'] + num_df['num2']
         return num_df
 
@@ -29,7 +30,7 @@ def create_hello_world_solid_no_api():
             SourceDefinition(
                 source_type='CSV',
                 argument_def_dict={'path': types.PATH},
-                source_fn=lambda arg_dict: pd.read_csv(arg_dict['path']),
+                source_fn=lambda context, arg_dict: pd.read_csv(arg_dict['path']),
             ),
         ],
     )
@@ -40,7 +41,7 @@ def create_hello_world_solid_no_api():
         argument_def_dict={'path': types.PATH}
     )
 
-    hello_world = Solid(
+    hello_world = SolidDefinition(
         name='hello_world',
         inputs=[csv_input],
         transform_fn=hello_world_transform_fn,
@@ -82,7 +83,7 @@ def create_dataframe_input(name):
             SourceDefinition(
                 source_type='CSV',
                 argument_def_dict={'path': types.PATH},
-                source_fn=lambda arg_dict: pd.read_csv(arg_dict['path']),
+                source_fn=lambda context, arg_dict: pd.read_csv(arg_dict['path']),
             ),
         ],
     )
@@ -95,7 +96,7 @@ def create_dataframe_dependency(name, depends_on):
             SourceDefinition(
                 source_type='CSV',
                 argument_def_dict={'path': types.PATH},
-                source_fn=lambda arg_dict: pd.read_csv(arg_dict['path']),
+                source_fn=lambda context, arg_dict: pd.read_csv(arg_dict['path']),
             ),
         ],
         depends_on=depends_on,
@@ -103,7 +104,7 @@ def create_dataframe_dependency(name, depends_on):
 
 
 def create_dataframe_output():
-    def mat_fn(df, arg_dict):
+    def mat_fn(context, arg_dict, df):
         df.to_csv(arg_dict['path'], index=False),
 
     return OutputDefinition(
@@ -118,11 +119,12 @@ def create_dataframe_output():
 
 
 def create_hello_world_solid_composed_api():
-    def transform_fn(num_df):
+    def transform_fn(context, args):
+        num_df = args['num_df']
         num_df['sum'] = num_df['num1'] + num_df['num2']
         return num_df
 
-    hello_world = Solid(
+    hello_world = SolidDefinition(
         name='hello_world',
         inputs=[create_dataframe_input(name='num_df')],
         transform_fn=transform_fn,
@@ -158,22 +160,24 @@ def test_hello_world_composed():
 
 
 def test_pipeline():
-    def solid_one_transform(num_df):
+    def solid_one_transform(context, args):
+        num_df = args['num_df']
         num_df['sum'] = num_df['num1'] + num_df['num2']
         return num_df
 
-    solid_one = Solid(
+    solid_one = SolidDefinition(
         name='solid_one',
         inputs=[create_dataframe_input(name='num_df')],
         transform_fn=solid_one_transform,
         output=create_dataframe_output(),
     )
 
-    def solid_two_transform(sum_df):
+    def solid_two_transform(context, args):
+        sum_df = args['sum_df']
         sum_df['sum_sq'] = sum_df['sum'] * sum_df['sum']
         return sum_df
 
-    solid_two = Solid(
+    solid_two = SolidDefinition(
         name='solid_two',
         inputs=[create_dataframe_dependency(name='sum_df', depends_on=solid_one)],
         transform_fn=solid_two_transform,

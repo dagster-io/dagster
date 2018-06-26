@@ -1,5 +1,6 @@
 import keyword
 import re
+import inspect
 
 from dagster import check
 from dagster.core import types
@@ -41,8 +42,9 @@ def check_valid_name(name):
 
 
 class ExpectationResult:
-    def __init__(self, success, message=None, result_context=None):
+    def __init__(self, success, solid=None, message=None, result_context=None):
         self.success = check.bool_param(success, 'success')
+        self.solid = check.opt_inst_param(solid, SolidDefinition, 'solid')
         self.message = check.opt_str_param(message, 'message')
         self.result_context = check.opt_dict_param(result_context, 'result_context')
 
@@ -71,15 +73,9 @@ class SourceDefinition:
     name: name of the source
 
     source_fn: callable
-         The input function defines exactly what happens when the source is invoked. This
-         function can be one of two signatures:
+         The input function defines exactly what happens when the source is invoked.
 
-         def simplified_read_csv_example_no_context(arg_dict):
-             return pd.read_csv(arg_dict['path'])
-
-         OR
-
-         def simplified_read_csv_example_no_context(context, arg_dict):
+         def simplified_read_csv_example(context, arg_dict):
              context.info('I am in an input.') # use context for logging
              return pd.read_csv(arg_dict['path'])
 
@@ -95,7 +91,7 @@ class SourceDefinition:
     def __init__(self, source_type, source_fn, argument_def_dict):
         check.callable_param(source_fn, 'source_fn')
         self.source_type = check_valid_name(source_type)
-        self.source_fn = make_context_arg_optional(check.callable_param(source_fn, 'source_fn'))
+        self.source_fn = check.callable_param(source_fn, 'source_fn')
         self.argument_def_dict = check.dict_param(
             argument_def_dict, 'argument_def_dict', key_type=str, value_type=types.DagsterType
         )
@@ -138,15 +134,18 @@ class InputDefinition:
 
     - depends_on: (Optional). This input depends on another solid in the context of a
     a pipeline.
+
+    - input_callback: (Optional) Called on the source result. Gets execution context and result. Can be used to validate the result, log stats etc.
     '''
 
-    def __init__(self, name, sources, depends_on=None, expectations=None):
+    def __init__(self, name, sources, depends_on=None, expectations=None, input_callback=None):
         self.name = check_valid_name(name)
         self.sources = check.list_param(sources, 'sources', of_type=SourceDefinition)
-        self.depends_on = check.opt_inst_param(depends_on, 'depends_on', Solid)
+        self.depends_on = check.opt_inst_param(depends_on, 'depends_on', SolidDefinition)
         self.expectations = check.opt_list_param(
             expectations, 'expectations', of_type=ExpectationDefinition
         )
+        self.input_callback = check.opt_callable_param(input_callback, 'input_callback')
 
     @property
     def is_external(self):
@@ -185,17 +184,7 @@ class MaterializationDefinition:
         You must specify an argument with the name "arg_dict". It will be the dictionary
         of arguments specified by the caller of the solid
 
-        You can optionally specify a context argument. If it is specified a DagsterExecutionContext
-        will be passed.
-
-        e.g.
-
-        def materialization_fn(value, arg_dict):
-            pass
-
-        OR
-
-        def materialization_fn(value, context, arg_dict):
+        def materialization_fn(context, args, value):
             pass
 
     argument_def_dict: { str: DagsterType }
@@ -209,9 +198,7 @@ class MaterializationDefinition:
 
     def __init__(self, materialization_type, materialization_fn, argument_def_dict):
         self.materialization_type = check_valid_name(materialization_type)
-        self.materialization_fn = make_context_arg_optional(
-            check.callable_param(materialization_fn, 'materialization_fn')
-        )
+        self.materialization_fn = check.callable_param(materialization_fn, 'materialization_fn')
         self.argument_def_dict = check.dict_param(
             argument_def_dict, 'argument_def_dict', key_type=str, value_type=types.DagsterType
         )
@@ -244,13 +231,14 @@ def create_single_materialization_output(
 
 class OutputDefinition:
     # runtime type info
-    def __init__(self, materializations=None, expectations=None):
+    def __init__(self, materializations=None, expectations=None, output_callback=None):
         self.materializations = check.opt_list_param(
             materializations, 'materializations', of_type=MaterializationDefinition
         )
         self.expectations = check.opt_list_param(
             expectations, 'expectations', of_type=ExpectationDefinition
         )
+        self.output_callback = check.opt_callable_param(output_callback, 'output_callback')
 
     def materialization_of_type(self, materialization_type):
         for materialization in self.materializations:
@@ -263,14 +251,13 @@ class OutputDefinition:
 # One or more inputs
 # The core computation in the native kernel abstraction
 # The output
-class Solid:
+class SolidDefinition:
     def __init__(self, name, inputs, transform_fn, output):
         self.name = check_valid_name(name)
         self.inputs = check.list_param(inputs, 'inputs', InputDefinition)
         self.output = check.inst_param(output, 'output', OutputDefinition)
-        self.transform_fn = make_context_arg_optional(
-            check.callable_param(transform_fn, 'transform')
-        )
+        # validate_transform_fn(self.name, transform_fn, self.inputs)
+        self.transform_fn = check.callable_param(transform_fn, 'transform')
 
     # Notes to self
 

@@ -3,7 +3,7 @@ from dagster import config
 
 import dagster.core
 from dagster.core.definitions import (
-    Solid,
+    SolidDefinition,
     create_single_source_input,
     create_no_materialization_output,
     create_single_materialization_output,
@@ -41,12 +41,12 @@ def create_input_set_input_def(input_name):
 def create_root_success_solid(name):
     input_name = name + '_input'
 
-    def root_transform(**kwargs):
-        passed_rows = list(kwargs.values())[0]
+    def root_transform(context, args):
+        passed_rows = list(args.values())[0]
         passed_rows.append({name: 'transform_called'})
         return passed_rows
 
-    return Solid(
+    return SolidDefinition(
         name=name,
         inputs=[create_input_set_input_def(input_name)],
         transform_fn=root_transform,
@@ -65,7 +65,7 @@ def create_root_transform_failure_solid(name):
     def failed_transform(**_kwargs):
         raise Exception('Transform failed')
 
-    return Solid(
+    return SolidDefinition(
         name=name,
         inputs=[inp],
         transform_fn=failed_transform,
@@ -74,7 +74,7 @@ def create_root_transform_failure_solid(name):
 
 
 def create_root_input_failure_solid(name):
-    def failed_input_fn(**_kwargs):
+    def failed_input_fn(context, args):
         raise Exception('something bad happened')
 
     input_name = name + '_input'
@@ -84,7 +84,7 @@ def create_root_input_failure_solid(name):
         argument_def_dict={},
     )
 
-    return Solid(
+    return SolidDefinition(
         name=name,
         inputs=[inp],
         transform_fn=lambda **_kwargs: {},
@@ -100,7 +100,7 @@ def create_root_output_failure_solid(name):
         passed_rows.append({name: 'transform_called'})
         return passed_rows
 
-    return Solid(
+    return SolidDefinition(
         name=name,
         inputs=[create_input_set_input_def(input_name)],
         transform_fn=root_transform,
@@ -171,11 +171,11 @@ def test_failure_midstream():
     solid_a = create_root_success_solid('A')
     solid_b = create_root_success_solid('B')
 
-    def transform_fn(A, B):
+    def transform_fn(context, args):
         check.failed('user error')
-        return [A, B, {'C': 'transform_called'}]
+        return [args['A'], args['B'], {'C': 'transform_called'}]
 
-    solid_c = Solid(
+    solid_c = SolidDefinition(
         name='C',
         inputs=[
             InputDefinition(name='A', sources=[], depends_on=solid_a),

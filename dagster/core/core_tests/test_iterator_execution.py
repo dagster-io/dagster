@@ -1,6 +1,6 @@
 import dagster
 from dagster.core.definitions import (
-    Solid, create_single_materialization_output, create_single_source_input
+    SolidDefinition, create_single_materialization_output, create_single_source_input
 )
 from dagster.core.execution import (output_single_solid, create_single_solid_env_from_arg_dicts)
 
@@ -16,13 +16,13 @@ def test_iterator_solid():
         argument_def_dict={},
     )
 
-    def transform_fn(iter_numbers):
-        for value in iter_numbers:
+    def transform_fn(context, args):
+        for value in args['iter_numbers']:
             yield value + 1
 
     output_spot = {}
 
-    def materialization_fn(data_iter, context, arg_dict):
+    def materialization_fn(context, arg_dict, data_iter):
         output_spot['list'] = list(data_iter)
 
         # in a real case we would iterate over
@@ -34,7 +34,7 @@ def test_iterator_solid():
         argument_def_dict={},
     )
 
-    iterable_solid = Solid(
+    iterable_solid = SolidDefinition(
         name='some_node',
         inputs=[some_input],
         transform_fn=transform_fn,

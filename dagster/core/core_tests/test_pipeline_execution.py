@@ -4,7 +4,7 @@ import pytest
 from dagster import check
 
 from dagster.core.definitions import (
-    Solid,
+    SolidDefinition,
     create_single_source_input,
     create_no_materialization_output,
 )
@@ -44,13 +44,13 @@ def create_solid_with_deps(name, *solid_deps):
         ) for solid_dep in solid_deps
     ]
 
-    def dep_transform(**kwargs):
-        passed_rows = list(kwargs.values())[0]
+    def dep_transform(context, args):
+        passed_rows = list(args.values())[0]
         passed_rows.append({name: 'transform_called'})
         #return copy.deepcopy(passed_rows)
         return passed_rows
 
-    return Solid(
+    return SolidDefinition(
         name=name,
         inputs=inputs,
         transform_fn=dep_transform,
@@ -66,13 +66,13 @@ def create_root_solid(name):
         argument_def_dict={},
     )
 
-    def root_transform(**kwargs):
-        passed_rows = list(kwargs.values())[0]
+    def root_transform(context, args):
+        passed_rows = list(args.values())[0]
         passed_rows.append({name: 'transform_called'})
         #return copy.deepcopy(passed_rows)
         return passed_rows
 
-    return Solid(
+    return SolidDefinition(
         name=name,
         inputs=[inp],
         transform_fn=root_transform,

@@ -4,7 +4,7 @@ from dagster import config
 from dagster.core import types
 
 from dagster.core.definitions import (
-    Solid,
+    SolidDefinition,
     ExpectationDefinition,
     ExpectationResult,
     create_single_source_input,
@@ -31,13 +31,13 @@ def test_execute_solid_no_args():
         argument_def_dict={}
     )
 
-    def tranform_fn_inst(some_input):
-        some_input[0]['data_key'] = 'new_value'
-        return some_input
+    def tranform_fn_inst(context, args):
+        args['some_input'][0]['data_key'] = 'new_value'
+        return args['some_input']
 
     test_output = {}
 
-    def materialization_fn_inst(data, context, arg_dict):
+    def materialization_fn_inst(context, arg_dict, data):
         assert isinstance(context, DagsterExecutionContext)
         assert isinstance(arg_dict, dict)
         test_output['thedata'] = data
@@ -48,7 +48,7 @@ def test_execute_solid_no_args():
         argument_def_dict={},
     )
 
-    single_solid = Solid(
+    single_solid = SolidDefinition(
         name='some_node',
         inputs=[some_input],
         transform_fn=tranform_fn_inst,
@@ -76,7 +76,7 @@ def create_single_dict_input(expectations=None):
 
 
 def create_noop_output(test_output, expectations=None):
-    def set_test_output(output, context, arg_dict):
+    def set_test_output(context, arg_dict, output):
         assert isinstance(context, DagsterExecutionContext)
         assert arg_dict == {}
         test_output['thedata'] = output
@@ -90,21 +90,22 @@ def create_noop_output(test_output, expectations=None):
 
 
 def test_hello_world():
-    def transform_fn(context, hello_world_input):
+    def transform_fn(context, args):
         assert isinstance(context, DagsterExecutionContext)
+        hello_world_input = args['hello_world_input']
         assert isinstance(hello_world_input, dict)
         hello_world_input['hello'] = 'world'
         return hello_world_input
 
     output_events = {}
 
-    def materialization_fn(data, context, arg_dict):
+    def materialization_fn(context, arg_dict, data):
         assert data['hello'] == 'world'
         assert isinstance(context, DagsterExecutionContext)
         assert arg_dict == {}
         output_events['called'] = True
 
-    hello_world = Solid(
+    hello_world = SolidDefinition(
         name='hello_world',
         inputs=[
             create_single_source_input(
@@ -152,10 +153,10 @@ def test_hello_world():
 def test_execute_solid_with_args():
     test_output = {}
 
-    single_solid = Solid(
+    single_solid = SolidDefinition(
         name='some_node',
         inputs=[create_single_dict_input()],
-        transform_fn=lambda some_input: some_input,
+        transform_fn=lambda context, args: args['some_input'],
         output=create_noop_output(test_output),
     )
 
@@ -239,10 +240,10 @@ def create_input_failing_solid():
 
     failing_expect = ExpectationDefinition(name='failing', expectation_fn=failing_expectation_fn)
 
-    return Solid(
+    return SolidDefinition(
         name='some_node',
         inputs=[create_single_dict_input(expectations=[failing_expect])],
-        transform_fn=lambda some_input: some_input,
+        transform_fn=lambda context, args: args['some_input'],
         output=create_noop_output(test_output),
     )
 
@@ -304,10 +305,10 @@ def _set_key_value(ddict, key, value):
 
 def test_execute_solid_with_no_inputs():
     did_run_dict = {}
-    no_args_solid = Solid(
+    no_args_solid = SolidDefinition(
         name='no_args_solid',
         inputs=[],
-        transform_fn=lambda: _set_key_value(did_run_dict, 'did_run', True),
+        transform_fn=lambda context, args: _set_key_value(did_run_dict, 'did_run', True),
         output=create_no_materialization_output(),
     )
 
@@ -329,9 +330,9 @@ def create_output_failing_solid():
         name='output_failure', expectation_fn=failing_expectation_fn
     )
 
-    return Solid(
+    return SolidDefinition(
         name='some_node',
         inputs=[create_single_dict_input()],
-        transform_fn=lambda some_input: some_input,
+        transform_fn=lambda context, args: args['some_input'],
         output=create_noop_output(test_output, expectations=[output_expectation]),
     )

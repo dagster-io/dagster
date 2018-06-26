@@ -5,18 +5,14 @@ from dagster import check
 from dagster.core import types
 
 from dagster.core.definitions import (
-    Solid,
-    InputDefinition,
-    SourceDefinition,
-    create_single_materialization_output,
+    SolidDefinition, InputDefinition, SourceDefinition, create_single_materialization_output,
+    create_no_materialization_output
 )
 
 from dagster.sqlalchemy_kernel import (
     DagsterSqlAlchemyExecutionContext,
     execute_sql_text_on_context,
 )
-
-from dagster.transform_only_solid import (no_args_transform_solid)
 
 
 class DagsterSqlExpression:
@@ -54,7 +50,7 @@ class DagsterSqlTableExpression(DagsterSqlExpression):
 
 
 def create_table_output():
-    def materialization_fn(sql_expr, context, arg_dict):
+    def materialization_fn(context, arg_dict, sql_expr):
         check.inst_param(sql_expr, 'sql_expr', DagsterSqlExpression)
         check.inst_param(context, 'context', DagsterSqlAlchemyExecutionContext)
         check.dict_param(arg_dict, 'arg_dict')
@@ -116,7 +112,7 @@ def create_table_expression_input(name):
 
 
 def create_table_input_dependency(solid):
-    check.inst_param(solid, 'solid', Solid)
+    check.inst_param(solid, 'solid', SolidDefinition)
 
     return InputDefinition(
         name=solid.name,
@@ -130,12 +126,9 @@ def create_table_input_dependency(solid):
 
 
 def create_sql_transform(sql_text):
-    def transform_fn(**kwargs):
+    def transform_fn(context, args):
         sql_texts = {}
-        for name, sql_expr in kwargs.items():
-            if name == 'context':
-                continue
-
+        for name, sql_expr in args.items():
             sql_texts[name] = sql_expr.from_target
 
         return DagsterSqlQueryExpression(sql_text.format(**sql_texts))
@@ -148,7 +141,7 @@ def create_sql_solid(name, inputs, sql_text):
     check.list_param(inputs, 'inputs', of_type=InputDefinition)
     check.str_param(sql_text, 'sql_text')
 
-    return Solid(
+    return SolidDefinition(
         name,
         inputs=inputs,
         transform_fn=create_sql_transform(sql_text),
@@ -159,7 +152,7 @@ def create_sql_solid(name, inputs, sql_text):
 def _create_sql_alchemy_transform_fn(sql_text):
     check.str_param(sql_text, 'sql_text')
 
-    def transform_fn(context):
+    def transform_fn(context, args):
         return execute_sql_text_on_context(context, sql_text)
 
     return transform_fn
@@ -169,10 +162,15 @@ def create_sql_statement_solid(name, sql_text, inputs=None):
     check.str_param(name, 'name')
     check.str_param(sql_text, 'sql_text')
     check.opt_list_param(inputs, 'inputs', of_type=InputDefinition)
-    return no_args_transform_solid(
-        name,
-        no_args_transform_fn=_create_sql_alchemy_transform_fn(sql_text),
+
+    if inputs is None:
+        inputs = []
+
+    return SolidDefinition(
+        name=name,
+        transform_fn=_create_sql_alchemy_transform_fn(sql_text),
         inputs=inputs,
+        output=create_no_materialization_output()
     )
 
 

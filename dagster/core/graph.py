@@ -2,14 +2,14 @@ from toposort import toposort_flatten
 
 from dagster import check
 
-from .definitions import Solid
+from .definitions import SolidDefinition
 
 
 class DagsterPipeline:
     def __init__(self, solids, name=None, description=None):
         self.name = check.opt_str_param(name, 'name')
         self.description = check.opt_str_param(description, 'description')
-        self.solids = check.list_param(solids, 'solids', of_type=Solid)
+        self.solids = check.list_param(solids, 'solids', of_type=SolidDefinition)
 
         solid_names = set([solid.name for solid in self.solids])
         for solid in solids:
@@ -84,7 +84,7 @@ class DagsterPipeline:
 
 
 def create_adjacency_lists(solids):
-    check.list_param(solids, 'solids', of_type=Solid)
+    check.list_param(solids, 'solids', of_type=SolidDefinition)
 
     visit_dict = {s.name: False for s in solids}
     forward_edges = {s.name: set() for s in solids}
@@ -113,7 +113,7 @@ def create_adjacency_lists(solids):
 
 class SolidGraph:
     def __init__(self, solids):
-        check.list_param(solids, 'solids', of_type=Solid)
+        check.list_param(solids, 'solids', of_type=SolidDefinition)
         self._solid_dict = {solid.name: solid for solid in solids}
 
         solid_names = set([solid.name for solid in solids])

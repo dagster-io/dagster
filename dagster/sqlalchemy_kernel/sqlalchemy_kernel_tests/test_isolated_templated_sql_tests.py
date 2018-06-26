@@ -1,7 +1,7 @@
 import dagster
 from dagster import config
 from dagster.core.definitions import (
-    InputDefinition, Solid, SourceDefinition, create_no_materialization_output
+    InputDefinition, SolidDefinition, SourceDefinition, create_no_materialization_output
 )
 from dagster.sqlalchemy_kernel.templated import (
     _create_templated_sql_transform_with_output, _render_template_string,
@@ -36,7 +36,7 @@ def test_single_templated_sql_solid_single_table_raw_api():
         sources=[
             SourceDefinition(
                 source_type='TABLENAME',
-                source_fn=lambda arg_dict: arg_dict,
+                source_fn=lambda context, arg_dict: arg_dict,
                 argument_def_dict={
                     'name': dagster.core.types.STRING,
                 },
@@ -44,7 +44,7 @@ def test_single_templated_sql_solid_single_table_raw_api():
         ]
     )
 
-    sum_table_transform_solid = Solid(
+    sum_table_transform_solid = SolidDefinition(
         name='sum_table_transform',
         inputs=[sum_table_input],
         transform_fn=_create_templated_sql_transform_with_output(sql, 'sum_table'),
@@ -109,7 +109,7 @@ def test_single_templated_sql_solid_double_table_raw_api():
         sources=[
             SourceDefinition(
                 source_type='TABLENAME',
-                source_fn=lambda arg_dict: arg_dict,
+                source_fn=lambda context, arg_dict: arg_dict,
                 argument_def_dict={
                     'name': dagster.core.types.STRING,
                 },
@@ -122,7 +122,7 @@ def test_single_templated_sql_solid_double_table_raw_api():
         sources=[
             SourceDefinition(
                 source_type='TABLENAME',
-                source_fn=lambda arg_dict: arg_dict,
+                source_fn=lambda context, arg_dict: arg_dict,
                 argument_def_dict={
                     'name': dagster.core.types.STRING,
                 },
@@ -130,7 +130,7 @@ def test_single_templated_sql_solid_double_table_raw_api():
         ]
     )
 
-    sum_solid = Solid(
+    sum_solid = SolidDefinition(
         name='sum_solid',
         inputs=[sum_table_input, num_table_input],
         transform_fn=_create_templated_sql_transform_with_output(
@@ -396,6 +396,6 @@ def create_multi_input_pipeline():
 def test_jinja():
     templated_sql = '''SELECT * FROM {{some_table.name}}'''
 
-    sql = _render_template_string(templated_sql, some_table={'name': 'fill_me_in'})
+    sql = _render_template_string(templated_sql, args={'some_table': {'name': 'fill_me_in'}})
 
     assert sql == '''SELECT * FROM fill_me_in'''

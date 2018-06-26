@@ -3,3 +3,5 @@ pipelines:
     fn: define_pipeline
   - module: dagster.dagster_examples.sql_hello_world.pipeline
     fn: define_pipeline
+  - module: dagster.dagster_examples.sql_project_example.pipelines
+    fn: define_full_pipeline

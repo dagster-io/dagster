@@ -16,7 +16,8 @@ def create_test_context():
 def test_hello_world_no_library_support():
     csv_input = dagster_pd.dataframe_input('num_csv', sources=[dagster_pd.csv_dataframe_source()])
 
-    def transform_fn(num_csv):
+    def transform_fn(context, args):
+        num_csv = args['num_csv']
         num_csv['sum'] = num_csv['num1'] + num_csv['num2']
         return num_csv
 
@@ -62,7 +63,8 @@ def test_hello_world_with_tables():
         'num_csv', sources=[dagster_pd.table_dataframe_source()]
     )
 
-    def transform_fn(num_csv):
+    def transform_fn(context, args):
+        num_csv = args['num_csv']
         num_csv['sum'] = num_csv['num1'] + num_csv['num2']
         return num_csv
 

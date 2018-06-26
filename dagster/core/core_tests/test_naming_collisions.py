@@ -2,7 +2,7 @@ import dagster
 from dagster import config
 
 from dagster.core.definitions import (
-    Solid, InputDefinition, SourceDefinition, create_no_materialization_output
+    SolidDefinition, InputDefinition, SourceDefinition, create_no_materialization_output
 )
 
 from dagster.core.execution import (DagsterExecutionContext, execute_single_solid)
@@ -11,7 +11,7 @@ from dagster.core import types
 
 
 def test_execute_solid_with_input_same_name():
-    solid = Solid(
+    solid = SolidDefinition(
         'a_thing',
         inputs=[
             InputDefinition(
@@ -19,13 +19,13 @@ def test_execute_solid_with_input_same_name():
                 sources=[
                     SourceDefinition(
                         source_type='a_source_type',
-                        source_fn=lambda arg_dict: arg_dict['an_arg'],
+                        source_fn=lambda context, arg_dict: arg_dict['an_arg'],
                         argument_def_dict={'an_arg': types.STRING},
                     ),
                 ],
             ),
         ],
-        transform_fn=lambda a_thing: a_thing + a_thing,
+        transform_fn=lambda context, args: args['a_thing'] + args['a_thing'],
         output=create_no_materialization_output(),
     )
 
@@ -34,8 +34,7 @@ def test_execute_solid_with_input_same_name():
         solid,
         environment=config.Environment(
             input_sources=[
-                config.
-                Input(input_name='a_thing', source='a_source_type', args={'an_arg': 'foo'})
+                config.Input(input_name='a_thing', source='a_source_type', args={'an_arg': 'foo'})
             ]
         )
     )
@@ -45,7 +44,7 @@ def test_execute_solid_with_input_same_name():
 
 
 def test_execute_dep_solid_different_input_name():
-    first_solid = Solid(
+    first_solid = SolidDefinition(
         'first_solid',
         inputs=[
             InputDefinition(
@@ -53,17 +52,17 @@ def test_execute_dep_solid_different_input_name():
                 sources=[
                     SourceDefinition(
                         source_type='a_source_type',
-                        source_fn=lambda arg_dict: arg_dict['an_arg'],
+                        source_fn=lambda context, arg_dict: arg_dict['an_arg'],
                         argument_def_dict={'an_arg': types.STRING},
                     ),
                 ],
             ),
         ],
-        transform_fn=lambda a_thing: a_thing + a_thing,
+        transform_fn=lambda context, args: args['a_thing'] + args['a_thing'],
         output=create_no_materialization_output(),
     )
 
-    second_solid = Solid(
+    second_solid = SolidDefinition(
         'second_solid',
         inputs=[
             InputDefinition(
@@ -72,7 +71,7 @@ def test_execute_dep_solid_different_input_name():
                 depends_on=first_solid,
             ),
         ],
-        transform_fn=lambda a_dependency: a_dependency + a_dependency,
+        transform_fn=lambda context, args: args['a_dependency'] + args['a_dependency'],
         output=create_no_materialization_output(),
     )
 
@@ -82,8 +81,7 @@ def test_execute_dep_solid_different_input_name():
         pipeline,
         environment=config.Environment(
             input_sources=[
-                config.
-                Input(input_name='a_thing', source='a_source_type', args={'an_arg': 'bar'})
+                config.Input(input_name='a_thing', source='a_source_type', args={'an_arg': 'bar'})
             ]
         )
     )
@@ -105,7 +103,7 @@ def test_execute_dep_solid_same_input_name():
         's2_t2_source': False,
     }
 
-    table_one = Solid(
+    table_one = SolidDefinition(
         'table_one',
         inputs=[
             InputDefinition(
@@ -113,17 +111,18 @@ def test_execute_dep_solid_same_input_name():
                 sources=[
                     SourceDefinition(
                         source_type='TABLE',
-                        source_fn=lambda arg_dict: s_fn(arg_dict, executed, 's1_t1_source'),
+                        source_fn=
+                        lambda context, arg_dict: s_fn(arg_dict, executed, 's1_t1_source'),
                         argument_def_dict={'name': types.STRING},
                     ),
                 ],
             ),
         ],
-        transform_fn=lambda table_one: table_one,
+        transform_fn=lambda context, args: args['table_one'],
         output=create_no_materialization_output(),
     )
 
-    table_two = Solid(
+    table_two = SolidDefinition(
         'table_two',
         inputs=[
             InputDefinition(
@@ -131,7 +130,8 @@ def test_execute_dep_solid_same_input_name():
                 sources=[
                     SourceDefinition(
                         source_type='TABLE',
-                        source_fn=lambda arg_dict: s_fn(arg_dict, executed, 's2_t1_source'),
+                        source_fn=
+                        lambda context, arg_dict: s_fn(arg_dict, executed, 's2_t1_source'),
                         argument_def_dict={'name': types.STRING},
                     ),
                 ],
@@ -142,13 +142,14 @@ def test_execute_dep_solid_same_input_name():
                 sources=[
                     SourceDefinition(
                         source_type='TABLE',
-                        source_fn=lambda arg_dict: s_fn(arg_dict, executed, 's2_t2_source'),
+                        source_fn=
+                        lambda context, arg_dict: s_fn(arg_dict, executed, 's2_t2_source'),
                         argument_def_dict={'name': types.STRING},
                     ),
                 ],
             ),
         ],
-        transform_fn=lambda table_one, table_two: table_two,
+        transform_fn=lambda context, args: args['table_two'],
         output=create_no_materialization_output(),
     )
 
