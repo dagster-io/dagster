@@ -6,6 +6,9 @@ from dagster.core.definitions import (
     SolidDefinition, create_dagster_single_file_input, InputDefinition, create_single_source_input,
     MaterializationDefinition, OutputDefinition, SourceDefinition
 )
+from dagster.core.errors import (
+    DagsterUserCodeExecutionError, DagsterInvariantViolationError, DagsterInvalidDefinitionError
+)
 from dagster.core.execution import DagsterExecutionContext
 
 from dagster.core import types
@@ -62,6 +65,14 @@ def table_dataframe_source(**read_table_kwargs):
     )
 
 
+def _dataframe_input_callback(context, result):
+    if not isinstance(result, pd.DataFrame):
+        raise DagsterInvariantViolationError(
+            f'Input source of dataframe solid ' + \
+            f"did not return a dataframe. Got '{repr(result)}'"
+        )
+
+
 def dataframe_dependency(solid, name=None, sources=None):
     check.inst_param(solid, 'solid', SolidDefinition)
 
@@ -74,11 +85,24 @@ def dataframe_dependency(solid, name=None, sources=None):
     return InputDefinition(name=name, sources=sources, depends_on=solid)
 
 
-def dataframe_input(name, sources=None):
+def dataframe_input(name, sources=None, depends_on=None, expectations=None, input_callback=None):
+    check.opt_inst_param(depends_on, 'depends_on', SolidDefinition)
+
     if sources is None:
         sources = [parquet_dataframe_source(), csv_dataframe_source(), table_dataframe_source()]
 
-    return InputDefinition(name=name, sources=sources)
+    def callback(context, output):
+        _dataframe_input_callback(context, output)
+        if input_callback:
+            input_callback(context, output)
+
+    return InputDefinition(
+        name=name,
+        sources=sources,
+        depends_on=depends_on,
+        input_callback=callback,
+        expectations=expectations
+    )
 
 
 def dataframe_csv_materialization():
@@ -110,4 +134,29 @@ def dataframe_parquet_materialization():
         materialization_type='PARQUET',
         materialization_fn=to_parquet_fn,
         argument_def_dict={'path': types.PATH}
+    )
+
+
+def _dataframe_output_callback(context, result):
+    if not isinstance(result, pd.DataFrame):
+        raise DagsterInvariantViolationError(
+            f'Trasform of dataframe solid ' + \
+            f"did not return a dataframe. Got '{repr(result)}'"
+        )
+    context.metric('rows', result.shape[0])
+
+
+def dataframe_output(materializations=None, expectations=[], output_callback=None):
+    if materializations is None:
+        materializations = [dataframe_csv_materialization(), dataframe_parquet_materialization()]
+
+    def callback(context, output):
+        _dataframe_output_callback(context, output)
+        if output_callback:
+            output_callback(context, output)
+
+    return OutputDefinition(
+        materializations=materializations,
+        expectations=expectations,
+        output_callback=callback,
     )

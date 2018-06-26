@@ -68,8 +68,7 @@ class DagsterExecutionContext:
         return str_val
 
     def _kv_message(self, extra=None):
-        if extra is None:
-            extra = {}
+        extra = check.opt_dict_param(extra, 'extra')
         return ' '.join(
             [
                 '{key}={value}'.format(key=key, value=self._maybe_quote(value))
@@ -530,6 +529,9 @@ def _pipeline_solid_in_memory(context, solid, transform_values_dict):
         )
         return transformed_value
 
+    if solid.output.output_callback:
+        solid.output.output_callback(context, transformed_value)
+
     output_expectation_failures = []
     for output_expectation_def in solid.output.expectations:
         output_expectation_result = _execute_output_expectation(
@@ -760,6 +762,9 @@ def _gather_input_values(context, solid, input_args, intermediate_values):
                     context, source_def, input_args.args_for_input(input_def.name)
                 )
                 input_values[input_def.name] = new_value
+
+            if input_def.input_callback:
+                input_def.input_callback(context, input_values[input_def.name])
     return input_values
 
 

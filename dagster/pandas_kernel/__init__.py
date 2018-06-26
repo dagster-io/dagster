@@ -20,43 +20,13 @@ from .definitions import (
     table_dataframe_source,
     dataframe_parquet_materialization,
     dataframe_csv_materialization,
+    dataframe_output,
 )
 
 
-def _default_passthrough_transform(context, arguments):
+def _default_passthrough_transform(_context, arguments):
+    check.invariant(len(arguments) == 1)
     return list(arguments.values())[0]
-
-
-def _post_process_transform(context, df):
-    check.inst_param(context, 'context', DagsterExecutionContext)
-    check.inst_param(df, 'df', pd.DataFrame)
-
-    context.metric('rows', df.shape[0])
-
-
-def _check_transform_output(df):
-    if not isinstance(df, pd.DataFrame):
-        return ExpectationResult(
-          success=False,
-          message=f'Transform function of dataframe solid ' + \
-            f"did not return a dataframe. Got '{repr(df)}'"
-
-        )
-    else:
-        return ExpectationResult(success=True)
-
-
-def dataframe_output_expectation():
-    return ExpectationDefinition(name='DataframeOutput', expectation_fn=_check_transform_output)
-
-
-def dataframe_output(materializations=None):
-    if materializations is None:
-        materializations = [dataframe_csv_materialization(), dataframe_parquet_materialization()]
-
-    return OutputDefinition(
-        materializations=materializations, expectations=[dataframe_output_expectation()]
-    )
 
 
 def dataframe_solid(*args, name, inputs, transform_fn=None, materializations=None, **kwargs):

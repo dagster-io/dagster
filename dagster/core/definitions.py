@@ -134,15 +134,18 @@ class InputDefinition:
 
     - depends_on: (Optional). This input depends on another solid in the context of a
     a pipeline.
+
+    - input_callback: (Optional) Called on the source result. Gets execution context and result. Can be used to validate the result, log stats etc.
     '''
 
-    def __init__(self, name, sources, depends_on=None, expectations=None):
+    def __init__(self, name, sources, depends_on=None, expectations=None, input_callback=None):
         self.name = check_valid_name(name)
         self.sources = check.list_param(sources, 'sources', of_type=SourceDefinition)
         self.depends_on = check.opt_inst_param(depends_on, 'depends_on', SolidDefinition)
         self.expectations = check.opt_list_param(
             expectations, 'expectations', of_type=ExpectationDefinition
         )
+        self.input_callback = check.opt_callable_param(input_callback, 'input_callback')
 
     @property
     def is_external(self):
@@ -228,13 +231,14 @@ def create_single_materialization_output(
 
 class OutputDefinition:
     # runtime type info
-    def __init__(self, materializations=None, expectations=None):
+    def __init__(self, materializations=None, expectations=None, output_callback=None):
         self.materializations = check.opt_list_param(
             materializations, 'materializations', of_type=MaterializationDefinition
         )
         self.expectations = check.opt_list_param(
             expectations, 'expectations', of_type=ExpectationDefinition
         )
+        self.output_callback = check.opt_callable_param(output_callback, 'output_callback')
 
     def materialization_of_type(self, materialization_type):
         for materialization in self.materializations:

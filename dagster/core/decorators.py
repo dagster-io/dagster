@@ -1,5 +1,10 @@
 import inspect
-from .definitions import SolidDefinition, SourceDefinition, MaterializationDefinition, create_no_materialization_output, DagsterInvalidDefinitionError
+from functools import wraps
+from dagster import check
+from .definitions import (
+    SolidDefinition, SourceDefinition, InputDefinition, OutputDefinition, MaterializationDefinition,
+    create_no_materialization_output, DagsterInvalidDefinitionError
+)
 
 
 def with_context(fn):
@@ -17,14 +22,12 @@ class WithContext:
         return True
 
 
-class solid:
+class Solid:
     def __init__(self, name=None, inputs=None, output=None):
-        self.name = name
+        self.name = check.opt_str_param(name, 'name')
+        self.inputs = check.opt_list_param(inputs, 'inputs', InputDefinition)
 
-        if not inputs:
-            inputs = []
-        self.inputs = inputs
-
+        check.opt_inst_param(output, 'output', OutputDefinition)
         if not output:
             output = create_no_materialization_output()
         self.output = output
@@ -42,11 +45,14 @@ class solid:
         )
 
 
+def solid(*, name=None, inputs=None, output=None):
+    return Solid(name=name, inputs=inputs, output=output)
+
+
 def _create_transform_wrapper(fn, inputs, include_context=False):
     input_names = [input.name for input in inputs]
 
-    # check signature
-
+    @wraps(fn)
     def transform(context, args):
         kwargs = {}
         for input_name in input_names:
@@ -74,7 +80,7 @@ def validate_transform_fn(solid_name, transform_fn, inputs, expect_context=False
                 f"solid '{solid_name}' transform function has positional vararg parameter '{param.name}'. Transform functions should only have keyword arguments that match input names and optionally a first positional parameter named 'context'."
             )
         else:
-            if param.name == 'context' and expect_context:
+            if param.name in ('context', 'context_', '_context') and expect_context:
                 pass
             elif param.name not in input_names:
                 raise DagsterInvalidDefinitionError(
@@ -91,16 +97,17 @@ def validate_transform_fn(solid_name, transform_fn, inputs, expect_context=False
         )
 
 
-class source:
+class Source:
     def __init__(self, name=None, argument_def_dict=None):
-        self.source_type = name
-        self.argument_def_dict = argument_def_dict
+        self.source_type = check.str_param(name, 'name')
+        self.argument_def_dict = check.opt_dict_param(argument_def_dict, 'argument_def_dict')
 
     def __call__(self, fn):
         include_context = getattr(fn, 'has_context', False)
         if include_context:
             fn = fn.fn
 
+        @wraps(fn)
         def source_fn(context, arg_dict):
             if include_context:
                 return fn(context, arg_dict)
@@ -114,19 +121,21 @@ class source:
         )
 
 
-class materialization:
+def source(*, name=None, argument_def_dict=None):
+    return Source(name=name, argument_def_dict=argument_def_dict)
+
+
+class Materialization:
     def __init__(self, name=None, argument_def_dict=None):
-        self.materialization_type = name
-        if argument_def_dict is None:
-            self.argument_def_dict = {}
-        else:
-            self.argument_def_dict = argument_def_dict
+        self.materialization_type = check.str_param(name, 'name')
+        self.argument_def_dict = check.opt_dict_param(argument_def_dict, 'argument_def_dict')
 
     def __call__(self, fn):
         include_context = getattr(fn, 'has_context', False)
         if include_context:
             fn = fn.fn
 
+        @wraps(fn)
         def materialization_fn(context, arg_dict, data):
             if include_context:
                 return fn(context, arg_dict, data)
@@ -138,3 +147,7 @@ class materialization:
             materialization_fn=materialization_fn,
             argument_def_dict=self.argument_def_dict
         )
+
+
+def materialization(*, name=None, argument_def_dict=None):
+    return Materialization(name=name, argument_def_dict=argument_def_dict)
