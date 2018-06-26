@@ -36,7 +36,7 @@ def test_wrong_output_value():
 
 def test_wrong_input_value():
     @source(name="WRONG")
-    def wrong_source(arg_dict):
+    def wrong_source():
         return 'not a dataframe'
 
     input = InputDefinition(name="foo", sources=[wrong_source])
