@@ -1,5 +1,5 @@
 import dagster.core
-from dagster.core.decorators import solid
+from dagster.core.decorators import solid, with_context
 import dagster.pandas_kernel as dagster_pd
 
 
@@ -24,7 +24,9 @@ def sum_sq_solid(sum):
 
 
 @solid(inputs=[dagster_pd.dataframe_dependency(sum_sq_solid)], output=dagster_pd.dataframe_output())
-def always_fails_solid(**_kwargs):
+@with_context
+def always_fails_solid(context, **_kwargs):
+    context.info(str(context.environment))
     raise Exception('I am a programmer and I make error')
 
 
@@ -36,3 +38,9 @@ def define_pipeline():
             always_fails_solid,
         ]
     )
+
+
+def get_environment(config):
+    return {
+        'foo': config.get('foo', 'bogus'),
+    }

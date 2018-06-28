@@ -12,7 +12,7 @@ from .math_test_db import in_mem_context
 
 
 def _load_table(context, table_name):
-    return context.engine.connect().execute(f'SELECT * FROM {table_name}').fetchall()
+    return context.environment['engine'].connect().execute(f'SELECT * FROM {table_name}').fetchall()
 
 
 def table_source(name):

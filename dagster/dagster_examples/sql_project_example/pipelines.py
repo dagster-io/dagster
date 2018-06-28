@@ -2,6 +2,7 @@ import os
 import dagster
 from dagster import check
 import dagster.sqlalchemy_kernel as dagster_sa
+import sqlalchemy as sa
 
 
 def _get_sql_script_path(name):
@@ -93,3 +94,11 @@ def define_setup_pipeline():
             populate_num_table_solid,
         ],
     )
+
+
+def get_environment(config):
+    connection_string = config.get('connection_string', 'sqlite://')
+    engine = sa.create_engine(connection_string)
+    return {
+        'engine': engine,
+    }

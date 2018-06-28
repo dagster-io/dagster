@@ -19,7 +19,9 @@ def define_config_class():
 
             pipeline_configs = [
                 PipelineConfig(
-                    module=check.str_elem(entry, 'module'), fn=check.str_elem(entry, 'fn')
+                    module=check.str_elem(entry, 'module'),
+                    fn=check.str_elem(entry, 'fn'),
+                    env_fn=check.opt_str_elem(entry, 'env_fn')
                 ) for entry in check.list_elem(config, 'pipelines')
             ]
 
@@ -52,17 +54,22 @@ Config = define_config_class()
 
 def define_pipeline_config_class():
     class _PipelineConfig:
-        def __init__(self, module, fn):
+        def __init__(self, module, fn, env_fn):
             self.module_name = module
             self.fn_name = fn
+            self.env_fn_name = env_fn
             self.module = None
             self.fn = None
+            self.env_fn = None
             self.pipeline = None
 
         def create_pipeline(self):
             self.module = importlib.import_module(self.module_name)
             self.fn = getattr(self.module, self.fn_name)
             check.is_callable(self.fn)
+            if self.env_fn_name:
+                self.env_fn = getattr(self.module, self.env_fn_name)
+                check.is_callable(self.env_fn)
             self.pipeline = self.fn()
             return self.pipeline
 
