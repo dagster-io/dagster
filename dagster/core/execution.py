@@ -56,10 +56,11 @@ class DagsterExecutionContext:
     reporting.
     '''
 
-    def __init__(self, loggers=None, log_level=ERROR):
+    def __init__(self, loggers=None, log_level=ERROR, environment=None):
         self._logger = CompositeLogger(loggers=loggers, level=log_level)
         self._context_dict = OrderedDict()
         self._metrics = []
+        self.environment = check.opt_dict_param(environment, 'environment')
 
     def _maybe_quote(self, val):
         str_val = str(val)

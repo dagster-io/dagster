@@ -1,4 +1,5 @@
 import sqlalchemy as sa
+from dagster.core.execution import DagsterExecutionContext
 import dagster.sqlalchemy_kernel as dagster_sa
 
 
@@ -27,4 +28,4 @@ def in_mem_engine(num_table_name='num_table'):
 
 
 def in_mem_context(num_table_name='num_table'):
-    return dagster_sa.DagsterSqlAlchemyExecutionContext(engine=in_mem_engine(num_table_name))
+    return DagsterExecutionContext(environment={'engine': in_mem_engine(num_table_name, )})

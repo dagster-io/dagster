@@ -165,7 +165,7 @@ def execute_command(pipeline_config, env, from_solid, log_level):
         input_sources=[
             dagster_config.Input(input_name=s['input_name'], args=s['args'], source=s['source'])
             for s in check.list_elem(env_config['environment'], 'inputs')
-        ]
+        ],
     )
 
     materializations = []
@@ -176,7 +176,15 @@ def execute_command(pipeline_config, env, from_solid, log_level):
             ) for m in check.list_elem(env_config, 'materializations')
         ]
 
-    context = DagsterExecutionContext(loggers=[define_logger('dagster')], log_level=log_level)
+    config = check.opt_dict_param(env_config['environment'].get('config'), 'config')
+    if pipeline_config.env_fn:
+        dagster_env = pipeline_config.env_fn(config)
+    else:
+        dagster_env = config
+
+    context = DagsterExecutionContext(
+        loggers=[define_logger('dagster')], log_level=log_level, environment=dagster_env
+    )
 
     pipeline_iter = materialize_pipeline_iterator(
         context,

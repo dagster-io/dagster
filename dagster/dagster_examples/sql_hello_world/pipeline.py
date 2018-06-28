@@ -48,3 +48,12 @@ def define_pipeline():
     return dagster.core.pipeline(
         name='sql_hello_world', solids=[sum_table_solid, sum_sq_table_solid]
     )
+
+
+def get_environment(config):
+    connection_string = config.get('connection_string', 'sqlite://')
+    engine = sa.create_engine(connection_string)
+    create_num_table(engine)
+    return {
+        'engine': engine,
+    }

@@ -13,7 +13,7 @@ def in_mem_engine():
 
 
 def in_mem_context():
-    return dagster_sa.DagsterSqlAlchemyExecutionContext(engine=in_mem_engine())
+    return dagster.core.execution.DagsterExecutionContext(environment={'engine': in_mem_engine()})
 
 
 def _get_sql_script_path(name):
@@ -35,7 +35,9 @@ def test_sql_create_tables():
     )
     assert pipeline_result.success
 
-    assert set(context.engine.table_names()) == set(['num_table', 'sum_sq_table', 'sum_table'])
+    assert set(context.environment['engine'].table_names()) == set(
+        ['num_table', 'sum_sq_table', 'sum_table']
+    )
 
 
 def test_sql_populate_tables():
@@ -54,7 +56,9 @@ def test_sql_populate_tables():
 
     assert pipeline_result.success
 
-    assert context.engine.execute('SELECT * FROM num_table').fetchall() == [(1, 2), (3, 4)]
+    assert context.environment['engine'].execute('SELECT * FROM num_table').fetchall() == [
+        (1, 2), (3, 4)
+    ]
 
 
 def create_full_pipeline():
@@ -94,9 +98,13 @@ def test_full_in_memory_pipeline():
     )
     assert pipeline_result.success
 
-    assert context.engine.execute('SELECT * FROM num_table').fetchall() == [(1, 2), (3, 4)]
-    assert context.engine.execute('SELECT * FROM sum_table').fetchall() == [(1, 2, 3), (3, 4, 7)]
-    assert context.engine.execute('SELECT * FROM sum_sq_table').fetchall() == [
+    assert context.environment['engine'].execute('SELECT * FROM num_table').fetchall() == [
+        (1, 2), (3, 4)
+    ]
+    assert context.environment['engine'].execute('SELECT * FROM sum_table').fetchall() == [
+        (1, 2, 3), (3, 4, 7)
+    ]
+    assert context.environment['engine'].execute('SELECT * FROM sum_sq_table').fetchall() == [
         (1, 2, 3, 9), (3, 4, 7, 49)
     ]
 
@@ -104,7 +112,7 @@ def test_full_in_memory_pipeline():
 def test_full_persisted_pipeline():
     full_path = script_relative_path('testdb.db')
     engine = sa.create_engine(f'sqlite:///{full_path}', echo=True)
-    context = dagster_sa.DagsterSqlAlchemyExecutionContext(engine=engine)
+    context = dagster.core.execution.DagsterExecutionContext(environment={'engine': engine})
 
     pipeline = create_full_pipeline()
     pipeline_result = dagster.execute_pipeline(
