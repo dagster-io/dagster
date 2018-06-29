@@ -535,7 +535,7 @@ would have to be changed.
     )
 
 Expectations
-~~~~~~~~~~~~
+------------
 
 Expectations are another reason to introduce logical seams between data
 computations. They are a way to perform data quality tests or
