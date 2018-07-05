@@ -14,12 +14,11 @@ def sum_solid(num):
 
 
 @solid(
-    inputs=[dagster_pd.dataframe_dependency(name="sum", solid=sum_solid)],
-    output=dagster_pd.dataframe_output()
+    inputs=[dagster_pd.dataframe_dependency(solid=sum_solid)], output=dagster_pd.dataframe_output()
 )
-def sum_sq_solid(sum):
-    sum_sq = sum.copy()
-    sum_sq['sum_sq'] = sum['sum']**2
+def sum_sq_solid(sum_solid):
+    sum_sq = sum_solid.copy()
+    sum_sq['sum_sq'] = sum_solid['sum']**2
     return sum_sq
 
 
