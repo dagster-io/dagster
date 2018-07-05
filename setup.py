@@ -15,7 +15,7 @@ with open(os.path.join(here, "README.rst"), "r") as fh:
 
 setup(
     name='dagster',
-    version="1.0.0-rc.1",
+    version="0.1.1",
     author="Elementl",
     author_email="schrockn@elementl.com",
     license='Apache-2.0',
