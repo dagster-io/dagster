@@ -188,12 +188,21 @@ def sum_table(num_csv):
     inputs=[dagster_pd.dataframe_dependency(sum_table)],
     output=dagster_pd.dataframe_output(),
 )
-def mult_table(sum_table):
+def sum_sq_table(sum_table):
     sum_table['sum_squared'] = sum_table['sum'] * sum_table['sum']
     return sum_table
 
 
-def create_mult_table(sum_table_solid):
+@solid(
+    inputs=[dagster_pd.dataframe_dependency(name='sum_table_renamed', solid=sum_table)],
+    output=dagster_pd.dataframe_output(),
+)
+def sum_sq_table_renamed_input(sum_table_renamed):
+    sum_table_renamed['sum_squared'] = sum_table_renamed['sum'] * sum_table_renamed['sum']
+    return sum_table_renamed
+
+
+def create_sum_sq_table(sum_table_solid):
     def transform(_context, args):
         sum_table = args['sum_table']
         sum_table['sum_squared'] = sum_table['sum'] * sum_table['sum']
@@ -229,7 +238,7 @@ def test_pandas_csv_in_memory():
 
 def test_two_step_pipeline_in_memory():
     sum_table_solid = create_sum_table()
-    mult_table_solid = create_mult_table(sum_table_solid)
+    mult_table_solid = create_sum_sq_table(sum_table_solid)
     context = create_test_context()
     df = get_solid_transformed_value(context, sum_table_solid, get_num_csv_environment())
     mult_df = _pipeline_solid_in_memory(context, mult_table_solid, {'sum_table': df})
@@ -244,7 +253,7 @@ def test_two_step_pipeline_in_memory():
 def test_two_step_pipeline_in_memory_decorator_style():
     context = create_test_context()
     df = get_solid_transformed_value(context, sum_table, get_num_csv_environment())
-    mult_df = _pipeline_solid_in_memory(context, mult_table, {'sum_table': df})
+    mult_df = _pipeline_solid_in_memory(context, sum_sq_table, {'sum_table': df})
     assert mult_df.to_dict('list') == {
         'num1': [1, 3],
         'num2': [2, 4],
@@ -656,3 +665,20 @@ def test_pandas_multiple_outputs():
             'mult': [2, 12],
             'sum_mult': [6, 84],
         }
+
+
+def test_rename_input():
+    result = execute_pipeline(
+        create_test_context(),
+        dagster.pipeline(solids=[sum_table, sum_sq_table_renamed_input]),
+        environment=get_num_csv_environment(),
+    )
+
+    assert result.success
+
+    assert result.result_named('sum_sq_table_renamed_input').transformed_value.to_dict('list') == {
+        'num1': [1, 3],
+        'num2': [2, 4],
+        'sum': [3, 7],
+        'sum_squared': [9, 49],
+    }

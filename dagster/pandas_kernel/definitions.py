@@ -3,8 +3,8 @@ import pandas as pd
 from dagster import check
 
 from dagster.core.definitions import (
-    SolidDefinition, create_dagster_single_file_input, InputDefinition, create_single_source_input,
-    MaterializationDefinition, OutputDefinition, SourceDefinition
+    SolidDefinition, InputDefinition, create_single_source_input, MaterializationDefinition,
+    OutputDefinition, SourceDefinition
 )
 from dagster.core.errors import (
     DagsterUserCodeExecutionError, DagsterInvariantViolationError, DagsterInvalidDefinitionError

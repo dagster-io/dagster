@@ -1,5 +1,3 @@
-import pandas as pd
-
 import dagster
 
 from dagster.core.execution import execute_pipeline
