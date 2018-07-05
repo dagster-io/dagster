@@ -3,12 +3,14 @@ import pandas as pd
 from dagster import check
 
 from dagster.core.definitions import (
-    SolidDefinition, InputDefinition, create_single_source_input, MaterializationDefinition,
-    OutputDefinition, SourceDefinition
+    SolidDefinition,
+    InputDefinition,
+    MaterializationDefinition,
+    OutputDefinition,
+    SourceDefinition,
 )
-from dagster.core.errors import (
-    DagsterUserCodeExecutionError, DagsterInvariantViolationError, DagsterInvalidDefinitionError
-)
+from dagster.core.errors import DagsterInvariantViolationError
+
 from dagster.core.execution import DagsterExecutionContext
 
 from dagster.core import types
@@ -65,7 +67,7 @@ def table_dataframe_source(**read_table_kwargs):
     )
 
 
-def _dataframe_input_callback(context, result):
+def _dataframe_input_callback(_context, result):
     if not isinstance(result, pd.DataFrame):
         raise DagsterInvariantViolationError(
             f'Input source of dataframe solid ' + \

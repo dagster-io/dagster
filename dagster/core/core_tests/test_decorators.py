@@ -2,12 +2,23 @@ import pytest
 from dagster import config
 from dagster import check
 from dagster.core import types
-from dagster.core.definitions import OutputDefinition, InputDefinition, DagsterInvalidDefinitionError
+from dagster.core.definitions import (
+    OutputDefinition,
+    InputDefinition,
+    DagsterInvalidDefinitionError,
+)
 from dagster.core.decorators import solid, source, materialization, with_context
 from dagster.core.execution import (
-    output_single_solid, execute_single_solid, DagsterExecutionContext,
-    create_single_solid_env_from_arg_dicts
+    output_single_solid,
+    execute_single_solid,
+    DagsterExecutionContext,
+    create_single_solid_env_from_arg_dicts,
 )
+
+# This file tests a lot of parameter name stuff
+# So these warnings are spurious
+# unused variables, unused arguments
+# pylint: disable=W0612, W0613
 
 
 def create_test_context():
@@ -64,7 +75,7 @@ def test_solid_with_name():
 def test_solid_with_context():
     @solid(name="foobar")
     @with_context
-    def hello_world(context):
+    def hello_world(_context):
         return {'foo': 'bar'}
 
     result = execute_single_solid(
@@ -83,9 +94,9 @@ def test_solid_with_input():
     def test_source(foo):
         return {'foo': foo}
 
-    @solid(inputs=[InputDefinition(name="i", sources=[test_source])])
-    def hello_world(i):
-        return i
+    @solid(inputs=[InputDefinition(name="foo_to_foo", sources=[test_source])])
+    def hello_world(foo_to_foo):
+        return foo_to_foo
 
     result = execute_single_solid(
         create_test_context(),
@@ -95,7 +106,7 @@ def test_solid_with_input():
                 'environment': {
                     'inputs': [
                         {
-                            'input_name': 'i',
+                            'input_name': 'foo_to_foo',
                             'source': 'TEST',
                             'args': {
                                 'foo': 'bar',
@@ -115,7 +126,7 @@ def test_solid_with_input():
 def test_sources():
     @source(name="WITH_CONTEXT", argument_def_dict={'foo': types.STRING})
     @with_context
-    def context_source(context, foo):
+    def context_source(_context, foo):
         return {'foo': foo}
 
     @source(name="NO_CONTEXT", argument_def_dict={'foo': types.STRING})
@@ -180,7 +191,7 @@ def test_materializations():
 
     @materialization(name="CONTEXT", argument_def_dict={'foo': types.STRING})
     @with_context
-    def materialization_with_context(context, data, foo):
+    def materialization_with_context(_context, data, foo):
         test_output['test'] = data
 
     @materialization(name="NO_CONTEXT", argument_def_dict={'foo': types.STRING})
@@ -229,7 +240,7 @@ def test_solid_definition_errors():
             inputs=[InputDefinition(name="foo", sources=[test_source])], output=OutputDefinition()
         )
         @with_context
-        def vargs(context, foo, *args):
+        def vargs(_context, foo, *args):
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError):
@@ -266,7 +277,7 @@ def test_solid_definition_errors():
         @solid(
             inputs=[InputDefinition(name="foo", sources=[test_source])], output=OutputDefinition()
         )
-        def yes_context(context, foo):
+        def yes_context(_context, foo):
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError):

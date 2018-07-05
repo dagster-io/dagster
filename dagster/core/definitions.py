@@ -1,10 +1,8 @@
 import keyword
 import re
-import inspect
 
 from dagster import check
 from dagster.core import types
-from dagster.utils import make_context_arg_optional
 
 from .errors import DagsterInvalidDefinitionError
 
@@ -135,7 +133,8 @@ class InputDefinition:
     - depends_on: (Optional). This input depends on another solid in the context of a
     a pipeline.
 
-    - input_callback: (Optional) Called on the source result. Gets execution context and result. Can be used to validate the result, log stats etc.
+    - input_callback: (Optional) Called on the source result. Gets execution context and result.
+    Can be used to validate the result, log stats etc.
     '''
 
     def __init__(self, name, sources, depends_on=None, expectations=None, input_callback=None):

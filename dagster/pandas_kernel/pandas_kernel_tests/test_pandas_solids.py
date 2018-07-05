@@ -1,5 +1,4 @@
 import os
-import pytest
 
 import pandas as pd
 
@@ -8,6 +7,7 @@ from dagster import config
 import dagster.core
 from dagster.core import types
 from dagster.core.definitions import (SolidDefinition, create_single_materialization_output)
+from dagster.core.decorators import solid
 from dagster.core.execution import (
     DagsterExecutionContext,
     execute_pipeline_through_solid,
@@ -157,11 +157,8 @@ def execute_transform_in_temp_csv_files(solid):
     return output_df
 
 
-from dagster.core.decorators import solid
-
-
 def create_sum_table():
-    def transform(context_, args):
+    def transform(_context, args):
         num_csv = args['num_csv']
         check.inst_param(num_csv, 'num_csv', pd.DataFrame)
         num_csv['sum'] = num_csv['num1'] + num_csv['num2']

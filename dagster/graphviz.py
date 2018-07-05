@@ -14,7 +14,6 @@ def build_graphviz_graph(pipeline):
     graphviz_graph.attr('node', color='grey')
 
     for input_def in pipeline.external_inputs:
-        print(f'adding {input_def.name} to graph')
         graphviz_graph.node(input_def.name)
 
     for solid in pipeline.solids:
