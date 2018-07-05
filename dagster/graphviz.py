@@ -18,6 +18,9 @@ def build_graphviz_graph(pipeline):
 
     for solid in pipeline.solids:
         for input_def in solid.inputs:
-            graphviz_graph.edge(input_def.name, solid.name)
+            if input_def.depends_on:
+                graphviz_graph.edge(input_def.depends_on.name, solid.name)
+            else:
+                graphviz_graph.edge(input_def.name, solid.name)
 
     return graphviz_graph

@@ -4,8 +4,11 @@ import dagster
 from dagster import config
 from dagster.core import types
 from dagster.core.definitions import (
-    InputDefinition, MaterializationDefinition, OutputDefinition, SolidDefinition, SourceDefinition,
-    create_single_materialization_output, create_single_source_input
+    InputDefinition,
+    MaterializationDefinition,
+    OutputDefinition,
+    SolidDefinition,
+    SourceDefinition,
 )
 from dagster.core.execution import (
     DagsterExecutionContext, create_single_solid_env_from_arg_dicts, execute_pipeline,

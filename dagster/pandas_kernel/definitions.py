@@ -3,12 +3,14 @@ import pandas as pd
 from dagster import check
 
 from dagster.core.definitions import (
-    SolidDefinition, create_dagster_single_file_input, InputDefinition, create_single_source_input,
-    MaterializationDefinition, OutputDefinition, SourceDefinition
+    SolidDefinition,
+    InputDefinition,
+    MaterializationDefinition,
+    OutputDefinition,
+    SourceDefinition,
 )
-from dagster.core.errors import (
-    DagsterUserCodeExecutionError, DagsterInvariantViolationError, DagsterInvalidDefinitionError
-)
+from dagster.core.errors import DagsterInvariantViolationError
+
 from dagster.core.execution import DagsterExecutionContext
 
 from dagster.core import types
@@ -65,7 +67,7 @@ def table_dataframe_source(**read_table_kwargs):
     )
 
 
-def _dataframe_input_callback(context, result):
+def _dataframe_input_callback(_context, result):
     if not isinstance(result, pd.DataFrame):
         raise DagsterInvariantViolationError(
             f'Input source of dataframe solid ' + \
@@ -146,7 +148,7 @@ def _dataframe_output_callback(context, result):
     context.metric('rows', result.shape[0])
 
 
-def dataframe_output(materializations=None, expectations=[], output_callback=None):
+def dataframe_output(materializations=None, expectations=None, output_callback=None):
     if materializations is None:
         materializations = [dataframe_csv_materialization(), dataframe_parquet_materialization()]
 

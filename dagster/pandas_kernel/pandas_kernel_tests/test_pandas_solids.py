@@ -1,5 +1,4 @@
 import os
-import pytest
 
 import pandas as pd
 
@@ -8,22 +7,42 @@ from dagster import config
 import dagster.core
 from dagster.core import types
 from dagster.core.definitions import (SolidDefinition, create_single_materialization_output)
+from dagster.core.decorators import solid
 from dagster.core.execution import (
-    DagsterExecutionContext, execute_pipeline_through_solid, _read_source,
-    materialize_pipeline_iterator, output_single_solid, _pipeline_solid_in_memory,
-    materialize_pipeline, execute_pipeline, execute_single_solid,
-    create_single_solid_env_from_arg_dicts, create_pipeline_env_from_arg_dicts
+    DagsterExecutionContext,
+    execute_pipeline_through_solid,
+    _read_source,
+    materialize_pipeline_iterator,
+    output_single_solid,
+    _pipeline_solid_in_memory,
+    materialize_pipeline,
+    execute_pipeline,
+    execute_single_solid,
 )
 import dagster.pandas_kernel as dagster_pd
 from dagster.utils.test import (get_temp_file_name, get_temp_file_names, script_relative_path)
 from .utils import simple_csv_input
 
 
-def get_solid_tranformed_value(context, solid, input_arg_dicts):
+def get_solid_transformed_value(context, solid_inst, environment):
     execution_result = execute_single_solid(
-        context, solid, environment=create_single_solid_env_from_arg_dicts(solid, input_arg_dicts)
+        context,
+        solid_inst,
+        environment=environment,
     )
     return execution_result.transformed_value
+
+
+def get_num_csv_environment():
+    return config.Environment(
+        input_sources=[
+            config.Input(
+                input_name='num_csv',
+                args={'path': script_relative_path('num.csv')},
+                source='CSV',
+            ),
+        ],
+    )
 
 
 def create_test_context():
@@ -43,7 +62,7 @@ def test_pandas_input():
 def test_pandas_solid():
     csv_input = simple_csv_input('num_csv')
 
-    def transform(context, args):
+    def transform(_context, args):
         num_csv = args['num_csv']
         num_csv['sum'] = num_csv['num1'] + num_csv['num2']
         return num_csv
@@ -73,11 +92,7 @@ def test_pandas_solid():
     output_single_solid(
         create_test_context(),
         single_solid,
-        environment=create_single_solid_env_from_arg_dicts(
-            single_solid, {'num_csv': {
-                'path': script_relative_path('num.csv')
-            }}
-        ),
+        environment=get_num_csv_environment(),
         materialization_type='CUSTOM',
         arg_dict={},
     )
@@ -106,27 +121,31 @@ def test_pandas_csv_to_csv():
         argument_def_dict={'path': types.PATH}
     )
 
-    solid = SolidDefinition(
+    solid_def = SolidDefinition(
         name='sum_table',
         inputs=[csv_input],
         transform_fn=transform,
         output=csv_output_def,
     )
 
-    output_df = execute_transform_in_temp_file(solid)
+    output_df = execute_transform_in_temp_csv_files(solid_def)
 
     assert output_df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
 
 
-def execute_transform_in_temp_file(solid):
+def execute_transform_in_temp_csv_files(solid_inst):
     with get_temp_file_name() as temp_file_name:
         result = output_single_solid(
             create_test_context(),
-            solid,
-            environment=create_single_solid_env_from_arg_dicts(
-                solid, {'num_csv': {
-                    'path': script_relative_path('num.csv')
-                }}
+            solid_inst,
+            environment=config.Environment(
+                input_sources=[
+                    config.Input(
+                        input_name='num_csv',
+                        args={'path': script_relative_path('num.csv')},
+                        source='CSV',
+                    ),
+                ],
             ),
             materialization_type='CSV',
             arg_dict={'path': temp_file_name},
@@ -139,7 +158,7 @@ def execute_transform_in_temp_file(solid):
 
 
 def create_sum_table():
-    def transform(context, args):
+    def transform(_context, args):
         num_csv = args['num_csv']
         check.inst_param(num_csv, 'num_csv', pd.DataFrame)
         num_csv['sum'] = num_csv['num1'] + num_csv['num2']
@@ -152,11 +171,39 @@ def create_sum_table():
     )
 
 
-def create_mult_table(sum_table_solid):
-    def transform(context, args):
-        sum_table = args['sum_table']
-        sum_table['sum_squared'] = sum_table['sum'] * sum_table['sum']
-        return sum_table
+@solid(
+    inputs=[dagster_pd.dataframe_input('num_csv')],
+    output=dagster_pd.dataframe_output(),
+)
+def sum_table(num_csv):
+    check.inst_param(num_csv, 'num_csv', pd.DataFrame)
+    num_csv['sum'] = num_csv['num1'] + num_csv['num2']
+    return num_csv
+
+
+@solid(
+    inputs=[dagster_pd.dataframe_dependency(solid=sum_table, name='sum_df')],
+    output=dagster_pd.dataframe_output(),
+)
+def sum_sq_table(sum_df):
+    sum_df['sum_squared'] = sum_df['sum'] * sum_df['sum']
+    return sum_df
+
+
+@solid(
+    inputs=[dagster_pd.dataframe_dependency(name='sum_table_renamed', solid=sum_table)],
+    output=dagster_pd.dataframe_output(),
+)
+def sum_sq_table_renamed_input(sum_table_renamed):
+    sum_table_renamed['sum_squared'] = sum_table_renamed['sum'] * sum_table_renamed['sum']
+    return sum_table_renamed
+
+
+def create_sum_sq_table(sum_table_solid):
+    def transform(_context, args):
+        sum_df = args['sum_table']
+        sum_df['sum_squared'] = sum_df['sum'] * sum_df['sum']
+        return sum_df
 
     return dagster_pd.dataframe_solid(
         name='mult_table',
@@ -166,25 +213,30 @@ def create_mult_table(sum_table_solid):
 
 
 def test_pandas_csv_to_csv_better_api():
-    solid = create_sum_table()
-    output_df = execute_transform_in_temp_file(solid)
+    output_df = execute_transform_in_temp_csv_files(create_sum_table())
+    assert output_df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
+
+
+def test_pandas_csv_to_csv_decorator_api():
+    output_df = execute_transform_in_temp_csv_files(sum_table)
     assert output_df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
 
 
 def test_pandas_csv_in_memory():
-    solid = create_sum_table()
-    input_args = {'num_csv': {'path': script_relative_path('num.csv')}}
-    df = get_solid_tranformed_value(create_test_context(), solid, input_args)
+    df = get_solid_transformed_value(
+        create_test_context(),
+        create_sum_table(),
+        get_num_csv_environment(),
+    )
     assert isinstance(df, pd.DataFrame)
     assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
 
 
 def test_two_step_pipeline_in_memory():
     sum_table_solid = create_sum_table()
-    mult_table_solid = create_mult_table(sum_table_solid)
-    input_args = {'num_csv': {'path': script_relative_path('num.csv')}}
+    mult_table_solid = create_sum_sq_table(sum_table_solid)
     context = create_test_context()
-    df = get_solid_tranformed_value(context, sum_table_solid, input_args)
+    df = get_solid_transformed_value(context, sum_table_solid, get_num_csv_environment())
     mult_df = _pipeline_solid_in_memory(context, mult_table_solid, {'sum_table': df})
     assert mult_df.to_dict('list') == {
         'num1': [1, 3],
@@ -194,8 +246,20 @@ def test_two_step_pipeline_in_memory():
     }
 
 
+def test_two_step_pipeline_in_memory_decorator_style():
+    context = create_test_context()
+    df = get_solid_transformed_value(context, sum_table, get_num_csv_environment())
+    mult_df = _pipeline_solid_in_memory(context, sum_sq_table, {'sum_df': df})
+    assert mult_df.to_dict('list') == {
+        'num1': [1, 3],
+        'num2': [2, 4],
+        'sum': [3, 7],
+        'sum_squared': [9, 49]
+    }
+
+
 def test_two_input_solid():
-    def transform(contextx, args):
+    def transform(_context, args):
         num_csv1 = args['num_csv1']
         num_csv2 = args['num_csv2']
         check.inst_param(num_csv1, 'num_csv1', pd.DataFrame)
@@ -210,16 +274,22 @@ def test_two_input_solid():
         transform_fn=transform,
     )
 
-    input_args = {
-        'num_csv1': {
-            'path': script_relative_path('num.csv')
-        },
-        'num_csv2': {
-            'path': script_relative_path('num.csv')
-        },
-    }
+    environment = config.Environment(
+        input_sources=[
+            config.Input(
+                input_name='num_csv1',
+                args={'path': script_relative_path('num.csv')},
+                source='CSV',
+            ),
+            config.Input(
+                input_name='num_csv2',
+                args={'path': script_relative_path('num.csv')},
+                source='CSV',
+            ),
+        ],
+    )
 
-    df = get_solid_tranformed_value(create_test_context(), two_input_solid, input_args)
+    df = get_solid_transformed_value(create_test_context(), two_input_solid, environment)
     assert isinstance(df, pd.DataFrame)
     assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
 
@@ -229,9 +299,8 @@ def test_no_transform_solid():
         name='num_table',
         inputs=[simple_csv_input('num_csv')],
     )
-    input_args = {'num_csv': {'path': script_relative_path('num.csv')}}
     context = create_test_context()
-    df = get_solid_tranformed_value(context, num_table, input_args)
+    df = get_solid_transformed_value(context, num_table, get_num_csv_environment())
     assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4]}
 
 
@@ -240,74 +309,73 @@ def create_diamond_pipeline():
 
 
 def create_diamond_dag():
-    num_table = dagster_pd.dataframe_solid(
+    num_table_solid = dagster_pd.dataframe_solid(
         name='num_table',
         inputs=[simple_csv_input('num_csv')],
     )
 
-    def sum_transform(context, args):
-        num_table = args['num_table']
-        sum_table = num_table.copy()
-        sum_table['sum'] = num_table['num1'] + num_table['num2']
-        return sum_table
+    def sum_transform(_context, args):
+        num_df = args['num_table']
+        sum_df = num_df.copy()
+        sum_df['sum'] = num_df['num1'] + num_df['num2']
+        return sum_df
 
-    sum_table = dagster_pd.dataframe_solid(
+    sum_table_solid = dagster_pd.dataframe_solid(
         name='sum_table',
-        inputs=[dagster_pd.dataframe_dependency(num_table)],
+        inputs=[dagster_pd.dataframe_dependency(num_table_solid)],
         transform_fn=sum_transform,
     )
 
-    def mult_transform(context, args):
+    def mult_transform(_context, args):
         num_table = args['num_table']
         mult_table = num_table.copy()
         mult_table['mult'] = num_table['num1'] * num_table['num2']
         return mult_table
 
-    mult_table = dagster_pd.dataframe_solid(
+    mult_table_solid = dagster_pd.dataframe_solid(
         name='mult_table',
-        inputs=[dagster_pd.dataframe_dependency(num_table)],
+        inputs=[dagster_pd.dataframe_dependency(num_table_solid)],
         transform_fn=mult_transform,
     )
 
-    def sum_mult_transform(context, args):
-        sum_table = args['sum_table']
-        mult_table = args['mult_table']
-        sum_mult_table = sum_table.copy()
-        sum_mult_table['mult'] = mult_table['mult']
-        sum_mult_table['sum_mult'] = sum_table['sum'] * mult_table['mult']
+    def sum_mult_transform(_context, args):
+        sum_df = args['sum_table']
+        mult_df = args['mult_table']
+        sum_mult_table = sum_df.copy()
+        sum_mult_table['mult'] = mult_df['mult']
+        sum_mult_table['sum_mult'] = sum_df['sum'] * mult_df['mult']
         return sum_mult_table
 
-    sum_mult_table = dagster_pd.dataframe_solid(
+    sum_mult_table_solid = dagster_pd.dataframe_solid(
         name='sum_mult_table',
         inputs=[
-            dagster_pd.dataframe_dependency(sum_table),
-            dagster_pd.dataframe_dependency(mult_table)
+            dagster_pd.dataframe_dependency(sum_table_solid),
+            dagster_pd.dataframe_dependency(mult_table_solid)
         ],
         transform_fn=sum_mult_transform,
     )
 
-    return (num_table, sum_table, mult_table, sum_mult_table)
+    return (num_table_solid, sum_table_solid, mult_table_solid, sum_mult_table_solid)
 
 
 def test_diamond_dag_run():
-    num_table, sum_table, mult_table, sum_mult_table = create_diamond_dag()
+    num_table_solid, sum_table_solid, mult_table_solid, sum_mult_table_solid = create_diamond_dag()
 
-    input_args = {'num_csv': {'path': script_relative_path('num.csv')}}
     context = create_test_context()
 
-    num_table_df = get_solid_tranformed_value(context, num_table, input_args)
+    num_table_df = get_solid_transformed_value(context, num_table_solid, get_num_csv_environment())
     assert num_table_df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4]}
 
-    sum_df = _pipeline_solid_in_memory(context, sum_table, {'num_table': num_table_df})
+    sum_df = _pipeline_solid_in_memory(context, sum_table_solid, {'num_table': num_table_df})
 
     assert sum_df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
 
-    mult_df = _pipeline_solid_in_memory(context, mult_table, {'num_table': num_table_df})
+    mult_df = _pipeline_solid_in_memory(context, mult_table_solid, {'num_table': num_table_df})
 
     assert mult_df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'mult': [2, 12]}
 
     sum_mult_df = _pipeline_solid_in_memory(
-        context, sum_mult_table, {
+        context, sum_mult_table_solid, {
             'sum_table': sum_df,
             'mult_table': mult_df
         }
@@ -324,14 +392,9 @@ def test_diamond_dag_run():
 
 def test_pandas_in_memory_diamond_pipeline():
     context = create_test_context()
-    input_args = {'num_csv': {'path': script_relative_path('num.csv')}}
-
     pipeline = create_diamond_pipeline()
     result = execute_pipeline_through_solid(
-        context,
-        pipeline,
-        environment=create_pipeline_env_from_arg_dicts(pipeline, input_args),
-        solid_name='sum_mult_table'
+        context, pipeline, environment=get_num_csv_environment(), solid_name='sum_mult_table'
     )
 
     assert result.transformed_value.to_dict('list') == {
@@ -345,11 +408,10 @@ def test_pandas_in_memory_diamond_pipeline():
 
 def test_pandas_output_csv_pipeline():
     context = create_test_context()
-    input_arg_dicts = {'num_csv': {'path': script_relative_path('num.csv')}}
 
     with get_temp_file_name() as temp_file_name:
         pipeline = create_diamond_pipeline()
-        environment = create_pipeline_env_from_arg_dicts(pipeline, input_arg_dicts)
+        environment = get_num_csv_environment()
 
         for _result in materialize_pipeline_iterator(
             context,
@@ -386,13 +448,12 @@ def _result_named(results, name):
 
 def test_pandas_output_intermediate_csv_files():
     context = create_test_context()
-    input_args = {'num_csv': {'path': script_relative_path('num.csv')}}
     pipeline = create_diamond_pipeline()
 
     with get_temp_file_names(2) as temp_tuple:
         sum_file, mult_file = temp_tuple  # pylint: disable=E0632
 
-        environment = create_pipeline_env_from_arg_dicts(pipeline, input_args)
+        environment = get_num_csv_environment()
 
         subgraph_one_result = materialize_pipeline(
             context,
@@ -491,7 +552,6 @@ def parquet_materialization(solid_name, path):
 
 def test_pandas_output_intermediate_parquet_files():
     context = create_test_context()
-    input_args = {'num_csv': {'path': script_relative_path('num.csv')}}
     pipeline = create_diamond_pipeline()
 
     with get_temp_file_names(2) as temp_tuple:
@@ -500,7 +560,7 @@ def test_pandas_output_intermediate_parquet_files():
         pipeline_result = materialize_pipeline(
             context,
             pipeline,
-            environment=create_pipeline_env_from_arg_dicts(pipeline, input_args),
+            environment=get_num_csv_environment(),
             materializations=[
                 parquet_materialization('sum_table', sum_file),
                 parquet_materialization('mult_table', mult_file),
@@ -522,16 +582,22 @@ def test_pandas_multiple_inputs():
 
     context = create_test_context()
 
-    input_args = {
-        'num_csv1': {
-            'path': script_relative_path('num.csv')
-        },
-        'num_csv2': {
-            'path': script_relative_path('num.csv')
-        },
-    }
+    environment = config.Environment(
+        input_sources=[
+            config.Input(
+                input_name='num_csv1',
+                args={'path': script_relative_path('num.csv')},
+                source='CSV',
+            ),
+            config.Input(
+                input_name='num_csv2',
+                args={'path': script_relative_path('num.csv')},
+                source='CSV',
+            ),
+        ],
+    )
 
-    def transform_fn(context, args):
+    def transform_fn(_context, args):
         return args['num_csv1'] + args['num_csv2']
 
     double_sum = dagster_pd.dataframe_solid(
@@ -545,8 +611,8 @@ def test_pandas_multiple_inputs():
     output_df = execute_pipeline_through_solid(
         context,
         pipeline,
-        environment=create_pipeline_env_from_arg_dicts(pipeline, input_args),
-        solid_name='double_sum'
+        environment=environment,
+        solid_name='double_sum',
     ).transformed_value
 
     assert not output_df.empty
@@ -559,7 +625,6 @@ def test_pandas_multiple_inputs():
 
 def test_pandas_multiple_outputs():
     context = create_test_context()
-    input_arg_dicts = {'num_csv': {'path': script_relative_path('num.csv')}}
 
     with get_temp_file_names(2) as temp_tuple:
         # false positive on pylint error
@@ -569,7 +634,7 @@ def test_pandas_multiple_outputs():
         for _result in materialize_pipeline_iterator(
             context,
             pipeline=pipeline,
-            environment=create_pipeline_env_from_arg_dicts(pipeline, input_arg_dicts),
+            environment=get_num_csv_environment(),
             materializations=[
                 csv_materialization('sum_mult_table', csv_file),
                 parquet_materialization('sum_mult_table', parquet_file),
@@ -596,3 +661,20 @@ def test_pandas_multiple_outputs():
             'mult': [2, 12],
             'sum_mult': [6, 84],
         }
+
+
+def test_rename_input():
+    result = execute_pipeline(
+        create_test_context(),
+        dagster.pipeline(solids=[sum_table, sum_sq_table_renamed_input]),
+        environment=get_num_csv_environment(),
+    )
+
+    assert result.success
+
+    assert result.result_named('sum_sq_table_renamed_input').transformed_value.to_dict('list') == {
+        'num1': [1, 3],
+        'num2': [2, 4],
+        'sum': [3, 7],
+        'sum_squared': [9, 49],
+    }
