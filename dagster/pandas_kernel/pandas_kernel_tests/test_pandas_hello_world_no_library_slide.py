@@ -10,10 +10,7 @@ from dagster.core.definitions import (
     SolidDefinition,
     SourceDefinition,
 )
-from dagster.core.execution import (
-    DagsterExecutionContext, create_single_solid_env_from_arg_dicts, execute_pipeline,
-    execute_single_solid
-)
+from dagster.core.execution import (DagsterExecutionContext, execute_single_solid)
 from dagster.utils.test import script_relative_path
 
 
@@ -22,7 +19,7 @@ def create_test_context():
 
 
 def create_hello_world_solid_no_api():
-    def hello_world_transform_fn(context, args):
+    def hello_world_transform_fn(_context, args):
         num_df = args['num_df']
         num_df['sum'] = num_df['num1'] + num_df['num2']
         return num_df
@@ -107,8 +104,8 @@ def create_dataframe_dependency(name, depends_on):
 
 
 def create_dataframe_output():
-    def mat_fn(context, arg_dict, df):
-        df.to_csv(arg_dict['path'], index=False),
+    def mat_fn(_context, arg_dict, df):
+        df.to_csv(arg_dict['path'], index=False)
 
     return OutputDefinition(
         materializations=[
@@ -122,7 +119,7 @@ def create_dataframe_output():
 
 
 def create_hello_world_solid_composed_api():
-    def transform_fn(context, args):
+    def transform_fn(_context, args):
         num_df = args['num_df']
         num_df['sum'] = num_df['num1'] + num_df['num2']
         return num_df
@@ -163,7 +160,7 @@ def test_hello_world_composed():
 
 
 def test_pipeline():
-    def solid_one_transform(context, args):
+    def solid_one_transform(_context, args):
         num_df = args['num_df']
         num_df['sum'] = num_df['num1'] + num_df['num2']
         return num_df
@@ -175,7 +172,7 @@ def test_pipeline():
         output=create_dataframe_output(),
     )
 
-    def solid_two_transform(context, args):
+    def solid_two_transform(_context, args):
         sum_df = args['sum_df']
         sum_df['sum_sq'] = sum_df['sum'] * sum_df['sum']
         return sum_df
@@ -211,7 +208,7 @@ def test_pipeline():
     }
 
     sum_sq_path_args = {'path': '/tmp/sum_sq.csv'}
-    materialization_pipeline_result = dagster.materialize_pipeline(
+    dagster.materialize_pipeline(
         DagsterExecutionContext(),
         pipeline,
         environment=environment,
