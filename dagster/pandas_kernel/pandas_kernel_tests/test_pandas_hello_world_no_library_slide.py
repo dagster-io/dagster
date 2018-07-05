@@ -57,7 +57,7 @@ def test_hello_world_no_library_support():
         create_test_context(),
         hello_world,
         environment=config.Environment(
-            input_sources=[
+            inputs=[
                 config.Input(
                     input_name='num_df',
                     source='CSV',
@@ -140,7 +140,7 @@ def test_hello_world_composed():
         create_test_context(),
         hello_world,
         environment=config.Environment(
-            input_sources=[
+            inputs=[
                 config.Input(
                     input_name='num_df',
                     source='CSV',
@@ -187,7 +187,7 @@ def test_pipeline():
     pipeline = dagster.pipeline(solids=[solid_one, solid_two])
 
     environment = config.Environment(
-        input_sources=[
+        inputs=[
             config.Input(
                 input_name='num_df', source='CSV', args={'path': script_relative_path('num.csv')}
             )

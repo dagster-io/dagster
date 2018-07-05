@@ -14,22 +14,22 @@ class Materialization(namedtuple('MaterializationData', 'solid materialization_t
         )
 
 
-class Environment(namedtuple('EnvironmentData', 'input_sources')):
-    def __new__(cls, input_sources):
+class Environment(namedtuple('EnvironmentData', 'inputs')):
+    def __new__(cls, inputs):
         return super(Environment, cls).__new__(
             cls,
-            check.list_param(input_sources, 'input_sources', of_type=Input),
+            check.list_param(inputs, 'inputs', of_type=Input),
         )
 
     def input_named(self, input_name):
-        for input_source in self.input_sources:
-            if input_source.input_name == input_name:
-                return input_source
+        for input_ in self.inputs:
+            if input_.input_name == input_name:
+                return input_
         check.failed(f'Could not find input {input_name} in environment')
 
     @staticmethod
     def empty():
-        return Environment(input_sources=[])
+        return Environment(inputs=[])
 
 
 class Input(namedtuple('InputData', 'input_name args source')):

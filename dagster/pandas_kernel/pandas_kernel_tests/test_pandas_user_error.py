@@ -50,7 +50,7 @@ def test_wrong_input_value():
             dagster.context(),
             df_solid,
             environment=config.Environment(
-                input_sources=[config.Input(
+                inputs=[config.Input(
                     input_name='foo',
                     source='WRONG',
                     args={},
@@ -74,7 +74,7 @@ def test_wrong_input_arg_dict():
             dagster.context(),
             df_solid,
             environment=config.Environment(
-                input_sources=[
+                inputs=[
                     config.Input(
                         input_name='num_jdkfjskdfjs',
                         source='CSV',

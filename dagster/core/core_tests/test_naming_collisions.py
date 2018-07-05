@@ -33,7 +33,7 @@ def test_execute_solid_with_input_same_name():
         DagsterExecutionContext(),
         solid,
         environment=config.Environment(
-            input_sources=[
+            inputs=[
                 config.Input(input_name='a_thing', source='a_source_type', args={'an_arg': 'foo'})
             ]
         )
@@ -80,7 +80,7 @@ def test_execute_dep_solid_different_input_name():
         DagsterExecutionContext(),
         pipeline,
         environment=config.Environment(
-            input_sources=[
+            inputs=[
                 config.Input(input_name='a_thing', source='a_source_type', args={'an_arg': 'bar'})
             ]
         )
@@ -156,7 +156,7 @@ def test_execute_dep_solid_same_input_name():
     pipeline = dagster.pipeline(solids=[table_one, table_two])
 
     complete_environment = config.Environment(
-        input_sources=[
+        inputs=[
             config.Input(
                 input_name='table_one',
                 source='TABLE',

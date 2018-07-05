@@ -33,7 +33,7 @@ def create_test_env(env_config=None):
             }
         }
     return config.Environment(
-        input_sources=[
+        inputs=[
             config.Input(input_name=s['input_name'], args=s['args'], source=s['source'])
             for s in check.list_elem(env_config['environment'], 'inputs')
         ]

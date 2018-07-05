@@ -52,7 +52,7 @@ def test_single_templated_sql_solid_single_table_raw_api():
     )
 
     pipeline = dagster.pipeline(solids=[sum_table_transform_solid])
-    environment = config.Environment(input_sources=[table_input_source('sum_table', sum_table_arg)])
+    environment = config.Environment(inputs=[table_input_source('sum_table', sum_table_arg)])
 
     result = dagster.execute_pipeline(context, pipeline, environment=environment)
     assert result.success
@@ -61,7 +61,7 @@ def test_single_templated_sql_solid_single_table_raw_api():
 
     input_without_source = config.Input(input_name='sum_table', args={'name': 'another_table'})
 
-    environment_without_source = config.Environment(input_sources=[input_without_source])
+    environment_without_source = config.Environment(inputs=[input_without_source])
     result_no_source = dagster.execute_pipeline(
         context, pipeline, environment=environment_without_source
     )
@@ -87,7 +87,7 @@ def test_single_templated_sql_solid_single_table_with_api():
 
     pipeline = dagster.pipeline(solids=[sum_table_transform])
 
-    environment = config.Environment(input_sources=[table_input_source('sum_table', sum_table_arg)])
+    environment = config.Environment(inputs=[table_input_source('sum_table', sum_table_arg)])
 
     result = dagster.execute_pipeline(context, pipeline, environment=environment)
     assert result.success
@@ -143,7 +143,7 @@ def test_single_templated_sql_solid_double_table_raw_api():
     pipeline = dagster.pipeline(solids=[sum_solid])
 
     environment = config.Environment(
-        input_sources=[
+        inputs=[
             table_input_source('sum_table', sum_table_arg),
             table_input_source('num_table', num_table_arg),
         ]
@@ -173,7 +173,7 @@ def test_single_templated_sql_solid_double_table_with_api():
     pipeline = dagster.pipeline(solids=[sum_solid])
 
     environment = config.Environment(
-        input_sources=[
+        inputs=[
             table_input_source('sum_table', sum_table_arg),
             table_input_source('num_table', num_table_arg),
         ]
@@ -214,7 +214,7 @@ def test_templated_sql_solid_pipeline():
     first_sum_sq_table = 'first_sum_sq_table'
 
     environment_one = config.Environment(
-        input_sources=[
+        inputs=[
             table_input_source('sum_table', first_sum_table),
             table_input_source('sum_sq_table', first_sum_sq_table),
         ]
@@ -235,7 +235,7 @@ def test_templated_sql_solid_pipeline():
     second_sum_sq_table = 'second_sum_sq_table'
 
     environment_two = config.Environment(
-        input_sources=[
+        inputs=[
             table_input_source('sum_table', first_sum_table),
             table_input_source('sum_sq_table', second_sum_sq_table),
         ]
@@ -269,7 +269,7 @@ def test_templated_sql_solid_with_api():
     pipeline = dagster.pipeline(solids=[sum_solid])
 
     sum_table_arg = 'specific_sum_table'
-    environment = config.Environment(input_sources=[table_input_source('sum_table', sum_table_arg)])
+    environment = config.Environment(inputs=[table_input_source('sum_table', sum_table_arg)])
     result = dagster.execute_pipeline(context, pipeline, environment=environment)
     assert result.success
 
@@ -286,7 +286,7 @@ def test_with_from_through_specifying_all_solids():
     first_sum_mult_table = 'first_sum_mult_table'
 
     environment = config.Environment(
-        input_sources=[
+        inputs=[
             table_input_source('sum_table', first_sum_table),
             table_input_source('mult_table', first_mult_table),
             table_input_source('sum_mult_table', first_sum_mult_table),
@@ -318,7 +318,7 @@ def test_multi_input_partial_execution():
     first_sum_mult_table = 'first_sum_mult_table'
 
     environment = config.Environment(
-        input_sources=[
+        inputs=[
             table_input_source('sum_table', first_sum_table),
             table_input_source('mult_table', first_mult_table),
             table_input_source('sum_mult_table', first_sum_mult_table),
@@ -336,7 +336,7 @@ def test_multi_input_partial_execution():
     second_sum_mult_table = 'second_sum_mult_table'
 
     environment_two = config.Environment(
-        input_sources=[
+        inputs=[
             table_input_source('sum_table', first_sum_table),
             table_input_source('mult_table', first_mult_table),
             table_input_source('sum_mult_table', second_sum_mult_table),

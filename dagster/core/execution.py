@@ -598,16 +598,15 @@ def create_single_solid_env_from_arg_dicts(solid, arg_dicts):
     check.inst_param(solid, 'solid', SolidDefinition)
     check.dict_param(arg_dicts, 'arg_dicts', key_type=str, value_type=dict)
 
-    input_sources = {}
     input_to_source_type = {}
     for input_def in solid.inputs:
         check.invariant(len(input_def.sources) == 1)
         input_to_source_type[input_def.name] = input_def.sources[0].source_type
 
-    input_sources = []
+    inputs = []
 
     for input_name, arg_dict in arg_dicts.items():
-        input_sources.append(
+        inputs.append(
             config.Input(
                 input_name=input_name,
                 source=input_to_source_type[input_name],
@@ -615,7 +614,7 @@ def create_single_solid_env_from_arg_dicts(solid, arg_dicts):
             )
         )
 
-    return config.Environment(input_sources=input_sources)
+    return config.Environment(inputs=inputs)
 
 
 # This is the legacy format for specifying inputs.
@@ -642,7 +641,7 @@ def create_pipeline_env_from_arg_dicts(pipeline, arg_dicts):
     check.inst_param(pipeline, 'pipeline', DagsterPipeline)
     check.dict_param(arg_dicts, 'arg_dicts', key_type=str, value_type=dict)
 
-    input_sources = {}
+    inputs = {}
     input_to_source_type = {}
 
     for solid in pipeline.solids:
@@ -650,10 +649,10 @@ def create_pipeline_env_from_arg_dicts(pipeline, arg_dicts):
             if input_def.sources:
                 input_to_source_type[input_def.name] = input_def.sources[0].source_type
 
-    input_sources = []
+    inputs = []
     for input_name, arg_dict in arg_dicts.items():
         if input_name in input_to_source_type:
-            input_sources.append(
+            inputs.append(
                 config.Input(
                     input_name=input_name,
                     source=input_to_source_type[input_name],
@@ -661,20 +660,7 @@ def create_pipeline_env_from_arg_dicts(pipeline, arg_dicts):
                 )
             )
 
-    return config.Environment(input_sources=input_sources)
-
-
-def _convert_environment_dict_to_environment_namedtuple(environment_dict):
-    check.dict_param(environment_dict, 'environment_dict')
-
-    def _to_input_source(input_source_dict):
-        for input_name, source_dict in input_source_dict.items():
-            yield config.Input(input_name, source_dict['source_type'], source_dict['args'])
-
-    return config.Environment(
-        input_sources=list(_to_input_source(environment_dict['input_sources'])),
-    )
-
+    return config.Environment(inputs=inputs)
 
 def output_single_solid(
     context,
@@ -814,7 +800,7 @@ class InputArgs:
 
     @property
     def input_names(self):
-        return [input_source.input_name for input_source in self.environment.input_sources]
+        return [input_source.input_name for input_source in self.environment.inputs]
 
     def source_for_input(self, solid_name, input_name):
         input_source = self.environment.input_named(input_name)

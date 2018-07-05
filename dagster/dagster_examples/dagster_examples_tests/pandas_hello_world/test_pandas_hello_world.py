@@ -13,7 +13,7 @@ def test_pipeline_include():
 def test_execute_pipeline():
     pipeline = define_pipeline()
     environment = dagster.config.Environment(
-        input_sources=[
+        inputs=[
             dagster.config.Input('num', {'path': script_relative_path('num.csv')}, source='CSV'),
         ],
     )

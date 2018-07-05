@@ -35,7 +35,7 @@ def get_solid_transformed_value(context, solid_inst, environment):
 
 def get_num_csv_environment():
     return config.Environment(
-        input_sources=[
+        inputs=[
             config.Input(
                 input_name='num_csv',
                 args={'path': script_relative_path('num.csv')},
@@ -139,7 +139,7 @@ def execute_transform_in_temp_csv_files(solid_inst):
             create_test_context(),
             solid_inst,
             environment=config.Environment(
-                input_sources=[
+                inputs=[
                     config.Input(
                         input_name='num_csv',
                         args={'path': script_relative_path('num.csv')},
@@ -275,7 +275,7 @@ def test_two_input_solid():
     )
 
     environment = config.Environment(
-        input_sources=[
+        inputs=[
             config.Input(
                 input_name='num_csv1',
                 args={'path': script_relative_path('num.csv')},
@@ -498,7 +498,7 @@ def test_pandas_output_intermediate_csv_files():
             context,
             pipeline,
             environment=config.Environment(
-                input_sources=[
+                inputs=[
                     config.Input(
                         input_name='sum_table',
                         source='CSV',
@@ -583,7 +583,7 @@ def test_pandas_multiple_inputs():
     context = create_test_context()
 
     environment = config.Environment(
-        input_sources=[
+        inputs=[
             config.Input(
                 input_name='num_csv1',
                 args={'path': script_relative_path('num.csv')},
