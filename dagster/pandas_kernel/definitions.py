@@ -148,7 +148,7 @@ def _dataframe_output_callback(context, result):
     context.metric('rows', result.shape[0])
 
 
-def dataframe_output(materializations=None, expectations=[], output_callback=None):
+def dataframe_output(materializations=None, expectations=None, output_callback=None):
     if materializations is None:
         materializations = [dataframe_csv_materialization(), dataframe_parquet_materialization()]
 
