@@ -5,7 +5,6 @@ from dagster.core.execution import (
     DagsterPipeline,
     execute_pipeline,
     materialize_pipeline,
-    create_single_solid_env_from_arg_dicts,
 )
 
 from dagster.sqlalchemy_kernel import DagsterSqlAlchemyExecutionContext
@@ -41,12 +40,12 @@ def test_sql_sum_solid():
     engine = sa.create_engine('sqlite://')
     create_num_table(engine)
 
-    input_arg_dicts = {'num_table': {'table_name': 'num_table'}}
-
     result = output_single_solid(
         DagsterSqlAlchemyExecutionContext(engine=engine),
         sum_table_solid,
-        environment=create_single_solid_env_from_arg_dicts(sum_table_solid, input_arg_dicts),
+        environment=config.Environment(
+            inputs=[config.Input('num_table', {'table_name': 'num_table'}, 'TABLENAME')]
+        ),
         materialization_type='CREATE',
         arg_dict={'table_name': 'sum_table'},
     )
