@@ -1,6 +1,5 @@
 import pytest
 from dagster import config
-from dagster import check
 from dagster.core import types
 from dagster.core.definitions import (
     OutputDefinition,
@@ -24,19 +23,8 @@ def create_test_context():
     return DagsterExecutionContext()
 
 
-def create_test_env(env_config=None):
-    if not env_config:
-        env_config = {
-            'environment': {
-                'inputs': [],
-            }
-        }
-    return config.Environment(
-        inputs=[
-            config.Input(input_name=s['input_name'], args=s['args'], source=s['source'])
-            for s in check.list_elem(env_config['environment'], 'inputs')
-        ]
-    )
+def create_empty_test_env():
+    return config.Environment(inputs=[])
 
 
 def test_solid():
@@ -47,7 +35,7 @@ def test_solid():
     result = execute_single_solid(
         create_test_context(),
         hello_world,
-        environment=create_test_env(),
+        environment=create_empty_test_env(),
     )
 
     assert result.success
@@ -63,7 +51,7 @@ def test_solid_with_name():
     result = execute_single_solid(
         create_test_context(),
         hello_world,
-        environment=create_test_env(),
+        environment=create_empty_test_env(),
     )
 
     assert result.success
@@ -80,7 +68,7 @@ def test_solid_with_context():
     result = execute_single_solid(
         create_test_context(),
         hello_world,
-        environment=create_test_env(),
+        environment=create_empty_test_env(),
     )
 
     assert result.success
@@ -100,21 +88,13 @@ def test_solid_with_input():
     result = execute_single_solid(
         create_test_context(),
         hello_world,
-        environment=create_test_env(
-            {
-                'environment': {
-                    'inputs': [
-                        {
-                            'input_name': 'foo_to_foo',
-                            'source': 'TEST',
-                            'args': {
-                                'foo': 'bar',
-                            },
-                        },
-                    ]
-                }
-            }
-        )
+        environment=config.Environment(
+            inputs=[config.Input(
+                input_name='foo_to_foo',
+                args={'foo': 'bar'},
+                source='TEST',
+            )]
+        ),
     )
 
     assert result.success
@@ -139,21 +119,13 @@ def test_sources():
     result = execute_single_solid(
         create_test_context(),
         hello_world,
-        environment=create_test_env(
-            {
-                'environment': {
-                    'inputs': [
-                        {
-                            'input_name': 'i',
-                            'source': 'NO_CONTEXT',
-                            'args': {
-                                'foo': 'bar',
-                            },
-                        },
-                    ]
-                }
-            }
-        )
+        environment=config.Environment(
+            inputs=[config.Input(
+                input_name='i',
+                args={'foo': 'bar'},
+                source='NO_CONTEXT',
+            )]
+        ),
     )
 
     assert result.success
@@ -163,21 +135,13 @@ def test_sources():
     result = execute_single_solid(
         create_test_context(),
         hello_world,
-        environment=create_test_env(
-            {
-                'environment': {
-                    'inputs': [
-                        {
-                            'input_name': 'i',
-                            'source': 'WITH_CONTEXT',
-                            'args': {
-                                'foo': 'bar',
-                            },
-                        },
-                    ]
-                }
-            }
-        )
+        environment=config.Environment(
+            inputs=[config.Input(
+                input_name='i',
+                args={'foo': 'bar'},
+                source='WITH_CONTEXT',
+            )]
+        ),
     )
 
     assert result.success
