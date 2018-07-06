@@ -45,7 +45,8 @@
     "**/.temp": true,
     "**/build": true,
     "**/spark-warehouse": true,
-    "**/.ipynb_checkpoints": true
+    "**/.ipynb_checkpoints": true,
+    "dist": true
   },
   "python.venvPath": "/Users/schrockn/venvs",
   "editor.formatOnSave": true,
