@@ -2,6 +2,7 @@ import copy
 import pytest
 
 from dagster import check
+from dagster import config
 
 from dagster.core.definitions import (
     SolidDefinition,
@@ -10,8 +11,9 @@ from dagster.core.definitions import (
 )
 from dagster.core.graph import (create_adjacency_lists, SolidGraph, DagsterPipeline)
 from dagster.core.execution import (
-    execute_pipeline_iterator, DagsterExecutionContext, DagsterExecutionResult,
-    create_pipeline_env_from_arg_dicts
+    execute_pipeline_iterator,
+    DagsterExecutionContext,
+    DagsterExecutionResult,
 )
 
 # protected members
@@ -44,7 +46,7 @@ def create_solid_with_deps(name, *solid_deps):
         ) for solid_dep in solid_deps
     ]
 
-    def dep_transform(context, args):
+    def dep_transform(_context, args):
         passed_rows = list(args.values())[0]
         passed_rows.append({name: 'transform_called'})
         #return copy.deepcopy(passed_rows)
@@ -66,7 +68,7 @@ def create_root_solid(name):
         argument_def_dict={},
     )
 
-    def root_transform(context, args):
+    def root_transform(_context, args):
         passed_rows = list(args.values())[0]
         passed_rows.append({name: 'transform_called'})
         #return copy.deepcopy(passed_rows)
@@ -256,10 +258,12 @@ def test_pipeline_execution_graph_diamond():
 
     results = list()
 
+    environment = config.Environment(inputs=[config.Input('A_input', {}, 'UNNAMED')])
+
     for result in execute_pipeline_iterator(
         create_test_context(),
         pipeline,
-        environment=create_pipeline_env_from_arg_dicts(pipeline, {'A_input': {}}),
+        environment=environment,
     ):
         results.append(copy.deepcopy(result))
 
