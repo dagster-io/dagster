@@ -17,6 +17,10 @@ tables, and so on).
 
 
 '''
+
+# too many lines
+# pylint: disable=C0302
+
 from collections import (namedtuple, OrderedDict)
 from contextlib import contextmanager
 import copy
