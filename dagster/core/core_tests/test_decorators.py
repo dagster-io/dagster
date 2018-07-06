@@ -12,7 +12,6 @@ from dagster.core.execution import (
     output_single_solid,
     execute_single_solid,
     DagsterExecutionContext,
-    create_single_solid_env_from_arg_dicts,
 )
 
 # This file tests a lot of parameter name stuff
@@ -209,7 +208,7 @@ def test_materializations():
     output_single_solid(
         create_test_context(),
         hello,
-        environment=create_single_solid_env_from_arg_dicts(hello, {}),
+        environment=config.Environment(inputs=[]),
         materialization_type='CONTEXT',
         arg_dict={'foo': 'bar'}
     )
@@ -221,7 +220,7 @@ def test_materializations():
     output_single_solid(
         create_test_context(),
         hello,
-        environment=create_single_solid_env_from_arg_dicts(hello, {}),
+        environment=config.Environment(inputs=[]),
         materialization_type='NO_CONTEXT',
         arg_dict={'foo': 'bar'}
     )
