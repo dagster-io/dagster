@@ -1,6 +1,6 @@
 import pytest
 
-from dagster import config
+from dagster import check, config
 from dagster.core import types
 
 from dagster.core.definitions import (
@@ -13,8 +13,11 @@ from dagster.core.definitions import (
 )
 
 from dagster.core.execution import (
-    output_single_solid, DagsterExecutionResult, DagsterExecutionFailureReason,
-    DagsterExecutionContext, execute_single_solid, create_single_solid_env_from_arg_dicts
+    output_single_solid,
+    DagsterExecutionResult,
+    DagsterExecutionFailureReason,
+    DagsterExecutionContext,
+    execute_single_solid,
 )
 
 from dagster.core.errors import DagsterExpectationFailedError
@@ -24,6 +27,12 @@ def create_test_context():
     return DagsterExecutionContext()
 
 
+def single_input_env(input_name, args=None):
+    check.str_param(input_name, 'input_name')
+    args = check.opt_dict_param(args, 'args')
+    return config.Environment(inputs=[config.Input(input_name, args, 'UNNAMED')])
+
+
 def test_execute_solid_no_args():
     some_input = create_single_source_input(
         name='some_input',
@@ -31,7 +40,7 @@ def test_execute_solid_no_args():
         argument_def_dict={}
     )
 
-    def tranform_fn_inst(context, args):
+    def tranform_fn_inst(_context, args):
         args['some_input'][0]['data_key'] = 'new_value'
         return args['some_input']
 
@@ -58,7 +67,7 @@ def test_execute_solid_no_args():
     output_single_solid(
         create_test_context(),
         single_solid,
-        environment=create_single_solid_env_from_arg_dicts(single_solid, {'some_input': {}}),
+        environment=single_input_env('some_input'),
         materialization_type='CUSTOM',
         arg_dict={}
     )
@@ -125,7 +134,7 @@ def test_hello_world():
     result = execute_single_solid(
         create_test_context(),
         hello_world,
-        environment=create_single_solid_env_from_arg_dicts(hello_world, {'hello_world_input': {}})
+        environment=single_input_env('hello_world_input'),
     )
 
     assert result.success
@@ -137,7 +146,7 @@ def test_hello_world():
     output_result = output_single_solid(
         create_test_context(),
         hello_world,
-        environment=create_single_solid_env_from_arg_dicts(hello_world, {'hello_world_input': {}}),
+        environment=single_input_env('hello_world_input'),
         materialization_type='CUSTOM',
         arg_dict={}
     )
@@ -163,12 +172,7 @@ def test_execute_solid_with_args():
     result = output_single_solid(
         create_test_context(),
         single_solid,
-        environment=create_single_solid_env_from_arg_dicts(
-            single_solid,
-            {'some_input': {
-                'str_arg': 'an_input_arg'
-            }},
-        ),
+        environment=single_input_env('some_input', {'str_arg': 'an_input_arg'}),
         materialization_type='CUSTOM',
         arg_dict={},
     )
@@ -187,11 +191,7 @@ def test_execute_solid_with_failed_input_expectation_non_throwing():
     solid_execution_result = output_single_solid(
         create_test_context(),
         single_solid,
-        environment=create_single_solid_env_from_arg_dicts(
-            single_solid, {'some_input': {
-                'str_arg': 'an_input_arg'
-            }}
-        ),
+        environment=single_input_env('some_input', {'str_arg': 'an_input_arg'}),
         materialization_type='CUSTOM',
         arg_dict={},
         throw_on_error=False,
@@ -209,11 +209,7 @@ def test_execute_solid_with_failed_input_expectation_throwing():
         output_single_solid(
             create_test_context(),
             single_solid,
-            environment=create_single_solid_env_from_arg_dicts(
-                single_solid, {'some_input': {
-                    'str_arg': 'an_input_arg'
-                }}
-            ),
+            environment=single_input_env('some_input', {'str_arg': 'an_input_arg'}),
             materialization_type='CUSTOM',
             arg_dict={},
         )
@@ -222,11 +218,7 @@ def test_execute_solid_with_failed_input_expectation_throwing():
         output_single_solid(
             create_test_context(),
             single_solid,
-            environment=create_single_solid_env_from_arg_dicts(
-                single_solid, {'some_input': {
-                    'str_arg': 'an_input_arg'
-                }}
-            ),
+            environment=single_input_env('some_input', {'str_arg': 'an_input_arg'}),
             materialization_type='CUSTOM',
             arg_dict={},
         )
@@ -254,11 +246,7 @@ def test_execute_solid_with_failed_output_expectation_non_throwing():
     solid_execution_result = output_single_solid(
         create_test_context(),
         failing_solid,
-        environment=create_single_solid_env_from_arg_dicts(
-            failing_solid, {'some_input': {
-                'str_arg': 'an_input_arg'
-            }}
-        ),
+        environment=single_input_env('some_input', {'str_arg': 'an_input_arg'}),
         materialization_type='CUSTOM',
         arg_dict={},
         throw_on_error=False
@@ -276,11 +264,7 @@ def test_execute_solid_with_failed_output_expectation_throwing():
         output_single_solid(
             create_test_context(),
             failing_solid,
-            environment=create_single_solid_env_from_arg_dicts(
-                failing_solid, {'some_input': {
-                    'str_arg': 'an_input_arg'
-                }}
-            ),
+            environment=single_input_env('some_input', {'str_arg': 'an_input_arg'}),
             materialization_type='CUSTOM',
             arg_dict={},
         )
@@ -289,11 +273,7 @@ def test_execute_solid_with_failed_output_expectation_throwing():
         output_single_solid(
             create_test_context(),
             failing_solid,
-            environment=create_single_solid_env_from_arg_dicts(
-                failing_solid, {'some_input': {
-                    'str_arg': 'an_input_arg'
-                }}
-            ),
+            environment=single_input_env('some_input', {'str_arg': 'an_input_arg'}),
             materialization_type='CUSTOM',
             arg_dict={},
         )
