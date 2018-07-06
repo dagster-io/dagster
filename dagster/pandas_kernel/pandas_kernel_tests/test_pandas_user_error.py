@@ -1,18 +1,15 @@
 # pylint: disable=W0613
 
-import dagster
-from dagster import config
-from dagster.core.execution import (execute_single_solid, create_single_solid_env_from_arg_dicts)
-import dagster.pandas_kernel as dagster_pd
-
-from dagster import config
-from dagster.utils.test import script_relative_path
-
 import pytest
 
-from dagster.core.definitions import InputDefinition, OutputDefinition
-from dagster.core.decorators import source, solid
-from dagster.core.errors import DagsterInvariantViolationError, DagsterInvalidDefinitionError, DagsterExpectationFailedError
+import dagster
+import dagster.pandas_kernel as dagster_pd
+from dagster import config
+from dagster.core.decorators import solid, source
+from dagster.core.definitions import InputDefinition
+from dagster.core.errors import DagsterInvariantViolationError
+from dagster.core.execution import execute_single_solid
+from dagster.utils.test import script_relative_path
 
 from .utils import simple_csv_input
 
@@ -24,13 +21,13 @@ def test_wrong_output_value():
     def df_solid(num_csv):
         return 'not a dataframe'
 
-    input_arg_dicts = {'num_csv': {'path': script_relative_path('num.csv')}}
-
     with pytest.raises(DagsterInvariantViolationError):
         execute_single_solid(
             dagster.context(),
             df_solid,
-            environment=create_single_solid_env_from_arg_dicts(df_solid, input_arg_dicts),
+            environment=config.Environment(
+                inputs=[config.Input('num_csv', {'path': script_relative_path('num.csv')}, 'CSV')]
+            ),
         )
 
 
@@ -39,9 +36,9 @@ def test_wrong_input_value():
     def wrong_source():
         return 'not a dataframe'
 
-    input = InputDefinition(name="foo", sources=[wrong_source])
+    input_ = InputDefinition(name="foo", sources=[wrong_source])
 
-    @solid(name="test_wrong_input", inputs=[input], output=dagster_pd.dataframe_output())
+    @solid(name="test_wrong_input", inputs=[input_], output=dagster_pd.dataframe_output())
     def df_solid(foo):
         return foo
 
