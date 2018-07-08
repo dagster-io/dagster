@@ -6,6 +6,9 @@ from .definitions import (
     create_no_materialization_output, DagsterInvalidDefinitionError
 )
 
+# Error messages are long
+# pylint: disable=C0301
+
 
 def with_context(fn):
     """Pass context as a first argument to a transform, source or materialization function.
@@ -168,8 +171,9 @@ class FunctionValidationError(Exception):
         'extra': 4,
     }
 
-    def __init__(self, type, param=None, missing_names=None):
-        self.type = type
+    def __init__(self, error_type, param=None, missing_names=None, **kwargs):
+        super().__init__(**kwargs)
+        self.error_type = error_type
         self.param = param
         self.missing_names = missing_names
 
@@ -183,19 +187,19 @@ def _validate_transform_fn(solid_name, transform_fn, inputs, expect_context=Fals
     try:
         _validate_decorated_fn(transform_fn, names, expected_positionals)
     except FunctionValidationError as e:
-        if e.type == FunctionValidationError.TYPES['vararg']:
+        if e.error_type == FunctionValidationError.TYPES['vararg']:
             raise DagsterInvalidDefinitionError(
                 f"solid '{solid_name}' transform function has positional vararg parameter '{e.param}'. Transform functions should only have keyword arguments that match input names and optionally a first positional parameter named 'context'."
             )
-        elif e.type == FunctionValidationError.TYPES['missing_name']:
+        elif e.error_type == FunctionValidationError.TYPES['missing_name']:
             raise DagsterInvalidDefinitionError(
                 f"solid '{solid_name}' transform function has parameter '{e.param}' that is not one of the solid inputs. Transform functions should only have keyword arguments that match input names and optionally a first positional parameter named 'context'."
             )
-        elif e.type == FunctionValidationError.TYPES['missing_positional']:
+        elif e.error_type == FunctionValidationError.TYPES['missing_positional']:
             raise DagsterInvalidDefinitionError(
                 f"solid '{solid_name}' transform function do not have required positional parameter '{e.param}'. Transform functions should only have keyword arguments that match input names and optionally a first positional parameter named 'context'."
             )
-        elif e.type == FunctionValidationError.TYPES['extra']:
+        elif e.error_type == FunctionValidationError.TYPES['extra']:
             undeclared_inputs_printed = ", '".join(e.missing_names)
             raise DagsterInvalidDefinitionError(
                 f"solid '{solid_name}' transform function do not have parameter(s) '{undeclared_inputs_printed}', which are in solid's inputs. Transform functions should only have keyword arguments that match input names and optionally a first positional parameter named 'context'."
@@ -213,19 +217,19 @@ def _validate_source_fn(fn, source_name, arg_def_dict, expect_context=False):
     try:
         _validate_decorated_fn(fn, names, expected_positionals)
     except FunctionValidationError as e:
-        if e.type == FunctionValidationError.TYPES['vararg']:
+        if e.error_type == FunctionValidationError.TYPES['vararg']:
             raise DagsterInvalidDefinitionError(
                 f"source '{source_name}' source function has positional vararg parameter '{e.param}'. Source functions should only have keyword arguments that match argument definition names and optionally a first positional parameter named 'context'."
             )
-        elif e.type == FunctionValidationError.TYPES['missing_name']:
+        elif e.error_type == FunctionValidationError.TYPES['missing_name']:
             raise DagsterInvalidDefinitionError(
                 f"source '{source_name}' source function has parameter '{e.param}' that is not one of the source arguments. Source functions should only have keyword arguments that match argument definition names and optionally a first positional parameter named 'context'."
             )
-        elif e.type == FunctionValidationError.TYPES['missing_positional']:
+        elif e.error_type == FunctionValidationError.TYPES['missing_positional']:
             raise DagsterInvalidDefinitionError(
                 f"source '{source_name}' transform function do not have required positional argument '{e.param}'. Source functions should only have keyword arguments that match argument definition names and optionally a first positional parameter named 'context"
             )
-        elif e.type == FunctionValidationError.TYPES['extra']:
+        elif e.error_type == FunctionValidationError.TYPES['extra']:
             undeclared_inputs_printed = ", '".join(e.missing_names)
             raise DagsterInvalidDefinitionError(
                 f"source '{source_name}' transform function do not have parameter(s) '{undeclared_inputs_printed}', which are in source's argument definitions.  Source functions should only have keyword arguments that match argument definition names and optionally a first positional parameter named 'context'"
@@ -243,19 +247,19 @@ def _validate_materialization_fn(fn, materialization_name, arg_def_dict, expect_
     try:
         _validate_decorated_fn(fn, names, expected_positionals)
     except FunctionValidationError as e:
-        if e.type == FunctionValidationError.TYPES['vararg']:
+        if e.error_type == FunctionValidationError.TYPES['vararg']:
             raise DagsterInvalidDefinitionError(
                 f"materialization '{materialization_name}' materialization function has positional vararg parameter '{e.param}'. Materialization functions should only have keyword arguments that match argument definition names, positional parameter 'data' and optionally a first positional parameter named 'context'."
             )
-        elif e.type == FunctionValidationError.TYPES['missing_name']:
+        elif e.error_type == FunctionValidationError.TYPES['missing_name']:
             raise DagsterInvalidDefinitionError(
                 f"materialization '{materialization_name}' transform function has parameter '{e.param}' that is not one of the materialization's argument definitions. Materialization functions should only have keyword arguments that match argument definition names, positional parameter 'data' and optionally a first positional parameter named 'context'."
             )
-        elif e.type == FunctionValidationError.TYPES['missing_positional']:
+        elif e.error_type == FunctionValidationError.TYPES['missing_positional']:
             raise DagsterInvalidDefinitionError(
                 f"materialization '{materialization_name}' materialization function do not have parameter {e.param}'. Materialization functions should only have keyword arguments that match argument definition names, positional parameter 'data' and optionally a first positional parameter named 'context'."
             )
-        elif e.type == FunctionValidationError.TYPES['extra']:
+        elif e.error_type == FunctionValidationError.TYPES['extra']:
             undeclared_inputs_printed = ", '".join(e.missing_names)
             raise DagsterInvalidDefinitionError(
                 f"materialization '{materialization_name}' materialization function do not have parameter(s) '{undeclared_inputs_printed}', which are in materialization's argument definitinio. Materialization functions should only have keyword arguments that match argument definition names, positional parameter 'data' and optionally a first positional parameter named 'context'."
@@ -289,7 +293,7 @@ def _validate_decorated_fn(fn, names, expected_positionals):
         if param.kind == inspect.Parameter.VAR_KEYWORD:
             has_kwargs = True
         elif param.kind == inspect.Parameter.VAR_POSITIONAL:
-            raise FunctionValidationError(type=FunctionValidationError.TYPES['vararg'])
+            raise FunctionValidationError(error_type=FunctionValidationError.TYPES['vararg'])
 
         else:
             if param.name not in names:
