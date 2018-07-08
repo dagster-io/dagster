@@ -7,7 +7,7 @@ from dagster.core.definitions import (
     SolidDefinition,
     ExpectationDefinition,
     ExpectationResult,
-    create_single_source_input,
+    create_custom_source_input,
     create_single_materialization_output,
     create_no_materialization_output,
 )
@@ -30,11 +30,11 @@ def create_test_context():
 def single_input_env(input_name, args=None):
     check.str_param(input_name, 'input_name')
     args = check.opt_dict_param(args, 'args')
-    return config.Environment(inputs=[config.Input(input_name, args, 'UNNAMED')])
+    return config.Environment(inputs=[config.Input(input_name, args, 'CUSTOM')])
 
 
 def test_execute_solid_no_args():
-    some_input = create_single_source_input(
+    some_input = create_custom_source_input(
         name='some_input',
         source_fn=lambda context, arg_dict: [{'data_key': 'data_value'}],
         argument_def_dict={}
@@ -76,7 +76,7 @@ def test_execute_solid_no_args():
 
 
 def create_single_dict_input(expectations=None):
-    return create_single_source_input(
+    return create_custom_source_input(
         name='some_input',
         source_fn=lambda context, arg_dict: [{'key': arg_dict['str_arg']}],
         argument_def_dict={'str_arg': types.STRING},
@@ -117,7 +117,7 @@ def test_hello_world():
     hello_world = SolidDefinition(
         name='hello_world',
         inputs=[
-            create_single_source_input(
+            create_custom_source_input(
                 name='hello_world_input',
                 source_fn=lambda context, arg_dict: {},
                 argument_def_dict={},

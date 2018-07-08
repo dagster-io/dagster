@@ -1,7 +1,7 @@
 import dagster
 from dagster import config
 from dagster.core.definitions import (
-    SolidDefinition, create_single_materialization_output, create_single_source_input
+    SolidDefinition, create_single_materialization_output, create_custom_source_input
 )
 from dagster.core.execution import output_single_solid
 
@@ -11,7 +11,7 @@ def test_iterator_solid():
         yield 1
         yield 2
 
-    some_input = create_single_source_input(
+    some_input = create_custom_source_input(
         name='iter_numbers',
         source_fn=input_fn,
         argument_def_dict={},
@@ -45,7 +45,7 @@ def test_iterator_solid():
     output_single_solid(
         dagster.context(),
         iterable_solid,
-        environment=config.Environment(inputs=[config.Input('iter_numbers', {}, 'UNNAMED')]),
+        environment=config.Environment(inputs=[config.Input('iter_numbers', {}, 'CUSTOM')]),
         materialization_type='CUSTOM',
         arg_dict={}
     )

@@ -3,7 +3,7 @@ import pytest
 from dagster.core import types
 
 from dagster.core.definitions import (
-    SolidDefinition, OutputDefinition, create_single_source_input, MaterializationDefinition
+    SolidDefinition, OutputDefinition, create_custom_source_input, MaterializationDefinition
 )
 
 from dagster.core.execution import (
@@ -23,7 +23,7 @@ def _read_new_single_source_input(context, new_input, arg_dict):
 
 def test_read_source():
     expected_output = [{'data_key': 'data_value'}]
-    some_input = create_single_source_input(
+    some_input = create_custom_source_input(
         name='some_input',
         source_fn=lambda context, arg_dict: expected_output,
         argument_def_dict={}
@@ -35,14 +35,14 @@ def test_read_source():
 
 
 def test_source_arg_mismiatch():
-    extra_arg_source = create_single_source_input(
+    extra_arg_source = create_custom_source_input(
         name='some_input', source_fn=lambda context, arg_dict: [], argument_def_dict={}
     ).sources[0]
 
     with pytest.raises(DagsterTypeError):
         _read_source(create_test_context(), extra_arg_source, {'extra_arg': None})
 
-    some_input_with_arg = create_single_source_input(
+    some_input_with_arg = create_custom_source_input(
         name='some_input_with_arg',
         source_fn=lambda context, arg_dict: [],
         argument_def_dict={'in_arg': types.STRING}
@@ -53,7 +53,7 @@ def test_source_arg_mismiatch():
 
 
 def test_materialize_input_arg_type_mismatch():
-    some_input_with_arg = create_single_source_input(
+    some_input_with_arg = create_custom_source_input(
         name='some_input_with_arg',
         source_fn=lambda context, arg_dict: [],
         argument_def_dict={'in_arg': types.STRING}
@@ -68,7 +68,7 @@ def noop_output():
 
 
 def test_materialize_output():
-    some_input = create_single_source_input(
+    some_input = create_custom_source_input(
         name='some_input',
         source_fn=lambda context, arg_dict: [{'data_key': 'data_value'}],
         argument_def_dict={},
@@ -97,7 +97,7 @@ def test_materialize_output():
 
 
 def test_materialize_input_with_args():
-    some_input = create_single_source_input(
+    some_input = create_custom_source_input(
         name='some_input',
         source_fn=lambda context, arg_dict: [{'key': arg_dict['str_arg']}],
         argument_def_dict={'str_arg': types.STRING}

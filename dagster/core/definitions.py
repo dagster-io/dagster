@@ -53,9 +53,9 @@ class ExpectationDefinition:
         self.expectation_fn = check.callable_param(expectation_fn, 'expectation_fn')
 
 
-def create_dagster_single_file_input(name, single_file_fn, source_type='UNNAMED'):
+def create_dagster_single_file_input(name, single_file_fn, source_type='CUSTOM'):
     check.str_param(name, 'name')
-    return create_single_source_input(
+    return create_custom_source_input(
         name=name,
         source_fn=lambda context, arg_dict: single_file_fn(
             context=context,
@@ -95,8 +95,8 @@ class SourceDefinition:
         )
 
 
-def create_single_source_input(
-    name, source_fn, argument_def_dict, depends_on=None, expectations=None, source_type='UNNAMED'
+def create_custom_source_input(
+    name, source_fn, argument_def_dict, depends_on=None, expectations=None, source_type='CUSTOM'
 ):
     '''
     This function exist and is used a lot because separation of inputs and sources used to not

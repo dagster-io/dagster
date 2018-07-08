@@ -2,7 +2,7 @@ import dagster
 from dagster import check
 from dagster import config
 from dagster.core.definitions import (
-    SolidDefinition, create_single_source_input, create_no_materialization_output
+    SolidDefinition, create_custom_source_input, create_no_materialization_output
 )
 from dagster import dep_only_input
 
@@ -22,7 +22,7 @@ def test_execute_solid_with_dep_only_inputs_no_api():
         output=create_no_materialization_output(),
     )
 
-    only_dep_input = create_single_source_input(
+    only_dep_input = create_custom_source_input(
         name='step_one_solid',
         source_fn=lambda arg_dict: check.not_implemented('should not get here'),
         argument_def_dict={},

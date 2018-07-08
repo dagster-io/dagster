@@ -8,7 +8,7 @@ from dagster.core import types
 from dagster.core.execution import DagsterExecutionContext
 
 from .definitions import (
-    InputDefinition, create_dagster_single_file_input, create_single_source_input
+    InputDefinition, create_dagster_single_file_input, create_custom_source_input
 )
 from .graph import DagsterPipeline
 
@@ -18,12 +18,12 @@ def pipeline(**kwargs):
 
 
 def input_definition(**kwargs):
-    return create_single_source_input(**kwargs)
+    return create_custom_source_input(**kwargs)
 
 
 def file_input_definition(argument_def_dict=None, **kwargs):
     check.param_invariant(argument_def_dict is None, 'Should not provide argument_def_dict')
-    return create_single_source_input(argument_def_dict={'path': types.PATH}, **kwargs)
+    return create_custom_source_input(argument_def_dict={'path': types.PATH}, **kwargs)
 
 
 def create_json_input(name):

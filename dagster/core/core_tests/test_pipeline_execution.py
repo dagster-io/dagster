@@ -6,7 +6,7 @@ from dagster import config
 
 from dagster.core.definitions import (
     SolidDefinition,
-    create_single_source_input,
+    create_custom_source_input,
     create_no_materialization_output,
 )
 from dagster.core.graph import (create_adjacency_lists, SolidGraph, DagsterPipeline)
@@ -38,7 +38,7 @@ def create_solid_with_deps(name, *solid_deps):
     #     return [{name: 'input_set'}]
 
     inputs = [
-        create_single_source_input(
+        create_custom_source_input(
             solid_dep.name,
             source_fn=create_dep_input_fn(solid_dep.name),
             argument_def_dict={},
@@ -62,7 +62,7 @@ def create_solid_with_deps(name, *solid_deps):
 
 def create_root_solid(name):
     input_name = name + '_input'
-    inp = create_single_source_input(
+    inp = create_custom_source_input(
         input_name,
         source_fn=lambda context, arg_dict: [{input_name: 'input_set'}],
         argument_def_dict={},
@@ -258,7 +258,7 @@ def test_pipeline_execution_graph_diamond():
 
     results = list()
 
-    environment = config.Environment(inputs=[config.Input('A_input', {}, 'UNNAMED')])
+    environment = config.Environment(inputs=[config.Input('A_input', {}, 'CUSTOM')])
 
     for result in execute_pipeline_iterator(
         create_test_context(),

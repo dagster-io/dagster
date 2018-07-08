@@ -4,7 +4,7 @@ from dagster import config
 import dagster.core
 from dagster.core.definitions import (
     SolidDefinition,
-    create_single_source_input,
+    create_custom_source_input,
     create_no_materialization_output,
     create_single_materialization_output,
     InputDefinition,
@@ -33,7 +33,7 @@ def create_failing_output_def():
 
 
 def create_input_set_input_def(input_name):
-    return create_single_source_input(
+    return create_custom_source_input(
         input_name,
         source_fn=lambda context, arg_dict: [{input_name: 'input_set'}],
         argument_def_dict={},
@@ -58,7 +58,7 @@ def create_root_success_solid(name):
 
 def create_root_transform_failure_solid(name):
     input_name = name + '_input'
-    inp = create_single_source_input(
+    inp = create_custom_source_input(
         input_name,
         source_fn=lambda context, arg_dict: [{input_name: 'input_set'}],
         argument_def_dict={},
@@ -80,7 +80,7 @@ def create_root_input_failure_solid(name):
         raise Exception('something bad happened')
 
     input_name = name + '_input'
-    inp = create_single_source_input(
+    inp = create_custom_source_input(
         input_name,
         source_fn=failed_input_fn,
         argument_def_dict={},
@@ -112,7 +112,7 @@ def create_root_output_failure_solid(name):
 
 def no_args_env(input_name):
     return config.Environment(
-        inputs=[config.Input(input_name=input_name, args={}, source='UNNAMED')]
+        inputs=[config.Input(input_name=input_name, args={}, source='CUSTOM')]
     )
 
 
@@ -192,8 +192,8 @@ def test_failure_midstream():
 
     environment = config.Environment(
         inputs=[
-            config.Input('A_input', {}, 'UNNAMED'),
-            config.Input('B_input', {}, 'UNNAMED'),
+            config.Input('A_input', {}, 'CUSTOM'),
+            config.Input('B_input', {}, 'CUSTOM'),
         ]
     )
     pipeline = dagster.core.pipeline(solids=[solid_a, solid_b, solid_c])

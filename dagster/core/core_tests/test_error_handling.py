@@ -2,7 +2,7 @@ import pytest
 
 from dagster import check
 
-from dagster.core.definitions import create_single_source_input
+from dagster.core.definitions import create_custom_source_input
 
 from dagster.core.execution import (
     _read_source, DagsterUserCodeExecutionError, _execute_core_transform, _execute_materialization,
@@ -18,7 +18,7 @@ def test_basic_input_error_handling():
     def input_fn_inst(_context, _arg_dict):
         raise Exception('a user error')
 
-    erroring_input = create_single_source_input(
+    erroring_input = create_custom_source_input(
         name='some_input', source_fn=input_fn_inst, argument_def_dict={}
     )
 
