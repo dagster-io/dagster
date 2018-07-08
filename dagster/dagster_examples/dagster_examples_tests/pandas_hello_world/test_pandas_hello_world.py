@@ -1,4 +1,5 @@
 import dagster
+from dagster import config
 
 from dagster.core.execution import execute_pipeline
 from dagster.utils.test import script_relative_path
@@ -12,9 +13,9 @@ def test_pipeline_include():
 
 def test_execute_pipeline():
     pipeline = define_pipeline()
-    environment = dagster.config.Environment(
+    environment = config.Environment(
         inputs=[
-            dagster.config.Input('num', {'path': script_relative_path('num.csv')}, source='CSV'),
+            config.Input('num', {'path': script_relative_path('num.csv')}, source='CSV'),
         ],
     )
 
