@@ -51,7 +51,7 @@ def format_description(desc):
     return wrapper.fill(dedented)
 
 
-def set_pipeline(ctx, arg, value):
+def set_pipeline(ctx, _arg, value):
     ctx.params['pipeline_config'] = ctx.find_object(Config).get_pipeline(value)
 
 

@@ -126,7 +126,7 @@ def create_table_input_dependency(solid):
 
 
 def create_sql_transform(sql_text):
-    def transform_fn(context, args):
+    def transform_fn(_context, args):
         sql_texts = {}
         for name, sql_expr in args.items():
             sql_texts[name] = sql_expr.from_target
@@ -152,7 +152,7 @@ def create_sql_solid(name, inputs, sql_text):
 def _create_sql_alchemy_transform_fn(sql_text):
     check.str_param(sql_text, 'sql_text')
 
-    def transform_fn(context, args):
+    def transform_fn(context, _args):
         return execute_sql_text_on_context(context, sql_text)
 
     return transform_fn

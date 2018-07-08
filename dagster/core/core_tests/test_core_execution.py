@@ -74,7 +74,7 @@ def test_materialize_output():
         argument_def_dict={},
     )
 
-    def tranform_fn_inst(context, args):
+    def tranform_fn_inst(_context, args):
         args['some_input'][0]['data_key'] = 'new_value'
         return args['some_input']
 

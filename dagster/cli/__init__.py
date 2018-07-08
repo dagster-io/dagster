@@ -1,6 +1,8 @@
-import click
 import os
 import sys
+
+import click
+
 from .context import Config
 from .pipeline import create_pipeline_cli
 

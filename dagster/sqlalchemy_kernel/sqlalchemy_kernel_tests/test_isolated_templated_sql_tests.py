@@ -161,7 +161,8 @@ def test_single_templated_sql_solid_double_table_with_api():
 
     context = in_mem_context(num_table_arg)
 
-    sql = '''CREATE TABLE {{sum_table.name}} AS SELECT num1, num2, num1 + num2 as sum FROM {{num_table.name}}'''
+    sql = '''CREATE TABLE {{sum_table.name}} AS
+    SELECT num1, num2, num1 + num2 as sum FROM {{num_table.name}}'''
 
     sum_solid = create_templated_sql_transform_solid(
         name='sum_solid',

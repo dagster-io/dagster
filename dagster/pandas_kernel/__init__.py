@@ -7,7 +7,12 @@ from dagster import check
 from dagster.utils import has_context_argument
 
 from dagster.core import create_json_input
-from dagster.core.definitions import SolidDefinition, OutputDefinition, ExpectationDefinition, ExpectationResult
+from dagster.core.definitions import (
+    SolidDefinition,
+    OutputDefinition,
+    ExpectationDefinition,
+    ExpectationResult,
+)
 from dagster.core.execution import DagsterExecutionContext
 from dagster.core.errors import (
     DagsterUserCodeExecutionError, DagsterInvariantViolationError, DagsterInvalidDefinitionError
