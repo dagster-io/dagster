@@ -1,11 +1,12 @@
 import pytest
+import dagster
 from dagster import config
 from dagster.core import types
 from dagster.core.definitions import (
     OutputDefinition,
     InputDefinition,
-    DagsterInvalidDefinitionError,
 )
+from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.decorators import solid, source, materialization, with_context
 from dagster.core.execution import (
     output_single_solid,
@@ -415,3 +416,18 @@ def test_materialization_definition_errors():
     @with_context
     def valid_context_2(_context, _data, foo, bar):
         pass
+
+
+def test_wrong_argument_to_pipeline():
+    def non_solid_func():
+        pass
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError, match='You have passed a lambda or function non_solid_func'
+    ):
+        dagster.pipeline(solids=[non_solid_func])
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError, match='You have passed a lambda or function <lambda>'
+    ):
+        dagster.pipeline(solids=[lambda x: x])

@@ -1,6 +1,7 @@
 from toposort import toposort_flatten
 
 from dagster import check
+from dagster.core.errors import DagsterInvalidDefinitionError
 
 from .definitions import SolidDefinition
 
@@ -9,6 +10,16 @@ class DagsterPipeline:
     def __init__(self, solids, name=None, description=None):
         self.name = check.opt_str_param(name, 'name')
         self.description = check.opt_str_param(description, 'description')
+
+        for solid in solids:
+            if not isinstance(solid, SolidDefinition) and callable(solid):
+                raise DagsterInvalidDefinitionError(
+                    '''You have passed a lambda or function {solid} into
+                a pipeline that is not a solid. You have likely forgetten to annotate this function
+                with an @solid decorator located in dagster.core.decorators
+                '''.format(solid=solid.__name__)
+                )
+
         self.solids = check.list_param(solids, 'solids', of_type=SolidDefinition)
 
         solid_names = set([solid.name for solid in self.solids])
