@@ -5,21 +5,26 @@ from dagster import check
 from dagster.core.definitions import create_custom_source_input
 
 from dagster.core.execution import (
-    _read_source, DagsterUserCodeExecutionError, _execute_core_transform, _execute_materialization,
-    DagsterExecutionContext, MaterializationDefinition
+    _read_source,
+    _execute_core_transform,
+    _execute_materialization,
+    DagsterExecutionContext,
+    MaterializationDefinition,
 )
+
+from dagster.core.errors import (DagsterUserCodeExecutionError, DagsterTypeError)
 
 
 def create_test_context():
     return DagsterExecutionContext()
 
 
-def test_basic_input_error_handling():
-    def input_fn_inst(_context, _arg_dict):
+def test_basic_source_runtime_error_handling():
+    def source_fn_inst(_context, _arg_dict):
         raise Exception('a user error')
 
     erroring_input = create_custom_source_input(
-        name='some_input', source_fn=input_fn_inst, argument_def_dict={}
+        name='some_input', source_fn=source_fn_inst, argument_def_dict={}
     )
 
     with pytest.raises(DagsterUserCodeExecutionError):
@@ -39,7 +44,7 @@ def test_basic_core_transform_error_handling():
         )
 
 
-def test_basic_output_transform_error_handling():
+def test_basic_materialization_runtime_error_handling():
     def materialization_fn_inst(_data, arg_dict):
         assert arg_dict == {}
         raise Exception('error during output')

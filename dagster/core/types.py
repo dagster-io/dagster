@@ -1,4 +1,4 @@
-from six import string_types
+from six import (string_types, integer_types)
 
 from dagster import check
 
@@ -16,5 +16,14 @@ class _SolidStringType(DagsterType):
         return isinstance(value, string_types)
 
 
+class _SolidIntType(DagsterType):
+    def __init__(self):
+        self.name = 'INT'
+
+    def is_python_valid_value(self, value):
+        return isinstance(value, integer_types)
+
+
 STRING = _SolidStringType(name='String')
 PATH = _SolidStringType(name='Path')
+INT = _SolidIntType()

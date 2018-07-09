@@ -3,12 +3,19 @@ import pytest
 from dagster.core import types
 
 from dagster.core.definitions import (
-    SolidDefinition, OutputDefinition, create_custom_source_input, MaterializationDefinition
+    SolidDefinition,
+    OutputDefinition,
+    create_custom_source_input,
+    MaterializationDefinition,
+    SourceDefinition,
 )
 
 from dagster.core.execution import (
-    _execute_core_transform, DagsterTypeError, DagsterExecutionContext, _execute_materialization,
-    _read_source
+    _execute_core_transform,
+    DagsterTypeError,
+    DagsterExecutionContext,
+    _execute_materialization,
+    _read_source,
 )
 
 
@@ -61,6 +68,22 @@ def test_materialize_input_arg_type_mismatch():
 
     with pytest.raises(DagsterTypeError):
         _read_new_single_source_input(create_test_context(), some_input_with_arg, {'in_arg': 1})
+
+
+def test_materialize_input_int_type():
+    int_arg_source = SourceDefinition(
+        source_type='SOMETHING',
+        source_fn=lambda _context, _args: True,
+        argument_def_dict={'an_int': types.INT},
+    )
+    assert _read_source(create_test_context(), int_arg_source, {'an_int': 0})
+    assert _read_source(create_test_context(), int_arg_source, {'an_int': 1})
+
+    with pytest.raises(DagsterTypeError):
+        _read_source(create_test_context(), int_arg_source, {'an_int': 'not_an_int'})
+
+    with pytest.raises(DagsterTypeError):
+        _read_source(create_test_context(), int_arg_source, {'an_int': None})
 
 
 def noop_output():
