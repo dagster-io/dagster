@@ -30,7 +30,7 @@ def create_test_context():
 def single_input_env(input_name, args=None):
     check.str_param(input_name, 'input_name')
     args = check.opt_dict_param(args, 'args')
-    return config.Environment(inputs=[config.Input(input_name, args, 'CUSTOM')])
+    return config.Environment(sources={input_name: config.Source('CUSTOM', args)})
 
 
 def test_execute_solid_no_args():

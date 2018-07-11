@@ -11,13 +11,7 @@ import dagster.pandas_kernel as dagster_pd
 
 def create_num_csv_environment():
     return config.Environment(
-        inputs=[
-            config.Input(
-                input_name='num_csv',
-                args={'path': script_relative_path('num.csv')},
-                source='CSV',
-            ),
-        ],
+        sources={'num_csv': config.Source('CSV', {'path': script_relative_path('num.csv')})}
     )
 
 

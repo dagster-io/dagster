@@ -111,9 +111,7 @@ def create_root_output_failure_solid(name):
 
 
 def no_args_env(input_name):
-    return config.Environment(
-        inputs=[config.Input(input_name=input_name, args={}, source='CUSTOM')]
-    )
+    return config.Environment(sources={input_name: config.Source(name='CUSTOM', args={})})
 
 
 def test_transform_failure_pipeline():
@@ -191,10 +189,10 @@ def test_failure_midstream():
     )
 
     environment = config.Environment(
-        inputs=[
-            config.Input('A_input', {}, 'CUSTOM'),
-            config.Input('B_input', {}, 'CUSTOM'),
-        ]
+        sources={
+            'A_input': config.Source('CUSTOM', {}),
+            'B_input': config.Source('CUSTOM', {}),
+        }
     )
     pipeline = dagster.core.pipeline(solids=[solid_a, solid_b, solid_c])
     pipeline_result = execute_pipeline(

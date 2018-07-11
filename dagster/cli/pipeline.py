@@ -141,6 +141,11 @@ LOGGING_DICT = {
 }
 
 
+def load_yaml(path):
+    with open(path, 'r') as ff:
+        return yaml.load(ff)
+
+
 @click.command(name='execute', help="execute <<pipeline_name>>")
 @pipeline_name_argument
 @click.option(
@@ -159,14 +164,14 @@ LOGGING_DICT = {
 @click.option('--from-solid', type=click.STRING, help="Solid to start execution from", default=None)
 @click.option('--log-level', type=click.Choice(LOGGING_DICT.keys()), default='INFO')
 def execute_command(pipeline_config, env, from_solid, log_level):
-    with open(env, 'r') as ff:
-        env_config = yaml.load(ff)
-    environment = dagster_config.Environment(
-        inputs=[
-            dagster_config.Input(input_name=s['input_name'], args=s['args'], source=s['source'])
-            for s in check.list_elem(env_config['environment'], 'inputs')
-        ]
-    )
+    env_config = load_yaml(env)
+    sources = {}
+    for input_name, source_yml in check.dict_elem(env_config['environment'], 'sources').items():
+        sources[input_name] = dagster_config.Source(
+            name=source_yml['name'], args=source_yml['args']
+        )
+
+    environment = dagster_config.Environment(sources=sources)
 
     materializations = []
     if 'materializations' in env_config:

@@ -33,9 +33,7 @@ def test_execute_solid_with_input_same_name():
         DagsterExecutionContext(),
         solid,
         environment=config.Environment(
-            inputs=[
-                config.Input(input_name='a_thing', source='a_source_type', args={'an_arg': 'foo'})
-            ]
+            sources={'a_thing': config.Source(name='a_source_type', args={'an_arg': 'foo'})}
         )
     )
 
@@ -80,9 +78,7 @@ def test_execute_dep_solid_different_input_name():
         DagsterExecutionContext(),
         pipeline,
         environment=config.Environment(
-            inputs=[
-                config.Input(input_name='a_thing', source='a_source_type', args={'an_arg': 'bar'})
-            ]
+            sources={'a_thing': config.Source(name='a_source_type', args={'an_arg': 'bar'})}
         )
     )
 
@@ -156,18 +152,10 @@ def test_execute_dep_solid_same_input_name():
     pipeline = dagster.pipeline(solids=[table_one, table_two])
 
     complete_environment = config.Environment(
-        inputs=[
-            config.Input(
-                input_name='table_one',
-                source='TABLE',
-                args={'name': 'table_one_instance'},
-            ),
-            config.Input(
-                input_name='table_two',
-                source='TABLE',
-                args={'name': 'table_two_instance'},
-            ),
-        ]
+        sources={
+            'table_one': config.Source(name='TABLE', args={'name': 'table_one_instance'}),
+            'table_two': config.Source(name='TABLE', args={'name': 'table_two_instance'}),
+        }
     )
 
     both_solids_result = dagster.execute_pipeline(

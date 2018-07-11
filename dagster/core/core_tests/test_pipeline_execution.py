@@ -258,7 +258,7 @@ def test_pipeline_execution_graph_diamond():
 
     results = list()
 
-    environment = config.Environment(inputs=[config.Input('A_input', {}, 'CUSTOM')])
+    environment = config.Environment(sources={'A_input': config.Source('CUSTOM', {})})
 
     for result in execute_pipeline_iterator(
         create_test_context(),
