@@ -25,7 +25,7 @@ def create_test_context():
 
 
 def create_empty_test_env():
-    return config.Environment(inputs=[])
+    return config.Environment(sources={})
 
 
 def test_solid():
@@ -90,11 +90,7 @@ def test_solid_with_input():
         create_test_context(),
         hello_world,
         environment=config.Environment(
-            inputs=[config.Input(
-                input_name='foo_to_foo',
-                args={'foo': 'bar'},
-                source='TEST',
-            )]
+            sources={'foo_to_foo': config.Source(name='TEST', args={'foo': 'bar'})}
         ),
     )
 
@@ -121,11 +117,7 @@ def test_sources():
         create_test_context(),
         hello_world,
         environment=config.Environment(
-            inputs=[config.Input(
-                input_name='i',
-                args={'foo': 'bar'},
-                source='NO_CONTEXT',
-            )]
+            sources={'i': config.Source(name='NO_CONTEXT', args={'foo': 'bar'})}
         ),
     )
 
@@ -137,11 +129,7 @@ def test_sources():
         create_test_context(),
         hello_world,
         environment=config.Environment(
-            inputs=[config.Input(
-                input_name='i',
-                args={'foo': 'bar'},
-                source='WITH_CONTEXT',
-            )]
+            sources={'i': config.Source(name='NO_CONTEXT', args={'foo': 'bar'})}
         ),
     )
 
@@ -173,7 +161,7 @@ def test_materializations():
     output_single_solid(
         create_test_context(),
         hello,
-        environment=config.Environment(inputs=[]),
+        environment=config.Environment(sources={}),
         materialization_type='CONTEXT',
         arg_dict={'foo': 'bar'}
     )
@@ -185,7 +173,7 @@ def test_materializations():
     output_single_solid(
         create_test_context(),
         hello,
-        environment=config.Environment(inputs=[]),
+        environment=config.Environment(sources={}),
         materialization_type='NO_CONTEXT',
         arg_dict={'foo': 'bar'}
     )

@@ -35,13 +35,9 @@ def get_solid_transformed_value(context, solid_inst, environment):
 
 def get_num_csv_environment():
     return config.Environment(
-        inputs=[
-            config.Input(
-                input_name='num_csv',
-                args={'path': script_relative_path('num.csv')},
-                source='CSV',
-            ),
-        ],
+        sources={
+            'num_csv': config.Source('CSV', args={'path': script_relative_path('num.csv')}),
+        }
     )
 
 
@@ -138,15 +134,7 @@ def execute_transform_in_temp_csv_files(solid_inst):
         result = output_single_solid(
             create_test_context(),
             solid_inst,
-            environment=config.Environment(
-                inputs=[
-                    config.Input(
-                        input_name='num_csv',
-                        args={'path': script_relative_path('num.csv')},
-                        source='CSV',
-                    ),
-                ],
-            ),
+            environment=get_num_csv_environment(),
             materialization_type='CSV',
             arg_dict={'path': temp_file_name},
         )
@@ -275,18 +263,10 @@ def test_two_input_solid():
     )
 
     environment = config.Environment(
-        inputs=[
-            config.Input(
-                input_name='num_csv1',
-                args={'path': script_relative_path('num.csv')},
-                source='CSV',
-            ),
-            config.Input(
-                input_name='num_csv2',
-                args={'path': script_relative_path('num.csv')},
-                source='CSV',
-            ),
-        ],
+        sources={
+            'num_csv1': config.Source('CSV', {'path': script_relative_path('num.csv')}),
+            'num_csv2': config.Source('CSV', {'path': script_relative_path('num.csv')}),
+        }
     )
 
     df = get_solid_transformed_value(create_test_context(), two_input_solid, environment)
@@ -498,22 +478,10 @@ def test_pandas_output_intermediate_csv_files():
             context,
             pipeline,
             environment=config.Environment(
-                inputs=[
-                    config.Input(
-                        input_name='sum_table',
-                        source='CSV',
-                        args={
-                            'path': sum_file,
-                        },
-                    ),
-                    config.Input(
-                        input_name='mult_table',
-                        source='CSV',
-                        args={
-                            'path': mult_file,
-                        },
-                    ),
-                ],
+                sources={
+                    'sum_table': config.Source('CSV', {'path': sum_file}),
+                    'mult_table': config.Source('CSV', {'path': mult_file}),
+                }
             ),
             from_solids=['sum_mult_table'],
             through_solids=['sum_mult_table'],
@@ -583,18 +551,10 @@ def test_pandas_multiple_inputs():
     context = create_test_context()
 
     environment = config.Environment(
-        inputs=[
-            config.Input(
-                input_name='num_csv1',
-                args={'path': script_relative_path('num.csv')},
-                source='CSV',
-            ),
-            config.Input(
-                input_name='num_csv2',
-                args={'path': script_relative_path('num.csv')},
-                source='CSV',
-            ),
-        ],
+        sources={
+            'num_csv1': config.Source('CSV', {'path': script_relative_path('num.csv')}),
+            'num_csv2': config.Source('CSV', {'path': script_relative_path('num.csv')}),
+        }
     )
 
     def transform_fn(_context, args):

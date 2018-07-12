@@ -112,14 +112,10 @@ You might notice that there is no actual CSV file specified as inputs. This is b
 
 .. code-block:: python
 
-  environment = dagster.config.environment(
-     inputs=[
-         dagster.config.input(
-             name='num',
-             source='CSV',
-             args={'path': 'path/to/num.csv'}
-         )
-     ]
+  environment = config.environment(
+    sources={
+        'num' : config.Source(name='CSV', args={'path': 'path/to/num.csv'})
+    }
   )
 
   pipeline_result = dagster.execute_pipeline(
@@ -187,15 +183,11 @@ We can specify in order to get artifacts for the results. We can materialize out
 
 .. code-block:: python
 
-  environment = config.Environment(
-     inputs=[
-         config.Input(
-             name='num',
-             source='CSV',
-             args={'path': 'path/to/num.csv'}
-         )
-     ]
-  )
+    environment = config.Environment(
+        sources={
+            'num' : config.Source(name='CSV', args={'path': 'path/to/num.csv'})
+        }
+    )
 
   materializations = [
       config.Materialization(
@@ -381,13 +373,9 @@ enough source data to create all the inputs necessary for the pipeline.
 .. code-block:: python
 
     environment = config.Environment(
-        inputs=[
-            config.Input(
-                name='num_df',
-                source='CSV',
-                args={'path': 'path/to/input.csv'}
-            )
-        ]
+        sources={
+            'num_df' : config.Source(name='CSV', args={'path': 'path/to/input.csv'})
+        }
     )
 
     pipeline_result = dagster.execute_pipeline(
@@ -471,13 +459,9 @@ isolation or in the context of a pipeline.
     pipeline = dagster.pipeline(solids=[sum_solid, sum_sq_solid])
 
     environment = config.Environment(
-        inputs=[
-            config.Input(
-                name='num_df',
-                source='CSV',
-                args={'path': 'path/to/num.csv'}
-            )
-        ]
+        sources={
+            'num_df' : config.Source(name='CSV', args={'path': 'path/to/num.csv'})
+        }
     )
 
     pipeline_result = dagster.execute_pipeline(
@@ -496,13 +480,9 @@ you could specify that you only want to specify the first solid:
 .. code-block:: python
 
     environment = config.Environment(
-        inputs=[
-            config.Input(
-                name='num_df',
-                source='CSV',
-                args={'path': 'path/to/num.csv'}
-            )
-        ]
+        sources={
+            'num_df' : config.Source(name='CSV', args={'path': 'path/to/num.csv'})
+        }
     )
 
     pipeline_result = dagster.execute_pipeline(
@@ -518,13 +498,9 @@ would have to be changed.
 .. code-block:: python
 
     environment = config.Environment(
-        inputs=[
-            config.Input(
-                name='sum_df',
-                source='CSV',
-                args={'path': 'path/to/sum.csv'}
-            )
-        ]
+        sources={
+            'sum_df' : config.Source(name='CSV', args={'path': 'path/to/sum.csv'})
+        }
     )
 
     pipeline_result = dagster.execute_pipeline(

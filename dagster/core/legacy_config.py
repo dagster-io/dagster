@@ -29,7 +29,6 @@ def create_pipeline_env_from_arg_dicts(pipeline, arg_dicts):
     check.inst_param(pipeline, 'pipeline', DagsterPipeline)
     check.dict_param(arg_dicts, 'arg_dicts', key_type=str, value_type=dict)
 
-    inputs = {}
     input_to_source_type = {}
 
     for solid in pipeline.solids:
@@ -37,18 +36,13 @@ def create_pipeline_env_from_arg_dicts(pipeline, arg_dicts):
             if input_def.sources:
                 input_to_source_type[input_def.name] = input_def.sources[0].source_type
 
-    inputs = []
+    sources = {}
     for input_name, arg_dict in arg_dicts.items():
         if input_name in input_to_source_type:
-            inputs.append(
-                config.Input(
-                    input_name=input_name,
-                    source=input_to_source_type[input_name],
-                    args=arg_dict,
-                )
-            )
+            source_name = input_to_source_type[input_name]
+            sources[input_name] = config.Source(name=source_name, args=arg_dict)
 
-    return config.Environment(inputs=inputs)
+    return config.Environment(sources=sources)
 
 
 def create_single_solid_env_from_arg_dicts(solid, arg_dicts):
@@ -60,15 +54,10 @@ def create_single_solid_env_from_arg_dicts(solid, arg_dicts):
         check.invariant(len(input_def.sources) == 1)
         input_to_source_type[input_def.name] = input_def.sources[0].source_type
 
-    inputs = []
+    sources = {}
 
     for input_name, arg_dict in arg_dicts.items():
-        inputs.append(
-            config.Input(
-                input_name=input_name,
-                source=input_to_source_type[input_name],
-                args=arg_dict,
-            )
-        )
+        source_name = input_to_source_type[input_name]
+        sources[input_name] = config.Source(name=source_name, args=arg_dict)
 
-    return config.Environment(inputs=inputs)
+    return config.Environment(sources=sources)

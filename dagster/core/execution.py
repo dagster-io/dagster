@@ -682,7 +682,7 @@ def _gather_input_values(context, solid, input_args, intermediate_values):
                 input_values[input_def.name] = intermediate_values[input_def.depends_on.name]
             else:
                 # must get value from source
-                source_def = input_args.source_for_input(solid.name, input_def.name)
+                source_def = input_args.source_def_for_input(solid.name, input_def.name)
                 new_value = _read_source(
                     context, source_def, input_args.args_for_input(input_def.name)
                 )
@@ -739,21 +739,18 @@ class InputArgs:
 
     @property
     def input_names(self):
-        return [input_source.input_name for input_source in self.environment.inputs]
+        return list(self.environment.sources.keys())
 
-    def source_for_input(self, solid_name, input_name):
-        input_source = self.environment.input_named(input_name)
+    def source_def_for_input(self, solid_name, input_name):
+        source_config = self.environment.sources[input_name]
 
         input_def = self.pipeline.get_input(solid_name, input_name)
 
-        if not input_source.source:
-            check.invariant(len(input_def.sources) == 1)
-            return input_def.sources[0]
-
-        return input_def.source_of_type(input_source.source)
+        return input_def.source_of_type(source_config.name)
 
     def args_for_input(self, input_name):
-        return self.environment.input_named(input_name).args
+        check.str_param(input_name, 'input_name')
+        return self.environment.sources[input_name].args
 
 
 def execute_pipeline_iterator(

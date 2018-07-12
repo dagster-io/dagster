@@ -44,7 +44,7 @@ def test_sql_sum_solid():
         DagsterSqlAlchemyExecutionContext(engine=engine),
         sum_table_solid,
         environment=config.Environment(
-            inputs=[config.Input('num_table', {'table_name': 'num_table'}, 'TABLENAME')]
+            sources={'num_table': config.Source('TABLENAME', {'table_name': 'num_table'})}
         ),
         materialization_type='CREATE',
         arg_dict={'table_name': 'sum_table'},
@@ -82,7 +82,7 @@ def test_execute_sql_sum_sq_solid():
     engine = in_mem_engine()
 
     environment = config.Environment(
-        inputs=[config.Input('num_table', {'table_name': 'num_table'}, source='TABLENAME')]
+        sources={'num_table': config.Source('TABLENAME', {'table_name': 'num_table'})}
     )
 
     pipeline_result = execute_pipeline(
@@ -110,7 +110,7 @@ def test_output_sql_sum_sq_solid():
     engine = in_mem_engine()
 
     environment = config.Environment(
-        inputs=[config.Input('num_table', {'table_name': 'num_table'}, source='TABLENAME')]
+        sources={'num_table': config.Source('TABLENAME', {'table_name': 'num_table'})}
     )
 
     pipeline_result = materialize_pipeline(
