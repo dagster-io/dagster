@@ -43,21 +43,3 @@ def create_pipeline_env_from_arg_dicts(pipeline, arg_dicts):
             sources[input_name] = config.Source(name=source_name, args=arg_dict)
 
     return config.Environment(sources=sources)
-
-
-def create_single_solid_env_from_arg_dicts(solid, arg_dicts):
-    check.inst_param(solid, 'solid', SolidDefinition)
-    check.dict_param(arg_dicts, 'arg_dicts', key_type=str, value_type=dict)
-
-    input_to_source_type = {}
-    for input_def in solid.inputs:
-        check.invariant(len(input_def.sources) == 1)
-        input_to_source_type[input_def.name] = input_def.sources[0].source_type
-
-    sources = {}
-
-    for input_name, arg_dict in arg_dicts.items():
-        source_name = input_to_source_type[input_name]
-        sources[input_name] = config.Source(name=source_name, args=arg_dict)
-
-    return config.Environment(sources=sources)
