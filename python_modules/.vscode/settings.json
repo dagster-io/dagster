@@ -1,13 +1,13 @@
 {
   "python.unitTest.pyTestArgs": [
     "-s",
-    "dagster/check/check_tests",
-    "dagster_tests",
-    "dagster/core/core_tests",
-    "dagster/utils/utils_tests",
-    "dagster/pandas_kernel/pandas_kernel_tests",
-    "dagster/sqlalchemy_kernel/sqlalchemy_kernel_tests",
-    "dagster/dagster_examples/dagster_examples_tests"
+    "dagster/dagster/check/check_tests",
+    "dagster/dagster_tests",
+    "dagster/dagster/core/core_tests",
+    "dagster/dagster/utils/utils_tests",
+    "dagster/dagster/pandas_kernel/pandas_kernel_tests",
+    "dagster/dagster/sqlalchemy_kernel/sqlalchemy_kernel_tests",
+    "dagster/dagster/dagster_examples/dagster_examples_tests"
   ],
   "python.unitTest.pyTestEnabled": true,
   "python.pythonPath": "/Users/schrockn/code/venvs/dagster/bin/python",
