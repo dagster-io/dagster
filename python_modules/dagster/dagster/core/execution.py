@@ -666,45 +666,33 @@ def execute_pipeline_through_solid(
     check.failed('Result ' + solid_name + ' not found!')
 
 
-def _gather_input_values(context, solid, input_args, intermediate_values):
+def _gather_input_values(context, solid, input_manager):
     check.inst_param(context, 'context', DagsterExecutionContext)
     check.inst_param(solid, 'solid', SolidDefinition)
-    check.inst_param(input_args, 'input_args', InputArgs)
-    check.dict_param(intermediate_values, 'intermediate_values')
+    check.inst_param(input_manager, 'input_manager', InputManager)
 
     context.info('About to instantiate and gather all inputs')
 
     input_values = {}
     for input_def in solid.inputs:
         with context.value('input', input_def.name):
-            if input_def.depends_on and input_def.depends_on.name in intermediate_values:
-                # grab value from dependency
-                input_values[input_def.name] = intermediate_values[input_def.depends_on.name]
-            else:
-                # must get value from source
-                source_def = input_args.source_def_for_input(solid.name, input_def.name)
-                new_value = _read_source(
-                    context, source_def, input_args.args_for_input(input_def.name)
-                )
-                input_values[input_def.name] = new_value
-
+            input_values[input_def.name] = input_manager.get_input_value(solid, input_def)
             if input_def.input_callback:
                 input_def.input_callback(context, input_values[input_def.name])
     return input_values
 
 
-def _execute_pipeline_solid_step(context, solid, input_args, intermediate_values):
+def _execute_pipeline_solid_step(context, solid, input_manager):
     check.inst_param(context, 'context', DagsterExecutionContext)
     check.inst_param(solid, 'solid', SolidDefinition)
-    check.inst_param(input_args, 'input_args', InputArgs)
-    check.dict_param(intermediate_values, 'intermediate_values')
+    check.inst_param(input_manager, 'input_manager', InputManager)
 
     # The value produce by an inputs is potentially different per solid.
     # This is allowed so that two solids that do different instantiation of the
     # same exact input (e.g. the same file) don't have to create additional solids
     # to account for this.
 
-    input_values = _gather_input_values(context, solid, input_args, intermediate_values)
+    input_values = _gather_input_values(context, solid, input_manager)
 
     # This call does all input and output expectations, as well as the core transform
     transformed_value = _pipeline_solid_in_memory(context, solid, input_values)
@@ -713,7 +701,10 @@ def _execute_pipeline_solid_step(context, solid, input_args, intermediate_values
         check.invariant(not transformed_value.success, 'early return should only be failure')
         return transformed_value
 
-    check.invariant(solid.name not in intermediate_values, 'should be not in intermediate values')
+    check.invariant(
+        solid.name not in input_manager.intermediate_values,
+        'should be not in intermediate values'
+    )
 
     context.debug(
         'About to set {output} for {name}'.format(
@@ -722,31 +713,65 @@ def _execute_pipeline_solid_step(context, solid, input_args, intermediate_values
         )
     )
 
-    intermediate_values[solid.name] = transformed_value
+    input_manager.intermediate_values[solid.name] = transformed_value
 
     return DagsterExecutionResult(
         success=True,
         solid=solid,
-        transformed_value=intermediate_values[solid.name],
+        transformed_value=input_manager.intermediate_values[solid.name],
         exception=None
     )
 
+class InputManager:
+    def __init__(self):
+        self.intermediate_values = {}
 
-class InputArgs:
-    def __init__(self, pipeline, environment):
+    def get_input_value(self, solid, input_def):
+        if input_def.depends_on and input_def.depends_on.name in self.intermediate_values:
+            # grab value from dependency
+            return self.intermediate_values[input_def.depends_on.name]
+        else:
+            # must get value from source
+            return self._get_sourced_input_value(solid.name, input_def.name)
+
+    def _get_sourced_input_value(self, _solid_name, _input_name):
+        check.not_implemented('must implement in subclass')
+
+    @property
+    def sourced_input_names(self):
+        check.not_implemented('must implement in subclass')
+
+class InMemoryInputManager(InputManager):
+    def __init__(self, input_values):
+        super().__init__()
+        self.input_values = check.dict_param(input_values, 'input_values', key_type=str)
+
+    def _get_sourced_input_value(self, _solid_name, input_name):
+        return self.input_values[input_name]
+
+    @property
+    def sourced_input_names(self):
+        return list(self.input_values.keys())
+
+
+class EnvironmentInputManager(InputManager):
+    def __init__(self, context, pipeline, environment):
+        super().__init__()
+        self.context = check.inst_param(context, 'context', DagsterExecutionContext)
         self.pipeline = check.inst_param(pipeline, 'pipeline', DagsterPipeline)
         self.environment = check.inst_param(environment, 'environment', config.Environment)
 
     @property
-    def input_names(self):
+    def sourced_input_names(self):
         return list(self.environment.sources.keys())
 
-    def source_def_for_input(self, solid_name, input_name):
+    def _get_sourced_input_value(self, solid_name, input_name):
         source_config = self.environment.sources[input_name]
-
         input_def = self.pipeline.get_input(solid_name, input_name)
-
-        return input_def.source_of_type(source_config.name)
+        source_def = input_def.source_of_type(source_config.name)
+        return _read_source(
+            self.context, source_def, self.args_for_input(input_def.name)
+        )
 
     def args_for_input(self, input_name):
         check.str_param(input_name, 'input_name')
@@ -759,6 +784,36 @@ def execute_pipeline_iterator(
     environment,
     through_solids=None,
     from_solids=None,
+):
+    return _execute_pipeline_iterator(
+        context,
+        pipeline,
+        through_solids,
+        from_solids,
+        EnvironmentInputManager(context, pipeline, environment)
+    )
+
+def execute_pipeline_iterator_in_memory(
+    context,
+    pipeline,
+    input_values,
+    through_solids=None,
+    from_solids=None,
+):
+    return _execute_pipeline_iterator(
+        context,
+        pipeline,
+        through_solids,
+        from_solids,
+        InMemoryInputManager(input_values),
+    )
+
+def _execute_pipeline_iterator(
+    context,
+    pipeline,
+    through_solids,
+    from_solids,
+    input_manager,
 ):
     '''
     This is the core workhorse function of this module, iterating over the pipeline execution
@@ -777,16 +832,16 @@ def execute_pipeline_iterator(
 
     check.inst_param(context, 'context', DagsterExecutionContext)
     check.inst_param(pipeline, 'pipeline', DagsterPipeline)
-    check.inst_param(environment, 'environment', config.Environment)
     check.opt_list_param(through_solids, 'through_solids', of_type=str)
     check.opt_list_param(from_solids, 'from_solids', of_type=str)
+    check.inst_param(input_manager, 'input_manager', InputManager)
 
     pipeline_context_value = pipeline.name if pipeline.name else 'unnamed'
 
     with context.value('pipeline', pipeline_context_value):
-        input_args = InputArgs(pipeline, environment)
+        input_manager = input_manager
 
-        provided_input_names = input_args.input_names
+        sourced_input_names = input_manager.sourced_input_names
 
         if not through_solids:
             through_solids = pipeline.all_sink_solids
@@ -798,7 +853,7 @@ def execute_pipeline_iterator(
 
             from_solids = list(all_deps)
 
-        for input_name in provided_input_names:
+        for input_name in sourced_input_names:
             if not pipeline.has_input(input_name):
                 raise DagsterInvariantViolationError(
                     f'Input "{input_name}" not found in the pipeline.' + \
@@ -807,7 +862,7 @@ def execute_pipeline_iterator(
 
         for through_solid_name in through_solids:
             unprovided_inputs = pipeline.solid_graph.compute_unprovided_inputs(
-                input_names=provided_input_names, solid_name=through_solid_name
+                input_names=sourced_input_names, solid_name=through_solid_name
             )
             if unprovided_inputs:
                 check.failed(
@@ -820,15 +875,11 @@ def execute_pipeline_iterator(
             from_solids, list(through_solids)
         )
 
-        intermediate_values = {}
-
         for solid in execution_graph.topological_solids:
 
             try:
                 with context.value('solid', solid.name):
-                    execution_result = _execute_pipeline_solid_step(
-                        context, solid, input_args, intermediate_values
-                    )
+                    execution_result = _execute_pipeline_solid_step(context, solid, input_manager)
 
                 yield execution_result
 
@@ -845,12 +896,48 @@ def execute_pipeline_iterator(
                 )
                 break
 
-
 def execute_pipeline(
     context,
     pipeline,
     *,
     environment,
+    from_solids=None,
+    through_solids=None,
+    throw_on_error=True,
+):
+    check.inst_param(environment, 'environment', config.Environment)
+    return _execute_pipeline(
+        context,
+        pipeline,
+        EnvironmentInputManager(context, pipeline, environment),
+        from_solids,
+        through_solids,
+        throw_on_error,
+    )
+
+def execute_pipeline_in_memory(
+    context,
+    pipeline,
+    *,
+    input_values,
+    from_solids=None,
+    through_solids=None,
+    throw_on_error=True,
+):
+    check.dict_param(input_values, 'input_values', key_type=str)
+    return _execute_pipeline(
+        context,
+        pipeline,
+        InMemoryInputManager(input_values),
+        from_solids,
+        through_solids,
+        throw_on_error,
+    )
+
+def _execute_pipeline(
+    context,
+    pipeline,
+    input_manager,
     from_solids=None,
     through_solids=None,
     throw_on_error=True,
@@ -865,19 +952,17 @@ def execute_pipeline(
     '''
     check.inst_param(context, 'context', DagsterExecutionContext)
     check.inst_param(pipeline, 'pipeline', DagsterPipeline)
-    check.inst_param(environment, 'environment', config.Environment)
+    check.inst_param(input_manager, 'input_manager', InputManager)
     from_solids = check.opt_list_param(from_solids, 'from_solids', of_type=str)
     through_solids = check.opt_list_param(through_solids, 'through_solids', of_type=str)
     check.bool_param(throw_on_error, 'throw_on_error')
 
-    check.bool_param(throw_on_error, 'throw_on_error')
-
     results = []
-    for result in execute_pipeline_iterator(
+    for result in _execute_pipeline_iterator(
         context,
         pipeline,
+        input_manager=input_manager,
         through_solids=through_solids,
-        environment=environment,
         from_solids=from_solids,
     ):
         if throw_on_error:
