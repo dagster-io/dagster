@@ -1,0 +1,20 @@
+{
+  "dataset_name": null,
+  "meta": {
+    "great_expectations.__version__": "0.4.3"
+  },
+  "expectations": [
+    {
+      "expectation_type": "expect_column_to_exist",
+      "kwargs": {
+        "column": "num1"
+      }
+    },
+    {
+      "expectation_type": "expect_column_to_exist",
+      "kwargs": {
+        "column": "num2"
+      }
+    }
+  ]
+}

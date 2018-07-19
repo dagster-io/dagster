@@ -355,7 +355,7 @@ def _execute_input_expectation(context, expectation_def, value):
 
     if not isinstance(expectation_result, ExpectationResult):
         raise DagsterInvariantViolationError(
-            'Must return SolidExpectationResult from expectation function'
+            'Must return ExpectationResult from expectation function'
         )
 
     return expectation_result
@@ -377,7 +377,7 @@ def _execute_output_expectation(context, expectation_def, transformed_value):
     if not isinstance(expectation_result, ExpectationResult):
 
         raise DagsterInvariantViolationError(
-            'Must return SolidExpectationResult from expectation function'
+            'Must return ExpectationResult from expectation function'
         )
 
     return expectation_result
