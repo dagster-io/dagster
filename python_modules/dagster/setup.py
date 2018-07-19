@@ -9,24 +9,26 @@ if sys.version_info[0] < 3:
 else:
     import builtins
 
-here = os.path.abspath(os.path.dirname(__file__))
-with open(os.path.join(here, "README.rst"), "r") as fh:
-    long_description = fh.read()
+def long_description():
+    here = os.path.abspath(os.path.dirname(__file__))
+    with open(os.path.join(here, 'README.rst'), 'r') as fh:
+        return fh.read()
+
 
 setup(
     name='dagster',
-    version="0.1.2",
-    author="Elementl",
-    author_email="schrockn@elementl.com",
+    version='0.1.2',
+    author='Elementl',
+    author_email='schrockn@elementl.com',
     license='Apache-2.0',
-    description="Dagster is an opinionated pipeline runner.",
-    long_description=long_description,
-    long_description_content_type="text/markdown",
-    url="https://github.com/dagster-io/dagster",
+    description='Dagster is an opinionated pipeline runner.',
+    long_description=long_description(),
+    long_description_content_type='text/markdown',
+    url='https://github.com/dagster-io/dagster',
     classifiers=(
-        "Programming Language :: Python :: 3.7",
-        "License :: OSI Approved :: Apache Software License",
-        "Operating System :: OS Independent",
+        'Programming Language :: Python :: 3.7',
+        'License :: OSI Approved :: Apache Software License',
+        'Operating System :: OS Independent',
     ),
     packages=find_packages(exclude=['dagster_tests']),
     install_requires=[
