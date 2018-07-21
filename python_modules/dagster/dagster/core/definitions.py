@@ -1,3 +1,4 @@
+import copy
 import keyword
 import re
 
@@ -45,6 +46,9 @@ class ExpectationResult:
         self.solid = check.opt_inst_param(solid, SolidDefinition, 'solid')
         self.message = check.opt_str_param(message, 'message')
         self.result_context = check.opt_dict_param(result_context, 'result_context')
+
+    def copy(self):
+        return copy.deepcopy(self)
 
 
 class ExpectationDefinition:
