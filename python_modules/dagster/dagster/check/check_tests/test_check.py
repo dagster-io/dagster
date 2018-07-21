@@ -221,9 +221,10 @@ def test_str_param():
 
 def test_opt_str_param():
     assert check.opt_str_param('a', 'str_param') == 'a'
-    assert check.str_param('', 'str_param') == ''
-    assert check.str_param(u'a', 'unicode_param') == u'a'
+    assert check.opt_str_param('', 'str_param') == ''
+    assert check.opt_str_param(u'a', 'unicode_param') == u'a'
     assert check.opt_str_param(None, 'str_param') is None
+    assert check.opt_str_param(None, 'str_param', 'foo') == 'foo'
 
     with pytest.raises(ParameterCheckError):
         check.opt_str_param(0, 'str_param')
@@ -250,6 +251,8 @@ def test_opt_bool_param():
     assert check.opt_bool_param(True, 'b') is True
     assert check.opt_bool_param(False, 'b') is False
     assert check.opt_bool_param(None, 'b') is None
+    assert check.opt_bool_param(None, 'b', True) is True
+    assert check.opt_bool_param(None, 'b', False) is False
 
     with pytest.raises(ParameterCheckError):
         check.opt_bool_param(0, 'b')
@@ -492,6 +495,7 @@ def test_tuple_param():
 def test_opt_tuple_param():
     assert check.opt_tuple_param((1, 2), 'something')
     assert check.opt_tuple_param(None, 'something') is None
+    assert check.opt_tuple_param(None, 'something', (2)) == (2)
 
     with pytest.raises(CheckError):
         assert check.tuple_param(1, 'something')
