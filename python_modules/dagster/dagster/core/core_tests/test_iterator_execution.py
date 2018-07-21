@@ -45,7 +45,11 @@ def test_iterator_solid():
     output_single_solid(
         dagster.context(),
         iterable_solid,
-        environment=config.Environment(sources={'iter_numbers': config.Source('CUSTOM', {})}),
+        environment=config.Environment(
+            sources={'some_node': {
+                'iter_numbers': config.Source('CUSTOM', {})
+            }}
+        ),
         materialization_type='CUSTOM',
         arg_dict={}
     )

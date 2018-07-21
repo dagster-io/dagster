@@ -16,7 +16,9 @@ class Materialization(namedtuple('MaterializationData', 'solid materialization_t
 
 class Environment(namedtuple('EnvironmentData', 'sources')):
     def __new__(cls, sources):
-        check.dict_param(sources, 'sources', key_type=str, value_type=Source)
+        check.dict_param(sources, 'sources', key_type=str, value_type=dict)
+        for _solid_name, source_dict in sources.items():
+            check.dict_param(source_dict, 'source_dict', key_type=str, value_type=Source)
 
         return super(Environment, cls).__new__(
             cls,

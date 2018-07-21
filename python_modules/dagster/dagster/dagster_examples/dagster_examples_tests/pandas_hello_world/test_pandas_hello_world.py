@@ -14,7 +14,11 @@ def test_pipeline_include():
 def test_execute_pipeline():
     pipeline = define_pipeline()
     environment = config.Environment(
-        sources={'num': config.Source(name='CSV', args={'path': script_relative_path('num.csv')})}
+        sources={
+            'sum_solid': {
+                'num': config.Source(name='CSV', args={'path': script_relative_path('num.csv')})
+            }
+        }
     )
 
     result = execute_pipeline(

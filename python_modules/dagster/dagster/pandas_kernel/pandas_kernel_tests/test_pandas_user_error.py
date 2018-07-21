@@ -27,9 +27,11 @@ def test_wrong_output_value():
             df_solid,
             environment=config.Environment(
                 sources={
-                    'num_csv': config.Source('CSV', {'path': script_relative_path('num.csv')})
-                }
-            )
+                    'test_wrong_output': {
+                        'num_csv': config.Source('CSV', {'path': script_relative_path('num.csv')})
+                    },
+                },
+            ),
         )
 
 
@@ -48,7 +50,11 @@ def test_wrong_input_value():
         execute_single_solid(
             dagster.context(),
             df_solid,
-            environment=config.Environment(sources={'foo': config.Source('WRONG', {})})
+            environment=config.Environment(
+                sources={'test_wrong_input': {
+                    'foo': config.Source('WRONG', {})
+                }}
+            )
         )
 
 
@@ -68,10 +74,10 @@ def test_wrong_input_arg_dict():
             df_solid,
             environment=config.Environment(
                 sources={
-                    'num_jdkfjskdfjs': config.Source(
-                        'CSV',
-                        {'path': script_relative_path('num.csv')}
-                    )
-                }
+                    'test_wrong_value': {
+                        'num_jdkfjskdfjs':
+                        config.Source('CSV', {'path': script_relative_path('num.csv')})
+                    },
+                },
             ),
         )

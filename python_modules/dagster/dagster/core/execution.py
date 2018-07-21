@@ -737,10 +737,6 @@ class InputManager:
     def _get_sourced_input_value(self, _solid_name, _input_name):
         check.not_implemented('must implement in subclass')
 
-    @property
-    def sourced_input_names(self):
-        check.not_implemented('must implement in subclass')
-
 class InMemoryInputManager(InputManager):
     def __init__(self, input_values):
         super().__init__()
@@ -749,33 +745,44 @@ class InMemoryInputManager(InputManager):
     def _get_sourced_input_value(self, _solid_name, input_name):
         return self.input_values[input_name]
 
-    @property
-    def sourced_input_names(self):
-        return list(self.input_values.keys())
 
+def _validate_environment(environment, pipeline):
+    for solid_name, input_configs in environment.sources.items():
+        if not pipeline.has_solid(solid_name):
+            raise DagsterInvariantViolationError(
+                f'Solid "{solid_name} not found'
+            )
+
+        solid_inst = pipeline.solid_named(solid_name)
+
+        for input_name, _source_configs in input_configs.items():
+            if not solid_inst.has_input(input_name):
+                raise DagsterInvariantViolationError(
+                    f'Input "{input_name}" not found in the pipeline on solid "{solid_name}".' + \
+                    f'Input must be one of {repr(pipeline.input_names)}'
+                )
 
 class EnvironmentInputManager(InputManager):
     def __init__(self, context, pipeline, environment):
         super().__init__()
+        # This is not necessarily the best spot for this call
+        _validate_environment(environment, pipeline)
         self.context = check.inst_param(context, 'context', DagsterExecutionContext)
         self.pipeline = check.inst_param(pipeline, 'pipeline', DagsterPipeline)
         self.environment = check.inst_param(environment, 'environment', config.Environment)
 
-    @property
-    def sourced_input_names(self):
-        return list(self.environment.sources.keys())
-
     def _get_sourced_input_value(self, solid_name, input_name):
-        source_config = self.environment.sources[input_name]
+        source_config = self.environment.sources[solid_name][input_name]
         input_def = self.pipeline.get_input(solid_name, input_name)
         source_def = input_def.source_of_type(source_config.name)
         return _read_source(
-            self.context, source_def, self.args_for_input(input_def.name)
+            self.context, source_def, self.args_for_input(solid_name, input_def.name)
         )
 
-    def args_for_input(self, input_name):
+    def args_for_input(self, solid_name, input_name):
+        check.str_param(solid_name, 'solid_name')
         check.str_param(input_name, 'input_name')
-        return self.environment.sources[input_name].args
+        return self.environment.sources[solid_name][input_name].args
 
 
 def execute_pipeline_iterator(
@@ -841,8 +848,6 @@ def _execute_pipeline_iterator(
     with context.value('pipeline', pipeline_context_value):
         input_manager = input_manager
 
-        sourced_input_names = input_manager.sourced_input_names
-
         if not through_solids:
             through_solids = pipeline.all_sink_solids
 
@@ -853,23 +858,19 @@ def _execute_pipeline_iterator(
 
             from_solids = list(all_deps)
 
-        for input_name in sourced_input_names:
-            if not pipeline.has_input(input_name):
-                raise DagsterInvariantViolationError(
-                    f'Input "{input_name}" not found in the pipeline.' + \
-                    f'Input must be one of {repr(pipeline.input_names)}'
-                )
+        # TODO provide meaningful error messages when the wrong inputs are provided for a particular
+        # execution subgraph
 
-        for through_solid_name in through_solids:
-            unprovided_inputs = pipeline.solid_graph.compute_unprovided_inputs(
-                input_names=sourced_input_names, solid_name=through_solid_name
-            )
-            if unprovided_inputs:
-                check.failed(
-                    'Failed to provide inputs {unprovided_inputs} for solid {name}'.format(
-                        unprovided_inputs=unprovided_inputs, name=through_solid_name
-                    )
-                )
+        # for through_solid_name in through_solids:
+        #     unprovided_inputs = pipeline.solid_graph.compute_unprovided_inputs(
+        #         input_names=sourced_input_names, solid_name=through_solid_name
+        #     )
+        #     if unprovided_inputs:
+        #         check.failed(
+        #             'Failed to provide inputs {unprovided_inputs} for solid {name}'.format(
+        #                 unprovided_inputs=unprovided_inputs, name=through_solid_name
+        #             )
+        #         )
 
         execution_graph = pipeline.solid_graph.create_execution_subgraph(
             from_solids, list(through_solids)

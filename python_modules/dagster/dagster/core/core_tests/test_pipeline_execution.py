@@ -206,7 +206,6 @@ def test_execution_graph_diamond():
     full_execution_graph = solid_graph.create_execution_subgraph(
         from_solids=['A'],
         to_solids=['D'],
-        # output_names=['D'], input_names=['A_input']
     )
     assert full_execution_graph.topological_order == ['A', 'B', 'C', 'D']
     assert len(full_execution_graph._solid_dict) == 4
@@ -255,7 +254,7 @@ def assert_all_results_equivalent(expected_results, result_results):
 def test_pipeline_execution_graph_diamond():
     solid_graph = create_diamond_graph()
     pipeline = DagsterPipeline(solids=solid_graph.solids)
-    environment = config.Environment(sources={'A_input': config.Source('CUSTOM', {})})
+    environment = config.Environment(sources={'A': {'A_input': config.Source('CUSTOM', {})}})
     return _do_test(pipeline, lambda: execute_pipeline_iterator(
         create_test_context(),
         pipeline,

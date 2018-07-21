@@ -285,6 +285,13 @@ class SolidDefinition:
     def input_names(self):
         return [inp.name for inp in self.inputs]
 
+    def has_input(self, name):
+        check.str_param(name, 'name')
+        for input_def in self.inputs:
+            if input_def.name == name:
+                return True
+        return False
+
     def input_def_named(self, name):
         check.str_param(name, 'name')
         for input_def in self.inputs:

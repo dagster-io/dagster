@@ -90,7 +90,11 @@ def test_solid_with_input():
         create_test_context(),
         hello_world,
         environment=config.Environment(
-            sources={'foo_to_foo': config.Source(name='TEST', args={'foo': 'bar'})}
+            sources={
+                'hello_world': {
+                    'foo_to_foo': config.Source(name='TEST', args={'foo': 'bar'})
+                }
+            }
         ),
     )
 
@@ -117,7 +121,9 @@ def test_sources():
         create_test_context(),
         hello_world,
         environment=config.Environment(
-            sources={'i': config.Source(name='NO_CONTEXT', args={'foo': 'bar'})}
+            sources={'hello_world': {
+                'i': config.Source(name='NO_CONTEXT', args={'foo': 'bar'})
+            }}
         ),
     )
 
@@ -129,7 +135,9 @@ def test_sources():
         create_test_context(),
         hello_world,
         environment=config.Environment(
-            sources={'i': config.Source(name='NO_CONTEXT', args={'foo': 'bar'})}
+            sources={'hello_world': {
+                'i': config.Source(name='NO_CONTEXT', args={'foo': 'bar'})
+            }}
         ),
     )
 
