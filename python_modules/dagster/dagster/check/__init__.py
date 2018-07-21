@@ -163,10 +163,10 @@ def str_param(obj, param_name):
     return obj
 
 
-def opt_str_param(obj, param_name):
+def opt_str_param(obj, param_name, default=None):
     if obj is not None and not isinstance(obj, string_types):
         raise_with_traceback(_param_type_mismatch_exception(obj, str, param_name))
-    return obj
+    return default if obj is None else obj
 
 
 def bool_param(obj, param_name):
@@ -175,10 +175,10 @@ def bool_param(obj, param_name):
     return obj
 
 
-def opt_bool_param(obj, param_name):
+def opt_bool_param(obj, param_name, default=None):
     if obj is not None and not isinstance(obj, bool):
         raise_with_traceback(_param_type_mismatch_exception(obj, bool, param_name))
-    return obj
+    return default if obj is None else obj
 
 
 def list_param(obj_list, param_name, of_type=None):
@@ -194,15 +194,13 @@ def list_param(obj_list, param_name, of_type=None):
 def tuple_param(obj, param_name):
     if not isinstance(obj, tuple):
         raise_with_traceback(_param_type_mismatch_exception(obj, tuple, param_name))
-
     return obj
 
 
-def opt_tuple_param(obj, param_name):
+def opt_tuple_param(obj, param_name, default=None):
     if obj is not None and not isinstance(obj, tuple):
         raise_with_traceback(_param_type_mismatch_exception(obj, tuple, param_name))
-
-    return obj
+    return default if obj is None else obj
 
 
 def opt_list_param(obj_list, param_name, of_type=None):
