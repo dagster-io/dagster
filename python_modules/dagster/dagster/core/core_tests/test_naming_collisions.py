@@ -5,7 +5,7 @@ from dagster.core.definitions import (
     SolidDefinition, InputDefinition, SourceDefinition, create_no_materialization_output
 )
 
-from dagster.core.execution import (DagsterExecutionContext, execute_single_solid)
+from dagster.core.execution import (DagsterExecutionContext, execute_single_solid, execute_pipeline)
 
 from dagster.core import types
 
@@ -33,12 +33,65 @@ def test_execute_solid_with_input_same_name():
         DagsterExecutionContext(),
         solid,
         environment=config.Environment(
-            sources={'a_thing': config.Source(name='a_source_type', args={'an_arg': 'foo'})}
+            sources={
+                'a_thing': {
+                    'a_thing': config.Source(name='a_source_type', args={'an_arg': 'foo'})
+                }
+            }
         )
     )
 
     assert result.success
     assert result.transformed_value == 'foofoo'
+
+
+def test_execute_two_solids_with_same_input_name():
+    input_def = InputDefinition(
+        name='a_thing',
+        sources=[
+            SourceDefinition(
+                source_type='a_source_type',
+                source_fn=lambda context, arg_dict: arg_dict['an_arg'],
+                argument_def_dict={'an_arg': types.STRING},
+            ),
+        ],
+    )
+
+    solid_one = SolidDefinition(
+        'solid_one',
+        inputs=[input_def],
+        transform_fn=lambda context, args: args['a_thing'] + args['a_thing'],
+        output=create_no_materialization_output(),
+    )
+
+    solid_two = SolidDefinition(
+        'solid_two',
+        inputs=[input_def],
+        transform_fn=lambda context, args: args['a_thing'] + args['a_thing'],
+        output=create_no_materialization_output(),
+    )
+
+    pipeline = dagster.pipeline(solids=[solid_one, solid_two])
+
+    result = execute_pipeline(
+        dagster.context(),
+        pipeline,
+        environment=config.Environment(
+            sources={
+                'solid_one': {
+                    'a_thing': config.Source(name='a_source_type', args={'an_arg': 'foo'})
+                },
+                'solid_two': {
+                    'a_thing': config.Source(name='a_source_type', args={'an_arg': 'bar'})
+                },
+            }
+        )
+    )
+
+    assert result.success
+
+    assert result.result_named('solid_one').transformed_value == 'foofoo'
+    assert result.result_named('solid_two').transformed_value == 'barbar'
 
 
 def test_execute_dep_solid_different_input_name():
@@ -78,7 +131,11 @@ def test_execute_dep_solid_different_input_name():
         DagsterExecutionContext(),
         pipeline,
         environment=config.Environment(
-            sources={'a_thing': config.Source(name='a_source_type', args={'an_arg': 'bar'})}
+            sources={
+                'first_solid': {
+                    'a_thing': config.Source(name='a_source_type', args={'an_arg': 'bar'})
+                }
+            }
         )
     )
 
@@ -153,8 +210,13 @@ def test_execute_dep_solid_same_input_name():
 
     complete_environment = config.Environment(
         sources={
-            'table_one': config.Source(name='TABLE', args={'name': 'table_one_instance'}),
-            'table_two': config.Source(name='TABLE', args={'name': 'table_two_instance'}),
+            'table_one': {
+                'table_one': config.Source(name='TABLE', args={'name': 'table_one_instance'}),
+            },
+            'table_two': {
+                'table_one': config.Source(name='TABLE', args={'name': 'table_one_instance'}),
+                'table_two': config.Source(name='TABLE', args={'name': 'table_two_instance'}),
+            },
         }
     )
 

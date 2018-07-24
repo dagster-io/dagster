@@ -17,7 +17,6 @@ from dagster.utils.test import script_relative_path
 def create_test_context():
     return DagsterExecutionContext()
 
-
 def create_hello_world_solid_no_api():
     def hello_world_transform_fn(_context, args):
         num_df = args['num_df']
@@ -57,7 +56,11 @@ def test_hello_world_no_library_support():
         create_test_context(),
         hello_world,
         environment=config.Environment(
-            sources={'num_df': config.Source('CSV', {'path': script_relative_path('num.csv')})}
+            sources={
+                'hello_world': {
+                    'num_df': config.Source('CSV', {'path': script_relative_path('num.csv')})
+                }
+            }
         ),
     )
 
@@ -134,7 +137,11 @@ def test_hello_world_composed():
         create_test_context(),
         hello_world,
         environment=config.Environment(
-            sources={'num_df': config.Source('CSV', {'path': script_relative_path('num.csv')})}
+            sources={
+                'hello_world': {
+                    'num_df': config.Source('CSV', {'path': script_relative_path('num.csv')})
+                }
+            }
         ),
     )
 
@@ -175,7 +182,11 @@ def test_pipeline():
     pipeline = dagster.pipeline(solids=[solid_one, solid_two])
 
     environment = config.Environment(
-        sources={'num_df': config.Source('CSV', {'path': script_relative_path('num.csv')})}
+        sources={
+            'solid_one': {
+                'num_df': config.Source('CSV', {'path': script_relative_path('num.csv')})
+            }
+        }
     )
 
     execute_pipeline_result = dagster.execute_pipeline(

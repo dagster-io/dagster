@@ -64,9 +64,12 @@ class DagsterPipeline:
                     yield solid
                     break
 
-    def has_input(self, name):
+    def has_solid(self, name):
         check.str_param(name, 'name')
-        return name in [input_def.name for input_def in self.all_inputs]
+        for solid in self.solids:
+            if solid.name == name:
+                return True
+        return False
 
     @property
     def all_inputs(self):

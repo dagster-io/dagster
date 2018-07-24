@@ -40,12 +40,18 @@ def test_sql_sum_solid():
     engine = sa.create_engine('sqlite://')
     create_num_table(engine)
 
+    environment = config.Environment(
+        sources={
+            'sum_table': {
+                'num_table': config.Source('TABLENAME', {'table_name': 'num_table'})
+            }
+        },
+    )
+
     result = output_single_solid(
         DagsterSqlAlchemyExecutionContext(engine=engine),
         sum_table_solid,
-        environment=config.Environment(
-            sources={'num_table': config.Source('TABLENAME', {'table_name': 'num_table'})}
-        ),
+        environment=environment,
         materialization_type='CREATE',
         arg_dict={'table_name': 'sum_table'},
     )
@@ -82,7 +88,11 @@ def test_execute_sql_sum_sq_solid():
     engine = in_mem_engine()
 
     environment = config.Environment(
-        sources={'num_table': config.Source('TABLENAME', {'table_name': 'num_table'})}
+        sources={
+            'sum_table': {
+                'num_table': config.Source('TABLENAME', {'table_name': 'num_table'})
+            }
+        },
     )
 
     pipeline_result = execute_pipeline(
@@ -110,7 +120,11 @@ def test_output_sql_sum_sq_solid():
     engine = in_mem_engine()
 
     environment = config.Environment(
-        sources={'num_table': config.Source('TABLENAME', {'table_name': 'num_table'})}
+        sources={
+            'sum_table': {
+                'num_table': config.Source('TABLENAME', {'table_name': 'num_table'})
+            }
+        },
     )
 
     pipeline_result = materialize_pipeline(

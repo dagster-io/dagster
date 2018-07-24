@@ -112,9 +112,11 @@ You might notice that there is no actual CSV file specified as inputs. This is b
 
 .. code-block:: python
 
-  environment = config.environment(
+  environment = config.Environment(
     sources={
+      'sum_solid' : {
         'num' : config.Source(name='CSV', args={'path': 'path/to/num.csv'})
+      }
     }
   )
 
@@ -185,7 +187,9 @@ We can specify in order to get artifacts for the results. We can materialize out
 
     environment = config.Environment(
         sources={
+          'sum' : {
             'num' : config.Source(name='CSV', args={'path': 'path/to/num.csv'})
+          }
         }
     )
 
@@ -374,7 +378,9 @@ enough source data to create all the inputs necessary for the pipeline.
 
     environment = config.Environment(
         sources={
+          'sum' : {
             'num_df' : config.Source(name='CSV', args={'path': 'path/to/input.csv'})
+          }
         }
     )
 
@@ -460,7 +466,9 @@ isolation or in the context of a pipeline.
 
     environment = config.Environment(
         sources={
-            'num_df' : config.Source(name='CSV', args={'path': 'path/to/num.csv'})
+          'sum' : {
+              'num_df' : config.Source(name='CSV', args={'path': 'path/to/num.csv'})
+          }
         }
     )
 
@@ -499,7 +507,9 @@ would have to be changed.
 
     environment = config.Environment(
         sources={
-            'sum_df' : config.Source(name='CSV', args={'path': 'path/to/sum.csv'})
+          'sum_sq' : { 
+              'sum_df' : config.Source(name='CSV', args={'path': 'path/to/sum.csv'})
+          }
         }
     )
 
@@ -507,7 +517,7 @@ would have to be changed.
         dagster.context(),
         pipeline,
         environment,
-        from=['sum'],
+        from=['sum_sq'],
         through=['sum_sq'],
     )
 

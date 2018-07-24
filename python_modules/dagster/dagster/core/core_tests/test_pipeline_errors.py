@@ -110,8 +110,12 @@ def create_root_output_failure_solid(name):
     )
 
 
-def no_args_env(input_name):
-    return config.Environment(sources={input_name: config.Source(name='CUSTOM', args={})})
+def no_args_env(solid_name, input_name):
+    return config.Environment(
+        sources={solid_name: {
+            input_name: config.Source(name='CUSTOM', args={})
+        }}
+    )
 
 
 def test_transform_failure_pipeline():
@@ -119,7 +123,7 @@ def test_transform_failure_pipeline():
     pipeline_result = execute_pipeline(
         create_test_context(),
         pipeline,
-        environment=no_args_env('failing_input'),
+        environment=no_args_env('failing', 'failing_input'),
         throw_on_error=False
     )
 
@@ -137,7 +141,7 @@ def test_input_failure_pipeline():
     pipeline_result = execute_pipeline(
         create_test_context(),
         pipeline,
-        environment=no_args_env('failing_input_input'),
+        environment=no_args_env('failing_input', 'failing_input_input'),
         throw_on_error=False
     )
 
@@ -154,7 +158,7 @@ def test_output_failure_pipeline():
     pipeline_result = materialize_pipeline(
         create_test_context(),
         pipeline,
-        environment=no_args_env('failing_output_input'),
+        environment=no_args_env('failing_output', 'failing_output_input'),
         materializations=[
             config.Materialization(solid='failing_output', materialization_type='CUSTOM', args={})
         ],
@@ -190,8 +194,12 @@ def test_failure_midstream():
 
     environment = config.Environment(
         sources={
-            'A_input': config.Source('CUSTOM', {}),
-            'B_input': config.Source('CUSTOM', {}),
+            'A': {
+                'A_input': config.Source('CUSTOM', {}),
+            },
+            'B': {
+                'B_input': config.Source('CUSTOM', {})
+            }
         }
     )
     pipeline = dagster.core.pipeline(solids=[solid_a, solid_b, solid_c])

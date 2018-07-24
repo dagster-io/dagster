@@ -33,7 +33,7 @@ def parquet_dataframe_source(**read_parquet_kwargs):
     )
 
 
-def csv_dataframe_source(**read_csv_kwargs):
+def csv_dataframe_source(name=None, **read_csv_kwargs):
     def callback(context, arg_dict):
         check.inst_param(context, 'context', DagsterExecutionContext)
         check.str_param(arg_dict['path'], 'path')
@@ -42,7 +42,7 @@ def csv_dataframe_source(**read_csv_kwargs):
         return df
 
     return SourceDefinition(
-        source_type='CSV',
+        source_type=check.opt_str_param(name, 'name', 'CSV'),
         source_fn=callback,
         argument_def_dict={
             'path': types.PATH,
