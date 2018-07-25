@@ -181,10 +181,11 @@ def execute_command(pipeline_config, env, from_solid, log_level):
             ) for m in check.list_elem(env_config, 'materializations')
         ]
 
-    context = DagsterExecutionContext(loggers=[define_logger('dagster')], log_level=log_level)
+    # TODO: figure out how to drive this from the environment
+    _context = DagsterExecutionContext(loggers=[define_logger('dagster')], log_level=log_level)
 
     pipeline_iter = materialize_pipeline_iterator(
-        context,
+        # context,
         pipeline_config.pipeline,
         environment=environment,
         materializations=materializations,

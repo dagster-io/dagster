@@ -132,7 +132,7 @@ def test_output_sql_sum_sq_solid():
     )
 
     pipeline_result = materialize_pipeline(
-        pipeline,
+        pipeline=pipeline,
         environment=environment,
         materializations=[
             config.Materialization(

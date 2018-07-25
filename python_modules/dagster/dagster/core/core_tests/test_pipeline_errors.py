@@ -10,15 +10,10 @@ from dagster.core.definitions import (
     InputDefinition,
 )
 from dagster.core.execution import (
-    DagsterExecutionContext,
     DagsterExecutionFailureReason,
     execute_pipeline,
     materialize_pipeline,
 )
-
-
-def create_test_context():
-    return DagsterExecutionContext()
 
 
 def create_failing_output_def():
