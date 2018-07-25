@@ -1,4 +1,3 @@
-import dagster
 from dagster import config
 
 from dagster.core.execution import execute_pipeline
@@ -22,7 +21,6 @@ def test_execute_pipeline():
     )
 
     result = execute_pipeline(
-        dagster.context(),
         pipeline,
         environment=environment,
         from_solids=['sum_solid'],

@@ -9,6 +9,19 @@ from dagster.utils.test import script_relative_path
 from .math_test_db import in_mem_context
 
 
+def pipeline_test_def(solids, context):
+    return dagster.pipeline(
+        solids=solids,
+        context_definitions={
+            'default':
+            dagster.PipelineContextDefinition(
+                argument_def_dict={},
+                context_fn=lambda _args: context,
+            ),
+        }
+    )
+
+
 def test_basic_isolated_sql_solid():
     context = in_mem_context()
 
@@ -39,13 +52,9 @@ def test_basic_pipeline():
         'sum_sq_sql_solid', sum_sq_sql_text, inputs=[dagster.dep_only_input(sum_sql_solid)]
     )
 
-    pipeline = dagster.pipeline(solids=[sum_sql_solid, sum_sq_sql_solid])
+    pipeline = pipeline_test_def(solids=[sum_sql_solid, sum_sq_sql_solid], context=in_mem_context())
 
-    context = in_mem_context()
-
-    pipeline_result = dagster.execute_pipeline(
-        context, pipeline, environment=config.Environment.empty()
-    )
+    pipeline_result = dagster.execute_pipeline(pipeline, environment=config.Environment.empty())
 
     assert pipeline_result.success
 
@@ -56,10 +65,12 @@ def test_basic_pipeline():
     for exec_result in exec_results:
         assert exec_result.success is True
 
-    results = context.engine.connect().execute('SELECT * from sum_table').fetchall()
+    engine = pipeline_result.context.engine
+
+    results = engine.connect().execute('SELECT * from sum_table').fetchall()
     assert results == [(1, 2, 3), (3, 4, 7)]
 
-    results = context.engine.connect().execute('SELECT * from sum_sq_table').fetchall()
+    results = engine.connect().execute('SELECT * from sum_sq_table').fetchall()
     assert results == [(1, 2, 3, 9), (3, 4, 7, 49)]
 
 
@@ -71,12 +82,11 @@ def test_pipeline_from_files():
         inputs=[dagster.dep_only_input(create_sum_table_solid)],
     )
 
-    pipeline = dagster.pipeline(solids=[create_sum_table_solid, create_sum_sq_table_solid])
-
-    context = in_mem_context()
-    pipeline_result = dagster.execute_pipeline(
-        context, pipeline, environment=config.Environment.empty()
+    pipeline = pipeline_test_def(
+        solids=[create_sum_table_solid, create_sum_sq_table_solid], context=in_mem_context()
     )
+
+    pipeline_result = dagster.execute_pipeline(pipeline, environment=config.Environment.empty())
 
     assert pipeline_result.success
 
@@ -85,8 +95,10 @@ def test_pipeline_from_files():
     for exec_result in exec_results:
         assert exec_result.success is True
 
-    results = context.engine.connect().execute('SELECT * from sum_table').fetchall()
+    engine = pipeline_result.context.engine
+
+    results = engine.connect().execute('SELECT * from sum_table').fetchall()
     assert results == [(1, 2, 3), (3, 4, 7)]
 
-    results = context.engine.connect().execute('SELECT * from sum_sq_table').fetchall()
+    results = engine.connect().execute('SELECT * from sum_sq_table').fetchall()
     assert results == [(1, 2, 3, 9), (3, 4, 7, 49)]

@@ -1,8 +1,8 @@
 import copy
 import json
 import logging
+from logging import (CRITICAL, DEBUG, ERROR, INFO, WARNING)
 import traceback
-from logging import CRITICAL, DEBUG, ERROR, INFO, WARNING
 
 import coloredlogs
 
@@ -38,7 +38,8 @@ class JsonFileHandler(logging.Handler):
             with open(self.json_path, 'a') as ff:
                 text_line = json.dumps(logged_properties)
                 ff.write(text_line + '\n')
-        except Exception as e:
+        # Need to catch Exception here, so disabling lint
+        except Exception as e: # pylint: disable=W0703
             logging.critical('Error during logging!')
             logging.exception(str(e))
 
