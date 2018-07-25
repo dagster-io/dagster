@@ -121,10 +121,7 @@ def no_args_env(solid_name, input_name):
 def test_transform_failure_pipeline():
     pipeline = dagster.core.pipeline(solids=[create_root_transform_failure_solid('failing')])
     pipeline_result = execute_pipeline(
-        create_test_context(),
-        pipeline,
-        environment=no_args_env('failing', 'failing_input'),
-        throw_on_error=False
+        pipeline, environment=no_args_env('failing', 'failing_input'), throw_on_error=False
     )
 
     assert not pipeline_result.success
@@ -139,7 +136,6 @@ def test_transform_failure_pipeline():
 def test_input_failure_pipeline():
     pipeline = dagster.core.pipeline(solids=[create_root_input_failure_solid('failing_input')])
     pipeline_result = execute_pipeline(
-        create_test_context(),
         pipeline,
         environment=no_args_env('failing_input', 'failing_input_input'),
         throw_on_error=False
@@ -156,7 +152,6 @@ def test_output_failure_pipeline():
     pipeline = dagster.core.pipeline(solids=[create_root_output_failure_solid('failing_output')])
 
     pipeline_result = materialize_pipeline(
-        create_test_context(),
         pipeline,
         environment=no_args_env('failing_output', 'failing_output_input'),
         materializations=[
@@ -204,7 +199,6 @@ def test_failure_midstream():
     )
     pipeline = dagster.core.pipeline(solids=[solid_a, solid_b, solid_c])
     pipeline_result = execute_pipeline(
-        create_test_context(),
         pipeline,
         environment=environment,
         throw_on_error=False,

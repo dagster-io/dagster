@@ -54,9 +54,7 @@ def test_basic_pipeline():
 
     pipeline = pipeline_test_def(solids=[sum_sql_solid, sum_sq_sql_solid], context=in_mem_context())
 
-    pipeline_result = dagster.execute_pipeline(
-        None, pipeline, environment=config.Environment.empty()
-    )
+    pipeline_result = dagster.execute_pipeline(pipeline, environment=config.Environment.empty())
 
     assert pipeline_result.success
 
@@ -88,9 +86,7 @@ def test_pipeline_from_files():
         solids=[create_sum_table_solid, create_sum_sq_table_solid], context=in_mem_context()
     )
 
-    pipeline_result = dagster.execute_pipeline(
-        None, pipeline, environment=config.Environment.empty()
-    )
+    pipeline_result = dagster.execute_pipeline(pipeline, environment=config.Environment.empty())
 
     assert pipeline_result.success
 

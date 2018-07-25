@@ -17,6 +17,7 @@ from dagster.utils.test import script_relative_path
 def create_test_context():
     return DagsterExecutionContext()
 
+
 def create_hello_world_solid_no_api():
     def hello_world_transform_fn(_context, args):
         num_df = args['num_df']
@@ -190,7 +191,6 @@ def test_pipeline():
     )
 
     execute_pipeline_result = dagster.execute_pipeline(
-        DagsterExecutionContext(),
         pipeline,
         environment=environment,
     )
@@ -204,7 +204,6 @@ def test_pipeline():
 
     sum_sq_path_args = {'path': '/tmp/sum_sq.csv'}
     dagster.materialize_pipeline(
-        DagsterExecutionContext(),
         pipeline,
         environment=environment,
         materializations=[

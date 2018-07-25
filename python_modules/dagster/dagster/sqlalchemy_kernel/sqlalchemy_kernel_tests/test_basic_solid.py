@@ -104,7 +104,6 @@ def test_execute_sql_sum_sq_solid():
     )
 
     pipeline_result = execute_pipeline(
-        None,
         pipeline,
         environment=environment,
     )
@@ -133,7 +132,6 @@ def test_output_sql_sum_sq_solid():
     )
 
     pipeline_result = materialize_pipeline(
-        None,
         pipeline,
         environment=environment,
         materializations=[

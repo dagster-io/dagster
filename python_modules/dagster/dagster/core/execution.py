@@ -28,8 +28,7 @@ import sys
 
 import six
 
-from dagster import check
-from dagster import config
+from dagster import check, config
 
 from dagster.utils.logging import (CompositeLogger, ERROR, get_formatted_stack_trace)
 from dagster.utils.timing import time_execution_scope
@@ -43,7 +42,7 @@ from .errors import (
     DagsterUserCodeExecutionError, DagsterTypeError, DagsterExecutionFailureReason,
     DagsterExpectationFailedError, DagsterInvariantViolationError
 )
-from .graph import DagsterPipeline
+from .graph import (DagsterPipeline, PipelineContextDefinition)
 
 Metric = namedtuple('Metric', 'context_dict metric_name value')
 
@@ -561,7 +560,6 @@ def _pipeline_solid_in_memory(context, solid, transform_values_dict):
     return transformed_value
 
 
-from .graph import PipelineContextDefinition 
 
 def _create_default_pipeline_context_definition(context):
     check.inst_param(context, 'context', DagsterExecutionContext)
@@ -637,8 +635,6 @@ def output_single_solid(
 
     results = list(
         materialize_pipeline_iterator(
-            None,
-            # context,
             DagsterPipeline(
                 solids=[solid],
                 context_definitions=_create_default_pipeline_context_definition(context),
@@ -950,7 +946,6 @@ def _execute_pipeline_iterator(
                 break
 
 def execute_pipeline(
-    _context, # TODO remove
     pipeline,
     *,
     environment,
@@ -960,7 +955,6 @@ def execute_pipeline(
 ):
     check.inst_param(environment, 'environment', config.Environment)
     return _execute_pipeline(
-        # context,
         pipeline,
         EnvironmentInputManager(pipeline, environment),
         from_solids,
@@ -979,7 +973,6 @@ def execute_pipeline_in_memory(
 ):
     check.dict_param(input_values, 'input_values', key_type=str)
     return _execute_pipeline(
-        # context,
         pipeline,
         InMemoryInputManager(context, input_values),
         from_solids,
@@ -1045,7 +1038,6 @@ class MaterializationArgs:
 
 
 def materialize_pipeline(
-    _context,
     pipeline,
     *,
     environment,
@@ -1078,7 +1070,6 @@ def materialize_pipeline(
     return DagsterPipelineExecutionResult(context, results)
 
 def materialize_pipeline_iterator(
-    _context,
     pipeline,
     *,
     materializations,

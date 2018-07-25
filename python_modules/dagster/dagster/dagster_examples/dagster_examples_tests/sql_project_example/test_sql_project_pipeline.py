@@ -52,9 +52,7 @@ def test_sql_create_tables():
 
     pipeline = create_mem_sql_pipeline_context_tuple(solids=[create_all_tables_solids])
 
-    pipeline_result = dagster.execute_pipeline(
-        None, pipeline, environment=config.Environment.empty()
-    )
+    pipeline_result = dagster.execute_pipeline(pipeline, environment=config.Environment.empty())
     assert pipeline_result.success
 
     assert set(pipeline_result.context.engine.table_names()) == set(
@@ -73,9 +71,7 @@ def test_sql_populate_tables():
         solids=[create_all_tables_solids, populate_num_table_solid]
     )
 
-    pipeline_result = dagster.execute_pipeline(
-        None, pipeline, environment=config.Environment.empty()
-    )
+    pipeline_result = dagster.execute_pipeline(pipeline, environment=config.Environment.empty())
 
     assert pipeline_result.success
 
@@ -115,9 +111,7 @@ def create_full_pipeline():
 def test_full_in_memory_pipeline():
 
     pipeline = create_full_pipeline()
-    pipeline_result = dagster.execute_pipeline(
-        None, pipeline, environment=config.Environment.empty()
-    )
+    pipeline_result = dagster.execute_pipeline(pipeline, environment=config.Environment.empty())
     context = pipeline_result.context
     assert pipeline_result.success
 
@@ -131,7 +125,6 @@ def test_full_in_memory_pipeline():
 def test_full_persisted_pipeline():
     pipeline = create_full_pipeline()
     pipeline_result = dagster.execute_pipeline(
-        None,
         pipeline,
         environment=config.Environment(
             sources={}, context=config.Context(name='persisted', args={})

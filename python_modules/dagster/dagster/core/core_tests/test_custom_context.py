@@ -20,7 +20,7 @@ def test_default_context():
     pipeline = dagster.pipeline(solids=[default_context_transform])
     environment = config.Environment(sources={}, context=config.Context('default', {}))
 
-    execute_pipeline(None, pipeline, environment=environment)
+    execute_pipeline(pipeline, environment=environment)
 
 
 def test_custom_contexts():
@@ -52,13 +52,13 @@ def test_custom_contexts():
         sources={}, context=config.Context('custom_one', {'arg_one': 'value_two'})
     )
 
-    execute_pipeline(None, pipeline, environment=environment_one)
+    execute_pipeline(pipeline, environment=environment_one)
 
     environment_two = config.Environment(
         sources={}, context=config.Context('custom_two', {'arg_one': 'value_two'})
     )
 
-    execute_pipeline(None, pipeline, environment=environment_two)
+    execute_pipeline(pipeline, environment=environment_two)
 
 
 def test_invalid_context():
@@ -77,7 +77,6 @@ def test_invalid_context():
 
     with pytest.raises(DagsterInvariantViolationError, message='Context not_found not found'):
         execute_pipeline(
-            None,
             default_context_pipeline,
             environment=environment_context_not_found,
             throw_on_error=True
@@ -89,7 +88,6 @@ def test_invalid_context():
 
     with pytest.raises(DagsterTypeError, message='Argument mismatch in context default'):
         execute_pipeline(
-            None,
             default_context_pipeline,
             environment=environment_arg_name_mismatch,
             throw_on_error=True
@@ -108,7 +106,6 @@ def test_invalid_context():
 
     with pytest.raises(DagsterTypeError, message='Argument mismatch in context default'):
         execute_pipeline(
-            None,
             with_argful_context_pipeline,
             environment=environment_no_args_error,
             throw_on_error=True
@@ -120,7 +117,6 @@ def test_invalid_context():
 
     with pytest.raises(DagsterTypeError, message='Argument mismatch in context default'):
         execute_pipeline(
-            None,
             with_argful_context_pipeline,
             environment=environment_type_mismatch_error,
             throw_on_error=True
