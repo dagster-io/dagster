@@ -561,17 +561,19 @@ def _pipeline_solid_in_memory(context, solid, transform_values_dict):
 
 from .graph import PipelineContextDefinition 
 
+def _create_default_pipeline_context_definition(context):
+    check.inst_param(context, 'context', DagsterExecutionContext)
+    context_definition = PipelineContextDefinition(
+        argument_def_dict={},
+        context_fn=lambda _args: context
+    )
+    return {'default': context_definition}
+
 def execute_single_solid(context, solid, environment, throw_on_error=True):
     check.inst_param(context, 'context', DagsterExecutionContext)
     check.inst_param(solid, 'solid', SolidDefinition)
     check.inst_param(environment, 'environment', config.Environment)
     check.bool_param(throw_on_error, 'throw_on_error')
-
-
-    context_definition = PipelineContextDefinition(
-        argument_def_dict={},
-        context_fn=lambda _args: context
-    )
 
     results = list(
         execute_pipeline_iterator(
@@ -579,7 +581,7 @@ def execute_single_solid(context, solid, environment, throw_on_error=True):
             # context,
             DagsterPipeline(
                 solids=[solid],
-                context_definitions={'default': context_definition},
+                context_definitions=_create_default_pipeline_context_definition(context),
             ),
             environment=environment,
         )
@@ -630,10 +632,15 @@ def output_single_solid(
     check.dict_param(arg_dict, 'arg_dict', key_type=str)
     check.bool_param(throw_on_error, 'throw_on_error')
 
+
     results = list(
         materialize_pipeline_iterator(
-            context,
-            DagsterPipeline(solids=[solid]),
+            None,
+            # context,
+            DagsterPipeline(
+                solids=[solid],
+                context_definitions=_create_default_pipeline_context_definition(context),
+            ),
             environment=environment,
             materializations=[
                 config.Materialization(
@@ -1022,7 +1029,7 @@ class MaterializationArgs:
 
 
 def materialize_pipeline(
-    context,
+    _context,
     pipeline,
     *,
     environment,
@@ -1035,18 +1042,18 @@ def materialize_pipeline(
     encountered instead of returning a result in an error state. Especially useful in testing
     contexts.
     '''
-    check.inst_param(context, 'context', DagsterExecutionContext)
     check.inst_param(pipeline, 'pipeline', DagsterPipeline)
     check.inst_param(environment, 'environment', config.Environment)
     check.list_param(materializations, 'materializations', of_type=config.Materialization)
     check.bool_param(throw_on_error, 'throw_on_error')
 
     results = []
-    for result in materialize_pipeline_iterator(
-        context,
+    input_manager = EnvironmentInputManager(pipeline, environment)
+    context = input_manager.get_context()
+    for result in _materialize_pipeline_iterator(
         pipeline,
         materializations=materializations,
-        environment=environment,
+        input_manager=input_manager,
     ):
         if throw_on_error:
             if not result.success:
@@ -1054,13 +1061,32 @@ def materialize_pipeline(
         results.append(result.copy())
     return DagsterPipelineExecutionResult(context, results)
 
-
 def materialize_pipeline_iterator(
-    context,
+    _context,
     pipeline,
     *,
     materializations,
     environment,
+    through_solids=None,
+    from_solids=None,
+    use_materialization_through_solids=True,
+):
+
+    input_manager = EnvironmentInputManager(pipeline, environment)
+
+    return _materialize_pipeline_iterator(
+        pipeline,
+        materializations,
+        input_manager,
+        through_solids,
+        from_solids,
+        use_materialization_through_solids
+    )
+
+def _materialize_pipeline_iterator(
+    pipeline,
+    materializations,
+    input_manager,
     through_solids=None,
     from_solids=None,
     use_materialization_through_solids=True,
@@ -1070,22 +1096,22 @@ def materialize_pipeline_iterator(
     specified in module docblock) to create externally accessible materializations of
     the computations in pipeline.
     '''
-    check.inst_param(context, 'context', DagsterExecutionContext)
     check.inst_param(pipeline, 'pipeline', DagsterPipeline)
     check.list_param(materializations, 'materializations', of_type=config.Materialization)
-    check.inst_param(environment, 'environment', config.Environment)
+    check.inst_param(input_manager, 'input_manager', InputManager)
 
     materialization_args = MaterializationArgs(pipeline, materializations)
 
     if through_solids is None and use_materialization_through_solids:
         through_solids = materialization_args.through_solids
 
-    for result in execute_pipeline_iterator(
-        context,
+    context = input_manager.get_context()
+
+    for result in _execute_pipeline_iterator(
         pipeline,
         through_solids=through_solids,
         from_solids=from_solids,
-        environment=environment
+        input_manager=input_manager,
     ):
         if not result.success:
             yield result
