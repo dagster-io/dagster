@@ -1,9 +1,11 @@
 import pytest
 import dagster
-from dagster import config
+from dagster import (config, PipelineContextDefinition)
+from dagster.core import types
 from dagster.core.decorators import (solid, with_context)
 from dagster.core.definitions import OutputDefinition
 from dagster.core.execution import execute_pipeline
+from dagster.core.errors import (DagsterInvariantViolationError, DagsterTypeError)
 
 
 def test_default_context():
@@ -13,11 +15,113 @@ def test_default_context():
     )
     @with_context
     def default_context_transform(context):
-        assert context.args == {'arg_one': 'value'}
+        assert context.args == {}
 
     pipeline = dagster.pipeline(solids=[default_context_transform])
-    environment = config.Environment(
-        sources={}, context=config.Context('default', {'arg_one': 'value_one'})
+    environment = config.Environment(sources={}, context=config.Context('default', {}))
+
+    execute_pipeline(None, pipeline, environment=environment)
+
+
+def test_custom_contexts():
+    @solid(
+        inputs=[],
+        output=OutputDefinition(),
+    )
+    @with_context
+    def custom_context_transform(context):
+        assert context.args == {'arg_one': 'value_two'}
+
+    pipeline = dagster.pipeline(
+        solids=[custom_context_transform],
+        context_definitions={
+            'custom_one':
+            PipelineContextDefinition(
+                argument_def_dict={'arg_one': types.STRING},
+                context_fn=lambda args: dagster.context(args=args),
+            ),
+            'custom_two':
+            PipelineContextDefinition(
+                argument_def_dict={'arg_one': types.STRING},
+                context_fn=lambda args: dagster.context(args=args),
+            )
+        },
     )
 
-    execute_pipeline()
+    environment_one = config.Environment(
+        sources={}, context=config.Context('custom_one', {'arg_one': 'value_two'})
+    )
+
+    execute_pipeline(None, pipeline, environment=environment_one)
+
+    environment_two = config.Environment(
+        sources={}, context=config.Context('custom_two', {'arg_one': 'value_two'})
+    )
+
+    execute_pipeline(None, pipeline, environment=environment_two)
+
+
+def test_invalid_context():
+    @solid(
+        inputs=[],
+        output=OutputDefinition(),
+    )
+    def never_transform():
+        raise Exception('should never execute')
+
+    default_context_pipeline = dagster.pipeline(solids=[never_transform])
+
+    environment_context_not_found = config.Environment(
+        sources={}, context=config.Context('not_found', {})
+    )
+
+    with pytest.raises(DagsterInvariantViolationError, message='Context not_found not found'):
+        execute_pipeline(
+            None,
+            default_context_pipeline,
+            environment=environment_context_not_found,
+            throw_on_error=True
+        )
+
+    environment_arg_name_mismatch = config.Environment(
+        sources={}, context=config.Context('default', {'unexpected': 'value'})
+    )
+
+    with pytest.raises(DagsterTypeError, message='Argument mismatch in context default'):
+        execute_pipeline(
+            None,
+            default_context_pipeline,
+            environment=environment_arg_name_mismatch,
+            throw_on_error=True
+        )
+
+    with_argful_context_pipeline = dagster.pipeline(
+        solids=[never_transform],
+        context_definitions={
+            'default': PipelineContextDefinition(argument_def_dict={'string_arg': types.STRING})
+        }
+    )
+
+    environment_no_args_error = config.Environment(
+        sources={}, context=config.Context('default', {})
+    )
+
+    with pytest.raises(DagsterTypeError, message='Argument mismatch in context default'):
+        execute_pipeline(
+            None,
+            with_argful_context_pipeline,
+            environment=environment_no_args_error,
+            throw_on_error=True
+        )
+
+    environment_type_mismatch_error = config.Environment(
+        sources={}, context=config.Context('default', {'string_arg': 1})
+    )
+
+    with pytest.raises(DagsterTypeError, message='Argument mismatch in context default'):
+        execute_pipeline(
+            None,
+            with_argful_context_pipeline,
+            environment=environment_type_mismatch_error,
+            throw_on_error=True
+        )

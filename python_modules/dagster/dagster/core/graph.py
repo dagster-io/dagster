@@ -9,11 +9,13 @@ from .definitions import SolidDefinition
 
 
 class PipelineContextDefinition:
-    def __init__(self, argument_def_dict, context_fn):
+    def __init__(self, argument_def_dict, context_fn=None):
         self.argument_def_dict = check.dict_param(
             argument_def_dict, 'argument_def_dict', key_type=str, value_type=types.DagsterType
         )
-        self.context_fn = check.callable_param(context_fn, 'context_fn')
+        self.context_fn = check.opt_callable_param(
+            context_fn, 'context_fn', lambda args: dagster.context(args=args)
+        )
 
 
 class DagsterPipeline:

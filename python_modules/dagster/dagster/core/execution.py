@@ -286,6 +286,34 @@ def _user_code_error_boundary(context, msg, **kwargs):
             msg.format(**kwargs), e, user_exception=e, original_exc_info=sys.exc_info()
         )
 
+def _validate_args(argument_def_dict, arg_dict, error_context_str):
+    expected_args = set(argument_def_dict.keys())
+    received_args = set(arg_dict.keys())
+    if expected_args != received_args:
+        raise DagsterTypeError(
+            'Argument mismatch in {error_context_str}. Expected {expected} got {received}'.
+            format(
+                error_context_str=error_context_str,
+                expected=repr(expected_args),
+                received=repr(received_args),
+            )
+        )
+
+    for arg_name, arg_value in arg_dict.items():
+        arg_def_type = argument_def_dict[arg_name]
+        if not arg_def_type.is_python_valid_value(arg_value):
+            format_string = (
+                'Expected type {typename} for arg {arg_name}' +
+                'for {error_context_str} but got {arg_value}'
+            )
+            raise DagsterTypeError(
+                format_string.format(
+                    typename=arg_def_type.name,
+                    arg_name=arg_name,
+                    error_context_str=error_context_str,
+                    arg_value=repr(arg_value),
+                )
+            )
 
 def _read_source(context, source_definition, arg_dict):
     '''
@@ -299,34 +327,8 @@ def _read_source(context, source_definition, arg_dict):
 
     with context.value('source_type', source_definition.source_type), \
          context.value('arg_dict', arg_dict):
-        expected_args = set(source_definition.argument_def_dict.keys())
-        received_args = set(arg_dict.keys())
-        if expected_args != received_args:
-            raise DagsterTypeError(
-                'Argument mismatch in source type {source}. Expected {expected} got {received}'.
-                format(
-                    source=source_definition.source_type,
-                    expected=repr(expected_args),
-                    received=repr(received_args),
-                )
-            )
-
-        for arg_name, arg_value in arg_dict.items():
-            arg_def_type = source_definition.argument_def_dict[arg_name]
-            if not arg_def_type.is_python_valid_value(arg_value):
-                format_string = (
-                    'Expected type {typename} for arg {arg_name}' +
-                    'for {source_type} but got {arg_value}'
-                )
-                raise DagsterTypeError(
-                    format_string.format(
-                        typename=arg_def_type.name,
-                        arg_name=arg_name,
-                        source_type=source_definition.source_type,
-                        arg_value=repr(arg_value),
-                    )
-                )
-
+        error_context_str = 'source type {source}'.format(source=source_definition.source_type)
+        _validate_args(source_definition.argument_def_dict, arg_dict, error_context_str)
         error_str = 'Error occured while loading source "{source_type}"'
         with _user_code_error_boundary(
             context,
@@ -789,6 +791,20 @@ def _validate_environment(environment, pipeline):
                     f'Input "{input_name}" not found in the pipeline on solid "{solid_name}".' + \
                     f'Input must be one of {repr(pipeline.input_names)}'
                 )
+
+    context_name = environment.context.name
+
+    if context_name not in pipeline.context_definitions:
+        avaiable_context_keys = list(pipeline.context_definitions.keys())
+        raise DagsterInvariantViolationError(f'Context {context_name} not found in ' + \
+            f'pipeline definiton. Available contexts {repr(avaiable_context_keys)}'
+        )
+
+    _validate_args(
+        pipeline.context_definitions[context_name].argument_def_dict,
+        environment.context.args,
+        'context {context_name}'.format(context_name=context_name)
+    )
 
 class EnvironmentInputManager(InputManager):
     def __init__(self, pipeline, environment):
