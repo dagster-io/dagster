@@ -1,15 +1,39 @@
 from toposort import toposort_flatten
 
-from dagster import check
-from dagster.core.errors import DagsterInvalidDefinitionError
+import dagster
 
+from dagster import check
+from dagster.core import types
+from dagster.core.errors import DagsterInvalidDefinitionError
 from .definitions import SolidDefinition
 
 
+class PipelineContextDefinition:
+    def __init__(self, argument_def_dict, context_fn):
+        self.argument_def_dict = check.dict_param(
+            argument_def_dict, 'argument_def_dict', key_type=str, value_type=types.DagsterType
+        )
+        self.context_fn = check.callable_param(context_fn, 'context_fn')
+
+
 class DagsterPipeline:
-    def __init__(self, solids, name=None, description=None):
-        self.name = check.opt_str_param(name, 'name')
+    def __init__(self, solids, name=None, description=None, context_definitions=None):
         self.description = check.opt_str_param(description, 'description')
+        self.name = check.opt_str_param(name, 'name')
+
+        if context_definitions is None:
+            default_context_def = PipelineContextDefinition(
+                context_fn=lambda args: dagster.context(args=args),
+                argument_def_dict={},
+            )
+            context_definitions = {'default': default_context_def}
+
+        self.context_definitions = check.dict_param(
+            context_definitions,
+            'context_definitions',
+            key_type=str,
+            value_type=PipelineContextDefinition,
+        )
 
         for solid in solids:
             if not isinstance(solid, SolidDefinition) and callable(solid):

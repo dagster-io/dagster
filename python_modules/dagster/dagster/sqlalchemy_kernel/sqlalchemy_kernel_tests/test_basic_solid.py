@@ -1,4 +1,5 @@
 import sqlalchemy as sa
+import dagster
 from dagster import config
 from dagster.core.execution import (
     output_single_solid,
@@ -13,7 +14,20 @@ from dagster.sqlalchemy_kernel.subquery_builder_experimental import (
     create_table_expression_input,
     create_table_input_dependency,
 )
-from .math_test_db import in_mem_engine
+from .math_test_db import in_mem_engine, in_mem_context
+
+
+def pipeline_test_def(solids, context):
+    return dagster.pipeline(
+        solids=solids,
+        context_definitions={
+            'default':
+            dagster.PipelineContextDefinition(
+                argument_def_dict={},
+                context_fn=lambda _args: context,
+            ),
+        }
+    )
 
 
 def create_num_table(engine):
@@ -49,6 +63,7 @@ def test_sql_sum_solid():
     )
 
     result = output_single_solid(
+        # in
         DagsterSqlAlchemyExecutionContext(engine=engine),
         sum_table_solid,
         environment=environment,

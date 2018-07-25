@@ -60,10 +60,11 @@ class DagsterExecutionContext:
     reporting.
     '''
 
-    def __init__(self, loggers=None, log_level=ERROR):
+    def __init__(self, loggers=None, log_level=ERROR, args=None):
         self._logger = CompositeLogger(loggers=loggers, level=log_level)
         self._context_dict = OrderedDict()
         self._metrics = []
+        self.args = check.opt_dict_param(args, 'args', key_type=str)
 
     def _maybe_quote(self, val):
         str_val = str(val)
@@ -174,8 +175,10 @@ class DagsterExecutionContext:
 class DagsterPipelineExecutionResult:
     def __init__(
         self,
+        context,
         result_list,
     ):
+        self.context = check.inst_param(context, 'context', DagsterExecutionContext)
         self.result_list = check.list_param(
             result_list, 'result_list', of_type=DagsterExecutionResult
         )
@@ -556,15 +559,29 @@ def _pipeline_solid_in_memory(context, solid, transform_values_dict):
     return transformed_value
 
 
+from .graph import PipelineContextDefinition 
+
 def execute_single_solid(context, solid, environment, throw_on_error=True):
     check.inst_param(context, 'context', DagsterExecutionContext)
     check.inst_param(solid, 'solid', SolidDefinition)
     check.inst_param(environment, 'environment', config.Environment)
     check.bool_param(throw_on_error, 'throw_on_error')
 
+
+    context_definition = PipelineContextDefinition(
+        argument_def_dict={},
+        context_fn=lambda _args: context
+    )
+
     results = list(
         execute_pipeline_iterator(
-            context, DagsterPipeline(solids=[solid]), environment=environment
+            None,
+            # context,
+            DagsterPipeline(
+                solids=[solid],
+                context_definitions={'default': context_definition},
+            ),
+            environment=environment,
         )
     )
 
@@ -596,9 +613,6 @@ def _do_throw_on_error(execution_result):
 
         check.invariant(execution_result.exception)
         raise execution_result.exception
-
-
-
 
 
 def output_single_solid(
@@ -726,6 +740,9 @@ class InputManager:
     def __init__(self):
         self.intermediate_values = {}
 
+    def get_context(self):
+        check.not_implemented('must implement in subclass')
+
     def get_input_value(self, solid, input_def):
         if input_def.depends_on and input_def.depends_on.name in self.intermediate_values:
             # grab value from dependency
@@ -738,12 +755,16 @@ class InputManager:
         check.not_implemented('must implement in subclass')
 
 class InMemoryInputManager(InputManager):
-    def __init__(self, input_values):
+    def __init__(self, context, input_values):
         super().__init__()
         self.input_values = check.dict_param(input_values, 'input_values', key_type=str)
+        self.context = check.inst_param(context, 'context', DagsterExecutionContext)
 
     def _get_sourced_input_value(self, _solid_name, input_name):
         return self.input_values[input_name]
+
+    def get_context(self):
+        return self.context
 
 
 def _validate_environment(environment, pipeline):
@@ -763,13 +784,19 @@ def _validate_environment(environment, pipeline):
                 )
 
 class EnvironmentInputManager(InputManager):
-    def __init__(self, context, pipeline, environment):
+    def __init__(self, pipeline, environment):
         super().__init__()
-        # This is not necessarily the best spot for this call
+        # This is not necessarily the best spot for these calls
         _validate_environment(environment, pipeline)
-        self.context = check.inst_param(context, 'context', DagsterExecutionContext)
+        context_name = environment.context.name
+        context_definition = pipeline.context_definitions[context_name]
+
+        self.context = context_definition.context_fn(environment.context.args)
         self.pipeline = check.inst_param(pipeline, 'pipeline', DagsterPipeline)
         self.environment = check.inst_param(environment, 'environment', config.Environment)
+
+    def get_context(self):
+        return self.context
 
     def _get_sourced_input_value(self, solid_name, input_name):
         source_config = self.environment.sources[solid_name][input_name]
@@ -786,18 +813,18 @@ class EnvironmentInputManager(InputManager):
 
 
 def execute_pipeline_iterator(
-    context,
+    _context, # TODO: Remove
     pipeline,
     environment,
     through_solids=None,
     from_solids=None,
 ):
     return _execute_pipeline_iterator(
-        context,
+        # context,
         pipeline,
         through_solids,
         from_solids,
-        EnvironmentInputManager(context, pipeline, environment)
+        EnvironmentInputManager(pipeline, environment)
     )
 
 def execute_pipeline_iterator_in_memory(
@@ -808,15 +835,15 @@ def execute_pipeline_iterator_in_memory(
     from_solids=None,
 ):
     return _execute_pipeline_iterator(
-        context,
+        # context,
         pipeline,
         through_solids,
         from_solids,
-        InMemoryInputManager(input_values),
+        InMemoryInputManager(context, input_values),
     )
 
 def _execute_pipeline_iterator(
-    context,
+    # context,
     pipeline,
     through_solids,
     from_solids,
@@ -837,11 +864,13 @@ def _execute_pipeline_iterator(
     once the entire pipeline has been executed.
     '''
 
-    check.inst_param(context, 'context', DagsterExecutionContext)
+    # check.inst_param(context, 'context', DagsterExecutionContext)
     check.inst_param(pipeline, 'pipeline', DagsterPipeline)
     check.opt_list_param(through_solids, 'through_solids', of_type=str)
     check.opt_list_param(from_solids, 'from_solids', of_type=str)
     check.inst_param(input_manager, 'input_manager', InputManager)
+
+    context = input_manager.get_context()
 
     pipeline_context_value = pipeline.name if pipeline.name else 'unnamed'
 
@@ -898,7 +927,7 @@ def _execute_pipeline_iterator(
                 break
 
 def execute_pipeline(
-    context,
+    _context, # TODO remove
     pipeline,
     *,
     environment,
@@ -908,9 +937,9 @@ def execute_pipeline(
 ):
     check.inst_param(environment, 'environment', config.Environment)
     return _execute_pipeline(
-        context,
+        # context,
         pipeline,
-        EnvironmentInputManager(context, pipeline, environment),
+        EnvironmentInputManager(pipeline, environment),
         from_solids,
         through_solids,
         throw_on_error,
@@ -927,16 +956,16 @@ def execute_pipeline_in_memory(
 ):
     check.dict_param(input_values, 'input_values', key_type=str)
     return _execute_pipeline(
-        context,
+        # context,
         pipeline,
-        InMemoryInputManager(input_values),
+        InMemoryInputManager(context, input_values),
         from_solids,
         through_solids,
         throw_on_error,
     )
 
 def _execute_pipeline(
-    context,
+    # context,
     pipeline,
     input_manager,
     from_solids=None,
@@ -951,7 +980,7 @@ def _execute_pipeline(
 
     Note: throw_on_error is very useful in testing contexts when not testing for error conditions
     '''
-    check.inst_param(context, 'context', DagsterExecutionContext)
+    # check.inst_param(context, 'context', DagsterExecutionContext)
     check.inst_param(pipeline, 'pipeline', DagsterPipeline)
     check.inst_param(input_manager, 'input_manager', InputManager)
     from_solids = check.opt_list_param(from_solids, 'from_solids', of_type=str)
@@ -960,7 +989,7 @@ def _execute_pipeline(
 
     results = []
     for result in _execute_pipeline_iterator(
-        context,
+        # context,
         pipeline,
         input_manager=input_manager,
         through_solids=through_solids,
@@ -971,7 +1000,7 @@ def _execute_pipeline(
                 _do_throw_on_error(result)
 
         results.append(result.copy())
-    return DagsterPipelineExecutionResult(results)
+    return DagsterPipelineExecutionResult(input_manager.get_context(), results)
 
 
 class MaterializationArgs:
@@ -1023,7 +1052,7 @@ def materialize_pipeline(
             if not result.success:
                 _do_throw_on_error(result)
         results.append(result.copy())
-    return DagsterPipelineExecutionResult(results)
+    return DagsterPipelineExecutionResult(context, results)
 
 
 def materialize_pipeline_iterator(
