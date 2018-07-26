@@ -1,19 +1,31 @@
 import sqlalchemy as sa
+import dagster
 from dagster import config
 from dagster.core.execution import (
     output_single_solid,
-    DagsterPipeline,
     execute_pipeline,
     materialize_pipeline,
 )
 
-from dagster.sqlalchemy_kernel import DagsterSqlAlchemyExecutionContext
 from dagster.sqlalchemy_kernel.subquery_builder_experimental import (
     create_sql_solid,
     create_table_expression_input,
     create_table_input_dependency,
 )
-from .math_test_db import in_mem_engine
+from .math_test_db import in_mem_context
+
+
+def pipeline_test_def(solids, context):
+    return dagster.pipeline(
+        solids=solids,
+        context_definitions={
+            'default':
+            dagster.PipelineContextDefinition(
+                argument_def_dict={},
+                context_fn=lambda _args: context,
+            ),
+        }
+    )
 
 
 def create_num_table(engine):
@@ -37,9 +49,6 @@ def create_num_table(engine):
 def test_sql_sum_solid():
     sum_table_solid = create_sum_table_solid()
 
-    engine = sa.create_engine('sqlite://')
-    create_num_table(engine)
-
     environment = config.Environment(
         sources={
             'sum_table': {
@@ -48,8 +57,10 @@ def test_sql_sum_solid():
         },
     )
 
+    context = in_mem_context()
+
     result = output_single_solid(
-        DagsterSqlAlchemyExecutionContext(engine=engine),
+        context,
         sum_table_solid,
         environment=environment,
         materialization_type='CREATE',
@@ -57,7 +68,7 @@ def test_sql_sum_solid():
     )
     assert result.success
 
-    results = engine.connect().execute('SELECT * FROM sum_table').fetchall()
+    results = context.engine.connect().execute('SELECT * FROM sum_table').fetchall()
     assert results == [(1, 2, 3), (3, 4, 7)]
 
 
@@ -69,7 +80,7 @@ def create_sum_table_solid():
     )
 
 
-def create_sum_sq_pipeline():
+def create_sum_sq_pipeline(context):
     sum_solid = create_sum_table_solid()
 
     sum_sq_solid = create_sql_solid(
@@ -78,14 +89,11 @@ def create_sum_sq_pipeline():
         sql_text='SELECT num1, num2, sum, sum * sum as sum_sq from {sum_table}',
     )
 
-    pipeline = DagsterPipeline(solids=[sum_solid, sum_sq_solid])
-    return pipeline
+    return pipeline_test_def(solids=[sum_solid, sum_sq_solid], context=context)
 
 
 def test_execute_sql_sum_sq_solid():
-    pipeline = create_sum_sq_pipeline()
-
-    engine = in_mem_engine()
+    pipeline = create_sum_sq_pipeline(in_mem_context())
 
     environment = config.Environment(
         sources={
@@ -96,7 +104,6 @@ def test_execute_sql_sum_sq_solid():
     )
 
     pipeline_result = execute_pipeline(
-        DagsterSqlAlchemyExecutionContext(engine=engine),
         pipeline,
         environment=environment,
     )
@@ -114,10 +121,7 @@ def test_execute_sql_sum_sq_solid():
 
 
 def test_output_sql_sum_sq_solid():
-    pipeline = create_sum_sq_pipeline()
-    engine = sa.create_engine('sqlite://')
-    create_num_table(engine)
-    engine = in_mem_engine()
+    pipeline = create_sum_sq_pipeline(in_mem_context())
 
     environment = config.Environment(
         sources={
@@ -128,8 +132,7 @@ def test_output_sql_sum_sq_solid():
     )
 
     pipeline_result = materialize_pipeline(
-        DagsterSqlAlchemyExecutionContext(engine=engine),
-        pipeline,
+        pipeline=pipeline,
         environment=environment,
         materializations=[
             config.Materialization(
@@ -145,5 +148,6 @@ def test_output_sql_sum_sq_solid():
     result_list = pipeline_result.result_list
 
     assert len(result_list) == 2
+    engine = pipeline_result.context.engine
     result_list = engine.connect().execute('SELECT * FROM sum_sq_table').fetchall()
     assert result_list == [(1, 2, 3, 9), (3, 4, 7, 49)]

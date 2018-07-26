@@ -1,4 +1,3 @@
-import copy
 import pytest
 
 from dagster import check
@@ -281,7 +280,7 @@ def _do_test(pipeline, do_execute_pipeline_iter):
     results = list()
 
     for result in do_execute_pipeline_iter():
-        results.append(copy.deepcopy(result))
+        results.append(result.copy())
 
     assert results[0].transformed_value[0] == input_set('A_input')
     assert results[0].transformed_value[1] == transform_called('A')

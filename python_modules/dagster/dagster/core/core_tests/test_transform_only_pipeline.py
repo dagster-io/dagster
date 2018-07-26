@@ -40,9 +40,7 @@ def test_execute_solid_with_dep_only_inputs_no_api():
 
     # from dagster.utils import logging
 
-    pipeline_result = dagster.execute_pipeline(
-        dagster.context(), pipeline, environment=config.Environment.empty()
-    )
+    pipeline_result = dagster.execute_pipeline(pipeline, environment=config.Environment.empty())
 
     assert pipeline_result.success
 
@@ -72,9 +70,7 @@ def test_execute_solid_with_dep_only_inputs_with_api():
 
     pipeline = dagster.pipeline(solids=[step_one_solid, step_two_solid])
 
-    pipeline_result = dagster.execute_pipeline(
-        dagster.context(), pipeline, environment=config.Environment.empty()
-    )
+    pipeline_result = dagster.execute_pipeline(pipeline, environment=config.Environment.empty())
 
     for result in pipeline_result.result_list:
         assert result.success

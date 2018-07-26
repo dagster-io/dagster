@@ -8,12 +8,35 @@ from dagster.sqlalchemy_kernel.subquery_builder_experimental import sql_file_sol
 
 
 def in_mem_engine():
-    engine = sa.create_engine('sqlite://')
+    engine = sa.create_engine('sqlite://', echo=False)
     return engine
 
 
 def in_mem_context():
     return dagster_sa.DagsterSqlAlchemyExecutionContext(engine=in_mem_engine())
+
+
+def create_persisted_context():
+    full_path = script_relative_path('testdb.db')
+    engine = sa.create_engine(f'sqlite:///{full_path}', echo=False)
+    return dagster_sa.DagsterSqlAlchemyExecutionContext(engine=engine)
+
+
+def create_mem_sql_pipeline_context_tuple(solids):
+    default_def = dagster.PipelineContextDefinition(
+        argument_def_dict={},
+        context_fn=lambda _args: in_mem_context(),
+    )
+    persisted_def = dagster.PipelineContextDefinition(
+        argument_def_dict={},
+        context_fn=lambda _args: create_persisted_context(),
+    )
+    return dagster.pipeline(
+        solids=solids, context_definitions={
+            'default': default_def,
+            'persisted': persisted_def
+        }
+    )
 
 
 def _get_sql_script_path(name):
@@ -27,15 +50,14 @@ def _get_project_solid(name, inputs=None):
 def test_sql_create_tables():
     create_all_tables_solids = _get_project_solid('create_all_tables')
 
-    pipeline = dagster.pipeline(solids=[create_all_tables_solids])
+    pipeline = create_mem_sql_pipeline_context_tuple(solids=[create_all_tables_solids])
 
-    context = in_mem_context()
-    pipeline_result = dagster.execute_pipeline(
-        context, pipeline, environment=config.Environment.empty()
-    )
+    pipeline_result = dagster.execute_pipeline(pipeline, environment=config.Environment.empty())
     assert pipeline_result.success
 
-    assert set(context.engine.table_names()) == set(['num_table', 'sum_sq_table', 'sum_table'])
+    assert set(pipeline_result.context.engine.table_names()) == set(
+        ['num_table', 'sum_sq_table', 'sum_table']
+    )
 
 
 def test_sql_populate_tables():
@@ -45,16 +67,17 @@ def test_sql_populate_tables():
         'populate_num_table', inputs=[dagster.dep_only_input(create_all_tables_solids)]
     )
 
-    pipeline = dagster.pipeline(solids=[create_all_tables_solids, populate_num_table_solid])
-
-    context = in_mem_context()
-    pipeline_result = dagster.execute_pipeline(
-        context, pipeline, environment=config.Environment.empty()
+    pipeline = create_mem_sql_pipeline_context_tuple(
+        solids=[create_all_tables_solids, populate_num_table_solid]
     )
+
+    pipeline_result = dagster.execute_pipeline(pipeline, environment=config.Environment.empty())
 
     assert pipeline_result.success
 
-    assert context.engine.execute('SELECT * FROM num_table').fetchall() == [(1, 2), (3, 4)]
+    assert pipeline_result.context.engine.execute('SELECT * FROM num_table').fetchall() == [
+        (1, 2), (3, 4)
+    ]
 
 
 def create_full_pipeline():
@@ -75,7 +98,7 @@ def create_full_pipeline():
         inputs=[dagster.dep_only_input(insert_into_sum_table_solid)],
     )
 
-    return dagster.pipeline(
+    return create_mem_sql_pipeline_context_tuple(
         solids=[
             create_all_tables_solids,
             populate_num_table_solid,
@@ -88,10 +111,8 @@ def create_full_pipeline():
 def test_full_in_memory_pipeline():
 
     pipeline = create_full_pipeline()
-    context = in_mem_context()
-    pipeline_result = dagster.execute_pipeline(
-        context, pipeline, environment=config.Environment.empty()
-    )
+    pipeline_result = dagster.execute_pipeline(pipeline, environment=config.Environment.empty())
+    context = pipeline_result.context
     assert pipeline_result.success
 
     assert context.engine.execute('SELECT * FROM num_table').fetchall() == [(1, 2), (3, 4)]
@@ -102,13 +123,12 @@ def test_full_in_memory_pipeline():
 
 
 def test_full_persisted_pipeline():
-    full_path = script_relative_path('testdb.db')
-    engine = sa.create_engine(f'sqlite:///{full_path}', echo=True)
-    context = dagster_sa.DagsterSqlAlchemyExecutionContext(engine=engine)
-
     pipeline = create_full_pipeline()
     pipeline_result = dagster.execute_pipeline(
-        context, pipeline, environment=config.Environment.empty()
+        pipeline,
+        environment=config.Environment(
+            sources={}, context=config.Context(name='persisted', args={})
+        )
     )
 
     assert pipeline_result.success
