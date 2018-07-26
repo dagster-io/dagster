@@ -210,6 +210,7 @@ class DagsterExecutionResult:
         reason=None,
         exception=None,
         failed_expectation_results=None,
+        context=None,
     ):
         self.success = check.bool_param(success, 'success')
         if not success:
@@ -240,6 +241,8 @@ class DagsterExecutionResult:
             check.invariant(failed_expectation_results is None)
             self.failed_expectation_results = None
 
+        self.context = context
+
     def reraise_user_error(self):
         check.invariant(self.reason == DagsterExecutionFailureReason.USER_CODE_ERROR)
         check.inst(self.exception, DagsterUserCodeExecutionError)
@@ -256,6 +259,7 @@ class DagsterExecutionResult:
             success=self.success,
             solid=self.solid,
             transformed_value=copy.deepcopy(self.transformed_value),
+            context=self.context,
             reason=self.reason,
             exception=self.exception,
             failed_expectation_results=None if self.failed_expectation_results is None else
@@ -522,6 +526,7 @@ def _pipeline_solid_in_memory(context, solid, transform_values_dict):
             success=False,
             transformed_value=None,
             solid=solid,
+            context=context,
             reason=DagsterExecutionFailureReason.EXPECTATION_FAILURE,
             failed_expectation_results=all_run_result.all_fails,
         )
@@ -553,6 +558,7 @@ def _pipeline_solid_in_memory(context, solid, transform_values_dict):
             success=False,
             transformed_value=None,
             solid=solid,
+            context=context,
             reason=DagsterExecutionFailureReason.EXPECTATION_FAILURE,
             failed_expectation_results=output_expectation_failures,
         )
@@ -737,6 +743,7 @@ def _execute_pipeline_solid_step(context, solid, input_manager):
     return DagsterExecutionResult(
         success=True,
         solid=solid,
+        context=context,
         transformed_value=input_manager.intermediate_values[solid.name],
         exception=None
     )
@@ -940,6 +947,7 @@ def _execute_pipeline_iterator(
                     success=False,
                     reason=DagsterExecutionFailureReason.USER_CODE_ERROR,
                     solid=solid,
+                    context=context,
                     transformed_value=None,
                     exception=see,
                 )
@@ -1042,6 +1050,8 @@ def materialize_pipeline(
     *,
     environment,
     materializations,
+    from_solids=None,
+    through_solids=None,
     throw_on_error=True,
 ):
     '''
@@ -1062,6 +1072,8 @@ def materialize_pipeline(
         pipeline,
         materializations=materializations,
         input_manager=input_manager,
+        from_solids=from_solids,
+        through_solids=through_solids,
     ):
         if throw_on_error:
             if not result.success:
@@ -1149,6 +1161,7 @@ def _materialize_pipeline_iterator(
                         materialization_result = DagsterExecutionResult(
                             success=False,
                             solid=result.solid,
+                            context=context,
                             reason=DagsterExecutionFailureReason.USER_CODE_ERROR,
                             exception=see,
                             transformed_value=result.transformed_value,
