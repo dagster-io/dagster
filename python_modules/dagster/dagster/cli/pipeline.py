@@ -8,13 +8,8 @@ import yaml
 
 from dagster import config as dagster_config
 from dagster import check
-from dagster.core.execution import (
-    DagsterExecutionContext,
-    DagsterExecutionFailureReason,
-    materialize_pipeline_iterator,
-)
+from dagster.core.execution import (DagsterExecutionFailureReason, materialize_pipeline_iterator)
 from dagster.graphviz import build_graphviz_graph
-from dagster.utils.logging import define_logger
 
 from .context import Config
 
@@ -174,7 +169,12 @@ def execute_command(pipeline_config, env, from_solid, log_level):
                 name=source_yml['name'], args=source_yml['args']
             )
 
-    environment = dagster_config.Environment(sources=sources)
+    # TODO: drive commandline execution context from yaml file
+    # https://github.com/dagster-io/dagster/issues/55
+    environment = dagster_config.Environment(
+        context=dagster_config.Context(name='default', args={'log_level': log_level}),
+        sources=sources
+    )
 
     materializations = []
     if 'materializations' in env_config:
@@ -184,11 +184,7 @@ def execute_command(pipeline_config, env, from_solid, log_level):
             ) for m in check.list_elem(env_config, 'materializations')
         ]
 
-    # TODO: figure out how to drive this from the environment
-    _context = DagsterExecutionContext(loggers=[define_logger('dagster')], log_level=log_level)
-
     pipeline_iter = materialize_pipeline_iterator(
-        # context,
         pipeline_config.pipeline,
         environment=environment,
         materializations=materializations,

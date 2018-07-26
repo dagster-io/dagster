@@ -61,6 +61,8 @@ def test_custom_contexts():
     execute_pipeline(pipeline, environment=environment_two)
 
 
+# TODO: reenable pending the ability to specific optional arguments
+# https://github.com/dagster-io/dagster/issues/56
 @pytest.mark.skip
 def test_invalid_context():
     @solid(
@@ -97,7 +99,10 @@ def test_invalid_context():
     with_argful_context_pipeline = dagster.pipeline(
         solids=[never_transform],
         context_definitions={
-            'default': PipelineContextDefinition(argument_def_dict={'string_arg': types.STRING})
+            'default':
+            PipelineContextDefinition(
+                argument_def_dict={'string_arg': types.STRING}, context_fn=lambda _args: _args
+            )
         }
     )
 

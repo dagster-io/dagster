@@ -803,6 +803,8 @@ def _validate_environment(environment, pipeline):
             f'pipeline definiton. Available contexts {repr(avaiable_context_keys)}'
         )
 
+    # TODO: reenable pending the ability to specific optional arguments
+    # https://github.com/dagster-io/dagster/issues/56
     # _validate_args(
     #     pipeline.context_definitions[context_name].argument_def_dict,
     #     environment.context.args,
