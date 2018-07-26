@@ -5,19 +5,31 @@ import dagster
 from dagster import check
 from dagster.core import types
 from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster.utils import logging
 from .definitions import SolidDefinition
 
 
-def _default_context_fn(_args):
-    return dagster.context()
+def _default_pipeline_context_definitions():
+    def _default_context_fn(args):
+        log_level = args.get('log_level', 'ERROR')
+        context = dagster.context(
+            log_level=log_level, loggers=[logging.define_logger('dagster', level=log_level)]
+        )
+        return context
+
+    default_context_def = PipelineContextDefinition(
+        argument_def_dict={'log_level': types.STRING},
+        context_fn=_default_context_fn,
+    )
+    return {'default': default_context_def}
 
 
 class PipelineContextDefinition:
-    def __init__(self, argument_def_dict, context_fn=None):
+    def __init__(self, argument_def_dict, context_fn):
         self.argument_def_dict = check.dict_param(
             argument_def_dict, 'argument_def_dict', key_type=str, value_type=types.DagsterType
         )
-        self.context_fn = check.opt_callable_param(context_fn, 'context_fn', _default_context_fn)
+        self.context_fn = check.callable_param(context_fn, 'context_fn')
 
 
 class DagsterPipeline:
@@ -26,8 +38,7 @@ class DagsterPipeline:
         self.name = check.opt_str_param(name, 'name')
 
         if context_definitions is None:
-            default_context_def = PipelineContextDefinition(argument_def_dict={})
-            context_definitions = {'default': default_context_def}
+            context_definitions = _default_pipeline_context_definitions()
 
         self.context_definitions = check.dict_param(
             context_definitions,

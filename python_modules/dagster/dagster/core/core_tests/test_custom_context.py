@@ -61,6 +61,7 @@ def test_custom_contexts():
     execute_pipeline(pipeline, environment=environment_two)
 
 
+@pytest.mark.skip
 def test_invalid_context():
     @solid(
         inputs=[],

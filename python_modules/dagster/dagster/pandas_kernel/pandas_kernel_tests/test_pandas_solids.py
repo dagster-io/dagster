@@ -35,6 +35,7 @@ def get_solid_transformed_value(context, solid_inst, environment):
 
 def get_num_csv_environment(solid_name):
     return config.Environment(
+        context=config.Context('default', {'log_level': 'ERROR'}),
         sources={
             solid_name: {
                 'num_csv': config.Source('CSV', args={'path': script_relative_path('num.csv')})
