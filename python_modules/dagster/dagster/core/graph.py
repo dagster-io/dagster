@@ -8,14 +8,16 @@ from dagster.core.errors import DagsterInvalidDefinitionError
 from .definitions import SolidDefinition
 
 
+def _default_context_fn(_args):
+    return dagster.context()
+
+
 class PipelineContextDefinition:
     def __init__(self, argument_def_dict, context_fn=None):
         self.argument_def_dict = check.dict_param(
             argument_def_dict, 'argument_def_dict', key_type=str, value_type=types.DagsterType
         )
-        self.context_fn = check.opt_callable_param(
-            context_fn, 'context_fn', lambda args: dagster.context(args=args)
-        )
+        self.context_fn = check.opt_callable_param(context_fn, 'context_fn', _default_context_fn)
 
 
 class DagsterPipeline:
@@ -24,10 +26,7 @@ class DagsterPipeline:
         self.name = check.opt_str_param(name, 'name')
 
         if context_definitions is None:
-            default_context_def = PipelineContextDefinition(
-                context_fn=lambda args: dagster.context(args=args),
-                argument_def_dict={},
-            )
+            default_context_def = PipelineContextDefinition(argument_def_dict={})
             context_definitions = {'default': default_context_def}
 
         self.context_definitions = check.dict_param(
