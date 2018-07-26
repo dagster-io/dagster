@@ -8,7 +8,7 @@ from dagster.sqlalchemy_kernel.subquery_builder_experimental import sql_file_sol
 
 
 def in_mem_engine():
-    engine = sa.create_engine('sqlite://')
+    engine = sa.create_engine('sqlite://', echo=False)
     return engine
 
 
@@ -18,7 +18,7 @@ def in_mem_context():
 
 def create_persisted_context():
     full_path = script_relative_path('testdb.db')
-    engine = sa.create_engine(f'sqlite:///{full_path}', echo=True)
+    engine = sa.create_engine(f'sqlite:///{full_path}', echo=False)
     return dagster_sa.DagsterSqlAlchemyExecutionContext(engine=engine)
 
 
