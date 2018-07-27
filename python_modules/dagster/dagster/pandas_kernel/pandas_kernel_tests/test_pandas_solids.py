@@ -6,7 +6,9 @@ import dagster
 from dagster import check
 from dagster import config
 from dagster.core import types
-from dagster.core.definitions import (SolidDefinition, create_single_materialization_output, ArgumentDefinition)
+from dagster.core.definitions import (
+    SolidDefinition, create_single_materialization_output, ArgumentDefinition
+)
 from dagster.core.decorators import solid
 from dagster.core.execution import (
     ExecutionContext,
@@ -35,7 +37,6 @@ def get_solid_transformed_value(context, solid_inst, environment):
 
 def get_num_csv_environment(solid_name):
     return config.Environment(
-        context=config.Context('default', {'log_level': 'ERROR'}),
         sources={
             solid_name: {
                 'num_csv': config.Source('CSV', args={'path': script_relative_path('num.csv')})
