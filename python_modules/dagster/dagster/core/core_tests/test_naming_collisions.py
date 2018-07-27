@@ -74,7 +74,6 @@ def test_execute_two_solids_with_same_input_name():
     pipeline = dagster.pipeline(solids=[solid_one, solid_two])
 
     result = execute_pipeline(
-        dagster.context(),
         pipeline,
         environment=config.Environment(
             sources={
@@ -128,7 +127,6 @@ def test_execute_dep_solid_different_input_name():
 
     pipeline = dagster.pipeline(solids=[first_solid, second_solid])
     result = dagster.execute_pipeline(
-        DagsterExecutionContext(),
         pipeline,
         environment=config.Environment(
             sources={
@@ -220,9 +218,7 @@ def test_execute_dep_solid_same_input_name():
         }
     )
 
-    both_solids_result = dagster.execute_pipeline(
-        DagsterExecutionContext(), pipeline, environment=complete_environment
-    )
+    both_solids_result = dagster.execute_pipeline(pipeline, environment=complete_environment)
 
     assert executed == {
         's1_t1_source': True,
@@ -242,10 +238,7 @@ def test_execute_dep_solid_same_input_name():
     executed['s2_t2_source'] = False
 
     second_solid_only_result = dagster.execute_pipeline(
-        DagsterExecutionContext(),
-        pipeline,
-        environment=complete_environment,
-        from_solids=['table_two']
+        pipeline, environment=complete_environment, from_solids=['table_two']
     )
 
     assert second_solid_only_result.success
@@ -267,7 +260,6 @@ def test_execute_dep_solid_same_input_name():
     executed['s2_t2_source'] = False
 
     first_solid_only_result = dagster.execute_pipeline(
-        DagsterExecutionContext(),
         pipeline,
         environment=complete_environment,
         through_solids=['table_one'],

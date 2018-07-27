@@ -276,6 +276,8 @@ def test_opt_callable_param():
     lamb = lambda: 1
     assert check.opt_callable_param(lamb, 'lamb') == lamb
     assert check.opt_callable_param(None, 'lamb') is None
+    assert check.opt_callable_param(None, 'lamb', default=None) is None
+    assert check.opt_callable_param(None, 'lamb', default=lamb) == lamb
 
     with pytest.raises(ParameterCheckError):
         check.opt_callable_param(2, 'lamb')

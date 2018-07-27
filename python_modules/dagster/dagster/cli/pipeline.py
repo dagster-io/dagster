@@ -1,3 +1,4 @@
+from collections import defaultdict
 import logging
 import os
 import textwrap
@@ -7,13 +8,8 @@ import yaml
 
 from dagster import config as dagster_config
 from dagster import check
-from dagster.core.execution import (
-    DagsterExecutionContext,
-    DagsterExecutionFailureReason,
-    materialize_pipeline_iterator,
-)
+from dagster.core.execution import (DagsterExecutionFailureReason, materialize_pipeline_iterator)
 from dagster.graphviz import build_graphviz_graph
-from dagster.utils.logging import define_logger
 
 from .context import Config
 
@@ -164,14 +160,21 @@ def load_yaml(path):
 @click.option('--from-solid', type=click.STRING, help="Solid to start execution from", default=None)
 @click.option('--log-level', type=click.Choice(LOGGING_DICT.keys()), default='INFO')
 def execute_command(pipeline_config, env, from_solid, log_level):
+    # loading environment from yaml should be its own reuable function and tested
     env_config = load_yaml(env)
-    sources = {}
-    for input_name, source_yml in check.dict_elem(env_config['environment'], 'sources').items():
-        sources[input_name] = dagster_config.Source(
-            name=source_yml['name'], args=source_yml['args']
-        )
+    sources = defaultdict(dict)
+    for solid_name, args_yml in check.dict_elem(env_config['environment'], 'sources').items():
+        for input_name, source_yml in args_yml.items():
+            sources[solid_name][input_name] = dagster_config.Source(
+                name=source_yml['name'], args=source_yml['args']
+            )
 
-    environment = dagster_config.Environment(sources=sources)
+    # TODO: drive commandline execution context from yaml file
+    # https://github.com/dagster-io/dagster/issues/55
+    environment = dagster_config.Environment(
+        context=dagster_config.Context(name='default', args={'log_level': log_level}),
+        sources=sources
+    )
 
     materializations = []
     if 'materializations' in env_config:
@@ -181,10 +184,7 @@ def execute_command(pipeline_config, env, from_solid, log_level):
             ) for m in check.list_elem(env_config, 'materializations')
         ]
 
-    context = DagsterExecutionContext(loggers=[define_logger('dagster')], log_level=log_level)
-
     pipeline_iter = materialize_pipeline_iterator(
-        context,
         pipeline_config.pipeline,
         environment=environment,
         materializations=materializations,
@@ -192,27 +192,29 @@ def execute_command(pipeline_config, env, from_solid, log_level):
         use_materialization_through_solids=False,
     )
 
-    process_results_for_console(pipeline_iter, context)
+    process_results_for_console(pipeline_iter)
 
 
-def process_results_for_console(pipeline_iter, context):
+def process_results_for_console(pipeline_iter):
     results = []
+
     for result in pipeline_iter:
         if not result.success:
             if result.reason == DagsterExecutionFailureReason.USER_CODE_ERROR:
                 raise result.user_exception
             elif result.reason == DagsterExecutionFailureReason.EXPECTATION_FAILURE:
                 for expectation_result in result.failed_expectation_results:
-                    context.error(expectation_result.message, solid=result.solid.name)
+                    result.context.error(expectation_result.message, solid=result.solid.name)
                 click_context = click.get_current_context()
                 click_context.exit(1)
         results.append(result)
 
-    print_metrics_to_console(results, context)
+    print_metrics_to_console(results)
 
 
-def print_metrics_to_console(results, context):
+def print_metrics_to_console(results):
     for result in results:
+        context = result.context
         metrics_of_solid = list(context.metrics_matching_context({'solid': result.name}))
 
         print('Metrics for {name}'.format(name=result.name))

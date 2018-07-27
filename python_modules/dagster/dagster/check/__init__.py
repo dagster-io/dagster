@@ -135,10 +135,10 @@ def callable_param(obj, param_name):
     return obj
 
 
-def opt_callable_param(obj, param_name):
+def opt_callable_param(obj, param_name, default=None):
     if obj is not None and not callable(obj):
         raise_with_traceback(_not_callable_exception(obj, param_name))
-    return obj
+    return default if obj is None else obj
 
 
 def int_param(obj, param_name):

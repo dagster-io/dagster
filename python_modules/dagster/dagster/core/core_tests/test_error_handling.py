@@ -12,7 +12,7 @@ from dagster.core.execution import (
     MaterializationDefinition,
 )
 
-from dagster.core.errors import (DagsterUserCodeExecutionError, DagsterTypeError)
+from dagster.core.errors import DagsterUserCodeExecutionError
 
 
 def create_test_context():

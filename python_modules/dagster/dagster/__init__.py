@@ -7,6 +7,8 @@ from dagster.core.execution import (
     execute_pipeline, execute_pipeline_through_solid, materialize_pipeline
 )
 
+from dagster.core.graph import PipelineContextDefinition
+
 # Note that the structure of this file might end up causing some pretty problematic
 # circular dependency issues. Fully qualifying the class names "fixes" issue
 # but this is quite fragile -- schrockn (06/04/2018)

@@ -20,9 +20,20 @@ def table_name_source(table_name):
     return config.Source('TABLENAME', args={'name': table_name})
 
 
-def test_single_templated_sql_solid_single_table_raw_api():
-    context = in_mem_context()
+def pipeline_test_def(solids, context):
+    return dagster.pipeline(
+        solids=solids,
+        context_definitions={
+            'default':
+            dagster.PipelineContextDefinition(
+                argument_def_dict={},
+                context_fn=lambda _args: context,
+            ),
+        }
+    )
 
+
+def test_single_templated_sql_solid_single_table_raw_api():
     sql = '''CREATE TABLE {{sum_table.name}}
     AS SELECT num1, num2, num1 + num2 as sum FROM num_table'''
 
@@ -48,33 +59,30 @@ def test_single_templated_sql_solid_single_table_raw_api():
         output=create_no_materialization_output(),
     )
 
-    pipeline = dagster.pipeline(solids=[sum_table_transform_solid])
+    pipeline = pipeline_test_def(solids=[sum_table_transform_solid], context=in_mem_context())
     environment = config.Environment(
         sources={'sum_table_transform': {
             'sum_table': table_name_source(sum_table_arg)
         }},
     )
 
-    result = dagster.execute_pipeline(context, pipeline, environment=environment)
+    result = dagster.execute_pipeline(pipeline, environment=environment)
     assert result.success
 
-    assert _load_table(context, sum_table_arg) == [(1, 2, 3), (3, 4, 7)]
+    assert _load_table(result.context, sum_table_arg) == [(1, 2, 3), (3, 4, 7)]
 
     environment_without_source = config.Environment(
         sources={'sum_table_transform': {
             'sum_table': table_name_source('another_table')
         }},
     )
-    result_no_source = dagster.execute_pipeline(
-        context, pipeline, environment=environment_without_source
-    )
+    result_no_source = dagster.execute_pipeline(pipeline, environment=environment_without_source)
     assert result_no_source.success
 
-    assert _load_table(context, 'another_table') == [(1, 2, 3), (3, 4, 7)]
+    assert _load_table(result_no_source.context, 'another_table') == [(1, 2, 3), (3, 4, 7)]
 
 
 def test_single_templated_sql_solid_single_table_with_api():
-    context = in_mem_context()
 
     sql = '''CREATE TABLE {{sum_table.name}} AS
     SELECT num1, num2, num1 + num2 as sum FROM num_table'''
@@ -88,7 +96,7 @@ def test_single_templated_sql_solid_single_table_with_api():
         output='sum_table',
     )
 
-    pipeline = dagster.pipeline(solids=[sum_table_transform])
+    pipeline = pipeline_test_def(solids=[sum_table_transform], context=in_mem_context())
 
     environment = config.Environment(
         sources={'sum_table_transform': {
@@ -96,17 +104,15 @@ def test_single_templated_sql_solid_single_table_with_api():
         }}
     )
 
-    result = dagster.execute_pipeline(context, pipeline, environment=environment)
+    result = dagster.execute_pipeline(pipeline, environment=environment)
     assert result.success
 
-    assert _load_table(context, sum_table_arg) == [(1, 2, 3), (3, 4, 7)]
+    assert _load_table(result.context, sum_table_arg) == [(1, 2, 3), (3, 4, 7)]
 
 
 def test_single_templated_sql_solid_double_table_raw_api():
     sum_table_arg = 'specific_sum_table'
     num_table_arg = 'specific_num_table'
-
-    context = in_mem_context(num_table_arg)
 
     sql = '''CREATE TABLE {{sum_table.name}} AS
         SELECT num1, num2, num1 + num2 as sum FROM {{num_table.name}}'''
@@ -147,7 +153,7 @@ def test_single_templated_sql_solid_double_table_raw_api():
         output=create_no_materialization_output(),
     )
 
-    pipeline = dagster.pipeline(solids=[sum_solid])
+    pipeline = pipeline_test_def(solids=[sum_solid], context=in_mem_context(num_table_arg))
 
     environment = config.Environment(
         sources={
@@ -158,17 +164,15 @@ def test_single_templated_sql_solid_double_table_raw_api():
         },
     )
 
-    result = dagster.execute_pipeline(context, pipeline, environment=environment)
+    result = dagster.execute_pipeline(pipeline, environment=environment)
     assert result.success
 
-    assert _load_table(context, sum_table_arg) == [(1, 2, 3), (3, 4, 7)]
+    assert _load_table(result.context, sum_table_arg) == [(1, 2, 3), (3, 4, 7)]
 
 
 def test_single_templated_sql_solid_double_table_with_api():
     sum_table_arg = 'specific_sum_table'
     num_table_arg = 'specific_num_table'
-
-    context = in_mem_context(num_table_arg)
 
     sql = '''CREATE TABLE {{sum_table.name}} AS
     SELECT num1, num2, num1 + num2 as sum FROM {{num_table.name}}'''
@@ -180,7 +184,7 @@ def test_single_templated_sql_solid_double_table_with_api():
         output='sum_table',
     )
 
-    pipeline = dagster.pipeline(solids=[sum_solid])
+    pipeline = pipeline_test_def(solids=[sum_solid], context=in_mem_context(num_table_arg))
 
     environment = config.Environment(
         sources={
@@ -191,15 +195,13 @@ def test_single_templated_sql_solid_double_table_with_api():
         },
     )
 
-    result = dagster.execute_pipeline(context, pipeline, environment=environment)
+    result = dagster.execute_pipeline(pipeline, environment=environment)
     assert result.success
 
-    assert _load_table(context, sum_table_arg) == [(1, 2, 3), (3, 4, 7)]
+    assert _load_table(result.context, sum_table_arg) == [(1, 2, 3), (3, 4, 7)]
 
 
 def test_templated_sql_solid_pipeline():
-    context = in_mem_context()
-
     sum_sql_template = '''CREATE TABLE {{sum_table.name}} AS
         SELECT num1, num2, num1 + num2 as sum FROM num_table'''
 
@@ -221,7 +223,9 @@ def test_templated_sql_solid_pipeline():
         dependencies=[sum_solid],
     )
 
-    pipeline = dagster.pipeline(solids=[sum_solid, sum_sq_solid])
+    context = in_mem_context()
+
+    pipeline = pipeline_test_def(solids=[sum_solid, sum_sq_solid], context=context)
     first_sum_table = 'first_sum_table'
     first_sum_sq_table = 'first_sum_sq_table'
 
@@ -235,18 +239,20 @@ def test_templated_sql_solid_pipeline():
             },
         }
     )
-    first_result = dagster.execute_pipeline(context, pipeline, environment=environment_one)
+    first_result = dagster.execute_pipeline(pipeline, environment=environment_one)
     assert first_result.success
 
     assert len(first_result.result_list) == 2
     assert first_result.result_list[0].transformed_value == {'name': first_sum_table}
     assert first_result.result_list[1].transformed_value == {'name': first_sum_sq_table}
 
-    assert _load_table(context, first_sum_table) == [(1, 2, 3), (3, 4, 7)]
+    assert _load_table(first_result.context, first_sum_table) == [(1, 2, 3), (3, 4, 7)]
 
-    assert _load_table(context, first_sum_sq_table) == [(1, 2, 3, 9), (3, 4, 7, 49)]
+    assert _load_table(first_result.context, first_sum_sq_table) == [(1, 2, 3, 9), (3, 4, 7, 49)]
 
     # now execute subdag
+
+    pipeline_two = pipeline_test_def(solids=[sum_solid, sum_sq_solid], context=context)
 
     second_sum_sq_table = 'second_sum_sq_table'
 
@@ -260,20 +266,17 @@ def test_templated_sql_solid_pipeline():
     )
 
     second_result = dagster.execute_pipeline(
-        context,
-        pipeline,
+        pipeline_two,
         environment=environment_two,
         from_solids=['sum_sq_table'],
         through_solids=['sum_sq_table']
     )
     assert second_result.success
     assert len(second_result.result_list) == 1
-    assert _load_table(context, second_sum_sq_table) == [(1, 2, 3, 9), (3, 4, 7, 49)]
+    assert _load_table(second_result.context, second_sum_sq_table) == [(1, 2, 3, 9), (3, 4, 7, 49)]
 
 
 def test_templated_sql_solid_with_api():
-    context = in_mem_context()
-
     sql_template = '''CREATE TABLE {{sum_table.name}} AS
         SELECT num1, num2, num1 + num2 as sum FROM num_table'''
 
@@ -284,7 +287,7 @@ def test_templated_sql_solid_with_api():
         output='sum_table',
     )
 
-    pipeline = dagster.pipeline(solids=[sum_solid])
+    pipeline = pipeline_test_def(solids=[sum_solid], context=in_mem_context())
 
     sum_table_arg = 'specific_sum_table'
     environment = config.Environment(
@@ -292,15 +295,13 @@ def test_templated_sql_solid_with_api():
             'sum_table': table_name_source(sum_table_arg)
         }}
     )
-    result = dagster.execute_pipeline(context, pipeline, environment=environment)
+    result = dagster.execute_pipeline(pipeline, environment=environment)
     assert result.success
 
-    assert _load_table(context, sum_table_arg) == [(1, 2, 3), (3, 4, 7)]
+    assert _load_table(result.context, sum_table_arg) == [(1, 2, 3), (3, 4, 7)]
 
 
 def test_with_from_through_specifying_all_solids():
-    context = in_mem_context()
-
     pipeline = create_multi_input_pipeline()
 
     first_sum_table = 'first_sum_table'
@@ -324,21 +325,18 @@ def test_with_from_through_specifying_all_solids():
     all_solid_names = [solid.name for solid in pipeline.solids]
 
     pipeline_result = dagster.execute_pipeline(
-        context,
         pipeline,
         environment=environment,
         from_solids=all_solid_names,
         through_solids=all_solid_names,
     )
     assert len(pipeline_result.result_list) == 3
-    assert _load_table(context, first_sum_table) == [(1, 2, 3), (3, 4, 7)]
-    assert _load_table(context, first_mult_table) == [(1, 2, 2), (3, 4, 12)]
-    assert _load_table(context, first_sum_mult_table) == [(1, 3, 2), (3, 7, 12)]
+    assert _load_table(pipeline_result.context, first_sum_table) == [(1, 2, 3), (3, 4, 7)]
+    assert _load_table(pipeline_result.context, first_mult_table) == [(1, 2, 2), (3, 4, 12)]
+    assert _load_table(pipeline_result.context, first_sum_mult_table) == [(1, 3, 2), (3, 7, 12)]
 
 
 def test_multi_input_partial_execution():
-    context = in_mem_context()
-
     pipeline = create_multi_input_pipeline()
 
     first_sum_table = 'first_sum_table'
@@ -359,13 +357,14 @@ def test_multi_input_partial_execution():
         }
     )
 
-    first_pipeline_result = dagster.execute_pipeline(context, pipeline, environment=environment)
+    first_pipeline_result = dagster.execute_pipeline(pipeline, environment=environment)
 
     assert first_pipeline_result.success
     assert len(first_pipeline_result.result_list) == 3
-    assert _load_table(context, first_sum_table) == [(1, 2, 3), (3, 4, 7)]
-    assert _load_table(context, first_mult_table) == [(1, 2, 2), (3, 4, 12)]
-    assert _load_table(context, first_sum_mult_table) == [(1, 3, 2), (3, 7, 12)]
+    assert _load_table(first_pipeline_result.context, first_sum_table) == [(1, 2, 3), (3, 4, 7)]
+    assert _load_table(first_pipeline_result.context, first_mult_table) == [(1, 2, 2), (3, 4, 12)]
+    assert _load_table(first_pipeline_result.context,
+                       first_sum_mult_table) == [(1, 3, 2), (3, 7, 12)]
 
     second_sum_mult_table = 'second_sum_mult_table'
 
@@ -380,7 +379,6 @@ def test_multi_input_partial_execution():
     )
 
     second_pipeline_result = dagster.execute_pipeline(
-        context,
         pipeline,
         environment=environment_two,
         from_solids=['sum_mult_table'],
@@ -389,7 +387,8 @@ def test_multi_input_partial_execution():
 
     assert second_pipeline_result.success
     assert len(second_pipeline_result.result_list) == 1
-    assert _load_table(context, second_sum_mult_table) == [(1, 3, 2), (3, 7, 12)]
+    assert _load_table(second_pipeline_result.context,
+                       second_sum_mult_table) == [(1, 3, 2), (3, 7, 12)]
 
 
 def create_multi_input_pipeline():
@@ -425,7 +424,9 @@ def create_multi_input_pipeline():
         output='sum_mult_table',
     )
 
-    pipeline = dagster.pipeline(solids=[sum_solid, mult_solid, sum_mult_solid])
+    pipeline = pipeline_test_def(
+        solids=[sum_solid, mult_solid, sum_mult_solid], context=in_mem_context()
+    )
     return pipeline
 
 

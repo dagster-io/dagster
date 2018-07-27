@@ -35,6 +35,7 @@ def get_solid_transformed_value(context, solid_inst, environment):
 
 def get_num_csv_environment(solid_name):
     return config.Environment(
+        context=config.Context('default', {'log_level': 'ERROR'}),
         sources={
             solid_name: {
                 'num_csv': config.Source('CSV', args={'path': script_relative_path('num.csv')})
@@ -379,10 +380,8 @@ def test_diamond_dag_run():
 
 
 def test_pandas_in_memory_diamond_pipeline():
-    context = create_test_context()
     pipeline = create_diamond_pipeline()
     result = execute_pipeline_through_solid(
-        context,
         pipeline,
         environment=get_num_csv_environment('num_table'),
         solid_name='sum_mult_table'
@@ -398,14 +397,11 @@ def test_pandas_in_memory_diamond_pipeline():
 
 
 def test_pandas_output_csv_pipeline():
-    context = create_test_context()
-
     with get_temp_file_name() as temp_file_name:
         pipeline = create_diamond_pipeline()
         environment = get_num_csv_environment('num_table')
 
         for _result in materialize_pipeline_iterator(
-            context,
             pipeline=pipeline,
             environment=environment,
             materializations=[
@@ -438,7 +434,6 @@ def _result_named(results, name):
 
 
 def test_pandas_output_intermediate_csv_files():
-    context = create_test_context()
     pipeline = create_diamond_pipeline()
 
     with get_temp_file_names(2) as temp_tuple:
@@ -447,7 +442,6 @@ def test_pandas_output_intermediate_csv_files():
         environment = get_num_csv_environment('num_table')
 
         subgraph_one_result = materialize_pipeline(
-            context,
             pipeline,
             environment=environment,
             materializations=[
@@ -486,7 +480,6 @@ def test_pandas_output_intermediate_csv_files():
         assert mult_table_result.transformed_value.to_dict('list') == expected_mult
 
         pipeline_result = execute_pipeline(
-            context,
             pipeline,
             environment=config.Environment(
                 sources={
@@ -532,14 +525,12 @@ def parquet_materialization(solid_name, path):
 
 
 def test_pandas_output_intermediate_parquet_files():
-    context = create_test_context()
     pipeline = create_diamond_pipeline()
 
     with get_temp_file_names(2) as temp_tuple:
         # false positive on pylint error
         sum_file, mult_file = temp_tuple  # pylint: disable=E0632
         pipeline_result = materialize_pipeline(
-            context,
             pipeline,
             environment=get_num_csv_environment('num_table'),
             materializations=[
@@ -560,8 +551,6 @@ def test_pandas_output_intermediate_parquet_files():
 
 
 def test_pandas_multiple_inputs():
-
-    context = create_test_context()
 
     environment = config.Environment(
         sources={
@@ -584,7 +573,6 @@ def test_pandas_multiple_inputs():
     pipeline = dagster.core.pipeline(solids=[double_sum])
 
     output_df = execute_pipeline_through_solid(
-        context,
         pipeline,
         environment=environment,
         solid_name='double_sum',
@@ -599,15 +587,12 @@ def test_pandas_multiple_inputs():
 
 
 def test_pandas_multiple_outputs():
-    context = create_test_context()
-
     with get_temp_file_names(2) as temp_tuple:
         # false positive on pylint error
         csv_file, parquet_file = temp_tuple  # pylint: disable=E0632
         pipeline = create_diamond_pipeline()
 
         for _result in materialize_pipeline_iterator(
-            context,
             pipeline=pipeline,
             environment=get_num_csv_environment('num_table'),
             materializations=[
@@ -640,7 +625,6 @@ def test_pandas_multiple_outputs():
 
 def test_rename_input():
     result = execute_pipeline(
-        create_test_context(),
         dagster.pipeline(solids=[sum_table, sum_sq_table_renamed_input]),
         environment=get_num_csv_environment('sum_table'),
     )

@@ -1,4 +1,3 @@
-import copy
 import pytest
 
 from dagster import check
@@ -256,7 +255,6 @@ def test_pipeline_execution_graph_diamond():
     pipeline = DagsterPipeline(solids=solid_graph.solids)
     environment = config.Environment(sources={'A': {'A_input': config.Source('CUSTOM', {})}})
     return _do_test(pipeline, lambda: execute_pipeline_iterator(
-        create_test_context(),
         pipeline,
         environment=environment,
     ))
@@ -267,7 +265,7 @@ def test_pipeline_execution_graph_diamond_in_memory():
     pipeline = DagsterPipeline(solids=solid_graph.solids)
     input_values = {'A_input': [{'A_input': 'input_set'}]}
     return _do_test(pipeline, lambda: execute_pipeline_iterator_in_memory(
-        create_test_context(),
+        DagsterExecutionContext(),
         pipeline,
         input_values=input_values,
     ))
@@ -281,7 +279,7 @@ def _do_test(pipeline, do_execute_pipeline_iter):
     results = list()
 
     for result in do_execute_pipeline_iter():
-        results.append(copy.deepcopy(result))
+        results.append(result.copy())
 
     assert results[0].transformed_value[0] == input_set('A_input')
     assert results[0].transformed_value[1] == transform_called('A')
