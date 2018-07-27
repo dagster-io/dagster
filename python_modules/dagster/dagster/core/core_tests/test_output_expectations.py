@@ -5,12 +5,12 @@ from dagster.core.definitions import (
     ExpectationResult,
 )
 from dagster.core.execution import (
-    _execute_output_expectation, DagsterUserCodeExecutionError, DagsterExecutionContext
+    _execute_output_expectation, DagsterUserCodeExecutionError, ExecutionContext
 )
 
 
 def create_test_context():
-    return DagsterExecutionContext()
+    return ExecutionContext()
 
 
 def test_basic_failing_output_expectation():

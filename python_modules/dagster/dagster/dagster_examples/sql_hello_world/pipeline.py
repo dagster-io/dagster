@@ -1,6 +1,6 @@
 import sqlalchemy as sa
 
-import dagster.core
+import dagster
 from dagster.sqlalchemy_kernel.subquery_builder_experimental import (
     create_sql_solid,
     create_table_input_dependency,
@@ -45,6 +45,6 @@ def define_pipeline():
         sql_text='SELECT num1, num2, sum, sum * sum as sum_sq from ({sum_table})',
     )
 
-    return dagster.core.pipeline(
+    return dagster.PipelineDefinition(
         name='sql_hello_world', solids=[sum_table_solid, sum_sq_table_solid]
     )

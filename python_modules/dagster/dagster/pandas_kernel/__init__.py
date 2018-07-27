@@ -13,7 +13,7 @@ from dagster.core.definitions import (
     ExpectationDefinition,
     ExpectationResult,
 )
-from dagster.core.execution import DagsterExecutionContext
+from dagster.core.execution import ExecutionContext
 from dagster.core.errors import (
     DagsterUserCodeExecutionError, DagsterInvariantViolationError, DagsterInvalidDefinitionError
 )

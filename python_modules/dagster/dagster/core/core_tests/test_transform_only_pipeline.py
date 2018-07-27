@@ -4,7 +4,6 @@ from dagster import config
 from dagster.core.definitions import (
     SolidDefinition, create_custom_source_input, create_no_materialization_output
 )
-from dagster import dep_only_input
 
 
 def _set_key_value(ddict, key, value):
@@ -36,7 +35,7 @@ def test_execute_solid_with_dep_only_inputs_no_api():
         output=create_no_materialization_output(),
     )
 
-    pipeline = dagster.pipeline(solids=[step_one_solid, step_two_solid])
+    pipeline = dagster.PipelineDefinition(solids=[step_one_solid, step_two_solid])
 
     # from dagster.utils import logging
 
@@ -64,11 +63,13 @@ def test_execute_solid_with_dep_only_inputs_with_api():
     step_two_solid = SolidDefinition(
         name='step_two_solid',
         transform_fn=lambda context, args: _set_key_value(did_run_dict, 'step_two', True),
-        inputs=[dep_only_input(step_one_solid)],
+        inputs=[
+            dagster.InputDefinition(step_one_solid.name, sources=[], depends_on=step_one_solid)
+        ],
         output=create_no_materialization_output(),
     )
 
-    pipeline = dagster.pipeline(solids=[step_one_solid, step_two_solid])
+    pipeline = dagster.PipelineDefinition(solids=[step_one_solid, step_two_solid])
 
     pipeline_result = dagster.execute_pipeline(pipeline, environment=config.Environment.empty())
 

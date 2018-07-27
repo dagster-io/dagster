@@ -121,7 +121,7 @@ You might notice that there is no actual CSV file specified as inputs. This is b
   )
 
   pipeline_result = dagster.execute_pipeline(
-      dagster.context(),
+      dagster.ExecutionContext(),
       pipeline,
       environment
   )
@@ -207,7 +207,7 @@ We can specify in order to get artifacts for the results. We can materialize out
   ]
 
   pipeline_result = dagster.execute_pipeline(
-      dagster.context(),
+      dagster.ExecutionContext(),
       pipeline,
       environment,
       materializations,
@@ -369,7 +369,7 @@ execute a solid, you need to package it up into a pipeline.
 
 .. code-block:: python
 
-    pipeline = dagster.pipeline(name='hello_world', solids=[sum_solid])
+    pipeline = dagster.PipelineDefinition(name='hello_world', solids=[sum_solid])
 
 Then you an execute it by providing an environment. You must provide
 enough source data to create all the inputs necessary for the pipeline.
@@ -385,7 +385,7 @@ enough source data to create all the inputs necessary for the pipeline.
     )
 
     pipeline_result = dagster.execute_pipeline(
-        dagster.context(),
+        dagster.ExecutionContext(),
         pipeline,
         environment
     )
@@ -413,7 +413,7 @@ addition to your environment, you must specify your materializations.
     ]
 
     dagster.materialize_pipeline(
-        dagster.context(),
+        dagster.ExecutionContext(),
         pipeline,
         environment,
         materializations,
@@ -462,7 +462,7 @@ isolation or in the context of a pipeline.
 
 .. code-block:: python
 
-    pipeline = dagster.pipeline(solids=[sum_solid, sum_sq_solid])
+    pipeline = dagster.PipelineDefinition(solids=[sum_solid, sum_sq_solid])
 
     environment = config.Environment(
         sources={
@@ -473,7 +473,7 @@ isolation or in the context of a pipeline.
     )
 
     pipeline_result = dagster.execute_pipeline(
-        dagster.context(),
+        dagster.ExecutionContext(),
         pipeline,
         environment
     )
@@ -494,7 +494,7 @@ you could specify that you only want to specify the first solid:
     )
 
     pipeline_result = dagster.execute_pipeline(
-        dagster.context(),
+        dagster.ExecutionContext(),
         pipeline,
         environment,
         through=['sum'],
@@ -514,7 +514,7 @@ would have to be changed.
     )
 
     pipeline_result = dagster.execute_pipeline(
-        dagster.context(),
+        dagster.ExecutionContext(),
         pipeline,
         environment,
         from=['sum_sq'],

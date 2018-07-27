@@ -13,14 +13,14 @@ from dagster.core.definitions import (
 from dagster.core.execution import (
     _execute_core_transform,
     DagsterTypeError,
-    DagsterExecutionContext,
+    ExecutionContext,
     _execute_materialization,
     _read_source,
 )
 
 
 def create_test_context():
-    return DagsterExecutionContext()
+    return ExecutionContext()
 
 
 def _read_new_single_source_input(context, new_input, arg_dict):
@@ -149,7 +149,7 @@ def test_execute_output_with_args():
     test_output = {}
 
     def materialization_fn_inst(context, arg_dict, value):
-        assert isinstance(context, DagsterExecutionContext)
+        assert isinstance(context, ExecutionContext)
         assert isinstance(arg_dict, dict)
         test_output['thedata'] = value
         test_output['thearg'] = arg_dict['out_arg']

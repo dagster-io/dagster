@@ -13,10 +13,10 @@ from .definitions import (
 def with_context(fn):
     """Pass context as a first argument to a transform, source or materialization function.
     """
-    return WithContext(fn)
+    return _WithContext(fn)
 
 
-class WithContext:
+class _WithContext:
     def __init__(self, fn):
         self.fn = fn
 
@@ -25,7 +25,7 @@ class WithContext:
         return True
 
 
-class Solid:
+class _Solid:
     def __init__(self, name=None, inputs=None, output=None):
         self.name = check.opt_str_param(name, 'name')
         self.inputs = check.opt_list_param(inputs, 'inputs', InputDefinition)
@@ -51,7 +51,7 @@ class Solid:
 
 
 def solid(*, name=None, inputs=None, output=None):
-    return Solid(name=name, inputs=inputs, output=output)
+    return _Solid(name=name, inputs=inputs, output=output)
 
 
 def _create_transform_wrapper(fn, inputs, include_context=False):
@@ -71,7 +71,7 @@ def _create_transform_wrapper(fn, inputs, include_context=False):
     return transform
 
 
-class Source:
+class _Source:
     def __init__(self, name=None, argument_def_dict=None):
         self.source_type = check.opt_str_param(name, 'name')
         self.argument_def_dict = check.opt_dict_param(argument_def_dict, 'argument_def_dict')
@@ -95,7 +95,7 @@ class Source:
 
 
 def source(*, name=None, argument_def_dict=None):
-    return Source(name=name, argument_def_dict=argument_def_dict)
+    return _Source(name=name, argument_def_dict=argument_def_dict)
 
 
 def _create_source_wrapper(fn, arg_def_dict, include_context=False):
@@ -115,7 +115,7 @@ def _create_source_wrapper(fn, arg_def_dict, include_context=False):
     return source_fn
 
 
-class Materialization:
+class _Materialization:
     def __init__(self, name=None, argument_def_dict=None):
         self.materialization_type = check.opt_str_param(name, 'name')
         self.argument_def_dict = check.opt_dict_param(argument_def_dict, 'argument_def_dict')
@@ -143,7 +143,7 @@ class Materialization:
 
 
 def materialization(*, name=None, argument_def_dict=None):
-    return Materialization(name=name, argument_def_dict=argument_def_dict)
+    return _Materialization(name=name, argument_def_dict=argument_def_dict)
 
 
 def _create_materialization_wrapper(fn, arg_def_dict, include_context=False):

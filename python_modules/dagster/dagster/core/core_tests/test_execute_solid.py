@@ -16,7 +16,7 @@ from dagster.core.execution import (
     output_single_solid,
     DagsterExecutionResult,
     DagsterExecutionFailureReason,
-    DagsterExecutionContext,
+    ExecutionContext,
     execute_single_solid,
 )
 
@@ -24,7 +24,7 @@ from dagster.core.errors import DagsterExpectationFailedError
 
 
 def create_test_context():
-    return DagsterExecutionContext()
+    return ExecutionContext()
 
 
 def single_input_env(solid_name, input_name, args=None):
@@ -48,7 +48,7 @@ def test_execute_solid_no_args():
     test_output = {}
 
     def materialization_fn_inst(context, arg_dict, data):
-        assert isinstance(context, DagsterExecutionContext)
+        assert isinstance(context, ExecutionContext)
         assert isinstance(arg_dict, dict)
         test_output['thedata'] = data
 
@@ -87,7 +87,7 @@ def create_single_dict_input(expectations=None):
 
 def create_noop_output(test_output, expectations=None):
     def set_test_output(context, arg_dict, output):
-        assert isinstance(context, DagsterExecutionContext)
+        assert isinstance(context, ExecutionContext)
         assert arg_dict == {}
         test_output['thedata'] = output
 
@@ -101,7 +101,7 @@ def create_noop_output(test_output, expectations=None):
 
 def test_hello_world():
     def transform_fn(context, args):
-        assert isinstance(context, DagsterExecutionContext)
+        assert isinstance(context, ExecutionContext)
         hello_world_input = args['hello_world_input']
         assert isinstance(hello_world_input, dict)
         hello_world_input['hello'] = 'world'
@@ -111,7 +111,7 @@ def test_hello_world():
 
     def materialization_fn(context, arg_dict, data):
         assert data['hello'] == 'world'
-        assert isinstance(context, DagsterExecutionContext)
+        assert isinstance(context, ExecutionContext)
         assert arg_dict == {}
         output_events['called'] = True
 
@@ -294,7 +294,7 @@ def test_execute_solid_with_no_inputs():
     )
 
     result = execute_single_solid(
-        DagsterExecutionContext(), no_args_solid, environment=config.Environment.empty()
+        ExecutionContext(), no_args_solid, environment=config.Environment.empty()
     )
 
     assert result.success

@@ -11,14 +11,14 @@ from dagster.core.definitions import (
 )
 from dagster.core.errors import DagsterInvariantViolationError
 
-from dagster.core.execution import DagsterExecutionContext
+from dagster.core.execution import ExecutionContext
 
 from dagster.core import types
 
 
 def parquet_dataframe_source(**read_parquet_kwargs):
     def callback(context, arg_dict):
-        check.inst_param(context, 'context', DagsterExecutionContext)
+        check.inst_param(context, 'context', ExecutionContext)
         check.str_param(arg_dict['path'], 'path')
         df = pd.read_parquet(arg_dict['path'], **read_parquet_kwargs)
         context.metric('rows', df.shape[0])
@@ -35,7 +35,7 @@ def parquet_dataframe_source(**read_parquet_kwargs):
 
 def csv_dataframe_source(name=None, **read_csv_kwargs):
     def callback(context, arg_dict):
-        check.inst_param(context, 'context', DagsterExecutionContext)
+        check.inst_param(context, 'context', ExecutionContext)
         check.str_param(arg_dict['path'], 'path')
         df = pd.read_csv(arg_dict['path'], **read_csv_kwargs)
         context.metric('rows', df.shape[0])
@@ -52,7 +52,7 @@ def csv_dataframe_source(name=None, **read_csv_kwargs):
 
 def table_dataframe_source(**read_table_kwargs):
     def callback(context, arg_dict):
-        check.inst_param(context, 'context', DagsterExecutionContext)
+        check.inst_param(context, 'context', ExecutionContext)
         path = check.str_elem(arg_dict, 'path')
         df = pd.read_table(path, **read_table_kwargs)
         context.metric('rows', df.shape[0])
@@ -110,7 +110,7 @@ def dataframe_input(name, sources=None, depends_on=None, expectations=None, inpu
 def dataframe_csv_materialization():
     def to_csv_fn(context, arg_dict, df):
         check.inst_param(df, 'df', pd.DataFrame)
-        check.inst_param(context, 'context', DagsterExecutionContext)
+        check.inst_param(context, 'context', ExecutionContext)
         check.dict_param(arg_dict, 'arg_dict')
         path = check.str_elem(arg_dict, 'path')
 
@@ -126,7 +126,7 @@ def dataframe_csv_materialization():
 def dataframe_parquet_materialization():
     def to_parquet_fn(context, arg_dict, df):
         check.inst_param(df, 'df', pd.DataFrame)
-        check.inst_param(context, 'context', DagsterExecutionContext)
+        check.inst_param(context, 'context', ExecutionContext)
         check.dict_param(arg_dict, 'arg_dict')
         path = check.str_elem(arg_dict, 'path')
 

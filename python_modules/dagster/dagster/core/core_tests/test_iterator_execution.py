@@ -43,7 +43,7 @@ def test_iterator_solid():
     )
 
     output_single_solid(
-        dagster.context(),
+        dagster.ExecutionContext(),
         iterable_solid,
         environment=config.Environment(
             sources={'some_node': {

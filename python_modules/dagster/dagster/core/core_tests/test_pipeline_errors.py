@@ -1,6 +1,7 @@
 from dagster import check
 from dagster import config
 
+import dagster
 import dagster.core
 from dagster.core.definitions import (
     SolidDefinition,
@@ -13,7 +14,18 @@ from dagster.core.execution import (
     DagsterExecutionFailureReason,
     execute_pipeline,
     materialize_pipeline,
+    ExecutionContext,
 )
+
+
+def silencing_default_context():
+    return {'default': dagster.PipelineContextDefinition({}, lambda _args: ExecutionContext())}
+
+
+def silencing_pipeline(solids):
+    return dagster.PipelineDefinition(
+        solids=solids, context_definitions=silencing_default_context()
+    )
 
 
 def create_failing_output_def():
@@ -114,7 +126,7 @@ def no_args_env(solid_name, input_name):
 
 
 def test_transform_failure_pipeline():
-    pipeline = dagster.core.pipeline(solids=[create_root_transform_failure_solid('failing')])
+    pipeline = silencing_pipeline(solids=[create_root_transform_failure_solid('failing')])
     pipeline_result = execute_pipeline(
         pipeline, environment=no_args_env('failing', 'failing_input'), throw_on_error=False
     )
@@ -129,7 +141,7 @@ def test_transform_failure_pipeline():
 
 
 def test_input_failure_pipeline():
-    pipeline = dagster.core.pipeline(solids=[create_root_input_failure_solid('failing_input')])
+    pipeline = silencing_pipeline(solids=[create_root_input_failure_solid('failing_input')])
     pipeline_result = execute_pipeline(
         pipeline,
         environment=no_args_env('failing_input', 'failing_input_input'),
@@ -144,7 +156,7 @@ def test_input_failure_pipeline():
 
 
 def test_output_failure_pipeline():
-    pipeline = dagster.core.pipeline(solids=[create_root_output_failure_solid('failing_output')])
+    pipeline = silencing_pipeline(solids=[create_root_output_failure_solid('failing_output')])
 
     pipeline_result = materialize_pipeline(
         pipeline,
@@ -192,7 +204,7 @@ def test_failure_midstream():
             }
         }
     )
-    pipeline = dagster.core.pipeline(solids=[solid_a, solid_b, solid_c])
+    pipeline = silencing_pipeline(solids=[solid_a, solid_b, solid_c])
     pipeline_result = execute_pipeline(
         pipeline,
         environment=environment,

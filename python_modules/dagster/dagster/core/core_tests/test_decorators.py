@@ -11,7 +11,7 @@ from dagster.core.decorators import solid, source, materialization, with_context
 from dagster.core.execution import (
     output_single_solid,
     execute_single_solid,
-    DagsterExecutionContext,
+    ExecutionContext,
 )
 
 # This file tests a lot of parameter name stuff
@@ -21,7 +21,7 @@ from dagster.core.execution import (
 
 
 def create_test_context():
-    return DagsterExecutionContext()
+    return ExecutionContext()
 
 
 def create_empty_test_env():
@@ -421,9 +421,9 @@ def test_wrong_argument_to_pipeline():
     with pytest.raises(
         DagsterInvalidDefinitionError, match='You have passed a lambda or function non_solid_func'
     ):
-        dagster.pipeline(solids=[non_solid_func])
+        dagster.PipelineDefinition(solids=[non_solid_func])
 
     with pytest.raises(
         DagsterInvalidDefinitionError, match='You have passed a lambda or function <lambda>'
     ):
-        dagster.pipeline(solids=[lambda x: x])
+        dagster.PipelineDefinition(solids=[lambda x: x])

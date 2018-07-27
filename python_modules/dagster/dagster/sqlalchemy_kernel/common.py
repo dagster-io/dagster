@@ -1,10 +1,10 @@
 import sqlalchemy as sa
 
 from dagster import check
-from dagster.core.execution import DagsterExecutionContext
+from dagster.core.execution import ExecutionContext
 
 
-class DagsterSqlAlchemyExecutionContext(DagsterExecutionContext):
+class DagsterSqlAlchemyExecutionContext(ExecutionContext):
     def __init__(self, engine, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.engine = check.inst_param(engine, 'engine', sa.engine.Engine)

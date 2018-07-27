@@ -8,7 +8,7 @@ from dagster.core.execution import (
     _read_source,
     _execute_core_transform,
     _execute_materialization,
-    DagsterExecutionContext,
+    ExecutionContext,
     MaterializationDefinition,
 )
 
@@ -16,7 +16,7 @@ from dagster.core.errors import DagsterUserCodeExecutionError
 
 
 def create_test_context():
-    return DagsterExecutionContext()
+    return ExecutionContext()
 
 
 def test_basic_source_runtime_error_handling():

@@ -4,137 +4,15 @@ import dagster
 
 from dagster import check
 from dagster.core import types
-from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.utils import logging
-from .definitions import SolidDefinition
 
+import dagster.core.definitions
 
-def _default_pipeline_context_definitions():
-    def _default_context_fn(args):
-        log_level = args.get('log_level', 'ERROR')
-        context = dagster.context(
-            log_level=log_level, loggers=[logging.define_logger('dagster', level=log_level)]
-        )
-        return context
-
-    default_context_def = PipelineContextDefinition(
-        argument_def_dict={'log_level': types.STRING},
-        context_fn=_default_context_fn,
-    )
-    return {'default': default_context_def}
-
-
-class PipelineContextDefinition:
-    def __init__(self, argument_def_dict, context_fn):
-        self.argument_def_dict = check.dict_param(
-            argument_def_dict, 'argument_def_dict', key_type=str, value_type=types.DagsterType
-        )
-        self.context_fn = check.callable_param(context_fn, 'context_fn')
-
-
-class DagsterPipeline:
-    def __init__(self, solids, name=None, description=None, context_definitions=None):
-        self.description = check.opt_str_param(description, 'description')
-        self.name = check.opt_str_param(name, 'name')
-
-        if context_definitions is None:
-            context_definitions = _default_pipeline_context_definitions()
-
-        self.context_definitions = check.dict_param(
-            context_definitions,
-            'context_definitions',
-            key_type=str,
-            value_type=PipelineContextDefinition,
-        )
-
-        for solid in solids:
-            if not isinstance(solid, SolidDefinition) and callable(solid):
-                raise DagsterInvalidDefinitionError(
-                    '''You have passed a lambda or function {solid} into
-                a pipeline that is not a solid. You have likely forgetten to annotate this function
-                with an @solid decorator located in dagster.core.decorators
-                '''.format(solid=solid.__name__)
-                )
-
-        self.solids = check.list_param(solids, 'solids', of_type=SolidDefinition)
-
-        solid_names = set([solid.name for solid in self.solids])
-        for solid in solids:
-            for input_def in solid.inputs:
-                if input_def.depends_on:
-                    check.invariant(
-                        input_def.depends_on.name in solid_names,
-                        f'dep must exist got: {input_def.depends_on.name} and set {solid_names}'
-                    )
-
-        self.solid_graph = SolidGraph(solids=solids)
-
-    @property
-    def solid_names(self):
-        return [solid.name for solid in self.solids]
-
-    @property
-    def input_names(self):
-        return set([input_def.name for input_def in self.all_inputs])
-
-    def get_input(self, solid_name, input_name):
-        for solid in self.solids:
-            if solid.name != solid_name:
-                continue
-            for input_def in solid.inputs:
-                if input_def.name == input_name:
-                    return input_def
-        check.failed('not found')
-
-    @property
-    def external_inputs(self):
-        for input_def in self.all_inputs:
-            if input_def.is_external:
-                yield input_def
-
-    @property
-    def externally_sourced_solids(self):
-        for solid in self.solids:
-            for input_def in solid.inputs:
-                if input_def.is_external:
-                    yield solid
-                    break
-
-    def has_solid(self, name):
-        check.str_param(name, 'name')
-        for solid in self.solids:
-            if solid.name == name:
-                return True
-        return False
-
-    @property
-    def all_inputs(self):
-        for solid in self.solids:
-            for input_def in solid.inputs:
-                yield input_def
-
-    def solid_named(self, name):
-        check.str_param(name, 'name')
-        for solid in self.solids:
-            if solid.name == name:
-                return solid
-        check.failed('Could not find solid named ' + name)
-
-    @property
-    def all_depended_on_solids(self):
-        for input_def in self.all_inputs:
-            if input_def.depends_on:
-                yield input_def.depends_on
-
-    @property
-    def all_sink_solids(self):
-        all_names = set([solid.name for solid in self.solids])
-        all_depended_on_names = set([solid.name for solid in self.all_depended_on_solids])
-        return all_names.difference(all_depended_on_names)
+# from .definitions import (SolidDefinition, PipelineContextDefinition)
 
 
 def create_adjacency_lists(solids):
-    check.list_param(solids, 'solids', of_type=SolidDefinition)
+    check.list_param(solids, 'solids', of_type=dagster.core.definitions.SolidDefinition)
 
     visit_dict = {s.name: False for s in solids}
     forward_edges = {s.name: set() for s in solids}
@@ -163,7 +41,7 @@ def create_adjacency_lists(solids):
 
 class SolidGraph:
     def __init__(self, solids):
-        check.list_param(solids, 'solids', of_type=SolidDefinition)
+        check.list_param(solids, 'solids', of_type=dagster.core.definitions.SolidDefinition)
         self._solid_dict = {solid.name: solid for solid in solids}
 
         solid_names = set([solid.name for solid in solids])
