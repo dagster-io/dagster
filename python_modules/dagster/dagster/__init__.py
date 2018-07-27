@@ -17,6 +17,7 @@ from dagster.core.definitions import (
     ExpectationDefinition,
     SourceDefinition,
     SolidDefinition,
+    ArgumentDefinition,
 )
 
 from dagster.core.decorators import (

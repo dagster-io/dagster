@@ -42,10 +42,8 @@ def check_valid_name(name):
 
 
 class PipelineContextDefinition:
-    def __init__(self, argument_def_dict, context_fn):
-        self.argument_def_dict = check.dict_param(
-            argument_def_dict, 'argument_def_dict', key_type=str, value_type=types.DagsterType
-        )
+    def __init__(self, *, argument_def_dict, context_fn):
+        self.argument_def_dict = check_argument_def_dict(argument_def_dict)
         self.context_fn = check.callable_param(context_fn, 'context_fn')
 
 
@@ -61,7 +59,7 @@ def _default_pipeline_context_definitions():
         return context
 
     default_context_def = PipelineContextDefinition(
-        argument_def_dict={'log_level': types.STRING},
+        argument_def_dict={'log_level': ArgumentDefinition(dagster_type=types.String)},
         context_fn=_default_context_fn,
     )
     return {'default': default_context_def}
@@ -193,8 +191,17 @@ def create_dagster_single_file_input(name, single_file_fn, source_type='CUSTOM')
             context=context,
             path=check.str_elem(arg_dict, 'path')
         ),
-        argument_def_dict={'path': types.PATH},
+        argument_def_dict={'path': ArgumentDefinition(types.Path)},
         source_type=source_type,
+    )
+
+
+def check_argument_def_dict(argument_def_dict):
+    return check.dict_param(
+        argument_def_dict,
+        'argument_def_dict',
+        key_type=str,
+        value_type=ArgumentDefinition,
     )
 
 
@@ -214,21 +221,25 @@ class SourceDefinition:
          (argument name) to an argument type (defined in dagster.core.types) Continuing
          the above example, the csv signature would be:
 
-         argument_def_dict = {'path' : dagster.core.types.PATH }
+         argument_def_dict = {'path' : dagster.core.types.Path }
 
     '''
 
-    def __init__(self, source_type, source_fn, argument_def_dict):
+    def __init__(self, source_type, source_fn, *, argument_def_dict):
         check.callable_param(source_fn, 'source_fn')
         self.source_type = check_valid_name(source_type)
         self.source_fn = check.callable_param(source_fn, 'source_fn')
-        self.argument_def_dict = check.dict_param(
-            argument_def_dict, 'argument_def_dict', key_type=str, value_type=types.DagsterType
-        )
+        self.argument_def_dict = check_argument_def_dict(argument_def_dict)
 
 
 def create_custom_source_input(
-    name, source_fn, argument_def_dict, depends_on=None, expectations=None, source_type='CUSTOM'
+    name,
+    source_fn,
+    *,
+    argument_def_dict=None,
+    depends_on=None,
+    expectations=None,
+    source_type='CUSTOM'
 ):
     '''
     This function exist and is used a lot because separation of inputs and sources used to not
@@ -317,15 +328,13 @@ class MaterializationDefinition:
 
         e.g.:
 
-        argument_def_dict = { 'path' : dagster.core.types.PATH}
+        argument_def_dict = { 'path' : dagster.core.types.Path }
     '''
 
-    def __init__(self, materialization_type, materialization_fn, argument_def_dict):
+    def __init__(self, materialization_type, materialization_fn, *, argument_def_dict=None):
         self.materialization_type = check_valid_name(materialization_type)
         self.materialization_fn = check.callable_param(materialization_fn, 'materialization_fn')
-        self.argument_def_dict = check.dict_param(
-            argument_def_dict, 'argument_def_dict', key_type=str, value_type=types.DagsterType
-        )
+        self.argument_def_dict = check_argument_def_dict(argument_def_dict)
 
 
 def create_no_materialization_output(expectations=None):
@@ -346,7 +355,7 @@ def create_single_materialization_output(
             MaterializationDefinition(
                 materialization_type=materialization_type,
                 materialization_fn=materialization_fn,
-                argument_def_dict=argument_def_dict
+                argument_def_dict=argument_def_dict,
             )
         ],
         expectations=expectations
@@ -420,3 +429,9 @@ class SolidDefinition:
                 return input_def
 
         check.failed('input {name} not found'.format(name=name))
+
+
+class ArgumentDefinition:
+    def __init__(self, dagster_type, description=None):
+        self.dagster_type = check.inst_param(dagster_type, 'dagster_type', types.DagsterType)
+        self.description = check.opt_str_param(description, 'description')

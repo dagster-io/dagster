@@ -2,7 +2,11 @@ import dagster
 from dagster import config
 
 from dagster.core.definitions import (
-    SolidDefinition, InputDefinition, SourceDefinition, create_no_materialization_output
+    SolidDefinition,
+    InputDefinition,
+    SourceDefinition,
+    create_no_materialization_output,
+    ArgumentDefinition,
 )
 
 from dagster.core.execution import (ExecutionContext, execute_single_solid, execute_pipeline)
@@ -20,7 +24,7 @@ def test_execute_solid_with_input_same_name():
                     SourceDefinition(
                         source_type='a_source_type',
                         source_fn=lambda context, arg_dict: arg_dict['an_arg'],
-                        argument_def_dict={'an_arg': types.STRING},
+                        argument_def_dict={'an_arg': ArgumentDefinition(types.String)},
                     ),
                 ],
             ),
@@ -52,7 +56,7 @@ def test_execute_two_solids_with_same_input_name():
             SourceDefinition(
                 source_type='a_source_type',
                 source_fn=lambda context, arg_dict: arg_dict['an_arg'],
-                argument_def_dict={'an_arg': types.STRING},
+                argument_def_dict={'an_arg': ArgumentDefinition(types.String)},
             ),
         ],
     )
@@ -103,7 +107,7 @@ def test_execute_dep_solid_different_input_name():
                     SourceDefinition(
                         source_type='a_source_type',
                         source_fn=lambda context, arg_dict: arg_dict['an_arg'],
-                        argument_def_dict={'an_arg': types.STRING},
+                        argument_def_dict={'an_arg': ArgumentDefinition(types.String)},
                     ),
                 ],
             ),
@@ -164,7 +168,7 @@ def test_execute_dep_solid_same_input_name():
                         source_type='TABLE',
                         source_fn=
                         lambda context, arg_dict: s_fn(arg_dict, executed, 's1_t1_source'),
-                        argument_def_dict={'name': types.STRING},
+                        argument_def_dict={'name': ArgumentDefinition(types.String)},
                     ),
                 ],
             ),
@@ -183,7 +187,7 @@ def test_execute_dep_solid_same_input_name():
                         source_type='TABLE',
                         source_fn=
                         lambda context, arg_dict: s_fn(arg_dict, executed, 's2_t1_source'),
-                        argument_def_dict={'name': types.STRING},
+                        argument_def_dict={'name': ArgumentDefinition(types.String)},
                     ),
                 ],
                 depends_on=table_one,
@@ -195,7 +199,7 @@ def test_execute_dep_solid_same_input_name():
                         source_type='TABLE',
                         source_fn=
                         lambda context, arg_dict: s_fn(arg_dict, executed, 's2_t2_source'),
-                        argument_def_dict={'name': types.STRING},
+                        argument_def_dict={'name': ArgumentDefinition(types.String)},
                     ),
                 ],
             ),

@@ -10,6 +10,7 @@ from dagster.core.definitions import (
     create_custom_source_input,
     create_single_materialization_output,
     create_no_materialization_output,
+    ArgumentDefinition,
 )
 
 from dagster.core.execution import (
@@ -80,7 +81,7 @@ def create_single_dict_input(expectations=None):
     return create_custom_source_input(
         name='some_input',
         source_fn=lambda context, arg_dict: [{'key': arg_dict['str_arg']}],
-        argument_def_dict={'str_arg': types.STRING},
+        argument_def_dict={'str_arg' : ArgumentDefinition(types.String)},
         expectations=expectations or [],
     )
 

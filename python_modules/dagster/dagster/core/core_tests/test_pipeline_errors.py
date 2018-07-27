@@ -19,7 +19,13 @@ from dagster.core.execution import (
 
 
 def silencing_default_context():
-    return {'default': dagster.PipelineContextDefinition({}, lambda _args: ExecutionContext())}
+    return {
+        'default':
+        dagster.PipelineContextDefinition(
+            argument_def_dict={},
+            context_fn=lambda _args: ExecutionContext(),
+        )
+    }
 
 
 def silencing_pipeline(solids):
