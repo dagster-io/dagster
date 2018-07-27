@@ -7,6 +7,7 @@ from dagster.core.definitions import (
     InputDefinition,
     SourceDefinition,
     create_no_materialization_output,
+    ArgumentDefinition,
 )
 
 from .common import execute_sql_text_on_context
@@ -19,7 +20,7 @@ def _create_table_input(name, depends_on=None):
             SourceDefinition(
                 source_type='TABLENAME',
                 source_fn=lambda context, arg_dict: arg_dict,
-                argument_def_dict={'name': dagster.core.types.STRING},
+                argument_def_dict={'name': ArgumentDefinition(dagster.core.types.String)},
             )
         ],
         depends_on=depends_on

@@ -1,11 +1,16 @@
 import dagster
 from dagster import (config, check)
 from dagster.core.definitions import (
-    InputDefinition, SolidDefinition, SourceDefinition, create_no_materialization_output
+    InputDefinition,
+    SolidDefinition,
+    SourceDefinition,
+    create_no_materialization_output,
+    ArgumentDefinition,
 )
 from dagster.sqlalchemy_kernel.templated import (
-    _create_templated_sql_transform_with_output, _render_template_string,
-    create_templated_sql_transform_solid
+    _create_templated_sql_transform_with_output,
+    _render_template_string,
+    create_templated_sql_transform_solid,
 )
 
 from .math_test_db import in_mem_context
@@ -46,7 +51,7 @@ def test_single_templated_sql_solid_single_table_raw_api():
                 source_type='TABLENAME',
                 source_fn=lambda context, arg_dict: arg_dict,
                 argument_def_dict={
-                    'name': dagster.core.types.STRING,
+                    'name': ArgumentDefinition(dagster.core.types.String),
                 },
             )
         ]
@@ -124,7 +129,7 @@ def test_single_templated_sql_solid_double_table_raw_api():
                 source_type='TABLENAME',
                 source_fn=lambda context, arg_dict: arg_dict,
                 argument_def_dict={
-                    'name': dagster.core.types.STRING,
+                    'name': ArgumentDefinition(dagster.core.types.String),
                 },
             )
         ]
@@ -137,7 +142,7 @@ def test_single_templated_sql_solid_double_table_raw_api():
                 source_type='TABLENAME',
                 source_fn=lambda context, arg_dict: arg_dict,
                 argument_def_dict={
-                    'name': dagster.core.types.STRING,
+                    'name': ArgumentDefinition(dagster.core.types.String),
                 },
             )
         ]

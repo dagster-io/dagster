@@ -38,7 +38,7 @@ Example
       # Name of the source
       name="CSV",
       # What arguments it should get from environment
-      argument_def_dict={'path': dagster.core.types.PATH})
+      argument_def_dict={'path': ArgumentDefinition(dagster.core.types.Path) })
   )
   def csv_to_dataframe_source(path):
       return pd.read_csv(path)
@@ -52,7 +52,7 @@ Example
       # Name of the materialization
       name="CSV",
       # What arguments it should get from environment
-      argument_def_dict={'path': dagster.core.types.PATH})
+      argument_def_dict={'path': ArgumentDefinition(dagster.core.types.Path) })
   )
   def dataframe_to_csv_materialization(data, path):
       data.to_csv(path)
@@ -441,7 +441,7 @@ and squared that value. (Fancy!)
         sources=[
             SourceDefinition(
                 source_type='CSV',
-                argument_def_dict={'path': types.PATH},
+                argument_def_dict={'path': ArgumentDefinition(types.Path)},
                 source_fn=lambda arg_dict: pd.read_csv(arg_dict['path']),
             ),
         ],

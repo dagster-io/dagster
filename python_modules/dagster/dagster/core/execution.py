@@ -302,15 +302,15 @@ def _validate_args(argument_def_dict, arg_dict, error_context_str):
         )
 
     for arg_name, arg_value in arg_dict.items():
-        arg_def_type = argument_def_dict[arg_name]
-        if not arg_def_type.is_python_valid_value(arg_value):
+        arg_def = argument_def_dict[arg_name]
+        if not arg_def.dagster_type.is_python_valid_value(arg_value):
             format_string = (
                 'Expected type {typename} for arg {arg_name}' +
                 'for {error_context_str} but got {arg_value}'
             )
             raise DagsterTypeError(
                 format_string.format(
-                    typename=arg_def_type.name,
+                    typename=arg_def.dagster_type.name,
                     arg_name=arg_name,
                     error_context_str=error_context_str,
                     arg_value=repr(arg_value),
@@ -438,10 +438,10 @@ def _execute_materialization(context, materialiation_def, arg_dict, value):
 
     for arg_name, arg_value in arg_dict.items():
         arg_def_type = materialiation_def.argument_def_dict[arg_name]
-        if not arg_def_type.is_python_valid_value(arg_value):
+        if not arg_def_type.dagster_type.is_python_valid_value(arg_value):
             raise DagsterTypeError(
                 'Expected type {typename} for arg {arg_name} in output but got {arg_value}'.format(
-                    typename=arg_def_type.name,
+                    typename=arg_def_type.dagster_type.name,
                     arg_name=arg_name,
                     arg_value=repr(arg_value),
                 )

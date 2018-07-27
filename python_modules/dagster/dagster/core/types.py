@@ -24,6 +24,6 @@ class _SolidIntType(DagsterType):
         return isinstance(value, integer_types)
 
 
-STRING = _SolidStringType(name='String')
-PATH = _SolidStringType(name='Path')
-INT = _SolidIntType()
+String = _SolidStringType(name='String')
+Path = _SolidStringType(name='Path')
+Int = _SolidIntType()

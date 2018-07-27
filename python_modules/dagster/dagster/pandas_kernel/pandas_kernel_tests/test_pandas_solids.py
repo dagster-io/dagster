@@ -6,7 +6,7 @@ import dagster
 from dagster import check
 from dagster import config
 from dagster.core import types
-from dagster.core.definitions import (SolidDefinition, create_single_materialization_output)
+from dagster.core.definitions import (SolidDefinition, create_single_materialization_output, ArgumentDefinition)
 from dagster.core.decorators import solid
 from dagster.core.execution import (
     ExecutionContext,
@@ -117,7 +117,7 @@ def test_pandas_csv_to_csv():
     csv_output_def = create_single_materialization_output(
         materialization_type='CSV',
         materialization_fn=materialization_fn_inst,
-        argument_def_dict={'path': types.PATH}
+        argument_def_dict={'path': ArgumentDefinition(types.Path)}
     )
 
     solid_def = SolidDefinition(

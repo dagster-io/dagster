@@ -74,7 +74,9 @@ def _create_transform_wrapper(fn, inputs, include_context=False):
 class _Source:
     def __init__(self, name=None, argument_def_dict=None):
         self.source_type = check.opt_str_param(name, 'name')
-        self.argument_def_dict = check.opt_dict_param(argument_def_dict, 'argument_def_dict')
+        self.argument_def_dict = check.opt_dict_param(
+            argument_def_dict, 'argument_def_dict'
+        )
 
     def __call__(self, fn):
         include_context = getattr(fn, 'has_context', False)
@@ -90,7 +92,7 @@ class _Source:
         return SourceDefinition(
             source_type=self.source_type,
             source_fn=source_fn,
-            argument_def_dict=self.argument_def_dict
+            argument_def_dict=self.argument_def_dict,
         )
 
 
@@ -118,7 +120,9 @@ def _create_source_wrapper(fn, arg_def_dict, include_context=False):
 class _Materialization:
     def __init__(self, name=None, argument_def_dict=None):
         self.materialization_type = check.opt_str_param(name, 'name')
-        self.argument_def_dict = check.opt_dict_param(argument_def_dict, 'argument_def_dict')
+        self.argument_def_dict = check.opt_dict_param(
+            argument_def_dict, 'argument_def_dict'
+        )
 
     def __call__(self, fn):
         include_context = getattr(fn, 'has_context', False)

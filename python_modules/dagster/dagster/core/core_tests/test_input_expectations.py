@@ -1,7 +1,10 @@
 import pytest
 
 from dagster.core.definitions import (
-    ExpectationDefinition, ExpectationResult, create_custom_source_input
+    ExpectationDefinition,
+    ExpectationResult,
+    create_custom_source_input,
+    ArgumentDefinition,
 )
 from dagster.core.execution import (
     _execute_input_expectation, DagsterUserCodeExecutionError, ExecutionContext
@@ -20,7 +23,7 @@ def test_basic_failing_input_expectation():
     some_input = create_custom_source_input(
         name='some_input',
         source_fn=lambda arg_dict: [{'key': arg_dict['str_arg']}],
-        argument_def_dict={'str_arg': types.STRING},
+        argument_def_dict={'str_arg': ArgumentDefinition(types.String)},
         expectations=[
             ExpectationDefinition(name='failing', expectation_fn=failing_expectation)
         ]
@@ -42,7 +45,7 @@ def test_basic_passing_input_expectation():
     some_input = create_custom_source_input(
         name='some_input',
         source_fn=lambda arg_dict: [{'key': arg_dict['str_arg']}],
-        argument_def_dict={'str_arg': types.STRING},
+        argument_def_dict={'str_arg': ArgumentDefinition(types.String)},
         expectations=[
             ExpectationDefinition(name='passing', expectation_fn=passing_expectation)
         ]
@@ -64,7 +67,7 @@ def test_input_expectation_user_error():
     failing_during_expectation_input = create_custom_source_input(
         name='failing_during_expectation',
         source_fn=lambda arg_dict: [{'key': arg_dict['str_arg']}],
-        argument_def_dict={'str_arg': types.STRING},
+        argument_def_dict={'str_arg': ArgumentDefinition(types.String)},
         expectations=[
             ExpectationDefinition(name='passing', expectation_fn=throwing)
         ]

@@ -8,6 +8,7 @@ from dagster.core.definitions import (
     create_custom_source_input,
     MaterializationDefinition,
     SourceDefinition,
+    ArgumentDefinition,
 )
 
 from dagster.core.execution import (
@@ -52,7 +53,7 @@ def test_source_arg_mismiatch():
     some_input_with_arg = create_custom_source_input(
         name='some_input_with_arg',
         source_fn=lambda context, arg_dict: [],
-        argument_def_dict={'in_arg': types.STRING}
+        argument_def_dict={'in_arg': ArgumentDefinition(types.String)},
     )
 
     with pytest.raises(DagsterTypeError):
@@ -63,7 +64,7 @@ def test_materialize_input_arg_type_mismatch():
     some_input_with_arg = create_custom_source_input(
         name='some_input_with_arg',
         source_fn=lambda context, arg_dict: [],
-        argument_def_dict={'in_arg': types.STRING}
+        argument_def_dict={'in_arg': ArgumentDefinition(types.String)},
     )
 
     with pytest.raises(DagsterTypeError):
@@ -74,7 +75,7 @@ def test_materialize_input_int_type():
     int_arg_source = SourceDefinition(
         source_type='SOMETHING',
         source_fn=lambda _context, _args: True,
-        argument_def_dict={'an_int': types.INT},
+        argument_def_dict={'an_int': ArgumentDefinition(types.Int)},
     )
     assert _read_source(create_test_context(), int_arg_source, {'an_int': 0})
     assert _read_source(create_test_context(), int_arg_source, {'an_int': 1})
@@ -123,7 +124,7 @@ def test_materialize_input_with_args():
     some_input = create_custom_source_input(
         name='some_input',
         source_fn=lambda context, arg_dict: [{'key': arg_dict['str_arg']}],
-        argument_def_dict={'str_arg': types.STRING}
+        argument_def_dict={'str_arg': ArgumentDefinition(types.String)},
     )
 
     output = _read_new_single_source_input(
@@ -131,18 +132,6 @@ def test_materialize_input_with_args():
     )
     expected_output = [{'key': 'passed_value'}]
     assert output == expected_output
-
-
-def single_materialization_output(materialization_type, materialization_fn, argument_def_dict):
-    return OutputDefinition(
-        materializations=[
-            MaterializationDefinition(
-                materialization_type=materialization_type,
-                materialization_fn=materialization_fn,
-                argument_def_dict=argument_def_dict
-            )
-        ]
-    )
 
 
 def test_execute_output_with_args():
@@ -157,7 +146,7 @@ def test_execute_output_with_args():
     materialization = MaterializationDefinition(
         materialization_type='CUSTOM',
         materialization_fn=materialization_fn_inst,
-        argument_def_dict={'out_arg': types.STRING}
+        argument_def_dict={'out_arg': ArgumentDefinition(types.String)}
     )
 
     _execute_materialization(
@@ -171,7 +160,7 @@ def test_execute_materialization_arg_mismatch():
     materialization = MaterializationDefinition(
         materialization_type='CUSTOM',
         materialization_fn=lambda out, dict: [],
-        argument_def_dict={'out_arg': types.STRING}
+        argument_def_dict={'out_arg': ArgumentDefinition(types.String)}
     )
 
     with pytest.raises(DagsterTypeError):
@@ -193,7 +182,7 @@ def test_execute_materialization_arg_type_mismatch():
     custom_output = MaterializationDefinition(
         materialization_type='CUSTOM',
         materialization_fn=lambda out, dict: [],
-        argument_def_dict={'out_arg': types.STRING}
+        argument_def_dict={'out_arg': ArgumentDefinition(types.String)}
     )
 
     with pytest.raises(DagsterTypeError):

@@ -37,12 +37,16 @@ def test_custom_contexts():
         context_definitions={
             'custom_one':
             PipelineContextDefinition(
-                argument_def_dict={'arg_one': types.STRING},
+                argument_def_dict={
+                    'arg_one': dagster.ArgumentDefinition(dagster_type=types.String)
+                },
                 context_fn=lambda args: dagster.ExecutionContext(args=args),
             ),
             'custom_two':
             PipelineContextDefinition(
-                argument_def_dict={'arg_one': types.STRING},
+                argument_def_dict={
+                    'arg_one': dagster.ArgumentDefinition(dagster_type=types.String)
+                },
                 context_fn=lambda args: dagster.ExecutionContext(args=args),
             )
         },
@@ -101,7 +105,7 @@ def test_invalid_context():
         context_definitions={
             'default':
             PipelineContextDefinition(
-                argument_def_dict={'string_arg': types.STRING}, context_fn=lambda _args: _args
+                argument_def_dict={'string_arg': types.String}, context_fn=lambda _args: _args
             )
         }
     )

@@ -8,6 +8,7 @@ from dagster.core.definitions import (
     MaterializationDefinition,
     OutputDefinition,
     SourceDefinition,
+    ArgumentDefinition,
 )
 from dagster.core.errors import DagsterInvariantViolationError
 
@@ -28,7 +29,7 @@ def parquet_dataframe_source(**read_parquet_kwargs):
         source_type='PARQUET',
         source_fn=callback,
         argument_def_dict={
-            'path': types.PATH,
+            'path': ArgumentDefinition(types.Path),
         },
     )
 
@@ -45,7 +46,7 @@ def csv_dataframe_source(name=None, **read_csv_kwargs):
         source_type=check.opt_str_param(name, 'name', 'CSV'),
         source_fn=callback,
         argument_def_dict={
-            'path': types.PATH,
+            'path': ArgumentDefinition(types.Path),
         },
     )
 
@@ -62,7 +63,7 @@ def table_dataframe_source(**read_table_kwargs):
         source_type='TABLE',
         source_fn=callback,
         argument_def_dict={
-            'path': types.PATH,
+            'path': ArgumentDefinition(types.Path),
         },
     )
 
@@ -119,7 +120,7 @@ def dataframe_csv_materialization():
     return MaterializationDefinition(
         materialization_type='CSV',
         materialization_fn=to_csv_fn,
-        argument_def_dict={'path': types.PATH}
+        argument_def_dict={'path': ArgumentDefinition(types.Path)},
     )
 
 
@@ -135,7 +136,7 @@ def dataframe_parquet_materialization():
     return MaterializationDefinition(
         materialization_type='PARQUET',
         materialization_fn=to_parquet_fn,
-        argument_def_dict={'path': types.PATH}
+        argument_def_dict={'path': ArgumentDefinition(types.Path)},
     )
 
 

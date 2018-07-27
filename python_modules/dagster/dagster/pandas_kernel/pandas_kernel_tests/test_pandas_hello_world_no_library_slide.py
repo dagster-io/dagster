@@ -9,6 +9,7 @@ from dagster.core.definitions import (
     OutputDefinition,
     SolidDefinition,
     SourceDefinition,
+    ArgumentDefinition,
 )
 from dagster.core.execution import (ExecutionContext, execute_single_solid)
 from dagster.utils.test import script_relative_path
@@ -29,7 +30,7 @@ def create_hello_world_solid_no_api():
         sources=[
             SourceDefinition(
                 source_type='CSV',
-                argument_def_dict={'path': types.PATH},
+                argument_def_dict={'path': ArgumentDefinition(types.Path)},
                 source_fn=lambda context, arg_dict: pd.read_csv(arg_dict['path']),
             ),
         ],
@@ -38,7 +39,7 @@ def create_hello_world_solid_no_api():
     csv_materialization = MaterializationDefinition(
         materialization_type='CSV',
         materialization_fn=lambda df, arg_dict: df.to_csv(arg_dict['path'], index=False),
-        argument_def_dict={'path': types.PATH}
+        argument_def_dict={'path': ArgumentDefinition(types.Path)}
     )
 
     hello_world = SolidDefinition(
@@ -80,7 +81,7 @@ def create_dataframe_input(name):
         sources=[
             SourceDefinition(
                 source_type='CSV',
-                argument_def_dict={'path': types.PATH},
+                argument_def_dict={'path': ArgumentDefinition(types.Path)},
                 source_fn=lambda context, arg_dict: pd.read_csv(arg_dict['path']),
             ),
         ],
@@ -93,7 +94,7 @@ def create_dataframe_dependency(name, depends_on):
         sources=[
             SourceDefinition(
                 source_type='CSV',
-                argument_def_dict={'path': types.PATH},
+                argument_def_dict={'path': ArgumentDefinition(types.Path)},
                 source_fn=lambda context, arg_dict: pd.read_csv(arg_dict['path']),
             ),
         ],
@@ -110,7 +111,7 @@ def create_dataframe_output():
             MaterializationDefinition(
                 materialization_type='CSV',
                 materialization_fn=mat_fn,
-                argument_def_dict={'path': types.PATH},
+                argument_def_dict={'path': ArgumentDefinition(types.Path)},
             ),
         ],
     )
