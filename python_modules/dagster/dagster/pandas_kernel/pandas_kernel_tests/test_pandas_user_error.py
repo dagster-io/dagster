@@ -23,7 +23,7 @@ def test_wrong_output_value():
 
     with pytest.raises(DagsterInvariantViolationError):
         execute_single_solid(
-            dagster.context(),
+            dagster.ExecutionContext(),
             df_solid,
             environment=config.Environment(
                 sources={
@@ -48,7 +48,7 @@ def test_wrong_input_value():
 
     with pytest.raises(DagsterInvariantViolationError):
         execute_single_solid(
-            dagster.context(),
+            dagster.ExecutionContext(),
             df_solid,
             environment=config.Environment(
                 sources={'test_wrong_input': {
@@ -70,7 +70,7 @@ def test_wrong_input_arg_dict():
 
     with pytest.raises(DagsterInvariantViolationError):
         execute_single_solid(
-            dagster.context(),
+            dagster.ExecutionContext(),
             df_solid,
             environment=config.Environment(
                 sources={

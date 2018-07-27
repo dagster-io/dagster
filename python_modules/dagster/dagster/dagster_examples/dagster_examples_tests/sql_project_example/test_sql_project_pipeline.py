@@ -31,7 +31,7 @@ def create_mem_sql_pipeline_context_tuple(solids):
         argument_def_dict={},
         context_fn=lambda _args: create_persisted_context(),
     )
-    return dagster.pipeline(
+    return dagster.PipelineDefinition(
         solids=solids, context_definitions={
             'default': default_def,
             'persisted': persisted_def
@@ -64,7 +64,7 @@ def test_sql_populate_tables():
     create_all_tables_solids = _get_project_solid('create_all_tables')
 
     populate_num_table_solid = _get_project_solid(
-        'populate_num_table', inputs=[dagster.dep_only_input(create_all_tables_solids)]
+        'populate_num_table', inputs=[_dep_only_input(create_all_tables_solids)]
     )
 
     pipeline = create_mem_sql_pipeline_context_tuple(
@@ -80,22 +80,30 @@ def test_sql_populate_tables():
     ]
 
 
+def _dep_only_input(solid):
+    return dagster.InputDefinition(
+        name=solid.name,
+        sources=[],
+        depends_on=solid,
+    )
+
+
 def create_full_pipeline():
     create_all_tables_solids = _get_project_solid('create_all_tables')
 
     populate_num_table_solid = _get_project_solid(
         'populate_num_table',
-        inputs=[dagster.dep_only_input(create_all_tables_solids)],
+        inputs=[_dep_only_input(create_all_tables_solids)],
     )
 
     insert_into_sum_table_solid = _get_project_solid(
         'insert_into_sum_table',
-        inputs=[dagster.dep_only_input(populate_num_table_solid)],
+        inputs=[_dep_only_input(populate_num_table_solid)],
     )
 
     insert_into_sum_sq_table_solid = _get_project_solid(
         'insert_into_sum_sq_table',
-        inputs=[dagster.dep_only_input(insert_into_sum_table_solid)],
+        inputs=[_dep_only_input(insert_into_sum_table_solid)],
     )
 
     return create_mem_sql_pipeline_context_tuple(

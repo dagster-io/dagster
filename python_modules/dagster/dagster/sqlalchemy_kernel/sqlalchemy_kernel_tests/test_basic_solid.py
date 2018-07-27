@@ -16,7 +16,7 @@ from .math_test_db import in_mem_context
 
 
 def pipeline_test_def(solids, context):
-    return dagster.pipeline(
+    return dagster.PipelineDefinition(
         solids=solids,
         context_definitions={
             'default':

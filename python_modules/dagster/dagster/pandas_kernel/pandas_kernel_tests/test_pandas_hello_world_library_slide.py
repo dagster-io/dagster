@@ -26,7 +26,7 @@ def test_hello_world_with_dataframe_fns():
 
 def run_hello_world(hello_world):
     result = execute_single_solid(
-        dagster.context(),
+        dagster.ExecutionContext(),
         hello_world,
         environment=create_num_csv_environment(),
     )
@@ -41,7 +41,7 @@ def run_hello_world(hello_world):
 
     with get_temp_file_name() as temp_file_name:
         output_result = output_single_solid(
-            dagster.context(),
+            dagster.ExecutionContext(),
             hello_world,
             environment=create_num_csv_environment(),
             materialization_type='CSV',
@@ -90,7 +90,7 @@ def test_hello_world_decorator_style():
     hello_world = create_decorator_based_solid()
     run_hello_world(hello_world)
     result = execute_single_solid(
-        dagster.context(),
+        dagster.ExecutionContext(),
         hello_world,
         environment=create_num_csv_environment(),
     )

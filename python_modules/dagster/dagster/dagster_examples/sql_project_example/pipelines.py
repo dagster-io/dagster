@@ -11,21 +11,29 @@ def _get_project_solid(name, inputs=None):
     return dagster_sa.sql_file_solid(_get_sql_script_path(name), inputs=inputs)
 
 
+def _dep_only_input(solid):
+    return dagster.InputDefinition(
+        name=solid.name,
+        sources=[],
+        depends_on=solid,
+    )
+
+
 def define_full_pipeline():
     create_all_tables_solids = _get_project_solid('create_all_tables')
 
     populate_num_table_solid = _get_project_solid(
         'populate_num_table',
-        inputs=[dagster.dep_only_input(create_all_tables_solids)],
+        inputs=[_dep_only_input(create_all_tables_solids)],
     )
 
-    insert_deps = [dagster.dep_only_input(populate_num_table_solid)]
+    insert_deps = [_dep_only_input(populate_num_table_solid)]
 
     insert_into_sum_table_solid, insert_into_sum_sq_table_solid = get_insert_solids(
         insert_deps=insert_deps
     )
 
-    return dagster.pipeline(
+    return dagster.PipelineDefinition(
         name='full_pipeline',
         description='Runs entire pipeline, both setup and running the transform',
         solids=[
@@ -45,14 +53,14 @@ def get_insert_solids(insert_deps):
 
     insert_into_sum_sq_table_solid = _get_project_solid(
         'insert_into_sum_sq_table',
-        inputs=[dagster.dep_only_input(insert_into_sum_table_solid)],
+        inputs=[_dep_only_input(insert_into_sum_table_solid)],
     )
     return insert_into_sum_table_solid, insert_into_sum_sq_table_solid
 
 
 def define_truncate_pipeline():
     truncate_solid = _get_project_solid('truncate_all_derived_tables')
-    return dagster.pipeline(
+    return dagster.PipelineDefinition(
         name='truncate_all_derived_tables',
         description=
         'Truncates all tables that are populated by the pipeline. Preserves source tables',
@@ -65,7 +73,7 @@ def define_rerun_pipeline():
         insert_deps=None
     )
 
-    return dagster.pipeline(
+    return dagster.PipelineDefinition(
         name='rerun_pipeline',
         description=
         'Rerun the pipeline, populating the the derived tables. Assumes pipeline is setup',
@@ -81,10 +89,10 @@ def define_setup_pipeline():
 
     populate_num_table_solid = _get_project_solid(
         'populate_num_table',
-        inputs=[dagster.dep_only_input(create_all_tables_solids)],
+        inputs=[_dep_only_input(create_all_tables_solids)],
     )
 
-    return dagster.pipeline(
+    return dagster.PipelineDefinition(
         name='setup_pipeline',
         description='Creates all tables and then populates source table',
         solids=[

@@ -4,13 +4,13 @@ from dagster.core.definitions import (
     ExpectationDefinition, ExpectationResult, create_custom_source_input
 )
 from dagster.core.execution import (
-    _execute_input_expectation, DagsterUserCodeExecutionError, DagsterExecutionContext
+    _execute_input_expectation, DagsterUserCodeExecutionError, ExecutionContext
 )
 from dagster.core import types
 
 
 def create_test_context():
-    return DagsterExecutionContext()
+    return ExecutionContext()
 
 
 def test_basic_failing_input_expectation():

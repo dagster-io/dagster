@@ -2,14 +2,14 @@ import os
 
 import pandas as pd
 
+import dagster
 from dagster import check
 from dagster import config
-import dagster.core
 from dagster.core import types
 from dagster.core.definitions import (SolidDefinition, create_single_materialization_output)
 from dagster.core.decorators import solid
 from dagster.core.execution import (
-    DagsterExecutionContext,
+    ExecutionContext,
     execute_pipeline_through_solid,
     _read_source,
     materialize_pipeline_iterator,
@@ -45,7 +45,7 @@ def get_num_csv_environment(solid_name):
 
 
 def create_test_context():
-    return DagsterExecutionContext()
+    return ExecutionContext()
 
 
 def test_pandas_input():
@@ -70,7 +70,7 @@ def test_pandas_solid():
 
     def materialization_fn_inst(context, arg_dict, df):
         assert isinstance(df, pd.DataFrame)
-        assert isinstance(context, DagsterExecutionContext)
+        assert isinstance(context, ExecutionContext)
         assert isinstance(arg_dict, dict)
 
         test_output['df'] = df
@@ -104,13 +104,13 @@ def test_pandas_csv_to_csv():
 
     # just adding a second context arg to test that
     def transform(context, args):
-        check.inst_param(context, 'context', dagster.core.execution.DagsterExecutionContext)
+        check.inst_param(context, 'context', dagster.core.execution.ExecutionContext)
         num_csv = args['num_csv']
         num_csv['sum'] = num_csv['num1'] + num_csv['num2']
         return num_csv
 
     def materialization_fn_inst(context, arg_dict, df):
-        assert isinstance(context, DagsterExecutionContext)
+        assert isinstance(context, ExecutionContext)
         path = check.str_elem(arg_dict, 'path')
         df.to_csv(path, index=False)
 
@@ -290,7 +290,7 @@ def test_no_transform_solid():
 
 
 def create_diamond_pipeline():
-    return dagster.core.pipeline(solids=list(create_diamond_dag()))
+    return dagster.PipelineDefinition(solids=list(create_diamond_dag()))
 
 
 def create_diamond_dag():
@@ -382,9 +382,7 @@ def test_diamond_dag_run():
 def test_pandas_in_memory_diamond_pipeline():
     pipeline = create_diamond_pipeline()
     result = execute_pipeline_through_solid(
-        pipeline,
-        environment=get_num_csv_environment('num_table'),
-        solid_name='sum_mult_table'
+        pipeline, environment=get_num_csv_environment('num_table'), solid_name='sum_mult_table'
     )
 
     assert result.transformed_value.to_dict('list') == {
@@ -570,7 +568,7 @@ def test_pandas_multiple_inputs():
                 simple_csv_input('num_csv2')],
         transform_fn=transform_fn
     )
-    pipeline = dagster.core.pipeline(solids=[double_sum])
+    pipeline = dagster.PipelineDefinition(solids=[double_sum])
 
     output_df = execute_pipeline_through_solid(
         pipeline,
@@ -625,7 +623,7 @@ def test_pandas_multiple_outputs():
 
 def test_rename_input():
     result = execute_pipeline(
-        dagster.pipeline(solids=[sum_table, sum_sq_table_renamed_input]),
+        dagster.PipelineDefinition(solids=[sum_table, sum_sq_table_renamed_input]),
         environment=get_num_csv_environment('sum_table'),
     )
 

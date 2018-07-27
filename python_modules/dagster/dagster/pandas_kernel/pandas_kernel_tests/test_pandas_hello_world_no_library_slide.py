@@ -10,12 +10,12 @@ from dagster.core.definitions import (
     SolidDefinition,
     SourceDefinition,
 )
-from dagster.core.execution import (DagsterExecutionContext, execute_single_solid)
+from dagster.core.execution import (ExecutionContext, execute_single_solid)
 from dagster.utils.test import script_relative_path
 
 
 def create_test_context():
-    return DagsterExecutionContext()
+    return ExecutionContext()
 
 
 def create_hello_world_solid_no_api():
@@ -180,7 +180,7 @@ def test_pipeline():
         output=create_dataframe_output(),
     )
 
-    pipeline = dagster.pipeline(solids=[solid_one, solid_two])
+    pipeline = dagster.PipelineDefinition(solids=[solid_one, solid_two])
 
     environment = config.Environment(
         sources={

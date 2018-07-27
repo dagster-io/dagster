@@ -10,7 +10,7 @@ from .math_test_db import in_mem_context
 
 
 def pipeline_test_def(solids, context):
-    return dagster.pipeline(
+    return dagster.PipelineDefinition(
         solids=solids,
         context_definitions={
             'default':
@@ -39,6 +39,14 @@ def test_basic_isolated_sql_solid():
     assert results == [(1, 2, 3), (3, 4, 7)]
 
 
+def _dep_only_input(solid):
+    return dagster.InputDefinition(
+        name=solid.name,
+        sources=[],
+        depends_on=solid,
+    )
+
+
 def test_basic_pipeline():
     sum_sql_text = '''CREATE TABLE sum_table AS
             SELECT num1, num2, num1 + num2 as sum FROM num_table'''
@@ -49,7 +57,7 @@ def test_basic_pipeline():
     sum_sql_solid = create_sql_statement_solid('sum_sql_solid', sum_sql_text)
 
     sum_sq_sql_solid = create_sql_statement_solid(
-        'sum_sq_sql_solid', sum_sq_sql_text, inputs=[dagster.dep_only_input(sum_sql_solid)]
+        'sum_sq_sql_solid', sum_sq_sql_text, inputs=[_dep_only_input(sum_sql_solid)]
     )
 
     pipeline = pipeline_test_def(solids=[sum_sql_solid, sum_sq_sql_solid], context=in_mem_context())
@@ -79,7 +87,7 @@ def test_pipeline_from_files():
 
     create_sum_sq_table_solid = sql_file_solid(
         script_relative_path('sql_files/create_sum_sq_table.sql'),
-        inputs=[dagster.dep_only_input(create_sum_table_solid)],
+        inputs=[_dep_only_input(create_sum_table_solid)],
     )
 
     pipeline = pipeline_test_def(

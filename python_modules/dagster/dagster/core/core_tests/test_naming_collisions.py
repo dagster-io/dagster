@@ -5,7 +5,7 @@ from dagster.core.definitions import (
     SolidDefinition, InputDefinition, SourceDefinition, create_no_materialization_output
 )
 
-from dagster.core.execution import (DagsterExecutionContext, execute_single_solid, execute_pipeline)
+from dagster.core.execution import (ExecutionContext, execute_single_solid, execute_pipeline)
 
 from dagster.core import types
 
@@ -30,7 +30,7 @@ def test_execute_solid_with_input_same_name():
     )
 
     result = execute_single_solid(
-        DagsterExecutionContext(),
+        ExecutionContext(),
         solid,
         environment=config.Environment(
             sources={
@@ -71,7 +71,7 @@ def test_execute_two_solids_with_same_input_name():
         output=create_no_materialization_output(),
     )
 
-    pipeline = dagster.pipeline(solids=[solid_one, solid_two])
+    pipeline = dagster.PipelineDefinition(solids=[solid_one, solid_two])
 
     result = execute_pipeline(
         pipeline,
@@ -125,7 +125,7 @@ def test_execute_dep_solid_different_input_name():
         output=create_no_materialization_output(),
     )
 
-    pipeline = dagster.pipeline(solids=[first_solid, second_solid])
+    pipeline = dagster.PipelineDefinition(solids=[first_solid, second_solid])
     result = dagster.execute_pipeline(
         pipeline,
         environment=config.Environment(
@@ -204,7 +204,7 @@ def test_execute_dep_solid_same_input_name():
         output=create_no_materialization_output(),
     )
 
-    pipeline = dagster.pipeline(solids=[table_one, table_two])
+    pipeline = dagster.PipelineDefinition(solids=[table_one, table_two])
 
     complete_environment = config.Environment(
         sources={

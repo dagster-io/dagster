@@ -17,7 +17,7 @@ def test_default_context():
     def default_context_transform(context):
         assert context.args == {}
 
-    pipeline = dagster.pipeline(solids=[default_context_transform])
+    pipeline = dagster.PipelineDefinition(solids=[default_context_transform])
     environment = config.Environment(sources={}, context=config.Context('default', {}))
 
     execute_pipeline(pipeline, environment=environment)
@@ -32,18 +32,18 @@ def test_custom_contexts():
     def custom_context_transform(context):
         assert context.args == {'arg_one': 'value_two'}
 
-    pipeline = dagster.pipeline(
+    pipeline = dagster.PipelineDefinition(
         solids=[custom_context_transform],
         context_definitions={
             'custom_one':
             PipelineContextDefinition(
                 argument_def_dict={'arg_one': types.STRING},
-                context_fn=lambda args: dagster.context(args=args),
+                context_fn=lambda args: dagster.ExecutionContext(args=args),
             ),
             'custom_two':
             PipelineContextDefinition(
                 argument_def_dict={'arg_one': types.STRING},
-                context_fn=lambda args: dagster.context(args=args),
+                context_fn=lambda args: dagster.ExecutionContext(args=args),
             )
         },
     )
@@ -72,7 +72,7 @@ def test_invalid_context():
     def never_transform():
         raise Exception('should never execute')
 
-    default_context_pipeline = dagster.pipeline(solids=[never_transform])
+    default_context_pipeline = dagster.PipelineDefinition(solids=[never_transform])
 
     environment_context_not_found = config.Environment(
         sources={}, context=config.Context('not_found', {})
@@ -96,7 +96,7 @@ def test_invalid_context():
             throw_on_error=True
         )
 
-    with_argful_context_pipeline = dagster.pipeline(
+    with_argful_context_pipeline = dagster.PipelineDefinition(
         solids=[never_transform],
         context_definitions={
             'default':

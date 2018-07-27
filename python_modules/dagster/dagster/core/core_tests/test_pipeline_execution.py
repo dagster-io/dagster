@@ -7,12 +7,13 @@ from dagster.core.definitions import (
     SolidDefinition,
     create_custom_source_input,
     create_no_materialization_output,
+    PipelineDefinition,
 )
-from dagster.core.graph import (create_adjacency_lists, SolidGraph, DagsterPipeline)
+from dagster.core.graph import (create_adjacency_lists, SolidGraph)
 from dagster.core.execution import (
     execute_pipeline_iterator,
     execute_pipeline_iterator_in_memory,
-    DagsterExecutionContext,
+    ExecutionContext,
     DagsterExecutionResult,
 )
 
@@ -21,7 +22,7 @@ from dagster.core.execution import (
 
 
 def create_test_context():
-    return DagsterExecutionContext()
+    return ExecutionContext()
 
 
 def _default_passthrough_transform(*args, **kwargs):
@@ -252,7 +253,7 @@ def assert_all_results_equivalent(expected_results, result_results):
 
 def test_pipeline_execution_graph_diamond():
     solid_graph = create_diamond_graph()
-    pipeline = DagsterPipeline(solids=solid_graph.solids)
+    pipeline = PipelineDefinition(solids=solid_graph.solids)
     environment = config.Environment(sources={'A': {'A_input': config.Source('CUSTOM', {})}})
     return _do_test(pipeline, lambda: execute_pipeline_iterator(
         pipeline,
@@ -262,10 +263,10 @@ def test_pipeline_execution_graph_diamond():
 
 def test_pipeline_execution_graph_diamond_in_memory():
     solid_graph = create_diamond_graph()
-    pipeline = DagsterPipeline(solids=solid_graph.solids)
+    pipeline = PipelineDefinition(solids=solid_graph.solids)
     input_values = {'A_input': [{'A_input': 'input_set'}]}
     return _do_test(pipeline, lambda: execute_pipeline_iterator_in_memory(
-        DagsterExecutionContext(),
+        ExecutionContext(),
         pipeline,
         input_values=input_values,
     ))
@@ -274,7 +275,7 @@ def test_pipeline_execution_graph_diamond_in_memory():
 def _do_test(pipeline, do_execute_pipeline_iter):
     solid_graph = create_diamond_graph()
 
-    pipeline = DagsterPipeline(solids=solid_graph.solids)
+    pipeline = PipelineDefinition(solids=solid_graph.solids)
 
     results = list()
 

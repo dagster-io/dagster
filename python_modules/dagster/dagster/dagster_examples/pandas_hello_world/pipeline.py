@@ -1,4 +1,4 @@
-import dagster.core
+import dagster
 from dagster.core.decorators import solid
 import dagster.pandas_kernel as dagster_pd
 
@@ -29,7 +29,7 @@ def always_fails_solid(**_kwargs):
 
 
 def define_pipeline():
-    return dagster.core.pipeline(
+    return dagster.PipelineDefinition(
         name='pandas_hello_world_fails', solids=[
             sum_solid,
             sum_sq_solid,
@@ -39,7 +39,7 @@ def define_pipeline():
 
 
 def define_success_pipeline():
-    return dagster.core.pipeline(
+    return dagster.PipelineDefinition(
         name='pandas_hello_world', solids=[
             sum_solid,
             sum_sq_solid,

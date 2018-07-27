@@ -5,16 +5,18 @@ import json
 
 from dagster import check
 from dagster.core import types
-from dagster.core.execution import DagsterExecutionContext
+from dagster.core.execution import ExecutionContext
 
 from .definitions import (
-    InputDefinition, create_dagster_single_file_input, create_custom_source_input
+    InputDefinition,
+    create_dagster_single_file_input,
+    create_custom_source_input,
+    PipelineContextDefinition,
+    PipelineDefinition,
 )
-from .graph import (DagsterPipeline, PipelineContextDefinition)
 
-
-def pipeline(**kwargs):
-    return DagsterPipeline(**kwargs)
+# def pipeline(**kwargs):
+#     return PipelineDefinition(**kwargs)
 
 
 def input_definition(**kwargs):
@@ -30,7 +32,7 @@ def create_json_input(name):
     check.str_param(name, 'name')
 
     def load_file(context, path):
-        check.inst_param(context, 'context', DagsterExecutionContext)
+        check.inst_param(context, 'context', ExecutionContext)
         check.str_param(path, 'path')
         with open(path) as ff:
             return json.load(ff)
