@@ -598,30 +598,33 @@ def output_single_solid(
     context,
     solid,
     environment,
-    materialization_type,
+    name,
     arg_dict,
     throw_on_error=True,
 ):
     check.inst_param(context, 'context', ExecutionContext)
     check.inst_param(solid, 'solid', SolidDefinition)
     check.inst_param(environment, 'environment', config.Environment)
-    check.str_param(materialization_type, 'materialization_type')
+    check.str_param(name, 'name')
     check.dict_param(arg_dict, 'arg_dict', key_type=str)
     check.bool_param(throw_on_error, 'throw_on_error')
 
 
     results = list(
-        materialize_pipeline_iterator(
+        execute_pipeline_iterator(
             PipelineDefinition(
                 solids=[solid],
                 context_definitions=_create_passthrough_context_definition(context),
             ),
-            environment=environment,
-            materializations=[
-                config.Materialization(
-                    solid=solid.name, materialization_type=materialization_type, args=arg_dict
-                )
-            ],
+            environment=config.Environment(
+                context=environment.context,
+                sources=environment.sources,
+                materializations=[
+                    config.Materialization(
+                        solid=solid.name, name=name, args=arg_dict
+                    )
+                ],
+            ),
         )
     )
 
@@ -724,6 +727,10 @@ class InputManager:
     def get_context(self):
         check.not_implemented('must implement in subclass')
 
+    @property
+    def materializations(self):
+        check.not_implemented('must implement in subclass')
+
     def get_input_value(self, solid, input_def):
         if input_def.depends_on and input_def.depends_on.name in self.intermediate_values:
             # grab value from dependency
@@ -747,6 +754,9 @@ class InMemoryInputManager(InputManager):
     def get_context(self):
         return self.context
 
+    @property
+    def materializations(self):
+        return []
 
 def _validate_environment(environment, pipeline):
     for solid_name, input_configs in environment.sources.items():
@@ -807,6 +817,10 @@ class EnvironmentInputManager(InputManager):
         check.str_param(input_name, 'input_name')
         return self.environment.sources[solid_name][input_name].args
 
+    @property
+    def materializations(self):
+        return self.environment.materializations
+
 
 def execute_pipeline_iterator(
     pipeline,
@@ -865,6 +879,11 @@ def _execute_pipeline_iterator(
 
     pipeline_context_value = pipeline.name if pipeline.name else 'unnamed'
 
+    materialization_args = MaterializationArgs(pipeline, input_manager.materializations)
+
+    if through_solids is None:
+        through_solids = materialization_args.through_solids
+
     with context.value('pipeline', pipeline_context_value):
         input_manager = input_manager
 
@@ -900,12 +919,24 @@ def _execute_pipeline_iterator(
 
             try:
                 with context.value('solid', solid.name):
-                    execution_result = _execute_pipeline_solid_step(context, solid, input_manager)
+                    result = _execute_pipeline_solid_step(context, solid, input_manager)
 
-                yield execution_result
+                    if not result.success:
+                        yield result
+                        break
 
-                if not execution_result.success:
-                    break
+                    if not materialization_args.should_materialize(result.name):
+                        yield result
+                        continue
+
+                    _execute_materializations(
+                        context,
+                        solid,
+                        materialization_args.materializations_for_solid(solid.name),
+                        result.transformed_value,
+                    )
+
+                    yield result
 
             except DagsterUserCodeExecutionError as see:
                 yield DagsterExecutionResult(
@@ -917,6 +948,20 @@ def _execute_pipeline_iterator(
                     exception=see,
                 )
                 break
+
+def _execute_materializations(
+    context,
+    solid,
+    materializations,
+    transformed_value,
+):
+    for materialization in materializations:
+        arg_dict = materialization.args
+        name = materialization.name
+        with context.value('materialization_name', name), \
+            context.value('materialization_args', arg_dict):
+            mat_def = solid.output.materialization_of_type(name)
+            _execute_materialization(context, mat_def, arg_dict, transformed_value)
 
 def execute_pipeline(
     pipeline,
@@ -1005,132 +1050,3 @@ class MaterializationArgs:
         for materialization in self.materializations:
             if materialization.solid == solid_name:
                 yield materialization
-
-
-def materialize_pipeline(
-    pipeline,
-    *,
-    environment,
-    materializations,
-    from_solids=None,
-    through_solids=None,
-    throw_on_error=True,
-):
-    '''
-    Synchronous version of materialize_pipeline_iterator. Just like execute_pipeline, you
-    can optionally specify, through throw_on_error, that exceptions should be thrown when
-    encountered instead of returning a result in an error state. Especially useful in testing
-    contexts.
-    '''
-    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    check.inst_param(environment, 'environment', config.Environment)
-    check.list_param(materializations, 'materializations', of_type=config.Materialization)
-    check.bool_param(throw_on_error, 'throw_on_error')
-
-    results = []
-    input_manager = EnvironmentInputManager(pipeline, environment)
-    context = input_manager.get_context()
-    for result in _materialize_pipeline_iterator(
-        pipeline,
-        materializations=materializations,
-        input_manager=input_manager,
-        from_solids=from_solids,
-        through_solids=through_solids,
-    ):
-        if throw_on_error:
-            if not result.success:
-                _do_throw_on_error(result)
-        results.append(result.copy())
-    return DagsterPipelineExecutionResult(context, results)
-
-def materialize_pipeline_iterator(
-    pipeline,
-    *,
-    materializations,
-    environment,
-    through_solids=None,
-    from_solids=None,
-    use_materialization_through_solids=True,
-):
-
-    input_manager = EnvironmentInputManager(pipeline, environment)
-
-    return _materialize_pipeline_iterator(
-        pipeline,
-        materializations,
-        input_manager,
-        through_solids,
-        from_solids,
-        use_materialization_through_solids
-    )
-
-def _materialize_pipeline_iterator(
-    pipeline,
-    materializations,
-    input_manager,
-    through_solids=None,
-    from_solids=None,
-    use_materialization_through_solids=True,
-):
-    '''
-    Similar to execute_pipeline_iterator, except that you can specify outputs (per format
-    specified in module docblock) to create externally accessible materializations of
-    the computations in pipeline.
-    '''
-    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    check.list_param(materializations, 'materializations', of_type=config.Materialization)
-    check.inst_param(input_manager, 'input_manager', InputManager)
-
-    materialization_args = MaterializationArgs(pipeline, materializations)
-
-    if through_solids is None and use_materialization_through_solids:
-        through_solids = materialization_args.through_solids
-
-    context = input_manager.get_context()
-
-    for result in _execute_pipeline_iterator(
-        pipeline,
-        through_solids=through_solids,
-        from_solids=from_solids,
-        input_manager=input_manager,
-    ):
-        if not result.success:
-            yield result
-            break
-
-        if not materialization_args.should_materialize(result.name):
-            yield result
-            continue
-
-        materialization_result = result
-
-        materializations = materialization_args.materializations_for_solid(result.name)
-
-        solid = pipeline.solid_named(result.name)
-
-        with context.value('solid', result.name):
-            for materialization in materializations:
-                arg_dict = materialization.args
-                materialization_type = materialization.materialization_type
-                with context.value('materialization_type', materialization_type), \
-                    context.value('materialization_args', arg_dict):
-                    try:
-                        mat_def = solid.output.materialization_of_type(materialization_type)
-                        _execute_materialization(
-                            context, mat_def, arg_dict, result.transformed_value
-                        )
-                    except DagsterUserCodeExecutionError as see:
-                        materialization_result = DagsterExecutionResult(
-                            success=False,
-                            solid=result.solid,
-                            context=context,
-                            reason=DagsterExecutionFailureReason.USER_CODE_ERROR,
-                            exception=see,
-                            transformed_value=result.transformed_value,
-                        )
-                        break
-
-        yield materialization_result
-
-        if not materialization_result.success:
-            break

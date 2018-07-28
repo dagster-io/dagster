@@ -4,7 +4,6 @@ from dagster import config
 from dagster.core.execution import (
     output_single_solid,
     execute_pipeline,
-    materialize_pipeline,
 )
 
 from dagster.sqlalchemy_kernel.subquery_builder_experimental import (
@@ -63,7 +62,7 @@ def test_sql_sum_solid():
         context,
         sum_table_solid,
         environment=environment,
-        materialization_type='CREATE',
+        name='CREATE',
         arg_dict={'table_name': 'sum_table'},
     )
     assert result.success
@@ -129,19 +128,16 @@ def test_output_sql_sum_sq_solid():
                 'num_table': config.Source('TABLENAME', {'table_name': 'num_table'})
             }
         },
-    )
-
-    pipeline_result = materialize_pipeline(
-        pipeline=pipeline,
-        environment=environment,
         materializations=[
             config.Materialization(
                 solid='sum_sq_table',
-                materialization_type='CREATE',
+                name='CREATE',
                 args={'table_name': 'sum_sq_table'},
             )
         ],
     )
+
+    pipeline_result = execute_pipeline(pipeline=pipeline, environment=environment)
 
     assert pipeline_result.success
 

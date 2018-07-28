@@ -30,7 +30,7 @@ def test_iterator_solid():
         # and stream to disk
 
     custom_output = create_single_materialization_output(
-        materialization_type='CUSTOM',
+        name='CUSTOM',
         materialization_fn=materialization_fn,
         argument_def_dict={},
     )
@@ -50,7 +50,7 @@ def test_iterator_solid():
                 'iter_numbers': config.Source('CUSTOM', {})
             }}
         ),
-        materialization_type='CUSTOM',
+        name='CUSTOM',
         arg_dict={}
     )
 

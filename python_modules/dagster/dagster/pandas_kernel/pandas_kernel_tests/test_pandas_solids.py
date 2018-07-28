@@ -14,10 +14,9 @@ from dagster.core.execution import (
     ExecutionContext,
     execute_pipeline_through_solid,
     _read_source,
-    materialize_pipeline_iterator,
+    execute_pipeline_iterator,
     output_single_solid,
     _pipeline_solid_in_memory,
-    materialize_pipeline,
     execute_pipeline,
     execute_single_solid,
 )
@@ -35,13 +34,14 @@ def get_solid_transformed_value(context, solid_inst, environment):
     return execution_result.transformed_value
 
 
-def get_num_csv_environment(solid_name):
+def get_num_csv_environment(solid_name, materializations=None):
     return config.Environment(
         sources={
             solid_name: {
                 'num_csv': config.Source('CSV', args={'path': script_relative_path('num.csv')})
             },
         },
+        materializations=materializations,
     )
 
 
@@ -77,7 +77,7 @@ def test_pandas_solid():
         test_output['df'] = df
 
     custom_output_def = create_single_materialization_output(
-        materialization_type='CUSTOM',
+        name='CUSTOM',
         materialization_fn=materialization_fn_inst,
         argument_def_dict={},
     )
@@ -93,7 +93,7 @@ def test_pandas_solid():
         create_test_context(),
         single_solid,
         environment=get_num_csv_environment('sum_table'),
-        materialization_type='CUSTOM',
+        name='CUSTOM',
         arg_dict={},
     )
 
@@ -116,7 +116,7 @@ def test_pandas_csv_to_csv():
         df.to_csv(path, index=False)
 
     csv_output_def = create_single_materialization_output(
-        materialization_type='CSV',
+        name='CSV',
         materialization_fn=materialization_fn_inst,
         argument_def_dict={'path': ArgumentDefinition(types.Path)}
     )
@@ -139,7 +139,7 @@ def execute_transform_in_temp_csv_files(solid_inst):
             create_test_context(),
             solid_inst,
             environment=get_num_csv_environment(solid_inst.name),
-            materialization_type='CSV',
+            name='CSV',
             arg_dict={'path': temp_file_name},
         )
 
@@ -398,19 +398,17 @@ def test_pandas_in_memory_diamond_pipeline():
 def test_pandas_output_csv_pipeline():
     with get_temp_file_name() as temp_file_name:
         pipeline = create_diamond_pipeline()
-        environment = get_num_csv_environment('num_table')
-
-        for _result in materialize_pipeline_iterator(
-            pipeline=pipeline,
-            environment=environment,
-            materializations=[
+        environment = get_num_csv_environment(
+            'num_table', [
                 config.Materialization(
                     solid='sum_mult_table',
-                    materialization_type='CSV',
+                    name='CSV',
                     args={'path': temp_file_name},
                 )
-            ],
-        ):
+            ]
+        )
+
+        for _result in execute_pipeline_iterator(pipeline=pipeline, environment=environment):
             pass
 
         assert os.path.exists(temp_file_name)
@@ -438,26 +436,24 @@ def test_pandas_output_intermediate_csv_files():
     with get_temp_file_names(2) as temp_tuple:
         sum_file, mult_file = temp_tuple  # pylint: disable=E0632
 
-        environment = get_num_csv_environment('num_table')
-
-        subgraph_one_result = materialize_pipeline(
-            pipeline,
-            environment=environment,
-            materializations=[
+        environment = get_num_csv_environment(
+            'num_table', [
                 config.Materialization(
                     solid='sum_table',
-                    materialization_type='CSV',
+                    name='CSV',
                     args={'path': sum_file},
                 ),
                 config.Materialization(
                     solid='mult_table',
-                    materialization_type='CSV',
+                    name='CSV',
                     args={'path': mult_file},
                 ),
-            ],
+            ]
         )
 
-        assert len(subgraph_one_result.result_list) == 3
+        subgraph_one_result = execute_pipeline(pipeline, environment=environment)
+
+        assert len(subgraph_one_result.result_list) == 4
 
         expected_sum = {
             'num1': [1, 3],
@@ -510,7 +506,7 @@ def test_pandas_output_intermediate_csv_files():
 def csv_materialization(solid_name, path):
     return config.Materialization(
         solid=solid_name,
-        materialization_type='CSV',
+        name='CSV',
         args={'path': path},
     )
 
@@ -518,7 +514,7 @@ def csv_materialization(solid_name, path):
 def parquet_materialization(solid_name, path):
     return config.Materialization(
         solid=solid_name,
-        materialization_type='PARQUET',
+        name='PARQUET',
         args={'path': path},
     )
 
@@ -529,13 +525,14 @@ def test_pandas_output_intermediate_parquet_files():
     with get_temp_file_names(2) as temp_tuple:
         # false positive on pylint error
         sum_file, mult_file = temp_tuple  # pylint: disable=E0632
-        pipeline_result = materialize_pipeline(
+        pipeline_result = execute_pipeline(
             pipeline,
-            environment=get_num_csv_environment('num_table'),
-            materializations=[
-                parquet_materialization('sum_table', sum_file),
-                parquet_materialization('mult_table', mult_file),
-            ],
+            environment=get_num_csv_environment(
+                'num_table', [
+                    parquet_materialization('sum_table', sum_file),
+                    parquet_materialization('mult_table', mult_file),
+                ]
+            ),
         )
 
         assert pipeline_result.success
@@ -591,13 +588,14 @@ def test_pandas_multiple_outputs():
         csv_file, parquet_file = temp_tuple  # pylint: disable=E0632
         pipeline = create_diamond_pipeline()
 
-        for _result in materialize_pipeline_iterator(
+        for _result in execute_pipeline_iterator(
             pipeline=pipeline,
-            environment=get_num_csv_environment('num_table'),
-            materializations=[
-                csv_materialization('sum_mult_table', csv_file),
-                parquet_materialization('sum_mult_table', parquet_file),
-            ],
+            environment=get_num_csv_environment(
+                'num_table', [
+                    csv_materialization('sum_mult_table', csv_file),
+                    parquet_materialization('sum_mult_table', parquet_file),
+                ]
+            ),
         ):
             pass
 

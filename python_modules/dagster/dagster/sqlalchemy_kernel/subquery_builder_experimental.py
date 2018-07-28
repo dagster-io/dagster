@@ -66,7 +66,7 @@ def create_table_output():
         context.engine.connect().execute(total_sql)
 
     return create_single_materialization_output(
-        materialization_type='CREATE',
+        name='CREATE',
         materialization_fn=materialization_fn,
         argument_def_dict={'table_name': ArgumentDefinition(types.String)}
     )

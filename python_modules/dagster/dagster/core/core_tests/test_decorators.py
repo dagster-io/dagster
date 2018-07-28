@@ -175,7 +175,7 @@ def test_materializations():
         create_test_context(),
         hello,
         environment=config.Environment(sources={}),
-        materialization_type='CONTEXT',
+        name='CONTEXT',
         arg_dict={'foo': 'bar'}
     )
 
@@ -187,7 +187,7 @@ def test_materializations():
         create_test_context(),
         hello,
         environment=config.Environment(sources={}),
-        materialization_type='NO_CONTEXT',
+        name='NO_CONTEXT',
         arg_dict={'foo': 'bar'}
     )
 

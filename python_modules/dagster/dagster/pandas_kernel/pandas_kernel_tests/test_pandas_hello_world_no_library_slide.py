@@ -37,7 +37,7 @@ def create_hello_world_solid_no_api():
     )
 
     csv_materialization = MaterializationDefinition(
-        materialization_type='CSV',
+        name='CSV',
         materialization_fn=lambda df, arg_dict: df.to_csv(arg_dict['path'], index=False),
         argument_def_dict={'path': ArgumentDefinition(types.Path)}
     )
@@ -109,7 +109,7 @@ def create_dataframe_output():
     return OutputDefinition(
         materializations=[
             MaterializationDefinition(
-                materialization_type='CSV',
+                name='CSV',
                 materialization_fn=mat_fn,
                 argument_def_dict={'path': ArgumentDefinition(types.Path)},
             ),
@@ -204,17 +204,22 @@ def test_pipeline():
     }
 
     sum_sq_path_args = {'path': '/tmp/sum_sq.csv'}
-    dagster.materialize_pipeline(
-        pipeline,
-        environment=environment,
+    environment_two = config.Environment(
+        sources={
+            'solid_one': {
+                'num_df': config.Source('CSV', {'path': script_relative_path('num.csv')})
+            }
+        },
         materializations=[
             config.Materialization(
                 solid='solid_two',
-                materialization_type='CSV',
+                name='CSV',
                 args=sum_sq_path_args,
             ),
-        ],
+        ]
     )
+
+    dagster.execute_pipeline(pipeline, environment=environment_two)
 
     sum_sq_df = pd.read_csv('/tmp/sum_sq.csv')
 
