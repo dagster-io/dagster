@@ -1,11 +1,18 @@
 import pytest
-import dagster
-from dagster import (config, PipelineContextDefinition)
-from dagster.core import types
-from dagster.core.decorators import (solid, with_context)
-from dagster.core.definitions import OutputDefinition
-from dagster.core.execution import execute_pipeline
-from dagster.core.errors import (DagsterInvariantViolationError, DagsterTypeError)
+
+from dagster import (
+    ArgumentDefinition,
+    ExecutionContext,
+    OutputDefinition,
+    PipelineDefinition,
+    PipelineContextDefinition,
+    config,
+    execute_pipeline,
+    solid,
+    types,
+    with_context,
+)
+from dagster.core.errors import (DagsterTypeError, DagsterInvariantViolationError)
 
 
 def test_default_context():
@@ -15,12 +22,74 @@ def test_default_context():
     )
     @with_context
     def default_context_transform(context):
-        assert context.args == {}
+        assert context.log_level == 'ERROR'
 
-    pipeline = dagster.PipelineDefinition(solids=[default_context_transform])
-    environment = config.Environment(sources={}, context=config.Context('default', {}))
+    pipeline = PipelineDefinition(solids=[default_context_transform])
+    execute_pipeline(
+        pipeline, environment=config.Environment(sources={}, context=config.Context('default', {}))
+    )
 
-    execute_pipeline(pipeline, environment=environment)
+
+def test_default_context_with_log_level():
+    @solid(
+        inputs=[],
+        output=OutputDefinition(),
+    )
+    @with_context
+    def default_context_transform(context):
+        assert context.log_level == 'ERROR'
+
+    pipeline = PipelineDefinition(solids=[default_context_transform])
+    execute_pipeline(
+        pipeline,
+        environment=config.Environment(
+            sources={}, context=config.Context('default', {'log_level': 'ERROR'})
+        )
+    )
+
+    with pytest.raises(DagsterTypeError, message='Argument mismatch in context default'):
+        execute_pipeline(
+            pipeline,
+            environment=config.Environment(
+                sources={}, context=config.Context('default', {'log_level': 2})
+            )
+        )
+
+
+def test_default_value():
+    def _get_args_test_solid(arg_name, arg_value):
+        @solid(
+            inputs=[],
+            output=OutputDefinition(),
+        )
+        @with_context
+        def args_test(context):
+            assert context.user_context == {arg_name: arg_value}
+
+        return args_test
+
+    pipeline = PipelineDefinition(
+        solids=[_get_args_test_solid('arg_one', 'heyo')],
+        context_definitions={
+            'custom_one':
+            PipelineContextDefinition(
+                argument_def_dict={
+                    'arg_one':
+                    ArgumentDefinition(
+                        dagster_type=types.String,
+                        is_optional=True,
+                        default_value='heyo',
+                    )
+                },
+                context_fn=lambda args: ExecutionContext(user_context=args),
+            ),
+        }
+    )
+
+    execute_pipeline(
+        pipeline,
+        environment=config.Environment(sources={}, context=config.Context('custom_one', {}))
+    )
 
 
 def test_custom_contexts():
@@ -30,24 +99,20 @@ def test_custom_contexts():
     )
     @with_context
     def custom_context_transform(context):
-        assert context.args == {'arg_one': 'value_two'}
+        assert context.user_context == {'arg_one': 'value_two'}
 
-    pipeline = dagster.PipelineDefinition(
+    pipeline = PipelineDefinition(
         solids=[custom_context_transform],
         context_definitions={
             'custom_one':
             PipelineContextDefinition(
-                argument_def_dict={
-                    'arg_one': dagster.ArgumentDefinition(dagster_type=types.String)
-                },
-                context_fn=lambda args: dagster.ExecutionContext(args=args),
+                argument_def_dict={'arg_one': ArgumentDefinition(dagster_type=types.String)},
+                context_fn=lambda args: ExecutionContext(user_context=args),
             ),
             'custom_two':
             PipelineContextDefinition(
-                argument_def_dict={
-                    'arg_one': dagster.ArgumentDefinition(dagster_type=types.String)
-                },
-                context_fn=lambda args: dagster.ExecutionContext(args=args),
+                argument_def_dict={'arg_one': ArgumentDefinition(dagster_type=types.String)},
+                context_fn=lambda args: ExecutionContext(user_context=args),
             )
         },
     )
@@ -67,7 +132,6 @@ def test_custom_contexts():
 
 # TODO: reenable pending the ability to specific optional arguments
 # https://github.com/dagster-io/dagster/issues/56
-@pytest.mark.skip
 def test_invalid_context():
     @solid(
         inputs=[],
@@ -76,7 +140,7 @@ def test_invalid_context():
     def never_transform():
         raise Exception('should never execute')
 
-    default_context_pipeline = dagster.PipelineDefinition(solids=[never_transform])
+    default_context_pipeline = PipelineDefinition(solids=[never_transform])
 
     environment_context_not_found = config.Environment(
         sources={}, context=config.Context('not_found', {})
@@ -100,12 +164,13 @@ def test_invalid_context():
             throw_on_error=True
         )
 
-    with_argful_context_pipeline = dagster.PipelineDefinition(
+    with_argful_context_pipeline = PipelineDefinition(
         solids=[never_transform],
         context_definitions={
             'default':
             PipelineContextDefinition(
-                argument_def_dict={'string_arg': types.String}, context_fn=lambda _args: _args
+                argument_def_dict={'string_arg': ArgumentDefinition(types.String)},
+                context_fn=lambda _args: _args
             )
         }
     )

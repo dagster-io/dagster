@@ -43,13 +43,15 @@ from .errors import (
     DagsterExpectationFailedError, DagsterInvariantViolationError
 )
 
+from .argument_handling import validate_args
+
 Metric = namedtuple('Metric', 'context_dict metric_name value')
 
 
 class ExecutionContext:
     '''
     A context object flowed through the entire scope of single execution of a
-    pipeline of solids. This is used by both framework and uesr code to log
+    pipeline of solids. This is used by both framework and user code to log
     messages and metrics. It also maintains a stack of context values so that
     logs, metrics, and any future reporting are reported with a minimal, consistent
     level of context so that developers do not have to repeatedly log well-known
@@ -58,11 +60,12 @@ class ExecutionContext:
     reporting.
     '''
 
-    def __init__(self, loggers=None, log_level=ERROR, args=None):
+    def __init__(self, loggers=None, log_level=ERROR, user_context=None):
         self._logger = CompositeLogger(loggers=loggers, level=log_level)
         self._context_dict = OrderedDict()
         self._metrics = []
-        self.args = check.opt_dict_param(args, 'args', key_type=str)
+        self.log_level = log_level
+        self.user_context = user_context
 
     def _maybe_quote(self, val):
         str_val = str(val)
@@ -288,35 +291,6 @@ def _user_code_error_boundary(context, msg, **kwargs):
             msg.format(**kwargs), e, user_exception=e, original_exc_info=sys.exc_info()
         )
 
-def _validate_args(argument_def_dict, arg_dict, error_context_str):
-    expected_args = set(argument_def_dict.keys())
-    received_args = set(arg_dict.keys())
-    if expected_args != received_args:
-        raise DagsterTypeError(
-            'Argument mismatch in {error_context_str}. Expected {expected} got {received}'.
-            format(
-                error_context_str=error_context_str,
-                expected=repr(expected_args),
-                received=repr(received_args),
-            )
-        )
-
-    for arg_name, arg_value in arg_dict.items():
-        arg_def = argument_def_dict[arg_name]
-        if not arg_def.dagster_type.is_python_valid_value(arg_value):
-            format_string = (
-                'Expected type {typename} for arg {arg_name}' +
-                'for {error_context_str} but got {arg_value}'
-            )
-            raise DagsterTypeError(
-                format_string.format(
-                    typename=arg_def.dagster_type.name,
-                    arg_name=arg_name,
-                    error_context_str=error_context_str,
-                    arg_value=repr(arg_value),
-                )
-            )
-
 def _read_source(context, source_definition, arg_dict):
     '''
     Check to ensure that the arguments to a particular input are valid, and then
@@ -330,7 +304,7 @@ def _read_source(context, source_definition, arg_dict):
     with context.value('source_type', source_definition.source_type), \
          context.value('arg_dict', arg_dict):
         error_context_str = 'source type {source}'.format(source=source_definition.source_type)
-        _validate_args(source_definition.argument_def_dict, arg_dict, error_context_str)
+        args_to_pass = validate_args(source_definition.argument_def_dict, arg_dict, error_context_str)
         error_str = 'Error occured while loading source "{source_type}"'
         with _user_code_error_boundary(
             context,
@@ -340,7 +314,7 @@ def _read_source(context, source_definition, arg_dict):
             context.info('Entering input implementation')
 
             with time_execution_scope() as timer_result:
-                value = source_definition.source_fn(context, arg_dict)
+                value = source_definition.source_fn(context, args_to_pass)
 
             context.metric('input_load_time_ms', timer_result.millis)
 
@@ -566,7 +540,7 @@ def _pipeline_solid_in_memory(context, solid, transform_values_dict):
 
 
 
-def _create_default_pipeline_context_definition(context):
+def _create_passthrough_context_definition(context):
     check.inst_param(context, 'context', ExecutionContext)
     context_definition = PipelineContextDefinition(
         argument_def_dict={},
@@ -584,7 +558,7 @@ def execute_single_solid(context, solid, environment, throw_on_error=True):
         execute_pipeline_iterator(
             PipelineDefinition(
                 solids=[solid],
-                context_definitions=_create_default_pipeline_context_definition(context),
+                context_definitions=_create_passthrough_context_definition(context),
             ),
             environment=environment,
         )
@@ -640,7 +614,7 @@ def output_single_solid(
         materialize_pipeline_iterator(
             PipelineDefinition(
                 solids=[solid],
-                context_definitions=_create_default_pipeline_context_definition(context),
+                context_definitions=_create_passthrough_context_definition(context),
             ),
             environment=environment,
             materializations=[
@@ -798,13 +772,6 @@ def _validate_environment(environment, pipeline):
             f'pipeline definiton. Available contexts {repr(avaiable_context_keys)}'
         )
 
-    # TODO: reenable pending the ability to specific optional arguments
-    # https://github.com/dagster-io/dagster/issues/56
-    # _validate_args(
-    #     pipeline.context_definitions[context_name].argument_def_dict,
-    #     environment.context.args,
-    #     'context {context_name}'.format(context_name=context_name)
-    # )
 
 class EnvironmentInputManager(InputManager):
     def __init__(self, pipeline, environment):
@@ -814,7 +781,13 @@ class EnvironmentInputManager(InputManager):
         context_name = environment.context.name
         context_definition = pipeline.context_definitions[context_name]
 
-        self.context = context_definition.context_fn(environment.context.args)
+        args_to_pass = validate_args(
+            pipeline.context_definitions[context_name].argument_def_dict,
+            environment.context.args,
+            'context {context_name}'.format(context_name=context_name)
+        )
+
+        self.context = context_definition.context_fn(args_to_pass)
         self.pipeline = check.inst_param(pipeline, 'pipeline', PipelineDefinition)
         self.environment = check.inst_param(environment, 'environment', config.Environment)
 
@@ -981,7 +954,6 @@ def execute_pipeline_in_memory(
     )
 
 def _execute_pipeline(
-    # context,
     pipeline,
     input_manager,
     from_solids=None,

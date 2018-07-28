@@ -41,6 +41,15 @@ def check_valid_name(name):
     return name
 
 
+def check_argument_def_dict(argument_def_dict):
+    return check.dict_param(
+        argument_def_dict,
+        'argument_def_dict',
+        key_type=str,
+        value_type=ArgumentDefinition,
+    )
+
+
 class PipelineContextDefinition:
     def __init__(self, *, argument_def_dict, context_fn):
         self.argument_def_dict = check_argument_def_dict(argument_def_dict)
@@ -49,9 +58,13 @@ class PipelineContextDefinition:
 
 def _default_pipeline_context_definitions():
     def _default_context_fn(args):
-        log_level = args.get('log_level', 'ERROR')
+        # This has a circular dependency between execution and definition
+        # The likely solution is to move the ExecutionContext to definitions.py
+        # -- schrockn (07-28-18)
         import dagster.core.execution
         import dagster.utils.logging
+
+        log_level = args['log_level']
         context = dagster.core.execution.ExecutionContext(
             log_level=log_level,
             loggers=[dagster.utils.logging.define_logger('dagster', level=log_level)]
@@ -59,7 +72,10 @@ def _default_pipeline_context_definitions():
         return context
 
     default_context_def = PipelineContextDefinition(
-        argument_def_dict={'log_level': ArgumentDefinition(dagster_type=types.String)},
+        argument_def_dict={
+            'log_level':
+            ArgumentDefinition(dagster_type=types.String, is_optional=True, default_value='ERROR')
+        },
         context_fn=_default_context_fn,
     )
     return {'default': default_context_def}
@@ -193,15 +209,6 @@ def create_dagster_single_file_input(name, single_file_fn, source_type='CUSTOM')
         ),
         argument_def_dict={'path': ArgumentDefinition(types.Path)},
         source_type=source_type,
-    )
-
-
-def check_argument_def_dict(argument_def_dict):
-    return check.dict_param(
-        argument_def_dict,
-        'argument_def_dict',
-        key_type=str,
-        value_type=ArgumentDefinition,
     )
 
 
@@ -431,7 +438,34 @@ class SolidDefinition:
         check.failed('input {name} not found'.format(name=name))
 
 
+class __ArgumentValueSentinel:
+    pass
+
+
+NO_DEFAULT_PROVIDED = __ArgumentValueSentinel
+
+
 class ArgumentDefinition:
-    def __init__(self, dagster_type, description=None):
+    def __init__(
+        self,
+        dagster_type,
+        *,
+        default_value=NO_DEFAULT_PROVIDED,
+        is_optional=False,
+        description=None
+    ):
+        if not is_optional:
+            check.param_invariant(
+                default_value == NO_DEFAULT_PROVIDED,
+                'default_value',
+                'required arguments should not specify default values',
+            )
+
         self.dagster_type = check.inst_param(dagster_type, 'dagster_type', types.DagsterType)
         self.description = check.opt_str_param(description, 'description')
+        self.is_optional = check.bool_param(is_optional, 'is_optional')
+        self.default_value = default_value
+
+    @property
+    def default_provided(self):
+        return self.default_value != NO_DEFAULT_PROVIDED
