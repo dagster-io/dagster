@@ -16,7 +16,7 @@ def pipeline_test_def(solids, context):
             'default':
             dagster.PipelineContextDefinition(
                 argument_def_dict={},
-                context_fn=lambda _args: context,
+                context_fn=lambda _pipeline, _args: context,
             ),
         }
     )

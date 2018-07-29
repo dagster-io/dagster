@@ -81,7 +81,7 @@ def test_default_value():
                         default_value='heyo',
                     )
                 },
-                context_fn=lambda args: ExecutionContext(user_context=args),
+                context_fn=lambda _pipeline, args: ExecutionContext(user_context=args),
             ),
         }
     )
@@ -107,12 +107,12 @@ def test_custom_contexts():
             'custom_one':
             PipelineContextDefinition(
                 argument_def_dict={'arg_one': ArgumentDefinition(dagster_type=types.String)},
-                context_fn=lambda args: ExecutionContext(user_context=args),
+                context_fn=lambda _pipeline, args: ExecutionContext(user_context=args),
             ),
             'custom_two':
             PipelineContextDefinition(
                 argument_def_dict={'arg_one': ArgumentDefinition(dagster_type=types.String)},
-                context_fn=lambda args: ExecutionContext(user_context=args),
+                context_fn=lambda _pipeline, args: ExecutionContext(user_context=args),
             )
         },
     )
@@ -128,6 +128,46 @@ def test_custom_contexts():
     )
 
     execute_pipeline(pipeline, environment=environment_two)
+
+
+def test_yield_context():
+    events = []
+
+    @solid(
+        inputs=[],
+        output=OutputDefinition(),
+    )
+    @with_context
+    def custom_context_transform(context):
+        assert context.user_context == {'arg_one': 'value_two'}
+        assert context._context_dict['foo'] == 'bar'  # pylint: disable=W0212
+        events.append('during')
+
+    def _yield_context(_pipeline, args):
+        events.append('before')
+        context = ExecutionContext(user_context=args)
+        with context.value('foo', 'bar'):
+            yield context
+        events.append('after')
+
+    pipeline = PipelineDefinition(
+        solids=[custom_context_transform],
+        context_definitions={
+            'custom_one':
+            PipelineContextDefinition(
+                argument_def_dict={'arg_one': ArgumentDefinition(dagster_type=types.String)},
+                context_fn=_yield_context,
+            ),
+        }
+    )
+
+    environment_one = config.Environment(
+        sources={}, context=config.Context('custom_one', {'arg_one': 'value_two'})
+    )
+
+    execute_pipeline(pipeline, environment=environment_one)
+
+    assert events == ['before', 'during', 'after']
 
 
 # TODO: reenable pending the ability to specific optional arguments
@@ -170,7 +210,7 @@ def test_invalid_context():
             'default':
             PipelineContextDefinition(
                 argument_def_dict={'string_arg': ArgumentDefinition(types.String)},
-                context_fn=lambda _args: _args
+                context_fn=lambda _pipeline, _args: _args
             )
         }
     )

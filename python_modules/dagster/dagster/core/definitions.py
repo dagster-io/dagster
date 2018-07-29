@@ -51,13 +51,14 @@ def check_argument_def_dict(argument_def_dict):
 
 
 class PipelineContextDefinition:
-    def __init__(self, *, argument_def_dict, context_fn):
+    def __init__(self, *, argument_def_dict, context_fn, description=None):
         self.argument_def_dict = check_argument_def_dict(argument_def_dict)
         self.context_fn = check.callable_param(context_fn, 'context_fn')
+        self.description = description
 
 
 def _default_pipeline_context_definitions():
-    def _default_context_fn(args):
+    def _default_context_fn(_pipeline, args):
         # This has a circular dependency between execution and definition
         # The likely solution is to move the ExecutionContext to definitions.py
         # -- schrockn (07-28-18)
