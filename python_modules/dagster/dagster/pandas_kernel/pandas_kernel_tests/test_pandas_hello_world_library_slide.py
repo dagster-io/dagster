@@ -44,7 +44,7 @@ def run_hello_world(hello_world):
             dagster.ExecutionContext(),
             hello_world,
             environment=create_num_csv_environment(),
-            materialization_type='CSV',
+            name='CSV',
             arg_dict={'path': temp_file_name},
         )
 

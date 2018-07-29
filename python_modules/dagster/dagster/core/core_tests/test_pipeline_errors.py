@@ -13,7 +13,6 @@ from dagster.core.definitions import (
 from dagster.core.execution import (
     DagsterExecutionFailureReason,
     execute_pipeline,
-    materialize_pipeline,
     ExecutionContext,
 )
 
@@ -39,7 +38,7 @@ def create_failing_output_def():
         raise Exception('something bad happened')
 
     return create_single_materialization_output(
-        materialization_type='CUSTOM',
+        name='CUSTOM',
         materialization_fn=failing_materialization_fn,
         argument_def_dict={},
     )
@@ -123,11 +122,12 @@ def create_root_output_failure_solid(name):
     )
 
 
-def no_args_env(solid_name, input_name):
+def no_args_env(solid_name, input_name, materializations=None):
     return config.Environment(
         sources={solid_name: {
             input_name: config.Source(name='CUSTOM', args={})
-        }}
+        }},
+        materializations=materializations,
     )
 
 
@@ -164,12 +164,12 @@ def test_input_failure_pipeline():
 def test_output_failure_pipeline():
     pipeline = silencing_pipeline(solids=[create_root_output_failure_solid('failing_output')])
 
-    pipeline_result = materialize_pipeline(
+    pipeline_result = execute_pipeline(
         pipeline,
-        environment=no_args_env('failing_output', 'failing_output_input'),
-        materializations=[
-            config.Materialization(solid='failing_output', materialization_type='CUSTOM', args={})
-        ],
+        environment=no_args_env(
+            'failing_output', 'failing_output_input',
+            [config.Materialization(solid='failing_output', name='CUSTOM', args={})]
+        ),
         throw_on_error=False,
     )
 

@@ -50,7 +50,7 @@ def test_basic_materialization_runtime_error_handling():
         raise Exception('error during output')
 
     materialization_def = MaterializationDefinition(
-        materialization_type='CUSTOM',
+        name='CUSTOM',
         materialization_fn=materialization_fn_inst,
         argument_def_dict={}
     )

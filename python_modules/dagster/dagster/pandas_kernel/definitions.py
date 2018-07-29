@@ -118,7 +118,7 @@ def dataframe_csv_materialization():
         df.to_csv(path, index=False)
 
     return MaterializationDefinition(
-        materialization_type='CSV',
+        name='CSV',
         materialization_fn=to_csv_fn,
         argument_def_dict={'path': ArgumentDefinition(types.Path)},
     )
@@ -134,7 +134,7 @@ def dataframe_parquet_materialization():
         df.to_parquet(path)
 
     return MaterializationDefinition(
-        materialization_type='PARQUET',
+        name='PARQUET',
         materialization_fn=to_parquet_fn,
         argument_def_dict={'path': ArgumentDefinition(types.Path)},
     )

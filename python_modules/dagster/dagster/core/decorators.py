@@ -119,7 +119,7 @@ def _create_source_wrapper(fn, arg_def_dict, include_context=False):
 
 class _Materialization:
     def __init__(self, name=None, argument_def_dict=None):
-        self.materialization_type = check.opt_str_param(name, 'name')
+        self.name = check.opt_str_param(name, 'name')
         self.argument_def_dict = check.opt_dict_param(
             argument_def_dict, 'argument_def_dict'
         )
@@ -129,18 +129,18 @@ class _Materialization:
         if include_context:
             fn = fn.fn
 
-        if not self.materialization_type:
-            self.materialization_type = fn.__name__
+        if not self.name:
+            self.name = fn.__name__
 
         _validate_materialization_fn(
-            fn, self.materialization_type, self.argument_def_dict, include_context
+            fn, self.name, self.argument_def_dict, include_context
         )
         materialization_fn = _create_materialization_wrapper(
             fn, self.argument_def_dict, include_context
         )
 
         return MaterializationDefinition(
-            materialization_type=self.materialization_type,
+            name=self.name,
             materialization_fn=materialization_fn,
             argument_def_dict=self.argument_def_dict
         )

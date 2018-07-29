@@ -144,7 +144,7 @@ def test_execute_output_with_args():
         test_output['thearg'] = arg_dict['out_arg']
 
     materialization = MaterializationDefinition(
-        materialization_type='CUSTOM',
+        name='CUSTOM',
         materialization_fn=materialization_fn_inst,
         argument_def_dict={'out_arg': ArgumentDefinition(types.String)}
     )
@@ -158,7 +158,7 @@ def test_execute_output_with_args():
 
 def test_execute_materialization_arg_mismatch():
     materialization = MaterializationDefinition(
-        materialization_type='CUSTOM',
+        name='CUSTOM',
         materialization_fn=lambda out, dict: [],
         argument_def_dict={'out_arg': ArgumentDefinition(types.String)}
     )
@@ -180,7 +180,7 @@ def test_execute_materialization_arg_mismatch():
 
 def test_execute_materialization_arg_type_mismatch():
     custom_output = MaterializationDefinition(
-        materialization_type='CUSTOM',
+        name='CUSTOM',
         materialization_fn=lambda out, dict: [],
         argument_def_dict={'out_arg': ArgumentDefinition(types.String)}
     )

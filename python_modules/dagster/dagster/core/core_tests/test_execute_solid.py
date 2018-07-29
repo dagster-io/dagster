@@ -54,7 +54,7 @@ def test_execute_solid_no_args():
         test_output['thedata'] = data
 
     custom_output = create_single_materialization_output(
-        materialization_type='CUSTOM',
+        name='CUSTOM',
         materialization_fn=materialization_fn_inst,
         argument_def_dict={},
     )
@@ -70,7 +70,7 @@ def test_execute_solid_no_args():
         create_test_context(),
         single_solid,
         environment=single_input_env('some_node', 'some_input'),
-        materialization_type='CUSTOM',
+        name='CUSTOM',
         arg_dict={}
     )
 
@@ -93,7 +93,7 @@ def create_noop_output(test_output, expectations=None):
         test_output['thedata'] = output
 
     return create_single_materialization_output(
-        materialization_type='CUSTOM',
+        name='CUSTOM',
         materialization_fn=set_test_output,
         argument_def_dict={},
         expectations=expectations
@@ -127,7 +127,7 @@ def test_hello_world():
         ],
         transform_fn=transform_fn,
         output=create_single_materialization_output(
-            materialization_type='CUSTOM',
+            name='CUSTOM',
             materialization_fn=materialization_fn,
             argument_def_dict={}
         ),
@@ -149,7 +149,7 @@ def test_hello_world():
         create_test_context(),
         hello_world,
         environment=single_input_env('hello_world', 'hello_world_input'),
-        materialization_type='CUSTOM',
+        name='CUSTOM',
         arg_dict={}
     )
 
@@ -175,7 +175,7 @@ def test_execute_solid_with_args():
         create_test_context(),
         single_solid,
         environment=single_input_env('some_node', 'some_input', {'str_arg': 'an_input_arg'}),
-        materialization_type='CUSTOM',
+        name='CUSTOM',
         arg_dict={},
     )
 
@@ -194,7 +194,7 @@ def test_execute_solid_with_failed_input_expectation_non_throwing():
         create_test_context(),
         single_solid,
         environment=single_input_env('some_node', 'some_input', {'str_arg': 'an_input_arg'}),
-        materialization_type='CUSTOM',
+        name='CUSTOM',
         arg_dict={},
         throw_on_error=False,
     )
@@ -212,7 +212,7 @@ def test_execute_solid_with_failed_input_expectation_throwing():
             create_test_context(),
             single_solid,
             environment=single_input_env('some_node', 'some_input', {'str_arg': 'an_input_arg'}),
-            materialization_type='CUSTOM',
+            name='CUSTOM',
             arg_dict={},
         )
 
@@ -221,7 +221,7 @@ def test_execute_solid_with_failed_input_expectation_throwing():
             create_test_context(),
             single_solid,
             environment=single_input_env('some_node', 'some_input', {'str_arg': 'an_input_arg'}),
-            materialization_type='CUSTOM',
+            name='CUSTOM',
             arg_dict={},
         )
 
@@ -249,7 +249,7 @@ def test_execute_solid_with_failed_output_expectation_non_throwing():
         create_test_context(),
         failing_solid,
         environment=single_input_env('some_node', 'some_input', {'str_arg': 'an_input_arg'}),
-        materialization_type='CUSTOM',
+        name='CUSTOM',
         arg_dict={},
         throw_on_error=False
     )
@@ -267,7 +267,7 @@ def test_execute_solid_with_failed_output_expectation_throwing():
             create_test_context(),
             failing_solid,
             environment=single_input_env('some_node', 'some_input', {'str_arg': 'an_input_arg'}),
-            materialization_type='CUSTOM',
+            name='CUSTOM',
             arg_dict={},
         )
 
@@ -276,7 +276,7 @@ def test_execute_solid_with_failed_output_expectation_throwing():
             create_test_context(),
             failing_solid,
             environment=single_input_env('some_node', 'some_input', {'str_arg': 'an_input_arg'}),
-            materialization_type='CUSTOM',
+            name='CUSTOM',
             arg_dict={},
         )
 

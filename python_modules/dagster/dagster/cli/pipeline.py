@@ -8,7 +8,7 @@ import yaml
 
 from dagster import config as dagster_config
 from dagster import check
-from dagster.core.execution import (DagsterExecutionFailureReason, materialize_pipeline_iterator)
+from dagster.core.execution import (DagsterExecutionFailureReason, execute_pipeline_iterator)
 from dagster.graphviz import build_graphviz_graph
 
 from .context import Config
@@ -99,9 +99,7 @@ def print_pipeline(pipeline, full=True):
             arg_list = format_argument_dict(materialization_def.argument_def_dict)
             print(
                 '{indent}{name}({arg_list})'.format(
-                    indent=indent * 4,
-                    name=materialization_def.materialization_type,
-                    arg_list=arg_list
+                    indent=indent * 4, name=materialization_def.name, arg_list=arg_list
                 )
             )
 
@@ -109,8 +107,8 @@ def print_pipeline(pipeline, full=True):
 def format_argument_dict(arg_def_dict):
     return ', '.join(
         [
-            '{name}: {type}'.format(name=name, type=arg_type.name)
-            for name, arg_type in arg_def_dict.items()
+            '{name}: {type}'.format(name=name, type=arg_def.dagster_type.name)
+            for name, arg_def in arg_def_dict.items()
         ]
     )
 
@@ -137,9 +135,29 @@ LOGGING_DICT = {
 }
 
 
-def load_yaml(path):
+def load_yaml_from_path(path):
+    check.str_param(path, 'path')
     with open(path, 'r') as ff:
         return yaml.load(ff)
+
+
+def construct_environment(yml_config_object):
+    sources = defaultdict(dict)
+    sources_obj = check.dict_elem(yml_config_object['environment'], 'sources')
+    for solid_name, args_yml in sources_obj.items():
+        for input_name, source_yml in args_yml.items():
+            sources[solid_name][input_name] = dagster_config.Source(
+                name=source_yml['name'], args=source_yml['args']
+            )
+
+    materializations = []
+    if 'materializations' in yml_config_object:
+        materializations = [
+            dagster_config.Materialization(solid=m['solid'], name=m['type'], args=m['args'])
+            for m in check.list_elem(yml_config_object, 'materializations')
+        ]
+
+    return dagster_config.Environment(sources=sources, materializations=materializations)
 
 
 @click.command(name='execute', help="execute <<pipeline_name>>")
@@ -158,38 +176,17 @@ def load_yaml(path):
     help="Path to environment file. Defaults to ./PIPELINE_DIR/env.yml."
 )
 @click.option('--from-solid', type=click.STRING, help="Solid to start execution from", default=None)
-@click.option('--log-level', type=click.Choice(LOGGING_DICT.keys()), default='INFO')
-def execute_command(pipeline_config, env, from_solid, log_level):
-    # loading environment from yaml should be its own reuable function and tested
-    env_config = load_yaml(env)
-    sources = defaultdict(dict)
-    for solid_name, args_yml in check.dict_elem(env_config['environment'], 'sources').items():
-        for input_name, source_yml in args_yml.items():
-            sources[solid_name][input_name] = dagster_config.Source(
-                name=source_yml['name'], args=source_yml['args']
-            )
+# @click.option('--log-level', type=click.Choice(LOGGING_DICT.keys()), default='INFO')
+# def execute_command(pipeline_config, env, from_solid, log_level):
+def execute_command(pipeline_config, env, from_solid):
+    env_config = load_yaml_from_path(env)
 
-    # TODO: drive commandline execution context from yaml file
-    # https://github.com/dagster-io/dagster/issues/55
-    environment = dagster_config.Environment(
-        context=dagster_config.Context(name='default', args={'log_level': log_level}),
-        sources=sources
-    )
+    environment = construct_environment(env_config)
 
-    materializations = []
-    if 'materializations' in env_config:
-        materializations = [
-            dagster_config.Materialization(
-                solid=m['solid'], materialization_type=m['type'], args=m['args']
-            ) for m in check.list_elem(env_config, 'materializations')
-        ]
-
-    pipeline_iter = materialize_pipeline_iterator(
+    pipeline_iter = execute_pipeline_iterator(
         pipeline_config.pipeline,
         environment=environment,
-        materializations=materializations,
         from_solids=[from_solid] if from_solid else None,
-        use_materialization_through_solids=False,
     )
 
     process_results_for_console(pipeline_iter)

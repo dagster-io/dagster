@@ -338,8 +338,8 @@ class MaterializationDefinition:
         argument_def_dict = { 'path' : dagster.core.types.Path }
     '''
 
-    def __init__(self, materialization_type, materialization_fn, *, argument_def_dict=None):
-        self.materialization_type = check_valid_name(materialization_type)
+    def __init__(self, name, materialization_fn, *, argument_def_dict=None):
+        self.name = check_valid_name(name)
         self.materialization_fn = check.callable_param(materialization_fn, 'materialization_fn')
         self.argument_def_dict = check_argument_def_dict(argument_def_dict)
 
@@ -349,7 +349,7 @@ def create_no_materialization_output(expectations=None):
 
 
 def create_single_materialization_output(
-    materialization_type, materialization_fn, argument_def_dict, expectations=None
+    name, materialization_fn, argument_def_dict, expectations=None
 ):
     '''
     Similar to create_single_source_input this exists because a move in the primitive APIs.
@@ -360,7 +360,7 @@ def create_single_materialization_output(
     return OutputDefinition(
         materializations=[
             MaterializationDefinition(
-                materialization_type=materialization_type,
+                name=name,
                 materialization_fn=materialization_fn,
                 argument_def_dict=argument_def_dict,
             )
@@ -380,12 +380,12 @@ class OutputDefinition:
         )
         self.output_callback = check.opt_callable_param(output_callback, 'output_callback')
 
-    def materialization_of_type(self, materialization_type):
+    def materialization_of_type(self, name):
         for materialization in self.materializations:
-            if materialization.materialization_type == materialization_type:
+            if materialization.name == name:
                 return materialization
 
-        check.failed('Did not find materialization {type}'.format(type=materialization_type))
+        check.failed('Did not find materialization {type}'.format(type=name))
 
 
 # One or more inputs

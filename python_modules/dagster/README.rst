@@ -196,12 +196,12 @@ We can specify in order to get artifacts for the results. We can materialize out
   materializations = [
       config.Materialization(
           solid='sum',
-          materialization_type='CSV',
+          name='CSV',
           args={'path': 'path/to/output.csv'},
       ),
       config.Materialization(
           solid='sum_sq',
-          materialization_type='CSV',
+          name='CSV',
           args={'path': 'path/to/output.csv'},
       )
   ]
@@ -407,12 +407,12 @@ addition to your environment, you must specify your materializations.
     materializations = [
         config.Materialization(
             solid='sum',
-            materialization_type='CSV',
+            name='CSV',
             args={'path': 'path/to/output.csv'},
         )
     ]
 
-    dagster.materialize_pipeline(
+    dagster.execute_pipeline(
         dagster.ExecutionContext(),
         pipeline,
         environment,
