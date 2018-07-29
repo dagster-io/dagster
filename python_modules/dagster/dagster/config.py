@@ -1,4 +1,4 @@
-from collections import namedtuple
+from collections import (namedtuple, defaultdict)
 
 from dagster import check
 
@@ -53,3 +53,40 @@ class Source(namedtuple('SourceData', 'name args')):
             name=check.str_param(name, 'name'),
             args=check.dict_param(args, 'args', key_type=str),
         )
+
+
+def _construct_context(yml_config_object):
+    context_obj = check.opt_dict_elem(yml_config_object, 'context')
+    if context_obj:
+        return Context(check.str_elem(context_obj, 'name'), check.dict_elem(context_obj, 'args'))
+    else:
+        return None
+
+
+def _construct_sources(yml_config_object):
+    sources = defaultdict(dict)
+    sources_obj = check.dict_elem(yml_config_object, 'sources')
+    for solid_name, args_yml in sources_obj.items():
+        for input_name, source_yml in args_yml.items():
+            sources[solid_name][input_name] = Source(
+                name=source_yml['name'], args=source_yml['args']
+            )
+    return sources
+
+
+def _construct_materializations(yml_config_object):
+    materializations = [
+        Materialization(solid=m['solid'], name=m['name'], args=m['args'])
+        for m in check.opt_list_elem(yml_config_object, 'materializations')
+    ]
+    return materializations
+
+
+def construct_environment(yml_config_object):
+    check.dict_param(yml_config_object, 'yml_config_object')
+
+    return Environment(
+        sources=_construct_sources(yml_config_object),
+        materializations=_construct_materializations(yml_config_object),
+        context=_construct_context(yml_config_object),
+    )

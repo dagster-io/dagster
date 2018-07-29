@@ -3,7 +3,7 @@ import importlib
 import click
 import yaml
 
-from dagster import check
+from dagster import (check, PipelineDefinition)
 
 
 def define_config_class():
@@ -63,7 +63,7 @@ def define_pipeline_config_class():
             self.module = importlib.import_module(self.module_name)
             self.fn = getattr(self.module, self.fn_name)
             check.is_callable(self.fn)
-            self.pipeline = self.fn()
+            self.pipeline = check.inst(self.fn(), PipelineDefinition)
             return self.pipeline
 
     # This lets you ask cli commands to have this object extracted from context and
