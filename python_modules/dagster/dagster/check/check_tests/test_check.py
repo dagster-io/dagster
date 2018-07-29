@@ -445,11 +445,23 @@ def test_opt_dict_elem():
     ddict = {'dictkey': dict_value, 'stringkey': 'A', 'nonekey': None}
 
     assert check.opt_dict_elem(ddict, 'dictkey') == dict_value
-    assert check.opt_dict_elem(ddict, 'nonekey') is None
-    assert check.opt_dict_elem(ddict, 'nonexistantkey') is None
+    assert check.opt_dict_elem(ddict, 'nonekey') == {}
+    assert check.opt_dict_elem(ddict, 'nonexistantkey') == {}
 
     with pytest.raises(CheckError):
         check.opt_dict_elem(ddict, 'stringkey')
+
+
+def test_opt_list_elem():
+    list_value = ['blah', 'blahblah']
+    ddict = {'listkey': list_value, 'stringkey': 'A', 'nonekey': None}
+
+    assert check.opt_list_elem(ddict, 'listkey') == list_value
+    assert check.opt_list_elem(ddict, 'nonekey') == []
+    assert check.opt_list_elem(ddict, 'nonexistantkey') == []
+
+    with pytest.raises(CheckError):
+        check.opt_list_elem(ddict, 'stringkey')
 
 
 def test_not_none_param():

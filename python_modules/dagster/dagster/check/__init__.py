@@ -262,6 +262,20 @@ def list_elem(ddict, key):
     return value
 
 
+def opt_list_elem(ddict, key):
+    dict_param(ddict, 'ddict')
+    str_param(key, 'key')
+
+    value = ddict.get(key)
+
+    if value is None:
+        return []
+
+    if not isinstance(value, list):
+        raise_with_traceback(_element_check_error(key, value, ddict, list))
+    return value
+
+
 def dict_elem(ddict, key):
     dict_param(ddict, 'ddict')
     str_param(key, 'key')
@@ -284,7 +298,7 @@ def opt_dict_elem(ddict, key):
     value = ddict.get(key)
 
     if value is None:
-        return value
+        return {}
 
     if not isinstance(value, dict):
         raise_with_traceback(_element_check_error(key, value, ddict, list))

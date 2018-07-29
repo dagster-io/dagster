@@ -1,4 +1,3 @@
-from collections import defaultdict
 import logging
 import os
 import textwrap
@@ -6,7 +5,7 @@ import textwrap
 import click
 import yaml
 
-from dagster import config as dagster_config
+import dagster
 from dagster import check
 from dagster.core.execution import (DagsterExecutionFailureReason, execute_pipeline_iterator)
 from dagster.graphviz import build_graphviz_graph
@@ -58,12 +57,16 @@ def pipeline_name_argument(f):
 @click.command(name='print', help="print <<pipeline_name>>")
 @pipeline_name_argument
 def print_command(pipeline_config):
-    print_pipeline(pipeline_config.pipeline, full=True)
+    print_pipeline(pipeline_config.pipeline, full=True, printer=print)
 
 
-def print_pipeline(pipeline, full=True):
+def print_pipeline(pipeline, full, printer):
+    check.inst_param(pipeline, 'pipeline', dagster.PipelineDefinition)
+    check.bool_param(full, 'full')
+    check.callable_param(printer, 'printer')
+
     indent = '    '
-    print(
+    printer(
         'Pipeline: {name} Description: {desc}'.format(
             name=pipeline.name, desc=pipeline.description
         )
@@ -71,33 +74,33 @@ def print_pipeline(pipeline, full=True):
     if not full:
         return
     for solid in pipeline.solids:
-        print('{indent}Solid: {name}'.format(indent=indent, name=solid.name))
-        print('{indent}Inputs:'.format(indent=indent * 2))
+        printer('{indent}Solid: {name}'.format(indent=indent, name=solid.name))
+        printer('{indent}Inputs:'.format(indent=indent * 2))
         for input_def in solid.inputs:
             if input_def.depends_on:
-                print(
+                printer(
                     '{indent}Name: {name} (depends on {dep_name})'.format(
                         name=input_def.name, indent=indent * 3, dep_name=input_def.depends_on.name
                     )
                 )
             else:
-                print('{indent}Name: {name}'.format(name=input_def.name, indent=indent * 3))
+                printer('{indent}Name: {name}'.format(name=input_def.name, indent=indent * 3))
 
             if input_def.sources:
-                print('{indent}Sources:'.format(indent=indent * 4))
+                printer('{indent}Sources:'.format(indent=indent * 4))
                 for source_def in input_def.sources:
                     arg_list = format_argument_dict(source_def.argument_def_dict)
-                    print(
+                    printer(
                         '{indent}{input_name}({arg_list})'.format(
                             indent=indent * 5, input_name=source_def.source_type, arg_list=arg_list
                         )
                     )
 
-        print('{indent}Output:'.format(indent=indent * 2))
-        print('{indent}Materializations:'.format(indent=indent * 3))
+        printer('{indent}Output:'.format(indent=indent * 2))
+        printer('{indent}Materializations:'.format(indent=indent * 3))
         for materialization_def in solid.output.materializations:
             arg_list = format_argument_dict(materialization_def.argument_def_dict)
-            print(
+            printer(
                 '{indent}{name}({arg_list})'.format(
                     indent=indent * 4, name=materialization_def.name, arg_list=arg_list
                 )
@@ -141,25 +144,6 @@ def load_yaml_from_path(path):
         return yaml.load(ff)
 
 
-def construct_environment(yml_config_object):
-    sources = defaultdict(dict)
-    sources_obj = check.dict_elem(yml_config_object['environment'], 'sources')
-    for solid_name, args_yml in sources_obj.items():
-        for input_name, source_yml in args_yml.items():
-            sources[solid_name][input_name] = dagster_config.Source(
-                name=source_yml['name'], args=source_yml['args']
-            )
-
-    materializations = []
-    if 'materializations' in yml_config_object:
-        materializations = [
-            dagster_config.Materialization(solid=m['solid'], name=m['type'], args=m['args'])
-            for m in check.list_elem(yml_config_object, 'materializations')
-        ]
-
-    return dagster_config.Environment(sources=sources, materializations=materializations)
-
-
 @click.command(name='execute', help="execute <<pipeline_name>>")
 @pipeline_name_argument
 @click.option(
@@ -179,20 +163,29 @@ def construct_environment(yml_config_object):
 # @click.option('--log-level', type=click.Choice(LOGGING_DICT.keys()), default='INFO')
 # def execute_command(pipeline_config, env, from_solid, log_level):
 def execute_command(pipeline_config, env, from_solid):
+    do_execute_command(pipeline_config.pipeline, env, from_solid, print)
+
+
+def do_execute_command(pipeline, env, from_solid, printer):
+    check.inst_param(pipeline, 'pipeline', dagster.PipelineDefinition)
+    check.str_param(env, 'env')
+    check.opt_str_param(from_solid, 'from_solid')
+    check.callable_param(printer, 'printer')
+
     env_config = load_yaml_from_path(env)
 
-    environment = construct_environment(env_config)
+    environment = dagster.config.construct_environment(env_config)
 
     pipeline_iter = execute_pipeline_iterator(
-        pipeline_config.pipeline,
+        pipeline,
         environment=environment,
         from_solids=[from_solid] if from_solid else None,
     )
 
-    process_results_for_console(pipeline_iter)
+    process_results_for_console(pipeline_iter, printer)
 
 
-def process_results_for_console(pipeline_iter):
+def process_results_for_console(pipeline_iter, printer):
     results = []
 
     for result in pipeline_iter:
@@ -206,15 +199,15 @@ def process_results_for_console(pipeline_iter):
                 click_context.exit(1)
         results.append(result)
 
-    print_metrics_to_console(results)
+    print_metrics_to_console(results, printer)
 
 
-def print_metrics_to_console(results):
+def print_metrics_to_console(results, printer):
     for result in results:
         context = result.context
         metrics_of_solid = list(context.metrics_matching_context({'solid': result.name}))
 
-        print('Metrics for {name}'.format(name=result.name))
+        printer('Metrics for {name}'.format(name=result.name))
 
         for input_def in result.solid.inputs:
             metrics_for_input = list(
@@ -224,16 +217,16 @@ def print_metrics_to_console(results):
                 })
             )
             if metrics_for_input:
-                print('    Input {input_name}'.format(input_name=input_def.name))
+                printer('    Input {input_name}'.format(input_name=input_def.name))
                 for metric in metrics_for_input:
-                    print(
+                    printer(
                         '{indent}{metric_name}: {value}'.format(
                             indent=' ' * 8, metric_name=metric.metric_name, value=metric.value
                         )
                     )
 
         for metric in metrics_of_solid:
-            print(
+            printer(
                 '{indent}{metric_name}: {value}'.format(
                     indent=' ' * 4, metric_name=metric.metric_name, value=metric.value
                 )

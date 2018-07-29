@@ -828,6 +828,9 @@ def execute_pipeline_iterator(
     through_solids=None,
     from_solids=None,
 ):
+    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+    check.inst_param(environment, 'enviroment', config.Environment)
+
     return _execute_pipeline_iterator(
         pipeline,
         through_solids,

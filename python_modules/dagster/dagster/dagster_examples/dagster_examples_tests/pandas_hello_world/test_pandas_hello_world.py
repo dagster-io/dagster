@@ -1,7 +1,10 @@
+import os
+
 from dagster import config
 
 from dagster.core.execution import execute_pipeline
 from dagster.utils.test import script_relative_path
+from dagster.cli.pipeline import (do_execute_command, print_pipeline)
 
 from dagster.dagster_examples.pandas_hello_world.pipeline import define_pipeline
 
@@ -43,3 +46,26 @@ def test_execute_pipeline():
         'sum': [3, 7],
         'sum_sq': [9, 49],
     }
+
+
+def test_cli_execute():
+
+    # currently paths in env files have to be relative to where the
+    # script has launched so we have to simulate that
+    cwd = os.getcwd()
+    try:
+
+        os.chdir(script_relative_path('../..'))
+
+        do_execute_command(
+            define_pipeline(), script_relative_path('../../pandas_hello_world/env.yml'), None,
+            lambda *_args, **_kwargs: None
+        )
+    finally:
+        # restore cwd
+        os.chdir(cwd)
+
+
+def test_cli_print():
+    print_pipeline(define_pipeline(), full=False, printer=lambda *_args, **_kwargs: None)
+    print_pipeline(define_pipeline(), full=True, printer=lambda *_args, **_kwargs: None)
