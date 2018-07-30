@@ -67,5 +67,5 @@ def test_cli_execute():
 
 
 def test_cli_print():
-    print_pipeline(define_pipeline(), full=False, printer=lambda *_args, **_kwargs: None)
-    print_pipeline(define_pipeline(), full=True, printer=lambda *_args, **_kwargs: None)
+    print_pipeline(define_pipeline(), full=False, print_fn=lambda *_args, **_kwargs: None)
+    print_pipeline(define_pipeline(), full=True, print_fn=lambda *_args, **_kwargs: None)

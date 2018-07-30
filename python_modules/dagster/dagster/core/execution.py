@@ -301,8 +301,7 @@ def _read_source(context, source_definition, arg_dict):
     check.inst_param(source_definition, 'source_definition', SourceDefinition)
     check.dict_param(arg_dict, 'arg_dict', key_type=str)
 
-    with context.value('source_type', source_definition.source_type), \
-         context.value('arg_dict', arg_dict):
+    with context.value('source_type', source_definition.source_type):
         error_context_str = 'source type {source}'.format(source=source_definition.source_type)
         args_to_pass = validate_args(
             source_definition.argument_def_dict,
@@ -983,8 +982,7 @@ def _execute_materializations(
     for materialization in materializations:
         arg_dict = materialization.args
         name = materialization.name
-        with context.value('materialization_name', name), \
-            context.value('materialization_args', arg_dict):
+        with context.value('materialization_name', name):
             mat_def = solid.output.materialization_of_type(name)
             _execute_materialization(context, mat_def, arg_dict, transformed_value)
 

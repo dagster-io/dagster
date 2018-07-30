@@ -15,17 +15,15 @@ def build_graphviz_graph(pipeline):
 
     for solid in pipeline.solids:
         for input_def in solid.inputs:
-            input_node = solid.name + '.' + input_def.name
-            graphviz_graph.node(input_node)
+            scoped_name = solid.name + '.' + input_def.name
+            graphviz_graph.node(scoped_name)
 
     for solid in pipeline.solids:
         for input_def in solid.inputs:
-
-            input_node = solid.name + '.' + input_def.name
-
-            graphviz_graph.edge(input_node, solid.name)
+            scoped_name = solid.name + '.' + input_def.name
+            graphviz_graph.edge(scoped_name, solid.name)
 
             if input_def.depends_on:
-                graphviz_graph.edge(input_def.depends_on.name, input_node)
+                graphviz_graph.edge(input_def.depends_on.name, scoped_name)
 
     return graphviz_graph
