@@ -64,7 +64,7 @@ def test_default_value():
         )
         @with_context
         def args_test(context):
-            assert context.user_context == {arg_name: arg_value}
+            assert context.resources == {arg_name: arg_value}
 
         return args_test
 
@@ -81,7 +81,7 @@ def test_default_value():
                         default_value='heyo',
                     )
                 },
-                context_fn=lambda _pipeline, args: ExecutionContext(user_context=args),
+                context_fn=lambda _pipeline, args: ExecutionContext(resources=args),
             ),
         }
     )
@@ -99,7 +99,7 @@ def test_custom_contexts():
     )
     @with_context
     def custom_context_transform(context):
-        assert context.user_context == {'arg_one': 'value_two'}
+        assert context.resources == {'arg_one': 'value_two'}
 
     pipeline = PipelineDefinition(
         solids=[custom_context_transform],
@@ -107,12 +107,12 @@ def test_custom_contexts():
             'custom_one':
             PipelineContextDefinition(
                 argument_def_dict={'arg_one': ArgumentDefinition(dagster_type=types.String)},
-                context_fn=lambda _pipeline, args: ExecutionContext(user_context=args),
+                context_fn=lambda _pipeline, args: ExecutionContext(resources=args),
             ),
             'custom_two':
             PipelineContextDefinition(
                 argument_def_dict={'arg_one': ArgumentDefinition(dagster_type=types.String)},
-                context_fn=lambda _pipeline, args: ExecutionContext(user_context=args),
+                context_fn=lambda _pipeline, args: ExecutionContext(resources=args),
             )
         },
     )
@@ -139,13 +139,13 @@ def test_yield_context():
     )
     @with_context
     def custom_context_transform(context):
-        assert context.user_context == {'arg_one': 'value_two'}
+        assert context.resources == {'arg_one': 'value_two'}
         assert context._context_dict['foo'] == 'bar'  # pylint: disable=W0212
         events.append('during')
 
     def _yield_context(_pipeline, args):
         events.append('before')
-        context = ExecutionContext(user_context=args)
+        context = ExecutionContext(resources=args)
         with context.value('foo', 'bar'):
             yield context
         events.append('after')

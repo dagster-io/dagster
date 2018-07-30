@@ -58,14 +58,19 @@ class ExecutionContext:
     information (e.g. the name of the solid, the name of the pipeline, etc) when
     logging. Additionally tool author may add their own context values to assist
     reporting.
+
+
+    resources is an arbitrary user-defined object that can be passed in
+    by a user and then access during pipeline execution. This exists so that
+    a user does not have to subclass ExecutionContext
     '''
 
-    def __init__(self, loggers=None, log_level=ERROR, user_context=None):
+    def __init__(self, loggers=None, log_level=ERROR, resources=None):
         self._logger = CompositeLogger(loggers=loggers, level=log_level)
         self._context_dict = OrderedDict()
         self._metrics = []
         self.log_level = log_level
-        self.user_context = user_context
+        self.resources = resources
 
     def _maybe_quote(self, val):
         str_val = str(val)

@@ -130,8 +130,7 @@ def print_solid(printer, solid):
                 with printer.with_indent():
                     printer.line(
                         '{name}({arg_list})'.format(
-                            name=materialization_def.name,
-                            arg_list=arg_list,
+                            name=materialization_def.name, arg_list=arg_list
                         )
                     )
 
