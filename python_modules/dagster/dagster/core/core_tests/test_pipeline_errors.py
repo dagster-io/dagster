@@ -22,7 +22,7 @@ def silencing_default_context():
         'default':
         dagster.PipelineContextDefinition(
             argument_def_dict={},
-            context_fn=lambda _args: ExecutionContext(),
+            context_fn=lambda _pipeline, _args: ExecutionContext(),
         )
     }
 

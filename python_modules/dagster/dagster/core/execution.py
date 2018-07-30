@@ -304,7 +304,11 @@ def _read_source(context, source_definition, arg_dict):
     with context.value('source_type', source_definition.source_type), \
          context.value('arg_dict', arg_dict):
         error_context_str = 'source type {source}'.format(source=source_definition.source_type)
-        args_to_pass = validate_args(source_definition.argument_def_dict, arg_dict, error_context_str)
+        args_to_pass = validate_args(
+            source_definition.argument_def_dict,
+            arg_dict,
+            error_context_str,
+        )
         error_str = 'Error occured while loading source "{source_type}"'
         with _user_code_error_boundary(
             context,
@@ -544,7 +548,7 @@ def _create_passthrough_context_definition(context):
     check.inst_param(context, 'context', ExecutionContext)
     context_definition = PipelineContextDefinition(
         argument_def_dict={},
-        context_fn=lambda _args: context
+        context_fn=lambda _pipeline, _args: context
     )
     return {'default': context_definition}
 
@@ -673,7 +677,7 @@ def _gather_input_values(context, solid, input_manager):
     input_values = {}
     for input_def in solid.inputs:
         with context.value('input', input_def.name):
-            input_values[input_def.name] = input_manager.get_input_value(solid, input_def)
+            input_values[input_def.name] = input_manager.get_input_value(context, solid, input_def)
             if input_def.input_callback:
                 input_def.input_callback(context, input_values[input_def.name])
     return input_values
@@ -724,23 +728,35 @@ class InputManager:
     def __init__(self):
         self.intermediate_values = {}
 
-    def get_context(self):
+    @contextmanager
+    def yield_context(self):
         check.not_implemented('must implement in subclass')
 
     @property
     def materializations(self):
         check.not_implemented('must implement in subclass')
 
-    def get_input_value(self, solid, input_def):
+    def get_input_value(self, context, solid, input_def):
         if input_def.depends_on and input_def.depends_on.name in self.intermediate_values:
             # grab value from dependency
             return self.intermediate_values[input_def.depends_on.name]
         else:
             # must get value from source
-            return self._get_sourced_input_value(solid.name, input_def.name)
+            return self._get_sourced_input_value(context, solid.name, input_def.name)
 
-    def _get_sourced_input_value(self, _solid_name, _input_name):
+    def _get_sourced_input_value(self, _context, _solid_name, _input_name):
         check.not_implemented('must implement in subclass')
+
+
+def _wrap_in_yield(thing):
+    if isinstance(thing, ExecutionContext):
+        def _wrap():
+            yield thing
+
+        return _wrap()
+
+    return thing
+
 
 class InMemoryInputManager(InputManager):
     def __init__(self, context, input_values):
@@ -748,11 +764,12 @@ class InMemoryInputManager(InputManager):
         self.input_values = check.dict_param(input_values, 'input_values', key_type=str)
         self.context = check.inst_param(context, 'context', ExecutionContext)
 
-    def _get_sourced_input_value(self, _solid_name, input_name):
+    def _get_sourced_input_value(self, _context, _solid_name, input_name):
         return self.input_values[input_name]
 
-    def get_context(self):
-        return self.context
+    @contextmanager
+    def yield_context(self):
+        return _wrap_in_yield(self.context)
 
     @property
     def materializations(self):
@@ -788,28 +805,29 @@ class EnvironmentInputManager(InputManager):
         super().__init__()
         # This is not necessarily the best spot for these calls
         _validate_environment(environment, pipeline)
-        context_name = environment.context.name
-        context_definition = pipeline.context_definitions[context_name]
-
-        args_to_pass = validate_args(
-            pipeline.context_definitions[context_name].argument_def_dict,
-            environment.context.args,
-            'context {context_name}'.format(context_name=context_name)
-        )
-
-        self.context = context_definition.context_fn(args_to_pass)
         self.pipeline = check.inst_param(pipeline, 'pipeline', PipelineDefinition)
         self.environment = check.inst_param(environment, 'environment', config.Environment)
 
-    def get_context(self):
-        return self.context
+    @contextmanager
+    def yield_context(self):
+        context_name = self.environment.context.name
+        context_definition = self.pipeline.context_definitions[context_name]
 
-    def _get_sourced_input_value(self, solid_name, input_name):
+        args_to_pass = validate_args(
+            self.pipeline.context_definitions[context_name].argument_def_dict,
+            self.environment.context.args,
+            'context {context_name}'.format(context_name=context_name)
+        )
+
+        thing = context_definition.context_fn(self.pipeline, args_to_pass)
+        return _wrap_in_yield(thing)
+
+    def _get_sourced_input_value(self, context, solid_name, input_name):
         source_config = self.environment.sources[solid_name][input_name]
         input_def = self.pipeline.get_input(solid_name, input_name)
         source_def = input_def.source_of_type(source_config.name)
         return _read_source(
-            self.context, source_def, self.args_for_input(solid_name, input_def.name)
+            context, source_def, self.args_for_input(solid_name, input_def.name)
         )
 
     def args_for_input(self, solid_name, input_name):
@@ -831,12 +849,15 @@ def execute_pipeline_iterator(
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.inst_param(environment, 'enviroment', config.Environment)
 
-    return _execute_pipeline_iterator(
-        pipeline,
-        through_solids,
-        from_solids,
-        EnvironmentInputManager(pipeline, environment)
-    )
+    input_manager = EnvironmentInputManager(pipeline, environment)
+    with input_manager.yield_context() as context:
+        return _execute_pipeline_iterator(
+            context,
+            pipeline,
+            through_solids,
+            from_solids,
+            EnvironmentInputManager(pipeline, environment)
+        )
 
 def execute_pipeline_iterator_in_memory(
     context,
@@ -846,6 +867,7 @@ def execute_pipeline_iterator_in_memory(
     from_solids=None,
 ):
     return _execute_pipeline_iterator(
+        context,
         pipeline,
         through_solids,
         from_solids,
@@ -853,6 +875,7 @@ def execute_pipeline_iterator_in_memory(
     )
 
 def _execute_pipeline_iterator(
+    context,
     pipeline,
     through_solids,
     from_solids,
@@ -873,12 +896,11 @@ def _execute_pipeline_iterator(
     once the entire pipeline has been executed.
     '''
 
+    check.inst_param(context, 'context', ExecutionContext)
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.opt_list_param(through_solids, 'through_solids', of_type=str)
     check.opt_list_param(from_solids, 'from_solids', of_type=str)
     check.inst_param(input_manager, 'input_manager', InputManager)
-
-    context = input_manager.get_context()
 
     pipeline_context_value = pipeline.name if pipeline.name else 'unnamed'
 
@@ -1023,18 +1045,20 @@ def _execute_pipeline(
     check.bool_param(throw_on_error, 'throw_on_error')
 
     results = []
-    for result in _execute_pipeline_iterator(
-        pipeline,
-        input_manager=input_manager,
-        through_solids=through_solids,
-        from_solids=from_solids,
-    ):
-        if throw_on_error:
-            if not result.success:
-                _do_throw_on_error(result)
+    with input_manager.yield_context() as context:
+        for result in _execute_pipeline_iterator(
+            context,
+            pipeline,
+            input_manager=input_manager,
+            through_solids=through_solids,
+            from_solids=from_solids,
+        ):
+            if throw_on_error:
+                if not result.success:
+                    _do_throw_on_error(result)
 
-        results.append(result.copy())
-    return DagsterPipelineExecutionResult(input_manager.get_context(), results)
+            results.append(result.copy())
+        return DagsterPipelineExecutionResult(context, results)
 
 
 class MaterializationArgs:

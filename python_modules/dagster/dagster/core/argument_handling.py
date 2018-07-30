@@ -52,14 +52,15 @@ def validate_args(argument_def_dict, arg_dict, error_context_str):
         arg_def = argument_def_dict[arg_name]
         if not arg_def.dagster_type.is_python_valid_value(arg_value):
             format_string = (
-                'Expected type {typename} for arg {arg_name}' +
-                'for {error_context_str} but got {arg_value}'
+                'Expected type {typename} for arg {arg_name} ' +
+                'for {error_context_str} but got type "{arg_type}" value {arg_value}'
             )
             raise DagsterTypeError(
                 format_string.format(
                     typename=arg_def.dagster_type.name,
                     arg_name=arg_name,
                     error_context_str=error_context_str,
+                    arg_type=type(arg_value).__name__,
                     arg_value=repr(arg_value),
                 )
             )

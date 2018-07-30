@@ -25,11 +25,11 @@ def create_persisted_context():
 def create_mem_sql_pipeline_context_tuple(solids):
     default_def = dagster.PipelineContextDefinition(
         argument_def_dict={},
-        context_fn=lambda _args: in_mem_context(),
+        context_fn=lambda _pipeline, _args: in_mem_context(),
     )
     persisted_def = dagster.PipelineContextDefinition(
         argument_def_dict={},
-        context_fn=lambda _args: create_persisted_context(),
+        context_fn=lambda _pipeline, _args: create_persisted_context(),
     )
     return dagster.PipelineDefinition(
         solids=solids, context_definitions={

@@ -11,16 +11,21 @@ def build_graphviz_graph(pipeline):
     for solid in pipeline.solids:
         graphviz_graph.node(solid.name)
 
-    graphviz_graph.attr('node', color='grey')
-
-    for input_def in pipeline.external_inputs:
-        graphviz_graph.node(input_def.name)
+    graphviz_graph.attr('node', color='grey', shape='box')
 
     for solid in pipeline.solids:
         for input_def in solid.inputs:
+            input_node = solid.name + '.' + input_def.name
+            graphviz_graph.node(input_node)
+
+    for solid in pipeline.solids:
+        for input_def in solid.inputs:
+
+            input_node = solid.name + '.' + input_def.name
+
+            graphviz_graph.edge(input_node, solid.name)
+
             if input_def.depends_on:
-                graphviz_graph.edge(input_def.depends_on.name, solid.name)
-            else:
-                graphviz_graph.edge(input_def.name, solid.name)
+                graphviz_graph.edge(input_def.depends_on.name, input_node)
 
     return graphviz_graph
