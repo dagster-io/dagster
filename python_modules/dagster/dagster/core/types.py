@@ -8,7 +8,7 @@ class DagsterType:
         check.not_implemented('Must implement in subclass')
 
 
-class _SolidStringType(DagsterType):
+class _DagsterStringType(DagsterType):
     def __init__(self, name):
         self.name = check.str_param(name, 'name')
 
@@ -16,14 +16,23 @@ class _SolidStringType(DagsterType):
         return isinstance(value, string_types)
 
 
-class _SolidIntType(DagsterType):
+class _DagsterIntType(DagsterType):
     def __init__(self):
-        self.name = 'INT'
+        self.name = 'Int'
 
     def is_python_valid_value(self, value):
         return isinstance(value, integer_types)
 
 
-String = _SolidStringType(name='String')
-Path = _SolidStringType(name='Path')
-Int = _SolidIntType()
+class _DagsterBoolType(DagsterType):
+    def __init__(self):
+        self.name = 'Bool'
+
+    def is_python_valid_value(self, value):
+        return isinstance(value, bool)
+
+
+String = _DagsterStringType(name='String')
+Path = _DagsterStringType(name='Path')
+Int = _DagsterIntType()
+Bool = _DagsterBoolType()

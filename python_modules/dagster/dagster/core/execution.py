@@ -177,7 +177,6 @@ class ExecutionContext:
             if needle_dict == metric.context_dict:
                 yield metric
 
-
 class DagsterPipelineExecutionResult:
     def __init__(
         self,

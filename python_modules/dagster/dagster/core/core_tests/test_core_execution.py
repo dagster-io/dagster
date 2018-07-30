@@ -60,7 +60,7 @@ def test_source_arg_mismiatch():
         _read_new_single_source_input(create_test_context(), some_input_with_arg, {})
 
 
-def test_materialize_input_arg_type_mismatch():
+def test_source_arg_type_mismatch():
     some_input_with_arg = create_custom_source_input(
         name='some_input_with_arg',
         source_fn=lambda context, arg_dict: [],
@@ -71,7 +71,7 @@ def test_materialize_input_arg_type_mismatch():
         _read_new_single_source_input(create_test_context(), some_input_with_arg, {'in_arg': 1})
 
 
-def test_materialize_input_int_type():
+def test_source_int_type():
     int_arg_source = SourceDefinition(
         source_type='SOMETHING',
         source_fn=lambda _context, _args: True,
@@ -85,6 +85,26 @@ def test_materialize_input_int_type():
 
     with pytest.raises(DagsterTypeError):
         _read_source(create_test_context(), int_arg_source, {'an_int': None})
+
+
+def test_source_bool_type():
+    bool_arg_source = SourceDefinition(
+        source_type='SOMETHING',
+        source_fn=lambda _context, _args: True,
+        argument_def_dict={'an_bool': ArgumentDefinition(types.Bool)},
+    )
+
+    assert _read_source(create_test_context(), bool_arg_source, {'an_bool': True})
+    assert _read_source(create_test_context(), bool_arg_source, {'an_bool': False})
+
+    with pytest.raises(DagsterTypeError):
+        _read_source(create_test_context(), bool_arg_source, {'an_bool': 'not_an_bool'})
+
+    with pytest.raises(DagsterTypeError):
+        _read_source(create_test_context(), bool_arg_source, {'an_bool': None})
+
+    with pytest.raises(DagsterTypeError):
+        _read_source(create_test_context(), bool_arg_source, {'an_bool': 0})
 
 
 def noop_output():
