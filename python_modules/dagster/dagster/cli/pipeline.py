@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import textwrap
 
 import click
@@ -9,6 +10,7 @@ import dagster
 from dagster import check
 from dagster.core.execution import (DagsterExecutionFailureReason, execute_pipeline_iterator)
 from dagster.graphviz import build_graphviz_graph
+from dagster.utils.indenting_printer import IndentingPrinter
 
 from .context import Config
 
@@ -32,18 +34,21 @@ def list_command(config):
         click.echo('Pipeline: {name}'.format(name=pipeline.name))
         if pipeline.description:
             click.echo('Description:')
-            click.echo(format_description(pipeline.description))
+            click.echo(format_description(pipeline.description, indent=' ' * 4))
         click.echo('Solids: (Execution Order)')
         for solid in pipeline.solid_graph.topological_solids:
             click.echo('    ' + solid.name)
         click.echo('*************')
 
 
-def format_description(desc):
+def format_description(desc, indent):
+    check.str_param(desc, 'desc')
+    check.str_param(indent, 'indent')
+    desc = re.sub(r'\s+', ' ', desc)
     dedented = textwrap.dedent(desc)
-    indent = ' ' * 4
-    wrapper = textwrap.TextWrapper(initial_indent=indent, subsequent_indent=indent)
-    return wrapper.fill(dedented)
+    wrapper = textwrap.TextWrapper(initial_indent='', subsequent_indent=indent)
+    filled = wrapper.fill(dedented)
+    return filled
 
 
 def set_pipeline(ctx, _arg, value):
@@ -57,54 +62,109 @@ def pipeline_name_argument(f):
 @click.command(name='print', help="print <<pipeline_name>>")
 @pipeline_name_argument
 def print_command(pipeline_config):
-    print_pipeline(pipeline_config.pipeline, full=True, printer=print)
+    print_pipeline(pipeline_config.pipeline, full=True, print_fn=click.echo)
 
 
-def print_pipeline(pipeline, full, printer):
+def print_pipeline(pipeline, full, print_fn):
     check.inst_param(pipeline, 'pipeline', dagster.PipelineDefinition)
     check.bool_param(full, 'full')
-    check.callable_param(printer, 'printer')
+    check.callable_param(print_fn, 'print_fn')
 
-    indent = '    '
-    printer(
-        'Pipeline: {name} Description: {desc}'.format(
-            name=pipeline.name, desc=pipeline.description
-        )
-    )
+    printer = IndentingPrinter(indent_level=2, printer=print_fn)
+    printer.line('Pipeline: {name}'.format(name=pipeline.name))
+    print_description(printer, pipeline.description)
+
     if not full:
         return
-    for solid in pipeline.solids:
-        printer('{indent}Solid: {name}'.format(indent=indent, name=solid.name))
-        printer('{indent}Inputs:'.format(indent=indent * 2))
-        for input_def in solid.inputs:
-            if input_def.depends_on:
-                printer(
-                    '{indent}Name: {name} (depends on {dep_name})'.format(
-                        name=input_def.name, indent=indent * 3, dep_name=input_def.depends_on.name
-                    )
-                )
-            else:
-                printer('{indent}Name: {name}'.format(name=input_def.name, indent=indent * 3))
 
-            if input_def.sources:
-                printer('{indent}Sources:'.format(indent=indent * 4))
-                for source_def in input_def.sources:
-                    arg_list = format_argument_dict(source_def.argument_def_dict)
-                    printer(
-                        '{indent}{input_name}({arg_list})'.format(
-                            indent=indent * 5, input_name=source_def.source_type, arg_list=arg_list
+    with printer.with_indent():
+        printer.line('Context Definitions:')
+
+        with printer.with_indent():
+
+            for context_name, context_definition in pipeline.context_definitions.items():
+                print_context_definition(printer, context_name, context_definition)
+
+    printer.line('Solids:')
+    for solid in pipeline.solids:
+        with printer.with_indent():
+            print_solid(printer, solid)
+
+
+def print_description(printer, desc):
+    with printer.with_indent():
+        if desc:
+            printer.line('Description:')
+            with printer.with_indent():
+                printer.line(format_description(desc, printer.current_indent_str))
+
+
+def print_context_definition(printer, context_name, context_definition):
+    printer.line('Name: {context_name}'.format(context_name=context_name))
+
+    print_description(printer, context_definition.description)
+
+    printer.line('Args:')
+
+    with printer.with_indent():
+        for arg_name, arg_def in context_definition.argument_def_dict.items():
+            printer.line('Arg: {name}'.format(name=arg_name))
+            with printer.with_indent():
+                printer.line('Type: {arg_type}'.format(arg_type=arg_def.dagster_type.name))
+
+                print_description(printer, arg_def.description)
+
+
+def print_solid(printer, solid):
+    printer.line('Solid: {name}'.format(name=solid.name))
+
+    with printer.with_indent():
+        print_inputs(printer, solid)
+
+        printer.line('Output:')
+
+        if solid.output.materializations:
+            printer.line('Materializations:')
+            for materialization_def in solid.output.materializations:
+                arg_list = format_argument_dict(materialization_def.argument_def_dict)
+                with printer.with_indent():
+                    printer.line(
+                        '{name}({arg_list})'.format(
+                            name=materialization_def.name,
+                            arg_list=arg_list,
                         )
                     )
 
-        printer('{indent}Output:'.format(indent=indent * 2))
-        printer('{indent}Materializations:'.format(indent=indent * 3))
-        for materialization_def in solid.output.materializations:
-            arg_list = format_argument_dict(materialization_def.argument_def_dict)
-            printer(
-                '{indent}{name}({arg_list})'.format(
-                    indent=indent * 4, name=materialization_def.name, arg_list=arg_list
+
+def print_inputs(printer, solid):
+    printer.line('Inputs:')
+    for input_def in solid.inputs:
+        with printer.with_indent():
+            if input_def.depends_on:
+                printer.line(
+                    'Input: {name} (depends on {dep_name})'.format(
+                        name=input_def.name, dep_name=input_def.depends_on.name
+                    )
                 )
-            )
+            else:
+                printer.line('Input: {name}'.format(name=input_def.name))
+
+            if input_def.sources:
+                print_sources(printer, input_def.sources)
+
+
+def print_sources(printer, sources):
+    with printer.with_indent():
+        printer.line('Sources:')
+        with printer.with_indent():
+            for source_def in sources:
+                arg_list = format_argument_dict(source_def.argument_def_dict)
+                printer.line(
+                    '{input_name}({arg_list})'.format(
+                        input_name=source_def.source_type,
+                        arg_list=arg_list,
+                    )
+                )
 
 
 def format_argument_dict(arg_def_dict):
