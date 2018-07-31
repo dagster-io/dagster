@@ -13,10 +13,7 @@ from dagster.core.definitions import (
     ArgumentDefinition,
 )
 
-from dagster.sqlalchemy_kernel import (
-    DagsterSqlAlchemyExecutionContext,
-    execute_sql_text_on_context,
-)
+from dagster.sqlalchemy_kernel import execute_sql_text_on_context
 
 
 class DagsterSqlExpression:
@@ -56,14 +53,13 @@ class DagsterSqlTableExpression(DagsterSqlExpression):
 def create_table_output():
     def materialization_fn(context, arg_dict, sql_expr):
         check.inst_param(sql_expr, 'sql_expr', DagsterSqlExpression)
-        check.inst_param(context, 'context', DagsterSqlAlchemyExecutionContext)
         check.dict_param(arg_dict, 'arg_dict')
 
         output_table_name = check.str_elem(arg_dict, 'table_name')
         total_sql = '''CREATE TABLE {output_table_name} AS {query_text}'''.format(
             output_table_name=output_table_name, query_text=sql_expr.query_text
         )
-        context.engine.connect().execute(total_sql)
+        context.resources.sa.engine.connect().execute(total_sql)
 
     return create_single_materialization_output(
         name='CREATE',
@@ -73,7 +69,6 @@ def create_table_output():
 
 
 def _table_name_read_fn(context, arg_dict):
-    check.inst_param(context, 'context', DagsterSqlAlchemyExecutionContext)
     check.dict_param(arg_dict, 'arg_dict')
 
     table_name = check.str_elem(arg_dict, 'table_name')

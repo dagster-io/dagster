@@ -1,17 +1,43 @@
-import sqlalchemy as sa
+import sqlalchemy
 
 from dagster import check
 from dagster.core.execution import ExecutionContext
 
 
-class DagsterSqlAlchemyExecutionContext(ExecutionContext):
-    def __init__(self, engine, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.engine = check.inst_param(engine, 'engine', sa.engine.Engine)
+class SqlAlchemyResource:
+    def __init__(self, engine):
+        self.engine = check.inst_param(engine, 'engine', sqlalchemy.engine.Engine)
+
+
+class _DefaultSqlAlchemyResources:
+    def __init__(self, sa):
+        self.sa = check.inst_param(sa, 'sa', SqlAlchemyResource)
+
+
+def check_supports_sql_alchemy_resource(context):
+    check.inst_param(context, 'context', ExecutionContext)
+    check.invariant(context.resources is not None)
+    check.invariant(
+        hasattr(context.resources, 'sa'),
+        'Resources must have sa property be an object of SqlAlchemyResource',
+    )
+    check.inst(
+        context.resources.sa,
+        SqlAlchemyResource,
+        'Resources must have sa property be an object of SqlAlchemyResource',
+    )
+    return context
+
+
+def create_sql_alchemy_context_from_engine(engine, *args, **kwargs):
+    resources = _DefaultSqlAlchemyResources(SqlAlchemyResource(engine))
+    context = ExecutionContext(resources=resources, *args, **kwargs)
+    return check_supports_sql_alchemy_resource(context)
 
 
 def _is_sqlite_context(context):
-    raw_connection = context.engine.raw_connection()
+    check_supports_sql_alchemy_resource(context)
+    raw_connection = context.resources.sa.engine.raw_connection()
     if not hasattr(raw_connection, 'connection'):
         return False
 
@@ -20,14 +46,16 @@ def _is_sqlite_context(context):
 
 
 def execute_sql_text_on_context(context, sql_text):
-    check.inst_param(context, 'context', DagsterSqlAlchemyExecutionContext)
+    check_supports_sql_alchemy_resource(context)
     check.str_param(sql_text, 'sql_text')
+
+    engine = context.resources.sa.engine
 
     if _is_sqlite_context(context):
         # sqlite3 does not support multiple statements in a single
         # sql text and sqlalchemy does not abstract that away AFAICT
         # so have to hack around this
-        raw_connection = context.engine.raw_connection()
+        raw_connection = engine.raw_connection()
         cursor = raw_connection.cursor()
         try:
             cursor.executescript(sql_text)
@@ -35,7 +63,7 @@ def execute_sql_text_on_context(context, sql_text):
         finally:
             cursor.close()
     else:
-        connection = context.engine.connect()
+        connection = engine.connect()
         transaction = connection.begin()
         connection.execute(sql_text)
         transaction.commit()

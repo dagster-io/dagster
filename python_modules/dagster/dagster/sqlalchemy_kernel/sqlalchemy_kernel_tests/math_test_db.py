@@ -27,4 +27,4 @@ def in_mem_engine(num_table_name='num_table'):
 
 
 def in_mem_context(num_table_name='num_table'):
-    return dagster_sa.DagsterSqlAlchemyExecutionContext(engine=in_mem_engine(num_table_name))
+    return dagster_sa.create_sql_alchemy_context_from_engine(engine=in_mem_engine(num_table_name))
