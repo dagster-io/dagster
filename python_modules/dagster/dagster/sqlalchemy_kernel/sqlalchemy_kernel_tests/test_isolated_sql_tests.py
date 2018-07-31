@@ -35,7 +35,7 @@ def test_basic_isolated_sql_solid():
 
     assert result.success
 
-    results = context.engine.connect().execute('SELECT * from sum_table').fetchall()
+    results = context.resources.sa.engine.connect().execute('SELECT * from sum_table').fetchall()
     assert results == [(1, 2, 3), (3, 4, 7)]
 
 
@@ -73,7 +73,7 @@ def test_basic_pipeline():
     for exec_result in exec_results:
         assert exec_result.success is True
 
-    engine = pipeline_result.context.engine
+    engine = pipeline_result.context.resources.sa.engine
 
     results = engine.connect().execute('SELECT * from sum_table').fetchall()
     assert results == [(1, 2, 3), (3, 4, 7)]
@@ -103,7 +103,7 @@ def test_pipeline_from_files():
     for exec_result in exec_results:
         assert exec_result.success is True
 
-    engine = pipeline_result.context.engine
+    engine = pipeline_result.context.resources.sa.engine
 
     results = engine.connect().execute('SELECT * from sum_table').fetchall()
     assert results == [(1, 2, 3), (3, 4, 7)]

@@ -67,7 +67,7 @@ def test_sql_sum_solid():
     )
     assert result.success
 
-    results = context.engine.connect().execute('SELECT * FROM sum_table').fetchall()
+    results = context.resources.sa.engine.connect().execute('SELECT * FROM sum_table').fetchall()
     assert results == [(1, 2, 3), (3, 4, 7)]
 
 
@@ -144,6 +144,6 @@ def test_output_sql_sum_sq_solid():
     result_list = pipeline_result.result_list
 
     assert len(result_list) == 2
-    engine = pipeline_result.context.engine
+    engine = pipeline_result.context.resources.sa.engine
     result_list = engine.connect().execute('SELECT * FROM sum_sq_table').fetchall()
     assert result_list == [(1, 2, 3, 9), (3, 4, 7, 49)]

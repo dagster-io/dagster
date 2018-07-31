@@ -13,13 +13,17 @@ def in_mem_engine():
 
 
 def in_mem_context():
-    return dagster_sa.DagsterSqlAlchemyExecutionContext(engine=in_mem_engine())
+    return dagster_sa.create_sql_alchemy_context_from_engine(engine=in_mem_engine())
+
+
+def pipeline_engine(pipeline_result):
+    return pipeline_result.context.resources.sa.engine
 
 
 def create_persisted_context():
     full_path = script_relative_path('testdb.db')
     engine = sa.create_engine(f'sqlite:///{full_path}', echo=False)
-    return dagster_sa.DagsterSqlAlchemyExecutionContext(engine=engine)
+    return dagster_sa.create_sql_alchemy_context_from_engine(engine=engine)
 
 
 def create_mem_sql_pipeline_context_tuple(solids):
@@ -55,7 +59,7 @@ def test_sql_create_tables():
     pipeline_result = dagster.execute_pipeline(pipeline, environment=config.Environment.empty())
     assert pipeline_result.success
 
-    assert set(pipeline_result.context.engine.table_names()) == set(
+    assert set(pipeline_engine(pipeline_result).table_names()) == set(
         ['num_table', 'sum_sq_table', 'sum_table']
     )
 
@@ -75,7 +79,7 @@ def test_sql_populate_tables():
 
     assert pipeline_result.success
 
-    assert pipeline_result.context.engine.execute('SELECT * FROM num_table').fetchall() == [
+    assert pipeline_engine(pipeline_result).execute('SELECT * FROM num_table').fetchall() == [
         (1, 2), (3, 4)
     ]
 
@@ -120,14 +124,12 @@ def test_full_in_memory_pipeline():
 
     pipeline = create_full_pipeline()
     pipeline_result = dagster.execute_pipeline(pipeline, environment=config.Environment.empty())
-    context = pipeline_result.context
     assert pipeline_result.success
 
-    assert context.engine.execute('SELECT * FROM num_table').fetchall() == [(1, 2), (3, 4)]
-    assert context.engine.execute('SELECT * FROM sum_table').fetchall() == [(1, 2, 3), (3, 4, 7)]
-    assert context.engine.execute('SELECT * FROM sum_sq_table').fetchall() == [
-        (1, 2, 3, 9), (3, 4, 7, 49)
-    ]
+    engine = pipeline_engine(pipeline_result)
+    assert engine.execute('SELECT * FROM num_table').fetchall() == [(1, 2), (3, 4)]
+    assert engine.execute('SELECT * FROM sum_table').fetchall() == [(1, 2, 3), (3, 4, 7)]
+    assert engine.execute('SELECT * FROM sum_sq_table').fetchall() == [(1, 2, 3, 9), (3, 4, 7, 49)]
 
 
 def test_full_persisted_pipeline():
