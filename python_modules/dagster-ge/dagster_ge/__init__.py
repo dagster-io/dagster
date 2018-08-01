@@ -12,7 +12,7 @@ from dagster.core.definitions import (ExpectationDefinition, ExpectationResult)
 #     dagster_ge.json_config_expectation('num_expectations', 'num_expectations.json')
 # ]
 def json_config_expectation(name, file_path):
-    def _file_passes(df):
+    def _file_passes(_context, _info, df):
         with open(file_path) as ff:
             expt_config = json.load(ff)
             # This is necessary because ge ends up coercing a type change
@@ -38,7 +38,7 @@ def json_config_expectation(name, file_path):
 #   dagster_ge.ge_expectation(name, lambda ge_df: ge_df.expect_column_to_exist(col_name)),
 # ]
 def ge_expectation(name, ge_callback):
-    def _do_expectation(df):
+    def _do_expectation(_context, _info, df):
         ge_df = ge.from_pandas(df)
         ge_result = ge_callback(ge_df)
         check.invariant('success' in ge_result)

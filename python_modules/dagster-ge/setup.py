@@ -27,7 +27,7 @@ setup(
         'enum34>=1.1.6',
         'future>=0.16.0',
         'dagster>=0.1.2',
-        'great-expectations>=0.4.3',
-    ],
+        'great-expectations>=0.4.2',
+    ]
     # scripts=['bin/dagster']
 )

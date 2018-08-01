@@ -2,8 +2,6 @@ from enum import Enum
 
 from dagster import check
 
-import dagster.core.definitions
-
 
 class DagsterExecutionFailureReason(Enum):
     USER_CODE_ERROR = 'USER_CODE_ERROR'
@@ -53,11 +51,14 @@ class DagsterUserCodeExecutionError(DagsterUserError):
 class DagsterExpectationFailedError(DagsterError):
     '''Thrown with pipeline configured to throw on expectation failure'''
 
-    def __init__(self, *args, failed_expectation_results, **kwargs):
+    def __init__(self, execution_result, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.failed_results = check.list_param(
-            failed_expectation_results,
-            'failed_expectation_results',
-            # fully qualified name prevents circular reference
-            dagster.core.definitions.ExpectationResult
+        # FIXME: need to reorganize to fix this circular dep
+        # Probable fix is to move all "execution result" objects
+        # to definitions
+        import dagster.core.execution
+        self.execution_result = check.inst_param(
+            execution_result,
+            'execution_result',
+            dagster.core.execution.SolidExecutionResult,
         )

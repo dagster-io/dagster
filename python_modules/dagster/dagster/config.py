@@ -21,8 +21,8 @@ class Context(namedtuple('ContextData', 'name args')):
         )
 
 
-class Environment(namedtuple('EnvironmentData', 'context sources materializations')):
-    def __new__(cls, sources, *, context=None, materializations=None):
+class Environment(namedtuple('EnvironmentData', 'context sources materializations expectations')):
+    def __new__(cls, sources, *, context=None, materializations=None, expectations=None):
         check.dict_param(sources, 'sources', key_type=str, value_type=dict)
         for _solid_name, source_dict in sources.items():
             check.dict_param(source_dict, 'source_dict', key_type=str, value_type=Source)
@@ -32,6 +32,9 @@ class Environment(namedtuple('EnvironmentData', 'context sources materialization
         if context is None:
             context = Context(name='default', args={})
 
+        if expectations is None:
+            expectations = Expectations(evaluate=True)
+
         return super(Environment, cls).__new__(
             cls,
             context=context,
@@ -39,6 +42,7 @@ class Environment(namedtuple('EnvironmentData', 'context sources materialization
             materializations=check.opt_list_param(
                 materializations, 'materializations', of_type=Materialization
             ),
+            expectations=expectations,
         )
 
     @staticmethod
@@ -52,6 +56,13 @@ class Source(namedtuple('SourceData', 'name args')):
             cls,
             name=check.str_param(name, 'name'),
             args=check.dict_param(args, 'args', key_type=str),
+        )
+
+
+class Expectations(namedtuple('ExpectationsData', 'evaluate')):
+    def __new__(cls, evaluate):
+        return super(Expectations, cls).__new__(
+            cls, evaluate=check.bool_param(evaluate, 'evaluate')
         )
 
 

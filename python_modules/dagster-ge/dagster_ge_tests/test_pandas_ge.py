@@ -43,7 +43,7 @@ def sum_solid(num_df):
     ],
     output=dagster_pd.dataframe_output()
 )
-def sum_solid_fails_expectation(num_df):
+def sum_solid_fails_input_expectation(num_df):
     return _sum_solid_impl(num_df)
 
 
@@ -98,7 +98,7 @@ def test_single_node_passing_json_config_expectations():
 
 def test_single_node_failing_expectation():
     in_df = pd.DataFrame.from_dict({'num1': [1, 3], 'num2': [2, 4]})
-    pipeline = dagster.PipelineDefinition(solids=[sum_solid_fails_expectation])
+    pipeline = dagster.PipelineDefinition(solids=[sum_solid_fails_input_expectation])
     result = execute_pipeline_in_memory(
         dagster.ExecutionContext(), pipeline, input_values={'num_df': in_df}, throw_on_error=False
     )
@@ -107,6 +107,10 @@ def test_single_node_failing_expectation():
     first_solid_result = result.result_list[0]
     assert not first_solid_result.success
     assert first_solid_result.reason == DagsterExecutionFailureReason.EXPECTATION_FAILURE
-    assert len(first_solid_result.failed_expectation_results) == 1
-    expt_result = first_solid_result.failed_expectation_results[0]
-    assert expt_result.result_context == {'success': False}
+    assert isinstance(first_solid_result.input_expectation_results, dagster.InputExpectationResults)
+    input_expt_results = first_solid_result.input_expectation_results
+    assert len(input_expt_results.result_dict) == 1
+    input_expt_result = list(input_expt_results.result_dict.values())[0]
+    assert isinstance(input_expt_result, dagster.InputExpectationResult)
+    assert len(list(input_expt_result.passes)) == 0
+    assert len(list(input_expt_result.fails)) == 1

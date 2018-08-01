@@ -1,5 +1,7 @@
 import pytest
 
+import dagster
+
 from dagster.core.definitions import (
     ExpectationDefinition,
     ExpectationResult,
@@ -17,7 +19,7 @@ def create_test_context():
 
 
 def test_basic_failing_input_expectation():
-    def failing_expectation(_some_input):
+    def failing_expectation(_context, _info, _some_input):
         return ExpectationResult(success=False, message='Some failure')
 
     some_input = create_custom_source_input(
@@ -29,17 +31,36 @@ def test_basic_failing_input_expectation():
         ]
     )
 
-    result = _execute_input_expectation(
-        create_test_context(), some_input.expectations[0], 'some_value'
-    )
+    expectation_def = some_input.expectations[0]
+
+    info = create_dummy_info(expectation_def)
+
+    result = _execute_input_expectation(create_test_context(), info, 'some_value')
 
     assert isinstance(result, ExpectationResult)
     assert not result.success
     assert result.message == 'Some failure'
 
 
+def create_dummy_info(expectation_def):
+    info = dagster.InputExpectationInfo(
+        solid=dagster.SolidDefinition(
+            name='dummy',
+            inputs=[],
+            transform_fn=lambda _context, _args: None,
+            output=dagster.OutputDefinition(),
+        ),
+        input_def=dagster.InputDefinition(
+            name='dummy_input',
+            sources=[],
+        ),
+        expectation_def=expectation_def,
+    )
+    return info
+
+
 def test_basic_passing_input_expectation():
-    def passing_expectation(_some_input):
+    def passing_expectation(_context, _info, _some_input):
         return ExpectationResult(success=True, message='yayayaya')
 
     some_input = create_custom_source_input(
@@ -52,7 +73,7 @@ def test_basic_passing_input_expectation():
     )
 
     result = _execute_input_expectation(
-        create_test_context(), some_input.expectations[0], 'some_value'
+        create_test_context(), create_dummy_info(some_input.expectations[0]), 'some_value'
     )
 
     assert isinstance(result, ExpectationResult)
@@ -61,7 +82,7 @@ def test_basic_passing_input_expectation():
 
 
 def test_input_expectation_user_error():
-    def throwing(_something):
+    def throwing(_context, _info, _something):
         raise Exception('nope')
 
     failing_during_expectation_input = create_custom_source_input(
@@ -75,5 +96,7 @@ def test_input_expectation_user_error():
 
     with pytest.raises(DagsterUserCodeExecutionError):
         _execute_input_expectation(
-            create_test_context(), failing_during_expectation_input.expectations[0], 'some_value'
+            create_test_context(),
+            create_dummy_info(failing_during_expectation_input.expectations[0]),
+            'some_value',
         )

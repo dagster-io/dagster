@@ -11,6 +11,7 @@ from dagster.core.definitions import (
 )
 from dagster.core.decorators import solid
 from dagster.core.execution import (
+    InMemoryInputManager,
     ExecutionContext,
     execute_pipeline_through_solid,
     _read_source,
@@ -229,7 +230,11 @@ def test_two_step_pipeline_in_memory():
     mult_table_solid = create_sum_sq_table(sum_table_solid)
     context = create_test_context()
     df = get_solid_transformed_value(context, sum_table_solid, get_num_csv_environment('sum_table'))
-    mult_df = _pipeline_solid_in_memory(context, mult_table_solid, {'sum_table': df})
+    input_values = {'sum_table': df}
+    input_manager = InMemoryInputManager(context, input_values)
+    mult_df = _pipeline_solid_in_memory(
+        context, input_manager, mult_table_solid, input_values
+    ).transformed_value
     assert mult_df.to_dict('list') == {
         'num1': [1, 3],
         'num2': [2, 4],
@@ -241,7 +246,10 @@ def test_two_step_pipeline_in_memory():
 def test_two_step_pipeline_in_memory_decorator_style():
     context = create_test_context()
     df = get_solid_transformed_value(context, sum_table, get_num_csv_environment('sum_table'))
-    mult_df = _pipeline_solid_in_memory(context, sum_sq_table, {'sum_df': df})
+    input_values = {'sum_df': df}
+    mult_df = _pipeline_solid_in_memory(
+        context, InMemoryInputManager(context, input_values), sum_sq_table, input_values
+    ).transformed_value
     assert mult_df.to_dict('list') == {
         'num1': [1, 3],
         'num2': [2, 4],
@@ -356,20 +364,25 @@ def test_diamond_dag_run():
     )
     assert num_table_df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4]}
 
-    sum_df = _pipeline_solid_in_memory(context, sum_table_solid, {'num_table': num_table_df})
+    input_values = {'num_table': num_table_df}
+    sum_df = _pipeline_solid_in_memory(
+        context, InMemoryInputManager(context, input_values), sum_table_solid, input_values
+    ).transformed_value
 
     assert sum_df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
 
-    mult_df = _pipeline_solid_in_memory(context, mult_table_solid, {'num_table': num_table_df})
+    input_values = {'num_table': num_table_df}
+    mult_df = _pipeline_solid_in_memory(
+        context, InMemoryInputManager(context, input_values), mult_table_solid, input_values
+    ).transformed_value
 
     assert mult_df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'mult': [2, 12]}
 
+    input_values = {'sum_table': sum_df, 'mult_table': mult_df}
+
     sum_mult_df = _pipeline_solid_in_memory(
-        context, sum_mult_table_solid, {
-            'sum_table': sum_df,
-            'mult_table': mult_df
-        }
-    )
+        context, InMemoryInputManager(context, input_values), sum_mult_table_solid, input_values
+    ).transformed_value
 
     assert sum_mult_df.to_dict('list') == {
         'num1': [1, 3],

@@ -14,7 +14,7 @@ from dagster.core.execution import (
     execute_pipeline_iterator,
     execute_pipeline_iterator_in_memory,
     ExecutionContext,
-    DagsterExecutionResult,
+    SolidExecutionResult,
 )
 
 # protected members
@@ -234,8 +234,8 @@ def transform_called(name):
 
 
 def assert_equivalent_results(left, right):
-    check.inst_param(left, 'left', DagsterExecutionResult)
-    check.inst_param(right, 'right', DagsterExecutionResult)
+    check.inst_param(left, 'left', SolidExecutionResult)
+    check.inst_param(right, 'right', SolidExecutionResult)
 
     assert left.success == right.success
     assert left.name == right.name
@@ -244,8 +244,8 @@ def assert_equivalent_results(left, right):
 
 
 def assert_all_results_equivalent(expected_results, result_results):
-    check.list_param(expected_results, 'expected_results', of_type=DagsterExecutionResult)
-    check.list_param(result_results, 'result_results', of_type=DagsterExecutionResult)
+    check.list_param(expected_results, 'expected_results', of_type=SolidExecutionResult)
+    check.list_param(result_results, 'result_results', of_type=SolidExecutionResult)
     assert len(expected_results) == len(result_results)
     for expected, result in zip(expected_results, result_results):
         assert_equivalent_results(expected, result)
@@ -288,7 +288,7 @@ def _do_test(pipeline, do_execute_pipeline_iter):
     assert results[0].transformed_value == [input_set('A_input'), transform_called('A')]
 
     expected_results = [
-        DagsterExecutionResult(
+        SolidExecutionResult(
             success=True,
             solid=pipeline.solid_named('A'),
             transformed_value=[
@@ -297,7 +297,7 @@ def _do_test(pipeline, do_execute_pipeline_iter):
             ],
             exception=None,
         ),
-        DagsterExecutionResult(
+        SolidExecutionResult(
             success=True,
             solid=pipeline.solid_named('B'),
             transformed_value=[
@@ -307,7 +307,7 @@ def _do_test(pipeline, do_execute_pipeline_iter):
             ],
             exception=None,
         ),
-        DagsterExecutionResult(
+        SolidExecutionResult(
             success=True,
             solid=pipeline.solid_named('C'),
             transformed_value=[
@@ -318,7 +318,7 @@ def _do_test(pipeline, do_execute_pipeline_iter):
             ],
             exception=None,
         ),
-        DagsterExecutionResult(
+        SolidExecutionResult(
             success=True,
             solid=pipeline.solid_named('D'),
             transformed_value=[

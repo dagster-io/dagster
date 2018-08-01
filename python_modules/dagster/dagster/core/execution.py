@@ -34,7 +34,7 @@ from dagster.utils.logging import (CompositeLogger, ERROR, get_formatted_stack_t
 from dagster.utils.timing import time_execution_scope
 
 from .definitions import (
-    SolidDefinition, ExpectationDefinition, ExpectationResult, SourceDefinition,
+    SolidDefinition, ExpectationResult, SourceDefinition,
     MaterializationDefinition, PipelineDefinition, PipelineContextDefinition
 )
 
@@ -185,7 +185,7 @@ class DagsterPipelineExecutionResult:
     ):
         self.context = check.inst_param(context, 'context', ExecutionContext)
         self.result_list = check.list_param(
-            result_list, 'result_list', of_type=DagsterExecutionResult
+            result_list, 'result_list', of_type=SolidExecutionResult
         )
 
     @property
@@ -200,7 +200,7 @@ class DagsterPipelineExecutionResult:
         check.failed('Did not find result {name} in pipeline execution result'.format(name=name))
 
 
-class DagsterExecutionResult:
+class SolidExecutionResult:
     '''
     A class to represent the result of the execution of a single solid. Pipeline
     commands return iterators or lists of these results.
@@ -215,7 +215,8 @@ class DagsterExecutionResult:
         transformed_value,
         reason=None,
         exception=None,
-        failed_expectation_results=None,
+        input_expectation_results=None,
+        output_expectation_results=None,
         context=None,
     ):
         self.success = check.bool_param(success, 'success')
@@ -229,23 +230,23 @@ class DagsterExecutionResult:
         self.reason = reason
         self.exception = check.opt_inst_param(exception, 'exception', Exception)
 
+        self.input_expectation_results = check.opt_inst_param(
+            input_expectation_results,
+            'input_expectation_results',
+            InputExpectationResults
+        )
+
+        self.output_expectation_results = check.opt_inst_param(
+            output_expectation_results,
+            'output_expectation_results',
+            OutputExpectationResults,
+        )
+
         if reason == DagsterExecutionFailureReason.USER_CODE_ERROR:
             check.inst(exception, DagsterUserCodeExecutionError)
             self.user_exception = exception.user_exception
         else:
             self.user_exception = None
-
-        if reason == DagsterExecutionFailureReason.EXPECTATION_FAILURE:
-            check.invariant(
-                failed_expectation_results is not None and failed_expectation_results != [],
-                'Must have at least one expectation failure'
-            )
-            self.failed_expectation_results = check.list_param(
-                failed_expectation_results, 'failed_expectation_results', of_type=ExpectationResult
-            )
-        else:
-            check.invariant(failed_expectation_results is None)
-            self.failed_expectation_results = None
 
         self.context = context
 
@@ -261,17 +262,33 @@ class DagsterExecutionResult:
     def copy(self):
         ''' This must be used instead of copy.deepcopy() because exceptions cannot
         be deepcopied'''
-        return DagsterExecutionResult(
+        return SolidExecutionResult(
             success=self.success,
             solid=self.solid,
             transformed_value=copy.deepcopy(self.transformed_value),
             context=self.context,
             reason=self.reason,
             exception=self.exception,
-            failed_expectation_results=None if self.failed_expectation_results is None else
-            [result.copy() for result in self.failed_expectation_results],
+            input_expectation_results=self.input_expectation_results.copy()
+                    if self.input_expectation_results else None,
+            output_expectation_results=self.output_expectation_results.copy()
+                    if self.output_expectation_results else None,
         )
 
+def copy_result_list(result_list):
+    if result_list is None:
+        return result_list
+
+    return [result.copy() for result in result_list]
+
+
+def copy_result_dict(result_dict):
+    if result_dict is None:
+        return None
+    new_dict = {}
+    for input_name, result in result_dict.items():
+        new_dict[input_name] = result.copy()
+    return new_dict
 
 @contextmanager
 def _user_code_error_boundary(context, msg, **kwargs):
@@ -328,39 +345,44 @@ def _read_source(context, source_definition, arg_dict):
             return value
 
 
-def _execute_input_expectation(context, expectation_def, value):
+InputExpectationInfo = namedtuple('InputExpectionInfo', 'solid input_def expectation_def')
+
+def _execute_input_expectation(context, info, value):
     '''
     Execute one user-specified input expectation on an input that has been instantiated in memory
     Wraps computation in an error boundary and performs all necessary logging and metrics tracking
     (TODO: actually log and track metrics!)
     '''
     check.inst_param(context, 'context', ExecutionContext)
-    check.inst_param(expectation_def, 'expectation_def', ExpectationDefinition)
+    check.inst_param(info, 'info', InputExpectationInfo)
 
     error_str = 'Error occured while evaluation expectation "{expectation_name}" in input'
-    with _user_code_error_boundary(context, error_str, expectation_name=expectation_def.name):
-        expectation_result = expectation_def.expectation_fn(value)
+    with _user_code_error_boundary(context, error_str, expectation_name=info.expectation_def.name):
+        expectation_result = info.expectation_def.expectation_fn(context, info, value)
 
     if not isinstance(expectation_result, ExpectationResult):
         raise DagsterInvariantViolationError(
             'Must return ExpectationResult from expectation function'
         )
-
     return expectation_result
 
 
-def _execute_output_expectation(context, expectation_def, transformed_value):
+OutputExpectationInfo = namedtuple('OutputExpectationInfo', 'solid expectation_def')
+
+def _execute_output_expectation(context, info, transformed_value):
     '''
     Execute one user-specified output expectation on an instantiated result of the core transform.
     Wraps computation in an error boundary and performs all necessary logging and metrics tracking
     (TODO: actually log and track metrics!)
     '''
     check.inst_param(context, 'context', ExecutionContext)
-    check.inst_param(expectation_def, 'expectation_def', ExpectationDefinition)
+    # check.inst_param(expectation_def, 'expectation_def', ExpectationDefinition)
+    check.inst_param(info, 'info', OutputExpectationInfo)
 
     error_str = 'Error occured while evaluation expectation "{expectation_name}" in output'
+    expectation_def = info.expectation_def
     with _user_code_error_boundary(context, error_str, expectation_name=expectation_def.name):
-        expectation_result = expectation_def.expectation_fn(transformed_value)
+        expectation_result = expectation_def.expectation_fn(context, info, transformed_value)
 
     if not isinstance(expectation_result, ExpectationResult):
 
@@ -386,12 +408,6 @@ def _execute_core_transform(context, solid_transform_fn, values_dict):
             transformed_value = solid_transform_fn(context, values_dict)
 
         context.metric('core_transform_time_ms', timer_result.millis)
-
-        check.invariant(
-            not isinstance(transformed_value, DagsterExecutionResult),
-            'Tricksy hobbitess cannot return an execution result from the transform ' + \
-            'function in order to fool the framework'
-        )
 
         return transformed_value
 
@@ -434,60 +450,100 @@ def _execute_materialization(context, materialiation_def, arg_dict, value):
         materialiation_def.materialization_fn(context, arg_dict, value)
 
 
-InputExpectationResult = namedtuple('InputExpectionResult', 'input_name passes fails')
+class InputExpectationResult:
+    def __init__(self, input_name, all_results):
+        self.input_name = check.str_param(input_name, 'input_name')
+        self.all_results = check.list_param(all_results, 'all_results', ExpectationResult)
 
+    @property
+    def fails(self):
+        for result in self.all_results:
+            if not result.success:
+                yield result
 
-class AllInputExpectationsRunResults:
-    def __init__(self, run_results_list):
-        self.run_results_list = check.list_param(
-            run_results_list, 'run_results_list', of_type=InputExpectationResult
+    @property
+    def passes(self):
+        for result in self.all_results:
+            if result.success:
+                yield result
+
+    def copy(self):
+        return InputExpectationResult(
+            input_name=self.input_name,
+            all_results=copy_result_list(self.all_results),
+        )
+
+class InputExpectationResults:
+    def __init__(self, result_dict):
+        check.dict_param(
+            result_dict,
+            'result_dict',
+            key_type=str,
+            value_type=InputExpectationResult
         )
 
         all_passes = []
         all_fails = []
-        for run_results in run_results_list:
+        for run_results in result_dict.values():
             all_passes.extend(run_results.passes)
             all_fails.extend(run_results.fails)
 
         self.all_passes = all_passes
         self.all_fails = all_fails
+        self.result_dict = result_dict
+
+    def copy(self):
+        return InputExpectationResults(copy_result_dict(self.result_dict))
 
     @property
     def success(self):
         return not self.all_fails
 
 
-def _execute_all_input_expectations(context, solid, values_dict):
+def _execute_all_input_expectations(context, input_manager, solid, values_dict):
     check.inst_param(context, 'context', ExecutionContext)
     check.dict_param(values_dict, 'values_dict', key_type=str)
 
-    run_results_list = []
+    result_dict = {}
+
+    if not input_manager.evaluate_expectations:
+        return InputExpectationResults(result_dict)
 
     for input_name in values_dict.keys():
         input_def = solid.input_def_named(input_name)
         value = values_dict[input_name]
 
-        passes = []
-        fails = []
+        results = []
 
         for input_expectation_def in input_def.expectations:
-            input_expectation_result = _execute_input_expectation(
-                context, input_expectation_def, value
+            user_expectation_result = _execute_input_expectation(
+                context, InputExpectationInfo(solid, input_def, input_expectation_def), value,
             )
+            results.append(user_expectation_result)
 
-            if input_expectation_result.success:
-                passes.append(input_expectation_result)
-            else:
-                fails.append(input_expectation_result)
-
-        run_results_list.append(
-            InputExpectationResult(input_name=input_name, passes=passes, fails=fails)
+        input_result = InputExpectationResult(
+            input_name=input_name,
+            all_results=results,
         )
+        result_dict[input_name] = input_result
 
-    return AllInputExpectationsRunResults(run_results_list)
+    return InputExpectationResults(result_dict)
 
+class OutputExpectationResults:
+    def __init__(self, results):
+        self.results = check.list_param(results, 'results', ExpectationResult)
 
-def _pipeline_solid_in_memory(context, solid, transform_values_dict):
+    @property
+    def success(self):
+        for result in self.results:
+            if not result.success:
+                return False
+        return True
+
+    def copy(self):
+        return OutputExpectationResults(copy_result_list(self.results))
+
+def _pipeline_solid_in_memory(context, input_manager, solid, transform_values_dict):
     '''
     Given inputs that are already in memory. Evaluation all inputs expectations,
     execute the core transform, and then evaluate all output expectations.
@@ -499,52 +555,70 @@ def _pipeline_solid_in_memory(context, solid, transform_values_dict):
     check.inst_param(solid, 'solid', SolidDefinition)
     check.dict_param(transform_values_dict, 'transform_values_dict', key_type=str)
 
-    all_run_result = _execute_all_input_expectations(context, solid, transform_values_dict)
+    input_expectation_results = _execute_all_input_expectations(
+        context,
+        input_manager,
+        solid,
+        transform_values_dict
+    )
 
-    if not all_run_result.success:
-        return DagsterExecutionResult(
+    if not input_expectation_results.success:
+        return SolidExecutionResult(
             success=False,
             transformed_value=None,
             solid=solid,
             context=context,
             reason=DagsterExecutionFailureReason.EXPECTATION_FAILURE,
-            failed_expectation_results=all_run_result.all_fails,
+            input_expectation_results=input_expectation_results
         )
 
     context.info('Executing core transform')
 
     transformed_value = _execute_core_transform(context, solid.transform_fn, transform_values_dict)
 
-    if isinstance(transformed_value, DagsterExecutionResult):
-        check.invariant(
-            not transformed_value.success,
-            'only failed things should return an execution result right here'
-        )
-        return transformed_value
-
     if solid.output.output_callback:
         solid.output.output_callback(context, transformed_value)
 
-    output_expectation_failures = []
-    for output_expectation_def in solid.output.expectations:
-        output_expectation_result = _execute_output_expectation(
-            context, output_expectation_def, transformed_value
-        )
-        if not output_expectation_result.success:
-            output_expectation_failures.append(output_expectation_result)
+    output_expectation_results = _execute_output_expectations(
+        context,
+        input_manager,
+        solid,
+        transformed_value,
+    )
 
-    if output_expectation_failures:
-        return DagsterExecutionResult(
+    if not output_expectation_results.success:
+        return SolidExecutionResult(
             success=False,
             transformed_value=None,
             solid=solid,
             context=context,
             reason=DagsterExecutionFailureReason.EXPECTATION_FAILURE,
-            failed_expectation_results=output_expectation_failures,
+            input_expectation_results=input_expectation_results,
+            output_expectation_results=output_expectation_results,
         )
 
-    return transformed_value
+    return SolidExecutionResult(
+        success=True,
+        transformed_value=transformed_value,
+        solid=solid,
+        context=context,
+        input_expectation_results=input_expectation_results,
+        output_expectation_results=output_expectation_results,
+    )
 
+
+def _execute_output_expectations(context, input_manager, solid, transformed_value):
+    if not input_manager.evaluate_expectations:
+        return OutputExpectationResults([])
+
+    output_expectation_result_list = []
+
+    for output_expectation_def in solid.output.expectations:
+        info = OutputExpectationInfo(solid=solid, expectation_def=output_expectation_def)
+        output_expectation_result = _execute_output_expectation(context, info, transformed_value)
+        output_expectation_result_list.append(output_expectation_result)
+
+    return OutputExpectationResults(results=output_expectation_result_list)
 
 
 def _create_passthrough_context_definition(context):
@@ -555,45 +629,33 @@ def _create_passthrough_context_definition(context):
     )
     return {'default': context_definition}
 
+
 def execute_single_solid(context, solid, environment, throw_on_error=True):
     check.inst_param(context, 'context', ExecutionContext)
     check.inst_param(solid, 'solid', SolidDefinition)
     check.inst_param(environment, 'environment', config.Environment)
     check.bool_param(throw_on_error, 'throw_on_error')
 
-    results = list(
-        execute_pipeline_iterator(
-            PipelineDefinition(
-                solids=[solid],
-                context_definitions=_create_passthrough_context_definition(context),
-            ),
-            environment=environment,
-        )
+    pipeline_result = execute_pipeline(
+        PipelineDefinition(
+            solids=[solid],
+            context_definitions=_create_passthrough_context_definition(context),
+        ),
+        environment=environment,
+        from_solids=[solid.name],
+        through_solids=[solid.name],
     )
 
+    results = pipeline_result.result_list
     check.invariant(len(results) == 1, 'must be one result got ' + str(len(results)))
-
-    execution_result = results[0]
-
-    check.invariant(execution_result.name == solid.name)
-
-    if throw_on_error:
-        _do_throw_on_error(execution_result)
-
-    return execution_result
+    return results[0]
 
 
 def _do_throw_on_error(execution_result):
-    check.inst_param(execution_result, 'execution_result', DagsterExecutionResult)
+    check.inst_param(execution_result, 'execution_result', SolidExecutionResult)
     if not execution_result.success:
         if execution_result.reason == DagsterExecutionFailureReason.EXPECTATION_FAILURE:
-            check.invariant(
-                execution_result.failed_expectation_results is not None
-                and execution_result.failed_expectation_results != []
-            )
-            raise DagsterExpectationFailedError(
-                failed_expectation_results=execution_result.failed_expectation_results
-            )
+            raise DagsterExpectationFailedError(execution_result)
         elif execution_result.reason == DagsterExecutionFailureReason.USER_CODE_ERROR:
             execution_result.reraise_user_error()
 
@@ -699,16 +761,17 @@ def _execute_pipeline_solid_step(context, solid, input_manager):
     input_values = _gather_input_values(context, solid, input_manager)
 
     # This call does all input and output expectations, as well as the core transform
-    transformed_value = _pipeline_solid_in_memory(context, solid, input_values)
+    execution_result = _pipeline_solid_in_memory(context, input_manager, solid, input_values)
 
-    if isinstance(transformed_value, DagsterExecutionResult):
-        check.invariant(not transformed_value.success, 'early return should only be failure')
-        return transformed_value
+    if not execution_result.success:
+        return execution_result
 
     check.invariant(
         solid.name not in input_manager.intermediate_values,
         'should be not in intermediate values'
     )
+
+    transformed_value = execution_result.transformed_value
 
     context.debug(
         'About to set {output} for {name}'.format(
@@ -719,11 +782,13 @@ def _execute_pipeline_solid_step(context, solid, input_manager):
 
     input_manager.intermediate_values[solid.name] = transformed_value
 
-    return DagsterExecutionResult(
+    return SolidExecutionResult(
         success=True,
         solid=solid,
         context=context,
         transformed_value=input_manager.intermediate_values[solid.name],
+        input_expectation_results=execution_result.input_expectation_results,
+        output_expectation_results=execution_result.output_expectation_results,
         exception=None
     )
 
@@ -738,6 +803,11 @@ class InputManager:
     @property
     def materializations(self):
         check.not_implemented('must implement in subclass')
+
+    @property
+    def evaluate_expectations(self):
+        check.not_implemented('must implement in subclass')
+
 
     def get_input_value(self, context, solid, input_def):
         if input_def.depends_on and input_def.depends_on.name in self.intermediate_values:
@@ -777,6 +847,10 @@ class InMemoryInputManager(InputManager):
     @property
     def materializations(self):
         return []
+
+    @property
+    def evaluate_expectations(self):
+        return True
 
 def _validate_environment(environment, pipeline):
     for solid_name, input_configs in environment.sources.items():
@@ -842,6 +916,9 @@ class EnvironmentInputManager(InputManager):
     def materializations(self):
         return self.environment.materializations
 
+    @property
+    def evaluate_expectations(self):
+        return self.environment.expectations.evaluate
 
 def execute_pipeline_iterator(
     pipeline,
@@ -967,7 +1044,7 @@ def _execute_pipeline_iterator(
                     yield result
 
             except DagsterUserCodeExecutionError as see:
-                yield DagsterExecutionResult(
+                yield SolidExecutionResult(
                     success=False,
                     reason=DagsterExecutionFailureReason.USER_CODE_ERROR,
                     solid=solid,
