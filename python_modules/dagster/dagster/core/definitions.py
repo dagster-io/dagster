@@ -195,9 +195,10 @@ class ExpectationResult:
 
 
 class ExpectationDefinition:
-    def __init__(self, name, expectation_fn):
+    def __init__(self, name, expectation_fn, description=None):
         self.name = check_valid_name(name)
         self.expectation_fn = check.callable_param(expectation_fn, 'expectation_fn')
+        self.description = check.opt_str_param(description, 'description')
 
 
 def create_dagster_single_file_input(name, single_file_fn, source_type='CUSTOM'):
@@ -233,11 +234,12 @@ class SourceDefinition:
 
     '''
 
-    def __init__(self, source_type, source_fn, *, argument_def_dict):
+    def __init__(self, source_type, source_fn, argument_def_dict, description=None):
         check.callable_param(source_fn, 'source_fn')
         self.source_type = check_valid_name(source_type)
         self.source_fn = check.callable_param(source_fn, 'source_fn')
         self.argument_def_dict = check_argument_def_dict(argument_def_dict)
+        self.description = check.opt_str_param(description, 'description')
 
 
 def create_custom_source_input(
@@ -288,7 +290,15 @@ class InputDefinition:
     Can be used to validate the result, log stats etc.
     '''
 
-    def __init__(self, name, sources, depends_on=None, expectations=None, input_callback=None):
+    def __init__(
+        self,
+        name,
+        sources,
+        depends_on=None,
+        expectations=None,
+        input_callback=None,
+        description=None
+    ):
         self.name = check_valid_name(name)
         self.sources = check.list_param(sources, 'sources', of_type=SourceDefinition)
         self.depends_on = check.opt_inst_param(depends_on, 'depends_on', SolidDefinition)
@@ -296,6 +306,7 @@ class InputDefinition:
             expectations, 'expectations', of_type=ExpectationDefinition
         )
         self.input_callback = check.opt_callable_param(input_callback, 'input_callback')
+        self.description = check.opt_str_param(description, 'description')
 
     @property
     def is_external(self):
@@ -339,10 +350,11 @@ class MaterializationDefinition:
         argument_def_dict = { 'path' : dagster.core.types.Path }
     '''
 
-    def __init__(self, name, materialization_fn, *, argument_def_dict=None):
+    def __init__(self, name, materialization_fn, argument_def_dict=None, description=None):
         self.name = check_valid_name(name)
         self.materialization_fn = check.callable_param(materialization_fn, 'materialization_fn')
         self.argument_def_dict = check_argument_def_dict(argument_def_dict)
+        self.description = check.opt_str_param(description, 'description')
 
 
 def create_no_materialization_output(expectations=None):
@@ -372,7 +384,9 @@ def create_single_materialization_output(
 
 class OutputDefinition:
     # runtime type info
-    def __init__(self, materializations=None, expectations=None, output_callback=None):
+    def __init__(
+        self, materializations=None, expectations=None, output_callback=None, description=None
+    ):
         self.materializations = check.opt_list_param(
             materializations, 'materializations', of_type=MaterializationDefinition
         )
@@ -380,6 +394,7 @@ class OutputDefinition:
             expectations, 'expectations', of_type=ExpectationDefinition
         )
         self.output_callback = check.opt_callable_param(output_callback, 'output_callback')
+        self.description = check.opt_str_param(description, 'description')
 
     def materialization_of_type(self, name):
         for materialization in self.materializations:
@@ -393,12 +408,13 @@ class OutputDefinition:
 # The core computation in the native kernel abstraction
 # The output
 class SolidDefinition:
-    def __init__(self, name, inputs, transform_fn, output):
+    def __init__(self, name, inputs, transform_fn, output, description=None):
         self.name = check_valid_name(name)
         self.inputs = check.list_param(inputs, 'inputs', InputDefinition)
         self.output = check.inst_param(output, 'output', OutputDefinition)
         # validate_transform_fn(self.name, transform_fn, self.inputs)
         self.transform_fn = check.callable_param(transform_fn, 'transform')
+        self.description = check.opt_str_param(description, 'description')
 
     # Notes to self
 
@@ -448,12 +464,7 @@ NO_DEFAULT_PROVIDED = __ArgumentValueSentinel
 
 class ArgumentDefinition:
     def __init__(
-        self,
-        dagster_type,
-        *,
-        default_value=NO_DEFAULT_PROVIDED,
-        is_optional=False,
-        description=None
+        self, dagster_type, default_value=NO_DEFAULT_PROVIDED, is_optional=False, description=None
     ):
         if not is_optional:
             check.param_invariant(
