@@ -267,14 +267,13 @@ def test_templated_sql_solid_pipeline():
                 'sum_table': table_name_source(first_sum_table),
                 'sum_sq_table': table_name_source(second_sum_sq_table),
             },
-        }
+        },
+        execution=config.Execution.single_solid('sum_sq_table'),
     )
 
     second_result = dagster.execute_pipeline(
         pipeline_two,
         environment=environment_two,
-        from_solids=['sum_sq_table'],
-        through_solids=['sum_sq_table']
     )
     assert second_result.success
     assert len(second_result.result_list) == 1
@@ -313,6 +312,8 @@ def test_with_from_through_specifying_all_solids():
     first_mult_table = 'first_mult_table'
     first_sum_mult_table = 'first_sum_mult_table'
 
+    all_solid_names = [solid.name for solid in pipeline.solids]
+
     environment = config.Environment(
         sources={
             'sum_table': {
@@ -324,17 +325,11 @@ def test_with_from_through_specifying_all_solids():
             'sum_mult_table': {
                 'sum_mult_table': table_name_source(first_sum_mult_table),
             },
-        }
+        },
+        execution=config.Execution(from_solids=all_solid_names, through_solids=all_solid_names)
     )
 
-    all_solid_names = [solid.name for solid in pipeline.solids]
-
-    pipeline_result = dagster.execute_pipeline(
-        pipeline,
-        environment=environment,
-        from_solids=all_solid_names,
-        through_solids=all_solid_names,
-    )
+    pipeline_result = dagster.execute_pipeline(pipeline, environment=environment)
     assert len(pipeline_result.result_list) == 3
     assert _load_table(pipeline_result.context, first_sum_table) == [(1, 2, 3), (3, 4, 7)]
     assert _load_table(pipeline_result.context, first_mult_table) == [(1, 2, 2), (3, 4, 12)]
@@ -380,14 +375,13 @@ def test_multi_input_partial_execution():
                 'mult_table': table_name_source(first_mult_table),
                 'sum_mult_table': table_name_source(second_sum_mult_table)
             },
-        }
+        },
+        execution=config.Execution.single_solid('sum_mult_table')
     )
 
     second_pipeline_result = dagster.execute_pipeline(
         pipeline,
         environment=environment_two,
-        from_solids=['sum_mult_table'],
-        through_solids=['sum_mult_table'],
     )
 
     assert second_pipeline_result.success

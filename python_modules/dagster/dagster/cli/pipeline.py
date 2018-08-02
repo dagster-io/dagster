@@ -218,28 +218,20 @@ def load_yaml_from_path(path):
     default=get_default_config_for_pipeline,
     help="Path to environment file. Defaults to ./PIPELINE_DIR/env.yml."
 )
-@click.option('--from-solid', type=click.STRING, help="Solid to start execution from", default=None)
-# @click.option('--log-level', type=click.Choice(LOGGING_DICT.keys()), default='INFO')
-# def execute_command(pipeline_config, env, from_solid, log_level):
-def execute_command(pipeline_config, env, from_solid):
-    do_execute_command(pipeline_config.pipeline, env, from_solid, print)
+def execute_command(pipeline_config, env):
+    do_execute_command(pipeline_config.pipeline, env, print)
 
 
-def do_execute_command(pipeline, env, from_solid, printer):
+def do_execute_command(pipeline, env, printer):
     check.inst_param(pipeline, 'pipeline', dagster.PipelineDefinition)
     check.str_param(env, 'env')
-    check.opt_str_param(from_solid, 'from_solid')
     check.callable_param(printer, 'printer')
 
     env_config = load_yaml_from_path(env)
 
     environment = dagster.config.construct_environment(env_config)
 
-    pipeline_iter = execute_pipeline_iterator(
-        pipeline,
-        environment=environment,
-        from_solids=[from_solid] if from_solid else None,
-    )
+    pipeline_iter = execute_pipeline_iterator(pipeline, environment)
 
     process_results_for_console(pipeline_iter, printer)
 
