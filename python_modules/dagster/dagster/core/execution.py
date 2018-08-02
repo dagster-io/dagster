@@ -636,14 +636,23 @@ def execute_single_solid(context, solid, environment, throw_on_error=True):
     check.inst_param(environment, 'environment', config.Environment)
     check.bool_param(throw_on_error, 'throw_on_error')
 
+    check.invariant(environment.execution.from_solids == [])
+    check.invariant(environment.execution.through_solids == [])
+
+    single_solid_environment = config.Environment(
+        sources=environment.sources,
+        materializations=environment.materializations,
+        expectations=environment.expectations,
+        context=environment.context,
+        execution=config.Execution.single_solid(solid.name),
+    )
+
     pipeline_result = execute_pipeline(
         PipelineDefinition(
             solids=[solid],
             context_definitions=_create_passthrough_context_definition(context),
         ),
-        environment=environment,
-        from_solids=[solid.name],
-        through_solids=[solid.name],
+        environment=single_solid_environment,
     )
 
     results = pipeline_result.result_list
@@ -707,29 +716,6 @@ def output_single_solid(
         _do_throw_on_error(execution_result)
 
     return execution_result
-
-
-def execute_pipeline_through_solid(
-    pipeline,
-    *,
-    environment,
-    solid_name,
-):
-    '''
-    Execute a pipeline through a single solid, and then output *only* that result
-    '''
-    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    check.inst_param(environment, 'environment', config.Environment)
-    check.str_param(solid_name, 'solid_name')
-
-    for result in execute_pipeline_iterator(
-        pipeline, environment=environment, through_solids=[solid_name]
-    ):
-
-        if result.name == solid_name:
-            return result
-
-    check.failed('Result ' + solid_name + ' not found!')
 
 
 def _gather_input_values(context, solid, input_manager):
@@ -808,6 +794,13 @@ class InputManager:
     def evaluate_expectations(self):
         check.not_implemented('must implement in subclass')
 
+    @property
+    def from_solids(self):
+        check.not_implemented('must implement in subclass')
+
+    @property
+    def through_solids(self):
+        check.not_implemented('must implement in subclass')
 
     def get_input_value(self, context, solid, input_def):
         if input_def.depends_on and input_def.depends_on.name in self.intermediate_values:
@@ -832,10 +825,20 @@ def _wrap_in_yield(thing):
 
 
 class InMemoryInputManager(InputManager):
-    def __init__(self, context, input_values):
+    def __init__(self, context, input_values, from_solids=None, through_solids=None):
         super().__init__()
         self.input_values = check.dict_param(input_values, 'input_values', key_type=str)
         self.context = check.inst_param(context, 'context', ExecutionContext)
+        self._from_solids = check.opt_list_param(from_solids, from_solids, of_type=str)
+        self._through_solids = check.opt_list_param(through_solids, through_solids, of_type=str)
+
+    @property
+    def from_solids(self):
+        return self._from_solids
+
+    @property
+    def through_solids(self):
+        return self._through_solids
 
     def _get_sourced_input_value(self, _context, _solid_name, input_name):
         return self.input_values[input_name]
@@ -885,6 +888,14 @@ class EnvironmentInputManager(InputManager):
         self.pipeline = check.inst_param(pipeline, 'pipeline', PipelineDefinition)
         self.environment = check.inst_param(environment, 'environment', config.Environment)
 
+    @property
+    def from_solids(self):
+        return self.environment.execution.from_solids
+
+    @property
+    def through_solids(self):
+        return self.environment.execution.through_solids
+
     @contextmanager
     def yield_context(self):
         context_name = self.environment.context.name
@@ -920,12 +931,7 @@ class EnvironmentInputManager(InputManager):
     def evaluate_expectations(self):
         return self.environment.expectations.evaluate
 
-def execute_pipeline_iterator(
-    pipeline,
-    environment,
-    through_solids=None,
-    from_solids=None,
-):
+def execute_pipeline_iterator(pipeline, environment):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.inst_param(environment, 'enviroment', config.Environment)
 
@@ -934,8 +940,6 @@ def execute_pipeline_iterator(
         return _execute_pipeline_iterator(
             context,
             pipeline,
-            through_solids,
-            from_solids,
             EnvironmentInputManager(pipeline, environment)
         )
 
@@ -943,22 +947,21 @@ def execute_pipeline_iterator_in_memory(
     context,
     pipeline,
     input_values,
-    through_solids=None,
+    *,
     from_solids=None,
+    through_solids=None,
 ):
+    check.opt_list_param(from_solids, 'from_solids', of_type=str)
+    check.opt_list_param(through_solids, 'through_solids', of_type=str)
     return _execute_pipeline_iterator(
         context,
         pipeline,
-        through_solids,
-        from_solids,
-        InMemoryInputManager(context, input_values),
+        InMemoryInputManager(context, input_values, from_solids, through_solids),
     )
 
 def _execute_pipeline_iterator(
     context,
     pipeline,
-    through_solids,
-    from_solids,
     input_manager,
 ):
     '''
@@ -978,9 +981,10 @@ def _execute_pipeline_iterator(
 
     check.inst_param(context, 'context', ExecutionContext)
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    check.opt_list_param(through_solids, 'through_solids', of_type=str)
-    check.opt_list_param(from_solids, 'from_solids', of_type=str)
     check.inst_param(input_manager, 'input_manager', InputManager)
+
+    through_solids = input_manager.through_solids
+    from_solids = input_manager.from_solids
 
     pipeline_context_value = pipeline.name if pipeline.name else 'unnamed'
 
@@ -1069,18 +1073,14 @@ def _execute_materializations(
 
 def execute_pipeline(
     pipeline,
-    *,
     environment,
-    from_solids=None,
-    through_solids=None,
+    *,
     throw_on_error=True,
 ):
     check.inst_param(environment, 'environment', config.Environment)
     return _execute_pipeline(
         pipeline,
         EnvironmentInputManager(pipeline, environment),
-        from_solids,
-        through_solids,
         throw_on_error,
     )
 
@@ -1096,17 +1096,13 @@ def execute_pipeline_in_memory(
     check.dict_param(input_values, 'input_values', key_type=str)
     return _execute_pipeline(
         pipeline,
-        InMemoryInputManager(context, input_values),
-        from_solids,
-        through_solids,
+        InMemoryInputManager(context, input_values, from_solids, through_solids),
         throw_on_error,
     )
 
 def _execute_pipeline(
     pipeline,
     input_manager,
-    from_solids=None,
-    through_solids=None,
     throw_on_error=True,
 ):
     '''
@@ -1119,8 +1115,6 @@ def _execute_pipeline(
     '''
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.inst_param(input_manager, 'input_manager', InputManager)
-    from_solids = check.opt_list_param(from_solids, 'from_solids', of_type=str)
-    through_solids = check.opt_list_param(through_solids, 'through_solids', of_type=str)
     check.bool_param(throw_on_error, 'throw_on_error')
 
     results = []
@@ -1129,8 +1123,6 @@ def _execute_pipeline(
             context,
             pipeline,
             input_manager=input_manager,
-            through_solids=through_solids,
-            from_solids=from_solids,
         ):
             if throw_on_error:
                 if not result.success:

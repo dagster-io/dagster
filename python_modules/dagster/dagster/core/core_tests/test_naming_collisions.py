@@ -210,17 +210,17 @@ def test_execute_dep_solid_same_input_name():
 
     pipeline = dagster.PipelineDefinition(solids=[table_one, table_two])
 
-    complete_environment = config.Environment(
-        sources={
-            'table_one': {
-                'table_one': config.Source(name='TABLE', args={'name': 'table_one_instance'}),
-            },
-            'table_two': {
-                'table_one': config.Source(name='TABLE', args={'name': 'table_one_instance'}),
-                'table_two': config.Source(name='TABLE', args={'name': 'table_two_instance'}),
-            },
-        }
-    )
+    sources = {
+        'table_one': {
+            'table_one': config.Source(name='TABLE', args={'name': 'table_one_instance'}),
+        },
+        'table_two': {
+            'table_one': config.Source(name='TABLE', args={'name': 'table_one_instance'}),
+            'table_two': config.Source(name='TABLE', args={'name': 'table_two_instance'}),
+        },
+    }
+
+    complete_environment = config.Environment(sources=sources)
 
     both_solids_result = dagster.execute_pipeline(pipeline, environment=complete_environment)
 
@@ -241,9 +241,12 @@ def test_execute_dep_solid_same_input_name():
     executed['s2_t1_source'] = False
     executed['s2_t2_source'] = False
 
-    second_solid_only_result = dagster.execute_pipeline(
-        pipeline, environment=complete_environment, from_solids=['table_two']
+    second_only_env = config.Environment(
+        sources=sources,
+        execution=config.Execution(from_solids=['table_two']),
     )
+
+    second_solid_only_result = dagster.execute_pipeline(pipeline, environment=second_only_env)
 
     assert second_solid_only_result.success
     assert len(second_solid_only_result.result_list) == 1
@@ -263,10 +266,14 @@ def test_execute_dep_solid_same_input_name():
     executed['s2_t1_source'] = False
     executed['s2_t2_source'] = False
 
+    first_only_env = config.Environment(
+        sources=sources,
+        execution=config.Execution(through_solids=['table_one']),
+    )
+
     first_solid_only_result = dagster.execute_pipeline(
         pipeline,
-        environment=complete_environment,
-        through_solids=['table_one'],
+        environment=first_only_env,
     )
 
     assert first_solid_only_result.success

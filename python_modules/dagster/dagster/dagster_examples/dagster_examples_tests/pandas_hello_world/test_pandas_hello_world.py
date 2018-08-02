@@ -20,17 +20,11 @@ def test_execute_pipeline():
             'sum_solid': {
                 'num': config.Source(name='CSV', args={'path': script_relative_path('num.csv')})
             }
-        }
+        },
+        execution=config.Execution(from_solids=['sum_solid'], through_solids=['sum_sq_solid']),
     )
 
-    result = execute_pipeline(
-        pipeline,
-        environment=environment,
-        from_solids=['sum_solid'],
-        through_solids=[
-            'sum_sq_solid',
-        ]
-    )
+    result = execute_pipeline(pipeline, environment=environment)
 
     assert result.success
 
@@ -58,8 +52,9 @@ def test_cli_execute():
         os.chdir(script_relative_path('../..'))
 
         do_execute_command(
-            define_pipeline(), script_relative_path('../../pandas_hello_world/env.yml'), None,
-            lambda *_args, **_kwargs: None
+            define_pipeline(),
+            script_relative_path('../../pandas_hello_world/env.yml'),
+            lambda *_args, **_kwargs: None,
         )
     finally:
         # restore cwd

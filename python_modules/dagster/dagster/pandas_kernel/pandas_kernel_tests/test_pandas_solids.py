@@ -13,7 +13,6 @@ from dagster.core.decorators import solid
 from dagster.core.execution import (
     InMemoryInputManager,
     ExecutionContext,
-    execute_pipeline_through_solid,
     _read_source,
     execute_pipeline_iterator,
     output_single_solid,
@@ -35,7 +34,7 @@ def get_solid_transformed_value(context, solid_inst, environment):
     return execution_result.transformed_value
 
 
-def get_num_csv_environment(solid_name, materializations=None):
+def get_num_csv_environment(solid_name, materializations=None, through_solids=None):
     return config.Environment(
         sources={
             solid_name: {
@@ -43,6 +42,7 @@ def get_num_csv_environment(solid_name, materializations=None):
             },
         },
         materializations=materializations,
+        execution=config.Execution(through_solids=through_solids),
     )
 
 
@@ -395,11 +395,12 @@ def test_diamond_dag_run():
 
 def test_pandas_in_memory_diamond_pipeline():
     pipeline = create_diamond_pipeline()
-    result = execute_pipeline_through_solid(
-        pipeline, environment=get_num_csv_environment('num_table'), solid_name='sum_mult_table'
+    result = execute_pipeline(
+        pipeline,
+        environment=get_num_csv_environment('num_table', through_solids=['sum_mult_table'])
     )
 
-    assert result.transformed_value.to_dict('list') == {
+    assert result.result_named('sum_mult_table').transformed_value.to_dict('list') == {
         'num1': [1, 3],
         'num2': [2, 4],
         'sum': [3, 7],
@@ -496,9 +497,8 @@ def test_pandas_output_intermediate_csv_files():
                         'mult_table': config.Source('CSV', {'path': mult_file}),
                     },
                 },
+                execution=config.Execution.single_solid('sum_mult_table'),
             ),
-            from_solids=['sum_mult_table'],
-            through_solids=['sum_mult_table'],
         )
 
         assert pipeline_result.success
@@ -568,6 +568,7 @@ def test_pandas_multiple_inputs():
                 'num_csv2': config.Source('CSV', {'path': script_relative_path('num.csv')}),
             },
         },
+        execution=config.Execution(through_solids=['double_sum']),
     )
 
     def transform_fn(_context, args):
@@ -581,11 +582,11 @@ def test_pandas_multiple_inputs():
     )
     pipeline = dagster.PipelineDefinition(solids=[double_sum])
 
-    output_df = execute_pipeline_through_solid(
+    output_df = execute_pipeline(
         pipeline,
         environment=environment,
-        solid_name='double_sum',
-    ).transformed_value
+        # solid_name='double_sum',
+    ).result_list[0].transformed_value
 
     assert not output_df.empty
 

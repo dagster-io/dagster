@@ -3,7 +3,6 @@ from builtins import *  # pylint: disable=W0622,W0401
 
 from dagster.core.execution import (
     execute_pipeline,
-    execute_pipeline_through_solid,
     ExecutionContext,
     ExpectationResult,
     InputExpectationInfo,
