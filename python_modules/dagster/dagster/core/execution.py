@@ -904,7 +904,10 @@ class EnvironmentInputManager(InputManager):
         args_to_pass = validate_args(
             self.pipeline.context_definitions[context_name].argument_def_dict,
             self.environment.context.args,
-            'context {context_name}'.format(context_name=context_name)
+            'pipeline {pipeline_name} context {context_name}'.format(
+                pipeline_name=self.pipeline.name,
+                context_name=context_name,
+            )
         )
 
         thing = context_definition.context_fn(self.pipeline, args_to_pass)
