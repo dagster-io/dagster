@@ -9,6 +9,7 @@ if sys.version_info[0] < 3:
 else:
     import builtins
 
+
 def long_description():
     here = os.path.abspath(os.path.dirname(__file__))
     with open(os.path.join(here, 'README.rst'), 'r') as fh:
@@ -52,7 +53,7 @@ setup(
 
         # sqlalchemy kernel
         'sqlalchemy>=1.2.7',
-        'jinja2>=2.10',
+        'jinja2>=2.8',
 
         # examples
         # unused and very, very heavy

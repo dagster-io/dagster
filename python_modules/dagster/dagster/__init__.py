@@ -5,6 +5,11 @@ from dagster.core.execution import (
     execute_pipeline,
     execute_pipeline_through_solid,
     ExecutionContext,
+    ExpectationResult,
+    InputExpectationInfo,
+    OutputExpectationInfo,
+    InputExpectationResult,
+    InputExpectationResults,
 )
 
 from dagster.core.definitions import (

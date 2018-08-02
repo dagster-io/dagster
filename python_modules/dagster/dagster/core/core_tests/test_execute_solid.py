@@ -15,7 +15,7 @@ from dagster.core.definitions import (
 
 from dagster.core.execution import (
     output_single_solid,
-    DagsterExecutionResult,
+    SolidExecutionResult,
     DagsterExecutionFailureReason,
     ExecutionContext,
     execute_single_solid,
@@ -127,9 +127,7 @@ def test_hello_world():
         ],
         transform_fn=transform_fn,
         output=create_single_materialization_output(
-            name='CUSTOM',
-            materialization_fn=materialization_fn,
-            argument_def_dict={}
+            name='CUSTOM', materialization_fn=materialization_fn, argument_def_dict={}
         ),
     )
 
@@ -199,7 +197,7 @@ def test_execute_solid_with_failed_input_expectation_non_throwing():
         throw_on_error=False,
     )
 
-    assert isinstance(solid_execution_result, DagsterExecutionResult)
+    assert isinstance(solid_execution_result, SolidExecutionResult)
     assert solid_execution_result.success is False
     assert solid_execution_result.reason == DagsterExecutionFailureReason.EXPECTATION_FAILURE
 
@@ -229,7 +227,7 @@ def test_execute_solid_with_failed_input_expectation_throwing():
 def create_input_failing_solid():
     test_output = {}
 
-    def failing_expectation_fn(_some_input):
+    def failing_expectation_fn(_context, _info, _some_input):
         return ExpectationResult(success=False)
 
     failing_expect = ExpectationDefinition(name='failing', expectation_fn=failing_expectation_fn)
@@ -254,7 +252,7 @@ def test_execute_solid_with_failed_output_expectation_non_throwing():
         throw_on_error=False
     )
 
-    assert isinstance(solid_execution_result, DagsterExecutionResult)
+    assert isinstance(solid_execution_result, SolidExecutionResult)
     assert solid_execution_result.success is False
     assert solid_execution_result.reason == DagsterExecutionFailureReason.EXPECTATION_FAILURE
 
@@ -305,7 +303,7 @@ def test_execute_solid_with_no_inputs():
 def create_output_failing_solid():
     test_output = {}
 
-    def failing_expectation_fn(_output):
+    def failing_expectation_fn(_context, _info, _output):
         return ExpectationResult(success=False)
 
     output_expectation = ExpectationDefinition(

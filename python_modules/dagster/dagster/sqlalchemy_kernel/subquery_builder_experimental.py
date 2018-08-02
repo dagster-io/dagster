@@ -68,7 +68,7 @@ def create_table_output():
     )
 
 
-def _table_name_read_fn(context, arg_dict):
+def _table_name_read_fn(_context, arg_dict):
     check.dict_param(arg_dict, 'arg_dict')
 
     table_name = check.str_elem(arg_dict, 'table_name')
