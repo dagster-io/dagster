@@ -48,10 +48,12 @@ def test_empty():
 
 def test_required_single_arg_passing():
     _validate(_single_required_string_arg_def_dict(), {'string_arg': 'value'})
+    _validate(_single_required_string_arg_def_dict(), {'string_arg': None})
 
 
 def test_multiple_required_arg_passing():
     _validate(_multiple_required_args_def_dict(), {'arg_one': 'value_one', 'arg_two': 'value_two'})
+    _validate(_multiple_required_args_def_dict(), {'arg_one': 'value_one', 'arg_two': None})
 
 
 def test_single_required_arg_failures():
@@ -67,9 +69,6 @@ def test_single_required_arg_failures():
     with pytest.raises(DagsterTypeError):
         _validate(_single_required_string_arg_def_dict(), {'string_arg': 1})
 
-    with pytest.raises(DagsterTypeError):
-        _validate(_single_required_string_arg_def_dict(), {'string_arg': None})
-
 
 def test_multiple_required_args_failing():
     with pytest.raises(DagsterTypeError):
@@ -84,9 +83,6 @@ def test_multiple_required_args_failing():
     with pytest.raises(DagsterTypeError):
         _validate(_multiple_required_args_def_dict(), {'arg_one': 'value_one', 'arg_two': 2})
 
-    with pytest.raises(DagsterTypeError):
-        _validate(_multiple_required_args_def_dict(), {'arg_one': 'value_one', 'arg_two': None})
-
 
 def test_single_optional_arg_passing():
     assert _validate(_single_optional_string_arg_def_dict(), {'optional_arg': 'value'}) == {
@@ -94,11 +90,12 @@ def test_single_optional_arg_passing():
     }
     assert _validate(_single_optional_string_arg_def_dict(), {}) == {}
 
+    assert _validate(_single_optional_string_arg_def_dict(), {'optional_arg': None}) == {
+        'optional_arg': None
+    }
+
 
 def test_single_optional_arg_failing():
-    with pytest.raises(DagsterTypeError):
-        _validate(_single_optional_string_arg_def_dict(), {'optional_arg': None})
-
     with pytest.raises(DagsterTypeError):
         _validate(_single_optional_string_arg_def_dict(), {'optional_arg': 1})
 

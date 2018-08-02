@@ -2,7 +2,7 @@ import pytest
 
 from dagster import check
 
-from dagster.core.definitions import create_custom_source_input
+from dagster.utils.compatability import create_custom_source_input
 
 from dagster.core.execution import (
     _read_source,
@@ -50,9 +50,7 @@ def test_basic_materialization_runtime_error_handling():
         raise Exception('error during output')
 
     materialization_def = MaterializationDefinition(
-        name='CUSTOM',
-        materialization_fn=materialization_fn_inst,
-        argument_def_dict={}
+        name='CUSTOM', materialization_fn=materialization_fn_inst, argument_def_dict={}
     )
 
     with pytest.raises(DagsterUserCodeExecutionError):

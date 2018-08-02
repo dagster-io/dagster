@@ -389,7 +389,7 @@ def test_inst():
         check.inst(Foo(), Bar)
 
 
-def test_param_inst():
+def test_inst_param():
     class Foo:
         pass
 
@@ -407,7 +407,7 @@ def test_param_inst():
         check.inst_param(Foo(), 'obj', Bar)
 
 
-def test_opt_param_inst():
+def test_opt_inst_param():
     class Foo:
         pass
 
@@ -422,6 +422,12 @@ def test_opt_param_inst():
 
     with pytest.raises(ParameterCheckError, match='not a Bar'):
         check.opt_inst_param(Foo(), 'obj', Bar)
+
+    # check defaults
+
+    default_obj = Foo()
+
+    assert check.opt_inst_param(None, 'obj', Foo, default_obj) is default_obj
 
 
 def test_dict_elem():
@@ -522,3 +528,26 @@ def test_opt_tuple_param():
 
     with pytest.raises(CheckError):
         assert check.tuple_param('kdjfkd', 'something')
+
+
+def test_type_param():
+    class Bar:
+        pass
+
+    assert check.type_param(int, 'foo')
+    assert check.type_param(Bar, 'foo')
+
+    with pytest.raises(CheckError):
+        check.type_param(None, 'foo')
+
+    with pytest.raises(CheckError):
+        check.type_param(check, 'foo')
+
+    with pytest.raises(CheckError):
+        check.type_param(234, 'foo')
+
+    with pytest.raises(CheckError):
+        check.type_param('bar', 'foo')
+
+    with pytest.raises(CheckError):
+        check.type_param(Bar(), 'foo')

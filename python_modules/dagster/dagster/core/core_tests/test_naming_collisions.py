@@ -5,7 +5,6 @@ from dagster.core.definitions import (
     SolidDefinition,
     InputDefinition,
     SourceDefinition,
-    create_no_materialization_output,
     ArgumentDefinition,
 )
 
@@ -30,7 +29,7 @@ def test_execute_solid_with_input_same_name():
             ),
         ],
         transform_fn=lambda context, args: args['a_thing'] + args['a_thing'],
-        output=create_no_materialization_output(),
+        output=dagster.OutputDefinition(),
     )
 
     result = execute_single_solid(
@@ -65,14 +64,14 @@ def test_execute_two_solids_with_same_input_name():
         'solid_one',
         inputs=[input_def],
         transform_fn=lambda context, args: args['a_thing'] + args['a_thing'],
-        output=create_no_materialization_output(),
+        output=dagster.OutputDefinition(),
     )
 
     solid_two = SolidDefinition(
         'solid_two',
         inputs=[input_def],
         transform_fn=lambda context, args: args['a_thing'] + args['a_thing'],
-        output=create_no_materialization_output(),
+        output=dagster.OutputDefinition(),
     )
 
     pipeline = dagster.PipelineDefinition(solids=[solid_one, solid_two])
@@ -113,7 +112,7 @@ def test_execute_dep_solid_different_input_name():
             ),
         ],
         transform_fn=lambda context, args: args['a_thing'] + args['a_thing'],
-        output=create_no_materialization_output(),
+        output=dagster.OutputDefinition(),
     )
 
     second_solid = SolidDefinition(
@@ -121,12 +120,11 @@ def test_execute_dep_solid_different_input_name():
         inputs=[
             InputDefinition(
                 name='a_dependency',
-                sources=[],
                 depends_on=first_solid,
             ),
         ],
         transform_fn=lambda context, args: args['a_dependency'] + args['a_dependency'],
-        output=create_no_materialization_output(),
+        output=dagster.OutputDefinition(),
     )
 
     pipeline = dagster.PipelineDefinition(solids=[first_solid, second_solid])
@@ -174,7 +172,7 @@ def test_execute_dep_solid_same_input_name():
             ),
         ],
         transform_fn=lambda context, args: args['table_one'],
-        output=create_no_materialization_output(),
+        output=dagster.OutputDefinition(),
     )
 
     table_two = SolidDefinition(
@@ -205,7 +203,7 @@ def test_execute_dep_solid_same_input_name():
             ),
         ],
         transform_fn=lambda context, args: args['table_two'],
-        output=create_no_materialization_output(),
+        output=dagster.OutputDefinition(),
     )
 
     pipeline = dagster.PipelineDefinition(solids=[table_one, table_two])

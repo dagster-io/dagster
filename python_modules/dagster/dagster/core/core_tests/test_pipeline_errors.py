@@ -5,15 +5,15 @@ import dagster
 import dagster.core
 from dagster.core.definitions import (
     SolidDefinition,
-    create_custom_source_input,
-    create_no_materialization_output,
-    create_single_materialization_output,
     InputDefinition,
 )
 from dagster.core.execution import (
     DagsterExecutionFailureReason,
     execute_pipeline,
     ExecutionContext,
+)
+from dagster.utils.compatability import (
+    create_custom_source_input, create_single_materialization_output
 )
 
 
@@ -64,7 +64,7 @@ def create_root_success_solid(name):
         name=name,
         inputs=[create_input_set_input_def(input_name)],
         transform_fn=root_transform,
-        output=create_no_materialization_output(),
+        output=dagster.OutputDefinition(),
     )
 
 
@@ -83,7 +83,7 @@ def create_root_transform_failure_solid(name):
         name=name,
         inputs=[inp],
         transform_fn=failed_transform,
-        output=create_no_materialization_output(),
+        output=dagster.OutputDefinition(),
     )
 
 
@@ -102,7 +102,7 @@ def create_root_input_failure_solid(name):
         name=name,
         inputs=[inp],
         transform_fn=lambda **_kwargs: {},
-        output=create_no_materialization_output(),
+        output=dagster.OutputDefinition(),
     )
 
 
@@ -193,11 +193,11 @@ def test_failure_midstream():
     solid_c = SolidDefinition(
         name='C',
         inputs=[
-            InputDefinition(name='A', sources=[], depends_on=solid_a),
-            InputDefinition(name='B', sources=[], depends_on=solid_b),
+            InputDefinition(name='A', depends_on=solid_a),
+            InputDefinition(name='B', depends_on=solid_b),
         ],
         transform_fn=transform_fn,
-        output=create_no_materialization_output(),
+        output=dagster.OutputDefinition(),
     )
 
     environment = config.Environment(

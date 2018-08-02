@@ -1,14 +1,8 @@
 import pytest
 
-from dagster import check
-from dagster import config
+from dagster import (check, config)
 
-from dagster.core.definitions import (
-    SolidDefinition,
-    create_custom_source_input,
-    create_no_materialization_output,
-    PipelineDefinition,
-)
+from dagster.core.definitions import (SolidDefinition, OutputDefinition, PipelineDefinition)
 from dagster.core.graph import (create_adjacency_lists, SolidGraph)
 from dagster.core.execution import (
     execute_pipeline_iterator,
@@ -16,6 +10,8 @@ from dagster.core.execution import (
     ExecutionContext,
     SolidExecutionResult,
 )
+
+from dagster.utils.compatability import create_custom_source_input
 
 # protected members
 # pylint: disable=W0212
@@ -57,7 +53,7 @@ def create_solid_with_deps(name, *solid_deps):
         name=name,
         inputs=inputs,
         transform_fn=dep_transform,
-        output=create_no_materialization_output(),
+        output=OutputDefinition(),
     )
 
 
@@ -79,7 +75,7 @@ def create_root_solid(name):
         name=name,
         inputs=[inp],
         transform_fn=root_transform,
-        output=create_no_materialization_output(),
+        output=OutputDefinition(),
     )
 
 

@@ -6,7 +6,6 @@ from dagster.core.definitions import (
     SolidDefinition,
     InputDefinition,
     SourceDefinition,
-    create_no_materialization_output,
     ArgumentDefinition,
 )
 
@@ -114,7 +113,7 @@ def create_templated_sql_transform_solid(
         name=name,
         inputs=table_inputs + dep_inputs + extra_inputs,
         transform_fn=_create_templated_sql_transform_with_output(sql, output),
-        output=create_no_materialization_output(),
+        output=dagster.OutputDefinition(),
     )
 
 

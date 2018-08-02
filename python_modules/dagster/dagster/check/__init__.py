@@ -123,10 +123,10 @@ def inst_param(obj, param_name, ttype):
     return obj
 
 
-def opt_inst_param(obj, param_name, ttype):
+def opt_inst_param(obj, param_name, ttype, default=None):
     if obj is not None and not isinstance(obj, ttype):
         raise_with_traceback(_param_type_mismatch_exception(obj, ttype, param_name))
-    return obj
+    return default if obj is None else obj
 
 
 def callable_param(obj, param_name):
@@ -223,6 +223,12 @@ def dict_param(obj, param_name, key_type=None, value_type=None):
         return obj
 
     return _check_key_value_types(obj, key_type, value_type)
+
+
+def type_param(obj, param_name):
+    if not isinstance(obj, type):
+        raise_with_traceback(_param_type_mismatch_exception(obj, type, param_name))
+    return obj
 
 
 def _check_key_value_types(obj, key_type, value_type):

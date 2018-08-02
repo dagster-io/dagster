@@ -1,7 +1,8 @@
 import dagster
 from dagster import config
-from dagster.core.definitions import (
-    SolidDefinition, create_single_materialization_output, create_custom_source_input
+from dagster.core.definitions import SolidDefinition
+from dagster.utils.compatability import (
+    create_custom_source_input, create_single_materialization_output
 )
 from dagster.core.execution import output_single_solid
 

@@ -7,10 +7,8 @@ from dagster.core.definitions import (
     SolidDefinition,
     ExpectationDefinition,
     ExpectationResult,
-    create_custom_source_input,
-    create_single_materialization_output,
-    create_no_materialization_output,
     ArgumentDefinition,
+    OutputDefinition,
 )
 
 from dagster.core.execution import (
@@ -22,6 +20,10 @@ from dagster.core.execution import (
 )
 
 from dagster.core.errors import DagsterExpectationFailedError
+
+from dagster.utils.compatability import (
+    create_custom_source_input, create_single_materialization_output
+)
 
 
 def create_test_context():
@@ -289,7 +291,7 @@ def test_execute_solid_with_no_inputs():
         name='no_args_solid',
         inputs=[],
         transform_fn=lambda context, args: _set_key_value(did_run_dict, 'did_run', True),
-        output=create_no_materialization_output(),
+        output=OutputDefinition(),
     )
 
     result = execute_single_solid(
