@@ -4,7 +4,6 @@ from dagster.core.definitions import (
     InputDefinition,
     SolidDefinition,
     SourceDefinition,
-    create_no_materialization_output,
     ArgumentDefinition,
 )
 from dagster.sqlalchemy_kernel.templated import (
@@ -61,7 +60,7 @@ def test_single_templated_sql_solid_single_table_raw_api():
         name='sum_table_transform',
         inputs=[sum_table_input],
         transform_fn=_create_templated_sql_transform_with_output(sql, 'sum_table'),
-        output=create_no_materialization_output(),
+        output=dagster.OutputDefinition(),
     )
 
     pipeline = pipeline_test_def(solids=[sum_table_transform_solid], context=in_mem_context())
@@ -155,7 +154,7 @@ def test_single_templated_sql_solid_double_table_raw_api():
             sql,
             'sum_table',
         ),
-        output=create_no_materialization_output(),
+        output=dagster.OutputDefinition(),
     )
 
     pipeline = pipeline_test_def(solids=[sum_solid], context=in_mem_context(num_table_arg))

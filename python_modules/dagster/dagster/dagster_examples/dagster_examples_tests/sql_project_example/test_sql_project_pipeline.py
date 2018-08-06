@@ -1,6 +1,6 @@
 import sqlalchemy as sa
 import dagster
-from dagster import config
+from dagster import (config, InputDefinition)
 import dagster.sqlalchemy_kernel as dagster_sa
 from dagster.utils.test import script_relative_path
 
@@ -68,7 +68,10 @@ def test_sql_populate_tables():
     create_all_tables_solids = _get_project_solid('create_all_tables')
 
     populate_num_table_solid = _get_project_solid(
-        'populate_num_table', inputs=[_dep_only_input(create_all_tables_solids)]
+        'populate_num_table',
+        inputs=[
+            InputDefinition(create_all_tables_solids.name, depends_on=create_all_tables_solids)
+        ]
     )
 
     pipeline = create_mem_sql_pipeline_context_tuple(
@@ -84,30 +87,24 @@ def test_sql_populate_tables():
     ]
 
 
-def _dep_only_input(solid):
-    return dagster.InputDefinition(
-        name=solid.name,
-        sources=[],
-        depends_on=solid,
-    )
-
-
 def create_full_pipeline():
     create_all_tables_solids = _get_project_solid('create_all_tables')
 
     populate_num_table_solid = _get_project_solid(
         'populate_num_table',
-        inputs=[_dep_only_input(create_all_tables_solids)],
+        inputs=[InputDefinition('create_all_tables_solids', depends_on=create_all_tables_solids)],
     )
 
     insert_into_sum_table_solid = _get_project_solid(
         'insert_into_sum_table',
-        inputs=[_dep_only_input(populate_num_table_solid)],
+        inputs=[InputDefinition('populate_num_table_solid', depends_on=populate_num_table_solid)],
     )
 
     insert_into_sum_sq_table_solid = _get_project_solid(
         'insert_into_sum_sq_table',
-        inputs=[_dep_only_input(insert_into_sum_table_solid)],
+        inputs=[
+            InputDefinition('insert_into_sum_sq_table', depends_on=insert_into_sum_table_solid)
+        ],
     )
 
     return create_mem_sql_pipeline_context_tuple(

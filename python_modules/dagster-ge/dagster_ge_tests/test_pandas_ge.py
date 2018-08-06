@@ -1,14 +1,12 @@
 import pandas as pd
 
 import dagster
-import dagster_ge
-
-from dagster.core.decorators import solid
-from dagster.core.execution import (execute_pipeline_in_memory, DagsterExecutionFailureReason)
-
-from dagster.utils.test import script_relative_path
-
 import dagster.pandas_kernel as dagster_pd
+import dagster_ge
+from dagster import (InputDefinition, OutputDefinition)
+from dagster.core.decorators import solid
+from dagster.core.execution import (DagsterExecutionFailureReason, execute_pipeline_in_memory)
+from dagster.utils.test import script_relative_path
 
 
 def _sum_solid_impl(num_df):
@@ -23,12 +21,11 @@ def col_exists(name, col_name):
 
 @solid(
     inputs=[
-        dagster_pd.dataframe_input(
-            'num_df',
-            expectations=[col_exists('num1_exists', 'num1')],
+        InputDefinition(
+            'num_df', dagster_pd.DataFrame, expectations=[col_exists('num1_exists', 'num1')]
         )
     ],
-    output=dagster_pd.dataframe_output()
+    output=OutputDefinition(dagster_pd.DataFrame)
 )
 def sum_solid(num_df):
     return _sum_solid_impl(num_df)
@@ -36,12 +33,13 @@ def sum_solid(num_df):
 
 @solid(
     inputs=[
-        dagster_pd.dataframe_input(
+        InputDefinition(
             'num_df',
+            dagster_pd.DataFrame,
             expectations=[col_exists('failing', 'not_a_column')],
-        ),
+        )
     ],
-    output=dagster_pd.dataframe_output()
+    output=OutputDefinition(dagster_pd.DataFrame)
 )
 def sum_solid_fails_input_expectation(num_df):
     return _sum_solid_impl(num_df)
@@ -49,16 +47,17 @@ def sum_solid_fails_input_expectation(num_df):
 
 @solid(
     inputs=[
-        dagster_pd.dataframe_input(
+        InputDefinition(
             'num_df',
+            dagster_pd.DataFrame,
             expectations=[
                 dagster_ge.json_config_expectation(
                     'num_expectations', script_relative_path('num_expectations.json')
                 )
             ],
-        )
+        ),
     ],
-    output=dagster_pd.dataframe_output()
+    output=OutputDefinition(dagster_pd.DataFrame)
 )
 def sum_solid_expectations_config(num_df):
     return _sum_solid_impl(num_df)

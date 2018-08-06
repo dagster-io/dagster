@@ -5,7 +5,6 @@ from dagster.core import types
 from dagster.core.definitions import (
     SolidDefinition,
     OutputDefinition,
-    create_custom_source_input,
     MaterializationDefinition,
     SourceDefinition,
     ArgumentDefinition,
@@ -18,6 +17,8 @@ from dagster.core.execution import (
     _execute_materialization,
     _read_source,
 )
+
+from dagster.utils.compatability import create_custom_source_input
 
 
 def create_test_context():
@@ -79,12 +80,10 @@ def test_source_int_type():
     )
     assert _read_source(create_test_context(), int_arg_source, {'an_int': 0})
     assert _read_source(create_test_context(), int_arg_source, {'an_int': 1})
+    assert _read_source(create_test_context(), int_arg_source, {'an_int': None})
 
     with pytest.raises(DagsterTypeError):
         _read_source(create_test_context(), int_arg_source, {'an_int': 'not_an_int'})
-
-    with pytest.raises(DagsterTypeError):
-        _read_source(create_test_context(), int_arg_source, {'an_int': None})
 
 
 def test_source_bool_type():
@@ -96,12 +95,10 @@ def test_source_bool_type():
 
     assert _read_source(create_test_context(), bool_arg_source, {'an_bool': True})
     assert _read_source(create_test_context(), bool_arg_source, {'an_bool': False})
+    assert _read_source(create_test_context(), bool_arg_source, {'an_bool': None})
 
     with pytest.raises(DagsterTypeError):
         _read_source(create_test_context(), bool_arg_source, {'an_bool': 'not_an_bool'})
-
-    with pytest.raises(DagsterTypeError):
-        _read_source(create_test_context(), bool_arg_source, {'an_bool': None})
 
     with pytest.raises(DagsterTypeError):
         _read_source(create_test_context(), bool_arg_source, {'an_bool': 0})

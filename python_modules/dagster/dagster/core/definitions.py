@@ -201,19 +201,6 @@ class ExpectationDefinition:
         self.description = check.opt_str_param(description, 'description')
 
 
-def create_dagster_single_file_input(name, single_file_fn, source_type='CUSTOM'):
-    check.str_param(name, 'name')
-    return create_custom_source_input(
-        name=name,
-        source_fn=lambda context, arg_dict: single_file_fn(
-            context=context,
-            path=check.str_elem(arg_dict, 'path')
-        ),
-        argument_def_dict={'path': ArgumentDefinition(types.Path)},
-        source_type=source_type,
-    )
-
-
 class SourceDefinition:
     '''
     name: name of the source
@@ -242,36 +229,6 @@ class SourceDefinition:
         self.description = check.opt_str_param(description, 'description')
 
 
-def create_custom_source_input(
-    name,
-    source_fn,
-    *,
-    argument_def_dict=None,
-    depends_on=None,
-    expectations=None,
-    source_type='CUSTOM'
-):
-    '''
-    This function exist and is used a lot because separation of inputs and sources used to not
-    exist so most of the unit tests in the systems were written without tha abstraction. So
-    this exists as a bridge from the old api to the new api.
-    '''
-    return InputDefinition(
-        name=name,
-        sources=[
-            SourceDefinition(
-                source_type=source_type,
-                source_fn=source_fn,
-                argument_def_dict=argument_def_dict,
-            )
-        ],
-        depends_on=depends_on,
-        expectations=check.opt_list_param(
-            expectations, 'expectations', of_type=ExpectationDefinition
-        )
-    )
-
-
 class InputDefinition:
     '''
     An InputDefinition instances represents an argument to a transform defined within a solid.
@@ -293,15 +250,25 @@ class InputDefinition:
     def __init__(
         self,
         name,
-        sources,
+        dagster_type=None,
+        sources=None,
         depends_on=None,
         expectations=None,
         input_callback=None,
         description=None
     ):
         self.name = check_valid_name(name)
-        self.sources = check.list_param(sources, 'sources', of_type=SourceDefinition)
+
+        if sources is None and dagster_type is not None:
+            sources = dagster_type.default_sources
+
+        self.sources = check.opt_list_param(sources, 'sources', of_type=SourceDefinition)
         self.depends_on = check.opt_inst_param(depends_on, 'depends_on', SolidDefinition)
+
+        self.dagster_type = check.opt_inst_param(
+            dagster_type, 'dagster_type', types.DagsterType, types.Any
+        )
+
         self.expectations = check.opt_list_param(
             expectations, 'expectations', of_type=ExpectationDefinition
         )
@@ -357,39 +324,28 @@ class MaterializationDefinition:
         self.description = check.opt_str_param(description, 'description')
 
 
-def create_no_materialization_output(expectations=None):
-    return OutputDefinition(expectations=expectations)
-
-
-def create_single_materialization_output(
-    name, materialization_fn, argument_def_dict, expectations=None
-):
-    '''
-    Similar to create_single_source_input this exists because a move in the primitive APIs.
-    Materializations and outputs used to not be separate concepts so this is a compatability
-    layer with the old api. Once the *new* api stabilizes this should be removed but it stays
-    for now.
-    '''
-    return OutputDefinition(
-        materializations=[
-            MaterializationDefinition(
-                name=name,
-                materialization_fn=materialization_fn,
-                argument_def_dict=argument_def_dict,
-            )
-        ],
-        expectations=expectations
-    )
-
-
 class OutputDefinition:
     # runtime type info
     def __init__(
-        self, materializations=None, expectations=None, output_callback=None, description=None
+        self,
+        dagster_type=None,
+        materializations=None,
+        expectations=None,
+        output_callback=None,
+        description=None
     ):
+
+        self.dagster_type = check.opt_inst_param(
+            dagster_type, 'dagster_type', types.DagsterType, types.Any
+        )
+
+        if materializations is None and dagster_type is not None:
+            materializations = dagster_type.default_materializations
+
         self.materializations = check.opt_list_param(
             materializations, 'materializations', of_type=MaterializationDefinition
         )
+
         self.expectations = check.opt_list_param(
             expectations, 'expectations', of_type=ExpectationDefinition
         )
@@ -412,7 +368,6 @@ class SolidDefinition:
         self.name = check_valid_name(name)
         self.inputs = check.list_param(inputs, 'inputs', InputDefinition)
         self.output = check.inst_param(output, 'output', OutputDefinition)
-        # validate_transform_fn(self.name, transform_fn, self.inputs)
         self.transform_fn = check.callable_param(transform_fn, 'transform')
         self.description = check.opt_str_param(description, 'description')
 

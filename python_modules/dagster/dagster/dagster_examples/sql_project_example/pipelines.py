@@ -2,6 +2,8 @@ import os
 import dagster
 import dagster.sqlalchemy_kernel as dagster_sa
 
+from dagster import InputDefinition
+
 
 def _get_sql_script_path(name):
     return os.path.join(os.path.dirname(__file__), 'sql_files', f'{name}.sql')
@@ -11,23 +13,19 @@ def _get_project_solid(name, inputs=None):
     return dagster_sa.sql_file_solid(_get_sql_script_path(name), inputs=inputs)
 
 
-def _dep_only_input(solid):
-    return dagster.InputDefinition(
-        name=solid.name,
-        sources=[],
-        depends_on=solid,
-    )
-
-
 def define_full_pipeline():
     create_all_tables_solids = _get_project_solid('create_all_tables')
 
     populate_num_table_solid = _get_project_solid(
         'populate_num_table',
-        inputs=[_dep_only_input(create_all_tables_solids)],
+        inputs=[
+            InputDefinition(create_all_tables_solids.name, depends_on=create_all_tables_solids)
+        ],
     )
 
-    insert_deps = [_dep_only_input(populate_num_table_solid)]
+    insert_deps = [
+        InputDefinition(populate_num_table_solid.name, depends_on=populate_num_table_solid)
+    ]
 
     insert_into_sum_table_solid, insert_into_sum_sq_table_solid = get_insert_solids(
         insert_deps=insert_deps
@@ -53,7 +51,11 @@ def get_insert_solids(insert_deps):
 
     insert_into_sum_sq_table_solid = _get_project_solid(
         'insert_into_sum_sq_table',
-        inputs=[_dep_only_input(insert_into_sum_table_solid)],
+        inputs=[
+            InputDefinition(
+                insert_into_sum_table_solid.name, depends_on=insert_into_sum_table_solid
+            )
+        ],
     )
     return insert_into_sum_table_solid, insert_into_sum_sq_table_solid
 
@@ -89,7 +91,9 @@ def define_setup_pipeline():
 
     populate_num_table_solid = _get_project_solid(
         'populate_num_table',
-        inputs=[_dep_only_input(create_all_tables_solids)],
+        inputs=[
+            InputDefinition(create_all_tables_solids.name, depends_on=create_all_tables_solids)
+        ]
     )
 
     return dagster.PipelineDefinition(

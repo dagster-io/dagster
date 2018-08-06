@@ -576,6 +576,10 @@ def _pipeline_solid_in_memory(context, input_manager, solid, transform_values_di
 
     transformed_value = _execute_core_transform(context, solid.transform_fn, transform_values_dict)
 
+    if not solid.output.dagster_type.is_python_valid_value(transformed_value):
+        raise DagsterInvariantViolationError(f'''Solid {solid.name} output {transformed_value}
+            which does not match the type for Dagster Type {solid.output.dagster_type.name}''')
+
     if solid.output.output_callback:
         solid.output.output_callback(context, transformed_value)
 
@@ -728,7 +732,15 @@ def _gather_input_values(context, solid, input_manager):
     input_values = {}
     for input_def in solid.inputs:
         with context.value('input', input_def.name):
-            input_values[input_def.name] = input_manager.get_input_value(context, solid, input_def)
+            input_value = input_manager.get_input_value(context, solid, input_def)
+
+            if not input_def.dagster_type.is_python_valid_value(input_value):
+                raise DagsterInvariantViolationError(f'''Solid {solid.name} input {input_def.name}
+                   received value {input_value} which does not match the type for Dagster type
+                   {input_def.dagster_type.name}'''
+                )
+
+            input_values[input_def.name] = input_value
             if input_def.input_callback:
                 input_def.input_callback(context, input_values[input_def.name])
     return input_values

@@ -5,13 +5,14 @@ import dagster
 from dagster.core.definitions import (
     ExpectationDefinition,
     ExpectationResult,
-    create_custom_source_input,
     ArgumentDefinition,
 )
 from dagster.core.execution import (
     _execute_input_expectation, DagsterUserCodeExecutionError, ExecutionContext
 )
 from dagster.core import types
+
+from dagster.utils.compatability import create_custom_source_input
 
 
 def create_test_context():
@@ -50,10 +51,7 @@ def create_dummy_info(expectation_def):
             transform_fn=lambda _context, _args: None,
             output=dagster.OutputDefinition(),
         ),
-        input_def=dagster.InputDefinition(
-            name='dummy_input',
-            sources=[],
-        ),
+        input_def=dagster.InputDefinition(name='dummy_input'),
         expectation_def=expectation_def,
     )
     return info

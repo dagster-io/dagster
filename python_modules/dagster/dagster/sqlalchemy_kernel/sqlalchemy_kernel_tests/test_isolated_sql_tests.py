@@ -1,5 +1,5 @@
 import dagster
-from dagster import config
+from dagster import config, InputDefinition
 from dagster.core.execution import execute_single_solid
 from dagster.sqlalchemy_kernel.subquery_builder_experimental import (
     create_sql_statement_solid, sql_file_solid
@@ -39,14 +39,6 @@ def test_basic_isolated_sql_solid():
     assert results == [(1, 2, 3), (3, 4, 7)]
 
 
-def _dep_only_input(solid):
-    return dagster.InputDefinition(
-        name=solid.name,
-        sources=[],
-        depends_on=solid,
-    )
-
-
 def test_basic_pipeline():
     sum_sql_text = '''CREATE TABLE sum_table AS
             SELECT num1, num2, num1 + num2 as sum FROM num_table'''
@@ -57,7 +49,9 @@ def test_basic_pipeline():
     sum_sql_solid = create_sql_statement_solid('sum_sql_solid', sum_sql_text)
 
     sum_sq_sql_solid = create_sql_statement_solid(
-        'sum_sq_sql_solid', sum_sq_sql_text, inputs=[_dep_only_input(sum_sql_solid)]
+        'sum_sq_sql_solid',
+        sum_sq_sql_text,
+        inputs=[InputDefinition(name=sum_sql_solid.name, depends_on=sum_sql_solid)]
     )
 
     pipeline = pipeline_test_def(solids=[sum_sql_solid, sum_sq_sql_solid], context=in_mem_context())
@@ -87,7 +81,7 @@ def test_pipeline_from_files():
 
     create_sum_sq_table_solid = sql_file_solid(
         script_relative_path('sql_files/create_sum_sq_table.sql'),
-        inputs=[_dep_only_input(create_sum_table_solid)],
+        inputs=[InputDefinition(create_sum_table_solid.name, depends_on=create_sum_table_solid)],
     )
 
     pipeline = pipeline_test_def(

@@ -8,10 +8,11 @@ from dagster.core.definitions import (
     SolidDefinition,
     InputDefinition,
     SourceDefinition,
-    create_single_materialization_output,
-    create_no_materialization_output,
     ArgumentDefinition,
+    OutputDefinition,
 )
+
+from dagster.utils.compatability import create_single_materialization_output
 
 from dagster.sqlalchemy_kernel import execute_sql_text_on_context
 
@@ -140,7 +141,7 @@ def create_sql_statement_solid(name, sql_text, inputs=None):
         name=name,
         transform_fn=_create_sql_alchemy_transform_fn(sql_text),
         inputs=inputs,
-        output=create_no_materialization_output()
+        output=OutputDefinition()
     )
 
 

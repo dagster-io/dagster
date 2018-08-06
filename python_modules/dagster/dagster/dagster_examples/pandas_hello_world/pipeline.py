@@ -1,11 +1,11 @@
 import dagster
-from dagster.core.decorators import solid
+from dagster import (solid, InputDefinition, OutputDefinition, PipelineDefinition)
 import dagster.pandas_kernel as dagster_pd
 
 
 @solid(
-    inputs=[dagster_pd.dataframe_input('num', sources=[dagster_pd.csv_dataframe_source()])],
-    output=dagster_pd.dataframe_output()
+    inputs=[InputDefinition('num', dagster_pd.DataFrame)],
+    output=OutputDefinition(dagster_pd.DataFrame)
 )
 def sum_solid(num):
     sum_df = num.copy()
@@ -14,8 +14,8 @@ def sum_solid(num):
 
 
 @solid(
-    inputs=[dagster_pd.dataframe_dependency(name='sum_df', solid=sum_solid)],
-    output=dagster_pd.dataframe_output()
+    inputs=[InputDefinition('sum_df', dagster_pd.DataFrame, depends_on=sum_solid)],
+    output=OutputDefinition(dagster_pd.DataFrame)
 )
 def sum_sq_solid(sum_df):
     sum_sq_df = sum_df.copy()
@@ -23,25 +23,24 @@ def sum_sq_solid(sum_df):
     return sum_sq_df
 
 
-@solid(inputs=[dagster_pd.dataframe_dependency(sum_sq_solid)], output=dagster_pd.dataframe_output())
+@solid(
+    inputs=[InputDefinition('sum_sq_solid', dagster_pd.DataFrame, depends_on=sum_sq_solid)],
+    output=OutputDefinition(dagster_pd.DataFrame)
+)
 def always_fails_solid(**_kwargs):
     raise Exception('I am a programmer and I make error')
 
 
 def define_pipeline():
     return dagster.PipelineDefinition(
-        name='pandas_hello_world_fails', solids=[
+        name='pandas_hello_world_fails',
+        solids=[
             sum_solid,
             sum_sq_solid,
             always_fails_solid,
-        ]
+        ],
     )
 
 
 def define_success_pipeline():
-    return dagster.PipelineDefinition(
-        name='pandas_hello_world', solids=[
-            sum_solid,
-            sum_sq_solid,
-        ]
-    )
+    return PipelineDefinition(name='pandas_hello_world', solids=[sum_solid, sum_sq_solid])

@@ -2,8 +2,12 @@ import inspect
 from functools import wraps
 from dagster import check
 from .definitions import (
-    SolidDefinition, SourceDefinition, InputDefinition, OutputDefinition, MaterializationDefinition,
-    create_no_materialization_output, DagsterInvalidDefinitionError
+    SolidDefinition,
+    SourceDefinition,
+    InputDefinition,
+    OutputDefinition,
+    MaterializationDefinition,
+    DagsterInvalidDefinitionError,
 )
 
 # Error messages are long
@@ -32,7 +36,7 @@ class _Solid:
 
         check.opt_inst_param(output, 'output', OutputDefinition)
         if not output:
-            output = create_no_materialization_output()
+            output = OutputDefinition()
         self.output = output
 
     def __call__(self, fn):
@@ -74,9 +78,7 @@ def _create_transform_wrapper(fn, inputs, include_context=False):
 class _Source:
     def __init__(self, name=None, argument_def_dict=None):
         self.source_type = check.opt_str_param(name, 'name')
-        self.argument_def_dict = check.opt_dict_param(
-            argument_def_dict, 'argument_def_dict'
-        )
+        self.argument_def_dict = check.opt_dict_param(argument_def_dict, 'argument_def_dict')
 
     def __call__(self, fn):
         include_context = getattr(fn, 'has_context', False)
@@ -120,9 +122,7 @@ def _create_source_wrapper(fn, arg_def_dict, include_context=False):
 class _Materialization:
     def __init__(self, name=None, argument_def_dict=None):
         self.name = check.opt_str_param(name, 'name')
-        self.argument_def_dict = check.opt_dict_param(
-            argument_def_dict, 'argument_def_dict'
-        )
+        self.argument_def_dict = check.opt_dict_param(argument_def_dict, 'argument_def_dict')
 
     def __call__(self, fn):
         include_context = getattr(fn, 'has_context', False)
@@ -132,9 +132,7 @@ class _Materialization:
         if not self.name:
             self.name = fn.__name__
 
-        _validate_materialization_fn(
-            fn, self.name, self.argument_def_dict, include_context
-        )
+        _validate_materialization_fn(fn, self.name, self.argument_def_dict, include_context)
         materialization_fn = _create_materialization_wrapper(
             fn, self.argument_def_dict, include_context
         )

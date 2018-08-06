@@ -1,9 +1,8 @@
 import dagster
 from dagster import check
 from dagster import config
-from dagster.core.definitions import (
-    SolidDefinition, create_custom_source_input, create_no_materialization_output
-)
+from dagster.core.definitions import SolidDefinition
+from dagster.utils.compatability import create_custom_source_input
 
 
 def _set_key_value(ddict, key, value):
@@ -18,7 +17,7 @@ def test_execute_solid_with_dep_only_inputs_no_api():
         name='step_one_solid',
         inputs=[],
         transform_fn=lambda context, args: _set_key_value(did_run_dict, 'step_one', True),
-        output=create_no_materialization_output(),
+        output=dagster.OutputDefinition(),
     )
 
     only_dep_input = create_custom_source_input(
@@ -32,7 +31,7 @@ def test_execute_solid_with_dep_only_inputs_no_api():
         name='step_two_solid',
         inputs=[only_dep_input],
         transform_fn=lambda context, args: _set_key_value(did_run_dict, 'step_two', True),
-        output=create_no_materialization_output(),
+        output=dagster.OutputDefinition(),
     )
 
     pipeline = dagster.PipelineDefinition(solids=[step_one_solid, step_two_solid])
@@ -57,16 +56,14 @@ def test_execute_solid_with_dep_only_inputs_with_api():
         name='step_one_solid',
         inputs=[],
         transform_fn=lambda context, args: _set_key_value(did_run_dict, 'step_one', True),
-        output=create_no_materialization_output(),
+        output=dagster.OutputDefinition(),
     )
 
     step_two_solid = SolidDefinition(
         name='step_two_solid',
         transform_fn=lambda context, args: _set_key_value(did_run_dict, 'step_two', True),
-        inputs=[
-            dagster.InputDefinition(step_one_solid.name, sources=[], depends_on=step_one_solid)
-        ],
-        output=create_no_materialization_output(),
+        inputs=[dagster.InputDefinition(step_one_solid.name, depends_on=step_one_solid)],
+        output=dagster.OutputDefinition(),
     )
 
     pipeline = dagster.PipelineDefinition(solids=[step_one_solid, step_two_solid])
