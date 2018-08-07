@@ -7,7 +7,6 @@
     "@types/prop-types": "^15.5.4",
     "@types/react-router": "^4.0.30",
     "@types/react-router-dom": "^4.3.0",
-    "@types/react-svg-pan-zoom": "^2.5.5",
     "@vx/gradient": "^0.0.165",
     "@vx/group": "^0.0.170",
     "@vx/legend": "^0.0.170",
@@ -23,7 +22,6 @@
     "react-dom": "^16.4.2",
     "react-router": "^4.3.1",
     "react-router-dom": "^4.3.1",
-    "react-svg-pan-zoom": "^2.18.0",
     "styled-components": "^3.3.3"
   },
   "devDependencies": {

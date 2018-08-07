@@ -58,17 +58,12 @@ class PipelineContext(graphene.ObjectType):
 
 class Solid(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
-    # XXX(freiksenet): missing
     description = graphene.String()
     inputs = graphene.NonNull(graphene.List(lambda: graphene.NonNull(Input)))
     output = graphene.Field(lambda: graphene.NonNull(Output))
 
     def __init__(self, solid):
-        super(Solid, self).__init__(
-            name=solid.name,
-            # XXX(freiksenet): missing
-            # description=context.description
-        )
+        super(Solid, self).__init__(name=solid.name, description=solid.description)
         self._solid = solid
 
     def resolve_inputs(self, info):
@@ -80,19 +75,20 @@ class Solid(graphene.ObjectType):
 
 class Input(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
-    # XXX(freiksenet): missing
     description = graphene.String()
+    type = graphene.NonNull(lambda: Type)
     sources = graphene.NonNull(graphene.List(lambda: graphene.NonNull(Source)))
     depends_on = graphene.Field(lambda: Solid)
     expectations = graphene.NonNull(graphene.List(lambda: graphene.NonNull(Expectation)))
 
     def __init__(self, input_definition):
         super(Input, self).__init__(
-            name=input_definition.name,
-            # XXX(freiksenet): missing
-            # description=input_definition.description
+            name=input_definition.name, description=input_definition.description
         )
         self._input_definition = input_definition
+
+    def resolve_type(self, info):
+        return Type(dagster_type=self._input_definition.dagster_type)
 
     def resolve_sources(self, info):
         return [Source(source) for source in self._input_definition.sources]
@@ -111,14 +107,16 @@ class Input(graphene.ObjectType):
 
 
 class Output(graphene.ObjectType):
-    # XXX(freiksenet): should we have it? Prolly solid desc is enough
-    # description = graphene.String()
+    type = graphene.NonNull(lambda: Type)
     materializations = graphene.NonNull(graphene.List(lambda: graphene.NonNull(Materialization)))
     expectations = graphene.NonNull(graphene.List(lambda: graphene.NonNull(Expectation)))
 
     def __init__(self, output_definition):
         super(Output, self).__init__()
         self._output_definition = output_definition
+
+    def resolve_type(self, info):
+        return Type(dagster_type=self._output_definition.dagster_type)
 
     def resolve_materializations(self, info):
         if self._output_definition.materializations:
@@ -141,16 +139,11 @@ class Output(graphene.ObjectType):
 class Source(graphene.ObjectType):
     # XXX(freiksenet): maybe rename to name?
     source_type = graphene.NonNull(graphene.String)
-    # XXX(freiksenet): missing
     description = graphene.String()
     arguments = graphene.NonNull(graphene.List(lambda: graphene.NonNull(Argument)))
 
     def __init__(self, source):
-        super(Source, self).__init__(
-            source_type=source.source_type,
-            # XXX(freiksenet): missing
-            # description=source.description
-        )
+        super(Source, self).__init__(source_type=source.source_type, description=source.description)
         self._source = source
 
     def resolve_arguments(self, info):
@@ -162,15 +155,12 @@ class Source(graphene.ObjectType):
 
 class Materialization(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
-    # XXX(freiksenet): missing
     description = graphene.String()
     arguments = graphene.NonNull(graphene.List(lambda: graphene.NonNull(Argument)))
 
     def __init__(self, materialization):
         super(Materialization, self).__init__(
-            name=materialization.name,
-            # XXX(freiksenet): missing
-            # description=materialization.description
+            name=materialization.name, description=materialization.description
         )
         self._materialization = materialization
 
@@ -181,13 +171,6 @@ class Materialization(graphene.ObjectType):
         ]
 
 
-class Type(graphene.Enum):
-    STRING = 'String'
-    PATH = 'Path'
-    INT = 'Int'
-    BOOL = 'Bool'
-
-
 class Argument(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
@@ -196,23 +179,32 @@ class Argument(graphene.ObjectType):
 
     def __init__(self, name, argument):
         super(Argument, self).__init__(
-            name=name,
-            description=argument.description,
-            type=argument.dagster_type.name,
-            is_optional=argument.is_optional
+            name=name, description=argument.description, is_optional=argument.is_optional
         )
+        self._argument = argument
+
+    def resolve_type(self, info):
+        return Type(dagster_type=self._argument.dagster_type)
 
 
 class Expectation(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
-    # XXX(freiksenet): missing
     description = graphene.String()
 
     def __init__(self, expectation):
         super(Expectation, self).__init__(
-            name=expectation.name,
-            # XXX(freiksenet): missing
-            # description=expectation.description
+            name=expectation.name, description=expectation.description
+        )
+
+
+class Type(graphene.ObjectType):
+    name = graphene.NonNull(graphene.String)
+    description = graphene.String()
+
+    def __init__(self, dagster_type):
+        super(Type, self).__init__(
+            name=dagster_type.name,
+            description=dagster_type.description,
         )
 
 

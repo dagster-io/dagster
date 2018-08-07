@@ -7,6 +7,10 @@
 // GraphQL fragment: PipelineGraphFragment
 // ====================================================
 
+export interface PipelineGraphFragment_solids_inputs_type {
+  name: string;
+}
+
 export interface PipelineGraphFragment_solids_inputs_sources {
   name: string;
 }
@@ -17,8 +21,13 @@ export interface PipelineGraphFragment_solids_inputs_dependsOn {
 
 export interface PipelineGraphFragment_solids_inputs {
   name: string;
+  type: PipelineGraphFragment_solids_inputs_type;
   sources: PipelineGraphFragment_solids_inputs_sources[];
   dependsOn: PipelineGraphFragment_solids_inputs_dependsOn | null;
+}
+
+export interface PipelineGraphFragment_solids_output_type {
+  name: string;
 }
 
 export interface PipelineGraphFragment_solids_output_materializations {
@@ -31,6 +40,7 @@ export interface PipelineGraphFragment_solids_output_expectations {
 }
 
 export interface PipelineGraphFragment_solids_output {
+  type: PipelineGraphFragment_solids_output_type;
   materializations: PipelineGraphFragment_solids_output_materializations[];
   expectations: PipelineGraphFragment_solids_output_expectations[];
 }
@@ -51,13 +61,6 @@ export interface PipelineGraphFragment {
 //==============================================================
 // START Enums and Input Objects
 //==============================================================
-
-export enum Type {
-  BOOL = "BOOL",
-  INT = "INT",
-  PATH = "PATH",
-  STRING = "STRING",
-}
 
 //==============================================================
 // END Enums and Input Objects

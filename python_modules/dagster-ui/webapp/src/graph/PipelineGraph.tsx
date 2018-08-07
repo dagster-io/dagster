@@ -7,7 +7,7 @@ import { Graph, DefaultNode } from "@vx/network";
 import { LinkHorizontalStep } from "@vx/shape";
 import { LegendOrdinal } from "@vx/legend";
 import { scaleOrdinal } from "@vx/scale";
-import { ParentSize } from "@vx/responsive";
+import PanAndZoom from "./PanAndZoom";
 import {
   PipelineGraphFragment,
   PipelineGraphFragment_solids,
@@ -22,6 +22,7 @@ interface IPipelineGraphProps {
 
 interface IGraphNode {
   id: string;
+  name: string;
   x: number;
   y: number;
 }
@@ -67,6 +68,9 @@ export default class PipelineGraph extends React.Component<
           name
           inputs {
             name
+            type {
+              name
+            }
             sources {
               name: sourceType
             }
@@ -75,6 +79,9 @@ export default class PipelineGraph extends React.Component<
             }
           }
           output {
+            type {
+              name
+            }
             materializations {
               name
             }
@@ -103,17 +110,18 @@ export default class PipelineGraph extends React.Component<
 
     this.props.pipeline.solids.forEach((solid, i: number) => {
       const baselineRow = 100;
-      const baselineColumn = 50 + i * 1000;
+      const baselineColumn = 100 + i * 750;
       const sourceColumn = baselineColumn;
-      const inputColumn = baselineColumn + 300;
-      const solidColumn = inputColumn + 300;
-      const outputColumn = solidColumn + 300;
+      const inputColumn = baselineColumn + 250;
+      const solidColumn = inputColumn + 250;
+      const outputColumn = solidColumn + 250;
 
       nodes[solid.name] = {
         id: solid.name,
         x: solidColumn,
         y: baselineRow,
         type: "solid",
+        name: solid.name,
         solid
       };
 
@@ -125,6 +133,7 @@ export default class PipelineGraph extends React.Component<
           x: inputColumn,
           y: inputRow,
           type: "input",
+          name: `${input.name} (${input.type.name})`,
           input
         };
         links.push({ source: inputId, target: solid.name });
@@ -136,12 +145,13 @@ export default class PipelineGraph extends React.Component<
         } else {
           input.sources.forEach((source, i: number) => {
             const sourceId = `${inputId}_${source.name}`;
-            const sourceRow = inputRow + 30 * i;
+            const sourceRow = inputRow + 80 * i;
             nodes[sourceId] = {
               id: sourceId,
               x: sourceColumn,
               y: sourceRow,
               type: "source",
+              name: source.name,
               source
             };
             links.push({
@@ -157,6 +167,7 @@ export default class PipelineGraph extends React.Component<
         id: outputId,
         x: outputColumn,
         y: baselineRow,
+        name: `output (${solid.output.type.name})`,
         type: "output",
         output: solid.output
       };
@@ -172,30 +183,30 @@ export default class PipelineGraph extends React.Component<
       }))
     };
 
+    const requiredWidth = this.props.pipeline.solids.length * 900;
+
     return (
-      <ParentSize>
-        {(parent: any) => (
-          <SVGContainer width={parent.width} height={parent.height}>
-            <BGRect />
+      <GraphWrapper>
+        <LegendWrapper>
+          <LegendOrdinal
+            direction="row"
+            itemDirection="row"
+            shapeMargin="0"
+            labelMargin="0 0 0 4px"
+            itemMargin="0 5px"
+            scale={NodeColorsScale}
+            shape="rect"
+            fill={({ datum }: any) => NodeColorsScale(datum)}
+            labelFormat={(label: string) => `${label.toUpperCase()}`}
+          />
+        </LegendWrapper>
+        <PanAndZoomStyled renderOnChange={true} scaleFactor={1.1}>
+          <SVGContainer width={requiredWidth} height={1000}>
             <Graph graph={graph} linkComponent={Link} nodeComponent={Node} />
-            <foreignObject>
-              <LegendWrapper>
-                <LegendOrdinal
-                  direction="row"
-                  itemDirection="row"
-                  shapeMargin="0"
-                  labelMargin="0 0 0 4px"
-                  itemMargin="0 5px"
-                  scale={NodeColorsScale}
-                  shape="rect"
-                  fill={({ datum }: any) => NodeColorsScale(datum)}
-                  labelFormat={(label: string) => `${label.toUpperCase()}`}
-                />
-              </LegendWrapper>
-            </foreignObject>
+            <foreignObject />
           </SVGContainer>
-        )}
-      </ParentSize>
+        </PanAndZoomStyled>
+      </GraphWrapper>
     );
   }
 }
@@ -209,6 +220,7 @@ function Link({ link }: { link: { source: GraphNode; target: GraphNode } }) {
       stroke="#374469"
       strokeWidth="1"
       fill="none"
+      percent={0.6}
     />
   );
 }
@@ -219,21 +231,37 @@ const Node = ({ node }: { node: GraphNode }) => {
   const height = 100;
   return (
     <foreignObject width={width} height={height}>
-      <Card elevation={2} style={{ backgroundColor: color }}>
-        {node.id}
+      <Card
+        elevation={2}
+        style={{
+          backgroundColor: color,
+          top: -25,
+          left: -75,
+          position: "relative"
+        }}
+      >
+        {node.name}
       </Card>
     </foreignObject>
   );
 };
 
+const PanAndZoomStyled = styled(PanAndZoom)`
+  width: 100%;
+  height: 100%;
+`;
+
 const SVGContainer = styled.svg`
   border-radius: 0;
 `;
 
-const BGRect = styled.rect`
+const GraphWrapper = styled.div`
   width: 100%;
   height: 100%;
-  fill: ${Colors.LIGHT_GRAY5};
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+  background-color: ${Colors.LIGHT_GRAY5};
 `;
 
 const LegendWrapper = styled.div`

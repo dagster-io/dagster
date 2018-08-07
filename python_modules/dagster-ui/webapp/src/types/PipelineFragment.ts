@@ -7,10 +7,19 @@
 // GraphQL fragment: PipelineFragment
 // ====================================================
 
+export interface PipelineFragment_solids_inputs_type {
+  name: string;
+  description: string | null;
+}
+
+export interface PipelineFragment_solids_inputs_sources_arguments_type {
+  name: string;
+}
+
 export interface PipelineFragment_solids_inputs_sources_arguments {
   name: string;
   description: string | null;
-  type: Type;
+  type: PipelineFragment_solids_inputs_sources_arguments_type;
   isOptional: boolean;
 }
 
@@ -25,16 +34,26 @@ export interface PipelineFragment_solids_inputs_dependsOn {
 }
 
 export interface PipelineFragment_solids_inputs {
+  type: PipelineFragment_solids_inputs_type;
   name: string;
   description: string | null;
   sources: PipelineFragment_solids_inputs_sources[];
   dependsOn: PipelineFragment_solids_inputs_dependsOn | null;
 }
 
+export interface PipelineFragment_solids_output_type {
+  name: string;
+  description: string | null;
+}
+
+export interface PipelineFragment_solids_output_materializations_arguments_type {
+  name: string;
+}
+
 export interface PipelineFragment_solids_output_materializations_arguments {
   name: string;
   description: string | null;
-  type: Type;
+  type: PipelineFragment_solids_output_materializations_arguments_type;
   isOptional: boolean;
 }
 
@@ -50,6 +69,7 @@ export interface PipelineFragment_solids_output_expectations {
 }
 
 export interface PipelineFragment_solids_output {
+  type: PipelineFragment_solids_output_type;
   materializations: PipelineFragment_solids_output_materializations[];
   expectations: PipelineFragment_solids_output_expectations[];
 }
@@ -61,10 +81,14 @@ export interface PipelineFragment_solids {
   output: PipelineFragment_solids_output;
 }
 
+export interface PipelineFragment_context_arguments_type {
+  name: string;
+}
+
 export interface PipelineFragment_context_arguments {
   name: string;
   description: string | null;
-  type: Type;
+  type: PipelineFragment_context_arguments_type;
   isOptional: boolean;
 }
 
@@ -87,13 +111,6 @@ export interface PipelineFragment {
 //==============================================================
 // START Enums and Input Objects
 //==============================================================
-
-export enum Type {
-  BOOL = "BOOL",
-  INT = "INT",
-  PATH = "PATH",
-  STRING = "STRING",
-}
 
 //==============================================================
 // END Enums and Input Objects

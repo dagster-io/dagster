@@ -28,7 +28,9 @@ export default class Argumented extends React.Component<
         arguments {
           name
           description
-          type
+          type {
+            name
+          }
           isOptional
         }
       }
@@ -40,7 +42,9 @@ export default class Argumented extends React.Component<
         arguments {
           name
           description
-          type
+          type {
+            name
+          }
           isOptional
         }
       }
@@ -52,7 +56,9 @@ export default class Argumented extends React.Component<
         arguments {
           name
           description
-          type
+          type {
+            name
+          }
           isOptional
         }
       }

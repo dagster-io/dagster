@@ -17,6 +17,10 @@ export default class Solid extends React.Component<ISolidProps, {}> {
         name
         description
         inputs {
+          type {
+            name
+            description
+          }
           name
           description
           sources {
@@ -27,6 +31,10 @@ export default class Solid extends React.Component<ISolidProps, {}> {
           }
         }
         output {
+          type {
+            name
+            description
+          }
           materializations {
             ...MaterializationFragment
           }

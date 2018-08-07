@@ -7,10 +7,14 @@
 // GraphQL fragment: MaterializationFragment
 // ====================================================
 
+export interface MaterializationFragment_arguments_type {
+  name: string;
+}
+
 export interface MaterializationFragment_arguments {
   name: string;
   description: string | null;
-  type: Type;
+  type: MaterializationFragment_arguments_type;
   isOptional: boolean;
 }
 
@@ -26,13 +30,6 @@ export interface MaterializationFragment {
 //==============================================================
 // START Enums and Input Objects
 //==============================================================
-
-export enum Type {
-  BOOL = "BOOL",
-  INT = "INT",
-  PATH = "PATH",
-  STRING = "STRING",
-}
 
 //==============================================================
 // END Enums and Input Objects

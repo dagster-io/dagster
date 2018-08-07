@@ -7,10 +7,19 @@
 // GraphQL fragment: PipelinesFragment
 // ====================================================
 
+export interface PipelinesFragment_solids_inputs_type {
+  name: string;
+  description: string | null;
+}
+
+export interface PipelinesFragment_solids_inputs_sources_arguments_type {
+  name: string;
+}
+
 export interface PipelinesFragment_solids_inputs_sources_arguments {
   name: string;
   description: string | null;
-  type: Type;
+  type: PipelinesFragment_solids_inputs_sources_arguments_type;
   isOptional: boolean;
 }
 
@@ -25,16 +34,26 @@ export interface PipelinesFragment_solids_inputs_dependsOn {
 }
 
 export interface PipelinesFragment_solids_inputs {
+  type: PipelinesFragment_solids_inputs_type;
   name: string;
   description: string | null;
   sources: PipelinesFragment_solids_inputs_sources[];
   dependsOn: PipelinesFragment_solids_inputs_dependsOn | null;
 }
 
+export interface PipelinesFragment_solids_output_type {
+  name: string;
+  description: string | null;
+}
+
+export interface PipelinesFragment_solids_output_materializations_arguments_type {
+  name: string;
+}
+
 export interface PipelinesFragment_solids_output_materializations_arguments {
   name: string;
   description: string | null;
-  type: Type;
+  type: PipelinesFragment_solids_output_materializations_arguments_type;
   isOptional: boolean;
 }
 
@@ -50,6 +69,7 @@ export interface PipelinesFragment_solids_output_expectations {
 }
 
 export interface PipelinesFragment_solids_output {
+  type: PipelinesFragment_solids_output_type;
   materializations: PipelinesFragment_solids_output_materializations[];
   expectations: PipelinesFragment_solids_output_expectations[];
 }
@@ -61,10 +81,14 @@ export interface PipelinesFragment_solids {
   output: PipelinesFragment_solids_output;
 }
 
+export interface PipelinesFragment_context_arguments_type {
+  name: string;
+}
+
 export interface PipelinesFragment_context_arguments {
   name: string;
   description: string | null;
-  type: Type;
+  type: PipelinesFragment_context_arguments_type;
   isOptional: boolean;
 }
 
@@ -87,13 +111,6 @@ export interface PipelinesFragment {
 //==============================================================
 // START Enums and Input Objects
 //==============================================================
-
-export enum Type {
-  BOOL = "BOOL",
-  INT = "INT",
-  PATH = "PATH",
-  STRING = "STRING",
-}
 
 //==============================================================
 // END Enums and Input Objects

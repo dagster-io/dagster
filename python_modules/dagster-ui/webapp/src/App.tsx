@@ -18,7 +18,7 @@ class App extends React.Component {
               {(queryResult: QueryResult<AppQuery, any>) => (
                 <Page>
                   <Loading queryResult={queryResult}>
-                    {(data: AppQuery) => (
+                    {data => (
                       <Pipelines
                         selectedPipeline={match ? match.params.pipeline : ""}
                         pipelines={data.pipelines}
