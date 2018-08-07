@@ -5,11 +5,12 @@ from dagster.core.execution import ExecutionContext
 
 
 class SqlAlchemyResource:
-    def __init__(self, engine):
+    def __init__(self, engine, mock_sql=False):
         self.engine = check.inst_param(engine, 'engine', sqlalchemy.engine.Engine)
+        self.mock_sql = check.bool_param(mock_sql, 'mock_sql')
 
 
-class _DefaultSqlAlchemyResources:
+class DefaultSqlAlchemyResources:
     def __init__(self, sa):
         self.sa = check.inst_param(sa, 'sa', SqlAlchemyResource)
 
@@ -29,8 +30,15 @@ def check_supports_sql_alchemy_resource(context):
     return context
 
 
+def create_sql_alchemy_context_from_sa_resource(sa_resource, *args, **kwargs):
+    check.inst_param(sa_resource, 'sa_resource', SqlAlchemyResource)
+    resources = DefaultSqlAlchemyResources(sa_resource)
+    context = ExecutionContext(resources=resources, *args, **kwargs)
+    return check_supports_sql_alchemy_resource(context)
+
+
 def create_sql_alchemy_context_from_engine(engine, *args, **kwargs):
-    resources = _DefaultSqlAlchemyResources(SqlAlchemyResource(engine))
+    resources = DefaultSqlAlchemyResources(SqlAlchemyResource(engine))
     context = ExecutionContext(resources=resources, *args, **kwargs)
     return check_supports_sql_alchemy_resource(context)
 
@@ -48,6 +56,9 @@ def _is_sqlite_context(context):
 def execute_sql_text_on_context(context, sql_text):
     check_supports_sql_alchemy_resource(context)
     check.str_param(sql_text, 'sql_text')
+
+    if context.resources.sa.mock_sql:
+        return
 
     engine = context.resources.sa.engine
 
