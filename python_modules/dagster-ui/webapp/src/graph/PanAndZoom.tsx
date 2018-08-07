@@ -1,4 +1,4 @@
-// Adopted from https://github.com/woutervh-/react-pan-and-zoom-hoc
+// Adapted from https://github.com/woutervh-/react-pan-and-zoom-hoc
 
 import * as React from "react";
 
@@ -67,12 +67,12 @@ export default class PanAndZoom extends React.Component<PanAndZoomProps, any> {
   }
 
   componentWillUnmount() {
-    // if (this.panning) {
-    //   document.removeEventListener("mousemove", this.handleMouseMove);
-    //   document.removeEventListener("mouseup", this.handleMouseUp);
-    //   document.removeEventListener("touchmove", this.handleMouseMove);
-    //   document.removeEventListener("touchend", this.handleMouseUp);
-    // }
+    if (this.panning) {
+      document.removeEventListener("mousemove", this.handleMouseMove);
+      document.removeEventListener("mouseup", this.handleMouseUp);
+      document.removeEventListener("touchmove", this.handleMouseMove);
+      document.removeEventListener("touchend", this.handleMouseUp);
+    }
   }
 
   handleWheel = (event: React.WheelEvent | WheelEvent) => {

@@ -12,6 +12,10 @@ interface IPipelineProps {
   pipeline: PipelineFragment;
 }
 
+interface IPipelineState {
+  selectedNode: string;
+}
+
 export default class Pipeline extends React.Component<IPipelineProps, {}> {
   static fragments = {
     PipelineFragment: gql`

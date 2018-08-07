@@ -2,12 +2,11 @@ import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
 import { Card, Colors } from "@blueprintjs/core";
-import { Group } from "@vx/group";
-import { Graph, DefaultNode } from "@vx/network";
+import { Graph } from "@vx/network";
 import { LinkHorizontalStep } from "@vx/shape";
-import { LegendOrdinal } from "@vx/legend";
-import { scaleOrdinal } from "@vx/scale";
 import PanAndZoom from "./PanAndZoom";
+import PipelineColorScale from "./PipelineColorScale";
+import PipelineLegend from "./PipelineLegend";
 import {
   PipelineGraphFragment,
   PipelineGraphFragment_solids,
@@ -45,17 +44,6 @@ type GraphNode = IGraphNode &
         type: "output";
         output: PipelineGraphFragment_solids_output;
       });
-
-const NodeColorsScale = scaleOrdinal({
-  domain: ["source", "input", "solid", "output", "materializations"],
-  range: [
-    Colors.TURQUOISE5,
-    Colors.TURQUOISE3,
-    Colors.GRAY5,
-    Colors.ORANGE3,
-    Colors.ORANGE5
-  ]
-});
 
 export default class PipelineGraph extends React.Component<
   IPipelineGraphProps,
@@ -188,17 +176,7 @@ export default class PipelineGraph extends React.Component<
     return (
       <GraphWrapper>
         <LegendWrapper>
-          <LegendOrdinal
-            direction="row"
-            itemDirection="row"
-            shapeMargin="0"
-            labelMargin="0 0 0 4px"
-            itemMargin="0 5px"
-            scale={NodeColorsScale}
-            shape="rect"
-            fill={({ datum }: any) => NodeColorsScale(datum)}
-            labelFormat={(label: string) => `${label.toUpperCase()}`}
-          />
+          <PipelineLegend />
         </LegendWrapper>
         <PanAndZoomStyled renderOnChange={true} scaleFactor={1.1}>
           <SVGContainer width={requiredWidth} height={1000}>
@@ -226,7 +204,7 @@ function Link({ link }: { link: { source: GraphNode; target: GraphNode } }) {
 }
 
 const Node = ({ node }: { node: GraphNode }) => {
-  let color = NodeColorsScale(node.type);
+  let color = PipelineColorScale(node.type);
   const width = 200;
   const height = 100;
   return (
