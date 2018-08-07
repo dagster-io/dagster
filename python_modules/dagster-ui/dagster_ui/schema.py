@@ -130,7 +130,7 @@ class Output(graphene.ObjectType):
     def resolve_expectations(self, info):
         if self._output_definition.expectations:
             return [
-                Expectation(expectation for expectation in self._output_definition.expectations)
+                Expectation(expectation) for expectation in self._output_definition.expectations
             ]
         else:
             return []
