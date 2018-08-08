@@ -2,7 +2,7 @@ import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
 import { History } from "history";
-import { Route, match } from "react-router";
+import { Switch, Route, match } from "react-router";
 import { Link } from "react-router-dom";
 import { Card, H2, H5, Text, Code, UL, Classes } from "@blueprintjs/core";
 import SpacedCard from "./SpacedCard";
@@ -10,7 +10,10 @@ import Argumented from "./Argumented";
 import Solid from "./Solid";
 import PipelineGraph from "./graph/PipelineGraph";
 import { Breadcrumbs, Breadcrumb } from "./Breadcrumbs";
-import { PipelineFragment } from "./types/PipelineFragment";
+import {
+  PipelineFragment,
+  PipelineFragment_solids
+} from "./types/PipelineFragment";
 
 interface IPipelineProps {
   pipeline: PipelineFragment;
@@ -66,17 +69,47 @@ export default class Pipeline extends React.Component<IPipelineProps, {}> {
     ));
   }
 
-  renderSolidList = ({ history }: { history: History }) => {
+  renderBody = ({
+    history,
+    match
+  }: {
+    history: History;
+    match: match<{ pipeline: string; solid?: string }>;
+  }) => {
+    const solidName = match.params.solid;
+    let solid: PipelineFragment_solids | undefined;
+    if (solidName) {
+      solid = this.props.pipeline.solids.find(({ name }) => name === solidName);
+    }
+    let body;
+    if (solid) {
+      body = <Solid solid={solid} />;
+    } else {
+      body = this.renderSolidList();
+    }
     return (
       <>
         <PipelineGraphWrapper key="graph">
           <PipelineGraph
             pipeline={this.props.pipeline}
+            selectedSolid={solidName}
             onClickSolid={solidName =>
-              this.handleClickSolid(history, null, solidName)
+              this.handleClickSolid(
+                history,
+                solid ? solid.name : null,
+                solidName
+              )
             }
           />
         </PipelineGraphWrapper>
+        {body}
+      </>
+    );
+  };
+
+  renderSolidList = () => {
+    return (
+      <>
         <SpacedCard elevation={1} key="solids">
           <H5>Solids</H5>
           <UL>{this.renderSolids()}</UL>
@@ -89,81 +122,50 @@ export default class Pipeline extends React.Component<IPipelineProps, {}> {
     );
   };
 
-  renderSolid = ({
-    history,
-    match
-  }: {
-    history: History;
-    match: match<{ pipeline: string; solid: string }>;
-  }) => {
-    const solidName = match.params.solid;
-    const solid = this.props.pipeline.solids.find(
-      ({ name }) => name === solidName
-    );
-    if (solid) {
-      return (
-        <>
-          <PipelineGraphWrapper key="graph">
-            <PipelineGraph
-              pipeline={this.props.pipeline}
-              selectedSolid={solidName}
-              onClickSolid={newSolidName =>
-                this.handleClickSolid(history, solidName, newSolidName)
-              }
-            />
-          </PipelineGraphWrapper>
-          <Solid solid={solid} />
-        </>
-      );
-    } else {
-      return null;
-    }
-  };
-
   public render() {
     return (
       <PipelineCard>
         <SpacedWrapper>
           <Breadcrumbs>
-            <Route
-              path="/:pipeline/:solid"
-              render={({ match }) => (
-                <>
-                  <Breadcrumb>
-                    <H2>
-                      <Link to={`/${this.props.pipeline.name}`}>
+            <Switch>
+              <Route
+                path="/:pipeline/:solid"
+                render={({ match }) => (
+                  <>
+                    <Breadcrumb>
+                      <H2>
+                        <Link to={`/${this.props.pipeline.name}`}>
+                          <Code>{this.props.pipeline.name}</Code>
+                        </Link>
+                      </H2>
+                    </Breadcrumb>
+                    <Breadcrumb current={true}>
+                      <H2>
+                        <Code>{match.params.solid}</Code>
+                      </H2>
+                    </Breadcrumb>
+                  </>
+                )}
+              />
+              <Route
+                path="/:pipeline"
+                render={() => (
+                  <>
+                    <Breadcrumb current={true}>
+                      <H2>
                         <Code>{this.props.pipeline.name}</Code>
-                      </Link>
-                    </H2>
-                  </Breadcrumb>
-                  <Breadcrumb current={true}>
-                    <H2>
-                      <Code>{match.params.solid}</Code>
-                    </H2>
-                  </Breadcrumb>
-                </>
-              )}
-            />
-            <Route
-              exact={true}
-              path="/:pipeline"
-              render={() => (
-                <>
-                  <Breadcrumb current={true}>
-                    <H2>
-                      <Code>{this.props.pipeline.name}</Code>
-                    </H2>
-                  </Breadcrumb>
-                </>
-              )}
-            />
+                      </H2>
+                    </Breadcrumb>
+                  </>
+                )}
+              />
+            </Switch>
           </Breadcrumbs>
         </SpacedWrapper>
         <SpacedWrapper>
           <Text>{this.props.pipeline.description}</Text>
         </SpacedWrapper>
-        <Route path="/:pipeline/:solid" render={this.renderSolid} />
-        <Route exact={true} path="/:pipeline" render={this.renderSolidList} />
+        <Route path="/:pipeline/:solid?" render={this.renderBody} />
       </PipelineCard>
     );
   }
