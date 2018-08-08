@@ -255,12 +255,6 @@
     "@types/history" "*"
     "@types/react" "*"
 
-"@types/react-svg-pan-zoom@^2.5.5":
-  version "2.5.5"
-  resolved "https://registry.yarnpkg.com/@types/react-svg-pan-zoom/-/react-svg-pan-zoom-2.5.5.tgz#aad0f1967d1c6b22eb57c337684455ad57b39ac7"
-  dependencies:
-    "@types/react" "*"
-
 "@types/react@*", "@types/react@^16.3.14", "@types/react@^16.4.7":
   version "16.4.7"
   resolved "https://registry.yarnpkg.com/@types/react/-/react-16.4.7.tgz#f33f6d759a7e1833befa15224d68942d178a5a3f"
@@ -6880,10 +6874,6 @@ react-lifecycles-compat@^3.0.4:
   version "3.0.4"
   resolved "https://registry.yarnpkg.com/react-lifecycles-compat/-/react-lifecycles-compat-3.0.4.tgz#4f1a273afdfc8f3488a8c516bfda78f872352362"
 
-react-pan-and-zoom-hoc@^1.2.2:
-  version "1.2.2"
-  resolved "https://registry.yarnpkg.com/react-pan-and-zoom-hoc/-/react-pan-and-zoom-hoc-1.2.2.tgz#cbc35e1bf536da56e52fcdcece6f0d38d1e5d949"
-
 react-popper@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/react-popper/-/react-popper-1.0.0.tgz#b99452144e8fe4acc77fa3d959a8c79e07a65084"
@@ -6961,13 +6951,6 @@ react-scripts-ts@2.16.0:
     whatwg-fetch "2.0.3"
   optionalDependencies:
     fsevents "^1.1.3"
-
-react-svg-pan-zoom@^2.18.0:
-  version "2.18.0"
-  resolved "https://registry.yarnpkg.com/react-svg-pan-zoom/-/react-svg-pan-zoom-2.18.0.tgz#1f033d9db1c82b9bb494e2196237276f694e7ac9"
-  dependencies:
-    prop-types "^15.6.2"
-    transformation-matrix "^1.12.0"
 
 react-transition-group@^2.2.1:
   version "2.4.0"
@@ -8162,10 +8145,6 @@ tr46@^1.0.1:
   resolved "https://registry.yarnpkg.com/tr46/-/tr46-1.0.1.tgz#a8b13fd6bfd2489519674ccde55ba3693b706d09"
   dependencies:
     punycode "^2.1.0"
-
-transformation-matrix@^1.12.0:
-  version "1.12.0"
-  resolved "https://registry.yarnpkg.com/transformation-matrix/-/transformation-matrix-1.12.0.tgz#4f1f0cec39f049e9f1e3200343ae9abd804f2108"
 
 trim-newlines@^1.0.0:
   version "1.0.0"

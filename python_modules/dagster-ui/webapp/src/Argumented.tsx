@@ -12,14 +12,7 @@ interface IArgumentedProps {
   renderCard?: (props: any) => React.ReactNode;
 }
 
-interface IArgumentedState {
-  isOpen: boolean;
-}
-
-export default class Argumented extends React.Component<
-  IArgumentedProps,
-  IArgumentedState
-> {
+export default class Argumented extends React.Component<IArgumentedProps, {}> {
   static fragments = {
     SourceFragment: gql`
       fragment SourceFragment on Source {
@@ -65,43 +58,26 @@ export default class Argumented extends React.Component<
     `
   };
 
-  constructor(props: IArgumentedProps) {
-    super(props);
-    this.state = {
-      isOpen: false
-    };
-  }
-
-  toggleOpen = () => {
-    this.setState(({ isOpen }) => ({
-      isOpen: !isOpen
-    }));
-  };
-
   public render() {
     const renderCard =
       this.props.renderCard || ((props: any) => <SpacedCard {...props} />);
     return renderCard({
       elevation: 2,
-      interactive: true,
-      onClick: this.toggleOpen,
       children: (
         <>
           <H5>
             <Code>{this.props.item.name}</Code>
           </H5>{" "}
-          <Collapse isOpen={this.state.isOpen}>
-            <Text>{this.props.item.description}</Text>
-            <H6>Arguments</H6>
-            <UL>
-              {this.props.item.arguments.map((argument: any, i: number) => (
-                <li key={i}>
-                  {argument.name} - {argument.isOptional ? "(optional)" : null}{" "}
-                  {argument.type}
-                </li>
-              ))}
-            </UL>
-          </Collapse>
+          <Text>{this.props.item.description}</Text>
+          <H6>Arguments</H6>
+          <UL>
+            {this.props.item.arguments.map((argument: any, i: number) => (
+              <li key={i}>
+                {argument.name} - {argument.isOptional ? "(optional)" : null} (
+                {argument.type.name}) {argument.description}
+              </li>
+            ))}
+          </UL>
         </>
       )
     });

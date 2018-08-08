@@ -78,4 +78,5 @@ export default class Pipelines extends React.Component<IPipelinesProps, {}> {
 const PipelinesContainer = styled.div`
   flex: 1 1;
   display: flex;
+  width: 100%;
 `;

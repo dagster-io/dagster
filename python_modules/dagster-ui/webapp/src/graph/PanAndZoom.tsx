@@ -3,6 +3,8 @@
 import * as React from "react";
 
 export interface PanAndZoomProps {
+  width: number;
+  height: number;
   x?: number;
   y?: number;
   scale?: number;
@@ -334,7 +336,7 @@ export default class PanAndZoom extends React.Component<PanAndZoomProps, any> {
           <div
             style={{
               transform: `scale(${scale}, ${scale}) translate3d(${(0.5 - x) *
-                1500}px, ${(0.5 - y) * 1500}px, 0)`,
+                this.props.width}px, ${(0.5 - y) * this.props.height}px, 0)`,
               width: "100%",
               height: "100%"
             }}

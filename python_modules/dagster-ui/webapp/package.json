@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "@blueprintjs/core": "^3.0.1",
+    "@blueprintjs/icons": "^3.0.0",
     "@types/prop-types": "^15.5.4",
     "@types/react-router": "^4.0.30",
     "@types/react-router-dom": "^4.3.0",

@@ -17,6 +17,8 @@ import {
 
 interface IPipelineGraphProps {
   pipeline: PipelineGraphFragment;
+  selectedSolid?: string;
+  onClickSolid?: (solidName: string) => void;
 }
 
 interface IGraphNode {
@@ -178,7 +180,12 @@ export default class PipelineGraph extends React.Component<
         <LegendWrapper>
           <PipelineLegend />
         </LegendWrapper>
-        <PanAndZoomStyled renderOnChange={true} scaleFactor={1.1}>
+        <PanAndZoomStyled
+          width={requiredWidth}
+          height={1000}
+          renderOnChange={true}
+          scaleFactor={1.1}
+        >
           <SVGContainer width={requiredWidth} height={1000}>
             <Graph graph={graph} linkComponent={Link} nodeComponent={Node} />
             <foreignObject />
