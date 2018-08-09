@@ -150,16 +150,12 @@ def test_sources():
 def test_materializations():
     test_output = {}
 
-    @materialization(
-        name="CONTEXT", argument_def_dict={'foo': ArgumentDefinition(types.String)}
-    )
+    @materialization(name="CONTEXT", argument_def_dict={'foo': ArgumentDefinition(types.String)})
     @with_context
     def materialization_with_context(_context, data, foo):
         test_output['test'] = data
 
-    @materialization(
-        name="NO_CONTEXT", argument_def_dict={'foo': ArgumentDefinition(types.String)}
-    )
+    @materialization(name="NO_CONTEXT", argument_def_dict={'foo': ArgumentDefinition(types.String)})
     def materialization_no_context(data, foo):
         test_output['test'] = data
 
@@ -397,7 +393,12 @@ def test_materialization_definition_errors():
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @materialization(argument_def_dict={'foo': ArgumentDefinition(types.String), 'bar': ArgumentDefinition(types.String)})
+        @materialization(
+            argument_def_dict={
+                'foo': ArgumentDefinition(types.String),
+                'bar': ArgumentDefinition(types.String)
+            }
+        )
         def wrong_name_2(data, foo):
             pass
 
@@ -424,16 +425,31 @@ def test_materialization_definition_errors():
     def valid_kwargs(data, **kwargs):
         pass
 
-    @materialization(argument_def_dict={'foo': ArgumentDefinition(types.String), 'bar': ArgumentDefinition(types.String)})
+    @materialization(
+        argument_def_dict={
+            'foo': ArgumentDefinition(types.String),
+            'bar': ArgumentDefinition(types.String)
+        }
+    )
     def valid(data, foo, bar):
         pass
 
-    @materialization(argument_def_dict={'foo': ArgumentDefinition(types.String), 'bar': ArgumentDefinition(types.String)})
+    @materialization(
+        argument_def_dict={
+            'foo': ArgumentDefinition(types.String),
+            'bar': ArgumentDefinition(types.String)
+        }
+    )
     @with_context
     def valid_rontext(context, data, foo, bar):
         pass
 
-    @materialization(argument_def_dict={'foo': ArgumentDefinition(types.String), 'bar': ArgumentDefinition(types.String)})
+    @materialization(
+        argument_def_dict={
+            'foo': ArgumentDefinition(types.String),
+            'bar': ArgumentDefinition(types.String)
+        }
+    )
     @with_context
     def valid_context_2(_context, _data, foo, bar):
         pass
@@ -452,3 +468,23 @@ def test_wrong_argument_to_pipeline():
         DagsterInvalidDefinitionError, match='You have passed a lambda or function <lambda>'
     ):
         dagster.PipelineDefinition(solids=[lambda x: x])
+
+
+def test_descriptions():
+    @solid(description='foo')
+    def solid_desc():
+        pass
+
+    assert solid_desc.description == 'foo'
+
+    @source(description='bar')
+    def source_desc():
+        pass
+
+    assert source_desc.description == 'bar'
+
+    @materialization(description='baaz')
+    def materialization_desc():
+        pass
+
+    assert materialization_desc.description == 'baaz'

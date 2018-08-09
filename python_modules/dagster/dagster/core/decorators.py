@@ -30,7 +30,7 @@ class _WithContext:
 
 
 class _Solid:
-    def __init__(self, name=None, inputs=None, output=None):
+    def __init__(self, name=None, inputs=None, output=None, description=None):
         self.name = check.opt_str_param(name, 'name')
         self.inputs = check.opt_list_param(inputs, 'inputs', InputDefinition)
 
@@ -38,6 +38,7 @@ class _Solid:
         if not output:
             output = OutputDefinition()
         self.output = output
+        self.description = check.opt_str_param(description, 'description')
 
     def __call__(self, fn):
         expect_context = getattr(fn, 'has_context', False)
@@ -50,12 +51,16 @@ class _Solid:
         _validate_transform_fn(self.name, fn, self.inputs, expect_context)
         transform_fn = _create_transform_wrapper(fn, self.inputs, expect_context)
         return SolidDefinition(
-            name=self.name, inputs=self.inputs, output=self.output, transform_fn=transform_fn
+            name=self.name,
+            inputs=self.inputs,
+            output=self.output,
+            transform_fn=transform_fn,
+            description=self.description,
         )
 
 
-def solid(*, name=None, inputs=None, output=None):
-    return _Solid(name=name, inputs=inputs, output=output)
+def solid(*, name=None, inputs=None, output=None, description=None):
+    return _Solid(name=name, inputs=inputs, output=output, description=description)
 
 
 def _create_transform_wrapper(fn, inputs, include_context=False):
@@ -76,9 +81,10 @@ def _create_transform_wrapper(fn, inputs, include_context=False):
 
 
 class _Source:
-    def __init__(self, name=None, argument_def_dict=None):
+    def __init__(self, name=None, argument_def_dict=None, description=None):
         self.source_type = check.opt_str_param(name, 'name')
         self.argument_def_dict = check.opt_dict_param(argument_def_dict, 'argument_def_dict')
+        self.description = check.opt_str_param(description, 'description')
 
     def __call__(self, fn):
         include_context = getattr(fn, 'has_context', False)
@@ -95,11 +101,12 @@ class _Source:
             source_type=self.source_type,
             source_fn=source_fn,
             argument_def_dict=self.argument_def_dict,
+            description=self.description,
         )
 
 
-def source(*, name=None, argument_def_dict=None):
-    return _Source(name=name, argument_def_dict=argument_def_dict)
+def source(*, name=None, argument_def_dict=None, description=None):
+    return _Source(name=name, argument_def_dict=argument_def_dict, description=description)
 
 
 def _create_source_wrapper(fn, arg_def_dict, include_context=False):
@@ -120,9 +127,10 @@ def _create_source_wrapper(fn, arg_def_dict, include_context=False):
 
 
 class _Materialization:
-    def __init__(self, name=None, argument_def_dict=None):
+    def __init__(self, name=None, argument_def_dict=None, description=None):
         self.name = check.opt_str_param(name, 'name')
         self.argument_def_dict = check.opt_dict_param(argument_def_dict, 'argument_def_dict')
+        self.description = check.opt_str_param(description, 'description')
 
     def __call__(self, fn):
         include_context = getattr(fn, 'has_context', False)
@@ -140,12 +148,17 @@ class _Materialization:
         return MaterializationDefinition(
             name=self.name,
             materialization_fn=materialization_fn,
-            argument_def_dict=self.argument_def_dict
+            argument_def_dict=self.argument_def_dict,
+            description=self.description,
         )
 
 
-def materialization(*, name=None, argument_def_dict=None):
-    return _Materialization(name=name, argument_def_dict=argument_def_dict)
+def materialization(*, name=None, argument_def_dict=None, description=None):
+    return _Materialization(
+        name=name,
+        argument_def_dict=argument_def_dict,
+        description=description,
+    )
 
 
 def _create_materialization_wrapper(fn, arg_def_dict, include_context=False):
