@@ -11,6 +11,7 @@ import Solid from "./Solid";
 import PipelineGraph from "./graph/PipelineGraph";
 import { Breadcrumbs, Breadcrumb } from "./Breadcrumbs";
 import SolidListItem from "./SolidListItem";
+import Description from "./Description";
 import {
   PipelineFragment,
   PipelineFragment_solids
@@ -172,9 +173,9 @@ export default class Pipeline extends React.Component<IPipelineProps, {}> {
     return (
       <PipelineCard>
         <SpacedWrapper>{this.renderBreadcrumbs()}</SpacedWrapper>
-        <Description>
-          <Text>{this.props.pipeline.description}</Text>
-        </Description>
+        <DescriptionWrapper>
+          <Description description={this.props.pipeline.description} />
+        </DescriptionWrapper>
         <Route path="/:pipeline/:solid?" render={this.renderBody} />
       </PipelineCard>
     );
@@ -208,6 +209,6 @@ const ContextCard = styled(SpacedCard)`
   margin-bottom: 10px;
 `;
 
-const Description = styled(SpacedWrapper)`
+const DescriptionWrapper = styled(SpacedWrapper)`
   max-width: 500px;
 `;

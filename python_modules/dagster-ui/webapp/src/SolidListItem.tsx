@@ -4,6 +4,7 @@ import styled from "styled-components";
 import { Link } from "react-router-dom";
 import { Text, Code } from "@blueprintjs/core";
 import SolidTypeSignature from "./SolidTypeSignature";
+import Description from "./Description";
 import { SolidListItemFragment } from "./types/SolidListItemFragment";
 
 interface ISolidListItemProps {
@@ -27,8 +28,6 @@ export default class SolidListItem extends React.Component<
     `
   };
 
-  renderTypeSignature() {}
-
   render() {
     return (
       <ListItem>
@@ -38,9 +37,9 @@ export default class SolidListItem extends React.Component<
         <SolidTypeSignatureWrapper>
           <SolidTypeSignature solid={this.props.solid} />
         </SolidTypeSignatureWrapper>
-        <Description>
-          <Text>{this.props.solid.description}</Text>
-        </Description>
+        <DescriptionWrapper>
+          <Description description={this.props.solid.description} />
+        </DescriptionWrapper>
       </ListItem>
     );
   }
@@ -52,7 +51,7 @@ const ListItem = styled.li`
   }
 `;
 
-const Description = styled.div`
+const DescriptionWrapper = styled.div`
   margin-top: 5px;
   margin-bottom: 5px;
   max-width: 500px;

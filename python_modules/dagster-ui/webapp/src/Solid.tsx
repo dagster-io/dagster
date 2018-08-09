@@ -7,6 +7,7 @@ import Argumented from "./Argumented";
 import SpacedCard from "./SpacedCard";
 import SolidTypeSignature from "./SolidTypeSignature";
 import TypeWithTooltip from "./TypeWithTooltip";
+import Description from "./Description";
 import { SolidFragment } from "./types/SolidFragment";
 
 interface ISolidProps {
@@ -71,7 +72,7 @@ export default class Solid extends React.Component<ISolidProps, {}> {
         <TypeWrapper>
           <TypeWithTooltip type={input.type} />
         </TypeWrapper>
-        <Text>{input.description}</Text>
+        <Description description={input.description} />
         {input.dependsOn && (
           <Text>
             Depends on{" "}
@@ -143,9 +144,9 @@ export default class Solid extends React.Component<ISolidProps, {}> {
         <TypeSignatureWrapper>
           <SolidTypeSignature solid={this.props.solid} />
         </TypeSignatureWrapper>
-        <Description>
-          <Text>{this.props.solid.description}</Text>
-        </Description>
+        <DescriptionWrapper>
+          <Description description={this.props.solid.description} />
+        </DescriptionWrapper>
         <Cards>
           {this.renderInputs()}
           <CardSeparator />
@@ -177,7 +178,7 @@ const TypeSignatureWrapper = styled.div`
   margin-bottom: 10px;
 `;
 
-const Description = styled.div`
+const DescriptionWrapper = styled.div`
   margin-bottom: 10px;
   max-width: 500px;
 `;
