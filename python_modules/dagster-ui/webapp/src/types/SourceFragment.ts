@@ -9,6 +9,7 @@
 
 export interface SourceFragment_arguments_type {
   name: string;
+  description: string | null;
 }
 
 export interface SourceFragment_arguments {

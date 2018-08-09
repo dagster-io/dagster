@@ -10,10 +10,18 @@ const determineMargin = (props: ISpacedCardProps) =>
   props.horizontal ? horizontal : vertical;
 
 const horizontal = css`
-  margin-left: 10px;
+  margin-right: 10px;
+
+  &:last-child {
+    margin-right: 0;
+  }
 `;
 const vertical = css`
-  margin-top: 10px;
+  margin-bottom: 10px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
 `;
 
 const SpacedCard = styled(Card)`

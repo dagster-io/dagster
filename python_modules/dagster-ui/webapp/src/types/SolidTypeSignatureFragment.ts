@@ -4,25 +4,31 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL fragment: PipelineContextFragment
+// GraphQL fragment: SolidTypeSignatureFragment
 // ====================================================
 
-export interface PipelineContextFragment_arguments_type {
+export interface SolidTypeSignatureFragment_output_type {
   name: string;
   description: string | null;
 }
 
-export interface PipelineContextFragment_arguments {
-  name: string;
-  description: string | null;
-  type: PipelineContextFragment_arguments_type;
-  isOptional: boolean;
+export interface SolidTypeSignatureFragment_output {
+  type: SolidTypeSignatureFragment_output_type;
 }
 
-export interface PipelineContextFragment {
+export interface SolidTypeSignatureFragment_inputs_type {
   name: string;
   description: string | null;
-  arguments: PipelineContextFragment_arguments[];
+}
+
+export interface SolidTypeSignatureFragment_inputs {
+  name: string;
+  type: SolidTypeSignatureFragment_inputs_type;
+}
+
+export interface SolidTypeSignatureFragment {
+  output: SolidTypeSignatureFragment_output;
+  inputs: SolidTypeSignatureFragment_inputs[];
 }
 
 /* tslint:disable */

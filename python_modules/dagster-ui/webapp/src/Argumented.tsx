@@ -2,6 +2,7 @@ import * as React from "react";
 import gql from "graphql-tag";
 import { H5, H6, Text, UL, Code, Collapse } from "@blueprintjs/core";
 import SpacedCard from "./SpacedCard";
+import TypeWithTooltip from "./TypeWithTooltip";
 import { SourceFragment } from "./types/SourceFragment";
 import { MaterializationFragment } from "./types/MaterializationFragment";
 import { PipelineContextFragment } from "./types/PipelineContextFragment";
@@ -22,11 +23,13 @@ export default class Argumented extends React.Component<IArgumentedProps, {}> {
           name
           description
           type {
-            name
+            ...TypeFragment
           }
           isOptional
         }
       }
+
+      ${TypeWithTooltip.fragments.TypeFragment}
     `,
     MaterializationFragment: gql`
       fragment MaterializationFragment on Materialization {
@@ -36,11 +39,13 @@ export default class Argumented extends React.Component<IArgumentedProps, {}> {
           name
           description
           type {
-            name
+            ...TypeFragment
           }
           isOptional
         }
       }
+
+      ${TypeWithTooltip.fragments.TypeFragment}
     `,
     PipelineContextFragment: gql`
       fragment PipelineContextFragment on PipelineContext {
@@ -50,11 +55,13 @@ export default class Argumented extends React.Component<IArgumentedProps, {}> {
           name
           description
           type {
-            name
+            ...TypeFragment
           }
           isOptional
         }
       }
+
+      ${TypeWithTooltip.fragments.TypeFragment}
     `
   };
 
@@ -73,8 +80,8 @@ export default class Argumented extends React.Component<IArgumentedProps, {}> {
           <UL>
             {this.props.item.arguments.map((argument: any, i: number) => (
               <li key={i}>
-                {argument.name} - {argument.isOptional ? "(optional)" : null} (
-                {argument.type.name}) {argument.description}
+                {argument.name} - {argument.isOptional ? "(optional)" : null}{" "}
+                <TypeWithTooltip type={argument.type} /> {argument.description}
               </li>
             ))}
           </UL>

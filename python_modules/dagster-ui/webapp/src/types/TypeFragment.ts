@@ -4,25 +4,12 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL fragment: PipelineContextFragment
+// GraphQL fragment: TypeFragment
 // ====================================================
 
-export interface PipelineContextFragment_arguments_type {
+export interface TypeFragment {
   name: string;
   description: string | null;
-}
-
-export interface PipelineContextFragment_arguments {
-  name: string;
-  description: string | null;
-  type: PipelineContextFragment_arguments_type;
-  isOptional: boolean;
-}
-
-export interface PipelineContextFragment {
-  name: string;
-  description: string | null;
-  arguments: PipelineContextFragment_arguments[];
 }
 
 /* tslint:disable */

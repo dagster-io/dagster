@@ -9,6 +9,7 @@
 
 export interface MaterializationFragment_arguments_type {
   name: string;
+  description: string | null;
 }
 
 export interface MaterializationFragment_arguments {

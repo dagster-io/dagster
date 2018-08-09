@@ -2,11 +2,15 @@ import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
 import { Card, Colors } from "@blueprintjs/core";
-import { LinkHorizontalStep } from "@vx/shape";
+import { LinkHorizontalCurve as Link } from "@vx/shape";
 import PanAndZoom from "./PanAndZoom";
 import PipelineColorScale from "./PipelineColorScale";
 import PipelineLegend from "./PipelineLegend";
 import SolidNode from "./SolidNode";
+import {
+  getFullPipelineLayout,
+  IFullPipelineLayout
+} from "./getFullSolidLayout";
 import {
   PipelineGraphFragment,
   PipelineGraphFragment_solids,
@@ -20,32 +24,6 @@ interface IPipelineGraphProps {
   selectedSolid?: string;
   onClickSolid?: (solidName: string) => void;
 }
-
-interface IGraphNode {
-  id: string;
-  name: string;
-  x: number;
-  y: number;
-}
-
-type GraphNode = IGraphNode &
-  (
-    | {
-        type: "source";
-        source: PipelineGraphFragment_solids_inputs_sources;
-      }
-    | {
-        type: "input";
-        input: PipelineGraphFragment_solids_inputs;
-      }
-    | {
-        type: "solid";
-        solid: PipelineGraphFragment_solids;
-      }
-    | {
-        type: "output";
-        output: PipelineGraphFragment_solids_output;
-      });
 
 export default class PipelineGraph extends React.Component<
   IPipelineGraphProps,
@@ -63,20 +41,61 @@ export default class PipelineGraph extends React.Component<
     `
   };
 
-  renderSolids() {
-    return this.props.pipeline.solids.map((solid, i) => (
-      <g key={i} transform={`translate(${300 + i * 750}, 100) `}>
+  renderSolids(layout: IFullPipelineLayout) {
+    return this.props.pipeline.solids.map((solid, i) => {
+      const solidLayout = layout[solid.name];
+      return (
         <SolidNode
+          key={solid.name}
           solid={solid}
+          layout={solidLayout}
           onClick={this.props.onClickSolid}
           selected={this.props.selectedSolid === solid.name}
         />
-      </g>
-    ));
+      );
+    });
+  }
+
+  renderConnections(layout: IFullPipelineLayout) {
+    const connections: Array<{
+      from: string;
+      to: { solidName: string; inputName: string };
+    }> = [];
+
+    this.props.pipeline.solids.forEach(solid => {
+      solid.inputs.forEach(input => {
+        if (input.dependsOn) {
+          connections.push({
+            from: input.dependsOn.name,
+            to: {
+              solidName: solid.name,
+              inputName: input.name
+            }
+          });
+        }
+      });
+    });
+
+    const links = connections.map(
+      ({ from, to: { solidName, inputName } }, i) => (
+        <StyledLink
+          key={i}
+          data={{
+            source: layout[from].output.port,
+            target: layout[solidName].inputs[inputName].port
+          }}
+          x={(d: { x: number; y: number }) => d.x}
+          y={(d: { x: number; y: number }) => d.y}
+        />
+      )
+    );
+
+    return <g>{links}</g>;
   }
 
   render() {
     const requiredWidth = this.props.pipeline.solids.length * 900;
+    const layout = getFullPipelineLayout(this.props.pipeline);
 
     return (
       <GraphWrapper>
@@ -90,7 +109,8 @@ export default class PipelineGraph extends React.Component<
           scaleFactor={1.1}
         >
           <SVGContainer width={requiredWidth} height={1000}>
-            {this.renderSolids()}
+            {this.renderConnections(layout)}
+            {this.renderSolids(layout)}
           </SVGContainer>
         </PanAndZoomStyled>
       </GraphWrapper>
@@ -123,4 +143,11 @@ const LegendWrapper = styled.div`
   border-radius: 3px;
   width: auto;
   position: absolute;
+`;
+
+const StyledLink = styled(Link)`
+  stroke-width: 2;
+  stroke: ${Colors.BLACK}
+  strokeOpacity: 0.6;
+  fill: none;
 `;

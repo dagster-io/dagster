@@ -4,8 +4,10 @@ import styled from "styled-components";
 import { Card, H5, Code, Colors } from "@blueprintjs/core";
 import PipelineColorScale from "./PipelineColorScale";
 import { SolidNodeFragment } from "./types/SolidNodeFragment";
+import { IFullSolidLayout } from "./getFullSolidLayout";
 
 interface ISolidNodeProps {
+  layout: IFullSolidLayout;
   solid: SolidNodeFragment;
   selected?: boolean;
   onClick?: (solid: any) => void;
@@ -53,13 +55,18 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
 
   renderInputs() {
     return this.props.solid.inputs.map((input, i) => {
-      const x = -190;
-      const y = 20 + i * 100;
-      const height = 80;
-      const width = 200;
+      const {
+        layout: { x, y, width, height }
+      } = this.props.layout.inputs[input.name];
 
       return (
-        <foreignObject key={i} x={x} y={y} width={width} height={height}>
+        <foreignObject
+          key={i}
+          x={x - this.props.layout.solid.x}
+          y={y - this.props.layout.solid.y}
+          width={width}
+          height={height}
+        >
           <Card
             elevation={3}
             style={{
@@ -77,13 +84,17 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
   }
 
   renderOutput() {
-    const x = 250 - 10;
-    const y = 20;
-    const height = 80;
-    const width = 200;
+    const {
+      layout: { x, y, width, height }
+    } = this.props.layout.output;
 
     return (
-      <foreignObject x={x} y={y} width={width} height={height}>
+      <foreignObject
+        x={x - this.props.layout.solid.x}
+        y={y - this.props.layout.solid.y}
+        width={width}
+        height={height}
+      >
         <Card
           elevation={3}
           style={{
@@ -99,11 +110,14 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
 
   renderSelectedBox() {
     if (this.props.selected) {
-      const width = 250 + 200 + 200 + 20;
-      const height = this.props.solid.inputs.length * 80 + 60 + 20;
+      const width =
+        this.props.layout.solid.width +
+        this.props.layout.output.layout.width * 2 +
+        20;
+      const height = this.props.layout.solid.height + 20;
       return (
         <rect
-          x={-10 - 200}
+          x={-10 - this.props.layout.output.layout.width}
           y={-10}
           height={height}
           width={width}
@@ -119,12 +133,18 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
   }
 
   public render() {
-    const width = 250;
-    const height = this.props.solid.inputs.length * 80 + 60;
     return (
-      <g onClick={this.handleClick}>
+      <g
+        onClick={this.handleClick}
+        transform={`translate(${this.props.layout.solid.x}, ${
+          this.props.layout.solid.y
+        })`}
+      >
         {this.renderSelectedBox()}
-        <foreignObject width={width} height={height}>
+        <foreignObject
+          width={this.props.layout.solid.width}
+          height={this.props.layout.solid.height}
+        >
           <Card
             elevation={2}
             style={{

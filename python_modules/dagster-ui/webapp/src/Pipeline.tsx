@@ -4,12 +4,13 @@ import styled from "styled-components";
 import { History } from "history";
 import { Switch, Route, match } from "react-router";
 import { Link } from "react-router-dom";
-import { Card, H2, H5, Text, Code, UL, Classes } from "@blueprintjs/core";
+import { Card, H2, H5, Text, Code, UL } from "@blueprintjs/core";
 import SpacedCard from "./SpacedCard";
 import Argumented from "./Argumented";
 import Solid from "./Solid";
 import PipelineGraph from "./graph/PipelineGraph";
 import { Breadcrumbs, Breadcrumb } from "./Breadcrumbs";
+import SolidListItem from "./SolidListItem";
 import {
   PipelineFragment,
   PipelineFragment_solids
@@ -27,6 +28,7 @@ export default class Pipeline extends React.Component<IPipelineProps, {}> {
         description
         solids {
           ...SolidFragment
+          ...SolidListItemFragment
         }
         context {
           ...PipelineContextFragment
@@ -37,6 +39,7 @@ export default class Pipeline extends React.Component<IPipelineProps, {}> {
       ${Solid.fragments.SolidFragment}
       ${Argumented.fragments.PipelineContextFragment}
       ${PipelineGraph.fragments.PipelineGraphFragment}
+      ${SolidListItem.fragments.SolidListItemFragment}
     `
   };
 
@@ -52,20 +55,63 @@ export default class Pipeline extends React.Component<IPipelineProps, {}> {
     }
   };
 
+  renderBreadcrumbs() {
+    return (
+      <Breadcrumbs>
+        <Switch>
+          <Route
+            path="/:pipeline/:solid"
+            render={({ match }) => (
+              <>
+                <Breadcrumb>
+                  <H2>
+                    <Link to={`/${this.props.pipeline.name}`}>
+                      <Code>{this.props.pipeline.name}</Code>
+                    </Link>
+                  </H2>
+                </Breadcrumb>
+                <Breadcrumb current={true}>
+                  <H2>
+                    <Code>{match.params.solid}</Code>
+                  </H2>
+                </Breadcrumb>
+              </>
+            )}
+          />
+          <Route
+            path="/:pipeline"
+            render={() => (
+              <>
+                <Breadcrumb current={true}>
+                  <H2>
+                    <Code>{this.props.pipeline.name}</Code>
+                  </H2>
+                </Breadcrumb>
+              </>
+            )}
+          />
+        </Switch>
+      </Breadcrumbs>
+    );
+  }
+
   renderContext() {
     return this.props.pipeline.context.map((context: any, i: number) => (
-      <Argumented key={i} item={context} />
+      <Argumented
+        key={i}
+        item={context}
+        renderCard={props => <ContextCard horizontal={true} {...props} />}
+      />
     ));
   }
 
   renderSolids() {
     return this.props.pipeline.solids.map((solid: any, i: number) => (
-      <li key={i}>
-        <Link to={`/${this.props.pipeline.name}/${solid.name}`}>
-          <Code>{solid.name}</Code>
-        </Link>{" "}
-        - ({solid.output.type.name})<Text>{solid.description}</Text>
-      </li>
+      <SolidListItem
+        pipelineName={this.props.pipeline.name}
+        solid={solid}
+        key={i}
+      />
     ));
   }
 
@@ -110,13 +156,13 @@ export default class Pipeline extends React.Component<IPipelineProps, {}> {
   renderSolidList = () => {
     return (
       <>
+        <SpacedCard elevation={1} key="context">
+          <H5>Context</H5>
+          <ContextCards>{this.renderContext()}</ContextCards>
+        </SpacedCard>
         <SpacedCard elevation={1} key="solids">
           <H5>Solids</H5>
           <UL>{this.renderSolids()}</UL>
-        </SpacedCard>
-        <SpacedCard elevation={1} key="context">
-          <H5>Context</H5>
-          {this.renderContext()}
         </SpacedCard>
       </>
     );
@@ -125,46 +171,10 @@ export default class Pipeline extends React.Component<IPipelineProps, {}> {
   public render() {
     return (
       <PipelineCard>
-        <SpacedWrapper>
-          <Breadcrumbs>
-            <Switch>
-              <Route
-                path="/:pipeline/:solid"
-                render={({ match }) => (
-                  <>
-                    <Breadcrumb>
-                      <H2>
-                        <Link to={`/${this.props.pipeline.name}`}>
-                          <Code>{this.props.pipeline.name}</Code>
-                        </Link>
-                      </H2>
-                    </Breadcrumb>
-                    <Breadcrumb current={true}>
-                      <H2>
-                        <Code>{match.params.solid}</Code>
-                      </H2>
-                    </Breadcrumb>
-                  </>
-                )}
-              />
-              <Route
-                path="/:pipeline"
-                render={() => (
-                  <>
-                    <Breadcrumb current={true}>
-                      <H2>
-                        <Code>{this.props.pipeline.name}</Code>
-                      </H2>
-                    </Breadcrumb>
-                  </>
-                )}
-              />
-            </Switch>
-          </Breadcrumbs>
-        </SpacedWrapper>
-        <SpacedWrapper>
+        <SpacedWrapper>{this.renderBreadcrumbs()}</SpacedWrapper>
+        <Description>
           <Text>{this.props.pipeline.description}</Text>
-        </SpacedWrapper>
+        </Description>
         <Route path="/:pipeline/:solid?" render={this.renderBody} />
       </PipelineCard>
     );
@@ -175,7 +185,7 @@ const PipelineGraphWrapper = styled(Card)`
   height: 500px;
   width: 100%;
   display: flex;
-  margin: 10px 0 0 0;
+  margin-bottom: 10px;
 `;
 
 const PipelineCard = styled(Card)`
@@ -184,5 +194,20 @@ const PipelineCard = styled(Card)`
 `;
 
 const SpacedWrapper = styled.div`
-  margin-top: 10px;
+  margin-bottom: 10px;
+`;
+
+const ContextCards = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+`;
+
+const ContextCard = styled(SpacedCard)`
+  width: 400px;
+  margin-bottom: 10px;
+`;
+
+const Description = styled(SpacedWrapper)`
+  max-width: 500px;
 `;
