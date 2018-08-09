@@ -2,22 +2,16 @@ import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
 import { Card, Colors } from "@blueprintjs/core";
-import { LinkHorizontalCurve as Link } from "@vx/shape";
+import { LinkHorizontal as Link } from "@vx/shape";
 import PanAndZoom from "./PanAndZoom";
 import PipelineColorScale from "./PipelineColorScale";
 import PipelineLegend from "./PipelineLegend";
 import SolidNode from "./SolidNode";
 import {
-  getFullPipelineLayout,
+  getDagrePipelineLayout,
   IFullPipelineLayout
 } from "./getFullSolidLayout";
-import {
-  PipelineGraphFragment,
-  PipelineGraphFragment_solids,
-  PipelineGraphFragment_solids_inputs,
-  PipelineGraphFragment_solids_output,
-  PipelineGraphFragment_solids_inputs_sources
-} from "./types/PipelineGraphFragment";
+import { PipelineGraphFragment } from "./types/PipelineGraphFragment";
 
 interface IPipelineGraphProps {
   pipeline: PipelineGraphFragment;
@@ -43,7 +37,7 @@ export default class PipelineGraph extends React.Component<
 
   renderSolids(layout: IFullPipelineLayout) {
     return this.props.pipeline.solids.map((solid, i) => {
-      const solidLayout = layout[solid.name];
+      const solidLayout = layout.solids[solid.name];
       return (
         <SolidNode
           key={solid.name}
@@ -81,8 +75,8 @@ export default class PipelineGraph extends React.Component<
         <StyledLink
           key={i}
           data={{
-            source: layout[from].output.port,
-            target: layout[solidName].inputs[inputName].port
+            source: layout.solids[from].output.port,
+            target: layout.solids[solidName].inputs[inputName].port
           }}
           x={(d: { x: number; y: number }) => d.x}
           y={(d: { x: number; y: number }) => d.y}
@@ -94,8 +88,7 @@ export default class PipelineGraph extends React.Component<
   }
 
   render() {
-    const requiredWidth = this.props.pipeline.solids.length * 900;
-    const layout = getFullPipelineLayout(this.props.pipeline);
+    const layout = getDagrePipelineLayout(this.props.pipeline);
 
     return (
       <GraphWrapper>
@@ -103,12 +96,12 @@ export default class PipelineGraph extends React.Component<
           <PipelineLegend />
         </LegendWrapper>
         <PanAndZoomStyled
-          width={requiredWidth}
-          height={1000}
+          width={layout.width}
+          height={layout.height + 300}
           renderOnChange={true}
           scaleFactor={1.1}
         >
-          <SVGContainer width={requiredWidth} height={1000}>
+          <SVGContainer width={layout.width} height={layout.height + 300}>
             {this.renderConnections(layout)}
             {this.renderSolids(layout)}
           </SVGContainer>

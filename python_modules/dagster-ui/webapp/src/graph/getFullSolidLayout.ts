@@ -1,5 +1,11 @@
+import * as dagre from "dagre";
+
 export type IFullPipelineLayout = {
-  [solidName: string]: IFullSolidLayout;
+  solids: {
+    [solidName: string]: IFullSolidLayout;
+  };
+  width: number;
+  height: number;
 };
 
 export interface IFullSolidLayout {
@@ -17,11 +23,16 @@ export interface IFullSolidLayout {
 }
 
 export interface ILayoutPipeline {
-  solids: Array<{
+  solids: Array<ILayoutSolid>;
+}
+
+interface ILayoutSolid {
+  name: string;
+  inputs: Array<{
     name: string;
-    inputs: Array<{
+    dependsOn: {
       name: string;
-    }>;
+    } | null;
   }>;
 }
 
@@ -51,78 +62,122 @@ const INPUT_OUTPUT_INSET = 10;
 const SOLID_STEP =
   SOLID_WIDTH + INPUT_WIDTH + OUTPUT_WIDTH - INPUT_OUTPUT_INSET * 2 + SOLID_GAP;
 
-export function getFullPipelineLayout(
+export function getDagrePipelineLayout(
   pipeline: ILayoutPipeline
 ): IFullPipelineLayout {
-  const result: IFullPipelineLayout = {};
-  pipeline.solids.forEach(({ name }) => {
-    result[name] = getFullSolidLayout(pipeline, name);
+  const g = new dagre.graphlib.Graph();
+  g.setGraph({
+    rankdir: "LR",
+    align: "UL",
+    marginx: 100,
+    marginy: 100
   });
-  return result;
-}
+  g.setDefaultEdgeLabel(function() {
+    return {};
+  });
 
-export function getFullSolidLayout(
-  pipeline: ILayoutPipeline,
-  solidName: string
-): IFullSolidLayout {
-  const solidIndex = pipeline.solids.findIndex(
-    ({ name }) => name === solidName
-  );
-  if (solidIndex !== -1) {
-    const solid = pipeline.solids[solidIndex];
-    const solidY = PADDING_TOP;
-    const solidX = PADDING_LEFT + INPUT_WIDTH + solidIndex * SOLID_STEP;
-    const solidLayout: ILayout = {
-      x: solidX,
-      y: solidY,
-      width: SOLID_WIDTH,
-      height:
-        SOLID_BASE_HEIGHT + (INPUT_HEIGHT + INPUT_GAP) * solid.inputs.length
-    };
-    const outputX = solidX + SOLID_WIDTH - INPUT_OUTPUT_INSET;
-    const outputY = solidY + INPUT_GAP;
-    const outputLayout: ILayout = {
-      x: outputX,
-      y: outputY,
-      width: OUTPUT_WIDTH,
-      height: OUTPUT_HEIGHT
-    };
-    const outputPort: IPoint = {
-      x: outputX + OUTPUT_WIDTH,
-      y: outputY + OUTPUT_HEIGHT / 2
-    };
-    const inputs: {
-      [inputName: string]: {
-        layout: ILayout;
-        port: IPoint;
-      };
-    } = {};
-    solid.inputs.forEach((input, i) => {
-      const inputX = solidX + INPUT_OUTPUT_INSET - INPUT_WIDTH;
-      const inputY = solidY + INPUT_GAP + (INPUT_HEIGHT + INPUT_GAP) * i;
-      inputs[input.name] = {
-        layout: {
-          x: inputX,
-          y: inputY,
-          width: INPUT_WIDTH,
-          height: INPUT_HEIGHT
-        },
-        port: {
-          x: inputX,
-          y: inputY + INPUT_HEIGHT / 2
-        }
-      };
+  pipeline.solids.forEach(solid => {
+    const layout = layoutSolid({ solid, x: 0, y: 0 });
+    g.setNode(solid.name, {
+      height: layout.solid.height,
+      width:
+        layout.solid.width +
+        layout.output.layout.width * 2 -
+        INPUT_OUTPUT_INSET * 2
     });
 
-    return {
-      solid: solidLayout,
-      inputs,
-      output: {
-        layout: outputLayout,
-        port: outputPort
+    solid.inputs.forEach(input => {
+      if (input.dependsOn) {
+        g.setEdge(input.dependsOn.name, solid.name);
+      }
+    });
+  });
+
+  dagre.layout(g);
+
+  const solids: {
+    [solidName: string]: IFullSolidLayout;
+  } = {};
+  g.nodes().forEach(function(solidName) {
+    const node = g.node(solidName);
+    const solid = pipeline.solids.find(({ name }) => name === solidName);
+    if (solid) {
+      solids[solidName] = layoutSolid({
+        solid: solid,
+        x: node.x,
+        y: node.y
+      });
+    }
+  });
+  // g.edges().forEach(function(e) {
+  //   console.log(
+  //     "Edge " + e.v + " -> " + e.w + ": " + JSON.stringify(g.edge(e))
+  //   );
+  // });
+
+  return {
+    solids,
+    width: g.graph().width as number,
+    height: g.graph().height as number
+  };
+}
+
+function layoutSolid({
+  solid,
+  x: solidX,
+  y: solidY
+}: {
+  solid: ILayoutSolid;
+  x: number;
+  y: number;
+}): IFullSolidLayout {
+  const solidLayout: ILayout = {
+    x: solidX,
+    y: solidY,
+    width: SOLID_WIDTH,
+    height: SOLID_BASE_HEIGHT + (INPUT_HEIGHT + INPUT_GAP) * solid.inputs.length
+  };
+  const outputX = solidX + SOLID_WIDTH - INPUT_OUTPUT_INSET;
+  const outputY = solidY + INPUT_GAP;
+  const outputLayout: ILayout = {
+    x: outputX,
+    y: outputY,
+    width: OUTPUT_WIDTH,
+    height: OUTPUT_HEIGHT
+  };
+  const outputPort: IPoint = {
+    x: outputX + OUTPUT_WIDTH,
+    y: outputY + OUTPUT_HEIGHT / 2
+  };
+  const inputs: {
+    [inputName: string]: {
+      layout: ILayout;
+      port: IPoint;
+    };
+  } = {};
+  solid.inputs.forEach((input, i) => {
+    const inputX = solidX + INPUT_OUTPUT_INSET - INPUT_WIDTH;
+    const inputY = solidY + INPUT_GAP + (INPUT_HEIGHT + INPUT_GAP) * i;
+    inputs[input.name] = {
+      layout: {
+        x: inputX,
+        y: inputY,
+        width: INPUT_WIDTH,
+        height: INPUT_HEIGHT
+      },
+      port: {
+        x: inputX,
+        y: inputY + INPUT_HEIGHT / 2
       }
     };
-  } else {
-    throw new Error("Unknown solid");
-  }
+  });
+
+  return {
+    solid: solidLayout,
+    inputs,
+    output: {
+      layout: outputLayout,
+      port: outputPort
+    }
+  };
 }

@@ -5,6 +5,7 @@
   "dependencies": {
     "@blueprintjs/core": "^3.0.1",
     "@blueprintjs/icons": "^3.0.0",
+    "@types/dagre": "^0.7.40",
     "@types/prop-types": "^15.5.4",
     "@types/react-router": "^4.0.30",
     "@types/react-router-dom": "^4.3.0",
@@ -17,6 +18,7 @@
     "@vx/shape": "^0.0.170",
     "apollo-boost": "^0.1.12",
     "d3-hierarchy": "^1.1.6",
+    "dagre": "^0.8.2",
     "graphql-tag": "^2.9.2",
     "react": "^16.4.2",
     "react-apollo": "^2.1.9",

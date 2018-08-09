@@ -1,8 +1,10 @@
 import * as React from "react";
 import gql from "graphql-tag";
+import styled from "styled-components";
 import { H5, H6, Text, UL, Code, Collapse } from "@blueprintjs/core";
 import SpacedCard from "./SpacedCard";
 import TypeWithTooltip from "./TypeWithTooltip";
+import Description from "./Description";
 import { SourceFragment } from "./types/SourceFragment";
 import { MaterializationFragment } from "./types/MaterializationFragment";
 import { PipelineContextFragment } from "./types/PipelineContextFragment";
@@ -74,14 +76,19 @@ export default class Argumented extends React.Component<IArgumentedProps, {}> {
         <>
           <H5>
             <Code>{this.props.item.name}</Code>
-          </H5>{" "}
-          <Text>{this.props.item.description}</Text>
+          </H5>
+          <DescriptionWrapper>
+            <Description description={this.props.item.description} />
+          </DescriptionWrapper>
           <H6>Arguments</H6>
           <UL>
             {this.props.item.arguments.map((argument: any, i: number) => (
               <li key={i}>
-                {argument.name} - {argument.isOptional ? "(optional)" : null}{" "}
-                <TypeWithTooltip type={argument.type} /> {argument.description}
+                {argument.name} {argument.isOptional ? "(optional)" : null}{" "}
+                <TypeWithTooltip type={argument.type} />
+                <DescriptionWrapper>
+                  <Description description={argument.description} />
+                </DescriptionWrapper>
               </li>
             ))}
           </UL>
@@ -90,3 +97,8 @@ export default class Argumented extends React.Component<IArgumentedProps, {}> {
     });
   }
 }
+
+const DescriptionWrapper = styled.div`
+  max-width: 400px;
+  margin-bottom: 10px;
+`;
