@@ -17,10 +17,9 @@ def long_description():
 
 
 setup(
-    name='dagster-ui',
-    version='0.0.0',
+    name='dagit',
+    version='0.0.1',
     author='Elementl',
-    author_email='schrockn@elementl.com',
     license='Apache-2.0',
     description='Web UI for dagster, an opinionated pipeline runner.',
     long_description=long_description(),
@@ -73,5 +72,5 @@ setup(
         # 'twine>=1.11.0',
         # 'pre-commit'>=1.10.1',
     ],
-    scripts=['bin/dagster-ui']
+    scripts=['bin/dagit']
 )

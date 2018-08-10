@@ -3,8 +3,8 @@ import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-import dagster_ui.cli
+import dagit.cli
 
 if __name__ == '__main__':
-    cli = dagster_ui.cli.create_dagster_ui_cli()
+    cli = dagit.cli.create_dagit_cli()
     cli(obj={})

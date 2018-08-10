@@ -7,7 +7,7 @@ export default class Page extends React.Component {
       <>
         <Navbar>
           <Navbar.Group align={Alignment.LEFT}>
-            <Navbar.Heading>Dagsterize</Navbar.Heading>
+            <Navbar.Heading>Dagit</Navbar.Heading>
             <Navbar.Divider />
           </Navbar.Group>
         </Navbar>
