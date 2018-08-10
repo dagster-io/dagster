@@ -8,7 +8,7 @@ from dagster.cli.context import Config
 from .app import create_app
 
 
-def create_dagster_ui_cli():
+def create_dagit_cli():
     group = click.group()(dagster_cli)
     group.add_command(ui)
     return group

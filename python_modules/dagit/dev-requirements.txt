@@ -1,7 +1,7 @@
 pylint==1.9.2
 pytest==3.6.1
 recommonmark==0.4.0
-rope==0.10.7
+rope==0.11.0
 yapf==0.22.0
 twine==1.11.0
 pre-commit==1.10.1
