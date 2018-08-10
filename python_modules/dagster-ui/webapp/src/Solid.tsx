@@ -85,7 +85,8 @@ export default class Solid extends React.Component<ISolidProps, {}> {
         <UL>
           {input.expectations.map((expectation, i) => (
             <li>
-              {expectation.name} - {expectation.description}
+              {expectation.name}
+              <Description description={expectation.description} />
             </li>
           ))}
         </UL>
@@ -114,8 +115,8 @@ export default class Solid extends React.Component<ISolidProps, {}> {
         <UL>
           {this.props.solid.output.expectations.map((expectation, i) => (
             <li>
-              {expectation.name} {expectation.description ? "-" : ""}{" "}
-              {expectation.description}
+              {expectation.name}
+              <Description description={expectation.description} />
             </li>
           ))}
         </UL>
