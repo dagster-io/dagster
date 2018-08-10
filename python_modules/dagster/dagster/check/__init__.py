@@ -187,7 +187,9 @@ def list_param(obj_list, param_name, of_type=None):
     if of_type:
         for obj in obj_list:
             if not isinstance(obj, of_type):
-                raise_with_traceback(CheckError('Member of list mismatches type'))
+                raise_with_traceback(CheckError(
+                    'Member of list mismatches type. Got {obj_repr}'.format(obj_repr=repr(obj))
+                ))
     return obj_list
 
 
@@ -211,7 +213,9 @@ def opt_list_param(obj_list, param_name, of_type=None):
     if of_type:
         for obj in obj_list:
             if not isinstance(obj, of_type):
-                raise_with_traceback(CheckError('Member of list mismatches type'))
+                raise_with_traceback(CheckError(
+                    'Member of list mismatches type. Got {obj_repr}'.format(obj_repr=repr(obj))
+                ))
     return obj_list
 
 
