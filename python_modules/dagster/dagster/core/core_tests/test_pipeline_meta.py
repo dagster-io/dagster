@@ -12,8 +12,3 @@ def step_one_no_external_source():
 def step_two(foo_bar):
     foo_bar['foo'] = foo_bar['foo'] + foo_bar['foo']
     return foo_bar
-
-
-def test_pipeline_meta():
-    pipeline = dagster.PipelineDefinition(solids=[step_one_no_external_source, step_two])
-    assert list(pipeline.external_inputs) == []

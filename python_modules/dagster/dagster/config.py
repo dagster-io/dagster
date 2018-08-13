@@ -4,13 +4,15 @@ from dagster import check
 
 
 # lifted from https://bit.ly/2HcQAuv
-class Materialization(namedtuple('MaterializationData', 'solid name args')):
+class Materialization(namedtuple('MaterializationData', 'solid name args output_name')):
     def __new__(cls, solid, name, args):
+        DEFAULT_OUTPUT = 'result'
         return super(Materialization, cls).__new__(
             cls,
             solid=check.str_param(solid, 'solid'),
             name=check.str_param(name, 'name'),
             args=check.dict_param(args, 'args', key_type=str),
+            output_name=DEFAULT_OUTPUT,
         )
 
 

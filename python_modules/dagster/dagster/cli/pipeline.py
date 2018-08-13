@@ -9,6 +9,7 @@ import yaml
 import dagster
 from dagster import check
 from dagster.core.execution import (DagsterExecutionFailureReason, execute_pipeline_iterator)
+from dagster.core.graph import SolidGraph
 from dagster.graphviz import build_graphviz_graph
 from dagster.utils.indenting_printer import IndentingPrinter
 
@@ -36,7 +37,8 @@ def list_command(config):
             click.echo('Description:')
             click.echo(format_description(pipeline.description, indent=' ' * 4))
         click.echo('Solids: (Execution Order)')
-        for solid in pipeline.solid_graph.topological_solids:
+        solid_graph = SolidGraph(pipeline.solids, pipeline.dependency_structure)
+        for solid in solid_graph.topological_solids:
             click.echo('    ' + solid.name)
         click.echo('*************')
 
@@ -139,14 +141,7 @@ def print_inputs(printer, solid):
     printer.line('Inputs:')
     for input_def in solid.inputs:
         with printer.with_indent():
-            if input_def.depends_on:
-                printer.line(
-                    'Input: {name} (depends on {dep_name})'.format(
-                        name=input_def.name, dep_name=input_def.depends_on.name
-                    )
-                )
-            else:
-                printer.line('Input: {name}'.format(name=input_def.name))
+            printer.line('Input: {name}'.format(name=input_def.name))
 
             if input_def.sources:
                 print_sources(printer, input_def.sources)
