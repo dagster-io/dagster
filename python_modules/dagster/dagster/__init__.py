@@ -1,32 +1,26 @@
 from __future__ import (absolute_import, division, print_function, unicode_literals)
 from builtins import *  # pylint: disable=W0622,W0401
 
-from dagster.core.execution import (
-    execute_pipeline,
-    ExecutionContext,
-    ExpectationResult,
-    InputExpectationInfo,
-    OutputExpectationInfo,
-    InputExpectationResult,
-    InputExpectationResults,
-)
+from dagster.core.execution import execute_pipeline
+from dagster.core.execution_context import ExecutionContext
 
 from dagster.core.definitions import (
+    ArgumentDefinition,
+    ExpectationDefinition,
+    ExpectationResult,
+    InputDefinition,
+    MaterializationDefinition,
+    OutputDefinition,
     PipelineContextDefinition,
     PipelineDefinition,
-    InputDefinition,
-    OutputDefinition,
-    MaterializationDefinition,
-    ExpectationDefinition,
-    SourceDefinition,
     SolidDefinition,
-    ArgumentDefinition,
+    SourceDefinition,
 )
 
 from dagster.core.decorators import (
+    materialization,
     solid,
     source,
-    materialization,
     with_context,
 )
 

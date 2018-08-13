@@ -1,47 +1,55 @@
 from toposort import toposort_flatten
 
-import dagster
-
 from dagster import check
-from dagster.core import types
-from dagster.utils import logging
 
-import dagster.core.definitions
+from .definitions import (
+    DependencyStructure,
+    PipelineDefinition,
+    SolidDefinition,
+    construct_dependency_structure_from_solids_only,
+)
 
-# from .definitions import (SolidDefinition, PipelineContextDefinition)
 
-
-def create_adjacency_lists(solids):
-    check.list_param(solids, 'solids', of_type=dagster.core.definitions.SolidDefinition)
+def create_adjacency_lists(solids, dep_structure):
+    check.list_param(solids, 'solids', of_type=SolidDefinition)
+    check.inst_param(dep_structure, 'dep_structure', DependencyStructure)
 
     visit_dict = {s.name: False for s in solids}
     forward_edges = {s.name: set() for s in solids}
     backward_edges = {s.name: set() for s in solids}
 
-    def visit(solid):
-        if visit_dict[solid.name]:
+    def visit(solid_name):
+        if visit_dict[solid_name]:
             return
 
-        visit_dict[solid.name] = True
+        visit_dict[solid_name] = True
 
-        for inp in solid.inputs:
-            if inp.depends_on is not None:
-                from_node = inp.depends_on.name
-                to_node = solid.name
-                if from_node in forward_edges:
-                    forward_edges[from_node].add(to_node)
-                    backward_edges[to_node].add(from_node)
-                    visit(inp.depends_on)
+        for dep_target in dep_structure.deps_of_solid(solid_name):
+            forward_node = dep_target.solid_name
+            backward_node = solid_name
+            if forward_node in forward_edges:
+                forward_edges[forward_node].add(backward_node)
+                backward_edges[backward_node].add(forward_node)
+                visit(forward_node)
 
     for s in solids:
-        visit(s)
+        visit(s.name)
 
     return (forward_edges, backward_edges)
 
 
 class SolidGraph:
-    def __init__(self, solids):
-        check.list_param(solids, 'solids', of_type=dagster.core.definitions.SolidDefinition)
+    def __init__(self, solids, dependency_structure):
+
+        solids = check.list_param(solids, 'solids', of_type=SolidDefinition)
+
+        if dependency_structure is None:
+            self.dep_structure = construct_dependency_structure_from_solids_only(solids)
+        else:
+            self.dep_structure = check.inst_param(
+                dependency_structure, 'dependency_structure', DependencyStructure
+            )
+
         self._solid_dict = {solid.name: solid for solid in solids}
 
         solid_names = set([solid.name for solid in solids])
@@ -55,7 +63,7 @@ class SolidGraph:
                 all_inputs[input_def.name] = input_def
 
         self._all_inputs = all_inputs
-        self.forward_edges, self.backward_edges = create_adjacency_lists(solids)
+        self.forward_edges, self.backward_edges = create_adjacency_lists(solids, self.dep_structure)
         self.topological_order = toposort_flatten(self.backward_edges, sort=True)
 
         self._transitive_deps = {}
@@ -76,9 +84,10 @@ class SolidGraph:
 
         trans_deps = set()
         for inp in self._solid_dict[solid_name].inputs:
-            if inp.depends_on:
-                trans_deps.add(inp.depends_on.name)
-                trans_deps.union(self.transitive_dependencies_of(inp.depends_on.name))
+            if self.dep_structure.has_dep(solid_name, inp.name):
+                dep_target = self.dep_structure.get_dep_target(solid_name, inp.name)
+                trans_deps.add(dep_target.solid_name)
+                trans_deps.union(self.transitive_dependencies_of(dep_target.solid_name))
 
         self._transitive_deps[solid_name] = trans_deps
         return self._transitive_deps[solid_name]
@@ -126,10 +135,11 @@ class SolidGraph:
                 if inp.name in input_set:
                     continue
 
-                if inp.is_external:
-                    unprovided_inputs.add(inp.name)
+                if self.dep_structure.has_dep(solid.name, inp.name):
+                    dep_target = self.dep_structure.get_dep_target(solid.name, inp.name)
+                    visit(self._solid_dict[dep_target.solid_name])
                 else:
-                    visit(inp.depends_on)
+                    unprovided_inputs.add(inp.name)
 
         visit(output_solid)
 
@@ -148,15 +158,56 @@ class SolidGraph:
             involved_solids.add(solid.name)
 
             for input_def in solid.inputs:
-                if input_def.is_external:
+                if not self.dep_structure.has_dep(solid.name, input_def.name):
                     continue
 
-                if input_def.depends_on.name in from_solid_set:
+                from_solid = self.dep_structure.get_dep_target(
+                    solid.name, input_def.name
+                ).solid_name
+
+                if from_solid in from_solid_set:
                     continue
 
-                visit(input_def.depends_on)
+                visit(self._solid_dict[from_solid])
 
         for to_solid in to_solids:
             visit(self._solid_dict[to_solid])
 
-        return SolidGraph([self._solid_dict[name] for name in involved_solids])
+        return SolidGraph([self._solid_dict[name] for name in involved_solids], self.dep_structure)
+
+
+def all_depended_on_solids(pipeline):
+    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+    dep_struct = pipeline.dependency_structure
+    for solid in pipeline.solids:
+        for input_def in solid.inputs:
+            if dep_struct.has_dep(solid.name, input_def.name):
+                dep_target = dep_struct.get_dep_target(solid.name, input_def.name)
+                yield pipeline.solid_named(dep_target.solid_name)
+
+
+def all_sink_solids(pipeline):
+    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+    all_names = set([solid.name for solid in pipeline.solids])
+    all_depended_on_names = set([solid.name for solid in all_depended_on_solids(pipeline)])
+    return all_names.difference(all_depended_on_names)
+
+
+def create_subgraph(pipeline, from_solids, through_solids):
+    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+    check.opt_list_param(from_solids, 'from_solids', of_type=str)
+    check.opt_list_param(through_solids, 'through_solids', of_type=str)
+
+    solid_graph = SolidGraph(pipeline.solids, pipeline.dependency_structure)
+
+    if not through_solids:
+        through_solids = list(all_sink_solids(pipeline))
+
+    if not from_solids:
+        all_deps = set()
+        for through_solid in through_solids:
+            all_deps.union(solid_graph.transitive_dependencies_of(through_solid))
+
+        from_solids = list(all_deps)
+
+    return solid_graph.create_execution_subgraph(from_solids, through_solids)

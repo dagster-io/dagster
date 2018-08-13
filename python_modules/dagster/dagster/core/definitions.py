@@ -1,13 +1,18 @@
+from collections import (defaultdict, namedtuple)
 import copy
 import keyword
 import re
 
 from dagster import check
 from dagster.core import types
-from dagster.utils.logging import level_from_string
+from dagster.utils.logging import (
+    level_from_string,
+    define_colored_console_logger,
+)
 
 from .errors import DagsterInvalidDefinitionError
-from .graph import SolidGraph
+
+DEFAULT_OUTPUT = 'result'
 
 DISALLOWED_NAMES = set(
     [
@@ -60,17 +65,11 @@ class PipelineContextDefinition:
 
 def _default_pipeline_context_definitions():
     def _default_context_fn(_pipeline, args):
-        # This has a circular dependency between execution and definition
-        # The likely solution is to move the ExecutionContext to definitions.py
-        # -- schrockn (07-28-18)
         import dagster.core.execution
-        import dagster.utils.logging
 
         log_level = level_from_string(args['log_level'])
         context = dagster.core.execution.ExecutionContext(
-            loggers=[
-                dagster.utils.logging.define_colored_console_logger('dagster', level=log_level)
-            ]
+            loggers=[define_colored_console_logger('dagster', level=log_level)]
         )
         return context
 
@@ -84,8 +83,70 @@ def _default_pipeline_context_definitions():
     return {'default': default_context_def}
 
 
+class DependencyDefinition:
+    def __init__(self, from_solid, from_input, to_solid, to_output=DEFAULT_OUTPUT):
+        self.from_solid = check.str_param(from_solid, 'from_solid')
+        self.from_input = check.str_param(from_input, 'from_input')
+        self.to_solid = check.str_param(to_solid, 'to_solid')
+        self.to_output = check.str_param(to_output, 'to_output')
+
+
+DepTarget = namedtuple('DepTarget', 'solid_name output_name')
+
+
+class DependencyStructure:
+    def __init__(self, deps):
+        self.deps = check.list_param(deps, 'deps', of_type=DependencyDefinition)
+
+        self._dep_lookup = defaultdict(dict)
+        for dep in deps:
+            self._dep_lookup[dep.from_solid][dep.from_input] = DepTarget(
+                solid_name=dep.to_solid,
+                output_name=dep.to_output,
+            )
+
+    def has_dep(self, solid_name, input_name):
+        check.str_param(solid_name, 'solid_name')
+        check.str_param(input_name, 'input_name')
+        return input_name in self._dep_lookup.get(solid_name, {})
+
+    def deps_of_solid(self, solid_name):
+        check.str_param(solid_name, 'solid_name')
+        return list(self._dep_lookup[solid_name].values())
+
+    def get_dep_target(self, solid_name, input_name):
+        check.str_param(solid_name, 'solid_name')
+        check.str_param(input_name, 'input_name')
+        return self._dep_lookup[solid_name][input_name]
+
+
+def construct_dependency_structure_from_solids_only(solids):
+    check.list_param(solids, 'solids', SolidDefinition)
+
+    deps = []
+    for solid in solids:
+        for input_def in solid.inputs:
+            if input_def.depends_on:
+
+                to_solid = input_def.depends_on
+                check.invariant(len(to_solid.outputs) == 1)
+
+                deps.append(
+                    DependencyDefinition(
+                        from_solid=solid.name,
+                        from_input=input_def.name,
+                        to_solid=to_solid.name,
+                        to_output=to_solid.outputs[0].name
+                    )
+                )
+
+    return DependencyStructure(deps)
+
+
 class PipelineDefinition:
-    def __init__(self, solids, name=None, description=None, context_definitions=None):
+    def __init__(
+        self, solids, name=None, description=None, context_definitions=None, dependencies=None
+    ):
         self.description = check.opt_str_param(description, 'description')
         self.name = check.opt_str_param(name, 'name')
 
@@ -122,15 +183,17 @@ class PipelineDefinition:
                         {solid_names}'''
                     )
 
-        self.solid_graph = SolidGraph(solids=solids)
+        # self.solid_graph = SolidGraph(solids=solids)
+
+        # TEMPORARY FOR MIGRATION
+        if dependencies is None:
+            self.dependency_structure = construct_dependency_structure_from_solids_only(solids)
+        else:
+            self.dependency_structure = DependencyStructure(dependencies)
 
     @property
     def solid_names(self):
         return [solid.name for solid in self.solids]
-
-    @property
-    def input_names(self):
-        return set([input_def.name for input_def in self.all_inputs])
 
     def get_input(self, solid_name, input_name):
         for solid in self.solids:
@@ -141,20 +204,6 @@ class PipelineDefinition:
                     return input_def
         check.failed('not found')
 
-    @property
-    def external_inputs(self):
-        for input_def in self.all_inputs:
-            if input_def.is_external:
-                yield input_def
-
-    @property
-    def externally_sourced_solids(self):
-        for solid in self.solids:
-            for input_def in solid.inputs:
-                if input_def.is_external:
-                    yield solid
-                    break
-
     def has_solid(self, name):
         check.str_param(name, 'name')
         for solid in self.solids:
@@ -162,30 +211,12 @@ class PipelineDefinition:
                 return True
         return False
 
-    @property
-    def all_inputs(self):
-        for solid in self.solids:
-            for input_def in solid.inputs:
-                yield input_def
-
     def solid_named(self, name):
         check.str_param(name, 'name')
         for solid in self.solids:
             if solid.name == name:
                 return solid
         check.failed('Could not find solid named ' + name)
-
-    @property
-    def all_depended_on_solids(self):
-        for input_def in self.all_inputs:
-            if input_def.depends_on:
-                yield input_def.depends_on
-
-    @property
-    def all_sink_solids(self):
-        all_names = set([solid.name for solid in self.solids])
-        all_depended_on_names = set([solid.name for solid in self.all_depended_on_solids])
-        return all_names.difference(all_depended_on_names)
 
 
 class ExpectationResult:
@@ -280,10 +311,6 @@ class InputDefinition:
         self.input_callback = check.opt_callable_param(input_callback, 'input_callback')
         self.description = check.opt_str_param(description, 'description')
 
-    @property
-    def is_external(self):
-        return self.depends_on is None
-
     def source_of_type(self, source_type):
         check.str_param(source_type, 'source_type')
         for source in self.sources:
@@ -333,12 +360,14 @@ class OutputDefinition:
     # runtime type info
     def __init__(
         self,
+        # name=None,
         dagster_type=None,
         materializations=None,
         expectations=None,
         output_callback=None,
         description=None
     ):
+        self.name = DEFAULT_OUTPUT
 
         self.dagster_type = check.opt_inst_param(
             dagster_type, 'dagster_type', types.DagsterType, types.Any
@@ -370,11 +399,20 @@ class OutputDefinition:
 # The output
 class SolidDefinition:
     def __init__(self, name, inputs, transform_fn, output, description=None):
+        # if output:
+        #     check.invariant(outputs is None)
+        #     self.outputs = [output]
+        # else:
+        #     check.invariant(outputs is not None)
+        #     self.outputs = check.list_param(outputs, 'outputs', of_type=OutputDefinition)
+
         self.name = check_valid_name(name)
         self.inputs = check.list_param(inputs, 'inputs', InputDefinition)
-        self.output = check.inst_param(output, 'output', OutputDefinition)
         self.transform_fn = check.callable_param(transform_fn, 'transform')
+        self.output = check.inst_param(output, 'output', OutputDefinition)
         self.description = check.opt_str_param(description, 'description')
+
+        self.outputs = [output]
 
     # Notes to self
 
