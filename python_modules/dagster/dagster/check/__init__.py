@@ -184,13 +184,11 @@ def opt_bool_param(obj, param_name, default=None):
 def list_param(obj_list, param_name, of_type=None):
     if not isinstance(obj_list, list):
         raise_with_traceback(_param_type_mismatch_exception(obj_list, list, param_name))
-    if of_type:
-        for obj in obj_list:
-            if not isinstance(obj, of_type):
-                raise_with_traceback(CheckError(
-                    'Member of list mismatches type. Got {obj_repr}'.format(obj_repr=repr(obj))
-                ))
-    return obj_list
+
+    if not of_type:
+        return obj_list
+
+    return _check_list_items(obj_list, of_type)
 
 
 def tuple_param(obj, param_name):
@@ -205,18 +203,29 @@ def opt_tuple_param(obj, param_name, default=None):
     return default if obj is None else obj
 
 
+def _check_list_items(obj_list, of_type):
+    for obj in obj_list:
+        if not isinstance(obj, of_type):
+            raise_with_traceback(
+                CheckError(
+                    'Member of list mismatches type. Expected {of_type}. Got {obj_repr}'.format(
+                        of_type=of_type,
+                        obj_repr=repr(obj),
+                    )
+                )
+            )
+    return obj_list
+
+
 def opt_list_param(obj_list, param_name, of_type=None):
     if obj_list is not None and not isinstance(obj_list, list):
         raise_with_traceback(_param_type_mismatch_exception(obj_list, list, param_name))
     if not obj_list:
         return []
-    if of_type:
-        for obj in obj_list:
-            if not isinstance(obj, of_type):
-                raise_with_traceback(CheckError(
-                    'Member of list mismatches type. Got {obj_repr}'.format(obj_repr=repr(obj))
-                ))
-    return obj_list
+    if not of_type:
+        return obj_list
+
+    return _check_list_items(obj_list, of_type)
 
 
 def dict_param(obj, param_name, key_type=None, value_type=None):
@@ -238,9 +247,23 @@ def type_param(obj, param_name):
 def _check_key_value_types(obj, key_type, value_type):
     for key, value in obj.items():
         if key_type and not isinstance(key, key_type):
-            raise_with_traceback(CheckError('Key in dictionary mismatches type'))
+            raise_with_traceback(
+                CheckError(
+                    'Key in dictionary mismatches type. Expected {key_type}. Got {obj_repr}'.format(
+                        key_type=repr(key_type),
+                        obj_repr=repr(key),
+                    )
+                )
+            )
         if value_type and not isinstance(value, value_type):
-            raise_with_traceback(CheckError('Value in dictionary mismatches type'))
+            raise_with_traceback(
+                CheckError(
+                    'Value in dictionary mismatches type. Expected {vtype}. Got {obj_repr}'.format(
+                        vtype=repr(value_type),
+                        obj_repr=repr(value),
+                    )
+                )
+            )
     return obj
 
 

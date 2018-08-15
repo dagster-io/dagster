@@ -825,7 +825,6 @@ class InputManager:
     def _get_sourced_input_value(self, _context, _solid_name, _input_name):
         check.not_implemented('must implement in subclass')
 
-
 def _wrap_in_yield(thing):
     if isinstance(thing, ExecutionContext):
         def _wrap():
