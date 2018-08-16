@@ -19,6 +19,7 @@ def create_pipeline_cli():
     group = click.Group(name="pipeline")
     group.add_command(list_command)
     group.add_command(print_command)
+    group.add_command(solids_command)
     group.add_command(graphviz_command)
     group.add_command(execute_command)
     return group
@@ -63,7 +64,6 @@ def pipeline_name_argument(f):
 @pipeline_name_argument
 def print_command(pipeline_config):
     print_pipeline(pipeline_config.pipeline, full=True, print_fn=click.echo)
-
 
 def print_pipeline(pipeline, full, print_fn):
     check.inst_param(pipeline, 'pipeline', dagster.PipelineDefinition)
@@ -173,6 +173,31 @@ def format_argument_dict(arg_def_dict):
             for name, arg_def in arg_def_dict.items()
         ]
     )
+
+
+@click.command(name='solids', help='solids <<pipeline_name>>')
+@pipeline_name_argument
+def solids_command(pipeline_config):
+    solids(pipeline_config.pipeline, print_fn=click.echo)
+
+
+def solids(pipeline, print_fn):
+    check.inst_param(pipeline, 'pipeline', dagster.PipelineDefinition)
+    check.callable_param(print_fn, 'print_fn')
+
+    printer = IndentingPrinter(indent_level=2, printer=print_fn)
+    printer.line('Pipeline: {name}'.format(name=pipeline.name))
+
+    printer.line('Solids:')
+    for solid in pipeline.solids:
+        with printer.with_indent():
+            printer.line('Solid: {name}'.format(name=solid.name))
+
+
+@click.command(name='shorty', help="shorty <<pipeline_name>>")
+@pipeline_name_argument
+def shorty_command(pipeline_config):
+    print_pipeline(pipeline_config.pipeline, full=True, print_fn=click.echo)
 
 
 @click.command(name='graphviz', help="graphviz <<pipeline_name>>")
