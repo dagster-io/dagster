@@ -18,7 +18,7 @@ def long_description():
 
 setup(
     name='dagster',
-    version='0.1.5',
+    version='0.1.6',
     author='Elementl',
     author_email='schrockn@elementl.com',
     license='Apache-2.0',
@@ -27,7 +27,7 @@ setup(
     long_description_content_type='text/markdown',
     url='https://github.com/dagster-io/dagster',
     classifiers=(
-        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.6',
         'License :: OSI Approved :: Apache Software License',
         'Operating System :: OS Independent',
     ),
@@ -54,11 +54,6 @@ setup(
         # sqlalchemy kernel
         'sqlalchemy>=1.2.7',
         'jinja2>=2.8',
-
-        # examples
-        # unused and very, very heavy
-        # 'great-expectations>=0.4.1',
-        # 'requests>=2.18.4',
 
         # dev/test - Installed via dev-requirements.txt
         # 'pylint>=1.8.4',
