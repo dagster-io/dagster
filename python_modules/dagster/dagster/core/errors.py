@@ -57,8 +57,8 @@ class DagsterExpectationFailedError(DagsterError):
         # Probable fix is to move all "execution result" objects
         # to definitions
         import dagster.core.execution
-        self.execution_result = check.inst_param(
+        self.execution_result = check.opt_inst_param(
             execution_result,
             'execution_result',
-            dagster.core.execution.SolidExecutionResult,
+            dagster.core.execution.ExecutionResultBase,
         )

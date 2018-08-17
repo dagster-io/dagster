@@ -12,6 +12,7 @@ from dagster.core.execution import (
     execute_pipeline,
     ExecutionContext,
 )
+from dagster.core.errors import DagsterUserCodeExecutionError
 from dagster.utils.compatability import (
     create_custom_source_input, create_single_materialization_output
 )
@@ -143,7 +144,7 @@ def test_transform_failure_pipeline():
 
     assert len(result_list) == 1
     assert not result_list[0].success
-    assert result_list[0].exception
+    assert result_list[0].dagster_user_exception
 
 
 def test_input_failure_pipeline():
@@ -158,7 +159,7 @@ def test_input_failure_pipeline():
 
     assert len(result_list) == 1
     assert not result_list[0].success
-    assert result_list[0].exception
+    assert result_list[0].dagster_user_exception
 
 
 def test_output_failure_pipeline():
@@ -179,7 +180,7 @@ def test_output_failure_pipeline():
 
     assert len(result_list) == 1
     assert not result_list[0].success
-    assert result_list[0].exception
+    assert result_list[0].dagster_user_exception
 
 
 def test_failure_midstream():
@@ -222,4 +223,4 @@ def test_failure_midstream():
     assert result_list[0].success
     assert result_list[1].success
     assert not result_list[2].success
-    assert result_list[2].reason == DagsterExecutionFailureReason.USER_CODE_ERROR
+    assert isinstance(result_list[2].dagster_user_exception, DagsterUserCodeExecutionError)

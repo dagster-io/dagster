@@ -21,7 +21,7 @@ class NotImplementedCheckError(CheckError):
 def _param_type_mismatch_exception(obj, ttype, param_name):
     return ParameterCheckError(
         'Param "{name}" is not a {type}. Got {obj} with is type {obj_type}.'.format(
-            name=param_name, obj=repr(obj), type=ttype.__name__, obj_type=type(obj).__name__
+            name=param_name, obj=repr(obj), type=ttype.__name__, obj_type=type(obj)
         )
     )
 
@@ -30,13 +30,13 @@ def _type_mismatch_error(obj, ttype, desc):
     if desc:
         return CheckError(
             'Object {obj} is not a {type}. Got {obj} with type {obj_type}. Desc: {desc}'.format(
-                obj=repr(obj), type=ttype.__name__, obj_type=type(obj).__name__, desc=desc
+                obj=repr(obj), type=ttype.__name__, obj_type=type(obj), desc=desc
             )
         )
     else:
         return CheckError(
             'Object {obj} is not a {type}. Got {obj} with type {obj_type}.'.format(
-                obj=repr(obj), type=ttype.__name__, obj_type=type(obj).__name__
+                obj=repr(obj), type=ttype.__name__, obj_type=type(obj)
             )
         )
 

@@ -6,6 +6,7 @@ from dagster.core.definitions import (
     InputDefinition,
     SourceDefinition,
     ArgumentDefinition,
+    DependencyDefinition,
 )
 
 from dagster.core.execution import (ExecutionContext, execute_single_solid, execute_pipeline)
@@ -120,14 +121,24 @@ def test_execute_dep_solid_different_input_name():
         inputs=[
             InputDefinition(
                 name='a_dependency',
-                depends_on=first_solid,
+
+                # depends_on=first_solid,
             ),
         ],
         transform_fn=lambda context, args: args['a_dependency'] + args['a_dependency'],
         output=dagster.OutputDefinition(),
     )
 
-    pipeline = dagster.PipelineDefinition(solids=[first_solid, second_solid])
+    pipeline = dagster.PipelineDefinition(
+        solids=[first_solid, second_solid],
+        dependencies=[
+            DependencyDefinition(
+                from_solid='second_solid',
+                from_input='a_dependency',
+                to_solid='first_solid',
+            )
+        ]
+    )
     result = dagster.execute_pipeline(
         pipeline,
         environment=config.Environment(
@@ -213,7 +224,6 @@ def test_execute_dep_solid_same_input_name():
             'table_one': config.Source(name='TABLE', args={'name': 'table_one_instance'}),
         },
         'table_two': {
-            'table_one': config.Source(name='TABLE', args={'name': 'table_one_instance'}),
             'table_two': config.Source(name='TABLE', args={'name': 'table_two_instance'}),
         },
     }
@@ -240,7 +250,12 @@ def test_execute_dep_solid_same_input_name():
     executed['s2_t2_source'] = False
 
     second_only_env = config.Environment(
-        sources=sources,
+        sources={
+            'table_two': {
+                'table_one': config.Source(name='TABLE', args={'name': 'table_one_instance'}),
+                'table_two': config.Source(name='TABLE', args={'name': 'table_two_instance'}),
+            },
+        },
         execution=config.Execution(from_solids=['table_two']),
     )
 
@@ -265,7 +280,12 @@ def test_execute_dep_solid_same_input_name():
     executed['s2_t2_source'] = False
 
     first_only_env = config.Environment(
-        sources=sources,
+        # sources=sources,
+        sources={
+            'table_one': {
+                'table_one': config.Source(name='TABLE', args={'name': 'table_one_instance'}),
+            },
+        },
         execution=config.Execution(through_solids=['table_one']),
     )
 
