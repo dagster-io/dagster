@@ -1,5 +1,11 @@
 import dagster
-from dagster import (solid, InputDefinition, OutputDefinition, PipelineDefinition)
+from dagster import (
+    DependencyDefinition,
+    InputDefinition,
+    OutputDefinition,
+    PipelineDefinition,
+    solid,
+)
 import dagster.pandas_kernel as dagster_pd
 
 
@@ -14,7 +20,7 @@ def sum_solid(num):
 
 
 @solid(
-    inputs=[InputDefinition('sum_df', dagster_pd.DataFrame, depends_on=sum_solid)],
+    inputs=[InputDefinition('sum_df', dagster_pd.DataFrame)],
     output=OutputDefinition(dagster_pd.DataFrame)
 )
 def sum_sq_solid(sum_df):
@@ -24,7 +30,7 @@ def sum_sq_solid(sum_df):
 
 
 @solid(
-    inputs=[InputDefinition('sum_sq_solid', dagster_pd.DataFrame, depends_on=sum_sq_solid)],
+    inputs=[InputDefinition('sum_sq_solid', dagster_pd.DataFrame)],
     output=OutputDefinition(dagster_pd.DataFrame)
 )
 def always_fails_solid(**_kwargs):
@@ -39,6 +45,14 @@ def define_pipeline():
             sum_sq_solid,
             always_fails_solid,
         ],
+        dependencies={
+            'sum_sq_solid': {
+                'sum_df': DependencyDefinition(sum_solid.name),
+            },
+            'always_fails_solid': {
+                'sum_sq_solid': DependencyDefinition(sum_sq_solid.name),
+            }
+        }
     )
 
 

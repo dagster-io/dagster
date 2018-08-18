@@ -4,12 +4,13 @@ import dagster
 from dagster import config
 from dagster.core import types
 from dagster.core.definitions import (
+    ArgumentDefinition,
+    DependencyDefinition,
     InputDefinition,
     MaterializationDefinition,
     OutputDefinition,
     SolidDefinition,
     SourceDefinition,
-    ArgumentDefinition,
 )
 from dagster.core.execution import (ExecutionContext, execute_single_solid)
 from dagster.utils.test import script_relative_path
@@ -88,20 +89,6 @@ def create_dataframe_input(name):
     )
 
 
-def create_dataframe_dependency(name, depends_on):
-    return InputDefinition(
-        name=name,
-        sources=[
-            SourceDefinition(
-                source_type='CSV',
-                argument_def_dict={'path': ArgumentDefinition(types.Path)},
-                source_fn=lambda context, arg_dict: pd.read_csv(arg_dict['path']),
-            ),
-        ],
-        depends_on=depends_on,
-    )
-
-
 def create_dataframe_output():
     def mat_fn(_context, arg_dict, df):
         df.to_csv(arg_dict['path'], index=False)
@@ -176,12 +163,19 @@ def test_pipeline():
 
     solid_two = SolidDefinition(
         name='solid_two',
-        inputs=[create_dataframe_dependency(name='sum_df', depends_on=solid_one)],
+        inputs=[create_dataframe_input(name='sum_df')],
         transform_fn=solid_two_transform,
         output=create_dataframe_output(),
     )
 
-    pipeline = dagster.PipelineDefinition(solids=[solid_one, solid_two])
+    pipeline = dagster.PipelineDefinition(
+        solids=[solid_one, solid_two],
+        dependencies={
+            'solid_two': {
+                'sum_df': DependencyDefinition('solid_one'),
+            },
+        }
+    )
 
     environment = config.Environment(
         sources={

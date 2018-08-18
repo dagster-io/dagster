@@ -1,6 +1,6 @@
 import sqlalchemy as sa
 import dagster
-from dagster import (config, InputDefinition)
+from dagster import (config, InputDefinition, DependencyDefinition)
 import dagster.sqlalchemy_kernel as dagster_sa
 from dagster.utils.test import script_relative_path
 
@@ -26,7 +26,7 @@ def create_persisted_context():
     return dagster_sa.create_sql_alchemy_context_from_engine(engine=engine)
 
 
-def create_mem_sql_pipeline_context_tuple(solids):
+def create_mem_sql_pipeline_context_tuple(solids, dependencies=None):
     default_def = dagster.PipelineContextDefinition(
         argument_def_dict={},
         context_fn=lambda _pipeline, _args: in_mem_context(),
@@ -36,10 +36,12 @@ def create_mem_sql_pipeline_context_tuple(solids):
         context_fn=lambda _pipeline, _args: create_persisted_context(),
     )
     return dagster.PipelineDefinition(
-        solids=solids, context_definitions={
+        solids=solids,
+        dependencies=dependencies,
+        context_definitions={
             'default': default_def,
             'persisted': persisted_def
-        }
+        },
     )
 
 
@@ -68,14 +70,16 @@ def test_sql_populate_tables():
     create_all_tables_solids = _get_project_solid('create_all_tables')
 
     populate_num_table_solid = _get_project_solid(
-        'populate_num_table',
-        inputs=[
-            InputDefinition(create_all_tables_solids.name, depends_on=create_all_tables_solids)
-        ]
+        'populate_num_table', inputs=[InputDefinition(create_all_tables_solids.name)]
     )
 
     pipeline = create_mem_sql_pipeline_context_tuple(
-        solids=[create_all_tables_solids, populate_num_table_solid]
+        solids=[create_all_tables_solids, populate_num_table_solid],
+        dependencies={
+            populate_num_table_solid.name: {
+                create_all_tables_solids.name: DependencyDefinition(create_all_tables_solids.name)
+            }
+        }
     )
 
     pipeline_result = dagster.execute_pipeline(pipeline, environment=config.Environment.empty())
@@ -92,19 +96,17 @@ def create_full_pipeline():
 
     populate_num_table_solid = _get_project_solid(
         'populate_num_table',
-        inputs=[InputDefinition('create_all_tables_solids', depends_on=create_all_tables_solids)],
+        inputs=[InputDefinition('create_all_tables_solids')],
     )
 
     insert_into_sum_table_solid = _get_project_solid(
         'insert_into_sum_table',
-        inputs=[InputDefinition('populate_num_table_solid', depends_on=populate_num_table_solid)],
+        inputs=[InputDefinition('populate_num_table_solid')],
     )
 
     insert_into_sum_sq_table_solid = _get_project_solid(
         'insert_into_sum_sq_table',
-        inputs=[
-            InputDefinition('insert_into_sum_sq_table', depends_on=insert_into_sum_table_solid)
-        ],
+        inputs=[InputDefinition('insert_into_sum_sq_table')],
     )
 
     return create_mem_sql_pipeline_context_tuple(
@@ -114,6 +116,17 @@ def create_full_pipeline():
             insert_into_sum_table_solid,
             insert_into_sum_sq_table_solid,
         ],
+        dependencies={
+            populate_num_table_solid.name: {
+                'create_all_tables_solids': DependencyDefinition(create_all_tables_solids.name)
+            },
+            insert_into_sum_table_solid.name: {
+                'populate_num_table_solid': DependencyDefinition(populate_num_table_solid.name)
+            },
+            insert_into_sum_sq_table_solid.name: {
+                'insert_into_sum_sq_table': DependencyDefinition(insert_into_sum_table_solid.name),
+            },
+        }
     )
 
 

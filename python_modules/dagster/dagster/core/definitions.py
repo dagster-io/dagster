@@ -84,63 +84,53 @@ def _default_pipeline_context_definitions():
 
 
 class DependencyDefinition:
-    def __init__(self, from_solid, from_input, to_solid, to_output=DEFAULT_OUTPUT):
-        self.from_solid = check.str_param(from_solid, 'from_solid')
-        self.from_input = check.str_param(from_input, 'from_input')
-        self.to_solid = check.str_param(to_solid, 'to_solid')
-        self.to_output = check.str_param(to_output, 'to_output')
+    def __init__(self, solid, output=DEFAULT_OUTPUT, description=None):
+        self.solid = check.str_param(solid, 'solid')
+        self.output = check.str_param(output, 'output')
+        self.description = check.opt_str_param(description, 'description')
 
 
 DepTarget = namedtuple('DepTarget', 'solid_name output_name')
 
 
 class DependencyStructure:
-    def __init__(self, deps):
-        self.deps = check.list_param(deps, 'deps', of_type=DependencyDefinition)
+    def __init__(self, solids, dep_dict):
+        check.list_param(solids, 'solids', of_type=SolidDefinition)
+        check.dict_param(dep_dict, 'dep_dict', key_type=str, value_type=dict)
+
+        def _solid_named(name):
+            for solid in solids:
+                if solid.name == name:
+                    return solid
+            check.failed('not fouhnd')
 
         self._dep_lookup = defaultdict(dict)
-        for dep in deps:
-            self._dep_lookup[dep.from_solid][dep.from_input] = DepTarget(
-                solid_name=dep.to_solid,
-                output_name=dep.to_output,
+
+        for solid_name, input_dict in dep_dict.items():
+            check.dict_param(
+                input_dict,
+                'input_dict',
+                key_type=str,
+                value_type=DependencyDefinition,
             )
 
-    def has_dep(self, solid_name, input_name):
-        check.str_param(solid_name, 'solid_name')
-        check.str_param(input_name, 'input_name')
-        return input_name in self._dep_lookup.get(solid_name, {})
+            for input_name, dep in input_dict.items():
+                dep_solid = _solid_named(dep.solid)
+                output_def = dep_solid.output_def_named(dep.output)
+                self._dep_lookup[solid_name][input_name] = SolidOutputHandle(dep_solid, output_def)
+
+    def has_dep(self, solid_input_handle):
+        check.inst_param(solid_input_handle, 'solid_input_handle', SolidInputHandle)
+        input_name = solid_input_handle.input_def.name
+        return input_name in self._dep_lookup.get(solid_input_handle.solid.name, {})
 
     def deps_of_solid(self, solid_name):
         check.str_param(solid_name, 'solid_name')
         return list(self._dep_lookup[solid_name].values())
 
-    def get_dep_target(self, solid_name, input_name):
-        check.str_param(solid_name, 'solid_name')
-        check.str_param(input_name, 'input_name')
-        return self._dep_lookup[solid_name][input_name]
-
-
-def construct_dependency_structure_from_solids_only(solids):
-    check.list_param(solids, 'solids', SolidDefinition)
-
-    deps = []
-    for solid in solids:
-        for input_def in solid.inputs:
-            if input_def.depends_on:
-
-                to_solid = input_def.depends_on
-                check.invariant(len(to_solid.outputs) == 1)
-
-                deps.append(
-                    DependencyDefinition(
-                        from_solid=solid.name,
-                        from_input=input_def.name,
-                        to_solid=to_solid.name,
-                        to_output=to_solid.outputs[0].name
-                    )
-                )
-
-    return DependencyStructure(deps)
+    def get_dep(self, solid_input_handle):
+        check.inst_param(solid_input_handle, 'solid_input_handle', SolidInputHandle)
+        return self._dep_lookup[solid_input_handle.solid.name][solid_input_handle.input_def.name]
 
 
 class PipelineDefinition:
@@ -171,25 +161,14 @@ class PipelineDefinition:
 
         self.solids = check.list_param(solids, 'solids', of_type=SolidDefinition)
 
-        solid_names = set([solid.name for solid in self.solids])
-        for solid in solids:
-            for input_def in solid.inputs:
-                if input_def.depends_on:
-                    check.invariant(
-                        input_def.depends_on.name in solid_names,
-                        f'''The solid {input_def.depends_on.name} was specified 
-                        as a dependency, however it does not exist in your 
-                        pipeline definition. Only the following exist: 
-                        {solid_names}'''
-                    )
+        dependencies = check.opt_dict_param(
+            dependencies,
+            'dependencies',
+            key_type=str,
+            value_type=dict,
+        )
 
-        # self.solid_graph = SolidGraph(solids=solids)
-
-        # TEMPORARY FOR MIGRATION
-        if dependencies is None:
-            self.dependency_structure = construct_dependency_structure_from_solids_only(solids)
-        else:
-            self.dependency_structure = DependencyStructure(dependencies)
+        self.dependency_structure = DependencyStructure(solids, dependencies)
 
     @property
     def solid_names(self):
@@ -288,7 +267,6 @@ class InputDefinition:
         name,
         dagster_type=None,
         sources=None,
-        depends_on=None,
         expectations=None,
         input_callback=None,
         description=None
@@ -299,7 +277,6 @@ class InputDefinition:
             sources = dagster_type.default_sources
 
         self.sources = check.opt_list_param(sources, 'sources', of_type=SourceDefinition)
-        self.depends_on = check.opt_inst_param(depends_on, 'depends_on', SolidDefinition)
 
         self.dagster_type = check.opt_inst_param(
             dagster_type, 'dagster_type', types.DagsterType, types.Any
@@ -394,6 +371,42 @@ class OutputDefinition:
         check.failed('Did not find materialization {type}'.format(type=name))
 
 
+class SolidInputHandle(namedtuple('_SolidInputHandle', 'solid input_def')):
+    def __new__(cls, solid, input_def):
+        return super(SolidInputHandle, cls).__new__(
+            cls,
+            check.inst_param(solid, 'solid', SolidDefinition),
+            check.inst_param(input_def, 'input_def', InputDefinition),
+        )
+
+    def __str__(self):
+        return f'SolidInputHandle(solid="{self.solid.name}", input_name="{self.input_def.name}")'
+
+    def __hash__(self):
+        return hash((self.solid.name, self.input_def.name))
+
+    def __eq__(self, other):
+        return self.solid.name == other.solid.name and self.input_def.name == other.input_def.name
+
+
+class SolidOutputHandle(namedtuple('_SolidOutputHandle', 'solid output')):
+    def __new__(cls, solid, output):
+        return super(SolidOutputHandle, cls).__new__(
+            cls,
+            check.inst_param(solid, 'solid', SolidDefinition),
+            check.inst_param(output, 'output', OutputDefinition),
+        )
+
+    def __str__(self):
+        return f'SolidOutputHandle(solid="{self.solid.name}", output.name="{self.output.name}")'
+
+    def __hash__(self):
+        return hash((self.solid.name, self.output.name))
+
+    def __eq__(self, other):
+        return self.solid.name == other.solid.name and self.output.name == other.output.name
+
+
 # One or more inputs
 # The core computation in the native kernel abstraction
 # The output
@@ -414,6 +427,14 @@ class SolidDefinition:
 
         self.outputs = [output]
 
+        input_handles = {}
+        for inp in self.inputs:
+            input_handles[inp.name] = SolidInputHandle(self, inp)
+
+        self.input_handles = input_handles
+
+        self.output_handles = {output.name: SolidOutputHandle(self, output)}
+
     # Notes to self
 
     # Input Definitions
@@ -433,6 +454,14 @@ class SolidDefinition:
     #       - Compute (value, args) => Result
     #   - Expectations
 
+    def input_handle(self, name):
+        check.str_param(name, 'name')
+        return self.input_handles[name]
+
+    def output_handle(self, name):
+        check.str_param(name, 'name')
+        return self.output_handles[name]
+
     @property
     def input_names(self):
         return [inp.name for inp in self.inputs]
@@ -451,6 +480,14 @@ class SolidDefinition:
                 return input_def
 
         check.failed('input {name} not found'.format(name=name))
+
+    def output_def_named(self, name):
+        check.str_param(name, 'name')
+        for output in self.outputs:
+            if output.name == name:
+                return output
+
+        check.failed('output {name} not found'.format(name=name))
 
 
 class __ArgumentValueSentinel:

@@ -6,6 +6,7 @@ import dagster.core
 from dagster.core.definitions import (
     SolidDefinition,
     InputDefinition,
+    DependencyDefinition,
 )
 from dagster.core.execution import (
     DagsterExecutionFailureReason,
@@ -28,9 +29,11 @@ def silencing_default_context():
     }
 
 
-def silencing_pipeline(solids):
+def silencing_pipeline(solids, dependencies=None):
     return dagster.PipelineDefinition(
-        solids=solids, context_definitions=silencing_default_context()
+        solids=solids,
+        dependencies=dependencies,
+        context_definitions=silencing_default_context(),
     )
 
 
@@ -193,10 +196,7 @@ def test_failure_midstream():
 
     solid_c = SolidDefinition(
         name='C',
-        inputs=[
-            InputDefinition(name='A', depends_on=solid_a),
-            InputDefinition(name='B', depends_on=solid_b),
-        ],
+        inputs=[InputDefinition(name='A'), InputDefinition(name='B')],
         transform_fn=transform_fn,
         output=dagster.OutputDefinition(),
     )
@@ -211,7 +211,15 @@ def test_failure_midstream():
             }
         }
     )
-    pipeline = silencing_pipeline(solids=[solid_a, solid_b, solid_c])
+    pipeline = silencing_pipeline(
+        solids=[solid_a, solid_b, solid_c],
+        dependencies={
+            'C': {
+                'A': DependencyDefinition(solid_a.name),
+                'B': DependencyDefinition(solid_b.name),
+            }
+        }
+    )
     pipeline_result = execute_pipeline(
         pipeline,
         environment=environment,

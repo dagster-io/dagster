@@ -12,7 +12,7 @@ from dagster.core.definitions import (
 from .common import execute_sql_text_on_context
 
 
-def _create_table_input(name, depends_on=None):
+def _create_table_input(name):
     return InputDefinition(
         name=name,
         sources=[
@@ -22,7 +22,6 @@ def _create_table_input(name, depends_on=None):
                 argument_def_dict={'name': ArgumentDefinition(dagster.core.types.String)},
             )
         ],
-        depends_on=depends_on
     )
 
 
@@ -31,7 +30,7 @@ def create_templated_sql_transform_solid(
     sql,
     table_arguments,
     output,
-    dependencies=None,
+    table_deps=None,
     extra_inputs=None,
 ):
     '''
@@ -104,11 +103,12 @@ def create_templated_sql_transform_solid(
     check.str_param(sql, 'sql')
     check.list_param(table_arguments, 'table_arguments', of_type=str)
     check.str_param(output, 'output')
-    dependencies = check.opt_list_param(dependencies, 'dependencies', of_type=SolidDefinition)
+    table_deps = check.opt_list_param(table_deps, 'table_deps', of_type=SolidDefinition)
     extra_inputs = check.opt_list_param(extra_inputs, 'extra_inputs', of_type=InputDefinition)
 
+    dep_inputs = [_create_table_input(dep.name) for dep in table_deps]
     table_inputs = [_create_table_input(table) for table in table_arguments]
-    dep_inputs = [_create_table_input(dep.name, depends_on=dep) for dep in dependencies]
+
     return SolidDefinition(
         name=name,
         inputs=table_inputs + dep_inputs + extra_inputs,

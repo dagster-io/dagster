@@ -9,26 +9,34 @@ import toposort
 from dagster import (check, config)
 
 from dagster.utils.indenting_printer import IndentingPrinter
-from dagster.utils.logging import (get_formatted_stack_trace, define_colored_console_logger, DEBUG)
+from dagster.utils.logging import (
+    get_formatted_stack_trace,
+    define_colored_console_logger,
+    ERROR,
+)
+
 from dagster.utils.timing import time_execution_scope
 
 from .argument_handling import validate_args
 
 from .definitions import (
-    SolidDefinition,
+    DependencyStructure,
+    ExpectationDefinition,
     InputDefinition,
+    MaterializationDefinition,
     OutputDefinition,
     PipelineDefinition,
-    ExpectationDefinition,
-    MaterializationDefinition,
+    SolidDefinition,
+    SolidInputHandle,
+    SolidOutputHandle,
 )
 
 from .execution_context import ExecutionContext
 
 from .errors import (
+    DagsterExpectationFailedError,
     DagsterInvariantViolationError,
     DagsterUserCodeExecutionError,
-    DagsterExpectationFailedError,
 )
 
 from .graph import create_subgraph
@@ -38,7 +46,87 @@ from .types import (
     DagsterType,
 )
 
-LOG_LEVEL = DEBUG
+class ComputeResult(namedtuple('_ComputeResult', 'output_name value')):
+    def __new__(cls, output_name, value):
+        return super(ComputeResult, cls).__new__(
+            cls,
+            check.str_param(output_name, 'output_name'),
+            value,
+        )
+
+
+class ComputeNodeOutputHandle(namedtuple('_ComputeNodeOutputHandle', 'compute_node output_name')):
+    def __new__(cls, compute_node, output_name):
+        return super(ComputeNodeOutputHandle, cls).__new__(
+            cls,
+            compute_node=check.inst_param(compute_node, 'compute_node', ComputeNode),
+            output_name=check.str_param(output_name, 'output_name'),
+        )
+
+    # Make this hashable so it be a key in a dictionary
+
+    def __str__(self):
+        return f'ComputeNodeOutputHandle(guid="{self.compute_node.guid}", output_name="{self.output_name}")'
+
+    def __hash__(self):
+        return hash(self.compute_node.guid + self.output_name)
+
+    def __eq__(self, other):
+        return (
+            self.compute_node.guid == other.compute_node.guid
+            and self.output_name == other.output_name
+        )
+
+
+class ComputeNodeSuccessData(namedtuple('_ComputeNodeSuccessData', 'output_name value')):
+    def __new__(cls, output_name, value):
+        return super(ComputeNodeSuccessData, cls).__new__(
+            cls,
+            output_name=check.str_param(output_name, 'output_name'),
+            value=value,
+        )
+
+
+class ComputeNodeFailureData(namedtuple('_ComputeNodeFailureData', 'dagster_user_exception')):
+    def __new__(cls, dagster_user_exception):
+        return super(ComputeNodeFailureData, cls).__new__(
+            cls,
+            dagster_user_exception=check.inst_param(
+                dagster_user_exception,
+                'dagster_user_exception',
+                DagsterUserCodeExecutionError,
+            ),
+        )
+
+
+class ComputeNodeResult(
+    namedtuple(
+        '_ComputeNodeResult',
+        'success compute_node tag success_data failure_data ',
+    )
+):
+    @staticmethod
+    def success_result(compute_node, tag, success_data):
+        return ComputeNodeResult(
+            success=True,
+            compute_node=check.inst_param(compute_node, 'compute_node', ComputeNode),
+            tag=check.inst_param(tag, 'tag', ComputeNodeTag),
+            success_data=check.inst_param(success_data, 'success_data', ComputeNodeSuccessData),
+            failure_data=None,
+        )
+
+    @staticmethod
+    def failure_result(compute_node, tag, failure_data):
+        return ComputeNodeResult(
+            success=False,
+            compute_node=check.inst_param(compute_node, 'compute_node', ComputeNode),
+            tag=check.inst_param(tag, 'tag', ComputeNodeTag),
+            success_data=None,
+            failure_data=check.inst_param(failure_data, 'failure_data', ComputeNodeFailureData),
+        )
+
+
+LOG_LEVEL = ERROR
 logger = define_colored_console_logger('dagster-compute-nodes', LOG_LEVEL)
 
 @contextmanager
@@ -97,28 +185,6 @@ def _execute_core_transform(context, solid_transform_fn, values_dict):
 
         return transformed_value
 
-
-class ComputeNodeOutputHandle(namedtuple('_ComputeNodeOutputHandle', 'compute_node output_name')):
-    def __new__(cls, compute_node, output_name):
-        return super(ComputeNodeOutputHandle, cls).__new__(
-            cls,
-            compute_node=check.inst_param(compute_node, 'compute_node', ComputeNode),
-            output_name=check.str_param(output_name, 'output_name'),
-        )
-
-    # Make this hashable so it be a key in a dictionary
-
-    def __str__(self):
-        return f'ComputeNodeOutputHandle(guid="{self.compute_node.guid}", output_name="{self.output_name}")'
-
-    def __hash__(self):
-        return hash(self.compute_node.guid + self.output_name)
-
-    def __eq__(self, other):
-        return (
-            self.compute_node.guid == other.compute_node.guid
-            and self.output_name == other.output_name
-        )
 
 
 class ComputeNodeInput:
@@ -235,51 +301,6 @@ class ComputeNode:
         check.failed(f'output {name} not found')
 
 
-class ComputeNodeSuccessData(namedtuple('_ComputeNodeSuccessData', 'output_name value')):
-    def __new__(cls, output_name, value):
-        return super(ComputeNodeSuccessData, cls).__new__(
-            cls,
-            output_name=check.str_param(output_name, 'output_name'),
-            value=value,
-        )
-
-class ComputeNodeFailureData(namedtuple('_ComputeNodeFailureData', 'dagster_user_exception')):
-    def __new__(cls, dagster_user_exception):
-        return super(ComputeNodeFailureData, cls).__new__(
-            cls,
-            dagster_user_exception=check.inst_param(
-                dagster_user_exception,
-                'dagster_user_exception',
-                DagsterUserCodeExecutionError,
-            ),
-        )
-
-class ComputeNodeResult(
-    namedtuple(
-        '_ComputeNodeResult',
-        'success compute_node tag success_data failure_data ',
-    )
-):
-
-    @staticmethod
-    def success_result(compute_node, tag, success_data):
-        return ComputeNodeResult(
-            success=True,
-            compute_node=check.inst_param(compute_node, 'compute_node', ComputeNode),
-            tag=check.inst_param(tag, 'tag', ComputeNodeTag),
-            success_data=check.inst_param(success_data, 'success_data', ComputeNodeSuccessData),
-            failure_data=None,
-        )
-
-    @staticmethod
-    def failure_result(compute_node, tag, failure_data):
-        return ComputeNodeResult(
-            success=False,
-            compute_node=check.inst_param(compute_node, 'compute_node', ComputeNode),
-            tag=check.inst_param(tag, 'tag', ComputeNodeTag),
-            success_data=None,
-            failure_data=check.inst_param(failure_data, 'failure_data', ComputeNodeFailureData),
-        )
 
 
 def execute_compute_nodes(context, compute_nodes):
@@ -316,13 +337,6 @@ class SingleSyncOutputComputeNode(ComputeNode):
         super().__init__(compute_fn=_yieldify(sync_compute_fn), **kwargs)
 
 
-class ComputeResult(namedtuple('_ComputeResult', 'output_name value')):
-    def __new__(cls, output_name, value):
-        return super(ComputeResult, cls).__new__(
-            cls,
-            check.str_param(output_name, 'output_name'),
-            value,
-        )
 
 def create_compute_node_from_source_config(solid, input_name, source_config):
     check.inst_param(solid, 'solid', SolidDefinition)
@@ -357,24 +371,6 @@ def create_compute_node_from_source_config(solid, input_name, source_config):
         tag=ComputeNodeTag.SOURCE,
         solid=solid,
     )
-
-class LogicalSolidOutput(namedtuple('_LogicalSolidOutput', 'solid_name output_name')):
-    def __new__(cls, solid_name, output_name):
-        return super(LogicalSolidOutput, cls).__new__(
-            cls,
-            check.str_param(solid_name, 'solid_name'),
-            check.str_param(output_name, 'output_name'),
-        )
-
-class LogicalSolidInput(namedtuple('_SourceCnDictKey', 'solid_name input_name')):
-    def __new__(cls, solid_name, input_name):
-        return super(LogicalSolidInput, cls).__new__(
-            cls,
-            check.str_param(solid_name, 'solid_name'),
-            check.str_param(input_name, 'input_name'),
-        )
-
-
 def create_source_compute_node_dict_from_environment(pipeline, environment):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.inst_param(environment, 'environment', config.Environment)
@@ -384,8 +380,7 @@ def create_source_compute_node_dict_from_environment(pipeline, environment):
         solid = pipeline.solid_named(solid_name)
         for input_name, source_config in sources_by_input.items():
             compute_node = create_compute_node_from_source_config(solid, input_name, source_config)
-            source_cn_dict[LogicalSolidInput(solid_name, input_name)] = compute_node
-
+            source_cn_dict[solid.input_handle(input_name)] = compute_node
     return source_cn_dict
 
 
@@ -400,8 +395,10 @@ def create_source_compute_node_dict_from_input_values(pipeline, input_values):
 
     source_cn_dict = {}
     for solid_name, sources_by_input in input_values.items():
+        solid = pipeline.solid_named(solid_name)
         for input_name, input_value in sources_by_input.items():
-            source_cn_dict[LogicalSolidInput(solid_name, input_name)] = SingleSyncOutputComputeNode(
+            input_handle = solid.input_handle(input_name)
+            source_cn_dict[input_handle] = SingleSyncOutputComputeNode(
                 friendly_name=f'{solid_name}.{input_name}.stub',
                 node_inputs=[],
                 # This is just a stub of a pre-existing value, so we are not
@@ -557,29 +554,31 @@ def create_expectations_cn_graph(solid, inout_def, prev_node_output_handle, tag)
         create_cn_output_handle(join_cn, output_name),
     )
 
-LogicalSolidOutput = namedtuple('LogicalSolidOutput', 'solid_name output_name')
-
 def _prev_node_handle(dep_structure, solid, input_def, source_cn_dict, logical_output_mapper):
-    check.inst_param(dep_structure, 'dep_structure', PipelineDependencyStructure)
+    check.inst_param(dep_structure, 'dep_structure', DependencyStructure)
     check.inst_param(solid, 'solid', SolidDefinition)
     check.inst_param(input_def, 'input_def', InputDefinition)
     check.dict_param(
         source_cn_dict,
         'source_cn_dict',
-        key_type=LogicalSolidInput,
+        key_type=SolidInputHandle,
         value_type=ComputeNode,
     )
 
     check.inst_param(logical_output_mapper, 'mapper', LogicalSolidOutputMapper)
 
-    logical_solid_input = LogicalSolidInput(solid.name, input_def.name)
+    input_handle = solid.input_handle(input_def.name)
 
-    if logical_solid_input in source_cn_dict:
-        return create_cn_output_handle(source_cn_dict[logical_solid_input], SOURCE_OUTPUT)
+    if input_handle in source_cn_dict:
+        return create_cn_output_handle(source_cn_dict[input_handle], SOURCE_OUTPUT)
     else:
-        check.invariant(dep_structure.input_has_dep(logical_solid_input))
-        logical_solid_output = dep_structure.get_dep(logical_solid_input)
-        return logical_output_mapper.get_handle_for_logical_output(logical_solid_output)
+        check.invariant(
+            dep_structure.has_dep(input_handle),
+            f'{input_handle} not found in dependency structure',
+        )
+
+        solid_output_handle = dep_structure.get_dep(input_handle)
+        return logical_output_mapper.get_cn_output_handle(solid_output_handle)
 
 def create_cn_output_handle(compute_node, cn_output_name):
     check.inst_param(compute_node, 'compute_node', ComputeNode)
@@ -587,51 +586,19 @@ def create_cn_output_handle(compute_node, cn_output_name):
     return ComputeNodeOutputHandle(compute_node, cn_output_name)
 
 
-class PipelineDependencyStructure:
-    def __init__(self, pipeline):
-        check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-
-        edges = {}
-        for solid in pipeline.solids:
-            for input_def in solid.inputs:
-                if pipeline.dependency_structure.has_dep(solid.name, input_def.name):
-                    logical_solid_input = LogicalSolidInput(solid.name, input_def.name)
-
-                    dep_target = pipeline.dependency_structure.get_dep_target(
-                        solid.name,
-                        input_def.name,
-                    )
-
-                    logical_solid_output = LogicalSolidOutput(
-                        dep_target.solid_name,
-                        dep_target.output_name,
-                    )
-
-                    edges[logical_solid_input] = logical_solid_output
-
-        self.edges = edges
-
-    def input_has_dep(self, logical_solid_input):
-        check.inst_param(logical_solid_input, 'logical_solid_input', LogicalSolidInput)
-        return logical_solid_input in self.edges
-
-    def get_dep(self, logical_solid_input):
-        check.inst_param(logical_solid_input, 'logical_solid_input', LogicalSolidInput)
-        return self.edges[logical_solid_input]
-
-
 class LogicalSolidOutputMapper:
     def __init__(self):
         self._output_handles = {}
 
-    def set_mapping(self, logical_solid_output, cn_output_handle):
-        check.inst_param(logical_solid_output, 'logical_solid_output', LogicalSolidOutput)
+    def set_mapping(self, solid_output_handle, cn_output_handle):
+        check.inst_param(solid_output_handle, 'solid_output_handle', SolidOutputHandle)
         check.inst_param(cn_output_handle, 'cn_output_handle', ComputeNodeOutputHandle)
-        self._output_handles[logical_solid_output] = cn_output_handle
+        self._output_handles[solid_output_handle] = cn_output_handle
 
-    def get_handle_for_logical_output(self, logical_solid_output):
-        check.inst_param(logical_solid_output, 'logical_solid_output', LogicalSolidOutput)
-        return self._output_handles[logical_solid_output]
+    def get_cn_output_handle(self, solid_output_handle):
+        check.inst_param(solid_output_handle, 'solid_output_handle', SolidOutputHandle)
+        return self._output_handles[solid_output_handle]
+
 
 def create_compute_node_graph_from_source_dict(
     pipeline,
@@ -647,7 +614,7 @@ def create_compute_node_graph_from_source_dict(
     check.dict_param(
         source_cn_dict,
         'source_cn_dict',
-        key_type=LogicalSolidInput,
+        key_type=SolidInputHandle,
         value_type=ComputeNode,
     )
 
@@ -657,7 +624,7 @@ def create_compute_node_graph_from_source_dict(
         of_type=config.Materialization,
     )
 
-    dep_structure = PipelineDependencyStructure(pipeline)
+    dep_structure = pipeline.dependency_structure
 
     check.bool_param(evaluate_expectations, 'evaluate_expectations')
 
@@ -720,12 +687,12 @@ def create_compute_node_graph_from_source_dict(
                 )
                 compute_nodes = compute_nodes + expectations_graph.nodes
                 logical_output_mapper.set_mapping(
-                    LogicalSolidOutput(topo_solid.name, output_def.name),
+                    topo_solid.output_handle(output_def.name),
                     expectations_graph.terminal_cn_output_handle,
                 )
             else:
                 logical_output_mapper.set_mapping(
-                    LogicalSolidOutput(topo_solid.name, output_def.name),
+                    topo_solid.output_handle(output_def.name),
                     create_cn_output_handle(solid_transform_cn, output_def.name),
                 )
 
@@ -733,14 +700,12 @@ def create_compute_node_graph_from_source_dict(
         compute_nodes.append(solid_transform_cn)
 
     for materialization in materializations:
+        mat_solid = pipeline.solid_named(materialization.solid)
         mat_cn = _construct_materialization_cn(
             pipeline,
             materialization,
-            logical_output_mapper.get_handle_for_logical_output(
-                LogicalSolidOutput(
-                    materialization.solid,
-                    materialization.output_name
-                )
+            logical_output_mapper.get_cn_output_handle(
+                mat_solid.output_handle(materialization.output_name)
             ),
         )
         compute_nodes.append(mat_cn)
