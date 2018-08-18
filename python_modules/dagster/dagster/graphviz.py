@@ -24,9 +24,7 @@ def build_graphviz_graph(pipeline):
             graphviz_graph.edge(scoped_name, solid.name)
 
             if pipeline.dependency_structure.has_dep(solid.name, input_def.name):
-                dep_target = pipeline.dependency_structure.get_dep_target(
-                    solid.name, input_def.name
-                )
-                graphviz_graph.edge(dep_target.solid_name, scoped_name)
+                output_handle = pipeline.dependency_structure.get_dep(solid.name, input_def.name)
+                graphviz_graph.edge(output_handle.solid_name, scoped_name)
 
     return graphviz_graph

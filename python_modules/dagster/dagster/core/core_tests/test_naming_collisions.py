@@ -120,25 +120,24 @@ def test_execute_dep_solid_different_input_name():
         'second_solid',
         inputs=[
             InputDefinition(
-                name='a_dependency',
+                name='an_input',
 
-                # depends_on=first_solid,
             ),
         ],
-        transform_fn=lambda context, args: args['a_dependency'] + args['a_dependency'],
+        transform_fn=lambda context, args: args['an_input'] + args['an_input'],
         output=dagster.OutputDefinition(),
     )
 
+
     pipeline = dagster.PipelineDefinition(
         solids=[first_solid, second_solid],
-        dependencies=[
-            DependencyDefinition(
-                from_solid='second_solid',
-                from_input='a_dependency',
-                to_solid='first_solid',
-            )
-        ]
+        dependencies={
+            'second_solid': {
+                'an_input': DependencyDefinition('first_solid')
+            }
+        }
     )
+
     result = dagster.execute_pipeline(
         pipeline,
         environment=config.Environment(
@@ -199,7 +198,6 @@ def test_execute_dep_solid_same_input_name():
                         argument_def_dict={'name': ArgumentDefinition(types.String)},
                     ),
                 ],
-                depends_on=table_one,
             ),
             InputDefinition(
                 name='table_two',
@@ -217,7 +215,14 @@ def test_execute_dep_solid_same_input_name():
         output=dagster.OutputDefinition(),
     )
 
-    pipeline = dagster.PipelineDefinition(solids=[table_one, table_two])
+    pipeline = dagster.PipelineDefinition(
+        solids=[table_one, table_two],
+        dependencies={
+            'table_two' : {
+                'table_one' : DependencyDefinition('table_one')
+            }
+        }
+    )
 
     sources = {
         'table_one': {

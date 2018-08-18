@@ -1,5 +1,9 @@
 import dagster
-from dagster import config, InputDefinition
+from dagster import (
+    DependencyDefinition,
+    InputDefinition,
+    config,
+)
 from dagster.core.execution import execute_single_solid
 from dagster.sqlalchemy_kernel.subquery_builder_experimental import (
     create_sql_statement_solid, sql_file_solid
@@ -9,7 +13,7 @@ from dagster.utils.test import script_relative_path
 from .math_test_db import in_mem_context
 
 
-def pipeline_test_def(solids, context):
+def pipeline_test_def(solids, context, dependencies=None):
     return dagster.PipelineDefinition(
         solids=solids,
         context_definitions={
@@ -18,7 +22,8 @@ def pipeline_test_def(solids, context):
                 argument_def_dict={},
                 context_fn=lambda _pipeline, _args: context,
             ),
-        }
+        },
+        dependencies=dependencies,
     )
 
 
@@ -51,10 +56,18 @@ def test_basic_pipeline():
     sum_sq_sql_solid = create_sql_statement_solid(
         'sum_sq_sql_solid',
         sum_sq_sql_text,
-        inputs=[InputDefinition(name=sum_sql_solid.name, depends_on=sum_sql_solid)]
+        inputs=[InputDefinition(name=sum_sql_solid.name)],
     )
 
-    pipeline = pipeline_test_def(solids=[sum_sql_solid, sum_sq_sql_solid], context=in_mem_context())
+    pipeline = pipeline_test_def(
+        solids=[sum_sql_solid, sum_sq_sql_solid],
+        context=in_mem_context(),
+        dependencies={
+            'sum_sq_sql_solid': {
+                sum_sql_solid.name: DependencyDefinition(sum_sql_solid.name),
+            }
+        },
+    )
 
     pipeline_result = dagster.execute_pipeline(pipeline, environment=config.Environment.empty())
 
@@ -81,11 +94,17 @@ def test_pipeline_from_files():
 
     create_sum_sq_table_solid = sql_file_solid(
         script_relative_path('sql_files/create_sum_sq_table.sql'),
-        inputs=[InputDefinition(create_sum_table_solid.name, depends_on=create_sum_table_solid)],
+        inputs=[InputDefinition(create_sum_table_solid.name)],
     )
 
     pipeline = pipeline_test_def(
-        solids=[create_sum_table_solid, create_sum_sq_table_solid], context=in_mem_context()
+        solids=[create_sum_table_solid, create_sum_sq_table_solid],
+        context=in_mem_context(),
+        dependencies={
+            create_sum_sq_table_solid.name: {
+                create_sum_table_solid.name: DependencyDefinition(create_sum_table_solid.name),
+            }
+        },
     )
 
     pipeline_result = dagster.execute_pipeline(pipeline, environment=config.Environment.empty())

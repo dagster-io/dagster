@@ -16,7 +16,6 @@ def create_custom_source_input(
     source_fn,
     *,
     argument_def_dict=None,
-    depends_on=None,
     expectations=None,
     source_type='CUSTOM'
 ):
@@ -34,7 +33,6 @@ def create_custom_source_input(
                 argument_def_dict=argument_def_dict,
             )
         ],
-        depends_on=depends_on,
         expectations=check.opt_list_param(
             expectations, 'expectations', of_type=ExpectationDefinition
         )
