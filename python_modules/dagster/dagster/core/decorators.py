@@ -50,7 +50,7 @@ class _Solid:
 
         _validate_transform_fn(self.name, fn, self.inputs, expect_context)
         transform_fn = _create_transform_wrapper(fn, self.inputs, expect_context)
-        return SolidDefinition(
+        return SolidDefinition.single_output_transform(
             name=self.name,
             inputs=self.inputs,
             output=self.output,

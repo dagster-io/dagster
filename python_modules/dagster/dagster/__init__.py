@@ -14,6 +14,7 @@ from dagster.core.definitions import (
     OutputDefinition,
     PipelineContextDefinition,
     PipelineDefinition,
+    Result,
     SolidDefinition,
     SourceDefinition,
 )

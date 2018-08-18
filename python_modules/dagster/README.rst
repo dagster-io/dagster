@@ -353,7 +353,7 @@ pandas kernel. (Note: the "kernel" terminology is not settled)
         num_df['sum'] = num_df['num1'] + num_df['num2']
         return num_df
 
-    sum_solid = SolidDefinition(
+    sum_solid = SolidDefinition.single_output_transform(
         name='sum',
         description='This computes the sum of two numbers.'
         inputs=[dagster_pd.dataframe_csv_input(name='num_df')],
@@ -448,7 +448,7 @@ and squared that value. (Fancy!)
         depends_on=sum_solid,
     )
 
-    sum_sq_solid = SolidDefinition(
+    sum_sq_solid = SolidDefinition.single_output_transform(
         name='sum_sq',
         inputs=[sum_sq_input],
         transform_fn=sum_sq_transform,

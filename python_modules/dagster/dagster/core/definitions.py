@@ -337,14 +337,14 @@ class OutputDefinition:
     # runtime type info
     def __init__(
         self,
-        # name=None,
+        name=None,
         dagster_type=None,
         materializations=None,
         expectations=None,
         output_callback=None,
         description=None
     ):
-        self.name = DEFAULT_OUTPUT
+        self.name = check.opt_str_param(name, 'name', DEFAULT_OUTPUT)
 
         self.dagster_type = check.opt_inst_param(
             dagster_type, 'dagster_type', types.DagsterType, types.Any
@@ -407,11 +407,20 @@ class SolidOutputHandle(namedtuple('_SolidOutputHandle', 'solid output')):
         return self.solid.name == other.solid.name and self.output.name == other.output.name
 
 
+class Result(namedtuple('_Result', 'output_name value')):
+    def __new__(cls, output_name, value):
+        return super(Result, cls).__new__(
+            cls,
+            check.str_param(output_name, 'output_name'),
+            value,
+        )
+
+
 # One or more inputs
 # The core computation in the native kernel abstraction
 # The output
 class SolidDefinition:
-    def __init__(self, name, inputs, transform_fn, output, description=None):
+    def __init__(self, name, inputs, transform_fn, outputs, description=None):
         # if output:
         #     check.invariant(outputs is None)
         #     self.outputs = [output]
@@ -422,10 +431,8 @@ class SolidDefinition:
         self.name = check_valid_name(name)
         self.inputs = check.list_param(inputs, 'inputs', InputDefinition)
         self.transform_fn = check.callable_param(transform_fn, 'transform')
-        self.output = check.inst_param(output, 'output', OutputDefinition)
+        self.outputs = check.list_param(outputs, 'outputs', OutputDefinition)
         self.description = check.opt_str_param(description, 'description')
-
-        self.outputs = [output]
 
         input_handles = {}
         for inp in self.inputs:
@@ -433,7 +440,19 @@ class SolidDefinition:
 
         self.input_handles = input_handles
 
-        self.output_handles = {output.name: SolidOutputHandle(self, output)}
+        output_handles = {}
+        for output in outputs:
+            output_handles[output.name] = SolidOutputHandle(self, output)
+
+        self.output_handles = output_handles
+
+    @staticmethod
+    def single_output_transform(name, inputs, transform_fn, output, description=None):
+        def _new_transform_fn(context, inputs):
+            value = transform_fn(context, inputs)
+            yield Result(DEFAULT_OUTPUT, value)
+
+        return SolidDefinition(name, inputs, _new_transform_fn, [output], description)
 
     # Notes to self
 

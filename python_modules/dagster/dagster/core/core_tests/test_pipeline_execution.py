@@ -16,7 +16,7 @@ from dagster.core.execution import (
     execute_pipeline_iterator,
     execute_pipeline_iterator_in_memory,
     ExecutionContext,
-    ExecutionResultBase,
+    ExecutionStepResult,
 )
 
 from dagster.utils.compatability import create_custom_source_input
@@ -56,7 +56,7 @@ def create_solid_with_deps(name, *solid_deps):
         #return copy.deepcopy(passed_rows)
         return passed_rows
 
-    return SolidDefinition(
+    return SolidDefinition.single_output_transform(
         name=name,
         inputs=inputs,
         transform_fn=dep_transform,
@@ -78,7 +78,7 @@ def create_root_solid(name):
         #return copy.deepcopy(passed_rows)
         return passed_rows
 
-    return SolidDefinition(
+    return SolidDefinition.single_output_transform(
         name=name,
         inputs=[inp],
         transform_fn=root_transform,
@@ -285,8 +285,8 @@ def transform_called(name):
 
 
 def assert_equivalent_results(left, right):
-    check.inst_param(left, 'left', ExecutionResultBase)
-    check.inst_param(right, 'right', ExecutionResultBase)
+    check.inst_param(left, 'left', ExecutionStepResult)
+    check.inst_param(right, 'right', ExecutionStepResult)
 
     assert left.success == right.success
     assert left.name == right.name
@@ -295,8 +295,8 @@ def assert_equivalent_results(left, right):
 
 
 def assert_all_results_equivalent(expected_results, result_results):
-    check.list_param(expected_results, 'expected_results', of_type=ExecutionResultBase)
-    check.list_param(result_results, 'result_results', of_type=ExecutionResultBase)
+    check.list_param(expected_results, 'expected_results', of_type=ExecutionStepResult)
+    check.list_param(result_results, 'result_results', of_type=ExecutionStepResult)
     assert len(expected_results) == len(result_results)
     for expected, result in zip(expected_results, result_results):
         assert_equivalent_results(expected, result)

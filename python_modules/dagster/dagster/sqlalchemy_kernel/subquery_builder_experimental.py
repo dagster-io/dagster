@@ -106,7 +106,7 @@ def create_sql_solid(name, inputs, sql_text):
     check.list_param(inputs, 'inputs', of_type=InputDefinition)
     check.str_param(sql_text, 'sql_text')
 
-    return SolidDefinition(
+    return SolidDefinition.single_output_transform(
         name,
         inputs=inputs,
         transform_fn=create_sql_transform(sql_text),
@@ -131,7 +131,7 @@ def create_sql_statement_solid(name, sql_text, inputs=None):
     if inputs is None:
         inputs = []
 
-    return SolidDefinition(
+    return SolidDefinition.single_output_transform(
         name=name,
         transform_fn=_create_sql_alchemy_transform_fn(sql_text),
         inputs=inputs,

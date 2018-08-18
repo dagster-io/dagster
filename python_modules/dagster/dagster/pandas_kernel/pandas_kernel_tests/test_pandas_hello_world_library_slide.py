@@ -66,11 +66,11 @@ def create_definition_based_solid():
         return num_csv
 
     # supports CSV and PARQUET by default
-    hello_world = dagster.SolidDefinition(
+    hello_world = dagster.SolidDefinition.single_output_transform(
         name='hello_world',
         inputs=[table_input],
         transform_fn=transform_fn,
-        output=dagster.OutputDefinition(dagster_pd.DataFrame)
+        output=dagster.OutputDefinition(dagster_type=dagster_pd.DataFrame)
     )
     return hello_world
 
@@ -78,7 +78,7 @@ def create_definition_based_solid():
 def create_decorator_based_solid():
     @solid(
         inputs=[dagster.InputDefinition('num_csv', dagster_pd.DataFrame)],
-        output=dagster.OutputDefinition(dagster_pd.DataFrame),
+        output=dagster.OutputDefinition(dagster_type=dagster_pd.DataFrame),
     )
     def hello_world(num_csv):
         num_csv['sum'] = num_csv['num1'] + num_csv['num2']

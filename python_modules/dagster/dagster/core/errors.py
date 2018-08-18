@@ -60,5 +60,5 @@ class DagsterExpectationFailedError(DagsterError):
         self.execution_result = check.opt_inst_param(
             execution_result,
             'execution_result',
-            dagster.core.execution.ExecutionResultBase,
+            dagster.core.execution.ExecutionStepResult,
         )

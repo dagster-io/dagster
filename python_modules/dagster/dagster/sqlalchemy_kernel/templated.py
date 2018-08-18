@@ -109,7 +109,7 @@ def create_templated_sql_transform_solid(
     dep_inputs = [_create_table_input(dep.name) for dep in table_deps]
     table_inputs = [_create_table_input(table) for table in table_arguments]
 
-    return SolidDefinition(
+    return SolidDefinition.single_output_transform(
         name=name,
         inputs=table_inputs + dep_inputs + extra_inputs,
         transform_fn=_create_templated_sql_transform_with_output(sql, output),
