@@ -43,7 +43,7 @@ def create_hello_world_solid_no_api():
         argument_def_dict={'path': ArgumentDefinition(types.Path)}
     )
 
-    hello_world = SolidDefinition(
+    hello_world = SolidDefinition.single_output_transform(
         name='hello_world',
         inputs=[csv_input],
         transform_fn=hello_world_transform_fn,
@@ -110,7 +110,7 @@ def create_hello_world_solid_composed_api():
         num_df['sum'] = num_df['num1'] + num_df['num2']
         return num_df
 
-    hello_world = SolidDefinition(
+    hello_world = SolidDefinition.single_output_transform(
         name='hello_world',
         inputs=[create_dataframe_input(name='num_df')],
         transform_fn=transform_fn,
@@ -149,7 +149,7 @@ def test_pipeline():
         num_df['sum'] = num_df['num1'] + num_df['num2']
         return num_df
 
-    solid_one = SolidDefinition(
+    solid_one = SolidDefinition.single_output_transform(
         name='solid_one',
         inputs=[create_dataframe_input(name='num_df')],
         transform_fn=solid_one_transform,
@@ -161,7 +161,7 @@ def test_pipeline():
         sum_df['sum_sq'] = sum_df['sum'] * sum_df['sum']
         return sum_df
 
-    solid_two = SolidDefinition(
+    solid_two = SolidDefinition.single_output_transform(
         name='solid_two',
         inputs=[create_dataframe_input(name='sum_df')],
         transform_fn=solid_two_transform,

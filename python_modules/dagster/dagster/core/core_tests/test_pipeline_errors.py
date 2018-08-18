@@ -64,7 +64,7 @@ def create_root_success_solid(name):
         passed_rows.append({name: 'transform_called'})
         return passed_rows
 
-    return SolidDefinition(
+    return SolidDefinition.single_output_transform(
         name=name,
         inputs=[create_input_set_input_def(input_name)],
         transform_fn=root_transform,
@@ -83,7 +83,7 @@ def create_root_transform_failure_solid(name):
     def failed_transform(**_kwargs):
         raise Exception('Transform failed')
 
-    return SolidDefinition(
+    return SolidDefinition.single_output_transform(
         name=name,
         inputs=[inp],
         transform_fn=failed_transform,
@@ -102,7 +102,7 @@ def create_root_input_failure_solid(name):
         argument_def_dict={},
     )
 
-    return SolidDefinition(
+    return SolidDefinition.single_output_transform(
         name=name,
         inputs=[inp],
         transform_fn=lambda **_kwargs: {},
@@ -118,7 +118,7 @@ def create_root_output_failure_solid(name):
         passed_rows.append({name: 'transform_called'})
         return passed_rows
 
-    return SolidDefinition(
+    return SolidDefinition.single_output_transform(
         name=name,
         inputs=[create_input_set_input_def(input_name)],
         transform_fn=root_transform,
@@ -194,7 +194,7 @@ def test_failure_midstream():
         check.failed('user error')
         return [args['A'], args['B'], {'C': 'transform_called'}]
 
-    solid_c = SolidDefinition(
+    solid_c = SolidDefinition.single_output_transform(
         name='C',
         inputs=[InputDefinition(name='A'), InputDefinition(name='B')],
         transform_fn=transform_fn,

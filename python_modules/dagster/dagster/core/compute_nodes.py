@@ -21,6 +21,7 @@ from .definitions import (
     MaterializationDefinition,
     OutputDefinition,
     PipelineDefinition,
+    Result,
     SolidDefinition,
     SolidInputHandle,
     SolidOutputHandle,
@@ -42,13 +43,10 @@ from .types import (
 )
 
 
-class ComputeResult(namedtuple('_ComputeResult', 'output_name value')):
-    def __new__(cls, output_name, value):
-        return super(ComputeResult, cls).__new__(
-            cls,
-            check.str_param(output_name, 'output_name'),
-            value,
-        )
+def get_single_solid_output(solid):
+    check.inst_param(solid, 'solid', SolidDefinition)
+    check.invariant(len(solid.outputs) == 1)
+    return solid.outputs[0]
 
 
 class ComputeNodeOutputHandle(namedtuple('_ComputeNodeOutputHandle', 'compute_node output_name')):
@@ -125,6 +123,7 @@ class ComputeNodeResult(
 LOG_LEVEL = 'ERROR'
 logger = define_logger('dagster-compute-nodes', LOG_LEVEL)
 
+
 @contextmanager
 def _user_code_error_boundary(context, msg, **kwargs):
     '''
@@ -163,6 +162,7 @@ JOIN_OUTPUT = 'join_output'
 MATERIALIZATION_INPUT = 'mat_input'
 EXPECTATION_INPUT = 'expectation_input'
 
+
 def _execute_core_transform(context, solid_transform_fn, values_dict):
     '''
     Execute the user-specified transform for the solid. Wrap in an error boundary and do
@@ -175,12 +175,10 @@ def _execute_core_transform(context, solid_transform_fn, values_dict):
     error_str = 'Error occured during core transform'
     with _user_code_error_boundary(context, error_str):
         with time_execution_scope() as timer_result:
-            transformed_value = solid_transform_fn(context, values_dict)
+            for result in solid_transform_fn(context, values_dict):
+                yield result
 
         context.metric('core_transform_time_ms', timer_result.millis)
-
-        return transformed_value
-
 
 
 class ComputeNodeInput:
@@ -220,18 +218,22 @@ class ComputeNode:
         self.tag = check.inst_param(tag, 'tag', ComputeNodeTag)
         self.solid = check.inst_param(solid, 'solid', SolidDefinition)
 
-    def _create_compute_node_result(self, compute_result):
-        check.inst_param(compute_result, 'compute_result', ComputeResult)
+    def node_named(self, name):
+        check.str_param(name, 'name')
+        for node_output in self.node_outputs:
+            if node_output.name == name:
+                return node_output
 
-        value = compute_result.value
+        check.failed('not found')
 
-        check.invariant(len(self.node_outputs) == 1)
-        node_output = self.node_outputs[0]
+    def _create_compute_node_result(self, result):
+        check.inst_param(result, 'result', Result)
 
+        node_output = self.node_named(result.output_name)
 
-        if not node_output.dagster_type.is_python_valid_value(value):
+        if not node_output.dagster_type.is_python_valid_value(result.value):
             raise DagsterInvariantViolationError(
-                f'''Solid {self.solid.name} output {value}
+                f'''Solid {self.solid.name} output {result.value}
                 which does not match the type for Dagster Type
                 {node_output.dagster_type.name}'''
             )
@@ -240,16 +242,14 @@ class ComputeNode:
             compute_node=self,
             tag=self.tag,
             success_data=ComputeNodeSuccessData(
-                output_name=compute_result.output_name,
-                value=compute_result.value,
+                output_name=result.output_name,
+                value=result.value,
             ),
         )
 
     def execute(self, context, inputs):
         check.inst_param(context, 'context', ExecutionContext)
         check.dict_param(inputs, 'inputs', key_type=str)
-
-        check.invariant(len(self.solid.outputs) == 1)
 
         logger.debug(f'Entering execution for {self.friendly_name}')
 
@@ -267,13 +267,13 @@ class ComputeNode:
 
         try:
             with _user_code_error_boundary(context, error_str):
-                compute_results = list(self.compute_fn(context, inputs))
+                results = list(self.compute_fn(context, inputs))
 
                 if not self.node_outputs:
                     return
 
-                for compute_result in compute_results:
-                    yield self._create_compute_node_result(compute_result)
+                for result in results:
+                    yield self._create_compute_node_result(result)
 
         except DagsterUserCodeExecutionError as dagster_user_exception:
             yield ComputeNodeResult.failure_result(
@@ -285,8 +285,6 @@ class ComputeNode:
             )
             return
 
-
-
     def output_named(self, name):
         check.str_param(name, 'name')
 
@@ -295,8 +293,6 @@ class ComputeNode:
                 return node_output
 
         check.failed(f'output {name} not found')
-
-
 
 
 def execute_compute_nodes(context, compute_nodes):
@@ -326,12 +322,13 @@ def execute_compute_nodes(context, compute_nodes):
 def _yieldify(sync_compute_fn):
     def _wrap(context, inputs):
         yield sync_compute_fn(context, inputs)
+
     return _wrap
+
 
 class SingleSyncOutputComputeNode(ComputeNode):
     def __init__(self, *, sync_compute_fn, **kwargs):
         super().__init__(compute_fn=_yieldify(sync_compute_fn), **kwargs)
-
 
 
 def create_compute_node_from_source_config(solid, input_name, source_config):
@@ -360,13 +357,15 @@ def create_compute_node_from_source_config(solid, input_name, source_config):
             ),
         ],
         arg_dict=arg_dict,
-        sync_compute_fn=lambda context, _inputs: ComputeResult(
+        sync_compute_fn=lambda context, _inputs: Result(
             output_name=SOURCE_OUTPUT,
             value=source_def.source_fn(context, arg_dict)
         ),
         tag=ComputeNodeTag.SOURCE,
         solid=solid,
     )
+
+
 def create_source_compute_node_dict_from_environment(pipeline, environment):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.inst_param(environment, 'environment', config.Environment)
@@ -381,9 +380,11 @@ def create_source_compute_node_dict_from_environment(pipeline, environment):
 
 
 def get_lambda(output_name, value):
-    return lambda _context, _args: ComputeResult(output_name, value)
+    return lambda _context, _args: Result(output_name, value)
+
 
 SOURCE_OUTPUT = 'source_output'
+
 
 def create_source_compute_node_dict_from_input_values(pipeline, input_values):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
@@ -485,26 +486,24 @@ def create_compute_node_graph_from_environment(pipeline, environment):
     )
 
 
-
 def create_expectation_cn(solid, expectation_def, friendly_name, tag, prev_node_output_handle):
     check.inst_param(solid, 'solid', SolidDefinition)
     check.inst_param(expectation_def, 'input_expct_def', ExpectationDefinition)
     check.inst_param(prev_node_output_handle, 'prev_node_output_handle', ComputeNodeOutputHandle)
+
+    output = get_single_solid_output(solid)
 
     return SingleSyncOutputComputeNode(
         friendly_name=friendly_name,
         node_inputs=[
             ComputeNodeInput(
                 name=EXPECTATION_INPUT,
-                dagster_type=solid.output.dagster_type,
+                dagster_type=output.dagster_type,
                 prev_output_handle=prev_node_output_handle,
             )
         ],
         node_outputs=[
-            ComputeNodeOutput(
-                name=EXPECTATION_VALUE_OUTPUT,
-                dagster_type=solid.output.dagster_type
-            ),
+            ComputeNodeOutput(name=EXPECTATION_VALUE_OUTPUT, dagster_type=output.dagster_type),
         ],
         arg_dict={},
         sync_compute_fn=_create_expectation_lambda(
@@ -550,6 +549,7 @@ def create_expectations_cn_graph(solid, inout_def, prev_node_output_handle, tag)
         create_cn_output_handle(join_cn, output_name),
     )
 
+
 def _prev_node_handle(dep_structure, solid, input_def, source_cn_dict, logical_output_mapper):
     check.inst_param(dep_structure, 'dep_structure', DependencyStructure)
     check.inst_param(solid, 'solid', SolidDefinition)
@@ -575,6 +575,7 @@ def _prev_node_handle(dep_structure, solid, input_def, source_cn_dict, logical_o
 
         solid_output_handle = dep_structure.get_dep(input_handle)
         return logical_output_mapper.get_cn_output_handle(solid_output_handle)
+
 
 def create_cn_output_handle(compute_node, cn_output_name):
     check.inst_param(compute_node, 'compute_node', ComputeNode)
@@ -666,15 +667,13 @@ def create_compute_node_graph_from_source_dict(
                 cn_output_handle = prev_cn_output_handle
 
             cn_inputs.append(
-                ComputeNodeInput(
-                    input_def.name, input_def.dagster_type, cn_output_handle
-                )
+                ComputeNodeInput(input_def.name, input_def.dagster_type, cn_output_handle)
             )
 
         solid_transform_cn = create_compute_node_from_solid_transform(topo_solid, cn_inputs)
 
         for output_def in topo_solid.outputs:
-            if evaluate_expectations and topo_solid.output.expectations:
+            if evaluate_expectations and output_def.expectations:
                 expectations_graph = create_expectations_cn_graph(
                     topo_solid,
                     output_def,
@@ -691,7 +690,6 @@ def create_compute_node_graph_from_source_dict(
                     topo_solid.output_handle(output_def.name),
                     create_cn_output_handle(solid_transform_cn, output_def.name),
                 )
-
 
         compute_nodes.append(solid_transform_cn)
 
@@ -755,8 +753,10 @@ def _create_join_node(solid, prev_nodes, prev_output_name):
 
 ExpectationExecutionInfo = namedtuple('ExpectationExecutionInfo', 'solid expectation_def')
 
+
 def _create_join_lambda(_context, inputs):
-    return ComputeResult(output_name=JOIN_OUTPUT, value=list(inputs.values())[0])
+    return Result(output_name=JOIN_OUTPUT, value=list(inputs.values())[0])
+
 
 def _create_expectation_lambda(solid, expectation_def, output_name):
     check.inst_param(solid, 'solid', SolidDefinition)
@@ -770,7 +770,7 @@ def _create_expectation_lambda(solid, expectation_def, output_name):
             inputs[EXPECTATION_INPUT],
         )
         if expt_result.success:
-            return ComputeResult(output_name=output_name, value=inputs[EXPECTATION_INPUT])
+            return Result(output_name=output_name, value=inputs[EXPECTATION_INPUT])
 
         raise DagsterExpectationFailedError(None)  # for now
 
@@ -783,7 +783,8 @@ def _construct_materialization_cn(pipeline, materialization, prev_output_handle)
     check.inst_param(prev_output_handle, 'prev_output_handle', ComputeNodeOutputHandle)
 
     solid = pipeline.solid_named(materialization.solid)
-    mat_def = solid.output.materialization_of_type(materialization.name)
+    output = get_single_solid_output(solid)
+    mat_def = output.materialization_of_type(materialization.name)
 
     error_context_str = 'source type {mat}'.format(mat=mat_def.name)
 
@@ -798,7 +799,7 @@ def _construct_materialization_cn(pipeline, materialization, prev_output_handle)
         node_inputs=[
             ComputeNodeInput(
                 name=MATERIALIZATION_INPUT,
-                dagster_type=solid.output.dagster_type,
+                dagster_type=output.dagster_type,
                 prev_output_handle=prev_output_handle,
             )
         ],
@@ -815,7 +816,7 @@ def _create_materialization_lambda(mat_def, materialization, output_name):
     check.inst_param(materialization, 'materialization', config.Materialization)
     check.str_param(output_name, 'output_name')
 
-    return lambda context, inputs: ComputeResult(
+    return lambda context, inputs: Result(
         output_name=output_name,
         value=mat_def.materialization_fn(
             context,
@@ -824,14 +825,12 @@ def _create_materialization_lambda(mat_def, materialization, output_name):
         ),
     )
 
+
 def create_compute_node_from_solid_transform(solid, node_inputs):
     check.inst_param(solid, 'solid', SolidDefinition)
     check.list_param(node_inputs, 'node_inputs', of_type=ComputeNodeInput)
-    check.invariant(len(solid.outputs) == 1)
 
-    output_name = solid.outputs[0].name
-
-    return SingleSyncOutputComputeNode(
+    return ComputeNode(
         friendly_name=f'{solid.name}.transform',
         node_inputs=node_inputs,
         node_outputs=[
@@ -839,13 +838,10 @@ def create_compute_node_from_solid_transform(solid, node_inputs):
             for output in solid.outputs
         ],
         arg_dict={},
-        sync_compute_fn=lambda context, inputs: ComputeResult(
-            output_name=output_name,
-            value=_execute_core_transform(
-                context,
-                solid.transform_fn,
-                inputs,
-            ),
+        compute_fn=lambda context, inputs: _execute_core_transform(
+            context,
+            solid.transform_fn,
+            inputs,
         ),
         tag=ComputeNodeTag.TRANSFORM,
         solid=solid,
