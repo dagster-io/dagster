@@ -90,12 +90,6 @@ def create_table_expression_input(name):
     return InputDefinition(name=name, sources=[_table_name_source()])
 
 
-def create_table_input_dependency(solid):
-    check.inst_param(solid, 'solid', SolidDefinition)
-
-    return InputDefinition(name=solid.name, sources=[_table_name_source()], depends_on=solid)
-
-
 def create_sql_transform(sql_text):
     def transform_fn(_context, args):
         sql_texts = {}

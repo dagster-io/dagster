@@ -3,15 +3,16 @@ import pytest
 
 import pandas as pd
 
-import dagster
 from dagster import (
-    check,
-    config,
+    ArgumentDefinition,
+    DependencyDefinition,
+    ExecutionContext,
     InputDefinition,
     OutputDefinition,
-    SolidDefinition,
-    ArgumentDefinition,
     PipelineDefinition,
+    SolidDefinition,
+    check,
+    config,
 )
 from dagster.core import types
 from dagster.core.decorators import solid
@@ -33,7 +34,7 @@ def _dataframe_solid(name, inputs, transform_fn):
         name=name,
         inputs=inputs,
         transform_fn=transform_fn,
-        output=dagster.OutputDefinition(dagster_pd.DataFrame),
+        output=OutputDefinition(dagster_pd.DataFrame),
     )
 
 
@@ -108,7 +109,7 @@ def test_pandas_csv_to_csv():
 
     # just adding a second context arg to test that
     def transform(context, args):
-        check.inst_param(context, 'context', dagster.core.execution.ExecutionContext)
+        check.inst_param(context, 'context', ExecutionContext)
         num_csv = args['num_csv']
         num_csv['sum'] = num_csv['num1'] + num_csv['num2']
         return num_csv
@@ -167,8 +168,8 @@ def create_sum_table():
 
 
 @solid(
-    inputs=[dagster.InputDefinition('num_csv', dagster_pd.DataFrame)],
-    output=dagster.OutputDefinition(dagster_pd.DataFrame),
+    inputs=[InputDefinition('num_csv', dagster_pd.DataFrame)],
+    output=OutputDefinition(dagster_pd.DataFrame),
 )
 def sum_table(num_csv):
     check.inst_param(num_csv, 'num_csv', pd.DataFrame)
@@ -177,8 +178,8 @@ def sum_table(num_csv):
 
 
 @solid(
-    inputs=[dagster.InputDefinition('sum_df', dagster_pd.DataFrame, depends_on=sum_table)],
-    output=dagster.OutputDefinition(dagster_pd.DataFrame),
+    inputs=[InputDefinition('sum_df', dagster_pd.DataFrame)],
+    output=OutputDefinition(dagster_pd.DataFrame),
 )
 def sum_sq_table(sum_df):
     sum_df['sum_squared'] = sum_df['sum'] * sum_df['sum']
@@ -187,9 +188,9 @@ def sum_sq_table(sum_df):
 
 @solid(
     inputs=[
-        dagster.InputDefinition('sum_table_renamed', dagster_pd.DataFrame, depends_on=sum_table)
+        InputDefinition('sum_table_renamed', dagster_pd.DataFrame)
     ],
-    output=dagster.OutputDefinition(dagster_pd.DataFrame),
+    output=OutputDefinition(dagster_pd.DataFrame),
 )
 def sum_sq_table_renamed_input(sum_table_renamed):
     sum_table_renamed['sum_squared'] = sum_table_renamed['sum'] * sum_table_renamed['sum']
@@ -205,7 +206,7 @@ def create_mult_table(sum_table_solid):
     return _dataframe_solid(
         name='mult_table',
         inputs=[
-            dagster.InputDefinition('sum_table', dagster_pd.DataFrame, depends_on=sum_table_solid)
+            InputDefinition('sum_table', dagster_pd.DataFrame)
         ],
         transform_fn=transform
     )
@@ -258,7 +259,7 @@ def test_two_step_pipeline_in_memory():
 
 
 def _sum_only_pipeline():
-    return PipelineDefinition(solids=[sum_table, sum_sq_table])
+    return PipelineDefinition(solids=[sum_table, sum_sq_table], dependencies={},)
 
 
 @pytest.mark.skip('do not use _pipeline_solid_in_memory')
@@ -324,8 +325,22 @@ def test_no_transform_solid():
 
 
 def create_diamond_pipeline():
-    return dagster.PipelineDefinition(solids=list(create_diamond_dag()))
+    return PipelineDefinition(solids=list(create_diamond_dag()), dependencies=create_diamond_deps(),)
 
+
+def create_diamond_deps():
+    return {
+        'sum_table' : {
+            'num_table' : DependencyDefinition('num_table'),
+        },
+        'mult_table' : {
+            'num_table' : DependencyDefinition('num_table'),
+        },
+        'sum_mult_table' : {
+            'sum_table' : DependencyDefinition('sum_table'),
+            'mult_table' : DependencyDefinition('mult_table'),
+        }
+    }
 
 def create_diamond_dag():
     num_table_solid = _dataframe_solid(
@@ -343,7 +358,7 @@ def create_diamond_dag():
     sum_table_solid = _dataframe_solid(
         name='sum_table',
         inputs=[
-            dagster.InputDefinition('num_table', dagster_pd.DataFrame, depends_on=num_table_solid)
+            InputDefinition('num_table', dagster_pd.DataFrame)
         ],
         transform_fn=sum_transform,
     )
@@ -357,7 +372,7 @@ def create_diamond_dag():
     mult_table_solid = _dataframe_solid(
         name='mult_table',
         inputs=[
-            dagster.InputDefinition('num_table', dagster_pd.DataFrame, depends_on=num_table_solid)
+            InputDefinition('num_table', dagster_pd.DataFrame)
         ],
         transform_fn=mult_transform,
     )
@@ -373,10 +388,8 @@ def create_diamond_dag():
     sum_mult_table_solid = _dataframe_solid(
         name='sum_mult_table',
         inputs=[
-            dagster.InputDefinition('sum_table', dagster_pd.DataFrame, depends_on=sum_table_solid),
-            dagster.InputDefinition(
-                'mult_table', dagster_pd.DataFrame, depends_on=mult_table_solid
-            ),
+            InputDefinition('sum_table', dagster_pd.DataFrame),
+            InputDefinition('mult_table', dagster_pd.DataFrame),
         ],
         transform_fn=sum_mult_transform,
     )
@@ -389,7 +402,7 @@ def test_diamond_dag_run():
     solids = create_diamond_dag()
     num_table_solid, sum_table_solid, mult_table_solid, sum_mult_table_solid = solids
 
-    pipeline = PipelineDefinition(solids=list(solids))
+    pipeline = PipelineDefinition(solids=list(solids), dependencies=create_diamond_deps())
 
     context = create_test_context()
 
@@ -630,7 +643,7 @@ def test_pandas_multiple_inputs():
         ],
         transform_fn=transform_fn
     )
-    pipeline = dagster.PipelineDefinition(solids=[double_sum])
+    pipeline = PipelineDefinition(solids=[double_sum])
 
     output_df = execute_pipeline(
         pipeline,
@@ -686,7 +699,14 @@ def test_pandas_multiple_outputs():
 
 def test_rename_input():
     result = execute_pipeline(
-        dagster.PipelineDefinition(solids=[sum_table, sum_sq_table_renamed_input]),
+        PipelineDefinition(
+            solids=[sum_table, sum_sq_table_renamed_input],
+            dependencies={
+                sum_sq_table_renamed_input.name : {
+                    'sum_table_renamed' : DependencyDefinition(sum_table.name),
+                },
+            },
+        ),
         environment=get_num_csv_environment('sum_table'),
     )
 

@@ -1,9 +1,12 @@
 import sqlalchemy as sa
 
-import dagster
+from dagster import (
+    DependencyDefinition,
+    PipelineDefinition,
+)
+
 from dagster.sqlalchemy_kernel.subquery_builder_experimental import (
     create_sql_solid,
-    create_table_input_dependency,
     create_table_expression_input,
 )
 
@@ -41,10 +44,16 @@ def define_pipeline():
 
     sum_sq_table_solid = create_sql_solid(
         name='sum_sq_table',
-        inputs=[create_table_input_dependency(sum_table_solid)],
+        inputs=[create_table_expression_input(sum_table_solid)],
         sql_text='SELECT num1, num2, sum, sum * sum as sum_sq from ({sum_table})',
     )
 
-    return dagster.PipelineDefinition(
-        name='sql_hello_world', solids=[sum_table_solid, sum_sq_table_solid]
+    return PipelineDefinition(
+        name='sql_hello_world',
+        solids=[sum_table_solid, sum_sq_table_solid],
+        dependencies={
+            sum_sq_table_solid.name: {
+                sum_table_solid.name: DependencyDefinition(sum_table_solid.name)
+            }
+        },
     )

@@ -1,13 +1,16 @@
 import pytest
 
-from dagster import (check, config)
-
-from dagster.core.definitions import (
+from dagster import (
+    DependencyDefinition,
     OutputDefinition,
     PipelineDefinition,
     SolidDefinition,
-    construct_dependency_structure_from_solids_only,
+    check,
+    config,
 )
+
+from dagster.core.definitions import DependencyStructure
+
 from dagster.core.graph import (create_adjacency_lists, SolidGraph)
 from dagster.core.execution import (
     execute_pipeline_iterator,
@@ -44,7 +47,6 @@ def create_solid_with_deps(name, *solid_deps):
             solid_dep.name,
             source_fn=create_dep_input_fn(solid_dep.name),
             argument_def_dict={},
-            depends_on=solid_dep,
         ) for solid_dep in solid_deps
     ]
 
@@ -84,13 +86,14 @@ def create_root_solid(name):
     )
 
 
-def _do_construct(solids):
-    return create_adjacency_lists(solids, construct_dependency_structure_from_solids_only(solids))
+def _do_construct(solids, dependencies):
+    dependency_structure = DependencyStructure(solids, dependencies)
+    return create_adjacency_lists(solids, dependency_structure)
 
 
 def test_empty_adjaceny_lists():
     solids = [create_root_solid('a_node')]
-    forward_edges, backwards_edges = _do_construct(solids)
+    forward_edges, backwards_edges = _do_construct(solids, {})
     assert forward_edges == {'a_node': set()}
     assert backwards_edges == {'a_node': set()}
 
@@ -100,14 +103,21 @@ def test_single_dep_adjacency_lists():
     node_a = create_root_solid('A')
     node_b = create_solid_with_deps('B', node_a)
 
-    forward_edges, backwards_edges = _do_construct([node_a, node_b])
+    forward_edges, backwards_edges = _do_construct(
+        [node_a, node_b],
+        {
+            'B': {
+                'A': DependencyDefinition('A'),
+            },
+        },
+    )
 
     assert forward_edges == {'A': {'B'}, 'B': set()}
     assert backwards_edges == {'B': {'A'}, 'A': set()}
 
 
-def graph_from_solids_only(solids):
-    return SolidGraph(solids, construct_dependency_structure_from_solids_only(solids))
+def graph_from_solids_only(solids, dependencies):
+    return SolidGraph(solids, DependencyStructure(solids, dependencies))
 
 
 def test_diamond_deps_adjaceny_lists():
@@ -118,9 +128,28 @@ def test_diamond_deps_adjaceny_lists():
     node_c = create_solid_with_deps('C', node_a)
     node_d = create_solid_with_deps('D', node_b, node_c)
 
-    forward_edges, backwards_edges = _do_construct([node_a, node_b, node_c, node_d])
+    forward_edges, backwards_edges = _do_construct(
+        [node_a, node_b, node_c, node_d],
+        diamond_deps(),
+    )
+
     assert forward_edges == {'A': {'B', 'C'}, 'B': {'D'}, 'C': {'D'}, 'D': set()}
     assert backwards_edges == {'D': {'B', 'C'}, 'B': {'A'}, 'C': {'A'}, 'A': set()}
+
+
+def diamond_deps():
+    return {
+        'B': {
+            'A': DependencyDefinition('A')
+        },
+        'C': {
+            'A': DependencyDefinition('A')
+        },
+        'D': {
+            'B': DependencyDefinition('B'),
+            'C': DependencyDefinition('C'),
+        }
+    }
 
 
 def test_disconnected_graphs_adjaceny_lists():
@@ -132,18 +161,30 @@ def test_disconnected_graphs_adjaceny_lists():
     node_c = create_root_solid('C')
     node_d = create_solid_with_deps('D', node_c)
 
-    forward_edges, backwards_edges = _do_construct([node_a, node_b, node_c, node_d])
+    forward_edges, backwards_edges = _do_construct(
+        [node_a, node_b, node_c, node_d], {
+            'B': {
+                'A': DependencyDefinition('A')
+            },
+            'D': {
+                'C': DependencyDefinition('C'),
+            }
+        }
+    )
     assert forward_edges == {'A': {'B'}, 'B': set(), 'C': {'D'}, 'D': set()}
     assert backwards_edges == {'B': {'A'}, 'A': set(), 'D': {'C'}, 'C': set()}
 
 
-def create_diamond_graph():
+def create_diamond_solids():
     node_a = create_root_solid('A')
     node_b = create_solid_with_deps('B', node_a)
     node_c = create_solid_with_deps('C', node_a)
     node_d = create_solid_with_deps('D', node_b, node_c)
+    return [node_d, node_c, node_b, node_a]
 
-    return graph_from_solids_only([node_d, node_c, node_b, node_a])
+
+def create_diamond_graph():
+    return graph_from_solids_only(create_diamond_solids(), diamond_deps())
 
 
 def test_diamond_toposort():
@@ -153,7 +194,7 @@ def test_diamond_toposort():
 
 def test_single_node_unprovided_inputs():
     node_a = create_root_solid('A')
-    solid_graph = graph_from_solids_only(solids=[node_a])
+    solid_graph = graph_from_solids_only([node_a], {})
     assert solid_graph.compute_unprovided_inputs('A', ['A_input']) == set()
     assert solid_graph.compute_unprovided_inputs('A', []) == set(['A_input'])
 
@@ -190,7 +231,7 @@ def test_diamond_toposort_unprovided_inputs():
 
 def test_unprovided_input_param_invariants():
     node_a = create_root_solid('A')
-    solid_graph = graph_from_solids_only(solids=[node_a])
+    solid_graph = graph_from_solids_only([node_a], {})
 
     with pytest.raises(check.ParameterCheckError):
         solid_graph.compute_unprovided_inputs('B', [])
@@ -201,7 +242,7 @@ def test_unprovided_input_param_invariants():
 
 def test_execution_subgraph_one_node():
     node_a = create_root_solid('A')
-    solid_graph = graph_from_solids_only(solids=[node_a])
+    solid_graph = graph_from_solids_only([node_a], {})
 
     execution_graph = solid_graph.create_execution_subgraph(
         from_solids=['A'],
@@ -262,8 +303,7 @@ def assert_all_results_equivalent(expected_results, result_results):
 
 
 def test_pipeline_execution_graph_diamond():
-    solid_graph = create_diamond_graph()
-    pipeline = PipelineDefinition(solids=solid_graph.solids)
+    pipeline = PipelineDefinition(solids=create_diamond_solids(), dependencies=diamond_deps())
     environment = config.Environment(sources={'A': {'A_input': config.Source('CUSTOM', {})}})
     return _do_test(pipeline, lambda: execute_pipeline_iterator(
         pipeline,
@@ -272,8 +312,7 @@ def test_pipeline_execution_graph_diamond():
 
 
 def test_pipeline_execution_graph_diamond_in_memory():
-    solid_graph = create_diamond_graph()
-    pipeline = PipelineDefinition(solids=solid_graph.solids)
+    pipeline = PipelineDefinition(solids=create_diamond_solids(), dependencies=diamond_deps())
     input_values = {'A_input': [{'A_input': 'input_set'}]}
     return _do_test(pipeline, lambda: execute_pipeline_iterator_in_memory(
         ExecutionContext(),

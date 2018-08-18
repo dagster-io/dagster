@@ -1,6 +1,10 @@
 import sqlalchemy as sa
 import dagster
-from dagster import config
+from dagster import (
+    config,
+    DependencyDefinition,
+    PipelineDefinition,
+)
 from dagster.core.execution import (
     output_single_solid,
     execute_pipeline,
@@ -9,13 +13,12 @@ from dagster.core.execution import (
 from dagster.sqlalchemy_kernel.subquery_builder_experimental import (
     create_sql_solid,
     create_table_expression_input,
-    create_table_input_dependency,
 )
 from .math_test_db import in_mem_context
 
 
-def pipeline_test_def(solids, context):
-    return dagster.PipelineDefinition(
+def pipeline_test_def(solids, context, dependencies):
+    return PipelineDefinition(
         solids=solids,
         context_definitions={
             'default':
@@ -23,7 +26,8 @@ def pipeline_test_def(solids, context):
                 argument_def_dict={},
                 context_fn=lambda _pipeline, _args: context,
             ),
-        }
+        },
+        dependencies=dependencies,
     )
 
 
@@ -84,11 +88,19 @@ def create_sum_sq_pipeline(context):
 
     sum_sq_solid = create_sql_solid(
         name='sum_sq_table',
-        inputs=[create_table_input_dependency(sum_solid)],
+        inputs=[create_table_expression_input(sum_solid.name)],
         sql_text='SELECT num1, num2, sum, sum * sum as sum_sq from {sum_table}',
     )
 
-    return pipeline_test_def(solids=[sum_solid, sum_sq_solid], context=context)
+    return pipeline_test_def(
+        solids=[sum_solid, sum_sq_solid],
+        context=context,
+        dependencies={
+            sum_sq_solid.name: {
+                sum_solid.name: DependencyDefinition(sum_solid.name),
+            },
+        },
+    )
 
 
 def test_execute_sql_sum_sq_solid():

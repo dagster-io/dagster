@@ -6,7 +6,6 @@ from .definitions import (
     DependencyStructure,
     PipelineDefinition,
     SolidDefinition,
-    construct_dependency_structure_from_solids_only,
 )
 
 
@@ -24,8 +23,8 @@ def create_adjacency_lists(solids, dep_structure):
 
         visit_dict[solid_name] = True
 
-        for dep_target in dep_structure.deps_of_solid(solid_name):
-            forward_node = dep_target.solid_name
+        for output_handle in dep_structure.deps_of_solid(solid_name):
+            forward_node = output_handle.solid.name
             backward_node = solid_name
             if forward_node in forward_edges:
                 forward_edges[forward_node].add(backward_node)
@@ -43,12 +42,9 @@ class SolidGraph:
 
         solids = check.list_param(solids, 'solids', of_type=SolidDefinition)
 
-        if dependency_structure is None:
-            self.dep_structure = construct_dependency_structure_from_solids_only(solids)
-        else:
-            self.dep_structure = check.inst_param(
-                dependency_structure, 'dependency_structure', DependencyStructure
-            )
+        self.dep_structure = check.inst_param(
+            dependency_structure, 'dependency_structure', DependencyStructure
+        )
 
         self._solid_dict = {solid.name: solid for solid in solids}
 
@@ -83,11 +79,13 @@ class SolidGraph:
             return self._transitive_deps[solid_name]
 
         trans_deps = set()
-        for inp in self._solid_dict[solid_name].inputs:
-            if self.dep_structure.has_dep(solid_name, inp.name):
-                dep_target = self.dep_structure.get_dep_target(solid_name, inp.name)
-                trans_deps.add(dep_target.solid_name)
-                trans_deps.union(self.transitive_dependencies_of(dep_target.solid_name))
+        solid = self._solid_dict[solid_name]
+        for inp in solid.inputs:
+            input_handle = solid.input_handle(inp.name)
+            if self.dep_structure.has_dep(input_handle):
+                output_handle = self.dep_structure.get_dep(input_handle)
+                trans_deps.add(output_handle.solid.name)
+                trans_deps.union(self.transitive_dependencies_of(output_handle.solid.name))
 
         self._transitive_deps[solid_name] = trans_deps
         return self._transitive_deps[solid_name]
@@ -135,9 +133,11 @@ class SolidGraph:
                 if inp.name in input_set:
                     continue
 
-                if self.dep_structure.has_dep(solid.name, inp.name):
-                    dep_target = self.dep_structure.get_dep_target(solid.name, inp.name)
-                    visit(self._solid_dict[dep_target.solid_name])
+                input_handle = solid.input_handle(inp.name)
+
+                if self.dep_structure.has_dep(input_handle):
+                    output_handle = self.dep_structure.get_dep(input_handle)
+                    visit(self._solid_dict[output_handle.solid.name])
                 else:
                     unprovided_inputs.add(inp.name)
 
@@ -158,12 +158,11 @@ class SolidGraph:
             involved_solids.add(solid.name)
 
             for input_def in solid.inputs:
-                if not self.dep_structure.has_dep(solid.name, input_def.name):
+                input_handle = solid.input_handle(input_def.name)
+                if not self.dep_structure.has_dep(input_handle):
                     continue
 
-                from_solid = self.dep_structure.get_dep_target(
-                    solid.name, input_def.name
-                ).solid_name
+                from_solid = self.dep_structure.get_dep(input_handle).solid.name
 
                 if from_solid in from_solid_set:
                     continue
@@ -181,9 +180,10 @@ def all_depended_on_solids(pipeline):
     dep_struct = pipeline.dependency_structure
     for solid in pipeline.solids:
         for input_def in solid.inputs:
-            if dep_struct.has_dep(solid.name, input_def.name):
-                dep_target = dep_struct.get_dep_target(solid.name, input_def.name)
-                yield pipeline.solid_named(dep_target.solid_name)
+            input_handle = solid.input_handle(input_def.name)
+            if dep_struct.has_dep(input_handle):
+                output_handle = dep_struct.get_dep(input_handle)
+                yield pipeline.solid_named(output_handle.solid.name)
 
 
 def all_sink_solids(pipeline):
