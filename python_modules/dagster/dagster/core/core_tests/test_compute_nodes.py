@@ -42,8 +42,6 @@ def test_compute_noop_node():
 
     assert len(compute_node_graph.nodes) == 1
 
-    context = ExecutionContext()
-
-    outputs = list(compute_node_graph.nodes[0].execute(context, {}))
+    outputs = list(compute_node_graph.nodes[0].execute(ExecutionContext(), {}))
 
     assert outputs[0].success_data.value == 'foo'
