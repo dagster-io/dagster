@@ -1,28 +1,23 @@
-from dagster import check
-from dagster import config
-
-import dagster
-import dagster.core
-from dagster.core.definitions import (
-    SolidDefinition,
-    InputDefinition,
+from dagster import (
     DependencyDefinition,
-)
-from dagster.core.execution import (
-    DagsterExecutionFailureReason,
-    execute_pipeline,
     ExecutionContext,
+    InputDefinition,
+    OutputDefinition,
+    PipelineContextDefinition,
+    PipelineDefinition,
+    SolidDefinition,
+    check,
+    config,
+    execute_pipeline,
 )
+
 from dagster.core.errors import DagsterUserCodeExecutionError
-from dagster.utils.compatability import (
-    create_custom_source_input, create_single_materialization_output
-)
 
 
 def silencing_default_context():
     return {
         'default':
-        dagster.PipelineContextDefinition(
+        PipelineContextDefinition(
             argument_def_dict={},
             context_fn=lambda _pipeline, _args: ExecutionContext(),
         )
@@ -30,151 +25,43 @@ def silencing_default_context():
 
 
 def silencing_pipeline(solids, dependencies=None):
-    return dagster.PipelineDefinition(
+    return PipelineDefinition(
         solids=solids,
         dependencies=dependencies,
         context_definitions=silencing_default_context(),
     )
 
 
-def create_failing_output_def():
-    def failing_materialization_fn(*_args, **_kwargs):
-        raise Exception('something bad happened')
-
-    return create_single_materialization_output(
-        name='CUSTOM',
-        materialization_fn=failing_materialization_fn,
-        argument_def_dict={},
-    )
-
-
-def create_input_set_input_def(input_name):
-    return create_custom_source_input(
-        input_name,
-        source_fn=lambda context, arg_dict: [{input_name: 'input_set'}],
-        argument_def_dict={},
-    )
-
-
 def create_root_success_solid(name):
-    input_name = name + '_input'
-
-    def root_transform(_context, args):
-        passed_rows = list(args.values())[0]
+    def root_transform(_context, _args):
+        passed_rows = []
         passed_rows.append({name: 'transform_called'})
         return passed_rows
 
     return SolidDefinition.single_output_transform(
         name=name,
-        inputs=[create_input_set_input_def(input_name)],
+        inputs=[],
         transform_fn=root_transform,
-        output=dagster.OutputDefinition(),
+        output=OutputDefinition(),
     )
 
 
 def create_root_transform_failure_solid(name):
-    input_name = name + '_input'
-    inp = create_custom_source_input(
-        input_name,
-        source_fn=lambda context, arg_dict: [{input_name: 'input_set'}],
-        argument_def_dict={},
-    )
-
     def failed_transform(**_kwargs):
         raise Exception('Transform failed')
 
     return SolidDefinition.single_output_transform(
         name=name,
-        inputs=[inp],
+        inputs=[],
         transform_fn=failed_transform,
-        output=dagster.OutputDefinition(),
-    )
-
-
-def create_root_input_failure_solid(name):
-    def failed_input_fn(_context, _args):
-        raise Exception('something bad happened')
-
-    input_name = name + '_input'
-    inp = create_custom_source_input(
-        input_name,
-        source_fn=failed_input_fn,
-        argument_def_dict={},
-    )
-
-    return SolidDefinition.single_output_transform(
-        name=name,
-        inputs=[inp],
-        transform_fn=lambda **_kwargs: {},
-        output=dagster.OutputDefinition(),
-    )
-
-
-def create_root_output_failure_solid(name):
-    input_name = name + '_input'
-
-    def root_transform(**kwargs):
-        passed_rows = list(kwargs.values())[0]
-        passed_rows.append({name: 'transform_called'})
-        return passed_rows
-
-    return SolidDefinition.single_output_transform(
-        name=name,
-        inputs=[create_input_set_input_def(input_name)],
-        transform_fn=root_transform,
-        output=create_failing_output_def(),
-    )
-
-
-def no_args_env(solid_name, input_name, materializations=None):
-    return config.Environment(
-        sources={solid_name: {
-            input_name: config.Source(name='CUSTOM', args={})
-        }},
-        materializations=materializations,
+        output=OutputDefinition(),
     )
 
 
 def test_transform_failure_pipeline():
     pipeline = silencing_pipeline(solids=[create_root_transform_failure_solid('failing')])
     pipeline_result = execute_pipeline(
-        pipeline, environment=no_args_env('failing', 'failing_input'), throw_on_error=False
-    )
-
-    assert not pipeline_result.success
-
-    result_list = pipeline_result.result_list
-
-    assert len(result_list) == 1
-    assert not result_list[0].success
-    assert result_list[0].dagster_user_exception
-
-
-def test_input_failure_pipeline():
-    pipeline = silencing_pipeline(solids=[create_root_input_failure_solid('failing_input')])
-    pipeline_result = execute_pipeline(
-        pipeline,
-        environment=no_args_env('failing_input', 'failing_input_input'),
-        throw_on_error=False
-    )
-
-    result_list = pipeline_result.result_list
-
-    assert len(result_list) == 1
-    assert not result_list[0].success
-    assert result_list[0].dagster_user_exception
-
-
-def test_output_failure_pipeline():
-    pipeline = silencing_pipeline(solids=[create_root_output_failure_solid('failing_output')])
-
-    pipeline_result = execute_pipeline(
-        pipeline,
-        environment=no_args_env(
-            'failing_output', 'failing_output_input',
-            [config.Materialization(solid='failing_output', name='CUSTOM', args={})]
-        ),
-        throw_on_error=False,
+        pipeline, environment=config.Environment(), throw_on_error=False
     )
 
     assert not pipeline_result.success
@@ -198,19 +85,9 @@ def test_failure_midstream():
         name='C',
         inputs=[InputDefinition(name='A'), InputDefinition(name='B')],
         transform_fn=transform_fn,
-        output=dagster.OutputDefinition(),
+        output=OutputDefinition(),
     )
 
-    environment = config.Environment(
-        sources={
-            'A': {
-                'A_input': config.Source('CUSTOM', {}),
-            },
-            'B': {
-                'B_input': config.Source('CUSTOM', {})
-            }
-        }
-    )
     pipeline = silencing_pipeline(
         solids=[solid_a, solid_b, solid_c],
         dependencies={
@@ -222,7 +99,7 @@ def test_failure_midstream():
     )
     pipeline_result = execute_pipeline(
         pipeline,
-        environment=environment,
+        environment=config.Environment(),
         throw_on_error=False,
     )
 
