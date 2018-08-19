@@ -16,12 +16,11 @@ from dagster.utils.test import (script_relative_path, get_temp_file_name)
 import dagster.pandas_kernel as dagster_pd
 
 
-def create_num_csv_environment(materializations=None):
+def create_num_csv_environment():
     return config.Environment(
         solids={'load_csv': config.Solid({
             'path': script_relative_path('num.csv')
         })},
-        materializations=materializations,
     )
 
 
@@ -34,10 +33,15 @@ def run_hello_world(hello_world):
     assert len(hello_world.inputs) == 1
 
     pipeline = PipelineDefinition(
-        solids=[dagster_pd.load_csv_solid('load_csv'), hello_world],
-        dependencies={'hello_world': {
-            'num_csv': DependencyDefinition('load_csv'),
-        }}
+        solids=[
+            dagster_pd.load_csv_solid('load_csv'),
+            hello_world,
+        ],
+        dependencies={
+            'hello_world': {
+                'num_csv': DependencyDefinition('load_csv'),
+            },
+        }
     )
 
     pipeline_result = execute_pipeline(
@@ -55,18 +59,36 @@ def run_hello_world(hello_world):
         'sum': [3, 7],
     }
 
+    pipeline_two = PipelineDefinition(
+        solids=[
+            dagster_pd.load_csv_solid('load_csv'),
+            hello_world,
+            dagster_pd.to_csv_solid('to_csv'),
+        ],
+        dependencies={
+            'hello_world': {
+                'num_csv': DependencyDefinition('load_csv'),
+            },
+            'to_csv': {
+                'df': DependencyDefinition('hello_world'),
+            }
+        }
+    )
+
     with get_temp_file_name() as temp_file_name:
+        environment = config.Environment(
+            solids={
+                'load_csv': config.Solid({
+                    'path': script_relative_path('num.csv'),
+                }),
+                'to_csv': config.Solid({
+                    'path': temp_file_name,
+                })
+            },
+        )
         pipeline_result = execute_pipeline(
-            pipeline,
-            environment=create_num_csv_environment(
-                materializations=[
-                    config.Materialization(
-                        solid='hello_world',
-                        name='CSV',
-                        args={'path': temp_file_name},
-                    )
-                ]
-            )
+            pipeline_two,
+            environment,
         )
 
         output_result = pipeline_result.result_named('hello_world')

@@ -19,12 +19,10 @@ from dagster.core.decorators import solid
 from dagster.core.execution import (
     ExecutionContext,
     execute_pipeline_iterator,
-    output_single_solid,
     execute_pipeline,
     execute_single_solid,
 )
 import dagster.pandas_kernel as dagster_pd
-from dagster.utils.compatability import create_single_materialization_output
 from dagster.utils.test import (get_temp_file_name, get_temp_file_names, script_relative_path)
 
 
@@ -51,20 +49,16 @@ def get_solid_transformed_value(_context, solid_inst, environment):
 
     execution_result = pipeline_result.result_named(solid_inst.name)
 
-    # execution_result = execute_single_solid(
-    #     context,
-    #     solid_inst,
-    #     environment=environment,
-    # )
     return execution_result.transformed_value
 
 
-def get_num_csv_environment(load_csv_solid_name, materializations=None, through_solids=None):
+def get_load_only_solids_config(load_csv_solid_name):
+    return {load_csv_solid_name: config.Solid({'path': script_relative_path('num.csv')})}
+
+
+def get_num_csv_environment(solids_config, through_solids=None):
     return config.Environment(
-        solids={load_csv_solid_name: config.Solid({
-            'path': script_relative_path('num.csv')
-        })},
-        materializations=materializations,
+        solids=solids_config,
         execution=config.Execution(through_solids=through_solids),
     )
 
@@ -83,24 +77,11 @@ def test_basic_pandas_solid():
 
     test_output = {}
 
-    def materialization_fn_inst(context, arg_dict, df):
-        assert isinstance(df, pd.DataFrame)
-        assert isinstance(context, ExecutionContext)
-        assert isinstance(arg_dict, dict)
-
-        test_output['df'] = df
-
-    custom_output_def = create_single_materialization_output(
-        name='CUSTOM',
-        materialization_fn=materialization_fn_inst,
-        argument_def_dict={},
-    )
-
     single_solid = SolidDefinition.single_output_transform(
         name='sum_table',
         inputs=[csv_input],
         transform_fn=transform,
-        output=custom_output_def,
+        output=OutputDefinition(),
     )
 
     pipeline = PipelineDefinition(
@@ -110,15 +91,18 @@ def test_basic_pandas_solid():
         }}
     )
 
-    execute_pipeline(
+    pipeline_result = execute_pipeline(
         pipeline,
-        environment=get_num_csv_environment(
-            'load_csv',
-            materializations=[config.Materialization(solid='sum_table', name='CUSTOM', args={})]
-        ),
+        environment=get_num_csv_environment(get_load_only_solids_config('load_csv')),
     )
 
-    assert test_output['df'].to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
+    assert pipeline_result.success
+
+    assert pipeline_result.result_named('sum_table').transformed_value.to_dict('list') == {
+        'num1': [1, 3],
+        'num2': [2, 4],
+        'sum': [3, 7]
+    }
 
 
 def test_pandas_csv_to_csv():
@@ -131,22 +115,11 @@ def test_pandas_csv_to_csv():
         num_csv['sum'] = num_csv['num1'] + num_csv['num2']
         return num_csv
 
-    def materialization_fn_inst(context, arg_dict, df):
-        assert isinstance(context, ExecutionContext)
-        path = check.str_elem(arg_dict, 'path')
-        df.to_csv(path, index=False)
-
-    csv_output_def = create_single_materialization_output(
-        name='CSV',
-        materialization_fn=materialization_fn_inst,
-        argument_def_dict={'path': ArgumentDefinition(types.Path)}
-    )
-
     solid_def = SolidDefinition.single_output_transform(
         name='sum_table',
         inputs=[csv_input],
         transform_fn=transform,
-        output=csv_output_def,
+        output=OutputDefinition(dagster_type=dagster_pd.DataFrame),
     )
 
     output_df = execute_transform_in_temp_csv_files(solid_def)
@@ -156,11 +129,16 @@ def test_pandas_csv_to_csv():
 
 def execute_transform_in_temp_csv_files(solid_inst):
     load_csv_solid = dagster_pd.load_csv_solid('load_csv')
+    to_csv_solid = dagster_pd.to_csv_solid('to_csv')
+
     pipeline = PipelineDefinition(
-        solids=[load_csv_solid, solid_inst],
+        solids=[load_csv_solid, solid_inst, to_csv_solid],
         dependencies={
             solid_inst.name: {
                 solid_inst.inputs[0].name: DependencyDefinition('load_csv'),
+            },
+            'to_csv': {
+                'df': DependencyDefinition(solid_inst.name),
             }
         }
     )
@@ -168,14 +146,14 @@ def execute_transform_in_temp_csv_files(solid_inst):
         result = execute_pipeline(
             pipeline,
             get_num_csv_environment(
-                'load_csv',
-                materializations=[
-                    config.Materialization(
-                        solid=solid_inst.name,
-                        name='CSV',
-                        args={'path': temp_file_name},
-                    )
-                ]
+                {
+                    load_csv_solid.name: config.Solid({
+                        'path': script_relative_path('num.csv')
+                    }),
+                    to_csv_solid.name: config.Solid({
+                        'path': temp_file_name
+                    }),
+                }
             ),
         )
 
@@ -255,7 +233,7 @@ def test_pandas_csv_in_memory():
     df = get_solid_transformed_value(
         None,
         create_sum_table(),
-        get_num_csv_environment('load_csv'),
+        get_num_csv_environment(get_load_only_solids_config('load_csv')),
     )
     assert isinstance(df, pd.DataFrame)
     assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
@@ -327,12 +305,16 @@ def test_no_transform_solid():
         transform_fn=lambda _context, args: args['num_csv'],
     )
     context = create_test_context()
-    df = get_solid_transformed_value(context, num_table, get_num_csv_environment('load_csv'))
+    df = get_solid_transformed_value(
+        context, num_table, get_num_csv_environment(get_load_only_solids_config('load_csv'))
+    )
     assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4]}
 
 
-def create_diamond_pipeline():
-    return PipelineDefinition(solids=list(create_diamond_dag()), dependencies=create_diamond_deps())
+def create_diamond_pipeline(extra_solids=None, extra_dependencies=None):
+    all_solids = list(create_diamond_dag()) + (extra_solids if extra_solids else [])
+    all_deps = {**create_diamond_deps(), **(extra_dependencies if extra_dependencies else {})}
+    return PipelineDefinition(solids=all_solids, dependencies=all_deps)
 
 
 def create_diamond_deps():
@@ -412,7 +394,9 @@ def test_pandas_in_memory_diamond_pipeline():
     pipeline = create_diamond_pipeline()
     result = execute_pipeline(
         pipeline,
-        environment=get_num_csv_environment('load_csv', through_solids=['sum_mult_table'])
+        environment=get_num_csv_environment(
+            get_load_only_solids_config('load_csv'), through_solids=['sum_mult_table']
+        )
     )
 
     assert result.result_named('sum_mult_table').transformed_value.to_dict('list') == {
@@ -426,15 +410,22 @@ def test_pandas_in_memory_diamond_pipeline():
 
 def test_pandas_output_csv_pipeline():
     with get_temp_file_name() as temp_file_name:
-        pipeline = create_diamond_pipeline()
+        write_solid = dagster_pd.to_csv_solid('write_sum_mult_table')
+        pipeline = create_diamond_pipeline(
+            extra_solids=[write_solid],
+            extra_dependencies={write_solid.name: {
+                'df': DependencyDefinition('sum_mult_table')
+            }}
+        )
         environment = get_num_csv_environment(
-            'load_csv', [
-                config.Materialization(
-                    solid='sum_mult_table',
-                    name='CSV',
-                    args={'path': temp_file_name},
-                )
-            ]
+            {
+                'load_csv': config.Solid({
+                    'path': script_relative_path('num.csv'),
+                }),
+                write_solid.name: config.Solid({
+                    'path': temp_file_name
+                }),
+            }
         )
 
         for _result in execute_pipeline_iterator(pipeline=pipeline, environment=environment):
@@ -460,24 +451,37 @@ def _result_named(results, name):
 
 
 def test_pandas_output_intermediate_csv_files():
-    pipeline = create_diamond_pipeline()
 
     with get_temp_file_names(2) as temp_tuple:
         sum_file, mult_file = temp_tuple  # pylint: disable=E0632
 
+        write_sum_table = dagster_pd.to_csv_solid('write_sum_table')
+        write_mult_table = dagster_pd.to_csv_solid('write_mult_table')
+
+        pipeline = create_diamond_pipeline(
+            extra_solids=[write_sum_table, write_mult_table],
+            extra_dependencies={
+                write_sum_table.name: {
+                    'df': DependencyDefinition('sum_table'),
+                },
+                write_mult_table.name:{
+                    'df': DependencyDefinition('mult_table'),
+                }
+            }
+        )
+
         environment = get_num_csv_environment(
-            'load_csv', [
-                config.Materialization(
-                    solid='sum_table',
-                    name='CSV',
-                    args={'path': sum_file},
-                ),
-                config.Materialization(
-                    solid='mult_table',
-                    name='CSV',
-                    args={'path': mult_file},
-                ),
-            ]
+            {
+                'load_csv': config.Solid({
+                    'path': script_relative_path('num.csv'),
+                }),
+                write_sum_table.name: config.Solid({
+                    'path': sum_file
+                }),
+                write_mult_table.name: config.Solid({
+                    'path': mult_file
+                }),
+            }
         )
 
         subgraph_one_result = execute_pipeline(pipeline, environment=environment)
@@ -534,36 +538,43 @@ def test_pandas_output_intermediate_csv_files():
         # }
 
 
-def csv_materialization(solid_name, path):
-    return config.Materialization(
-        solid=solid_name,
-        name='CSV',
-        args={'path': path},
-    )
-
-
-def parquet_materialization(solid_name, path):
-    return config.Materialization(
-        solid=solid_name,
-        name='PARQUET',
-        args={'path': path},
-    )
-
-
 def test_pandas_output_intermediate_parquet_files():
     pipeline = create_diamond_pipeline()
 
     with get_temp_file_names(2) as temp_tuple:
         # false positive on pylint error
         sum_file, mult_file = temp_tuple  # pylint: disable=E0632
+
+        write_sum_table = dagster_pd.to_parquet_solid('write_sum_table')
+        write_mult_table = dagster_pd.to_parquet_solid('write_mult_table')
+
+        pipeline = create_diamond_pipeline(
+            extra_solids=[write_sum_table, write_mult_table],
+            extra_dependencies={
+                write_sum_table.name: {
+                    'df': DependencyDefinition('sum_table'),
+                },
+                write_mult_table.name:{
+                    'df': DependencyDefinition('mult_table'),
+                }
+            }
+        )
+
+        environment = get_num_csv_environment({
+            'load_csv': config.Solid({
+                'path': script_relative_path('num.csv'),
+            }),
+            write_sum_table.name: config.Solid({
+                'path': sum_file 
+            }),
+            write_mult_table.name: config.Solid({
+                'path': mult_file 
+            }),
+        })
+
         pipeline_result = execute_pipeline(
             pipeline,
-            environment=get_num_csv_environment(
-                'load_csv', [
-                    parquet_materialization('sum_table', sum_file),
-                    parquet_materialization('mult_table', mult_file),
-                ]
-            ),
+            environment,
         )
 
         assert pipeline_result.success
@@ -634,16 +645,34 @@ def test_pandas_multiple_outputs():
         csv_file, parquet_file = temp_tuple  # pylint: disable=E0632
         pipeline = create_diamond_pipeline()
 
-        for _result in execute_pipeline_iterator(
-            pipeline=pipeline,
-            environment=get_num_csv_environment(
-                'load_csv', [
-                    csv_materialization('sum_mult_table', csv_file),
-                    parquet_materialization('sum_mult_table', parquet_file),
-                ]
-            ),
-        ):
-            pass
+        write_sum_mult_csv = dagster_pd.to_csv_solid('write_sum_mult_csv')
+        write_sum_mult_parquet = dagster_pd.to_parquet_solid('write_sum_mult_parquet')
+
+        pipeline = create_diamond_pipeline(
+            extra_solids=[write_sum_mult_csv, write_sum_mult_parquet],
+            extra_dependencies={
+                write_sum_mult_csv.name: {
+                    'df': DependencyDefinition('sum_mult_table'),
+                },
+                write_sum_mult_parquet.name:{
+                    'df': DependencyDefinition('sum_mult_table'),
+                }
+            }
+        )
+
+        environment = get_num_csv_environment({
+            'load_csv': config.Solid({
+                'path': script_relative_path('num.csv'),
+            }),
+            write_sum_mult_csv.name: config.Solid({
+                'path': csv_file,
+            }),
+            write_sum_mult_parquet.name: config.Solid({
+                'path': parquet_file,
+            }),
+        })
+
+        execute_pipeline(pipeline, environment)
 
         assert os.path.exists(csv_file)
         output_csv_df = pd.read_csv(csv_file)
@@ -679,7 +708,7 @@ def test_rename_input():
                 },
             },
         ),
-        environment=get_num_csv_environment('load_csv'),
+        environment=get_num_csv_environment(get_load_only_solids_config('load_csv')),
     )
 
     assert result.success

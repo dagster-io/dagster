@@ -9,8 +9,6 @@ from dagster import (
     types,
 )
 
-from dagster.utils.compatability import create_single_materialization_output
-
 from dagster.sqlalchemy_kernel import execute_sql_text_on_context
 
 
@@ -48,21 +46,24 @@ class DagsterSqlTableExpression(DagsterSqlExpression):
         return self._table_name
 
 
-def create_table_output():
-    def materialization_fn(context, arg_dict, sql_expr):
-        check.inst_param(sql_expr, 'sql_expr', DagsterSqlExpression)
-        check.dict_param(arg_dict, 'arg_dict')
-
-        output_table_name = check.str_elem(arg_dict, 'table_name')
+def define_create_table_solid(name):
+    def _materialization_fn(context, inputs, config_dict):
+        sql_expr = inputs['expr']
+        check.inst(sql_expr, DagsterSqlExpression)
+        output_table_name = check.str_elem(config_dict, 'table_name')
         total_sql = '''CREATE TABLE {output_table_name} AS {query_text}'''.format(
             output_table_name=output_table_name, query_text=sql_expr.query_text
         )
         context.resources.sa.engine.connect().execute(total_sql)
 
-    return create_single_materialization_output(
-        name='CREATE',
-        materialization_fn=materialization_fn,
-        argument_def_dict={'table_name': ArgumentDefinition(types.String)}
+    return SolidDefinition(
+        name=name,
+        inputs=[InputDefinition('expr')],
+        outputs=[],
+        transform_fn=_materialization_fn,
+        config_def={
+            'table_name': ArgumentDefinition(types.String),
+        }
     )
 
 
@@ -94,7 +95,7 @@ def create_sql_solid(name, inputs, sql_text):
         name,
         inputs=inputs,
         transform_fn=create_sql_transform(sql_text),
-        output=create_table_output(),
+        output=OutputDefinition(),
     )
 
 

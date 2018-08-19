@@ -9,12 +9,6 @@ These represent functions which do purely in-memory compute. They will evaluate 
 the core transform, and exercise all logging and metrics tracking (outside of outputs), but they
 will not invoke *any* outputs (and their APIs don't allow the user to).
 
-materialize_*
-
-Materializations functions do execution but also allow the user to specify materializations,
-which create artifacts that are discoverable by external systems (e.g. files, database
-tables, and so on).
-
 
 '''
 
@@ -140,7 +134,6 @@ def execute_single_solid(context, solid, environment, throw_on_error=True):
     check.invariant(environment.execution.through_solids == [])
 
     single_solid_environment = config.Environment(
-        materializations=environment.materializations,
         expectations=environment.expectations,
         context=environment.context,
         execution=config.Execution.single_solid(solid.name),
@@ -168,82 +161,6 @@ def _do_throw_on_error(execution_result):
         execution_result.reraise_user_error()
 
     raise execution_result.dagster_user_exception
-
-def output_single_solid(
-    context,
-    solid,
-    environment,
-    name,
-    arg_dict,
-    throw_on_error=True,
-):
-    check.inst_param(context, 'context', ExecutionContext)
-    check.inst_param(solid, 'solid', SolidDefinition)
-    check.inst_param(environment, 'environment', config.Environment)
-    check.str_param(name, 'name')
-    check.dict_param(arg_dict, 'arg_dict', key_type=str)
-    check.bool_param(throw_on_error, 'throw_on_error')
-
-
-    results = list(
-        execute_pipeline_iterator(
-            PipelineDefinition(
-                solids=[solid],
-                context_definitions=_create_passthrough_context_definition(context),
-            ),
-            environment=config.Environment(
-                context=environment.context,
-                materializations=[
-                    config.Materialization(
-                        solid=solid.name, name=name, args=arg_dict
-                    )
-                ],
-            ),
-        )
-    )
-
-    for result in results:
-        if not result.success:
-            if throw_on_error:
-                _do_throw_on_error(result)
-            else:
-                return result
-
-    for result in results:
-        if result.name == solid.name and result.tag == ComputeNodeTag.TRANSFORM:
-            return result
-
-    check.invariant(len(results) == 1, 'must be one result got ' + str(len(results)))
-
-    execution_result = results[0]
-
-    check.invariant(execution_result.name == solid.name)
-
-    if throw_on_error:
-        _do_throw_on_error(execution_result)
-
-    return execution_result
-
-class DagsterEnv:
-    @contextmanager
-    def yield_context(self):
-        check.not_implemented('must implement in subclass')
-
-    @property
-    def materializations(self):
-        check.not_implemented('must implement in subclass')
-
-    @property
-    def evaluate_expectations(self):
-        check.not_implemented('must implement in subclass')
-
-    @property
-    def from_solids(self):
-        check.not_implemented('must implement in subclass')
-
-    @property
-    def through_solids(self):
-        check.not_implemented('must implement in subclass')
 
 def _wrap_in_yield(thing):
     if isinstance(thing, ExecutionContext):
@@ -296,10 +213,6 @@ class DagsterEnv:
 
         thing = context_definition.context_fn(self.pipeline, args_to_pass)
         return _wrap_in_yield(thing)
-
-    @property
-    def materializations(self):
-        return self.environment.materializations
 
     @property
     def evaluate_expectations(self):
