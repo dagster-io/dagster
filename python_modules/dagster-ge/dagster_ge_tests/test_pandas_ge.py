@@ -7,7 +7,7 @@ import dagster.pandas_kernel as dagster_pd
 import dagster_ge
 from dagster import (InputDefinition, OutputDefinition)
 from dagster.core.decorators import solid
-from dagster.core.execution import (DagsterExecutionFailureReason, execute_pipeline_in_memory)
+from dagster.core.errors import DagsterExecutionFailureReason
 from dagster.utils.test import script_relative_path
 
 

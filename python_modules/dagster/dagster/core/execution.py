@@ -20,7 +20,10 @@ import copy
 
 import six
 
-from dagster import check, config
+from dagster import (
+    check,
+    config,
+)
 
 from .definitions import (
     SolidDefinition,
@@ -30,8 +33,6 @@ from .definitions import (
 
 from .errors import (
     DagsterUserCodeExecutionError,
-    DagsterExecutionFailureReason,
-    DagsterExpectationFailedError,
     DagsterInvariantViolationError,
 )
 
@@ -237,23 +238,6 @@ def execute_pipeline_iterator(pipeline, environment):
             DagsterEnv(pipeline, environment)
         )
 
-def execute_pipeline_iterator_in_memory(
-    context,
-    pipeline,
-    input_values,
-    *,
-    from_solids=None,
-    through_solids=None,
-):
-    check.opt_list_param(from_solids, 'from_solids', of_type=str)
-    check.opt_list_param(through_solids, 'through_solids', of_type=str)
-    return _execute_pipeline_iterator(
-        context,
-        pipeline,
-        InMemoryEnv(context, pipeline, input_values, from_solids, through_solids),
-    )
-
-
 def _execute_pipeline_iterator(context, pipeline, env):
     check.inst_param(context, 'context', ExecutionContext)
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
@@ -303,22 +287,6 @@ def execute_pipeline(
     return _execute_pipeline(
         pipeline,
         DagsterEnv(pipeline, environment),
-        throw_on_error,
-    )
-
-def execute_pipeline_in_memory(
-    context,
-    pipeline,
-    *,
-    input_values,
-    from_solids=None,
-    through_solids=None,
-    throw_on_error=True,
-):
-    check.dict_param(input_values, 'input_values', key_type=str)
-    return _execute_pipeline(
-        pipeline,
-        InMemoryEnv(context, pipeline, input_values, from_solids, through_solids),
         throw_on_error,
     )
 

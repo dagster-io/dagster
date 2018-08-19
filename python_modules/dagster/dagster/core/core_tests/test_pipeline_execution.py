@@ -1,5 +1,3 @@
-import pytest
-
 from dagster import (
     DependencyDefinition,
     InputDefinition,
@@ -15,7 +13,6 @@ from dagster.core.definitions import DependencyStructure
 from dagster.core.graph import (create_adjacency_lists, SolidGraph)
 from dagster.core.execution import (
     execute_pipeline_iterator,
-    execute_pipeline_iterator_in_memory,
     ExecutionContext,
     ExecutionStepResult,
 )
