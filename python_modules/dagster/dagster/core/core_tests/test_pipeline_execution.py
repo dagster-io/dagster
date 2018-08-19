@@ -21,10 +21,6 @@ from dagster.core.execution import (
 # pylint: disable=W0212
 
 
-def create_test_context():
-    return ExecutionContext()
-
-
 def _default_passthrough_transform(*args, **kwargs):
     check.invariant(not args, 'There should be no positional args')
     return list(kwargs.values())[0]
