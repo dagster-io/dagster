@@ -23,6 +23,12 @@ class Context(namedtuple('ContextData', 'name args')):
         )
 
 
+class Solid(namedtuple('Solid', 'config_dict')):
+    def __new__(cls, config_dict):
+        return super(Solid,
+                     cls).__new__(cls, check.dict_param(config_dict, 'config_dict', key_type=str))
+
+
 class Execution(namedtuple('ExecutionData', 'from_solids through_solids')):
     def __new__(cls, from_solids=None, through_solids=None):
         return super(Execution, cls).__new__(
@@ -38,12 +44,15 @@ class Execution(namedtuple('ExecutionData', 'from_solids through_solids')):
 
 
 class Environment(
-    namedtuple('EnvironmentData', 'context sources materializations expectations, execution')
+    namedtuple(
+        'EnvironmentData', 'context solids sources materializations expectations, execution'
+    )
 ):
     def __new__(
         cls,
         sources=None,
         *,
+        solids=None,
         context=None,
         materializations=None,
         expectations=None,
@@ -68,6 +77,7 @@ class Environment(
         return super(Environment, cls).__new__(
             cls,
             context=context,
+            solids=check.opt_dict_param(solids, 'solids', key_type=str, value_type=Solid),
             sources=sources,
             materializations=check.opt_list_param(
                 materializations, 'materializations', of_type=Materialization

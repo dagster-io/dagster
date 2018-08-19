@@ -9,9 +9,9 @@ from dagster import (
 
 
 def test_multiple_outputs():
-    def _t_fn(_context, _inputs):
-        yield Result('output_one', 'foo')
-        yield Result('output_two', 'bar')
+    def _t_fn(_context, _inputs, _config_dict):
+        yield Result(output_name='output_one', value='foo')
+        yield Result(output_name='output_two', value='bar')
 
     solid = SolidDefinition(
         name='multiple_outputs',
@@ -20,6 +20,7 @@ def test_multiple_outputs():
             OutputDefinition(name='output_one'),
             OutputDefinition(name='output_two'),
         ],
+        config_def={},
         transform_fn=_t_fn,
     )
 
