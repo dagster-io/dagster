@@ -365,12 +365,22 @@ def create_compute_node_from_source_config(solid, input_name, source_config):
         solid=solid,
     )
 
+class SourceComputeNodeMap(dict):
+    def __getitem__(self, key):
+        check.inst_param(key, 'key', SolidInputHandle)
+        return dict.__getitem__(self, key)
+
+    def __setitem__(self, key, val):
+        check.inst_param(key, 'key', SolidInputHandle)
+        check.inst_param(val, 'val', ComputeNode)
+        return dict.__setitem__(self, key, val)
+
 
 def create_source_compute_node_dict_from_environment(pipeline, environment):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.inst_param(environment, 'environment', config.Environment)
 
-    source_cn_dict = {}
+    source_cn_dict = SourceComputeNodeMap()
     for solid_name, sources_by_input in environment.sources.items():
         solid = pipeline.solid_named(solid_name)
         for input_name, source_config in sources_by_input.items():
@@ -390,7 +400,7 @@ def create_source_compute_node_dict_from_input_values(pipeline, input_values):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.dict_param(input_values, 'input_values', key_type=str)
 
-    source_cn_dict = {}
+    source_cn_dict = SourceComputeNodeMap()
     for solid_name, sources_by_input in input_values.items():
         solid = pipeline.solid_named(solid_name)
         for input_name, input_value in sources_by_input.items():
@@ -550,18 +560,12 @@ def create_expectations_cn_graph(solid, inout_def, prev_node_output_handle, tag)
     )
 
 
-def _prev_node_handle(dep_structure, solid, input_def, source_cn_dict, logical_output_mapper):
+def _prev_node_handle(dep_structure, solid, input_def, source_cn_dict, compute_node_output_map):
     check.inst_param(dep_structure, 'dep_structure', DependencyStructure)
     check.inst_param(solid, 'solid', SolidDefinition)
     check.inst_param(input_def, 'input_def', InputDefinition)
-    check.dict_param(
-        source_cn_dict,
-        'source_cn_dict',
-        key_type=SolidInputHandle,
-        value_type=ComputeNode,
-    )
-
-    check.inst_param(logical_output_mapper, 'mapper', LogicalSolidOutputMapper)
+    check.inst_param(source_cn_dict, 'source_cn_dict', SourceComputeNodeMap)
+    check.inst_param(compute_node_output_map, 'compute_node_output_map', ComputeNodeOutputMap)
 
     input_handle = solid.input_handle(input_def.name)
 
@@ -574,7 +578,7 @@ def _prev_node_handle(dep_structure, solid, input_def, source_cn_dict, logical_o
         )
 
         solid_output_handle = dep_structure.get_dep(input_handle)
-        return logical_output_mapper.get_cn_output_handle(solid_output_handle)
+        return compute_node_output_map[solid_output_handle]
 
 
 def create_cn_output_handle(compute_node, cn_output_name):
@@ -583,18 +587,15 @@ def create_cn_output_handle(compute_node, cn_output_name):
     return ComputeNodeOutputHandle(compute_node, cn_output_name)
 
 
-class LogicalSolidOutputMapper:
-    def __init__(self):
-        self._output_handles = {}
+class ComputeNodeOutputMap(dict):
+    def __getitem__(self, key):
+        check.inst_param(key, 'key', SolidOutputHandle)
+        return dict.__getitem__(self, key)
 
-    def set_mapping(self, solid_output_handle, cn_output_handle):
-        check.inst_param(solid_output_handle, 'solid_output_handle', SolidOutputHandle)
-        check.inst_param(cn_output_handle, 'cn_output_handle', ComputeNodeOutputHandle)
-        self._output_handles[solid_output_handle] = cn_output_handle
-
-    def get_cn_output_handle(self, solid_output_handle):
-        check.inst_param(solid_output_handle, 'solid_output_handle', SolidOutputHandle)
-        return self._output_handles[solid_output_handle]
+    def __setitem__(self, key, val):
+        check.inst_param(key, 'key', SolidOutputHandle)
+        check.inst_param(val, 'val', ComputeNodeOutputHandle)
+        return dict.__setitem__(self, key, val)
 
 
 def create_compute_node_graph_from_source_dict(
@@ -607,13 +608,7 @@ def create_compute_node_graph_from_source_dict(
 ):
 
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-
-    check.dict_param(
-        source_cn_dict,
-        'source_cn_dict',
-        key_type=SolidInputHandle,
-        value_type=ComputeNode,
-    )
+    check.inst_param(source_cn_dict, 'source_cn_dict', SourceComputeNodeMap)
 
     materializations = check.opt_list_param(
         materializations,
@@ -627,7 +622,7 @@ def create_compute_node_graph_from_source_dict(
 
     compute_nodes = list(source_cn_dict.values())
 
-    logical_output_mapper = LogicalSolidOutputMapper()
+    cn_output_node_map = ComputeNodeOutputMap()
 
     subgraph = create_subgraph(
         pipeline,
@@ -644,7 +639,7 @@ def create_compute_node_graph_from_source_dict(
                 topo_solid,
                 input_def,
                 source_cn_dict,
-                logical_output_mapper,
+                cn_output_node_map,
             )
 
             check.inst(prev_cn_output_handle, ComputeNodeOutputHandle)
@@ -673,6 +668,7 @@ def create_compute_node_graph_from_source_dict(
         solid_transform_cn = create_compute_node_from_solid_transform(topo_solid, cn_inputs)
 
         for output_def in topo_solid.outputs:
+            output_handle = topo_solid.output_handle(output_def.name)
             if evaluate_expectations and output_def.expectations:
                 expectations_graph = create_expectations_cn_graph(
                     topo_solid,
@@ -681,14 +677,11 @@ def create_compute_node_graph_from_source_dict(
                     tag=ComputeNodeTag.OUTPUT_EXPECTATION
                 )
                 compute_nodes = compute_nodes + expectations_graph.nodes
-                logical_output_mapper.set_mapping(
-                    topo_solid.output_handle(output_def.name),
-                    expectations_graph.terminal_cn_output_handle,
-                )
+                cn_output_node_map[output_handle] = expectations_graph.terminal_cn_output_handle
             else:
-                logical_output_mapper.set_mapping(
-                    topo_solid.output_handle(output_def.name),
-                    create_cn_output_handle(solid_transform_cn, output_def.name),
+                cn_output_node_map[output_handle] = create_cn_output_handle(
+                    solid_transform_cn,
+                    output_def.name,
                 )
 
         compute_nodes.append(solid_transform_cn)
@@ -698,9 +691,7 @@ def create_compute_node_graph_from_source_dict(
         mat_cn = _construct_materialization_cn(
             pipeline,
             materialization,
-            logical_output_mapper.get_cn_output_handle(
-                mat_solid.output_handle(materialization.output_name)
-            ),
+            cn_output_node_map[mat_solid.output_handle(materialization.output_name)],
         )
         compute_nodes.append(mat_cn)
 
