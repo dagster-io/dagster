@@ -216,34 +216,6 @@ class ExpectationDefinition:
         self.description = check.opt_str_param(description, 'description')
 
 
-class SourceDefinition:
-    '''
-    name: name of the source
-
-    source_fn: callable
-         The input function defines exactly what happens when the source is invoked.
-
-         def simplified_read_csv_example(context, arg_dict):
-             context.info('I am in an input.') # use context for logging
-             return pd.read_csv(arg_dict['path'])
-
-    argument_def_dict: { str: DagsterType }
-         Define the arguments expected by this source . A dictionary that maps a string
-         (argument name) to an argument type (defined in dagster.core.types) Continuing
-         the above example, the csv signature would be:
-
-         argument_def_dict = {'path' : dagster.core.types.Path }
-
-    '''
-
-    def __init__(self, source_type, source_fn, argument_def_dict, description=None):
-        check.callable_param(source_fn, 'source_fn')
-        self.source_type = check_valid_name(source_type)
-        self.source_fn = check.callable_param(source_fn, 'source_fn')
-        self.argument_def_dict = check_argument_def_dict(argument_def_dict)
-        self.description = check.opt_str_param(description, 'description')
-
-
 class InputDefinition:
     '''
     An InputDefinition instances represents an argument to a transform defined within a solid.
@@ -263,20 +235,9 @@ class InputDefinition:
     '''
 
     def __init__(
-        self,
-        name,
-        dagster_type=None,
-        sources=None,
-        expectations=None,
-        input_callback=None,
-        description=None
+        self, name, dagster_type=None, expectations=None, input_callback=None, description=None
     ):
         self.name = check_valid_name(name)
-
-        if sources is None and dagster_type is not None:
-            sources = dagster_type.default_sources
-
-        self.sources = check.opt_list_param(sources, 'sources', of_type=SourceDefinition)
 
         self.dagster_type = check.opt_inst_param(
             dagster_type, 'dagster_type', types.DagsterType, types.Any
@@ -287,19 +248,6 @@ class InputDefinition:
         )
         self.input_callback = check.opt_callable_param(input_callback, 'input_callback')
         self.description = check.opt_str_param(description, 'description')
-
-    def source_of_type(self, source_type):
-        check.str_param(source_type, 'source_type')
-        for source in self.sources:
-            if source.source_type == source_type:
-                return source
-
-        check.failed(
-            'Source {source_type} not found in input {input_name}.'.format(
-                source_type=source_type,
-                input_name=self.name,
-            )
-        )
 
 
 class MaterializationDefinition:

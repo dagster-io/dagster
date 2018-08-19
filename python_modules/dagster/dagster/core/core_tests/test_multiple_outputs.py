@@ -26,7 +26,7 @@ def test_multiple_outputs():
 
     pipeline = PipelineDefinition(solids=[solid])
 
-    result = execute_pipeline(pipeline, config.Environment(sources={}))
+    result = execute_pipeline(pipeline, config.Environment())
 
     assert result.result_list[0].name == 'multiple_outputs'
     assert result.result_list[0].output_name == 'output_one'

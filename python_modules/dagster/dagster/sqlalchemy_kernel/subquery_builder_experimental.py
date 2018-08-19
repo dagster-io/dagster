@@ -1,15 +1,12 @@
 import os
 
-from dagster import check
-
-from dagster.core import types
-
-from dagster.core.definitions import (
-    SolidDefinition,
-    InputDefinition,
-    SourceDefinition,
+from dagster import (
     ArgumentDefinition,
+    InputDefinition,
     OutputDefinition,
+    SolidDefinition,
+    check,
+    types,
 )
 
 from dagster.utils.compatability import create_single_materialization_output
@@ -75,19 +72,6 @@ def _table_name_read_fn(_context, arg_dict):
     table_name = check.str_elem(arg_dict, 'table_name')
     # probably verify that the table name exists?
     return DagsterSqlTableExpression(table_name)
-
-
-def _table_name_source():
-    return SourceDefinition(
-        source_type='TABLENAME',
-        source_fn=_table_name_read_fn,
-        argument_def_dict={'table_name': ArgumentDefinition(types.String)},
-    )
-
-
-def create_table_expression_input(name):
-    check.str_param(name, 'name')
-    return InputDefinition(name=name, sources=[_table_name_source()])
 
 
 def create_sql_transform(sql_text):

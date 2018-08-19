@@ -16,13 +16,11 @@ from dagster.core.definitions import (
     PipelineDefinition,
     Result,
     SolidDefinition,
-    SourceDefinition,
 )
 
 from dagster.core.decorators import (
     materialization,
     solid,
-    source,
     with_context,
 )
 

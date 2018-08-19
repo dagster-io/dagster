@@ -156,9 +156,7 @@ class ComputeNodeTag(Enum):
     INPUT_EXPECTATION = 'INPUT_EXPECTATION'
     OUTPUT_EXPECTATION = 'OUTPUT_EXPECTATION'
     JOIN = 'JOIN'
-    SOURCE = 'SOURCE'
     MATERIALIZATION = 'MATERIALIZATION'
-    INPUTSTUB = 'INPUTSTUB'
 
 
 EXPECTATION_VALUE_OUTPUT = 'expectation_value'
@@ -339,95 +337,6 @@ class SingleSyncOutputComputeNode(ComputeNode):
         super().__init__(compute_fn=_yieldify(sync_compute_fn), **kwargs)
 
 
-def create_compute_node_from_source_config(solid, input_name, source_config):
-    check.inst_param(solid, 'solid', SolidDefinition)
-    check.str_param(input_name, 'input_name')
-    check.inst_param(source_config, 'source_config', config.Source)
-
-    input_def = solid.input_def_named(input_name)
-    source_def = input_def.source_of_type(source_config.name)
-
-    error_context_str = 'source type {source}'.format(source=source_def.source_type)
-
-    arg_dict = validate_args(
-        source_def.argument_def_dict,
-        source_config.args,
-        error_context_str,
-    )
-
-    return SingleSyncOutputComputeNode(
-        friendly_name=f'{solid.name}.{input_name}.source.{source_config.name}',
-        node_inputs=[],
-        node_outputs=[
-            ComputeNodeOutput(
-                name=SOURCE_OUTPUT,
-                dagster_type=input_def.dagster_type,
-            ),
-        ],
-        arg_dict=arg_dict,
-        sync_compute_fn=lambda context, _inputs: Result(
-            output_name=SOURCE_OUTPUT,
-            value=source_def.source_fn(context, arg_dict)
-        ),
-        tag=ComputeNodeTag.SOURCE,
-        solid=solid,
-    )
-
-class SourceComputeNodeMap(dict):
-    def __getitem__(self, key):
-        check.inst_param(key, 'key', SolidInputHandle)
-        return dict.__getitem__(self, key)
-
-    def __setitem__(self, key, val):
-        check.inst_param(key, 'key', SolidInputHandle)
-        check.inst_param(val, 'val', ComputeNode)
-        return dict.__setitem__(self, key, val)
-
-
-def create_source_compute_node_dict_from_environment(pipeline, environment):
-    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    check.inst_param(environment, 'environment', config.Environment)
-
-    source_cn_dict = SourceComputeNodeMap()
-    for solid_name, sources_by_input in environment.sources.items():
-        solid = pipeline.solid_named(solid_name)
-        for input_name, source_config in sources_by_input.items():
-            compute_node = create_compute_node_from_source_config(solid, input_name, source_config)
-            source_cn_dict[solid.input_handle(input_name)] = compute_node
-    return source_cn_dict
-
-
-def get_lambda(output_name, value):
-    return lambda _context, _args: Result(output_name=output_name, value=value)
-
-
-SOURCE_OUTPUT = 'source_output'
-
-
-def create_source_compute_node_dict_from_input_values(pipeline, input_values):
-    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    check.dict_param(input_values, 'input_values', key_type=str)
-
-    source_cn_dict = SourceComputeNodeMap()
-    for solid_name, sources_by_input in input_values.items():
-        solid = pipeline.solid_named(solid_name)
-        for input_name, input_value in sources_by_input.items():
-            input_handle = solid.input_handle(input_name)
-            source_cn_dict[input_handle] = SingleSyncOutputComputeNode(
-                friendly_name=f'{solid_name}.{input_name}.stub',
-                node_inputs=[],
-                # This is just a stub of a pre-existing value, so we are not
-                # going to make any type guarantees
-                node_outputs=[ComputeNodeOutput(SOURCE_OUTPUT, Any)],
-                arg_dict={},
-                sync_compute_fn=get_lambda(SOURCE_OUTPUT, input_value),
-                tag=ComputeNodeTag.INPUTSTUB,
-                solid=pipeline.solid_named(solid_name),
-            )
-
-    return source_cn_dict
-
-
 def print_graph(graph, printer=print):
     check.inst_param(graph, 'graph', ComputeNodeGraph)
     printer = IndentingPrinter(printer=printer)
@@ -454,24 +363,6 @@ class ComputeNodeGraph:
         for cn_guid in cn_guids_sorted:
             yield self.cn_dict[cn_guid]
 
-
-def create_compute_node_graph_from_env(pipeline, env):
-    import dagster.core.execution
-    if isinstance(env, dagster.core.execution.ConfigEnv):
-        source_cn_dict = create_source_compute_node_dict_from_environment(pipeline, env.environment)
-    elif isinstance(env, dagster.core.execution.InMemoryEnv):
-        source_cn_dict = create_source_compute_node_dict_from_input_values(
-            pipeline,
-            env.input_values,
-        )
-    else:
-        check.not_implemented('unsupported')
-
-    return create_compute_node_graph_from_source_dict(
-        pipeline,
-        env,
-        source_cn_dict,
-    )
 
 def create_expectation_cn(solid, expectation_def, friendly_name, tag, prev_node_output_handle):
     check.inst_param(solid, 'solid', SolidDefinition)
@@ -537,25 +428,21 @@ def create_expectations_cn_graph(solid, inout_def, prev_node_output_handle, tag)
     )
 
 
-def _prev_node_handle(dep_structure, solid, input_def, source_cn_dict, compute_node_output_map):
+def _prev_node_handle(dep_structure, solid, input_def, compute_node_output_map):
     check.inst_param(dep_structure, 'dep_structure', DependencyStructure)
     check.inst_param(solid, 'solid', SolidDefinition)
     check.inst_param(input_def, 'input_def', InputDefinition)
-    check.inst_param(source_cn_dict, 'source_cn_dict', SourceComputeNodeMap)
     check.inst_param(compute_node_output_map, 'compute_node_output_map', ComputeNodeOutputMap)
 
     input_handle = solid.input_handle(input_def.name)
 
-    if input_handle in source_cn_dict:
-        return create_cn_output_handle(source_cn_dict[input_handle], SOURCE_OUTPUT)
-    else:
-        check.invariant(
-            dep_structure.has_dep(input_handle),
-            f'{input_handle} not found in dependency structure',
-        )
+    check.invariant(
+        dep_structure.has_dep(input_handle),
+        f'{input_handle} not found in dependency structure',
+    )
 
-        solid_output_handle = dep_structure.get_dep(input_handle)
-        return compute_node_output_map[solid_output_handle]
+    solid_output_handle = dep_structure.get_dep(input_handle)
+    return compute_node_output_map[solid_output_handle]
 
 
 def create_cn_output_handle(compute_node, cn_output_name):
@@ -575,16 +462,14 @@ class ComputeNodeOutputMap(dict):
         return dict.__setitem__(self, key, val)
 
 
-def create_compute_node_graph_from_source_dict(pipeline, env, source_cn_dict):
+def create_compute_node_graph_from_env(pipeline, env):
     import dagster.core.execution
-
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.inst_param(env, 'env', dagster.core.execution.DagsterEnv)
-    check.inst_param(source_cn_dict, 'source_cn_dict', SourceComputeNodeMap)
 
     dep_structure = pipeline.dependency_structure
 
-    compute_nodes = list(source_cn_dict.values())
+    compute_nodes = []
 
     cn_output_node_map = ComputeNodeOutputMap()
 
@@ -602,7 +487,6 @@ def create_compute_node_graph_from_source_dict(pipeline, env, source_cn_dict):
                 dep_structure,
                 topo_solid,
                 input_def,
-                source_cn_dict,
                 cn_output_node_map,
             )
 
@@ -632,7 +516,7 @@ def create_compute_node_graph_from_source_dict(pipeline, env, source_cn_dict):
         validated_config_args = validate_args(
             topo_solid.config_dict_def,
             env.config_dict_for_solid(topo_solid.name),
-            'TODO for solid config',
+            'config for solid {solid_name}'.format(solid_name=topo_solid.name),
         )
 
         solid_transform_cn = create_compute_node_from_solid_transform(
@@ -751,7 +635,7 @@ def _construct_materialization_cn(pipeline, materialization, prev_output_handle)
     output = get_single_solid_output(solid)
     mat_def = output.materialization_of_type(materialization.name)
 
-    error_context_str = 'source type {mat}'.format(mat=mat_def.name)
+    error_context_str = 'materialization type {mat}'.format(mat=mat_def.name)
 
     arg_dict = validate_args(
         mat_def.argument_def_dict,

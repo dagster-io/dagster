@@ -2,6 +2,7 @@ import pytest
 
 from dagster import (
     DependencyDefinition,
+    InputDefinition,
     OutputDefinition,
     PipelineDefinition,
     SolidDefinition,
@@ -18,8 +19,6 @@ from dagster.core.execution import (
     ExecutionContext,
     ExecutionStepResult,
 )
-
-from dagster.utils.compatability import create_custom_source_input
 
 # protected members
 # pylint: disable=W0212
@@ -39,21 +38,11 @@ def create_dep_input_fn(name):
 
 
 def create_solid_with_deps(name, *solid_deps):
-    # def throw_input_fn(arg_dict):
-    #     return [{name: 'input_set'}]
-
-    inputs = [
-        create_custom_source_input(
-            solid_dep.name,
-            source_fn=create_dep_input_fn(solid_dep.name),
-            argument_def_dict={},
-        ) for solid_dep in solid_deps
-    ]
+    inputs = [InputDefinition(solid_dep.name) for solid_dep in solid_deps]
 
     def dep_transform(_context, args):
         passed_rows = list(args.values())[0]
         passed_rows.append({name: 'transform_called'})
-        #return copy.deepcopy(passed_rows)
         return passed_rows
 
     return SolidDefinition.single_output_transform(
@@ -66,16 +55,12 @@ def create_solid_with_deps(name, *solid_deps):
 
 def create_root_solid(name):
     input_name = name + '_input'
-    inp = create_custom_source_input(
-        input_name,
-        source_fn=lambda context, arg_dict: [{input_name: 'input_set'}],
-        argument_def_dict={},
-    )
+    inp = InputDefinition(input_name)
 
     def root_transform(_context, args):
         passed_rows = list(args.values())[0]
+
         passed_rows.append({name: 'transform_called'})
-        #return copy.deepcopy(passed_rows)
         return passed_rows
 
     return SolidDefinition.single_output_transform(
@@ -121,24 +106,26 @@ def graph_from_solids_only(solids, dependencies):
 
 
 def test_diamond_deps_adjaceny_lists():
-    # A <-- (B, C) <-- D
-
-    node_a = create_root_solid('A')
-    node_b = create_solid_with_deps('B', node_a)
-    node_c = create_solid_with_deps('C', node_a)
-    node_d = create_solid_with_deps('D', node_b, node_c)
-
     forward_edges, backwards_edges = _do_construct(
-        [node_a, node_b, node_c, node_d],
+        create_diamond_solids(),
         diamond_deps(),
     )
 
-    assert forward_edges == {'A': {'B', 'C'}, 'B': {'D'}, 'C': {'D'}, 'D': set()}
-    assert backwards_edges == {'D': {'B', 'C'}, 'B': {'A'}, 'C': {'A'}, 'A': set()}
+    assert forward_edges == {'A_source': {'A'}, 'A': {'B', 'C'}, 'B': {'D'}, 'C': {'D'}, 'D': set()}
+    assert backwards_edges == {
+        'D': {'B', 'C'},
+        'B': {'A'},
+        'C': {'A'},
+        'A': {'A_source'},
+        'A_source': set()
+    }
 
 
 def diamond_deps():
     return {
+        'A': {
+            'A_input': DependencyDefinition('A_source'),
+        },
         'B': {
             'A': DependencyDefinition('A')
         },
@@ -175,12 +162,16 @@ def test_disconnected_graphs_adjaceny_lists():
     assert backwards_edges == {'B': {'A'}, 'A': set(), 'D': {'C'}, 'C': set()}
 
 
+from dagster.core.utility_solids import define_pass_mem_value
+
+
 def create_diamond_solids():
+    a_source = define_pass_mem_value('A_source', [input_set('A_input')])
     node_a = create_root_solid('A')
     node_b = create_solid_with_deps('B', node_a)
     node_c = create_solid_with_deps('C', node_a)
     node_d = create_solid_with_deps('D', node_b, node_c)
-    return [node_d, node_c, node_b, node_a]
+    return [node_d, node_c, node_b, node_a, a_source]
 
 
 def create_diamond_graph():
@@ -189,7 +180,7 @@ def create_diamond_graph():
 
 def test_diamond_toposort():
     graph = create_diamond_graph()
-    assert graph.topological_order == ['A', 'B', 'C', 'D']
+    assert graph.topological_order == ['A_source', 'A', 'B', 'C', 'D']
 
 
 def test_single_node_unprovided_inputs():
@@ -199,45 +190,35 @@ def test_single_node_unprovided_inputs():
     assert solid_graph.compute_unprovided_inputs('A', []) == set(['A_input'])
 
 
-def test_diamond_toposort_unprovided_inputs():
-    solid_graph = create_diamond_graph()
+# need to replicate these tests with new api
+# def test_diamond_toposort_unprovided_inputs():
+#     solid_graph = create_diamond_graph()
 
-    # no inputs
-    assert solid_graph.compute_unprovided_inputs('A', []) == set(['A_input'])
-    assert solid_graph.compute_unprovided_inputs('B', []) == set(['A_input'])
-    assert solid_graph.compute_unprovided_inputs('C', []) == set(['A_input'])
-    assert solid_graph.compute_unprovided_inputs('D', []) == set(['A_input'])
+#     # no inputs
+#     assert solid_graph.compute_unprovided_inputs('A', []) == set(['A_input'])
+#     assert solid_graph.compute_unprovided_inputs('B', []) == set(['A_input'])
+#     assert solid_graph.compute_unprovided_inputs('C', []) == set(['A_input'])
+#     assert solid_graph.compute_unprovided_inputs('D', []) == set(['A_input'])
 
-    # root input
-    assert solid_graph.compute_unprovided_inputs('A', ['A_input']) == set()
-    assert solid_graph.compute_unprovided_inputs('B', ['A_input']) == set()
-    assert solid_graph.compute_unprovided_inputs('C', ['A_input']) == set()
-    assert solid_graph.compute_unprovided_inputs('D', ['A_input']) == set()
+#     # root input
+#     assert solid_graph.compute_unprovided_inputs('A', ['A_input']) == set()
+#     assert solid_graph.compute_unprovided_inputs('B', ['A_input']) == set()
+#     assert solid_graph.compute_unprovided_inputs('C', ['A_input']) == set()
+#     assert solid_graph.compute_unprovided_inputs('D', ['A_input']) == set()
 
-    # immediate input
-    assert solid_graph.compute_unprovided_inputs('A', ['A_input']) == set()
-    assert solid_graph.compute_unprovided_inputs('B', ['A']) == set()
-    assert solid_graph.compute_unprovided_inputs('C', ['A']) == set()
-    assert solid_graph.compute_unprovided_inputs('D', ['B', 'C']) == set()
+#     # immediate input
+#     assert solid_graph.compute_unprovided_inputs('A', ['A_input']) == set()
+#     assert solid_graph.compute_unprovided_inputs('B', ['A']) == set()
+#     assert solid_graph.compute_unprovided_inputs('C', ['A']) == set()
+#     assert solid_graph.compute_unprovided_inputs('D', ['B', 'C']) == set()
 
-    # mixed satisified inputs
-    assert solid_graph.compute_unprovided_inputs('D', ['A_input', 'C']) == set()
-    assert solid_graph.compute_unprovided_inputs('D', ['B', 'A_input']) == set()
+#     # mixed satisified inputs
+#     assert solid_graph.compute_unprovided_inputs('D', ['A_input', 'C']) == set()
+#     assert solid_graph.compute_unprovided_inputs('D', ['B', 'A_input']) == set()
 
-    # mixed unsatisifed inputs
-    assert solid_graph.compute_unprovided_inputs('D', ['C']) == set(['A_input'])
-    assert solid_graph.compute_unprovided_inputs('D', ['B']) == set(['A_input'])
-
-
-def test_unprovided_input_param_invariants():
-    node_a = create_root_solid('A')
-    solid_graph = graph_from_solids_only([node_a], {})
-
-    with pytest.raises(check.ParameterCheckError):
-        solid_graph.compute_unprovided_inputs('B', [])
-
-    with pytest.raises(check.ParameterCheckError):
-        solid_graph.compute_unprovided_inputs('A', ['no_input_here'])
+#     # mixed unsatisifed inputs
+#     assert solid_graph.compute_unprovided_inputs('D', ['C']) == set(['A_input'])
+#     assert solid_graph.compute_unprovided_inputs('D', ['B']) == set(['A_input'])
 
 
 def test_execution_subgraph_one_node():
@@ -304,58 +285,44 @@ def assert_all_results_equivalent(expected_results, result_results):
 
 def test_pipeline_execution_graph_diamond():
     pipeline = PipelineDefinition(solids=create_diamond_solids(), dependencies=diamond_deps())
-    environment = config.Environment(sources={'A': {'A_input': config.Source('CUSTOM', {})}})
-    return _do_test(pipeline, lambda: execute_pipeline_iterator(
+    environment = config.Environment()
+    return _do_test(lambda: execute_pipeline_iterator(
         pipeline,
         environment=environment,
     ))
 
 
-def test_pipeline_execution_graph_diamond_in_memory():
-    pipeline = PipelineDefinition(solids=create_diamond_solids(), dependencies=diamond_deps())
-    input_values = {'A_input': [{'A_input': 'input_set'}]}
-    return _do_test(pipeline, lambda: execute_pipeline_iterator_in_memory(
-        ExecutionContext(),
-        pipeline,
-        input_values={'A': input_values},
-    ))
+# def test_pipeline_execution_graph_diamond_in_memory():
+#     pipeline = PipelineDefinition(solids=create_diamond_solids(), dependencies=diamond_deps())
+#     # input_values = {'A_input': [{'A_input': 'input_set'}]}
+#     return _do_test(lambda: execute_pipeline_iterator_in_memory(
+#         ExecutionContext(),
+#         pipeline,
+#         {}
+#         # input_values={'A': input_values},
+#     ))
 
 
-def _do_test(_pipeline, do_execute_pipeline_iter):
-    solid_graph = create_diamond_graph()
-
-    pipeline = PipelineDefinition(solids=solid_graph.solids)
+def _do_test(do_execute_pipeline_iter):
 
     results = list()
 
     for result in do_execute_pipeline_iter():
         results.append(result.copy())
 
-    assert results[0].transformed_value[0] == input_set('A_input')
-    assert results[0].transformed_value[1] == transform_called('A')
+    assert results[1].transformed_value[0] == input_set('A_input')
+    assert results[1].transformed_value[1] == transform_called('A')
 
-    assert results[0].transformed_value == [input_set('A_input'), transform_called('A')]
-
-    assert results[1].transformed_value == [
-        input_set('A_input'),
-        transform_called('A'),
-        transform_called('C'),
-    ] or results[1].transformed_value == [
-        input_set('A_input'),
-        transform_called('A'),
-        transform_called('B'),
-    ]
+    assert results[1].transformed_value == [input_set('A_input'), transform_called('A')]
 
     assert results[2].transformed_value == [
         input_set('A_input'),
         transform_called('A'),
         transform_called('C'),
-        transform_called('B'),
-    ] or [
+    ] or results[2].transformed_value == [
         input_set('A_input'),
         transform_called('A'),
         transform_called('B'),
-        transform_called('C'),
     ]
 
     assert results[3].transformed_value == [
@@ -363,8 +330,20 @@ def _do_test(_pipeline, do_execute_pipeline_iter):
         transform_called('A'),
         transform_called('C'),
         transform_called('B'),
+    ] or results[3].transformed_value == [
+        input_set('A_input'),
+        transform_called('A'),
+        transform_called('B'),
+        transform_called('C'),
+    ]
+
+    assert results[4].transformed_value == [
+        input_set('A_input'),
+        transform_called('A'),
+        transform_called('C'),
+        transform_called('B'),
         transform_called('D'),
-    ] or [
+    ] or results[4].transformed_value == [
         input_set('A_input'),
         transform_called('A'),
         transform_called('B'),

@@ -17,7 +17,6 @@ class DagsterType:
 class DagsterScalarType(DagsterType):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.default_sources = []
         self.default_materializations = []
 
 
@@ -40,15 +39,11 @@ class PythonObjectType(DagsterType):
         self,
         name,
         python_type,
-        default_sources=None,
         default_materializations=None,
         description=None,
     ):
         super().__init__(name, description)
         self.python_type = check.type_param(python_type, 'python_type')
-        self.default_sources = check.opt_list_param(
-            default_sources, 'default_sources', of_type=dagster.SourceDefinition
-        )
         self.default_materializations = check.opt_list_param(
             default_materializations,
             'default_materializations',

@@ -145,10 +145,7 @@ def test_full_in_memory_pipeline():
 def test_full_persisted_pipeline():
     pipeline = create_full_pipeline()
     pipeline_result = dagster.execute_pipeline(
-        pipeline,
-        environment=config.Environment(
-            sources={}, context=config.Context(name='persisted', args={})
-        )
+        pipeline, environment=config.Environment(context=config.Context(name='persisted', args={}))
     )
 
     assert pipeline_result.success

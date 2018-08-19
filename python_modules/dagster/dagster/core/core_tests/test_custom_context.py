@@ -31,7 +31,7 @@ def test_default_context():
 
     pipeline = PipelineDefinition(solids=[default_context_transform])
     execute_pipeline(
-        pipeline, environment=config.Environment(sources={}, context=config.Context('default', {}))
+        pipeline, environment=config.Environment(context=config.Context('default', {}))
     )
 
 
@@ -48,17 +48,13 @@ def test_default_context_with_log_level():
     pipeline = PipelineDefinition(solids=[default_context_transform])
     execute_pipeline(
         pipeline,
-        environment=config.Environment(
-            sources={}, context=config.Context('default', {'log_level': 'INFO'})
-        )
+        environment=config.Environment(context=config.Context('default', {'log_level': 'INFO'}))
     )
 
     with pytest.raises(DagsterTypeError, message='Argument mismatch in context default'):
         execute_pipeline(
             pipeline,
-            environment=config.Environment(
-                sources={}, context=config.Context('default', {'log_level': 2})
-            )
+            environment=config.Environment(context=config.Context('default', {'log_level': 2}))
         )
 
 
@@ -93,8 +89,7 @@ def test_default_value():
     )
 
     execute_pipeline(
-        pipeline,
-        environment=config.Environment(sources={}, context=config.Context('custom_one', {}))
+        pipeline, environment=config.Environment(context=config.Context('custom_one', {}))
     )
 
 
@@ -124,13 +119,13 @@ def test_custom_contexts():
     )
 
     environment_one = config.Environment(
-        sources={}, context=config.Context('custom_one', {'arg_one': 'value_two'})
+        context=config.Context('custom_one', {'arg_one': 'value_two'})
     )
 
     execute_pipeline(pipeline, environment=environment_one)
 
     environment_two = config.Environment(
-        sources={}, context=config.Context('custom_two', {'arg_one': 'value_two'})
+        context=config.Context('custom_two', {'arg_one': 'value_two'})
     )
 
     execute_pipeline(pipeline, environment=environment_two)
@@ -168,7 +163,7 @@ def test_yield_context():
     )
 
     environment_one = config.Environment(
-        sources={}, context=config.Context('custom_one', {'arg_one': 'value_two'})
+        context=config.Context('custom_one', {'arg_one': 'value_two'})
     )
 
     execute_pipeline(pipeline, environment=environment_one)
@@ -188,9 +183,7 @@ def test_invalid_context():
 
     default_context_pipeline = PipelineDefinition(solids=[never_transform])
 
-    environment_context_not_found = config.Environment(
-        sources={}, context=config.Context('not_found', {})
-    )
+    environment_context_not_found = config.Environment(context=config.Context('not_found', {}))
 
     with pytest.raises(DagsterInvariantViolationError, message='Context not_found not found'):
         execute_pipeline(
@@ -200,7 +193,7 @@ def test_invalid_context():
         )
 
     environment_arg_name_mismatch = config.Environment(
-        sources={}, context=config.Context('default', {'unexpected': 'value'})
+        context=config.Context('default', {'unexpected': 'value'})
     )
 
     with pytest.raises(DagsterTypeError, message='Argument mismatch in context default'):
@@ -221,9 +214,7 @@ def test_invalid_context():
         }
     )
 
-    environment_no_args_error = config.Environment(
-        sources={}, context=config.Context('default', {})
-    )
+    environment_no_args_error = config.Environment(context=config.Context('default', {}))
 
     with pytest.raises(DagsterTypeError, message='Argument mismatch in context default'):
         execute_pipeline(
@@ -233,7 +224,7 @@ def test_invalid_context():
         )
 
     environment_type_mismatch_error = config.Environment(
-        sources={}, context=config.Context('default', {'string_arg': 1})
+        context=config.Context('default', {'string_arg': 1})
     )
 
     with pytest.raises(DagsterTypeError, message='Argument mismatch in context default'):
