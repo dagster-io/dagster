@@ -163,7 +163,7 @@ MATERIALIZATION_INPUT = 'mat_input'
 EXPECTATION_INPUT = 'expectation_input'
 
 
-def _execute_core_transform(context, solid_transform_fn, values_dict):
+def _execute_core_transform(context, solid_transform_fn, values_dict, config_dict):
     '''
     Execute the user-specified transform for the solid. Wrap in an error boundary and do
     all relevant logging and metrics tracking
@@ -171,12 +171,15 @@ def _execute_core_transform(context, solid_transform_fn, values_dict):
     check.inst_param(context, 'context', ExecutionContext)
     check.callable_param(solid_transform_fn, 'solid_transform_fn')
     check.dict_param(values_dict, 'values_dict', key_type=str)
+    check.dict_param(config_dict, 'config_dict', key_type=str)
 
     error_str = 'Error occured during core transform'
     with _user_code_error_boundary(context, error_str):
         with time_execution_scope() as timer_result:
-            for result in solid_transform_fn(context, values_dict):
-                yield result
+            gen = solid_transform_fn(context, values_dict, config_dict)
+            if gen is not None:
+                for result in gen:
+                    yield result
 
         context.metric('core_transform_time_ms', timer_result.millis)
 
@@ -208,11 +211,9 @@ class ComputeNode:
         for node_input in node_inputs:
             node_input_dict[node_input.name] = node_input
         self.node_input_dict = node_input_dict
-
         self.node_outputs = check.list_param(
             node_outputs, 'node_outputs', of_type=ComputeNodeOutput
         )
-
         self.arg_dict = check.dict_param(arg_dict, 'arg_dict', key_type=str)
         self.compute_fn = check.callable_param(compute_fn, 'compute_fn')
         self.tag = check.inst_param(tag, 'tag', ComputeNodeTag)
@@ -224,7 +225,7 @@ class ComputeNode:
             if node_output.name == name:
                 return node_output
 
-        check.failed('not found')
+        check.failed(f'{name} not found')
 
     def _create_compute_node_result(self, result):
         check.inst_param(result, 'result', Result)
@@ -267,10 +268,13 @@ class ComputeNode:
 
         try:
             with _user_code_error_boundary(context, error_str):
-                results = list(self.compute_fn(context, inputs))
+                gen = self.compute_fn(context, inputs)
 
-                if not self.node_outputs:
+                if gen is None:
+                    check.invariant(not self.node_outputs)
                     return
+
+                results = list(gen)
 
                 for result in results:
                     yield self._create_compute_node_result(result)
@@ -390,7 +394,7 @@ def create_source_compute_node_dict_from_environment(pipeline, environment):
 
 
 def get_lambda(output_name, value):
-    return lambda _context, _args: Result(output_name, value)
+    return lambda _context, _args: Result(output_name=output_name, value=value)
 
 
 SOURCE_OUTPUT = 'source_output'
@@ -450,51 +454,20 @@ class ComputeNodeGraph:
 def create_compute_node_graph_from_env(pipeline, env):
     import dagster.core.execution
     if isinstance(env, dagster.core.execution.ConfigEnv):
-        return create_compute_node_graph_from_environment(
-            pipeline,
-            env.environment,
-        )
+        source_cn_dict = create_source_compute_node_dict_from_environment(pipeline, env.environment)
     elif isinstance(env, dagster.core.execution.InMemoryEnv):
-        return create_compute_node_graph_from_input_values(
+        source_cn_dict = create_source_compute_node_dict_from_input_values(
             pipeline,
             env.input_values,
-            from_solids=env.from_solids,
-            through_solids=env.through_solids,
-            evaluate_expectations=env.evaluate_expectations,
         )
     else:
         check.not_implemented('unsupported')
 
-
-def create_compute_node_graph_from_input_values(
-    pipeline,
-    input_values,
-    from_solids=None,
-    through_solids=None,
-    evaluate_expectations=True,
-):
-    source_cn_dict = create_source_compute_node_dict_from_input_values(pipeline, input_values)
     return create_compute_node_graph_from_source_dict(
         pipeline,
+        env,
         source_cn_dict,
-        from_solids=from_solids,
-        through_solids=through_solids,
-        evaluate_expectations=evaluate_expectations,
     )
-
-
-def create_compute_node_graph_from_environment(pipeline, environment):
-    source_cn_dict = create_source_compute_node_dict_from_environment(pipeline, environment)
-
-    return create_compute_node_graph_from_source_dict(
-        pipeline,
-        source_cn_dict,
-        materializations=environment.materializations,
-        from_solids=environment.execution.from_solids,
-        through_solids=environment.execution.through_solids,
-        evaluate_expectations=environment.expectations.evaluate,
-    )
-
 
 def create_expectation_cn(solid, expectation_def, friendly_name, tag, prev_node_output_handle):
     check.inst_param(solid, 'solid', SolidDefinition)
@@ -598,27 +571,14 @@ class ComputeNodeOutputMap(dict):
         return dict.__setitem__(self, key, val)
 
 
-def create_compute_node_graph_from_source_dict(
-    pipeline,
-    source_cn_dict,
-    materializations=None,
-    from_solids=None,
-    through_solids=None,
-    evaluate_expectations=True,
-):
+def create_compute_node_graph_from_source_dict(pipeline, env, source_cn_dict):
+    import dagster.core.execution
 
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+    check.inst_param(env, 'env', dagster.core.execution.DagsterEnv)
     check.inst_param(source_cn_dict, 'source_cn_dict', SourceComputeNodeMap)
 
-    materializations = check.opt_list_param(
-        materializations,
-        'materializations',
-        of_type=config.Materialization,
-    )
-
     dep_structure = pipeline.dependency_structure
-
-    check.bool_param(evaluate_expectations, 'evaluate_expectations')
 
     compute_nodes = list(source_cn_dict.values())
 
@@ -626,8 +586,8 @@ def create_compute_node_graph_from_source_dict(
 
     subgraph = create_subgraph(
         pipeline,
-        check.opt_list_param(from_solids, 'from_solid', of_type=str),
-        check.opt_list_param(through_solids, 'through_solid', of_type=str),
+        env.from_solids,
+        env.through_solids,
     )
 
     for topo_solid in subgraph.topological_solids:
@@ -646,7 +606,7 @@ def create_compute_node_graph_from_source_dict(
 
             # jam in input expectations here
 
-            if evaluate_expectations and input_def.expectations:
+            if env.evaluate_expectations and input_def.expectations:
                 expectations_graph = create_expectations_cn_graph(
                     topo_solid,
                     input_def,
@@ -665,11 +625,21 @@ def create_compute_node_graph_from_source_dict(
                 ComputeNodeInput(input_def.name, input_def.dagster_type, cn_output_handle)
             )
 
-        solid_transform_cn = create_compute_node_from_solid_transform(topo_solid, cn_inputs)
+        validated_config_args = validate_args(
+            topo_solid.config_dict_def,
+            env.config_dict_for_solid(topo_solid.name),
+            'TODO for solid config',
+        )
+
+        solid_transform_cn = create_compute_node_from_solid_transform(
+            topo_solid,
+            cn_inputs,
+            validated_config_args,
+        )
 
         for output_def in topo_solid.outputs:
             output_handle = topo_solid.output_handle(output_def.name)
-            if evaluate_expectations and output_def.expectations:
+            if env.evaluate_expectations and output_def.expectations:
                 expectations_graph = create_expectations_cn_graph(
                     topo_solid,
                     output_def,
@@ -686,7 +656,7 @@ def create_compute_node_graph_from_source_dict(
 
         compute_nodes.append(solid_transform_cn)
 
-    for materialization in materializations:
+    for materialization in env.materializations:
         mat_solid = pipeline.solid_named(materialization.solid)
         mat_cn = _construct_materialization_cn(
             pipeline,
@@ -785,7 +755,15 @@ def _construct_materialization_cn(pipeline, materialization, prev_output_handle)
         error_context_str,
     )
 
-    return SingleSyncOutputComputeNode(
+    def _compute_fn(context, inputs):
+        mat_def.materialization_fn(
+            context,
+            materialization.args,
+            inputs[MATERIALIZATION_INPUT],
+        )
+
+
+    return ComputeNode(
         friendly_name=f'{solid.name}.materialization.{mat_def.name}',
         node_inputs=[
             ComputeNodeInput(
@@ -796,7 +774,7 @@ def _construct_materialization_cn(pipeline, materialization, prev_output_handle)
         ],
         node_outputs=[],
         arg_dict=arg_dict,
-        sync_compute_fn=_create_materialization_lambda(mat_def, materialization, 'TODO_REMOVE'),
+        compute_fn=_compute_fn,
         tag=ComputeNodeTag.MATERIALIZATION,
         solid=solid,
     )
@@ -817,9 +795,10 @@ def _create_materialization_lambda(mat_def, materialization, output_name):
     )
 
 
-def create_compute_node_from_solid_transform(solid, node_inputs):
+def create_compute_node_from_solid_transform(solid, node_inputs, config_args):
     check.inst_param(solid, 'solid', SolidDefinition)
     check.list_param(node_inputs, 'node_inputs', of_type=ComputeNodeInput)
+    check.dict_param(config_args, 'config_args', key_type=str)
 
     return ComputeNode(
         friendly_name=f'{solid.name}.transform',
@@ -833,6 +812,7 @@ def create_compute_node_from_solid_transform(solid, node_inputs):
             context,
             solid.transform_fn,
             inputs,
+            config_args,
         ),
         tag=ComputeNodeTag.TRANSFORM,
         solid=solid,

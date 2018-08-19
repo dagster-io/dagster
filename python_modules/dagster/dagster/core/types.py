@@ -15,7 +15,10 @@ class DagsterType:
 
 
 class DagsterScalarType(DagsterType):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.default_sources = []
+        self.default_materializations = []
 
 
 class _DagsterAnyType(DagsterType):

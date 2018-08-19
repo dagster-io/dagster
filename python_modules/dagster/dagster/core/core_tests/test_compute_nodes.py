@@ -9,7 +9,8 @@ from dagster import (
     OutputDefinition,
 )
 
-from dagster.core.compute_nodes import create_compute_node_graph_from_environment
+from dagster.core.execution import ConfigEnv
+from dagster.core.compute_nodes import create_compute_node_graph_from_env
 
 
 @solid(name='noop', inputs=[], output=OutputDefinition())
@@ -51,7 +52,8 @@ def test_compute_noop_node():
 
     environment = config.Environment(sources={})
 
-    compute_node_graph = create_compute_node_graph_from_environment(pipeline, environment)
+    env = ConfigEnv(pipeline, environment)
+    compute_node_graph = create_compute_node_graph_from_env(pipeline, env)
 
     assert len(compute_node_graph.nodes) == 1
 
@@ -72,7 +74,8 @@ def test_compute_node_with_source():
         }
     )
 
-    compute_node_graph = create_compute_node_graph_from_environment(pipeline, environment)
+    env = ConfigEnv(pipeline, environment)
+    compute_node_graph = create_compute_node_graph_from_env(pipeline, env)
     assert len(compute_node_graph.nodes) == 2
 
     context = ExecutionContext()

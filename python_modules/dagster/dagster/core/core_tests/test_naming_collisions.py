@@ -1,52 +1,57 @@
 import dagster
-from dagster import config
 
-from dagster.core.definitions import (
-    SolidDefinition,
-    InputDefinition,
-    SourceDefinition,
+from dagster import (
     ArgumentDefinition,
     DependencyDefinition,
+    InputDefinition,
+    OutputDefinition,
+    SolidDefinition,
+    SourceDefinition,
+    config,
+    types,
+    execute_pipeline,
+    ExecutionContext,
+    Result,
+    PipelineDefinition,
 )
 
-from dagster.core.execution import (ExecutionContext, execute_single_solid, execute_pipeline)
+def define_pass_value_solid(name):
+    def _value_t_fn(_context, _inputs, config_dict):
+        yield Result(config_dict['value'])
 
-from dagster.core import types
-
+    return SolidDefinition(
+        name=name,
+        inputs=[],
+        outputs=[OutputDefinition(dagster_type=types.String)],
+        config_def={'value': ArgumentDefinition(types.String)},
+        transform_fn=_value_t_fn,
+    )
 
 def test_execute_solid_with_input_same_name():
-    solid = SolidDefinition.single_output_transform(
+    a_thing_solid = SolidDefinition.single_output_transform(
         'a_thing',
-        inputs=[
-            InputDefinition(
-                name='a_thing',
-                sources=[
-                    SourceDefinition(
-                        source_type='a_source_type',
-                        source_fn=lambda context, arg_dict: arg_dict['an_arg'],
-                        argument_def_dict={'an_arg': ArgumentDefinition(types.String)},
-                    ),
-                ],
-            ),
-        ],
+        inputs=[InputDefinition(name='a_thing')],
         transform_fn=lambda context, args: args['a_thing'] + args['a_thing'],
         output=dagster.OutputDefinition(),
     )
 
-    result = execute_single_solid(
-        ExecutionContext(),
-        solid,
-        environment=config.Environment(
-            sources={
-                'a_thing': {
-                    'a_thing': config.Source(name='a_source_type', args={'an_arg': 'foo'})
-                }
+    pipeline = PipelineDefinition(
+        solids=[define_pass_value_solid('pass_value'), a_thing_solid],
+        dependencies={
+            'a_thing' : {
+                'a_thing' : DependencyDefinition('pass_value')
             }
-        )
+        },
     )
 
-    assert result.success
-    assert result.transformed_value == 'foofoo'
+    result = execute_pipeline(
+        pipeline,
+        config.Environment(
+            solids={'pass_value': config.Solid(config_dict={'value': 'foo'})}
+        ),
+    )
+
+    assert result.result_named('a_thing').transformed_value == 'foofoo'
 
 
 def test_execute_two_solids_with_same_input_name():
