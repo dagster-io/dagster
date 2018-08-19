@@ -407,32 +407,23 @@ class SolidOutputHandle(namedtuple('_SolidOutputHandle', 'solid output')):
         return self.solid.name == other.solid.name and self.output.name == other.output.name
 
 
-class Result(namedtuple('_Result', 'output_name value')):
-    def __new__(cls, output_name, value):
+class Result(namedtuple('_Result', 'value output_name')):
+    def __new__(cls, value, output_name=DEFAULT_OUTPUT):
         return super(Result, cls).__new__(
             cls,
-            check.str_param(output_name, 'output_name'),
             value,
+            check.str_param(output_name, 'output_name'),
         )
 
 
-# One or more inputs
-# The core computation in the native kernel abstraction
-# The output
 class SolidDefinition:
-    def __init__(self, name, inputs, transform_fn, outputs, description=None):
-        # if output:
-        #     check.invariant(outputs is None)
-        #     self.outputs = [output]
-        # else:
-        #     check.invariant(outputs is not None)
-        #     self.outputs = check.list_param(outputs, 'outputs', of_type=OutputDefinition)
-
+    def __init__(self, *, name, inputs, transform_fn, outputs, config_def, description=None):
         self.name = check_valid_name(name)
         self.inputs = check.list_param(inputs, 'inputs', InputDefinition)
-        self.transform_fn = check.callable_param(transform_fn, 'transform')
+        self.transform_fn = check.callable_param(transform_fn, 'transform_fn')
         self.outputs = check.list_param(outputs, 'outputs', OutputDefinition)
         self.description = check.opt_str_param(description, 'description')
+        self.config_dict_def = check_argument_def_dict(config_def)
 
         input_handles = {}
         for inp in self.inputs:
@@ -448,30 +439,18 @@ class SolidDefinition:
 
     @staticmethod
     def single_output_transform(name, inputs, transform_fn, output, description=None):
-        def _new_transform_fn(context, inputs):
+        def _new_transform_fn(context, inputs, _config_dict):
             value = transform_fn(context, inputs)
-            yield Result(DEFAULT_OUTPUT, value)
+            yield Result(output_name=DEFAULT_OUTPUT, value=value)
 
-        return SolidDefinition(name, inputs, _new_transform_fn, [output], description)
-
-    # Notes to self
-
-    # Input Definitions
-    #   - DematerializationDefinitions
-    #       - Arguments
-    #       - Compute (args) => Value
-    #   - Expectations
-    #   - Dependency
-
-    # Transform Definition
-    #   - Function (inputs) => Value
-    #   - Runtime Types (Inputs and Outputs)
-
-    # Output Definition
-    #   - MaterializationDefinitions
-    #       - Arguments
-    #       - Compute (value, args) => Result
-    #   - Expectations
+        return SolidDefinition(
+            name=name,
+            inputs=inputs,
+            transform_fn=_new_transform_fn,
+            outputs=[output],
+            config_def={},
+            description=description,
+        )
 
     def input_handle(self, name):
         check.str_param(name, 'name')

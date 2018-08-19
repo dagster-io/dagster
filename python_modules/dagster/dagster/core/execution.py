@@ -274,6 +274,10 @@ class InMemoryEnv(DagsterEnv):
     def through_solids(self):
         return self._through_solids
 
+    def config_dict_for_solid(self, name):
+        check.str_param(name, 'name')
+        return {}
+
     @contextmanager
     def yield_context(self):
         return _wrap_in_yield(self.context)
@@ -352,6 +356,14 @@ class ConfigEnv(DagsterEnv):
     @property
     def evaluate_expectations(self):
         return self.environment.expectations.evaluate
+
+    def config_dict_for_solid(self, name):
+        check.str_param(name, 'name')
+        if name not in self.environment.solids:
+            return {}
+        else:
+            return self.environment.solids[name].config_dict
+
 
 def execute_pipeline_iterator(pipeline, environment):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
