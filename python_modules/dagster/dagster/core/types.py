@@ -17,7 +17,6 @@ class DagsterType:
 class DagsterScalarType(DagsterType):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.default_materializations = []
 
 
 class _DagsterAnyType(DagsterType):
@@ -39,16 +38,10 @@ class PythonObjectType(DagsterType):
         self,
         name,
         python_type,
-        default_materializations=None,
         description=None,
     ):
         super().__init__(name, description)
         self.python_type = check.type_param(python_type, 'python_type')
-        self.default_materializations = check.opt_list_param(
-            default_materializations,
-            'default_materializations',
-            of_type=dagster.MaterializationDefinition
-        )
 
     def is_python_valid_value(self, value):
         return _nullable_isinstance(value, self.python_type)

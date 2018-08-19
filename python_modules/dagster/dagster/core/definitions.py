@@ -247,44 +247,12 @@ class InputDefinition:
         self.description = check.opt_str_param(description, 'description')
 
 
-class MaterializationDefinition:
-    '''
-    materialization_fn: callable
-
-        This function defines the actual output.
-
-        The first function argument is the result of the transform function. It can be
-        named anything.
-
-        You must specify an argument with the name "arg_dict". It will be the dictionary
-        of arguments specified by the caller of the solid
-
-        def materialization_fn(context, args, value):
-            pass
-
-    argument_def_dict: { str: DagsterType }
-        Define the arguments expected by this materialization. A dictionary that maps a string
-        (argument name) to an argument type (defined in dagster.core.types).
-
-        e.g.:
-
-        argument_def_dict = { 'path' : dagster.core.types.Path }
-    '''
-
-    def __init__(self, name, materialization_fn, argument_def_dict=None, description=None):
-        self.name = check_valid_name(name)
-        self.materialization_fn = check.callable_param(materialization_fn, 'materialization_fn')
-        self.argument_def_dict = check_argument_def_dict(argument_def_dict)
-        self.description = check.opt_str_param(description, 'description')
-
-
 class OutputDefinition:
     # runtime type info
     def __init__(
         self,
         name=None,
         dagster_type=None,
-        materializations=None,
         expectations=None,
         output_callback=None,
         description=None
@@ -295,25 +263,11 @@ class OutputDefinition:
             dagster_type, 'dagster_type', types.DagsterType, types.Any
         )
 
-        if materializations is None and dagster_type is not None:
-            materializations = dagster_type.default_materializations
-
-        self.materializations = check.opt_list_param(
-            materializations, 'materializations', of_type=MaterializationDefinition
-        )
-
         self.expectations = check.opt_list_param(
             expectations, 'expectations', of_type=ExpectationDefinition
         )
         self.output_callback = check.opt_callable_param(output_callback, 'output_callback')
         self.description = check.opt_str_param(description, 'description')
-
-    def materialization_of_type(self, name):
-        for materialization in self.materializations:
-            if materialization.name == name:
-                return materialization
-
-        check.failed('Did not find materialization {type}'.format(type=name))
 
 
 class SolidInputHandle(namedtuple('_SolidInputHandle', 'solid input_def')):
