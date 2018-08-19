@@ -10,7 +10,6 @@ from dagster.core.definitions import (
     ExpectationDefinition,
     ExpectationResult,
     InputDefinition,
-    MaterializationDefinition,
     OutputDefinition,
     PipelineContextDefinition,
     PipelineDefinition,
@@ -19,7 +18,6 @@ from dagster.core.definitions import (
 )
 
 from dagster.core.decorators import (
-    materialization,
     solid,
     with_context,
 )

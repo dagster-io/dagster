@@ -15,6 +15,7 @@ from dagster.core.utility_solids import define_pass_mem_value
 from dagster.sqlalchemy_kernel.subquery_builder_experimental import (
     create_sql_solid,
     DagsterSqlTableExpression,
+    define_create_table_solid,
 )
 from .math_test_db import in_mem_context
 
@@ -56,22 +57,25 @@ def test_sql_sum_solid():
 
     sum_table_solid = create_sum_table_solid()
 
+    create_sum_table = define_create_table_solid('create_sum_table_solid')
+
     environment = config.Environment(
-        materializations=[
-            config.Materialization(
-                solid='sum_table',
-                name='CREATE',
-                args={'table_name': 'sum_table'},
-            )
-        ],
+        solids={create_sum_table.name: config.Solid({
+            'table_name': 'sum_table',
+        })}
     )
 
     pipeline = pipeline_test_def(
-        solids=[expr_solid, sum_table_solid],
+        solids=[expr_solid, sum_table_solid, create_sum_table],
         context=in_mem_context(),
-        dependencies={'sum_table': {
-            'num_table': DependencyDefinition('expr')
-        }},
+        dependencies={
+            'sum_table': {
+                'num_table': DependencyDefinition('expr')
+            },
+            create_sum_table.name: {
+                'expr': DependencyDefinition('sum_table'),
+            }
+        },
     )
 
     pipeline_result = execute_pipeline(pipeline, environment)
@@ -94,7 +98,7 @@ def create_sum_table_solid():
     )
 
 
-def create_sum_sq_pipeline(context, expr):
+def create_sum_sq_pipeline(context, expr, extra_solids=None, extra_deps=None):
     check.inst_param(expr, 'expr', DagsterSqlTableExpression)
 
     expr_solid = define_pass_mem_value('expr', expr)
@@ -108,15 +112,18 @@ def create_sum_sq_pipeline(context, expr):
     )
 
     return pipeline_test_def(
-        solids=[expr_solid, sum_solid, sum_sq_solid],
+        solids=[expr_solid, sum_solid, sum_sq_solid] + (extra_solids if extra_solids else []),
         context=context,
         dependencies={
-            sum_solid.name: {
-                'num_table': DependencyDefinition('expr'),
+            **{
+                sum_solid.name: {
+                    'num_table': DependencyDefinition('expr'),
+                },
+                sum_sq_solid.name: {
+                    sum_solid.name: DependencyDefinition(sum_solid.name),
+                },
             },
-            sum_sq_solid.name: {
-                sum_solid.name: DependencyDefinition(sum_solid.name),
-            },
+            **(extra_deps if extra_deps else {})
         },
     )
 
@@ -144,16 +151,19 @@ def test_execute_sql_sum_sq_solid():
 
 
 def test_output_sql_sum_sq_solid():
-    pipeline = create_sum_sq_pipeline(in_mem_context(), DagsterSqlTableExpression('num_table'))
+    create_sum_sq_table = define_create_table_solid('create_sum_sq_table')
+
+    pipeline = create_sum_sq_pipeline(
+        in_mem_context(), DagsterSqlTableExpression('num_table'), [create_sum_sq_table],
+        {create_sum_sq_table.name: {
+            'expr': DependencyDefinition('sum_sq_table')
+        }}
+    )
 
     environment = config.Environment(
-        materializations=[
-            config.Materialization(
-                solid='sum_sq_table',
-                name='CREATE',
-                args={'table_name': 'sum_sq_table'},
-            )
-        ],
+        solids={'create_sum_sq_table': config.Solid({
+            'table_name': 'sum_sq_table'
+        })},
     )
 
     pipeline_result = execute_pipeline(pipeline=pipeline, environment=environment)

@@ -126,16 +126,7 @@ def print_solid(printer, solid):
         printer.line('Outputs:')
 
         for output in solid.outputs:
-            if output.materializations:
-                printer.line('Materializations:')
-                for materialization_def in output.materializations:
-                    arg_list = format_argument_dict(materialization_def.argument_def_dict)
-                    with printer.with_indent():
-                        printer.line(
-                            '{name}({arg_list})'.format(
-                                name=materialization_def.name, arg_list=arg_list
-                            )
-                        )
+            print(output.name)
 
 
 def print_inputs(printer, solid):

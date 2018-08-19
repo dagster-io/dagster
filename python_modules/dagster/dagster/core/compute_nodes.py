@@ -18,12 +18,10 @@ from .definitions import (
     DependencyStructure,
     ExpectationDefinition,
     InputDefinition,
-    MaterializationDefinition,
     OutputDefinition,
     PipelineDefinition,
     Result,
     SolidDefinition,
-    SolidInputHandle,
     SolidOutputHandle,
 )
 
@@ -37,10 +35,7 @@ from .errors import (
 
 from .graph import create_subgraph
 
-from .types import (
-    Any,
-    DagsterType,
-)
+from .types import DagsterType
 
 
 def get_single_solid_output(solid):
@@ -152,14 +147,11 @@ class ComputeNodeTag(Enum):
     INPUT_EXPECTATION = 'INPUT_EXPECTATION'
     OUTPUT_EXPECTATION = 'OUTPUT_EXPECTATION'
     JOIN = 'JOIN'
-    MATERIALIZATION = 'MATERIALIZATION'
 
 
 EXPECTATION_VALUE_OUTPUT = 'expectation_value'
 JOIN_OUTPUT = 'join_output'
-MATERIALIZATION_INPUT = 'mat_input'
 EXPECTATION_INPUT = 'expectation_input'
-
 
 def _execute_core_transform(context, solid_transform_fn, values_dict, config_dict):
     '''
@@ -540,15 +532,6 @@ def create_compute_node_graph_from_env(pipeline, env):
 
         compute_nodes.append(solid_transform_cn)
 
-    for materialization in env.materializations:
-        mat_solid = pipeline.solid_named(materialization.solid)
-        mat_cn = _construct_materialization_cn(
-            pipeline,
-            materialization,
-            cn_output_node_map[mat_solid.output_handle(materialization.output_name)],
-        )
-        compute_nodes.append(mat_cn)
-
     cn_dict = {}
     for cn in compute_nodes:
         cn_dict[cn.guid] = cn
@@ -620,63 +603,6 @@ def _create_expectation_lambda(solid, expectation_def, output_name):
         raise DagsterExpectationFailedError(None)  # for now
 
     return _do_expectation
-
-
-def _construct_materialization_cn(pipeline, materialization, prev_output_handle):
-    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    check.inst_param(materialization, 'materialization', config.Materialization)
-    check.inst_param(prev_output_handle, 'prev_output_handle', ComputeNodeOutputHandle)
-
-    solid = pipeline.solid_named(materialization.solid)
-    output = get_single_solid_output(solid)
-    mat_def = output.materialization_of_type(materialization.name)
-
-    error_context_str = 'materialization type {mat}'.format(mat=mat_def.name)
-
-    arg_dict = validate_args(
-        mat_def.argument_def_dict,
-        materialization.args,
-        error_context_str,
-    )
-
-    def _compute_fn(context, inputs):
-        mat_def.materialization_fn(
-            context,
-            materialization.args,
-            inputs[MATERIALIZATION_INPUT],
-        )
-
-
-    return ComputeNode(
-        friendly_name=f'{solid.name}.materialization.{mat_def.name}',
-        node_inputs=[
-            ComputeNodeInput(
-                name=MATERIALIZATION_INPUT,
-                dagster_type=output.dagster_type,
-                prev_output_handle=prev_output_handle,
-            )
-        ],
-        node_outputs=[],
-        arg_dict=arg_dict,
-        compute_fn=_compute_fn,
-        tag=ComputeNodeTag.MATERIALIZATION,
-        solid=solid,
-    )
-
-
-def _create_materialization_lambda(mat_def, materialization, output_name):
-    check.inst_param(mat_def, 'mat_def', MaterializationDefinition)
-    check.inst_param(materialization, 'materialization', config.Materialization)
-    check.str_param(output_name, 'output_name')
-
-    return lambda context, inputs: Result(
-        output_name=output_name,
-        value=mat_def.materialization_fn(
-            context,
-            materialization.args,
-            inputs[MATERIALIZATION_INPUT],
-        ),
-    )
 
 
 def create_compute_node_from_solid_transform(solid, node_inputs, config_args):
