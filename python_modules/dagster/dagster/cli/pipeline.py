@@ -8,7 +8,8 @@ import yaml
 
 import dagster
 from dagster import check
-from dagster.core.execution import (DagsterExecutionFailureReason, execute_pipeline_iterator)
+from dagster.core.execution import execute_pipeline_iterator
+from dagster.core.errors import DagsterExecutionFailureReason
 from dagster.core.graph import SolidGraph
 from dagster.graphviz import build_graphviz_graph
 from dagster.utils.indenting_printer import IndentingPrinter
