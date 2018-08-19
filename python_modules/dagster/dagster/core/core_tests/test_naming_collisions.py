@@ -15,7 +15,7 @@ from dagster.core import types
 
 
 def test_execute_solid_with_input_same_name():
-    solid = SolidDefinition(
+    solid = SolidDefinition.single_output_transform(
         'a_thing',
         inputs=[
             InputDefinition(
@@ -61,14 +61,14 @@ def test_execute_two_solids_with_same_input_name():
         ],
     )
 
-    solid_one = SolidDefinition(
+    solid_one = SolidDefinition.single_output_transform(
         'solid_one',
         inputs=[input_def],
         transform_fn=lambda context, args: args['a_thing'] + args['a_thing'],
         output=dagster.OutputDefinition(),
     )
 
-    solid_two = SolidDefinition(
+    solid_two = SolidDefinition.single_output_transform(
         'solid_two',
         inputs=[input_def],
         transform_fn=lambda context, args: args['a_thing'] + args['a_thing'],
@@ -98,7 +98,7 @@ def test_execute_two_solids_with_same_input_name():
 
 
 def test_execute_dep_solid_different_input_name():
-    first_solid = SolidDefinition(
+    first_solid = SolidDefinition.single_output_transform(
         'first_solid',
         inputs=[
             InputDefinition(
@@ -116,7 +116,7 @@ def test_execute_dep_solid_different_input_name():
         output=dagster.OutputDefinition(),
     )
 
-    second_solid = SolidDefinition(
+    second_solid = SolidDefinition.single_output_transform(
         'second_solid',
         inputs=[
             InputDefinition(
@@ -166,7 +166,7 @@ def test_execute_dep_solid_same_input_name():
         's2_t2_source': False,
     }
 
-    table_one = SolidDefinition(
+    table_one = SolidDefinition.single_output_transform(
         'table_one',
         inputs=[
             InputDefinition(
@@ -185,7 +185,7 @@ def test_execute_dep_solid_same_input_name():
         output=dagster.OutputDefinition(),
     )
 
-    table_two = SolidDefinition(
+    table_two = SolidDefinition.single_output_transform(
         'table_two',
         inputs=[
             InputDefinition(

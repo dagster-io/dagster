@@ -19,7 +19,7 @@ def _set_key_value(ddict, key, value):
 def test_execute_solid_with_dep_only_inputs_no_api():
     did_run_dict = {}
 
-    step_one_solid = SolidDefinition(
+    step_one_solid = SolidDefinition.single_output_transform(
         name='step_one_solid',
         inputs=[],
         transform_fn=lambda context, args: _set_key_value(did_run_dict, 'step_one', True),
@@ -32,7 +32,7 @@ def test_execute_solid_with_dep_only_inputs_no_api():
         argument_def_dict={},
     )
 
-    step_two_solid = SolidDefinition(
+    step_two_solid = SolidDefinition.single_output_transform(
         name='step_two_solid',
         inputs=[only_dep_input],
         transform_fn=lambda context, args: _set_key_value(did_run_dict, 'step_two', True),
@@ -64,14 +64,14 @@ def test_execute_solid_with_dep_only_inputs_no_api():
 def test_execute_solid_with_dep_only_inputs_with_api():
     did_run_dict = {}
 
-    step_one_solid = SolidDefinition(
+    step_one_solid = SolidDefinition.single_output_transform(
         name='step_one_solid',
         inputs=[],
         transform_fn=lambda context, args: _set_key_value(did_run_dict, 'step_one', True),
         output=OutputDefinition(),
     )
 
-    step_two_solid = SolidDefinition(
+    step_two_solid = SolidDefinition.single_output_transform(
         name='step_two_solid',
         transform_fn=lambda context, args: _set_key_value(did_run_dict, 'step_two', True),
         inputs=[InputDefinition(step_one_solid.name)],

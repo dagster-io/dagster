@@ -36,7 +36,7 @@ def test_iterator_solid():
         argument_def_dict={},
     )
 
-    iterable_solid = SolidDefinition(
+    iterable_solid = SolidDefinition.single_output_transform(
         name='some_node',
         inputs=[some_input],
         transform_fn=transform_fn,

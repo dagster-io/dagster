@@ -64,7 +64,7 @@ def test_single_templated_sql_solid_single_table_raw_api():
         ]
     )
 
-    sum_table_transform_solid = SolidDefinition(
+    sum_table_transform_solid = SolidDefinition.single_output_transform(
         name='sum_table_transform',
         inputs=[sum_table_input],
         transform_fn=_create_templated_sql_transform_with_output(sql, 'sum_table'),
@@ -155,7 +155,7 @@ def test_single_templated_sql_solid_double_table_raw_api():
         ]
     )
 
-    sum_solid = SolidDefinition(
+    sum_solid = SolidDefinition.single_output_transform(
         name='sum_solid',
         inputs=[sum_table_input, num_table_input],
         transform_fn=_create_templated_sql_transform_with_output(

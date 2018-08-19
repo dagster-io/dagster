@@ -41,9 +41,15 @@ class Environment(
     namedtuple('EnvironmentData', 'context sources materializations expectations, execution')
 ):
     def __new__(
-        cls, sources, *, context=None, materializations=None, expectations=None, execution=None
+        cls,
+        sources=None,
+        *,
+        context=None,
+        materializations=None,
+        expectations=None,
+        execution=None
     ):
-        check.dict_param(sources, 'sources', key_type=str, value_type=dict)
+        sources = check.opt_dict_param(sources, 'sources', key_type=str, value_type=dict)
         for _solid_name, source_dict in sources.items():
             check.dict_param(source_dict, 'source_dict', key_type=str, value_type=Source)
 

@@ -59,7 +59,7 @@ class DagsterPipelineExecutionResult:
     ):
         self.context = check.inst_param(context, 'context', ExecutionContext)
         self.result_list = check.list_param(
-            result_list, 'result_list', of_type=ExecutionResultBase
+            result_list, 'result_list', of_type=ExecutionStepResult
         )
 
     @property
@@ -74,26 +74,21 @@ class DagsterPipelineExecutionResult:
         check.failed('Did not find result {name} in pipeline execution result'.format(name=name))
 
 
-class ExecutionResultBase:
-    def __init__(self, success, context, transformed_value):
+class ExecutionStepResult:
+    def __init__(self, *, success, context, transformed_value, name, dagster_user_exception, solid, tag, output_name):
         self.success = check.bool_param(success, 'success')
         self.context = context
         self.transformed_value = transformed_value
-
-
-
-class BridgeSolidExecutionResult(ExecutionResultBase):
-    def __init__(self, success, context, transformed_value, name, dagster_user_exception, solid, tag):
-        super().__init__(success, context, transformed_value)
         self.name = name
         self.dagster_user_exception = dagster_user_exception
         self.solid = solid
         self.tag = tag
+        self.output_name = output_name
 
     def copy(self):
         ''' This must be used instead of copy.deepcopy() because exceptions cannot
         be deepcopied'''
-        return BridgeSolidExecutionResult(
+        return ExecutionStepResult(
             name=self.name,
             solid=self.solid,
             success=self.success,
@@ -101,70 +96,13 @@ class BridgeSolidExecutionResult(ExecutionResultBase):
             context=self.context,
             dagster_user_exception=self.dagster_user_exception,
             tag=self.tag,
+            output_name=self.output_name
         )
 
     def reraise_user_error(self):
         check.inst(self.dagster_user_exception, DagsterUserCodeExecutionError)
         six.reraise(*self.dagster_user_exception.original_exc_info)
 
-
-class LegacySolidExecutionResult(ExecutionResultBase):
-    '''
-    A class to represent the result of the execution of a single solid. Pipeline
-    commands return iterators or lists of these results.
-
-    (TODO: explain the various error states)
-    '''
-
-    def __init__(
-        self,
-        success,
-        solid,
-        transformed_value,
-        reason=None,
-        exception=None,
-        _input_expectation_results=None,
-        _output_expectation_results=None,
-        context=None,
-    ):
-        super().__init__(success, context, transformed_value)
-        if not success:
-            check.param_invariant(
-                isinstance(reason, DagsterExecutionFailureReason), 'reason',
-                'Must provide a reason is result is a failure'
-            )
-        # self.transformed_value = transformed_value
-        self.solid = check.inst_param(solid, 'solid', SolidDefinition)
-        self.reason = reason
-        self.exception = check.opt_inst_param(exception, 'exception', Exception)
-
-        if reason == DagsterExecutionFailureReason.USER_CODE_ERROR:
-            check.inst(exception, DagsterUserCodeExecutionError)
-            self.user_exception = exception.user_exception
-        else:
-            self.user_exception = None
-
-
-    def reraise_user_error(self):
-        check.invariant(self.reason == DagsterExecutionFailureReason.USER_CODE_ERROR)
-        check.inst(self.exception, DagsterUserCodeExecutionError)
-        six.reraise(*self.exception.original_exc_info)
-
-    @property
-    def name(self):
-        return self.solid.name
-
-    def copy(self):
-        ''' This must be used instead of copy.deepcopy() because exceptions cannot
-        be deepcopied'''
-        return LegacySolidExecutionResult(
-            success=self.success,
-            solid=self.solid,
-            transformed_value=copy.deepcopy(self.transformed_value),
-            context=self.context,
-            reason=self.reason,
-            exception=self.exception,
-        )
 
 def copy_result_list(result_list):
     if result_list is None:
@@ -222,26 +160,14 @@ def execute_single_solid(context, solid, environment, throw_on_error=True):
 
 
 def _do_throw_on_error(execution_result):
-    check.inst_param(execution_result, 'execution_result', ExecutionResultBase)
+    check.inst_param(execution_result, 'execution_result', ExecutionStepResult)
     if execution_result.success:
         return
 
-    if isinstance(execution_result, LegacySolidExecutionResult):
-        if execution_result.reason == DagsterExecutionFailureReason.EXPECTATION_FAILURE:
-            raise DagsterExpectationFailedError(execution_result)
-        elif execution_result.reason == DagsterExecutionFailureReason.USER_CODE_ERROR:
-            execution_result.reraise_user_error()
+    if isinstance(execution_result.dagster_user_exception, DagsterUserCodeExecutionError):
+        execution_result.reraise_user_error()
 
-        check.invariant(execution_result.exception)
-        raise execution_result.exception
-
-    if isinstance(execution_result, BridgeSolidExecutionResult):
-        if isinstance(execution_result.dagster_user_exception, DagsterUserCodeExecutionError):
-            execution_result.reraise_user_error()
-
-        raise execution_result.dagster_user_exception
-
-
+    raise execution_result.dagster_user_exception
 
 def output_single_solid(
     context,
@@ -470,7 +396,7 @@ def _execute_pipeline_iterator(context, pipeline, env):
     for cn_result in execute_compute_nodes(context, cn_nodes):
         cn_node = cn_result.compute_node
         if not cn_result.success:
-            yield BridgeSolidExecutionResult(
+            yield ExecutionStepResult(
                 success=False,
                 context=context,
                 transformed_value=None,
@@ -478,11 +404,12 @@ def _execute_pipeline_iterator(context, pipeline, env):
                 dagster_user_exception=cn_result.failure_data.dagster_user_exception,
                 solid=cn_node.solid,
                 tag=cn_result.tag,
+                output_name=None
             )
             return
 
         if cn_node.tag == ComputeNodeTag.TRANSFORM:
-            yield BridgeSolidExecutionResult(
+            yield ExecutionStepResult(
                 success=True,
                 context=context,
                 transformed_value=cn_result.success_data.value,
@@ -490,6 +417,7 @@ def _execute_pipeline_iterator(context, pipeline, env):
                 dagster_user_exception=None,
                 solid=cn_node.solid,
                 tag=cn_node.tag,
+                output_name=cn_result.success_data.output_name,
             )
 
 def execute_pipeline(

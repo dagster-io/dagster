@@ -30,11 +30,11 @@ from dagster.utils.test import (get_temp_file_name, get_temp_file_names, script_
 
 
 def _dataframe_solid(name, inputs, transform_fn):
-    return SolidDefinition(
+    return SolidDefinition.single_output_transform(
         name=name,
         inputs=inputs,
         transform_fn=transform_fn,
-        output=OutputDefinition(dagster_pd.DataFrame),
+        output=OutputDefinition(dagster_type=dagster_pd.DataFrame),
     )
 
 
@@ -86,7 +86,7 @@ def test_pandas_solid():
         argument_def_dict={},
     )
 
-    single_solid = SolidDefinition(
+    single_solid = SolidDefinition.single_output_transform(
         name='sum_table',
         inputs=[csv_input],
         transform_fn=transform,
@@ -125,7 +125,7 @@ def test_pandas_csv_to_csv():
         argument_def_dict={'path': ArgumentDefinition(types.Path)}
     )
 
-    solid_def = SolidDefinition(
+    solid_def = SolidDefinition.single_output_transform(
         name='sum_table',
         inputs=[csv_input],
         transform_fn=transform,
@@ -169,7 +169,7 @@ def create_sum_table():
 
 @solid(
     inputs=[InputDefinition('num_csv', dagster_pd.DataFrame)],
-    output=OutputDefinition(dagster_pd.DataFrame),
+    output=OutputDefinition(dagster_type=dagster_pd.DataFrame),
 )
 def sum_table(num_csv):
     check.inst_param(num_csv, 'num_csv', pd.DataFrame)
@@ -179,7 +179,7 @@ def sum_table(num_csv):
 
 @solid(
     inputs=[InputDefinition('sum_df', dagster_pd.DataFrame)],
-    output=OutputDefinition(dagster_pd.DataFrame),
+    output=OutputDefinition(dagster_type=dagster_pd.DataFrame),
 )
 def sum_sq_table(sum_df):
     sum_df['sum_squared'] = sum_df['sum'] * sum_df['sum']
@@ -190,7 +190,7 @@ def sum_sq_table(sum_df):
     inputs=[
         InputDefinition('sum_table_renamed', dagster_pd.DataFrame)
     ],
-    output=OutputDefinition(dagster_pd.DataFrame),
+    output=OutputDefinition(dagster_type=dagster_pd.DataFrame),
 )
 def sum_sq_table_renamed_input(sum_table_renamed):
     sum_table_renamed['sum_squared'] = sum_table_renamed['sum'] * sum_table_renamed['sum']
