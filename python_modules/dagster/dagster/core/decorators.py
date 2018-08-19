@@ -3,7 +3,6 @@ from functools import wraps
 from dagster import check
 from .definitions import (
     SolidDefinition,
-    SourceDefinition,
     InputDefinition,
     OutputDefinition,
     MaterializationDefinition,
@@ -78,52 +77,6 @@ def _create_transform_wrapper(fn, inputs, include_context=False):
             return fn(**kwargs)
 
     return transform
-
-
-class _Source:
-    def __init__(self, name=None, argument_def_dict=None, description=None):
-        self.source_type = check.opt_str_param(name, 'name')
-        self.argument_def_dict = check.opt_dict_param(argument_def_dict, 'argument_def_dict')
-        self.description = check.opt_str_param(description, 'description')
-
-    def __call__(self, fn):
-        include_context = getattr(fn, 'has_context', False)
-        if include_context:
-            fn = fn.fn
-
-        if not self.source_type:
-            self.source_type = fn.__name__
-
-        _validate_source_fn(fn, self.source_type, self.argument_def_dict, include_context)
-        source_fn = _create_source_wrapper(fn, self.argument_def_dict, include_context)
-
-        return SourceDefinition(
-            source_type=self.source_type,
-            source_fn=source_fn,
-            argument_def_dict=self.argument_def_dict,
-            description=self.description,
-        )
-
-
-def source(*, name=None, argument_def_dict=None, description=None):
-    return _Source(name=name, argument_def_dict=argument_def_dict, description=description)
-
-
-def _create_source_wrapper(fn, arg_def_dict, include_context=False):
-    arg_names = arg_def_dict.keys()
-
-    @wraps(fn)
-    def source_fn(context, args):
-        kwargs = {}
-        for arg in arg_names:
-            kwargs[arg] = args[arg]
-
-        if include_context:
-            return fn(context, **kwargs)
-        else:
-            return fn(**kwargs)
-
-    return source_fn
 
 
 class _Materialization:

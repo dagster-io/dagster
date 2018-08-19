@@ -44,24 +44,11 @@ class Execution(namedtuple('ExecutionData', 'from_solids through_solids')):
 
 
 class Environment(
-    namedtuple(
-        'EnvironmentData', 'context solids sources materializations expectations, execution'
-    )
+    namedtuple('EnvironmentData', 'context solids materializations expectations, execution')
 ):
     def __new__(
-        cls,
-        sources=None,
-        *,
-        solids=None,
-        context=None,
-        materializations=None,
-        expectations=None,
-        execution=None
+        cls, *, solids=None, context=None, materializations=None, expectations=None, execution=None
     ):
-        sources = check.opt_dict_param(sources, 'sources', key_type=str, value_type=dict)
-        for _solid_name, source_dict in sources.items():
-            check.dict_param(source_dict, 'source_dict', key_type=str, value_type=Source)
-
         check.opt_inst_param(context, 'context', Context)
         check.opt_inst_param(execution, 'execution', Execution)
 
@@ -78,7 +65,6 @@ class Environment(
             cls,
             context=context,
             solids=check.opt_dict_param(solids, 'solids', key_type=str, value_type=Solid),
-            sources=sources,
             materializations=check.opt_list_param(
                 materializations, 'materializations', of_type=Materialization
             ),
@@ -88,7 +74,7 @@ class Environment(
 
     @staticmethod
     def empty():
-        return Environment(sources={})
+        return Environment()
 
 
 class Source(namedtuple('SourceData', 'name args')):
@@ -113,17 +99,6 @@ def _construct_context(yml_config_object):
         return Context(check.str_elem(context_obj, 'name'), check.dict_elem(context_obj, 'args'))
     else:
         return None
-
-
-def _construct_sources(yml_config_object):
-    sources = defaultdict(dict)
-    sources_obj = check.dict_elem(yml_config_object, 'sources')
-    for solid_name, args_yml in sources_obj.items():
-        for input_name, source_yml in args_yml.items():
-            sources[solid_name][input_name] = Source(
-                name=source_yml['name'], args=source_yml['args']
-            )
-    return sources
 
 
 def _construct_materializations(yml_config_object):
@@ -156,11 +131,24 @@ def _construct_execution(yml_config_object):
     )
 
 
+def _construct_solids(yml_config_object):
+    solid_dict = check.opt_dict_elem(yml_config_object, 'solids')
+    if solid_dict is None:
+        return None
+
+    solid_configs = {}
+    for solid_name, solid_yml_object in solid_dict.items():
+        config_dict = check.dict_elem(solid_yml_object, 'config')
+        solid_configs[solid_name] = Solid(config_dict)
+
+    return solid_configs
+
+
 def construct_environment(yml_config_object):
     check.dict_param(yml_config_object, 'yml_config_object')
 
     return Environment(
-        sources=_construct_sources(yml_config_object),
+        solids=_construct_solids(yml_config_object),
         materializations=_construct_materializations(yml_config_object),
         context=_construct_context(yml_config_object),
         execution=_construct_execution(yml_config_object),

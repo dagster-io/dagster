@@ -139,7 +139,6 @@ def execute_single_solid(context, solid, environment, throw_on_error=True):
     check.invariant(environment.execution.through_solids == [])
 
     single_solid_environment = config.Environment(
-        sources=environment.sources,
         materializations=environment.materializations,
         expectations=environment.expectations,
         context=environment.context,
@@ -193,7 +192,6 @@ def output_single_solid(
             ),
             environment=config.Environment(
                 context=environment.context,
-                sources=environment.sources,
                 materializations=[
                     config.Materialization(
                         solid=solid.name, name=name, args=arg_dict
@@ -256,56 +254,7 @@ def _wrap_in_yield(thing):
     return thing
 
 
-class InMemoryEnv(DagsterEnv):
-    def __init__(self, context, pipeline, input_values, from_solids=None, through_solids=None):
-        super().__init__()
-        self.context = check.inst_param(context, 'context', ExecutionContext)
-        self.pipeline = check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-        self.input_values = check.dict_param(input_values, 'input_values', key_type=str)
-        self._from_solids = check.opt_list_param(from_solids, from_solids, of_type=str)
-        self._through_solids = check.opt_list_param(through_solids, through_solids, of_type=str)
-
-    @property
-    def from_solids(self):
-        return self._from_solids
-
-    @property
-    def through_solids(self):
-        return self._through_solids
-
-    def config_dict_for_solid(self, name):
-        check.str_param(name, 'name')
-        return {}
-
-    @contextmanager
-    def yield_context(self):
-        return _wrap_in_yield(self.context)
-
-    @property
-    def materializations(self):
-        return []
-
-    @property
-    def evaluate_expectations(self):
-        return True
-
-
 def _validate_environment(environment, pipeline):
-    for solid_name, input_configs in environment.sources.items():
-        if not pipeline.has_solid(solid_name):
-            raise DagsterInvariantViolationError(
-                f'Solid "{solid_name} not found'
-            )
-
-        solid_inst = pipeline.solid_named(solid_name)
-
-        for input_name, _source_configs in input_configs.items():
-            if not solid_inst.has_input(input_name):
-                raise DagsterInvariantViolationError(
-                    f'Input "{input_name}" not found in the pipeline on solid "{solid_name}".' + \
-                    f'Input must be one of {repr([inp.name for inp in solid_inst.inputs])}'
-                )
-
     context_name = environment.context.name
 
     if context_name not in pipeline.context_definitions:
@@ -315,9 +264,8 @@ def _validate_environment(environment, pipeline):
         )
 
 
-class ConfigEnv(DagsterEnv):
+class DagsterEnv:
     def __init__(self, pipeline, environment):
-        super().__init__()
         # This is not necessarily the best spot for these calls
         _validate_environment(environment, pipeline)
         self.pipeline = check.inst_param(pipeline, 'pipeline', PipelineDefinition)
@@ -368,12 +316,12 @@ def execute_pipeline_iterator(pipeline, environment):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.inst_param(environment, 'enviroment', config.Environment)
 
-    env = ConfigEnv(pipeline, environment)
+    env = DagsterEnv(pipeline, environment)
     with env.yield_context() as context:
         return _execute_pipeline_iterator(
             context,
             pipeline,
-            ConfigEnv(pipeline, environment)
+            DagsterEnv(pipeline, environment)
         )
 
 def execute_pipeline_iterator_in_memory(
@@ -441,7 +389,7 @@ def execute_pipeline(
     check.inst_param(environment, 'environment', config.Environment)
     return _execute_pipeline(
         pipeline,
-        ConfigEnv(pipeline, environment),
+        DagsterEnv(pipeline, environment),
         throw_on_error,
     )
 

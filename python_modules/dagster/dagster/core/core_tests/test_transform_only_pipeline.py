@@ -8,7 +8,6 @@ from dagster import (
     config,
     execute_pipeline,
 )
-from dagster.utils.compatability import create_custom_source_input
 
 
 def _set_key_value(ddict, key, value):
@@ -26,15 +25,9 @@ def test_execute_solid_with_dep_only_inputs_no_api():
         output=OutputDefinition(),
     )
 
-    only_dep_input = create_custom_source_input(
-        name='step_one_solid',
-        source_fn=lambda arg_dict: check.not_implemented('should not get here'),
-        argument_def_dict={},
-    )
-
     step_two_solid = SolidDefinition.single_output_transform(
         name='step_two_solid',
-        inputs=[only_dep_input],
+        inputs=[InputDefinition('step_one_solid')],
         transform_fn=lambda context, args: _set_key_value(did_run_dict, 'step_two', True),
         output=OutputDefinition(),
     )

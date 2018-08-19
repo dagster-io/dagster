@@ -2,13 +2,24 @@
 
 import pytest
 
+import pandas as pd
+
 import dagster
 import dagster.pandas_kernel as dagster_pd
-from dagster import (config, InputDefinition, OutputDefinition, SolidDefinition)
-from dagster.core.decorators import solid, source
+from dagster import (
+    DependencyDefinition,
+    InputDefinition,
+    OutputDefinition,
+    PipelineDefinition,
+    SolidDefinition,
+    config,
+    execute_pipeline,
+    solid,
+)
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution import execute_single_solid
 from dagster.utils.test import script_relative_path
+from dagster.core.utility_solids import define_pass_mem_value
 
 
 def _dataframe_solid(name, inputs, transform_fn):
@@ -31,65 +42,42 @@ def test_wrong_output_value():
     def df_solid(num_csv):
         return 'not a dataframe'
 
+    pass_solid = define_pass_mem_value('pass_solid', pd.DataFrame())
+
+    pipeline = PipelineDefinition(
+        solids=[pass_solid, df_solid],
+        dependencies={'test_wrong_output': {
+            'num_csv': DependencyDefinition('pass_solid'),
+        }}
+    )
+
     with pytest.raises(DagsterInvariantViolationError):
-        execute_single_solid(
-            dagster.ExecutionContext(),
-            df_solid,
-            environment=config.Environment(
-                sources={
-                    'test_wrong_output': {
-                        'num_csv': config.Source('CSV', {'path': script_relative_path('num.csv')})
-                    },
-                },
-            ),
+        execute_pipeline(
+            pipeline,
+            environment=config.Environment(),
         )
 
 
 def test_wrong_input_value():
-    @source(name="WRONG")
-    def wrong_source():
-        return 'not a dataframe'
-
     @solid(
         name="test_wrong_input",
-        inputs=[InputDefinition('foo', dagster_pd.DataFrame, sources=[wrong_source])],
+        inputs=[InputDefinition('foo', dagster_pd.DataFrame)],
         output=OutputDefinition(),
     )
     def df_solid(foo):
         return foo
 
-    with pytest.raises(DagsterInvariantViolationError):
-        execute_single_solid(
-            dagster.ExecutionContext(),
-            df_solid,
-            environment=config.Environment(
-                sources={'test_wrong_input': {
-                    'foo': config.Source('WRONG', {})
-                }}
-            )
-        )
+    pass_solid = define_pass_mem_value('pass_solid', 'not a dataframe')
 
-
-def test_wrong_input_arg_dict():
-    csv_input = InputDefinition('num_csv', dagster_pd.DataFrame)
-
-    def transform_fn(context, args):
-        return args['num_csv']
-
-    df_solid = _dataframe_solid(
-        name='test_wrong_value', inputs=[csv_input], transform_fn=transform_fn
+    pipeline = PipelineDefinition(
+        solids=[pass_solid, df_solid],
+        dependencies={'test_wrong_input': {
+            'foo': DependencyDefinition('pass_solid'),
+        }}
     )
 
     with pytest.raises(DagsterInvariantViolationError):
-        execute_single_solid(
-            dagster.ExecutionContext(),
-            df_solid,
-            environment=config.Environment(
-                sources={
-                    'test_wrong_value': {
-                        'num_jdkfjskdfjs':
-                        config.Source('CSV', {'path': script_relative_path('num.csv')})
-                    },
-                },
-            ),
+        execute_pipeline(
+            pipeline,
+            environment=config.Environment(),
         )

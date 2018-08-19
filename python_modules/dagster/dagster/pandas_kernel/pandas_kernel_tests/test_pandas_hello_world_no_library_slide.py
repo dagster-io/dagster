@@ -1,41 +1,42 @@
 import pandas as pd
 
-import dagster
-from dagster import config
-from dagster.core import types
-from dagster.core.definitions import (
+from dagster import (
     ArgumentDefinition,
     DependencyDefinition,
     InputDefinition,
     MaterializationDefinition,
     OutputDefinition,
+    PipelineDefinition,
+    Result,
     SolidDefinition,
-    SourceDefinition,
+    config,
+    execute_pipeline,
+    types,
 )
-from dagster.core.execution import (ExecutionContext, execute_single_solid)
+
 from dagster.utils.test import script_relative_path
 
 
-def create_test_context():
-    return ExecutionContext()
+def define_read_csv_solid(name):
+    def _t_fn(_context, _inputs, config_dict):
+        yield Result(pd.read_csv(config_dict['path']))
+
+    return SolidDefinition(
+        name=name,
+        inputs=[],
+        outputs=[OutputDefinition()],
+        config_def={'path': ArgumentDefinition(types.Path)},
+        transform_fn=_t_fn
+    )
 
 
-def create_hello_world_solid_no_api():
+def test_hello_world_pipeline_no_api():
     def hello_world_transform_fn(_context, args):
         num_df = args['num_df']
         num_df['sum'] = num_df['num1'] + num_df['num2']
         return num_df
 
-    csv_input = InputDefinition(
-        name='num_df',
-        sources=[
-            SourceDefinition(
-                source_type='CSV',
-                argument_def_dict={'path': ArgumentDefinition(types.Path)},
-                source_fn=lambda context, arg_dict: pd.read_csv(arg_dict['path']),
-            ),
-        ],
-    )
+    read_csv_solid = define_read_csv_solid('read_csv_solid')
 
     csv_materialization = MaterializationDefinition(
         name='CSV',
@@ -45,48 +46,38 @@ def create_hello_world_solid_no_api():
 
     hello_world = SolidDefinition.single_output_transform(
         name='hello_world',
-        inputs=[csv_input],
+        inputs=[InputDefinition('num_df')],
         transform_fn=hello_world_transform_fn,
         output=OutputDefinition(materializations=[csv_materialization])
     )
-    return hello_world
 
+    pipeline = PipelineDefinition(
+        solids=[read_csv_solid, hello_world],
+        dependencies={'hello_world': {
+            'num_df': DependencyDefinition('read_csv_solid')
+        }}
+    )
 
-def test_hello_world_no_library_support():
-    hello_world = create_hello_world_solid_no_api()
-
-    result = execute_single_solid(
-        create_test_context(),
-        hello_world,
-        environment=config.Environment(
-            sources={
-                'hello_world': {
-                    'num_df': config.Source('CSV', {'path': script_relative_path('num.csv')})
-                }
-            }
+    pipeline_result = execute_pipeline(
+        pipeline,
+        config.Environment(
+            solids={
+                'read_csv_solid': config.Solid({
+                    'path': script_relative_path('num.csv'),
+                }),
+            },
         ),
     )
 
-    assert result.success
+    assert pipeline_result.success
+
+    result = pipeline_result.result_named('hello_world')
 
     assert result.transformed_value.to_dict('list') == {
         'num1': [1, 3],
         'num2': [2, 4],
         'sum': [3, 7],
     }
-
-
-def create_dataframe_input(name):
-    return InputDefinition(
-        name=name,
-        sources=[
-            SourceDefinition(
-                source_type='CSV',
-                argument_def_dict={'path': ArgumentDefinition(types.Path)},
-                source_fn=lambda context, arg_dict: pd.read_csv(arg_dict['path']),
-            ),
-        ],
-    )
 
 
 def create_dataframe_output():
@@ -104,7 +95,7 @@ def create_dataframe_output():
     )
 
 
-def create_hello_world_solid_composed_api():
+def create_hello_world_solid_composed_pipeline():
     def transform_fn(_context, args):
         num_df = args['num_df']
         num_df['sum'] = num_df['num1'] + num_df['num2']
@@ -112,27 +103,36 @@ def create_hello_world_solid_composed_api():
 
     hello_world = SolidDefinition.single_output_transform(
         name='hello_world',
-        inputs=[create_dataframe_input(name='num_df')],
+        inputs=[InputDefinition('num_df')],
         transform_fn=transform_fn,
-        output=create_dataframe_output(),
+        output=OutputDefinition(),
     )
-    return hello_world
+
+    return PipelineDefinition(
+        solids=[define_read_csv_solid('read_hello_world'), hello_world],
+        dependencies={'hello_world': {
+            'num_df': DependencyDefinition('read_hello_world')
+        }}
+    )
 
 
 def test_hello_world_composed():
-    hello_world = create_hello_world_solid_composed_api()
+    pipeline = create_hello_world_solid_composed_pipeline()
 
-    result = execute_single_solid(
-        create_test_context(),
-        hello_world,
+    pipeline_result = execute_pipeline(
+        pipeline,
         environment=config.Environment(
-            sources={
-                'hello_world': {
-                    'num_df': config.Source('CSV', {'path': script_relative_path('num.csv')})
-                }
-            }
+            solids={
+                'read_hello_world': config.Solid({
+                    'path': script_relative_path('num.csv')
+                }),
+            },
         ),
     )
+
+    assert pipeline_result.success
+
+    result = pipeline_result.result_named('hello_world')
 
     assert result.success
 
@@ -151,9 +151,9 @@ def test_pipeline():
 
     solid_one = SolidDefinition.single_output_transform(
         name='solid_one',
-        inputs=[create_dataframe_input(name='num_df')],
+        inputs=[InputDefinition(name='num_df')],
         transform_fn=solid_one_transform,
-        output=create_dataframe_output(),
+        output=OutputDefinition(),
     )
 
     def solid_two_transform(_context, args):
@@ -163,14 +163,17 @@ def test_pipeline():
 
     solid_two = SolidDefinition.single_output_transform(
         name='solid_two',
-        inputs=[create_dataframe_input(name='sum_df')],
+        inputs=[InputDefinition(name='sum_df')],
         transform_fn=solid_two_transform,
         output=create_dataframe_output(),
     )
 
-    pipeline = dagster.PipelineDefinition(
-        solids=[solid_one, solid_two],
+    pipeline = PipelineDefinition(
+        solids=[define_read_csv_solid('read_one'), solid_one, solid_two],
         dependencies={
+            'solid_one': {
+                'num_df': DependencyDefinition('read_one'),
+            },
             'solid_two': {
                 'sum_df': DependencyDefinition('solid_one'),
             },
@@ -178,14 +181,14 @@ def test_pipeline():
     )
 
     environment = config.Environment(
-        sources={
-            'solid_one': {
-                'num_df': config.Source('CSV', {'path': script_relative_path('num.csv')})
-            }
+        solids={
+            'read_one': config.Solid({
+                'path': script_relative_path('num.csv')
+            }),
         }
     )
 
-    execute_pipeline_result = dagster.execute_pipeline(
+    execute_pipeline_result = execute_pipeline(
         pipeline,
         environment=environment,
     )
@@ -199,10 +202,10 @@ def test_pipeline():
 
     sum_sq_path_args = {'path': '/tmp/sum_sq.csv'}
     environment_two = config.Environment(
-        sources={
-            'solid_one': {
-                'num_df': config.Source('CSV', {'path': script_relative_path('num.csv')})
-            }
+        solids={
+            'read_one': config.Solid({
+                'path': script_relative_path('num.csv')
+            }),
         },
         materializations=[
             config.Materialization(
@@ -213,7 +216,7 @@ def test_pipeline():
         ]
     )
 
-    dagster.execute_pipeline(pipeline, environment=environment_two)
+    execute_pipeline(pipeline, environment=environment_two)
 
     sum_sq_df = pd.read_csv('/tmp/sum_sq.csv')
 

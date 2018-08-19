@@ -1,19 +1,27 @@
 import pytest
 import dagster
-from dagster import config
-from dagster.core import types
-from dagster.core.definitions import (
-    OutputDefinition,
-    InputDefinition,
+from dagster import (
     ArgumentDefinition,
+    DependencyDefinition,
+    InputDefinition,
+    OutputDefinition,
+    PipelineDefinition,
+    config,
+    execute_pipeline,
+    types,
 )
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.core.decorators import solid, source, materialization, with_context
+from dagster.core.decorators import (
+    materialization,
+    solid,
+    with_context,
+)
 from dagster.core.execution import (
     output_single_solid,
     execute_single_solid,
     ExecutionContext,
 )
+from dagster.core.utility_solids import define_pass_mem_value
 
 # This file tests a lot of parameter name stuff
 # So these warnings are spurious
@@ -26,7 +34,7 @@ def create_test_context():
 
 
 def create_empty_test_env():
-    return config.Environment(sources={})
+    return config.Environment()
 
 
 def test_solid():
@@ -79,68 +87,23 @@ def test_solid_with_context():
 
 
 def test_solid_with_input():
-    @source(name="TEST", argument_def_dict={'foo': ArgumentDefinition(types.String)})
-    def test_source(foo):
-        return {'foo': foo}
-
-    @solid(inputs=[InputDefinition(name="foo_to_foo", sources=[test_source])])
+    @solid(inputs=[InputDefinition(name="foo_to_foo")])
     def hello_world(foo_to_foo):
         return foo_to_foo
 
-    result = execute_single_solid(
-        create_test_context(),
-        hello_world,
-        environment=config.Environment(
-            sources={
-                'hello_world': {
-                    'foo_to_foo': config.Source(name='TEST', args={'foo': 'bar'})
-                }
-            }
-        ),
+    pipeline = PipelineDefinition(
+        solids=[define_pass_mem_value('test_value', {'foo': 'bar'}), hello_world],
+        dependencies={'hello_world': {
+            'foo_to_foo': DependencyDefinition('test_value'),
+        }}
     )
 
-    assert result.success
-
-    assert result.transformed_value['foo'] == 'bar'
-
-
-def test_sources():
-    @source(name="WITH_CONTEXT", argument_def_dict={'foo': ArgumentDefinition(types.String)})
-    @with_context
-    def context_source(_context, foo):
-        return {'foo': foo}
-
-    @source(name="NO_CONTEXT", argument_def_dict={'foo': ArgumentDefinition(types.String)})
-    def no_context_source(foo):
-        return {'foo': foo}
-
-    @solid(inputs=[InputDefinition(name="i", sources=[context_source, no_context_source])])
-    def hello_world(i):
-        return i
-
-    result = execute_single_solid(
-        create_test_context(),
-        hello_world,
-        environment=config.Environment(
-            sources={'hello_world': {
-                'i': config.Source(name='NO_CONTEXT', args={'foo': 'bar'})
-            }}
-        ),
+    pipeline_result = execute_pipeline(
+        pipeline,
+        environment=config.Environment(),
     )
 
-    assert result.success
-
-    assert result.transformed_value['foo'] == 'bar'
-
-    result = execute_single_solid(
-        create_test_context(),
-        hello_world,
-        environment=config.Environment(
-            sources={'hello_world': {
-                'i': config.Source(name='NO_CONTEXT', args={'foo': 'bar'})
-            }}
-        ),
-    )
+    result = pipeline_result.result_named('hello_world')
 
     assert result.success
 
@@ -170,7 +133,7 @@ def test_materializations():
     output_single_solid(
         create_test_context(),
         hello,
-        environment=config.Environment(sources={}),
+        environment=config.Environment(),
         name='CONTEXT',
         arg_dict={'foo': 'bar'}
     )
@@ -182,7 +145,7 @@ def test_materializations():
     output_single_solid(
         create_test_context(),
         hello,
-        environment=config.Environment(sources={}),
+        environment=config.Environment(),
         name='NO_CONTEXT',
         arg_dict={'foo': 'bar'}
     )
@@ -191,34 +154,24 @@ def test_materializations():
 
 
 def test_solid_definition_errors():
-    @source(name="test_source")
-    def test_source():
-        pass
-
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @solid(
-            inputs=[InputDefinition(name="foo", sources=[test_source])], output=OutputDefinition()
-        )
+        @solid(inputs=[InputDefinition(name="foo")], output=OutputDefinition())
         @with_context
         def vargs(_context, foo, *args):
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @solid(
-            inputs=[InputDefinition(name="foo", sources=[test_source])], output=OutputDefinition()
-        )
+        @solid(inputs=[InputDefinition(name="foo")], output=OutputDefinition())
         def wrong_name(bar):
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
         @solid(
-            inputs=[
-                InputDefinition(name="foo", sources=[test_source]),
-                InputDefinition(name="bar", sources=[test_source])
-            ],
+            inputs=[InputDefinition(name="foo"),
+                    InputDefinition(name="bar")],
             output=OutputDefinition()
         )
         def wrong_name_2(foo):
@@ -226,54 +179,42 @@ def test_solid_definition_errors():
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @solid(
-            inputs=[InputDefinition(name="foo", sources=[test_source])], output=OutputDefinition()
-        )
+        @solid(inputs=[InputDefinition(name="foo")], output=OutputDefinition())
         @with_context
         def no_context(foo):
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @solid(
-            inputs=[InputDefinition(name="foo", sources=[test_source])], output=OutputDefinition()
-        )
+        @solid(inputs=[InputDefinition(name="foo")], output=OutputDefinition())
         def yes_context(_context, foo):
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @solid(
-            inputs=[InputDefinition(name="foo", sources=[test_source])], output=OutputDefinition()
-        )
+        @solid(inputs=[InputDefinition(name="foo")], output=OutputDefinition())
         def extras(foo, bar):
             pass
 
     @solid(
-        inputs=[
-            InputDefinition(name="foo", sources=[test_source]),
-            InputDefinition(name="bar", sources=[test_source])
-        ],
+        inputs=[InputDefinition(name="foo"),
+                InputDefinition(name="bar")],
         output=OutputDefinition()
     )
     def valid_kwargs(**kwargs):
         pass
 
     @solid(
-        inputs=[
-            InputDefinition(name="foo", sources=[test_source]),
-            InputDefinition(name="bar", sources=[test_source])
-        ],
+        inputs=[InputDefinition(name="foo"),
+                InputDefinition(name="bar")],
         output=OutputDefinition()
     )
     def valid(foo, bar):
         pass
 
     @solid(
-        inputs=[
-            InputDefinition(name="foo", sources=[test_source]),
-            InputDefinition(name="bar", sources=[test_source])
-        ],
+        inputs=[InputDefinition(name="foo"),
+                InputDefinition(name="bar")],
         output=OutputDefinition()
     )
     @with_context
@@ -281,89 +222,9 @@ def test_solid_definition_errors():
         pass
 
     @solid(
-        inputs=[
-            InputDefinition(name="foo", sources=[test_source]),
-            InputDefinition(name="bar", sources=[test_source])
-        ],
+        inputs=[InputDefinition(name="foo"),
+                InputDefinition(name="bar")],
         output=OutputDefinition()
-    )
-    @with_context
-    def valid_context_2(_context, foo, bar):
-        pass
-
-
-def test_source_definition_errors():
-    with pytest.raises(DagsterInvalidDefinitionError):
-
-        @source(argument_def_dict={'foo': ArgumentDefinition(types.String)})
-        @with_context
-        def vargs(context, foo, *args):
-            pass
-
-    with pytest.raises(DagsterInvalidDefinitionError):
-
-        @source(argument_def_dict={'foo': ArgumentDefinition(types.String)})
-        def wrong_name(bar):
-            pass
-
-    with pytest.raises(DagsterInvalidDefinitionError):
-
-        @source(
-            argument_def_dict={
-                'foo': ArgumentDefinition(types.String),
-                'bar': ArgumentDefinition(types.String)
-            }
-        )
-        def wrong_name_2(foo):
-            pass
-
-    with pytest.raises(DagsterInvalidDefinitionError):
-
-        @source(argument_def_dict={'foo': ArgumentDefinition(types.String)})
-        @with_context
-        def no_context(foo):
-            pass
-
-    with pytest.raises(DagsterInvalidDefinitionError):
-
-        @source(argument_def_dict={'foo': ArgumentDefinition(types.String)})
-        def yes_context(context, foo):
-            pass
-
-    with pytest.raises(DagsterInvalidDefinitionError):
-
-        @source(argument_def_dict={'foo': ArgumentDefinition(types.String)})
-        def extras(foo, bar):
-            pass
-
-    @source(argument_def_dict={'foo': ArgumentDefinition(types.String)})
-    def valid_kwargs(**kwargs):
-        pass
-
-    @source(
-        argument_def_dict={
-            'foo': ArgumentDefinition(types.String),
-            'bar': ArgumentDefinition(types.String)
-        }
-    )
-    def valid(foo, bar):
-        pass
-
-    @source(
-        argument_def_dict={
-            'foo': ArgumentDefinition(types.String),
-            'bar': ArgumentDefinition(types.String)
-        }
-    )
-    @with_context
-    def valid_rontext(context, foo, bar):
-        pass
-
-    @source(
-        argument_def_dict={
-            'foo': ArgumentDefinition(types.String),
-            'bar': ArgumentDefinition(types.String)
-        }
     )
     @with_context
     def valid_context_2(_context, foo, bar):
@@ -476,12 +337,6 @@ def test_descriptions():
         pass
 
     assert solid_desc.description == 'foo'
-
-    @source(description='bar')
-    def source_desc():
-        pass
-
-    assert source_desc.description == 'bar'
 
     @materialization(description='baaz')
     def materialization_desc():

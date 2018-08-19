@@ -6,22 +6,19 @@ from dagster.core.execution import execute_pipeline
 from dagster.utils.test import script_relative_path
 from dagster.cli.pipeline import (do_execute_command, print_pipeline)
 
-from dagster.dagster_examples.pandas_hello_world.pipeline import define_pipeline
+from dagster.dagster_examples.pandas_hello_world.pipeline import define_success_pipeline
 
 
 def test_pipeline_include():
-    assert define_pipeline()
+    assert define_success_pipeline()
 
 
 def test_execute_pipeline():
-    pipeline = define_pipeline()
+    pipeline = define_success_pipeline()
     environment = config.Environment(
-        sources={
-            'sum_solid': {
-                'num': config.Source(name='CSV', args={'path': script_relative_path('num.csv')})
-            }
-        },
-        execution=config.Execution(from_solids=['sum_solid'], through_solids=['sum_sq_solid']),
+        solids={'load_num_csv': config.Solid({
+            'path': script_relative_path('num.csv')
+        })},
     )
 
     result = execute_pipeline(pipeline, environment=environment)
@@ -52,7 +49,7 @@ def test_cli_execute():
         os.chdir(script_relative_path('../..'))
 
         do_execute_command(
-            define_pipeline(),
+            define_success_pipeline(),
             script_relative_path('../../pandas_hello_world/env.yml'),
             lambda *_args, **_kwargs: None,
         )
@@ -62,5 +59,5 @@ def test_cli_execute():
 
 
 def test_cli_print():
-    print_pipeline(define_pipeline(), full=False, print_fn=lambda *_args, **_kwargs: None)
-    print_pipeline(define_pipeline(), full=True, print_fn=lambda *_args, **_kwargs: None)
+    print_pipeline(define_success_pipeline(), full=False, print_fn=lambda *_args, **_kwargs: None)
+    print_pipeline(define_success_pipeline(), full=True, print_fn=lambda *_args, **_kwargs: None)

@@ -144,23 +144,6 @@ def print_inputs(printer, solid):
         with printer.with_indent():
             printer.line('Input: {name}'.format(name=input_def.name))
 
-            if input_def.sources:
-                print_sources(printer, input_def.sources)
-
-
-def print_sources(printer, sources):
-    with printer.with_indent():
-        printer.line('Sources:')
-        with printer.with_indent():
-            for source_def in sources:
-                arg_list = format_argument_dict(source_def.argument_def_dict)
-                printer.line(
-                    '{input_name}({arg_list})'.format(
-                        input_name=source_def.source_type,
-                        arg_list=arg_list,
-                    )
-                )
-
 
 def format_argument_dict(arg_def_dict):
     return ', '.join(
