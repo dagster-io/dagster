@@ -10,7 +10,7 @@ import dagster
 from dagster import check
 from dagster.core.execution import execute_pipeline_iterator
 from dagster.core.errors import DagsterExecutionFailureReason
-from dagster.core.graph import SolidGraph
+from dagster.core.graph import ExecutionGraph
 from dagster.graphviz import build_graphviz_graph
 from dagster.utils.indenting_printer import IndentingPrinter
 
@@ -38,7 +38,7 @@ def list_command(config):
             click.echo('Description:')
             click.echo(format_description(pipeline.description, indent=' ' * 4))
         click.echo('Solids: (Execution Order)')
-        solid_graph = SolidGraph(pipeline.solids, pipeline.dependency_structure)
+        solid_graph = ExecutionGraph(pipeline.solids, pipeline.dependency_structure)
         for solid in solid_graph.topological_solids:
             click.echo('    ' + solid.name)
         click.echo('*************')

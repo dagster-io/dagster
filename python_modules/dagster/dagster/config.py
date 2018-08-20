@@ -17,24 +17,9 @@ class Solid(namedtuple('Solid', 'config_dict')):
                      cls).__new__(cls, check.dict_param(config_dict, 'config_dict', key_type=str))
 
 
-class Execution(namedtuple('ExecutionData', 'from_solids through_solids')):
-    def __new__(cls, from_solids=None, through_solids=None):
-        return super(Execution, cls).__new__(
-            cls,
-            check.opt_list_param(from_solids, 'from_solids', of_type=str),
-            check.opt_list_param(through_solids, 'through_solids', of_type=str),
-        )
-
-    @staticmethod
-    def single_solid(solid_name):
-        check.str_param(solid_name, 'solid_name')
-        return Execution(from_solids=[solid_name], through_solids=[solid_name])
-
-
-class Environment(namedtuple('EnvironmentData', 'context solids expectations, execution')):
-    def __new__(cls, *, solids=None, context=None, expectations=None, execution=None):
+class Environment(namedtuple('EnvironmentData', 'context solids expectations')):
+    def __new__(cls, *, solids=None, context=None, expectations=None):
         check.opt_inst_param(context, 'context', Context)
-        check.opt_inst_param(execution, 'execution', Execution)
 
         if context is None:
             context = Context(name='default', args={})
@@ -42,15 +27,11 @@ class Environment(namedtuple('EnvironmentData', 'context solids expectations, ex
         if expectations is None:
             expectations = Expectations(evaluate=True)
 
-        if execution is None:
-            execution = Execution()
-
         return super(Environment, cls).__new__(
             cls,
             context=context,
             solids=check.opt_dict_param(solids, 'solids', key_type=str, value_type=Solid),
-            expectations=expectations,
-            execution=execution,
+            expectations=check.inst_param(expectations, 'expectations', Expectations)
         )
 
     @staticmethod
@@ -93,17 +74,6 @@ def _coerce_to_list(value):
     check.invariant('should not get here')
 
 
-def _construct_execution(yml_config_object):
-    execution_obj = check.opt_dict_elem(yml_config_object, 'execution')
-    if execution_obj is None:
-        return None
-
-    return Execution(
-        from_solids=_coerce_to_list(execution_obj.get('from')),
-        through_solids=_coerce_to_list(execution_obj.get('through')),
-    )
-
-
 def _construct_solids(yml_config_object):
     solid_dict = check.opt_dict_elem(yml_config_object, 'solids')
     if solid_dict is None:
@@ -123,5 +93,4 @@ def construct_environment(yml_config_object):
     return Environment(
         solids=_construct_solids(yml_config_object),
         context=_construct_context(yml_config_object),
-        execution=_construct_execution(yml_config_object),
     )

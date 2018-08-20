@@ -46,6 +46,8 @@ from .compute_nodes import (
 
 from .execution_context import ExecutionContext
 
+from .graph import ExecutionGraph
+
 class DagsterPipelineExecutionResult:
     def __init__(
         self,
@@ -130,13 +132,9 @@ def execute_single_solid(context, solid, environment, throw_on_error=True):
     check.inst_param(environment, 'environment', config.Environment)
     check.bool_param(throw_on_error, 'throw_on_error')
 
-    check.invariant(environment.execution.from_solids == [])
-    check.invariant(environment.execution.through_solids == [])
-
     single_solid_environment = config.Environment(
         expectations=environment.expectations,
         context=environment.context,
-        execution=config.Execution.single_solid(solid.name),
     )
 
     pipeline_result = execute_pipeline(
@@ -183,19 +181,12 @@ def _validate_environment(environment, pipeline):
 
 
 class DagsterEnv:
-    def __init__(self, pipeline, environment):
+    def __init__(self, execution_graph, environment):
         # This is not necessarily the best spot for these calls
+        pipeline = execution_graph.pipeline
         _validate_environment(environment, pipeline)
         self.pipeline = check.inst_param(pipeline, 'pipeline', PipelineDefinition)
         self.environment = check.inst_param(environment, 'environment', config.Environment)
-
-    @property
-    def from_solids(self):
-        return self.environment.execution.from_solids
-
-    @property
-    def through_solids(self):
-        return self.environment.execution.through_solids
 
     @contextmanager
     def yield_context(self):
@@ -230,21 +221,18 @@ def execute_pipeline_iterator(pipeline, environment):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.inst_param(environment, 'enviroment', config.Environment)
 
-    env = DagsterEnv(pipeline, environment)
+    execution_graph = ExecutionGraph.from_pipeline(pipeline)
+    env = DagsterEnv(execution_graph, environment)
     with env.yield_context() as context:
-        return _execute_pipeline_iterator(
-            context,
-            pipeline,
-            DagsterEnv(pipeline, environment)
-        )
+        return _execute_graph_iterator(context, execution_graph, env)
 
-def _execute_pipeline_iterator(context, pipeline, env):
+def _execute_graph_iterator(context, execution_graph, env):
     check.inst_param(context, 'context', ExecutionContext)
-    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+    check.inst_param(execution_graph, 'execution_graph', ExecutionGraph)
     check.inst_param(env, 'env', DagsterEnv)
 
 
-    cn_graph = create_compute_node_graph_from_env(pipeline, env)
+    cn_graph = create_compute_node_graph_from_env(execution_graph, env)
 
     cn_nodes = list(cn_graph.topological_nodes())
 
@@ -277,22 +265,12 @@ def _execute_pipeline_iterator(context, pipeline, env):
                 output_name=cn_result.success_data.output_name,
             )
 
+
+
 def execute_pipeline(
     pipeline,
     environment,
     *,
-    throw_on_error=True,
-):
-    check.inst_param(environment, 'environment', config.Environment)
-    return _execute_pipeline(
-        pipeline,
-        DagsterEnv(pipeline, environment),
-        throw_on_error,
-    )
-
-def _execute_pipeline(
-    pipeline,
-    env,
     throw_on_error=True,
 ):
     '''
@@ -303,17 +281,25 @@ def _execute_pipeline(
 
     Note: throw_on_error is very useful in testing contexts when not testing for error conditions
     '''
+
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+    check.inst_param(environment, 'environment', config.Environment)
+    execution_graph = ExecutionGraph.from_pipeline(pipeline)
+    env = DagsterEnv(execution_graph, environment)
+    return _execute_graph(execution_graph, env, throw_on_error)
+
+def _execute_graph(
+    execution_graph,
+    env,
+    throw_on_error=True,
+):
+    check.inst_param(execution_graph, 'execution_graph', ExecutionGraph)
     check.inst_param(env, 'env', DagsterEnv)
     check.bool_param(throw_on_error, 'throw_on_error')
 
     results = []
     with env.yield_context() as context:
-        for result in _execute_pipeline_iterator(
-            context,
-            pipeline,
-            env=env,
-        ):
+        for result in _execute_graph_iterator(context, execution_graph, env):
             if throw_on_error:
                 if not result.success:
                     _do_throw_on_error(result)
