@@ -6,7 +6,7 @@ import sys
 
 import toposort
 
-from dagster import (check, config)
+from dagster import check
 
 from dagster.utils.indenting_printer import IndentingPrinter
 from dagster.utils.logging import (
@@ -24,7 +24,6 @@ from .definitions import (
     ExpectationDefinition,
     InputDefinition,
     OutputDefinition,
-    PipelineDefinition,
     Result,
     SolidDefinition,
     SolidOutputHandle,
@@ -38,7 +37,7 @@ from .errors import (
     DagsterUserCodeExecutionError,
 )
 
-from .graph import create_subgraph
+from .graph import ExecutionGraph
 
 from .types import DagsterType
 
@@ -454,29 +453,23 @@ class ComputeNodeOutputMap(dict):
         return dict.__setitem__(self, key, val)
 
 
-def create_compute_node_graph_from_env(pipeline, env):
+def create_compute_node_graph_from_env(execution_graph, env):
     import dagster.core.execution
-    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+    check.inst_param(execution_graph, 'execution_graph', ExecutionGraph)
     check.inst_param(env, 'env', dagster.core.execution.DagsterEnv)
 
-    dep_structure = pipeline.dependency_structure
+    dependency_structure = execution_graph.dependency_structure
 
     compute_nodes = []
 
     cn_output_node_map = ComputeNodeOutputMap()
 
-    subgraph = create_subgraph(
-        pipeline,
-        env.from_solids,
-        env.through_solids,
-    )
-
-    for topo_solid in subgraph.topological_solids:
+    for topo_solid in execution_graph.topological_solids:
         cn_inputs = []
 
         for input_def in topo_solid.inputs:
             prev_cn_output_handle = _prev_node_handle(
-                dep_structure,
+                dependency_structure,
                 topo_solid,
                 input_def,
                 cn_output_node_map,

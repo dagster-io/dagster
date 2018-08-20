@@ -90,50 +90,97 @@ class DependencyDefinition:
         self.description = check.opt_str_param(description, 'description')
 
 
-DepTarget = namedtuple('DepTarget', 'solid_name output_name')
+class InputToOutputHandleDict(dict):
+    def __getitem__(self, key):
+        check.inst_param(key, 'key', SolidInputHandle)
+        return dict.__getitem__(self, key)
+
+    def __setitem__(self, key, val):
+        check.inst_param(key, 'key', SolidInputHandle)
+        check.inst_param(val, 'val', SolidOutputHandle)
+        return dict.__setitem__(self, key, val)
+
+
+def check_two_dim_str_dict(ddict, param_name, value_type):
+    check.dict_param(ddict, param_name, key_type=str, value_type=dict)
+    for sub_dict in ddict.values():
+        check.dict_param(sub_dict, 'sub_dict', key_type=str, value_type=value_type)
+
+
+def create_handle_dict(solid_dict, dep_dict):
+    check.dict_param(solid_dict, 'solid_dict', key_type=str, value_type=SolidDefinition)
+    check_two_dim_str_dict(dep_dict, 'dep_dict', DependencyDefinition)
+
+    handle_dict = InputToOutputHandleDict()
+
+    for solid_name, input_dict in dep_dict.items():
+        for input_name, dep_def in input_dict.items():
+            from_solid = solid_dict[solid_name]
+            to_solid = solid_dict[dep_def.solid]
+            handle_dict[from_solid.input_handle(input_name)] = to_solid.output_handle(
+                dep_def.output
+            )
+
+    return handle_dict
 
 
 class DependencyStructure:
-    def __init__(self, solids, dep_dict):
-        check.list_param(solids, 'solids', of_type=SolidDefinition)
-        check.dict_param(dep_dict, 'dep_dict', key_type=str, value_type=dict)
+    @staticmethod
+    def from_definitions(solids, dep_dict):
+        return DependencyStructure(create_handle_dict(_build_named_dict(solids), dep_dict))
 
-        def _solid_named(name):
-            for solid in solids:
-                if solid.name == name:
-                    return solid
-            check.failed('not fouhnd')
-
-        self._dep_lookup = defaultdict(dict)
-
-        for solid_name, input_dict in dep_dict.items():
-            check.dict_param(
-                input_dict,
-                'input_dict',
-                key_type=str,
-                value_type=DependencyDefinition,
-            )
-
-            for input_name, dep in input_dict.items():
-                dep_solid = _solid_named(dep.solid)
-                output_def = dep_solid.output_def_named(dep.output)
-                self._dep_lookup[solid_name][input_name] = SolidOutputHandle(dep_solid, output_def)
+    def __init__(self, handle_dict):
+        self._handle_dict = check.inst_param(handle_dict, 'handle_dict', InputToOutputHandleDict)
 
     def has_dep(self, solid_input_handle):
         check.inst_param(solid_input_handle, 'solid_input_handle', SolidInputHandle)
-        input_name = solid_input_handle.input_def.name
-        return input_name in self._dep_lookup.get(solid_input_handle.solid.name, {})
+        return solid_input_handle in self._handle_dict
 
     def deps_of_solid(self, solid_name):
         check.str_param(solid_name, 'solid_name')
-        return list(self._dep_lookup[solid_name].values())
+        return list(self.__gen_deps_of_solid(solid_name))
+
+    def __gen_deps_of_solid(self, solid_name):
+        for input_handle, output_handle in self._handle_dict.items():
+            if input_handle.solid.name == solid_name:
+                yield output_handle
 
     def get_dep(self, solid_input_handle):
         check.inst_param(solid_input_handle, 'solid_input_handle', SolidInputHandle)
-        return self._dep_lookup[solid_input_handle.solid.name][solid_input_handle.input_def.name]
+        return self._handle_dict[solid_input_handle]
+
+    def input_handles(self):
+        return list(self._handle_dict.keys())
+
+    def items(self):
+        return self._handle_dict.items()
+
+
+def _build_named_dict(things):
+    ddict = {}
+    for thing in things:
+        ddict[thing.name] = thing
+    return ddict
 
 
 class PipelineDefinition:
+    @staticmethod
+    def create_pipeline_slice(pipeline, from_solids, through_solids, injected_solids):
+        from .graph import ExecutionGraph
+        check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+        check.list_param(from_solids, 'from_solids', of_type=str)
+        check.list_param(through_solids, 'through_solids', of_type=str)
+        check_two_dim_str_dict(injected_solids, 'injected_solids', SolidDefinition)
+
+        subgraph = ExecutionGraph.from_pipeline_subset(
+            pipeline,
+            from_solids,
+            through_solids,
+            injected_solids,
+        )
+
+        return subgraph.to_pipeline()
+
     def __init__(
         self, solids, name=None, description=None, context_definitions=None, dependencies=None
     ):
@@ -159,7 +206,7 @@ class PipelineDefinition:
                 '''.format(solid=solid.__name__)
                 )
 
-        self.solids = check.list_param(solids, 'solids', of_type=SolidDefinition)
+        self._solid_dict = _build_named_dict(solids)
 
         dependencies = check.opt_dict_param(
             dependencies,
@@ -168,34 +215,19 @@ class PipelineDefinition:
             value_type=dict,
         )
 
-        self.dependency_structure = DependencyStructure(solids, dependencies)
+        self.dependency_structure = DependencyStructure.from_definitions(solids, dependencies)
 
     @property
-    def solid_names(self):
-        return [solid.name for solid in self.solids]
-
-    def get_input(self, solid_name, input_name):
-        for solid in self.solids:
-            if solid.name != solid_name:
-                continue
-            for input_def in solid.inputs:
-                if input_def.name == input_name:
-                    return input_def
-        check.failed('not found')
+    def solids(self):
+        return list(self._solid_dict.values())
 
     def has_solid(self, name):
         check.str_param(name, 'name')
-        for solid in self.solids:
-            if solid.name == name:
-                return True
-        return False
+        return name in self._solid_dict
 
     def solid_named(self, name):
         check.str_param(name, 'name')
-        for solid in self.solids:
-            if solid.name == name:
-                return solid
-        check.failed('Could not find solid named ' + name)
+        return self._solid_dict[name]
 
 
 class ExpectationResult:
@@ -284,6 +316,9 @@ class SolidInputHandle(namedtuple('_SolidInputHandle', 'solid input_def')):
     def __str__(self):
         return f'SolidInputHandle(solid="{self.solid.name}", input_name="{self.input_def.name}")'
 
+    def __repr__(self):
+        return f'SolidInputHandle(solid="{self.solid.name}", input_name="{self.input_def.name}")'
+
     def __hash__(self):
         return hash((self.solid.name, self.input_def.name))
 
@@ -300,6 +335,9 @@ class SolidOutputHandle(namedtuple('_SolidOutputHandle', 'solid output')):
         )
 
     def __str__(self):
+        return f'SolidOutputHandle(solid="{self.solid.name}", output.name="{self.output.name}")'
+
+    def __repr__(self):
         return f'SolidOutputHandle(solid="{self.solid.name}", output.name="{self.output.name}")'
 
     def __hash__(self):

@@ -1,10 +1,8 @@
 import os
-import pytest
 
 import pandas as pd
 
 from dagster import (
-    ArgumentDefinition,
     DependencyDefinition,
     ExecutionContext,
     InputDefinition,
@@ -14,13 +12,11 @@ from dagster import (
     check,
     config,
 )
-from dagster.core import types
 from dagster.core.decorators import solid
 from dagster.core.execution import (
-    ExecutionContext,
+    ExecutionGraph,
     execute_pipeline_iterator,
     execute_pipeline,
-    execute_single_solid,
 )
 import dagster.pandas_kernel as dagster_pd
 from dagster.utils.test import (get_temp_file_name, get_temp_file_names, script_relative_path)
@@ -56,11 +52,8 @@ def get_load_only_solids_config(load_csv_solid_name):
     return {load_csv_solid_name: config.Solid({'path': script_relative_path('num.csv')})}
 
 
-def get_num_csv_environment(solids_config, through_solids=None):
-    return config.Environment(
-        solids=solids_config,
-        execution=config.Execution(through_solids=through_solids),
-    )
+def get_num_csv_environment(solids_config):
+    return config.Environment(solids=solids_config)
 
 
 def create_test_context():
@@ -394,9 +387,7 @@ def test_pandas_in_memory_diamond_pipeline():
     pipeline = create_diamond_pipeline()
     result = execute_pipeline(
         pipeline,
-        environment=get_num_csv_environment(
-            get_load_only_solids_config('load_csv'), through_solids=['sum_mult_table']
-        )
+        environment=get_num_csv_environment(get_load_only_solids_config('load_csv'))
     )
 
     assert result.result_named('sum_mult_table').transformed_value.to_dict('list') == {
@@ -507,35 +498,45 @@ def test_pandas_output_intermediate_csv_files():
         mult_table_result = subgraph_one_result.result_named('mult_table')
         assert mult_table_result.transformed_value.to_dict('list') == expected_mult
 
-        # TODO need better partial execution API
-        return
+        injected_solids = {
+            'sum_mult_table': {
+                'sum_table' : dagster_pd.load_csv_solid('load_sum_table'),
+                'mult_table' : dagster_pd.load_csv_solid('load_mult_table'),
+            }
+        }
 
-        # pipeline_result = execute_pipeline(
-        #     pipeline,
-        #     environment=config.Environment(
-        #         sources={
-        #             'sum_mult_table': {
-        #                 'sum_table': config.Source('CSV', {'path': sum_file}),
-        #                 'mult_table': config.Source('CSV', {'path': mult_file}),
-        #             },
-        #         },
-        #         execution=config.Execution.single_solid('sum_mult_table'),
-        #     ),
-        # )
+        pipeline_result = execute_pipeline(
+            PipelineDefinition.create_pipeline_slice(
+                pipeline,
+                ['sum_mult_table'],
+                ['sum_mult_table'],
+                injected_solids,
+            ),
+            environment=config.Environment(
+                solids={
+                    'load_sum_table' : config.Solid(
+                        {'path' : sum_file},
+                    ),
+                    'load_mult_table' : config.Solid(
+                        {'path' : mult_file},
+                    ),
+                },
+            ),
+        )
 
-        # assert pipeline_result.success
+        assert pipeline_result.success
 
-        # subgraph_two_result_list = pipeline_result.result_list
+        subgraph_two_result_list = pipeline_result.result_list
 
-        # assert len(subgraph_two_result_list) == 1
-        # output_df = subgraph_two_result_list[0].transformed_value
-        # assert output_df.to_dict('list') == {
-        #     'num1': [1, 3],
-        #     'num2': [2, 4],
-        #     'sum': [3, 7],
-        #     'mult': [2, 12],
-        #     'sum_mult': [6, 84],
-        # }
+        assert len(subgraph_two_result_list) == 3
+        output_df = pipeline_result.result_named('sum_mult_table').transformed_value
+        assert output_df.to_dict('list') == {
+            'num1': [1, 3],
+            'num2': [2, 4],
+            'sum': [3, 7],
+            'mult': [2, 12],
+            'sum_mult': [6, 84],
+        }
 
 
 def test_pandas_output_intermediate_parquet_files():
@@ -565,10 +566,10 @@ def test_pandas_output_intermediate_parquet_files():
                 'path': script_relative_path('num.csv'),
             }),
             write_sum_table.name: config.Solid({
-                'path': sum_file 
+                'path': sum_file
             }),
             write_mult_table.name: config.Solid({
-                'path': mult_file 
+                'path': mult_file
             }),
         })
 
@@ -598,7 +599,6 @@ def test_pandas_multiple_inputs():
                 'path': script_relative_path('num.csv')
             }),
         },
-        execution=config.Execution(through_solids=['double_sum']),
     )
 
     def transform_fn(_context, args):
