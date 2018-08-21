@@ -152,12 +152,13 @@ EXPECTATION_VALUE_OUTPUT = 'expectation_value'
 JOIN_OUTPUT = 'join_output'
 EXPECTATION_INPUT = 'expectation_input'
 
-def _execute_core_transform(context, solid_transform_fn, values_dict, config_dict):
+def _execute_core_transform(context, solid_name, solid_transform_fn, values_dict, config_dict):
     '''
     Execute the user-specified transform for the solid. Wrap in an error boundary and do
     all relevant logging and metrics tracking
     '''
     check.inst_param(context, 'context', ExecutionContext)
+    check.str_param(solid_name, 'solid_name')
     check.callable_param(solid_transform_fn, 'solid_transform_fn')
     check.dict_param(values_dict, 'values_dict', key_type=str)
     check.dict_param(config_dict, 'config_dict', key_type=str)
@@ -165,10 +166,11 @@ def _execute_core_transform(context, solid_transform_fn, values_dict, config_dic
     error_str = 'Error occured during core transform'
     with _user_code_error_boundary(context, error_str):
         with time_execution_scope() as timer_result:
-            gen = solid_transform_fn(context, values_dict, config_dict)
-            if gen is not None:
-                for result in gen:
-                    yield result
+            with context.value('solid', solid_name):
+                gen = solid_transform_fn(context, values_dict, config_dict)
+                if gen is not None:
+                    for result in gen:
+                        yield result
 
         context.metric('core_transform_time_ms', timer_result.millis)
 
@@ -613,6 +615,7 @@ def create_compute_node_from_solid_transform(solid, node_inputs, config_args):
         arg_dict={},
         compute_fn=lambda context, inputs: _execute_core_transform(
             context,
+            solid.name,
             solid.transform_fn,
             inputs,
             config_args,

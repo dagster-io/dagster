@@ -5,9 +5,15 @@ import pandas as pd
 import dagster
 import dagster.pandas_kernel as dagster_pd
 import dagster_ge
-from dagster import (InputDefinition, OutputDefinition)
-from dagster.core.decorators import solid
-from dagster.core.errors import DagsterExecutionFailureReason
+from dagster import (
+    config,
+    solid,
+    execute_pipeline,
+    InputDefinition,
+    OutputDefinition,
+    DependencyDefinition,
+)
+from dagster.core.errors import (DagsterExecutionFailureReason, DagsterExpectationFailedError)
 from dagster.utils.test import script_relative_path
 
 
@@ -65,72 +71,64 @@ def sum_solid_expectations_config(num_df):
     return _sum_solid_impl(num_df)
 
 
+from dagster.core.utility_solids import define_pass_mem_value
+
+
 def test_single_node_passing_expectation():
     in_df = pd.DataFrame.from_dict({'num1': [1, 3], 'num2': [2, 4]})
-    pipeline = dagster.PipelineDefinition(solids=[sum_solid])
+    pipeline = dagster.PipelineDefinition(
+        solids=[define_pass_mem_value('value', in_df), sum_solid],
+        dependencies={'sum_solid': {
+            'num_df': DependencyDefinition('value')
+        }}
+    )
 
-    return
-    # result = execute_pipeline_in_memory(
-    #     dagster.ExecutionContext(),
-    #     pipeline,
-    #     input_values={sum_solid.name: {
-    #         'num_df': in_df
-    #     }},
-    # )
-    # assert result.success
-    # assert result.result_list[0].success
-    # assert result.result_list[0].transformed_value.to_dict('list') == {
-    #     'num1': [1, 3],
-    #     'num2': [2, 4],
-    #     'sum': [3, 7],
-    # }
+    result = execute_pipeline(pipeline, config.Environment())
+    assert result.success
+    assert len(result.result_list) == 2
+    assert result.result_list[1].success
+    assert result.result_list[1].transformed_value.to_dict('list') == {
+        'num1': [1, 3],
+        'num2': [2, 4],
+        'sum': [3, 7],
+    }
 
 
 def test_single_node_passing_json_config_expectations():
     in_df = pd.DataFrame.from_dict({'num1': [1, 3], 'num2': [2, 4]})
-    pipeline = dagster.PipelineDefinition(solids=[sum_solid_expectations_config])
+    pipeline = dagster.PipelineDefinition(
+        solids=[define_pass_mem_value('value', in_df), sum_solid_expectations_config],
+        dependencies={
+            sum_solid_expectations_config.name: {
+                'num_df': DependencyDefinition('value')
+            }
+        }
+    )
 
-    return
-    # result = execute_pipeline_in_memory(
-    #     dagster.ExecutionContext(),
-    #     pipeline,
-    #     input_values={sum_solid_expectations_config.name: {
-    #         'num_df': in_df
-    #     }},
-    # )
-    # assert result.success
-    # assert result.result_list[0].success
-    # assert result.result_list[0].transformed_value.to_dict('list') == {
-    #     'num1': [1, 3],
-    #     'num2': [2, 4],
-    #     'sum': [3, 7],
-    # }
+    result = execute_pipeline(pipeline, config.Environment())
+    assert result.success
+    assert len(result.result_list) == 2
+    assert result.result_list[1].success
+    assert result.result_list[1].transformed_value.to_dict('list') == {
+        'num1': [1, 3],
+        'num2': [2, 4],
+        'sum': [3, 7],
+    }
 
 
 def test_single_node_failing_expectation():
     in_df = pd.DataFrame.from_dict({'num1': [1, 3], 'num2': [2, 4]})
-    pipeline = dagster.PipelineDefinition(solids=[sum_solid_fails_input_expectation])
-    return
-    # result = execute_pipeline_in_memory(
-    #     dagster.ExecutionContext(),
-    #     pipeline,
-    #     input_values={sum_solid_fails_input_expectation.name: {
-    #         'num_df': in_df
-    #     }},
-    #     throw_on_error=False
-    # )
-    # assert not result.success
+    pipeline = dagster.PipelineDefinition(
+        solids=[define_pass_mem_value('value', in_df), sum_solid_fails_input_expectation],
+        dependencies={
+            sum_solid_fails_input_expectation.name: {
+                'num_df': DependencyDefinition('value')
+            }
+        }
+    )
 
-    # return
-    # TODO redo expectation result API
-    # assert len(result.result_list) == 1
-    # first_solid_result = result.result_list[0]
-    # assert not first_solid_result.success
-    # assert first_solid_result.reason == DagsterExecutionFailureReason.EXPECTATION_FAILURE
-    # assert isinstance(first_solid_result.input_expectation_results, dagster.InputExpectationResults)
-    # input_expt_results = first_solid_result.input_expectation_results
-    # assert len(input_expt_results.result_dict) == 1
-    # input_expt_result = list(input_expt_results.result_dict.values())[0]
-    # assert isinstance(input_expt_result, dagster.InputExpectationResult)
-    # assert len(list(input_expt_result.passes)) == 0
-    # assert len(list(input_expt_result.fails)) == 1
+    # NOTE: this is not what I want to API to be but at least it exercises
+    # the code path for now
+    with pytest.raises(DagsterExpectationFailedError):
+        result = execute_pipeline(pipeline, config.Environment())
+        assert not result.success

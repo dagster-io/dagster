@@ -177,17 +177,6 @@ def test_diamond_toposort():
     assert graph.topological_order == ['A_source', 'A', 'B', 'C', 'D']
 
 
-def test_execution_subgraph_one_node():
-    node_a = create_root_solid('A')
-    solid_graph = graph_from_solids_only([node_a], {})
-
-    execution_graph = solid_graph.create_execution_subgraph(
-        from_solids=['A'],
-        to_solids=['A'],
-    )
-    assert execution_graph
-
-
 def test_execution_graph_diamond():
     solid_graph = create_diamond_graph()
 

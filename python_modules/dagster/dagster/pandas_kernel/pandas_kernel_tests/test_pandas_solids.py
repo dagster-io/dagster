@@ -514,12 +514,12 @@ def test_pandas_output_intermediate_csv_files():
             ),
             environment=config.Environment(
                 solids={
-                    'load_sum_table' : config.Solid(
-                        {'path' : sum_file},
-                    ),
-                    'load_mult_table' : config.Solid(
-                        {'path' : mult_file},
-                    ),
+                    'load_sum_table': config.Solid({
+                        'path': sum_file
+                    }, ),
+                    'load_mult_table': config.Solid({
+                        'path': mult_file
+                    }, ),
                 },
             ),
         )

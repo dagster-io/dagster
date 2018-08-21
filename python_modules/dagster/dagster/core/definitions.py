@@ -102,6 +102,7 @@ def check_two_dim_str_dict(ddict, param_name, value_type):
     check.dict_param(ddict, param_name, key_type=str, value_type=dict)
     for sub_dict in ddict.values():
         check.dict_param(sub_dict, 'sub_dict', key_type=str, value_type=value_type)
+    return ddict
 
 
 def create_handle_dict(solid_dict, dep_dict):
@@ -205,14 +206,57 @@ class PipelineDefinition:
 
         self._solid_dict = _build_named_dict(solids)
 
-        dependencies = check.opt_dict_param(
+        dependencies = check_two_dim_str_dict(
             dependencies,
             'dependencies',
-            key_type=str,
-            value_type=dict,
-        )
+            DependencyDefinition,
+        ) if dependencies else {}
+
+        for from_solid, dep_by_input in dependencies.items():
+            for from_input, dep in dep_by_input.items():
+                if from_solid == dep.solid:
+                    raise DagsterInvalidDefinitionError(
+                        f'Circular reference detected in solid {from_solid} input {from_input}.'
+                    )
+                if not from_solid in self._solid_dict:
+                    raise DagsterInvalidDefinitionError(
+                        f'Solid {from_solid} in dependency dictionary not found in solid list',
+                    )
+
+                if not self._solid_dict[from_solid].has_input(from_input):
+                    input_list = [
+                        input_def.name for input_def in self._solid_dict[from_solid].inputs
+                    ]
+                    raise DagsterInvalidDefinitionError(
+                        f'Solid {from_solid} does not have input {from_input}. ' + \
+                        f'Input list: {input_list}'
+                    )
+
+                if not dep.solid in self._solid_dict:
+                    raise DagsterInvalidDefinitionError(
+                        f'Solid {dep.solid} in DependencyDefinition not found in solid list',
+                    )
+
+                if not self._solid_dict[dep.solid].has_output(dep.output):
+                    raise DagsterInvalidDefinitionError(
+                        f'Solid {dep.solid} does not have output {dep.output}',
+                    )
 
         self.dependency_structure = DependencyStructure.from_definitions(solids, dependencies)
+
+        for solid in solids:
+            for input_def in solid.inputs:
+                if not self.dependency_structure.has_dep(solid.input_handle(input_def.name)):
+                    if name:
+                        raise DagsterInvalidDefinitionError(
+                            f'Dependency must be specified for solid {solid.name} input ' + \
+                            f'{input_def.name} in pipeline {name}'
+                        )
+                    else:
+                        raise DagsterInvalidDefinitionError(
+                            f'Dependency must be specified for solid {solid.name} input ' + \
+                            f'{input_def.name}'
+                        )
 
     @property
     def solids(self):
@@ -373,6 +417,8 @@ class SolidDefinition:
             output_handles[output.name] = SolidOutputHandle(self, output)
 
         self.output_handles = output_handles
+        self._input_dict = _build_named_dict(inputs)
+        self._output_dict = _build_named_dict(outputs)
 
     @staticmethod
     def single_output_transform(name, inputs, transform_fn, output, description=None):
@@ -403,26 +449,19 @@ class SolidDefinition:
 
     def has_input(self, name):
         check.str_param(name, 'name')
-        for input_def in self.inputs:
-            if input_def.name == name:
-                return True
-        return False
+        return name in self._input_dict
 
     def input_def_named(self, name):
         check.str_param(name, 'name')
-        for input_def in self.inputs:
-            if input_def.name == name:
-                return input_def
+        return self._input_dict[name]
 
-        check.failed('input {name} not found'.format(name=name))
+    def has_output(self, name):
+        check.str_param(name, 'name')
+        return name in self._output_dict
 
     def output_def_named(self, name):
         check.str_param(name, 'name')
-        for output in self.outputs:
-            if output.name == name:
-                return output
-
-        check.failed('output {name} not found'.format(name=name))
+        return self._output_dict[name]
 
 
 class __ArgumentValueSentinel:

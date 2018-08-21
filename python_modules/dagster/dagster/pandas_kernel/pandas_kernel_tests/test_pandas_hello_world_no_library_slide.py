@@ -31,7 +31,6 @@ def define_read_csv_solid(name):
 
 def define_to_csv_solid(name):
     def _t_fn(_context, inputs, config_dict):
-        print('WRITING NOW')
         inputs['df'].to_csv(config_dict['path'], index=False)
 
     return SolidDefinition(
