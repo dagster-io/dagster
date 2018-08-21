@@ -38,7 +38,7 @@ def list_command(config):
             click.echo('Description:')
             click.echo(format_description(pipeline.description, indent=' ' * 4))
         click.echo('Solids: (Execution Order)')
-        solid_graph = ExecutionGraph(pipeline.solids, pipeline.dependency_structure)
+        solid_graph = ExecutionGraph(pipeline, pipeline.solids, pipeline.dependency_structure)
         for solid in solid_graph.topological_solids:
             click.echo('    ' + solid.name)
         click.echo('*************')

@@ -300,10 +300,11 @@ def _execute_graph(
 
     results = []
     with env.yield_context() as context:
-        for result in _execute_graph_iterator(context, execution_graph, env):
-            if throw_on_error:
-                if not result.success:
-                    _do_throw_on_error(result)
+        with context.value('pipeline', execution_graph.pipeline.name or '<<unnamed>>'):
+            for result in _execute_graph_iterator(context, execution_graph, env):
+                if throw_on_error:
+                    if not result.success:
+                        _do_throw_on_error(result)
 
-            results.append(result.copy())
-        return DagsterPipelineExecutionResult(context, results)
+                results.append(result.copy())
+            return DagsterPipelineExecutionResult(context, results)
