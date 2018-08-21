@@ -10,7 +10,7 @@ from dagster import (
 
 from dagster.core.definitions import DependencyStructure
 
-from dagster.core.graph import (create_adjacency_lists, SolidGraph)
+from dagster.core.graph import (_create_adjacency_lists, ExecutionGraph)
 from dagster.core.execution import (
     execute_pipeline_iterator,
     ExecutionContext,
@@ -65,8 +65,8 @@ def create_root_solid(name):
 
 
 def _do_construct(solids, dependencies):
-    dependency_structure = DependencyStructure(solids, dependencies)
-    return create_adjacency_lists(solids, dependency_structure)
+    dependency_structure = DependencyStructure.from_definitions(solids, dependencies)
+    return _create_adjacency_lists(solids, dependency_structure)
 
 
 def test_empty_adjaceny_lists():
@@ -95,7 +95,8 @@ def test_single_dep_adjacency_lists():
 
 
 def graph_from_solids_only(solids, dependencies):
-    return SolidGraph(solids, DependencyStructure(solids, dependencies))
+    pipeline = PipelineDefinition(solids=solids, dependencies=dependencies)
+    return ExecutionGraph.from_pipeline(pipeline)
 
 
 def test_diamond_deps_adjaceny_lists():
@@ -174,44 +175,6 @@ def create_diamond_graph():
 def test_diamond_toposort():
     graph = create_diamond_graph()
     assert graph.topological_order == ['A_source', 'A', 'B', 'C', 'D']
-
-
-def test_single_node_unprovided_inputs():
-    node_a = create_root_solid('A')
-    solid_graph = graph_from_solids_only([node_a], {})
-    assert solid_graph.compute_unprovided_inputs('A', ['A_input']) == set()
-    assert solid_graph.compute_unprovided_inputs('A', []) == set(['A_input'])
-
-
-# need to replicate these tests with new api
-# def test_diamond_toposort_unprovided_inputs():
-#     solid_graph = create_diamond_graph()
-
-#     # no inputs
-#     assert solid_graph.compute_unprovided_inputs('A', []) == set(['A_input'])
-#     assert solid_graph.compute_unprovided_inputs('B', []) == set(['A_input'])
-#     assert solid_graph.compute_unprovided_inputs('C', []) == set(['A_input'])
-#     assert solid_graph.compute_unprovided_inputs('D', []) == set(['A_input'])
-
-#     # root input
-#     assert solid_graph.compute_unprovided_inputs('A', ['A_input']) == set()
-#     assert solid_graph.compute_unprovided_inputs('B', ['A_input']) == set()
-#     assert solid_graph.compute_unprovided_inputs('C', ['A_input']) == set()
-#     assert solid_graph.compute_unprovided_inputs('D', ['A_input']) == set()
-
-#     # immediate input
-#     assert solid_graph.compute_unprovided_inputs('A', ['A_input']) == set()
-#     assert solid_graph.compute_unprovided_inputs('B', ['A']) == set()
-#     assert solid_graph.compute_unprovided_inputs('C', ['A']) == set()
-#     assert solid_graph.compute_unprovided_inputs('D', ['B', 'C']) == set()
-
-#     # mixed satisified inputs
-#     assert solid_graph.compute_unprovided_inputs('D', ['A_input', 'C']) == set()
-#     assert solid_graph.compute_unprovided_inputs('D', ['B', 'A_input']) == set()
-
-#     # mixed unsatisifed inputs
-#     assert solid_graph.compute_unprovided_inputs('D', ['C']) == set(['A_input'])
-#     assert solid_graph.compute_unprovided_inputs('D', ['B']) == set(['A_input'])
 
 
 def test_execution_subgraph_one_node():

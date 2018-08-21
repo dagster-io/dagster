@@ -1,15 +1,20 @@
+from collections import defaultdict
 from toposort import toposort_flatten
 
 from dagster import check
 
 from .definitions import (
+    DependencyDefinition,
     DependencyStructure,
+    InputToOutputHandleDict,
     PipelineDefinition,
     SolidDefinition,
+    _build_named_dict,
+    create_handle_dict,
 )
 
 
-def create_adjacency_lists(solids, dep_structure):
+def _create_adjacency_lists(solids, dep_structure):
     check.list_param(solids, 'solids', of_type=SolidDefinition)
     check.inst_param(dep_structure, 'dep_structure', DependencyStructure)
 
@@ -37,29 +42,83 @@ def create_adjacency_lists(solids, dep_structure):
     return (forward_edges, backward_edges)
 
 
-class SolidGraph:
-    def __init__(self, solids, dependency_structure):
+def _dependency_structure_to_dep_dict(dependency_structure):
+    dep_dict = defaultdict(dict)
+    for input_handle, output_handle in dependency_structure.items():
+        dep_dict[input_handle.solid.name][input_handle.input_def.name] = DependencyDefinition(
+            solid=output_handle.solid.name,
+            output=output_handle.output.name,
+        )
+    return dep_dict
 
+
+class ExecutionGraph:
+    @staticmethod
+    def from_pipeline(pipeline):
+        check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+        return ExecutionGraph(pipeline, pipeline.solids, pipeline.dependency_structure)
+
+    @staticmethod
+    def from_pipeline_subset(pipeline, from_solids, through_solids, injected_solids):
+        check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+        check.list_param(from_solids, 'from_solids', of_type=str)
+        check.list_param(through_solids, 'through_solids', of_type=str)
+        graph = ExecutionGraph.from_pipeline(pipeline)
+        return _create_subgraph(graph, from_solids, through_solids).augment(injected_solids)
+
+    def to_pipeline(self):
+        return PipelineDefinition(
+            solids=self.solids,
+            dependencies=_dependency_structure_to_dep_dict(self.dependency_structure),
+            context_definitions=self.pipeline.context_definitions
+        )
+
+    def augment(self, injected_solids):
+
+        new_deps = defaultdict(dict)
+        new_solids = []
+
+        for from_solid_name, targets_by_input in injected_solids.items():
+            for from_input_name, target_solid in targets_by_input.items():
+                new_solids.append(target_solid)
+                new_deps[from_solid_name][from_input_name] = DependencyDefinition(
+                    solid=target_solid.name
+                )
+
+        check.list_param(new_solids, 'new_solids', of_type=SolidDefinition)
+
+        solids = self.solids + new_solids
+
+        solid_dict = _build_named_dict(solids)
+
+        handle_dict = InputToOutputHandleDict()
+        for input_handle, output_handle in self.dependency_structure.items():
+            handle_dict[input_handle] = output_handle
+
+        for input_handle, output_handle in create_handle_dict(solid_dict, new_deps).items():
+            handle_dict[input_handle] = output_handle
+
+        return ExecutionGraph(self.pipeline, solids, DependencyStructure(handle_dict))
+
+    def __init__(self, pipeline, solids, dependency_structure):
+        self.pipeline = pipeline
         solids = check.list_param(solids, 'solids', of_type=SolidDefinition)
 
-        self.dep_structure = check.inst_param(
+        self.dependency_structure = check.inst_param(
             dependency_structure, 'dependency_structure', DependencyStructure
         )
 
         self._solid_dict = {solid.name: solid for solid in solids}
 
+        for input_handle in dependency_structure.input_handles():
+            check.invariant(input_handle.solid.name in self._solid_dict)
+
         solid_names = set([solid.name for solid in solids])
         check.invariant(len(solid_names) == len(solids), 'must have unique names')
 
-        all_inputs = {}
-
-        for solid in solids:
-            for input_def in solid.inputs:
-                # if input exists should probably ensure that it is the same
-                all_inputs[input_def.name] = input_def
-
-        self._all_inputs = all_inputs
-        self.forward_edges, self.backward_edges = create_adjacency_lists(solids, self.dep_structure)
+        self.forward_edges, self.backward_edges = _create_adjacency_lists(
+            solids, self.dependency_structure
+        )
         self.topological_order = toposort_flatten(self.backward_edges, sort=True)
 
         self._transitive_deps = {}
@@ -72,6 +131,10 @@ class SolidGraph:
     def solids(self):
         return list(self._solid_dict.values())
 
+    def solid_named(self, name):
+        check.str_param(name, 'name')
+        return self._solid_dict[name]
+
     def transitive_dependencies_of(self, solid_name):
         check.str_param(solid_name, 'solid_name')
 
@@ -82,8 +145,8 @@ class SolidGraph:
         solid = self._solid_dict[solid_name]
         for inp in solid.inputs:
             input_handle = solid.input_handle(inp.name)
-            if self.dep_structure.has_dep(input_handle):
-                output_handle = self.dep_structure.get_dep(input_handle)
+            if self.dependency_structure.has_dep(input_handle):
+                output_handle = self.dependency_structure.get_dep(input_handle)
                 trans_deps.add(output_handle.solid.name)
                 trans_deps.union(self.transitive_dependencies_of(output_handle.solid.name))
 
@@ -97,117 +160,93 @@ class SolidGraph:
             f'Solid {solid_name} must exist in {list(self._solid_dict.keys())}'
         )
 
-    def _check_input_names(self, input_names):
-        check.list_param(input_names, 'input_names', of_type=str)
-
-        for input_name in input_names:
-            check.param_invariant(
-                input_name in self._all_inputs, 'input_names', 'Input name not found'
-            )
-
-    def compute_unprovided_inputs(self, solid_name, input_names):
-        '''
-        Given a single solid_name and a set of input_names that represent the
-        set of inputs provided for a computation, return the inputs that are *missing*.
-        This detects the case where an upstream path in the DAG of solids does not
-        have enough information to materialize a given output.
-        '''
-
-        self._check_solid_name(solid_name)
-        self._check_input_names(input_names)
-
-        input_set = set(input_names)
-
-        unprovided_inputs = set()
-
-        visit_dict = {name: False for name in self._solid_dict.keys()}
-
-        output_solid = self._solid_dict[solid_name]
-
-        def visit(solid):
-            if visit_dict[solid.name]:
-                return
-            visit_dict[solid.name] = True
-
-            for inp in solid.inputs:
-                if inp.name in input_set:
-                    continue
-
-                input_handle = solid.input_handle(inp.name)
-
-                if self.dep_structure.has_dep(input_handle):
-                    output_handle = self.dep_structure.get_dep(input_handle)
-                    visit(self._solid_dict[output_handle.solid.name])
-                else:
-                    unprovided_inputs.add(inp.name)
-
-        visit(output_solid)
-
-        return unprovided_inputs
-
     def create_execution_subgraph(self, from_solids, to_solids):
         check.list_param(from_solids, 'from_solids', of_type=str)
         check.list_param(to_solids, 'to_solids', of_type=str)
 
+        involved_solid_set = self._compute_involved_solid_set(from_solids, to_solids)
+
+        involved_solids = [self._solid_dict[name] for name in involved_solid_set]
+
+        handle_dict = InputToOutputHandleDict()
+
+        for solid in involved_solids:
+            for input_def in solid.inputs:
+                input_handle = solid.input_handle(input_def.name)
+                if self.dependency_structure.has_dep(input_handle):
+                    handle_dict[input_handle] = self.dependency_structure.get_dep(input_handle)
+
+        return ExecutionGraph(self.pipeline, involved_solids, DependencyStructure(handle_dict))
+
+    def _compute_involved_solid_set(self, from_solids, to_solids):
         from_solid_set = set(from_solids)
-        involved_solids = from_solid_set
+        involved_solid_set = from_solid_set
 
         def visit(solid):
-            if solid.name in involved_solids:
+            if solid.name in involved_solid_set:
                 return
-            involved_solids.add(solid.name)
+
+            involved_solid_set.add(solid.name)
 
             for input_def in solid.inputs:
                 input_handle = solid.input_handle(input_def.name)
-                if not self.dep_structure.has_dep(input_handle):
+                if not self.dependency_structure.has_dep(input_handle):
                     continue
 
-                from_solid = self.dep_structure.get_dep(input_handle).solid.name
+                output_handle = self.dependency_structure.get_dep(input_handle)
 
-                if from_solid in from_solid_set:
+                next_solid = output_handle.solid.name
+                if next_solid in from_solid_set:
                     continue
 
-                visit(self._solid_dict[from_solid])
+                visit(self._solid_dict[next_solid])
 
         for to_solid in to_solids:
             visit(self._solid_dict[to_solid])
 
-        return SolidGraph([self._solid_dict[name] for name in involved_solids], self.dep_structure)
+        return involved_solid_set
 
 
-def all_depended_on_solids(pipeline):
-    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    dep_struct = pipeline.dependency_structure
-    for solid in pipeline.solids:
+def _build_named_dict(things):
+    ddict = {}
+    for thing in things:
+        ddict[thing.name] = thing
+    return ddict
+
+
+def _all_depended_on_solids(execution_graph):
+    check.inst_param(execution_graph, 'execution_graph', ExecutionGraph)
+
+    dependency_structure = execution_graph.dependency_structure
+
+    for solid in execution_graph.solids:
         for input_def in solid.inputs:
             input_handle = solid.input_handle(input_def.name)
-            if dep_struct.has_dep(input_handle):
-                output_handle = dep_struct.get_dep(input_handle)
-                yield pipeline.solid_named(output_handle.solid.name)
+            if dependency_structure.has_dep(input_handle):
+                output_handle = dependency_structure.get_dep(input_handle)
+                yield execution_graph.solid_named(output_handle.solid.name)
 
 
-def all_sink_solids(pipeline):
-    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    all_names = set([solid.name for solid in pipeline.solids])
-    all_depended_on_names = set([solid.name for solid in all_depended_on_solids(pipeline)])
+def _all_sink_solids(execution_graph):
+    check.inst_param(execution_graph, 'execution_graph', ExecutionGraph)
+    all_names = set([solid.name for solid in execution_graph.solids])
+    all_depended_on_names = set([solid.name for solid in _all_depended_on_solids(execution_graph)])
     return all_names.difference(all_depended_on_names)
 
 
-def create_subgraph(pipeline, from_solids, through_solids):
-    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+def _create_subgraph(execution_graph, from_solids, through_solids):
+    check.inst_param(execution_graph, 'execution_graph', ExecutionGraph)
     check.opt_list_param(from_solids, 'from_solids', of_type=str)
     check.opt_list_param(through_solids, 'through_solids', of_type=str)
 
-    solid_graph = SolidGraph(pipeline.solids, pipeline.dependency_structure)
-
     if not through_solids:
-        through_solids = list(all_sink_solids(pipeline))
+        through_solids = list(_all_sink_solids(execution_graph))
 
     if not from_solids:
         all_deps = set()
         for through_solid in through_solids:
-            all_deps.union(solid_graph.transitive_dependencies_of(through_solid))
+            all_deps.union(execution_graph.transitive_dependencies_of(through_solid))
 
         from_solids = list(all_deps)
 
-    return solid_graph.create_execution_subgraph(from_solids, through_solids)
+    return execution_graph.create_execution_subgraph(from_solids, through_solids)

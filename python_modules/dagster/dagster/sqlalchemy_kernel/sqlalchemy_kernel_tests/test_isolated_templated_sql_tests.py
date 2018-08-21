@@ -213,7 +213,6 @@ def test_templated_sql_solid_pipeline():
 
     second_sum_sq_table = 'second_sum_sq_table'
 
-    # This is a bit awkward ATM
     environment_two = config.Environment(
         solids={
             'pass_value':
@@ -226,7 +225,6 @@ def test_templated_sql_solid_pipeline():
                 'sum_sq_table': second_sum_sq_table,
             }),
         },
-        execution=config.Execution(from_solids=['pass_value'], through_solids=['sum_sq_table']),
     )
 
     second_result = execute_pipeline(
@@ -290,7 +288,6 @@ def test_with_from_through_specifying_all_solids():
                 }
             ),
         },
-        execution=config.Execution(from_solids=all_solid_names, through_solids=all_solid_names)
     )
 
     pipeline_result = execute_pipeline(pipeline, environment=environment)
