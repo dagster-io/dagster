@@ -1,11 +1,9 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
-import { Card, Colors } from "@blueprintjs/core";
+import { Colors } from "@blueprintjs/core";
 import { LinkHorizontal as Link } from "@vx/shape";
 import PanAndZoom from "./PanAndZoom";
-import PipelineColorScale from "./PipelineColorScale";
-import PipelineLegend from "./PipelineLegend";
 import SolidNode from "./SolidNode";
 import {
   getDagrePipelineLayout,
@@ -36,7 +34,7 @@ export default class PipelineGraph extends React.Component<
   };
 
   renderSolids(layout: IFullPipelineLayout) {
-    return this.props.pipeline.solids.map((solid, i) => {
+    return this.props.pipeline.solids.map(solid => {
       const solidLayout = layout.solids[solid.name];
       return (
         <SolidNode
@@ -101,9 +99,6 @@ export default class PipelineGraph extends React.Component<
 
     return (
       <GraphWrapper>
-        <LegendWrapper>
-          <PipelineLegend />
-        </LegendWrapper>
         <PanAndZoomStyled
           width={layout.width}
           height={layout.height + 300}
@@ -136,15 +131,6 @@ const PanAndZoomStyled = styled(PanAndZoom)`
 
 const SVGContainer = styled.svg`
   border-radius: 0;
-`;
-
-const LegendWrapper = styled.div`
-  padding: 10px;
-  margin: 5px;
-  border: 1px solid ${Colors.GRAY1};
-  border-radius: 3px;
-  width: auto;
-  position: absolute;
 `;
 
 const StyledLink = styled(Link)`
