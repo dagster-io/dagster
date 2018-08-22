@@ -7,38 +7,21 @@
 // GraphQL fragment: PipelineFragment
 // ====================================================
 
-export interface PipelineFragment_solids_output_type {
+export interface PipelineFragment_solids_outputs_type {
   name: string;
   description: string | null;
 }
 
-export interface PipelineFragment_solids_output_expectations {
+export interface PipelineFragment_solids_outputs_expectations {
   name: string;
   description: string | null;
 }
 
-export interface PipelineFragment_solids_output_materializations_arguments_type {
+export interface PipelineFragment_solids_outputs {
   name: string;
+  type: PipelineFragment_solids_outputs_type;
   description: string | null;
-}
-
-export interface PipelineFragment_solids_output_materializations_arguments {
-  name: string;
-  description: string | null;
-  type: PipelineFragment_solids_output_materializations_arguments_type;
-  isOptional: boolean;
-}
-
-export interface PipelineFragment_solids_output_materializations {
-  name: string;
-  description: string | null;
-  arguments: PipelineFragment_solids_output_materializations_arguments[];
-}
-
-export interface PipelineFragment_solids_output {
-  type: PipelineFragment_solids_output_type;
-  expectations: PipelineFragment_solids_output_expectations[];
-  materializations: PipelineFragment_solids_output_materializations[];
+  expectations: PipelineFragment_solids_outputs_expectations[];
 }
 
 export interface PipelineFragment_solids_inputs_type {
@@ -51,42 +34,41 @@ export interface PipelineFragment_solids_inputs_expectations {
   description: string | null;
 }
 
-export interface PipelineFragment_solids_inputs_sources_arguments_type {
+export interface PipelineFragment_solids_inputs_dependsOn_solid {
   name: string;
-  description: string | null;
-}
-
-export interface PipelineFragment_solids_inputs_sources_arguments {
-  name: string;
-  description: string | null;
-  type: PipelineFragment_solids_inputs_sources_arguments_type;
-  isOptional: boolean;
-}
-
-export interface PipelineFragment_solids_inputs_sources {
-  name: string;
-  description: string | null;
-  arguments: PipelineFragment_solids_inputs_sources_arguments[];
 }
 
 export interface PipelineFragment_solids_inputs_dependsOn {
   name: string;
+  solid: PipelineFragment_solids_inputs_dependsOn_solid;
 }
 
 export interface PipelineFragment_solids_inputs {
   name: string;
   type: PipelineFragment_solids_inputs_type;
-  expectations: PipelineFragment_solids_inputs_expectations[];
   description: string | null;
-  sources: PipelineFragment_solids_inputs_sources[];
+  expectations: PipelineFragment_solids_inputs_expectations[];
   dependsOn: PipelineFragment_solids_inputs_dependsOn | null;
 }
 
+export interface PipelineFragment_solids_config_type {
+  name: string;
+  description: string | null;
+}
+
+export interface PipelineFragment_solids_config {
+  name: string;
+  description: string | null;
+  type: PipelineFragment_solids_config_type;
+  isOptional: boolean;
+}
+
 export interface PipelineFragment_solids {
-  output: PipelineFragment_solids_output;
+  outputs: PipelineFragment_solids_outputs[];
   inputs: PipelineFragment_solids_inputs[];
   name: string;
   description: string | null;
+  config: PipelineFragment_solids_config[];
 }
 
 export interface PipelineFragment_context_arguments_type {
