@@ -7,13 +7,14 @@
 // GraphQL fragment: SolidTypeSignatureFragment
 // ====================================================
 
-export interface SolidTypeSignatureFragment_output_type {
+export interface SolidTypeSignatureFragment_outputs_type {
   name: string;
   description: string | null;
 }
 
-export interface SolidTypeSignatureFragment_output {
-  type: SolidTypeSignatureFragment_output_type;
+export interface SolidTypeSignatureFragment_outputs {
+  name: string;
+  type: SolidTypeSignatureFragment_outputs_type;
 }
 
 export interface SolidTypeSignatureFragment_inputs_type {
@@ -27,7 +28,7 @@ export interface SolidTypeSignatureFragment_inputs {
 }
 
 export interface SolidTypeSignatureFragment {
-  output: SolidTypeSignatureFragment_output;
+  outputs: SolidTypeSignatureFragment_outputs[];
   inputs: SolidTypeSignatureFragment_inputs[];
 }
 

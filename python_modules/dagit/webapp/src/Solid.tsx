@@ -3,7 +3,7 @@ import gql from "graphql-tag";
 import styled from "styled-components";
 import { Link } from "react-router-dom";
 import { H5, H6, Text, Colors, Code, UL } from "@blueprintjs/core";
-import Argumented from "./Argumented";
+import Arguments from "./Arguments";
 import SpacedCard from "./SpacedCard";
 import SolidTypeSignature from "./SolidTypeSignature";
 import TypeWithTooltip from "./TypeWithTooltip";
@@ -21,33 +21,35 @@ export default class Solid extends React.Component<ISolidProps, {}> {
         ...SolidTypeSignatureFragment
         name
         description
+        config {
+          ...ArgumentsFragment
+        }
         inputs {
+          name
+          description
           type {
             ...TypeFragment
           }
           expectations {
             name
             description
-          }
-          name
-          description
-          sources {
-            ...SourceFragment
           }
           dependsOn {
             name
+            solid {
+              name
+            }
           }
         }
-        output {
+        outputs {
+          name
+          description
           type {
             ...TypeFragment
           }
           expectations {
             name
             description
-          }
-          materializations {
-            ...MaterializationFragment
           }
           expectations {
             name
@@ -56,12 +58,24 @@ export default class Solid extends React.Component<ISolidProps, {}> {
         }
       }
 
-      ${Argumented.fragments.SourceFragment}
-      ${Argumented.fragments.MaterializationFragment}
       ${TypeWithTooltip.fragments.TypeFragment}
       ${SolidTypeSignature.fragments.SolidTypeSignatureFragment}
+      ${Arguments.fragments.ArgumentsFragment}
     `
   };
+
+  renderConfig() {
+    if (this.props.solid.config.length > 0) {
+      return (
+        <>
+          <H6>Config</H6>
+          <Arguments arguments={this.props.solid.config} />
+        </>
+      );
+    } else {
+      return null;
+    }
+  }
 
   renderInputs() {
     return this.props.solid.inputs.map((input, i: number) => (
@@ -90,50 +104,31 @@ export default class Solid extends React.Component<ISolidProps, {}> {
             </li>
           ))}
         </UL>
-        {input.sources.length > 0 ? <H6>Sources</H6> : null}
-        {input.sources.map((source: any, i: number) => (
-          <Argumented
-            key={i}
-            item={source}
-            renderCard={props => <SpacedCard {...props} />}
-          />
-        ))}
       </SolidPartCard>
     ));
   }
 
-  renderOutput() {
-    return (
-      <SolidPartCard elevation={3} key="output" horizontal={true}>
-        <H6>Output</H6>
+  renderOutputs() {
+    return this.props.solid.outputs.map((output, i: number) => (
+      <SolidPartCard key={i} elevation={3} horizontal={true}>
+        <H6>
+          Input <Code>{output.name}</Code>
+        </H6>
         <TypeWrapper>
-          <TypeWithTooltip type={this.props.solid.output.type} />
+          <TypeWithTooltip type={output.type} />
         </TypeWrapper>
-        {this.props.solid.output.expectations.length > 0 ? (
-          <H6>Expectations</H6>
-        ) : null}
+        <Description description={output.description} />
+        {output.expectations.length > 0 ? <H6>Expectations</H6> : null}
         <UL>
-          {this.props.solid.output.expectations.map((expectation, i) => (
+          {output.expectations.map((expectation, i) => (
             <li>
               {expectation.name}
               <Description description={expectation.description} />
             </li>
           ))}
         </UL>
-        {this.props.solid.output.materializations.length > 0 ? (
-          <H6>Materializations</H6>
-        ) : null}
-        {this.props.solid.output.materializations.map(
-          (materialization: any, i: number) => (
-            <Argumented
-              key={i}
-              item={materialization}
-              renderCard={props => <SpacedCard {...props} />}
-            />
-          )
-        )}
       </SolidPartCard>
-    );
+    ));
   }
 
   public render() {
@@ -148,10 +143,11 @@ export default class Solid extends React.Component<ISolidProps, {}> {
         <DescriptionWrapper>
           <Description description={this.props.solid.description} />
         </DescriptionWrapper>
+        {this.renderConfig()}
         <Cards>
           {this.renderInputs()}
           <CardSeparator />
-          {this.renderOutput()}
+          {this.renderOutputs()}
         </Cards>
       </SpacedCard>
     );

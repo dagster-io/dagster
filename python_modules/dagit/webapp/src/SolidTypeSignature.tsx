@@ -16,7 +16,8 @@ export default class SolidTypeSignature extends React.Component<
   static fragments = {
     SolidTypeSignatureFragment: gql`
       fragment SolidTypeSignatureFragment on Solid {
-        output {
+        outputs {
+          name
           type {
             ...TypeFragment
           }
@@ -35,19 +36,20 @@ export default class SolidTypeSignature extends React.Component<
 
   render() {
     const inputSide = this.props.solid.inputs.map((input, i) => (
-      <span>
+      <span key={i}>
         {input.name}: <TypeWithTooltip type={input.type} />
         {i < this.props.solid.inputs.length - 1 ? ", " : ""}
       </span>
     ));
-    const outputSide = (
-      <span>
-        <TypeWithTooltip type={this.props.solid.output.type} />
+    const outputSide = this.props.solid.outputs.map((output, i) => (
+      <span key={i}>
+        {output.name}: <TypeWithTooltip type={output.type} />
+        {i < this.props.solid.outputs.length - 1 ? ", " : ""}
       </span>
-    );
+    ));
     return (
       <TypeSignature>
-        ({inputSide}) ⇒ {outputSide}
+        ({inputSide}) ⇒ ({outputSide})
       </TypeSignature>
     );
   }

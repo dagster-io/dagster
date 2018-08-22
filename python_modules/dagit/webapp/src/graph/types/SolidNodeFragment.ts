@@ -11,44 +11,40 @@ export interface SolidNodeFragment_inputs_type {
   name: string;
 }
 
-export interface SolidNodeFragment_inputs_sources {
+export interface SolidNodeFragment_inputs_dependsOn_solid {
   name: string;
 }
 
 export interface SolidNodeFragment_inputs_dependsOn {
   name: string;
+  solid: SolidNodeFragment_inputs_dependsOn_solid;
 }
 
 export interface SolidNodeFragment_inputs {
   name: string;
   type: SolidNodeFragment_inputs_type;
-  sources: SolidNodeFragment_inputs_sources[];
   dependsOn: SolidNodeFragment_inputs_dependsOn | null;
 }
 
-export interface SolidNodeFragment_output_type {
+export interface SolidNodeFragment_outputs_type {
   name: string;
 }
 
-export interface SolidNodeFragment_output_materializations {
-  name: string;
-}
-
-export interface SolidNodeFragment_output_expectations {
+export interface SolidNodeFragment_outputs_expectations {
   name: string;
   description: string | null;
 }
 
-export interface SolidNodeFragment_output {
-  type: SolidNodeFragment_output_type;
-  materializations: SolidNodeFragment_output_materializations[];
-  expectations: SolidNodeFragment_output_expectations[];
+export interface SolidNodeFragment_outputs {
+  name: string;
+  type: SolidNodeFragment_outputs_type;
+  expectations: SolidNodeFragment_outputs_expectations[];
 }
 
 export interface SolidNodeFragment {
   name: string;
   inputs: SolidNodeFragment_inputs[];
-  output: SolidNodeFragment_output;
+  outputs: SolidNodeFragment_outputs[];
 }
 
 /* tslint:disable */

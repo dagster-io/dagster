@@ -16,9 +16,11 @@ export interface IFullSolidLayout {
       port: IPoint;
     };
   };
-  output: {
-    layout: ILayout;
-    port: IPoint;
+  outputs: {
+    [outputName: string]: {
+      layout: ILayout;
+      port: IPoint;
+    };
   };
 }
 
@@ -32,7 +34,13 @@ interface ILayoutSolid {
     name: string;
     dependsOn: {
       name: string;
+      solid: {
+        name: string;
+      };
     } | null;
+  }>;
+  outputs: Array<{
+    name: string;
   }>;
 }
 
@@ -80,15 +88,12 @@ export function getDagrePipelineLayout(
     const layout = layoutSolid({ solid, x: 0, y: 0 });
     g.setNode(solid.name, {
       height: layout.solid.height,
-      width:
-        layout.solid.width +
-        layout.output.layout.width * 2 -
-        INPUT_OUTPUT_INSET * 2
+      width: layout.solid.width + INPUT_WIDTH * 2 - INPUT_OUTPUT_INSET * 2
     });
 
     solid.inputs.forEach(input => {
       if (input.dependsOn) {
-        g.setEdge(input.dependsOn.name, solid.name);
+        g.setEdge(input.dependsOn.solid.name, solid.name);
       }
     });
   });
@@ -135,19 +140,10 @@ function layoutSolid({
     x: solidX,
     y: solidY,
     width: SOLID_WIDTH,
-    height: SOLID_BASE_HEIGHT + (INPUT_HEIGHT + INPUT_GAP) * solid.inputs.length
-  };
-  const outputX = solidX + SOLID_WIDTH - INPUT_OUTPUT_INSET;
-  const outputY = solidY + INPUT_GAP;
-  const outputLayout: ILayout = {
-    x: outputX,
-    y: outputY,
-    width: OUTPUT_WIDTH,
-    height: OUTPUT_HEIGHT
-  };
-  const outputPort: IPoint = {
-    x: outputX + OUTPUT_WIDTH,
-    y: outputY + OUTPUT_HEIGHT / 2
+    height:
+      SOLID_BASE_HEIGHT +
+      (INPUT_HEIGHT + INPUT_GAP) *
+        Math.max(solid.inputs.length, solid.outputs.length)
   };
   const inputs: {
     [inputName: string]: {
@@ -172,12 +168,32 @@ function layoutSolid({
     };
   });
 
+  const outputs: {
+    [outputName: string]: {
+      layout: ILayout;
+      port: IPoint;
+    };
+  } = {};
+  solid.outputs.forEach((output, i) => {
+    const outputX = solidX + SOLID_WIDTH - INPUT_OUTPUT_INSET;
+    const outputY = solidY + INPUT_GAP + (OUTPUT_HEIGHT + INPUT_GAP) * i;
+    outputs[output.name] = {
+      layout: {
+        x: outputX,
+        y: outputY,
+        width: OUTPUT_WIDTH,
+        height: OUTPUT_HEIGHT
+      },
+      port: {
+        x: outputX,
+        y: outputY + OUTPUT_HEIGHT / 2
+      }
+    };
+  });
+
   return {
     solid: solidLayout,
     inputs,
-    output: {
-      layout: outputLayout,
-      port: outputPort
-    }
+    outputs
   };
 }

@@ -4,34 +4,19 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL fragment: SolidListItemFragment
+// GraphQL fragment: ArgumentsFragment
 // ====================================================
 
-export interface SolidListItemFragment_outputs_type {
+export interface ArgumentsFragment_type {
   name: string;
   description: string | null;
 }
 
-export interface SolidListItemFragment_outputs {
-  name: string;
-  type: SolidListItemFragment_outputs_type;
-}
-
-export interface SolidListItemFragment_inputs_type {
+export interface ArgumentsFragment {
   name: string;
   description: string | null;
-}
-
-export interface SolidListItemFragment_inputs {
-  name: string;
-  type: SolidListItemFragment_inputs_type;
-}
-
-export interface SolidListItemFragment {
-  name: string;
-  description: string | null;
-  outputs: SolidListItemFragment_outputs[];
-  inputs: SolidListItemFragment_inputs[];
+  type: ArgumentsFragment_type;
+  isOptional: boolean;
 }
 
 /* tslint:disable */
