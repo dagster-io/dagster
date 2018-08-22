@@ -114,7 +114,10 @@ class PipelineDefinition:
                 if input_def.depends_on:
                     check.invariant(
                         input_def.depends_on.name in solid_names,
-                        f'dep must exist got: {input_def.depends_on.name} and set {solid_names}'
+                        f'''The solid {input_def.depends_on.name} was specified 
+                        as a dependency, however it does not exist in your 
+                        pipeline definition. Only the following exist: 
+                        {solid_names}'''
                     )
 
         self.solid_graph = SolidGraph(solids=solids)
