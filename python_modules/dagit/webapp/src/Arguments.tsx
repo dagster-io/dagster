@@ -1,8 +1,7 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
-import { H5, H6, Text, UL, Code, Collapse } from "@blueprintjs/core";
-import SpacedCard from "./SpacedCard";
+import { UL } from "@blueprintjs/core";
 import TypeWithTooltip from "./TypeWithTooltip";
 import Description from "./Description";
 import { ArgumentsFragment } from "./types/ArgumentsFragment";
