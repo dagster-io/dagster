@@ -52,7 +52,7 @@ export default class PipelineGraph extends React.Component<
 
   renderConnections(layout: IFullPipelineLayout) {
     const connections: Array<{
-      from: string;
+      from: { solidName: string; outputName: string };
       to: { solidName: string; inputName: string };
     }> = [];
 
@@ -60,7 +60,10 @@ export default class PipelineGraph extends React.Component<
       solid.inputs.forEach(input => {
         if (input.dependsOn) {
           connections.push({
-            from: input.dependsOn.name,
+            from: {
+              solidName: input.dependsOn.solid.name,
+              outputName: input.dependsOn.name
+            },
             to: {
               solidName: solid.name,
               inputName: input.name
@@ -71,12 +74,18 @@ export default class PipelineGraph extends React.Component<
     });
 
     const links = connections.map(
-      ({ from, to: { solidName, inputName } }, i) => (
+      (
+        {
+          from: { solidName: outputSolidName, outputName },
+          to: { solidName: inputSolidName, inputName }
+        },
+        i
+      ) => (
         <StyledLink
           key={i}
           data={{
-            source: layout.solids[from].output.port,
-            target: layout.solids[solidName].inputs[inputName].port
+            source: layout.solids[outputSolidName].outputs[outputName].port,
+            target: layout.solids[inputSolidName].inputs[inputName].port
           }}
           x={(d: { x: number; y: number }) => d.x}
           y={(d: { x: number; y: number }) => d.y}

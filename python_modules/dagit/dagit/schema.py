@@ -29,9 +29,15 @@ class Pipeline(graphene.ObjectType):
     def __init__(self, pipeline):
         super(Pipeline, self).__init__(name=pipeline.name, description=pipeline.description)
         self._pipeline = pipeline
+        print(self._pipeline.dependency_structure.items())
 
     def resolve_solids(self, info):
-        return [Solid(solid) for solid in self._pipeline.solids]
+        return [
+            Solid(
+                solid, self._pipeline.dependency_structure.deps_of_solid_with_input(solid.name),
+                self._pipeline.dependency_structure.depended_by_of_solid(solid.name)
+            ) for solid in self._pipeline.solids
+        ]
 
     def resolve_context(self, info):
         return [
@@ -60,44 +66,66 @@ class Solid(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
     inputs = graphene.NonNull(graphene.List(lambda: graphene.NonNull(Input)))
-    output = graphene.Field(lambda: graphene.NonNull(Output))
+    outputs = graphene.NonNull(graphene.List(lambda: graphene.NonNull(Output)))
+    config = graphene.NonNull(graphene.List(lambda: graphene.NonNull(Argument)))
 
-    def __init__(self, solid):
+    def __init__(self, solid, depends_on=None, depended_by=None):
         super(Solid, self).__init__(name=solid.name, description=solid.description)
         self._solid = solid
+        if depends_on:
+            self._depends_on = {
+                input_handle.input_def.name: output_handle
+                for input_handle, output_handle in depends_on.items()
+            }
+        else:
+            self.depends_on = {}
+
+        if depended_by:
+            self._depended_by = {
+                output_handle.output.name: input_handles
+                for output_handle, input_handles in depended_by.items()
+            }
+        else:
+            self._depended_by = {}
 
     def resolve_inputs(self, info):
-        return [Input(input_definition) for input_definition in self._solid.inputs]
+        return [
+            Input(input_definition, self, self._depends_on.get(input_definition.name))
+            for input_definition in self._solid.inputs
+        ]
 
-    def resolve_output(self, info):
-        return Output(self._solid.output)
+    def resolve_outputs(self, info):
+        return [
+            Output(output_definition, self, self._depended_by.get(output_definition.name, []))
+            for output_definition in self._solid.outputs
+        ]
+
+    def resolve_config(self, info):
+        return [
+            Argument(name=name, argument=argument)
+            for name, argument in self._solid.config_dict_def.items()
+        ]
 
 
 class Input(graphene.ObjectType):
+    solid = graphene.NonNull(lambda: Solid)
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
     type = graphene.NonNull(lambda: Type)
-    sources = graphene.NonNull(graphene.List(lambda: graphene.NonNull(Source)))
-    depends_on = graphene.Field(lambda: Solid)
     expectations = graphene.NonNull(graphene.List(lambda: graphene.NonNull(Expectation)))
+    depends_on = graphene.Field(lambda: Output)
 
-    def __init__(self, input_definition):
+    def __init__(self, input_definition, solid, depends_on):
         super(Input, self).__init__(
-            name=input_definition.name, description=input_definition.description
+            name=input_definition.name,
+            description=input_definition.description,
+            solid=solid,
         )
         self._input_definition = input_definition
+        self._depends_on = depends_on
 
     def resolve_type(self, info):
         return Type(dagster_type=self._input_definition.dagster_type)
-
-    def resolve_sources(self, info):
-        return [Source(source) for source in self._input_definition.sources]
-
-    def resolve_depends_on(self, info):
-        if self._input_definition.depends_on:
-            return Solid(self._input_definition.depends_on)
-        else:
-            return None
 
     def resolve_expectations(self, info):
         if self._input_definition.expectations:
@@ -105,27 +133,34 @@ class Input(graphene.ObjectType):
         else:
             return []
 
+    def resolve_depends_on(self, info):
+        return Output(
+            self._depends_on.output,
+            Solid(self._depends_on.solid),
+            # XXX(freiksenet): This is not right
+            []
+        )
+
 
 class Output(graphene.ObjectType):
+    solid = graphene.NonNull(lambda: Solid)
+    name = graphene.NonNull(graphene.String)
+    description = graphene.String()
     type = graphene.NonNull(lambda: Type)
-    materializations = graphene.NonNull(graphene.List(lambda: graphene.NonNull(Materialization)))
     expectations = graphene.NonNull(graphene.List(lambda: graphene.NonNull(Expectation)))
+    depended_by = graphene.List(lambda: graphene.NonNull(Input))
 
-    def __init__(self, output_definition):
-        super(Output, self).__init__()
+    def __init__(self, output_definition, solid, depended_by):
+        super(Output, self).__init__(
+            name=output_definition.name,
+            description=output_definition.description,
+            solid=solid,
+        )
         self._output_definition = output_definition
+        self._depended_by = depended_by
 
     def resolve_type(self, info):
         return Type(dagster_type=self._output_definition.dagster_type)
-
-    def resolve_materializations(self, info):
-        if self._output_definition.materializations:
-            return [
-                Materialization(materialization)
-                for materialization in self._output_definition.materializations
-            ]
-        else:
-            return []
 
     def resolve_expectations(self, info):
         if self._output_definition.expectations:
@@ -135,39 +170,14 @@ class Output(graphene.ObjectType):
         else:
             return []
 
-
-class Source(graphene.ObjectType):
-    # XXX(freiksenet): maybe rename to name?
-    source_type = graphene.NonNull(graphene.String)
-    description = graphene.String()
-    arguments = graphene.NonNull(graphene.List(lambda: graphene.NonNull(Argument)))
-
-    def __init__(self, source):
-        super(Source, self).__init__(source_type=source.source_type, description=source.description)
-        self._source = source
-
-    def resolve_arguments(self, info):
+    def resolve_depends_on(self, info):
         return [
-            Argument(name=name, argument=argument)
-            for name, argument in self._source.argument_def_dict.items()
-        ]
-
-
-class Materialization(graphene.ObjectType):
-    name = graphene.NonNull(graphene.String)
-    description = graphene.String()
-    arguments = graphene.NonNull(graphene.List(lambda: graphene.NonNull(Argument)))
-
-    def __init__(self, materialization):
-        super(Materialization, self).__init__(
-            name=materialization.name, description=materialization.description
-        )
-        self._materialization = materialization
-
-    def resolve_arguments(self, info):
-        return [
-            Argument(name=name, argument=argument)
-            for name, argument in self._materialization.argument_def_dict.items()
+            Input(
+                depended_by.input_def,
+                Solid(depended_by.solid),
+                # XXX(freiksenet): This is not right
+                None
+            ) for depended_by in self._depended_by
         ]
 
 

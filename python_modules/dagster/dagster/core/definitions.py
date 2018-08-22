@@ -136,12 +136,26 @@ class DependencyStructure:
 
     def deps_of_solid(self, solid_name):
         check.str_param(solid_name, 'solid_name')
-        return list(self.__gen_deps_of_solid(solid_name))
+        return list(handles[1] for handles in self.__gen_deps_of_solid(solid_name))
+
+    def deps_of_solid_with_input(self, solid_name):
+        check.str_param(solid_name, 'solid_name')
+        return dict(self.__gen_deps_of_solid(solid_name))
 
     def __gen_deps_of_solid(self, solid_name):
         for input_handle, output_handle in self._handle_dict.items():
             if input_handle.solid.name == solid_name:
-                yield output_handle
+                yield (input_handle, output_handle)
+
+    def depended_by_of_solid(self, solid_name):
+        check.str_param(solid_name, 'solid_name')
+        result = {}
+        for input_handle, output_handle in self._handle_dict.items():
+            if output_handle.solid.name == solid_name:
+                if output_handle not in result:
+                    result[output_handle] = []
+                result[output_handle].extend(input_handle)
+        return result
 
     def get_dep(self, solid_input_handle):
         check.inst_param(solid_input_handle, 'solid_input_handle', SolidInputHandle)

@@ -11,44 +11,40 @@ export interface PipelineGraphFragment_solids_inputs_type {
   name: string;
 }
 
-export interface PipelineGraphFragment_solids_inputs_sources {
+export interface PipelineGraphFragment_solids_inputs_dependsOn_solid {
   name: string;
 }
 
 export interface PipelineGraphFragment_solids_inputs_dependsOn {
   name: string;
+  solid: PipelineGraphFragment_solids_inputs_dependsOn_solid;
 }
 
 export interface PipelineGraphFragment_solids_inputs {
   name: string;
   type: PipelineGraphFragment_solids_inputs_type;
-  sources: PipelineGraphFragment_solids_inputs_sources[];
   dependsOn: PipelineGraphFragment_solids_inputs_dependsOn | null;
 }
 
-export interface PipelineGraphFragment_solids_output_type {
+export interface PipelineGraphFragment_solids_outputs_type {
   name: string;
 }
 
-export interface PipelineGraphFragment_solids_output_materializations {
-  name: string;
-}
-
-export interface PipelineGraphFragment_solids_output_expectations {
+export interface PipelineGraphFragment_solids_outputs_expectations {
   name: string;
   description: string | null;
 }
 
-export interface PipelineGraphFragment_solids_output {
-  type: PipelineGraphFragment_solids_output_type;
-  materializations: PipelineGraphFragment_solids_output_materializations[];
-  expectations: PipelineGraphFragment_solids_output_expectations[];
+export interface PipelineGraphFragment_solids_outputs {
+  name: string;
+  type: PipelineGraphFragment_solids_outputs_type;
+  expectations: PipelineGraphFragment_solids_outputs_expectations[];
 }
 
 export interface PipelineGraphFragment_solids {
   name: string;
   inputs: PipelineGraphFragment_solids_inputs[];
-  output: PipelineGraphFragment_solids_output;
+  outputs: PipelineGraphFragment_solids_outputs[];
 }
 
 export interface PipelineGraphFragment {

@@ -7,38 +7,21 @@
 // GraphQL query operation: AppQuery
 // ====================================================
 
-export interface AppQuery_pipelines_solids_output_type {
+export interface AppQuery_pipelines_solids_outputs_type {
   name: string;
   description: string | null;
 }
 
-export interface AppQuery_pipelines_solids_output_expectations {
+export interface AppQuery_pipelines_solids_outputs_expectations {
   name: string;
   description: string | null;
 }
 
-export interface AppQuery_pipelines_solids_output_materializations_arguments_type {
+export interface AppQuery_pipelines_solids_outputs {
   name: string;
+  type: AppQuery_pipelines_solids_outputs_type;
   description: string | null;
-}
-
-export interface AppQuery_pipelines_solids_output_materializations_arguments {
-  name: string;
-  description: string | null;
-  type: AppQuery_pipelines_solids_output_materializations_arguments_type;
-  isOptional: boolean;
-}
-
-export interface AppQuery_pipelines_solids_output_materializations {
-  name: string;
-  description: string | null;
-  arguments: AppQuery_pipelines_solids_output_materializations_arguments[];
-}
-
-export interface AppQuery_pipelines_solids_output {
-  type: AppQuery_pipelines_solids_output_type;
-  expectations: AppQuery_pipelines_solids_output_expectations[];
-  materializations: AppQuery_pipelines_solids_output_materializations[];
+  expectations: AppQuery_pipelines_solids_outputs_expectations[];
 }
 
 export interface AppQuery_pipelines_solids_inputs_type {
@@ -51,42 +34,41 @@ export interface AppQuery_pipelines_solids_inputs_expectations {
   description: string | null;
 }
 
-export interface AppQuery_pipelines_solids_inputs_sources_arguments_type {
+export interface AppQuery_pipelines_solids_inputs_dependsOn_solid {
   name: string;
-  description: string | null;
-}
-
-export interface AppQuery_pipelines_solids_inputs_sources_arguments {
-  name: string;
-  description: string | null;
-  type: AppQuery_pipelines_solids_inputs_sources_arguments_type;
-  isOptional: boolean;
-}
-
-export interface AppQuery_pipelines_solids_inputs_sources {
-  name: string;
-  description: string | null;
-  arguments: AppQuery_pipelines_solids_inputs_sources_arguments[];
 }
 
 export interface AppQuery_pipelines_solids_inputs_dependsOn {
   name: string;
+  solid: AppQuery_pipelines_solids_inputs_dependsOn_solid;
 }
 
 export interface AppQuery_pipelines_solids_inputs {
   name: string;
   type: AppQuery_pipelines_solids_inputs_type;
-  expectations: AppQuery_pipelines_solids_inputs_expectations[];
   description: string | null;
-  sources: AppQuery_pipelines_solids_inputs_sources[];
+  expectations: AppQuery_pipelines_solids_inputs_expectations[];
   dependsOn: AppQuery_pipelines_solids_inputs_dependsOn | null;
 }
 
+export interface AppQuery_pipelines_solids_config_type {
+  name: string;
+  description: string | null;
+}
+
+export interface AppQuery_pipelines_solids_config {
+  name: string;
+  description: string | null;
+  type: AppQuery_pipelines_solids_config_type;
+  isOptional: boolean;
+}
+
 export interface AppQuery_pipelines_solids {
-  output: AppQuery_pipelines_solids_output;
+  outputs: AppQuery_pipelines_solids_outputs[];
   inputs: AppQuery_pipelines_solids_inputs[];
   name: string;
   description: string | null;
+  config: AppQuery_pipelines_solids_config[];
 }
 
 export interface AppQuery_pipelines_context_arguments_type {
