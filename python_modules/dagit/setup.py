@@ -18,8 +18,9 @@ def long_description():
 
 setup(
     name='dagit',
-    version='0.0.1',
+    version='0.2.0',
     author='Elementl',
+    author_email='schrockn@elementl.com',
     license='Apache-2.0',
     description='Web UI for dagster, an opinionated pipeline runner.',
     long_description=long_description(),
@@ -30,7 +31,8 @@ setup(
         'License :: OSI Approved :: Apache Software License',
         'Operating System :: OS Independent',
     ),
-    packages=find_packages(exclude=['dagster_tests']),
+    packages=find_packages(exclude=['dagit_tests']),
+    include_package_data=True,
     install_requires=[
         # standard python 2/3 compatability things
         'enum34>=1.1.6',
@@ -49,7 +51,7 @@ setup(
         'click>=6.7',
 
         # dagster
-        'dagster>=0.1.2',
+        'dagster>=0.1.7',
 
         # graphql
         'graphql-core>=2.1',
