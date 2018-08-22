@@ -30,7 +30,7 @@ def create_dagit_cli():
 @click.option('--port', '-p', type=click.INT, default=3000, help="Port to run server on")
 @click.pass_context
 def ui(ctx, config, host, port):
+    sys.path.append(os.getcwd())
     ctx.obj = Config.from_file(config)
     app = create_app(ctx.obj)
-
     serve(app, host=host, port=port)
