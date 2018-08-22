@@ -29,7 +29,6 @@ class Pipeline(graphene.ObjectType):
     def __init__(self, pipeline):
         super(Pipeline, self).__init__(name=pipeline.name, description=pipeline.description)
         self._pipeline = pipeline
-        print(self._pipeline.dependency_structure.items())
 
     def resolve_solids(self, info):
         return [
