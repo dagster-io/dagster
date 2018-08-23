@@ -1,4 +1,5 @@
 import inspect
+from collections import namedtuple
 from functools import wraps
 from dagster import check
 from .definitions import (
@@ -6,10 +7,20 @@ from .definitions import (
     InputDefinition,
     OutputDefinition,
     DagsterInvalidDefinitionError,
+    Result,
+    check_argument_def_dict,
 )
 
 # Error messages are long
 # pylint: disable=C0301
+
+
+class MultipleResults(namedtuple('_MultipleResults', 'results')):
+    def __new__(cls, results):
+        return super(MultipleResults, cls).__new__(
+            cls,
+            check.list_param(results, 'results', Result),
+        )
 
 
 def with_context(fn):
@@ -28,15 +39,22 @@ class _WithContext:
 
 
 class _Solid:
-    def __init__(self, name=None, inputs=None, output=None, description=None):
+    def __init__(
+        self,
+        name=None,
+        inputs=None,
+        outputs=None,
+        description=None,
+        config_def=None,
+    ):
         self.name = check.opt_str_param(name, 'name')
         self.inputs = check.opt_list_param(inputs, 'inputs', InputDefinition)
-
-        check.opt_inst_param(output, 'output', OutputDefinition)
-        if not output:
-            output = OutputDefinition()
-        self.output = output
+        self.outputs = check.opt_list_param(outputs, 'outputs', OutputDefinition)
         self.description = check.opt_str_param(description, 'description')
+        if config_def:
+            self.config_def = check_argument_def_dict(config_def)
+        else:
+            self.config_def = {}
 
     def __call__(self, fn):
         expect_context = getattr(fn, 'has_context', False)
@@ -47,33 +65,46 @@ class _Solid:
             self.name = fn.__name__
 
         _validate_transform_fn(self.name, fn, self.inputs, expect_context)
-        transform_fn = _create_transform_wrapper(fn, self.inputs, expect_context)
-        return SolidDefinition.single_output_transform(
+        transform_fn = _create_transform_wrapper(fn, self.inputs, self.outputs, expect_context)
+        return SolidDefinition(
             name=self.name,
             inputs=self.inputs,
-            output=self.output,
+            outputs=self.outputs,
             transform_fn=transform_fn,
+            config_def=self.config_def,
             description=self.description,
         )
 
 
-def solid(*, name=None, inputs=None, output=None, description=None):
-    return _Solid(name=name, inputs=inputs, output=output, description=description)
+def solid(*, name=None, inputs=None, outputs=None, description=None):
+    return _Solid(name=name, inputs=inputs, outputs=outputs, description=description)
 
 
-def _create_transform_wrapper(fn, inputs, include_context=False):
+def _create_transform_wrapper(fn, inputs, outputs, include_context=False):
     input_names = [input.name for input in inputs]
 
     @wraps(fn)
-    def transform(context, args):
+    def transform(context, args, config):
         kwargs = {}
         for input_name in input_names:
             kwargs[input_name] = args[input_name]
 
         if include_context:
-            return fn(context, **kwargs)
+            result = fn(context, **kwargs)
         else:
-            return fn(**kwargs)
+            result = fn(**kwargs)
+        if inspect.isgenerator(result):
+            yield from result
+        else:
+            if isinstance(result, Result):
+                yield result
+            elif isinstance(result, MultipleResults):
+                yield from MultipleResults.results
+            elif len(outputs) == 1:
+                yield Result(value=result, output_name=outputs[0].name)
+            elif result is not None:
+                # XXX(freiksenet)
+                raise Exception('Output for a solid without an output.')
 
     return transform
 

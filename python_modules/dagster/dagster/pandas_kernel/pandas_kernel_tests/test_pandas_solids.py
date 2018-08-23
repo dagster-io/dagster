@@ -173,7 +173,7 @@ def create_sum_table():
 
 @solid(
     inputs=[InputDefinition('num_csv', dagster_pd.DataFrame)],
-    output=OutputDefinition(dagster_type=dagster_pd.DataFrame),
+    outputs=[OutputDefinition(dagster_type=dagster_pd.DataFrame)],
 )
 def sum_table(num_csv):
     check.inst_param(num_csv, 'num_csv', pd.DataFrame)
@@ -183,7 +183,7 @@ def sum_table(num_csv):
 
 @solid(
     inputs=[InputDefinition('sum_df', dagster_pd.DataFrame)],
-    output=OutputDefinition(dagster_type=dagster_pd.DataFrame),
+    outputs=[OutputDefinition(dagster_type=dagster_pd.DataFrame)],
 )
 def sum_sq_table(sum_df):
     sum_df['sum_squared'] = sum_df['sum'] * sum_df['sum']
@@ -192,7 +192,7 @@ def sum_sq_table(sum_df):
 
 @solid(
     inputs=[InputDefinition('sum_table_renamed', dagster_pd.DataFrame)],
-    output=OutputDefinition(dagster_type=dagster_pd.DataFrame),
+    outputs=[OutputDefinition(dagster_type=dagster_pd.DataFrame)],
 )
 def sum_sq_table_renamed_input(sum_table_renamed):
     sum_table_renamed['sum_squared'] = sum_table_renamed['sum'] * sum_table_renamed['sum']
@@ -386,8 +386,7 @@ def create_diamond_dag():
 def test_pandas_in_memory_diamond_pipeline():
     pipeline = create_diamond_pipeline()
     result = execute_pipeline(
-        pipeline,
-        environment=get_num_csv_environment(get_load_only_solids_config('load_csv'))
+        pipeline, environment=get_num_csv_environment(get_load_only_solids_config('load_csv'))
     )
 
     assert result.result_named('sum_mult_table').transformed_value.to_dict('list') == {
@@ -455,7 +454,7 @@ def test_pandas_output_intermediate_csv_files():
                 write_sum_table.name: {
                     'df': DependencyDefinition('sum_table'),
                 },
-                write_mult_table.name:{
+                write_mult_table.name: {
                     'df': DependencyDefinition('mult_table'),
                 }
             }
@@ -500,8 +499,8 @@ def test_pandas_output_intermediate_csv_files():
 
         injected_solids = {
             'sum_mult_table': {
-                'sum_table' : dagster_pd.load_csv_solid('load_sum_table'),
-                'mult_table' : dagster_pd.load_csv_solid('load_mult_table'),
+                'sum_table': dagster_pd.load_csv_solid('load_sum_table'),
+                'mult_table': dagster_pd.load_csv_solid('load_mult_table'),
             }
         }
 
@@ -555,23 +554,25 @@ def test_pandas_output_intermediate_parquet_files():
                 write_sum_table.name: {
                     'df': DependencyDefinition('sum_table'),
                 },
-                write_mult_table.name:{
+                write_mult_table.name: {
                     'df': DependencyDefinition('mult_table'),
                 }
             }
         )
 
-        environment = get_num_csv_environment({
-            'load_csv': config.Solid({
-                'path': script_relative_path('num.csv'),
-            }),
-            write_sum_table.name: config.Solid({
-                'path': sum_file
-            }),
-            write_mult_table.name: config.Solid({
-                'path': mult_file
-            }),
-        })
+        environment = get_num_csv_environment(
+            {
+                'load_csv': config.Solid({
+                    'path': script_relative_path('num.csv'),
+                }),
+                write_sum_table.name: config.Solid({
+                    'path': sum_file
+                }),
+                write_mult_table.name: config.Solid({
+                    'path': mult_file
+                }),
+            }
+        )
 
         pipeline_result = execute_pipeline(
             pipeline,
@@ -654,23 +655,25 @@ def test_pandas_multiple_outputs():
                 write_sum_mult_csv.name: {
                     'df': DependencyDefinition('sum_mult_table'),
                 },
-                write_sum_mult_parquet.name:{
+                write_sum_mult_parquet.name: {
                     'df': DependencyDefinition('sum_mult_table'),
                 }
             }
         )
 
-        environment = get_num_csv_environment({
-            'load_csv': config.Solid({
-                'path': script_relative_path('num.csv'),
-            }),
-            write_sum_mult_csv.name: config.Solid({
-                'path': csv_file,
-            }),
-            write_sum_mult_parquet.name: config.Solid({
-                'path': parquet_file,
-            }),
-        })
+        environment = get_num_csv_environment(
+            {
+                'load_csv': config.Solid({
+                    'path': script_relative_path('num.csv'),
+                }),
+                write_sum_mult_csv.name: config.Solid({
+                    'path': csv_file,
+                }),
+                write_sum_mult_parquet.name: config.Solid({
+                    'path': parquet_file,
+                }),
+            }
+        )
 
         execute_pipeline(pipeline, environment)
 

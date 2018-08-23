@@ -22,7 +22,7 @@ def silencing_default_context():
     }
 
 
-@solid(name='noop', inputs=[], output=OutputDefinition())
+@solid(name='noop', inputs=[], outputs=[OutputDefinition()])
 def noop_solid():
     return 'foo'
 
