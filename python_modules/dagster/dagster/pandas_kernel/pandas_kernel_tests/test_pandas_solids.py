@@ -506,7 +506,7 @@ def test_pandas_output_intermediate_csv_files():
         }
 
         pipeline_result = execute_pipeline(
-            PipelineDefinition.create_pipeline_slice(
+            PipelineDefinition.create_sub_pipeline(
                 pipeline,
                 ['sum_mult_table'],
                 ['sum_mult_table'],

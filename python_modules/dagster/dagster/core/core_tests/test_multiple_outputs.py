@@ -1,4 +1,6 @@
 from dagster import (
+    ExpectationDefinition,
+    ExpectationResult,
     OutputDefinition,
     PipelineDefinition,
     Result,
@@ -35,3 +37,50 @@ def test_multiple_outputs():
     assert result.result_list[1].name == 'multiple_outputs'
     assert result.result_list[1].output_name == 'output_two'
     assert result.result_list[1].transformed_value == 'bar'
+
+
+def test_multiple_outputs_expectations():
+    called = {}
+
+    def _expect_fn_one(*_args, **_kwargs):
+        called['expectation_one'] = True
+        return ExpectationResult(success=True)
+
+    def _expect_fn_two(*_args, **_kwargs):
+        called['expectation_two'] = True
+        return ExpectationResult(success=True)
+
+    def _transform_fn(*_args, **_kwargs):
+        yield Result('foo', 'output_one')
+        yield Result('bar', 'output_two')
+
+    solid = SolidDefinition(
+        name='multiple_outputs',
+        inputs=[],
+        outputs=[
+            OutputDefinition(
+                name='output_one',
+                expectations=[
+                    ExpectationDefinition(name='some_expectation', expectation_fn=_expect_fn_one)
+                ]
+            ),
+            OutputDefinition(
+                name='output_two',
+                expectations=[
+                    ExpectationDefinition(
+                        name='some_other_expectation', expectation_fn=_expect_fn_two
+                    )
+                ],
+            ),
+        ],
+        config_def={},
+        transform_fn=_transform_fn,
+    )
+
+    pipeline = PipelineDefinition(solids=[solid])
+
+    result = execute_pipeline(pipeline, config.Environment())
+
+    assert result.success
+    assert called['expectation_one']
+    assert called['expectation_two']

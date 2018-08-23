@@ -112,7 +112,7 @@ export default class Solid extends React.Component<ISolidProps, {}> {
     return this.props.solid.outputs.map((output, i: number) => (
       <SolidPartCard key={i} elevation={3} horizontal={true}>
         <H6>
-          Input <Code>{output.name}</Code>
+          Output <Code>{output.name}</Code>
         </H6>
         <TypeWrapper>
           <TypeWithTooltip type={output.type} />
