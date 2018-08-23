@@ -17,7 +17,7 @@ from dagster.core.execution import (
     execute_single_solid,
     ExecutionContext,
 )
-from dagster.core.utility_solids import define_pass_mem_value
+from dagster.core.utility_solids import define_stub_solid
 
 # This file tests a lot of parameter name stuff
 # So these warnings are spurious
@@ -88,7 +88,7 @@ def test_solid_with_input():
         return foo_to_foo
 
     pipeline = PipelineDefinition(
-        solids=[define_pass_mem_value('test_value', {'foo': 'bar'}), hello_world],
+        solids=[define_stub_solid('test_value', {'foo': 'bar'}), hello_world],
         dependencies={'hello_world': {
             'foo_to_foo': DependencyDefinition('test_value'),
         }}

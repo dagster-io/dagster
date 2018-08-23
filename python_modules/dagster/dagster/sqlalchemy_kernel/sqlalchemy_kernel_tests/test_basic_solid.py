@@ -10,7 +10,7 @@ from dagster import (
     execute_pipeline,
 )
 
-from dagster.core.utility_solids import define_pass_mem_value
+from dagster.core.utility_solids import define_stub_solid
 
 from dagster.sqlalchemy_kernel.subquery_builder_experimental import (
     create_sql_solid,
@@ -53,7 +53,7 @@ def create_num_table(engine):
 
 
 def test_sql_sum_solid():
-    expr_solid = define_pass_mem_value('expr', DagsterSqlTableExpression('num_table'))
+    expr_solid = define_stub_solid('expr', DagsterSqlTableExpression('num_table'))
 
     sum_table_solid = create_sum_table_solid()
 
@@ -101,7 +101,7 @@ def create_sum_table_solid():
 def create_sum_sq_pipeline(context, expr, extra_solids=None, extra_deps=None):
     check.inst_param(expr, 'expr', DagsterSqlTableExpression)
 
-    expr_solid = define_pass_mem_value('expr', expr)
+    expr_solid = define_stub_solid('expr', expr)
 
     sum_solid = create_sum_table_solid()
 

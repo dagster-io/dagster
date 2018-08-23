@@ -8,12 +8,28 @@ from dagster import (
     PipelineDefinition,
     Result,
     SolidDefinition,
+    check,
     config,
     execute_pipeline,
     types,
 )
 
-from dagster.core.utility_solids import define_pass_value_solid
+
+def define_pass_value_solid(name, description=None):
+    check.str_param(name, 'name')
+    check.opt_str_param(description, 'description')
+
+    def _value_t_fn(_context, _inputs, config_dict):
+        yield Result(config_dict['value'])
+
+    return SolidDefinition(
+        name=name,
+        description=description,
+        inputs=[],
+        outputs=[OutputDefinition(dagster_type=types.String)],
+        config_def={'value': ArgumentDefinition(types.String)},
+        transform_fn=_value_t_fn,
+    )
 
 
 def test_execute_solid_with_input_same_name():

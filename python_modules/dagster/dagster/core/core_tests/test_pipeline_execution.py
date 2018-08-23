@@ -156,11 +156,11 @@ def test_disconnected_graphs_adjaceny_lists():
     assert backwards_edges == {'B': {'A'}, 'A': set(), 'D': {'C'}, 'C': set()}
 
 
-from dagster.core.utility_solids import define_pass_mem_value
+from dagster.core.utility_solids import define_stub_solid
 
 
 def create_diamond_solids():
-    a_source = define_pass_mem_value('A_source', [input_set('A_input')])
+    a_source = define_stub_solid('A_source', [input_set('A_input')])
     node_a = create_root_solid('A')
     node_b = create_solid_with_deps('B', node_a)
     node_c = create_solid_with_deps('C', node_a)

@@ -17,7 +17,7 @@ from dagster.sqlalchemy_kernel.templated import (
     create_templated_sql_transform_solid,
 )
 
-from dagster.core.utility_solids import define_pass_value_solid
+from dagster.core.utility_solids import define_stub_solid
 
 from .math_test_db import in_mem_context
 
@@ -202,7 +202,7 @@ def test_templated_sql_solid_pipeline():
     # now execute subdag
 
     pipeline_two = pipeline_test_def(
-        solids=[define_pass_value_solid('pass_value'), sum_sq_solid],
+        solids=[define_stub_solid('pass_value', 'TODO'), sum_sq_solid],
         context=context,
         dependencies={
             sum_sq_solid.name: {
@@ -213,17 +213,13 @@ def test_templated_sql_solid_pipeline():
 
     second_sum_sq_table = 'second_sum_sq_table'
 
+    sum_sq_args = {
+        'sum_table': first_sum_table,
+        'sum_sq_table': second_sum_sq_table,
+    }
     environment_two = config.Environment(
         solids={
-            'pass_value':
-            config.Solid({
-                'value': 'something'
-            }),
-            'sum_sq_table':
-            config.Solid({
-                'sum_table': first_sum_table,
-                'sum_sq_table': second_sum_sq_table,
-            }),
+            'sum_sq_table': config.Solid(sum_sq_args),
         },
     )
 
