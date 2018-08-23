@@ -22,7 +22,7 @@ from dagster.utils.logging import (INFO, ERROR)
 def test_default_context():
     @solid(
         inputs=[],
-        output=OutputDefinition(),
+        outputs=[OutputDefinition()],
     )
     @with_context
     def default_context_transform(context):
@@ -38,7 +38,7 @@ def test_default_context():
 def test_default_context_with_log_level():
     @solid(
         inputs=[],
-        output=OutputDefinition(),
+        outputs=[OutputDefinition()],
     )
     @with_context
     def default_context_transform(context):
@@ -62,7 +62,7 @@ def test_default_value():
     def _get_args_test_solid(arg_name, arg_value):
         @solid(
             inputs=[],
-            output=OutputDefinition(),
+            outputs=[OutputDefinition()],
         )
         @with_context
         def args_test(context):
@@ -96,7 +96,7 @@ def test_default_value():
 def test_custom_contexts():
     @solid(
         inputs=[],
-        output=OutputDefinition(),
+        outputs=[OutputDefinition()],
     )
     @with_context
     def custom_context_transform(context):
@@ -136,7 +136,7 @@ def test_yield_context():
 
     @solid(
         inputs=[],
-        output=OutputDefinition(),
+        outputs=[OutputDefinition()],
     )
     @with_context
     def custom_context_transform(context):
@@ -176,7 +176,7 @@ def test_yield_context():
 def test_invalid_context():
     @solid(
         inputs=[],
-        output=OutputDefinition(),
+        outputs=[OutputDefinition()],
     )
     def never_transform():
         raise Exception('should never execute')
