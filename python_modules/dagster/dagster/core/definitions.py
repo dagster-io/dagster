@@ -47,10 +47,10 @@ def check_valid_name(name):
     return name
 
 
-def check_argument_def_dict(argument_def_dict):
+def check_argument_def_dict(config_def_dict):
     return check.dict_param(
-        argument_def_dict,
-        'argument_def_dict',
+        config_def_dict,
+        'config_def_dict',
         key_type=str,
         value_type=ArgumentDefinition,
     )
@@ -83,11 +83,14 @@ def _default_pipeline_context_definitions():
     return {'default': default_context_def}
 
 
-class DependencyDefinition:
-    def __init__(self, solid, output=DEFAULT_OUTPUT, description=None):
-        self.solid = check.str_param(solid, 'solid')
-        self.output = check.str_param(output, 'output')
-        self.description = check.opt_str_param(description, 'description')
+class DependencyDefinition(namedtuple('_DependencyDefinition', 'solid output description')):
+    def __new__(cls, solid, output=DEFAULT_OUTPUT, description=None):
+        return super(DependencyDefinition, cls).__new__(
+            cls,
+            check.str_param(solid, 'solid'),
+            check.str_param(output, 'output'),
+            check.opt_str_param(description, 'description'),
+        )
 
 
 class InputToOutputHandleDict(dict):
@@ -103,6 +106,13 @@ class InputToOutputHandleDict(dict):
 
 def check_two_dim_str_dict(ddict, param_name, value_type):
     check.dict_param(ddict, param_name, key_type=str, value_type=dict)
+    for sub_dict in ddict.values():
+        check.dict_param(sub_dict, 'sub_dict', key_type=str, value_type=value_type)
+    return ddict
+
+
+def check_opt_two_dim_str_dict(ddict, param_name, value_type):
+    ddict = check.opt_dict_param(ddict, param_name, key_type=str, value_type=dict)
     for sub_dict in ddict.values():
         check.dict_param(sub_dict, 'sub_dict', key_type=str, value_type=value_type)
     return ddict
@@ -180,12 +190,23 @@ def _build_named_dict(things):
 
 class PipelineDefinition:
     @staticmethod
-    def create_pipeline_slice(pipeline, from_solids, through_solids, injected_solids):
+    def create_single_solid_pipeline(pipeline, solid_name, injected_solids=None):
+        return PipelineDefinition.create_sub_pipeline(
+            pipeline,
+            [solid_name],
+            [solid_name],
+            injected_solids,
+        )
+
+    @staticmethod
+    def create_sub_pipeline(pipeline, from_solids, through_solids, injected_solids=None):
         from .graph import ExecutionGraph
         check.inst_param(pipeline, 'pipeline', PipelineDefinition)
         check.list_param(from_solids, 'from_solids', of_type=str)
         check.list_param(through_solids, 'through_solids', of_type=str)
-        check_two_dim_str_dict(injected_solids, 'injected_solids', SolidDefinition)
+        injected_solids = check_opt_two_dim_str_dict(
+            injected_solids, 'injected_solids', SolidDefinition
+        )
 
         subgraph = ExecutionGraph.from_pipeline_subset(
             pipeline,
@@ -438,7 +459,9 @@ class SolidDefinition:
         self._output_dict = _build_named_dict(outputs)
 
     @staticmethod
-    def single_output_transform(name, inputs, transform_fn, output, description=None):
+    def single_output_transform(
+        name, inputs, transform_fn, output, config_def=None, description=None
+    ):
         def _new_transform_fn(context, inputs, _config_dict):
             value = transform_fn(context, inputs)
             yield Result(output_name=DEFAULT_OUTPUT, value=value)
@@ -448,7 +471,7 @@ class SolidDefinition:
             inputs=inputs,
             transform_fn=_new_transform_fn,
             outputs=[output],
-            config_def={},
+            config_def=check.opt_dict_param(config_def, 'config_def'),
             description=description,
         )
 

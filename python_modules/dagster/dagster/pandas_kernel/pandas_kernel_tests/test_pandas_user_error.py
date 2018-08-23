@@ -19,7 +19,7 @@ from dagster import (
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution import execute_single_solid
 from dagster.utils.test import script_relative_path
-from dagster.core.utility_solids import define_pass_mem_value
+from dagster.core.utility_solids import define_stub_solid
 
 
 def _dataframe_solid(name, inputs, transform_fn):
@@ -42,7 +42,7 @@ def test_wrong_output_value():
     def df_solid(num_csv):
         return 'not a dataframe'
 
-    pass_solid = define_pass_mem_value('pass_solid', pd.DataFrame())
+    pass_solid = define_stub_solid('pass_solid', pd.DataFrame())
 
     pipeline = PipelineDefinition(
         solids=[pass_solid, df_solid],
@@ -67,7 +67,7 @@ def test_wrong_input_value():
     def df_solid(foo):
         return foo
 
-    pass_solid = define_pass_mem_value('pass_solid', 'not a dataframe')
+    pass_solid = define_stub_solid('pass_solid', 'not a dataframe')
 
     pipeline = PipelineDefinition(
         solids=[pass_solid, df_solid],

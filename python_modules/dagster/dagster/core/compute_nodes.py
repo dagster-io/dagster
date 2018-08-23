@@ -293,7 +293,6 @@ class ComputeNode:
 
         check.failed(f'output {name} not found')
 
-
 def execute_compute_nodes(context, compute_nodes):
     check.inst_param(context, 'context', ExecutionContext)
     check.list_param(compute_nodes, 'compute_nodes', of_type=ComputeNode)
@@ -304,9 +303,13 @@ def execute_compute_nodes(context, compute_nodes):
         for node_input in compute_node.node_inputs:
             prev_output_handle = node_input.prev_output_handle
             if prev_output_handle not in intermediate_results:
+
+                target_cn = prev_output_handle.compute_node
+
                 check.failed(
                     f'Could not find handle {prev_output_handle} in results. ' + \
-                    f'current node: {compute_node.friendly_name}'
+                    f'current node: {compute_node.friendly_name}\n' + \
+                    f'target node: {target_cn.friendly_name}'
                 )
             input_value = intermediate_results[prev_output_handle].success_data.value
             input_values[node_input.name] = input_value
@@ -357,24 +360,25 @@ class ComputeNodeGraph:
             yield self.cn_dict[cn_guid]
 
 
-def create_expectation_cn(solid, expectation_def, friendly_name, tag, prev_node_output_handle):
+def create_expectation_cn(solid, expectation_def, friendly_name, tag, prev_node_output_handle, inout_def):
     check.inst_param(solid, 'solid', SolidDefinition)
     check.inst_param(expectation_def, 'input_expct_def', ExpectationDefinition)
     check.inst_param(prev_node_output_handle, 'prev_node_output_handle', ComputeNodeOutputHandle)
+    check.inst_param(inout_def, 'inout_def', (InputDefinition, OutputDefinition))
 
-    output = get_single_solid_output(solid)
+    value_type = inout_def.dagster_type
 
     return SingleSyncOutputComputeNode(
         friendly_name=friendly_name,
         node_inputs=[
             ComputeNodeInput(
                 name=EXPECTATION_INPUT,
-                dagster_type=output.dagster_type,
+                dagster_type=value_type,
                 prev_output_handle=prev_node_output_handle,
             )
         ],
         node_outputs=[
-            ComputeNodeOutput(name=EXPECTATION_VALUE_OUTPUT, dagster_type=output.dagster_type),
+            ComputeNodeOutput(name=EXPECTATION_VALUE_OUTPUT, dagster_type=value_type),
         ],
         arg_dict={},
         sync_compute_fn=_create_expectation_lambda(
@@ -408,6 +412,7 @@ def create_expectations_cn_graph(solid, inout_def, prev_node_output_handle, tag)
             friendly_name=f'{solid.name}.{inout_def.name}.expectation.{expectation_def.name}',
             tag=tag,
             prev_node_output_handle=prev_node_output_handle,
+            inout_def=inout_def,
         )
         input_expect_nodes.append(expect_compute_node)
         compute_nodes.append(expect_compute_node)
