@@ -4,8 +4,6 @@ import styled from "styled-components";
 import { Card, Colors } from "@blueprintjs/core";
 import { LinkHorizontal as Link } from "@vx/shape";
 import PanAndZoom from "./PanAndZoom";
-import PipelineColorScale from "./PipelineColorScale";
-import PipelineLegend from "./PipelineLegend";
 import SolidNode from "./SolidNode";
 import {
   getDagrePipelineLayout,
@@ -19,9 +17,14 @@ interface IPipelineGraphProps {
   onClickSolid?: (solidName: string) => void;
 }
 
+interface IPipelineGraphState {
+  graphWidth: number | null;
+  graphHeight: number | null;
+}
+
 export default class PipelineGraph extends React.Component<
   IPipelineGraphProps,
-  {}
+  IPipelineGraphState
 > {
   static fragments = {
     PipelineGraphFragment: gql`
@@ -34,6 +37,36 @@ export default class PipelineGraph extends React.Component<
       ${SolidNode.fragments.SolidNodeFragment}
     `
   };
+
+  state = {
+    graphWidth: null,
+    graphHeight: null
+  };
+
+  graphWrapper: React.RefObject<HTMLDivElement> = React.createRef();
+
+  componentDidMount() {
+    if (this.graphWrapper.current) {
+      this.setState({
+        graphWidth: this.graphWrapper.current.clientWidth,
+        graphHeight: this.graphWrapper.current.clientHeight
+      });
+    }
+  }
+
+  componentDidUpdate() {
+    if (this.graphWrapper.current) {
+      if (
+        this.state.graphWidth !== this.graphWrapper.current.clientWidth ||
+        this.state.graphHeight !== this.graphWrapper.current.clientHeight
+      ) {
+        this.setState({
+          graphWidth: this.graphWrapper.current.clientWidth,
+          graphHeight: this.graphWrapper.current.clientHeight
+        });
+      }
+    }
+  }
 
   renderSolids(layout: IFullPipelineLayout) {
     return this.props.pipeline.solids.map((solid, i) => {
@@ -90,18 +123,33 @@ export default class PipelineGraph extends React.Component<
   render() {
     const layout = getDagrePipelineLayout(this.props.pipeline);
 
+    let minScale;
+    const { graphWidth, graphHeight } = this.state;
+    if (graphWidth !== null && graphHeight !== null) {
+      if (graphWidth > graphHeight) {
+        minScale = graphWidth / (layout.width + 200);
+      } else {
+        minScale = graphHeight / (layout.height - 300);
+      }
+    } else {
+      minScale = 0.1;
+    }
+
     return (
-      <GraphWrapper>
-        <LegendWrapper>
-          <PipelineLegend />
-        </LegendWrapper>
+      <GraphWrapper innerRef={this.graphWrapper}>
         <PanAndZoomStyled
           width={layout.width}
           height={layout.height + 300}
           renderOnChange={true}
-          scaleFactor={1.1}
+          minScale={minScale}
+          maxScale={1}
+          minX={0.5}
         >
-          <SVGContainer width={layout.width} height={layout.height + 300}>
+          <SVGContainer
+            width={layout.width}
+            height={layout.height + 300}
+            onMouseDown={evt => evt.preventDefault()}
+          >
             {this.renderConnections(layout)}
             {this.renderSolids(layout)}
           </SVGContainer>
