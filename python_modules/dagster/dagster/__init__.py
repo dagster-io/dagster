@@ -6,6 +6,7 @@ from dagster.core.execution_context import ExecutionContext
 
 from dagster.core.definitions import (
     ArgumentDefinition,
+    ConfigDefinition,
     DependencyDefinition,
     ExpectationDefinition,
     ExpectationResult,

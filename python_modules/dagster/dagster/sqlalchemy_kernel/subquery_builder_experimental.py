@@ -2,6 +2,7 @@ import os
 
 from dagster import (
     ArgumentDefinition,
+    ConfigDefinition,
     InputDefinition,
     OutputDefinition,
     SolidDefinition,
@@ -61,9 +62,9 @@ def define_create_table_solid(name):
         inputs=[InputDefinition('expr')],
         outputs=[],
         transform_fn=_materialization_fn,
-        config_def={
+        config_def=ConfigDefinition({
             'table_name': ArgumentDefinition(types.String),
-        }
+        }),
     )
 
 

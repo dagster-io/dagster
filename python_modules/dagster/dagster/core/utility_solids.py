@@ -18,6 +18,5 @@ def define_stub_solid(name, value):
         name=name,
         inputs=[],
         outputs=[OutputDefinition()],
-        config_def={},
         transform_fn=_value_t_fn,
     )

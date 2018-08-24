@@ -1,12 +1,16 @@
 import pytest
 
-from dagster import (ArgumentDefinition, types)
+from dagster import (
+    ArgumentDefinition,
+    types,
+)
 from dagster.core.argument_handling import validate_args
+from dagster.core.definitions import ArgumentDefinitionDictionary
 from dagster.core.errors import DagsterTypeError
 
 
 def _validate(argument_def_dict, arg_dict):
-    return validate_args(argument_def_dict, arg_dict, 'dummy')
+    return validate_args(ArgumentDefinitionDictionary(argument_def_dict), arg_dict, 'dummy')
 
 
 def _single_required_string_arg_def_dict():

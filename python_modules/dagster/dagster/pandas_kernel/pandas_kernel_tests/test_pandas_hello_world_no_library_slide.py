@@ -2,6 +2,7 @@ import pandas as pd
 
 from dagster import (
     ArgumentDefinition,
+    ConfigDefinition,
     DependencyDefinition,
     InputDefinition,
     OutputDefinition,
@@ -24,7 +25,9 @@ def define_read_csv_solid(name):
         name=name,
         inputs=[],
         outputs=[OutputDefinition()],
-        config_def={'path': ArgumentDefinition(types.Path)},
+        config_def=ConfigDefinition({
+            'path': ArgumentDefinition(types.Path)
+        }),
         transform_fn=_t_fn
     )
 
@@ -37,7 +40,9 @@ def define_to_csv_solid(name):
         name=name,
         inputs=[InputDefinition('df')],
         outputs=[],
-        config_def={'path': ArgumentDefinition(types.Path)},
+        config_def=ConfigDefinition({
+            'path': ArgumentDefinition(types.Path)
+        }),
         transform_fn=_t_fn,
     )
 
