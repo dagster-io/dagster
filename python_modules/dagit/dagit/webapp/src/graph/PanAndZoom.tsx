@@ -7,6 +7,10 @@ export interface PanAndZoomProps {
   height: number;
   x?: number;
   y?: number;
+  minX?: number;
+  minY?: number;
+  maxX?: number;
+  maxY?: number;
   scale?: number;
   scaleFactor?: number;
   minScale?: number;
@@ -45,6 +49,10 @@ export default class PanAndZoom extends React.Component<PanAndZoomProps, any> {
   static defaultProps = {
     x: 0.5,
     y: 0.5,
+    minX: 0,
+    minY: 0,
+    maxX: 1,
+    maxY: 1,
     scale: 1,
     scaleFactor: Math.sqrt(2),
     minScale: Number.EPSILON,
@@ -304,6 +312,10 @@ export default class PanAndZoom extends React.Component<PanAndZoomProps, any> {
       scale: tempScale,
       minScale,
       maxScale,
+      minX,
+      minY,
+      maxX,
+      maxY,
       onPanStart,
       onPanMove,
       onPanEnd,
@@ -312,6 +324,8 @@ export default class PanAndZoom extends React.Component<PanAndZoomProps, any> {
       renderOnChange,
       passOnProps,
       ignorePanOutside,
+      width,
+      height,
       ...other
     } = this.props;
     let x: number | undefined = this.props.x;
@@ -319,8 +333,8 @@ export default class PanAndZoom extends React.Component<PanAndZoomProps, any> {
     let scale: number | undefined = this.props.scale;
 
     if (x !== undefined && y !== undefined && scale !== undefined) {
-      x = x + this.dx;
-      y = y + this.dy;
+      x = Math.max(Math.min(x + this.dx, maxX as number), minX as number);
+      y = Math.max(Math.min(y + this.dy, maxY as number), minY as number);
       scale = scale + this.ds;
 
       return (
@@ -335,8 +349,9 @@ export default class PanAndZoom extends React.Component<PanAndZoomProps, any> {
         >
           <div
             style={{
-              transform: `scale(${scale}, ${scale}) translate3d(${(0.5 - x) *
-                this.props.width}px, ${(0.5 - y) * this.props.height}px, 0)`,
+              transform: `scale3d(${scale}, ${scale}, 1) translate3d(${(0.5 -
+                x) *
+                width}px, ${(0.5 - y) * height}px, 0) `,
               width: "100%",
               height: "100%"
             }}
