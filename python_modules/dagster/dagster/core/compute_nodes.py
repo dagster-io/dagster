@@ -332,25 +332,25 @@ class ComputeNode:
 
         check.failed(f'output {name} not found')
 
+def _all_inputs_covered(cn, results):
+    for node_input in cn.node_inputs:
+        if node_input.prev_output_handle not in results:
+            return False
+    return True
 
 def execute_compute_nodes(context, compute_nodes):
     check.inst_param(context, 'context', ExecutionContext)
     check.list_param(compute_nodes, 'compute_nodes', of_type=ComputeNode)
 
+
     intermediate_results = {}
     for compute_node in compute_nodes:
+        if not _all_inputs_covered(compute_node, intermediate_results):
+            continue
+
         input_values = {}
         for node_input in compute_node.node_inputs:
             prev_output_handle = node_input.prev_output_handle
-            if prev_output_handle not in intermediate_results:
-
-                target_cn = prev_output_handle.compute_node
-
-                check.failed(
-                    f'Could not find handle {prev_output_handle} in results. ' + \
-                    f'current node: {compute_node.friendly_name}\n' + \
-                    f'target node: {target_cn.friendly_name}'
-                )
             input_value = intermediate_results[prev_output_handle].success_data.value
             input_values[node_input.name] = input_value
 
