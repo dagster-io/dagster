@@ -22,6 +22,9 @@ from dagster.core.decorators import (
     with_context,
 )
 
-from dagster.core.errors import (DagsterInvalidDefinitionError)
+from dagster.core.errors import (
+    DagsterInvalidDefinitionError,
+    DagsterInvariantViolationError,
+)
 
 import dagster.core.types as types

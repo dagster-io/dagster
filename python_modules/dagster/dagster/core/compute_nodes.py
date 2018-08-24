@@ -156,6 +156,7 @@ EXPECTATION_VALUE_OUTPUT = 'expectation_value'
 JOIN_OUTPUT = 'join_output'
 EXPECTATION_INPUT = 'expectation_input'
 
+
 def _execute_core_transform(context, solid_name, solid_transform_fn, values_dict, config_dict):
     '''
     Execute the user-specified transform for the solid. Wrap in an error boundary and do
@@ -205,22 +206,28 @@ class ComputeNode:
         node_input_dict = {}
         for node_input in node_inputs:
             node_input_dict[node_input.name] = node_input
-        self.node_input_dict = node_input_dict
+        self._node_input_dict = node_input_dict
         self.node_outputs = check.list_param(
             node_outputs, 'node_outputs', of_type=ComputeNodeOutput
         )
+
+        node_output_dict = {}
+        for node_output in node_outputs:
+            node_output_dict[node_output.name] = node_output
+
+        self._node_output_dict = node_output_dict
         self.arg_dict = check.dict_param(arg_dict, 'arg_dict', key_type=str)
         self.compute_fn = check.callable_param(compute_fn, 'compute_fn')
         self.tag = check.inst_param(tag, 'tag', ComputeNodeTag)
         self.solid = check.inst_param(solid, 'solid', SolidDefinition)
 
+    def has_node(self, name):
+        check.str_param(name, 'name')
+        return name in self._node_output_dict
+
     def node_named(self, name):
         check.str_param(name, 'name')
-        for node_output in self.node_outputs:
-            if node_output.name == name:
-                return node_output
-
-        check.failed(f'{name} not found')
+        return self._node_output_dict[name]
 
     def _create_compute_node_result(self, result):
         check.inst_param(result, 'result', Result)
@@ -251,7 +258,7 @@ class ComputeNode:
 
         # do runtime type checks of inputs versus node inputs
         for input_name, input_value in inputs.items():
-            compute_node_input = self.node_input_dict[input_name]
+            compute_node_input = self._node_input_dict[input_name]
             if not compute_node_input.dagster_type.is_python_valid_value(input_value):
                 raise DagsterInvariantViolationError(
                     f'''Solid {self.solid.name} input {input_name}
@@ -261,18 +268,36 @@ class ComputeNode:
 
         error_str = 'TODO error string'
 
+        seen_outputs = set()
+
         try:
+
             with _user_code_error_boundary(context, error_str):
                 gen = self.compute_fn(context, inputs)
 
-                if gen is None:
-                    check.invariant(not self.node_outputs)
-                    return
+            if gen is None:
+                check.invariant(not self.node_outputs)
+                return
 
-                results = list(gen)
+            results = list(gen)
 
-                for result in results:
-                    yield self._create_compute_node_result(result)
+            for result in results:
+                if not self.has_node(result.output_name):
+                    raise DagsterInvariantViolationError(
+                        f'''Core transform for {self.solid.name} returned an output
+                        {result.output_name} that does not exist. The available
+                        outputs are {list([output.name for output in self.solid.outputs])}'''
+                    )
+
+                if result.output_name in seen_outputs:
+                    raise DagsterInvariantViolationError(
+                        f'''Core transform for {self.solid.name} returned an output
+                        {result.output_name} multiple times'''
+                    )
+
+                seen_outputs.add(result.output_name)
+
+                yield self._create_compute_node_result(result)
 
         except DagsterUserCodeExecutionError as dagster_user_exception:
             yield ComputeNodeResult.failure_result(
@@ -292,6 +317,7 @@ class ComputeNode:
                 return node_output
 
         check.failed(f'output {name} not found')
+
 
 def execute_compute_nodes(context, compute_nodes):
     check.inst_param(context, 'context', ExecutionContext)
@@ -360,7 +386,15 @@ class ComputeNodeGraph:
             yield self.cn_dict[cn_guid]
 
 
-def create_expectation_cn(solid, expectation_def, friendly_name, tag, prev_node_output_handle, inout_def):
+def create_expectation_cn(
+    solid,
+    expectation_def,
+    friendly_name,
+    tag,
+    prev_node_output_handle,
+    inout_def,
+):
+
     check.inst_param(solid, 'solid', SolidDefinition)
     check.inst_param(expectation_def, 'input_expct_def', ExpectationDefinition)
     check.inst_param(prev_node_output_handle, 'prev_node_output_handle', ComputeNodeOutputHandle)
