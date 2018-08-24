@@ -23,6 +23,14 @@ class MultipleResults(namedtuple('_MultipleResults', 'results')):
             check.opt_list_param(list(results), 'results', Result),
         )
 
+    @staticmethod
+    def from_dict(result_dict):
+        check.dict_param(result_dict, 'result_dict', key_type=str)
+        results = []
+        for name, value in result_dict.items():
+            results.append(Result(value, name))
+        return MultipleResults(*results)
+
 
 def with_context(fn):
     """Pass context as a first argument to a transform.
