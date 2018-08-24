@@ -18,6 +18,7 @@ from dagster.core.definitions import (
 )
 
 from dagster.core.decorators import (
+    MultipleResults,
     solid,
     with_context,
 )
