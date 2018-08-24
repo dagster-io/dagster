@@ -1,10 +1,13 @@
 import os
 
 from dagster import config
-
 from dagster.core.execution import execute_pipeline
 from dagster.utils.test import script_relative_path
-from dagster.cli.pipeline import (do_execute_command, print_pipeline)
+from dagster.cli.pipeline import (
+    do_execute_command,
+    print_pipeline,
+    print_solids,
+)
 
 from dagster.dagster_examples.pandas_hello_world.pipeline import define_pipeline
 
@@ -64,3 +67,4 @@ def test_cli_execute():
 def test_cli_print():
     print_pipeline(define_pipeline(), full=False, print_fn=lambda *_args, **_kwargs: None)
     print_pipeline(define_pipeline(), full=True, print_fn=lambda *_args, **_kwargs: None)
+    print_solids(define_pipeline(), print_fn=lambda *_args, **_kwargs: None)

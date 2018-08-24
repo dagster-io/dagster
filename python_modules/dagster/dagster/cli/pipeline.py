@@ -60,9 +60,26 @@ def pipeline_name_argument(f):
 
 
 @click.command(name='print', help="print <<pipeline_name>>")
+@click.option('--verbose', is_flag=True)
 @pipeline_name_argument
-def print_command(pipeline_config):
-    print_pipeline(pipeline_config.pipeline, full=True, print_fn=click.echo)
+def print_command(pipeline_config, verbose):
+    if verbose:
+        print_pipeline(pipeline_config.pipeline, full=True, print_fn=click.echo)
+    else:
+        print_solids(pipeline_config.pipeline, print_fn=click.echo)
+
+
+def print_solids(pipeline, print_fn):
+    check.inst_param(pipeline, 'pipeline', dagster.PipelineDefinition)
+    check.callable_param(print_fn, 'print_fn')
+
+    printer = IndentingPrinter(indent_level=2, printer=print_fn)
+    printer.line('Pipeline: {name}'.format(name=pipeline.name))
+
+    printer.line('Solids:')
+    for solid in pipeline.solids:
+        with printer.with_indent():
+            printer.line('Solid: {name}'.format(name=solid.name))
 
 
 def print_pipeline(pipeline, full, print_fn):
