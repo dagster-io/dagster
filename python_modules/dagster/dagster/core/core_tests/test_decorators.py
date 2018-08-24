@@ -122,6 +122,33 @@ def test_solid_multiple_outputs():
     assert result.result_list[1].transformed_value['foo'] == 'right'
 
 
+def test_dict_multiple_outputs():
+    @solid(outputs=[
+        OutputDefinition(name="left"),
+        OutputDefinition(name="right"),
+    ])
+    def hello_world():
+        return MultipleResults.from_dict({
+            'left': {
+                'foo': 'left'
+            },
+            'right': {
+                'foo': 'right'
+            },
+        })
+
+    result = execute_single_solid(
+        create_test_context(),
+        hello_world,
+        environment=create_empty_test_env(),
+    )
+
+    assert result.success
+    assert len(result.result_list) == 2
+    assert result.result_list[0].transformed_value['foo'] == 'left'
+    assert result.result_list[1].transformed_value['foo'] == 'right'
+
+
 def test_solid_with_name():
     @solid(name="foobar", outputs=[OutputDefinition()])
     def hello_world():
