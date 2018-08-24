@@ -77,9 +77,26 @@ def inst(obj, ttype, desc=None):
     return obj
 
 
-def is_callable(obj):
+def is_callable(obj, desc=None):
     if not callable(obj):
-        raise_with_traceback(CheckError('must be callable'))
+        if desc:
+            raise_with_traceback(
+                CheckError(
+                    'Must be callable. Got {obj}. Description: {desc}'.format(
+                        obj=repr(obj),
+                        desc=desc,
+                    )
+                )
+            )
+        else:
+            raise_with_traceback(
+                CheckError(
+                    'Must be callable. Got {obj}. Description: {desc}'.format(
+                        obj=obj,
+                        desc=desc,
+                    )
+                )
+            )
 
     return obj
 
