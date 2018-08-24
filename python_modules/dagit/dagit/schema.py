@@ -134,7 +134,7 @@ class Input(graphene.ObjectType):
 
     def resolve_depends_on(self, info):
         return Output(
-            self._depends_on.output,
+            self._depends_on.output_def,
             Solid(self._depends_on.solid),
             # XXX(freiksenet): This is not right
             []
