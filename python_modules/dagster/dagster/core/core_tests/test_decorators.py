@@ -6,12 +6,14 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     config,
+    Result,
     execute_pipeline,
 )
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.decorators import (
     solid,
     with_context,
+    MultipleResults,
 )
 from dagster.core.execution import (
     execute_single_solid,
@@ -34,7 +36,7 @@ def create_empty_test_env():
 
 
 def test_solid():
-    @solid()
+    @solid(outputs=[OutputDefinition()])
     def hello_world():
         return {'foo': 'bar'}
 
@@ -45,12 +47,83 @@ def test_solid():
     )
 
     assert result.success
+    assert len(result.result_list) == 1
+    assert result.result_list[0].transformed_value['foo'] == 'bar'
 
-    assert result.transformed_value['foo'] == 'bar'
+
+def test_solid_one_output():
+    @solid(output=OutputDefinition())
+    def hello_world():
+        return {'foo': 'bar'}
+
+    result = execute_single_solid(
+        create_test_context(),
+        hello_world,
+        environment=create_empty_test_env(),
+    )
+
+    assert result.success
+    assert len(result.result_list) == 1
+    assert result.result_list[0].transformed_value['foo'] == 'bar'
+
+
+def test_solid_yield():
+    @solid(output=OutputDefinition())
+    def hello_world():
+        yield Result(value={'foo': 'bar'})
+
+    result = execute_single_solid(
+        create_test_context(),
+        hello_world,
+        environment=create_empty_test_env(),
+    )
+
+    assert result.success
+    assert len(result.result_list) == 1
+    assert result.result_list[0].transformed_value['foo'] == 'bar'
+
+
+def test_solid_result_return():
+    @solid(output=OutputDefinition())
+    def hello_world():
+        return Result(value={'foo': 'bar'})
+
+    result = execute_single_solid(
+        create_test_context(),
+        hello_world,
+        environment=create_empty_test_env(),
+    )
+
+    assert result.success
+    assert len(result.result_list) == 1
+    assert result.result_list[0].transformed_value['foo'] == 'bar'
+
+
+def test_solid_multiple_outputs():
+    @solid(outputs=[
+        OutputDefinition(name="left"),
+        OutputDefinition(name="right"),
+    ])
+    def hello_world():
+        return MultipleResults(
+            Result(value={'foo': 'left'}, output_name='left'),
+            Result(value={'foo': 'right'}, output_name='right')
+        )
+
+    result = execute_single_solid(
+        create_test_context(),
+        hello_world,
+        environment=create_empty_test_env(),
+    )
+
+    assert result.success
+    assert len(result.result_list) == 2
+    assert result.result_list[0].transformed_value['foo'] == 'left'
+    assert result.result_list[1].transformed_value['foo'] == 'right'
 
 
 def test_solid_with_name():
-    @solid(name="foobar")
+    @solid(name="foobar", outputs=[OutputDefinition()])
     def hello_world():
         return {'foo': 'bar'}
 
@@ -61,12 +134,12 @@ def test_solid_with_name():
     )
 
     assert result.success
-
-    assert result.transformed_value['foo'] == 'bar'
+    assert len(result.result_list) == 1
+    assert result.result_list[0].transformed_value['foo'] == 'bar'
 
 
 def test_solid_with_context():
-    @solid(name="foobar")
+    @solid(name="foobar", outputs=[OutputDefinition()])
     @with_context
     def hello_world(_context):
         return {'foo': 'bar'}
@@ -78,12 +151,12 @@ def test_solid_with_context():
     )
 
     assert result.success
-
-    assert result.transformed_value['foo'] == 'bar'
+    assert len(result.result_list) == 1
+    assert result.result_list[0].transformed_value['foo'] == 'bar'
 
 
 def test_solid_with_input():
-    @solid(inputs=[InputDefinition(name="foo_to_foo")])
+    @solid(inputs=[InputDefinition(name="foo_to_foo")], outputs=[OutputDefinition()])
     def hello_world(foo_to_foo):
         return foo_to_foo
 
@@ -102,21 +175,20 @@ def test_solid_with_input():
     result = pipeline_result.result_named('hello_world')
 
     assert result.success
-
     assert result.transformed_value['foo'] == 'bar'
 
 
 def test_solid_definition_errors():
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @solid(inputs=[InputDefinition(name="foo")], output=OutputDefinition())
+        @solid(inputs=[InputDefinition(name="foo")], outputs=[OutputDefinition()])
         @with_context
         def vargs(_context, foo, *args):
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @solid(inputs=[InputDefinition(name="foo")], output=OutputDefinition())
+        @solid(inputs=[InputDefinition(name="foo")], outputs=[OutputDefinition()])
         def wrong_name(bar):
             pass
 
@@ -125,34 +197,34 @@ def test_solid_definition_errors():
         @solid(
             inputs=[InputDefinition(name="foo"),
                     InputDefinition(name="bar")],
-            output=OutputDefinition()
+            outputs=[OutputDefinition()]
         )
         def wrong_name_2(foo):
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @solid(inputs=[InputDefinition(name="foo")], output=OutputDefinition())
+        @solid(inputs=[InputDefinition(name="foo")], outputs=[OutputDefinition()])
         @with_context
         def no_context(foo):
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @solid(inputs=[InputDefinition(name="foo")], output=OutputDefinition())
+        @solid(inputs=[InputDefinition(name="foo")], outputs=[OutputDefinition()])
         def yes_context(_context, foo):
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @solid(inputs=[InputDefinition(name="foo")], output=OutputDefinition())
+        @solid(inputs=[InputDefinition(name="foo")], outputs=[OutputDefinition()])
         def extras(foo, bar):
             pass
 
     @solid(
         inputs=[InputDefinition(name="foo"),
                 InputDefinition(name="bar")],
-        output=OutputDefinition()
+        outputs=[OutputDefinition()]
     )
     def valid_kwargs(**kwargs):
         pass
@@ -160,7 +232,7 @@ def test_solid_definition_errors():
     @solid(
         inputs=[InputDefinition(name="foo"),
                 InputDefinition(name="bar")],
-        output=OutputDefinition()
+        outputs=[OutputDefinition()]
     )
     def valid(foo, bar):
         pass
@@ -168,7 +240,7 @@ def test_solid_definition_errors():
     @solid(
         inputs=[InputDefinition(name="foo"),
                 InputDefinition(name="bar")],
-        output=OutputDefinition()
+        outputs=[OutputDefinition()]
     )
     @with_context
     def valid_rontext(context, foo, bar):
@@ -177,7 +249,7 @@ def test_solid_definition_errors():
     @solid(
         inputs=[InputDefinition(name="foo"),
                 InputDefinition(name="bar")],
-        output=OutputDefinition()
+        outputs=[OutputDefinition()]
     )
     @with_context
     def valid_context_2(_context, foo, bar):

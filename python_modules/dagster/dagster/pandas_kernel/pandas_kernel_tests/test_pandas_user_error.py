@@ -37,7 +37,7 @@ def test_wrong_output_value():
     @solid(
         name="test_wrong_output",
         inputs=[csv_input],
-        output=OutputDefinition(dagster_type=dagster_pd.DataFrame)
+        outputs=[OutputDefinition(dagster_type=dagster_pd.DataFrame)]
     )
     def df_solid(num_csv):
         return 'not a dataframe'
@@ -62,7 +62,7 @@ def test_wrong_input_value():
     @solid(
         name="test_wrong_input",
         inputs=[InputDefinition('foo', dagster_pd.DataFrame)],
-        output=OutputDefinition(),
+        outputs=[OutputDefinition()],
     )
     def df_solid(foo):
         return foo
