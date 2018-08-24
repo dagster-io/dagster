@@ -41,12 +41,6 @@ from .graph import ExecutionGraph
 
 from .types import DagsterType
 
-def get_single_solid_output(solid):
-    check.inst_param(solid, 'solid', SolidDefinition)
-    check.invariant(len(solid.outputs) == 1)
-    return solid.outputs[0]
-
-
 class ComputeNodeOutputHandle(namedtuple('_ComputeNodeOutputHandle', 'compute_node output_name')):
     def __new__(cls, compute_node, output_name):
         return super(ComputeNodeOutputHandle, cls).__new__(
@@ -286,7 +280,7 @@ class ComputeNode:
                     raise DagsterInvariantViolationError(
                         f'''Core transform for {self.solid.name} returned an output
                         {result.output_name} that does not exist. The available
-                        outputs are {list([output.name for output in self.solid.outputs])}'''
+                        outputs are {list([output_def.name for output_def in self.solid.output_defs])}'''
                     )
 
                 if result.output_name in seen_outputs:
@@ -508,7 +502,7 @@ def create_compute_node_graph_from_env(execution_graph, env):
     for topo_solid in execution_graph.topological_solids:
         cn_inputs = []
 
-        for input_def in topo_solid.inputs:
+        for input_def in topo_solid.input_defs:
             prev_cn_output_handle = _prev_node_handle(
                 dependency_structure,
                 topo_solid,
@@ -540,7 +534,7 @@ def create_compute_node_graph_from_env(execution_graph, env):
             )
 
         validated_config_args = validate_args(
-            topo_solid.config_dict_def,
+            topo_solid.config_def.argument_def_dict,
             env.config_dict_for_solid(topo_solid.name),
             'config for solid {solid_name}'.format(solid_name=topo_solid.name),
         )
@@ -551,7 +545,7 @@ def create_compute_node_graph_from_env(execution_graph, env):
             validated_config_args,
         )
 
-        for output_def in topo_solid.outputs:
+        for output_def in topo_solid.output_defs:
             output_handle = topo_solid.output_handle(output_def.name)
             if env.evaluate_expectations and output_def.expectations:
                 expectations_graph = create_expectations_cn_graph(
@@ -652,8 +646,8 @@ def create_compute_node_from_solid_transform(solid, node_inputs, config_args):
         friendly_name=f'{solid.name}.transform',
         node_inputs=node_inputs,
         node_outputs=[
-            ComputeNodeOutput(name=output.name, dagster_type=output.dagster_type)
-            for output in solid.outputs
+            ComputeNodeOutput(name=output_def.name, dagster_type=output_def.dagster_type)
+            for output_def in solid.output_defs
         ],
         arg_dict={},
         compute_fn=lambda context, inputs: _execute_core_transform(

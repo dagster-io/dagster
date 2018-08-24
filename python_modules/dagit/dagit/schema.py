@@ -81,7 +81,7 @@ class Solid(graphene.ObjectType):
 
         if depended_by:
             self._depended_by = {
-                output_handle.output.name: input_handles
+                output_handle.output_def.name: input_handles
                 for output_handle, input_handles in depended_by.items()
             }
         else:
@@ -90,19 +90,19 @@ class Solid(graphene.ObjectType):
     def resolve_inputs(self, info):
         return [
             Input(input_definition, self, self._depends_on.get(input_definition.name))
-            for input_definition in self._solid.inputs
+            for input_definition in self._solid.input_defs
         ]
 
     def resolve_outputs(self, info):
         return [
             Output(output_definition, self, self._depended_by.get(output_definition.name, []))
-            for output_definition in self._solid.outputs
+            for output_definition in self._solid.output_defs
         ]
 
     def resolve_config(self, info):
         return [
             Argument(name=name, argument=argument)
-            for name, argument in self._solid.config_dict_def.items()
+            for name, argument in self._solid.config_def.argument_def_dict.items()
         ]
 
 

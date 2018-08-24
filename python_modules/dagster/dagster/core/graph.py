@@ -47,7 +47,7 @@ def _dependency_structure_to_dep_dict(dependency_structure):
     for input_handle, output_handle in dependency_structure.items():
         dep_dict[input_handle.solid.name][input_handle.input_def.name] = DependencyDefinition(
             solid=output_handle.solid.name,
-            output=output_handle.output.name,
+            output=output_handle.output_def.name,
         )
     return dep_dict
 
@@ -143,8 +143,8 @@ class ExecutionGraph:
 
         trans_deps = set()
         solid = self._solid_dict[solid_name]
-        for inp in solid.inputs:
-            input_handle = solid.input_handle(inp.name)
+        for input_def in solid.input_defs:
+            input_handle = solid.input_handle(input_def.name)
             if self.dependency_structure.has_dep(input_handle):
                 output_handle = self.dependency_structure.get_dep(input_handle)
                 trans_deps.add(output_handle.solid.name)
@@ -171,7 +171,7 @@ class ExecutionGraph:
         handle_dict = InputToOutputHandleDict()
 
         for solid in involved_solids:
-            for input_def in solid.inputs:
+            for input_def in solid.input_defs:
                 input_handle = solid.input_handle(input_def.name)
                 if self.dependency_structure.has_dep(input_handle):
                     handle_dict[input_handle] = self.dependency_structure.get_dep(input_handle)
@@ -188,7 +188,7 @@ class ExecutionGraph:
 
             involved_solid_set.add(solid.name)
 
-            for input_def in solid.inputs:
+            for input_def in solid.input_defs:
                 input_handle = solid.input_handle(input_def.name)
                 if not self.dependency_structure.has_dep(input_handle):
                     continue
@@ -220,7 +220,7 @@ def _all_depended_on_solids(execution_graph):
     dependency_structure = execution_graph.dependency_structure
 
     for solid in execution_graph.solids:
-        for input_def in solid.inputs:
+        for input_def in solid.input_defs:
             input_handle = solid.input_handle(input_def.name)
             if dependency_structure.has_dep(input_handle):
                 output_handle = dependency_structure.get_dep(input_handle)

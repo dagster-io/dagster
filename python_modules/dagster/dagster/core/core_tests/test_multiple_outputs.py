@@ -25,7 +25,6 @@ def test_multiple_outputs():
             OutputDefinition(name='output_one'),
             OutputDefinition(name='output_two'),
         ],
-        config_def={},
         transform_fn=_t_fn,
     )
 
@@ -76,7 +75,6 @@ def test_multiple_outputs_expectations():
                 ],
             ),
         ],
-        config_def={},
         transform_fn=_transform_fn,
     )
 
@@ -99,7 +97,6 @@ def test_wrong_multiple_output():
         outputs=[
             OutputDefinition(name='output_one'),
         ],
-        config_def={},
         transform_fn=_t_fn,
     )
 
@@ -122,7 +119,6 @@ def test_multiple_outputs_of_same_name_disallowed():
         outputs=[
             OutputDefinition(name='output_one'),
         ],
-        config_def={},
         transform_fn=_t_fn,
     )
 

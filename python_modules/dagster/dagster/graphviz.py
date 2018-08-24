@@ -14,12 +14,12 @@ def build_graphviz_graph(pipeline):
     graphviz_graph.attr('node', color='grey', shape='box')
 
     for solid in pipeline.solids:
-        for input_def in solid.inputs:
+        for input_def in solid.input_defs:
             scoped_name = solid.name + '.' + input_def.name
             graphviz_graph.node(scoped_name)
 
     for solid in pipeline.solids:
-        for input_def in solid.inputs:
+        for input_def in solid.input_defs:
             scoped_name = solid.name + '.' + input_def.name
             graphviz_graph.edge(scoped_name, solid.name)
 

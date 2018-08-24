@@ -47,18 +47,23 @@ def check_valid_name(name):
     return name
 
 
-def check_argument_def_dict(config_def_dict):
-    return check.dict_param(
-        config_def_dict,
-        'config_def_dict',
-        key_type=str,
-        value_type=ArgumentDefinition,
-    )
+# We wrap the passed in dictionary of str : ArgumentDefinition to
+# 1) enforce typing
+# 2) enforce immutability
+# 3) make type checks throughout execution cheaper
+class ArgumentDefinitionDictionary(dict):
+    def __init__(self, ddict):
+        super().__init__(
+            check.dict_param(ddict, 'ddict', key_type=str, value_type=ArgumentDefinition)
+        )
+
+    def __setitem__(self, _key, _value):
+        check.failed('This dictionary is readonly')
 
 
 class PipelineContextDefinition:
     def __init__(self, *, argument_def_dict, context_fn, description=None):
-        self.argument_def_dict = check_argument_def_dict(argument_def_dict)
+        self.argument_def_dict = ArgumentDefinitionDictionary(argument_def_dict)
         self.context_fn = check.callable_param(context_fn, 'context_fn')
         self.description = description
 
@@ -263,7 +268,7 @@ class PipelineDefinition:
 
                 if not self._solid_dict[from_solid].has_input(from_input):
                     input_list = [
-                        input_def.name for input_def in self._solid_dict[from_solid].inputs
+                        input_def.name for input_def in self._solid_dict[from_solid].input_defs
                     ]
                     raise DagsterInvalidDefinitionError(
                         f'Solid {from_solid} does not have input {from_input}. ' + \
@@ -283,7 +288,7 @@ class PipelineDefinition:
         self.dependency_structure = DependencyStructure.from_definitions(solids, dependencies)
 
         for solid in solids:
-            for input_def in solid.inputs:
+            for input_def in solid.input_defs:
                 if not self.dependency_structure.has_dep(solid.input_handle(input_def.name)):
                     if name:
                         raise DagsterInvalidDefinitionError(
@@ -405,25 +410,25 @@ class SolidInputHandle(namedtuple('_SolidInputHandle', 'solid input_def')):
         return self.solid.name == other.solid.name and self.input_def.name == other.input_def.name
 
 
-class SolidOutputHandle(namedtuple('_SolidOutputHandle', 'solid output')):
-    def __new__(cls, solid, output):
+class SolidOutputHandle(namedtuple('_SolidOutputHandle', 'solid output_def')):
+    def __new__(cls, solid, output_def):
         return super(SolidOutputHandle, cls).__new__(
             cls,
             check.inst_param(solid, 'solid', SolidDefinition),
-            check.inst_param(output, 'output', OutputDefinition),
+            check.inst_param(output_def, 'output_def', OutputDefinition),
         )
 
     def __str__(self):
-        return f'SolidOutputHandle(solid="{self.solid.name}", output.name="{self.output.name}")'
+        return f'SolidOutputHandle(solid="{self.solid.name}", output.name="{self.output_def.name}")'
 
     def __repr__(self):
-        return f'SolidOutputHandle(solid="{self.solid.name}", output.name="{self.output.name}")'
+        return f'SolidOutputHandle(solid="{self.solid.name}", output.name="{self.output_def.name}")'
 
     def __hash__(self):
-        return hash((self.solid.name, self.output.name))
+        return hash((self.solid.name, self.output_def.name))
 
     def __eq__(self, other):
-        return self.solid.name == other.solid.name and self.output.name == other.output.name
+        return self.solid.name == other.solid.name and self.output_def.name == other.output_def.name
 
 
 class Result(namedtuple('_Result', 'value output_name')):
@@ -435,28 +440,42 @@ class Result(namedtuple('_Result', 'value output_name')):
         )
 
 
+class ConfigDefinition:
+    def __init__(self, argument_def_dict):
+        self.argument_def_dict = ArgumentDefinitionDictionary(argument_def_dict)
+
+
 class SolidDefinition:
-    def __init__(self, *, name, inputs, transform_fn, outputs, config_def, description=None):
+    def __init__(self, *, name, inputs, transform_fn, outputs, config_def=None, description=None):
         self.name = check_valid_name(name)
-        self.inputs = check.list_param(inputs, 'inputs', InputDefinition)
+        self.input_defs = check.list_param(inputs, 'inputs', InputDefinition)
         self.transform_fn = check.callable_param(transform_fn, 'transform_fn')
-        self.outputs = check.list_param(outputs, 'outputs', OutputDefinition)
+        self.output_defs = check.list_param(outputs, 'outputs', OutputDefinition)
         self.description = check.opt_str_param(description, 'description')
-        self.config_dict_def = check_argument_def_dict(config_def)
+        self.config_def = check.opt_inst_param(
+            config_def,
+            'config_def',
+            ConfigDefinition,
+            ConfigDefinition({}),
+        )
 
         input_handles = {}
-        for inp in self.inputs:
-            input_handles[inp.name] = SolidInputHandle(self, inp)
+        for input_def in self.input_defs:
+            input_handles[input_def.name] = SolidInputHandle(self, input_def)
 
-        self.input_handles = input_handles
+        self._input_handles = input_handles
 
         output_handles = {}
-        for output in outputs:
-            output_handles[output.name] = SolidOutputHandle(self, output)
+        for output_def in self.output_defs:
+            output_handles[output_def.name] = SolidOutputHandle(self, output_def)
 
-        self.output_handles = output_handles
+        self._output_handles = output_handles
         self._input_dict = _build_named_dict(inputs)
         self._output_dict = _build_named_dict(outputs)
+
+    @property
+    def outputs(self):
+        return self.output_defs
 
     @staticmethod
     def single_output_transform(
@@ -471,21 +490,17 @@ class SolidDefinition:
             inputs=inputs,
             transform_fn=_new_transform_fn,
             outputs=[output],
-            config_def=check.opt_dict_param(config_def, 'config_def'),
+            config_def=config_def,
             description=description,
         )
 
     def input_handle(self, name):
         check.str_param(name, 'name')
-        return self.input_handles[name]
+        return self._input_handles[name]
 
     def output_handle(self, name):
         check.str_param(name, 'name')
-        return self.output_handles[name]
-
-    @property
-    def input_names(self):
-        return [inp.name for inp in self.inputs]
+        return self._output_handles[name]
 
     def has_input(self, name):
         check.str_param(name, 'name')
