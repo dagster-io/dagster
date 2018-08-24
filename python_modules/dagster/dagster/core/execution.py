@@ -48,6 +48,7 @@ from .execution_context import ExecutionContext
 
 from .graph import ExecutionGraph
 
+
 class DagsterPipelineExecutionResult:
     def __init__(
         self,
@@ -55,9 +56,7 @@ class DagsterPipelineExecutionResult:
         result_list,
     ):
         self.context = check.inst_param(context, 'context', ExecutionContext)
-        self.result_list = check.list_param(
-            result_list, 'result_list', of_type=ExecutionStepResult
-        )
+        self.result_list = check.list_param(result_list, 'result_list', of_type=ExecutionStepResult)
 
     @property
     def success(self):
@@ -72,7 +71,10 @@ class DagsterPipelineExecutionResult:
 
 
 class ExecutionStepResult:
-    def __init__(self, *, success, context, transformed_value, name, dagster_user_exception, solid, tag, output_name):
+    def __init__(
+        self, *, success, context, transformed_value, name, dagster_user_exception, solid, tag,
+        output_name
+    ):
         self.success = check.bool_param(success, 'success')
         self.context = context
         self.transformed_value = transformed_value
@@ -120,8 +122,7 @@ def copy_result_dict(result_dict):
 def _create_passthrough_context_definition(context):
     check.inst_param(context, 'context', ExecutionContext)
     context_definition = PipelineContextDefinition(
-        argument_def_dict={},
-        context_fn=lambda _pipeline, _args: context
+        argument_def_dict={}, context_fn=lambda _pipeline, _args: context
     )
     return {'default': context_definition}
 
@@ -145,9 +146,7 @@ def execute_single_solid(context, solid, environment, throw_on_error=True):
         environment=single_solid_environment,
     )
 
-    results = pipeline_result.result_list
-    check.invariant(len(results) == 1, 'must be one result got ' + str(len(results)))
-    return results[0]
+    return pipeline_result
 
 
 def _do_throw_on_error(execution_result):
@@ -160,8 +159,10 @@ def _do_throw_on_error(execution_result):
 
     raise execution_result.dagster_user_exception
 
+
 def _wrap_in_yield(thing):
     if isinstance(thing, ExecutionContext):
+
         def _wrap():
             yield thing
 
@@ -195,8 +196,7 @@ class DagsterEnv:
 
         args_to_pass = validate_args(
             self.pipeline.context_definitions[context_name].argument_def_dict,
-            self.environment.context.args,
-            'pipeline {pipeline_name} context {context_name}'.format(
+            self.environment.context.args, 'pipeline {pipeline_name} context {context_name}'.format(
                 pipeline_name=self.pipeline.name,
                 context_name=context_name,
             )
@@ -226,11 +226,11 @@ def execute_pipeline_iterator(pipeline, environment):
     with env.yield_context() as context:
         return _execute_graph_iterator(context, execution_graph, env)
 
+
 def _execute_graph_iterator(context, execution_graph, env):
     check.inst_param(context, 'context', ExecutionContext)
     check.inst_param(execution_graph, 'execution_graph', ExecutionGraph)
     check.inst_param(env, 'env', DagsterEnv)
-
 
     cn_graph = create_compute_node_graph_from_env(execution_graph, env)
 
@@ -266,7 +266,6 @@ def _execute_graph_iterator(context, execution_graph, env):
             )
 
 
-
 def execute_pipeline(
     pipeline,
     environment,
@@ -287,6 +286,7 @@ def execute_pipeline(
     execution_graph = ExecutionGraph.from_pipeline(pipeline)
     env = DagsterEnv(execution_graph, environment)
     return _execute_graph(execution_graph, env, throw_on_error)
+
 
 def _execute_graph(
     execution_graph,

@@ -16,10 +16,11 @@ from .definitions import (
 
 
 class MultipleResults(namedtuple('_MultipleResults', 'results')):
-    def __new__(cls, results):
+    def __new__(cls, *results):
         return super(MultipleResults, cls).__new__(
             cls,
-            check.list_param(results, 'results', Result),
+            # XXX(freiksenet): should check.list_param accept tuples from rest?
+            check.opt_list_param(list(results), 'results', Result),
         )
 
 
@@ -44,12 +45,18 @@ class _Solid:
         name=None,
         inputs=None,
         outputs=None,
+        output=None,
         description=None,
         config_def=None,
     ):
         self.name = check.opt_str_param(name, 'name')
         self.inputs = check.opt_list_param(inputs, 'inputs', InputDefinition)
-        self.outputs = check.opt_list_param(outputs, 'outputs', OutputDefinition)
+
+        if output is not None and outputs is None:
+            self.outputs = [check.opt_inst_param(output, 'output', OutputDefinition)]
+        else:
+            self.outputs = check.opt_list_param(outputs, 'outputs', OutputDefinition)
+
         self.description = check.opt_str_param(description, 'description')
         if config_def:
             self.config_def = check_argument_def_dict(config_def)
@@ -76,8 +83,8 @@ class _Solid:
         )
 
 
-def solid(*, name=None, inputs=None, outputs=None, description=None):
-    return _Solid(name=name, inputs=inputs, outputs=outputs, description=description)
+def solid(*, name=None, inputs=None, output=None, outputs=None, description=None):
+    return _Solid(name=name, inputs=inputs, output=output, outputs=outputs, description=description)
 
 
 def _create_transform_wrapper(fn, inputs, outputs, include_context=False):
@@ -99,7 +106,7 @@ def _create_transform_wrapper(fn, inputs, outputs, include_context=False):
             if isinstance(result, Result):
                 yield result
             elif isinstance(result, MultipleResults):
-                yield from MultipleResults.results
+                yield from result.results
             elif len(outputs) == 1:
                 yield Result(value=result, output_name=outputs[0].name)
             elif result is not None:
