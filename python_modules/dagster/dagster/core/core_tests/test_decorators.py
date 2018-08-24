@@ -6,12 +6,14 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     config,
+    Result,
     execute_pipeline,
 )
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.decorators import (
     solid,
     with_context,
+    MultipleResults,
 )
 from dagster.core.execution import (
     execute_single_solid,
@@ -45,8 +47,79 @@ def test_solid():
     )
 
     assert result.success
+    assert len(result.result_list) == 1
+    assert result.result_list[0].transformed_value['foo'] == 'bar'
 
-    assert result.transformed_value['foo'] == 'bar'
+
+def test_solid_one_output():
+    @solid(output=OutputDefinition())
+    def hello_world():
+        return {'foo': 'bar'}
+
+    result = execute_single_solid(
+        create_test_context(),
+        hello_world,
+        environment=create_empty_test_env(),
+    )
+
+    assert result.success
+    assert len(result.result_list) == 1
+    assert result.result_list[0].transformed_value['foo'] == 'bar'
+
+
+def test_solid_yield():
+    @solid(output=OutputDefinition())
+    def hello_world():
+        yield Result(value={'foo': 'bar'})
+
+    result = execute_single_solid(
+        create_test_context(),
+        hello_world,
+        environment=create_empty_test_env(),
+    )
+
+    assert result.success
+    assert len(result.result_list) == 1
+    assert result.result_list[0].transformed_value['foo'] == 'bar'
+
+
+def test_solid_result_return():
+    @solid(output=OutputDefinition())
+    def hello_world():
+        return Result(value={'foo': 'bar'})
+
+    result = execute_single_solid(
+        create_test_context(),
+        hello_world,
+        environment=create_empty_test_env(),
+    )
+
+    assert result.success
+    assert len(result.result_list) == 1
+    assert result.result_list[0].transformed_value['foo'] == 'bar'
+
+
+def test_solid_multiple_outputs():
+    @solid(outputs=[
+        OutputDefinition(name="left"),
+        OutputDefinition(name="right"),
+    ])
+    def hello_world():
+        return MultipleResults(
+            Result(value={'foo': 'left'}, output_name='left'),
+            Result(value={'foo': 'right'}, output_name='right')
+        )
+
+    result = execute_single_solid(
+        create_test_context(),
+        hello_world,
+        environment=create_empty_test_env(),
+    )
+
+    assert result.success
+    assert len(result.result_list) == 2
+    assert result.result_list[0].transformed_value['foo'] == 'left'
+    assert result.result_list[1].transformed_value['foo'] == 'right'
 
 
 def test_solid_with_name():
@@ -61,8 +134,8 @@ def test_solid_with_name():
     )
 
     assert result.success
-
-    assert result.transformed_value['foo'] == 'bar'
+    assert len(result.result_list) == 1
+    assert result.result_list[0].transformed_value['foo'] == 'bar'
 
 
 def test_solid_with_context():
@@ -78,8 +151,8 @@ def test_solid_with_context():
     )
 
     assert result.success
-
-    assert result.transformed_value['foo'] == 'bar'
+    assert len(result.result_list) == 1
+    assert result.result_list[0].transformed_value['foo'] == 'bar'
 
 
 def test_solid_with_input():
@@ -102,7 +175,6 @@ def test_solid_with_input():
     result = pipeline_result.result_named('hello_world')
 
     assert result.success
-
     assert result.transformed_value['foo'] == 'bar'
 
 
