@@ -485,12 +485,16 @@ def test_is_callable():
 
     assert check.is_callable(fn) == fn
     assert check.is_callable(lambda: None)
+    assert check.is_callable(lambda: None, 'some desc')
 
     with pytest.raises(CheckError):
         check.is_callable(None)
 
     with pytest.raises(CheckError):
         check.is_callable(1)
+
+    with pytest.raises(CheckError, message='some other desc'):
+        check.is_callable(1, 'some other desc')
 
 
 def test_tuple_param():

@@ -11,10 +11,13 @@ from dagster.core.definitions import (
     ExpectationDefinition,
     ExpectationResult,
     InputDefinition,
+    LibraryDefinition,
+    LibrarySolidDefinition,
     OutputDefinition,
     PipelineContextDefinition,
     PipelineDefinition,
     Result,
+    RepositoryDefinition,
     SolidDefinition,
 )
 

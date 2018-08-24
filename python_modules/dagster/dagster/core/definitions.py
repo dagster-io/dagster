@@ -1,4 +1,7 @@
-from collections import (defaultdict, namedtuple)
+from collections import (
+    defaultdict,
+    namedtuple,
+)
 import copy
 import keyword
 import re
@@ -9,6 +12,12 @@ from dagster.core import types
 from dagster.utils.logging import (
     level_from_string,
     define_colored_console_logger,
+)
+
+from .argument_handling import (
+    validate_args,
+    ArgumentDefinition,
+    ArgumentDefinitionDictionary,
 )
 
 from .errors import (
@@ -51,20 +60,6 @@ def check_valid_name(name):
             '{name} must be in regex {regex}'.format(name=name, regex=regex)
         )
     return name
-
-
-# We wrap the passed in dictionary of str : ArgumentDefinition to
-# 1) enforce typing
-# 2) enforce immutability
-# 3) make type checks throughout execution cheaper
-class ArgumentDefinitionDictionary(dict):
-    def __init__(self, ddict):
-        super().__init__(
-            check.dict_param(ddict, 'ddict', key_type=str, value_type=ArgumentDefinition)
-        )
-
-    def __setitem__(self, _key, _value):
-        check.failed('This dictionary is readonly')
 
 
 class PipelineContextDefinition:
@@ -654,7 +649,8 @@ class SolidDefinition:
             if isinstance(value, Result):
                 raise DagsterInvariantViolationError(
                     '''Single output transform Solid {name} returned a Result. Just return
-                    value directly without wrapping it in Result''')
+                    value directly without wrapping it in Result'''
+                )
             yield Result(output_name=DEFAULT_OUTPUT, value=value)
 
         return SolidDefinition(
@@ -690,53 +686,35 @@ class SolidDefinition:
         return self._output_dict[name]
 
 
-class __ArgumentValueSentinel:
-    pass
+class LibrarySolidDefinition:
+    def __init__(self, name, argument_def_dict, solid_creation_fn):
+        self.name = check.str_param(name, 'name')
+        self.argument_def_dict = ArgumentDefinitionDictionary(argument_def_dict)
+        self.solid_creation_fn = check.callable_param(solid_creation_fn, 'solid_creation_fn')
+
+    def create_solid(self, name, args):
+        check.str_param(name, 'name')
+        check.dict_param(args, 'args', key_type=str)
+
+        args = validate_args(
+            self.argument_def_dict,
+            args,
+            'Args of library_solid {name} invalid'.format(name=self.name),
+        )
+        solid = self.solid_creation_fn(name, args)
+        return check.inst_param(solid, 'solid', SolidDefinition)
 
 
-NO_DEFAULT_PROVIDED = __ArgumentValueSentinel
-
-
-class ArgumentDefinition:
-    '''Definition of an argument passed through the config system. Used in a few different
-    contexts: to configure a context, to configure a solid, and more to come.
-
-    We have decided to allow arguments to be explictly made *optional* and separate that
-    concept from the nullability of the type. That means one could have a *required* argument
-    that is nullable, because sometimes an argument set to null has a distinct semantic meaning
-    from the lack of an argument. Optional arguments can have default values. Required arguments
-    cannot.
-    '''
-
-    def __init__(
-        self, dagster_type, default_value=NO_DEFAULT_PROVIDED, is_optional=False, description=None
-    ):
-        '''
-        Parameters
-        ---------
-        dagster_type: DagsterType
-            The type of the argument.
-        default_value: Any (optional, defaults to a sentinel value)
-            Default value of argument. Can only be provided if argument is optional
-        is_optional: bool (optional, defaults to false)
-            Optional. Can the solid execute with the argument even set.
-        description: str (optional)
-        '''
-        if not is_optional:
-            check.param_invariant(
-                default_value == NO_DEFAULT_PROVIDED,
-                'default_value',
-                'required arguments should not specify default values',
+class LibraryDefinition:
+    def __init__(self, name, library_solids):
+        self.name = check.str_param(name, 'name')
+        self._library_solid_dict = _build_named_dict(
+            check.list_param(
+                library_solids,
+                'library_solids',
+                of_type=LibrarySolidDefinition,
             )
-
-        self.dagster_type = check.inst_param(dagster_type, 'dagster_type', types.DagsterType)
-        self.description = check.opt_str_param(description, 'description')
-        self.is_optional = check.bool_param(is_optional, 'is_optional')
-        self.default_value = default_value
-
-    @property
-    def default_provided(self):
-        return self.default_value != NO_DEFAULT_PROVIDED
+        )
 
 
 def _create_adjacency_lists(solids, dep_structure):
@@ -975,3 +953,60 @@ def _create_subgraph(execution_graph, from_solids, through_solids):
         from_solids = list(all_deps)
 
     return execution_graph.create_execution_subgraph(from_solids, through_solids)
+
+
+class RepositoryDefinition:
+    def __init__(self, name, pipeline_dict, libraries=None):
+        self.name = check.str_param(name, 'name')
+
+        check.dict_param(
+            pipeline_dict,
+            'pipeline_dict',
+            key_type=str,
+        )
+
+        for val in pipeline_dict.values():
+            check.is_callable(val, 'Value in pipeline_dict must be function')
+
+        self.pipeline_dict = pipeline_dict
+
+        self._pipeline_cache = {}
+
+        self._library_dict = _build_named_dict(
+            check.opt_list_param(
+                libraries,
+                'libraries',
+                of_type=LibraryDefinition,
+            )
+        )
+
+    def get_library(self, name):
+        check.str_param(name, 'name')
+        return self._library_dict[name]
+
+    def get_pipeline(self, name):
+        if name in self._pipeline_cache:
+            return self._pipeline_cache[name]
+
+        pipeline = self.pipeline_dict[name]()
+        check.invariant(
+            pipeline.name == name,
+            f'Name does not match. Name in dict {name}. Name in pipeline {pipeline.name}'
+        )
+
+        check.inst(
+            pipeline,
+            PipelineDefinition,
+            'Function passed into pipeline_dict with key {key} must return a PipelineDefinition'.
+            format(key=name),
+        )
+
+        self._pipeline_cache[name] = pipeline
+        return pipeline
+
+    def iterate_over_pipelines(self):
+        for name in self.pipeline_dict.keys():
+            yield self.get_pipeline(name)
+
+    def get_all_pipelines(self):
+        return list(self.iterate_over_pipelines())
