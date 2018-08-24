@@ -24,7 +24,7 @@ injectGlobal`
   }
 
   html, body, #root {
-    mix-width: 100%;
+    max-width: 100%;
     min-height: 100%;
     display: flex;
     flex: 1 1;
