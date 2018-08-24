@@ -1,10 +1,11 @@
 from dagster import check
+
+from .definitions import ArgumentDefinitionDictionary
 from .errors import DagsterTypeError
-from .definitions import check_argument_def_dict
 
 
 def validate_args(argument_def_dict, arg_dict, error_context_str):
-    check_argument_def_dict(argument_def_dict)
+    check.inst_param(argument_def_dict, 'argument_def_dict', ArgumentDefinitionDictionary)
     check.dict_param(arg_dict, 'arg_dict', key_type=str)
     check.str_param(error_context_str, 'error_context_str')
 

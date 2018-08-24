@@ -36,7 +36,7 @@ def get_solid_transformed_value(_context, solid_inst, environment):
         solids=[dagster_pd.load_csv_solid('load_csv'), solid_inst],
         dependencies={
             solid_inst.name: {
-                solid_inst.inputs[0].name: DependencyDefinition('load_csv'),
+                solid_inst.input_defs[0].name: DependencyDefinition('load_csv'),
             }
         }
     )
@@ -128,7 +128,7 @@ def execute_transform_in_temp_csv_files(solid_inst):
         solids=[load_csv_solid, solid_inst, to_csv_solid],
         dependencies={
             solid_inst.name: {
-                solid_inst.inputs[0].name: DependencyDefinition('load_csv'),
+                solid_inst.input_defs[0].name: DependencyDefinition('load_csv'),
             },
             'to_csv': {
                 'df': DependencyDefinition(solid_inst.name),

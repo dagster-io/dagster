@@ -126,13 +126,13 @@ def print_solid(printer, solid):
 
         printer.line('Outputs:')
 
-        for output in solid.outputs:
-            print(output.name)
+        for output_def in solid.output_defs:
+            print(output_def.name)
 
 
 def print_inputs(printer, solid):
     printer.line('Inputs:')
-    for input_def in solid.inputs:
+    for input_def in solid.input_defs:
         with printer.with_indent():
             printer.line('Input: {name}'.format(name=input_def.name))
 
@@ -231,7 +231,7 @@ def print_metrics_to_console(results, printer):
 
         printer('Metrics for {name}'.format(name=result.name))
 
-        for input_def in result.solid.inputs:
+        for input_def in result.solid.input_defs:
             metrics_for_input = list(
                 context.metrics_covering_context({
                     'solid': result.name,

@@ -1,14 +1,15 @@
 import inspect
 from collections import namedtuple
 from functools import wraps
-from dagster import check
+
 from .definitions import (
-    SolidDefinition,
+    ConfigDefinition,
+    DagsterInvalidDefinitionError,
     InputDefinition,
     OutputDefinition,
-    DagsterInvalidDefinitionError,
     Result,
-    check_argument_def_dict,
+    SolidDefinition,
+    check,
 )
 
 # Error messages are long
@@ -58,7 +59,7 @@ class _Solid:
         config_def=None,
     ):
         self.name = check.opt_str_param(name, 'name')
-        self.inputs = check.opt_list_param(inputs, 'inputs', InputDefinition)
+        self.input_defs = check.opt_list_param(inputs, 'inputs', InputDefinition)
 
         if output is not None and outputs is None:
             self.outputs = [check.opt_inst_param(output, 'output', OutputDefinition)]
@@ -66,10 +67,7 @@ class _Solid:
             self.outputs = check.opt_list_param(outputs, 'outputs', OutputDefinition)
 
         self.description = check.opt_str_param(description, 'description')
-        if config_def:
-            self.config_def = check_argument_def_dict(config_def)
-        else:
-            self.config_def = {}
+        self.config_def = check.opt_inst_param(config_def, 'config_def', ConfigDefinition({}))
 
     def __call__(self, fn):
         expect_context = getattr(fn, 'has_context', False)
@@ -79,11 +77,11 @@ class _Solid:
         if not self.name:
             self.name = fn.__name__
 
-        _validate_transform_fn(self.name, fn, self.inputs, expect_context)
-        transform_fn = _create_transform_wrapper(fn, self.inputs, self.outputs, expect_context)
+        _validate_transform_fn(self.name, fn, self.input_defs, expect_context)
+        transform_fn = _create_transform_wrapper(fn, self.input_defs, self.outputs, expect_context)
         return SolidDefinition(
             name=self.name,
-            inputs=self.inputs,
+            inputs=self.input_defs,
             outputs=self.outputs,
             transform_fn=transform_fn,
             config_def=self.config_def,
