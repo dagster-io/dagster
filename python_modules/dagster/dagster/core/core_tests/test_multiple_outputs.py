@@ -1,4 +1,7 @@
+import pytest
+
 from dagster import (
+    DagsterInvariantViolationError,
     ExpectationDefinition,
     ExpectationResult,
     OutputDefinition,
@@ -84,3 +87,46 @@ def test_multiple_outputs_expectations():
     assert result.success
     assert called['expectation_one']
     assert called['expectation_two']
+
+
+def test_wrong_multiple_output():
+    def _t_fn(_context, _inputs, _config_dict):
+        yield Result(output_name='mismatch', value='foo')
+
+    solid = SolidDefinition(
+        name='multiple_outputs',
+        inputs=[],
+        outputs=[
+            OutputDefinition(name='output_one'),
+        ],
+        config_def={},
+        transform_fn=_t_fn,
+    )
+
+    pipeline = PipelineDefinition(solids=[solid])
+
+    with pytest.raises(DagsterInvariantViolationError):
+        execute_pipeline(pipeline, config.Environment())
+
+
+def test_multiple_outputs_of_same_name_disallowed():
+    # make this illegal until it is supported
+
+    def _t_fn(_context, _inputs, _config_dict):
+        yield Result(output_name='output_one', value='foo')
+        yield Result(output_name='output_one', value='foo')
+
+    solid = SolidDefinition(
+        name='multiple_outputs',
+        inputs=[],
+        outputs=[
+            OutputDefinition(name='output_one'),
+        ],
+        config_def={},
+        transform_fn=_t_fn,
+    )
+
+    pipeline = PipelineDefinition(solids=[solid])
+
+    with pytest.raises(DagsterInvariantViolationError):
+        execute_pipeline(pipeline, config.Environment())
