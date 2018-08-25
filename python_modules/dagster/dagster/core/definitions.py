@@ -222,45 +222,14 @@ class PipelineDefinition:
 
         return subgraph.to_pipeline()
 
-    def __init__(
-        self, solids, name=None, description=None, context_definitions=None, dependencies=None
-    ):
-        self.description = check.opt_str_param(description, 'description')
-        self.name = check.opt_str_param(name, 'name')
-
-        if context_definitions is None:
-            context_definitions = _default_pipeline_context_definitions()
-
-        self.context_definitions = check.dict_param(
-            context_definitions,
-            'context_definitions',
-            key_type=str,
-            value_type=PipelineContextDefinition,
-        )
-
-        for solid in solids:
-            if not isinstance(solid, SolidDefinition) and callable(solid):
-                raise DagsterInvalidDefinitionError(
-                    '''You have passed a lambda or function {solid} into
-                a pipeline that is not a solid. You have likely forgetten to annotate this function
-                with an @solid decorator located in dagster.core.decorators
-                '''.format(solid=solid.__name__)
-                )
-
-        self._solid_dict = _build_named_dict(solids)
-
-        dependencies = check_two_dim_str_dict(
-            dependencies,
-            'dependencies',
-            DependencyDefinition,
-        ) if dependencies else {}
-
+    def __validate_dependences(self, dependencies):
         for from_solid, dep_by_input in dependencies.items():
             for from_input, dep in dep_by_input.items():
                 if from_solid == dep.solid:
                     raise DagsterInvalidDefinitionError(
                         f'Circular reference detected in solid {from_solid} input {from_input}.'
                     )
+
                 if not from_solid in self._solid_dict:
                     raise DagsterInvalidDefinitionError(
                         f'Solid {from_solid} in dependency dictionary not found in solid list',
@@ -285,11 +254,10 @@ class PipelineDefinition:
                         f'Solid {dep.solid} does not have output {dep.output}',
                     )
 
-        self.dependency_structure = DependencyStructure.from_definitions(solids, dependencies)
-
+    def __validate_dependency_structure(self, name, solids, dependency_structure):
         for solid in solids:
             for input_def in solid.input_defs:
-                if not self.dependency_structure.has_dep(solid.input_handle(input_def.name)):
+                if not dependency_structure.has_dep(solid.input_handle(input_def.name)):
                     if name:
                         raise DagsterInvalidDefinitionError(
                             f'Dependency must be specified for solid {solid.name} input ' + \
@@ -300,6 +268,44 @@ class PipelineDefinition:
                             f'Dependency must be specified for solid {solid.name} input ' + \
                             f'{input_def.name}'
                         )
+
+    def __init__(
+        self, solids, name=None, description=None, context_definitions=None, dependencies=None
+    ):
+        self.description = check.opt_str_param(description, 'description')
+        self.name = check.opt_str_param(name, 'name')
+
+        if context_definitions is None:
+            context_definitions = _default_pipeline_context_definitions()
+
+        self.context_definitions = check.dict_param(
+            context_definitions,
+            'context_definitions',
+            key_type=str,
+            value_type=PipelineContextDefinition,
+        )
+
+        for solid in solids:
+            if not isinstance(solid, SolidDefinition) and callable(solid):
+                raise DagsterInvalidDefinitionError(
+                    '''You have passed a lambda or function {func} into
+                a pipeline that is not a solid. You have likely forgetten to annotate this function
+                with an @solid decorator located in dagster.core.decorators
+                '''.format(func=solid.__name__)
+                )
+
+        self._solid_dict = _build_named_dict(solids)
+
+        dependencies = check_two_dim_str_dict(
+            dependencies,
+            'dependencies',
+            DependencyDefinition,
+        ) if dependencies else {}
+
+        self.__validate_dependences(dependencies)
+        dependency_structure = DependencyStructure.from_definitions(solids, dependencies)
+        self.__validate_dependency_structure(name, solids, dependency_structure)
+        self.dependency_structure = dependency_structure
 
     @property
     def solids(self):
