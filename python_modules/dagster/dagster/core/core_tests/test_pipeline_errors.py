@@ -1,16 +1,21 @@
+import pytest
+
 from dagster import (
+    DagsterInvariantViolationError,
     DependencyDefinition,
     ExecutionContext,
     InputDefinition,
     OutputDefinition,
     PipelineContextDefinition,
     PipelineDefinition,
+    Result,
     SolidDefinition,
     check,
     config,
     execute_pipeline,
 )
 
+from dagster.core.execution import execute_single_solid
 from dagster.core.errors import DagsterUserCodeExecutionError
 
 
@@ -109,3 +114,36 @@ def test_failure_midstream():
     assert result_list[1].success
     assert not result_list[2].success
     assert isinstance(result_list[2].dagster_user_exception, DagsterUserCodeExecutionError)
+
+
+def test_do_not_yield_result():
+    solid_inst = SolidDefinition(
+        name='do_not_yield_result',
+        inputs=[],
+        outputs=[OutputDefinition()],
+        transform_fn=lambda *_args, **_kwargs: Result('foo')
+    )
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        message='Tranform for solid do_not_yield_result return a Result',
+    ):
+        execute_single_solid(ExecutionContext(), solid_inst, config.Environment())
+
+
+def test_yield_non_result():
+    def _tn(*_args, **_kwargs):
+        yield 'foo'
+
+    solid_inst = SolidDefinition(
+        name='yield_wrong_thing',
+        inputs=[],
+        outputs=[OutputDefinition()],
+        transform_fn=_tn,
+    )
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        message="Tranform for solid yield_wrong_thing yielded 'foo'",
+    ):
+        execute_single_solid(ExecutionContext(), solid_inst, config.Environment())
