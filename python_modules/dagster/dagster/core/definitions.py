@@ -164,11 +164,9 @@ class DependencyStructure:
 
     def depended_by_of_solid(self, solid_name):
         check.str_param(solid_name, 'solid_name')
-        result = {}
+        result = defaultdict(list)
         for input_handle, output_handle in self._handle_dict.items():
             if output_handle.solid.name == solid_name:
-                if output_handle not in result:
-                    result[output_handle] = []
                 result[output_handle].extend(input_handle)
         return result
 
