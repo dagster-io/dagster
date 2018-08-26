@@ -20,7 +20,6 @@ from dagster.utils.timing import time_execution_scope
 from .argument_handling import validate_args
 
 from .definitions import (
-    DependencyStructure,
     ExpectationDefinition,
     InputDefinition,
     OutputDefinition,
@@ -40,6 +39,9 @@ from .errors import (
 from .graph import ExecutionGraph
 
 from .types import DagsterType
+
+# TODO: remove circular
+import dagster.core.execution
 
 class ComputeNodeOutputHandle(namedtuple('_ComputeNodeOutputHandle', 'compute_node output_name')):
     def __new__(cls, compute_node, output_name):
@@ -88,7 +90,7 @@ class ComputeNodeFailureData(namedtuple('_ComputeNodeFailureData', 'dagster_user
 class ComputeNodeResult(
     namedtuple(
         '_ComputeNodeResult',
-        'success compute_node tag success_data failure_data ',
+        'success compute_node tag success_data failure_data',
     )
 ):
     @staticmethod
@@ -355,20 +357,8 @@ def execute_compute_nodes(context, compute_nodes):
         for result in compute_node.execute(context, input_values):
             check.invariant(isinstance(result, ComputeNodeResult))
             yield result
-            output_handle = create_cn_output_handle(compute_node, result.success_data.output_name)
+            output_handle = ComputeNodeOutputHandle(compute_node, result.success_data.output_name)
             intermediate_results[output_handle] = result
-
-
-def _yieldify(sync_compute_fn):
-    def _wrap(context, compute_node, inputs):
-        yield sync_compute_fn(context, compute_node, inputs)
-
-    return _wrap
-
-
-class SingleSyncOutputComputeNode(ComputeNode):
-    def __init__(self, *, sync_compute_fn, **kwargs):
-        super().__init__(compute_fn=_yieldify(sync_compute_fn), **kwargs)
 
 
 def print_graph(graph, printer=print):
@@ -414,7 +404,7 @@ def create_expectation_cn(
 
     value_type = inout_def.dagster_type
 
-    return SingleSyncOutputComputeNode(
+    return ComputeNode(
         friendly_name=friendly_name,
         node_inputs=[
             ComputeNodeInput(
@@ -427,7 +417,7 @@ def create_expectation_cn(
             ComputeNodeOutput(name=EXPECTATION_VALUE_OUTPUT, dagster_type=value_type),
         ],
         arg_dict={},
-        sync_compute_fn=_create_expectation_lambda(
+        compute_fn=_create_expectation_lambda(
             solid,
             expectation_def,
             EXPECTATION_VALUE_OUTPUT,
@@ -437,8 +427,8 @@ def create_expectation_cn(
     )
 
 
-ExpectationsComputeNodeGraph = namedtuple(
-    'ExpectationsComputeNodeGraph',
+ComputeNodeSubgraph = namedtuple(
+    'ComputeNodeSubgraph',
     'nodes terminal_cn_output_handle',
 )
 
@@ -466,34 +456,10 @@ def create_expectations_cn_graph(solid, inout_def, prev_node_output_handle, tag)
     join_cn = _create_join_node(solid, input_expect_nodes, EXPECTATION_VALUE_OUTPUT)
 
     output_name = join_cn.node_outputs[0].name
-    return ExpectationsComputeNodeGraph(
+    return ComputeNodeSubgraph(
         compute_nodes + [join_cn],
-        create_cn_output_handle(join_cn, output_name),
+        ComputeNodeOutputHandle(join_cn, output_name),
     )
-
-
-def _prev_node_handle(dep_structure, solid, input_def, compute_node_output_map):
-    check.inst_param(dep_structure, 'dep_structure', DependencyStructure)
-    check.inst_param(solid, 'solid', SolidDefinition)
-    check.inst_param(input_def, 'input_def', InputDefinition)
-    check.inst_param(compute_node_output_map, 'compute_node_output_map', ComputeNodeOutputMap)
-
-    input_handle = solid.input_handle(input_def.name)
-
-    check.invariant(
-        dep_structure.has_dep(input_handle),
-        f'{input_handle} not found in dependency structure',
-    )
-
-    solid_output_handle = dep_structure.get_dep(input_handle)
-    return compute_node_output_map[solid_output_handle]
-
-
-def create_cn_output_handle(compute_node, cn_output_name):
-    check.inst_param(compute_node, 'compute_node', ComputeNode)
-    check.str_param(cn_output_name, 'cn_output_name')
-    return ComputeNodeOutputHandle(compute_node, cn_output_name)
-
 
 class ComputeNodeOutputMap(dict):
     def __getitem__(self, key):
@@ -507,7 +473,6 @@ class ComputeNodeOutputMap(dict):
 
 
 def create_compute_node_graph_from_env(execution_graph, env):
-    import dagster.core.execution
     check.inst_param(execution_graph, 'execution_graph', ExecutionGraph)
     check.inst_param(env, 'env', dagster.core.execution.DagsterEnv)
 
@@ -521,34 +486,25 @@ def create_compute_node_graph_from_env(execution_graph, env):
         cn_inputs = []
 
         for input_def in topo_solid.input_defs:
-            prev_cn_output_handle = _prev_node_handle(
-                dependency_structure,
-                topo_solid,
-                input_def,
-                cn_output_node_map,
+            input_handle = topo_solid.input_handle(input_def.name)
+
+            check.invariant(
+                dependency_structure.has_dep(input_handle),
+                f'{input_handle} not found in dependency structure',
             )
 
-            check.inst(prev_cn_output_handle, ComputeNodeOutputHandle)
+            solid_output_handle = dependency_structure.get_dep(input_handle)
+            prev_cn_output_handle = cn_output_node_map[solid_output_handle]
 
-            # jam in input expectations here
+            subgraph = create_subgraph_for_input(env, topo_solid, prev_cn_output_handle, input_def)
 
-            if env.evaluate_expectations and input_def.expectations:
-                expectations_graph = create_expectations_cn_graph(
-                    topo_solid,
-                    input_def,
-                    prev_cn_output_handle,
-                    tag=ComputeNodeTag.INPUT_EXPECTATION,
-                )
-                compute_nodes = compute_nodes + expectations_graph.nodes
-
-                check.inst(expectations_graph.terminal_cn_output_handle, ComputeNodeOutputHandle)
-
-                cn_output_handle = expectations_graph.terminal_cn_output_handle
-            else:
-                cn_output_handle = prev_cn_output_handle
-
+            compute_nodes.extend(subgraph.nodes)
             cn_inputs.append(
-                ComputeNodeInput(input_def.name, input_def.dagster_type, cn_output_handle)
+                ComputeNodeInput(
+                    input_def.name,
+                    input_def.dagster_type,
+                    subgraph.terminal_cn_output_handle,
+                )
             )
 
         validated_config_args = validate_args(
@@ -563,25 +519,19 @@ def create_compute_node_graph_from_env(execution_graph, env):
             validated_config_args,
         )
 
-        for output_def in topo_solid.output_defs:
-            output_handle = topo_solid.output_handle(output_def.name)
-            if env.evaluate_expectations and output_def.expectations:
-                expectations_graph = create_expectations_cn_graph(
-                    topo_solid,
-                    output_def,
-                    create_cn_output_handle(solid_transform_cn, output_def.name),
-                    tag=ComputeNodeTag.OUTPUT_EXPECTATION
-                )
-                compute_nodes = compute_nodes + expectations_graph.nodes
-                cn_output_node_map[output_handle] = expectations_graph.terminal_cn_output_handle
-            else:
-                cn_output_node_map[output_handle] = create_cn_output_handle(
-                    solid_transform_cn,
-                    output_def.name,
-                )
-
         compute_nodes.append(solid_transform_cn)
 
+        for output_def in topo_solid.output_defs:
+            subgraph = create_subgraph_for_output(env, topo_solid, solid_transform_cn, output_def)
+            compute_nodes.extend(subgraph.nodes)
+
+            output_handle = topo_solid.output_handle(output_def.name)
+            cn_output_node_map[output_handle] = subgraph.terminal_cn_output_handle
+
+
+    return _create_compute_node_graph(compute_nodes)
+
+def _create_compute_node_graph(compute_nodes):
     cn_dict = {}
     for cn in compute_nodes:
         cn_dict[cn.guid] = cn
@@ -594,6 +544,48 @@ def create_compute_node_graph_from_env(execution_graph, env):
             deps[cn.guid].add(cn_input.prev_output_handle.compute_node.guid)
 
     return ComputeNodeGraph(cn_dict, deps)
+
+def create_subgraph_for_input(env, solid, prev_cn_output_handle, input_def):
+    check.inst_param(env, 'env', dagster.core.execution.DagsterEnv)
+    check.inst_param(solid, 'solid', SolidDefinition)
+    check.inst_param(prev_cn_output_handle, 'prev_cn_output_handle', ComputeNodeOutputHandle)
+    check.inst_param(input_def, 'input_def', InputDefinition)
+
+    if env.evaluate_expectations and input_def.expectations:
+        return create_expectations_cn_graph(
+            solid,
+            input_def,
+            prev_cn_output_handle,
+            tag=ComputeNodeTag.INPUT_EXPECTATION,
+        )
+    else:
+        return ComputeNodeSubgraph(
+            nodes=[],
+            terminal_cn_output_handle=prev_cn_output_handle,
+        )
+
+
+def create_subgraph_for_output(env, solid, solid_transform_cn, output_def):
+    check.inst_param(env, 'env', dagster.core.execution.DagsterEnv)
+    check.inst_param(solid, 'solid', SolidDefinition)
+    check.inst_param(solid_transform_cn, 'solid_transform_cn', ComputeNode)
+    check.inst_param(output_def, 'output_def', OutputDefinition)
+
+    if env.evaluate_expectations and output_def.expectations:
+        return create_expectations_cn_graph(
+            solid,
+            output_def,
+            ComputeNodeOutputHandle(solid_transform_cn, output_def.name),
+            tag=ComputeNodeTag.OUTPUT_EXPECTATION
+        )
+    else:
+        return ComputeNodeSubgraph(
+            nodes=[],
+            terminal_cn_output_handle=ComputeNodeOutputHandle(
+                solid_transform_cn,
+                output_def.name,
+            ),
+        )
 
 
 def _create_join_node(solid, prev_nodes, prev_output_name):
@@ -612,18 +604,18 @@ def _create_join_node(solid, prev_nodes, prev_output_name):
         else:
             check.invariant(seen_dagster_type == prev_node_output.dagster_type)
 
-        output_handle = create_cn_output_handle(prev_node, prev_output_name)
+        output_handle = ComputeNodeOutputHandle(prev_node, prev_output_name)
 
         node_inputs.append(
             ComputeNodeInput(prev_node.guid, prev_node_output.dagster_type, output_handle)
         )
 
-    return SingleSyncOutputComputeNode(
+    return ComputeNode(
         friendly_name='join',
         node_inputs=node_inputs,
         node_outputs=[ComputeNodeOutput(JOIN_OUTPUT, seen_dagster_type)],
         arg_dict={},
-        sync_compute_fn=_create_join_lambda,
+        compute_fn=_create_join_lambda,
         tag=ComputeNodeTag.JOIN,
         solid=solid,
     )
@@ -633,7 +625,7 @@ ExpectationExecutionInfo = namedtuple('ExpectationExecutionInfo', 'solid expecta
 
 
 def _create_join_lambda(_context, _compute_node, inputs):
-    return Result(output_name=JOIN_OUTPUT, value=list(inputs.values())[0])
+    yield Result(output_name=JOIN_OUTPUT, value=list(inputs.values())[0])
 
 
 def _create_expectation_lambda(solid, expectation_def, output_name):
@@ -648,9 +640,9 @@ def _create_expectation_lambda(solid, expectation_def, output_name):
             inputs[EXPECTATION_INPUT],
         )
         if expt_result.success:
-            return Result(output_name=output_name, value=inputs[EXPECTATION_INPUT])
-
-        raise DagsterExpectationFailedError(None)  # for now
+            yield Result(output_name=output_name, value=inputs[EXPECTATION_INPUT])
+        else:
+            raise DagsterExpectationFailedError(None)  # for now
 
     return _do_expectation
 
