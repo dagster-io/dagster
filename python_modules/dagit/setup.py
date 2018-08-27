@@ -18,7 +18,7 @@ def long_description():
 
 setup(
     name='dagit',
-    version='0.1.8',
+    version='0.1.9',
     author='Elementl',
     author_email='schrockn@elementl.com',
     license='Apache-2.0',
