@@ -41,6 +41,14 @@ def define_config_class():
 
             check.failed(f'pipeline {name} not found')
 
+        def reload(self):
+            for pipeline_config in self.pipeline_configs:
+                if pipeline_config.module:
+                    importlib.reload(pipeline_config.module)
+                pipeline_config.create_pipeline()
+
+            return self.pipeline_configs
+
     # This lets you ask cli commands to have this object extracted from context and
     # passed as first arg
     _Config.pass_object = click.make_pass_decorator(_Config)

@@ -63,6 +63,9 @@ setup(
         'flask-cors>=3.0.6',
         'waitress>=1.1.0',
 
+        # watchdog
+        'watchdog>=0.8.3',
+
         # dev/test - Installed via dev-requirements.txt
         # 'pylint>=1.8.4',
         # 'pytest>=3.5.1',
