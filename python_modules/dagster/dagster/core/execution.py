@@ -25,6 +25,7 @@ from collections import (namedtuple, OrderedDict)
 from contextlib import contextmanager
 import copy
 import sys
+import uuid
 
 import six
 
@@ -87,33 +88,42 @@ class ExecutionContext:
             ]
         )
 
-    def _log(self, method, msg, **kwargs):
+    def _log(self, method, msg, kwargs):
         check.str_param(method, 'method')
         check.str_param(msg, 'msg')
+
+        check.invariant('extra' not in kwargs, 'do not allow until explicit support is handled')
+        check.invariant('exc_info' not in kwargs, 'do not allow until explicit support is handled')
+
+        check.invariant('log_message' not in kwargs, 'log_message_id reserved value')
+        check.invariant('log_message_id' not in kwargs, 'log_message_id reserved value')
+
 
         full_message = 'message="{message}" {kv_message}'.format(
             message=msg, kv_message=self._kv_message(kwargs)
         )
 
         log_props = copy.copy(self._context_dict)
+
         log_props['log_message'] = msg
+        log_props['log_message_id'] = str(uuid.uuid4())
 
         getattr(self._logger, method)(full_message, extra={**log_props, **kwargs})
 
     def debug(self, msg, **kwargs):
-        return self._log('debug', msg, **kwargs)
+        return self._log('debug', msg, kwargs)
 
     def info(self, msg, **kwargs):
-        return self._log('info', msg, **kwargs)
+        return self._log('info', msg, kwargs)
 
-    def warn(self, msg, **kwargs):
-        return self._log('warn', msg, **kwargs)
+    def warning(self, msg, **kwargs):
+        return self._log('warning', msg, kwargs)
 
     def error(self, msg, **kwargs):
-        return self._log('error', msg, **kwargs)
+        return self._log('error', msg, kwargs)
 
     def critical(self, msg, **kwargs):
-        return self._log('critical', msg, **kwargs)
+        return self._log('critical', msg, kwargs)
 
     # FIXME: Actually make this work
     # def exception(self, e):

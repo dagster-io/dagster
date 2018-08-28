@@ -13,6 +13,7 @@ from dagster import (
     with_context,
 )
 from dagster.core.errors import (DagsterTypeError, DagsterInvariantViolationError)
+from dagster.utils.logging import ERROR
 
 
 def test_default_context():
@@ -22,7 +23,7 @@ def test_default_context():
     )
     @with_context
     def default_context_transform(context):
-        assert context.log_level == 'ERROR'
+        assert context.log_level == ERROR
 
     pipeline = PipelineDefinition(solids=[default_context_transform])
     execute_pipeline(
@@ -37,7 +38,7 @@ def test_default_context_with_log_level():
     )
     @with_context
     def default_context_transform(context):
-        assert context.log_level == 'ERROR'
+        assert context.log_level == ERROR
 
     pipeline = PipelineDefinition(solids=[default_context_transform])
     execute_pipeline(

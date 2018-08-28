@@ -8,9 +8,19 @@ import coloredlogs
 
 from dagster import check
 
-# This global, while fundamentally offensive, is necessary if I want to be able
-# to apply a blanket logging level after the fact based on context
-REGISTERED_LOGGERS = set()
+VALID_LEVELS = set([CRITICAL, DEBUG, ERROR, INFO, WARNING])
+
+LOOKUP = {
+    'CRITICAL': CRITICAL,
+    'DEBUG': DEBUG,
+    'ERROR': ERROR,
+    'INFO': INFO,
+    'WARNING': WARNING,
+}
+
+def level_from_string(string):
+    check.str_param(string, 'string')
+    return LOOKUP[string]
 
 class CompositeLogger:
     def __init__(self, loggers=None, level=logging.ERROR):
@@ -26,15 +36,15 @@ class CompositeLogger:
                 logger_method(*args, **kwargs)
         return _invoke_logger_method
 
+
 class JsonFileHandler(logging.Handler):
     def __init__(self, json_path):
         super().__init__()
-        self.json_path = json_path
+        self.json_path = check.str_param(json_path, 'json_path')
 
     def emit(self, record):
         try:
             logged_properties = copy.copy(record.__dict__)
-            del logged_properties['msg']
             with open(self.json_path, 'a') as ff:
                 text_line = json.dumps(logged_properties)
                 ff.write(text_line + '\n')
@@ -46,53 +56,26 @@ class JsonFileHandler(logging.Handler):
 
 def define_json_file_logger(name, json_path, level):
     check.str_param(name, 'name')
+    check.str_param(json_path, 'json_path')
+    check.param_invariant(level in VALID_LEVELS, 'level', f'Must be valid python logging level. Got {level}')
 
-    if name in REGISTERED_LOGGERS:
-        return logging.getLogger(name)
-
-    logger = logging.getLogger(name)
+    klass = logging.getLoggerClass()
+    logger = klass(name)
     logger.setLevel(level)
-
-
     stream_handler = JsonFileHandler(json_path)
     stream_handler.setFormatter(define_default_formatter())
     logger.addHandler(stream_handler)
-
     return logger
 
 
-def define_logger(name, level=INFO):
+def define_colored_console_logger(name, level=INFO):
     check.str_param(name, 'name')
+    check.param_invariant(level in VALID_LEVELS, 'level', f'Must be valid python logging level. Got {level}')
 
-    if name in REGISTERED_LOGGERS:
-        return logging.getLogger(name)
-
-    logger = logging.getLogger(name)
-
-    # This is the pre-coloredlogs process. Retaining here for posterity
-    # stream_handler = logging.StreamHandler()
-    # logger.setLevel(INFO)
-    # stream_handler.setFormatter(define_default_formatter())
-    # logger.addHandler(stream_handler)
-
+    klass = logging.getLoggerClass()
+    logger = klass(name)
     coloredlogs.install(logger=logger, level=level, fmt=default_format_string())
-
-    REGISTERED_LOGGERS.add(name)
-
     return logger
-
-def set_global_logging_level(level):
-    check.param_invariant(
-        level in {DEBUG, INFO, WARNING, ERROR, CRITICAL},
-        'Invalid logging level {level}'.format(level=level)
-    )
-    for logger in REGISTERED_LOGGERS:
-        logging.getLogger(logger).setLevel(level)
-
-def add_global_handler(handler):
-    handler.setFormatter(define_default_formatter())
-    for logger in REGISTERED_LOGGERS:
-        logging.getLogger(logger).addHandler(handler)
 
 def default_format_string():
     return '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
