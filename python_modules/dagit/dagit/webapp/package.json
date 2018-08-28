@@ -20,6 +20,7 @@
     "d3-hierarchy": "^1.1.6",
     "dagre": "^0.8.2",
     "graphql-tag": "^2.9.2",
+    "panzoom": "^6.1.3",
     "react": "^16.4.2",
     "react-apollo": "^2.1.9",
     "react-dom": "^16.4.2",
