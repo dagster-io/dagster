@@ -4,6 +4,7 @@ import re
 
 from dagster import check
 from dagster.core import types
+from dagster.utils.logging import level_from_string
 
 from .errors import DagsterInvalidDefinitionError
 from .graph import SolidGraph
@@ -65,10 +66,12 @@ def _default_pipeline_context_definitions():
         import dagster.core.execution
         import dagster.utils.logging
 
-        log_level = args['log_level']
+        log_level = level_from_string(args['log_level'])
         context = dagster.core.execution.ExecutionContext(
             log_level=log_level,
-            loggers=[dagster.utils.logging.define_logger('dagster', level=log_level)]
+            loggers=[
+                dagster.utils.logging.define_colored_console_logger('dagster', level=log_level)
+            ]
         )
         return context
 
