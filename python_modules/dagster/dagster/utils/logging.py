@@ -23,11 +23,8 @@ def level_from_string(string):
     return LOOKUP[string]
 
 class CompositeLogger:
-    def __init__(self, loggers=None, level=logging.ERROR):
+    def __init__(self, loggers=None):
         self.loggers = check.opt_list_param(loggers, 'loggers', of_type=logging.Logger)
-
-        for logger in self.loggers:
-            logger.setLevel(level)
 
     def __getattr__(self, name):
         def _invoke_logger_method(*args, **kwargs):
@@ -60,8 +57,7 @@ def define_json_file_logger(name, json_path, level):
     check.param_invariant(level in VALID_LEVELS, 'level', f'Must be valid python logging level. Got {level}')
 
     klass = logging.getLoggerClass()
-    logger = klass(name)
-    logger.setLevel(level)
+    logger = klass(name, level=level)
     stream_handler = JsonFileHandler(json_path)
     stream_handler.setFormatter(define_default_formatter())
     logger.addHandler(stream_handler)
@@ -73,7 +69,7 @@ def define_colored_console_logger(name, level=INFO):
     check.param_invariant(level in VALID_LEVELS, 'level', f'Must be valid python logging level. Got {level}')
 
     klass = logging.getLoggerClass()
-    logger = klass(name)
+    logger = klass(name, level=level)
     coloredlogs.install(logger=logger, level=level, fmt=default_format_string())
     return logger
 

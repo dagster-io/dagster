@@ -13,7 +13,10 @@ from dagster import (
     with_context,
 )
 from dagster.core.errors import (DagsterTypeError, DagsterInvariantViolationError)
-from dagster.utils.logging import ERROR
+from dagster.utils.logging import (INFO, ERROR)
+
+# protected variable. need to test loggers
+# pylint: disable=W0212
 
 
 def test_default_context():
@@ -23,7 +26,8 @@ def test_default_context():
     )
     @with_context
     def default_context_transform(context):
-        assert context.log_level == ERROR
+        for logger in context._logger.loggers:
+            assert logger.level == ERROR
 
     pipeline = PipelineDefinition(solids=[default_context_transform])
     execute_pipeline(
@@ -38,13 +42,14 @@ def test_default_context_with_log_level():
     )
     @with_context
     def default_context_transform(context):
-        assert context.log_level == ERROR
+        for logger in context._logger.loggers:
+            assert logger.level == INFO
 
     pipeline = PipelineDefinition(solids=[default_context_transform])
     execute_pipeline(
         pipeline,
         environment=config.Environment(
-            sources={}, context=config.Context('default', {'log_level': 'ERROR'})
+            sources={}, context=config.Context('default', {'log_level': 'INFO'})
         )
     )
 
