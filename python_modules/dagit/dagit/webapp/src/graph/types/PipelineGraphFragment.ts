@@ -52,6 +52,7 @@ export interface PipelineGraphFragment_solids {
 }
 
 export interface PipelineGraphFragment {
+  name: string;
   solids: PipelineGraphFragment_solids[];
 }
 

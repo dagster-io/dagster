@@ -48,8 +48,6 @@ export interface IPoint {
   y: number;
 }
 
-const PADDING_LEFT = 100;
-const PADDING_TOP = 250;
 const SOLID_WIDTH = 250;
 const SOLID_BASE_HEIGHT = 60;
 const SOLID_GAP = 100;
@@ -59,8 +57,6 @@ const INPUT_GAP = 20;
 const OUTPUT_WIDTH = 200;
 const OUTPUT_HEIGHT = 80;
 const INPUT_OUTPUT_INSET = 10;
-const SOLID_STEP =
-  SOLID_WIDTH + INPUT_WIDTH + OUTPUT_WIDTH - INPUT_OUTPUT_INSET * 2 + SOLID_GAP;
 
 export function getDagrePipelineLayout(
   pipeline: ILayoutPipeline
@@ -69,8 +65,8 @@ export function getDagrePipelineLayout(
   g.setGraph({
     rankdir: "LR",
     align: "UL",
-    marginx: 100,
-    marginy: 100
+    marginx: 0,
+    marginy: 0
   });
   g.setDefaultEdgeLabel(function() {
     return {};
