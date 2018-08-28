@@ -17,14 +17,9 @@ interface IPipelineGraphProps {
   onClickSolid?: (solidName: string) => void;
 }
 
-interface IPipelineGraphState {
-  graphWidth: number | null;
-  graphHeight: number | null;
-}
-
 export default class PipelineGraph extends React.Component<
   IPipelineGraphProps,
-  IPipelineGraphState
+  {}
 > {
   static fragments = {
     PipelineGraphFragment: gql`
@@ -38,36 +33,6 @@ export default class PipelineGraph extends React.Component<
       ${SolidNode.fragments.SolidNodeFragment}
     `
   };
-
-  state = {
-    graphWidth: null,
-    graphHeight: null
-  };
-
-  graphWrapper: React.RefObject<HTMLDivElement> = React.createRef();
-
-  componentDidMount() {
-    if (this.graphWrapper.current) {
-      this.setState({
-        graphWidth: this.graphWrapper.current.clientWidth,
-        graphHeight: this.graphWrapper.current.clientHeight
-      });
-    }
-  }
-
-  componentDidUpdate() {
-    if (this.graphWrapper.current) {
-      if (
-        this.state.graphWidth !== this.graphWrapper.current.clientWidth ||
-        this.state.graphHeight !== this.graphWrapper.current.clientHeight
-      ) {
-        this.setState({
-          graphWidth: this.graphWrapper.current.clientWidth,
-          graphHeight: this.graphWrapper.current.clientHeight
-        });
-      }
-    }
-  }
 
   renderSolids(layout: IFullPipelineLayout) {
     return this.props.pipeline.solids.map(solid => {
@@ -133,20 +98,8 @@ export default class PipelineGraph extends React.Component<
   render() {
     const layout = getDagrePipelineLayout(this.props.pipeline);
 
-    let minScale;
-    const { graphWidth, graphHeight } = this.state;
-    if (graphWidth !== null && graphHeight !== null) {
-      if (graphWidth > graphHeight) {
-        minScale = graphWidth / (layout.width + 200);
-      } else {
-        minScale = graphHeight / (layout.height - 300);
-      }
-    } else {
-      minScale = 0.1;
-    }
-
     return (
-      <GraphWrapper innerRef={this.graphWrapper}>
+      <GraphWrapper>
         <PanAndZoomStyled
           key={this.props.pipeline.name}
           graphWidth={layout.width}
