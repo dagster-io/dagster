@@ -65,8 +65,8 @@ export function getDagrePipelineLayout(
   g.setGraph({
     rankdir: "LR",
     align: "UL",
-    marginx: 0,
-    marginy: 0
+    marginx: 100,
+    marginy: 100
   });
   g.setDefaultEdgeLabel(function() {
     return {};
