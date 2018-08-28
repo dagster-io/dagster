@@ -68,7 +68,6 @@ def _default_pipeline_context_definitions():
 
         log_level = level_from_string(args['log_level'])
         context = dagster.core.execution.ExecutionContext(
-            log_level=log_level,
             loggers=[
                 dagster.utils.logging.define_colored_console_logger('dagster', level=log_level)
             ]

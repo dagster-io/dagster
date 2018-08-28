@@ -31,7 +31,7 @@ import six
 
 from dagster import check, config
 
-from dagster.utils.logging import (CompositeLogger, ERROR, get_formatted_stack_trace)
+from dagster.utils.logging import (CompositeLogger, get_formatted_stack_trace)
 from dagster.utils.timing import time_execution_scope
 
 from .definitions import (
@@ -66,11 +66,10 @@ class ExecutionContext:
     a user does not have to subclass ExecutionContext
     '''
 
-    def __init__(self, loggers=None, log_level=ERROR, resources=None):
-        self._logger = CompositeLogger(loggers=loggers, level=log_level)
+    def __init__(self, loggers=None, resources=None):
+        self._logger = CompositeLogger(loggers=loggers)
         self._context_dict = OrderedDict()
         self._metrics = []
-        self.log_level = log_level
         self.resources = resources
 
     def _maybe_quote(self, val):
