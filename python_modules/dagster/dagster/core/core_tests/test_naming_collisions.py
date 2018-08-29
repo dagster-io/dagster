@@ -55,7 +55,7 @@ def test_execute_solid_with_input_same_name():
         config.Environment(solids={'pass_value': config.Solid(config_dict={'value': 'foo'})}),
     )
 
-    assert result.result_named('a_thing').transformed_value == 'foofoo'
+    assert result.result_for_solid('a_thing').transformed_value() == 'foofoo'
 
 
 def test_execute_two_solids_with_same_input_name():
@@ -108,8 +108,8 @@ def test_execute_two_solids_with_same_input_name():
 
     assert result.success
 
-    assert result.result_named('solid_one').transformed_value == 'foofoo'
-    assert result.result_named('solid_two').transformed_value == 'barbar'
+    assert result.result_for_solid('solid_one').transformed_value() == 'foofoo'
+    assert result.result_for_solid('solid_two').transformed_value() == 'barbar'
 
 
 def test_execute_dep_solid_different_input_name():
@@ -152,6 +152,6 @@ def test_execute_dep_solid_different_input_name():
 
     assert result.success
     assert len(result.result_list) == 3
-    assert result.result_list[0].transformed_value == 'bar'
-    assert result.result_list[1].transformed_value == 'barbar'
-    assert result.result_list[2].transformed_value == 'barbarbarbar'
+    assert result.result_list[0].transformed_value() == 'bar'
+    assert result.result_list[1].transformed_value() == 'barbar'
+    assert result.result_list[2].transformed_value() == 'barbarbarbar'

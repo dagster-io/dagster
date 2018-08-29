@@ -50,11 +50,11 @@ def run_hello_world(hello_world):
         environment=create_num_csv_environment(),
     )
 
-    result = pipeline_result.result_named('hello_world')
+    result = pipeline_result.result_for_solid('hello_world')
 
     assert result.success
 
-    assert result.transformed_value.to_dict('list') == {
+    assert result.transformed_value().to_dict('list') == {
         'num1': [1, 3],
         'num2': [2, 4],
         'sum': [3, 7],
@@ -92,7 +92,7 @@ def run_hello_world(hello_world):
             environment,
         )
 
-        output_result = pipeline_result.result_named('hello_world')
+        output_result = pipeline_result.result_for_solid('hello_world')
 
         assert output_result.success
 

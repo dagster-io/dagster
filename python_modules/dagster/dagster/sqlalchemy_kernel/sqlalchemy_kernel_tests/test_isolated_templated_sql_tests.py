@@ -184,8 +184,8 @@ def test_templated_sql_solid_pipeline():
     assert first_result.success
 
     assert len(first_result.result_list) == 2
-    assert first_result.result_list[0].transformed_value == {'sum_table': first_sum_table}
-    assert first_result.result_list[1].transformed_value == {
+    assert first_result.result_list[0].transformed_value() == {'sum_table': first_sum_table}
+    assert first_result.result_list[1].transformed_value() == {
         'sum_table': first_sum_table,
         'sum_sq_table': first_sum_sq_table,
     }

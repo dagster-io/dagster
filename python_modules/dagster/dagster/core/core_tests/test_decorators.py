@@ -45,7 +45,7 @@ def test_solid():
 
     assert result.success
     assert len(result.result_list) == 1
-    assert result.result_list[0].transformed_value['foo'] == 'bar'
+    assert result.result_list[0].transformed_value()['foo'] == 'bar'
 
 
 def test_solid_one_output():
@@ -61,7 +61,7 @@ def test_solid_one_output():
 
     assert result.success
     assert len(result.result_list) == 1
-    assert result.result_list[0].transformed_value['foo'] == 'bar'
+    assert result.result_list[0].transformed_value()['foo'] == 'bar'
 
 
 def test_solid_yield():
@@ -77,7 +77,7 @@ def test_solid_yield():
 
     assert result.success
     assert len(result.result_list) == 1
-    assert result.result_list[0].transformed_value['foo'] == 'bar'
+    assert result.result_list[0].transformed_value()['foo'] == 'bar'
 
 
 def test_solid_result_return():
@@ -93,7 +93,7 @@ def test_solid_result_return():
 
     assert result.success
     assert len(result.result_list) == 1
-    assert result.result_list[0].transformed_value['foo'] == 'bar'
+    assert result.result_list[0].transformed_value()['foo'] == 'bar'
 
 
 def test_solid_multiple_outputs():
@@ -114,9 +114,10 @@ def test_solid_multiple_outputs():
     )
 
     assert result.success
-    assert len(result.result_list) == 2
-    assert result.result_list[0].transformed_value['foo'] == 'left'
-    assert result.result_list[1].transformed_value['foo'] == 'right'
+    assert len(result.result_list) == 1
+    solid_result = result.result_list[0]
+    assert solid_result.transformed_value('left')['foo'] == 'left'
+    assert solid_result.transformed_value('right')['foo'] == 'right'
 
 
 def test_dict_multiple_outputs():
@@ -141,9 +142,10 @@ def test_dict_multiple_outputs():
     )
 
     assert result.success
-    assert len(result.result_list) == 2
-    assert result.result_list[0].transformed_value['foo'] == 'left'
-    assert result.result_list[1].transformed_value['foo'] == 'right'
+    assert len(result.result_list) == 1
+    solid_result = result.result_list[0]
+    assert solid_result.transformed_value('left')['foo'] == 'left'
+    assert solid_result.transformed_value('right')['foo'] == 'right'
 
 
 def test_solid_with_name():
@@ -159,7 +161,7 @@ def test_solid_with_name():
 
     assert result.success
     assert len(result.result_list) == 1
-    assert result.result_list[0].transformed_value['foo'] == 'bar'
+    assert result.result_list[0].transformed_value()['foo'] == 'bar'
 
 
 def test_solid_with_context():
@@ -176,7 +178,7 @@ def test_solid_with_context():
 
     assert result.success
     assert len(result.result_list) == 1
-    assert result.result_list[0].transformed_value['foo'] == 'bar'
+    assert result.result_list[0].transformed_value()['foo'] == 'bar'
 
 
 def test_solid_with_input():
@@ -195,11 +197,12 @@ def test_solid_with_input():
         pipeline,
         environment=config.Environment(),
     )
+    print([p.solid.name for p in pipeline_result.result_list])
 
-    result = pipeline_result.result_named('hello_world')
+    result = pipeline_result.result_for_solid('hello_world')
 
     assert result.success
-    assert result.transformed_value['foo'] == 'bar'
+    assert result.transformed_value()['foo'] == 'bar'
 
 
 def test_solid_definition_errors():

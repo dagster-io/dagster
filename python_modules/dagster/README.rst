@@ -390,7 +390,7 @@ enough source data to create all the inputs necessary for the pipeline.
         environment
     )
 
-    print(pipeline_result.result_named('sum').transformed_value)
+    print(pipeline_result.result_for_solid('sum').transformed_value)
 
 Execute pipeline does a purely in-memory transform, materializing
 nothing. This is useful in testing and CI/CD contexts.

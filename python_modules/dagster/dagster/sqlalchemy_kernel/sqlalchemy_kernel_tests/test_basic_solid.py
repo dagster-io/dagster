@@ -81,7 +81,7 @@ def test_sql_sum_solid():
     pipeline_result = execute_pipeline(pipeline, environment)
     assert pipeline_result.success
 
-    result = pipeline_result.result_named(sum_table_solid.name)
+    result = pipeline_result.result_for_solid(sum_table_solid.name)
 
     assert result.success
 
@@ -142,10 +142,10 @@ def test_execute_sql_sum_sq_solid():
 
     result_list = pipeline_result.result_list
 
-    sum_table_sql_text = result_list[1].transformed_value.query_text
+    sum_table_sql_text = result_list[1].transformed_value().query_text
     assert sum_table_sql_text == 'SELECT num1, num2, num1 + num2 as sum FROM num_table'
 
-    sum_sq_table_sql_text = result_list[2].transformed_value.query_text
+    sum_sq_table_sql_text = result_list[2].transformed_value().query_text
     assert sum_sq_table_sql_text == 'SELECT num1, num2, sum, sum * sum as sum_sq from ' + \
             '(SELECT num1, num2, num1 + num2 as sum FROM num_table)'
 

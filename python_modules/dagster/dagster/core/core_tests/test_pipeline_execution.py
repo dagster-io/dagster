@@ -16,8 +16,7 @@ from dagster.core.graph import (
 )
 
 from dagster.core.execution import (
-    execute_pipeline_iterator,
-    ExecutionStepResult,
+    execute_pipeline_iterator, ExecutionContext, SolidExecutionResult, PipelineExecutionResult
 )
 
 from dagster.core.utility_solids import define_stub_solid
@@ -35,18 +34,29 @@ def create_dep_input_fn(name):
     return lambda context, arg_dict: {name: 'input_set'}
 
 
+def make_transform(name):
+    def transform(_context, args):
+        passed_rows = []
+        seen = set()
+        for row in args.values():
+            for item in row:
+                key = list(item.keys())[0]
+                if key not in seen:
+                    seen.add(key)
+                    passed_rows.append(item)
+
+        return [*passed_rows, {name: 'transform_called'}]
+
+    return transform
+
+
 def create_solid_with_deps(name, *solid_deps):
     inputs = [InputDefinition(solid_dep.name) for solid_dep in solid_deps]
-
-    def dep_transform(_context, args):
-        passed_rows = list(args.values())[0]
-        passed_rows.append({name: 'transform_called'})
-        return passed_rows
 
     return SolidDefinition.single_output_transform(
         name=name,
         inputs=inputs,
-        transform_fn=dep_transform,
+        transform_fn=make_transform(name),
         output=OutputDefinition(),
     )
 
@@ -55,16 +65,10 @@ def create_root_solid(name):
     input_name = name + '_input'
     inp = InputDefinition(input_name)
 
-    def root_transform(_context, args):
-        passed_rows = list(args.values())[0]
-
-        passed_rows.append({name: 'transform_called'})
-        return passed_rows
-
     return SolidDefinition.single_output_transform(
         name=name,
         inputs=[inp],
-        transform_fn=root_transform,
+        transform_fn=make_transform(name),
         output=OutputDefinition(),
     )
 
@@ -213,8 +217,8 @@ def transform_called(name):
 
 
 def assert_equivalent_results(left, right):
-    check.inst_param(left, 'left', ExecutionStepResult)
-    check.inst_param(right, 'right', ExecutionStepResult)
+    check.inst_param(left, 'left', SolidExecutionResult)
+    check.inst_param(right, 'right', SolidExecutionResult)
 
     assert left.success == right.success
     assert left.name == right.name
@@ -223,8 +227,8 @@ def assert_equivalent_results(left, right):
 
 
 def assert_all_results_equivalent(expected_results, result_results):
-    check.list_param(expected_results, 'expected_results', of_type=ExecutionStepResult)
-    check.list_param(result_results, 'result_results', of_type=ExecutionStepResult)
+    check.list_param(expected_results, 'expected_results', of_type=SolidExecutionResult)
+    check.list_param(result_results, 'result_results', of_type=SolidExecutionResult)
     assert len(expected_results) == len(result_results)
     for expected, result in zip(expected_results, result_results):
         assert_equivalent_results(expected, result)
@@ -255,42 +259,36 @@ def _do_test(do_execute_pipeline_iter):
     results = list()
 
     for result in do_execute_pipeline_iter():
-        results.append(result.copy())
+        print(result.solid.name)
+        print(result.transformed_value())
 
-    assert results[1].transformed_value[0] == input_set('A_input')
-    assert results[1].transformed_value[1] == transform_called('A')
+        results.append(result)
 
-    assert results[1].transformed_value == [input_set('A_input'), transform_called('A')]
+    result = PipelineExecutionResult(ExecutionContext(), results)
 
-    assert results[2].transformed_value == [
-        input_set('A_input'),
-        transform_called('A'),
-        transform_called('C'),
-    ] or results[2].transformed_value == [
+    assert result.result_for_solid('A').transformed_value() == [
+        input_set('A_input'), transform_called('A')
+    ]
+
+    assert result.result_for_solid('B').transformed_value() == [
         input_set('A_input'),
         transform_called('A'),
         transform_called('B'),
     ]
 
-    assert results[3].transformed_value == [
+    assert result.result_for_solid('C').transformed_value() == [
         input_set('A_input'),
         transform_called('A'),
-        transform_called('C'),
-        transform_called('B'),
-    ] or results[3].transformed_value == [
-        input_set('A_input'),
-        transform_called('A'),
-        transform_called('B'),
         transform_called('C'),
     ]
 
-    assert results[4].transformed_value == [
+    assert result.result_for_solid('D').transformed_value() == [
         input_set('A_input'),
         transform_called('A'),
         transform_called('C'),
         transform_called('B'),
         transform_called('D'),
-    ] or results[4].transformed_value == [
+    ] or result.result_for_solid('D').transformed_value() == [
         input_set('A_input'),
         transform_called('A'),
         transform_called('B'),

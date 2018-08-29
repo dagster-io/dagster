@@ -16,6 +16,7 @@ will not invoke *any* outputs (and their APIs don't allow the user to).
 # pylint: disable=C0302
 
 from contextlib import contextmanager
+import itertools
 import copy
 
 import six
@@ -25,7 +26,9 @@ from dagster import (
     config,
 )
 
-from .definitions import PipelineDefinition
+from .definitions import (
+    SolidDefinition, PipelineDefinition, PipelineContextDefinition, DEFAULT_OUTPUT
+)
 
 from .errors import (
     DagsterUserCodeExecutionError,
@@ -36,6 +39,7 @@ from .argument_handling import validate_args
 
 from .compute_nodes import (
     ComputeNodeTag,
+    ComputeNodeResult,
     create_compute_node_graph_from_env,
     execute_compute_nodes,
 )
@@ -45,85 +49,123 @@ from .execution_context import ExecutionContext
 from .graph import ExecutionGraph
 
 
-class DagsterPipelineExecutionResult:
+class PipelineExecutionResult:
     def __init__(
         self,
         context,
         result_list,
     ):
         self.context = check.inst_param(context, 'context', ExecutionContext)
-        self.result_list = check.list_param(result_list, 'result_list', of_type=ExecutionStepResult)
+        self.result_list = check.list_param(
+            result_list, 'result_list', of_type=SolidExecutionResult
+        )
 
     @property
     def success(self):
         return all([result.success for result in self.result_list])
 
-    def result_named(self, name):
+    def result_for_solid(self, name):
         check.str_param(name, 'name')
         for result in self.result_list:
-            if result.name == name:
+            if result.solid.name == name:
                 return result
-        check.failed('Did not find result {name} in pipeline execution result'.format(name=name))
-
-
-class ExecutionStepResult:
-    def __init__(
-        self, *, success, context, transformed_value, name, dagster_user_exception, solid, tag,
-        output_name
-    ):
-        self.success = check.bool_param(success, 'success')
-        self.context = context
-        self.transformed_value = transformed_value
-        self.name = name
-        self.dagster_user_exception = dagster_user_exception
-        self.solid = solid
-        self.tag = tag
-        self.output_name = output_name
-
-    def copy(self):
-        ''' This must be used instead of copy.deepcopy() because exceptions cannot
-        be deepcopied'''
-        return ExecutionStepResult(
-            name=self.name,
-            solid=self.solid,
-            success=self.success,
-            transformed_value=copy.deepcopy(self.transformed_value),
-            context=self.context,
-            dagster_user_exception=self.dagster_user_exception,
-            tag=self.tag,
-            output_name=self.output_name
+        check.failed(
+            'Did not find result for solid {name} in pipeline execution result'.format(name=name)
         )
 
+
+class SolidExecutionResult:
+    def __init__(self, *, context, solid, input_expectations, transforms, output_expectations):
+        self.context = check.inst_param(context, 'context', ExecutionContext)
+        self.solid = check.inst_param(solid, 'solid', SolidDefinition)
+        self.input_expectations = check.list_param(
+            input_expectations, 'input_expectations', ComputeNodeResult
+        )
+        self.output_expectations = check.list_param(
+            output_expectations, 'output_expectations', ComputeNodeResult
+        )
+        self.transforms = check.list_param(transforms, 'transforms', ComputeNodeResult)
+
+    @staticmethod
+    def from_results(context, results):
+        results = check.list_param(results, 'results', ComputeNodeResult)
+        if results:
+            input_expectations = []
+            output_expectations = []
+            transforms = []
+
+            for result in results:
+                if result.tag == ComputeNodeTag.INPUT_EXPECTATION:
+                    input_expectations.append(result)
+                elif result.tag == ComputeNodeTag.OUTPUT_EXPECTATION:
+                    output_expectations.append(result)
+                elif result.tag == ComputeNodeTag.TRANSFORM:
+                    transforms.append(result)
+
+            return SolidExecutionResult(
+                context=context,
+                solid=results[0].compute_node.solid,
+                input_expectations=input_expectations,
+                output_expectations=output_expectations,
+                transforms=transforms,
+            )
+        else:
+            check.failed("Cannot create SolidExecutionResult from empty list")
+
+    @property
+    def success(self):
+        return all(
+            [
+                result.success for result in
+                itertools.chain(self.input_expectations, self.output_expectations, self.transforms)
+            ]
+        )
+
+    @property
+    def transformed_values(self):
+        if self.success and self.transforms:
+            return {
+                result.success_data.output_name: result.success_data.value
+                for result in self.transforms
+            }
+        else:
+            return None
+
+    def transformed_value(self, output_name=DEFAULT_OUTPUT):
+        check.str_param(output_name, 'output_name')
+        if self.success:
+            for result in self.transforms:
+                if result.success_data.output_name == output_name:
+                    return result.success_data.value
+            check.failed(
+                f'Did not find result {output_name} in solid {self.solid.name} execution result'
+            )
+        else:
+            return None
+
     def reraise_user_error(self):
-        check.inst(self.dagster_user_exception, DagsterUserCodeExecutionError)
-        six.reraise(*self.dagster_user_exception.original_exc_info)
+        if not self.success:
+            for result in itertools.chain(
+                self.input_expectations, self.output_expectations, self.transforms
+            ):
+                if not result.success:
+                    six.reraise(*result.failure_data.dagster_user_exception.original_exc_info)
 
-
-def copy_result_list(result_list):
-    if result_list is None:
-        return result_list
-
-    return [result.copy() for result in result_list]
-
-
-def copy_result_dict(result_dict):
-    if result_dict is None:
-        return None
-    new_dict = {}
-    for input_name, result in result_dict.items():
-        new_dict[input_name] = result.copy()
-    return new_dict
+    @property
+    def dagster_user_exception(self):
+        for result in itertools.chain(
+            self.input_expectations, self.output_expectations, self.transforms
+        ):
+            if not result.success:
+                return result.failure_data.dagster_user_exception
 
 
 def _do_throw_on_error(execution_result):
-    check.inst_param(execution_result, 'execution_result', ExecutionStepResult)
+    check.inst_param(execution_result, 'execution_result', SolidExecutionResult)
     if execution_result.success:
         return
-
-    if isinstance(execution_result.dagster_user_exception, DagsterUserCodeExecutionError):
+    else:
         execution_result.reraise_user_error()
-
-    raise execution_result.dagster_user_exception
 
 
 def _wrap_in_yield(thing):
@@ -204,32 +246,26 @@ def _execute_graph_iterator(context, execution_graph, env):
 
     check.invariant(len(cn_nodes[0].node_inputs) == 0)
 
+    solid = None
+    solid_results = []
     for cn_result in execute_compute_nodes(context, cn_nodes):
         cn_node = cn_result.compute_node
+
+        if solid and solid is not cn_node.solid:
+            yield SolidExecutionResult.from_results(context, solid_results)
+            solid_results = []
+
         if not cn_result.success:
-            yield ExecutionStepResult(
-                success=False,
-                context=context,
-                transformed_value=None,
-                name=cn_node.solid.name,
-                dagster_user_exception=cn_result.failure_data.dagster_user_exception,
-                solid=cn_node.solid,
-                tag=cn_result.tag,
-                output_name=None
-            )
+            solid_results.append(cn_result)
+            yield SolidExecutionResult.from_results(context, solid_results)
+            solid_results = []
             return
 
-        if cn_node.tag == ComputeNodeTag.TRANSFORM:
-            yield ExecutionStepResult(
-                success=True,
-                context=context,
-                transformed_value=cn_result.success_data.value,
-                name=cn_node.solid.name,
-                dagster_user_exception=None,
-                solid=cn_node.solid,
-                tag=cn_node.tag,
-                output_name=cn_result.success_data.output_name,
-            )
+        solid = cn_node.solid
+        solid_results.append(cn_result)
+
+    if solid and solid_results:
+        yield SolidExecutionResult.from_results(context, solid_results)
 
 
 def execute_pipeline(
@@ -271,5 +307,5 @@ def _execute_graph(
                     if not result.success:
                         _do_throw_on_error(result)
 
-                results.append(result.copy())
-            return DagsterPipelineExecutionResult(context, results)
+                results.append(result)
+            return PipelineExecutionResult(context, results)

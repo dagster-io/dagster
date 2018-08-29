@@ -84,9 +84,9 @@ def test_hello_world_pipeline_no_api():
 
     assert pipeline_result.success
 
-    result = pipeline_result.result_named('hello_world')
+    result = pipeline_result.result_for_solid('hello_world')
 
-    assert result.transformed_value.to_dict('list') == {
+    assert result.transformed_value().to_dict('list') == {
         'num1': [1, 3],
         'num2': [2, 4],
         'sum': [3, 7],
@@ -130,11 +130,11 @@ def test_hello_world_composed():
 
     assert pipeline_result.success
 
-    result = pipeline_result.result_named('hello_world')
+    result = pipeline_result.result_for_solid('hello_world')
 
     assert result.success
 
-    assert result.transformed_value.to_dict('list') == {
+    assert result.transformed_value().to_dict('list') == {
         'num1': [1, 3],
         'num2': [2, 4],
         'sum': [3, 7],
@@ -191,7 +191,7 @@ def test_pandas_hello_no_library():
         environment=environment,
     )
 
-    assert execute_pipeline_result.result_named('solid_two').transformed_value.to_dict('list') == {
+    assert execute_pipeline_result.result_for_solid('solid_two').transformed_value().to_dict('list') == {
         'num1': [1, 3],
         'num2': [2, 4],
         'sum': [3, 7],
