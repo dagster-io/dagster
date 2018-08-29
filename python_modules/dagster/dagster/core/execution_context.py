@@ -1,6 +1,10 @@
 import copy
-from collections import OrderedDict, namedtuple
+from collections import (
+    OrderedDict,
+    namedtuple,
+)
 from contextlib import contextmanager
+import uuid
 
 from dagster import check
 from dagster.utils.logging import CompositeLogger
@@ -50,12 +54,21 @@ class ExecutionContext:
         check.str_param(method, 'method')
         check.str_param(msg, 'msg')
 
+        check.invariant('extra' not in kwargs, 'do not allow until explicit support is handled')
+        check.invariant('exc_info' not in kwargs, 'do not allow until explicit support is handled')
+
+        check.invariant('log_message' not in kwargs, 'log_message_id reserved value')
+        check.invariant('log_message_id' not in kwargs, 'log_message_id reserved value')
+
         full_message = 'message="{message}" {kv_message}'.format(
             message=msg, kv_message=self._kv_message(kwargs)
         )
 
         log_props = copy.copy(self._context_dict)
         log_props['log_message'] = msg
+
+        log_props['log_message'] = msg
+        log_props['log_message_id'] = str(uuid.uuid4())
 
         getattr(self._logger, method)(full_message, extra={**log_props, **kwargs})
 
