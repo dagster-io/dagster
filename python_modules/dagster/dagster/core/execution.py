@@ -27,6 +27,7 @@ from dagster import (
 
 from .definitions import (
     DEFAULT_OUTPUT,
+    ExecutionGraph, 
     PipelineDefinition,
     SolidDefinition,
 )
@@ -36,15 +37,14 @@ from .errors import DagsterInvariantViolationError
 from .argument_handling import validate_args
 
 from .compute_nodes import (
-    ComputeNodeTag,
+    ComputeNodeExecutionInfo,
     ComputeNodeResult,
-    create_compute_node_graph_from_env,
+    ComputeNodeTag,
+    create_compute_node_graph,
     execute_compute_nodes,
 )
 
 from .execution_context import ExecutionContext
-
-from .graph import ExecutionGraph
 
 
 class PipelineExecutionResult:
@@ -187,40 +187,26 @@ def _validate_environment(environment, pipeline):
         )
 
 
-class DagsterEnv:
-    def __init__(self, execution_graph, environment):
-        # This is not necessarily the best spot for these calls
-        pipeline = execution_graph.pipeline
-        _validate_environment(environment, pipeline)
-        self.pipeline = check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-        self.environment = check.inst_param(environment, 'environment', config.Environment)
+@contextmanager
+def yield_context(pipeline, environment):
+    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+    check.inst_param(environment, 'environment', config.Environment)
 
-    @contextmanager
-    def yield_context(self):
-        context_name = self.environment.context.name
-        context_definition = self.pipeline.context_definitions[context_name]
+    _validate_environment(environment, pipeline)
 
-        args_to_pass = validate_args(
-            self.pipeline.context_definitions[context_name].argument_def_dict,
-            self.environment.context.args, 'pipeline {pipeline_name} context {context_name}'.format(
-                pipeline_name=self.pipeline.name,
-                context_name=context_name,
-            )
+    context_name = environment.context.name
+
+    context_definition = pipeline.context_definitions[context_name]
+
+    args_to_pass = validate_args(
+        pipeline.context_definitions[context_name].argument_def_dict,
+        environment.context.args, 'pipeline {pipeline_name} context {context_name}'.format(
+            pipeline_name=pipeline.name,
+            context_name=context_name,
         )
-
-        thing = context_definition.context_fn(self.pipeline, args_to_pass)
-        return _wrap_in_yield(thing)
-
-    @property
-    def evaluate_expectations(self):
-        return self.environment.expectations.evaluate
-
-    def config_dict_for_solid(self, name):
-        check.str_param(name, 'name')
-        if name not in self.environment.solids:
-            return {}
-        else:
-            return self.environment.solids[name].config_dict
+    )
+    thing = context_definition.context_fn(pipeline, args_to_pass)
+    return _wrap_in_yield(thing)
 
 
 def execute_pipeline_iterator(pipeline, environment):
@@ -228,17 +214,22 @@ def execute_pipeline_iterator(pipeline, environment):
     check.inst_param(environment, 'enviroment', config.Environment)
 
     execution_graph = ExecutionGraph.from_pipeline(pipeline)
-    env = DagsterEnv(execution_graph, environment)
-    with env.yield_context() as context:
-        return _execute_graph_iterator(context, execution_graph, env)
+    with yield_context(pipeline, environment) as context:
+        return _execute_graph_iterator(context, execution_graph, environment)
 
 
-def _execute_graph_iterator(context, execution_graph, env):
+def _execute_graph_iterator(context, execution_graph, environment):
     check.inst_param(context, 'context', ExecutionContext)
     check.inst_param(execution_graph, 'execution_graph', ExecutionGraph)
-    check.inst_param(env, 'env', DagsterEnv)
+    check.inst_param(environment, 'environent', config.Environment)
 
-    cn_graph = create_compute_node_graph_from_env(execution_graph, env)
+    cn_graph = create_compute_node_graph(
+        ComputeNodeExecutionInfo(
+            context,
+            execution_graph,
+            environment,
+        ),
+    )
 
     cn_nodes = list(cn_graph.topological_nodes())
 
@@ -284,23 +275,22 @@ def execute_pipeline(
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.inst_param(environment, 'environment', config.Environment)
     execution_graph = ExecutionGraph.from_pipeline(pipeline)
-    env = DagsterEnv(execution_graph, environment)
-    return _execute_graph(execution_graph, env, throw_on_error)
+    return _execute_graph(execution_graph, environment, throw_on_error)
 
 
 def _execute_graph(
     execution_graph,
-    env,
+    environment,
     throw_on_error=True,
 ):
     check.inst_param(execution_graph, 'execution_graph', ExecutionGraph)
-    check.inst_param(env, 'env', DagsterEnv)
+    check.inst_param(environment, 'environment', config.Environment)
     check.bool_param(throw_on_error, 'throw_on_error')
 
     results = []
-    with env.yield_context() as context:
+    with yield_context(execution_graph.pipeline, environment) as context:
         with context.value('pipeline', execution_graph.pipeline.name or '<<unnamed>>'):
-            for result in _execute_graph_iterator(context, execution_graph, env):
+            for result in _execute_graph_iterator(context, execution_graph, environment):
                 if throw_on_error:
                     if not result.success:
                         _do_throw_on_error(result)
