@@ -7,14 +7,18 @@ from dagster import check
 class Context(namedtuple('ContextData', 'name args')):
     def __new__(cls, name, args):
         return super(Context, cls).__new__(
-            cls, check.str_param(name, 'name'), check.dict_param(args, 'args', key_type=str)
+            cls,
+            check.str_param(name, 'name'),
+            check.dict_param(args, 'args', key_type=str),
         )
 
 
 class Solid(namedtuple('Solid', 'config_dict')):
     def __new__(cls, config_dict):
-        return super(Solid,
-                     cls).__new__(cls, check.dict_param(config_dict, 'config_dict', key_type=str))
+        return super(Solid, cls).__new__(
+            cls,
+            check.dict_param(config_dict, 'config_dict', key_type=str),
+        )
 
 
 class Environment(namedtuple('EnvironmentData', 'context solids expectations')):
@@ -42,7 +46,8 @@ class Environment(namedtuple('EnvironmentData', 'context solids expectations')):
 class Expectations(namedtuple('ExpectationsData', 'evaluate')):
     def __new__(cls, evaluate):
         return super(Expectations, cls).__new__(
-            cls, evaluate=check.bool_param(evaluate, 'evaluate')
+            cls,
+            evaluate=check.bool_param(evaluate, 'evaluate'),
         )
 
 
