@@ -15,7 +15,7 @@ from dagster import (
     execute_pipeline,
 )
 
-from dagster.core.execution import execute_single_solid
+from dagster.core.test_utils import execute_single_solid
 from dagster.core.errors import DagsterUserCodeExecutionError
 
 

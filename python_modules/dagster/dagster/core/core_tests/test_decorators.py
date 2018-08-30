@@ -1,24 +1,21 @@
 import pytest
 import dagster
 from dagster import (
+    DagsterInvalidDefinitionError,
     DependencyDefinition,
+    ExecutionContext,
     InputDefinition,
+    MultipleResults,
     OutputDefinition,
     PipelineDefinition,
-    config,
     Result,
+    config,
     execute_pipeline,
-)
-from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.core.decorators import (
     solid,
     with_context,
-    MultipleResults,
 )
-from dagster.core.execution import (
-    execute_single_solid,
-    ExecutionContext,
-)
+
+from dagster.core.test_utils import execute_single_solid
 from dagster.core.utility_solids import define_stub_solid
 
 # This file tests a lot of parameter name stuff

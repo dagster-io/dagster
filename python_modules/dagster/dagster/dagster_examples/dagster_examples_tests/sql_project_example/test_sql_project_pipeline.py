@@ -2,7 +2,7 @@ import sqlalchemy as sa
 import dagster
 from dagster import (config, InputDefinition, DependencyDefinition)
 import dagster.sqlalchemy_kernel as dagster_sa
-from dagster.utils.test import script_relative_path
+from dagster.utils import script_relative_path
 
 from dagster.sqlalchemy_kernel.subquery_builder_experimental import sql_file_solid
 

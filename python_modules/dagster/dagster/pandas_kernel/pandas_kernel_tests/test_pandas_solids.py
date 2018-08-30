@@ -21,10 +21,11 @@ from dagster.core.execution import (
 
 import dagster.pandas_kernel as dagster_pd
 
+from dagster.utils import script_relative_path
+
 from dagster.utils.test import (
     get_temp_file_name,
     get_temp_file_names,
-    script_relative_path,
 )
 
 

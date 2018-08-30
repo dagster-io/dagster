@@ -25,12 +25,7 @@ from dagster import (
     config,
 )
 
-
-from .definitions import (
-    SolidDefinition,
-    PipelineDefinition,
-    PipelineContextDefinition,
-)
+from .definitions import PipelineDefinition
 
 from .errors import (
     DagsterUserCodeExecutionError,
@@ -118,36 +113,6 @@ def copy_result_dict(result_dict):
     for input_name, result in result_dict.items():
         new_dict[input_name] = result.copy()
     return new_dict
-
-
-def _create_passthrough_context_definition(context):
-    check.inst_param(context, 'context', ExecutionContext)
-    context_definition = PipelineContextDefinition(
-        argument_def_dict={}, context_fn=lambda _pipeline, _args: context
-    )
-    return {'default': context_definition}
-
-
-def execute_single_solid(context, solid, environment, throw_on_error=True):
-    check.inst_param(context, 'context', ExecutionContext)
-    check.inst_param(solid, 'solid', SolidDefinition)
-    check.inst_param(environment, 'environment', config.Environment)
-    check.bool_param(throw_on_error, 'throw_on_error')
-
-    single_solid_environment = config.Environment(
-        expectations=environment.expectations,
-        context=environment.context,
-    )
-
-    pipeline_result = execute_pipeline(
-        PipelineDefinition(
-            solids=[solid],
-            context_definitions=_create_passthrough_context_definition(context),
-        ),
-        environment=single_solid_environment,
-    )
-
-    return pipeline_result
 
 
 def _do_throw_on_error(execution_result):

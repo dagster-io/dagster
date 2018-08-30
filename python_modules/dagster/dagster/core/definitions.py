@@ -11,6 +11,7 @@ from dagster.utils.logging import (
 )
 
 from .errors import DagsterInvalidDefinitionError
+from .execution_context import ExecutionContext
 
 DEFAULT_OUTPUT = 'result'
 
@@ -62,6 +63,14 @@ class ArgumentDefinitionDictionary(dict):
 
 
 class PipelineContextDefinition:
+    @staticmethod
+    def passthrough_context_definition(context):
+        check.inst_param(context, 'context', ExecutionContext)
+        context_definition = PipelineContextDefinition(
+            argument_def_dict={}, context_fn=lambda _pipeline, _args: context
+        )
+        return {'default': context_definition}
+
     def __init__(self, *, argument_def_dict, context_fn, description=None):
         self.argument_def_dict = ArgumentDefinitionDictionary(argument_def_dict)
         self.context_fn = check.callable_param(context_fn, 'context_fn')
@@ -462,10 +471,6 @@ class SolidDefinition:
         self._output_handles = output_handles
         self._input_dict = _build_named_dict(inputs)
         self._output_dict = _build_named_dict(outputs)
-
-    @property
-    def outputs(self):
-        return self.output_defs
 
     @staticmethod
     def single_output_transform(
