@@ -6,7 +6,10 @@ import sys
 
 import toposort
 
-from dagster import check
+from dagster import (
+    check,
+    config,
+)
 
 from dagster.utils.indenting_printer import IndentingPrinter
 from dagster.utils.logging import (
@@ -20,6 +23,7 @@ from dagster.utils.timing import time_execution_scope
 from .argument_handling import validate_args
 
 from .definitions import (
+    ExecutionGraph,
     ExpectationDefinition,
     InputDefinition,
     OutputDefinition,
@@ -36,9 +40,21 @@ from .errors import (
     DagsterUserCodeExecutionError,
 )
 
-from .graph import ExecutionGraph
-
 from .types import DagsterType
+
+
+class ComputeNodeExecutionInfo(namedtuple('_ComputeNodeExecutionInfo', 'context execution_graph environment')):
+    def __new__(cls, context, execution_graph, environment):
+        return super(ComputeNodeExecutionInfo, cls).__new__(
+            cls,
+            check.inst_param(context, 'context', ExecutionContext),
+            check.inst_param(execution_graph, 'execution_graph', ExecutionGraph),
+            check.inst_param(environment, 'environment', config.Environment),
+        )
+
+    @property
+    def pipeline(self):
+        return self.execution_graph.pipeline
 
 
 class ComputeNodeOutputHandle(namedtuple('_ComputeNodeOutputHandle', 'compute_node output_name')):
@@ -477,16 +493,25 @@ class ComputeNodeOutputMap(dict):
         check.inst_param(val, 'val', ComputeNodeOutputHandle)
         return dict.__setitem__(self, key, val)
 
+def validate_config_dict(execution_info, solid):
+    check.inst_param(execution_info, 'execution_info', ComputeNodeExecutionInfo)
+    check.inst_param(solid, 'solid', SolidDefinition)
 
-def check_dagster_env(env):
-    # TODO: remove circular
-    import dagster.core.execution
-    check.inst_param(env, 'env', dagster.core.execution.DagsterEnv)
+    name = solid.name
+    solid_configs = execution_info.environment.solids
+    config_dict = solid_configs[name].config_dict if name in solid_configs else {}
+
+    return validate_args(
+        solid.config_def.argument_def_dict,
+        config_dict,
+        'config for solid {solid_name}'.format(solid_name=name),
+    )
 
 
-def create_compute_node_graph_from_env(execution_graph, env):
-    check.inst_param(execution_graph, 'execution_graph', ExecutionGraph)
-    check_dagster_env(env)
+def create_compute_node_graph(execution_info):
+    check.inst_param(execution_info, 'execution_info', ComputeNodeExecutionInfo)
+
+    execution_graph = execution_info.execution_graph
 
     dependency_structure = execution_graph.dependency_structure
 
@@ -508,7 +533,12 @@ def create_compute_node_graph_from_env(execution_graph, env):
             solid_output_handle = dependency_structure.get_dep(input_handle)
             prev_cn_output_handle = cn_output_node_map[solid_output_handle]
 
-            subgraph = create_subgraph_for_input(env, topo_solid, prev_cn_output_handle, input_def)
+            subgraph = create_subgraph_for_input(
+                execution_info,
+                topo_solid,
+                prev_cn_output_handle,
+                input_def,
+            )
 
             compute_nodes.extend(subgraph.nodes)
             cn_inputs.append(
@@ -519,11 +549,7 @@ def create_compute_node_graph_from_env(execution_graph, env):
                 )
             )
 
-        validated_config_args = validate_args(
-            topo_solid.config_def.argument_def_dict,
-            env.config_dict_for_solid(topo_solid.name),
-            'config for solid {solid_name}'.format(solid_name=topo_solid.name),
-        )
+        validated_config_args = validate_config_dict(execution_info, topo_solid)
 
         solid_transform_cn = create_compute_node_from_solid_transform(
             topo_solid,
@@ -534,7 +560,12 @@ def create_compute_node_graph_from_env(execution_graph, env):
         compute_nodes.append(solid_transform_cn)
 
         for output_def in topo_solid.output_defs:
-            subgraph = create_subgraph_for_output(env, topo_solid, solid_transform_cn, output_def)
+            subgraph = create_subgraph_for_output(
+                execution_info,
+                topo_solid,
+                solid_transform_cn,
+                output_def,
+            )
             compute_nodes.extend(subgraph.nodes)
 
             output_handle = topo_solid.output_handle(output_def.name)
@@ -558,13 +589,13 @@ def _create_compute_node_graph(compute_nodes):
     return ComputeNodeGraph(cn_dict, deps)
 
 
-def create_subgraph_for_input(env, solid, prev_cn_output_handle, input_def):
-    check_dagster_env(env)
+def create_subgraph_for_input(execution_info, solid, prev_cn_output_handle, input_def):
+    check.inst_param(execution_info, 'execution_info', ComputeNodeExecutionInfo)
     check.inst_param(solid, 'solid', SolidDefinition)
     check.inst_param(prev_cn_output_handle, 'prev_cn_output_handle', ComputeNodeOutputHandle)
     check.inst_param(input_def, 'input_def', InputDefinition)
 
-    if env.evaluate_expectations and input_def.expectations:
+    if execution_info.environment.expectations.evaluate and input_def.expectations:
         return create_expectations_cn_graph(
             solid,
             input_def,
@@ -578,13 +609,13 @@ def create_subgraph_for_input(env, solid, prev_cn_output_handle, input_def):
         )
 
 
-def create_subgraph_for_output(env, solid, solid_transform_cn, output_def):
-    check_dagster_env(env)
+def create_subgraph_for_output(execution_info, solid, solid_transform_cn, output_def):
+    check.inst_param(execution_info, 'execution_info', ComputeNodeExecutionInfo)
     check.inst_param(solid, 'solid', SolidDefinition)
     check.inst_param(solid_transform_cn, 'solid_transform_cn', ComputeNode)
     check.inst_param(output_def, 'output_def', OutputDefinition)
 
-    if env.evaluate_expectations and output_def.expectations:
+    if execution_info.environment.expectations.evaluate and output_def.expectations:
         return create_expectations_cn_graph(
             solid,
             output_def,

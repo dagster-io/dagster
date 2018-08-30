@@ -1,18 +1,19 @@
 from dagster import (
     ExecutionContext,
+    OutputDefinition,
     PipelineContextDefinition,
     PipelineDefinition,
     config,
     solid,
-    OutputDefinition,
 )
 
 from dagster.core.execution import (
-    DagsterEnv,
-    ExecutionGraph,
+    ComputeNodeExecutionInfo,
 )
 
-from dagster.core.compute_nodes import create_compute_node_graph_from_env
+from dagster.core.definitions import ExecutionGraph
+
+from dagster.core.compute_nodes import create_compute_node_graph
 
 
 def silencing_default_context():
@@ -41,10 +42,13 @@ def test_compute_noop_node():
 
     environment = config.Environment()
 
-    env = DagsterEnv(ExecutionGraph.from_pipeline(pipeline), environment)
-    compute_node_graph = create_compute_node_graph_from_env(
-        ExecutionGraph.from_pipeline(pipeline),
-        env,
+    execution_graph = ExecutionGraph.from_pipeline(pipeline)
+    compute_node_graph = create_compute_node_graph(
+        ComputeNodeExecutionInfo(
+            ExecutionContext(),
+            execution_graph,
+            environment,
+        ),
     )
 
     assert len(compute_node_graph.nodes) == 1

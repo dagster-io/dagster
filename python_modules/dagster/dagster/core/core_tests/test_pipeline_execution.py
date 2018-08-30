@@ -9,11 +9,10 @@ from dagster import (
     execute_pipeline,
 )
 
-from dagster.core.definitions import DependencyStructure
-
-from dagster.core.graph import (
-    _create_adjacency_lists,
+from dagster.core.definitions import (
+    DependencyStructure,
     ExecutionGraph,
+    _create_adjacency_lists,
 )
 
 from dagster.core.execution import (
