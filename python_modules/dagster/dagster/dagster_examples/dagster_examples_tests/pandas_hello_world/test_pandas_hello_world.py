@@ -6,7 +6,6 @@ from dagster.utils.test import script_relative_path
 from dagster.cli.pipeline import (
     do_execute_command,
     print_pipeline,
-    print_solids,
 )
 
 from dagster.dagster_examples.pandas_hello_world.pipeline import define_success_pipeline

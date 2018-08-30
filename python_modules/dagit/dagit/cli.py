@@ -1,6 +1,7 @@
-import click
 import os
 import sys
+
+import click
 from waitress import serve
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler

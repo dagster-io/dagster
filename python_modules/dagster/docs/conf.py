@@ -21,7 +21,7 @@
 from recommonmark.parser import CommonMarkParser
 
 project = 'Dagster'
-copyright = '2018, Nicholas Schrock'
+copyright = '2018, Nicholas Schrock'  # pylint: disable=W0622
 author = 'Nicholas Schrock'
 
 # The short X.Y version

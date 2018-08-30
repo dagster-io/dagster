@@ -54,7 +54,11 @@ class JsonFileHandler(logging.Handler):
 def define_json_file_logger(name, json_path, level):
     check.str_param(name, 'name')
     check.str_param(json_path, 'json_path')
-    check.param_invariant(level in VALID_LEVELS, 'level', f'Must be valid python logging level. Got {level}')
+    check.param_invariant(
+        level in VALID_LEVELS,
+        'level',
+        f'Must be valid python logging level. Got {level}',
+    )
 
     klass = logging.getLoggerClass()
     logger = klass(name, level=level)
@@ -66,7 +70,11 @@ def define_json_file_logger(name, json_path, level):
 
 def define_colored_console_logger(name, level=INFO):
     check.str_param(name, 'name')
-    check.param_invariant(level in VALID_LEVELS, 'level', f'Must be valid python logging level. Got {level}')
+    check.param_invariant(
+        level in VALID_LEVELS,
+        'level',
+        f'Must be valid python logging level. Got {level}',
+    )
 
     klass = logging.getLoggerClass()
     logger = klass(name, level=level)

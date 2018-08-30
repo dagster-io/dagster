@@ -40,9 +40,6 @@ from .graph import ExecutionGraph
 
 from .types import DagsterType
 
-# TODO: remove circular
-import dagster.core.execution
-
 class ComputeNodeOutputHandle(namedtuple('_ComputeNodeOutputHandle', 'compute_node output_name')):
     def __new__(cls, compute_node, output_name):
         return super(ComputeNodeOutputHandle, cls).__new__(
@@ -54,7 +51,10 @@ class ComputeNodeOutputHandle(namedtuple('_ComputeNodeOutputHandle', 'compute_no
     # Make this hashable so it be a key in a dictionary
 
     def __str__(self):
-        return f'ComputeNodeOutputHandle(guid="{self.compute_node.guid}", output_name="{self.output_name}")'
+        return (
+            f'ComputeNodeOutputHandle'
+            f'(guid="{self.compute_node.guid}", output_name="{self.output_name}")'
+        )
 
     def __hash__(self):
         return hash(self.compute_node.guid + self.output_name)
@@ -297,10 +297,11 @@ class ComputeNode:
 
             for result in results:
                 if not self.has_node(result.output_name):
+                    output_names = list([output_def.name for output_def in self.solid.output_defs])
                     raise DagsterInvariantViolationError(
                         f'''Core transform for {self.solid.name} returned an output
                         {result.output_name} that does not exist. The available
-                        outputs are {list([output_def.name for output_def in self.solid.output_defs])}'''
+                        outputs are {output_names}'''
                     )
 
                 if result.output_name in seen_outputs:
@@ -461,6 +462,7 @@ def create_expectations_cn_graph(solid, inout_def, prev_node_output_handle, tag)
         ComputeNodeOutputHandle(join_cn, output_name),
     )
 
+
 class ComputeNodeOutputMap(dict):
     def __getitem__(self, key):
         check.inst_param(key, 'key', SolidOutputHandle)
@@ -472,9 +474,15 @@ class ComputeNodeOutputMap(dict):
         return dict.__setitem__(self, key, val)
 
 
+def check_dagster_env(env):
+    # TODO: remove circular
+    import dagster.core.execution
+    check.inst_param(env, 'env', dagster.core.execution.DagsterEnv)
+
+
 def create_compute_node_graph_from_env(execution_graph, env):
     check.inst_param(execution_graph, 'execution_graph', ExecutionGraph)
-    check.inst_param(env, 'env', dagster.core.execution.DagsterEnv)
+    check_dagster_env(env)
 
     dependency_structure = execution_graph.dependency_structure
 
@@ -531,6 +539,7 @@ def create_compute_node_graph_from_env(execution_graph, env):
 
     return _create_compute_node_graph(compute_nodes)
 
+
 def _create_compute_node_graph(compute_nodes):
     cn_dict = {}
     for cn in compute_nodes:
@@ -545,8 +554,9 @@ def _create_compute_node_graph(compute_nodes):
 
     return ComputeNodeGraph(cn_dict, deps)
 
+
 def create_subgraph_for_input(env, solid, prev_cn_output_handle, input_def):
-    check.inst_param(env, 'env', dagster.core.execution.DagsterEnv)
+    check_dagster_env(env)
     check.inst_param(solid, 'solid', SolidDefinition)
     check.inst_param(prev_cn_output_handle, 'prev_cn_output_handle', ComputeNodeOutputHandle)
     check.inst_param(input_def, 'input_def', InputDefinition)
@@ -566,7 +576,7 @@ def create_subgraph_for_input(env, solid, prev_cn_output_handle, input_def):
 
 
 def create_subgraph_for_output(env, solid, solid_transform_cn, output_def):
-    check.inst_param(env, 'env', dagster.core.execution.DagsterEnv)
+    check_dagster_env(env)
     check.inst_param(solid, 'solid', SolidDefinition)
     check.inst_param(solid_transform_cn, 'solid_transform_cn', ComputeNode)
     check.inst_param(output_def, 'output_def', OutputDefinition)
