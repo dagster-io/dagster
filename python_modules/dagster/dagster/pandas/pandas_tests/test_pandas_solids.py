@@ -19,7 +19,7 @@ from dagster.core.execution import (
     execute_pipeline,
 )
 
-import dagster.pandas_kernel as dagster_pd
+import dagster.pandas as dagster_pd
 
 from dagster.utils import script_relative_path
 

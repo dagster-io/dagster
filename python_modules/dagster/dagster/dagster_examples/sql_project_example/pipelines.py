@@ -1,6 +1,6 @@
 import os
 import dagster
-import dagster.sqlalchemy_kernel as dagster_sa
+import dagster.sqlalchemy as dagster_sa
 
 from dagster import (
     DependencyDefinition,

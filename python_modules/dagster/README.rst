@@ -134,7 +134,7 @@ We can simplify the above example by using built-in dagster pandas inputs and ou
   import dagster.core
   from dagster import config
   from dagster.core.decorators import solid, with_context
-  import dagster.pandas_kernel as dagster_pd
+  import dagster.pandas as dagster_pd
 
   @solid(
       inputs=[
@@ -347,7 +347,7 @@ pandas kernel. (Note: the "kernel" terminology is not settled)
 .. code-block:: python
 
     import dagster
-    import dagster.pandas_kernel as dagster_pd
+    import dagster.pandas as dagster_pd
 
     def sum_transform(num_df):
         num_df['sum'] = num_df['num1'] + num_df['num2']

@@ -4,7 +4,7 @@ import pytest
 
 import pandas as pd
 
-import dagster.pandas_kernel as dagster_pd
+import dagster.pandas as dagster_pd
 from dagster import (
     DependencyDefinition,
     InputDefinition,

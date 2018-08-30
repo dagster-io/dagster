@@ -7,7 +7,7 @@ from dagster import (
     execute_pipeline,
 )
 from dagster.core.test_utils import execute_single_solid
-from dagster.sqlalchemy_kernel.subquery_builder_experimental import (
+from dagster.sqlalchemy.subquery_builder_experimental import (
     create_sql_statement_solid,
     sql_file_solid,
 )

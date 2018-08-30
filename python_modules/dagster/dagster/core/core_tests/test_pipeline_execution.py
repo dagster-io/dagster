@@ -253,7 +253,6 @@ def test_pipeline_execution_graph_diamond():
 #         # input_values={'A': input_values},
 #     ))
 
-
 def _do_test(do_execute_pipeline_iter):
 
     results = list()
