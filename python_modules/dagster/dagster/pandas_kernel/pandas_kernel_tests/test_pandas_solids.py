@@ -708,10 +708,11 @@ def test_rename_input():
 
     assert result.success
 
-    assert result.result_for_solid('sum_sq_table_renamed_input'
-                                   ).transformed_value().to_dict('list') == {
-                                       'num1': [1, 3],
-                                       'num2': [2, 4],
-                                       'sum': [3, 7],
-                                       'sum_squared': [9, 49],
-                                   }
+    expected = {
+        'num1': [1, 3],
+        'num2': [2, 4],
+        'sum': [3, 7],
+        'sum_squared': [9, 49],
+    }
+    solid_result = result.result_for_solid('sum_sq_table_renamed_input')
+    assert solid_result.transformed_value().to_dict('list') == expected

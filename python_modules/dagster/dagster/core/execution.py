@@ -17,7 +17,6 @@ will not invoke *any* outputs (and their APIs don't allow the user to).
 
 from contextlib import contextmanager
 import itertools
-import copy
 
 import six
 
@@ -27,13 +26,12 @@ from dagster import (
 )
 
 from .definitions import (
-    SolidDefinition, PipelineDefinition, PipelineContextDefinition, DEFAULT_OUTPUT
+    DEFAULT_OUTPUT,
+    PipelineDefinition,
+    SolidDefinition,
 )
 
-from .errors import (
-    DagsterUserCodeExecutionError,
-    DagsterInvariantViolationError,
-)
+from .errors import DagsterInvariantViolationError
 
 from .argument_handling import validate_args
 
