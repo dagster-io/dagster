@@ -3,23 +3,29 @@ import os
 import pandas as pd
 
 from dagster import (
-    DependencyDefinition,
     ExecutionContext,
+    DependencyDefinition,
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
     SolidDefinition,
     check,
     config,
+    solid,
 )
-from dagster.core.decorators import solid
+
 from dagster.core.execution import (
-    ExecutionGraph,
     execute_pipeline_iterator,
     execute_pipeline,
 )
+
 import dagster.pandas_kernel as dagster_pd
-from dagster.utils.test import (get_temp_file_name, get_temp_file_names, script_relative_path)
+
+from dagster.utils.test import (
+    get_temp_file_name,
+    get_temp_file_names,
+    script_relative_path,
+)
 
 
 def _dataframe_solid(name, inputs, transform_fn):
@@ -67,8 +73,6 @@ def test_basic_pandas_solid():
         num_csv = args['num_csv']
         num_csv['sum'] = num_csv['num1'] + num_csv['num2']
         return num_csv
-
-    test_output = {}
 
     single_solid = SolidDefinition.single_output_transform(
         name='sum_table',
@@ -197,19 +201,6 @@ def sum_sq_table(sum_df):
 def sum_sq_table_renamed_input(sum_table_renamed):
     sum_table_renamed['sum_squared'] = sum_table_renamed['sum'] * sum_table_renamed['sum']
     return sum_table_renamed
-
-
-def create_mult_table(sum_table_solid):
-    def transform(_context, args):
-        sum_df = args['sum_table']
-        sum_df['sum_squared'] = sum_df['sum'] * sum_df['sum']
-        return sum_df
-
-    return _dataframe_solid(
-        name='mult_table',
-        inputs=[InputDefinition('sum_table', dagster_pd.DataFrame)],
-        transform_fn=transform
-    )
 
 
 def test_pandas_csv_to_csv_better_api():

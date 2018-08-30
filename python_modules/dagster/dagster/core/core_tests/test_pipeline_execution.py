@@ -10,12 +10,17 @@ from dagster import (
 
 from dagster.core.definitions import DependencyStructure
 
-from dagster.core.graph import (_create_adjacency_lists, ExecutionGraph)
+from dagster.core.graph import (
+    _create_adjacency_lists,
+    ExecutionGraph,
+)
+
 from dagster.core.execution import (
     execute_pipeline_iterator,
-    ExecutionContext,
     ExecutionStepResult,
 )
+
+from dagster.core.utility_solids import define_stub_solid
 
 # protected members
 # pylint: disable=W0212
@@ -154,9 +159,6 @@ def test_disconnected_graphs_adjaceny_lists():
     )
     assert forward_edges == {'A': {'B'}, 'B': set(), 'C': {'D'}, 'D': set()}
     assert backwards_edges == {'B': {'A'}, 'A': set(), 'D': {'C'}, 'C': set()}
-
-
-from dagster.core.utility_solids import define_stub_solid
 
 
 def create_diamond_solids():

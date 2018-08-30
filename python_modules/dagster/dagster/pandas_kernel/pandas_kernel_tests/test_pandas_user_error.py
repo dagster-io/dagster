@@ -4,7 +4,6 @@ import pytest
 
 import pandas as pd
 
-import dagster
 import dagster.pandas_kernel as dagster_pd
 from dagster import (
     DependencyDefinition,
@@ -17,8 +16,6 @@ from dagster import (
     solid,
 )
 from dagster.core.errors import DagsterInvariantViolationError
-from dagster.core.execution import execute_single_solid
-from dagster.utils.test import script_relative_path
 from dagster.core.utility_solids import define_stub_solid
 
 

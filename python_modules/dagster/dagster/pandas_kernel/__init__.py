@@ -20,10 +20,8 @@ def _create_dataframe_type():
     return types.PythonObjectType(
         name='PandasDataFrame',
         python_type=pd.DataFrame,
-        description=
-        '''Two-dimensional size-mutable, potentially heterogeneous tabular data structure with labeled axes (rows and columns).
-        See http://pandas.pydata.org/
-        ''',
+        description='''Two-dimensional size-mutable, potentially heterogeneous
+tabular data structure with labeled axes (rows and columns). See http://pandas.pydata.org/''',
     )
 
 
