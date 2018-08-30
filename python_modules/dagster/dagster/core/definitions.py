@@ -11,7 +11,10 @@ from dagster.utils.logging import (
     define_colored_console_logger,
 )
 
-from .errors import DagsterInvalidDefinitionError
+from .errors import (
+    DagsterInvalidDefinitionError,
+    DagsterInvariantViolationError,
+)
 
 from .execution_context import ExecutionContext
 
@@ -648,6 +651,10 @@ class SolidDefinition:
 
         def _new_transform_fn(context, inputs, _config_dict):
             value = transform_fn(context, inputs)
+            if isinstance(value, Result):
+                raise DagsterInvariantViolationError(
+                    '''Single output transform Solid {name} returned a Result. Just return
+                    value directly without wrapping it in Result''')
             yield Result(output_name=DEFAULT_OUTPUT, value=value)
 
         return SolidDefinition(
