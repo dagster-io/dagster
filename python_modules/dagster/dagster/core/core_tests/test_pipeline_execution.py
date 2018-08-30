@@ -6,6 +6,7 @@ from dagster import (
     SolidDefinition,
     check,
     config,
+    execute_pipeline,
 )
 
 from dagster.core.definitions import DependencyStructure
@@ -243,6 +244,22 @@ def test_pipeline_execution_graph_diamond():
     ))
 
 
+def test_create_single_solid_pipeline():
+    stub_solid = define_stub_solid('stub', [{'a key': 'a value'}])
+    single_solid_pipeline = PipelineDefinition.create_single_solid_pipeline(
+        PipelineDefinition(solids=create_diamond_solids(), dependencies=diamond_deps()),
+        'A',
+        {
+            'A': {
+                'A_input': stub_solid
+            },
+        },
+    )
+
+    result = execute_pipeline(single_solid_pipeline, config.Environment())
+    assert result.success
+
+
 # def test_pipeline_execution_graph_diamond_in_memory():
 #     pipeline = PipelineDefinition(solids=create_diamond_solids(), dependencies=diamond_deps())
 #     # input_values = {'A_input': [{'A_input': 'input_set'}]}
@@ -252,6 +269,7 @@ def test_pipeline_execution_graph_diamond():
 #         {}
 #         # input_values={'A': input_values},
 #     ))
+
 
 def _do_test(do_execute_pipeline_iter):
 
