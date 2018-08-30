@@ -7,9 +7,12 @@ from dagster import (
     OutputDefinition,
 )
 
-from dagster.core.execution import (DagsterEnv, ExecutionGraph)
+from dagster.core.execution import (
+    DagsterEnv,
+    ExecutionGraph,
+)
+
 from dagster.core.compute_nodes import create_compute_node_graph_from_env
-from dagster.core.graph import ExecutionGraph
 
 
 def silencing_default_context():

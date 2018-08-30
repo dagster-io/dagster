@@ -4,7 +4,6 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     SolidDefinition,
-    check,
     config,
     execute_pipeline,
 )

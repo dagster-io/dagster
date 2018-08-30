@@ -2,8 +2,6 @@ from six import (string_types, integer_types)
 
 from dagster import check
 
-import dagster
-
 
 class DagsterType:
     def __init__(self, name, description=None):

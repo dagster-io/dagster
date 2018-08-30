@@ -97,7 +97,7 @@ def _create_transform_wrapper(fn, inputs, outputs, include_context=False):
     input_names = [input.name for input in inputs]
 
     @wraps(fn)
-    def transform(context, args, config):
+    def transform(context, args, _config):
         kwargs = {}
         for input_name in input_names:
             kwargs[input_name] = args[input_name]

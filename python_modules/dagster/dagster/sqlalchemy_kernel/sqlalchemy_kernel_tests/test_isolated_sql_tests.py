@@ -1,12 +1,15 @@
-import dagster
 from dagster import (
     DependencyDefinition,
     InputDefinition,
+    PipelineContextDefinition,
+    PipelineDefinition,
     config,
+    execute_pipeline,
 )
 from dagster.core.execution import execute_single_solid
 from dagster.sqlalchemy_kernel.subquery_builder_experimental import (
-    create_sql_statement_solid, sql_file_solid
+    create_sql_statement_solid,
+    sql_file_solid,
 )
 from dagster.utils.test import script_relative_path
 
@@ -14,11 +17,11 @@ from .math_test_db import in_mem_context
 
 
 def pipeline_test_def(solids, context, dependencies=None):
-    return dagster.PipelineDefinition(
+    return PipelineDefinition(
         solids=solids,
         context_definitions={
             'default':
-            dagster.PipelineContextDefinition(
+            PipelineContextDefinition(
                 argument_def_dict={},
                 context_fn=lambda _pipeline, _args: context,
             ),
@@ -69,7 +72,7 @@ def test_basic_pipeline():
         },
     )
 
-    pipeline_result = dagster.execute_pipeline(pipeline, environment=config.Environment.empty())
+    pipeline_result = execute_pipeline(pipeline, environment=config.Environment.empty())
 
     assert pipeline_result.success
 
@@ -107,7 +110,7 @@ def test_pipeline_from_files():
         },
     )
 
-    pipeline_result = dagster.execute_pipeline(pipeline, environment=config.Environment.empty())
+    pipeline_result = execute_pipeline(pipeline, environment=config.Environment.empty())
 
     assert pipeline_result.success
 

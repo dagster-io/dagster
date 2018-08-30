@@ -1,15 +1,10 @@
 from dagster import (
-    ArgumentDefinition,
     DependencyDefinition,
-    InputDefinition,
     PipelineContextDefinition,
     PipelineDefinition,
-    OutputDefinition,
-    SolidDefinition,
     check,
     config,
     execute_pipeline,
-    types,
 )
 
 from dagster.sqlalchemy_kernel.templated import (
@@ -262,8 +257,6 @@ def test_with_from_through_specifying_all_solids():
     first_sum_table = 'first_sum_table'
     first_mult_table = 'first_mult_table'
     first_sum_mult_table = 'first_sum_mult_table'
-
-    all_solid_names = [solid.name for solid in pipeline.solids]
 
     environment = config.Environment(
         solids={
