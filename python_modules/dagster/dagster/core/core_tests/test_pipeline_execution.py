@@ -259,9 +259,6 @@ def _do_test(do_execute_pipeline_iter):
     results = list()
 
     for result in do_execute_pipeline_iter():
-        print(result.solid.name)
-        print(result.transformed_value())
-
         results.append(result)
 
     result = PipelineExecutionResult(ExecutionContext(), results)
