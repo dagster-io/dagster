@@ -1,4 +1,3 @@
-import pytest
 import yaml
 
 from dagster import config

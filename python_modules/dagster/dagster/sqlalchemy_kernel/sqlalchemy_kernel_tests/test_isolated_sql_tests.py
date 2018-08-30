@@ -6,12 +6,12 @@ from dagster import (
     config,
     execute_pipeline,
 )
-from dagster.core.execution import execute_single_solid
+from dagster.core.test_utils import execute_single_solid
 from dagster.sqlalchemy_kernel.subquery_builder_experimental import (
     create_sql_statement_solid,
     sql_file_solid,
 )
-from dagster.utils.test import script_relative_path
+from dagster.utils import script_relative_path
 
 from .math_test_db import in_mem_context
 

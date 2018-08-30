@@ -11,7 +11,8 @@ from dagster import (
 )
 
 from dagster.core.decorators import solid
-from dagster.utils.test import (script_relative_path, get_temp_file_name)
+from dagster.utils import script_relative_path
+from dagster.utils.test import get_temp_file_name
 
 import dagster.pandas_kernel as dagster_pd
 

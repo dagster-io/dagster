@@ -14,7 +14,7 @@ from dagster import (
     types,
 )
 
-from dagster.utils.test import script_relative_path
+from dagster.utils import script_relative_path
 
 
 def define_read_csv_solid(name):

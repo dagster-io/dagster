@@ -2,7 +2,7 @@ import os
 
 from dagster import config
 from dagster.core.execution import execute_pipeline
-from dagster.utils.test import script_relative_path
+from dagster.utils import script_relative_path
 from dagster.cli.pipeline import (
     do_execute_command,
     print_pipeline,

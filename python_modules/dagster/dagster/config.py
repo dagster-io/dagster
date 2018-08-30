@@ -39,15 +39,6 @@ class Environment(namedtuple('EnvironmentData', 'context solids expectations')):
         return Environment()
 
 
-class Source(namedtuple('SourceData', 'name args')):
-    def __new__(cls, name, args):
-        return super(Source, cls).__new__(
-            cls,
-            name=check.str_param(name, 'name'),
-            args=check.dict_param(args, 'args', key_type=str),
-        )
-
-
 class Expectations(namedtuple('ExpectationsData', 'evaluate')):
     def __new__(cls, evaluate):
         return super(Expectations, cls).__new__(
