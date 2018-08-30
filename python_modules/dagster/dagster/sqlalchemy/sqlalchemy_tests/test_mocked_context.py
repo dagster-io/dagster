@@ -1,5 +1,5 @@
 import sqlalchemy
-import dagster.sqlalchemy_kernel as dagster_sa
+import dagster.sqlalchemy as dagster_sa
 
 
 # disable warnings about malformed inheritance

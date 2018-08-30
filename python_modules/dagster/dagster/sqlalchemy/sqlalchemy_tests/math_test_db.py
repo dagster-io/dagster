@@ -1,5 +1,5 @@
 import sqlalchemy as sa
-import dagster.sqlalchemy_kernel as dagster_sa
+import dagster.sqlalchemy as dagster_sa
 
 
 def create_num_table(engine, num_table_name='num_table'):

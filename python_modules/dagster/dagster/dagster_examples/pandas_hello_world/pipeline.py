@@ -6,7 +6,7 @@ from dagster import (
     PipelineDefinition,
     solid,
 )
-import dagster.pandas_kernel as dagster_pd
+import dagster.pandas as dagster_pd
 
 
 @solid(

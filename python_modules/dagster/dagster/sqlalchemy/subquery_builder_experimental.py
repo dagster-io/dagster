@@ -10,7 +10,7 @@ from dagster import (
     types,
 )
 
-from dagster.sqlalchemy_kernel import execute_sql_text_on_context
+from dagster.sqlalchemy import execute_sql_text_on_context
 
 
 class DagsterSqlExpression:
