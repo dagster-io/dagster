@@ -349,14 +349,9 @@ class InputDefinition:
 
     - depends_on: (Optional). This input depends on another solid in the context of a
     a pipeline.
-
-    - input_callback: (Optional) Called on the source result. Gets execution context and result.
-    Can be used to validate the result, log stats etc.
     '''
 
-    def __init__(
-        self, name, dagster_type=None, expectations=None, input_callback=None, description=None
-    ):
+    def __init__(self, name, dagster_type=None, expectations=None, description=None):
         self.name = check_valid_name(name)
 
         self.dagster_type = check.opt_inst_param(
@@ -366,20 +361,12 @@ class InputDefinition:
         self.expectations = check.opt_list_param(
             expectations, 'expectations', of_type=ExpectationDefinition
         )
-        self.input_callback = check.opt_callable_param(input_callback, 'input_callback')
         self.description = check.opt_str_param(description, 'description')
 
 
 class OutputDefinition:
     # runtime type info
-    def __init__(
-        self,
-        name=None,
-        dagster_type=None,
-        expectations=None,
-        output_callback=None,
-        description=None
-    ):
+    def __init__(self, name=None, dagster_type=None, expectations=None, description=None):
         self.name = check.opt_str_param(name, 'name', DEFAULT_OUTPUT)
 
         self.dagster_type = check.opt_inst_param(
@@ -389,7 +376,6 @@ class OutputDefinition:
         self.expectations = check.opt_list_param(
             expectations, 'expectations', of_type=ExpectationDefinition
         )
-        self.output_callback = check.opt_callable_param(output_callback, 'output_callback')
         self.description = check.opt_str_param(description, 'description')
 
 
