@@ -109,6 +109,7 @@ def test_failure_midstream():
     )
 
     result_list = pipeline_result.result_list
+    print([r.solid.name for r in result_list])
 
     assert result_list[0].success
     assert result_list[1].success

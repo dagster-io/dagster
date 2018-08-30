@@ -40,6 +40,7 @@ from .graph import ExecutionGraph
 
 from .types import DagsterType
 
+
 class ComputeNodeOutputHandle(namedtuple('_ComputeNodeOutputHandle', 'compute_node output_name')):
     def __new__(cls, compute_node, output_name):
         return super(ComputeNodeOutputHandle, cls).__new__(
@@ -172,19 +173,21 @@ def _execute_core_transform(context, compute_node, values_dict, config_dict):
 
         if isinstance(gen, Result):
             raise DagsterInvariantViolationError(
-                ('Transform for solid {solid_name} returned a Result rather than ' +
-                'yielding it. The transform_fn of the core SolidDefinition must yield ' +
-                'its results').format(
-                    solid_name=compute_node.solid.name,
-                )
+                (
+                    'Transform for solid {solid_name} returned a Result rather than ' +
+                    'yielding it. The transform_fn of the core SolidDefinition must yield ' +
+                    'its results'
+                ).format(solid_name=compute_node.solid.name, )
             )
 
         if gen is not None:
             for result in gen:
                 if not isinstance(result, Result):
                     raise DagsterInvariantViolationError(
-                        ('Transform for solid {solid_name} yielded {result} rather an ' +
-                        'an instance of the Result class.').format(
+                        (
+                            'Transform for solid {solid_name} yielded {result} rather an ' +
+                            'an instance of the Result class.'
+                        ).format(
                             result=repr(result),
                             solid_name=compute_node.solid.name,
                         )
@@ -333,16 +336,17 @@ class ComputeNode:
 
         check.failed(f'output {name} not found')
 
+
 def _all_inputs_covered(cn, results):
     for node_input in cn.node_inputs:
         if node_input.prev_output_handle not in results:
             return False
     return True
 
+
 def execute_compute_nodes(context, compute_nodes):
     check.inst_param(context, 'context', ExecutionContext)
     check.list_param(compute_nodes, 'compute_nodes', of_type=ComputeNode)
-
 
     intermediate_results = {}
     for compute_node in compute_nodes:
@@ -535,7 +539,6 @@ def create_compute_node_graph_from_env(execution_graph, env):
 
             output_handle = topo_solid.output_handle(output_def.name)
             cn_output_node_map[output_handle] = subgraph.terminal_cn_output_handle
-
 
     return _create_compute_node_graph(compute_nodes)
 

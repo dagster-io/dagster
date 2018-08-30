@@ -27,13 +27,13 @@ def test_execute_pipeline():
 
     assert result.success
 
-    assert result.result_named('sum_solid').transformed_value.to_dict('list') == {
+    assert result.result_for_solid('sum_solid').transformed_value().to_dict('list') == {
         'num1': [1, 3],
         'num2': [2, 4],
         'sum': [3, 7],
     }
 
-    assert result.result_named('sum_sq_solid').transformed_value.to_dict('list') == {
+    assert result.result_for_solid('sum_sq_solid').transformed_value().to_dict('list') == {
         'num1': [1, 3],
         'num2': [2, 4],
         'sum': [3, 7],

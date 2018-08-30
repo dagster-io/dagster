@@ -50,9 +50,9 @@ def get_solid_transformed_value(_context, solid_inst, environment):
 
     pipeline_result = execute_pipeline(pipeline, environment)
 
-    execution_result = pipeline_result.result_named(solid_inst.name)
+    execution_result = pipeline_result.result_for_solid(solid_inst.name)
 
-    return execution_result.transformed_value
+    return execution_result.transformed_value()
 
 
 def get_load_only_solids_config(load_csv_solid_name):
@@ -96,7 +96,7 @@ def test_basic_pandas_solid():
 
     assert pipeline_result.success
 
-    assert pipeline_result.result_named('sum_table').transformed_value.to_dict('list') == {
+    assert pipeline_result.result_for_solid('sum_table').transformed_value().to_dict('list') == {
         'num1': [1, 3],
         'num2': [2, 4],
         'sum': [3, 7]
@@ -276,7 +276,7 @@ def test_two_input_solid():
     pipeline_result = execute_pipeline(pipeline, environment)
     assert pipeline_result.success
 
-    df = pipeline_result.result_named('two_input_solid').transformed_value
+    df = pipeline_result.result_for_solid('two_input_solid').transformed_value()
 
     # df = get_solid_transformed_value(create_test_context(), two_input_solid, environment)
     assert isinstance(df, pd.DataFrame)
@@ -381,7 +381,7 @@ def test_pandas_in_memory_diamond_pipeline():
         pipeline, environment=get_num_csv_environment(get_load_only_solids_config('load_csv'))
     )
 
-    assert result.result_named('sum_mult_table').transformed_value.to_dict('list') == {
+    assert result.result_for_solid('sum_mult_table').transformed_value().to_dict('list') == {
         'num1': [1, 3],
         'num2': [2, 4],
         'sum': [3, 7],
@@ -424,7 +424,7 @@ def test_pandas_output_csv_pipeline():
         }
 
 
-def _result_named(results, name):
+def _result_for_solid(results, name):
     for result in results:
         if result.name == name:
             return result
@@ -477,8 +477,8 @@ def test_pandas_output_intermediate_csv_files():
         }
 
         assert pd.read_csv(sum_file).to_dict('list') == expected_sum
-        sum_table_result = subgraph_one_result.result_named('sum_table')
-        assert sum_table_result.transformed_value.to_dict('list') == expected_sum
+        sum_table_result = subgraph_one_result.result_for_solid('sum_table')
+        assert sum_table_result.transformed_value().to_dict('list') == expected_sum
 
         expected_mult = {
             'num1': [1, 3],
@@ -486,8 +486,8 @@ def test_pandas_output_intermediate_csv_files():
             'mult': [2, 12],
         }
         assert pd.read_csv(mult_file).to_dict('list') == expected_mult
-        mult_table_result = subgraph_one_result.result_named('mult_table')
-        assert mult_table_result.transformed_value.to_dict('list') == expected_mult
+        mult_table_result = subgraph_one_result.result_for_solid('mult_table')
+        assert mult_table_result.transformed_value().to_dict('list') == expected_mult
 
         injected_solids = {
             'sum_mult_table': {
@@ -520,7 +520,7 @@ def test_pandas_output_intermediate_csv_files():
         subgraph_two_result_list = pipeline_result.result_list
 
         assert len(subgraph_two_result_list) == 3
-        output_df = pipeline_result.result_named('sum_mult_table').transformed_value
+        output_df = pipeline_result.result_for_solid('sum_mult_table').transformed_value()
         assert output_df.to_dict('list') == {
             'num1': [1, 3],
             'num2': [2, 4],
@@ -622,7 +622,7 @@ def test_pandas_multiple_inputs():
     output_df = execute_pipeline(
         pipeline,
         environment=environment,
-    ).result_named('double_sum').transformed_value
+    ).result_for_solid('double_sum').transformed_value()
 
     assert not output_df.empty
 
@@ -708,9 +708,10 @@ def test_rename_input():
 
     assert result.success
 
-    assert result.result_named('sum_sq_table_renamed_input').transformed_value.to_dict('list') == {
-        'num1': [1, 3],
-        'num2': [2, 4],
-        'sum': [3, 7],
-        'sum_squared': [9, 49],
-    }
+    assert result.result_for_solid('sum_sq_table_renamed_input'
+                                   ).transformed_value().to_dict('list') == {
+                                       'num1': [1, 3],
+                                       'num2': [2, 4],
+                                       'sum': [3, 7],
+                                       'sum_squared': [9, 49],
+                                   }

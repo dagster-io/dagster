@@ -33,14 +33,11 @@ def test_multiple_outputs():
     pipeline = PipelineDefinition(solids=[solid])
 
     result = execute_pipeline(pipeline, config.Environment())
+    solid_result = result.result_list[0]
 
-    assert result.result_list[0].name == 'multiple_outputs'
-    assert result.result_list[0].output_name == 'output_one'
-    assert result.result_list[0].transformed_value == 'foo'
-
-    assert result.result_list[1].name == 'multiple_outputs'
-    assert result.result_list[1].output_name == 'output_two'
-    assert result.result_list[1].transformed_value == 'bar'
+    assert solid_result.solid.name == 'multiple_outputs'
+    assert solid_result.transformed_value('output_one') == 'foo'
+    assert solid_result.transformed_value('output_two') == 'bar'
 
 
 def test_multiple_outputs_expectations():

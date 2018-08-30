@@ -244,16 +244,18 @@ def process_results_for_console(pipeline_iter, printer):
 def print_metrics_to_console(results, printer):
     for result in results:
         context = result.context
-        metrics_of_solid = list(context.metrics_matching_context({'solid': result.name}))
+        metrics_of_solid = list(context.metrics_matching_context({'solid': result.solid.name}))
 
-        printer('Metrics for {name}'.format(name=result.name))
+        printer('Metrics for {name}'.format(name=result.solid.name))
 
         for input_def in result.solid.input_defs:
             metrics_for_input = list(
-                context.metrics_covering_context({
-                    'solid': result.name,
-                    'input': input_def.name,
-                })
+                context.metrics_covering_context(
+                    {
+                        'solid': result.solid.name,
+                        'input': input_def.name,
+                    }
+                )
             )
             if metrics_for_input:
                 printer('    Input {input_name}'.format(input_name=input_def.name))
