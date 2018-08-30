@@ -148,3 +148,15 @@ def test_yield_non_result():
         message="Tranform for solid yield_wrong_thing yielded 'foo'",
     ):
         execute_single_solid(ExecutionContext(), solid_inst, config.Environment())
+
+
+def test_single_transform_returning_result():
+    solid_inst = SolidDefinition.single_output_transform(
+        'test_return_result',
+        inputs=[],
+        transform_fn=lambda *_args, **_kwargs: Result(None),
+        output=OutputDefinition()
+    )
+
+    with pytest.raises(DagsterInvariantViolationError):
+        execute_single_solid(ExecutionContext(), solid_inst, config.Environment())
