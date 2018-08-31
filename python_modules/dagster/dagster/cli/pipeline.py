@@ -1,20 +1,26 @@
 import logging
-import os
 import re
 import textwrap
 
 import click
 import yaml
 
-import dagster
-from dagster import check
+from dagster import (
+    PipelineDefinition,
+    check,
+    config,
+)
+
 from dagster.core.definitions import ExecutionGraph
 from dagster.core.execution import execute_pipeline_iterator
 from dagster.core.errors import DagsterExecutionFailureReason
 from dagster.graphviz import build_graphviz_graph
 from dagster.utils.indenting_printer import IndentingPrinter
 
-from .context import Config
+from .context import (
+    load_repository_from_file,
+    repository_config_argument,
+)
 
 
 def create_pipeline_cli():
@@ -27,12 +33,11 @@ def create_pipeline_cli():
 
 
 @click.command(name='list', help="list")
-@Config.pass_object
-def list_command(config):
-    pipeline_configs = config.create_pipelines()
-
-    for pipeline_config in pipeline_configs:
-        pipeline = pipeline_config.pipeline
+@repository_config_argument
+def list_command(conf):
+    repository = load_repository_from_file(conf).repository
+    click.echo('Repository {name}'.format(name=repository.name))
+    for pipeline in repository.get_all_pipelines():
         click.echo('Pipeline: {name}'.format(name=pipeline.name))
         if pipeline.description:
             click.echo('Description:')
@@ -54,26 +59,25 @@ def format_description(desc, indent):
     return filled
 
 
-def set_pipeline(ctx, _arg, value):
-    ctx.params['pipeline_config'] = ctx.find_object(Config).get_pipeline(value)
-
-
-def pipeline_name_argument(f):
-    return click.argument('pipeline_name', callback=set_pipeline, expose_value=False)(f)
+def pipeline_from_conf(conf, name):
+    repository = load_repository_from_file(conf).repository
+    return repository.get_pipeline(name)
 
 
 @click.command(name='print', help="print <<pipeline_name>>")
+@repository_config_argument
 @click.option('--verbose', is_flag=True)
-@pipeline_name_argument
-def print_command(pipeline_config, verbose):
+@click.argument('name')
+def print_command(conf, name, verbose):
+    pipeline = pipeline_from_conf(conf, name)
     if verbose:
-        print_pipeline(pipeline_config.pipeline, full=True, print_fn=click.echo)
+        print_pipeline(pipeline, full=True, print_fn=click.echo)
     else:
-        print_solids(pipeline_config.pipeline, print_fn=click.echo)
+        print_solids(pipeline, print_fn=click.echo)
 
 
 def print_solids(pipeline, print_fn):
-    check.inst_param(pipeline, 'pipeline', dagster.PipelineDefinition)
+    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.callable_param(print_fn, 'print_fn')
 
     printer = IndentingPrinter(indent_level=2, printer=print_fn)
@@ -86,7 +90,7 @@ def print_solids(pipeline, print_fn):
 
 
 def print_pipeline(pipeline, full, print_fn):
-    check.inst_param(pipeline, 'pipeline', dagster.PipelineDefinition)
+    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.bool_param(full, 'full')
     check.callable_param(print_fn, 'print_fn')
 
@@ -164,16 +168,11 @@ def format_argument_dict(arg_def_dict):
 
 
 @click.command(name='graphviz', help="graphviz <<pipeline_name>>")
-@pipeline_name_argument
-def graphviz_command(pipeline_config):
-    build_graphviz_graph(pipeline_config.pipeline).view(cleanup=True)
-
-
-def get_default_config_for_pipeline():
-    ctx = click.get_current_context()
-    pipeline_config = ctx.params['pipeline_config']
-    module_path = os.path.dirname(pipeline_config.module.__file__)
-    return os.path.join(module_path, 'env.yml')
+@repository_config_argument
+@click.argument('name')
+def graphviz_command(conf, name):
+    pipeline = pipeline_from_conf(conf, name)
+    build_graphviz_graph(pipeline).view(cleanup=True)
 
 
 LOGGING_DICT = {
@@ -192,7 +191,8 @@ def load_yaml_from_path(path):
 
 
 @click.command(name='execute', help="execute <<pipeline_name>>")
-@pipeline_name_argument
+@repository_config_argument
+@click.argument('name')
 @click.option(
     '-e',
     '--env',
@@ -203,21 +203,20 @@ def load_yaml_from_path(path):
         readable=True,
         resolve_path=True,
     ),
-    default=get_default_config_for_pipeline,
-    help="Path to environment file. Defaults to ./PIPELINE_DIR/env.yml."
 )
-def execute_command(pipeline_config, env):
-    do_execute_command(pipeline_config.pipeline, env, print)
+def execute_command(conf, name, env):
+    pipeline = pipeline_from_conf(conf, name)
+    do_execute_command(pipeline, env, print)
 
 
 def do_execute_command(pipeline, env, printer):
-    check.inst_param(pipeline, 'pipeline', dagster.PipelineDefinition)
+    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.str_param(env, 'env')
     check.callable_param(printer, 'printer')
 
     env_config = load_yaml_from_path(env)
 
-    environment = dagster.config.construct_environment(env_config)
+    environment = config.construct_environment(env_config)
 
     pipeline_iter = execute_pipeline_iterator(pipeline, environment)
 

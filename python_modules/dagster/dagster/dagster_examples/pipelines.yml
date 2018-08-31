@@ -1,5 +1,0 @@
-pipelines:
-  - module: dagster.dagster_examples.pandas_hello_world.pipeline
-    fn: define_pipeline
-  - module: dagster.dagster_examples.pandas_hello_world.pipeline
-    fn: define_success_pipeline
