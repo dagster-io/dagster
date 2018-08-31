@@ -6,13 +6,15 @@ class Query(graphene.ObjectType):
     pipelines = graphene.NonNull(graphene.List(lambda: graphene.NonNull(Pipeline)))
 
     def resolve_pipeline(self, info, name):
-        config = info.context['pipeline_config']
-        pipeline_config = config.get_pipeline(name)
-        return Pipeline(pipeline_config.pipeline)
+        repository = info.context['repository_container'].repository
+        return repository.get_pipeline(name)
 
     def resolve_pipelines(self, info):
-        config = info.context['pipeline_config']
-        return [Pipeline(c.pipeline) for c in config.create_pipelines()]
+        repository = info.context['repository_container'].repository
+        pipelines = []
+        for pipeline_def in repository.get_all_pipelines():
+            pipelines.append(Pipeline(pipeline_def))
+        return pipelines
 
 
 # (XXX) Some stuff is named, other stuffed is keyed in dict.

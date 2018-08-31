@@ -1,7 +1,58 @@
 from dagster import check
 
-from .definitions import ArgumentDefinitionDictionary
 from .errors import DagsterTypeError
+from .types import DagsterType
+
+
+# We wrap the passed in dictionary of str : ArgumentDefinition to
+# 1) enforce typing
+# 2) enforce immutability
+# 3) make type checks throughout execution cheaper
+class ArgumentDefinitionDictionary(dict):
+    def __init__(self, ddict):
+        super().__init__(
+            check.dict_param(ddict, 'ddict', key_type=str, value_type=ArgumentDefinition)
+        )
+
+    def __setitem__(self, _key, _value):
+        check.failed('This dictionary is readonly')
+
+
+class __ArgumentValueSentinel:
+    pass
+
+
+NO_DEFAULT_PROVIDED = __ArgumentValueSentinel
+
+
+class ArgumentDefinition:
+    def __init__(
+        self, dagster_type, default_value=NO_DEFAULT_PROVIDED, is_optional=False, description=None
+    ):
+        '''Definition of an argument passed through the config system. Used in a few different
+        contexts: to configure a context, to configure a solid, and more to come.
+
+        We have decided to allow arguments to be explictly made *optional* and separate that
+        concept from the nullability of the type. That means one could have a *required* argument
+        that is nullable, because sometimes an argument set to null has a distinct semantic meaning
+        from the lack of an argument. Optional arguments can have default values. Required arguments
+        cannot.
+        '''
+        if not is_optional:
+            check.param_invariant(
+                default_value == NO_DEFAULT_PROVIDED,
+                'default_value',
+                'required arguments should not specify default values',
+            )
+
+        self.dagster_type = check.inst_param(dagster_type, 'dagster_type', DagsterType)
+        self.description = check.opt_str_param(description, 'description')
+        self.is_optional = check.bool_param(is_optional, 'is_optional')
+        self.default_value = default_value
+
+    @property
+    def default_provided(self):
+        return self.default_value != NO_DEFAULT_PROVIDED
 
 
 def validate_args(argument_def_dict, arg_dict, error_context_str):
