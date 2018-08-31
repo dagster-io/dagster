@@ -654,7 +654,8 @@ class SolidDefinition:
             if isinstance(value, Result):
                 raise DagsterInvariantViolationError(
                     '''Single output transform Solid {name} returned a Result. Just return
-                    value directly without wrapping it in Result''')
+                    value directly without wrapping it in Result'''
+                )
             yield Result(output_name=DEFAULT_OUTPUT, value=value)
 
         return SolidDefinition(

@@ -191,12 +191,13 @@ def test_pandas_hello_no_library():
         environment=environment,
     )
 
-    assert execute_pipeline_result.result_for_solid('solid_two').transformed_value().to_dict('list') == {
-        'num1': [1, 3],
-        'num2': [2, 4],
-        'sum': [3, 7],
-        'sum_sq': [9, 49],
-    }
+    assert execute_pipeline_result.result_for_solid('solid_two'
+                                                    ).transformed_value().to_dict('list') == {
+                                                        'num1': [1, 3],
+                                                        'num2': [2, 4],
+                                                        'sum': [3, 7],
+                                                        'sum_sq': [9, 49],
+                                                    }
 
     sum_sq_out_path = '/tmp/sum_sq.csv'
     import os

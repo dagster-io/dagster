@@ -3,6 +3,7 @@ import time
 
 from dagster import check
 
+
 class TimerResult:
     def __init__(self):
         self.start_time = time.time()
@@ -16,6 +17,7 @@ class TimerResult:
     @property
     def millis(self):
         return self.seconds * 1000
+
 
 @contextmanager
 def time_execution_scope():

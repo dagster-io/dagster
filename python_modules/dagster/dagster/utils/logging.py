@@ -18,9 +18,11 @@ LOOKUP = {
     'WARNING': WARNING,
 }
 
+
 def level_from_string(string):
     check.str_param(string, 'string')
     return LOOKUP[string]
+
 
 class CompositeLogger:
     def __init__(self, loggers=None):
@@ -31,6 +33,7 @@ class CompositeLogger:
             for logger in self.loggers:
                 logger_method = check.is_callable(getattr(logger, name))
                 logger_method(*args, **kwargs)
+
         return _invoke_logger_method
 
 
@@ -46,7 +49,7 @@ class JsonFileHandler(logging.Handler):
                 text_line = json.dumps(logged_properties)
                 ff.write(text_line + '\n')
         # Need to catch Exception here, so disabling lint
-        except Exception as e: # pylint: disable=W0703
+        except Exception as e:  # pylint: disable=W0703
             logging.critical('Error during logging!')
             logging.exception(str(e))
 
@@ -81,16 +84,20 @@ def define_colored_console_logger(name, level=INFO):
     coloredlogs.install(logger=logger, level=level, fmt=default_format_string())
     return logger
 
+
 def default_format_string():
     return '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 
+
 def define_default_formatter():
     return logging.Formatter(default_format_string())
+
 
 def debug_format_string():
     return '''%(name)s.%(levelname)s: %(message)s
     time: %(asctime)s relative: %(relativeCreated)dms
     path: %(pathname)s line: %(lineno)d'''
+
 
 def define_debug_formatter():
     return logging.Formatter(debug_format_string())

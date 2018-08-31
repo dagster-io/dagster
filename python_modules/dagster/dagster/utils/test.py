@@ -6,8 +6,6 @@ from contextlib import contextmanager
 from dagster import check
 
 
-
-
 def _unlink_swallow_errors(path):
     check.str_param(path, 'path')
     try:

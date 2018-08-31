@@ -43,7 +43,9 @@ from .errors import (
 from .types import DagsterType
 
 
-class ComputeNodeExecutionInfo(namedtuple('_ComputeNodeExecutionInfo', 'context execution_graph environment')):
+class ComputeNodeExecutionInfo(
+    namedtuple('_ComputeNodeExecutionInfo', 'context execution_graph environment')
+):
     def __new__(cls, context, execution_graph, environment):
         return super(ComputeNodeExecutionInfo, cls).__new__(
             cls,
@@ -492,6 +494,7 @@ class ComputeNodeOutputMap(dict):
         check.inst_param(key, 'key', SolidOutputHandle)
         check.inst_param(val, 'val', ComputeNodeOutputHandle)
         return dict.__setitem__(self, key, val)
+
 
 def validate_config_dict(execution_info, solid):
     check.inst_param(execution_info, 'execution_info', ComputeNodeExecutionInfo)

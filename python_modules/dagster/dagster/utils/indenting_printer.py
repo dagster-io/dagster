@@ -2,6 +2,7 @@ from contextlib import contextmanager
 
 from dagster import check
 
+
 class IndentingPrinter:
     def __init__(self, indent_level=2, printer=print):
         self.lines = []

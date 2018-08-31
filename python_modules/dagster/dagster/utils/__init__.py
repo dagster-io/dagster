@@ -2,6 +2,8 @@ import inspect
 import os
 
 from dagster import check
+
+
 def script_relative_path(file_path):
     '''
     Useful for testing with local files. Use a path relative to where the

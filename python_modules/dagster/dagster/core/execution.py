@@ -27,7 +27,7 @@ from dagster import (
 
 from .definitions import (
     DEFAULT_OUTPUT,
-    ExecutionGraph, 
+    ExecutionGraph,
     PipelineDefinition,
     SolidDefinition,
 )
@@ -199,8 +199,8 @@ def yield_context(pipeline, environment):
     context_definition = pipeline.context_definitions[context_name]
 
     args_to_pass = validate_args(
-        pipeline.context_definitions[context_name].argument_def_dict,
-        environment.context.args, 'pipeline {pipeline_name} context {context_name}'.format(
+        pipeline.context_definitions[context_name].argument_def_dict, environment.context.args,
+        'pipeline {pipeline_name} context {context_name}'.format(
             pipeline_name=pipeline.name,
             context_name=context_name,
         )
