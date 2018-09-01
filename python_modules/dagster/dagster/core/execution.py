@@ -32,9 +32,10 @@ from .definitions import (
     SolidDefinition,
 )
 
-from .errors import DagsterInvariantViolationError
-
-from .argument_handling import validate_args
+from .errors import (
+    DagsterInvariantViolationError,
+    DagsterTypeError,
+)
 
 from .compute_nodes import (
     ComputeNodeExecutionInfo,
@@ -183,8 +184,11 @@ def _validate_environment(environment, pipeline):
 
     if context_name not in pipeline.context_definitions:
         avaiable_context_keys = list(pipeline.context_definitions.keys())
-        raise DagsterInvariantViolationError('Context {context_name} not found in '.format(context_name=context_name) + \
-            'pipeline definiton. Available contexts {avaiable_context_keys}'.format(avaiable_context_keys=repr(avaiable_context_keys))
+        raise DagsterInvariantViolationError(
+            'Context {context_name} not found in '.format(context_name=context_name) + \
+            'pipeline definiton. Available contexts {avaiable_context_keys}'.format(
+                avaiable_context_keys=repr(avaiable_context_keys),
+            )
         )
 
 
@@ -196,17 +200,15 @@ def yield_context(pipeline, environment):
     _validate_environment(environment, pipeline)
 
     context_name = environment.context.name
-
     context_definition = pipeline.context_definitions[context_name]
+    config_type = context_definition.config_def.config_type
 
-    args_to_pass = validate_args(
-        pipeline.context_definitions[context_name].argument_def_dict, environment.context.args,
-        'pipeline {pipeline_name} context {context_name}'.format(
-            pipeline_name=pipeline.name,
-            context_name=context_name,
+    evaluation_result = config_type.evaluate_value(environment.context.args)
+    if not evaluation_result.success:
+        raise DagsterTypeError(
+            'Invalid config value: {error_msg}'.format(error_msg=evaluation_result.error_msg)
         )
-    )
-    thing = context_definition.context_fn(pipeline, args_to_pass)
+    thing = context_definition.context_fn(pipeline, evaluation_result.value)
     return _wrap_in_yield(thing)
 
 

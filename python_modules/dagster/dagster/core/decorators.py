@@ -16,6 +16,8 @@ from .definitions import (
     check,
 )
 
+from .types import Any
+
 # Error messages are long
 # pylint: disable=C0301
 
@@ -71,7 +73,7 @@ class _Solid(object):
             self.outputs = check.opt_list_param(outputs, 'outputs', OutputDefinition)
 
         self.description = check.opt_str_param(description, 'description')
-        self.config_def = check.opt_inst_param(config_def, 'config_def', ConfigDefinition({}))
+        self.config_def = check.opt_inst_param(config_def, 'config_def', ConfigDefinition(Any))
 
     def __call__(self, fn):
         expect_context = getattr(fn, 'has_context', False)

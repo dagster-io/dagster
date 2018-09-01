@@ -5,14 +5,12 @@ from dagster.core.execution import execute_pipeline
 from dagster.core.execution_context import ExecutionContext
 
 from dagster.core.definitions import (
-    ArgumentDefinition,
     ConfigDefinition,
     DependencyDefinition,
     ExpectationDefinition,
     ExpectationResult,
+    Field,
     InputDefinition,
-    LibraryDefinition,
-    LibrarySolidDefinition,
     OutputDefinition,
     PipelineContextDefinition,
     PipelineDefinition,
@@ -30,6 +28,7 @@ from dagster.core.decorators import (
 from dagster.core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
+    DagsterTypeError,
 )
 
 import dagster.core.types as types

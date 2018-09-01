@@ -21,9 +21,7 @@ from dagster.core.errors import DagsterUserCodeExecutionError
 
 def silencing_default_context():
     return {
-        'default':
-        PipelineContextDefinition(
-            argument_def_dict={},
+        'default': PipelineContextDefinition(
             context_fn=lambda _pipeline, _args: ExecutionContext(),
         )
     }

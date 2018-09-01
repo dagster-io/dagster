@@ -1,6 +1,14 @@
 import sqlalchemy as sa
-import dagster
-from dagster import (config, InputDefinition, DependencyDefinition)
+
+from dagster import (
+    DependencyDefinition,
+    InputDefinition,
+    PipelineContextDefinition,
+    PipelineDefinition,
+    config,
+    execute_pipeline,
+)
+
 import dagster.sqlalchemy as dagster_sa
 from dagster.utils import script_relative_path
 
@@ -27,15 +35,11 @@ def create_persisted_context():
 
 
 def create_mem_sql_pipeline_context_tuple(solids, dependencies=None):
-    default_def = dagster.PipelineContextDefinition(
-        argument_def_dict={},
-        context_fn=lambda _pipeline, _args: in_mem_context(),
-    )
-    persisted_def = dagster.PipelineContextDefinition(
-        argument_def_dict={},
+    default_def = PipelineContextDefinition(context_fn=lambda _pipeline, _args: in_mem_context(), )
+    persisted_def = PipelineContextDefinition(
         context_fn=lambda _pipeline, _args: create_persisted_context(),
     )
-    return dagster.PipelineDefinition(
+    return PipelineDefinition(
         solids=solids,
         dependencies=dependencies,
         context_definitions={
@@ -58,7 +62,7 @@ def test_sql_create_tables():
 
     pipeline = create_mem_sql_pipeline_context_tuple(solids=[create_all_tables_solids])
 
-    pipeline_result = dagster.execute_pipeline(pipeline, environment=config.Environment.empty())
+    pipeline_result = execute_pipeline(pipeline, environment=config.Environment.empty())
     assert pipeline_result.success
 
     assert set(pipeline_engine(pipeline_result).table_names()) == set(
@@ -82,7 +86,7 @@ def test_sql_populate_tables():
         }
     )
 
-    pipeline_result = dagster.execute_pipeline(pipeline, environment=config.Environment.empty())
+    pipeline_result = execute_pipeline(pipeline, environment=config.Environment.empty())
 
     assert pipeline_result.success
 
@@ -133,7 +137,7 @@ def create_full_pipeline():
 def test_full_in_memory_pipeline():
 
     pipeline = create_full_pipeline()
-    pipeline_result = dagster.execute_pipeline(pipeline, environment=config.Environment.empty())
+    pipeline_result = execute_pipeline(pipeline, environment=config.Environment.empty())
     assert pipeline_result.success
 
     engine = pipeline_engine(pipeline_result)
@@ -144,7 +148,7 @@ def test_full_in_memory_pipeline():
 
 def test_full_persisted_pipeline():
     pipeline = create_full_pipeline()
-    pipeline_result = dagster.execute_pipeline(
+    pipeline_result = execute_pipeline(
         pipeline, environment=config.Environment(context=config.Context(name='persisted', args={}))
     )
 

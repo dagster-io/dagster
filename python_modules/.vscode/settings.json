@@ -8,7 +8,8 @@
     "dagster/dagster/pandas/pandas_tests",
     "dagster/dagster/sqlalchemy/sqlalchemy_tests",
     "dagster/dagster/dagster_examples/dagster_examples_tests",
-    "dagster-ge/dagster_ge_tests"
+    "dagster-ge/dagster_ge_tests",
+    "dagit/dagit_tests"
   ],
   "python.unitTest.pyTestEnabled": true,
   "python.pythonPath": "/Users/schrockn/code/venvs/dagster/bin/python",
@@ -47,7 +48,8 @@
     "**/build": true,
     "**/spark-warehouse": true,
     "**/.ipynb_checkpoints": true,
-    "dist": true
+    "dist": true,
+    "**/.tox": true
   },
   "python.venvPath": "/Users/schrockn/venvs",
   "editor.formatOnSave": true,

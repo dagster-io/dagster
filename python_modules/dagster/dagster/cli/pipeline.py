@@ -129,15 +129,9 @@ def print_context_definition(printer, context_name, context_definition):
 
     print_description(printer, context_definition.description)
 
-    printer.line('Args:')
-
-    with printer.with_indent():
-        for arg_name, arg_def in context_definition.argument_def_dict.items():
-            printer.line('Arg: {name}'.format(name=arg_name))
-            with printer.with_indent():
-                printer.line('Type: {arg_type}'.format(arg_type=arg_def.dagster_type.name))
-
-                print_description(printer, arg_def.description)
+    printer.line(
+        'Type: {config_type}'.format(config_type=context_definition.config_def.config_type.name)
+    )
 
 
 def print_solid(printer, solid):
