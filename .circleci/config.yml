@@ -58,28 +58,28 @@ jobs:
           destination: test-reports
 
   dagster-python-3.5:
-    <<: &dagster-template
+    <<: *dagster-template
     docker:
       - image: circleci/python:3.5.6
     environment:
       TOXENV: py35
 
   dagit-python-3.5:
-    <<: &dagit-template
+    <<: *dagit-template
     docker:
       - image: circleci/python:3.5.6
     environment:
       TOXENV: py35
 
   dagster-python-2.7:
-    <<: &dagster-template
+    <<: *dagster-template
     docker:
       - image: circleci/python:2.7.15
     environment:
       TOXENV: py27
 
   dagit-python-2.7:
-    <<: &dagit-template
+    <<: *dagit-template
     docker:
       - image: circleci/python:2.7.15
     environment:
