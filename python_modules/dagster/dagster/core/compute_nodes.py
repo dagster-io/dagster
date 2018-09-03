@@ -21,8 +21,6 @@ from dagster.utils.logging import (
 
 from dagster.utils.timing import time_execution_scope
 
-from .argument_handling import validate_args
-
 from .definitions import (
     ExecutionGraph,
     ExpectationDefinition,
@@ -38,6 +36,7 @@ from .execution_context import ExecutionContext
 from .errors import (
     DagsterExpectationFailedError,
     DagsterInvariantViolationError,
+    DagsterTypeError,
     DagsterUserCodeExecutionError,
 )
 
@@ -270,12 +269,16 @@ class ComputeNode(object):
 
         node_output = self.node_named(result.output_name)
 
-        if not node_output.dagster_type.is_python_valid_value(result.value):
+        evaluation_result = node_output.dagster_type.evaluate_value(result.value)
+        if not evaluation_result.success:
             raise DagsterInvariantViolationError(
-                '''Solid {cn.solid.name} output {result.value}
-                which does not match the type for Dagster Type
-                {node_output.dagster_type.name}'''
-                .format(cn=self, result=result, node_output=node_output)
+                '''Solid {cn.solid.name} output name {output_name} output {result.value}
+                type failure: {error_msg}'''.format(
+                    cn=self,
+                    result=result,
+                    error_msg=evaluation_result.error_msg,
+                    output_name=result.output_name,
+                )
             )
 
         return ComputeNodeResult.success_result(
@@ -283,7 +286,7 @@ class ComputeNode(object):
             tag=self.tag,
             success_data=ComputeNodeSuccessData(
                 output_name=result.output_name,
-                value=result.value,
+                value=evaluation_result.value,
             ),
         )
 
@@ -523,11 +526,16 @@ def validate_config_dict(execution_info, solid):
     solid_configs = execution_info.environment.solids
     config_dict = solid_configs[name].config_dict if name in solid_configs else {}
 
-    return validate_args(
-        solid.config_def.argument_def_dict,
-        config_dict,
-        'config for solid {solid_name}'.format(solid_name=name),
-    )
+    evaluation_result = solid.config_def.config_type.evaluate_value(config_dict)
+    if evaluation_result.success:
+        return evaluation_result.value
+    else:
+        raise DagsterTypeError(
+            'Error evaluating config for {solid_name}: {error_msg}'.format(
+                solid_name=solid.name,
+                error_msg=evaluation_result.error_msg,
+            )
+        )
 
 
 def create_compute_node_graph(execution_info):

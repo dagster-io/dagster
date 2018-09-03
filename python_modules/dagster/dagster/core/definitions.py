@@ -14,18 +14,17 @@ from dagster.utils.logging import (
     define_colored_console_logger,
 )
 
-from .argument_handling import (
-    validate_args,
-    ArgumentDefinition,
-    ArgumentDefinitionDictionary,
-)
-
 from .errors import (
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
 )
 
 from .execution_context import ExecutionContext
+
+from .types import (
+    DagsterType,
+    Field,
+)
 
 DEFAULT_OUTPUT = 'result'
 
@@ -76,17 +75,15 @@ class PipelineContextDefinition(object):
     @staticmethod
     def passthrough_context_definition(context):
         check.inst_param(context, 'context', ExecutionContext)
-        context_definition = PipelineContextDefinition(
-            argument_def_dict={}, context_fn=lambda _pipeline, _args: context
-        )
+        context_definition = PipelineContextDefinition(context_fn=lambda _pipeline, _args: context)
         return {'default': context_definition}
 
-    def __init__(self, argument_def_dict, context_fn, description=None):
+    def __init__(self, context_fn, config_def=None, description=None):
         '''
         Parameters
         ----------
-        argument_def_dict: str => ArgumentDefinition
-            Define the arguments expected by the context configuration
+        config_def: ConfigDefinition
+            Define the configuration for the context
 
         context_fn: callable (pipeline: PipelineDefinition, args: dict str => Any
             Returns *or* yields an ExecutionContext.
@@ -102,7 +99,12 @@ class PipelineContextDefinition(object):
 
         description: str (optional)
         '''
-        self.argument_def_dict = ArgumentDefinitionDictionary(argument_def_dict)
+        self.config_def = check.opt_inst_param(
+            config_def,
+            'config_def',
+            ConfigDefinition,
+            ConfigDefinition(),
+        )
         self.context_fn = check.callable_param(context_fn, 'context_fn')
         self.description = description
 
@@ -116,10 +118,15 @@ def _default_pipeline_context_definitions():
         return context
 
     default_context_def = PipelineContextDefinition(
-        argument_def_dict={
-            'log_level':
-            ArgumentDefinition(dagster_type=types.String, is_optional=True, default_value='ERROR')
-        },
+        config_def=ConfigDefinition.config_dict(
+            {
+                'log_level': Field(
+                    dagster_type=types.String,
+                    is_optional=True,
+                    default_value='ERROR',
+                )
+            }
+        ),
         context_fn=_default_context_fn,
     )
     return {'default': default_context_def}
@@ -364,7 +371,10 @@ class PipelineDefinition(object):
                         input_def.name for input_def in self._solid_dict[from_solid].input_defs
                     ]
                     raise DagsterInvalidDefinitionError(
-                        'Solid {from_solid} does not have input {from_input}. '.format(from_solid=from_solid, from_input=from_input) + \
+                        'Solid {from_solid} does not have input {from_input}. '.format(
+                            from_solid=from_solid,
+                            from_input=from_input,
+                        ) + \
                         'Input list: {input_list}'.format(input_list=input_list)
                     )
 
@@ -386,12 +396,19 @@ class PipelineDefinition(object):
                 if not dependency_structure.has_dep(solid.input_handle(input_def.name)):
                     if name:
                         raise DagsterInvalidDefinitionError(
-                            'Dependency must be specified for solid {solid.name} input '.format(solid=solid) + \
-                            '{input_def.name} in pipeline {name}'.format(input_def=input_def, name=name)
+                            'Dependency must be specified for solid {solid.name} input '.format(
+                                solid=solid
+                            ) + \
+                            '{input_def.name} in pipeline {name}'.format(
+                                input_def=input_def,
+                                name=name,
+                            )
                         )
                     else:
                         raise DagsterInvalidDefinitionError(
-                            'Dependency must be specified for solid {solid.name} input '.format(solid=solid) + \
+                            'Dependency must be specified for solid {solid.name} input '.format(
+                                solid=solid,
+                             ) + \
                             '{input_def.name}'.format(input_def=input_def)
                         )
 
@@ -535,15 +552,17 @@ class SolidInputHandle(namedtuple('_SolidInputHandle', 'solid input_def')):
             check.inst_param(input_def, 'input_def', InputDefinition),
         )
 
-    def __str__(self):
-        return 'SolidInputHandle(solid="{self.solid.name}", input_name="{self.input_def.name}")'.format(
-            self=self
+    def _inner_str(self):
+        return 'SolidInputHandle(solid="{sn}", input_name="{idn}")'.format(
+            sn=self.solid.name,
+            idn=self.input_def.name,
         )
 
+    def __str__(self):
+        return self._inner_str()
+
     def __repr__(self):
-        return 'SolidInputHandle(solid="{self.solid.name}", input_name="{self.input_def.name}")'.format(
-            self=self
-        )
+        return self._inner_str()
 
     def __hash__(self):
         return hash((self.solid.name, self.input_def.name))
@@ -560,15 +579,17 @@ class SolidOutputHandle(namedtuple('_SolidOutputHandle', 'solid output_def')):
             check.inst_param(output_def, 'output_def', OutputDefinition),
         )
 
-    def __str__(self):
-        return 'SolidOutputHandle(solid="{self.solid.name}", output.name="{self.output_def.name}")'.format(
-            self=self
+    def _inner_str(self):
+        return 'SolidOutputHandle(solid="{sn}", output.name="{on}")'.format(
+            sn=self.solid.name,
+            on=self.output_def.name,
         )
 
+    def __str__(self):
+        return self._inner_str()
+
     def __repr__(self):
-        return 'SolidOutputHandle(solid="{self.solid.name}", output.name="{self.output_def.name}")'.format(
-            self=self
-        )
+        return self._inner_str()
 
     def __hash__(self):
         return hash((self.solid.name, self.output_def.name))
@@ -596,15 +617,18 @@ class Result(namedtuple('_Result', 'value output_name')):
 
 
 class ConfigDefinition(object):
-    '''Solids have config, which determine how they interact with the external world.
-    Example configs would be file paths, database table names, and so forth.
+    @staticmethod
+    def config_dict(field_dict):
+        return ConfigDefinition(types.ConfigDictionary(field_dict))
 
-    Parameters:
-    ----------
-    argument_def_dict: str => ArgumentDefinition'''
+    def __init__(self, config_type=types.Any):
+        '''Solids have config, which determine how they interact with the external world.
+        Example configs would be file paths, database table names, and so forth.
 
-    def __init__(self, argument_def_dict):
-        self.argument_def_dict = ArgumentDefinitionDictionary(argument_def_dict)
+        Parameters:
+        ----------
+        config_type: DagsterType (optional defaults to types.Any)'''
+        self.config_type = check.inst_param(config_type, 'config_type', DagsterType)
 
 
 class SolidDefinition(object):
@@ -633,7 +657,7 @@ class SolidDefinition(object):
             config_def,
             'config_def',
             ConfigDefinition,
-            ConfigDefinition({}),
+            ConfigDefinition(types.Any),
         )
 
         input_handles = {}
@@ -696,37 +720,6 @@ class SolidDefinition(object):
     def output_def_named(self, name):
         check.str_param(name, 'name')
         return self._output_dict[name]
-
-
-class LibrarySolidDefinition(object):
-    def __init__(self, name, argument_def_dict, solid_creation_fn):
-        self.name = check.str_param(name, 'name')
-        self.argument_def_dict = ArgumentDefinitionDictionary(argument_def_dict)
-        self.solid_creation_fn = check.callable_param(solid_creation_fn, 'solid_creation_fn')
-
-    def create_solid(self, name, args):
-        check.str_param(name, 'name')
-        check.dict_param(args, 'args', key_type=str)
-
-        args = validate_args(
-            self.argument_def_dict,
-            args,
-            'Args of library_solid {name} invalid'.format(name=self.name),
-        )
-        solid = self.solid_creation_fn(name, args)
-        return check.inst_param(solid, 'solid', SolidDefinition)
-
-
-class LibraryDefinition(object):
-    def __init__(self, name, library_solids):
-        self.name = check.str_param(name, 'name')
-        self._library_solid_dict = _build_named_dict(
-            check.list_param(
-                library_solids,
-                'library_solids',
-                of_type=LibrarySolidDefinition,
-            )
-        )
 
 
 def _create_adjacency_lists(solids, dep_structure):
@@ -871,10 +864,9 @@ class ExecutionGraph(object):
     def _check_solid_name(self, solid_name):
         check.str_param(solid_name, 'output_name')
         check.param_invariant(
-            solid_name in self._solid_dict,
-            'output_name',
-            'Solid {solid_name} must exist in {list(self._solid_dict.keys())}'.format(
-                solid_name=solid_name
+            solid_name in self._solid_dict, 'output_name',
+            'Solid {solid_name} must exist in {solid_names}'.format(
+                solid_name=solid_name, solid_names=list(self._solid_dict.keys())
             )
         )
 
@@ -971,7 +963,7 @@ def _create_subgraph(execution_graph, from_solids, through_solids):
 
 
 class RepositoryDefinition(object):
-    def __init__(self, name, pipeline_dict, libraries=None):
+    def __init__(self, name, pipeline_dict):
         self.name = check.str_param(name, 'name')
 
         check.dict_param(
@@ -986,18 +978,6 @@ class RepositoryDefinition(object):
         self.pipeline_dict = pipeline_dict
 
         self._pipeline_cache = {}
-
-        self._library_dict = _build_named_dict(
-            check.opt_list_param(
-                libraries,
-                'libraries',
-                of_type=LibraryDefinition,
-            )
-        )
-
-    def get_library(self, name):
-        check.str_param(name, 'name')
-        return self._library_dict[name]
 
     def get_pipeline(self, name):
         if name in self._pipeline_cache:

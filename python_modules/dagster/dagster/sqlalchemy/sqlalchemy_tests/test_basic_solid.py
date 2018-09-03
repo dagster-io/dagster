@@ -24,11 +24,8 @@ def pipeline_test_def(solids, context, dependencies):
     return PipelineDefinition(
         solids=solids,
         context_definitions={
-            'default':
-            PipelineContextDefinition(
-                argument_def_dict={},
-                context_fn=lambda _pipeline, _args: context,
-            ),
+            'default': PipelineContextDefinition(context_fn=lambda _pipeline, _args: context,
+                                                 ),
         },
         dependencies=dependencies,
     )

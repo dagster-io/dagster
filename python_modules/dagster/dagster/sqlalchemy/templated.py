@@ -1,8 +1,8 @@
 import jinja2
 
 from dagster import (
-    ArgumentDefinition,
     ConfigDefinition,
+    Field,
     InputDefinition,
     OutputDefinition,
     Result,
@@ -23,14 +23,14 @@ def create_templated_sql_transform_solid(name, sql, table_arguments, dependant_s
         dependant_solids, 'dependant_solids', of_type=SolidDefinition
     )
 
-    argument_def_dict = {}
+    field_dict = {}
     for table in table_arguments:
-        argument_def_dict[table] = ArgumentDefinition(types.String)
+        field_dict[table] = Field(types.String)
 
     return SolidDefinition(
         name=name,
         inputs=[InputDefinition(solid.name) for solid in dependant_solids],
-        config_def=ConfigDefinition(argument_def_dict),
+        config_def=ConfigDefinition.config_dict(field_dict),
         transform_fn=_create_templated_sql_transform_with_output(sql),
         outputs=[OutputDefinition()],
     )

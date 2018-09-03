@@ -4,8 +4,8 @@ from builtins import *  # pylint: disable=W0622,W0401
 import pandas as pd
 
 from dagster import (
-    ArgumentDefinition,
     ConfigDefinition,
+    Field,
     ExecutionContext,
     InputDefinition,
     OutputDefinition,
@@ -39,8 +39,8 @@ def load_csv_solid(name):
         inputs=[],
         outputs=[OutputDefinition(dagster_type=DataFrame)],
         transform_fn=_t_fn,
-        config_def=ConfigDefinition({
-            'path': ArgumentDefinition(types.Path),
+        config_def=ConfigDefinition.config_dict({
+            'path': Field(types.Path),
         }),
     )
 
@@ -53,8 +53,8 @@ def to_csv_solid(name):
         name=name,
         inputs=[InputDefinition('df', DataFrame)],
         outputs=[],
-        config_def=ConfigDefinition({
-            'path': ArgumentDefinition(types.Path)
+        config_def=ConfigDefinition.config_dict({
+            'path': Field(types.Path)
         }),
         transform_fn=_t_fn,
     )
@@ -68,8 +68,8 @@ def to_parquet_solid(name):
         name=name,
         inputs=[InputDefinition('df', DataFrame)],
         outputs=[],
-        config_def=ConfigDefinition({
-            'path': ArgumentDefinition(types.Path)
+        config_def=ConfigDefinition.config_dict({
+            'path': Field(types.Path)
         }),
         transform_fn=_t_fn,
     )

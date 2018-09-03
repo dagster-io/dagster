@@ -18,7 +18,7 @@ def long_description():
 
 setup(
     name='dagster',
-    version='0.2.0.dev3',
+    version='0.2.0.dev5',
     author='Elementl',
     author_email='schrockn@elementl.com',
     license='Apache-2.0',

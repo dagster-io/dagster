@@ -1,9 +1,9 @@
 import dagster
 
 from dagster import (
-    ArgumentDefinition,
     ConfigDefinition,
     DependencyDefinition,
+    Field,
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
@@ -28,8 +28,8 @@ def define_pass_value_solid(name, description=None):
         description=description,
         inputs=[],
         outputs=[OutputDefinition(dagster_type=types.String)],
-        config_def=ConfigDefinition({
-            'value': ArgumentDefinition(types.String)
+        config_def=ConfigDefinition.config_dict({
+            'value': Field(types.String)
         }),
         transform_fn=_value_t_fn,
     )

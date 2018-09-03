@@ -1,8 +1,9 @@
 import pytest
 
 from dagster import (
-    ArgumentDefinition,
+    ConfigDefinition,
     ExecutionContext,
+    Field,
     OutputDefinition,
     PipelineDefinition,
     PipelineContextDefinition,
@@ -59,31 +60,33 @@ def test_default_context_with_log_level():
 
 
 def test_default_value():
-    def _get_args_test_solid(arg_name, arg_value):
+    def _get_config_test_solid(config_key, config_value):
         @solid(
             inputs=[],
             outputs=[OutputDefinition()],
         )
         @with_context
-        def args_test(context):
-            assert context.resources == {arg_name: arg_value}
+        def config_test(context):
+            assert context.resources == {config_key: config_value}
 
-        return args_test
+        return config_test
 
     pipeline = PipelineDefinition(
-        solids=[_get_args_test_solid('arg_one', 'heyo')],
+        solids=[_get_config_test_solid('field_one', 'heyo')],
         context_definitions={
             'custom_one':
             PipelineContextDefinition(
-                argument_def_dict={
-                    'arg_one':
-                    ArgumentDefinition(
-                        dagster_type=types.String,
-                        is_optional=True,
-                        default_value='heyo',
-                    )
-                },
-                context_fn=lambda _pipeline, args: ExecutionContext(resources=args),
+                config_def=ConfigDefinition.config_dict(
+                    {
+                        'field_one':
+                        Field(
+                            dagster_type=types.String,
+                            is_optional=True,
+                            default_value='heyo',
+                        )
+                    }
+                ),
+                context_fn=lambda _pipeline, config_value: ExecutionContext(resources=config_value),
             ),
         }
     )
@@ -100,32 +103,40 @@ def test_custom_contexts():
     )
     @with_context
     def custom_context_transform(context):
-        assert context.resources == {'arg_one': 'value_two'}
+        assert context.resources == {'field_one': 'value_two'}
 
     pipeline = PipelineDefinition(
         solids=[custom_context_transform],
         context_definitions={
             'custom_one':
             PipelineContextDefinition(
-                argument_def_dict={'arg_one': ArgumentDefinition(dagster_type=types.String)},
-                context_fn=lambda _pipeline, args: ExecutionContext(resources=args),
+                config_def=ConfigDefinition.config_dict(
+                    {
+                        'field_one': Field(dagster_type=types.String)
+                    }
+                ),
+                context_fn=lambda _pipeline, config_value: ExecutionContext(resources=config_value),
             ),
             'custom_two':
             PipelineContextDefinition(
-                argument_def_dict={'arg_one': ArgumentDefinition(dagster_type=types.String)},
-                context_fn=lambda _pipeline, args: ExecutionContext(resources=args),
+                config_def=ConfigDefinition.config_dict(
+                    {
+                        'field_one': Field(dagster_type=types.String)
+                    }
+                ),
+                context_fn=lambda _pipeline, config_value: ExecutionContext(resources=config_value),
             )
         },
     )
 
     environment_one = config.Environment(
-        context=config.Context('custom_one', {'arg_one': 'value_two'})
+        context=config.Context('custom_one', {'field_one': 'value_two'})
     )
 
     execute_pipeline(pipeline, environment=environment_one)
 
     environment_two = config.Environment(
-        context=config.Context('custom_two', {'arg_one': 'value_two'})
+        context=config.Context('custom_two', {'field_one': 'value_two'})
     )
 
     execute_pipeline(pipeline, environment=environment_two)
@@ -140,13 +151,13 @@ def test_yield_context():
     )
     @with_context
     def custom_context_transform(context):
-        assert context.resources == {'arg_one': 'value_two'}
+        assert context.resources == {'field_one': 'value_two'}
         assert context._context_dict['foo'] == 'bar'  # pylint: disable=W0212
         events.append('during')
 
-    def _yield_context(_pipeline, args):
+    def _yield_context(_pipeline, config_value):
         events.append('before')
-        context = ExecutionContext(resources=args)
+        context = ExecutionContext(resources=config_value)
         with context.value('foo', 'bar'):
             yield context
         events.append('after')
@@ -156,14 +167,18 @@ def test_yield_context():
         context_definitions={
             'custom_one':
             PipelineContextDefinition(
-                argument_def_dict={'arg_one': ArgumentDefinition(dagster_type=types.String)},
+                config_def=ConfigDefinition.config_dict(
+                    {
+                        'field_one': Field(dagster_type=types.String)
+                    }
+                ),
                 context_fn=_yield_context,
             ),
         }
     )
 
     environment_one = config.Environment(
-        context=config.Context('custom_one', {'arg_one': 'value_two'})
+        context=config.Context('custom_one', {'field_one': 'value_two'})
     )
 
     execute_pipeline(pipeline, environment=environment_one)
@@ -192,14 +207,14 @@ def test_invalid_context():
             throw_on_error=True
         )
 
-    environment_arg_name_mismatch = config.Environment(
+    environment_field_name_mismatch = config.Environment(
         context=config.Context('default', {'unexpected': 'value'})
     )
 
     with pytest.raises(DagsterTypeError, message='Argument mismatch in context default'):
         execute_pipeline(
             default_context_pipeline,
-            environment=environment_arg_name_mismatch,
+            environment=environment_field_name_mismatch,
             throw_on_error=True
         )
 
@@ -208,23 +223,27 @@ def test_invalid_context():
         context_definitions={
             'default':
             PipelineContextDefinition(
-                argument_def_dict={'string_arg': ArgumentDefinition(types.String)},
-                context_fn=lambda _pipeline, _args: _args
+                config_def=ConfigDefinition.config_dict(
+                    {
+                        'string_field': Field(types.String)
+                    }
+                ),
+                context_fn=lambda _pipeline, _config_value: _config_value
             )
         }
     )
 
-    environment_no_args_error = config.Environment(context=config.Context('default', {}))
+    environment_no_config_error = config.Environment(context=config.Context('default', {}))
 
     with pytest.raises(DagsterTypeError, message='Argument mismatch in context default'):
         execute_pipeline(
             with_argful_context_pipeline,
-            environment=environment_no_args_error,
+            environment=environment_no_config_error,
             throw_on_error=True
         )
 
     environment_type_mismatch_error = config.Environment(
-        context=config.Context('default', {'string_arg': 1})
+        context=config.Context('default', {'string_field': 1})
     )
 
     with pytest.raises(DagsterTypeError, message='Argument mismatch in context default'):
