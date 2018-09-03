@@ -22,7 +22,7 @@ jobs:
       - run:
           name: Install Dependencies
           command: |
-            pip install tox
+            sudo pip install tox
 
       - run:
           name: Run Dagster Tests
