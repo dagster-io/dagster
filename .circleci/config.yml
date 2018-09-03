@@ -22,21 +22,17 @@ jobs:
       - run:
           name: Install Dependencies
           command: |
-            python3 -m venv venv
-            . venv/bin/activate
             pip install tox
 
       - run:
           name: Run Dagster Tests
           command: |
-            . venv/bin/activate
             cd python_modules/dagster
             tox -e $TOXENV
 
       - run:
           name: Run Dagit Tests
           command: |
-            . venv/bin/activate
             cd python_modules/dagit
             tox -e $TOXENV
 
