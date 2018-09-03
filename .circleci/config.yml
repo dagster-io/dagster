@@ -3,7 +3,7 @@ jobs:
   build:
     docker:
       - image: circleci/python:3.6.6
-      - image: circleci/python:2.7.15
+      - image: circleci/buildpack-deps:18.10
 
     working_directory: ~/repo
 
