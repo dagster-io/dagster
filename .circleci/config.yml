@@ -1,10 +1,19 @@
 version: 2
+
+workflows:
+  version: 2
+  test:
+    jobs:
+      - test-3.6
+      - test-3.5
+      - test-2.7
+
 jobs:
-  build:
+  test-3.6: &test-template
     docker:
       - image: circleci/python:3.6.6
-      - image: circleci/buildpack-deps:18.10
-
+    environment:
+      TOXENV: py36
     working_directory: ~/repo
 
     steps:
@@ -22,15 +31,29 @@ jobs:
           command: |
             . venv/bin/activate
             cd python_modules/dagster
-            tox
+            tox -e $TOXENV
 
       - run:
           name: Run Dagit Tests
           command: |
             . venv/bin/activate
             cd python_modules/dagit
-            tox
+            tox -e $TOXENV
 
       - store_artifacts:
           path: test-reports
           destination: test-reports
+
+
+  test-3.5:
+    <<: *test-template
+    docker:
+      - image: circleci/python:3.5.6
+    environment:
+      TOXENV: py35
+  test-2.7:
+    <<: *test-template
+    docker:
+      - image: circleci/python:2.7.15
+    environment:
+      TOXENV: py27
