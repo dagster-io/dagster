@@ -20,6 +20,6 @@ def test_smoke_app():
 
     result = client.post('/graphql', data={'query': 'query { pipelines { name }}'})
 
-    data = json.loads(str(result.data))
+    data = json.loads(result.data.decode('utf-8'))
 
     assert data == {"data": {"pipelines": [{"name": "pandas_hello_world"}]}}
