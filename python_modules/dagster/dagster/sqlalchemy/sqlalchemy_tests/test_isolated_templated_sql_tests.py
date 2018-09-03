@@ -18,7 +18,9 @@ from .math_test_db import in_mem_context
 
 
 def _load_table(context, table_name):
-    return context.resources.sa.engine.connect().execute(f'SELECT * FROM {table_name}').fetchall()
+    return context.resources.sa.engine.connect().execute(
+        'SELECT * FROM {table_name}'.format(table_name=table_name)
+    ).fetchall()
 
 
 def table_name_source(table_name):

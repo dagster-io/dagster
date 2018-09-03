@@ -6,7 +6,7 @@ import dagster.sqlalchemy as dagster_sa
 # pylint: disable=W0221, W0223
 class MockEngine(sqlalchemy.engine.Engine):
     def __init__(self):
-        super().__init__(None, None, None)
+        super(MockEngine, self).__init__(None, None, None)
 
     def connect(self):
         raise Exception('should not call')

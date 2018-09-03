@@ -8,7 +8,7 @@ def test_desc():
 
 
 def test_python_object_type():
-    class Bar:
+    class Bar(object):
         pass
 
     type_bar = PythonObjectType('Bar', Bar, description='A bar.')

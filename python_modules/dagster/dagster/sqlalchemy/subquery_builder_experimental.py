@@ -13,7 +13,7 @@ from dagster import (
 from dagster.sqlalchemy import execute_sql_text_on_context
 
 
-class DagsterSqlExpression:
+class DagsterSqlExpression(object):
     @property
     def from_target(self):
         check.not_implemented('must implemented in subclass')
@@ -21,7 +21,7 @@ class DagsterSqlExpression:
 
 class DagsterSqlQueryExpression(DagsterSqlExpression):
     def __init__(self, subquery_text):
-        super().__init__()
+        super(DagsterSqlQueryExpression, self).__init__()
         self._subquery_text = check.str_param(subquery_text, 'subquery_text')
 
     @property
@@ -30,12 +30,12 @@ class DagsterSqlQueryExpression(DagsterSqlExpression):
 
     @property
     def from_target(self):
-        return f'({self._subquery_text})'
+        return '({subquery_text})'.format(subquery_text=self._subquery_text)
 
 
 class DagsterSqlTableExpression(DagsterSqlExpression):
     def __init__(self, table_name):
-        super().__init__()
+        super(DagsterSqlTableExpression, self).__init__()
         self._table_name = check.str_param(table_name, 'table_name')
 
     @property

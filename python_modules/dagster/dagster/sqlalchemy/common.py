@@ -4,13 +4,13 @@ from dagster import check
 from dagster.core.execution import ExecutionContext
 
 
-class SqlAlchemyResource:
+class SqlAlchemyResource(object):
     def __init__(self, engine, mock_sql=False):
         self.engine = check.inst_param(engine, 'engine', sqlalchemy.engine.Engine)
         self.mock_sql = check.bool_param(mock_sql, 'mock_sql')
 
 
-class DefaultSqlAlchemyResources:
+class DefaultSqlAlchemyResources(object):
     def __init__(self, sa):
         self.sa = check.inst_param(sa, 'sa', SqlAlchemyResource)
 

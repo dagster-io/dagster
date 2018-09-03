@@ -38,7 +38,9 @@ class StructuredArguments(_StructuredArguments):
 
         value = self._for_name(name, key)
         if value is None:
-            raise StructuredArgumentsError(f'Could not find name {name} key {key}')
+            raise StructuredArgumentsError(
+                'Could not find name {name} key {key}'.format(name=name, key=key)
+            )
         return value
 
 
@@ -91,10 +93,14 @@ def structure_flags(inputs):
                 raise StructuredArgumentsError('Single arg must be alone')
 
             if arg.name in named_argument_set:
-                raise StructuredArgumentsError(f'Cannot specify name twice: {arg.name}')
+                raise StructuredArgumentsError(
+                    'Cannot specify name twice: {arg.name}'.format(arg=arg)
+                )
 
             if arg.name in named_argument_key_dict:
-                raise StructuredArgumentsError(f'Cannot specify name and keyed value: {arg.name}')
+                raise StructuredArgumentsError(
+                    'Cannot specify name and keyed value: {arg.name}'.format(arg=arg)
+                )
 
             named_arguments.append(arg)
             named_argument_set.add(arg.name)
@@ -103,18 +109,19 @@ def structure_flags(inputs):
                 raise StructuredArgumentsError('Single arg must be alone')
 
             if arg.name in named_argument_set:
-                raise StructuredArgumentsError(f'Cannot specify name twice: {arg.name}')
+                raise StructuredArgumentsError(
+                    'Cannot specify name twice: {arg.name}'.format(arg=arg)
+                )
 
             if arg.key in named_argument_key_dict[arg.name]:
                 raise StructuredArgumentsError(
-                    f'Cannot specify key ({arg.key}) in name ({arg.name}) twice'
+                    'Cannot specify key ({arg.key}) in name ({arg.name}) twice'.format(arg=arg)
                 )
 
             named_key_arguments.append(arg)
             named_argument_key_dict[arg.name].add(arg.key)
         else:
-            check.failed(f'Not supported type: {type(arg)}')
-
+            check.failed('Not supported type: {type}'.format(type=type(arg)))
     return StructuredArguments(
         single_argument=single_argument,
         named_arguments=named_arguments,

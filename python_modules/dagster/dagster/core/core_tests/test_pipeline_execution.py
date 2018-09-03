@@ -45,7 +45,10 @@ def make_transform(name):
                     seen.add(key)
                     passed_rows.append(item)
 
-        return [*passed_rows, {name: 'transform_called'}]
+        result = []
+        result.extend(passed_rows)
+        result.append({name: 'transform_called'})
+        return result
 
     return transform
 

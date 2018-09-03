@@ -10,7 +10,7 @@ from .types import DagsterType
 # 3) make type checks throughout execution cheaper
 class ArgumentDefinitionDictionary(dict):
     def __init__(self, ddict):
-        super().__init__(
+        super(ArgumentDefinitionDictionary, self).__init__(
             check.dict_param(ddict, 'ddict', key_type=str, value_type=ArgumentDefinition)
         )
 
@@ -18,14 +18,14 @@ class ArgumentDefinitionDictionary(dict):
         check.failed('This dictionary is readonly')
 
 
-class __ArgumentValueSentinel:
+class __ArgumentValueSentinel(object):
     pass
 
 
 NO_DEFAULT_PROVIDED = __ArgumentValueSentinel
 
 
-class ArgumentDefinition:
+class ArgumentDefinition(object):
     def __init__(
         self, dagster_type, default_value=NO_DEFAULT_PROVIDED, is_optional=False, description=None
     ):

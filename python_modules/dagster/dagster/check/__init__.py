@@ -222,6 +222,10 @@ def opt_tuple_param(obj, param_name, default=None):
 
 def _check_list_items(obj_list, of_type):
     for obj in obj_list:
+
+        if of_type is str:
+            key_type = string_types
+
         if not isinstance(obj, of_type):
             raise_with_traceback(
                 CheckError(
@@ -262,6 +266,12 @@ def type_param(obj, param_name):
 
 
 def _check_key_value_types(obj, key_type, value_type):
+    if key_type is str:
+        key_type = string_types
+
+    if value_type is str:
+        value_type = string_types
+
     for key, value in obj.items():
         if key_type and not isinstance(key, key_type):
             raise_with_traceback(

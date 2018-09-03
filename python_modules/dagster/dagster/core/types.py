@@ -3,7 +3,7 @@ from six import (string_types, integer_types)
 from dagster import check
 
 
-class DagsterType:
+class DagsterType(object):
     def __init__(self, name, description=None):
         self.name = check.str_param(name, 'name')
         self.description = check.opt_str_param(description, 'description')
@@ -14,12 +14,12 @@ class DagsterType:
 
 class DagsterScalarType(DagsterType):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super(DagsterScalarType, self).__init__(*args, **kwargs)
 
 
 class _DagsterAnyType(DagsterType):
     def __init__(self):
-        super().__init__(
+        super(_DagsterAnyType, self).__init__(
             name='Any', description='The type that allows any value, including no value.'
         )
 
@@ -38,7 +38,7 @@ class PythonObjectType(DagsterType):
         python_type,
         description=None,
     ):
-        super().__init__(name, description)
+        super(PythonObjectType, self).__init__(name, description)
         self.python_type = check.type_param(python_type, 'python_type')
 
     def is_python_valid_value(self, value):
@@ -52,7 +52,7 @@ class _DagsterStringType(DagsterScalarType):
 
 class _DagsterIntType(DagsterScalarType):
     def __init__(self):
-        super().__init__('Int', description='An integer.')
+        super(_DagsterIntType, self).__init__('Int', description='An integer.')
 
     def is_python_valid_value(self, value):
         return _nullable_isinstance(value, integer_types)
@@ -60,7 +60,7 @@ class _DagsterIntType(DagsterScalarType):
 
 class _DagsterBoolType(DagsterScalarType):
     def __init__(self):
-        super().__init__('Bool', description='A boolean.')
+        super(_DagsterBoolType, self).__init__('Bool', description='A boolean.')
 
     def is_python_valid_value(self, value):
         return _nullable_isinstance(value, bool)

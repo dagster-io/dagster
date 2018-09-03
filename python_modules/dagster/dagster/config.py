@@ -22,7 +22,7 @@ class Solid(namedtuple('Solid', 'config_dict')):
 
 
 class Environment(namedtuple('EnvironmentData', 'context solids expectations')):
-    def __new__(cls, *, solids=None, context=None, expectations=None):
+    def __new__(cls, solids=None, context=None, expectations=None):
         check.opt_inst_param(context, 'context', Context)
 
         if context is None:

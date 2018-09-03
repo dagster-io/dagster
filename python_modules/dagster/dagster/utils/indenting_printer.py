@@ -1,9 +1,10 @@
+from __future__ import print_function
 from contextlib import contextmanager
 
 from dagster import check
 
 
-class IndentingPrinter:
+class IndentingPrinter(object):
     def __init__(self, indent_level=2, printer=print):
         self.lines = []
         self.current_indent = 0

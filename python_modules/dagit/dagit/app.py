@@ -13,7 +13,7 @@ from dagster.cli.repository_config import (
 from .schema import create_schema
 
 
-class RepositoryContainer:
+class RepositoryContainer(object):
     '''
     This class solely exists to implement reloading semantics. We need to have a single object
     that the graphql server has access that stays the same object between reload. This container

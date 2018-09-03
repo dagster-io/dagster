@@ -9,7 +9,7 @@ from dagster import (
 
 
 def _get_sql_script_path(name):
-    return os.path.join(os.path.dirname(__file__), 'sql_files', f'{name}.sql')
+    return os.path.join(os.path.dirname(__file__), 'sql_files', '{name}.sql'.format(name=name))
 
 
 def _get_project_solid(name, inputs=None):

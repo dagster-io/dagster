@@ -1,3 +1,4 @@
+from __future__ import print_function
 from collections import (namedtuple, defaultdict)
 from contextlib import contextmanager
 from enum import Enum
@@ -71,8 +72,8 @@ class ComputeNodeOutputHandle(namedtuple('_ComputeNodeOutputHandle', 'compute_no
 
     def __str__(self):
         return (
-            f'ComputeNodeOutputHandle'
-            f'(guid="{self.compute_node.guid}", output_name="{self.output_name}")'
+            'ComputeNodeOutputHandle'
+            '(guid="{cn.compute_node.guid}", output_name="{cn.output_name}")'.format(cn=self)
         )
 
     def __hash__(self):
@@ -215,7 +216,7 @@ def _execute_core_transform(context, compute_node, values_dict, config_dict):
     context.metric('core_transform_time_ms', timer_result.millis)
 
 
-class ComputeNodeInput:
+class ComputeNodeInput(object):
     def __init__(self, name, dagster_type, prev_output_handle):
         self.name = check.str_param(name, 'name')
         self.dagster_type = check.inst_param(dagster_type, 'dagster_type', DagsterType)
@@ -226,13 +227,13 @@ class ComputeNodeInput:
         )
 
 
-class ComputeNodeOutput:
+class ComputeNodeOutput(object):
     def __init__(self, name, dagster_type):
         self.name = check.str_param(name, 'name')
         self.dagster_type = check.inst_param(dagster_type, 'dagster_type', DagsterType)
 
 
-class ComputeNode:
+class ComputeNode(object):
     def __init__(self, friendly_name, node_inputs, node_outputs, arg_dict, compute_fn, tag, solid):
         self.guid = str(uuid.uuid4())
         self.friendly_name = check.str_param(friendly_name, 'friendly_name')
@@ -271,9 +272,10 @@ class ComputeNode:
 
         if not node_output.dagster_type.is_python_valid_value(result.value):
             raise DagsterInvariantViolationError(
-                f'''Solid {self.solid.name} output {result.value}
+                '''Solid {cn.solid.name} output {result.value}
                 which does not match the type for Dagster Type
                 {node_output.dagster_type.name}'''
+                .format(cn=self, result=result, node_output=node_output)
             )
 
         return ComputeNodeResult.success_result(
@@ -289,16 +291,22 @@ class ComputeNode:
         check.inst_param(context, 'context', ExecutionContext)
         check.dict_param(inputs, 'inputs', key_type=str)
 
-        logger.debug(f'Entering execution for {self.friendly_name}')
+        logger.debug('Entering execution for {self.friendly_name}'.format(self=self))
 
         # do runtime type checks of inputs versus node inputs
         for input_name, input_value in inputs.items():
             compute_node_input = self._node_input_dict[input_name]
             if not compute_node_input.dagster_type.is_python_valid_value(input_value):
                 raise DagsterInvariantViolationError(
-                    f'''Solid {self.solid.name} input {input_name}
+                    '''Solid {cn.solid.name} input {input_name}
                    received value {input_value} which does not match the type for Dagster type
-                   {compute_node_input.dagster_type.name}. Compute node {self.friendly_name}'''
+                   {compute_node_input.dagster_type.name}. Compute node {cn.friendly_name}'''
+                    .format(
+                        cn=self,
+                        input_name=input_name,
+                        input_value=input_value,
+                        compute_node_input=compute_node_input
+                    )
                 )
 
         error_str = 'TODO error string'
@@ -320,15 +328,16 @@ class ComputeNode:
                 if not self.has_node(result.output_name):
                     output_names = list([output_def.name for output_def in self.solid.output_defs])
                     raise DagsterInvariantViolationError(
-                        f'''Core transform for {self.solid.name} returned an output
+                        '''Core transform for {cn.solid.name} returned an output
                         {result.output_name} that does not exist. The available
                         outputs are {output_names}'''
+                        .format(cn=self, result=result, output_names=output_names)
                     )
 
                 if result.output_name in seen_outputs:
                     raise DagsterInvariantViolationError(
-                        f'''Core transform for {self.solid.name} returned an output
-                        {result.output_name} multiple times'''
+                        '''Core transform for {cn.solid.name} returned an output
+                        {result.output_name} multiple times'''.format(cn=self, result=result)
                     )
 
                 seen_outputs.add(result.output_name)
@@ -352,7 +361,7 @@ class ComputeNode:
             if node_output.name == name:
                 return node_output
 
-        check.failed(f'output {name} not found')
+        check.failed('output {name} not found'.format(name=name))
 
 
 def _all_inputs_covered(cn, results):
@@ -389,17 +398,25 @@ def print_graph(graph, printer=print):
     printer = IndentingPrinter(printer=printer)
 
     for node in graph.topological_nodes():
-        with printer.with_indent(f'Node {node.friendly_name} Id: {node.guid}'):
+        with printer.with_indent('Node {node.friendly_name} Id: {node.guid}'.format(node=node)):
             for node_input in node.node_inputs:
-                with printer.with_indent(f'Input: {node_input.name}'):
-                    printer.line(f'Type: {node_input.dagster_type.name}')
-                    printer.line(f'From: {node_input.prev_output_handle}')
+                with printer.with_indent('Input: {node_input.name}'.format(node_input=node_input)):
+                    printer.line(
+                        'Type: {node_input.dagster_type.name}'.format(node_input=node_input)
+                    )
+                    printer.line(
+                        'From: {node_input.prev_output_handle}'.format(node_input=node_input)
+                    )
             for node_output in node.node_outputs:
-                with printer.with_indent(f'Output: {node_output.name}'):
-                    printer.line(f'Type: {node_output.dagster_type.name}')
+                with printer.with_indent(
+                    'Output: {node_output.name}'.format(node_output=node_output)
+                ):
+                    printer.line(
+                        'Type: {node_output.dagster_type.name}'.format(node_output=node_output)
+                    )
 
 
-class ComputeNodeGraph:
+class ComputeNodeGraph(object):
     def __init__(self, cn_dict, deps):
         self.cn_dict = cn_dict
         self.deps = deps
@@ -468,7 +485,9 @@ def create_expectations_cn_graph(solid, inout_def, prev_node_output_handle, tag)
         expect_compute_node = create_expectation_cn(
             solid=solid,
             expectation_def=expectation_def,
-            friendly_name=f'{solid.name}.{inout_def.name}.expectation.{expectation_def.name}',
+            friendly_name='{solid.name}.{inout_def.name}.expectation.{expectation_def.name}'.format(
+                solid=solid, inout_def=inout_def, expectation_def=expectation_def
+            ),
             tag=tag,
             prev_node_output_handle=prev_node_output_handle,
             inout_def=inout_def,
@@ -530,7 +549,9 @@ def create_compute_node_graph(execution_info):
 
             check.invariant(
                 dependency_structure.has_dep(input_handle),
-                f'{input_handle} not found in dependency structure',
+                '{input_handle} not found in dependency structure'.format(
+                    input_handle=input_handle
+                ),
             )
 
             solid_output_handle = dependency_structure.get_dep(input_handle)
@@ -700,7 +721,7 @@ def create_compute_node_from_solid_transform(solid, node_inputs, config_args):
     check.dict_param(config_args, 'config_args', key_type=str)
 
     return ComputeNode(
-        friendly_name=f'{solid.name}.transform',
+        friendly_name='{solid.name}.transform'.format(solid=solid),
         node_inputs=node_inputs,
         node_outputs=[
             ComputeNodeOutput(name=output_def.name, dagster_type=output_def.dagster_type)
