@@ -4,12 +4,15 @@ workflows:
   version: 2
   test:
     jobs:
-      - test-3.6
-      - test-3.5
-      - test-2.7
+      - dagster-python-3.6
+      - dagster-python-3.5
+      - dagster-python-2.7
+      - dagit-python-3.6
+      - dagit-python-3.5
+      - dagit-python-2.7
 
 jobs:
-  test-3.6: &test-template
+  dagster-python-3.6: &dagster-template
     docker:
       - image: circleci/python:3.6.6
     environment:
@@ -30,6 +33,20 @@ jobs:
             cd python_modules/dagster
             tox -e $TOXENV
 
+      - store_artifacts:
+          path: test-reports
+          destination: test-reports
+
+  dagit-python-3.6: &dagit-template
+    <<: *dagster-template
+    steps:
+      - checkout
+
+      - run:
+          name: Install Dependencies
+          command: |
+            sudo pip install tox
+
       - run:
           name: Run Dagit Tests
           command: |
@@ -40,15 +57,29 @@ jobs:
           path: test-reports
           destination: test-reports
 
-
-  test-3.5:
-    <<: *test-template
+  dagster-python-3.5:
+    <<: &dagster-template
     docker:
       - image: circleci/python:3.5.6
     environment:
       TOXENV: py35
-  test-2.7:
-    <<: *test-template
+
+  dagit-python-3.5:
+    <<: &dagit-template
+    docker:
+      - image: circleci/python:3.5.6
+    environment:
+      TOXENV: py35
+
+  dagster-python-2.7:
+    <<: &dagster-template
+    docker:
+      - image: circleci/python:2.7.15
+    environment:
+      TOXENV: py27
+
+  dagit-python-2.7:
+    <<: &dagit-template
     docker:
       - image: circleci/python:2.7.15
     environment:
