@@ -39,10 +39,10 @@ def test_list_param():
 
 
 def test_typed_list_param():
-    class Foo:
+    class Foo(object):
         pass
 
-    class Bar:
+    class Bar(object):
         pass
 
     assert check.list_param([], 'list_param', Foo) == []
@@ -73,10 +73,10 @@ def test_opt_list_param():
 
 
 def test_opt_typed_list_param():
-    class Foo:
+    class Foo(object):
         pass
 
-    class Bar:
+    class Bar(object):
         pass
 
     assert check.opt_list_param(None, 'list_param', Foo) == []
@@ -127,7 +127,7 @@ def test_dict_param_with_type():
     assert check.dict_param({}, 'str_to_int', key_type=str) == {}
     assert check.dict_param({}, 'str_to_int') == {}
 
-    class Wrong:
+    class Wrong(object):
         pass
 
     with pytest.raises(CheckError):
@@ -163,7 +163,7 @@ def test_opt_dict_param_with_type():
     assert check.opt_dict_param(None, 'str_to_int', key_type=str) == {}
     assert check.opt_dict_param(None, 'str_to_int') == {}
 
-    class Wrong:
+    class Wrong(object):
         pass
 
     with pytest.raises(CheckError):
@@ -375,10 +375,10 @@ def test_not_implemented():
 
 
 def test_inst():
-    class Foo:
+    class Foo(object):
         pass
 
-    class Bar:
+    class Bar(object):
         pass
 
     obj = Foo()
@@ -390,10 +390,10 @@ def test_inst():
 
 
 def test_inst_param():
-    class Foo:
+    class Foo(object):
         pass
 
-    class Bar:
+    class Bar(object):
         pass
 
     obj = Foo()
@@ -408,10 +408,10 @@ def test_inst_param():
 
 
 def test_opt_inst_param():
-    class Foo:
+    class Foo(object):
         pass
 
-    class Bar:
+    class Bar(object):
         pass
 
     obj = Foo()
@@ -535,7 +535,7 @@ def test_opt_tuple_param():
 
 
 def test_type_param():
-    class Bar:
+    class Bar(object):
         pass
 
     assert check.type_param(int, 'foo')

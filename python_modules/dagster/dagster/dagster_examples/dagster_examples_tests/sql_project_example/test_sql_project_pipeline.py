@@ -22,7 +22,7 @@ def pipeline_engine(pipeline_result):
 
 def create_persisted_context():
     full_path = script_relative_path('testdb.db')
-    engine = sa.create_engine(f'sqlite:///{full_path}', echo=False)
+    engine = sa.create_engine('sqlite:///{full_path}'.format(full_path=full_path), echo=False)
     return dagster_sa.create_sql_alchemy_context_from_engine(engine=engine)
 
 
@@ -46,7 +46,7 @@ def create_mem_sql_pipeline_context_tuple(solids, dependencies=None):
 
 
 def _get_sql_script_path(name):
-    return script_relative_path(f'../../sql_project_example/sql_files/{name}.sql')
+    return script_relative_path('../../sql_project_example/sql_files/{name}.sql'.format(name=name))
 
 
 def _get_project_solid(name, inputs=None):

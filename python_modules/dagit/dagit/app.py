@@ -1,5 +1,8 @@
 import os
-from graphql.execution.executors.asyncio import AsyncioExecutor
+try:
+    from graphql.execution.executors.asyncio import AsyncioExecutor as Executor
+except ImportError:
+    from graphql.execution.executors.thread import ThreadExecutor as Executor
 from flask import Flask, send_file, send_from_directory
 from flask_graphql import GraphQLView
 from flask_cors import CORS
@@ -13,7 +16,7 @@ from dagster.cli.repository_config import (
 from .schema import create_schema
 
 
-class RepositoryContainer:
+class RepositoryContainer(object):
     '''
     This class solely exists to implement reloading semantics. We need to have a single object
     that the graphql server has access that stays the same object between reload. This container
@@ -64,7 +67,7 @@ def create_app(repository_container):
             'graphql',
             schema=schema,
             graphiql=True,
-            executor=AsyncioExecutor(),
+            executor=Executor(),
             repository_container=repository_container,
         )
     )

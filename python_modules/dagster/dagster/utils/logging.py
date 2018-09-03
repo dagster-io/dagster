@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import copy
 import json
 import logging
@@ -24,7 +25,7 @@ def level_from_string(string):
     return LOOKUP[string]
 
 
-class CompositeLogger:
+class CompositeLogger(object):
     def __init__(self, loggers=None):
         self.loggers = check.opt_list_param(loggers, 'loggers', of_type=logging.Logger)
 
@@ -39,7 +40,7 @@ class CompositeLogger:
 
 class JsonFileHandler(logging.Handler):
     def __init__(self, json_path):
-        super().__init__()
+        super(JsonFileHandler, self).__init__()
         self.json_path = check.str_param(json_path, 'json_path')
 
     def emit(self, record):
@@ -60,7 +61,7 @@ def define_json_file_logger(name, json_path, level):
     check.param_invariant(
         level in VALID_LEVELS,
         'level',
-        f'Must be valid python logging level. Got {level}',
+        'Must be valid python logging level. Got {level}'.format(level=level),
     )
 
     klass = logging.getLoggerClass()
@@ -76,7 +77,7 @@ def define_colored_console_logger(name, level=INFO):
     check.param_invariant(
         level in VALID_LEVELS,
         'level',
-        f'Must be valid python logging level. Got {level}',
+        'Must be valid python logging level. Got {level}'.format(level=level),
     )
 
     klass = logging.getLoggerClass()
@@ -105,4 +106,9 @@ def define_debug_formatter():
 
 def get_formatted_stack_trace(exception):
     check.inst_param(exception, 'exception', Exception)
-    return ''.join(traceback.format_tb(exception.__traceback__))
+    if hasattr(exception, '__traceback__'):
+        tb = exception.__traceback__
+    else:
+        import sys
+        exc_type, exc_value, tb = sys.exc_info()
+    return ''.join(traceback.format_tb(tb))

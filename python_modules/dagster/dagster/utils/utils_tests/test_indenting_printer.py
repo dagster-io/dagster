@@ -11,7 +11,7 @@ class CollectingIndentingPrinter(IndentingPrinter):
             if str is not None:
                 self.lines.append(text)
 
-        super().__init__(printer=_add_line, *args, **kwargs)
+        super(CollectingIndentingPrinter, self).__init__(printer=_add_line, *args, **kwargs)
 
     def result(self):
         return '\n'.join(self.lines)

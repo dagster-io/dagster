@@ -47,7 +47,7 @@ from .compute_nodes import (
 from .execution_context import ExecutionContext
 
 
-class PipelineExecutionResult:
+class PipelineExecutionResult(object):
     def __init__(
         self,
         context,
@@ -72,8 +72,8 @@ class PipelineExecutionResult:
         )
 
 
-class SolidExecutionResult:
-    def __init__(self, *, context, solid, input_expectations, transforms, output_expectations):
+class SolidExecutionResult(object):
+    def __init__(self, context, solid, input_expectations, transforms, output_expectations):
         self.context = check.inst_param(context, 'context', ExecutionContext)
         self.solid = check.inst_param(solid, 'solid', SolidDefinition)
         self.input_expectations = check.list_param(
@@ -136,7 +136,8 @@ class SolidExecutionResult:
                 if result.success_data.output_name == output_name:
                     return result.success_data.value
             check.failed(
-                f'Did not find result {output_name} in solid {self.solid.name} execution result'
+                'Did not find result {output_name} in solid {self.solid.name} execution result'.
+                format(output_name=output_name, self=self)
             )
         else:
             return None
@@ -182,8 +183,8 @@ def _validate_environment(environment, pipeline):
 
     if context_name not in pipeline.context_definitions:
         avaiable_context_keys = list(pipeline.context_definitions.keys())
-        raise DagsterInvariantViolationError(f'Context {context_name} not found in ' + \
-            f'pipeline definiton. Available contexts {repr(avaiable_context_keys)}'
+        raise DagsterInvariantViolationError('Context {context_name} not found in '.format(context_name=context_name) + \
+            'pipeline definiton. Available contexts {avaiable_context_keys}'.format(avaiable_context_keys=repr(avaiable_context_keys))
         )
 
 
@@ -260,7 +261,6 @@ def _execute_graph_iterator(context, execution_graph, environment):
 def execute_pipeline(
     pipeline,
     environment,
-    *,
     throw_on_error=True,
 ):
     '''

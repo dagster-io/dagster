@@ -62,7 +62,7 @@ def check_valid_name(name):
     return name
 
 
-class PipelineContextDefinition:
+class PipelineContextDefinition(object):
     '''Pipelines declare the different context types they support, in the form
     of PipelineContextDefinitions. For example a pipeline could declare a context
     definition for different operating environments: unittest, integration tests,
@@ -81,7 +81,7 @@ class PipelineContextDefinition:
         )
         return {'default': context_definition}
 
-    def __init__(self, *, argument_def_dict, context_fn, description=None):
+    def __init__(self, argument_def_dict, context_fn, description=None):
         '''
         Parameters
         ----------
@@ -192,7 +192,7 @@ def create_handle_dict(solid_dict, dep_dict):
     return handle_dict
 
 
-class DependencyStructure:
+class DependencyStructure(object):
     @staticmethod
     def from_definitions(solids, dep_dict):
         return DependencyStructure(create_handle_dict(_build_named_dict(solids), dep_dict))
@@ -243,7 +243,7 @@ def _build_named_dict(things):
     return ddict
 
 
-class PipelineDefinition:
+class PipelineDefinition(object):
     ''' A instance of a PipelineDefinition represents a pipeline in dagster.
 
     A pipeline is comprised of:
@@ -349,12 +349,14 @@ class PipelineDefinition:
             for from_input, dep in dep_by_input.items():
                 if from_solid == dep.solid:
                     raise DagsterInvalidDefinitionError(
-                        f'Circular reference detected in solid {from_solid} input {from_input}.'
+                        'Circular reference detected in solid {from_solid} input {from_input}.'.
+                        format(from_solid=from_solid, from_input=from_input)
                     )
 
                 if not from_solid in self._solid_dict:
                     raise DagsterInvalidDefinitionError(
-                        f'Solid {from_solid} in dependency dictionary not found in solid list',
+                        'Solid {from_solid} in dependency dictionary not found in solid list'.
+                        format(from_solid=from_solid),
                     )
 
                 if not self._solid_dict[from_solid].has_input(from_input):
@@ -362,18 +364,20 @@ class PipelineDefinition:
                         input_def.name for input_def in self._solid_dict[from_solid].input_defs
                     ]
                     raise DagsterInvalidDefinitionError(
-                        f'Solid {from_solid} does not have input {from_input}. ' + \
-                        f'Input list: {input_list}'
+                        'Solid {from_solid} does not have input {from_input}. '.format(from_solid=from_solid, from_input=from_input) + \
+                        'Input list: {input_list}'.format(input_list=input_list)
                     )
 
                 if not dep.solid in self._solid_dict:
                     raise DagsterInvalidDefinitionError(
-                        f'Solid {dep.solid} in DependencyDefinition not found in solid list',
+                        'Solid {dep.solid} in DependencyDefinition not found in solid list'.format(
+                            dep=dep
+                        ),
                     )
 
                 if not self._solid_dict[dep.solid].has_output(dep.output):
                     raise DagsterInvalidDefinitionError(
-                        f'Solid {dep.solid} does not have output {dep.output}',
+                        'Solid {dep.solid} does not have output {dep.output}'.format(dep=dep),
                     )
 
     def __validate_dependency_structure(self, name, solids, dependency_structure):
@@ -382,13 +386,13 @@ class PipelineDefinition:
                 if not dependency_structure.has_dep(solid.input_handle(input_def.name)):
                     if name:
                         raise DagsterInvalidDefinitionError(
-                            f'Dependency must be specified for solid {solid.name} input ' + \
-                            f'{input_def.name} in pipeline {name}'
+                            'Dependency must be specified for solid {solid.name} input '.format(solid=solid) + \
+                            '{input_def.name} in pipeline {name}'.format(input_def=input_def, name=name)
                         )
                     else:
                         raise DagsterInvalidDefinitionError(
-                            f'Dependency must be specified for solid {solid.name} input ' + \
-                            f'{input_def.name}'
+                            'Dependency must be specified for solid {solid.name} input '.format(solid=solid) + \
+                            '{input_def.name}'.format(input_def=input_def)
                         )
 
     def __init__(
@@ -453,7 +457,7 @@ class PipelineDefinition:
         return self._solid_dict[name]
 
 
-class ExpectationResult:
+class ExpectationResult(object):
     def __init__(self, success, solid=None, message=None, result_context=None):
         self.success = check.bool_param(success, 'success')
         self.solid = check.opt_inst_param(solid, SolidDefinition, 'solid')
@@ -464,14 +468,14 @@ class ExpectationResult:
         return copy.deepcopy(self)
 
 
-class ExpectationDefinition:
+class ExpectationDefinition(object):
     def __init__(self, name, expectation_fn, description=None):
         self.name = check_valid_name(name)
         self.expectation_fn = check.callable_param(expectation_fn, 'expectation_fn')
         self.description = check.opt_str_param(description, 'description')
 
 
-class InputDefinition:
+class InputDefinition(object):
     '''An InputDefinition instance represents an argument to a transform defined within a solid.
     Inputs are values within the dagster type system that are created from previous solids.
 
@@ -496,7 +500,7 @@ class InputDefinition:
         self.description = check.opt_str_param(description, 'description')
 
 
-class OutputDefinition:
+class OutputDefinition(object):
     '''An OutputDefinition represents an output from a solid. Solids can have multiple
     outputs. In those cases the outputs must be named. Frequently solids have only one
     output, and so the user can construct a single OutputDefinition that will have
@@ -532,10 +536,14 @@ class SolidInputHandle(namedtuple('_SolidInputHandle', 'solid input_def')):
         )
 
     def __str__(self):
-        return f'SolidInputHandle(solid="{self.solid.name}", input_name="{self.input_def.name}")'
+        return 'SolidInputHandle(solid="{self.solid.name}", input_name="{self.input_def.name}")'.format(
+            self=self
+        )
 
     def __repr__(self):
-        return f'SolidInputHandle(solid="{self.solid.name}", input_name="{self.input_def.name}")'
+        return 'SolidInputHandle(solid="{self.solid.name}", input_name="{self.input_def.name}")'.format(
+            self=self
+        )
 
     def __hash__(self):
         return hash((self.solid.name, self.input_def.name))
@@ -553,10 +561,14 @@ class SolidOutputHandle(namedtuple('_SolidOutputHandle', 'solid output_def')):
         )
 
     def __str__(self):
-        return f'SolidOutputHandle(solid="{self.solid.name}", output.name="{self.output_def.name}")'
+        return 'SolidOutputHandle(solid="{self.solid.name}", output.name="{self.output_def.name}")'.format(
+            self=self
+        )
 
     def __repr__(self):
-        return f'SolidOutputHandle(solid="{self.solid.name}", output.name="{self.output_def.name}")'
+        return 'SolidOutputHandle(solid="{self.solid.name}", output.name="{self.output_def.name}")'.format(
+            self=self
+        )
 
     def __hash__(self):
         return hash((self.solid.name, self.output_def.name))
@@ -583,7 +595,7 @@ class Result(namedtuple('_Result', 'value output_name')):
         )
 
 
-class ConfigDefinition:
+class ConfigDefinition(object):
     '''Solids have config, which determine how they interact with the external world.
     Example configs would be file paths, database table names, and so forth.
 
@@ -595,7 +607,7 @@ class ConfigDefinition:
         self.argument_def_dict = ArgumentDefinitionDictionary(argument_def_dict)
 
 
-class SolidDefinition:
+class SolidDefinition(object):
     '''A solid is a node of computation within a pipeline.
 
     Parameters:
@@ -611,7 +623,7 @@ class SolidDefinition:
     description: str (optional)
     '''
 
-    def __init__(self, *, name, inputs, transform_fn, outputs, config_def=None, description=None):
+    def __init__(self, name, inputs, transform_fn, outputs, config_def=None, description=None):
         self.name = check_valid_name(name)
         self.input_defs = check.list_param(inputs, 'inputs', InputDefinition)
         self.transform_fn = check.callable_param(transform_fn, 'transform_fn')
@@ -686,7 +698,7 @@ class SolidDefinition:
         return self._output_dict[name]
 
 
-class LibrarySolidDefinition:
+class LibrarySolidDefinition(object):
     def __init__(self, name, argument_def_dict, solid_creation_fn):
         self.name = check.str_param(name, 'name')
         self.argument_def_dict = ArgumentDefinitionDictionary(argument_def_dict)
@@ -705,7 +717,7 @@ class LibrarySolidDefinition:
         return check.inst_param(solid, 'solid', SolidDefinition)
 
 
-class LibraryDefinition:
+class LibraryDefinition(object):
     def __init__(self, name, library_solids):
         self.name = check.str_param(name, 'name')
         self._library_solid_dict = _build_named_dict(
@@ -755,7 +767,7 @@ def _dependency_structure_to_dep_dict(dependency_structure):
     return dep_dict
 
 
-class ExecutionGraph:
+class ExecutionGraph(object):
     @staticmethod
     def from_pipeline(pipeline):
         check.inst_param(pipeline, 'pipeline', PipelineDefinition)
@@ -859,8 +871,11 @@ class ExecutionGraph:
     def _check_solid_name(self, solid_name):
         check.str_param(solid_name, 'output_name')
         check.param_invariant(
-            solid_name in self._solid_dict, 'output_name',
-            f'Solid {solid_name} must exist in {list(self._solid_dict.keys())}'
+            solid_name in self._solid_dict,
+            'output_name',
+            'Solid {solid_name} must exist in {list(self._solid_dict.keys())}'.format(
+                solid_name=solid_name
+            )
         )
 
     def create_execution_subgraph(self, from_solids, to_solids):
@@ -955,7 +970,7 @@ def _create_subgraph(execution_graph, from_solids, through_solids):
     return execution_graph.create_execution_subgraph(from_solids, through_solids)
 
 
-class RepositoryDefinition:
+class RepositoryDefinition(object):
     def __init__(self, name, pipeline_dict, libraries=None):
         self.name = check.str_param(name, 'name')
 
@@ -991,7 +1006,9 @@ class RepositoryDefinition:
         pipeline = self.pipeline_dict[name]()
         check.invariant(
             pipeline.name == name,
-            f'Name does not match. Name in dict {name}. Name in pipeline {pipeline.name}'
+            'Name does not match. Name in dict {name}. Name in pipeline {pipeline.name}'.format(
+                name=name, pipeline=pipeline
+            )
         )
 
         check.inst(

@@ -14,22 +14,27 @@ LogMessage = namedtuple('LogMessage', 'msg extra level')
 # weird name so that pytest ignores
 class LoggerForTest(logging.Logger):
     def __init__(self, name=None):
-        super().__init__(name if name else str(uuid.uuid4()))
+        super(LoggerForTest, self).__init__(name if name else str(uuid.uuid4()))
         self.messages = []
 
-    def debug(self, msg, *args, extra=None, **kwargs):
+    def debug(self, msg, *args, **kwargs):
+        extra = kwargs.pop('extra', None)
         self.messages.append(LogMessage(msg=msg, level=DEBUG, extra=extra))
 
-    def info(self, msg, *args, extra=None, **kwargs):
+    def info(self, msg, *args, **kwargs):
+        extra = kwargs.pop('extra', None)
         self.messages.append(LogMessage(msg=msg, level=INFO, extra=extra))
 
-    def warning(self, msg, *args, extra=None, **kwargs):
+    def warning(self, msg, *args, **kwargs):
+        extra = kwargs.pop('extra', None)
         self.messages.append(LogMessage(msg=msg, level=WARNING, extra=extra))
 
-    def error(self, msg, *args, extra=None, **kwargs):
+    def error(self, msg, *args, **kwargs):
+        extra = kwargs.pop('extra', None)
         self.messages.append(LogMessage(msg=msg, level=ERROR, extra=extra))
 
-    def critical(self, msg, *args, extra=None, **kwargs):
+    def critical(self, msg, *args, **kwargs):
+        extra = kwargs.pop('extra', None)
         self.messages.append(LogMessage(msg=msg, level=CRITICAL, extra=extra))
 
 

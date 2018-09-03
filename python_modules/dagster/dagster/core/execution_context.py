@@ -1,3 +1,4 @@
+import itertools
 import copy
 from collections import (
     OrderedDict,
@@ -12,7 +13,7 @@ from dagster.utils.logging import CompositeLogger
 Metric = namedtuple('Metric', 'context_dict metric_name value')
 
 
-class ExecutionContext:
+class ExecutionContext(object):
     '''
     A context object flowed through the entire scope of single execution of a
     pipeline of solids. This is used by both framework and user code to log
@@ -46,7 +47,7 @@ class ExecutionContext:
         return ' '.join(
             [
                 '{key}={value}'.format(key=key, value=self._maybe_quote(value))
-                for key, value in [*self._context_dict.items(), *extra.items()]
+                for key, value in itertools.chain(self._context_dict.items(), extra.items())
             ]
         )
 
@@ -70,7 +71,11 @@ class ExecutionContext:
         log_props['log_message'] = msg
         log_props['log_message_id'] = str(uuid.uuid4())
 
-        getattr(self._logger, method)(full_message, extra={**log_props, **kwargs})
+        extra = {}
+        extra.update(log_props)
+        extra.update(kwargs)
+
+        getattr(self._logger, method)(full_message, extra=extra)
 
     def debug(self, msg, **kwargs):
         return self._log('debug', msg, **kwargs)

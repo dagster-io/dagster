@@ -16,8 +16,12 @@ def create_num_table(engine, num_table_name='num_table'):
 
     conn = engine.connect()
 
-    conn.execute(f'''INSERT INTO {num_table_name} VALUES(1, 2)''')
-    conn.execute(f'''INSERT INTO {num_table_name} VALUES(3, 4)''')
+    conn.execute(
+        '''INSERT INTO {num_table_name} VALUES(1, 2)'''.format(num_table_name=num_table_name)
+    )
+    conn.execute(
+        '''INSERT INTO {num_table_name} VALUES(3, 4)'''.format(num_table_name=num_table_name)
+    )
 
 
 def in_mem_engine(num_table_name='num_table'):

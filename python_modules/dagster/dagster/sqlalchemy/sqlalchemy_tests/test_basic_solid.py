@@ -111,20 +111,21 @@ def create_sum_sq_pipeline(context, expr, extra_solids=None, extra_deps=None):
         sql_text='SELECT num1, num2, sum, sum * sum as sum_sq from {sum_table}',
     )
 
+    dependencies = {
+        sum_solid.name: {
+            'num_table': DependencyDefinition('expr'),
+        },
+        sum_sq_solid.name: {
+            sum_solid.name: DependencyDefinition(sum_solid.name),
+        }
+    }
+    if extra_deps:
+        dependencies.update(extra_deps)
+
     return pipeline_test_def(
         solids=[expr_solid, sum_solid, sum_sq_solid] + (extra_solids if extra_solids else []),
         context=context,
-        dependencies={
-            **{
-                sum_solid.name: {
-                    'num_table': DependencyDefinition('expr'),
-                },
-                sum_sq_solid.name: {
-                    sum_solid.name: DependencyDefinition(sum_solid.name),
-                },
-            },
-            **(extra_deps if extra_deps else {})
-        },
+        dependencies=dependencies
     )
 
 

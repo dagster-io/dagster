@@ -1,16 +1,22 @@
 version: 2
+
+workflows:
+  version: 2
+  test:
+    jobs:
+      - dagster-python-3.6
+      - dagster-python-3.5
+      - dagster-python-2.7
+      - dagit-python-3.6
+      - dagit-python-3.5
+      - dagit-python-2.7
+
 jobs:
-  build:
+  dagster-python-3.6: &dagster-template
     docker:
-      # specify the version you desire here
-      # use `-browsers` prefix for selenium tests, e.g. `3.6.1-browsers`
-      - image: circleci/python:3.6.1
-
-      # Specify service dependencies here if necessary
-      # CircleCI maintains a library of pre-built images
-      # documented at https://circleci.com/docs/2.0/circleci-images/
-      # - image: circleci/postgres:9.4
-
+      - image: circleci/python:3.6.6
+    environment:
+      TOXENV: py36
     working_directory: ~/repo
 
     steps:
@@ -19,17 +25,62 @@ jobs:
       - run:
           name: Install Dependencies
           command: |
-            python3 -m venv venv
-            . venv/bin/activate
-            pip install tox
+            sudo pip install tox
 
       - run:
           name: Run Dagster Tests
           command: |
-            . venv/bin/activate
             cd python_modules/dagster
-            tox
+            tox -e $TOXENV
 
       - store_artifacts:
           path: test-reports
           destination: test-reports
+
+  dagit-python-3.6: &dagit-template
+    <<: *dagster-template
+    steps:
+      - checkout
+
+      - run:
+          name: Install Dependencies
+          command: |
+            sudo pip install tox
+
+      - run:
+          name: Run Dagit Tests
+          command: |
+            cd python_modules/dagit
+            tox -e $TOXENV
+
+      - store_artifacts:
+          path: test-reports
+          destination: test-reports
+
+  dagster-python-3.5:
+    <<: *dagster-template
+    docker:
+      - image: circleci/python:3.5.6
+    environment:
+      TOXENV: py35
+
+  dagit-python-3.5:
+    <<: *dagit-template
+    docker:
+      - image: circleci/python:3.5.6
+    environment:
+      TOXENV: py35
+
+  dagster-python-2.7:
+    <<: *dagster-template
+    docker:
+      - image: circleci/python:2.7.15
+    environment:
+      TOXENV: py27
+
+  dagit-python-2.7:
+    <<: *dagit-template
+    docker:
+      - image: circleci/python:2.7.15
+    environment:
+      TOXENV: py27

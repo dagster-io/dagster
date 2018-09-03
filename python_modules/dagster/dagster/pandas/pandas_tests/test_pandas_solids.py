@@ -298,7 +298,10 @@ def test_no_transform_solid():
 
 def create_diamond_pipeline(extra_solids=None, extra_dependencies=None):
     all_solids = list(create_diamond_dag()) + (extra_solids if extra_solids else [])
-    all_deps = {**create_diamond_deps(), **(extra_dependencies if extra_dependencies else {})}
+    all_deps = {}
+    all_deps.update(create_diamond_deps())
+    if extra_dependencies:
+        all_deps.update(extra_dependencies)
     return PipelineDefinition(solids=all_solids, dependencies=all_deps)
 
 
