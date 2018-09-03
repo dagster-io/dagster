@@ -30,6 +30,13 @@ jobs:
             cd python_modules/dagster
             tox
 
+      - run:
+          name: Run Dagit Tests
+          command: |
+            . venv/bin/activate
+            cd python_modules/dagit
+            tox
+
       - store_artifacts:
           path: test-reports
           destination: test-reports

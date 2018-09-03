@@ -1,5 +1,8 @@
 import os
-from graphql.execution.executors.asyncio import AsyncioExecutor
+try:
+    from graphql.execution.executors.asyncio import AsyncioExecutor as Executor
+except ImportError:
+    from graphql.execution.executors.thread import ThreadExecutor as Executor
 from flask import Flask, send_file, send_from_directory
 from flask_graphql import GraphQLView
 from flask_cors import CORS
@@ -64,7 +67,7 @@ def create_app(repository_container):
             'graphql',
             schema=schema,
             graphiql=True,
-            executor=AsyncioExecutor(),
+            executor=Executor(),
             repository_container=repository_container,
         )
     )
