@@ -9,6 +9,9 @@ class DagsterType(object):
         self.name = check.str_param(name, 'name')
         self.description = check.opt_str_param(description, 'description')
 
+    def __repr__(self):
+        return 'DagsterType({name})'.format(name=self.name)
+
     def evaluate_value(self, _value):
         check.not_implemented('Must implement in subclass')
 
@@ -107,6 +110,18 @@ FIELD_NO_DEFAULT_PROVIDED = __FieldValueSentinel
 
 
 class Field:
+    '''
+    A Field in a DagsterCompositeType.
+
+    Attributes:
+        dagster_type (DagsterType): The type of the field.
+        default_value (Any):
+            If the Field is optional, a default value can be provided when the field value
+            is not specified.
+        is_optional (bool): Is the field optional.
+        description (str): Description of the field.
+    '''
+
     def __init__(
         self,
         dagster_type,
@@ -128,6 +143,11 @@ class Field:
 
     @property
     def default_provided(self):
+        '''Was a default value provided
+
+        Returns:
+            bool: Yes or no
+        '''
         return self.default_value != FIELD_NO_DEFAULT_PROVIDED
 
 

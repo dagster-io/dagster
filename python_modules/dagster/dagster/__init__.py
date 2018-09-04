@@ -32,3 +32,14 @@ from dagster.core.errors import (
 )
 
 import dagster.core.types as types
+
+__all__ = [
+    'ConfigDefinition',
+    'DependencyDefinition',
+    'ExpectationDefinition',
+    'ExpectationResult',
+    'Field',
+    'InputDefinition',
+    'OutputDefinition',
+    'PipelineDefinition',
+]

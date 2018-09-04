@@ -1,21 +1,25 @@
-.. Dagster documentation master file, created by
-   sphinx-quickstart on Mon Jun 11 11:00:41 2018.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
-Dagster's documentation!
-===================================
-
-.. include:: ../../../README.rst
-  :start-after: docs-include
+.. image:: https://user-images.githubusercontent.com/28738937/44878798-b6e17e00-ac5c-11e8-8d25-2e47e5a53418.png
+   :align: center
 
 
+Welcome to Dagster, an opinionated programming model for data pipelines.
+
+Documentation Structure:
+
+.. toctree::
+  :maxdepth: 3
+
+  motivations
+  principles
+  tutorials
+  topic_guides
+  apidocs/index
 
 Other docs
 ==========
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Contents:
 
    developing/index
