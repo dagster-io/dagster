@@ -20,6 +20,15 @@ Other docs
 
    developing/index
 
+API Reference
+================
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Contents:
+
+   apidocs/index
+
 
 Indices and tables
 ==================
