@@ -51,16 +51,36 @@ export interface SolidFragment_inputs {
   dependsOn: SolidFragment_inputs_dependsOn | null;
 }
 
-export interface SolidFragment_config_type {
+export interface SolidFragment_config_type_RegularType {
+  __typename: "RegularType";
   name: string;
   description: string | null;
 }
 
-export interface SolidFragment_config {
+export interface SolidFragment_config_type_CompositeType_fields_type {
   name: string;
   description: string | null;
-  type: SolidFragment_config_type;
+}
+
+export interface SolidFragment_config_type_CompositeType_fields {
+  name: string;
+  description: string | null;
   isOptional: boolean;
+  defaultValue: string | null;
+  type: SolidFragment_config_type_CompositeType_fields_type;
+}
+
+export interface SolidFragment_config_type_CompositeType {
+  __typename: "CompositeType";
+  name: string;
+  description: string | null;
+  fields: SolidFragment_config_type_CompositeType_fields[];
+}
+
+export type SolidFragment_config_type = SolidFragment_config_type_RegularType | SolidFragment_config_type_CompositeType;
+
+export interface SolidFragment_config {
+  type: SolidFragment_config_type;
 }
 
 export interface SolidFragment {
@@ -68,7 +88,7 @@ export interface SolidFragment {
   inputs: SolidFragment_inputs[];
   name: string;
   description: string | null;
-  config: SolidFragment_config[];
+  config: SolidFragment_config;
 }
 
 /* tslint:disable */

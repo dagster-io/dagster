@@ -4,10 +4,10 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL fragment: TypeFragment
+// GraphQL fragment: TypeWithTooltipFragment
 // ====================================================
 
-export interface TypeFragment {
+export interface TypeWithTooltipFragment {
   name: string;
   description: string | null;
 }

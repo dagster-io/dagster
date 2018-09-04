@@ -13,8 +13,8 @@ export default class TypeWithTooltip extends React.Component<
   {}
 > {
   static fragments = {
-    TypeFragment: gql`
-      fragment TypeFragment on Type {
+    TypeWithTooltipFragment: gql`
+      fragment TypeWithTooltipFragment on Type {
         name
         description
       }

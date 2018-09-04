@@ -1,4 +1,5 @@
 import graphene
+from dagster.core.types import (DagsterScalarType, DagsterCompositeType)
 
 
 class Query(graphene.ObjectType):
@@ -17,16 +18,11 @@ class Query(graphene.ObjectType):
         return pipelines
 
 
-# (XXX) Some stuff is named, other stuffed is keyed in dict.
-# Either everything should be named or everything should be keyed
-
-
 class Pipeline(graphene.ObjectType):
-    # XXX(freiksenet): optional, but probably shouldn't be
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
     solids = graphene.NonNull(graphene.List(lambda: graphene.NonNull(Solid)))
-    context = graphene.NonNull(graphene.List(lambda: graphene.NonNull(PipelineContext)))
+    contexts = graphene.NonNull(graphene.List(lambda: graphene.NonNull(PipelineContext)))
 
     def __init__(self, pipeline):
         super(Pipeline, self).__init__(name=pipeline.name, description=pipeline.description)
@@ -40,7 +36,7 @@ class Pipeline(graphene.ObjectType):
             ) for solid in self._pipeline.solids
         ]
 
-    def resolve_context(self, info):
+    def resolve_contexts(self, info):
         return [
             PipelineContext(name=name, context=context)
             for name, context in self._pipeline.context_definitions.items()
@@ -50,17 +46,14 @@ class Pipeline(graphene.ObjectType):
 class PipelineContext(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
-    arguments = graphene.NonNull(graphene.List(lambda: graphene.NonNull(Argument)))
+    config = graphene.NonNull(lambda: Config)
 
     def __init__(self, name, context):
         super(PipelineContext, self).__init__(name=name, description=context.description)
         self._context = context
 
-    def resolve_arguments(self, info):
-        return [
-            Argument(name=name, argument=argument)
-            for name, argument in self._context.argument_def_dict.items()
-        ]
+    def resolve_config(self, info):
+        return Config(self._context.config_def)
 
 
 class Solid(graphene.ObjectType):
@@ -68,7 +61,7 @@ class Solid(graphene.ObjectType):
     description = graphene.String()
     inputs = graphene.NonNull(graphene.List(lambda: graphene.NonNull(Input)))
     outputs = graphene.NonNull(graphene.List(lambda: graphene.NonNull(Output)))
-    config = graphene.NonNull(graphene.List(lambda: graphene.NonNull(Argument)))
+    config = graphene.NonNull(lambda: Config)
 
     def __init__(self, solid, depends_on=None, depended_by=None):
         super(Solid, self).__init__(name=solid.name, description=solid.description)
@@ -102,10 +95,7 @@ class Solid(graphene.ObjectType):
         ]
 
     def resolve_config(self, info):
-        return [
-            Argument(name=name, argument=argument)
-            for name, argument in self._solid.config_def.argument_def_dict.items()
-        ]
+        return Config(self._solid.config_def)
 
 
 class Input(graphene.ObjectType):
@@ -126,7 +116,7 @@ class Input(graphene.ObjectType):
         self._depends_on = depends_on
 
     def resolve_type(self, info):
-        return Type(dagster_type=self._input_definition.dagster_type)
+        return Type.from_dagster_type(dagster_type=self._input_definition.dagster_type)
 
     def resolve_expectations(self, info):
         if self._input_definition.expectations:
@@ -161,7 +151,7 @@ class Output(graphene.ObjectType):
         self._depended_by = depended_by
 
     def resolve_type(self, info):
-        return Type(dagster_type=self._output_definition.dagster_type)
+        return Type.from_dagster_type(dagster_type=self._output_definition.dagster_type)
 
     def resolve_expectations(self, info):
         if self._output_definition.expectations:
@@ -182,22 +172,6 @@ class Output(graphene.ObjectType):
         ]
 
 
-class Argument(graphene.ObjectType):
-    name = graphene.NonNull(graphene.String)
-    description = graphene.String()
-    type = graphene.NonNull(lambda: Type)
-    is_optional = graphene.NonNull(graphene.Boolean)
-
-    def __init__(self, name, argument):
-        super(Argument, self).__init__(
-            name=name, description=argument.description, is_optional=argument.is_optional
-        )
-        self._argument = argument
-
-    def resolve_type(self, info):
-        return Type(dagster_type=self._argument.dagster_type)
-
-
 class Expectation(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
@@ -208,16 +182,80 @@ class Expectation(graphene.ObjectType):
         )
 
 
-class Type(graphene.ObjectType):
+class Config(graphene.ObjectType):
+    type = graphene.NonNull(lambda: Type)
+
+    def __init__(self, config_def):
+        super(Config, self).__init__()
+        self._config_def = config_def
+
+    def resolve_type(self, info):
+        return Type.from_dagster_type(dagster_type=self._config_def.config_type)
+
+
+class Type(graphene.Interface):
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
 
+    @classmethod
+    def from_dagster_type(self, dagster_type):
+        if isinstance(dagster_type, DagsterCompositeType):
+            return CompositeType(dagster_type)
+        else:
+            return RegularType(dagster_type)
+
+
+class RegularType(graphene.ObjectType):
+    class Meta:
+        interfaces = [
+            Type,
+        ]
+
     def __init__(self, dagster_type):
-        super(Type, self).__init__(
+        super(RegularType, self).__init__(
             name=dagster_type.name,
             description=dagster_type.description,
         )
 
 
+class CompositeType(graphene.ObjectType):
+    fields = graphene.NonNull(graphene.List(graphene.NonNull(lambda: TypeField)))
+
+    class Meta:
+        interfaces = [
+            Type,
+        ]
+
+    def __init__(self, dagster_type):
+        super(CompositeType, self).__init__(
+            name=dagster_type.name,
+            description=dagster_type.description,
+        )
+        self._dagster_type = dagster_type
+
+    def resolve_fields(self, info):
+        return [TypeField(name=k, field=v) for k, v in self._dagster_type.field_dict.items()]
+
+
+class TypeField(graphene.ObjectType):
+    name = graphene.NonNull(graphene.String)
+    description = graphene.String()
+    type = graphene.NonNull(lambda: Type)
+    default_value = graphene.String()
+    is_optional = graphene.NonNull(graphene.Boolean)
+
+    def __init__(self, name, field):
+        super(TypeField, self).__init__(
+            name=name,
+            description=field.description,
+            default_value=str(field.default_value),
+            is_optional=field.is_optional
+        )
+        self._field = field
+
+    def resolve_type(self, info):
+        return Type.from_dagster_type(dagster_type=self._field.dagster_type)
+
+
 def create_schema():
-    return graphene.Schema(query=Query)
+    return graphene.Schema(query=Query, types=[RegularType, CompositeType])

@@ -46,8 +46,8 @@
     "build": "react-scripts-ts build",
     "test": "react-scripts-ts test --env=jsdom",
     "eject": "react-scripts-ts eject",
-    "download-schema": "apollo schema:download --endpoint $REACT_APP_GRAPHQL_URI ./schema.json",
-    "generate-types": "apollo codegen:generate --queries \"./src/**/*.tsx\" --target typescript types --schema ./schema.json",
-    "watch-types": "apollo codegen:generate --queries \"./src/**/*.tsx\" --target typescript types --schema ./schema.json --watch"
+    "download-schema": "apollo schema:download --endpoint $REACT_APP_GRAPHQL_URI ./src/schema.json",
+    "generate-types": "apollo codegen:generate --queries \"./src/**/*.tsx\" --target typescript types --schema ./src/schema.json",
+    "watch-types": "apollo codegen:generate --queries \"./src/**/*.tsx\" --target typescript types --schema ./src/schema.json --watch"
   }
 }

@@ -51,16 +51,36 @@ export interface PipelinesFragment_solids_inputs {
   dependsOn: PipelinesFragment_solids_inputs_dependsOn | null;
 }
 
-export interface PipelinesFragment_solids_config_type {
+export interface PipelinesFragment_solids_config_type_RegularType {
+  __typename: "RegularType";
   name: string;
   description: string | null;
 }
 
-export interface PipelinesFragment_solids_config {
+export interface PipelinesFragment_solids_config_type_CompositeType_fields_type {
   name: string;
   description: string | null;
-  type: PipelinesFragment_solids_config_type;
+}
+
+export interface PipelinesFragment_solids_config_type_CompositeType_fields {
+  name: string;
+  description: string | null;
   isOptional: boolean;
+  defaultValue: string | null;
+  type: PipelinesFragment_solids_config_type_CompositeType_fields_type;
+}
+
+export interface PipelinesFragment_solids_config_type_CompositeType {
+  __typename: "CompositeType";
+  name: string;
+  description: string | null;
+  fields: PipelinesFragment_solids_config_type_CompositeType_fields[];
+}
+
+export type PipelinesFragment_solids_config_type = PipelinesFragment_solids_config_type_RegularType | PipelinesFragment_solids_config_type_CompositeType;
+
+export interface PipelinesFragment_solids_config {
+  type: PipelinesFragment_solids_config_type;
 }
 
 export interface PipelinesFragment_solids {
@@ -68,32 +88,52 @@ export interface PipelinesFragment_solids {
   inputs: PipelinesFragment_solids_inputs[];
   name: string;
   description: string | null;
-  config: PipelinesFragment_solids_config[];
+  config: PipelinesFragment_solids_config;
 }
 
-export interface PipelinesFragment_context_arguments_type {
+export interface PipelinesFragment_contexts_config_type_RegularType {
+  __typename: "RegularType";
   name: string;
   description: string | null;
 }
 
-export interface PipelinesFragment_context_arguments {
+export interface PipelinesFragment_contexts_config_type_CompositeType_fields_type {
   name: string;
   description: string | null;
-  type: PipelinesFragment_context_arguments_type;
+}
+
+export interface PipelinesFragment_contexts_config_type_CompositeType_fields {
+  name: string;
+  description: string | null;
   isOptional: boolean;
+  defaultValue: string | null;
+  type: PipelinesFragment_contexts_config_type_CompositeType_fields_type;
 }
 
-export interface PipelinesFragment_context {
+export interface PipelinesFragment_contexts_config_type_CompositeType {
+  __typename: "CompositeType";
   name: string;
   description: string | null;
-  arguments: PipelinesFragment_context_arguments[];
+  fields: PipelinesFragment_contexts_config_type_CompositeType_fields[];
+}
+
+export type PipelinesFragment_contexts_config_type = PipelinesFragment_contexts_config_type_RegularType | PipelinesFragment_contexts_config_type_CompositeType;
+
+export interface PipelinesFragment_contexts_config {
+  type: PipelinesFragment_contexts_config_type;
+}
+
+export interface PipelinesFragment_contexts {
+  name: string;
+  description: string | null;
+  config: PipelinesFragment_contexts_config;
 }
 
 export interface PipelinesFragment {
   name: string;
   description: string | null;
   solids: PipelinesFragment_solids[];
-  context: PipelinesFragment_context[];
+  contexts: PipelinesFragment_contexts[];
 }
 
 /* tslint:disable */

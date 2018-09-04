@@ -6,7 +6,7 @@ import { Switch, Route, match } from "react-router";
 import { Link } from "react-router-dom";
 import { Card, H2, H5, Text, Code, UL, H6 } from "@blueprintjs/core";
 import SpacedCard from "./SpacedCard";
-import Arguments from "./Arguments";
+import Config from "./Config";
 import Solid from "./Solid";
 import PipelineGraph from "./graph/PipelineGraph";
 import { Breadcrumbs, Breadcrumb } from "./Breadcrumbs";
@@ -31,11 +31,11 @@ export default class Pipeline extends React.Component<IPipelineProps, {}> {
           ...SolidFragment
           ...SolidListItemFragment
         }
-        context {
+        contexts {
           name
           description
-          arguments {
-            ...ArgumentsFragment
+          config {
+            ...ConfigFragment
           }
         }
         ...PipelineGraphFragment
@@ -44,7 +44,7 @@ export default class Pipeline extends React.Component<IPipelineProps, {}> {
       ${Solid.fragments.SolidFragment}
       ${PipelineGraph.fragments.PipelineGraphFragment}
       ${SolidListItem.fragments.SolidListItemFragment}
-      ${Arguments.fragments.ArgumentsFragment}
+      ${Config.fragments.ConfigFragment}
     `
   };
 
@@ -101,16 +101,15 @@ export default class Pipeline extends React.Component<IPipelineProps, {}> {
   }
 
   renderContext() {
-    return this.props.pipeline.context.map((context: any, i: number) => (
-      <SpacedCard>
+    return this.props.pipeline.contexts.map((context: any, i: number) => (
+      <SpacedCard key={i}>
         <H5>
           <Code>{context.name}</Code>
         </H5>
         <DescriptionWrapper>
           <Description description={context.description} />
         </DescriptionWrapper>
-        <H6>Arguments</H6>
-        <Arguments arguments={context.arguments} />
+        <Config config={context.config} />
       </SpacedCard>
     ));
   }

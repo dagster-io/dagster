@@ -51,16 +51,36 @@ export interface AppQuery_pipelines_solids_inputs {
   dependsOn: AppQuery_pipelines_solids_inputs_dependsOn | null;
 }
 
-export interface AppQuery_pipelines_solids_config_type {
+export interface AppQuery_pipelines_solids_config_type_RegularType {
+  __typename: "RegularType";
   name: string;
   description: string | null;
 }
 
-export interface AppQuery_pipelines_solids_config {
+export interface AppQuery_pipelines_solids_config_type_CompositeType_fields_type {
   name: string;
   description: string | null;
-  type: AppQuery_pipelines_solids_config_type;
+}
+
+export interface AppQuery_pipelines_solids_config_type_CompositeType_fields {
+  name: string;
+  description: string | null;
   isOptional: boolean;
+  defaultValue: string | null;
+  type: AppQuery_pipelines_solids_config_type_CompositeType_fields_type;
+}
+
+export interface AppQuery_pipelines_solids_config_type_CompositeType {
+  __typename: "CompositeType";
+  name: string;
+  description: string | null;
+  fields: AppQuery_pipelines_solids_config_type_CompositeType_fields[];
+}
+
+export type AppQuery_pipelines_solids_config_type = AppQuery_pipelines_solids_config_type_RegularType | AppQuery_pipelines_solids_config_type_CompositeType;
+
+export interface AppQuery_pipelines_solids_config {
+  type: AppQuery_pipelines_solids_config_type;
 }
 
 export interface AppQuery_pipelines_solids {
@@ -68,32 +88,52 @@ export interface AppQuery_pipelines_solids {
   inputs: AppQuery_pipelines_solids_inputs[];
   name: string;
   description: string | null;
-  config: AppQuery_pipelines_solids_config[];
+  config: AppQuery_pipelines_solids_config;
 }
 
-export interface AppQuery_pipelines_context_arguments_type {
+export interface AppQuery_pipelines_contexts_config_type_RegularType {
+  __typename: "RegularType";
   name: string;
   description: string | null;
 }
 
-export interface AppQuery_pipelines_context_arguments {
+export interface AppQuery_pipelines_contexts_config_type_CompositeType_fields_type {
   name: string;
   description: string | null;
-  type: AppQuery_pipelines_context_arguments_type;
+}
+
+export interface AppQuery_pipelines_contexts_config_type_CompositeType_fields {
+  name: string;
+  description: string | null;
   isOptional: boolean;
+  defaultValue: string | null;
+  type: AppQuery_pipelines_contexts_config_type_CompositeType_fields_type;
 }
 
-export interface AppQuery_pipelines_context {
+export interface AppQuery_pipelines_contexts_config_type_CompositeType {
+  __typename: "CompositeType";
   name: string;
   description: string | null;
-  arguments: AppQuery_pipelines_context_arguments[];
+  fields: AppQuery_pipelines_contexts_config_type_CompositeType_fields[];
+}
+
+export type AppQuery_pipelines_contexts_config_type = AppQuery_pipelines_contexts_config_type_RegularType | AppQuery_pipelines_contexts_config_type_CompositeType;
+
+export interface AppQuery_pipelines_contexts_config {
+  type: AppQuery_pipelines_contexts_config_type;
+}
+
+export interface AppQuery_pipelines_contexts {
+  name: string;
+  description: string | null;
+  config: AppQuery_pipelines_contexts_config;
 }
 
 export interface AppQuery_pipelines {
   name: string;
   description: string | null;
   solids: AppQuery_pipelines_solids[];
-  context: AppQuery_pipelines_context[];
+  contexts: AppQuery_pipelines_contexts[];
 }
 
 export interface AppQuery {

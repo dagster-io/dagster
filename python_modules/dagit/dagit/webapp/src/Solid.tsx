@@ -3,7 +3,7 @@ import gql from "graphql-tag";
 import styled from "styled-components";
 import { Link } from "react-router-dom";
 import { H5, H6, Text, Colors, Code, UL } from "@blueprintjs/core";
-import Arguments from "./Arguments";
+import Config from "./Config";
 import SpacedCard from "./SpacedCard";
 import SolidTypeSignature from "./SolidTypeSignature";
 import TypeWithTooltip from "./TypeWithTooltip";
@@ -22,13 +22,13 @@ export default class Solid extends React.Component<ISolidProps, {}> {
         name
         description
         config {
-          ...ArgumentsFragment
+          ...ConfigFragment
         }
         inputs {
           name
           description
           type {
-            ...TypeFragment
+            ...TypeWithTooltipFragment
           }
           expectations {
             name
@@ -45,7 +45,7 @@ export default class Solid extends React.Component<ISolidProps, {}> {
           name
           description
           type {
-            ...TypeFragment
+            ...TypeWithTooltipFragment
           }
           expectations {
             name
@@ -58,24 +58,11 @@ export default class Solid extends React.Component<ISolidProps, {}> {
         }
       }
 
-      ${TypeWithTooltip.fragments.TypeFragment}
+      ${TypeWithTooltip.fragments.TypeWithTooltipFragment}
       ${SolidTypeSignature.fragments.SolidTypeSignatureFragment}
-      ${Arguments.fragments.ArgumentsFragment}
+      ${Config.fragments.ConfigFragment}
     `
   };
-
-  renderConfig() {
-    if (this.props.solid.config.length > 0) {
-      return (
-        <>
-          <H6>Config</H6>
-          <Arguments arguments={this.props.solid.config} />
-        </>
-      );
-    } else {
-      return null;
-    }
-  }
 
   renderInputs() {
     return this.props.solid.inputs.map((input, i: number) => (
@@ -131,6 +118,17 @@ export default class Solid extends React.Component<ISolidProps, {}> {
     ));
   }
 
+  renderSeparator() {
+    if (
+      this.props.solid.inputs.length > 0 &&
+      this.props.solid.outputs.length > 0
+    ) {
+      return <CardSeparator />;
+    } else {
+      return null;
+    }
+  }
+
   public render() {
     return (
       <SpacedCard elevation={2}>
@@ -143,10 +141,10 @@ export default class Solid extends React.Component<ISolidProps, {}> {
         <DescriptionWrapper>
           <Description description={this.props.solid.description} />
         </DescriptionWrapper>
-        {this.renderConfig()}
+        <Config config={this.props.solid.config} />
         <Cards>
           {this.renderInputs()}
-          <CardSeparator />
+          {this.renderSeparator()}
           {this.renderOutputs()}
         </Cards>
       </SpacedCard>

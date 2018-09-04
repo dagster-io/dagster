@@ -19,18 +19,18 @@ export default class SolidTypeSignature extends React.Component<
         outputs {
           name
           type {
-            ...TypeFragment
+            ...TypeWithTooltipFragment
           }
         }
         inputs {
           name
           type {
-            ...TypeFragment
+            ...TypeWithTooltipFragment
           }
         }
       }
 
-      ${TypeWithTooltip.fragments.TypeFragment}
+      ${TypeWithTooltip.fragments.TypeWithTooltipFragment}
     `
   };
 
