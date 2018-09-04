@@ -70,34 +70,55 @@ class PipelineContextDefinition(object):
     (such as db connections) off of that context. Thus the pipeline author
     has complete control over how the author of each individual solid within
     the pipeline interacts with its operating environment.
+
+    The PipelineContextDefinition is passed to the PipelineDefinition in
+    a dictionary key'ed by its name so the name is not present in this object.
+
+    Attributes:
+        config_def: A ConfigurationDefinition. A context definition
+            defines the configuration necessary to instantiate a context.
+            This is where the that description goes
+        context_fn: A callable that either returns *or* yields an ExecutionContext.
+            (pipeline: PipelineDefinition, config: Any) : ExecutionContext
+        description: A description of what this context represents
     '''
 
     @staticmethod
     def passthrough_context_definition(context):
+        '''Create a context definition from a pre-existing context.
+        This can be useful in testing contexts where you may want to
+        create a context manually and then pass it into a one-off
+        PipelineDefinition
+
+        Args:
+            context: ExecutionContext
+        Returns:
+            PipelineContextDefinition
+        '''
+
         check.inst_param(context, 'context', ExecutionContext)
         context_definition = PipelineContextDefinition(context_fn=lambda _pipeline, _args: context)
         return {'default': context_definition}
 
     def __init__(self, context_fn, config_def=None, description=None):
         '''
-        Parameters
-        ----------
-        config_def: ConfigDefinition
-            Define the configuration for the context
+        Args:
+            config_def: ConfigDefinition
+                Define the configuration for the context
 
-        context_fn: callable (pipeline: PipelineDefinition, args: dict str => Any
-            Returns *or* yields an ExecutionContext.
+            context_fn: callable (pipeline: PipelineDefinition, args: dict str => Any
+                Returns *or* yields an ExecutionContext.
 
-            If it yields a context, the code after the yield executes after pipeline
-            completion, just like a python context manager.
+                If it yields a context, the code after the yield executes after pipeline
+                completion, just like a python context manager.
 
-            Environment-specific resources should be placed in the "resources" argument
-            to an execution context. This argument can be *anything* and it is made
-            avaiable to every solid in the pipeline. A typical pattern is to have this
-            resources object be a namedtuple, where each property is an object that
-            manages a particular resource, e.g. aws, a local filesystem manager, etc.
+                Environment-specific resources should be placed in the "resources" argument
+                to an execution context. This argument can be *anything* and it is made
+                avaiable to every solid in the pipeline. A typical pattern is to have this
+                resources object be a namedtuple, where each property is an object that
+                manages a particular resource, e.g. aws, a local filesystem manager, etc.
 
-        description: str (optional)
+            description: str (optional)
         '''
         self.config_def = check.opt_inst_param(
             config_def,
@@ -110,8 +131,8 @@ class PipelineContextDefinition(object):
 
 
 def _default_pipeline_context_definitions():
-    def _default_context_fn(_pipeline, args):
-        log_level = level_from_string(args['log_level'])
+    def _default_context_fn(_pipeline, config_value):
+        log_level = level_from_string(config_value['log_level'])
         context = ExecutionContext(
             loggers=[define_colored_console_logger('dagster', level=log_level)]
         )
@@ -136,18 +157,23 @@ class DependencyDefinition(namedtuple('_DependencyDefinition', 'solid output des
     '''Dependency definitions represent an edge in the DAG of solids. This object is
     used with a dictionary structure (whose keys represent solid/input where the dependency
     comes from) so this object only contains the target dependency information.
-    '''
 
-    def __new__(cls, solid, output=DEFAULT_OUTPUT, description=None):
-        '''
-        Parameters:
+    Attributes:
         solid: str
             The name of the solid that is the target of the dependency.
             This is the solid where the value passed between the solids
             comes from.
-        output: str (optional) defaults to 'result'
+        output: str (optional)
             The name of the output that is the target of the dependency.
         description: str (optional)
+    '''
+
+    def __new__(cls, solid, output=DEFAULT_OUTPUT, description=None):
+        '''
+        Args:
+            solid: str
+            output: str (optional) defaults to 'result'
+            description: str (optional)
         '''
         return super(DependencyDefinition, cls).__new__(
             cls,
@@ -262,6 +288,13 @@ class PipelineDefinition(object):
     (of type ExecutionContext) is created and what configuration is necessary to create it.
     - Dependencies. Solids within a pipeline are arranged as a DAG (directed, acyclic graph).
     Dependencies determine how the values produced by solids flow through the DAG.
+
+    Attributes:
+        name:
+        description:
+        solids:
+        dependencies:
+        dependency_structure:
     '''
 
     @staticmethod
@@ -272,26 +305,23 @@ class PipelineDefinition(object):
         Frequently (especially in test contexts) one wants to isolate a single solid for
         independent testing.
 
-        See Also
-        --------
-        PipelineDefinition.create_sub_pipeline
+        See PipelineDefinition.create_sub_pipeline.
 
-        Parameters
-        ----------
-        pipeline: PipelineDefinition
-        solid_name: str
-        injected_solids:
+        Args:
+            pipeline: PipelineDefinition
+            solid_name: str
+            injected_solids:
                 Two dimensional dictionary. (optional)
                 solid_name (str) => index_name (str) => SolidDefinition
 
-            When you create a subpipeline, you possible left with solids within that pipeline
-            who have unmet dependencies. To fulfill these dependencies new solids must be
-            provided.
+                When you create a subpipeline, you possible left with solids within that pipeline
+                who have unmet dependencies. To fulfill these dependencies new solids must be
+                provided.
 
-        returns a PipelineDefinition
+        Returns:
+            PipelineDefinition
 
-        Examples
-        --------
+        Example:
         new_pipeline = PipelineDefinition.create_single_solid_pipeline(
             existing_pipeline,
             'A', # existing_pipeline
@@ -319,20 +349,18 @@ class PipelineDefinition(object):
         of solids and then proceed forward through the dependency graph until all the
         "through" solids are reached.
 
-        See Also
-        --------
-        PipelineDefinition.create_single_solid_pipeline
+        See PipelineDefinition.create_single_solid_pipeline
 
-        Parameters
-        ----------
-        pipeline: PipelineDefinintion
-        from_solids: list of strs
-        through_solids: list of strs
-        injected_solids:
-                Two dimensional dictionary. (optional)
-                solid_name (str) => index_name (str) => SolidDefinition
+        Args:
+            pipeline: PipelineDefinintion
+            from_solids: list of strs
+            through_solids: list of strs
+            injected_solids:
+                    Two dimensional dictionary. (optional)
+                    solid_name (str) => index_name (str) => SolidDefinition
 
-        returns a PipelineDefinition
+        Returns:
+            PipelineDefinition
         '''
         # FIXME: fix circular reference
         check.inst_param(pipeline, 'pipeline', PipelineDefinition)
@@ -416,13 +444,12 @@ class PipelineDefinition(object):
         self, solids, name=None, description=None, context_definitions=None, dependencies=None
     ):
         '''
-        Parameters
-        ----------
-        solids: list of SolidDefinition
-        name: string (optional)
-        description: string (optional)
-        context_definitions: dictionary str => PipelineContextDefinition (optional)
-        dependencies: 2D dictionary str => str => DependencyDefinition (optional)
+        Args:
+            solids: list of SolidDefinition
+            name: string (optional)
+            description: string (optional)
+            context_definitions: dictionary str => PipelineContextDefinition (optional)
+            dependencies: 2D dictionary str => str => DependencyDefinition (optional)
         '''
         self.description = check.opt_str_param(description, 'description')
         self.name = check.opt_str_param(name, 'name')
@@ -496,12 +523,11 @@ class InputDefinition(object):
     '''An InputDefinition instance represents an argument to a transform defined within a solid.
     Inputs are values within the dagster type system that are created from previous solids.
 
-    Parameters
-    ----------
-    name: str
-    dagster_type: DagsterType (optional) defaults to types.Any
-    expectations: list of ExpectationDefinition (optional)
-    description: str (optional)
+    Attributes:
+        name: str
+        dagster_type: DagsterType (optional) defaults to types.Any
+        expectations: list of ExpectationDefinition (optional)
+        description: str (optional)
     '''
 
     def __init__(self, name, dagster_type=None, expectations=None, description=None):
@@ -523,12 +549,11 @@ class OutputDefinition(object):
     output, and so the user can construct a single OutputDefinition that will have
     the default name of "result".
 
-    Parameters
-    ----------
-    name: str (optional) defaults to "result"
-    dagster_type: DagsterType (optional) defaults to types.Any
-    expectations: list of ExpectationDefinition (optional)
-    description: str (optional)
+    Attributes:
+        name: str (optional) defaults to "result"
+        dagster_type: DagsterType (optional) defaults to types.Any
+        expectations: list of ExpectationDefinition (optional)
+        description: str (optional)
     '''
 
     def __init__(self, name=None, dagster_type=None, expectations=None, description=None):
@@ -603,10 +628,9 @@ class Result(namedtuple('_Result', 'value output_name')):
     An implementator of a SolidDefinition must provide a transform that
     yields objects of this type.
 
-    Parameters
-    ----------
-    value: Any
-    output_name: str (optional) defaults to "result"'''
+    Attributes:
+        value: Any
+        output_name: str (optional) defaults to "result"'''
 
     def __new__(cls, value, output_name=DEFAULT_OUTPUT):
         return super(Result, cls).__new__(
@@ -625,26 +649,24 @@ class ConfigDefinition(object):
         '''Solids have config, which determine how they interact with the external world.
         Example configs would be file paths, database table names, and so forth.
 
-        Parameters:
-        ----------
-        config_type: DagsterType (optional defaults to types.Any)'''
+        Args:
+            config_type: DagsterType (optional defaults to types.Any)'''
         self.config_type = check.inst_param(config_type, 'config_type', DagsterType)
 
 
 class SolidDefinition(object):
     '''A solid is a node of computation within a pipeline.
 
-    Parameters:
-    ----------
-    name: str
-    inputs: list of InputDefinitions
-    transform_fn: callable with sig (
-        context: ExecutionContext,
-        inputs: str => Any,
-        config_dict: str => Any) : Iterable<Result>
-    outputs: list of OutputDefinitions
-    config_def: ConfigDefinition (optional)
-    description: str (optional)
+    Attributes:
+        name: str
+        inputs: list of InputDefinitions
+        transform_fn: callable with sig (
+            context: ExecutionContext,
+            inputs: str => Any,
+            config_value: Any) : Iterable<Result>
+        outputs: list of OutputDefinitions
+        config_def: ConfigDefinition
+        description: str
     '''
 
     def __init__(self, name, inputs, transform_fn, outputs, config_def=None, description=None):

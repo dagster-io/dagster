@@ -6,7 +6,7 @@
 Dagster's documentation!
 ===================================
 
-.. include:: ../README.rst
+.. include:: ../../../README.rst
   :start-after: docs-include
 
 
