@@ -11,7 +11,6 @@ from dagster import (
     execute_pipeline,
     solid,
     types,
-    with_context,
 )
 from dagster.core.errors import (DagsterTypeError, DagsterInvariantViolationError)
 from dagster.utils.logging import (INFO, ERROR)
@@ -25,9 +24,8 @@ def test_default_context():
         inputs=[],
         outputs=[OutputDefinition()],
     )
-    @with_context
-    def default_context_transform(context):
-        for logger in context._logger.loggers:
+    def default_context_transform(info):
+        for logger in info.context._logger.loggers:
             assert logger.level == ERROR
 
     pipeline = PipelineDefinition(solids=[default_context_transform])
@@ -41,9 +39,8 @@ def test_default_context_with_log_level():
         inputs=[],
         outputs=[OutputDefinition()],
     )
-    @with_context
-    def default_context_transform(context):
-        for logger in context._logger.loggers:
+    def default_context_transform(info):
+        for logger in info.context._logger.loggers:
             assert logger.level == INFO
 
     pipeline = PipelineDefinition(solids=[default_context_transform])
@@ -65,9 +62,8 @@ def test_default_value():
             inputs=[],
             outputs=[OutputDefinition()],
         )
-        @with_context
-        def config_test(context):
-            assert context.resources == {config_key: config_value}
+        def config_test(info):
+            assert info.context.resources == {config_key: config_value}
 
         return config_test
 
@@ -101,9 +97,8 @@ def test_custom_contexts():
         inputs=[],
         outputs=[OutputDefinition()],
     )
-    @with_context
-    def custom_context_transform(context):
-        assert context.resources == {'field_one': 'value_two'}
+    def custom_context_transform(info):
+        assert info.context.resources == {'field_one': 'value_two'}
 
     pipeline = PipelineDefinition(
         solids=[custom_context_transform],
@@ -149,10 +144,9 @@ def test_yield_context():
         inputs=[],
         outputs=[OutputDefinition()],
     )
-    @with_context
-    def custom_context_transform(context):
-        assert context.resources == {'field_one': 'value_two'}
-        assert context._context_dict['foo'] == 'bar'  # pylint: disable=W0212
+    def custom_context_transform(info):
+        assert info.context.resources == {'field_one': 'value_two'}
+        assert info.context._context_dict['foo'] == 'bar'  # pylint: disable=W0212
         events.append('during')
 
     def _yield_context(_pipeline, config_value):
@@ -193,7 +187,7 @@ def test_invalid_context():
         inputs=[],
         outputs=[OutputDefinition()],
     )
-    def never_transform():
+    def never_transform(info):
         raise Exception('should never execute')
 
     default_context_pipeline = PipelineDefinition(solids=[never_transform])
@@ -223,11 +217,9 @@ def test_invalid_context():
         context_definitions={
             'default':
             PipelineContextDefinition(
-                config_def=ConfigDefinition.config_dict(
-                    {
-                        'string_field': Field(types.String)
-                    }
-                ),
+                config_def=ConfigDefinition.config_dict({
+                    'string_field': Field(types.String)
+                }),
                 context_fn=lambda _pipeline, _config_value: _config_value
             )
         }

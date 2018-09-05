@@ -26,7 +26,7 @@ def silencing_default_context():
 
 
 @solid(name='noop', inputs=[], outputs=[OutputDefinition()])
-def noop_solid():
+def noop_solid(_info):
     return 'foo'
 
 

@@ -16,10 +16,21 @@ from .definitions import (
     check,
 )
 
+from .execution import ExecutionContext
+
 from .types import Any
 
 # Error messages are long
 # pylint: disable=C0301
+
+
+class SolidResolveInfo(namedtuple('SolidResolveInfo', 'context config')):
+    def __new__(cls, context, config):
+        return super(SolidResolveInfo, cls).__new__(
+            cls,
+            check.inst_param(context, 'context', ExecutionContext),
+            config,
+        )
 
 
 class MultipleResults(namedtuple('_MultipleResults', 'results')):
@@ -37,21 +48,6 @@ class MultipleResults(namedtuple('_MultipleResults', 'results')):
         for name, value in result_dict.items():
             results.append(Result(value, name))
         return MultipleResults(*results)
-
-
-def with_context(fn):
-    """Pass context as a first argument to a transform.
-    """
-    return _WithContext(fn)
-
-
-class _WithContext(object):
-    def __init__(self, fn):
-        self.fn = fn
-
-    @property
-    def has_context(self):
-        return True
 
 
 class _Solid(object):
@@ -76,15 +72,11 @@ class _Solid(object):
         self.config_def = check.opt_inst_param(config_def, 'config_def', ConfigDefinition(Any))
 
     def __call__(self, fn):
-        expect_context = getattr(fn, 'has_context', False)
-        if expect_context:
-            fn = fn.fn
-
         if not self.name:
             self.name = fn.__name__
 
-        _validate_transform_fn(self.name, fn, self.input_defs, expect_context)
-        transform_fn = _create_transform_wrapper(fn, self.input_defs, self.outputs, expect_context)
+        _validate_transform_fn(self.name, fn, self.input_defs)
+        transform_fn = _create_transform_wrapper(fn, self.input_defs, self.outputs)
         return SolidDefinition(
             name=self.name,
             inputs=self.input_defs,
@@ -95,23 +87,28 @@ class _Solid(object):
         )
 
 
-def solid(name=None, inputs=None, output=None, outputs=None, description=None):
-    return _Solid(name=name, inputs=inputs, output=output, outputs=outputs, description=description)
+def solid(name=None, inputs=None, output=None, outputs=None, description=None, config_def=None):
+    return _Solid(
+        name=name,
+        inputs=inputs,
+        output=output,
+        outputs=outputs,
+        description=description,
+        config_def=config_def
+    )
 
 
-def _create_transform_wrapper(fn, inputs, outputs, include_context=False):
+def _create_transform_wrapper(fn, inputs, outputs):
     input_names = [input.name for input in inputs]
 
     @wraps(fn)
-    def transform(context, args, _config):
+    def transform(context, args, config):
         kwargs = {}
         for input_name in input_names:
             kwargs[input_name] = args[input_name]
 
-        if include_context:
-            result = fn(context, **kwargs)
-        else:
-            result = fn(**kwargs)
+        info = SolidResolveInfo(context, config)
+        result = fn(info, **kwargs)
         if inspect.isgenerator(result):
             for item in result:
                 yield item
@@ -145,34 +142,31 @@ class FunctionValidationError(Exception):
         self.missing_names = missing_names
 
 
-def _validate_transform_fn(solid_name, transform_fn, inputs, expect_context=False):
+def _validate_transform_fn(solid_name, transform_fn, inputs):
     names = set(inp.name for inp in inputs)
-    if expect_context:
-        expected_positionals = ('context', )
-    else:
-        expected_positionals = ()
+    expected_positionals = ('info', )
     try:
         _validate_decorated_fn(transform_fn, names, expected_positionals)
     except FunctionValidationError as e:
         if e.error_type == FunctionValidationError.TYPES['vararg']:
             raise DagsterInvalidDefinitionError(
-                "solid '{solid_name}' transform function has positional vararg parameter '{e.param}'. Transform functions should only have keyword arguments that match input names and optionally a first positional parameter named 'context'.".
+                "solid '{solid_name}' transform function has positional vararg parameter '{e.param}'. Transform functions should only have keyword arguments that match input names and a positional parameter named 'info'.".
                 format(solid_name=solid_name, e=e)
             )
         elif e.error_type == FunctionValidationError.TYPES['missing_name']:
             raise DagsterInvalidDefinitionError(
-                "solid '{solid_name}' transform function has parameter '{e.param}' that is not one of the solid inputs. Transform functions should only have keyword arguments that match input names and optionally a first positional parameter named 'context'.".
+                "solid '{solid_name}' transform function has parameter '{e.param}' that is not one of the solid inputs. Transform functions should only have keyword arguments that match input names and a positional parameter named 'info'.".
                 format(solid_name=solid_name, e=e)
             )
         elif e.error_type == FunctionValidationError.TYPES['missing_positional']:
             raise DagsterInvalidDefinitionError(
-                "solid '{solid_name}' transform function do not have required positional parameter '{e.param}'. Transform functions should only have keyword arguments that match input names and optionally a first positional parameter named 'context'.".
+                "solid '{solid_name}' transform function do not have required positional parameter '{e.param}'. Transform functions should only have keyword arguments that match input names and a positional parameter named 'info'.".
                 format(solid_name=solid_name, e=e)
             )
         elif e.error_type == FunctionValidationError.TYPES['extra']:
             undeclared_inputs_printed = ", '".join(e.missing_names)
             raise DagsterInvalidDefinitionError(
-                "solid '{solid_name}' transform function do not have parameter(s) '{undeclared_inputs_printed}', which are in solid's inputs. Transform functions should only have keyword arguments that match input names and optionally a first positional parameter named 'context'.".
+                "solid '{solid_name}' transform function do not have parameter(s) '{undeclared_inputs_printed}', which are in solid's inputs. Transform functions should only have keyword arguments that match input names and a positional parameter named 'info'.".
                 format(solid_name=solid_name, undeclared_inputs_printed=undeclared_inputs_printed)
             )
         else:

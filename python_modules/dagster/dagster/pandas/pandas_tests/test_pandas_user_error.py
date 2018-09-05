@@ -36,7 +36,7 @@ def test_wrong_output_value():
         inputs=[csv_input],
         outputs=[OutputDefinition(dagster_type=dagster_pd.DataFrame)]
     )
-    def df_solid(num_csv):
+    def df_solid(_info, num_csv):
         return 'not a dataframe'
 
     pass_solid = define_stub_solid('pass_solid', pd.DataFrame())
@@ -61,7 +61,7 @@ def test_wrong_input_value():
         inputs=[InputDefinition('foo', dagster_pd.DataFrame)],
         outputs=[OutputDefinition()],
     )
-    def df_solid(foo):
+    def df_solid(_info, foo):
         return foo
 
     pass_solid = define_stub_solid('pass_solid', 'not a dataframe')
