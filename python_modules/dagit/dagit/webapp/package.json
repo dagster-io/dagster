@@ -50,8 +50,10 @@
   "scripts": {
     "start": "react-scripts-ts start",
     "build": "react-scripts-ts build",
-    "test": "jest",
     "eject": "react-scripts-ts eject",
+    "test": "npm run ts && npm run jest",
+    "jest": "jest",
+    "ts": "tsc -p .",
     "download-schema": "apollo schema:download --endpoint $REACT_APP_GRAPHQL_URI ./src/schema.json",
     "generate-types": "apollo codegen:generate --queries \"./src/**/*.tsx\" --target typescript types --schema ./src/schema.json",
     "watch-types": "apollo codegen:generate --queries \"./src/**/*.tsx\" --target typescript types --schema ./src/schema.json --watch"

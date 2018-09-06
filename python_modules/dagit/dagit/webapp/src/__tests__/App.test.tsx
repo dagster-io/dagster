@@ -201,7 +201,7 @@ const mocks = [
   }
 ];
 
-function createNodeMock(element) {
+function createNodeMock(element: any) {
   if (element.type === "div") {
     return {
       querySelector() {
