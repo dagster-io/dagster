@@ -72,7 +72,13 @@ class ComputeNodeOutputHandle(namedtuple('_ComputeNodeOutputHandle', 'compute_no
     def __str__(self):
         return (
             'ComputeNodeOutputHandle'
-            '(guid="{cn.compute_node.guid}", output_name="{cn.output_name}")'.format(cn=self)
+            '(cn="{cn.compute_node.friendly_name}", output_name="{cn.output_name}")'.format(cn=self)
+        )
+
+    def __repr__(self):
+        return (
+            'ComputeNodeOutputHandle'
+            '(cn="{cn.compute_node.friendly_name}", output_name="{cn.output_name}")'.format(cn=self)
         )
 
     def __hash__(self):
@@ -172,6 +178,34 @@ JOIN_OUTPUT = 'join_output'
 EXPECTATION_INPUT = 'expectation_input'
 
 
+def _yield_transform_results(context, compute_node, values_dict, config_dict):
+    gen = compute_node.solid.transform_fn(context, values_dict, config_dict)
+
+    if isinstance(gen, Result):
+        raise DagsterInvariantViolationError(
+            (
+                'Transform for solid {solid_name} returned a Result rather than ' +
+                'yielding it. The transform_fn of the core SolidDefinition must yield ' +
+                'its results'
+            ).format(solid_name=compute_node.solid.name)
+        )
+
+    if gen is None:
+        return
+
+    for result in gen:
+        if not isinstance(result, Result):
+            raise DagsterInvariantViolationError(
+                (
+                    'Transform for solid {solid_name} yielded {result} rather an ' +
+                    'an instance of the Result class.'
+                ).format(
+                    result=repr(result),
+                    solid_name=compute_node.solid.name,
+                )
+            )
+        yield result
+
 def _execute_core_transform(context, compute_node, values_dict, config_dict):
     '''
     Execute the user-specified transform for the solid. Wrap in an error boundary and do
@@ -183,34 +217,19 @@ def _execute_core_transform(context, compute_node, values_dict, config_dict):
     check.dict_param(config_dict, 'config_dict', key_type=str)
 
     error_str = 'Error occured during core transform'
+
+    context.debug(
+        'Executing core transform for solid {solid}.'.format(
+            solid=compute_node.solid.name
+        )
+    )
+
     with _user_code_error_boundary(context, error_str), \
             time_execution_scope() as timer_result, \
             context.value('solid', compute_node.solid.name):
 
-        gen = compute_node.solid.transform_fn(context, values_dict, config_dict)
-
-        if isinstance(gen, Result):
-            raise DagsterInvariantViolationError(
-                (
-                    'Transform for solid {solid_name} returned a Result rather than ' +
-                    'yielding it. The transform_fn of the core SolidDefinition must yield ' +
-                    'its results'
-                ).format(solid_name=compute_node.solid.name, )
-            )
-
-        if gen is not None:
-            for result in gen:
-                if not isinstance(result, Result):
-                    raise DagsterInvariantViolationError(
-                        (
-                            'Transform for solid {solid_name} yielded {result} rather an ' +
-                            'an instance of the Result class.'
-                        ).format(
-                            result=repr(result),
-                            solid_name=compute_node.solid.name,
-                        )
-                    )
-                yield result
+        for result in _yield_transform_results(context, compute_node, values_dict, config_dict):
+            yield result
 
     context.metric('core_transform_time_ms', timer_result.millis)
 
@@ -379,8 +398,24 @@ def execute_compute_nodes(context, compute_nodes):
     check.list_param(compute_nodes, 'compute_nodes', of_type=ComputeNode)
 
     intermediate_results = {}
+    context.debug('Entering exeute_compute_nodes loop. Order: {order}'.format(
+        order=[cn.friendly_name for cn in compute_nodes]
+    ))
+
     for compute_node in compute_nodes:
         if not _all_inputs_covered(compute_node, intermediate_results):
+            result_keys = set(intermediate_results.keys())
+            expected_outputs = [ni.prev_output_handle for ni in compute_node.node_inputs]
+
+            context.debug(
+                'Not all inputs covered for {compute_name}. Not executing.'.format(
+                    compute_name=compute_node.friendly_name
+                ) + '\nKeys in result: {result_keys}.'.format(
+                    result_keys=result_keys,
+                ) + '\nOutputs need for inputs {expected_outputs}'.format(
+                    expected_outputs=expected_outputs,
+                )
+            )
             continue
 
         input_values = {}
@@ -603,6 +638,7 @@ def create_compute_node_graph(execution_info):
             output_handle = topo_solid.output_handle(output_def.name)
             cn_output_node_map[output_handle] = subgraph.terminal_cn_output_handle
 
+
     return _create_compute_node_graph(compute_nodes)
 
 
@@ -611,7 +647,7 @@ def _create_compute_node_graph(compute_nodes):
     for cn in compute_nodes:
         cn_dict[cn.guid] = cn
 
-    deps = defaultdict(set)
+    deps = defaultdict()
 
     for cn in compute_nodes:
         deps[cn.guid] = set()

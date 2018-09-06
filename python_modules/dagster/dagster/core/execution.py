@@ -236,6 +236,14 @@ def _execute_graph_iterator(context, execution_graph, environment):
 
     cn_nodes = list(cn_graph.topological_nodes())
 
+    check.invariant(len(cn_nodes) > 0, 'No compute nodes!')
+
+    context.debug(
+        'About to execute the compute node graph in the following order {order}'.format(
+            order=[cn.friendly_name for cn in cn_nodes]
+        )
+    )
+
     check.invariant(len(cn_nodes[0].node_inputs) == 0)
 
     solid = None
