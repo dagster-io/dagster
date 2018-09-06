@@ -41,5 +41,6 @@ __all__ = [
     'Field',
     'InputDefinition',
     'OutputDefinition',
+    'PipelineContextDefinition',
     'PipelineDefinition',
 ]

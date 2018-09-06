@@ -74,24 +74,26 @@ class PipelineContextDefinition(object):
     a dictionary key'ed by its name so the name is not present in this object.
 
     Attributes:
-        config_def (ConfigurationDefinition):
+        config_def (ConfigurationDefinition): The configuration for the pipeline context.
+
         context_fn (callable):
-            A callable that either returns *or* yields an ExecutionContext. Type sig:
-            (pipeline: PipelineDefinition, config: Any) : ExecutionContext
+            Signature is (pipeline: PipelineDefintion, config_value: Any) => ExecutionContext
+
+            A callable that either returns *or* yields an ExecutionContext.
+
         description (str): A description of what this context represents
     '''
 
     @staticmethod
     def passthrough_context_definition(context):
-        '''Create a context definition from a pre-existing context.
-        This can be useful in testing contexts where you may want to
-        create a context manually and then pass it into a one-off
-        PipelineDefinition
+        '''Create a context definition from a pre-existing context. This can be useful
+        in testing contexts where you may want to create a context manually and then
+        pass it into a one-off PipelineDefinition
 
         Args:
-            context: ExecutionContext
+            context (ExecutionContext): The context that will provided to the pipeline. 
         Returns:
-            PipelineContextDefinition
+            PipelineContextDefinition: The passthrough context definition.
         '''
 
         check.inst_param(context, 'context', ExecutionContext)
@@ -101,10 +103,10 @@ class PipelineContextDefinition(object):
     def __init__(self, context_fn, config_def=None, description=None):
         '''
         Args:
-            config_def: ConfigDefinition
-                Define the configuration for the context
+            context_fn (callable):
+                Signature of context_fn:
+                (pipeline: PipelineDefintion, config_value: Any) => ExecutionContext
 
-            context_fn: callable (pipeline: PipelineDefinition, args: dict str => Any
                 Returns *or* yields an ExecutionContext.
 
                 If it yields a context, the code after the yield executes after pipeline
@@ -116,7 +118,10 @@ class PipelineContextDefinition(object):
                 resources object be a namedtuple, where each property is an object that
                 manages a particular resource, e.g. aws, a local filesystem manager, etc.
 
-            description: str (optional)
+            config_def (ConfigDefinition):
+                Define the configuration for the context
+
+            description (str): Description of the context definition.
         '''
         self.config_def = check.opt_inst_param(
             config_def,
