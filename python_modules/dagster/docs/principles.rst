@@ -38,8 +38,8 @@ Testing data pipelines is notoriously difficult. Because it is so difficult it i
 done, or done poorly. Dagster pipelines are designed to be tested. They have explicit support 
 for pipeline authors to manage and maintain multiple operating environments -- for example, unit
 testing, integration testing, and production environments, among others. In addition dagster can
-execute arbitrary subsets and nodes of the pipeline, critical testability. (This capability
-happens to be useful in operational contexts as well).
+execute arbitrary subsets and nodes of the pipeline which is critical for testability. (This
+capability happens to be useful in operational contexts as well).
 
 Verifiable data quality
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -48,7 +48,7 @@ during every meaningful stage of computation in production -- are critical to re
 maintenance burden of data pipelines. Pipeline authors generally do not have control of their
 input data, and make many implicit assumptions about that data. The data formats can also change
 over time. In order to control this entropy, Dagster encourages users to computationally verify
-assumptions (known as expectations) about the data as part of the piplien process. This way if
+assumptions (known as expectations) about the data as part of the pipeline process. This way if
 those assumptions are broken, the breakage can be reported quickly, easily, and with rich metadata
 and diagnostic information. These expectations can also serve as contracts between teams.
 
@@ -59,5 +59,5 @@ Gradual, optional typing
 
 Dagster contains a type system to describe the values flowing through the pipeline and the
 configuration of the pipeline. This allows nodes in a pipeline know if they are properly
-arranged and configuration prior to execution before execution, and serves as value
+arranged and configuration prior to execution before execution, and serves as valuable
 documentation and runtime error checking. 
