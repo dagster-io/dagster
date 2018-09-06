@@ -2,10 +2,10 @@ import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
 import { Code, Position, Tooltip, Text } from "@blueprintjs/core";
-import { TypeFragment } from "./types/TypeFragment";
+import { TypeWithTooltipFragment } from "./types/TypeWithTooltipFragment";
 
 interface ITypeWithTooltipProps {
-  type: TypeFragment;
+  type: TypeWithTooltipFragment;
 }
 
 export default class TypeWithTooltip extends React.Component<
