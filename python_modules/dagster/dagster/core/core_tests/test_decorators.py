@@ -197,7 +197,6 @@ def test_solid_with_input():
         pipeline,
         environment=config.Environment(),
     )
-    print([p.solid.name for p in pipeline_result.result_list])
 
     result = pipeline_result.result_for_solid('hello_world')
 
