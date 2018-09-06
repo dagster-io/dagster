@@ -720,8 +720,9 @@ class Result(namedtuple('_Result', 'value output_name')):
     yields objects of this type.
 
     Attributes:
-        value: Any
-        output_name: str (optional) defaults to "result"'''
+        value (Any): Value returned by the transform.
+        output_name (str): Name of the output returns. defaults to "result"
+'''
 
     def __new__(cls, value, output_name=DEFAULT_OUTPUT):
         return super(Result, cls).__new__(

@@ -43,4 +43,5 @@ __all__ = [
     'OutputDefinition',
     'PipelineContextDefinition',
     'PipelineDefinition',
+    'Result',
 ]
