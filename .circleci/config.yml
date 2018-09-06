@@ -89,18 +89,20 @@ jobs:
   dagit-webapp:
     docker:
       - image: circleci/node:10.6
-    working_directory: ~/repo/python_modules/dagit/dagit/webapp
+    working_directory: ~/repo
     steps:
       - checkout
 
       - run:
           name: Install Dependencies
           command: |
+            cd python_modules/dagit/dagit/webapp
             yarn
 
       - run:
           name: Run Dagit Webapp Tests
           command: |
+            cd python_modules/dagit/dagit/webapp
             yarn test
 
       - store_artifacts:
