@@ -8,7 +8,7 @@ import Loading from "./Loading";
 import Pipelines from "./Pipelines";
 import { AppQuery } from "./types/AppQuery";
 
-class App extends React.Component {
+export default class App extends React.Component {
   public render() {
     return (
       <BrowserRouter>
@@ -36,7 +36,7 @@ class App extends React.Component {
   }
 }
 
-const APP_QUERY = gql`
+export const APP_QUERY = gql`
   query AppQuery {
     pipelines {
       ...PipelinesFragment
@@ -45,5 +45,3 @@ const APP_QUERY = gql`
 
   ${Pipelines.fragments.PipelinesFragment}
 `;
-
-export default App;

@@ -2,26 +2,14 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 import { injectGlobal } from "styled-components";
 import ApolloClient from "apollo-boost";
-import {
-  InMemoryCache,
-  IntrospectionFragmentMatcher
-} from "apollo-cache-inmemory";
 import { ApolloProvider } from "react-apollo";
 import App from "./App";
+import AppCache from "./AppCache";
 import "@blueprintjs/core/lib/css/blueprint.css";
 import "@blueprintjs/icons/lib/css/blueprint-icons.css";
-import introspectionQueryResultData from "./schema.json";
-
-const fragmentMatcher = new IntrospectionFragmentMatcher({
-  introspectionQueryResultData: {
-    __schema: introspectionQueryResultData
-  }
-});
-
-const cache = new InMemoryCache({ fragmentMatcher });
 
 const client = new ApolloClient({
-  cache,
+  cache: AppCache,
   uri: process.env.REACT_APP_GRAPHQL_URI || "/graphql"
 });
 

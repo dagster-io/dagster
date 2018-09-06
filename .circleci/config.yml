@@ -10,6 +10,7 @@ workflows:
       - dagit-python-3.6
       - dagit-python-3.5
       - dagit-python-2.7
+      - dagit-webapp
 
 jobs:
   dagster-python-3.6: &dagster-template
@@ -84,3 +85,24 @@ jobs:
       - image: circleci/python:2.7.15
     environment:
       TOXENV: py27
+
+  dagit-webapp:
+    docker:
+      - image: circleci/node:10.6
+    working_directory: ~/repo/python_modules/dagit/dagit/webapp
+    steps:
+      - checkout
+
+      - run:
+          name: Install Dependencies
+          command: |
+            yarn
+
+      - run:
+          name: Run Dagit Webapp Tests
+          command: |
+            yarn test
+
+      - store_artifacts:
+          path: test-reports
+          destination: test-reports

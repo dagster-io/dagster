@@ -27,27 +27,50 @@
     "react-markdown": "^3.4.1",
     "react-router": "^4.3.1",
     "react-router-dom": "^4.3.1",
-    "styled-components": "^3.3.3"
+    "styled-components": "^3.3.3",
+    "ts-jest": "^23.1.4"
   },
   "devDependencies": {
     "@types/jest": "^23.3.1",
     "@types/node": "^10.5.5",
     "@types/react": "^16.4.7",
     "@types/react-dom": "^16.0.6",
+    "@types/react-test-renderer": "^16.0.2",
     "apollo": "^1.6.0",
+    "babel-jest": "^23.4.2",
     "babel-plugin-graphql-tag": "^1.6.0",
     "graphql": "^0.13.2",
+    "jest": "^23.5.0",
     "prettier": "^1.14.0",
     "react-scripts-ts": "2.16.0",
-    "typescript": "^3.0.1"
+    "react-test-renderer": "^16.4.2",
+    "typescript": "^3.0.1",
+    "typescript-babel-jest": "^1.0.5"
   },
   "scripts": {
     "start": "react-scripts-ts start",
     "build": "react-scripts-ts build",
-    "test": "react-scripts-ts test --env=jsdom",
+    "test": "jest",
     "eject": "react-scripts-ts eject",
     "download-schema": "apollo schema:download --endpoint $REACT_APP_GRAPHQL_URI ./src/schema.json",
     "generate-types": "apollo codegen:generate --queries \"./src/**/*.tsx\" --target typescript types --schema ./src/schema.json",
     "watch-types": "apollo codegen:generate --queries \"./src/**/*.tsx\" --target typescript types --schema ./src/schema.json --watch"
+  },
+  "jest": {
+    "roots": [
+      "<rootDir>/src"
+    ],
+    "transform": {
+      "^.+\\.(ts|tsx)$": "ts-jest"
+    },
+    "moduleFileExtensions": [
+      "js",
+      "jsx",
+      "json",
+      "ts",
+      "tsx"
+    ],
+    "testRegex": "/__tests__/.*\\.test\\.(ts|tsx)$",
+    "testURL": "http://localhost"
   }
 }

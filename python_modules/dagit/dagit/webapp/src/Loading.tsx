@@ -21,7 +21,10 @@ export default class Loading<TData> extends React.Component<
           </LoadingCentering>
         </LoadingContainer>
       );
-    } else {
+    } else if (this.props.queryResult.error) {
+      throw this.props.queryResult.error;
+    }
+    {
       return this.props.children(this.props.queryResult.data as TData);
     }
   }
