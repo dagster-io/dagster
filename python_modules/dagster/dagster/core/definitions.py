@@ -30,6 +30,7 @@ DEFAULT_OUTPUT = 'result'
 DISALLOWED_NAMES = set(
     [
         'context',
+        'conf',
         'meta',
         'arg_dict',
         'dict',

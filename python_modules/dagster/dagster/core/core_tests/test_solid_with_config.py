@@ -20,7 +20,7 @@ def test_basic_solid_with_config():
         did_get['yep'] = config_dict
 
     solid = SolidDefinition(
-        name='with_context',
+        name='solid_with_context',
         inputs=[],
         outputs=[],
         config_def=ConfigDefinition.config_dict({
@@ -33,9 +33,9 @@ def test_basic_solid_with_config():
 
     execute_pipeline(
         pipeline,
-        config.Environment(
-            solids={'with_context': config.Solid(config_dict={'some_config': 'foo'})}
-        ),
+        config.Environment(solids={'solid_with_context': config.Solid({
+            'some_config': 'foo'
+        })}),
     )
 
     assert 'yep' in did_get
@@ -47,7 +47,7 @@ def test_config_arg_mismatch():
         raise Exception('should not reach')
 
     solid = SolidDefinition(
-        name='with_context',
+        name='solid_with_context',
         inputs=[],
         outputs=[],
         config_def=ConfigDefinition.config_dict({
@@ -61,7 +61,7 @@ def test_config_arg_mismatch():
     with pytest.raises(DagsterTypeError):
         execute_pipeline(
             pipeline,
-            config.Environment(
-                solids={'with_context': config.Solid(config_dict={'some_config': 1})}
-            ),
+            config.Environment(solids={'solid_with_context': config.Solid({
+                'some_config': 1
+            })}),
         )

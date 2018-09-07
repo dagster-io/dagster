@@ -227,17 +227,19 @@ def yield_context(pipeline, environment):
     context_definition = pipeline.context_definitions[context_name]
     config_type = context_definition.config_def.config_type
 
-    evaluation_result = config_type.evaluate_value(environment.context.args)
+    evaluation_result = config_type.evaluate_value(environment.context.config)
     if not evaluation_result.success:
         raise DagsterTypeError(
             'Invalid config value: {error_msg}'.format(error_msg=evaluation_result.error_msg)
         )
+
     thing = context_definition.context_fn(pipeline, evaluation_result.value)
     return _wrap_in_yield(thing)
 
 
 def execute_pipeline_iterator(pipeline, environment):
-    '''Returns iterator that yields :py:class:`SolidExecutionResult` for each solid executed in the pipeline
+    '''Returns iterator that yields :py:class:`SolidExecutionResult` for each
+    solid executed in the pipeline.
 
     Parameters:
       pipeline (PipelineDefinition): pipeline to run

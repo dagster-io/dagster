@@ -18,6 +18,8 @@ def execute_single_solid(context, solid, environment, throw_on_error=True):
     single_solid_environment = config.Environment(
         expectations=environment.expectations,
         context=environment.context,
+        solids={solid.name: environment.solids[solid.name]}
+        if solid.name in environment.solids else None
     )
 
     pipeline_result = execute_pipeline(

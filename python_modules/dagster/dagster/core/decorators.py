@@ -72,30 +72,6 @@ class MultipleResults(namedtuple('_MultipleResults', 'results')):
         return MultipleResults(*results)
 
 
-def with_context(fn):
-    '''(decorator) Pass context as a first argument to a transform.
-
-    Example:
-
-    .. code-block:: python
-
-        @solid()
-        @with_context
-        def my_solid(context):
-            pass
-    '''
-    return _WithContext(fn)
-
-
-class _WithContext(object):
-    def __init__(self, fn):
-        self.fn = fn
-
-    @property
-    def has_context(self):
-        return True
-
-
 class _Solid(object):
     def __init__(
         self,
@@ -115,18 +91,16 @@ class _Solid(object):
             self.outputs = check.opt_list_param(outputs, 'outputs', OutputDefinition)
 
         self.description = check.opt_str_param(description, 'description')
-        self.config_def = check.opt_inst_param(config_def, 'config_def', ConfigDefinition(Any))
+        self.config_def = check.opt_inst_param(config_def, 'config_def', ConfigDefinition)
 
     def __call__(self, fn):
-        expect_context = getattr(fn, 'has_context', False)
-        if expect_context:
-            fn = fn.fn
+        check.callable_param(fn, 'fn')
 
         if not self.name:
             self.name = fn.__name__
 
-        _validate_transform_fn(self.name, fn, self.input_defs, expect_context)
-        transform_fn = _create_transform_wrapper(fn, self.input_defs, self.outputs, expect_context)
+        _validate_transform_fn(self.name, fn, self.input_defs)
+        transform_fn = _create_transform_wrapper(fn, self.input_defs, self.outputs)
         return SolidDefinition(
             name=self.name,
             inputs=self.input_defs,
@@ -137,13 +111,12 @@ class _Solid(object):
         )
 
 
-def solid(name=None, inputs=None, output=None, outputs=None, description=None):
+def solid(name=None, inputs=None, output=None, outputs=None, config_def=None, description=None):
     '''(decorator) Create a solid with specified parameters.
 
     This shortcut simplifies core solid API by exploding arguments into kwargs of the
     transform function and omitting additional parameters when they are not needed.
-    Parameters are otherwise as per :py:class:`SolidDefinition`. By using
-    :py:function:`with_context` one can request context object to be passed too.
+    Parameters are otherwise as per :py:class:`SolidDefinition`. 
 
     Decorated function is the transform function itself. Instead of having to yield
     result objects, transform support multiple simpler output types.
@@ -158,23 +131,31 @@ def solid(name=None, inputs=None, output=None, outputs=None, description=None):
 
     .. code-block:: python
 
+        @solid
+        def hello_world(context, conf):
+            print('hello')
+
+        @solid()
+        def hello_world(context, conf):
+            print('hello')
+
         @solid(outputs=[OutputDefinition()])
-        def hello_world():
+        def hello_world(context, conf):
             return {'foo': 'bar'}
 
         @solid(output=OutputDefinition())
-        def hello_world():
+        def hello_world(context, conf):
             return Result(value={'foo': 'bar'})
 
         @solid(output=OutputDefinition())
-        def hello_world():
+        def hello_world(context, conf):
             yield Result(value={'foo': 'bar'})
 
         @solid(outputs=[
             OutputDefinition(name="left"),
             OutputDefinition(name="right"),
         ])
-        def hello_world():
+        def hello_world(context, conf):
             return MultipleResults.from_dict({
                 'left': {'foo': 'left'},
                 'right': {'foo': 'right'},
@@ -184,33 +165,41 @@ def solid(name=None, inputs=None, output=None, outputs=None, description=None):
             inputs=[InputDefinition(name="foo_to_foo")],
             outputs=[OutputDefinition()]
         )
-        def hello_world(foo_to_foo):
+        def hello_world(context, conf, foo_to_foo):
             return foo_to_foo
 
-        @solid(
-            inputs=[InputDefinition(name="foo_to_foo")],
-            outputs=[OutputDefinition()]
-        )
-        @with_context
-        def hello_world(context, foo_to_foo):
-            return foo_to_foo
     '''
-    return _Solid(name=name, inputs=inputs, output=output, outputs=outputs, description=description)
+    if callable(name):
+        check.invariant(inputs is None)
+        check.invariant(output is None)
+        check.invariant(outputs is None)
+        check.invariant(description is None)
+        check.invariant(config_def is None)
+        return _Solid()(name)
+
+    return _Solid(
+        name=name,
+        inputs=inputs,
+        output=output,
+        outputs=outputs,
+        config_def=config_def,
+        description=description,
+    )
 
 
-def _create_transform_wrapper(fn, inputs, outputs, include_context=False):
+# TODO change names and check types
+def _create_transform_wrapper(fn, inputs, outputs):
+    check.callable_param(fn, 'fn')
     input_names = [input.name for input in inputs]
 
     @wraps(fn)
-    def transform(context, args, _config):
+    def transform(context, args, conf):
         kwargs = {}
         for input_name in input_names:
             kwargs[input_name] = args[input_name]
 
-        if include_context:
-            result = fn(context, **kwargs)
-        else:
-            result = fn(**kwargs)
+        result = fn(context, conf, **kwargs)
+
         if inspect.isgenerator(result):
             for item in result:
                 yield item
@@ -244,12 +233,10 @@ class FunctionValidationError(Exception):
         self.missing_names = missing_names
 
 
-def _validate_transform_fn(solid_name, transform_fn, inputs, expect_context=False):
+def _validate_transform_fn(solid_name, transform_fn, inputs):
     names = set(inp.name for inp in inputs)
-    if expect_context:
-        expected_positionals = ('context', )
-    else:
-        expected_positionals = ()
+    # Currently being super strict about naming. Might be a good idea to relax. Starting strict.
+    expected_positionals = ('context', 'conf')
     try:
         _validate_decorated_fn(transform_fn, names, expected_positionals)
     except FunctionValidationError as e:

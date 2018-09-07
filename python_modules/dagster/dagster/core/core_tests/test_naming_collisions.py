@@ -52,7 +52,9 @@ def test_execute_solid_with_input_same_name():
 
     result = execute_pipeline(
         pipeline,
-        config.Environment(solids={'pass_value': config.Solid(config_dict={'value': 'foo'})}),
+        config.Environment(solids={'pass_value': config.Solid({
+            'value': 'foo'
+        })}),
     )
 
     assert result.result_for_solid('a_thing').transformed_value() == 'foofoo'
