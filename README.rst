@@ -25,10 +25,10 @@ As noted above Dagster has a point of view and values regarding how data pipelin
 
 * **Functional Data Pipelines**: We believe that data pipelines should be organized as DAGs of functional, idempotent computations. These computations injest input, do computation, and produce output, either with no side effects or well-known, un-externalized side effects. Given the same inputs and configuration, the computation should always produce the same output. These computations should also be parameterizable, so that they can execute in different environments. See https://bit.ly/2LxDgnr for an excellent overview of functional programing in batch computations.
 * **Self-describing**: Pipelines should be self-describing with rich metadata and types. Users should be able to approach a pipeline, and use tooling to inspect the pipelines for their structure and capabilities. This metadata should be co-located with actual code of the pipeline. Documentation and code is delivered as a single artifact.
-* **Compute-agnostic**: Dagster has opinions about the structure and best practices of data pipelines. It has no opinions about what libraries and engines use to do actual compute. The core computation within a dagster pipeline is user-specified code, meaning that it could be anything: Pandas, Spark, SQL computations on a data warehouse, vanilla python, or any combination therein. 
+* **Compute-agnostic**: Dagster has opinions about the structure and best practices of data pipelines. It has no opinions about what libraries and engines use to do actual compute. The core computation within a dagster pipeline is user-specified code, meaning that it could be anything: Pandas, Spark, SQL computations on a data warehouse, vanilla python, or any combination therein.
 * **Testable by design and by default**: Testing data pipelines is notoriously difficult. Because it is so difficult it is often never done, or done poorly. Dagster pipelines are designed to be tested. They have explicit support for pipeline authors to manage and maintain multiple operating environments -- for example, unit testing, integration testing, and production environments, among others. In addition dagster can execute arbitrary subsets and nodes of the pipeline, critical testability. (This capability happens to be useful in operational contexts as well).
 * **First-class data quality tests**: Testing code is important in data pipelines, but it is not sufficient. Data quality tests -- run during every meaningful stage of production -- are critical to reduce the maintenance burden of data pipelines. Pipeline authors generally do not have control of their input data, and make many implicit assumptions about that data. The data formats can also change over time. In order to control this entropy, Dagster encourages users to computationally verify assumptions (known as expectations) about the data as part of the piplien process. This way if those assumptions are broken, the breakage can be reported quickly, easily, and with rich metadata and diagnostic information. These expectations can also serve as contracts between teams.  See https://bit.ly/2mxDS1R for a primer on pipeline tests for data quality.
-* **Gradual, optional typing**: Dagster contains a type system to describe the values flowing through the pipeline. This allows nodes in a pipeline know if they are compatible before execution, and serves as value documentation and runtime error checking. 
+* **Gradual, optional typing**: Dagster contains a type system to describe the values flowing through the pipeline. This allows nodes in a pipeline know if they are compatible before execution, and serves as value documentation and runtime error checking.
 
 
 The core abstraction in Dagster is a *solid*, a logical unit of computation in a data pipeline. At its core a solid is a configurable function that accepts abstract inputs and produces outputs.
@@ -95,7 +95,7 @@ Example
           dataframe_to_csv_materialization,
       ])
   )
-  def sum_solid(num):
+  def sum_solid(info, num):
       sum_df = num.copy()
       # Here we add a new column to dataframe to sum up num1 and
       # num2 columns
@@ -111,7 +111,7 @@ Example
           dataframe_to_csv_materialization,
       ])
   )
-  def sum_sq_solid(sum):
+  def sum_sq_solid(info, sum):
       sum_sq = sum.copy()
       sum_sq['sum_sq'] = sum['sum']**2
       return sum_sq

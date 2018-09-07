@@ -13,7 +13,7 @@ import dagster.pandas as dagster_pd
     inputs=[InputDefinition('num', dagster_pd.DataFrame)],
     outputs=[OutputDefinition(dagster_type=dagster_pd.DataFrame)]
 )
-def sum_solid(num):
+def sum_solid(_info, num):
     sum_df = num.copy()
     sum_df['sum'] = sum_df['num1'] + sum_df['num2']
     return sum_df
@@ -23,7 +23,7 @@ def sum_solid(num):
     inputs=[InputDefinition('sum_df', dagster_pd.DataFrame)],
     outputs=[OutputDefinition(dagster_type=dagster_pd.DataFrame)]
 )
-def sum_sq_solid(sum_df):
+def sum_sq_solid(_info, sum_df):
     sum_sq_df = sum_df.copy()
     sum_sq_df['sum_sq'] = sum_df['sum']**2
     return sum_sq_df
@@ -33,7 +33,7 @@ def sum_sq_solid(sum_df):
     inputs=[InputDefinition('sum_sq_solid', dagster_pd.DataFrame)],
     outputs=[OutputDefinition(dagster_type=dagster_pd.DataFrame)]
 )
-def always_fails_solid(**_kwargs):
+def always_fails_solid(_info, **_kwargs):
     raise Exception('I am a programmer and I make error')
 
 
