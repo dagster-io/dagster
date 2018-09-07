@@ -7,7 +7,7 @@ def test_construct_full_environment():
     document = '''
 context:
     name: default
-    args:
+    config:
         context_arg: context_value
 '''
 

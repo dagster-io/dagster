@@ -23,11 +23,6 @@ def _load_table(context, table_name):
     ).fetchall()
 
 
-def table_name_source(table_name):
-    check.str_param(table_name, 'table_name')
-    return config.Source('TABLENAME', args={'name': table_name})
-
-
 def pipeline_test_def(solids, context, dependencies=None):
     return PipelineDefinition(
         solids=solids,
@@ -390,6 +385,6 @@ def create_multi_input_pipeline():
 def test_jinja():
     templated_sql = '''SELECT * FROM {{some_table.name}}'''
 
-    sql = _render_template_string(templated_sql, config_dict={'some_table': {'name': 'fill_me_in'}})
+    sql = _render_template_string(templated_sql, {'some_table': {'name': 'fill_me_in'}})
 
     assert sql == '''SELECT * FROM fill_me_in'''

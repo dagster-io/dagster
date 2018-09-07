@@ -206,7 +206,7 @@ def _yield_transform_results(context, compute_node, values_dict, config_dict):
             )
         yield result
 
-def _execute_core_transform(context, compute_node, values_dict, config_dict):
+def _execute_core_transform(context, compute_node, values_dict, conf):
     '''
     Execute the user-specified transform for the solid. Wrap in an error boundary and do
     all relevant logging and metrics tracking
@@ -214,7 +214,6 @@ def _execute_core_transform(context, compute_node, values_dict, config_dict):
     check.inst_param(context, 'context', ExecutionContext)
     check.inst_param(compute_node, 'compute_node', ComputeNode)
     check.dict_param(values_dict, 'values_dict', key_type=str)
-    check.dict_param(config_dict, 'config_dict', key_type=str)
 
     error_str = 'Error occured during core transform'
 
@@ -228,7 +227,7 @@ def _execute_core_transform(context, compute_node, values_dict, config_dict):
             time_execution_scope() as timer_result, \
             context.value('solid', compute_node.solid.name):
 
-        for result in _yield_transform_results(context, compute_node, values_dict, config_dict):
+        for result in _yield_transform_results(context, compute_node, values_dict, conf):
             yield result
 
     context.metric('core_transform_time_ms', timer_result.millis)
@@ -559,9 +558,9 @@ def validate_config_dict(execution_info, solid):
 
     name = solid.name
     solid_configs = execution_info.environment.solids
-    config_dict = solid_configs[name].config_dict if name in solid_configs else {}
+    conf = solid_configs[name].config if name in solid_configs else {}
 
-    evaluation_result = solid.config_def.config_type.evaluate_value(config_dict)
+    evaluation_result = solid.config_def.config_type.evaluate_value(conf)
     if evaluation_result.success:
         return evaluation_result.value
     else:
@@ -762,7 +761,6 @@ def _create_expectation_lambda(solid, expectation_def, output_name):
 def create_compute_node_from_solid_transform(solid, node_inputs, config_args):
     check.inst_param(solid, 'solid', SolidDefinition)
     check.list_param(node_inputs, 'node_inputs', of_type=ComputeNodeInput)
-    check.dict_param(config_args, 'config_args', key_type=str)
 
     return ComputeNode(
         friendly_name='{solid.name}.transform'.format(solid=solid),

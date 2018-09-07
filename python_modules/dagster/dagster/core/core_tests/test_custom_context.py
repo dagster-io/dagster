@@ -11,7 +11,6 @@ from dagster import (
     execute_pipeline,
     solid,
     types,
-    with_context,
 )
 from dagster.core.errors import (DagsterTypeError, DagsterInvariantViolationError)
 from dagster.utils.logging import (INFO, ERROR)
@@ -25,8 +24,7 @@ def test_default_context():
         inputs=[],
         outputs=[OutputDefinition()],
     )
-    @with_context
-    def default_context_transform(context):
+    def default_context_transform(context, _conf):
         for logger in context._logger.loggers:
             assert logger.level == ERROR
 
@@ -41,8 +39,7 @@ def test_default_context_with_log_level():
         inputs=[],
         outputs=[OutputDefinition()],
     )
-    @with_context
-    def default_context_transform(context):
+    def default_context_transform(context, _conf):
         for logger in context._logger.loggers:
             assert logger.level == INFO
 
@@ -65,8 +62,7 @@ def test_default_value():
             inputs=[],
             outputs=[OutputDefinition()],
         )
-        @with_context
-        def config_test(context):
+        def config_test(context, _conf):
             assert context.resources == {config_key: config_value}
 
         return config_test
@@ -101,8 +97,7 @@ def test_custom_contexts():
         inputs=[],
         outputs=[OutputDefinition()],
     )
-    @with_context
-    def custom_context_transform(context):
+    def custom_context_transform(context, _conf):
         assert context.resources == {'field_one': 'value_two'}
 
     pipeline = PipelineDefinition(
@@ -149,8 +144,7 @@ def test_yield_context():
         inputs=[],
         outputs=[OutputDefinition()],
     )
-    @with_context
-    def custom_context_transform(context):
+    def custom_context_transform(context, _conf):
         assert context.resources == {'field_one': 'value_two'}
         assert context._context_dict['foo'] == 'bar'  # pylint: disable=W0212
         events.append('during')
@@ -223,11 +217,9 @@ def test_invalid_context():
         context_definitions={
             'default':
             PipelineContextDefinition(
-                config_def=ConfigDefinition.config_dict(
-                    {
-                        'string_field': Field(types.String)
-                    }
-                ),
+                config_def=ConfigDefinition.config_dict({
+                    'string_field': Field(types.String)
+                }),
                 context_fn=lambda _pipeline, _config_value: _config_value
             )
         }
