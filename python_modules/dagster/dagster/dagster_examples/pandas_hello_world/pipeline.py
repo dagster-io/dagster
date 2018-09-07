@@ -4,12 +4,12 @@ from dagster import (
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
-    solid,
+    transform,
 )
 import dagster.pandas as dagster_pd
 
 
-@solid(
+@transform(
     inputs=[InputDefinition('num', dagster_pd.DataFrame)],
     outputs=[OutputDefinition(dagster_type=dagster_pd.DataFrame)]
 )
@@ -19,7 +19,7 @@ def sum_solid(num):
     return sum_df
 
 
-@solid(
+@transform(
     inputs=[InputDefinition('sum_df', dagster_pd.DataFrame)],
     outputs=[OutputDefinition(dagster_type=dagster_pd.DataFrame)]
 )
@@ -29,7 +29,7 @@ def sum_sq_solid(sum_df):
     return sum_sq_df
 
 
-@solid(
+@transform(
     inputs=[InputDefinition('sum_sq_solid', dagster_pd.DataFrame)],
     outputs=[OutputDefinition(dagster_type=dagster_pd.DataFrame)]
 )

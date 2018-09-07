@@ -10,7 +10,7 @@ from dagster import (
     execute_pipeline,
 )
 
-from dagster.core.decorators import solid
+from dagster.core.decorators import transform
 from dagster.utils import script_relative_path
 from dagster.utils.test import get_temp_file_name
 
@@ -122,7 +122,7 @@ def create_definition_based_solid():
 
 
 def create_decorator_based_solid():
-    @solid(
+    @transform(
         inputs=[InputDefinition('num_csv', dagster_pd.DataFrame)],
         outputs=[OutputDefinition(dagster_type=dagster_pd.DataFrame)],
     )

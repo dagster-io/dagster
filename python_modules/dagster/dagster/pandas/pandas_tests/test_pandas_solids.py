@@ -11,7 +11,7 @@ from dagster import (
     SolidDefinition,
     check,
     config,
-    solid,
+    transform,
 )
 
 from dagster.core.execution import (
@@ -70,7 +70,7 @@ def create_test_context():
 def test_basic_pandas_solid():
     csv_input = InputDefinition('num_csv', dagster_pd.DataFrame)
 
-    def transform(_context, args):
+    def _transform(_context, args):
         num_csv = args['num_csv']
         num_csv['sum'] = num_csv['num1'] + num_csv['num2']
         return num_csv
@@ -78,7 +78,7 @@ def test_basic_pandas_solid():
     single_solid = SolidDefinition.single_output_transform(
         name='sum_table',
         inputs=[csv_input],
-        transform_fn=transform,
+        transform_fn=_transform,
         output=OutputDefinition(),
     )
 
@@ -107,7 +107,7 @@ def test_pandas_csv_to_csv():
     csv_input = InputDefinition('num_csv', dagster_pd.DataFrame)
 
     # just adding a second context arg to test that
-    def transform(context, args):
+    def _transform(context, args):
         check.inst_param(context, 'context', ExecutionContext)
         num_csv = args['num_csv']
         num_csv['sum'] = num_csv['num1'] + num_csv['num2']
@@ -116,7 +116,7 @@ def test_pandas_csv_to_csv():
     solid_def = SolidDefinition.single_output_transform(
         name='sum_table',
         inputs=[csv_input],
-        transform_fn=transform,
+        transform_fn=_transform,
         output=OutputDefinition(dagster_type=dagster_pd.DataFrame),
     )
 
@@ -163,7 +163,7 @@ def execute_transform_in_temp_csv_files(solid_inst):
 
 
 def create_sum_table():
-    def transform(_context, args):
+    def _transform(_context, args):
         num_csv = args['num_csv']
         check.inst_param(num_csv, 'num_csv', pd.DataFrame)
         num_csv['sum'] = num_csv['num1'] + num_csv['num2']
@@ -172,11 +172,11 @@ def create_sum_table():
     return _dataframe_solid(
         name='sum_table',
         inputs=[InputDefinition('num_csv', dagster_pd.DataFrame)],
-        transform_fn=transform,
+        transform_fn=_transform,
     )
 
 
-@solid(
+@transform(
     inputs=[InputDefinition('num_csv', dagster_pd.DataFrame)],
     outputs=[OutputDefinition(dagster_type=dagster_pd.DataFrame)],
 )
@@ -186,7 +186,7 @@ def sum_table(num_csv):
     return num_csv
 
 
-@solid(
+@transform(
     inputs=[InputDefinition('sum_df', dagster_pd.DataFrame)],
     outputs=[OutputDefinition(dagster_type=dagster_pd.DataFrame)],
 )
@@ -195,7 +195,7 @@ def sum_sq_table(sum_df):
     return sum_df
 
 
-@solid(
+@transform(
     inputs=[InputDefinition('sum_table_renamed', dagster_pd.DataFrame)],
     outputs=[OutputDefinition(dagster_type=dagster_pd.DataFrame)],
 )
@@ -232,7 +232,7 @@ def _sum_only_pipeline():
 
 
 def test_two_input_solid():
-    def transform(_context, args):
+    def _transform(_context, args):
         num_csv1 = args['num_csv1']
         num_csv2 = args['num_csv2']
         check.inst_param(num_csv1, 'num_csv1', pd.DataFrame)
@@ -246,7 +246,7 @@ def test_two_input_solid():
             InputDefinition('num_csv1', dagster_pd.DataFrame),
             InputDefinition('num_csv2', dagster_pd.DataFrame),
         ],
-        transform_fn=transform,
+        transform_fn=_transform,
     )
 
     environment = config.Environment(

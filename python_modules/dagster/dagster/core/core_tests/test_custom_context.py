@@ -9,7 +9,7 @@ from dagster import (
     PipelineContextDefinition,
     config,
     execute_pipeline,
-    solid,
+    transform,
     types,
     with_context,
 )
@@ -21,7 +21,7 @@ from dagster.utils.logging import (INFO, ERROR)
 
 
 def test_default_context():
-    @solid(
+    @transform(
         inputs=[],
         outputs=[OutputDefinition()],
     )
@@ -37,7 +37,7 @@ def test_default_context():
 
 
 def test_default_context_with_log_level():
-    @solid(
+    @transform(
         inputs=[],
         outputs=[OutputDefinition()],
     )
@@ -61,7 +61,7 @@ def test_default_context_with_log_level():
 
 def test_default_value():
     def _get_config_test_solid(config_key, config_value):
-        @solid(
+        @transform(
             inputs=[],
             outputs=[OutputDefinition()],
         )
@@ -97,7 +97,7 @@ def test_default_value():
 
 
 def test_custom_contexts():
-    @solid(
+    @transform(
         inputs=[],
         outputs=[OutputDefinition()],
     )
@@ -145,7 +145,7 @@ def test_custom_contexts():
 def test_yield_context():
     events = []
 
-    @solid(
+    @transform(
         inputs=[],
         outputs=[OutputDefinition()],
     )
@@ -189,7 +189,7 @@ def test_yield_context():
 # TODO: reenable pending the ability to specific optional arguments
 # https://github.com/dagster-io/dagster/issues/56
 def test_invalid_context():
-    @solid(
+    @transform(
         inputs=[],
         outputs=[OutputDefinition()],
     )
