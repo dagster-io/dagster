@@ -852,7 +852,32 @@ class SolidDefinition(object):
     def single_output_transform(name, inputs, transform_fn, output, description=None):
         '''It is commmon to want a Solid that has only inputs, a single output (with the default
         name), and no config. So this is a helper function to do that. This transform function
-        must return the naked return value (as opposed to a Result object)'''
+        must return the naked return value (as opposed to a Result object).
+
+        Args:
+            name (str): Name of the solid.
+            inputs (List[InputDefinition]): Inputs of solid.
+            transform_fn (callable):
+                Callable with the signature
+                (context: ExecutionContext, inputs: Dict[str, Any]) : Any
+            output (OutputDefinition): Output of the solid.
+            description (str): Descripion of the solid.
+
+        Returns:
+            SolidDefinition:
+
+        Example:
+
+            .. code-block:: python
+
+                SolidDefinition.single_output_transform(
+                    'add_one',
+                    inputs=InputDefinition('num', types.Int),
+                    output=OutputDefinition(types.Int),
+                    transform_fn=lambda context, inputs: inputs['num'] + 1
+                )
+
+        '''
 
         def _new_transform_fn(context, inputs, _config_dict):
             value = transform_fn(context, inputs)
