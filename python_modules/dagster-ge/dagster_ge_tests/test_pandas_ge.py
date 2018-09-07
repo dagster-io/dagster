@@ -9,7 +9,7 @@ from dagster import (
     PipelineDefinition,
     config,
     execute_pipeline,
-    solid,
+    transform,
 )
 from dagster.core.errors import DagsterExpectationFailedError
 from dagster.core.utility_solids import define_stub_solid
@@ -29,7 +29,7 @@ def col_exists(name, col_name):
     return dagster_ge.ge_expectation(name, lambda ge_df: ge_df.expect_column_to_exist(col_name))
 
 
-@solid(
+@transform(
     inputs=[
         InputDefinition(
             'num_df', dagster_pd.DataFrame, expectations=[col_exists('num1_exists', 'num1')]
@@ -41,7 +41,7 @@ def sum_solid(num_df):
     return _sum_solid_impl(num_df)
 
 
-@solid(
+@transform(
     inputs=[
         InputDefinition(
             'num_df',
@@ -55,7 +55,7 @@ def sum_solid_fails_input_expectation(num_df):
     return _sum_solid_impl(num_df)
 
 
-@solid(
+@transform(
     inputs=[
         InputDefinition(
             'num_df',

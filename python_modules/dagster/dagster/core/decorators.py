@@ -33,7 +33,7 @@ class MultipleResults(namedtuple('_MultipleResults', 'results')):
 
     .. code-block:: python
 
-        @solid(outputs=[
+        @transform(outputs=[
             OutputDefinition(name='foo'),
             OutputDefinition(name='bar'),
         ])
@@ -44,7 +44,7 @@ class MultipleResults(namedtuple('_MultipleResults', 'results')):
             ])
 
 
-        @solid(outputs=[
+        @transform(outputs=[
             OutputDefinition(name='foo'),
             OutputDefinition(name='bar'),
         ])
@@ -79,7 +79,7 @@ def with_context(fn):
 
     .. code-block:: python
 
-        @solid()
+        @transform()
         @with_context
         def my_solid(context):
             pass
@@ -96,7 +96,53 @@ class _WithContext(object):
         return True
 
 
-class _Solid(object):
+DecoratorData = namedtuple('DecoratorData', 'name input_defs output_defs config_def description')
+
+
+def create_decorator_data(
+    name=None,
+    inputs=None,
+    outputs=None,
+    output=None,
+    description=None,
+    config_def=None,
+):
+    check.opt_inst_param(config_def, 'config_def', ConfigDefinition)
+
+    if output is not None and outputs is None:
+        output_defs = [check.opt_inst_param(output, 'output', OutputDefinition)]
+    else:
+        output_defs = check.opt_list_param(outputs, 'outputs', OutputDefinition)
+
+    return DecoratorData(
+        name=check.opt_str_param(name, 'name'),
+        input_defs=check.opt_list_param(inputs, 'inputs', InputDefinition),
+        output_defs=output_defs,
+        description=check.opt_str_param(description, 'description'),
+        config_def=check.opt_inst_param(config_def, 'config_def', ConfigDefinition),
+    )
+
+
+def solid(name=None, inputs=None, output=None, outputs=None, description=None, config_def=None):
+    if callable(name):
+        check.invariant(inputs is None)
+        check.invariant(output is None)
+        check.invariant(outputs is None)
+        check.invariant(description is None)
+        check.invariant(config_def is None)
+        return _SolidDecoratorFunctor()(name)
+    else:
+        return _SolidDecoratorFunctor(
+            name=name,
+            inputs=inputs,
+            output=output,
+            outputs=outputs,
+            description=description,
+            config_def=config_def,
+        )
+
+
+class _SolidDecoratorFunctor(object):
     def __init__(
         self,
         name=None,
@@ -106,39 +152,76 @@ class _Solid(object):
         description=None,
         config_def=None,
     ):
-        self.name = check.opt_str_param(name, 'name')
-        self.input_defs = check.opt_list_param(inputs, 'inputs', InputDefinition)
+        check.opt_inst_param(config_def, 'config_def', ConfigDefinition)
 
-        if output is not None and outputs is None:
-            self.outputs = [check.opt_inst_param(output, 'output', OutputDefinition)]
-        else:
-            self.outputs = check.opt_list_param(outputs, 'outputs', OutputDefinition)
+        self.decorator_data = create_decorator_data(
+            name,
+            inputs,
+            outputs,
+            output,
+            description,
+            config_def,
+        )
 
-        self.description = check.opt_str_param(description, 'description')
-        self.config_def = check.opt_inst_param(config_def, 'config_def', ConfigDefinition(Any))
+    def __call__(self, fn):
+        name = self.decorator_data.name if self.decorator_data.name else fn.__name__
+        transform_fn = _create_solid_fn_wrapper(fn, self.decorator_data.output_defs)
+
+        return SolidDefinition(
+            name=name,
+            inputs=self.decorator_data.input_defs,
+            outputs=self.decorator_data.output_defs,
+            transform_fn=transform_fn,
+            config_def=self.decorator_data.config_def,
+            description=self.decorator_data.description,
+        )
+
+
+class _TransformDecoratorFunctor(object):
+    def __init__(
+        self,
+        name=None,
+        inputs=None,
+        outputs=None,
+        output=None,
+        description=None,
+        config_def=None,
+    ):
+        self.decorator_data = create_decorator_data(
+            name,
+            inputs,
+            outputs,
+            output,
+            description,
+            config_def,
+        )
 
     def __call__(self, fn):
         expect_context = getattr(fn, 'has_context', False)
         if expect_context:
-            fn = fn.fn
+            fn = check.inst(fn, _WithContext).fn
 
-        if not self.name:
-            self.name = fn.__name__
+        name = self.decorator_data.name if self.decorator_data.name else fn.__name__
 
-        _validate_transform_fn(self.name, fn, self.input_defs, expect_context)
-        transform_fn = _create_transform_wrapper(fn, self.input_defs, self.outputs, expect_context)
+        _validate_transform_fn(name, fn, self.decorator_data.input_defs, expect_context)
+        transform_fn = _create_transform_fn_wrapper(
+            fn,
+            self.decorator_data.input_defs,
+            self.decorator_data.output_defs,
+            expect_context,
+        )
         return SolidDefinition(
-            name=self.name,
-            inputs=self.input_defs,
-            outputs=self.outputs,
+            name=name,
+            inputs=self.decorator_data.input_defs,
+            outputs=self.decorator_data.output_defs,
             transform_fn=transform_fn,
-            config_def=self.config_def,
-            description=self.description,
+            config_def=self.decorator_data.config_def,
+            description=self.decorator_data.description,
         )
 
 
-def solid(name=None, inputs=None, output=None, outputs=None, description=None):
-    '''(decorator) Create a solid with specified parameters.
+def transform(name=None, inputs=None, output=None, outputs=None, description=None):
+    '''(decorator) Create a transform-flavored solid with specified parameters.
 
     This shortcut simplifies core solid API by exploding arguments into kwargs of the
     transform function and omitting additional parameters when they are not needed.
@@ -158,19 +241,19 @@ def solid(name=None, inputs=None, output=None, outputs=None, description=None):
 
     .. code-block:: python
 
-        @solid(outputs=[OutputDefinition()])
+        @transform(outputs=[OutputDefinition()])
         def hello_world():
             return {'foo': 'bar'}
 
-        @solid(output=OutputDefinition())
+        @transform(output=OutputDefinition())
         def hello_world():
             return Result(value={'foo': 'bar'})
 
-        @solid(output=OutputDefinition())
+        @transform(output=OutputDefinition())
         def hello_world():
             yield Result(value={'foo': 'bar'})
 
-        @solid(outputs=[
+        @transform(outputs=[
             OutputDefinition(name="left"),
             OutputDefinition(name="right"),
         ])
@@ -180,14 +263,14 @@ def solid(name=None, inputs=None, output=None, outputs=None, description=None):
                 'right': {'foo': 'right'},
             })
 
-        @solid(
+        @transform(
             inputs=[InputDefinition(name="foo_to_foo")],
             outputs=[OutputDefinition()]
         )
         def hello_world(foo_to_foo):
             return foo_to_foo
 
-        @solid(
+        @transform(
             inputs=[InputDefinition(name="foo_to_foo")],
             outputs=[OutputDefinition()]
         )
@@ -195,38 +278,72 @@ def solid(name=None, inputs=None, output=None, outputs=None, description=None):
         def hello_world(context, foo_to_foo):
             return foo_to_foo
     '''
-    return _Solid(name=name, inputs=inputs, output=output, outputs=outputs, description=description)
+    if callable(name):
+        return _TransformDecoratorFunctor()(name)
+    else:
+        return _TransformDecoratorFunctor(
+            name=name,
+            inputs=inputs,
+            output=output,
+            outputs=outputs,
+            description=description,
+        )
 
 
-def _create_transform_wrapper(fn, inputs, outputs, include_context=False):
-    input_names = [input.name for input in inputs]
+def _yield_results(transform_output, output_defs):
+    if inspect.isgenerator(transform_output):
+        for item in transform_output:
+            yield item
+    else:
+        if isinstance(transform_output, Result):
+            yield transform_output
+        elif isinstance(transform_output, MultipleResults):
+            for item in transform_output.results:
+                yield item
+        elif len(output_defs) == 1:
+            yield Result(value=transform_output, output_name=output_defs[0].name)
+        elif transform_output is not None:
+            # XXX(freiksenet)
+            raise Exception('Output for a solid without an output.')
+
+
+def _create_solid_fn_wrapper(fn, output_defs):
+    check.callable_param(fn, 'fn')
+    check.list_param(output_defs, 'output_defs', OutputDefinition)
 
     @wraps(fn)
-    def transform(context, args, _config):
+    def _transform(context, inputs, conf):
+        transform_output = fn(context, inputs, conf)
+
+        for item in _yield_results(transform_output, output_defs):
+            yield item
+
+    return _transform
+
+
+def _create_transform_fn_wrapper(fn, input_defs, output_defs, include_context=False):
+    check.callable_param(fn, 'fn')
+    check.list_param(input_defs, 'input_defs', InputDefinition)
+    check.list_param(output_defs, 'output_defs', OutputDefinition)
+    check.bool_param(include_context, 'include_context')
+
+    input_names = [input_def.name for input_def in input_defs]
+
+    @wraps(fn)
+    def _transform(context, inputs, _conf):
         kwargs = {}
         for input_name in input_names:
-            kwargs[input_name] = args[input_name]
+            kwargs[input_name] = inputs[input_name]
 
         if include_context:
-            result = fn(context, **kwargs)
+            transform_output = fn(context, **kwargs)
         else:
-            result = fn(**kwargs)
-        if inspect.isgenerator(result):
-            for item in result:
-                yield item
-        else:
-            if isinstance(result, Result):
-                yield result
-            elif isinstance(result, MultipleResults):
-                for item in result.results:
-                    yield item
-            elif len(outputs) == 1:
-                yield Result(value=result, output_name=outputs[0].name)
-            elif result is not None:
-                # XXX(freiksenet)
-                raise Exception('Output for a solid without an output.')
+            transform_output = fn(**kwargs)
 
-    return transform
+        for item in _yield_results(transform_output, output_defs):
+            yield item
+
+    return _transform
 
 
 class FunctionValidationError(Exception):

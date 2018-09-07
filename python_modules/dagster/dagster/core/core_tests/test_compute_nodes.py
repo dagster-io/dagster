@@ -1,11 +1,10 @@
 from dagster import (
-    ConfigDefinition,
     ExecutionContext,
     OutputDefinition,
     PipelineContextDefinition,
     PipelineDefinition,
     config,
-    solid,
+    transform,
 )
 
 from dagster.core.execution import (
@@ -25,7 +24,7 @@ def silencing_default_context():
     }
 
 
-@solid(name='noop', inputs=[], outputs=[OutputDefinition()])
+@transform(name='noop', inputs=[], outputs=[OutputDefinition()])
 def noop_solid():
     return 'foo'
 

@@ -5,7 +5,7 @@ Decorators
 
 A more concise way to define solids.
 
-.. autofunction:: solid
+.. autofunction:: transform
 
 .. autofunction:: with_context
 
