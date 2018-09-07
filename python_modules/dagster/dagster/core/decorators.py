@@ -1,10 +1,6 @@
-import inspect
-if hasattr(inspect, 'signature'):
-    funcsigs = inspect
-else:
-    import funcsigs
 from collections import namedtuple
 from functools import wraps
+import inspect
 
 from .definitions import (
     ConfigDefinition,
@@ -17,6 +13,11 @@ from .definitions import (
 )
 
 from .types import Any
+
+if hasattr(inspect, 'signature'):
+    funcsigs = inspect
+else:
+    import funcsigs
 
 # Error messages are long
 # pylint: disable=C0301
@@ -139,13 +140,18 @@ class _Solid(object):
 def solid(name=None, inputs=None, output=None, outputs=None, description=None):
     '''(decorator) Create a solid with specified parameters.
 
-    This shortcut simplifies core solid API by exploding arguments into kwargs of the transform function and omitting additional parameters when they are not needed. Parameters are otherwise as per :py:class:`SolidDefinition`. By using :py:function:`with_context` one can request context object to be passed too.
+    This shortcut simplifies core solid API by exploding arguments into kwargs of the
+    transform function and omitting additional parameters when they are not needed.
+    Parameters are otherwise as per :py:class:`SolidDefinition`. By using
+    :py:function:`with_context` one can request context object to be passed too.
 
-    Decorated function becomes transform. Instead of having to yield result objects, transform support multiple simpler output types.
+    Decorated function is the transform function itself. Instead of having to yield
+    result objects, transform support multiple simpler output types.
 
     1. Return a value. This is returned as a :py:class:`Result` for a single output solid.
     2. Return a :py:class:`Result`. Works like yielding result.
-    3. Return a :py:class:`MultipleResults`. Works like yielding several results for multiple outputs. Useful for solids that have multiple outputs.
+    3. Return a :py:class:`MultipleResults`. Works like yielding several results for
+       multiple outputs. Useful for solids that have multiple outputs.
     4. Yield :py:class:`Result`. Same as default transform behaviour.
 
     Examples:
