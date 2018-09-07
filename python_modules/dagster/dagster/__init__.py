@@ -44,4 +44,5 @@ __all__ = [
     'PipelineContextDefinition',
     'PipelineDefinition',
     'Result',
+    'RepositoryDefinition',
 ]

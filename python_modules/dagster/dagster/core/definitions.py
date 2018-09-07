@@ -1087,7 +1087,28 @@ def _create_subgraph(execution_graph, from_solids, through_solids):
 
 
 class RepositoryDefinition(object):
+    '''Define a repository that contains a collection of pipelines.
+
+    Attributes:
+        name (str): The name of the pipeline.
+        pipeline_dict (Dict[str, callable]):
+            An dictionary of pipelines. The value of the dictionary is a function that takes
+            no parameters and returns a PipelineDefiniton.
+
+            We pass callables instead of the PipelineDefinitions itself so that they can be
+            created on demand when accessed by name.
+
+            As the pipelines are retrieved it ensures that the keys of the dictionary and the
+            name of the pipeline are the same.
+
+    '''
+
     def __init__(self, name, pipeline_dict):
+        '''
+        Args:
+            name (str): Name of pipeline.
+            pipeline_dict (Dict[str, callable]): See top-level class documentation
+        '''
         self.name = check.str_param(name, 'name')
 
         check.dict_param(
@@ -1104,6 +1125,14 @@ class RepositoryDefinition(object):
         self._pipeline_cache = {}
 
     def get_pipeline(self, name):
+        '''Get a pipeline by name. Only constructs that pipeline and caches it.
+
+        Args:
+            name (str): Name of the pipeline to retriever
+
+        Returns:
+            PipelineDefinition: Instance of PipelineDefinition with that name.
+'''
         if name in self._pipeline_cache:
             return self._pipeline_cache[name]
 
@@ -1115,19 +1144,29 @@ class RepositoryDefinition(object):
             )
         )
 
-        check.inst(
+        self._pipeline_cache[name] = check.inst(
             pipeline,
             PipelineDefinition,
             'Function passed into pipeline_dict with key {key} must return a PipelineDefinition'.
             format(key=name),
         )
 
-        self._pipeline_cache[name] = pipeline
         return pipeline
 
     def iterate_over_pipelines(self):
+        '''Yield all pipelines one at a time
+
+        Returns:
+            Iterable[PipelineDefinition]:
+        '''
         for name in self.pipeline_dict.keys():
             yield self.get_pipeline(name)
 
     def get_all_pipelines(self):
+        '''Return all pipelines as a list
+
+        Returns:
+            List[PipelineDefinition]:
+
+        '''
         return list(self.iterate_over_pipelines())
