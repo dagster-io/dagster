@@ -6,4 +6,4 @@ Top-level Dagster API
 
 .. automodule:: dagster
     :members:
-    :special-members: __init__
+    :undoc-members:
