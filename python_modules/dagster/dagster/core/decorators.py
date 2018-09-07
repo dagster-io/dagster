@@ -23,6 +23,37 @@ from .types import Any
 
 
 class MultipleResults(namedtuple('_MultipleResults', 'results')):
+    '''A shortcut to output multiple results.
+
+    Attributes:
+      results (list[Result]): list of :py:class:`Result`
+
+    Example:
+
+    .. code-block:: python
+
+        @solid(outputs=[
+            OutputDefinition(name='foo'),
+            OutputDefinition(name='bar'),
+        ])
+        def my_solid():
+            return MultipleResults([
+                Result('Barb', 'foo'),
+                Result('Glarb', 'bar'),
+            ])
+
+
+        @solid(outputs=[
+            OutputDefinition(name='foo'),
+            OutputDefinition(name='bar'),
+        ])
+        def my_solid_from_dict():
+            return MultipleResults.from_dict({
+              'foo': 'Barb',
+              'bar': 'Glarb',
+            })
+    '''
+
     def __new__(cls, *results):
         return super(MultipleResults, cls).__new__(
             cls,
@@ -32,6 +63,7 @@ class MultipleResults(namedtuple('_MultipleResults', 'results')):
 
     @staticmethod
     def from_dict(result_dict):
+        '''Create MultipleResults object from a dictionary. Keys become result names'''
         check.dict_param(result_dict, 'result_dict', key_type=str)
         results = []
         for name, value in result_dict.items():
@@ -40,8 +72,17 @@ class MultipleResults(namedtuple('_MultipleResults', 'results')):
 
 
 def with_context(fn):
-    """Pass context as a first argument to a transform.
-    """
+    '''(decorator) Pass context as a first argument to a transform.
+
+    Example:
+
+    .. code-block:: python
+
+        @solid()
+        @with_context
+        def my_solid(context):
+            pass
+    '''
     return _WithContext(fn)
 
 
@@ -96,6 +137,58 @@ class _Solid(object):
 
 
 def solid(name=None, inputs=None, output=None, outputs=None, description=None):
+    '''(decorator) Create a solid with specified parameters.
+
+    This shortcut simplifies core solid API by exploding arguments into kwargs of the transform function and omitting additional parameters when they are not needed. Parameters are otherwise as per :py:class:`SolidDefinition`. By using :py:function:`with_context` one can request context object to be passed too.
+
+    Decorated function becomes transform. Instead of having to yield result objects, transform support multiple simpler output types.
+
+    1. Return a value. This is returned as a :py:class:`Result` for a single output solid.
+    2. Return a :py:class:`Result`. Works like yielding result.
+    3. Return a :py:class:`MultipleResults`. Works like yielding several results for multiple outputs. Useful for solids that have multiple outputs.
+    4. Yield :py:class:`Result`. Same as default transform behaviour.
+
+    Examples:
+
+    .. code-block:: python
+
+        @solid(outputs=[OutputDefinition()])
+        def hello_world():
+            return {'foo': 'bar'}
+
+        @solid(output=OutputDefinition())
+        def hello_world():
+            return Result(value={'foo': 'bar'})
+
+        @solid(output=OutputDefinition())
+        def hello_world():
+            yield Result(value={'foo': 'bar'})
+
+        @solid(outputs=[
+            OutputDefinition(name="left"),
+            OutputDefinition(name="right"),
+        ])
+        def hello_world():
+            return MultipleResults.from_dict({
+                'left': {'foo': 'left'},
+                'right': {'foo': 'right'},
+            })
+
+        @solid(
+            inputs=[InputDefinition(name="foo_to_foo")],
+            outputs=[OutputDefinition()]
+        )
+        def hello_world(foo_to_foo):
+            return foo_to_foo
+
+        @solid(
+            inputs=[InputDefinition(name="foo_to_foo")],
+            outputs=[OutputDefinition()]
+        )
+        @with_context
+        def hello_world(context, foo_to_foo):
+            return foo_to_foo
+    '''
     return _Solid(name=name, inputs=inputs, output=output, outputs=outputs, description=description)
 
 

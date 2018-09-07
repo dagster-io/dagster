@@ -49,6 +49,13 @@ from .execution_context import ExecutionContext
 
 
 class PipelineExecutionResult(object):
+    '''Result of execution of the whole pipeline. Returned eg by :py:function:`execute_pipeline`.
+
+    Attributes:
+      context (ExecutionContext): ExecutionContext of that particular Pipeline run.
+      result_list (list[SolidExecutionResult]): List of results for each pipeline solid.
+    '''
+
     def __init__(
         self,
         context,
@@ -61,9 +68,15 @@ class PipelineExecutionResult(object):
 
     @property
     def success(self):
+        '''Whether the pipeline execution was successful at all steps'''
         return all([result.success for result in self.result_list])
 
     def result_for_solid(self, name):
+        '''Get a :py:class:`SolidExecutionResult` for a given solid name.
+
+        Returns:
+          SolidExecutionResult
+        '''
         check.str_param(name, 'name')
         for result in self.result_list:
             if result.solid.name == name:
@@ -74,6 +87,13 @@ class PipelineExecutionResult(object):
 
 
 class SolidExecutionResult(object):
+    '''Execution result for one solid of the pipeline.
+
+    Attributes:
+      context (ExecutionContext): ExecutionContext of that particular Pipeline run.
+      solid (SolidDefinition): Solid for which this result is
+    '''
+
     def __init__(self, context, solid, input_expectations, transforms, output_expectations):
         self.context = check.inst_param(context, 'context', ExecutionContext)
         self.solid = check.inst_param(solid, 'solid', SolidDefinition)
@@ -113,6 +133,7 @@ class SolidExecutionResult(object):
 
     @property
     def success(self):
+        '''Whether the solid execution was successful'''
         return all(
             [
                 result.success for result in
@@ -122,6 +143,7 @@ class SolidExecutionResult(object):
 
     @property
     def transformed_values(self):
+        '''Return dictionary of transformed results, with keys being output names. Returns None if execution result isn't a success.'''
         if self.success and self.transforms:
             return {
                 result.success_data.output_name: result.success_data.value
@@ -131,6 +153,7 @@ class SolidExecutionResult(object):
             return None
 
     def transformed_value(self, output_name=DEFAULT_OUTPUT):
+        '''Returns transformed value either for DEFAULT_OUTPUT or for the output given as outputname. Returns None if execution result isn't a success'''
         check.str_param(output_name, 'output_name')
         if self.success:
             for result in self.transforms:
@@ -153,6 +176,7 @@ class SolidExecutionResult(object):
 
     @property
     def dagster_user_exception(self):
+        '''Returns exception that happened during this solid's execution, if any'''
         for result in itertools.chain(
             self.input_expectations, self.output_expectations, self.transforms
         ):
@@ -213,6 +237,12 @@ def yield_context(pipeline, environment):
 
 
 def execute_pipeline_iterator(pipeline, environment):
+    '''Returns iterator that yields :py:class:`SolidExecutionResult` for each solid executed in the pipeline
+
+    Parameters:
+      pipeline (PipelineDefinition): pipeline to run
+      execution (ExecutionContext): execution context of the run
+    '''
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.inst_param(environment, 'enviroment', config.Environment)
 
@@ -274,12 +304,18 @@ def execute_pipeline(
     throw_on_error=True,
 ):
     '''
-    "Synchronous" version of execute_pipeline_iteator.
-
-    throw_on_error makes the function throw when an error is encoutered rather than returning
-    the LegacySolidExecutionResult in an error-state.
+    "Synchronous" version of `execute_pipeline_iterator`.
 
     Note: throw_on_error is very useful in testing contexts when not testing for error conditions
+
+    Parameters:
+      pipeline (PipelineDefinition): pipeline to run
+      execution (ExecutionContext): execution context of the run
+      throw_on_error (bool): throw_on_error makes the function throw when an error is encoutered rather than returning the py:class:`SolidExecutionResult` in an error-state.
+
+
+    Returns:
+      PipelineExecutionResult
     '''
 
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)

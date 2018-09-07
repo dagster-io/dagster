@@ -32,10 +32,10 @@ about what libraries and engines use to do actual compute. Dagster pipelines can
 any python computation, which could be Pandas, Spark, or it could in turn invoke SQL or any
 other DSL or library deemed appropriate to the task.
 
-Testable 
+Testable
 ^^^^^^^^
 Testing data pipelines is notoriously difficult. Because it is so difficult it is often never
-done, or done poorly. Dagster pipelines are designed to be tested. They have explicit support 
+done, or done poorly. Dagster pipelines are designed to be tested. They have explicit support
 for pipeline authors to manage and maintain multiple operating environments -- for example, unit
 testing, integration testing, and production environments, among others. In addition dagster can
 execute arbitrary subsets and nodes of the pipeline which is critical for testability. (This
@@ -60,4 +60,4 @@ Gradual, optional typing
 Dagster contains a type system to describe the values flowing through the pipeline and the
 configuration of the pipeline. This allows nodes in a pipeline know if they are properly
 arranged and configuration prior to execution before execution, and serves as valuable
-documentation and runtime error checking. 
+documentation and runtime error checking.

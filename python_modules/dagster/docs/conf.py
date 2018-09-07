@@ -156,3 +156,5 @@ texinfo_documents = [
 # -- Extension configuration -------------------------------------------------
 
 extensions = ['sphinx.ext.napoleon']
+
+html_sidebars = {'**': ['globaltoc.html', 'relations.html', 'sourcelink.html', 'searchbox.html']}

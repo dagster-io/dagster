@@ -91,7 +91,7 @@ class PipelineContextDefinition(object):
         pass it into a one-off PipelineDefinition
 
         Args:
-            context (ExecutionContext): The context that will provided to the pipeline. 
+            context (ExecutionContext): The context that will provided to the pipeline.
         Returns:
             PipelineContextDefinition: The passthrough context definition.
         '''
@@ -746,6 +746,22 @@ class ConfigDefinition(object):
 
     @staticmethod
     def config_dict(field_dict):
+        '''Shorcut to create a dictionary based config definition.
+
+
+        Args:
+            field_dict (dict): dictionary of `Field` objects keyed by their names.
+
+        Example:
+
+        .. code-block:: python
+
+            ConfigDefinition.config_dict({
+                'int_field': Field(types.Int),
+                'string_field': Field(types.String),
+             })
+
+        '''
         return ConfigDefinition(types.ConfigDictionary(field_dict))
 
     def __init__(self, config_type=types.Any):

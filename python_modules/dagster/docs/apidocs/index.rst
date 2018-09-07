@@ -1,9 +1,15 @@
 API Reference
 =============
 
-Top-level Dagster API
----------------------
+.. module:: dagster
 
-.. automodule:: dagster
-    :members:
-    :undoc-members:
+Top level dagster definitions
+
+.. toctree::
+   :maxdepth: 1
+
+   ./definitions
+   ./decorators
+   ./execution
+   ./errors
+   ./types

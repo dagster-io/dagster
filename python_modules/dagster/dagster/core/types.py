@@ -5,25 +5,60 @@ from dagster import check
 
 
 class DagsterType(object):
+    '''Base class for Dagster Type system. Should be inherited by a subclass. Subclass must implement `evaluate_value`
+
+    Attributes:
+      name (str): Name of the type
+
+      description (str): Description of the type
+    '''
+
     def __init__(self, name, description=None):
         self.name = check.str_param(name, 'name')
         self.description = check.opt_str_param(description, 'description')
+        self.__doc__ = description
 
     def __repr__(self):
         return 'DagsterType({name})'.format(name=self.name)
 
     def evaluate_value(self, _value):
+        '''Subclasses must implement this method. Check if the value is a valid one and output :py:class:`IncomingValueResult`.
+
+        Args:
+          value: The value to check
+
+        Returns:
+          IncomingValueResult
+        '''
         check.not_implemented('Must implement in subclass')
 
 
 class DagsterScalarType(DagsterType):
+    '''Base class for dagster types that are scalar python values.
+
+    Attributes:
+      name (str): Name of the type
+
+      description (str): Description of the type
+    '''
+
     def __init__(self, *args, **kwargs):
         super(DagsterScalarType, self).__init__(*args, **kwargs)
 
     def process_value(self, value):
+        '''Modify the value before it's evaluated. Subclasses may override.
+
+        Returns:
+          any: New value
+        '''
         return value
 
     def is_python_valid_value(self, _value):
+        '''Subclasses must implement this method. Check if the value and output a boolean.
+
+        Returns:
+          bool: Whether the value is valid.
+        '''
         raise Exception('must implement')
 
     def evaluate_value(self, value):
@@ -57,6 +92,8 @@ def nullable_isinstance(value, typez):
 
 
 class PythonObjectType(DagsterType):
+    '''Dagster Type that checks if the value is an instance of some `python_type`'''
+
     def __init__(
         self,
         name,
@@ -161,6 +198,9 @@ class FieldDefinitionDictionary(dict):
 
 
 class DagsterCompositeType(DagsterType):
+    '''Dagster type representing a type with a list of named :py:class:`Field` objects.
+    '''
+
     def __init__(self, name, fields, ctor, description=None):
         self.field_dict = FieldDefinitionDictionary(fields)
         self.ctor = check.callable_param(ctor, 'ctor')
@@ -173,17 +213,31 @@ class DagsterCompositeType(DagsterType):
 
 
 class ConfigDictionary(DagsterCompositeType):
+    '''Configuration dictionary.
+
+    Typed-checked but then passed to implementations as a python dict
+
+    Arguments:
+      fields (dict): dictonary of :py:class:`Field` objects keyed by name'''
+
     def __init__(self, fields):
         super(ConfigDictionary, self).__init__(
             'ConfigDictionary',
             fields,
             lambda val: val,
-            '''Configuration dictionary.
-            Typed-checked but then passed to implementations as a python dict''',
+            self.__doc__,
         )
 
 
 class IncomingValueResult(namedtuple('_IncomingValueResult', 'success value error_msg')):
+    '''Result of a dagster typecheck.
+
+    Attributes:
+      success (bool): whether value is a valid one.
+      value (any): the actual value
+      error_msg (str): error message
+    '''
+
     def __new__(cls, success, value, error_msg):
         return super(IncomingValueResult, cls).__new__(
             cls,
@@ -194,10 +248,12 @@ class IncomingValueResult(namedtuple('_IncomingValueResult', 'success value erro
 
     @staticmethod
     def create_success(value):
+        '''Create a succesful IncomingValueResult out of a value'''
         return IncomingValueResult(success=True, value=value, error_msg=None)
 
     @staticmethod
     def create_failure(error_msg):
+        '''Create a failing IncomingValueResult with a error_msg'''
         return IncomingValueResult(success=False, value=None, error_msg=error_msg)
 
 

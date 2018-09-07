@@ -1,5 +1,6 @@
 #!/bin/bash
 
+rm -r dist/
 cd ./dagit/webapp
 yarn install
 yarn build

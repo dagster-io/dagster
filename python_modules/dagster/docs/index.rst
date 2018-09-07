@@ -4,35 +4,30 @@
 
 Welcome to Dagster, an opinionated programming model for data pipelines.
 
-Documentation Structure:
-
 .. toctree::
-  :maxdepth: 3
+  :maxdepth: 1
+  :caption: Documentation
+  :name: Documentation
 
   motivations
   principles
   tutorials
   topic_guides
-  apidocs/index
-
-Other docs
-==========
-
-.. toctree::
-   :maxdepth: 3
-   :caption: Contents:
-
-   developing/index
+  contributing
 
 API Reference
 ================
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+  :maxdepth: 1
+  :name: API Reference
+  :caption: API Reference
 
-   apidocs/index
-
+  apidocs/definitions
+  apidocs/decorators
+  apidocs/execution
+  apidocs/errors
+  apidocs/types
 
 Indices and tables
 ==================
