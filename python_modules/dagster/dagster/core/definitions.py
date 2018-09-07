@@ -773,18 +773,52 @@ class ConfigDefinition(object):
 
 
 class SolidDefinition(object):
-    '''A solid is a node of computation within a pipeline.
+    '''A solid (a name extracted from the acronym of "software-structured data" (SSD)) represents
+    a unit of computation within a data pipeline.
+
+    As its core, a solid is a function. It accepts inputs (which are values produced from
+    other solids) and configuration, and produces outputs. These solids are composed as a
+    directed, acyclic graph (DAG) within a pipeline to form a computation that produces
+    data assets.
+
+    Solids should be implemented as idempotent, parameterizable, non-destructive functions.
+    Data computations with these properties are much easier to test, reason about, and operate.
+
+    The inputs and outputs are gradually, optionally typed by the dagster type system. Types
+    can be user-defined and can represent entites as varied as scalars, dataframe, database
+    tables, and so forth. They can represent pure in-memory objects, or handles to assets
+    on disk or in external resources.
+
+    A solid is a generalized abstraction that could take many forms.
+
+    Example:
+
+        .. code-block:: python
+
+            def _read_csv(context, inputs, config_dict):
+                yield Result(pandas.read_csv(config_dict['path']))
+
+            SolidDefinition(
+                name='read_csv',
+                inputs=[],
+                config_def=ConfigDefinition(types.ConfigDictionary({'path' => types.Path})),
+                outputs=[OutputDefinition()] # default name ('result') and any typed
+                transform_fn
+            )
 
     Attributes:
-        name: str
-        inputs: list of InputDefinitions
-        transform_fn: callable with sig (
-            context: ExecutionContext,
-            inputs: str => Any,
-            config_value: Any) : Iterable<Result>
-        outputs: list of OutputDefinitions
-        config_def: ConfigDefinition
-        description: str
+        name (str): Name of the solid.
+        inputs (List[InputDefiniton]): Inputs of the solid.
+        transform_fn (callable):
+            Callable with the signature
+            (
+                context: ExecutionContext,
+                inputs: Dict[str, Any],
+                conf: Any
+            ) : Iterable<Result>
+        outputs (List[OutputDefinition]): Outputs of the solid.
+        config_def (ConfigDefinition): How the solid configured.
+        description (str): Description of the solid.
     '''
 
     def __init__(self, name, inputs, transform_fn, outputs, config_def=None, description=None):
