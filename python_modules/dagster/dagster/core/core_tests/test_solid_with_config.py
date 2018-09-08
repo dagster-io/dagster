@@ -43,7 +43,7 @@ def test_basic_solid_with_config():
 
 
 def test_config_arg_mismatch():
-    def _t_fn(*args):
+    def _t_fn(*_args):
         raise Exception('should not reach')
 
     solid = SolidDefinition(

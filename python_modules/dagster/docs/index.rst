@@ -11,9 +11,21 @@ Welcome to Dagster, an opinionated programming model for data pipelines.
 
   motivations
   principles
-  tutorials
   topic_guides
   contributing
+
+Intro Tutorial
+==============
+.. toctree::
+  :maxdepth: 1
+  :name: Intro Tutorial
+  :caption: Intro Tutorial
+
+  intro_tutorial/part_one
+  intro_tutorial/part_two
+  intro_tutorial/part_three
+  intro_tutorial/part_four
+
 
 API Reference
 ================

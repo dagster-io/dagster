@@ -87,7 +87,7 @@ def test_multiple_outputs_expectations():
 
 
 def test_wrong_multiple_output():
-    def _t_fn(*args):
+    def _t_fn(*_args):
         yield Result(output_name='mismatch', value='foo')
 
     solid = SolidDefinition(
@@ -108,7 +108,7 @@ def test_wrong_multiple_output():
 def test_multiple_outputs_of_same_name_disallowed():
     # make this illegal until it is supported
 
-    def _t_fn(*args):
+    def _t_fn(*_args):
         yield Result(output_name='output_one', value='foo')
         yield Result(output_name='output_one', value='foo')
 
@@ -128,7 +128,7 @@ def test_multiple_outputs_of_same_name_disallowed():
 
 
 def test_multiple_outputs_only_emit_one():
-    def _t_fn(*args):
+    def _t_fn(*_args):
         yield Result(output_name='output_one', value='foo')
 
     solid = SolidDefinition(
