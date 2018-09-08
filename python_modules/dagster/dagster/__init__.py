@@ -1,6 +1,3 @@
-from __future__ import (absolute_import, division, print_function, unicode_literals)
-from builtins import *  # pylint: disable=W0622,W0401
-
 from dagster.core.execution import (
     PipelineExecutionResult,
     SolidExecutionResult,
@@ -39,6 +36,7 @@ from dagster.core.errors import (
     DagsterExpectationFailedError,
 )
 
+import dagster.config as config
 import dagster.core.types as types
 
 __all__ = [
@@ -75,5 +73,6 @@ __all__ = [
     'DagsterExpectationFailedError',
 
     # types
+    'config',
     'types',
 ]

@@ -302,7 +302,7 @@ def _execute_graph_iterator(context, execution_graph, environment):
 
 def execute_pipeline(
     pipeline,
-    environment,
+    environment=None,
     throw_on_error=True,
 ):
     '''
@@ -313,7 +313,9 @@ def execute_pipeline(
     Parameters:
       pipeline (PipelineDefinition): pipeline to run
       execution (ExecutionContext): execution context of the run
-      throw_on_error (bool): throw_on_error makes the function throw when an error is encoutered rather than returning the py:class:`SolidExecutionResult` in an error-state.
+      throw_on_error (bool):
+        throw_on_error makes the function throw when an error is encoutered rather than returning
+        the py:class:`SolidExecutionResult` in an error-state.
 
 
     Returns:
@@ -321,7 +323,12 @@ def execute_pipeline(
     '''
 
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    check.inst_param(environment, 'environment', config.Environment)
+    environment = check.opt_inst_param(
+        environment,
+        'environment',
+        config.Environment,
+        config.Environment(),
+    )
     execution_graph = ExecutionGraph.from_pipeline(pipeline)
     return _execute_graph(execution_graph, environment, throw_on_error)
 

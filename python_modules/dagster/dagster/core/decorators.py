@@ -111,7 +111,8 @@ class _Solid(object):
     ):
         self.name = check.opt_str_param(name, 'name')
         self.input_defs = check.opt_list_param(inputs, 'inputs', InputDefinition)
-        self.outputs = check.opt_list_param(outputs, 'outputs', OutputDefinition)
+        outputs = outputs or [OutputDefinition()]
+        self.outputs = check.list_param(outputs, 'outputs', OutputDefinition)
         self.description = check.opt_str_param(description, 'description')
         self.config_def = check.opt_inst_param(config_def, 'config_def', ConfigDefinition)
 
