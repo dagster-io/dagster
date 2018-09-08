@@ -18,8 +18,8 @@ from dagster.utils import script_relative_path
 
 
 def define_read_csv_solid(name):
-    def _t_fn(_context, _inputs, config_dict):
-        yield Result(pd.read_csv(config_dict['path']))
+    def _t_fn(_context, conf, _inputs):
+        yield Result(pd.read_csv(conf['path']))
 
     return SolidDefinition(
         name=name,
@@ -33,8 +33,8 @@ def define_read_csv_solid(name):
 
 
 def define_to_csv_solid(name):
-    def _t_fn(_context, inputs, config_dict):
-        inputs['df'].to_csv(config_dict['path'], index=False)
+    def _t_fn(_context, conf, inputs):
+        inputs['df'].to_csv(conf['path'], index=False)
 
     return SolidDefinition(
         name=name,
@@ -48,8 +48,8 @@ def define_to_csv_solid(name):
 
 
 def test_hello_world_pipeline_no_api():
-    def hello_world_transform_fn(_context, args):
-        num_df = args['num_df']
+    def hello_world_transform_fn(_context, inputs):
+        num_df = inputs['num_df']
         num_df['sum'] = num_df['num1'] + num_df['num2']
         return num_df
 
@@ -94,8 +94,8 @@ def test_hello_world_pipeline_no_api():
 
 
 def create_hello_world_solid_composed_pipeline():
-    def transform_fn(_context, args):
-        num_df = args['num_df']
+    def transform_fn(_context, inputs):
+        num_df = inputs['num_df']
         num_df['sum'] = num_df['num1'] + num_df['num2']
         return num_df
 
@@ -142,8 +142,8 @@ def test_hello_world_composed():
 
 
 def test_pandas_hello_no_library():
-    def solid_one_transform(_context, args):
-        num_df = args['num_df']
+    def solid_one_transform(_context, inputs):
+        num_df = inputs['num_df']
         num_df['sum'] = num_df['num1'] + num_df['num2']
         return num_df
 
@@ -154,8 +154,8 @@ def test_pandas_hello_no_library():
         output=OutputDefinition(),
     )
 
-    def solid_two_transform(_context, args):
-        sum_df = args['sum_df']
+    def solid_two_transform(_context, inputs):
+        sum_df = inputs['sum_df']
         sum_df['sum_sq'] = sum_df['sum'] * sum_df['sum']
         return sum_df
 

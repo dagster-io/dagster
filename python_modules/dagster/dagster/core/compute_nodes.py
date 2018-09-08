@@ -178,8 +178,8 @@ JOIN_OUTPUT = 'join_output'
 EXPECTATION_INPUT = 'expectation_input'
 
 
-def _yield_transform_results(context, compute_node, values_dict, config_dict):
-    gen = compute_node.solid.transform_fn(context, values_dict, config_dict)
+def _yield_transform_results(context, compute_node, conf, inputs):
+    gen = compute_node.solid.transform_fn(context, conf, inputs)
 
     if isinstance(gen, Result):
         raise DagsterInvariantViolationError(
@@ -206,14 +206,14 @@ def _yield_transform_results(context, compute_node, values_dict, config_dict):
             )
         yield result
 
-def _execute_core_transform(context, compute_node, values_dict, conf):
+def _execute_core_transform(context, compute_node, conf, inputs):
     '''
     Execute the user-specified transform for the solid. Wrap in an error boundary and do
     all relevant logging and metrics tracking
     '''
     check.inst_param(context, 'context', ExecutionContext)
     check.inst_param(compute_node, 'compute_node', ComputeNode)
-    check.dict_param(values_dict, 'values_dict', key_type=str)
+    check.dict_param(inputs, 'inputs', key_type=str)
 
     error_str = 'Error occured during core transform'
 
@@ -227,7 +227,7 @@ def _execute_core_transform(context, compute_node, values_dict, conf):
             time_execution_scope() as timer_result, \
             context.value('solid', compute_node.solid.name):
 
-        for result in _yield_transform_results(context, compute_node, values_dict, conf):
+        for result in _yield_transform_results(context, compute_node, conf, inputs):
             yield result
 
     context.metric('core_transform_time_ms', timer_result.millis)
@@ -552,15 +552,15 @@ class ComputeNodeOutputMap(dict):
         return dict.__setitem__(self, key, val)
 
 
-def validate_config_dict(execution_info, solid):
+def create_conf_value(execution_info, solid):
     check.inst_param(execution_info, 'execution_info', ComputeNodeExecutionInfo)
     check.inst_param(solid, 'solid', SolidDefinition)
 
     name = solid.name
     solid_configs = execution_info.environment.solids
-    conf = solid_configs[name].config if name in solid_configs else {}
+    config_input = solid_configs[name].config if name in solid_configs else {}
 
-    evaluation_result = solid.config_def.config_type.evaluate_value(conf)
+    evaluation_result = solid.config_def.config_type.evaluate_value(config_input)
     if evaluation_result.success:
         return evaluation_result.value
     else:
@@ -615,13 +615,9 @@ def create_compute_node_graph(execution_info):
                 )
             )
 
-        validated_config_args = validate_config_dict(execution_info, topo_solid)
+        conf = create_conf_value(execution_info, topo_solid)
 
-        solid_transform_cn = create_compute_node_from_solid_transform(
-            topo_solid,
-            cn_inputs,
-            validated_config_args,
-        )
+        solid_transform_cn = create_compute_node_from_solid_transform(topo_solid, cn_inputs, conf)
 
         compute_nodes.append(solid_transform_cn)
 
@@ -758,7 +754,7 @@ def _create_expectation_lambda(solid, expectation_def, output_name):
     return _do_expectation
 
 
-def create_compute_node_from_solid_transform(solid, node_inputs, config_args):
+def create_compute_node_from_solid_transform(solid, node_inputs, conf):
     check.inst_param(solid, 'solid', SolidDefinition)
     check.list_param(node_inputs, 'node_inputs', of_type=ComputeNodeInput)
 
@@ -773,8 +769,8 @@ def create_compute_node_from_solid_transform(solid, node_inputs, config_args):
         compute_fn=lambda context, compute_node, inputs: _execute_core_transform(
             context,
             compute_node,
+            conf,
             inputs,
-            config_args,
         ),
         tag=ComputeNodeTag.TRANSFORM,
         solid=solid,

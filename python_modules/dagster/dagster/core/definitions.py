@@ -880,7 +880,7 @@ class SolidDefinition(object):
 
         '''
 
-        def _new_transform_fn(context, inputs, _config_dict):
+        def _new_transform_fn(context, _conf, inputs):
             value = transform_fn(context, inputs)
             if isinstance(value, Result):
                 raise DagsterInvariantViolationError(

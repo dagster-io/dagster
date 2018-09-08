@@ -80,9 +80,9 @@ def test_failure_midstream():
     solid_a = create_root_success_solid('A')
     solid_b = create_root_success_solid('B')
 
-    def transform_fn(_context, args):
+    def transform_fn(_context, inputs):
         check.failed('user error')
-        return [args['A'], args['B'], {'C': 'transform_called'}]
+        return [inputs['A'], inputs['B'], {'C': 'transform_called'}]
 
     solid_c = SolidDefinition.single_output_transform(
         name='C',

@@ -16,8 +16,8 @@ from dagster.core.errors import DagsterTypeError
 def test_basic_solid_with_config():
     did_get = {}
 
-    def _t_fn(_context, _inputs, config_dict):
-        did_get['yep'] = config_dict
+    def _t_fn(_context, conf, _inputs):
+        did_get['yep'] = conf
 
     solid = SolidDefinition(
         name='solid_with_context',
@@ -43,7 +43,7 @@ def test_basic_solid_with_config():
 
 
 def test_config_arg_mismatch():
-    def _t_fn(_context, _inputs, _config_dict):
+    def _t_fn(*args):
         raise Exception('should not reach')
 
     solid = SolidDefinition(
