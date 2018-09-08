@@ -36,10 +36,10 @@ class MultipleResults(namedtuple('_MultipleResults', 'results')):
             OutputDefinition(name='bar'),
         ])
         def my_solid():
-            return MultipleResults([
+            return MultipleResults(
                 Result('Barb', 'foo'),
                 Result('Glarb', 'bar'),
-            ])
+            )
 
 
         @solid(outputs=[

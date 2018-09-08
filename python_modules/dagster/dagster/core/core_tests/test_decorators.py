@@ -32,6 +32,21 @@ def create_empty_test_env():
     return config.Environment()
 
 
+def test_multiple_single_result():
+    mr = MultipleResults(Result('value', 'output_one'))
+    assert mr.results == [Result('value', 'output_one')]
+
+
+def test_multiple_double_result():
+    mr = MultipleResults(Result('value_one', 'output_one'), Result('value_two', 'output_two'))
+    assert mr.results == [Result('value_one', 'output_one'), Result('value_two', 'output_two')]
+
+
+def test_multiple_dict():
+    mr = MultipleResults.from_dict({'output_one': 'value_one', 'output_two': 'value_two'})
+    assert mr.results == [Result('value_one', 'output_one'), Result('value_two', 'output_two')]
+
+
 def test_no_parens_solid():
     called = {}
 
