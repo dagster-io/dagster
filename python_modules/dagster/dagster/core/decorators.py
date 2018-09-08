@@ -12,8 +12,6 @@ from .definitions import (
     check,
 )
 
-from .types import Any
-
 if hasattr(inspect, 'signature'):
     funcsigs = inspect
 else:
@@ -38,10 +36,10 @@ class MultipleResults(namedtuple('_MultipleResults', 'results')):
             OutputDefinition(name='bar'),
         ])
         def my_solid():
-            return MultipleResults([
+            return MultipleResults(
                 Result('Barb', 'foo'),
                 Result('Glarb', 'bar'),
-            ])
+            )
 
 
         @solid(outputs=[
@@ -72,24 +70,48 @@ class MultipleResults(namedtuple('_MultipleResults', 'results')):
         return MultipleResults(*results)
 
 
+class _LambdaSolid(object):
+    def __init__(
+        self,
+        name=None,
+        inputs=None,
+        output=None,
+        description=None,
+    ):
+        self.name = check.opt_str_param(name, 'name')
+        self.input_defs = check.opt_list_param(inputs, 'inputs', InputDefinition)
+        self.output_def = check.inst_param(output, 'output', OutputDefinition)
+        self.description = check.opt_str_param(description, 'description')
+
+    def __call__(self, fn):
+        check.callable_param(fn, 'fn')
+
+        if not self.name:
+            self.name = fn.__name__
+
+        _validate_transform_fn(self.name, fn, self.input_defs)
+        transform_fn = _create_lambda_solid_transform_wrapper(fn, self.input_defs, self.output_def)
+        return SolidDefinition(
+            name=self.name,
+            inputs=self.input_defs,
+            outputs=[self.output_def],
+            transform_fn=transform_fn,
+            description=self.description,
+        )
+
+
 class _Solid(object):
     def __init__(
         self,
         name=None,
         inputs=None,
         outputs=None,
-        output=None,
         description=None,
         config_def=None,
     ):
         self.name = check.opt_str_param(name, 'name')
         self.input_defs = check.opt_list_param(inputs, 'inputs', InputDefinition)
-
-        if output is not None and outputs is None:
-            self.outputs = [check.opt_inst_param(output, 'output', OutputDefinition)]
-        else:
-            self.outputs = check.opt_list_param(outputs, 'outputs', OutputDefinition)
-
+        self.outputs = check.opt_list_param(outputs, 'outputs', OutputDefinition)
         self.description = check.opt_str_param(description, 'description')
         self.config_def = check.opt_inst_param(config_def, 'config_def', ConfigDefinition)
 
@@ -99,8 +121,8 @@ class _Solid(object):
         if not self.name:
             self.name = fn.__name__
 
-        _validate_transform_fn(self.name, fn, self.input_defs)
-        transform_fn = _create_transform_wrapper(fn, self.input_defs, self.outputs)
+        _validate_transform_fn(self.name, fn, self.input_defs, ['context', 'conf'])
+        transform_fn = _create_solid_transform_wrapper(fn, self.input_defs, self.outputs)
         return SolidDefinition(
             name=self.name,
             inputs=self.input_defs,
@@ -111,12 +133,64 @@ class _Solid(object):
         )
 
 
-def solid(name=None, inputs=None, output=None, outputs=None, config_def=None, description=None):
+def lambda_solid(
+    name=None,
+    inputs=None,
+    output=None,
+    description=None,
+):
+    '''(decorator) Create a simple solid
+
+    This shortcut allows the creation of simple solids that do not require
+    configuration and whose implementations do not require a context.
+
+    Lambda solids take inputs an and produce an output. The body of the function
+    should return a single value.
+
+    Args:
+        name (str): Name of solid
+        inputs (List[InputDefinition]): List of inputs
+        output (OutputDefinition): The output of the solid. Defaults to OutputDefinition()
+        description (str): Solid description
+
+    .. code-block:: python
+
+        @lambda_solid
+        def hello_world():
+            return 'hello'
+
+        @lambda_solid(inputs=[InputDefinition(name="foo")])
+        def hello_world(foo):
+            return foo
+
+    '''
+    output = output or OutputDefinition()
+
+    if callable(name):
+        check.invariant(inputs is None)
+        check.invariant(description is None)
+        return _LambdaSolid(output=output)(name)
+
+    return _LambdaSolid(
+        name=name,
+        inputs=inputs,
+        output=output,
+        description=description,
+    )
+
+
+def solid(
+    name=None,
+    inputs=None,
+    outputs=None,
+    config_def=None,
+    description=None,
+):
     '''(decorator) Create a solid with specified parameters.
 
     This shortcut simplifies core solid API by exploding arguments into kwargs of the
     transform function and omitting additional parameters when they are not needed.
-    Parameters are otherwise as per :py:class:`SolidDefinition`. 
+    Parameters are otherwise as per :py:class:`SolidDefinition`.
 
     Decorated function is the transform function itself. Instead of having to yield
     result objects, transform support multiple simpler output types.
@@ -126,6 +200,14 @@ def solid(name=None, inputs=None, output=None, outputs=None, config_def=None, de
     3. Return a :py:class:`MultipleResults`. Works like yielding several results for
        multiple outputs. Useful for solids that have multiple outputs.
     4. Yield :py:class:`Result`. Same as default transform behaviour.
+
+    Args:
+        name (str): Name of solid
+        inputs (List[InputDefinition]): List of inputs
+        outputs (List[OutputDefinition]): List of outputs
+        config_def (ConfigDefinition):
+            The configuration for this solid.
+        description (str): Description of this solid.
 
     Examples:
 
@@ -143,11 +225,11 @@ def solid(name=None, inputs=None, output=None, outputs=None, config_def=None, de
         def hello_world(context, conf):
             return {'foo': 'bar'}
 
-        @solid(output=OutputDefinition())
+        @solid(outputs=[OutputDefinition()])
         def hello_world(context, conf):
             return Result(value={'foo': 'bar'})
 
-        @solid(output=OutputDefinition())
+        @solid(outputs=[OutputDefinition()])
         def hello_world(context, conf):
             yield Result(value={'foo': 'bar'})
 
@@ -162,16 +244,32 @@ def solid(name=None, inputs=None, output=None, outputs=None, config_def=None, de
             })
 
         @solid(
-            inputs=[InputDefinition(name="foo_to_foo")],
+            inputs=[InputDefinition(name="foo")],
             outputs=[OutputDefinition()]
         )
-        def hello_world(context, conf, foo_to_foo):
-            return foo_to_foo
+        def hello_world(context, conf, foo):
+            return foo
+
+        @solid(
+            inputs=[InputDefinition(name="foo")],
+            outputs=[OutputDefinition()],
+        )
+        def hello_world(context, conf, foo):
+            context.info('log something')
+            return foo
+
+        @solid(
+            inputs=[InputDefinition(name="foo")],
+            outputs=[OutputDefinition()],
+            config_def=ConfigDefinition(types.ConfigDictionary({'str_value' : Field(types.String)})),
+        )
+        def hello_world(context, conf, foo):
+            # conf is a dictionary with 'str_value' key
+            return foo
 
     '''
     if callable(name):
         check.invariant(inputs is None)
-        check.invariant(output is None)
         check.invariant(outputs is None)
         check.invariant(description is None)
         check.invariant(config_def is None)
@@ -180,17 +278,37 @@ def solid(name=None, inputs=None, output=None, outputs=None, config_def=None, de
     return _Solid(
         name=name,
         inputs=inputs,
-        output=output,
         outputs=outputs,
         config_def=config_def,
         description=description,
     )
 
 
-# TODO change names and check types
-def _create_transform_wrapper(fn, inputs, outputs):
+def _create_lambda_solid_transform_wrapper(fn, input_defs, output_def):
     check.callable_param(fn, 'fn')
-    input_names = [input.name for input in inputs]
+    check.list_param(input_defs, 'input_defs', of_type=InputDefinition)
+    check.inst_param(output_def, 'output_def', OutputDefinition)
+
+    input_names = [input_def.name for input_def in input_defs]
+
+    @wraps(fn)
+    def transform(_context, inputs, _conf):
+        kwargs = {}
+        for input_name in input_names:
+            kwargs[input_name] = inputs[input_name]
+
+        result = fn(**kwargs)
+        yield Result(value=result, output_name=output_def.name)
+
+    return transform
+
+
+def _create_solid_transform_wrapper(fn, input_defs, output_defs):
+    check.callable_param(fn, 'fn')
+    check.list_param(input_defs, 'input_defs', of_type=InputDefinition)
+    check.list_param(output_defs, 'output_defs', of_type=OutputDefinition)
+
+    input_names = [input_def.name for input_def in input_defs]
 
     @wraps(fn)
     def transform(context, args, conf):
@@ -209,8 +327,8 @@ def _create_transform_wrapper(fn, inputs, outputs):
             elif isinstance(result, MultipleResults):
                 for item in result.results:
                     yield item
-            elif len(outputs) == 1:
-                yield Result(value=result, output_name=outputs[0].name)
+            elif len(output_defs) == 1:
+                yield Result(value=result, output_name=output_defs[0].name)
             elif result is not None:
                 # XXX(freiksenet)
                 raise Exception('Output for a solid without an output.')
@@ -233,10 +351,18 @@ class FunctionValidationError(Exception):
         self.missing_names = missing_names
 
 
-def _validate_transform_fn(solid_name, transform_fn, inputs):
+def _validate_transform_fn(solid_name, transform_fn, inputs, expected_positionals=None):
+    check.str_param(solid_name, 'solid_name')
+    check.callable_param(transform_fn, 'transform_fn')
+    check.list_param(inputs, 'inputs', of_type=InputDefinition)
+    expected_positionals = check.opt_list_param(
+        expected_positionals,
+        'expected_positionals',
+        of_type=str,
+    )
+
     names = set(inp.name for inp in inputs)
     # Currently being super strict about naming. Might be a good idea to relax. Starting strict.
-    expected_positionals = ('context', 'conf')
     try:
         _validate_decorated_fn(transform_fn, names, expected_positionals)
     except FunctionValidationError as e:
@@ -277,8 +403,10 @@ def _validate_decorated_fn(fn, names, expected_positionals):
 
     for expected, actual in zip(expected_positionals, expected_positional_params):
         possible_names = [
-            expected, '_{expected}'.format(expected=expected),
-            '{expected}_'.format(expected=expected)
+            '_',
+            expected,
+            '_{expected}'.format(expected=expected),
+            '{expected}_'.format(expected=expected),
         ]
         if (
             actual.kind not in [

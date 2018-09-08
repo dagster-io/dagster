@@ -8,9 +8,9 @@ from dagster import (
     SolidDefinition,
     config,
     execute_pipeline,
+    lambda_solid,
 )
 
-from dagster.core.decorators import solid
 from dagster.utils import script_relative_path
 from dagster.utils.test import get_temp_file_name
 
@@ -122,11 +122,11 @@ def create_definition_based_solid():
 
 
 def create_decorator_based_solid():
-    @solid(
+    @lambda_solid(
         inputs=[InputDefinition('num_csv', dagster_pd.DataFrame)],
-        outputs=[OutputDefinition(dagster_type=dagster_pd.DataFrame)],
+        output=OutputDefinition(dagster_type=dagster_pd.DataFrame),
     )
-    def hello_world(_context, _conf, num_csv):
+    def hello_world(num_csv):
         num_csv['sum'] = num_csv['num1'] + num_csv['num2']
         return num_csv
 
