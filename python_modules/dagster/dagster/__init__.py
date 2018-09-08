@@ -27,6 +27,7 @@ from dagster.core.definitions import (
 
 from dagster.core.decorators import (
     MultipleResults,
+    lambda_solid,
     solid,
 )
 
@@ -55,6 +56,7 @@ __all__ = [
     'Result',
 
     # Decorators
+    'lambda_solid',
     'solid',
     'MultipleResults',
 

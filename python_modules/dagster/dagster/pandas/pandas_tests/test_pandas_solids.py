@@ -11,7 +11,7 @@ from dagster import (
     SolidDefinition,
     check,
     config,
-    solid,
+    lambda_solid,
 )
 
 from dagster.core.execution import (
@@ -176,30 +176,30 @@ def create_sum_table():
     )
 
 
-@solid(
+@lambda_solid(
     inputs=[InputDefinition('num_csv', dagster_pd.DataFrame)],
-    outputs=[OutputDefinition(dagster_type=dagster_pd.DataFrame)],
+    output=OutputDefinition(dagster_type=dagster_pd.DataFrame),
 )
-def sum_table(_context, _conf, num_csv):
+def sum_table(num_csv):
     check.inst_param(num_csv, 'num_csv', pd.DataFrame)
     num_csv['sum'] = num_csv['num1'] + num_csv['num2']
     return num_csv
 
 
-@solid(
+@lambda_solid(
     inputs=[InputDefinition('sum_df', dagster_pd.DataFrame)],
-    outputs=[OutputDefinition(dagster_type=dagster_pd.DataFrame)],
+    output=OutputDefinition(dagster_type=dagster_pd.DataFrame),
 )
-def sum_sq_table(_context, _conf, sum_df):
+def sum_sq_table(sum_df):
     sum_df['sum_squared'] = sum_df['sum'] * sum_df['sum']
     return sum_df
 
 
-@solid(
+@lambda_solid(
     inputs=[InputDefinition('sum_table_renamed', dagster_pd.DataFrame)],
-    outputs=[OutputDefinition(dagster_type=dagster_pd.DataFrame)],
+    output=OutputDefinition(dagster_type=dagster_pd.DataFrame),
 )
-def sum_sq_table_renamed_input(_context, _conf, sum_table_renamed):
+def sum_sq_table_renamed_input(sum_table_renamed):
     sum_table_renamed['sum_squared'] = sum_table_renamed['sum'] * sum_table_renamed['sum']
     return sum_table_renamed
 

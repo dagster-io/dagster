@@ -9,7 +9,7 @@ from dagster import (
     PipelineDefinition,
     config,
     execute_pipeline,
-    solid,
+    lambda_solid,
 )
 from dagster.core.errors import DagsterExpectationFailedError
 from dagster.core.utility_solids import define_stub_solid
@@ -29,7 +29,7 @@ def col_exists(name, col_name):
     return dagster_ge.ge_expectation(name, lambda ge_df: ge_df.expect_column_to_exist(col_name))
 
 
-@solid(
+@lambda_solid(
     inputs=[
         InputDefinition(
             'num_df', dagster_pd.DataFrame, expectations=[col_exists('num1_exists', 'num1')]
@@ -37,11 +37,11 @@ def col_exists(name, col_name):
     ],
     output=OutputDefinition(dagster_type=dagster_pd.DataFrame)
 )
-def sum_solid(_context, _conf, num_df):
+def sum_solid(num_df):
     return _sum_solid_impl(num_df)
 
 
-@solid(
+@lambda_solid(
     inputs=[
         InputDefinition(
             'num_df',
@@ -51,11 +51,11 @@ def sum_solid(_context, _conf, num_df):
     ],
     output=OutputDefinition(dagster_type=dagster_pd.DataFrame)
 )
-def sum_solid_fails_input_expectation(_context, _conf, num_df):
+def sum_solid_fails_input_expectation(num_df):
     return _sum_solid_impl(num_df)
 
 
-@solid(
+@lambda_solid(
     inputs=[
         InputDefinition(
             'num_df',
@@ -69,7 +69,7 @@ def sum_solid_fails_input_expectation(_context, _conf, num_df):
     ],
     output=OutputDefinition(dagster_type=dagster_pd.DataFrame)
 )
-def sum_solid_expectations_config(_context, _conf, num_df):
+def sum_solid_expectations_config(num_df):
     return _sum_solid_impl(num_df)
 
 

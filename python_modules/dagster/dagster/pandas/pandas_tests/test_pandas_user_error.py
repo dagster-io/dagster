@@ -13,7 +13,7 @@ from dagster import (
     SolidDefinition,
     config,
     execute_pipeline,
-    solid,
+    lambda_solid,
 )
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.utility_solids import define_stub_solid
@@ -31,12 +31,12 @@ def _dataframe_solid(name, inputs, transform_fn):
 def test_wrong_output_value():
     csv_input = InputDefinition('num_csv', dagster_pd.DataFrame)
 
-    @solid(
+    @lambda_solid(
         name="test_wrong_output",
         inputs=[csv_input],
-        outputs=[OutputDefinition(dagster_type=dagster_pd.DataFrame)]
+        output=OutputDefinition(dagster_type=dagster_pd.DataFrame),
     )
-    def df_solid(_context, _conf, num_csv):
+    def df_solid(num_csv):
         return 'not a dataframe'
 
     pass_solid = define_stub_solid('pass_solid', pd.DataFrame())
@@ -56,12 +56,11 @@ def test_wrong_output_value():
 
 
 def test_wrong_input_value():
-    @solid(
+    @lambda_solid(
         name="test_wrong_input",
         inputs=[InputDefinition('foo', dagster_pd.DataFrame)],
-        outputs=[OutputDefinition()],
     )
-    def df_solid(_context, _conf, foo):
+    def df_solid(foo):
         return foo
 
     pass_solid = define_stub_solid('pass_solid', 'not a dataframe')

@@ -344,7 +344,7 @@ class PipelineDefinition(object):
                 raise DagsterInvalidDefinitionError(
                     '''You have passed a lambda or function {func} into
                 a pipeline that is not a solid. You have likely forgetten to annotate this function
-                with an @solid decorator located in dagster.core.decorators
+                with an @solid or @lambda_solid decorator located in dagster.core.decorators
                 '''.format(func=solid.__name__)
                 )
 

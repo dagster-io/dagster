@@ -9,6 +9,7 @@ from dagster import (
     PipelineContextDefinition,
     config,
     execute_pipeline,
+    lambda_solid,
     solid,
     types,
 )
@@ -20,11 +21,8 @@ from dagster.utils.logging import (INFO, ERROR)
 
 
 def test_default_context():
-    @solid(
-        inputs=[],
-        outputs=[OutputDefinition()],
-    )
-    def default_context_transform(context, _conf):
+    @solid(inputs=[], outputs=[OutputDefinition()])
+    def default_context_transform(context, _):
         for logger in context._logger.loggers:
             assert logger.level == ERROR
 
@@ -35,11 +33,8 @@ def test_default_context():
 
 
 def test_default_context_with_log_level():
-    @solid(
-        inputs=[],
-        outputs=[OutputDefinition()],
-    )
-    def default_context_transform(context, _conf):
+    @solid(inputs=[], outputs=[OutputDefinition()])
+    def default_context_transform(context, _):
         for logger in context._logger.loggers:
             assert logger.level == INFO
 
@@ -58,11 +53,8 @@ def test_default_context_with_log_level():
 
 def test_default_value():
     def _get_config_test_solid(config_key, config_value):
-        @solid(
-            inputs=[],
-            outputs=[OutputDefinition()],
-        )
-        def config_test(context, _conf):
+        @solid(inputs=[], outputs=[OutputDefinition()])
+        def config_test(context, _):
             assert context.resources == {config_key: config_value}
 
         return config_test
@@ -93,11 +85,8 @@ def test_default_value():
 
 
 def test_custom_contexts():
-    @solid(
-        inputs=[],
-        outputs=[OutputDefinition()],
-    )
-    def custom_context_transform(context, _conf):
+    @solid(inputs=[], outputs=[OutputDefinition()])
+    def custom_context_transform(context, _):
         assert context.resources == {'field_one': 'value_two'}
 
     pipeline = PipelineDefinition(
@@ -140,11 +129,8 @@ def test_custom_contexts():
 def test_yield_context():
     events = []
 
-    @solid(
-        inputs=[],
-        outputs=[OutputDefinition()],
-    )
-    def custom_context_transform(context, _conf):
+    @solid(inputs=[], outputs=[OutputDefinition()])
+    def custom_context_transform(context, _):
         assert context.resources == {'field_one': 'value_two'}
         assert context._context_dict['foo'] == 'bar'  # pylint: disable=W0212
         events.append('during')
@@ -183,10 +169,7 @@ def test_yield_context():
 # TODO: reenable pending the ability to specific optional arguments
 # https://github.com/dagster-io/dagster/issues/56
 def test_invalid_context():
-    @solid(
-        inputs=[],
-        outputs=[OutputDefinition()],
-    )
+    @lambda_solid
     def never_transform():
         raise Exception('should never execute')
 

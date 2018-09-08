@@ -1,11 +1,9 @@
 from dagster import (
-    ConfigDefinition,
     ExecutionContext,
-    OutputDefinition,
     PipelineContextDefinition,
     PipelineDefinition,
     config,
-    solid,
+    lambda_solid,
 )
 
 from dagster.core.execution import (
@@ -25,8 +23,8 @@ def silencing_default_context():
     }
 
 
-@solid(name='noop', inputs=[], outputs=[OutputDefinition()])
-def noop_solid(_context, _conf):
+@lambda_solid
+def noop():
     return 'foo'
 
 
@@ -36,7 +34,7 @@ def silencing_pipeline(solids):
 
 def test_compute_noop_node():
     pipeline = silencing_pipeline(solids=[
-        noop_solid,
+        noop,
     ])
 
     environment = config.Environment()

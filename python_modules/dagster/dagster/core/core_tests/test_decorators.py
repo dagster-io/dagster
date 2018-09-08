@@ -1,5 +1,4 @@
 import pytest
-import dagster
 from dagster import (
     ConfigDefinition,
     DagsterInvalidDefinitionError,
@@ -12,6 +11,7 @@ from dagster import (
     Result,
     config,
     execute_pipeline,
+    lambda_solid,
     solid,
 )
 
@@ -32,11 +32,29 @@ def create_empty_test_env():
     return config.Environment()
 
 
+def test_multiple_single_result():
+    mr = MultipleResults(Result('value', 'output_one'))
+    assert mr.results == [Result('value', 'output_one')]
+
+
+def test_multiple_double_result():
+    mr = MultipleResults(Result('value_one', 'output_one'), Result('value_two', 'output_two'))
+    assert mr.results == [Result('value_one', 'output_one'), Result('value_two', 'output_two')]
+
+
+def test_multiple_dict():
+    mr = MultipleResults.from_dict({'output_one': 'value_one', 'output_two': 'value_two'})
+    assert set(mr.results) == set(
+        [Result('value_one', 'output_one'),
+         Result('value_two', 'output_two')]
+    )
+
+
 def test_no_parens_solid():
     called = {}
 
-    @solid
-    def hello_world(_context, _conf):
+    @lambda_solid
+    def hello_world():
         called['yup'] = True
 
     result = execute_single_solid(
@@ -51,8 +69,8 @@ def test_no_parens_solid():
 def test_empty_solid():
     called = {}
 
-    @solid()
-    def hello_world(_context, _conf):
+    @lambda_solid()
+    def hello_world():
         called['yup'] = True
 
     result = execute_single_solid(
@@ -81,8 +99,8 @@ def test_solid():
 
 
 def test_solid_one_output():
-    @solid(output=OutputDefinition())
-    def hello_world(_context, _conf):
+    @lambda_solid
+    def hello_world():
         return {'foo': 'bar'}
 
     result = execute_single_solid(
@@ -97,8 +115,8 @@ def test_solid_one_output():
 
 
 def test_solid_yield():
-    @solid(output=OutputDefinition())
-    def hello_world(_context, _conf):
+    @solid(outputs=[OutputDefinition()])
+    def hello_world(_context, _):
         yield Result(value={'foo': 'bar'})
 
     result = execute_single_solid(
@@ -113,7 +131,7 @@ def test_solid_yield():
 
 
 def test_solid_result_return():
-    @solid(output=OutputDefinition())
+    @solid(outputs=[OutputDefinition()])
     def hello_world(_context, _conf):
         return Result(value={'foo': 'bar'})
 
@@ -129,10 +147,7 @@ def test_solid_result_return():
 
 
 def test_solid_multiple_outputs():
-    @solid(outputs=[
-        OutputDefinition(name="left"),
-        OutputDefinition(name="right"),
-    ])
+    @solid(outputs=[OutputDefinition(name="left"), OutputDefinition(name="right")])
     def hello_world(_context, _conf):
         return MultipleResults(
             Result(value={'foo': 'left'}, output_name='left'),
@@ -153,10 +168,7 @@ def test_solid_multiple_outputs():
 
 
 def test_dict_multiple_outputs():
-    @solid(outputs=[
-        OutputDefinition(name="left"),
-        OutputDefinition(name="right"),
-    ])
+    @solid(outputs=[OutputDefinition(name="left"), OutputDefinition(name="right")])
     def hello_world(_context, _conf):
         return MultipleResults.from_dict({
             'left': {
@@ -180,6 +192,22 @@ def test_dict_multiple_outputs():
     assert solid_result.transformed_value('right')['foo'] == 'right'
 
 
+def test_lambda_solid_with_name():
+    @lambda_solid(name="foobar")
+    def hello_world():
+        return {'foo': 'bar'}
+
+    result = execute_single_solid(
+        create_test_context(),
+        hello_world,
+        environment=create_empty_test_env(),
+    )
+
+    assert result.success
+    assert len(result.result_list) == 1
+    assert result.result_list[0].transformed_value()['foo'] == 'bar'
+
+
 def test_solid_with_name():
     @solid(name="foobar", outputs=[OutputDefinition()])
     def hello_world(_context, _conf):
@@ -197,8 +225,8 @@ def test_solid_with_name():
 
 
 def test_solid_with_input():
-    @solid(inputs=[InputDefinition(name="foo_to_foo")], outputs=[OutputDefinition()])
-    def hello_world(_context, _conf, foo_to_foo):
+    @lambda_solid(inputs=[InputDefinition(name="foo_to_foo")])
+    def hello_world(foo_to_foo):
         return foo_to_foo
 
     pipeline = PipelineDefinition(
@@ -219,39 +247,55 @@ def test_solid_with_input():
     assert result.transformed_value()['foo'] == 'bar'
 
 
+def test_lambda_solid_definition_errors():
+    with pytest.raises(DagsterInvalidDefinitionError, match='positional vararg'):
+
+        @lambda_solid(inputs=[InputDefinition(name="foo")])
+        def vargs(foo, *args):
+            pass
+
+
 def test_solid_definition_errors():
-    with pytest.raises(DagsterInvalidDefinitionError):
+    with pytest.raises(DagsterInvalidDefinitionError, match='positional vararg'):
 
         @solid(inputs=[InputDefinition(name="foo")], outputs=[OutputDefinition()])
-        def vargs(_context, _conf, foo, *args):
+        def vargs(context, conf, foo, *args):
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
         @solid(inputs=[InputDefinition(name="foo")], outputs=[OutputDefinition()])
-        def wrong_name(_context, _conf, bar):
+        def wrong_name(context, conf, bar):
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
         @solid(
-            inputs=[InputDefinition(name="foo"),
-                    InputDefinition(name="bar")],
+            inputs=[
+                InputDefinition(name="foo"),
+                InputDefinition(name="bar"),
+            ],
             outputs=[OutputDefinition()]
         )
-        def wrong_name_2(_context, _conf, foo):
+        def wrong_name_2(context, conf, foo):
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
         @solid(inputs=[InputDefinition(name="foo")], outputs=[OutputDefinition()])
-        def no_context(foo):
+        def no_context(conf, foo):
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
         @solid(inputs=[InputDefinition(name="foo")], outputs=[OutputDefinition()])
-        def no_conf(_context, foo):
+        def no_context_with_both(conf, foo):
+            pass
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+
+        @solid(inputs=[InputDefinition(name="foo")], outputs=[OutputDefinition()])
+        def no_conf(context, foo):
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError):
@@ -271,7 +315,7 @@ def test_solid_definition_errors():
                 InputDefinition(name="bar")],
         outputs=[OutputDefinition()]
     )
-    def valid_kwargs(_context, _conf, **kwargs):
+    def valid_kwargs(context, conf, **kwargs):
         pass
 
     @solid(
@@ -279,15 +323,7 @@ def test_solid_definition_errors():
                 InputDefinition(name="bar")],
         outputs=[OutputDefinition()]
     )
-    def valid(_context, _conf, foo, bar):
-        pass
-
-    @solid(
-        inputs=[InputDefinition(name="foo"),
-                InputDefinition(name="bar")],
-        outputs=[OutputDefinition()]
-    )
-    def valid_rontext(context, _conf, foo, bar):
+    def valid(context, conf, foo, bar):
         pass
 
 
@@ -298,12 +334,12 @@ def test_wrong_argument_to_pipeline():
     with pytest.raises(
         DagsterInvalidDefinitionError, match='You have passed a lambda or function non_solid_func'
     ):
-        dagster.PipelineDefinition(solids=[non_solid_func])
+        PipelineDefinition(solids=[non_solid_func])
 
     with pytest.raises(
         DagsterInvalidDefinitionError, match='You have passed a lambda or function <lambda>'
     ):
-        dagster.PipelineDefinition(solids=[lambda x: x])
+        PipelineDefinition(solids=[lambda x: x])
 
 
 def test_descriptions():
@@ -319,7 +355,7 @@ def test_any_config_definition():
     conf_value = 234
 
     @solid(config_def=ConfigDefinition())
-    def hello_world(_context, conf):
+    def hello_world(context, conf):
         assert conf == conf_value
         called['yup'] = True
 
