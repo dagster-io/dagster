@@ -70,8 +70,8 @@ def create_test_context():
 def test_basic_pandas_solid():
     csv_input = InputDefinition('num_csv', dagster_pd.DataFrame)
 
-    def transform(_context, args):
-        num_csv = args['num_csv']
+    def transform(_context, inputs):
+        num_csv = inputs['num_csv']
         num_csv['sum'] = num_csv['num1'] + num_csv['num2']
         return num_csv
 
@@ -107,9 +107,9 @@ def test_pandas_csv_to_csv():
     csv_input = InputDefinition('num_csv', dagster_pd.DataFrame)
 
     # just adding a second context arg to test that
-    def transform(context, args):
+    def transform(context, inputs):
         check.inst_param(context, 'context', ExecutionContext)
-        num_csv = args['num_csv']
+        num_csv = inputs['num_csv']
         num_csv['sum'] = num_csv['num1'] + num_csv['num2']
         return num_csv
 
@@ -163,8 +163,8 @@ def execute_transform_in_temp_csv_files(solid_inst):
 
 
 def create_sum_table():
-    def transform(_context, args):
-        num_csv = args['num_csv']
+    def transform(_context, inputs):
+        num_csv = inputs['num_csv']
         check.inst_param(num_csv, 'num_csv', pd.DataFrame)
         num_csv['sum'] = num_csv['num1'] + num_csv['num2']
         return num_csv
@@ -232,9 +232,9 @@ def _sum_only_pipeline():
 
 
 def test_two_input_solid():
-    def transform(_context, args):
-        num_csv1 = args['num_csv1']
-        num_csv2 = args['num_csv2']
+    def transform(_context, inputs):
+        num_csv1 = inputs['num_csv1']
+        num_csv2 = inputs['num_csv2']
         check.inst_param(num_csv1, 'num_csv1', pd.DataFrame)
         check.inst_param(num_csv2, 'num_csv2', pd.DataFrame)
         num_csv1['sum'] = num_csv1['num1'] + num_csv2['num2']
@@ -287,7 +287,7 @@ def test_no_transform_solid():
     num_table = _dataframe_solid(
         name='num_table',
         inputs=[InputDefinition('num_csv', dagster_pd.DataFrame)],
-        transform_fn=lambda _context, args: args['num_csv'],
+        transform_fn=lambda _context, inputs: inputs['num_csv'],
     )
     context = create_test_context()
     df = get_solid_transformed_value(
@@ -329,11 +329,11 @@ def create_diamond_dag():
     num_table_solid = _dataframe_solid(
         name='num_table',
         inputs=[InputDefinition('num_csv', dagster_pd.DataFrame)],
-        transform_fn=lambda _context, args: args['num_csv'],
+        transform_fn=lambda _context, inputs: inputs['num_csv'],
     )
 
-    def sum_transform(_context, args):
-        num_df = args['num_table']
+    def sum_transform(_context, inputs):
+        num_df = inputs['num_table']
         sum_df = num_df.copy()
         sum_df['sum'] = num_df['num1'] + num_df['num2']
         return sum_df
@@ -344,8 +344,8 @@ def create_diamond_dag():
         transform_fn=sum_transform,
     )
 
-    def mult_transform(_context, args):
-        num_table = args['num_table']
+    def mult_transform(_context, inputs):
+        num_table = inputs['num_table']
         mult_table = num_table.copy()
         mult_table['mult'] = num_table['num1'] * num_table['num2']
         return mult_table
@@ -356,9 +356,9 @@ def create_diamond_dag():
         transform_fn=mult_transform,
     )
 
-    def sum_mult_transform(_context, args):
-        sum_df = args['sum_table']
-        mult_df = args['mult_table']
+    def sum_mult_transform(_context, inputs):
+        sum_df = inputs['sum_table']
+        mult_df = inputs['mult_table']
         sum_mult_table = sum_df.copy()
         sum_mult_table['mult'] = mult_df['mult']
         sum_mult_table['sum_mult'] = sum_df['sum'] * mult_df['mult']
@@ -597,8 +597,8 @@ def test_pandas_multiple_inputs():
         },
     )
 
-    def transform_fn(_context, args):
-        return args['num_csv1'] + args['num_csv2']
+    def transform_fn(_context, inputs):
+        return inputs['num_csv1'] + inputs['num_csv2']
 
     double_sum = _dataframe_solid(
         name='double_sum',

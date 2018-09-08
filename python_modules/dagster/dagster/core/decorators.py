@@ -292,7 +292,7 @@ def _create_lambda_solid_transform_wrapper(fn, input_defs, output_def):
     input_names = [input_def.name for input_def in input_defs]
 
     @wraps(fn)
-    def transform(_context, inputs, _conf):
+    def transform(_context, _conf, inputs):
         kwargs = {}
         for input_name in input_names:
             kwargs[input_name] = inputs[input_name]
@@ -311,10 +311,10 @@ def _create_solid_transform_wrapper(fn, input_defs, output_defs):
     input_names = [input_def.name for input_def in input_defs]
 
     @wraps(fn)
-    def transform(context, args, conf):
+    def transform(context, conf, inputs):
         kwargs = {}
         for input_name in input_names:
-            kwargs[input_name] = args[input_name]
+            kwargs[input_name] = inputs[input_name]
 
         result = fn(context, conf, **kwargs)
 

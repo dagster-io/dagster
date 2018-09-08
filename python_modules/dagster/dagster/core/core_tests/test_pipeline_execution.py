@@ -35,10 +35,10 @@ def create_dep_input_fn(name):
 
 
 def make_transform(name):
-    def transform(_context, args):
+    def transform(_context, inputs):
         passed_rows = []
         seen = set()
-        for row in args.values():
+        for row in inputs.values():
             for item in row:
                 key = list(item.keys())[0]
                 if key not in seen:

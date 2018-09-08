@@ -106,8 +106,8 @@ def run_hello_world(hello_world):
 def create_definition_based_solid():
     table_input = InputDefinition('num_csv', dagster_pd.DataFrame)
 
-    def transform_fn(_context, args):
-        num_csv = args['num_csv']
+    def transform_fn(_context, inputs):
+        num_csv = inputs['num_csv']
         num_csv['sum'] = num_csv['num1'] + num_csv['num2']
         return num_csv
 

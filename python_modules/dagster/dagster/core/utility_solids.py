@@ -9,7 +9,7 @@ from dagster import (
 def define_stub_solid(name, value):
     check.str_param(name, 'name')
 
-    def _value_t_fn(_context, _inputs, _config_dict):
+    def _value_t_fn(*_args):
         yield Result(value)
 
     return SolidDefinition(

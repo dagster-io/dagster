@@ -16,13 +16,13 @@ def solid_a_b_list():
             name='A',
             inputs=[],
             outputs=[OutputDefinition()],
-            transform_fn=lambda context, inputs, config: None,
+            transform_fn=lambda context, conf, inputs: None,
         ),
         SolidDefinition(
             name='B',
             inputs=[InputDefinition('b_input')],
             outputs=[],
-            transform_fn=lambda context, inputs, config: None,
+            transform_fn=lambda context, conf, inputs: None,
         )
     ]
 

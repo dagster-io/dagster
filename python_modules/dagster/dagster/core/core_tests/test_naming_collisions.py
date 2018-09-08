@@ -20,8 +20,8 @@ def define_pass_value_solid(name, description=None):
     check.str_param(name, 'name')
     check.opt_str_param(description, 'description')
 
-    def _value_t_fn(_context, _inputs, config_dict):
-        yield Result(config_dict['value'])
+    def _value_t_fn(_context, conf, _inputs):
+        yield Result(conf['value'])
 
     return SolidDefinition(
         name=name,
@@ -39,7 +39,7 @@ def test_execute_solid_with_input_same_name():
     a_thing_solid = SolidDefinition.single_output_transform(
         'a_thing',
         inputs=[InputDefinition(name='a_thing')],
-        transform_fn=lambda context, args: args['a_thing'] + args['a_thing'],
+        transform_fn=lambda context, inputs: inputs['a_thing'] + inputs['a_thing'],
         output=dagster.OutputDefinition(),
     )
 
@@ -66,14 +66,14 @@ def test_execute_two_solids_with_same_input_name():
     solid_one = SolidDefinition.single_output_transform(
         'solid_one',
         inputs=[input_def],
-        transform_fn=lambda context, args: args['a_thing'] + args['a_thing'],
+        transform_fn=lambda context, inputs: inputs['a_thing'] + inputs['a_thing'],
         output=dagster.OutputDefinition(),
     )
 
     solid_two = SolidDefinition.single_output_transform(
         'solid_two',
         inputs=[input_def],
-        transform_fn=lambda context, args: args['a_thing'] + args['a_thing'],
+        transform_fn=lambda context, inputs: inputs['a_thing'] + inputs['a_thing'],
         output=dagster.OutputDefinition(),
     )
 
@@ -120,7 +120,7 @@ def test_execute_dep_solid_different_input_name():
     first_solid = SolidDefinition.single_output_transform(
         'first_solid',
         inputs=[InputDefinition(name='a_thing')],
-        transform_fn=lambda context, args: args['a_thing'] + args['a_thing'],
+        transform_fn=lambda context, inputs: inputs['a_thing'] + inputs['a_thing'],
         output=dagster.OutputDefinition(),
     )
 
@@ -129,7 +129,7 @@ def test_execute_dep_solid_different_input_name():
         inputs=[
             InputDefinition(name='an_input'),
         ],
-        transform_fn=lambda context, args: args['an_input'] + args['an_input'],
+        transform_fn=lambda context, inputs: inputs['an_input'] + inputs['an_input'],
         output=dagster.OutputDefinition(),
     )
 

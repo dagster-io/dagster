@@ -48,10 +48,10 @@ class DagsterSqlTableExpression(DagsterSqlExpression):
 
 
 def define_create_table_solid(name):
-    def _materialization_fn(context, inputs, config_dict):
+    def _materialization_fn(context, conf, inputs):
         sql_expr = inputs['expr']
         check.inst(sql_expr, DagsterSqlExpression)
-        output_table_name = check.str_elem(config_dict, 'table_name')
+        output_table_name = check.str_elem(conf, 'table_name')
         total_sql = '''CREATE TABLE {output_table_name} AS {query_text}'''.format(
             output_table_name=output_table_name, query_text=sql_expr.query_text
         )
@@ -77,9 +77,9 @@ def _table_name_read_fn(_context, arg_dict):
 
 
 def create_sql_transform(sql_text):
-    def transform_fn(_context, args):
+    def transform_fn(_context, inputs):
         sql_texts = {}
-        for name, sql_expr in args.items():
+        for name, sql_expr in inputs.items():
             sql_texts[name] = sql_expr.from_target
 
         return DagsterSqlQueryExpression(sql_text.format(**sql_texts))
