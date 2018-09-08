@@ -12,8 +12,6 @@ from .definitions import (
     check,
 )
 
-from .types import Any
-
 if hasattr(inspect, 'signature'):
     funcsigs = inspect
 else:
@@ -81,6 +79,8 @@ class _Solid(object):
         output=None,
         description=None,
         config_def=None,
+        with_context=False,
+        with_conf=False,
     ):
         self.name = check.opt_str_param(name, 'name')
         self.input_defs = check.opt_list_param(inputs, 'inputs', InputDefinition)
@@ -92,6 +92,8 @@ class _Solid(object):
 
         self.description = check.opt_str_param(description, 'description')
         self.config_def = check.opt_inst_param(config_def, 'config_def', ConfigDefinition)
+        self.with_context = check.bool_param(with_context, 'with_context')
+        self.with_conf = check.bool_param(with_conf, 'with_conf')
 
     def __call__(self, fn):
         check.callable_param(fn, 'fn')
@@ -99,8 +101,14 @@ class _Solid(object):
         if not self.name:
             self.name = fn.__name__
 
-        _validate_transform_fn(self.name, fn, self.input_defs)
-        transform_fn = _create_transform_wrapper(fn, self.input_defs, self.outputs)
+        _validate_transform_fn(self.name, fn, self.input_defs, self.with_context, self.with_conf)
+        transform_fn = _create_transform_wrapper(
+            fn,
+            self.input_defs,
+            self.outputs,
+            self.with_context,
+            self.with_conf,
+        )
         return SolidDefinition(
             name=self.name,
             inputs=self.input_defs,
@@ -111,12 +119,21 @@ class _Solid(object):
         )
 
 
-def solid(name=None, inputs=None, output=None, outputs=None, config_def=None, description=None):
+def solid(
+    name=None,
+    inputs=None,
+    output=None,
+    outputs=None,
+    config_def=None,
+    description=None,
+    with_context=False,
+    with_conf=False
+):
     '''(decorator) Create a solid with specified parameters.
 
     This shortcut simplifies core solid API by exploding arguments into kwargs of the
     transform function and omitting additional parameters when they are not needed.
-    Parameters are otherwise as per :py:class:`SolidDefinition`. 
+    Parameters are otherwise as per :py:class:`SolidDefinition`.
 
     Decorated function is the transform function itself. Instead of having to yield
     result objects, transform support multiple simpler output types.
@@ -175,6 +192,8 @@ def solid(name=None, inputs=None, output=None, outputs=None, config_def=None, de
         check.invariant(outputs is None)
         check.invariant(description is None)
         check.invariant(config_def is None)
+        check.invariant(with_context is False)
+        check.invariant(with_conf is False)
         return _Solid()(name)
 
     return _Solid(
@@ -184,13 +203,20 @@ def solid(name=None, inputs=None, output=None, outputs=None, config_def=None, de
         outputs=outputs,
         config_def=config_def,
         description=description,
+        with_context=with_context,
+        with_conf=with_conf,
     )
 
 
 # TODO change names and check types
-def _create_transform_wrapper(fn, inputs, outputs):
+def _create_transform_wrapper(fn, input_defs, output_defs, with_context, with_conf):
     check.callable_param(fn, 'fn')
-    input_names = [input.name for input in inputs]
+    check.list_param(input_defs, 'input_defs', of_type=InputDefinition)
+    check.list_param(output_defs, 'output_defs', of_type=OutputDefinition)
+    check.bool_param(with_context, 'with_context')
+    check.bool_param(with_conf, 'with_conf')
+
+    input_names = [input_def.name for input_def in input_defs]
 
     @wraps(fn)
     def transform(context, args, conf):
@@ -198,7 +224,18 @@ def _create_transform_wrapper(fn, inputs, outputs):
         for input_name in input_names:
             kwargs[input_name] = args[input_name]
 
-        result = fn(context, conf, **kwargs)
+        if with_context and with_conf:
+            result = fn(context, conf, **kwargs)
+        elif with_context:
+            check.invariant(not with_conf)
+            result = fn(context, **kwargs)
+        elif with_conf:
+            check.invariant(not with_context)
+            result = fn(conf, **kwargs)
+        else:
+            check.invariant(not with_conf)
+            check.invariant(not with_context)
+            result = fn(**kwargs)
 
         if inspect.isgenerator(result):
             for item in result:
@@ -209,8 +246,8 @@ def _create_transform_wrapper(fn, inputs, outputs):
             elif isinstance(result, MultipleResults):
                 for item in result.results:
                     yield item
-            elif len(outputs) == 1:
-                yield Result(value=result, output_name=outputs[0].name)
+            elif len(output_defs) == 1:
+                yield Result(value=result, output_name=output_defs[0].name)
             elif result is not None:
                 # XXX(freiksenet)
                 raise Exception('Output for a solid without an output.')
@@ -233,10 +270,14 @@ class FunctionValidationError(Exception):
         self.missing_names = missing_names
 
 
-def _validate_transform_fn(solid_name, transform_fn, inputs):
+def _validate_transform_fn(solid_name, transform_fn, inputs, with_context, with_conf):
     names = set(inp.name for inp in inputs)
     # Currently being super strict about naming. Might be a good idea to relax. Starting strict.
-    expected_positionals = ('context', 'conf')
+    expected_positionals = []
+    if with_context:
+        expected_positionals.append('context')
+    if with_conf:
+        expected_positionals.append('conf')
     try:
         _validate_decorated_fn(transform_fn, names, expected_positionals)
     except FunctionValidationError as e:

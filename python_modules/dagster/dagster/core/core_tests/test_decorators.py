@@ -36,7 +36,7 @@ def test_no_parens_solid():
     called = {}
 
     @solid
-    def hello_world(_context, _conf):
+    def hello_world():
         called['yup'] = True
 
     result = execute_single_solid(
@@ -52,7 +52,7 @@ def test_empty_solid():
     called = {}
 
     @solid()
-    def hello_world(_context, _conf):
+    def hello_world():
         called['yup'] = True
 
     result = execute_single_solid(
@@ -66,7 +66,7 @@ def test_empty_solid():
 
 def test_solid():
     @solid(outputs=[OutputDefinition()])
-    def hello_world(_context, _conf):
+    def hello_world():
         return {'foo': 'bar'}
 
     result = execute_single_solid(
@@ -82,7 +82,7 @@ def test_solid():
 
 def test_solid_one_output():
     @solid(output=OutputDefinition())
-    def hello_world(_context, _conf):
+    def hello_world():
         return {'foo': 'bar'}
 
     result = execute_single_solid(
@@ -98,7 +98,7 @@ def test_solid_one_output():
 
 def test_solid_yield():
     @solid(output=OutputDefinition())
-    def hello_world(_context, _conf):
+    def hello_world():
         yield Result(value={'foo': 'bar'})
 
     result = execute_single_solid(
@@ -114,7 +114,7 @@ def test_solid_yield():
 
 def test_solid_result_return():
     @solid(output=OutputDefinition())
-    def hello_world(_context, _conf):
+    def hello_world():
         return Result(value={'foo': 'bar'})
 
     result = execute_single_solid(
@@ -133,7 +133,7 @@ def test_solid_multiple_outputs():
         OutputDefinition(name="left"),
         OutputDefinition(name="right"),
     ])
-    def hello_world(_context, _conf):
+    def hello_world():
         return MultipleResults(
             Result(value={'foo': 'left'}, output_name='left'),
             Result(value={'foo': 'right'}, output_name='right')
@@ -157,7 +157,7 @@ def test_dict_multiple_outputs():
         OutputDefinition(name="left"),
         OutputDefinition(name="right"),
     ])
-    def hello_world(_context, _conf):
+    def hello_world():
         return MultipleResults.from_dict({
             'left': {
                 'foo': 'left'
@@ -182,7 +182,7 @@ def test_dict_multiple_outputs():
 
 def test_solid_with_name():
     @solid(name="foobar", outputs=[OutputDefinition()])
-    def hello_world(_context, _conf):
+    def hello_world():
         return {'foo': 'bar'}
 
     result = execute_single_solid(
@@ -198,7 +198,7 @@ def test_solid_with_name():
 
 def test_solid_with_input():
     @solid(inputs=[InputDefinition(name="foo_to_foo")], outputs=[OutputDefinition()])
-    def hello_world(_context, _conf, foo_to_foo):
+    def hello_world(foo_to_foo):
         return foo_to_foo
 
     pipeline = PipelineDefinition(
@@ -223,13 +223,13 @@ def test_solid_definition_errors():
     with pytest.raises(DagsterInvalidDefinitionError):
 
         @solid(inputs=[InputDefinition(name="foo")], outputs=[OutputDefinition()])
-        def vargs(_context, _conf, foo, *args):
+        def vargs(foo, *args):
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
         @solid(inputs=[InputDefinition(name="foo")], outputs=[OutputDefinition()])
-        def wrong_name(_context, _conf, bar):
+        def wrong_name(bar):
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError):
@@ -239,19 +239,43 @@ def test_solid_definition_errors():
                     InputDefinition(name="bar")],
             outputs=[OutputDefinition()]
         )
-        def wrong_name_2(_context, _conf, foo):
+        def wrong_name_2(foo):
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @solid(inputs=[InputDefinition(name="foo")], outputs=[OutputDefinition()])
+        @solid(
+            inputs=[InputDefinition(name="foo")], outputs=[OutputDefinition()], with_context=True
+        )
         def no_context(foo):
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @solid(inputs=[InputDefinition(name="foo")], outputs=[OutputDefinition()])
-        def no_conf(_context, foo):
+        @solid(
+            inputs=[InputDefinition(name="foo")],
+            outputs=[OutputDefinition()],
+            with_context=True,
+            with_conf=True
+        )
+        def no_context_with_both(conf, foo):
+            pass
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+
+        @solid(inputs=[InputDefinition(name="foo")], outputs=[OutputDefinition()], with_conf=True)
+        def no_conf(foo):
+            pass
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+
+        @solid(
+            inputs=[InputDefinition(name="foo")],
+            outputs=[OutputDefinition()],
+            with_context=True,
+            with_conf=True
+        )
+        def no_conf_with_both(context, foo):
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError):
@@ -271,7 +295,7 @@ def test_solid_definition_errors():
                 InputDefinition(name="bar")],
         outputs=[OutputDefinition()]
     )
-    def valid_kwargs(_context, _conf, **kwargs):
+    def valid_kwargs(**kwargs):
         pass
 
     @solid(
@@ -279,15 +303,35 @@ def test_solid_definition_errors():
                 InputDefinition(name="bar")],
         outputs=[OutputDefinition()]
     )
-    def valid(_context, _conf, foo, bar):
+    def valid(foo, bar):
         pass
 
     @solid(
         inputs=[InputDefinition(name="foo"),
                 InputDefinition(name="bar")],
-        outputs=[OutputDefinition()]
+        outputs=[OutputDefinition()],
+        with_context=True,
     )
-    def valid_rontext(context, _conf, foo, bar):
+    def valid_context(context, foo, bar):
+        pass
+
+    @solid(
+        inputs=[InputDefinition(name="foo"),
+                InputDefinition(name="bar")],
+        outputs=[OutputDefinition()],
+        with_conf=True,
+    )
+    def valid_conf(conf, foo, bar):
+        pass
+
+    @solid(
+        inputs=[InputDefinition(name="foo"),
+                InputDefinition(name="bar")],
+        outputs=[OutputDefinition()],
+        with_context=True,
+        with_conf=True,
+    )
+    def valid_context_conf(context, conf, foo, bar):
         pass
 
 
@@ -318,8 +362,8 @@ def test_any_config_definition():
     called = {}
     conf_value = 234
 
-    @solid(config_def=ConfigDefinition())
-    def hello_world(_context, conf):
+    @solid(config_def=ConfigDefinition(), with_conf=True)
+    def hello_world(conf):
         assert conf == conf_value
         called['yup'] = True
 
