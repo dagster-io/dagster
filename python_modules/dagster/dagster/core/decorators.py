@@ -144,46 +144,96 @@ def solid(
        multiple outputs. Useful for solids that have multiple outputs.
     4. Yield :py:class:`Result`. Same as default transform behaviour.
 
+    Args:
+        name (str): Name of solid
+        inputs (List[InputDefinition]): List of inputs
+        output (OutputDefinition):
+            Specify a single output. If this argument is passed outputs must be None.
+        outputs (List[OutputDefinition]):
+            Specify a list of outputs. If this argument is passed output must be None.
+        config_def (ConfigDefinition):
+            The configuration for this solid.
+        description (str): Description of this solid.
+        with_context (bool):
+            If specified, context with be passed as first argument to transform. This
+            argument must be named "context", "_context", or "context_"
+        with_conf (bool):
+            If specified, config will be passed as a argument to the transform. If only
+            with_conf is True, and not with_context, it will be the first argument. If both
+            with_conf and with_context are True, then it will be the second argument. That
+            argument must be named "conf", "_conf" or "conf_".
+
     Examples:
 
     .. code-block:: python
 
         @solid
-        def hello_world(context, conf):
+        def hello_world():
             print('hello')
 
         @solid()
-        def hello_world(context, conf):
+        def hello_world():
             print('hello')
 
         @solid(outputs=[OutputDefinition()])
-        def hello_world(context, conf):
+        def hello_world():
             return {'foo': 'bar'}
 
         @solid(output=OutputDefinition())
-        def hello_world(context, conf):
+        def hello_world():
             return Result(value={'foo': 'bar'})
 
         @solid(output=OutputDefinition())
-        def hello_world(context, conf):
+        def hello_world():
             yield Result(value={'foo': 'bar'})
 
         @solid(outputs=[
             OutputDefinition(name="left"),
             OutputDefinition(name="right"),
         ])
-        def hello_world(context, conf):
+        def hello_world():
             return MultipleResults.from_dict({
                 'left': {'foo': 'left'},
                 'right': {'foo': 'right'},
             })
 
         @solid(
-            inputs=[InputDefinition(name="foo_to_foo")],
+            inputs=[InputDefinition(name="foo")],
             outputs=[OutputDefinition()]
         )
-        def hello_world(context, conf, foo_to_foo):
-            return foo_to_foo
+        def hello_world(foo):
+            return foo
+
+        @solid(
+            inputs=[InputDefinition(name="foo")],
+            outputs=[OutputDefinition()],
+            with_context=True,
+        )
+        def hello_world(context, foo):
+            context.info('log something')
+            return foo
+
+        @solid(
+            inputs=[InputDefinition(name="foo")],
+            outputs=[OutputDefinition()],
+            config_def=ConfigDefinition(types.ConfigDictionary({'str_value' : Field(types.String)})),
+            with_conf=True,
+        )
+        def hello_world(conf, foo):
+            # conf is a dictionary with 'str_value' key
+            return foo
+
+        @solid(
+            inputs=[InputDefinition(name="foo")],
+            outputs=[OutputDefinition()],
+            config_def=ConfigDefinition(types.ConfigDictionary({'str_value' : Field(types.String)})),
+            with_context=True,
+            with_conf=True,
+        )
+        def hello_world(context, conf, foo):
+            context.info('log something')
+            # conf is a dictionary with 'str_value' key
+            return foo
 
     '''
     if callable(name):
