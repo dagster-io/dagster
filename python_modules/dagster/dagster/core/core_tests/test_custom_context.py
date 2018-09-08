@@ -23,8 +23,9 @@ def test_default_context():
     @solid(
         inputs=[],
         outputs=[OutputDefinition()],
+        with_context=True,
     )
-    def default_context_transform(context, _conf):
+    def default_context_transform(context):
         for logger in context._logger.loggers:
             assert logger.level == ERROR
 
@@ -38,8 +39,9 @@ def test_default_context_with_log_level():
     @solid(
         inputs=[],
         outputs=[OutputDefinition()],
+        with_context=True,
     )
-    def default_context_transform(context, _conf):
+    def default_context_transform(context):
         for logger in context._logger.loggers:
             assert logger.level == INFO
 
@@ -61,8 +63,9 @@ def test_default_value():
         @solid(
             inputs=[],
             outputs=[OutputDefinition()],
+            with_context=True,
         )
-        def config_test(context, _conf):
+        def config_test(context):
             assert context.resources == {config_key: config_value}
 
         return config_test
@@ -96,8 +99,9 @@ def test_custom_contexts():
     @solid(
         inputs=[],
         outputs=[OutputDefinition()],
+        with_context=True,
     )
-    def custom_context_transform(context, _conf):
+    def custom_context_transform(context):
         assert context.resources == {'field_one': 'value_two'}
 
     pipeline = PipelineDefinition(
@@ -143,8 +147,9 @@ def test_yield_context():
     @solid(
         inputs=[],
         outputs=[OutputDefinition()],
+        with_context=True,
     )
-    def custom_context_transform(context, _conf):
+    def custom_context_transform(context):
         assert context.resources == {'field_one': 'value_two'}
         assert context._context_dict['foo'] == 'bar'  # pylint: disable=W0212
         events.append('during')
