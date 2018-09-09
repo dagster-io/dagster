@@ -206,6 +206,17 @@ def _yield_transform_results(context, compute_node, conf, inputs):
             )
         yield result
 
+
+def _collect_result_list(context, compute_node, conf, inputs):
+    for result in _yield_transform_results(context, compute_node, conf, inputs):
+        context.debug('Solid {solid} emitted output "{output}" value {value}'.format(
+            solid=compute_node.solid.name,
+            output=result.output_name,
+            value=repr(result.value),
+        ))
+        yield result
+
+
 def _execute_core_transform(context, compute_node, conf, inputs):
     '''
     Execute the user-specified transform for the solid. Wrap in an error boundary and do
@@ -228,11 +239,12 @@ def _execute_core_transform(context, compute_node, conf, inputs):
         with time_execution_scope() as timer_result, \
             _user_code_error_boundary(context, error_str):
 
-            for result in _yield_transform_results(context, compute_node, conf, inputs):
-                yield result
-
+            all_results = list(_collect_result_list(context, compute_node, conf, inputs))
 
         context.metric('core_transform_time_ms', timer_result.millis)
+
+        for result in all_results:
+            yield result
 
 
 class ComputeNodeInput(object):
@@ -399,7 +411,7 @@ def execute_compute_nodes(context, compute_nodes):
     check.list_param(compute_nodes, 'compute_nodes', of_type=ComputeNode)
 
     intermediate_results = {}
-    context.debug('Entering exeute_compute_nodes loop. Order: {order}'.format(
+    context.debug('Entering execute_compute_nodes loop. Order: {order}'.format(
         order=[cn.friendly_name for cn in compute_nodes]
     ))
 

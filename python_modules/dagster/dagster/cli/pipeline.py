@@ -240,7 +240,8 @@ def process_results_for_console(pipeline_iter, printer):
                 click_context.exit(1)
         results.append(result)
 
-    print_metrics_to_console(results, printer)
+    # Commenting this out for now
+    # print_metrics_to_console(results, printer)
 
 
 def print_metrics_to_console(results, printer):
