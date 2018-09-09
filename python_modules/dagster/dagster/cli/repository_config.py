@@ -1,5 +1,7 @@
 from collections import namedtuple
+import imp
 import importlib
+import os
 
 import click
 import yaml
@@ -19,10 +21,14 @@ def load_repository_from_file(file_path):
     with open(file_path, 'r') as ff:
         config = yaml.load(ff)
         repository_config = check.dict_elem(config, 'repository')
-        module_name = check.str_elem(repository_config, 'module')
+        module_name = check.opt_str_elem(repository_config, 'module')
+        file_name = check.opt_str_elem(repository_config, 'file')
         fn_name = check.str_elem(repository_config, 'fn')
 
-        module, fn, repository = load_repository(module_name, fn_name)
+        if module_name:
+            module, fn, repository = load_repository_from_module_name(module_name, fn_name)
+        else:
+            module, fn, repository = load_repository_from_python_file(file_name, fn_name)
 
         return RepositoryInfo(
             repository=repository,
@@ -33,12 +39,22 @@ def load_repository_from_file(file_path):
         )
 
 
-def load_repository(module_name, fn_name):
-    module = importlib.import_module(module_name)
+def _create_repo_from_module(module, fn_name):
     fn = getattr(module, fn_name)
     check.is_callable(fn)
     repository = check.inst(fn(), RepositoryDefinition)
     return (module, fn, repository)
+
+
+def load_repository_from_python_file(file_path, fn_name):
+    module_name = os.path.splitext(os.path.basename(file_path))[0]
+    module = imp.load_source(module_name, file_path)
+    return _create_repo_from_module(module, fn_name)
+
+
+def load_repository_from_module_name(module_name, fn_name):
+    module = importlib.import_module(module_name)
+    return _create_repo_from_module(module, fn_name)
 
 
 def reload_repository_info(repository_info):

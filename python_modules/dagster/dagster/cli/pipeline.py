@@ -37,9 +37,18 @@ def create_pipeline_cli():
 @repository_config_argument
 def list_command(conf):
     repository = load_repository_from_file(conf).repository
-    click.echo('Repository {name}'.format(name=repository.name))
+    title = 'Repository {name}'.format(name=repository.name)
+    click.echo(title)
+    click.echo('*' * len(title))
+    first = True
     for pipeline in repository.get_all_pipelines():
-        click.echo('Pipeline: {name}'.format(name=pipeline.name))
+        pipeline_title = 'Pipeline: {name}'.format(name=pipeline.name)
+
+        if not first:
+            click.echo('*' * len(pipeline_title))
+        first = False
+
+        click.echo(pipeline_title)
         if pipeline.description:
             click.echo('Description:')
             click.echo(format_description(pipeline.description, indent=' ' * 4))
@@ -47,7 +56,6 @@ def list_command(conf):
         solid_graph = ExecutionGraph(pipeline, pipeline.solids, pipeline.dependency_structure)
         for solid in solid_graph.topological_solids:
             click.echo('    ' + solid.name)
-        click.echo('*************')
 
 
 def format_description(desc, indent):
