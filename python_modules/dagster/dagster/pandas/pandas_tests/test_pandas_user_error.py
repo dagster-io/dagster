@@ -49,10 +49,7 @@ def test_wrong_output_value():
     )
 
     with pytest.raises(DagsterInvariantViolationError):
-        execute_pipeline(
-            pipeline,
-            environment=config.Environment(),
-        )
+        execute_pipeline(pipeline)
 
 
 def test_wrong_input_value():
@@ -73,7 +70,4 @@ def test_wrong_input_value():
     )
 
     with pytest.raises(DagsterInvariantViolationError):
-        execute_pipeline(
-            pipeline,
-            environment=config.Environment(),
-        )
+        execute_pipeline(pipeline)

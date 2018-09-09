@@ -9,10 +9,15 @@ from dagster import (
 )
 
 
-def execute_single_solid(context, solid, environment, throw_on_error=True):
+def execute_single_solid(context, solid, environment=None, throw_on_error=True):
     check.inst_param(context, 'context', ExecutionContext)
     check.inst_param(solid, 'solid', SolidDefinition)
-    check.inst_param(environment, 'environment', config.Environment)
+    environment = check.opt_inst_param(
+        environment,
+        'environment',
+        config.Environment,
+        config.Environment(),
+    )
     check.bool_param(throw_on_error, 'throw_on_error')
 
     single_solid_environment = config.Environment(

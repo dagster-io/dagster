@@ -129,12 +129,7 @@ def create_sum_sq_pipeline(context, expr, extra_solids=None, extra_deps=None):
 def test_execute_sql_sum_sq_solid():
     pipeline = create_sum_sq_pipeline(in_mem_context(), DagsterSqlTableExpression('num_table'))
 
-    environment = config.Environment()
-
-    pipeline_result = execute_pipeline(
-        pipeline,
-        environment=environment,
-    )
+    pipeline_result = execute_pipeline(pipeline)
 
     assert pipeline_result.success
 

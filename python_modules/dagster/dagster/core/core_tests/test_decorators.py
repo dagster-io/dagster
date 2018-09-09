@@ -236,10 +236,7 @@ def test_solid_with_input():
         }}
     )
 
-    pipeline_result = execute_pipeline(
-        pipeline,
-        environment=config.Environment(),
-    )
+    pipeline_result = execute_pipeline(pipeline)
 
     result = pipeline_result.result_for_solid('hello_world')
 

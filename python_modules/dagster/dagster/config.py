@@ -2,13 +2,15 @@ from collections import namedtuple
 
 from dagster import check
 
+DEFAULT_CONTEXT_NAME = 'default'
+
 
 # lifted from https://bit.ly/2HcQAuv
 class Context(namedtuple('ContextData', 'name config')):
-    def __new__(cls, name, config=None):
+    def __new__(cls, name=None, config=None):
         return super(Context, cls).__new__(
             cls,
-            check.str_param(name, 'name'),
+            check.opt_str_param(name, 'name', DEFAULT_CONTEXT_NAME),
             config,
         )
 
@@ -21,9 +23,10 @@ class Solid(namedtuple('Solid', 'config')):
 class Environment(namedtuple('EnvironmentData', 'context solids expectations')):
     def __new__(cls, solids=None, context=None, expectations=None):
         check.opt_inst_param(context, 'context', Context)
+        check.opt_inst_param(expectations, 'expectations', Expectations)
 
         if context is None:
-            context = Context(name='default', config={})
+            context = Context()
 
         if expectations is None:
             expectations = Expectations(evaluate=True)
@@ -32,12 +35,8 @@ class Environment(namedtuple('EnvironmentData', 'context solids expectations')):
             cls,
             context=context,
             solids=check.opt_dict_param(solids, 'solids', key_type=str, value_type=Solid),
-            expectations=check.inst_param(expectations, 'expectations', Expectations)
+            expectations=expectations,
         )
-
-    @staticmethod
-    def empty():
-        return Environment()
 
 
 class Expectations(namedtuple('ExpectationsData', 'evaluate')):
@@ -51,7 +50,7 @@ class Expectations(namedtuple('ExpectationsData', 'evaluate')):
 def _construct_context(yml_config_object):
     context_obj = check.opt_dict_elem(yml_config_object, 'context')
     if context_obj:
-        return Context(check.str_elem(context_obj, 'name'), context_obj['config'])
+        return Context(check.opt_str_elem(context_obj, 'name'), context_obj['config'])
     else:
         return None
 

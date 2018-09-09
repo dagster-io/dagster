@@ -258,7 +258,7 @@ def test_create_single_solid_pipeline():
         },
     )
 
-    result = execute_pipeline(single_solid_pipeline, config.Environment())
+    result = execute_pipeline(single_solid_pipeline)
     assert result.success
 
 

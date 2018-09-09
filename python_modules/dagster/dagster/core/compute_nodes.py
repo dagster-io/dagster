@@ -217,20 +217,22 @@ def _execute_core_transform(context, compute_node, conf, inputs):
 
     error_str = 'Error occured during core transform'
 
-    context.debug(
-        'Executing core transform for solid {solid}.'.format(
-            solid=compute_node.solid.name
+
+    with context.value('solid', compute_node.solid.name):
+        context.debug(
+            'Executing core transform for solid {solid}.'.format(
+                solid=compute_node.solid.name
+            )
         )
-    )
 
-    with _user_code_error_boundary(context, error_str), \
-            time_execution_scope() as timer_result, \
-            context.value('solid', compute_node.solid.name):
+        with time_execution_scope() as timer_result, \
+            _user_code_error_boundary(context, error_str):
 
-        for result in _yield_transform_results(context, compute_node, conf, inputs):
-            yield result
+            for result in _yield_transform_results(context, compute_node, conf, inputs):
+                yield result
 
-    context.metric('core_transform_time_ms', timer_result.millis)
+
+        context.metric('core_transform_time_ms', timer_result.millis)
 
 
 class ComputeNodeInput(object):

@@ -32,7 +32,7 @@ def test_multiple_outputs():
 
     pipeline = PipelineDefinition(solids=[solid])
 
-    result = execute_pipeline(pipeline, config.Environment())
+    result = execute_pipeline(pipeline)
     solid_result = result.result_list[0]
 
     assert solid_result.solid.name == 'multiple_outputs'
@@ -79,7 +79,7 @@ def test_multiple_outputs_expectations():
 
     pipeline = PipelineDefinition(solids=[solid])
 
-    result = execute_pipeline(pipeline, config.Environment())
+    result = execute_pipeline(pipeline)
 
     assert result.success
     assert called['expectation_one']
@@ -102,7 +102,7 @@ def test_wrong_multiple_output():
     pipeline = PipelineDefinition(solids=[solid])
 
     with pytest.raises(DagsterInvariantViolationError):
-        execute_pipeline(pipeline, config.Environment())
+        execute_pipeline(pipeline)
 
 
 def test_multiple_outputs_of_same_name_disallowed():
@@ -124,7 +124,7 @@ def test_multiple_outputs_of_same_name_disallowed():
     pipeline = PipelineDefinition(solids=[solid])
 
     with pytest.raises(DagsterInvariantViolationError):
-        execute_pipeline(pipeline, config.Environment())
+        execute_pipeline(pipeline)
 
 
 def test_multiple_outputs_only_emit_one():
@@ -175,7 +175,7 @@ def test_multiple_outputs_only_emit_one():
         },
     )
 
-    result = execute_pipeline(pipeline, config.Environment())
+    result = execute_pipeline(pipeline)
     assert result.success
 
     assert called['one']

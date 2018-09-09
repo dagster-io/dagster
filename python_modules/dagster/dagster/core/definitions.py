@@ -13,6 +13,8 @@ from dagster.utils.logging import (
     define_colored_console_logger,
 )
 
+from dagster.config import DEFAULT_CONTEXT_NAME
+
 from .errors import (
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
@@ -99,7 +101,7 @@ class PipelineContextDefinition(object):
 
         check.inst_param(context, 'context', ExecutionContext)
         context_definition = PipelineContextDefinition(context_fn=lambda _pipeline, _args: context)
-        return {'default': context_definition}
+        return {DEFAULT_CONTEXT_NAME: context_definition}
 
     def __init__(self, context_fn, config_def=None, description=None):
         '''
@@ -154,7 +156,7 @@ def _default_pipeline_context_definitions():
         ),
         context_fn=_default_context_fn,
     )
-    return {'default': default_context_def}
+    return {DEFAULT_CONTEXT_NAME: default_context_def}
 
 
 class DependencyDefinition(namedtuple('_DependencyDefinition', 'solid output description')):
@@ -747,7 +749,7 @@ class ConfigDefinition(object):
 
     @staticmethod
     def config_dict(field_dict):
-        '''Shorcut to create a dictionary based config definition.
+        '''Shortcut to create a dictionary based config definition.
 
 
         Args:

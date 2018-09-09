@@ -34,9 +34,7 @@ def test_basic_isolated_sql_solid():
 
     basic_isolated_sql_solid = create_sql_statement_solid('basic_isolated_sql_solid', sql_text)
 
-    result = execute_single_solid(
-        context, basic_isolated_sql_solid, environment=config.Environment.empty()
-    )
+    result = execute_single_solid(context, basic_isolated_sql_solid)
 
     assert result.success
 
@@ -69,7 +67,7 @@ def test_basic_pipeline():
         },
     )
 
-    pipeline_result = execute_pipeline(pipeline, environment=config.Environment.empty())
+    pipeline_result = execute_pipeline(pipeline)
 
     assert pipeline_result.success
 
@@ -107,7 +105,7 @@ def test_pipeline_from_files():
         },
     )
 
-    pipeline_result = execute_pipeline(pipeline, environment=config.Environment.empty())
+    pipeline_result = execute_pipeline(pipeline)
 
     assert pipeline_result.success
 
