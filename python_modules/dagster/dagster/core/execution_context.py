@@ -1,16 +1,24 @@
-import itertools
 import copy
+import itertools
+import json
+import uuid
+
 from collections import (
     OrderedDict,
     namedtuple,
 )
 from contextlib import contextmanager
-import uuid
 
 from dagster import check
 from dagster.utils.logging import CompositeLogger
 
 Metric = namedtuple('Metric', 'context_dict metric_name value')
+
+
+def _kv_message(all_items):
+    return ' '.join(
+        ['{key}={value}'.format(key=key, value=json.dumps(value)) for key, value in all_items]
+    )
 
 
 class ExecutionContext(object):
@@ -25,9 +33,16 @@ class ExecutionContext(object):
     reporting.
 
 
-    resources is an arbitrary user-defined object that can be passed in
-    by a user and then access during pipeline execution. This exists so that
-    a user does not have to subclass ExecutionContext
+    Args:
+        loggers (List[logging.Logger]):
+            The list of loggers that will be invoked whenever the context logging
+            functions are called.
+
+        resources(Any):
+            An arbitrary user-defined object that can be passed in by a user and
+            then access during pipeline execution. This exists so that a user can
+            inject their own objects into the context without having to subclass
+            ExecutionContext.
     '''
 
     def __init__(self, loggers=None, resources=None):
@@ -36,61 +51,85 @@ class ExecutionContext(object):
         self._metrics = []
         self.resources = resources
 
-    def _maybe_quote(self, val):
-        str_val = str(val)
-        if ' ' in str_val:
-            return '"{val}"'.format(val=str_val)
-        return str_val
-
-    def _kv_message(self, extra=None):
-        extra = check.opt_dict_param(extra, 'extra')
-        return ' '.join(
-            [
-                '{key}={value}'.format(key=key, value=self._maybe_quote(value))
-                for key, value in itertools.chain(self._context_dict.items(), extra.items())
-            ]
-        )
-
-    def _log(self, method, msg, **kwargs):
+    def _log(self, method, orig_message, message_props):
         check.str_param(method, 'method')
-        check.str_param(msg, 'msg')
+        check.str_param(orig_message, 'orig_message')
+        check.dict_param(message_props, 'message_props')
 
-        check.invariant('extra' not in kwargs, 'do not allow until explicit support is handled')
-        check.invariant('exc_info' not in kwargs, 'do not allow until explicit support is handled')
-
-        check.invariant('log_message' not in kwargs, 'log_message_id reserved value')
-        check.invariant('log_message_id' not in kwargs, 'log_message_id reserved value')
-
-        full_message = 'message="{message}" {kv_message}'.format(
-            message=msg, kv_message=self._kv_message(kwargs)
+        check.invariant(
+            'extra' not in message_props,
+            'do not allow until explicit support is handled',
+        )
+        check.invariant(
+            'exc_info' not in message_props,
+            'do not allow until explicit support is handled',
         )
 
-        log_props = copy.copy(self._context_dict)
-        log_props['log_message'] = msg
+        check.invariant('orig_message' not in message_props, 'orig_message reserved value')
+        check.invariant('message' not in message_props, 'message reserved value')
+        check.invariant('log_message_id' not in message_props, 'log_message_id reserved value')
 
-        log_props['log_message'] = msg
-        log_props['log_message_id'] = str(uuid.uuid4())
+        log_message_id = str(uuid.uuid4())
 
-        extra = {}
-        extra.update(log_props)
-        extra.update(kwargs)
+        synth_props = {'orig_message': orig_message, 'log_message_id': log_message_id}
 
-        getattr(self._logger, method)(full_message, extra=extra)
+        # We first generate all props for the purpose of producing the semi-structured
+        # log message via _kv_messsage
+        all_props = dict(
+            itertools.chain(
+                synth_props.items(),
+                self._context_dict.items(),
+                message_props.items(),
+            )
+        )
+
+        message_with_structured_props = _kv_message(all_props.items())
+
+        getattr(self._logger, method)(message_with_structured_props, extra=all_props)
 
     def debug(self, msg, **kwargs):
-        return self._log('debug', msg, **kwargs)
+        '''
+        Debug level logging directive. Ends up invoking loggers with DEBUG error level.
+
+        The message will be automatically adorned with context information about the name
+        of the pipeline, the name of the solid, and so forth. The use can also add
+        context values during execution using the value() method of ExecutionContext.
+        Therefore it is generally unnecessary to include this type of information
+        (solid name, pipeline name, etc) in the log message unless it is critical
+        for the readability/fluency of the log message text itself.
+
+        You can optionally additional context key-value pairs to an individual log
+        message using the keyword args to this message
+
+        Args:
+            msg (str): The core string
+            **kwargs (Dict[str, Any]): Additional context values for only this log message.
+        '''
+        return self._log('debug', msg, kwargs)
 
     def info(self, msg, **kwargs):
-        return self._log('info', msg, **kwargs)
+        '''Log at INFO level
+
+        See debug()'''
+        return self._log('info', msg, kwargs)
 
     def warning(self, msg, **kwargs):
-        return self._log('warning', msg, **kwargs)
+        '''Log at WARNING level
+
+        See debug()'''
+        return self._log('warning', msg, kwargs)
 
     def error(self, msg, **kwargs):
-        return self._log('error', msg, **kwargs)
+        '''Log at ERROR level
+
+        See debug()'''
+        return self._log('error', msg, kwargs)
 
     def critical(self, msg, **kwargs):
-        return self._log('critical', msg, **kwargs)
+        '''Log at CRITICAL level
+
+        See debug()'''
+        return self._log('critical', msg, kwargs)
 
     # FIXME: Actually make this work
     # def exception(self, e):
@@ -101,6 +140,21 @@ class ExecutionContext(object):
 
     @contextmanager
     def value(self, key, value):
+        '''
+        Adds a context value to the Execution for a particular scope, using the
+        python contextmanager abstraction. This allows the user to add scoped metadata
+        just like the framework does (for things such as solid name).
+
+        Examples:
+
+        .. code-block:: python
+
+            with context.value('some_key', 'some_value):
+                context.info('msg with some_key context value')
+
+            context.info('msg without some_key context value')
+
+        '''
         check.str_param(key, 'key')
         check.not_none_param(value, 'value')
 
@@ -122,10 +176,13 @@ class ExecutionContext(object):
             format_string = 'metric:{metric_name}={value:.3f} {kv_message}'
         else:
             format_string = 'metric:{metric_name}={value} {kv_message}'
+            value = json.dumps(value)
 
         self._logger.info(
             format_string.format(
-                metric_name=metric_name, value=value, kv_message=self._kv_message()
+                metric_name=metric_name,
+                value=value,
+                kv_message=_kv_message(self._context_dict.items()),
             ),
             extra=self._context_dict
         )

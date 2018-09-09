@@ -146,11 +146,12 @@ def test_full_in_memory_pipeline():
     assert engine.execute('SELECT * FROM sum_sq_table').fetchall() == [(1, 2, 3, 9), (3, 4, 7, 49)]
 
 
-def test_full_persisted_pipeline():
-    pipeline = create_full_pipeline()
-    pipeline_result = execute_pipeline(
-        pipeline,
-        environment=config.Environment(context=config.Context(name='persisted')),
-    )
+# Commmenting out for now because it takes two seconds
+# def test_full_persisted_pipeline():
+#     pipeline = create_full_pipeline()
+#     pipeline_result = execute_pipeline(
+#         pipeline,
+#         environment=config.Environment(context=config.Context(name='persisted')),
+#     )
 
-    assert pipeline_result.success
+#     assert pipeline_result.success

@@ -110,5 +110,5 @@ def get_formatted_stack_trace(exception):
         tb = exception.__traceback__
     else:
         import sys
-        exc_type, exc_value, tb = sys.exc_info()
+        _exc_type, _exc_value, tb = sys.exc_info()
     return ''.join(traceback.format_tb(tb))
