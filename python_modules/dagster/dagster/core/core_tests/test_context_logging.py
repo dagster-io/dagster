@@ -46,7 +46,7 @@ def test_test_logger():
 
 
 def orig_message(message):
-    return message.extra['log_message']
+    return message.extra['orig_message']
 
 
 def test_context_logging():
@@ -80,7 +80,7 @@ def test_context_value():
         context.info('some message')
 
     assert logger.messages[0].extra['some_key'] == 'some_value'
-    assert 'some_key=some_value' in logger.messages[0].msg
+    assert 'some_key="some_value"' in logger.messages[0].msg
     assert 'message="some message"' in logger.messages[0].msg
 
 
@@ -104,11 +104,26 @@ def test_interleaved_context_value():
     message_one = logger.messages[0]
     assert message_one.extra['key_one'] == 'value_one'
     assert 'key_two' not in message_one.extra
-    assert 'key_one=value_one' in message_one.msg
+    assert 'key_one="value_one"' in message_one.msg
     assert 'key_two' not in message_one.msg
 
     message_two = logger.messages[1]
     assert message_two.extra['key_one'] == 'value_one'
     assert message_two.extra['key_two'] == 'value_two'
-    assert 'key_one=value_one' in message_two.msg
-    assert 'key_two=value_two' in message_two.msg
+    assert 'key_one="value_one"' in message_two.msg
+    assert 'key_two="value_two"' in message_two.msg
+
+
+def test_message_specific_logging():
+    logger = LoggerForTest()
+    context = ExecutionContext(loggers=[logger])
+    with context.value('key_one', 'value_one'):
+        context.info('message one', key_two='value_two')
+
+    message_one = logger.messages[0]
+    assert message_one.extra['key_one'] == 'value_one'
+    assert message_one.extra['key_two'] == 'value_two'
+
+    assert set(message_one.extra.keys()) == set(
+        ['key_one', 'key_two', 'log_message_id', 'orig_message']
+    )
