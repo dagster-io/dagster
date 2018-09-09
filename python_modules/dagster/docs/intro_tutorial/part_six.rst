@@ -1,7 +1,7 @@
 Repositories and Tools
 ----------------------
 
-Dagster is a not just a programming model for pipeliens, it is also a platform for
+Dagster is a not just a programming model for pipelines, it is also a platform for
 tool-building. Included within dagster is a CLI tool, the first tool you'll use
 to interact with pipelines.
 
