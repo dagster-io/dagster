@@ -207,7 +207,7 @@ class DagsterCompositeType(DagsterType):
         super(DagsterCompositeType, self).__init__(name, description)
 
     def evaluate_value(self, value):
-        if not isinstance(value, dict):
+        if value is not None and not isinstance(value, dict):
             return IncomingValueResult.create_failure('Incoming value for composite must be dict')
         return process_incoming_composite_value(self, value, self.ctor)
 
@@ -259,8 +259,7 @@ class IncomingValueResult(namedtuple('_IncomingValueResult', 'success value erro
 
 def process_incoming_composite_value(dagster_composite_type, incoming_value, ctor):
     check.inst_param(dagster_composite_type, 'dagster_composite_type', DagsterCompositeType)
-    check.dict_param(incoming_value, 'incoming_value', key_type=str)
-    # check.str_param(error_context_str, 'error_context_str')
+    incoming_value = check.opt_dict_param(incoming_value, 'incoming_value', key_type=str)
     check.callable_param(ctor, 'ctor')
 
     field_dict = dagster_composite_type.field_dict

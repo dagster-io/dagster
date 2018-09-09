@@ -63,9 +63,7 @@ def create_root_transform_failure_solid(name):
 
 def test_transform_failure_pipeline():
     pipeline = silencing_pipeline(solids=[create_root_transform_failure_solid('failing')])
-    pipeline_result = execute_pipeline(
-        pipeline, environment=config.Environment(), throw_on_error=False
-    )
+    pipeline_result = execute_pipeline(pipeline, throw_on_error=False)
 
     assert not pipeline_result.success
 
@@ -102,7 +100,6 @@ def test_failure_midstream():
     )
     pipeline_result = execute_pipeline(
         pipeline,
-        environment=config.Environment(),
         throw_on_error=False,
     )
 
@@ -126,7 +123,7 @@ def test_do_not_yield_result():
         DagsterInvariantViolationError,
         message='Tranform for solid do_not_yield_result return a Result',
     ):
-        execute_single_solid(ExecutionContext(), solid_inst, config.Environment())
+        execute_single_solid(ExecutionContext(), solid_inst)
 
 
 def test_yield_non_result():
@@ -144,7 +141,7 @@ def test_yield_non_result():
         DagsterInvariantViolationError,
         message="Tranform for solid yield_wrong_thing yielded 'foo'",
     ):
-        execute_single_solid(ExecutionContext(), solid_inst, config.Environment())
+        execute_single_solid(ExecutionContext(), solid_inst)
 
 
 def test_single_transform_returning_result():
@@ -156,4 +153,4 @@ def test_single_transform_returning_result():
     )
 
     with pytest.raises(DagsterInvariantViolationError):
-        execute_single_solid(ExecutionContext(), solid_inst, config.Environment())
+        execute_single_solid(ExecutionContext(), solid_inst)

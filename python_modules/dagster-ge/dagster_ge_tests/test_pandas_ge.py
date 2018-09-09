@@ -82,7 +82,7 @@ def test_single_node_passing_expectation():
         }}
     )
 
-    result = execute_pipeline(pipeline, config.Environment())
+    result = execute_pipeline(pipeline)
     assert result.success
     assert len(result.result_list) == 2
     assert result.result_list[1].success
@@ -104,7 +104,7 @@ def test_single_node_passing_json_config_expectations():
         }
     )
 
-    result = execute_pipeline(pipeline, config.Environment())
+    result = execute_pipeline(pipeline)
     assert result.success
     assert len(result.result_list) == 2
     assert result.result_list[1].success
@@ -129,5 +129,5 @@ def test_single_node_failing_expectation():
     # NOTE: this is not what I want to API to be but at least it exercises
     # the code path for now
     with pytest.raises(DagsterExpectationFailedError):
-        result = execute_pipeline(pipeline, config.Environment())
+        result = execute_pipeline(pipeline)
         assert not result.success

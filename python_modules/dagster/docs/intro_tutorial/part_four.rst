@@ -19,7 +19,6 @@ minimal API. ``solid`` is more complicated, but has more capabilities:
 .. code-block:: python
 
     from dagster import *
-    from dagster import config
 
     @solid
     def hello_world(_context, conf):
