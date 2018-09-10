@@ -38,6 +38,7 @@ from .errors import (
     DagsterInvariantViolationError,
     DagsterTypeError,
     DagsterUserCodeExecutionError,
+    DagsterEvaluateValueError,
 )
 
 from .types import DagsterType
@@ -306,7 +307,7 @@ class ComputeNode(object):
 
         try:
             evaluation_result = node_output.dagster_type.evaluate_value(result.value)
-        except DagsterTypeError as e:
+        except DagsterEvaluateValueError as e:
             raise DagsterInvariantViolationError(
                 '''Solid {cn.solid.name} output name {output_name} output {result.value}
                 type failure: {error_msg}'''.format(
@@ -580,7 +581,7 @@ def create_conf_value(execution_info, solid):
 
     try:
         return solid.config_def.config_type.evaluate_value(config_input)
-    except DagsterTypeError as e:
+    except DagsterEvaluateValueError as e:
         raise DagsterTypeError(
             'Error evaluating config for {solid_name}: {error_msg}'.format(
                 solid_name=solid.name,

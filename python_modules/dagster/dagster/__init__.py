@@ -36,6 +36,7 @@ from dagster.core.errors import (
     DagsterTypeError,
     DagsterUserCodeExecutionError,
     DagsterExpectationFailedError,
+    DagsterEvaluateValueError,
 )
 
 import dagster.config as config
@@ -73,6 +74,7 @@ __all__ = [
     'DagsterTypeError',
     'DagsterUserCodeExecutionError',
     'DagsterExpectationFailedError',
+    'DagsterEvaluateValueError',
 
     # types
     'config',

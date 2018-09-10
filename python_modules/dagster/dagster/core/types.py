@@ -2,7 +2,8 @@ from collections import namedtuple
 from six import (string_types, integer_types)
 
 from dagster import check
-from dagster.core.errors import DagsterTypeError
+
+from dagster.core.errors import DagsterEvaluateValueError
 
 
 class DagsterType(object):
@@ -23,13 +24,13 @@ class DagsterType(object):
         return 'DagsterType({name})'.format(name=self.name)
 
     def evaluate_value(self, _value):
-        '''Subclasses must implement this method. Check if the value is a valid one and return a processed version of it. If value is invalid, raise `DagsterTypeError`.
+        '''Subclasses must implement this method. Check if the value is a valid one and return a processed version of it. If value is invalid, raise `DagsterEvaluateValueError`.
 
         Args:
           value: The value to check
 
         Returns:
-          IncomingValueResult
+          value: A transformed value
         '''
         check.not_implemented('Must implement in subclass')
 
@@ -64,7 +65,7 @@ class DagsterScalarType(DagsterType):
 
     def evaluate_value(self, value):
         if not self.is_python_valid_value(value):
-            raise DagsterTypeError(
+            raise DagsterEvaluateValueError(
                 'Expected valid value for {type_name} but got {value}'.format(
                     type_name=self.name, value=repr(value)
                 )
@@ -109,7 +110,7 @@ class PythonObjectType(DagsterType):
 
     def evaluate_value(self, value):
         if not self.is_python_valid_value(value):
-            raise DagsterTypeError(
+            raise DagsterEvaluateValueError(
                 'Expected valid value for {type_name} but got {value}'.format(
                     type_name=self.name, value=repr(value)
                 )
@@ -209,7 +210,7 @@ class DagsterCompositeType(DagsterType):
 
     def evaluate_value(self, value):
         if value is not None and not isinstance(value, dict):
-            raise DagsterTypeError('Incoming value for composite must be dict')
+            raise DagsterEvaluateValueError('Incoming value for composite must be dict')
         return process_incoming_composite_value(self, value, self.ctor)
 
 
@@ -242,7 +243,7 @@ def process_incoming_composite_value(dagster_composite_type, incoming_value, cto
 
     for received_arg in received_args:
         if received_arg not in defined_args:
-            raise DagsterTypeError(
+            raise DagsterEvaluateValueError(
                 'Field {received} not found. Defined fields: {defined}'.format(
                     defined=repr(defined_args),
                     received=received_arg,
@@ -256,7 +257,7 @@ def process_incoming_composite_value(dagster_composite_type, incoming_value, cto
         check.invariant(not field_def.default_provided)
 
         if expected_field not in received_args:
-            raise DagsterTypeError(
+            raise DagsterEvaluateValueError(
                 'Did not not find {expected}. Defined fields: {defined}'.format(
                     expected=expected_field,
                     defined=repr(defined_args),

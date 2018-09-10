@@ -3,7 +3,7 @@ from dagster import (
     ConfigDefinition,
     types,
     Field,
-    DagsterTypeError,
+    DagsterEvaluateValueError,
 )
 
 
@@ -24,10 +24,10 @@ def test_int_fails():
         'int_field': Field(types.Int),
     })
 
-    with pytest.raises(DagsterTypeError):
+    with pytest.raises(DagsterEvaluateValueError):
         config_def.config_type.evaluate_value({'int_field': 'fjkdj'})
 
-    with pytest.raises(DagsterTypeError):
+    with pytest.raises(DagsterEvaluateValueError):
         config_def.config_type.evaluate_value({'int_field': True})
 
 
@@ -93,16 +93,16 @@ def test_single_required_string_field_config_type():
         'string_field': None
     }
 
-    with pytest.raises(DagsterTypeError):
+    with pytest.raises(DagsterEvaluateValueError):
         _validate(_single_required_string_config_dict(), {})
 
-    with pytest.raises(DagsterTypeError):
+    with pytest.raises(DagsterEvaluateValueError):
         _validate(_single_required_string_config_dict(), {'extra': 'yup'})
 
-    with pytest.raises(DagsterTypeError):
+    with pytest.raises(DagsterEvaluateValueError):
         _validate(_single_required_string_config_dict(), {'string_field': 'yupup', 'extra': 'yup'})
 
-    with pytest.raises(DagsterTypeError):
+    with pytest.raises(DagsterEvaluateValueError):
         _validate(_single_required_string_config_dict(), {'string_field': 1})
 
 
@@ -131,16 +131,16 @@ def test_multiple_required_fields_passing():
 
 
 def test_multiple_required_fields_failing():
-    with pytest.raises(DagsterTypeError):
+    with pytest.raises(DagsterEvaluateValueError):
         _validate(_multiple_required_fields_config_dict(), {})
 
-    with pytest.raises(DagsterTypeError):
+    with pytest.raises(DagsterEvaluateValueError):
         _validate(_multiple_required_fields_config_dict(), {'field_one': 'yup'})
 
-    with pytest.raises(DagsterTypeError):
+    with pytest.raises(DagsterEvaluateValueError):
         _validate(_multiple_required_fields_config_dict(), {'field_one': 'yup', 'extra': 'yup'})
 
-    with pytest.raises(DagsterTypeError):
+    with pytest.raises(DagsterEvaluateValueError):
         _validate(
             _multiple_required_fields_config_dict(), {
                 'field_one': 'value_one',
@@ -161,11 +161,11 @@ def test_single_optional_field_passing():
 
 
 def test_single_optional_field_failing():
-    with pytest.raises(DagsterTypeError):
+    with pytest.raises(DagsterEvaluateValueError):
 
         _validate(_single_optional_string_config_dict(), {'optional_field': 1})
 
-    with pytest.raises(DagsterTypeError):
+    with pytest.raises(DagsterEvaluateValueError):
         _validate(_single_optional_string_config_dict(), {'dlkjfalksdjflksaj': 1})
 
 
@@ -277,13 +277,13 @@ def test_single_nested_config():
 
 
 def test_single_nested_config_failures():
-    with pytest.raises(DagsterTypeError):
+    with pytest.raises(DagsterEvaluateValueError):
         _validate(_single_nested_config(), {'nested': 'dkjfdk'})
 
-    with pytest.raises(DagsterTypeError):
+    with pytest.raises(DagsterEvaluateValueError):
         _validate(_single_nested_config(), {'nested': {'int_field': 'dkjfdk'}})
 
-    with pytest.raises(DagsterTypeError):
+    with pytest.raises(DagsterEvaluateValueError):
         _validate(_single_nested_config(), {'nested': {'int_field': {'too_nested': 'dkjfdk'}}})
 
 
