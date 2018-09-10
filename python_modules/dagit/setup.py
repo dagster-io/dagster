@@ -22,7 +22,7 @@ with open("dagit/version.py") as fp:
 
 setup(
     name='dagit',
-    version='0.2.0.dev3',
+    version=version['__version__'],
     author='Elementl',
     author_email='schrockn@elementl.com',
     license='Apache-2.0',
