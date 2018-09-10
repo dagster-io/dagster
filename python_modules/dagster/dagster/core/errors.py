@@ -17,6 +17,11 @@ class DagsterUserError(DagsterError):
     pass
 
 
+class DagsterEvaluateValueError(DagsterError):
+    '''Indicates that invalid value was passed to a type's evaluate_value method'''
+    pass
+
+
 class DagsterInvalidDefinitionError(DagsterUserError):
     '''Indicates that some violation of the definition rules has been violated by the user'''
     pass

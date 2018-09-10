@@ -35,6 +35,7 @@ from .definitions import (
 from .errors import (
     DagsterInvariantViolationError,
     DagsterTypeError,
+    DagsterEvaluateValueError,
 )
 
 from .compute_nodes import (
@@ -229,13 +230,14 @@ def yield_context(pipeline, environment):
     context_definition = pipeline.context_definitions[context_name]
     config_type = context_definition.config_def.config_type
 
-    evaluation_result = config_type.evaluate_value(environment.context.config)
-    if not evaluation_result.success:
+    try:
+        evaluation_result = config_type.evaluate_value(environment.context.config)
+    except DagsterEvaluateValueError as e:
         raise DagsterTypeError(
-            'Invalid config value: {error_msg}'.format(error_msg=evaluation_result.error_msg)
+            'Invalid config value: {error_msg}'.format(error_msg=','.join(e.args))
         )
 
-    thing = context_definition.context_fn(pipeline, evaluation_result.value)
+    thing = context_definition.context_fn(pipeline, evaluation_result)
     return _wrap_in_yield(thing)
 
 

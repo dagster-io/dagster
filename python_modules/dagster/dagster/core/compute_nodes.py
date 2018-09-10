@@ -38,6 +38,7 @@ from .errors import (
     DagsterInvariantViolationError,
     DagsterTypeError,
     DagsterUserCodeExecutionError,
+    DagsterEvaluateValueError,
 )
 
 from .types import DagsterType
@@ -72,13 +73,17 @@ class ComputeNodeOutputHandle(namedtuple('_ComputeNodeOutputHandle', 'compute_no
     def __str__(self):
         return (
             'ComputeNodeOutputHandle'
-            '(cn="{cn.compute_node.friendly_name}", output_name="{cn.output_name}")'.format(cn=self)
+            '(cn="{cn.compute_node.friendly_name}", output_name="{cn.output_name}")'.format(
+                cn=self
+            )
         )
 
     def __repr__(self):
         return (
             'ComputeNodeOutputHandle'
-            '(cn="{cn.compute_node.friendly_name}", output_name="{cn.output_name}")'.format(cn=self)
+            '(cn="{cn.compute_node.friendly_name}", output_name="{cn.output_name}")'.format(
+                cn=self
+            )
         )
 
     def __hash__(self):
@@ -209,11 +214,13 @@ def _yield_transform_results(context, compute_node, conf, inputs):
 
 def _collect_result_list(context, compute_node, conf, inputs):
     for result in _yield_transform_results(context, compute_node, conf, inputs):
-        context.debug('Solid {solid} emitted output "{output}" value {value}'.format(
-            solid=compute_node.solid.name,
-            output=result.output_name,
-            value=repr(result.value),
-        ))
+        context.debug(
+            'Solid {solid} emitted output "{output}" value {value}'.format(
+                solid=compute_node.solid.name,
+                output=result.output_name,
+                value=repr(result.value),
+            )
+        )
         yield result
 
 
@@ -228,12 +235,9 @@ def _execute_core_transform(context, compute_node, conf, inputs):
 
     error_str = 'Error occured during core transform'
 
-
     with context.value('solid', compute_node.solid.name):
         context.debug(
-            'Executing core transform for solid {solid}.'.format(
-                solid=compute_node.solid.name
-            )
+            'Executing core transform for solid {solid}.'.format(solid=compute_node.solid.name)
         )
 
         with time_execution_scope() as timer_result, \
@@ -307,14 +311,15 @@ class ComputeNode(object):
 
         node_output = self.node_named(result.output_name)
 
-        evaluation_result = node_output.dagster_type.evaluate_value(result.value)
-        if not evaluation_result.success:
+        try:
+            evaluation_result = node_output.dagster_type.evaluate_value(result.value)
+        except DagsterEvaluateValueError as e:
             raise DagsterInvariantViolationError(
                 '''Solid {cn.solid.name} output name {output_name} output {result.value}
                 type failure: {error_msg}'''.format(
                     cn=self,
                     result=result,
-                    error_msg=evaluation_result.error_msg,
+                    error_msg=','.join(e.args),
                     output_name=result.output_name,
                 )
             )
@@ -324,7 +329,7 @@ class ComputeNode(object):
             tag=self.tag,
             success_data=ComputeNodeSuccessData(
                 output_name=result.output_name,
-                value=evaluation_result.value,
+                value=evaluation_result,
             ),
         )
 
@@ -417,9 +422,11 @@ def execute_compute_nodes(context, compute_nodes):
     check.list_param(compute_nodes, 'compute_nodes', of_type=ComputeNode)
 
     intermediate_results = {}
-    context.debug('Entering execute_compute_nodes loop. Order: {order}'.format(
-        order=[cn.friendly_name for cn in compute_nodes]
-    ))
+    context.debug(
+        'Entering execute_compute_nodes loop. Order: {order}'.format(
+            order=[cn.friendly_name for cn in compute_nodes]
+        )
+    )
 
     for compute_node in compute_nodes:
         if not _all_inputs_covered(compute_node, intermediate_results):
@@ -427,13 +434,11 @@ def execute_compute_nodes(context, compute_nodes):
             expected_outputs = [ni.prev_output_handle for ni in compute_node.node_inputs]
 
             context.debug(
-                'Not all inputs covered for {compute_name}. Not executing.'.format(
-                    compute_name=compute_node.friendly_name
-                ) + '\nKeys in result: {result_keys}.'.format(
-                    result_keys=result_keys,
-                ) + '\nOutputs need for inputs {expected_outputs}'.format(
-                    expected_outputs=expected_outputs,
-                )
+                'Not all inputs covered for {compute_name}. Not executing.'.
+                format(compute_name=compute_node.friendly_name) +
+                '\nKeys in result: {result_keys}.'.format(result_keys=result_keys, ) +
+                '\nOutputs need for inputs {expected_outputs}'.
+                format(expected_outputs=expected_outputs, )
             )
             continue
 
@@ -580,14 +585,13 @@ def create_conf_value(execution_info, solid):
     solid_configs = execution_info.environment.solids
     config_input = solid_configs[name].config if name in solid_configs else {}
 
-    evaluation_result = solid.config_def.config_type.evaluate_value(config_input)
-    if evaluation_result.success:
-        return evaluation_result.value
-    else:
+    try:
+        return solid.config_def.config_type.evaluate_value(config_input)
+    except DagsterEvaluateValueError as e:
         raise DagsterTypeError(
             'Error evaluating config for {solid_name}: {error_msg}'.format(
                 solid_name=solid.name,
-                error_msg=evaluation_result.error_msg,
+                error_msg=','.join(e.args),
             )
         )
 
@@ -652,7 +656,6 @@ def create_compute_node_graph(execution_info):
 
             output_handle = topo_solid.output_handle(output_def.name)
             cn_output_node_map[output_handle] = subgraph.terminal_cn_output_handle
-
 
     return _create_compute_node_graph(compute_nodes)
 
