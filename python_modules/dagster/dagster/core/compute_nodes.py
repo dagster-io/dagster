@@ -241,7 +241,13 @@ def _execute_core_transform(context, compute_node, conf, inputs):
 
             all_results = list(_collect_result_list(context, compute_node, conf, inputs))
 
-        context.metric('core_transform_time_ms', timer_result.millis)
+        context.debug(
+            'Finished executing transform for solid {solid}. Time elapsed: {millis:.3f} ms'.format(
+                solid=compute_node.solid.name,
+                millis=timer_result.millis,
+            ),
+            execution_time_ms=timer_result.millis,
+        )
 
         for result in all_results:
             yield result

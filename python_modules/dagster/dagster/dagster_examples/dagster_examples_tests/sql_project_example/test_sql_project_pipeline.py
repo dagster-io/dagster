@@ -5,7 +5,6 @@ from dagster import (
     InputDefinition,
     PipelineContextDefinition,
     PipelineDefinition,
-    config,
     execute_pipeline,
 )
 

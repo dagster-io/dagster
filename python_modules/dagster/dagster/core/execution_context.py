@@ -1,4 +1,3 @@
-import copy
 import itertools
 import json
 import uuid
@@ -165,48 +164,3 @@ class ExecutionContext(object):
         yield
 
         self._context_dict.pop(key)
-
-    def metric(self, metric_name, value):
-        check.str_param(metric_name, 'metric_name')
-        check.not_none_param(value, 'value')
-
-        keys = list(self._context_dict.keys())
-        keys.append(metric_name)
-        if isinstance(value, float):
-            format_string = 'metric:{metric_name}={value:.3f} {kv_message}'
-        else:
-            format_string = 'metric:{metric_name}={value} {kv_message}'
-            value = json.dumps(value)
-
-        self._logger.info(
-            format_string.format(
-                metric_name=metric_name,
-                value=value,
-                kv_message=_kv_message(self._context_dict.items()),
-            ),
-            extra=self._context_dict
-        )
-
-        self._metrics.append(
-            Metric(
-                context_dict=copy.copy(self._context_dict), metric_name=metric_name, value=value
-            )
-        )
-
-    def _dict_covers(self, needle_dict, haystack_dict):
-        for key, value in needle_dict.items():
-            if not key in haystack_dict:
-                return False
-            if value != haystack_dict[key]:
-                return False
-        return True
-
-    def metrics_covering_context(self, needle_dict):
-        for metric in self._metrics:
-            if self._dict_covers(needle_dict, metric.context_dict):
-                yield metric
-
-    def metrics_matching_context(self, needle_dict):
-        for metric in self._metrics:
-            if needle_dict == metric.context_dict:
-                yield metric
