@@ -16,9 +16,13 @@ def long_description():
         return fh.read()
 
 
+version = {}
+with open("dagster/version.py") as fp:
+    exec(fp.read(), version)
+
 setup(
     name='dagster',
-    version='0.2.0.dev10',
+    version=version['__version__'],
     author='Elementl',
     author_email='schrockn@elementl.com',
     license='Apache-2.0',

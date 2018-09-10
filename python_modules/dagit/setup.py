@@ -16,6 +16,10 @@ def long_description():
         return fh.read()
 
 
+version = {}
+with open("dagit/version.py") as fp:
+    exec(fp.read(), version)
+
 setup(
     name='dagit',
     version='0.2.0.dev3',
