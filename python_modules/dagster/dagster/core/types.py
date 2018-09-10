@@ -2,6 +2,7 @@ from collections import namedtuple
 from six import (string_types, integer_types)
 
 from dagster import check
+from dagster.core.errors import DagsterTypeError
 
 
 class DagsterType(object):
@@ -22,7 +23,7 @@ class DagsterType(object):
         return 'DagsterType({name})'.format(name=self.name)
 
     def evaluate_value(self, _value):
-        '''Subclasses must implement this method. Check if the value is a valid one and output :py:class:`IncomingValueResult`.
+        '''Subclasses must implement this method. Check if the value is a valid one and return a processed version of it. If value is invalid, raise `DagsterTypeError`.
 
         Args:
           value: The value to check
@@ -63,12 +64,12 @@ class DagsterScalarType(DagsterType):
 
     def evaluate_value(self, value):
         if not self.is_python_valid_value(value):
-            return IncomingValueResult.create_failure(
+            raise DagsterTypeError(
                 'Expected valid value for {type_name} but got {value}'.format(
                     type_name=self.name, value=repr(value)
                 )
             )
-        return IncomingValueResult.create_success(value)
+        return value
 
 
 class _DagsterAnyType(DagsterType):
@@ -84,7 +85,7 @@ class _DagsterAnyType(DagsterType):
         return value
 
     def evaluate_value(self, value):
-        return IncomingValueResult.create_success(value)
+        return value
 
 
 def nullable_isinstance(value, typez):
@@ -108,12 +109,12 @@ class PythonObjectType(DagsterType):
 
     def evaluate_value(self, value):
         if not self.is_python_valid_value(value):
-            return IncomingValueResult.create_failure(
+            raise DagsterTypeError(
                 'Expected valid value for {type_name} but got {value}'.format(
                     type_name=self.name, value=repr(value)
                 )
             )
-        return IncomingValueResult.create_success(value)
+        return value
 
 
 class _DagsterStringType(DagsterScalarType):
@@ -208,7 +209,7 @@ class DagsterCompositeType(DagsterType):
 
     def evaluate_value(self, value):
         if value is not None and not isinstance(value, dict):
-            return IncomingValueResult.create_failure('Incoming value for composite must be dict')
+            raise DagsterTypeError('Incoming value for composite must be dict')
         return process_incoming_composite_value(self, value, self.ctor)
 
 
@@ -229,34 +230,6 @@ class ConfigDictionary(DagsterCompositeType):
         )
 
 
-class IncomingValueResult(namedtuple('_IncomingValueResult', 'success value error_msg')):
-    '''Result of a dagster typecheck.
-
-    Attributes:
-      success (bool): whether value is a valid one.
-      value (any): the actual value
-      error_msg (str): error message
-    '''
-
-    def __new__(cls, success, value, error_msg):
-        return super(IncomingValueResult, cls).__new__(
-            cls,
-            check.bool_param(success, 'success'),
-            value,
-            check.opt_str_param(error_msg, 'error_msg'),
-        )
-
-    @staticmethod
-    def create_success(value):
-        '''Create a succesful IncomingValueResult out of a value'''
-        return IncomingValueResult(success=True, value=value, error_msg=None)
-
-    @staticmethod
-    def create_failure(error_msg):
-        '''Create a failing IncomingValueResult with a error_msg'''
-        return IncomingValueResult(success=False, value=None, error_msg=error_msg)
-
-
 def process_incoming_composite_value(dagster_composite_type, incoming_value, ctor):
     check.inst_param(dagster_composite_type, 'dagster_composite_type', DagsterCompositeType)
     incoming_value = check.opt_dict_param(incoming_value, 'incoming_value', key_type=str)
@@ -269,7 +242,7 @@ def process_incoming_composite_value(dagster_composite_type, incoming_value, cto
 
     for received_arg in received_args:
         if received_arg not in defined_args:
-            return IncomingValueResult.create_failure(
+            raise DagsterTypeError(
                 'Field {received} not found. Defined fields: {defined}'.format(
                     defined=repr(defined_args),
                     received=received_arg,
@@ -283,7 +256,7 @@ def process_incoming_composite_value(dagster_composite_type, incoming_value, cto
         check.invariant(not field_def.default_provided)
 
         if expected_field not in received_args:
-            return IncomingValueResult.create_failure(
+            raise DagsterTypeError(
                 'Did not not find {expected}. Defined fields: {defined}'.format(
                     expected=expected_field,
                     defined=repr(defined_args),
@@ -297,15 +270,13 @@ def process_incoming_composite_value(dagster_composite_type, incoming_value, cto
             evaluation_result = field_def.dagster_type.evaluate_value(
                 incoming_value[expected_field]
             )
-            if not evaluation_result.success:
-                return evaluation_result
-            fields_to_pass[expected_field] = evaluation_result.value
+            fields_to_pass[expected_field] = evaluation_result
         elif field_def.default_provided:
             fields_to_pass[expected_field] = field_def.default_value
         else:
             check.invariant(field_def.is_optional and not field_def.default_provided)
 
-    return IncomingValueResult.create_success(ctor(fields_to_pass))
+    return ctor(fields_to_pass)
 
 
 String = _DagsterStringType(name='String', description='A string.')
