@@ -13,7 +13,7 @@ and a yaml file so that the CLI tool can know about the repository.
 
     @solid
     def double_the_word(_context, conf):
-        return conf['config_key'] * 2
+        return conf['word'] * 2
 
     @lambda_solid(inputs=[InputDefinition('word')])
     def count_letters(word):
@@ -40,6 +40,7 @@ and a yaml file so that the CLI tool can know about the repository.
                 'part_seven': define_part_seven_pipeline,
             },
         )
+
 And now the repository file:
 
 .. code-block:: yaml
@@ -69,11 +70,11 @@ With these elements in place we can now drive execution from the CLI
 .. code-block:: sh
 
     dagster pipeline execute part_seven -e env.yml
-    2018-09-09 11:47:38 - dagster - DEBUG - message="About to execute the compute node graph in the following order ['double_the_word.transform', 'count_letters.transform']"
-    2018-09-09 11:47:38 - dagster - DEBUG - message="Entering execute_compute_nodes loop. Order: ['double_the_word.transform', 'count_letters.transform']"
-    2018-09-09 11:47:38 - dagster - DEBUG - message="Executing core transform for solid double_the_word." solid=double_the_word
-    2018-09-09 11:47:38 - dagster - DEBUG - message="Solid double_the_word emitted output "result" value 'barbar'" solid=double_the_word
-    2018-09-09 11:47:38 - dagster - INFO - metric:core_transform_time_ms=0.136 solid=double_the_word
-    2018-09-09 11:47:38 - dagster - DEBUG - message="Executing core transform for solid count_letters." solid=count_letters
-    2018-09-09 11:47:38 - dagster - DEBUG - message="Solid count_letters emitted output "result" value {'b': 2, 'a': 2, 'r': 2}" solid=count_letters
-    2018-09-09 11:47:38 - dagster - INFO - metric:core_transform_time_ms=0.130 solid=count_letters
+    2018-09-10 06:29:41 - dagster - DEBUG - orig_message="About to execute the compute node graph in the following order ['double_the_word.transform', 'count_letters.transform']" log_message_id="12c7c3f0-ea99-44ce-bd1e-5c362560795a"
+    2018-09-10 06:29:41 - dagster - DEBUG - orig_message="Entering execute_compute_nodes loop. Order: ['double_the_word.transform', 'count_letters.transform']" log_message_id="c6750058-1a1c-49cd-b529-e149cd6fee27"
+    2018-09-10 06:29:41 - dagster - DEBUG - orig_message="Executing core transform for solid double_the_word." log_message_id="09eb5f50-3681-4594-a1e5-d1a007630a47" solid="double_the_word"
+    2018-09-10 06:29:41 - dagster - DEBUG - orig_message="Solid double_the_word emitted output \"result\" value 'barbar'" log_message_id="44af0ca9-a62c-472d-ae9b-91cd0a66fe8d" solid="double_the_word"
+    2018-09-10 06:29:41 - dagster - DEBUG - orig_message="Finished executing transform for solid double_the_word. Time elapsed: 0.269 ms" log_message_id="ad8f806d-6022-4b81-865d-cc33bff03e0f" solid="double_the_word" execution_time_ms=0.2689361572265625
+    2018-09-10 06:29:41 - dagster - DEBUG - orig_message="Executing core transform for solid count_letters." log_message_id="108c91b6-4503-4004-947b-1d5ccb77698d" solid="count_letters"
+    2018-09-10 06:29:41 - dagster - DEBUG - orig_message="Solid count_letters emitted output \"result\" value {'b': 2, 'a': 2, 'r': 2}" log_message_id="000cdb0e-7471-42c1-9616-281eaea28f6c" solid="count_letters"
+    2018-09-10 06:29:41 - dagster - DEBUG - orig_message="Finished executing transform for solid count_letters. Time elapsed: 0.160 ms" log_message_id="9bb52b66-519c-4301-abec-0ff1b6a62eae" solid="count_letters" execution_time_ms=0.16021728515625

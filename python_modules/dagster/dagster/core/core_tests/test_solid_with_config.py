@@ -2,6 +2,7 @@ import pytest
 
 from dagster import (
     ConfigDefinition,
+    DagsterInvariantViolationError,
     Field,
     PipelineDefinition,
     SolidDefinition,
@@ -64,4 +65,28 @@ def test_config_arg_mismatch():
             config.Environment(solids={'solid_with_context': config.Solid({
                 'some_config': 1
             })}),
+        )
+
+
+def test_solid_not_found():
+    def _t_fn(*_args):
+        raise Exception('should not reach')
+
+    solid = SolidDefinition(
+        name='find_me_solid',
+        inputs=[],
+        outputs=[],
+        transform_fn=_t_fn,
+    )
+
+    pipeline = PipelineDefinition(solids=[solid])
+
+    with pytest.raises(DagsterInvariantViolationError):
+        execute_pipeline(
+            pipeline,
+            config.Environment(solids={
+                'not_found': config.Solid({
+                    'some_config': 1,
+                }),
+            }),
         )

@@ -27,7 +27,7 @@ def define_pass_value_solid(name, description=None):
         name=name,
         description=description,
         inputs=[],
-        outputs=[OutputDefinition(dagster_type=types.String)],
+        outputs=[OutputDefinition(types.String)],
         config_def=ConfigDefinition.config_dict({
             'value': Field(types.String)
         }),

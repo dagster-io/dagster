@@ -293,3 +293,4 @@ for a particular execution environment.
 Int = _DagsterIntType()
 Bool = _DagsterBoolType()
 Any = _DagsterAnyType()
+Dict = PythonObjectType('Dict', dict)

@@ -35,7 +35,7 @@ def col_exists(name, col_name):
             'num_df', dagster_pd.DataFrame, expectations=[col_exists('num1_exists', 'num1')]
         )
     ],
-    output=OutputDefinition(dagster_type=dagster_pd.DataFrame)
+    output=OutputDefinition(dagster_pd.DataFrame)
 )
 def sum_solid(num_df):
     return _sum_solid_impl(num_df)
@@ -49,7 +49,7 @@ def sum_solid(num_df):
             expectations=[col_exists('failing', 'not_a_column')],
         )
     ],
-    output=OutputDefinition(dagster_type=dagster_pd.DataFrame)
+    output=OutputDefinition(dagster_pd.DataFrame)
 )
 def sum_solid_fails_input_expectation(num_df):
     return _sum_solid_impl(num_df)
@@ -67,7 +67,7 @@ def sum_solid_fails_input_expectation(num_df):
             ],
         ),
     ],
-    output=OutputDefinition(dagster_type=dagster_pd.DataFrame)
+    output=OutputDefinition(dagster_pd.DataFrame)
 )
 def sum_solid_expectations_config(num_df):
     return _sum_solid_impl(num_df)

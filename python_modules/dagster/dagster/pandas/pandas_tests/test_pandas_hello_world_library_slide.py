@@ -116,7 +116,7 @@ def create_definition_based_solid():
         name='hello_world',
         inputs=[table_input],
         transform_fn=transform_fn,
-        output=OutputDefinition(dagster_type=dagster_pd.DataFrame)
+        output=OutputDefinition(dagster_pd.DataFrame)
     )
     return hello_world
 
@@ -124,7 +124,7 @@ def create_definition_based_solid():
 def create_decorator_based_solid():
     @lambda_solid(
         inputs=[InputDefinition('num_csv', dagster_pd.DataFrame)],
-        output=OutputDefinition(dagster_type=dagster_pd.DataFrame),
+        output=OutputDefinition(dagster_pd.DataFrame),
     )
     def hello_world(num_csv):
         num_csv['sum'] = num_csv['num1'] + num_csv['num2']

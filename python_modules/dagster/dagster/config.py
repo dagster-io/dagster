@@ -1,6 +1,7 @@
 from collections import namedtuple
 
 from dagster import check
+from dagster.utils import load_yaml_from_path
 
 DEFAULT_CONTEXT_NAME = 'default'
 
@@ -86,3 +87,7 @@ def construct_environment(yml_config_object):
         solids=_construct_solids(yml_config_object),
         context=_construct_context(yml_config_object),
     )
+
+
+def load_environment(path):
+    return construct_environment(load_yaml_from_path(path))

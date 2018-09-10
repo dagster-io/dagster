@@ -518,6 +518,16 @@ class PipelineDefinition(object):
                         )
 
     @property
+    def display_name(self):
+        '''Name suitable for exception messages, logging etc. If pipeline
+        is unnamed the method with return "<<unnamed>>".
+
+        Returns:
+            str: Display name of pipeline
+        '''
+        return self.name if self.name else '<<unnamed>>'
+
+    @property
     def solids(self):
         '''Return the solids in the pipeline.
 
@@ -644,13 +654,13 @@ class OutputDefinition(object):
     the default name of "result".
 
     Attributes:
-        name (str): Name of the output. Defaults to "result".
         dagster_type (DagsterType): Type of the output. Defaults to types.Any.
+        name (str): Name of the output. Defaults to "result".
         expectations List[ExpectationDefinition]: Expectations for this output.
         description (str): Description of the output. Optional.
     '''
 
-    def __init__(self, name=None, dagster_type=None, expectations=None, description=None):
+    def __init__(self, dagster_type=None, name=None, expectations=None, description=None):
         self.name = check.opt_str_param(name, 'name', DEFAULT_OUTPUT)
 
         self.dagster_type = check.opt_inst_param(

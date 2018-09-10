@@ -15,7 +15,7 @@ from graphql import graphql
 
 @lambda_solid(
     inputs=[InputDefinition('num', dagster_pd.DataFrame)],
-    output=OutputDefinition(dagster_type=dagster_pd.DataFrame),
+    output=OutputDefinition(dagster_pd.DataFrame),
 )
 def sum_solid(num):
     sum_df = num.copy()
@@ -25,7 +25,7 @@ def sum_solid(num):
 
 @lambda_solid(
     inputs=[InputDefinition('sum_df', dagster_pd.DataFrame)],
-    output=OutputDefinition(dagster_type=dagster_pd.DataFrame),
+    output=OutputDefinition(dagster_pd.DataFrame),
 )
 def sum_sq_solid(sum_df):
     sum_sq_df = sum_df.copy()
