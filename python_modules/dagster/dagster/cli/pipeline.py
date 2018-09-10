@@ -223,10 +223,10 @@ def do_execute_command(pipeline, env, printer):
 
     pipeline_iter = execute_pipeline_iterator(pipeline, environment)
 
-    process_results_for_console(pipeline_iter, printer)
+    process_results_for_console(pipeline_iter)
 
 
-def process_results_for_console(pipeline_iter, printer):
+def process_results_for_console(pipeline_iter):
     results = []
 
     for result in pipeline_iter:
@@ -240,38 +240,4 @@ def process_results_for_console(pipeline_iter, printer):
                 click_context.exit(1)
         results.append(result)
 
-    # Commenting this out for now
-    # print_metrics_to_console(results, printer)
-
-
-def print_metrics_to_console(results, printer):
-    for result in results:
-        context = result.context
-        metrics_of_solid = list(context.metrics_matching_context({'solid': result.solid.name}))
-
-        printer('Metrics for {name}'.format(name=result.solid.name))
-
-        for input_def in result.solid.input_defs:
-            metrics_for_input = list(
-                context.metrics_covering_context(
-                    {
-                        'solid': result.solid.name,
-                        'input': input_def.name,
-                    }
-                )
-            )
-            if metrics_for_input:
-                printer('    Input {input_name}'.format(input_name=input_def.name))
-                for metric in metrics_for_input:
-                    printer(
-                        '{indent}{metric_name}: {value}'.format(
-                            indent=' ' * 8, metric_name=metric.metric_name, value=metric.value
-                        )
-                    )
-
-        for metric in metrics_of_solid:
-            printer(
-                '{indent}{metric_name}: {value}'.format(
-                    indent=' ' * 4, metric_name=metric.metric_name, value=metric.value
-                )
-            )
+    return results

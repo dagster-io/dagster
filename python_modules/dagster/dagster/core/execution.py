@@ -143,7 +143,8 @@ class SolidExecutionResult(object):
 
     @property
     def transformed_values(self):
-        '''Return dictionary of transformed results, with keys being output names. Returns None if execution result isn't a success.'''
+        '''Return dictionary of transformed results, with keys being output names.
+        Returns None if execution result isn't a success.'''
         if self.success and self.transforms:
             return {
                 result.success_data.output_name: result.success_data.value
@@ -153,7 +154,8 @@ class SolidExecutionResult(object):
             return None
 
     def transformed_value(self, output_name=DEFAULT_OUTPUT):
-        '''Returns transformed value either for DEFAULT_OUTPUT or for the output given as outputname. Returns None if execution result isn't a success'''
+        '''Returns transformed value either for DEFAULT_OUTPUT or for the output
+        given as output_name. Returns None if execution result isn't a success'''
         check.str_param(output_name, 'output_name')
         if self.success:
             for result in self.transforms:

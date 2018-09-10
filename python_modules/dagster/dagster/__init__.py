@@ -7,8 +7,6 @@ from dagster.core.execution import (
 
 from dagster.core.execution_context import ExecutionContext
 
-from .version import __version__
-
 from dagster.core.definitions import (
     ConfigDefinition,
     DependencyDefinition,
@@ -40,6 +38,8 @@ from dagster.core.errors import (
 
 import dagster.config as config
 import dagster.core.types as types
+
+from .version import __version__
 
 __all__ = [
     # Definition
