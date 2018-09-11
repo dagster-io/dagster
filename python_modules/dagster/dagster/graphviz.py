@@ -14,7 +14,6 @@ def build_graphviz_graph(pipeline, only_solids):
     graphviz_graph.attr('node', color='grey', shape='box')
 
     if only_solids:
-        #!!! New logic goes here !!!
         for solid in pipeline.solids:
             for input_def in solid.input_defs:
                 input_handle = solid.input_handle(input_def.name)
