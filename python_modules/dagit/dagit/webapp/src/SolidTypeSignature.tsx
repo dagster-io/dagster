@@ -1,7 +1,7 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
-import { Code } from "@blueprintjs/core";
+import { Code, Colors } from "@blueprintjs/core";
 import TypeWithTooltip from "./TypeWithTooltip";
 import { SolidTypeSignatureFragment } from "./types/SolidTypeSignatureFragment";
 
@@ -57,6 +57,9 @@ export default class SolidTypeSignature extends React.Component<
 
 const TypeSignature = styled(Code)`
   && {
-    padding: 5px;
+    background: ${Colors.LIGHT_GRAY5};
+    padding: 5px 10px;
+    box-shadow: none;
+    color: black;
   }
 `;

@@ -51,27 +51,22 @@
     "start": "react-scripts-ts start",
     "build": "react-scripts-ts build",
     "eject": "react-scripts-ts eject",
-    "test": "npm run ts && npm run jest",
+    "prettier": "prettier --write \"./src/**/*.tsx\"",
+    "test": "npm run ts && npm run jest && npm run check-prettier",
     "jest": "jest",
+    "check-prettier": "prettier --list-different \"./src/**/*.tsx\"",
     "ts": "tsc -p .",
     "download-schema": "apollo schema:download --endpoint $REACT_APP_GRAPHQL_URI ./src/schema.json",
     "generate-types": "apollo codegen:generate --queries \"./src/**/*.tsx\" --target typescript types --schema ./src/schema.json",
     "watch-types": "apollo codegen:generate --queries \"./src/**/*.tsx\" --target typescript types --schema ./src/schema.json --watch"
   },
   "jest": {
-    "roots": [
-      "<rootDir>/src"
-    ],
+    "roots": ["<rootDir>/src"],
     "transform": {
-      "^.+\\.(ts|tsx)$": "ts-jest"
+      "^.+\\.(ts|tsx)$": "ts-jest",
+      "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/jest/fileTransformer.js"
     },
-    "moduleFileExtensions": [
-      "js",
-      "jsx",
-      "json",
-      "ts",
-      "tsx"
-    ],
+    "moduleFileExtensions": ["js", "jsx", "json", "ts", "tsx"],
     "testRegex": "/__tests__/.*\\.test\\.(ts|tsx)$",
     "testURL": "http://localhost"
   }
