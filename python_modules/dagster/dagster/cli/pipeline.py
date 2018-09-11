@@ -173,9 +173,10 @@ def format_argument_dict(arg_def_dict):
 @click.command(name='graphviz', help="graphviz <<pipeline_name>>")
 @repository_config_argument
 @click.argument('name')
-def graphviz_command(conf, name):
+@click.option('--only-solids', is_flag=True)
+def graphviz_command(conf, name, only_solids):
     pipeline = pipeline_from_conf(conf, name)
-    build_graphviz_graph(pipeline).view(cleanup=True)
+    build_graphviz_graph(pipeline, only_solids).view(cleanup=True)
 
 
 LOGGING_DICT = {
