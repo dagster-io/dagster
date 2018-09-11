@@ -4,7 +4,7 @@ import styled from "styled-components";
 import { History } from "history";
 import { Switch, Route, match } from "react-router";
 import { Link } from "react-router-dom";
-import { Card, H2, H5, Text, Code, UL, H6 } from "@blueprintjs/core";
+import { Card, H3, H5, Text, Code, UL, H6 } from "@blueprintjs/core";
 import SpacedCard from "./SpacedCard";
 import Config from "./Config";
 import Solid from "./Solid";
@@ -69,16 +69,12 @@ export default class Pipeline extends React.Component<IPipelineProps, {}> {
             render={({ match }) => (
               <>
                 <Breadcrumb>
-                  <H2>
-                    <Link to={`/${this.props.pipeline.name}`}>
-                      <Code>{this.props.pipeline.name}</Code>
-                    </Link>
-                  </H2>
+                  <Link to={`/${this.props.pipeline.name}`}>
+                    <BreadcrumbText>{this.props.pipeline.name}</BreadcrumbText>
+                  </Link>
                 </Breadcrumb>
                 <Breadcrumb current={true}>
-                  <H2>
-                    <Code>{match.params.solid}</Code>
-                  </H2>
+                  <BreadcrumbText>{match.params.solid}</BreadcrumbText>
                 </Breadcrumb>
               </>
             )}
@@ -88,9 +84,7 @@ export default class Pipeline extends React.Component<IPipelineProps, {}> {
             render={() => (
               <>
                 <Breadcrumb current={true}>
-                  <H2>
-                    <Code>{this.props.pipeline.name}</Code>
-                  </H2>
+                  <BreadcrumbText>{this.props.pipeline.name}</BreadcrumbText>
                 </Breadcrumb>
               </>
             )}
@@ -165,14 +159,14 @@ export default class Pipeline extends React.Component<IPipelineProps, {}> {
   renderSolidList = () => {
     return (
       <>
-        <SpacedCard elevation={1} key="context">
-          <H5>Context</H5>
+        <Section key="context">
+          <H3>Context</H3>
           <ContextCards>{this.renderContext()}</ContextCards>
-        </SpacedCard>
-        <SpacedCard elevation={1} key="solids">
-          <H5>Solids</H5>
-          <UL>{this.renderSolids()}</UL>
-        </SpacedCard>
+        </Section>
+        <Section key="solids">
+          <H3>Solids</H3>
+          {this.renderSolids()}
+        </Section>
       </>
     );
   };
@@ -190,11 +184,19 @@ export default class Pipeline extends React.Component<IPipelineProps, {}> {
   }
 }
 
-const PipelineGraphWrapper = styled(Card)`
+const BreadcrumbText = styled.h2`
+  font-family: "Source Code Pro", monospace;
+  font-weight: 500;
+`;
+
+const Section = styled.div`
+  margin-bottom: 30px;
+`;
+
+const PipelineGraphWrapper = styled(Section)`
   height: 500px;
   width: 100%;
   display: flex;
-  margin-bottom: 10px;
 `;
 
 const PipelineCard = styled(Card)`
