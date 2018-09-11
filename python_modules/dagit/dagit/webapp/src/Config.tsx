@@ -1,7 +1,7 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
-import { UL, H6 } from "@blueprintjs/core";
+import { UL, H6, Colors } from "@blueprintjs/core";
 import SpacedCard from "./SpacedCard";
 import TypeWithTooltip from "./TypeWithTooltip";
 import Description from "./Description";
@@ -78,5 +78,7 @@ const ConfigCard = styled(SpacedCard)`
 
 const DescriptionWrapper = styled.div`
   max-width: 400px;
+  margin-top: 10px;
   margin-bottom: 10px;
+  color: ${Colors.GRAY2};
 `;

@@ -3,7 +3,7 @@ import gql from "graphql-tag";
 import styled from "styled-components";
 import { History } from "history";
 import { withRouter } from "react-router-dom";
-import { Tabs, Tab, NonIdealState } from "@blueprintjs/core";
+import { Tabs, Tab, NonIdealState, Colors } from "@blueprintjs/core";
 import Pipeline from "./Pipeline";
 import { PipelinesFragment } from "./types/PipelinesFragment";
 
@@ -12,6 +12,7 @@ interface IPipelinesProps {
   pipelines: Array<PipelinesFragment>;
   selectedPipeline: string;
 }
+
 
 export default class Pipelines extends React.Component<IPipelinesProps, {}> {
   static fragments = {
@@ -61,14 +62,14 @@ export default class Pipelines extends React.Component<IPipelinesProps, {}> {
   public render() {
     return (
       <PipelinesContainer>
-        <Tabs
+        <LeftTabs
           id="PipelinesTabs"
           onChange={this.handleTabChange}
           selectedTabId={this.props.selectedPipeline}
           vertical={true}
         >
           {this.renderTabs()}
-        </Tabs>
+        </LeftTabs>
         {this.renderPipeline()}
       </PipelinesContainer>
     );
@@ -80,3 +81,9 @@ const PipelinesContainer = styled.div`
   display: flex;
   width: 100%;
 `;
+
+// TODO BG: Something is wrong with the Tabs type?
+const _Tabs : any = Tabs 
+const LeftTabs = styled(_Tabs)`
+  background:${Colors.LIGHT_GRAY4};
+`
