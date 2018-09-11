@@ -2,7 +2,7 @@ import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
 import { Link } from "react-router-dom";
-import { Text, Code } from "@blueprintjs/core";
+import { Text, Code, Card } from "@blueprintjs/core";
 import SolidTypeSignature from "./SolidTypeSignature";
 import Description from "./Description";
 import { SolidListItemFragment } from "./types/SolidListItemFragment";
@@ -30,26 +30,35 @@ export default class SolidListItem extends React.Component<
 
   render() {
     return (
-      <ListItem>
-        <Link to={`/${this.props.pipelineName}/${this.props.solid.name}`}>
-          <Code>{this.props.solid.name}</Code>
-        </Link>
+      <SolidCard elevation={1}>
         <SolidTypeSignatureWrapper>
           <SolidTypeSignature solid={this.props.solid} />
         </SolidTypeSignatureWrapper>
+        <Link to={`/${this.props.pipelineName}/${this.props.solid.name}`}>
+          <TitleCode>{this.props.solid.name}</TitleCode>
+        </Link>
         <DescriptionWrapper>
           <Description description={this.props.solid.description} />
         </DescriptionWrapper>
-      </ListItem>
+      </SolidCard>
     );
   }
 }
 
-const ListItem = styled.li`
+
+const TitleCode = styled.h3`
+  font-family: 'Source Code Pro', monospace;
+  margin-top: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`
+
+const SolidCard = styled(Card)`
+  position: relative;
   &&&& {
     margin-bottom: 10px;
   }
-`;
+`
 
 const DescriptionWrapper = styled.div`
   margin-top: 5px;
@@ -58,5 +67,7 @@ const DescriptionWrapper = styled.div`
 `;
 
 const SolidTypeSignatureWrapper = styled.span`
-  margin-left: 10px;
+  position: absolute;
+  right: 18px;
+  top: 18px;
 `;

@@ -132,12 +132,12 @@ export default class Solid extends React.Component<ISolidProps, {}> {
   public render() {
     return (
       <SpacedCard elevation={2}>
-        <H5>
-          <Code>{this.props.solid.name}</Code>
-        </H5>
         <TypeSignatureWrapper>
           <SolidTypeSignature solid={this.props.solid} />
         </TypeSignatureWrapper>
+        <SolidHeader>
+          {this.props.solid.name}
+        </SolidHeader>
         <DescriptionWrapper>
           <Description description={this.props.solid.description} />
         </DescriptionWrapper>
@@ -151,6 +151,14 @@ export default class Solid extends React.Component<ISolidProps, {}> {
     );
   }
 }
+
+const SolidHeader = styled.h3`
+  font-family: 'Source Code Pro', monospace;
+  margin-bottom: 8px;
+  margin-top: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`
 
 const Cards = styled.div`
   display: flex;
@@ -175,7 +183,6 @@ const TypeSignatureWrapper = styled.div`
 
 const DescriptionWrapper = styled.div`
   margin-bottom: 10px;
-  max-width: 500px;
 `;
 
 const TypeWrapper = styled.div`
