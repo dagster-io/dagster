@@ -11,7 +11,13 @@ Array [
       <div
         className="bp3-navbar-heading"
       >
-        Dagit
+        <img
+          style={
+            Object {
+              "height": 34,
+            }
+          }
+        />
       </div>
       <div
         className="bp3-navbar-divider"
@@ -19,10 +25,10 @@ Array [
     </div>
   </div>,
   <div
-    className="sc-kEYyzF hpedB"
+    className="sc-cMljjf fjCaRe"
   >
     <div
-      className="bp3-tabs bp3-vertical"
+      className="bp3-tabs bp3-vertical sc-jAaTju kPqiQR"
     >
       <div
         className="bp3-tab-list"

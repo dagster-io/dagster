@@ -135,9 +135,7 @@ export default class Solid extends React.Component<ISolidProps, {}> {
         <TypeSignatureWrapper>
           <SolidTypeSignature solid={this.props.solid} />
         </TypeSignatureWrapper>
-        <SolidHeader>
-          {this.props.solid.name}
-        </SolidHeader>
+        <SolidHeader>{this.props.solid.name}</SolidHeader>
         <DescriptionWrapper>
           <Description description={this.props.solid.description} />
         </DescriptionWrapper>
@@ -153,12 +151,12 @@ export default class Solid extends React.Component<ISolidProps, {}> {
 }
 
 const SolidHeader = styled.h3`
-  font-family: 'Source Code Pro', monospace;
+  font-family: "Source Code Pro", monospace;
   margin-bottom: 8px;
   margin-top: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-`
+`;
 
 const Cards = styled.div`
   display: flex;

@@ -20,25 +20,24 @@ If `input` begins with whitespace and every line contains at least that whitespa
 it removes it. Otherwise, return the original string.
 */
 function removeLeadingSpaces(input: string) {
-  const leadingSpaces = /^\n?( +)/.exec(input)
-  if (leadingSpaces == null) { 
+  const leadingSpaces = /^\n?( +)/.exec(input);
+  if (leadingSpaces == null) {
     return input;
   }
-  
-  const lines = input.split('\n');
+
+  const lines = input.split("\n");
   if (!lines.every(l => l.substr(0, leadingSpaces[1].length).trim() === "")) {
     return input;
   }
 
-  return lines.map(l => l.substr(leadingSpaces[1].length)).join('\n')
+  return lines.map(l => l.substr(leadingSpaces[1].length)).join("\n");
 }
 
 export default class Description extends React.Component<
   IDescriptionProps,
   IDescriptionState
 > {
-
-  private _container: any = React.createRef();
+  private _container: React.RefObject<HTMLDivElement> = React.createRef();
 
   public state: IDescriptionState = {
     hasMore: false,
@@ -55,7 +54,7 @@ export default class Description extends React.Component<
 
   updateHandleState() {
     if (!this._container.current) {
-      return
+      return;
     }
     const hasMore = this._container.current.clientHeight > MaxHeight;
     if (hasMore !== this.state.hasMore) {
@@ -82,9 +81,9 @@ export default class Description extends React.Component<
             {expanded ? "Show Less" : "Show More"}
           </ShowMoreHandle>
         )}
-        
+
         <div ref={this._container}>
-        <ReactMarkdown source={removeLeadingSpaces(this.props.description)} />
+          <ReactMarkdown source={removeLeadingSpaces(this.props.description)} />
         </div>
       </Container>
     );

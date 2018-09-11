@@ -3,7 +3,13 @@ import gql from "graphql-tag";
 import styled from "styled-components";
 import { History } from "history";
 import { withRouter } from "react-router-dom";
-import { Tabs, Tab, NonIdealState, Colors } from "@blueprintjs/core";
+import {
+  Tabs,
+  ITabsProps,
+  Tab,
+  NonIdealState,
+  Colors
+} from "@blueprintjs/core";
 import Pipeline from "./Pipeline";
 import { PipelinesFragment } from "./types/PipelinesFragment";
 
@@ -12,7 +18,6 @@ interface IPipelinesProps {
   pipelines: Array<PipelinesFragment>;
   selectedPipeline: string;
 }
-
 
 export default class Pipelines extends React.Component<IPipelinesProps, {}> {
   static fragments = {
@@ -82,8 +87,7 @@ const PipelinesContainer = styled.div`
   width: 100%;
 `;
 
-// TODO BG: Something is wrong with the Tabs type?
-const _Tabs : any = Tabs 
-const LeftTabs = styled(_Tabs)`
-  background:${Colors.LIGHT_GRAY4};
-`
+// XXX(freiksenet): Some weirdness caused by weird blueprint type hierarchy
+const LeftTabs = styled((Tabs as any) as React.StatelessComponent<ITabsProps>)`
+  background: ${Colors.LIGHT_GRAY4};
+`;

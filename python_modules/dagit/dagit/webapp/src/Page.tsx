@@ -1,5 +1,6 @@
 import * as React from "react";
 import { Alignment, Navbar } from "@blueprintjs/core";
+import navBarImage from "./images/nav-logo.png";
 
 export default class Page extends React.Component {
   public render() {
@@ -8,7 +9,7 @@ export default class Page extends React.Component {
         <Navbar>
           <Navbar.Group align={Alignment.LEFT}>
             <Navbar.Heading>
-              <img src={require('./images/nav-logo.png')} style={{ height: 34 }} />
+              <img src={navBarImage} style={{ height: 34 }} />
             </Navbar.Heading>
             <Navbar.Divider />
           </Navbar.Group>

@@ -39,10 +39,10 @@ export default class TypeWithTooltip extends React.Component<
 }
 
 const TypeName = styled.code`
-  background: #D6ECFF;
+  background: #d6ecff;
   border: none;
   padding: 1px 4px;
-  border-bottom: 1px solid #2491EB;
+  border-bottom: 1px solid #2491eb;
   border-radius: 0.25em;
   font-weight: 500;
 `;

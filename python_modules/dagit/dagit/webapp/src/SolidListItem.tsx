@@ -45,20 +45,19 @@ export default class SolidListItem extends React.Component<
   }
 }
 
-
 const TitleCode = styled.h3`
-  font-family: 'Source Code Pro', monospace;
+  font-family: "Source Code Pro", monospace;
   margin-top: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-`
+`;
 
 const SolidCard = styled(Card)`
   position: relative;
   &&&& {
     margin-bottom: 10px;
   }
-`
+`;
 
 const DescriptionWrapper = styled.div`
   margin-top: 5px;

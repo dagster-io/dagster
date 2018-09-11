@@ -111,6 +111,12 @@ jobs:
             cd python_modules/dagit/dagit/webapp
             yarn run jest
 
+      - run:
+          name: Check coding style
+          command: |
+            cd python_modules/dagit/dagit/webapp
+            yarn run check-prettier
+
       - store_artifacts:
           path: test-reports
           destination: test-reports
