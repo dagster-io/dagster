@@ -16,6 +16,7 @@ from dagster.core.definitions import ExecutionGraph
 from dagster.core.execution import execute_pipeline_iterator
 from dagster.core.errors import DagsterExecutionFailureReason
 from dagster.graphviz import build_graphviz_graph
+from dagster.utils import load_yaml_from_path
 from dagster.utils.indenting_printer import IndentingPrinter
 
 from .repository_config import (
@@ -186,12 +187,6 @@ LOGGING_DICT = {
     'ERROR': logging.ERROR,
     'CRITICAL': logging.CRITICAL,
 }
-
-
-def load_yaml_from_path(path):
-    check.str_param(path, 'path')
-    with open(path, 'r') as ff:
-        return yaml.load(ff)
 
 
 @click.command(name='execute', help="execute <<pipeline_name>>")

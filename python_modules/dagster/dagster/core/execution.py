@@ -195,15 +195,15 @@ def _do_throw_on_error(execution_result):
         execution_result.reraise_user_error()
 
 
-def _wrap_in_yield(thing):
-    if isinstance(thing, ExecutionContext):
+def _wrap_in_yield(context_or_generator):
+    if isinstance(context_or_generator, ExecutionContext):
 
         def _wrap():
-            yield thing
+            yield context_or_generator
 
         return _wrap()
 
-    return thing
+    return context_or_generator
 
 
 def _validate_environment(environment, pipeline):
@@ -217,6 +217,17 @@ def _validate_environment(environment, pipeline):
                 avaiable_context_keys=repr(avaiable_context_keys),
             )
         )
+
+    for solid_name in environment.solids.keys():
+        if not pipeline.has_solid(solid_name):
+            available_solids = [s.name for s in pipeline.solids]
+            raise DagsterInvariantViolationError(
+                'Solid {solid_name} specified in config for pipeline {pipeline} not found.'.format(
+                    solid_name=solid_name,
+                    pipeline=pipeline.display_name,
+                ) + \
+                ' Available solids in pipeline are {solids}.'.format(solids=available_solids)
+            )
 
 
 @contextmanager
@@ -237,8 +248,8 @@ def yield_context(pipeline, environment):
             'Invalid config value: {error_msg}'.format(error_msg=','.join(e.args))
         )
 
-    thing = context_definition.context_fn(pipeline, evaluation_result)
-    return _wrap_in_yield(thing)
+    context_or_generator = context_definition.context_fn(pipeline, evaluation_result)
+    return _wrap_in_yield(context_or_generator)
 
 
 def execute_pipeline_iterator(pipeline, environment):
@@ -347,12 +358,13 @@ def _execute_graph(
     check.bool_param(throw_on_error, 'throw_on_error')
 
     results = []
-    with yield_context(execution_graph.pipeline, environment) as context:
-        with context.value('pipeline', execution_graph.pipeline.name or '<<unnamed>>'):
-            for result in _execute_graph_iterator(context, execution_graph, environment):
-                if throw_on_error:
-                    if not result.success:
-                        _do_throw_on_error(result)
+    with yield_context(execution_graph.pipeline, environment) as context, \
+         context.value('pipeline', execution_graph.pipeline.display_name):
 
-                results.append(result)
-            return PipelineExecutionResult(context, results)
+        for result in _execute_graph_iterator(context, execution_graph, environment):
+            if throw_on_error:
+                if not result.success:
+                    _do_throw_on_error(result)
+
+            results.append(result)
+        return PipelineExecutionResult(context, results)

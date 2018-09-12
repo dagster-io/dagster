@@ -34,7 +34,7 @@ def _dataframe_solid(name, inputs, transform_fn):
         name=name,
         inputs=inputs,
         transform_fn=transform_fn,
-        output=OutputDefinition(dagster_type=dagster_pd.DataFrame),
+        output=OutputDefinition(dagster_pd.DataFrame),
     )
 
 
@@ -117,7 +117,7 @@ def test_pandas_csv_to_csv():
         name='sum_table',
         inputs=[csv_input],
         transform_fn=transform,
-        output=OutputDefinition(dagster_type=dagster_pd.DataFrame),
+        output=OutputDefinition(dagster_pd.DataFrame),
     )
 
     output_df = execute_transform_in_temp_csv_files(solid_def)
@@ -178,7 +178,7 @@ def create_sum_table():
 
 @lambda_solid(
     inputs=[InputDefinition('num_csv', dagster_pd.DataFrame)],
-    output=OutputDefinition(dagster_type=dagster_pd.DataFrame),
+    output=OutputDefinition(dagster_pd.DataFrame),
 )
 def sum_table(num_csv):
     check.inst_param(num_csv, 'num_csv', pd.DataFrame)
@@ -188,7 +188,7 @@ def sum_table(num_csv):
 
 @lambda_solid(
     inputs=[InputDefinition('sum_df', dagster_pd.DataFrame)],
-    output=OutputDefinition(dagster_type=dagster_pd.DataFrame),
+    output=OutputDefinition(dagster_pd.DataFrame),
 )
 def sum_sq_table(sum_df):
     sum_df['sum_squared'] = sum_df['sum'] * sum_df['sum']
@@ -197,7 +197,7 @@ def sum_sq_table(sum_df):
 
 @lambda_solid(
     inputs=[InputDefinition('sum_table_renamed', dagster_pd.DataFrame)],
-    output=OutputDefinition(dagster_type=dagster_pd.DataFrame),
+    output=OutputDefinition(dagster_pd.DataFrame),
 )
 def sum_sq_table_renamed_input(sum_table_renamed):
     sum_table_renamed['sum_squared'] = sum_table_renamed['sum'] * sum_table_renamed['sum']

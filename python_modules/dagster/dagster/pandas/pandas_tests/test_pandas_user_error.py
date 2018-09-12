@@ -24,7 +24,7 @@ def _dataframe_solid(name, inputs, transform_fn):
         name=name,
         inputs=inputs,
         transform_fn=transform_fn,
-        output=OutputDefinition(dagster_type=dagster_pd.DataFrame),
+        output=OutputDefinition(dagster_pd.DataFrame),
     )
 
 
@@ -34,7 +34,7 @@ def test_wrong_output_value():
     @lambda_solid(
         name="test_wrong_output",
         inputs=[csv_input],
-        output=OutputDefinition(dagster_type=dagster_pd.DataFrame),
+        output=OutputDefinition(dagster_pd.DataFrame),
     )
     def df_solid(num_csv):
         return 'not a dataframe'

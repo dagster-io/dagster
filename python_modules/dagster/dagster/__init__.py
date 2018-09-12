@@ -48,6 +48,7 @@ __all__ = [
     'DependencyDefinition',
     'ExpectationDefinition',
     'ExpectationResult',
+    'Field',
     'InputDefinition',
     'OutputDefinition',
     'PipelineContextDefinition',

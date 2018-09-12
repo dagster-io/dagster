@@ -37,7 +37,7 @@ def load_csv_solid(name):
     return SolidDefinition(
         name=name,
         inputs=[],
-        outputs=[OutputDefinition(dagster_type=DataFrame)],
+        outputs=[OutputDefinition(DataFrame)],
         transform_fn=_t_fn,
         config_def=ConfigDefinition.config_dict({
             'path': Field(types.Path),

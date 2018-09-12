@@ -11,6 +11,8 @@ from dagster import (
     RepositoryDefinition,
 )
 
+from dagster.utils import load_yaml_from_path
+
 
 class RepositoryInfo(namedtuple('_RepositoryInfo', 'repository module fn module_name fn_name')):
     pass
@@ -18,25 +20,24 @@ class RepositoryInfo(namedtuple('_RepositoryInfo', 'repository module fn module_
 
 def load_repository_from_file(file_path):
     check.str_param(file_path, 'file_path')
-    with open(file_path, 'r') as ff:
-        config = yaml.load(ff)
-        repository_config = check.dict_elem(config, 'repository')
-        module_name = check.opt_str_elem(repository_config, 'module')
-        file_name = check.opt_str_elem(repository_config, 'file')
-        fn_name = check.str_elem(repository_config, 'fn')
+    config = load_yaml_from_path(file_path)
+    repository_config = check.dict_elem(config, 'repository')
+    module_name = check.opt_str_elem(repository_config, 'module')
+    file_name = check.opt_str_elem(repository_config, 'file')
+    fn_name = check.str_elem(repository_config, 'fn')
 
-        if module_name:
-            module, fn, repository = load_repository_from_module_name(module_name, fn_name)
-        else:
-            module, fn, repository = load_repository_from_python_file(file_name, fn_name)
+    if module_name:
+        module, fn, repository = load_repository_from_module_name(module_name, fn_name)
+    else:
+        module, fn, repository = load_repository_from_python_file(file_name, fn_name)
 
-        return RepositoryInfo(
-            repository=repository,
-            module=module,
-            fn=fn,
-            module_name=module_name,
-            fn_name=fn_name,
-        )
+    return RepositoryInfo(
+        repository=repository,
+        module=module,
+        fn=fn,
+        module_name=module_name,
+        fn_name=fn_name,
+    )
 
 
 def _create_repo_from_module(module, fn_name):
