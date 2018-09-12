@@ -361,6 +361,11 @@ def _execute_graph(
     with yield_context(execution_graph.pipeline, environment) as context, \
          context.value('pipeline', execution_graph.pipeline.display_name):
 
+        context.info(
+            'Beginning execution of pipeline {pipeline}',
+            pipeline=execution_graph.pipeline.display_name,
+        )
+
         for result in _execute_graph_iterator(context, execution_graph, environment):
             if throw_on_error:
                 if not result.success:

@@ -9,7 +9,11 @@ from collections import (
 from contextlib import contextmanager
 
 from dagster import check
-from dagster.utils.logging import CompositeLogger
+from dagster.utils.logging import (
+    CompositeLogger,
+    INFO,
+    define_colored_console_logger,
+)
 
 Metric = namedtuple('Metric', 'context_dict metric_name value')
 
@@ -49,6 +53,13 @@ class ExecutionContext(object):
         self._context_dict = OrderedDict()
         self._metrics = []
         self.resources = resources
+
+    @staticmethod
+    def console_logging(log_level=INFO, resources=None):
+        return ExecutionContext(
+            loggers=[define_colored_console_logger('dagster', log_level)],
+            resources=resources,
+        )
 
     def _log(self, method, orig_message, message_props):
         check.str_param(method, 'method')

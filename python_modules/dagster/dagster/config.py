@@ -13,8 +13,8 @@ class Context(namedtuple('ContextData', 'name config')):
             cls,
             check.opt_str_param(name, 'name', DEFAULT_CONTEXT_NAME),
             config,
-        )
 
+        )
 
 class Solid(namedtuple('Solid', 'config')):
     def __new__(cls, config):
@@ -51,7 +51,10 @@ class Expectations(namedtuple('ExpectationsData', 'evaluate')):
 def _construct_context(yml_config_object):
     context_obj = check.opt_dict_elem(yml_config_object, 'context')
     if context_obj:
-        return Context(check.opt_str_elem(context_obj, 'name'), context_obj['config'])
+        return Context(
+            check.opt_str_elem(context_obj, 'name'),
+            context_obj.get('config'),
+        )
     else:
         return None
 
@@ -74,8 +77,8 @@ def _construct_solids(yml_config_object):
 
     solid_configs = {}
     for solid_name, solid_yml_object in solid_dict.items():
-        config_dict = check.dict_elem(solid_yml_object, 'config')
-        solid_configs[solid_name] = Solid(config_dict)
+        config_value = solid_yml_object['config']
+        solid_configs[solid_name] = Solid(config_value)
 
     return solid_configs
 
