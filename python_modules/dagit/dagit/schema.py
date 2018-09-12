@@ -1,5 +1,17 @@
 import graphene
-from dagster.core.types import (DagsterScalarType, DagsterCompositeType)
+
+from dagster import (
+    ConfigDefinition,
+    ExpectationDefinition,
+    InputDefinition,
+    OutputDefinition,
+    PipelineContextDefinition,
+    PipelineDefinition,
+    SolidDefinition,
+    check,
+)
+
+from dagster.core.types import DagsterCompositeType
 
 
 class Query(graphene.ObjectType):
@@ -7,8 +19,9 @@ class Query(graphene.ObjectType):
     pipelines = graphene.NonNull(graphene.List(lambda: graphene.NonNull(Pipeline)))
 
     def resolve_pipeline(self, info, name):
+        check.str_param(name, 'name')
         repository = info.context['repository_container'].repository
-        return repository.get_pipeline(name)
+        return Pipeline(repository.get_pipeline(name))
 
     def resolve_pipelines(self, info):
         repository = info.context['repository_container'].repository
@@ -26,9 +39,9 @@ class Pipeline(graphene.ObjectType):
 
     def __init__(self, pipeline):
         super(Pipeline, self).__init__(name=pipeline.name, description=pipeline.description)
-        self._pipeline = pipeline
+        self._pipeline = check.inst_param(pipeline, 'pipeline', PipelineDefinition)
 
-    def resolve_solids(self, info):
+    def resolve_solids(self, _info):
         return [
             Solid(
                 solid, self._pipeline.dependency_structure.deps_of_solid_with_input(solid.name),
@@ -36,7 +49,7 @@ class Pipeline(graphene.ObjectType):
             ) for solid in self._pipeline.solids
         ]
 
-    def resolve_contexts(self, info):
+    def resolve_contexts(self, _info):
         return [
             PipelineContext(name=name, context=context)
             for name, context in self._pipeline.context_definitions.items()
@@ -50,9 +63,9 @@ class PipelineContext(graphene.ObjectType):
 
     def __init__(self, name, context):
         super(PipelineContext, self).__init__(name=name, description=context.description)
-        self._context = context
+        self._context = check.inst_param(context, 'context', PipelineContextDefinition)
 
-    def resolve_config(self, info):
+    def resolve_config(self, _info):
         return Config(self._context.config_def)
 
 
@@ -65,7 +78,9 @@ class Solid(graphene.ObjectType):
 
     def __init__(self, solid, depends_on=None, depended_by=None):
         super(Solid, self).__init__(name=solid.name, description=solid.description)
-        self._solid = solid
+
+        self._solid = check.inst_param(solid, 'solid', SolidDefinition)
+
         if depends_on:
             self._depends_on = {
                 input_handle.input_def.name: output_handle
@@ -82,19 +97,19 @@ class Solid(graphene.ObjectType):
         else:
             self._depended_by = {}
 
-    def resolve_inputs(self, info):
+    def resolve_inputs(self, _info):
         return [
             Input(input_definition, self, self._depends_on.get(input_definition.name))
             for input_definition in self._solid.input_defs
         ]
 
-    def resolve_outputs(self, info):
+    def resolve_outputs(self, _info):
         return [
             Output(output_definition, self, self._depended_by.get(output_definition.name, []))
             for output_definition in self._solid.output_defs
         ]
 
-    def resolve_config(self, info):
+    def resolve_config(self, _info):
         return Config(self._solid.config_def)
 
 
@@ -112,19 +127,21 @@ class Input(graphene.ObjectType):
             description=input_definition.description,
             solid=solid,
         )
-        self._input_definition = input_definition
+        self._input_definition = check.inst_param(
+            input_definition, 'input_definition', InputDefinition
+        )
         self._depends_on = depends_on
 
-    def resolve_type(self, info):
+    def resolve_type(self, _info):
         return Type.from_dagster_type(dagster_type=self._input_definition.dagster_type)
 
-    def resolve_expectations(self, info):
+    def resolve_expectations(self, _info):
         if self._input_definition.expectations:
             return [Expectation(expectation for expectation in self._input_definition.expectations)]
         else:
             return []
 
-    def resolve_depends_on(self, info):
+    def resolve_depends_on(self, _info):
         return Output(
             self._depends_on.output_def,
             Solid(self._depends_on.solid),
@@ -142,6 +159,7 @@ class Output(graphene.ObjectType):
     depended_by = graphene.List(lambda: graphene.NonNull(Input))
 
     def __init__(self, output_definition, solid, depended_by):
+        check.inst_param(output_definition, 'output_definition', OutputDefinition)
         super(Output, self).__init__(
             name=output_definition.name,
             description=output_definition.description,
@@ -150,10 +168,10 @@ class Output(graphene.ObjectType):
         self._output_definition = output_definition
         self._depended_by = depended_by
 
-    def resolve_type(self, info):
+    def resolve_type(self, _info):
         return Type.from_dagster_type(dagster_type=self._output_definition.dagster_type)
 
-    def resolve_expectations(self, info):
+    def resolve_expectations(self, _info):
         if self._output_definition.expectations:
             return [
                 Expectation(expectation) for expectation in self._output_definition.expectations
@@ -161,7 +179,7 @@ class Output(graphene.ObjectType):
         else:
             return []
 
-    def resolve_depends_on(self, info):
+    def resolve_depends_on(self, _info):
         return [
             Input(
                 depended_by.input_def,
@@ -177,6 +195,7 @@ class Expectation(graphene.ObjectType):
     description = graphene.String()
 
     def __init__(self, expectation):
+        check.inst_param(expectation, 'expectation', ExpectationDefinition)
         super(Expectation, self).__init__(
             name=expectation.name, description=expectation.description
         )
@@ -187,9 +206,9 @@ class Config(graphene.ObjectType):
 
     def __init__(self, config_def):
         super(Config, self).__init__()
-        self._config_def = config_def
+        self._config_def = check.inst_param(config_def, 'config_def', ConfigDefinition)
 
-    def resolve_type(self, info):
+    def resolve_type(self, _info):
         return Type.from_dagster_type(dagster_type=self._config_def.config_type)
 
 
@@ -198,7 +217,7 @@ class Type(graphene.Interface):
     description = graphene.String()
 
     @classmethod
-    def from_dagster_type(self, dagster_type):
+    def from_dagster_type(cls, dagster_type):
         if isinstance(dagster_type, DagsterCompositeType):
             return CompositeType(dagster_type)
         else:
@@ -233,7 +252,7 @@ class CompositeType(graphene.ObjectType):
         )
         self._dagster_type = dagster_type
 
-    def resolve_fields(self, info):
+    def resolve_fields(self, _info):
         return [TypeField(name=k, field=v) for k, v in self._dagster_type.field_dict.items()]
 
 
@@ -253,7 +272,7 @@ class TypeField(graphene.ObjectType):
         )
         self._field = field
 
-    def resolve_type(self, info):
+    def resolve_type(self, _info):
         return Type.from_dagster_type(dagster_type=self._field.dagster_type)
 
 
