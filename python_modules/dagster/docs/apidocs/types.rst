@@ -35,6 +35,3 @@ Utilities
 
 .. autoclass:: Field
    :members:
-
-.. autoclass:: IncomingValueResult
-   :members:

@@ -1,5 +1,5 @@
 Basic Typing
-------
+------------
 
 Dagster includes an optional type system that can be applied to both runtime values
 and configuration. We can use these types to both provide runtime type guarantees
