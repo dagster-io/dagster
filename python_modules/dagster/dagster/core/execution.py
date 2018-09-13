@@ -286,7 +286,13 @@ def _execute_graph_iterator(context, execution_graph, environment):
 
     cn_nodes = list(cn_graph.topological_nodes())
 
-    check.invariant(len(cn_nodes) > 0, 'No compute nodes!')
+    if not cn_nodes:
+        context.debug(
+            'Pipeline {pipeline} has no nodes and no execution will happen'.format(
+                pipeline=execution_graph.pipeline.display_name
+            )
+        )
+        return
 
     context.debug(
         'About to execute the compute node graph in the following order {order}'.format(
