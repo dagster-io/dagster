@@ -18,8 +18,8 @@ Before we had this:
     from dagster import *
 
     @solid
-    def double_the_word(_context, conf):
-        return conf['word'] * 2
+    def double_the_word(info):
+        return info.config['word'] * 2
 
 We are going to make the configuration of this strongly typed prevent errors and improve
 documentation.
@@ -29,8 +29,8 @@ documentation.
     from dagster import *
 
     @solid(config_def=ConfigDefinition(types.ConfigDictionary({'word': Field(types.String)})))
-    def double_the_word_with_typed_config(_context, conf):
-        return conf['word'] * 2
+    def double_the_word_with_typed_config(info):
+        return info.config['word'] * 2
 
 The previous env.yml file works as before:
 
@@ -98,8 +98,8 @@ specified, it defaults to the Any type.
         })),
         outputs=[OutputDefinition(types.String)],
     )
-    def typed_double_word(_context, conf):
-        return conf['word'] * 2
+    def typed_double_word(info):
+        return info.config['word'] * 2
 
 You'll see here that now the output is annotated with a type. This both ensures
 that the runtime value conforms requirements specified by the type (in this case
@@ -117,8 +117,8 @@ So imagine we made a coding error (mistyped the output) such as:
         })),
         outputs=[OutputDefinition(types.Int)],
     )
-    def typed_double_word(_context, conf):
-        return conf['word'] * 2
+    def typed_double_word(info):
+        return info.config['word'] * 2
 
 When we run it, it errors:
 

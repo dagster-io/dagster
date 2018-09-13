@@ -11,6 +11,8 @@ from dagster import (
     lambda_solid,
 )
 
+from dagster.core.test_utils import single_output_transform
+
 from dagster.utils import script_relative_path
 from dagster.utils.test import get_temp_file_name
 
@@ -112,7 +114,7 @@ def create_definition_based_solid():
         return num_csv
 
     # supports CSV and PARQUET by default
-    hello_world = SolidDefinition.single_output_transform(
+    hello_world = single_output_transform(
         name='hello_world',
         inputs=[table_input],
         transform_fn=transform_fn,

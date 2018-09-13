@@ -15,13 +15,15 @@ from dagster import (
     types,
 )
 
+from dagster.core.test_utils import single_output_transform
+
 
 def define_pass_value_solid(name, description=None):
     check.str_param(name, 'name')
     check.opt_str_param(description, 'description')
 
-    def _value_t_fn(_context, conf, _inputs):
-        yield Result(conf['value'])
+    def _value_t_fn(info, _inputs):
+        yield Result(info.config['value'])
 
     return SolidDefinition(
         name=name,
@@ -36,7 +38,7 @@ def define_pass_value_solid(name, description=None):
 
 
 def test_execute_solid_with_input_same_name():
-    a_thing_solid = SolidDefinition.single_output_transform(
+    a_thing_solid = single_output_transform(
         'a_thing',
         inputs=[InputDefinition(name='a_thing')],
         transform_fn=lambda context, inputs: inputs['a_thing'] + inputs['a_thing'],
@@ -63,14 +65,14 @@ def test_execute_solid_with_input_same_name():
 def test_execute_two_solids_with_same_input_name():
     input_def = InputDefinition(name='a_thing')
 
-    solid_one = SolidDefinition.single_output_transform(
+    solid_one = single_output_transform(
         'solid_one',
         inputs=[input_def],
         transform_fn=lambda context, inputs: inputs['a_thing'] + inputs['a_thing'],
         output=dagster.OutputDefinition(),
     )
 
-    solid_two = SolidDefinition.single_output_transform(
+    solid_two = single_output_transform(
         'solid_two',
         inputs=[input_def],
         transform_fn=lambda context, inputs: inputs['a_thing'] + inputs['a_thing'],
@@ -117,14 +119,14 @@ def test_execute_two_solids_with_same_input_name():
 def test_execute_dep_solid_different_input_name():
     pass_to_first = define_pass_value_solid('pass_to_first')
 
-    first_solid = SolidDefinition.single_output_transform(
+    first_solid = single_output_transform(
         'first_solid',
         inputs=[InputDefinition(name='a_thing')],
         transform_fn=lambda context, inputs: inputs['a_thing'] + inputs['a_thing'],
         output=dagster.OutputDefinition(),
     )
 
-    second_solid = SolidDefinition.single_output_transform(
+    second_solid = single_output_transform(
         'second_solid',
         inputs=[
             InputDefinition(name='an_input'),

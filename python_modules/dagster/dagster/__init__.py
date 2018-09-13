@@ -5,7 +5,10 @@ from dagster.core.execution import (
     execute_pipeline_iterator,
 )
 
-from dagster.core.execution_context import ExecutionContext
+from dagster.core.execution_context import (
+    ExecutionContext,
+    TransformExecutionInfo,
+)
 
 from dagster.core.definitions import (
     ConfigDefinition,

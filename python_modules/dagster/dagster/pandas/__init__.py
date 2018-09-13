@@ -31,8 +31,8 @@ DataFrame = _create_dataframe_type()
 def load_csv_solid(name):
     check.str_param(name, 'name')
 
-    def _t_fn(_context, conf, _inputs):
-        yield Result(pd.read_csv(conf['path']))
+    def _t_fn(info, _inputs):
+        yield Result(pd.read_csv(info.config['path']))
 
     return SolidDefinition(
         name=name,
@@ -46,8 +46,8 @@ def load_csv_solid(name):
 
 
 def to_csv_solid(name):
-    def _t_fn(_context, conf, inputs):
-        inputs['df'].to_csv(conf['path'], index=False)
+    def _t_fn(info, inputs):
+        inputs['df'].to_csv(info.config['path'], index=False)
 
     return SolidDefinition(
         name=name,
@@ -61,8 +61,8 @@ def to_csv_solid(name):
 
 
 def to_parquet_solid(name):
-    def _t_fn(_context, conf, inputs):
-        inputs['df'].to_parquet(conf['path'])
+    def _t_fn(info, inputs):
+        inputs['df'].to_parquet(info.config['path'])
 
     return SolidDefinition(
         name=name,

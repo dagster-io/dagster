@@ -21,8 +21,8 @@ minimal API. ``solid`` is more complicated, but has more capabilities:
     from dagster import *
 
     @solid
-    def hello_world(_context, conf):
-        print(conf)
+    def hello_world(info):
+        print(info.config)
         return conf
 
 
@@ -36,11 +36,10 @@ minimal API. ``solid`` is more complicated, but has more capabilities:
 
 You'll notice a new API, ``solid``. We will be exploring this API in much more detail as this
 tutorial proceeds. For now, the only is that the function annotated by solid now
-takes two parameters where before it took zero (if it accepted no inputs). Ignore
-the first parameter,  ``_context``, for now. We will cover that in a later section
-of the tutorial. The other parameter is ``conf``, which is short for config (which
-we cannot use because of the name collision with the config namespace of dagster).
-It represents the configuration for that solid.
+takes one parameter where before it took zero (if it accepted no inputs). This
+takes an info parameter, which is of type :py:class:`TransformExecutionInfo`. It
+has a property config, which is the configuration that is passed into this
+particular solid.
 
 We must provide that configuration. And thusly turn your attention to the second argument
 of execute_pipeline, which must be an instance of ``config.Environment``. An ``Environment``

@@ -31,7 +31,10 @@ from .definitions import (
     SolidOutputHandle,
 )
 
-from .execution_context import ExecutionContext
+from .execution_context import (
+    ExecutionContext,
+    TransformExecutionInfo,
+)
 
 from .errors import (
     DagsterExpectationFailedError,
@@ -183,8 +186,9 @@ JOIN_OUTPUT = 'join_output'
 EXPECTATION_INPUT = 'expectation_input'
 
 
+
 def _yield_transform_results(context, compute_node, conf, inputs):
-    gen = compute_node.solid.transform_fn(context, conf, inputs)
+    gen = compute_node.solid.transform_fn(TransformExecutionInfo(context, conf), inputs)
 
     if isinstance(gen, Result):
         raise DagsterInvariantViolationError(

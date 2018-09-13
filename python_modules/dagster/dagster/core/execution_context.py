@@ -175,3 +175,20 @@ class ExecutionContext(object):
         yield
 
         self._context_dict.pop(key)
+
+
+class TransformExecutionInfo(namedtuple('_TransformExecutionInfo', 'context config')):
+    '''An instance of TransformExecutionInfo is passed every solid transform function.
+
+    Attributes:
+
+        context (ExecutionContext): Context instance for this pipeline invocation
+        config (Any): Config object for current solid
+    '''
+
+    def __new__(cls, context, config):
+        return super(TransformExecutionInfo, cls).__new__(
+            cls,
+            check.inst_param(context, 'context', ExecutionContext),
+            config,
+        )

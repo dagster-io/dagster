@@ -42,9 +42,9 @@ def _render_template_string(template_text, config_dict):
 
 
 def _create_templated_sql_transform_with_output(sql):
-    def do_transform(context, conf, _inputs):
-        rendered_sql = _render_template_string(sql, conf)
-        execute_sql_text_on_context(context, rendered_sql)
-        yield Result(conf)
+    def do_transform(info, _inputs):
+        rendered_sql = _render_template_string(sql, info.config)
+        execute_sql_text_on_context(info.context, rendered_sql)
+        yield Result(info.config)
 
     return do_transform

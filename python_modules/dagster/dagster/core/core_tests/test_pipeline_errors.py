@@ -15,7 +15,10 @@ from dagster import (
     execute_pipeline,
 )
 
-from dagster.core.test_utils import execute_single_solid
+from dagster.core.test_utils import (
+    execute_single_solid,
+    single_output_transform,
+)
 from dagster.core.errors import DagsterUserCodeExecutionError
 
 
@@ -41,7 +44,7 @@ def create_root_success_solid(name):
         passed_rows.append({name: 'transform_called'})
         return passed_rows
 
-    return SolidDefinition.single_output_transform(
+    return single_output_transform(
         name=name,
         inputs=[],
         transform_fn=root_transform,
@@ -53,7 +56,7 @@ def create_root_transform_failure_solid(name):
     def failed_transform(**_kwargs):
         raise Exception('Transform failed')
 
-    return SolidDefinition.single_output_transform(
+    return single_output_transform(
         name=name,
         inputs=[],
         transform_fn=failed_transform,
@@ -82,7 +85,7 @@ def test_failure_midstream():
         check.failed('user error')
         return [inputs['A'], inputs['B'], {'C': 'transform_called'}]
 
-    solid_c = SolidDefinition.single_output_transform(
+    solid_c = single_output_transform(
         name='C',
         inputs=[InputDefinition(name='A'), InputDefinition(name='B')],
         transform_fn=transform_fn,
@@ -145,7 +148,7 @@ def test_yield_non_result():
 
 
 def test_single_transform_returning_result():
-    solid_inst = SolidDefinition.single_output_transform(
+    solid_inst = single_output_transform(
         'test_return_result',
         inputs=[],
         transform_fn=lambda *_args, **_kwargs: Result(None),

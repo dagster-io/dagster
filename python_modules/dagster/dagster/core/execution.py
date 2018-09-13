@@ -46,7 +46,10 @@ from .compute_nodes import (
     execute_compute_nodes,
 )
 
-from .execution_context import ExecutionContext
+from .execution_context import (
+    ExecutionContext,
+    TransformExecutionInfo,
+)
 
 
 class PipelineExecutionResult(object):
