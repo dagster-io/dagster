@@ -27,6 +27,7 @@ from dagster import (
 
 from .definitions import (
     DEFAULT_OUTPUT,
+    ContextCreationExecutionInfo,
     ExecutionGraph,
     PipelineDefinition,
     SolidDefinition,
@@ -233,6 +234,15 @@ def _validate_environment(environment, pipeline):
             )
 
 
+def _create_config_value(config_type, config_input):
+    try:
+        return config_type.evaluate_value(config_input)
+    except DagsterEvaluateValueError as e:
+        raise DagsterTypeError(
+            'Invalid config value: {error_msg}'.format(error_msg=','.join(e.args))
+        )
+
+
 @contextmanager
 def yield_context(pipeline, environment):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
@@ -244,14 +254,13 @@ def yield_context(pipeline, environment):
     context_definition = pipeline.context_definitions[context_name]
     config_type = context_definition.config_def.config_type
 
-    try:
-        evaluation_result = config_type.evaluate_value(environment.context.config)
-    except DagsterEvaluateValueError as e:
-        raise DagsterTypeError(
-            'Invalid config value: {error_msg}'.format(error_msg=','.join(e.args))
+    config_value = _create_config_value(config_type, environment.context.config)
+    context_or_generator = context_definition.context_fn(
+        ContextCreationExecutionInfo(
+            config=config_value,
+            pipeline_def=pipeline,
         )
-
-    context_or_generator = context_definition.context_fn(pipeline, evaluation_result)
+    )
     return _wrap_in_yield(context_or_generator)
 
 

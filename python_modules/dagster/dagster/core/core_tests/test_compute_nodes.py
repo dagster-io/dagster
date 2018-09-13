@@ -16,11 +16,7 @@ from dagster.core.compute_nodes import create_compute_node_graph
 
 
 def silencing_default_context():
-    return {
-        'default': PipelineContextDefinition(
-            context_fn=lambda _pipeline, _config: ExecutionContext(),
-        )
-    }
+    return {'default': PipelineContextDefinition(context_fn=lambda *_args: ExecutionContext(), )}
 
 
 @lambda_solid

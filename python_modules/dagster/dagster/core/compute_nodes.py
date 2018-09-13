@@ -24,6 +24,7 @@ from dagster.utils.timing import time_execution_scope
 from .definitions import (
     ExecutionGraph,
     ExpectationDefinition,
+    ExpectationExecutionInfo,
     InputDefinition,
     OutputDefinition,
     Result,
@@ -755,9 +756,6 @@ def _create_join_node(solid, prev_nodes, prev_output_name):
     )
 
 
-ExpectationExecutionInfo = namedtuple('ExpectationExecutionInfo', 'solid expectation_def')
-
-
 def _create_join_lambda(_context, _compute_node, inputs):
     yield Result(output_name=JOIN_OUTPUT, value=list(inputs.values())[0])
 
@@ -769,8 +767,7 @@ def _create_expectation_lambda(solid, expectation_def, output_name):
 
     def _do_expectation(context, _compute_node, inputs):
         expt_result = expectation_def.expectation_fn(
-            context,
-            ExpectationExecutionInfo(solid, expectation_def),
+            ExpectationExecutionInfo(context, solid, expectation_def),
             inputs[EXPECTATION_INPUT],
         )
         if expt_result.success:

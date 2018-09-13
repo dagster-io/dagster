@@ -97,7 +97,7 @@ class PipelineContextDefinition(object):
         '''
 
         check.inst_param(context, 'context', ExecutionContext)
-        context_definition = PipelineContextDefinition(context_fn=lambda _pipeline, _args: context)
+        context_definition = PipelineContextDefinition(context_fn=lambda *_args: context)
         return {DEFAULT_CONTEXT_NAME: context_definition}
 
     def __init__(self, context_fn, config_def=None, description=None):
@@ -134,8 +134,8 @@ class PipelineContextDefinition(object):
 
 
 def _default_pipeline_context_definitions():
-    def _default_context_fn(_pipeline, config_value):
-        log_level = level_from_string(config_value['log_level'])
+    def _default_context_fn(info):
+        log_level = level_from_string(info.config['log_level'])
         context = ExecutionContext(
             loggers=[define_colored_console_logger('dagster', level=log_level)]
         )
@@ -606,7 +606,6 @@ class ExpectationDefinition(object):
             ExpectationDefinition(
                 name='is_positive',
                 expectation_fn=lambda(
-                    _context,
                     _info,
                     value,
                 ): ExpectationResult(success=value > 0),
@@ -1206,3 +1205,20 @@ class RepositoryDefinition(object):
 
         '''
         return list(self.iterate_over_pipelines())
+
+
+class ContextCreationExecutionInfo(
+    namedtuple('_ContextCreationExecutionInfo', 'config pipeline_def')
+):
+    def __new__(cls, config, pipeline_def):
+        return super(ContextCreationExecutionInfo, cls).__new__(
+            cls,
+            config,
+            check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition),
+        )
+
+
+ExpectationExecutionInfo = namedtuple(
+    'ExpectationExecutionInfo',
+    'context solid_def expectation_def',
+)

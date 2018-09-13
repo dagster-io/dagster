@@ -34,10 +34,8 @@ def create_persisted_context():
 
 
 def create_mem_sql_pipeline_context_tuple(solids, dependencies=None):
-    default_def = PipelineContextDefinition(context_fn=lambda _pipeline, _args: in_mem_context(), )
-    persisted_def = PipelineContextDefinition(
-        context_fn=lambda _pipeline, _args: create_persisted_context(),
-    )
+    default_def = PipelineContextDefinition(context_fn=lambda _info: in_mem_context(), )
+    persisted_def = PipelineContextDefinition(context_fn=lambda _info: create_persisted_context(), )
     return PipelineDefinition(
         solids=solids,
         dependencies=dependencies,

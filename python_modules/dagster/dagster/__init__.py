@@ -12,16 +12,18 @@ from dagster.core.execution_context import (
 
 from dagster.core.definitions import (
     ConfigDefinition,
+    ContextCreationExecutionInfo,
     DependencyDefinition,
     ExpectationDefinition,
+    ExpectationExecutionInfo,
     ExpectationResult,
     Field,
     InputDefinition,
     OutputDefinition,
     PipelineContextDefinition,
     PipelineDefinition,
-    Result,
     RepositoryDefinition,
+    Result,
     SolidDefinition,
 )
 
@@ -59,6 +61,11 @@ __all__ = [
     'RepositoryDefinition',
     'SolidDefinition',
     'Result',
+
+    # Infos
+    'ContextCreationExecutionInfo',
+    'ExpectationExecutionInfo',
+    'TransformExecutionInfo',
 
     # Decorators
     'lambda_solid',
