@@ -79,7 +79,7 @@ def single_output_transform(name, inputs, transform_fn, output, description=None
                 '''Single output transform Solid {name} returned a Result. Just return
                 value directly without wrapping it in Result'''
             )
-        yield Result(output_name=DEFAULT_OUTPUT, value=value)
+        yield Result(value=value)
 
     return SolidDefinition(
         name=name,

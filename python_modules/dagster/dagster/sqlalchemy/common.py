@@ -1,7 +1,11 @@
 import sqlalchemy
 
-from dagster import check
-from dagster.core.execution import ExecutionContext
+from dagster import (
+    ExecutionContext,
+    Result,
+    SolidDefinition,
+    check,
+)
 
 
 class SqlAlchemyResource(object):
