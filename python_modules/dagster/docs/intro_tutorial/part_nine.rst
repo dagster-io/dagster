@@ -30,23 +30,23 @@ and then two downstream solids add and multiple those numbers, respectively.
         config_def=ConfigDefinition(types.Int),
         outputs=[OutputDefinition(types.Int)],
     )
-    def injest_a(context, conf):
-        return conf
+    def injest_a(info):
+        return info.config
 
 
     @solid(
         config_def=ConfigDefinition(types.Int),
         outputs=[OutputDefinition(types.Int)],
     )
-    def injest_b(context, conf):
-        return conf
+    def injest_b(info):
+        return info.config
 
     @solid(
         inputs=[InputDefinition('num_one', types.Int),
                 InputDefinition('num_two', types.Int)],
         outputs=[OutputDefinition(types.Int)],
     )
-    def add_ints(_context, _conf, num_one, num_two):
+    def add_ints(_info, num_one, num_two):
         return num_one + num_two
 
 
@@ -55,7 +55,7 @@ and then two downstream solids add and multiple those numbers, respectively.
                 InputDefinition('num_two', types.Int)],
         outputs=[OutputDefinition(types.Int)],
     )
-    def mult_ints(_context, _conf, num_one, num_two):
+    def mult_ints(_info, num_one, num_two):
         return num_one * num_two
         
 
@@ -125,10 +125,10 @@ Naively let's add this to one of our transforms:
         config_def=ConfigDefinition(types.Int),
         outputs=[OutputDefinition(types.Int)],
     )
-    def injest_a(_context, conf):
+    def injest_a(info):
         conn = PublicCloudConn('some_user', 'some_pwd')
-        set_value_in_cloud_store(conn, 'a', conf)
-        return conf
+        set_value_in_cloud_store(conn, 'a', info.config)
+        return info.config 
 
 As coded above this is a bad idea on any number of dimensions. One the username/password
 combo is hard coded. We could pass it in as a configuration of the solid. However that
@@ -154,11 +154,11 @@ this:
         config_def=ConfigDefinition(types.Int),
         outputs=[OutputDefinition(types.Int)],
     )
-    def injest_a(context, conf):
+    def injest_a(info):
         # The store should be an interface to the cloud store 
         # We will explain the ``resources`` property later.
-        context.resources.store.record_value(context, 'a', conf)
-        return conf
+        info.context.resources.store.record_value(info.context, 'a', conf)
+        return info.config 
 
 The user will be able have complete control the creation of the ``store`` object attached to
 the ``resources`` object, which allows a pipeline designer to insert seams of testability.
@@ -240,16 +240,16 @@ which is attached the resources property of the context.
         config_def=ConfigDefinition(types.Int),
         outputs=[OutputDefinition(types.Int)],
     )
-    def injest_a(context, conf):
-        context.resources.store.record_value(context, 'a', conf)
+    def injest_a(info):
+        info.context.resources.store.record_value(info.context, 'a', info.config)
         return conf
 
     @solid(
         config_def=ConfigDefinition(types.Int),
         outputs=[OutputDefinition(types.Int)],
     )
-    def injest_b(context, conf):
-        context.resources.store.record_value(context, 'b', conf)
+    def injest_b(info):
+        info.context.resources.store.record_value(info.context, 'b', info.config)
         return conf
 
 
@@ -258,9 +258,9 @@ which is attached the resources property of the context.
                 InputDefinition('num_two', types.Int)],
         outputs=[OutputDefinition(types.Int)],
     )
-    def add_ints(context, _conf, num_one, num_two):
+    def add_ints(info, num_one, num_two):
         result = num_one + num_two
-        context.resources.store.record_value(context, 'add', result)
+        info.context.resources.store.record_value(info.context, 'add', result)
         return result
 
 
@@ -269,9 +269,9 @@ which is attached the resources property of the context.
                 InputDefinition('num_two', types.Int)],
         outputs=[OutputDefinition(types.Int)],
     )
-    def mult_ints(context, _conf, num_one, num_two):
+    def mult_ints(info, num_one, num_two):
         result = num_one * num_two
-        context.resources.store.record_value(context, 'mult', result)
+        info.context.resources.store.record_value(info.context, 'mult', result)
         return result
 
 Now we need to declare the pipeline to use this PipelineContextDefinition. 
