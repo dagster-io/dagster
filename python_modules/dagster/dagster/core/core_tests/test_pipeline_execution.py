@@ -313,3 +313,9 @@ def _do_test(do_execute_pipeline_iter):
         transform_called('C'),
         transform_called('D'),
     ]
+
+
+def test_empty_pipeline_execution():
+    result = execute_pipeline(PipelineDefinition(solids=[]))
+
+    assert result.success
