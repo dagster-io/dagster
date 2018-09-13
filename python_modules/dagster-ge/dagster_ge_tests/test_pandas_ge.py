@@ -7,7 +7,6 @@ from dagster import (
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
-    config,
     execute_pipeline,
     lambda_solid,
 )

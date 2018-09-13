@@ -14,12 +14,14 @@ from dagster import (
     types,
 )
 
+from dagster.core.test_utils import single_output_transform
+
 from dagster.utils import script_relative_path
 
 
 def define_read_csv_solid(name):
-    def _t_fn(_context, conf, _inputs):
-        yield Result(pd.read_csv(conf['path']))
+    def _t_fn(info, _inputs):
+        yield Result(pd.read_csv(info.config['path']))
 
     return SolidDefinition(
         name=name,
@@ -33,8 +35,8 @@ def define_read_csv_solid(name):
 
 
 def define_to_csv_solid(name):
-    def _t_fn(_context, conf, inputs):
-        inputs['df'].to_csv(conf['path'], index=False)
+    def _t_fn(info, inputs):
+        inputs['df'].to_csv(info.config['path'], index=False)
 
     return SolidDefinition(
         name=name,
@@ -55,7 +57,7 @@ def test_hello_world_pipeline_no_api():
 
     read_csv_solid = define_read_csv_solid('read_csv_solid')
 
-    hello_world = SolidDefinition.single_output_transform(
+    hello_world = single_output_transform(
         name='hello_world',
         inputs=[InputDefinition('num_df')],
         transform_fn=hello_world_transform_fn,
@@ -99,7 +101,7 @@ def create_hello_world_solid_composed_pipeline():
         num_df['sum'] = num_df['num1'] + num_df['num2']
         return num_df
 
-    hello_world = SolidDefinition.single_output_transform(
+    hello_world = single_output_transform(
         name='hello_world',
         inputs=[InputDefinition('num_df')],
         transform_fn=transform_fn,
@@ -147,7 +149,7 @@ def test_pandas_hello_no_library():
         num_df['sum'] = num_df['num1'] + num_df['num2']
         return num_df
 
-    solid_one = SolidDefinition.single_output_transform(
+    solid_one = single_output_transform(
         name='solid_one',
         inputs=[InputDefinition(name='num_df')],
         transform_fn=solid_one_transform,
@@ -159,7 +161,7 @@ def test_pandas_hello_no_library():
         sum_df['sum_sq'] = sum_df['sum'] * sum_df['sum']
         return sum_df
 
-    solid_two = SolidDefinition.single_output_transform(
+    solid_two = single_output_transform(
         name='solid_two',
         inputs=[InputDefinition(name='sum_df')],
         transform_fn=solid_two_transform,

@@ -18,7 +18,7 @@ def long_description():
 
 version = {}
 with open("dagster/version.py") as fp:
-    exec(fp.read(), version)
+    exec(fp.read(), version) # pylint: disable=W0122
 
 setup(
     name='dagster',

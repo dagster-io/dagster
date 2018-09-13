@@ -3,13 +3,13 @@ from dagster import *
 
 
 @solid
-def solid_one(context, _conf):
-    context.info('Something you should know about occurred.')
+def solid_one(info):
+    info.context.info('Something you should know about occurred.')
 
 
 @solid
-def solid_two(context, _conf):
-    context.error('An error occurred.')
+def solid_two(info):
+    info.context.error('An error occurred.')
 
 
 def test_tutorial_part_five_sample_one():

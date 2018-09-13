@@ -1,9 +1,8 @@
 Execution Context
 -----------------
 
-In addition to its configuration and its inputs, a solid also receives a ``context``
-argument. In this tutorial part, we'll go over this ``context`` variable which was
-ignored in the previous step of the tutorial.
+In this tutorial part, we'll go over the other property of the ``info`` parameter,
+``context``.
 
 The context is an object of type :py:class:`ExecutionContext`. For every execution
 of a particular pipeline, one instance of this context is created, no matter how
@@ -18,13 +17,13 @@ Let's use the context for one of its core capabilities: logging.
     from dagster import *
 
     @solid
-    def solid_one(context, _conf):
-        context.info('Something you should know about occurred.')
+    def solid_one(info):
+        info.context.info('Something you should know about occurred.')
 
 
     @solid
-    def solid_two(context, _conf):
-        context.error('An error occurred.')
+    def solid_two(info):
+        info.context.error('An error occurred.')
 
 
     if __name__ == '__main__':

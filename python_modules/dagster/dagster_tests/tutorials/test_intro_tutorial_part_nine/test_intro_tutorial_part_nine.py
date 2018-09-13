@@ -43,33 +43,33 @@ def define_contextless_solids():
         config_def=ConfigDefinition(types.Int),
         outputs=[OutputDefinition(types.Int)],
     )
-    def injest_a(_context, conf):
-        return conf
+    def injest_a(info):
+        return info.config
 
 
     @solid(
         config_def=ConfigDefinition(types.Int),
         outputs=[OutputDefinition(types.Int)],
     )
-    def injest_b(_context, conf):
-        return conf
+    def injest_b(info):
+        return info.config
 
 
-    @solid(
+    @lambda_solid(
         inputs=[InputDefinition('num_one', types.Int),
                 InputDefinition('num_two', types.Int)],
-        outputs=[OutputDefinition(types.Int)],
+        output=OutputDefinition(types.Int),
     )
-    def add_ints(_context, _conf, num_one, num_two):
+    def add_ints(num_one, num_two):
         return num_one + num_two
 
 
-    @solid(
+    @lambda_solid(
         inputs=[InputDefinition('num_one', types.Int),
                 InputDefinition('num_two', types.Int)],
-        outputs=[OutputDefinition(types.Int)],
+        output=OutputDefinition(types.Int),
     )
-    def mult_ints(_context, _conf, num_one, num_two):
+    def mult_ints(num_one, num_two):
         return num_one * num_two
 
     return [injest_a, injest_b, add_ints, mult_ints]
@@ -79,18 +79,17 @@ def define_contextful_solids():
         config_def=ConfigDefinition(types.Int),
         outputs=[OutputDefinition(types.Int)],
     )
-    def injest_a(context, conf):
-        context.resources.store.record_value(context, 'a', conf)
-        return conf
-
+    def injest_a(info):
+        info.context.resources.store.record_value(info.context, 'a', info.config)
+        return info.config
 
     @solid(
         config_def=ConfigDefinition(types.Int),
         outputs=[OutputDefinition(types.Int)],
     )
-    def injest_b(context, conf):
-        context.resources.store.record_value(context, 'b', conf)
-        return conf
+    def injest_b(info):
+        info.context.resources.store.record_value(info.context, 'b', info.config)
+        return info.config
 
 
     @solid(
@@ -98,9 +97,9 @@ def define_contextful_solids():
                 InputDefinition('num_two', types.Int)],
         outputs=[OutputDefinition(types.Int)],
     )
-    def add_ints(context, _conf, num_one, num_two):
+    def add_ints(info, num_one, num_two):
         result = num_one + num_two
-        context.resources.store.record_value(context, 'add', result)
+        info.context.resources.store.record_value(info.context, 'add', result)
         return result
 
 
@@ -109,9 +108,9 @@ def define_contextful_solids():
                 InputDefinition('num_two', types.Int)],
         outputs=[OutputDefinition(types.Int)],
     )
-    def mult_ints(context, _conf, num_one, num_two):
+    def mult_ints(info, num_one, num_two):
         result = num_one * num_two
-        context.resources.store.record_value(context, 'mult', result)
+        info.context.resources.store.record_value(info.context, 'mult', result)
         return result
 
     return [injest_a, injest_b, add_ints, mult_ints]

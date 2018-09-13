@@ -24,9 +24,9 @@ def test_default_context():
     called = {}
 
     @solid(inputs=[], outputs=[OutputDefinition()])
-    def default_context_transform(context, _):
+    def default_context_transform(info):
         called['yes'] = True
-        for logger in context._logger.loggers:
+        for logger in info.context._logger.loggers:
             assert logger.level == ERROR
 
     pipeline = PipelineDefinition(solids=[default_context_transform])
@@ -37,8 +37,8 @@ def test_default_context():
 
 def test_default_context_with_log_level():
     @solid(inputs=[], outputs=[OutputDefinition()])
-    def default_context_transform(context, _):
-        for logger in context._logger.loggers:
+    def default_context_transform(info):
+        for logger in info.context._logger.loggers:
             assert logger.level == INFO
 
     pipeline = PipelineDefinition(solids=[default_context_transform])
@@ -57,8 +57,8 @@ def test_default_context_with_log_level():
 def test_default_value():
     def _get_config_test_solid(config_key, config_value):
         @solid(inputs=[], outputs=[OutputDefinition()])
-        def config_test(context, _):
-            assert context.resources == {config_key: config_value}
+        def config_test(info):
+            assert info.context.resources == {config_key: config_value}
 
         return config_test
 
@@ -89,8 +89,8 @@ def test_default_value():
 
 def test_custom_contexts():
     @solid(inputs=[], outputs=[OutputDefinition()])
-    def custom_context_transform(context, _):
-        assert context.resources == {'field_one': 'value_two'}
+    def custom_context_transform(info):
+        assert info.context.resources == {'field_one': 'value_two'}
 
     pipeline = PipelineDefinition(
         solids=[custom_context_transform],
@@ -133,9 +133,9 @@ def test_yield_context():
     events = []
 
     @solid(inputs=[], outputs=[OutputDefinition()])
-    def custom_context_transform(context, _):
-        assert context.resources == {'field_one': 'value_two'}
-        assert context._context_dict['foo'] == 'bar'  # pylint: disable=W0212
+    def custom_context_transform(info):
+        assert info.context.resources == {'field_one': 'value_two'}
+        assert info.context._context_dict['foo'] == 'bar'  # pylint: disable=W0212
         events.append('during')
 
     def _yield_context(_pipeline, config_value):

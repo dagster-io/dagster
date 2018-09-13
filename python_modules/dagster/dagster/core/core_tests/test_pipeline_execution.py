@@ -19,6 +19,8 @@ from dagster.core.execution import (
     execute_pipeline_iterator, ExecutionContext, SolidExecutionResult, PipelineExecutionResult
 )
 
+from dagster.core.test_utils import single_output_transform
+
 from dagster.core.utility_solids import define_stub_solid
 
 # protected members
@@ -56,7 +58,7 @@ def make_transform(name):
 def create_solid_with_deps(name, *solid_deps):
     inputs = [InputDefinition(solid_dep.name) for solid_dep in solid_deps]
 
-    return SolidDefinition.single_output_transform(
+    return single_output_transform(
         name=name,
         inputs=inputs,
         transform_fn=make_transform(name),
@@ -68,7 +70,7 @@ def create_root_solid(name):
     input_name = name + '_input'
     inp = InputDefinition(input_name)
 
-    return SolidDefinition.single_output_transform(
+    return single_output_transform(
         name=name,
         inputs=[inp],
         transform_fn=make_transform(name),

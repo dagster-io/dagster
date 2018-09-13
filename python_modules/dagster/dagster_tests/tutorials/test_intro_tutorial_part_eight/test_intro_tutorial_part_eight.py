@@ -8,8 +8,8 @@ from dagster.utils import script_relative_path
 
 
 @solid(config_def=ConfigDefinition(types.ConfigDictionary({'word': Field(types.String)})))
-def double_the_word_with_typed_config(_context, conf):
-    return conf['word'] * 2
+def double_the_word_with_typed_config(info):
+    return info.config['word'] * 2
 
 
 @solid(
@@ -18,8 +18,8 @@ def double_the_word_with_typed_config(_context, conf):
     })),
     outputs=[OutputDefinition(types.String)],
 )
-def typed_double_word(_context, conf):
-    return conf['word'] * 2
+def typed_double_word(info):
+    return info.config['word'] * 2
 
 
 @solid(
@@ -28,8 +28,8 @@ def typed_double_word(_context, conf):
     })),
     outputs=[OutputDefinition(types.Int)],
 )
-def typed_double_word_mismatch(_context, conf):
-    return conf['word'] * 2
+def typed_double_word_mismatch(info):
+    return info.config['word'] * 2
 
 
 @lambda_solid(inputs=[InputDefinition('word')])

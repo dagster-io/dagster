@@ -12,8 +12,8 @@ and a yaml file so that the CLI tool can know about the repository.
     from dagster import *
 
     @solid
-    def double_the_word(_context, conf):
-        return conf['word'] * 2
+    def double_the_word(info):
+        return info.config['word'] * 2
 
     @lambda_solid(inputs=[InputDefinition('word')])
     def count_letters(word):

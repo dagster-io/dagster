@@ -21,6 +21,8 @@ from dagster.core.execution import (
 
 import dagster.pandas as dagster_pd
 
+from dagster.core.test_utils import single_output_transform
+
 from dagster.utils import script_relative_path
 
 from dagster.utils.test import (
@@ -30,7 +32,7 @@ from dagster.utils.test import (
 
 
 def _dataframe_solid(name, inputs, transform_fn):
-    return SolidDefinition.single_output_transform(
+    return single_output_transform(
         name=name,
         inputs=inputs,
         transform_fn=transform_fn,
@@ -75,7 +77,7 @@ def test_basic_pandas_solid():
         num_csv['sum'] = num_csv['num1'] + num_csv['num2']
         return num_csv
 
-    single_solid = SolidDefinition.single_output_transform(
+    single_solid = single_output_transform(
         name='sum_table',
         inputs=[csv_input],
         transform_fn=transform,
@@ -113,7 +115,7 @@ def test_pandas_csv_to_csv():
         num_csv['sum'] = num_csv['num1'] + num_csv['num2']
         return num_csv
 
-    solid_def = SolidDefinition.single_output_transform(
+    solid_def = single_output_transform(
         name='sum_table',
         inputs=[csv_input],
         transform_fn=transform,

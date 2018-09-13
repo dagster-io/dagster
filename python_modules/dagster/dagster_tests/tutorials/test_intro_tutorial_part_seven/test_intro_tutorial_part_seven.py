@@ -5,8 +5,8 @@ from dagster import *
 
 
 @solid
-def double_the_word(_context, conf):
-    return conf['word'] * 2
+def double_the_word(info):
+    return info.config['word'] * 2
 
 
 @lambda_solid(inputs=[InputDefinition('word')])

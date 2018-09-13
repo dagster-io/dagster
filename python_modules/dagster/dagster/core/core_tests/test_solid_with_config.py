@@ -17,8 +17,8 @@ from dagster.core.errors import DagsterTypeError
 def test_basic_solid_with_config():
     did_get = {}
 
-    def _t_fn(_context, conf, _inputs):
-        did_get['yep'] = conf
+    def _t_fn(info, _inputs):
+        did_get['yep'] = info.config
 
     solid = SolidDefinition(
         name='solid_with_context',

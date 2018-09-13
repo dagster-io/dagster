@@ -3,9 +3,9 @@ from dagster import *
 
 
 @solid
-def hello_world(_context, conf):
-    print(conf)
-    return conf
+def hello_world(info):
+    print(info.config)
+    return info.config
 
 
 def test_tutorial_part_four():
