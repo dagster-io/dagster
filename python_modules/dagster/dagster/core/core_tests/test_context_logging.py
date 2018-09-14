@@ -127,3 +127,19 @@ def test_message_specific_logging():
     assert set(message_one.extra.keys()) == set(
         ['key_one', 'key_two', 'log_message_id', 'orig_message']
     )
+
+
+def test_multicontext_value():
+    logger = LoggerForTest()
+    context = ExecutionContext(loggers=[logger])
+    with context.values({
+        'key_one': 'value_one',
+        'key_two': 'value_two',
+    }):
+        context.info('message one')
+
+    message_two = logger.messages[0]
+    assert message_two.extra['key_one'] == 'value_one'
+    assert message_two.extra['key_two'] == 'value_two'
+    assert 'key_one="value_one"' in message_two.msg
+    assert 'key_two="value_two"' in message_two.msg

@@ -165,16 +165,24 @@ class ExecutionContext(object):
             context.info('msg without some_key context value')
 
         '''
+
         check.str_param(key, 'key')
         check.not_none_param(value, 'value')
+        with self.values({key: value}):
+            yield
 
-        check.invariant(not key in self._context_dict, 'Should not be in context')
+    @contextmanager
+    def values(self, ddict):
+        check.dict_param(ddict, 'ddict')
 
-        self._context_dict[key] = value
+        for key, value in ddict.items():
+            check.invariant(not key in self._context_dict, 'Should not be in context')
+            self._context_dict[key] = value
 
         yield
 
-        self._context_dict.pop(key)
+        for key in ddict.keys():
+            self._context_dict.pop(key)
 
 
 class TransformExecutionInfo(namedtuple('_TransformExecutionInfo', 'context config')):
