@@ -34,9 +34,10 @@ from .definitions import (
 )
 
 from .errors import (
+    DagsterEvaluateValueError,
     DagsterInvariantViolationError,
     DagsterTypeError,
-    DagsterEvaluateValueError,
+    DagsterUserCodeExecutionError,
 )
 
 from .compute_nodes import (
@@ -179,7 +180,13 @@ class SolidExecutionResult(object):
                 self.input_expectations, self.output_expectations, self.transforms
             ):
                 if not result.success:
-                    six.reraise(*result.failure_data.dagster_user_exception.original_exc_info)
+                    if isinstance(
+                        result.failure_data.dagster_user_exception,
+                        DagsterUserCodeExecutionError,
+                    ):
+                        six.reraise(*result.failure_data.dagster_user_exception.original_exc_info)
+                    else:
+                        raise result.failure_data.dagster_user_exception
 
     @property
     def dagster_user_exception(self):

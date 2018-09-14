@@ -642,6 +642,10 @@ class InputDefinition(object):
         )
         self.description = check.opt_str_param(description, 'description')
 
+    @property
+    def descriptive_key(self):
+        return 'output'
+
 
 class OutputDefinition(object):
     '''An OutputDefinition represents an output from a solid. Solids can have multiple
@@ -667,6 +671,10 @@ class OutputDefinition(object):
             expectations, 'expectations', of_type=ExpectationDefinition
         )
         self.description = check.opt_str_param(description, 'description')
+
+    @property
+    def descriptive_key(self):
+        return 'output'
 
 
 class SolidInputHandle(namedtuple('_SolidInputHandle', 'solid input_def')):
@@ -1220,5 +1228,5 @@ class ContextCreationExecutionInfo(
 
 ExpectationExecutionInfo = namedtuple(
     'ExpectationExecutionInfo',
-    'context solid_def expectation_def',
+    'context inout_def solid_def expectation_def',
 )

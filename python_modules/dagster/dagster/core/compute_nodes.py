@@ -38,6 +38,7 @@ from .execution_context import (
 )
 
 from .errors import (
+    DagsterError,
     DagsterExpectationFailedError,
     DagsterInvariantViolationError,
     DagsterTypeError,
@@ -116,7 +117,7 @@ class ComputeNodeFailureData(namedtuple('_ComputeNodeFailureData', 'dagster_user
             dagster_user_exception=check.inst_param(
                 dagster_user_exception,
                 'dagster_user_exception',
-                DagsterUserCodeExecutionError,
+                DagsterError,
             ),
         )
 
@@ -167,6 +168,10 @@ def _user_code_error_boundary(context, msg, **kwargs):
 
     try:
         yield
+    except DagsterError as de:
+        stack_trace = get_formatted_stack_trace(de)
+        context.error(str(de), stack_trace=stack_trace)
+        raise de
     except Exception as e:
         stack_trace = get_formatted_stack_trace(e)
         context.error(str(e), stack_trace=stack_trace)
@@ -360,7 +365,9 @@ class ComputeNode(object):
                     )
                 )
 
-        error_str = 'TODO error string'
+        error_str = 'Error occured during compute node {friendly_name}'.format(
+            friendly_name=self.friendly_name,
+        )
 
         seen_outputs = set()
 
@@ -369,11 +376,11 @@ class ComputeNode(object):
             with _user_code_error_boundary(context, error_str):
                 gen = self.compute_fn(context, self, inputs)
 
-            if gen is None:
-                check.invariant(not self.node_outputs)
-                return
+                if gen is None:
+                    check.invariant(not self.node_outputs)
+                    return
 
-            results = list(gen)
+                results = list(gen)
 
             for result in results:
                 if not self.has_node(result.output_name):
@@ -401,6 +408,15 @@ class ComputeNode(object):
                 tag=self.tag,
                 failure_data=ComputeNodeFailureData(
                     dagster_user_exception=dagster_user_exception,
+                ),
+            )
+            return
+        except DagsterError as dagster_error:
+            yield ComputeNodeResult.failure_result(
+                compute_node=self,
+                tag=self.tag,
+                failure_data=ComputeNodeFailureData(
+                    dagster_user_exception=dagster_error,
                 ),
             )
             return
@@ -526,6 +542,7 @@ def create_expectation_cn(
         arg_dict={},
         compute_fn=_create_expectation_lambda(
             solid,
+            inout_def,
             expectation_def,
             EXPECTATION_VALUE_OUTPUT,
         ),
@@ -760,20 +777,32 @@ def _create_join_lambda(_context, _compute_node, inputs):
     yield Result(output_name=JOIN_OUTPUT, value=list(inputs.values())[0])
 
 
-def _create_expectation_lambda(solid, expectation_def, output_name):
+def _create_expectation_lambda(solid, inout_def, expectation_def, internal_output_name):
     check.inst_param(solid, 'solid', SolidDefinition)
+    check.inst_param(inout_def, 'inout_def', (InputDefinition, OutputDefinition))
     check.inst_param(expectation_def, 'expectations_def', ExpectationDefinition)
-    check.str_param(output_name, 'output_name')
+    check.str_param(internal_output_name, 'internal_output_name')
 
-    def _do_expectation(context, _compute_node, inputs):
-        expt_result = expectation_def.expectation_fn(
-            ExpectationExecutionInfo(context, solid, expectation_def),
-            inputs[EXPECTATION_INPUT],
-        )
-        if expt_result.success:
-            yield Result(output_name=output_name, value=inputs[EXPECTATION_INPUT])
-        else:
-            raise DagsterExpectationFailedError(None)  # for now
+    def _do_expectation(context, compute_node, inputs):
+        with context.value('solid', solid.name),\
+             context.value(inout_def.descriptive_key, inout_def.name),\
+             context.value('expectation', expectation_def.name):
+
+            value = inputs[EXPECTATION_INPUT]
+            info = ExpectationExecutionInfo(context, inout_def, solid, expectation_def)
+            expt_result = expectation_def.expectation_fn(info, value)
+            if expt_result.success:
+                context.debug('Expectation {friendly_name} succeeded on {value}.'.format(
+                    friendly_name=compute_node.friendly_name,
+                    value=value,
+                ))
+                yield Result(output_name=internal_output_name, value=inputs[EXPECTATION_INPUT])
+            else:
+                context.debug('Expectation {friendly_name} failed on {value}.'.format(
+                    friendly_name=compute_node.friendly_name,
+                    value=value,
+                ))
+                raise DagsterExpectationFailedError(info, value)
 
     return _do_expectation
 
