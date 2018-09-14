@@ -212,7 +212,7 @@ the entire execution.
 
 First let's create the context suitable for local testing:
 
-..code-block:: python
+.. code-block:: python
 
     PartNineResources = namedtuple('PartNineResources', 'store')
 
