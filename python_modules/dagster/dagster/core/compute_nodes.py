@@ -784,10 +784,11 @@ def _create_expectation_lambda(solid, inout_def, expectation_def, internal_outpu
     check.str_param(internal_output_name, 'internal_output_name')
 
     def _do_expectation(context, compute_node, inputs):
-        with context.value('solid', solid.name),\
-             context.value(inout_def.descriptive_key, inout_def.name),\
-             context.value('expectation', expectation_def.name):
-
+        with context.values({
+            'solid': solid.name,
+            inout_def.descriptive_key: inout_def.name,
+            'expectation': expectation_def.name
+        }):
             value = inputs[EXPECTATION_INPUT]
             info = ExpectationExecutionInfo(context, inout_def, solid, expectation_def)
             expt_result = expectation_def.expectation_fn(info, value)
