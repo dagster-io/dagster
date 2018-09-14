@@ -58,14 +58,20 @@ class DagsterUserCodeExecutionError(DagsterUserError):
 class DagsterExpectationFailedError(DagsterError):
     '''Thrown with pipeline configured to throw on expectation failure'''
 
-    def __init__(self, execution_result, *args, **kwargs):
+    def __init__(self, info, value, *args, **kwargs):
         super(DagsterExpectationFailedError, self).__init__(*args, **kwargs)
-        # FIXME: need to reorganize to fix this circular dep
-        # Probable fix is to move all "execution result" objects
-        # to definitions
-        import dagster.core.execution
-        self.execution_result = check.opt_inst_param(
-            execution_result,
-            'execution_result',
-            dagster.core.execution.SolidExecutionResult,
+        self.info = info
+        self.value = value
+
+    def __repr__(self):
+        inout_def = self.info.inout_def
+        return (
+            'DagsterExpectationFailedError(' +
+            'solid={name}, '.format(name=self.info.solid_def.name) +
+            '{key}={name}, '.format(key=inout_def.descriptive_key, name=inout_def.name) +
+            'expectation={name}'.format(name=self.info.expectation_def.name
+                                        ) + 'value={value}'.format(value=repr(self.value)) + ')'
         )
+
+    def __str__(self):
+        return self.__repr__()
