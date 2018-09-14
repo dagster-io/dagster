@@ -37,7 +37,7 @@ def always_fails_solid(**_kwargs):
     raise Exception('I am a programmer and I make error')
 
 
-def define_pipeline():
+def define_failure_pipeline():
     return dagster.PipelineDefinition(
         name='pandas_hello_world_fails',
         solids=[
