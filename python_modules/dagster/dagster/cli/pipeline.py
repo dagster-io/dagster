@@ -227,13 +227,7 @@ def process_results_for_console(pipeline_iter):
 
     for result in pipeline_iter:
         if not result.success:
-            if result.reason == DagsterExecutionFailureReason.USER_CODE_ERROR:
-                raise result.user_exception
-            elif result.reason == DagsterExecutionFailureReason.EXPECTATION_FAILURE:
-                for expectation_result in result.failed_expectation_results:
-                    result.context.error(expectation_result.message, solid=result.solid.name)
-                click_context = click.get_current_context()
-                click_context.exit(1)
+            result.reraise_user_error()
         results.append(result)
 
     return results
