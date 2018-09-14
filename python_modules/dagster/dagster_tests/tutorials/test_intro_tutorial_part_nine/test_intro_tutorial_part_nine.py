@@ -151,7 +151,7 @@ def define_part_nine_step_two():
         context_definitions={
             'local':
             PipelineContextDefinition(
-                context_fn=lambda _pipeline_def, _conf:
+                context_fn=lambda *_args:
                     ExecutionContext.console_logging(
                         log_level=DEBUG,
                         resources=PartNineResources(InMemoryStore())
@@ -178,15 +178,15 @@ def define_part_nine_final():
         context_definitions={
             'local':
             PipelineContextDefinition(
-                context_fn=lambda _pipeline_def, _conf: ExecutionContext.console_logging(
+                context_fn=lambda *_args: ExecutionContext.console_logging(
                     log_level=DEBUG,
                     resources=PartNineResources(InMemoryStore())
                 )
             ),
             'cloud':
             PipelineContextDefinition(
-                context_fn=lambda _pipeline_def, conf: ExecutionContext.console_logging(
-                    resources=PartNineResources(PublicCloudStore(conf['credentials']))
+                context_fn=lambda info: ExecutionContext.console_logging(
+                    resources=PartNineResources(PublicCloudStore(info.config['credentials']))
                 ),
                 config_def=ConfigDefinition(config_type=types.ConfigDictionary({
                     'credentials': Field(types.ConfigDictionary({

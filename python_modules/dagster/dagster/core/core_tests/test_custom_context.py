@@ -77,7 +77,7 @@ def test_default_value():
                         )
                     }
                 ),
-                context_fn=lambda _pipeline, config_value: ExecutionContext(resources=config_value),
+                context_fn=lambda info: ExecutionContext(resources=info.config),
             ),
         }
     )
@@ -102,7 +102,7 @@ def test_custom_contexts():
                         'field_one': Field(dagster_type=types.String)
                     }
                 ),
-                context_fn=lambda _pipeline, config_value: ExecutionContext(resources=config_value),
+                context_fn=lambda info: ExecutionContext(resources=info.config),
             ),
             'custom_two':
             PipelineContextDefinition(
@@ -111,7 +111,7 @@ def test_custom_contexts():
                         'field_one': Field(dagster_type=types.String)
                     }
                 ),
-                context_fn=lambda _pipeline, config_value: ExecutionContext(resources=config_value),
+                context_fn=lambda info: ExecutionContext(resources=info.config),
             )
         },
     )
@@ -138,9 +138,9 @@ def test_yield_context():
         assert info.context._context_dict['foo'] == 'bar'  # pylint: disable=W0212
         events.append('during')
 
-    def _yield_context(_pipeline, config_value):
+    def _yield_context(info):
         events.append('before')
-        context = ExecutionContext(resources=config_value)
+        context = ExecutionContext(resources=info.config)
         with context.value('foo', 'bar'):
             yield context
         events.append('after')
@@ -206,7 +206,7 @@ def test_invalid_context():
                 config_def=ConfigDefinition.config_dict({
                     'string_field': Field(types.String)
                 }),
-                context_fn=lambda _pipeline, _config_value: _config_value
+                context_fn=lambda info: info.config,
             )
         }
     )

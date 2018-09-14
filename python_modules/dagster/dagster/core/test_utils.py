@@ -10,8 +10,6 @@ from dagster import (
     execute_pipeline,
 )
 
-from dagster.core.definitions import DEFAULT_OUTPUT
-
 
 def execute_single_solid(context, solid, environment=None, throw_on_error=True):
     check.inst_param(context, 'context', ExecutionContext)

@@ -217,7 +217,7 @@ First let's create the context suitable for local testing:
     PartNineResources = namedtuple('PartNineResources', 'store')
 
     PipelineContextDefinition(
-        context_fn=lambda _pipeline_def, _conf: 
+        context_fn=lambda _info:
             ExecutionContext.console_logging(
                 log_level=DEBUG,
                 resources=PartNineResources(InMemoryStore())
@@ -294,7 +294,7 @@ We do so with the following:
         },
         context_definitions={
             'local': PipelineContextDefinition(
-                context_fn=lambda _pipeline_def, _conf: 
+                context_fn=lambda _info:
                     ExecutionContext.console_logging(
                         log_level=DEBUG,
                         resources=PartNineResources(InMemoryStore())
@@ -340,17 +340,17 @@ version of that store.
         },
         context_definitions={
             'local': PipelineContextDefinition(
-                context_fn=lambda _pipeline_def, _conf: 
+                context_fn=lambda _info:
                     ExecutionContext.console_logging(
                         log_level=DEBUG,
                         resources=PartNineResources(InMemoryStore())
                     )
             ),
             'cloud': PipelineContextDefinition(
-                context_fn=lambda _pipeline_def, conf: 
+                context_fn=lambda info:
                     ExecutionContext.console_logging(
                         resources=PartNineResources(
-                            PublicCloudStore(conf['credentials'],
+                            PublicCloudStore(info.config['credentials'],
                         )
                     )
                 ),
