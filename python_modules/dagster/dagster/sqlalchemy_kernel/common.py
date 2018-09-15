@@ -69,7 +69,7 @@ def execute_sql_text_on_context(context, sql_text):
         raw_connection = engine.raw_connection()
         cursor = raw_connection.cursor()
         try:
-            cursor.executescript(sql_text)
+            cursor.executescript(sqlalchemy.text(sql_text))
             raw_connection.commit()
         finally:
             cursor.close()
