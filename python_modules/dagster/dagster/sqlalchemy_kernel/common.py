@@ -76,5 +76,5 @@ def execute_sql_text_on_context(context, sql_text):
     else:
         connection = engine.connect()
         transaction = connection.begin()
-        connection.execute(sql_text)
+        connection.execute(sqlalchemy.text(sql_text))
         transaction.commit()
