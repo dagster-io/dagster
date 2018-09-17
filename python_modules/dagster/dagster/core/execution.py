@@ -48,25 +48,25 @@ from .compute_nodes import (
     execute_compute_nodes,
 )
 
-from .execution_context import (
-    ExecutionContext,
-    TransformExecutionInfo,
-)
+from .execution_context import ExecutionContext
 
 
 class PipelineExecutionResult(object):
     '''Result of execution of the whole pipeline. Returned eg by :py:function:`execute_pipeline`.
 
     Attributes:
-      context (ExecutionContext): ExecutionContext of that particular Pipeline run.
-      result_list (list[SolidExecutionResult]): List of results for each pipeline solid.
+        pipeline (PipelineDefinition): Pipeline that was executed
+        context (ExecutionContext): ExecutionContext of that particular Pipeline run.
+        result_list (list[SolidExecutionResult]): List of results for each pipeline solid.
     '''
 
     def __init__(
         self,
+        pipeline,
         context,
         result_list,
     ):
+        self.pipeline = check.inst_param(pipeline, 'pipeline', PipelineDefinition)
         self.context = check.inst_param(context, 'context', ExecutionContext)
         self.result_list = check.list_param(
             result_list, 'result_list', of_type=SolidExecutionResult
@@ -84,10 +84,20 @@ class PipelineExecutionResult(object):
           SolidExecutionResult
         '''
         check.str_param(name, 'name')
+
+        if not self.pipeline.has_solid(name):
+            raise DagsterInvariantViolationError(
+                'Try to get result for solid {name} in {pipeline}. No such solid.'.format(
+                    name=name,
+                    pipeline=self.pipeline.display_name,
+                )
+            )
+
         for result in self.result_list:
             if result.solid.name == name:
                 return result
-        check.failed(
+
+        raise DagsterInvariantViolationError(
             'Did not find result for solid {name} in pipeline execution result'.format(name=name)
         )
 
@@ -163,11 +173,20 @@ class SolidExecutionResult(object):
         '''Returns transformed value either for DEFAULT_OUTPUT or for the output
         given as output_name. Returns None if execution result isn't a success'''
         check.str_param(output_name, 'output_name')
+
+        if not self.solid.has_output(output_name):
+            raise DagsterInvariantViolationError(
+                '{output_name} not defined in solid {solid}'.format(
+                    output_name=output_name,
+                    solid=self.solid.name,
+                )
+            )
+
         if self.success:
             for result in self.transforms:
                 if result.success_data.output_name == output_name:
                     return result.success_data.value
-            check.failed(
+            raise DagsterInvariantViolationError(
                 'Did not find result {output_name} in solid {self.solid.name} execution result'.
                 format(output_name=output_name, self=self)
             )
@@ -196,14 +215,6 @@ class SolidExecutionResult(object):
         ):
             if not result.success:
                 return result.failure_data.dagster_user_exception
-
-
-def _do_throw_on_error(execution_result):
-    check.inst_param(execution_result, 'execution_result', SolidExecutionResult)
-    if execution_result.success:
-        return
-    else:
-        execution_result.reraise_user_error()
 
 
 def _wrap_in_yield(context_or_generator):
@@ -382,19 +393,29 @@ def _execute_graph(
     check.inst_param(environment, 'environment', config.Environment)
     check.bool_param(throw_on_error, 'throw_on_error')
 
+    display_name = execution_graph.pipeline.display_name
     results = []
     with yield_context(execution_graph.pipeline, environment) as context, \
          context.value('pipeline', execution_graph.pipeline.display_name):
 
-        context.info(
-            'Beginning execution of pipeline {pipeline}',
-            pipeline=execution_graph.pipeline.display_name,
-        )
+        context.info('Beginning execution of pipeline {pipeline}'.format(pipeline=display_name))
 
         for result in _execute_graph_iterator(context, execution_graph, environment):
-            if throw_on_error:
-                if not result.success:
-                    _do_throw_on_error(result)
+            if throw_on_error and not result.success:
+                result.reraise_user_error()
 
             results.append(result)
-        return PipelineExecutionResult(context, results)
+
+        pipeline_result = PipelineExecutionResult(execution_graph.pipeline, context, results)
+        if pipeline_result.success:
+            context.info(
+                'Completing successful execution of pipeline {pipeline}'.format(
+                    pipeline=display_name
+                )
+            )
+        else:
+            context.info(
+                'Completing failing execution of pipeline {pipeline}'.format(pipeline=display_name)
+            )
+
+        return pipeline_result

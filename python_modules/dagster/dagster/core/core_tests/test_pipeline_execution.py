@@ -3,7 +3,6 @@ from dagster import (
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
-    SolidDefinition,
     check,
     config,
     execute_pipeline,
@@ -16,7 +15,10 @@ from dagster.core.definitions import (
 )
 
 from dagster.core.execution import (
-    execute_pipeline_iterator, ExecutionContext, SolidExecutionResult, PipelineExecutionResult
+    execute_pipeline_iterator,
+    ExecutionContext,
+    SolidExecutionResult,
+    PipelineExecutionResult,
 )
 
 from dagster.core.test_utils import single_output_transform
@@ -242,7 +244,7 @@ def assert_all_results_equivalent(expected_results, result_results):
 def test_pipeline_execution_graph_diamond():
     pipeline = PipelineDefinition(solids=create_diamond_solids(), dependencies=diamond_deps())
     environment = config.Environment()
-    return _do_test(lambda: execute_pipeline_iterator(
+    return _do_test(pipeline, lambda: execute_pipeline_iterator(
         pipeline,
         environment=environment,
     ))
@@ -275,14 +277,14 @@ def test_create_single_solid_pipeline():
 #     ))
 
 
-def _do_test(do_execute_pipeline_iter):
+def _do_test(pipeline, do_execute_pipeline_iter):
 
     results = list()
 
     for result in do_execute_pipeline_iter():
         results.append(result)
 
-    result = PipelineExecutionResult(ExecutionContext(), results)
+    result = PipelineExecutionResult(pipeline, ExecutionContext(), results)
 
     assert result.result_for_solid('A').transformed_value() == [
         input_set('A_input'), transform_called('A')
