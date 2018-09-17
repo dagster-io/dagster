@@ -32,6 +32,7 @@ Intro Tutorial
   intro_tutorial/part_nine
   intro_tutorial/part_ten
   intro_tutorial/part_eleven
+  intro_tutorial/part_twelve
 
 
 API Reference

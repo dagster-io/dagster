@@ -14,7 +14,9 @@ StringTupleType = types.PythonObjectType(
     description='A tuple of strings.',
 )
 
-SSNString = namedtuple('SSNString', 'value')
+
+class SSNString(str):
+    pass
 
 
 class SSNStringTypeClass(types.DagsterType):
@@ -41,7 +43,7 @@ class SSNStringTypeClass(types.DagsterType):
 SSNStringType = SSNStringTypeClass()
 
 
-@lambda_solid
+@lambda_solid(output=OutputDefinition(StringTupleType))
 def produce_valid_value():
     return StringTuple(str_one='value_one', str_two='value_two')
 
@@ -68,6 +70,8 @@ def produce_invalid_ssn_string():
 
 @solid(inputs=[InputDefinition('ssn', SSNStringType)])
 def consume_ssn(info, ssn):
+    if not isinstance(ssn, SSNString):
+        raise Exception('This should never be thrown')
     info.context.info('ssn: {ssn}'.format(ssn=ssn))
 
 
@@ -156,4 +160,4 @@ def test_intro_tutorial_part_twelve_step_four():
 
 
 if __name__ == '__main__':
-    execute_pipeline(define_part_twelve_step_four(), throw_on_error=True)
+    execute_pipeline(define_part_twelve_step_three(), throw_on_error=True)
