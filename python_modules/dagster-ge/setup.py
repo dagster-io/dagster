@@ -10,9 +10,8 @@ else:
 
 setup(
     name='dagster-ge',
-    version='0.0.0',
+    version='0.2.0',
     author='Elementl',
-    author_email='schrockn@elementl.com',
     license='Apache-2.0',
     description='Great Expectations plugin for Dagster',
     url='https://github.com/dagster-io/dagster',
