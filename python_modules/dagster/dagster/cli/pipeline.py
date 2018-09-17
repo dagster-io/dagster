@@ -151,13 +151,13 @@ def print_solid(printer, solid):
 
         printer.line('Outputs:')
 
-        for output_def in solid.output_defs:
+        for output_def in solid.definition.output_defs:
             print(output_def.name)
 
 
 def print_inputs(printer, solid):
     printer.line('Inputs:')
-    for input_def in solid.input_defs:
+    for input_def in solid.definition.input_defs:
         with printer.with_indent():
             printer.line('Input: {name}'.format(name=input_def.name))
 

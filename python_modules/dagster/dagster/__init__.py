@@ -25,6 +25,7 @@ from dagster.core.definitions import (
     RepositoryDefinition,
     Result,
     SolidDefinition,
+    PipelineSolid,
 )
 
 from dagster.core.decorators import (
@@ -61,6 +62,7 @@ __all__ = [
     'RepositoryDefinition',
     'SolidDefinition',
     'Result',
+    'PipelineSolid',
 
     # Infos
     'ContextCreationExecutionInfo',

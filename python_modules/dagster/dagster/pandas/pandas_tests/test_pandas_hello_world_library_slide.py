@@ -9,6 +9,7 @@ from dagster import (
     config,
     execute_pipeline,
     lambda_solid,
+    PipelineSolid,
 )
 
 from dagster.core.test_utils import single_output_transform

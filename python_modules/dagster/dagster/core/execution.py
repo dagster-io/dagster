@@ -31,6 +31,7 @@ from .definitions import (
     ExecutionGraph,
     PipelineDefinition,
     SolidDefinition,
+    PipelineSolid,
 )
 
 from .errors import (
@@ -112,7 +113,7 @@ class SolidExecutionResult(object):
 
     def __init__(self, context, solid, input_expectations, transforms, output_expectations):
         self.context = check.inst_param(context, 'context', ExecutionContext)
-        self.solid = check.inst_param(solid, 'solid', SolidDefinition)
+        self.solid = check.inst_param(solid, 'solid', PipelineSolid)
         self.input_expectations = check.list_param(
             input_expectations, 'input_expectations', ComputeNodeResult
         )
@@ -174,7 +175,7 @@ class SolidExecutionResult(object):
         given as output_name. Returns None if execution result isn't a success'''
         check.str_param(output_name, 'output_name')
 
-        if not self.solid.has_output(output_name):
+        if not self.solid.definition.has_output(output_name):
             raise DagsterInvariantViolationError(
                 '{output_name} not defined in solid {solid}'.format(
                     output_name=output_name,

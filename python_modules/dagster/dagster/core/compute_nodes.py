@@ -32,6 +32,7 @@ from .definitions import (
     Result,
     SolidDefinition,
     SolidOutputHandle,
+    PipelineSolid,
 )
 
 from .execution_context import (
@@ -166,7 +167,7 @@ def _user_code_error_boundary(context, msg, **kwargs):
         stack_trace = get_formatted_stack_trace(de)
         context.error(str(de), stack_trace=stack_trace)
         raise de
-    except Exception as e: # pylint: disable=W0703
+    except Exception as e:  # pylint: disable=W0703
         stack_trace = get_formatted_stack_trace(e)
         context.error(str(e), stack_trace=stack_trace)
         raise_from(
@@ -191,9 +192,8 @@ JOIN_OUTPUT = 'join_output'
 EXPECTATION_INPUT = 'expectation_input'
 
 
-
 def _yield_transform_results(context, compute_node, conf, inputs):
-    gen = compute_node.solid.transform_fn(TransformExecutionInfo(context, conf), inputs)
+    gen = compute_node.solid.definition.transform_fn(TransformExecutionInfo(context, conf), inputs)
 
     if isinstance(gen, Result):
         raise DagsterInvariantViolationError(
@@ -247,23 +247,25 @@ def _execute_core_transform(context, compute_node, conf, inputs):
     solid = compute_node.solid
 
     with context.value('solid', solid.name):
-        context.debug(
-            'Executing core transform for solid {solid}.'.format(solid=solid.name)
-        )
+        context.debug('Executing core transform for solid {solid}.'.format(solid=solid.name))
 
         with time_execution_scope() as timer_result, \
             _user_code_error_boundary(context, error_str):
 
             all_results = list(_collect_result_list(context, compute_node, conf, inputs))
 
-        if len(all_results) != len(solid.output_defs):
+        if len(all_results) != len(solid.definition.output_defs):
             emitted_result_names = set([r.output_name for r in all_results])
-            solid_output_names = set([output_def.name for output_def in solid.output_defs])
+            solid_output_names = set(
+                [output_def.name for output_def in solid.definition.output_defs]
+            )
             omitted_outputs = solid_output_names.difference(emitted_result_names)
-            context.info('Solid {solid} did not fire outputs {outputs}'.format(
-                solid=solid.name,
-                outputs=repr(omitted_outputs),
-            ))
+            context.info(
+                'Solid {solid} did not fire outputs {outputs}'.format(
+                    solid=solid.name,
+                    outputs=repr(omitted_outputs),
+                )
+            )
 
         context.debug(
             'Finished executing transform for solid {solid}. Time elapsed: {millis:.3f} ms'.format(
@@ -316,7 +318,7 @@ class ComputeNode(object):
         self.arg_dict = check.dict_param(arg_dict, 'arg_dict', key_type=str)
         self.compute_fn = check.callable_param(compute_fn, 'compute_fn')
         self.tag = check.inst_param(tag, 'tag', ComputeNodeTag)
-        self.solid = check.inst_param(solid, 'solid', SolidDefinition)
+        self.solid = check.inst_param(solid, 'solid', PipelineSolid)
 
     def has_node(self, name):
         check.str_param(name, 'name')
@@ -359,10 +361,11 @@ class ComputeNode(object):
             return compute_node_input.dagster_type.evaluate_value(input_value)
         except DagsterEvaluateValueError as evaluate_error:
             raise_from(
-                DagsterTypeError((
-                    'Solid {cn.solid.name} input {input_name} received value {input_value} ' +
-                    'which does not pass the typecheck for Dagster type ' +
-                    '{compute_node_input.dagster_type.name}. Compute node {cn.friendly_name}'
+                DagsterTypeError(
+                    (
+                        'Solid {cn.solid.name} input {input_name} received value {input_value} ' +
+                        'which does not pass the typecheck for Dagster type ' +
+                        '{compute_node_input.dagster_type.name}. Compute node {cn.friendly_name}'
                     ).format(
                         cn=self,
                         input_name=input_name,
@@ -391,7 +394,9 @@ class ComputeNode(object):
         seen_outputs = set()
         for result in results:
             if not self.has_node(result.output_name):
-                output_names = list([output_def.name for output_def in self.solid.output_defs])
+                output_names = list(
+                    [output_def.name for output_def in self.solid.definition.output_defs]
+                )
                 raise DagsterInvariantViolationError(
                     '''Core transform for {cn.solid.name} returned an output
                     {result.output_name} that does not exist. The available
@@ -406,7 +411,6 @@ class ComputeNode(object):
                 )
 
             seen_outputs.add(result.output_name)
-
 
     def _execute_inner_compute_node_loop(self, context, inputs):
         evaluated_inputs = {}
@@ -433,9 +437,7 @@ class ComputeNode(object):
             yield ComputeNodeResult.failure_result(
                 compute_node=self,
                 tag=self.tag,
-                failure_data=ComputeNodeFailureData(
-                    dagster_error=dagster_error,
-                ),
+                failure_data=ComputeNodeFailureData(dagster_error=dagster_error, ),
             )
             return
 
@@ -538,7 +540,7 @@ def create_expectation_cn(
     inout_def,
 ):
 
-    check.inst_param(solid, 'solid', SolidDefinition)
+    check.inst_param(solid, 'solid', PipelineSolid)
     check.inst_param(expectation_def, 'input_expct_def', ExpectationDefinition)
     check.inst_param(prev_node_output_handle, 'prev_node_output_handle', ComputeNodeOutputHandle)
     check.inst_param(inout_def, 'inout_def', (InputDefinition, OutputDefinition))
@@ -565,7 +567,7 @@ def create_expectation_cn(
             EXPECTATION_VALUE_OUTPUT,
         ),
         tag=tag,
-        solid=solid
+        solid=solid,
     )
 
 
@@ -576,7 +578,7 @@ ComputeNodeSubgraph = namedtuple(
 
 
 def create_expectations_cn_graph(solid, inout_def, prev_node_output_handle, tag):
-    check.inst_param(solid, 'solid', SolidDefinition)
+    check.inst_param(solid, 'solid', PipelineSolid)
     check.inst_param(inout_def, 'inout_def', (InputDefinition, OutputDefinition))
     check.inst_param(prev_node_output_handle, 'prev_node_output_handle', ComputeNodeOutputHandle)
     check.inst_param(tag, 'tag', ComputeNodeTag)
@@ -647,11 +649,13 @@ def create_compute_node_graph(execution_info):
 
     cn_output_node_map = ComputeNodeOutputMap()
 
-    for topo_solid in execution_graph.topological_solids:
+    for topo_pipeline_solid in execution_graph.topological_solids:
         cn_inputs = []
 
+        topo_solid = topo_pipeline_solid.definition
+
         for input_def in topo_solid.input_defs:
-            input_handle = topo_solid.input_handle(input_def.name)
+            input_handle = topo_pipeline_solid.input_handle(input_def.name)
 
             check.invariant(
                 dependency_structure.has_dep(input_handle),
@@ -665,7 +669,7 @@ def create_compute_node_graph(execution_info):
 
             subgraph = create_subgraph_for_input(
                 execution_info,
-                topo_solid,
+                topo_pipeline_solid,
                 prev_cn_output_handle,
                 input_def,
             )
@@ -681,20 +685,22 @@ def create_compute_node_graph(execution_info):
 
         conf = create_conf_value(execution_info, topo_solid)
 
-        solid_transform_cn = create_compute_node_from_solid_transform(topo_solid, cn_inputs, conf)
+        solid_transform_cn = create_compute_node_from_solid_transform(
+            topo_pipeline_solid, cn_inputs, conf
+        )
 
         compute_nodes.append(solid_transform_cn)
 
         for output_def in topo_solid.output_defs:
             subgraph = create_subgraph_for_output(
                 execution_info,
-                topo_solid,
+                topo_pipeline_solid,
                 solid_transform_cn,
                 output_def,
             )
             compute_nodes.extend(subgraph.nodes)
 
-            output_handle = topo_solid.output_handle(output_def.name)
+            output_handle = topo_pipeline_solid.output_handle(output_def.name)
             cn_output_node_map[output_handle] = subgraph.terminal_cn_output_handle
 
     return _create_compute_node_graph(compute_nodes)
@@ -717,7 +723,7 @@ def _create_compute_node_graph(compute_nodes):
 
 def create_subgraph_for_input(execution_info, solid, prev_cn_output_handle, input_def):
     check.inst_param(execution_info, 'execution_info', ComputeNodeExecutionInfo)
-    check.inst_param(solid, 'solid', SolidDefinition)
+    check.inst_param(solid, 'solid', PipelineSolid)
     check.inst_param(prev_cn_output_handle, 'prev_cn_output_handle', ComputeNodeOutputHandle)
     check.inst_param(input_def, 'input_def', InputDefinition)
 
@@ -737,7 +743,7 @@ def create_subgraph_for_input(execution_info, solid, prev_cn_output_handle, inpu
 
 def create_subgraph_for_output(execution_info, solid, solid_transform_cn, output_def):
     check.inst_param(execution_info, 'execution_info', ComputeNodeExecutionInfo)
-    check.inst_param(solid, 'solid', SolidDefinition)
+    check.inst_param(solid, 'solid', PipelineSolid)
     check.inst_param(solid_transform_cn, 'solid_transform_cn', ComputeNode)
     check.inst_param(output_def, 'output_def', OutputDefinition)
 
@@ -759,7 +765,7 @@ def create_subgraph_for_output(execution_info, solid, solid_transform_cn, output
 
 
 def _create_join_node(solid, prev_nodes, prev_output_name):
-    check.inst_param(solid, 'solid', SolidDefinition)
+    check.inst_param(solid, 'solid', PipelineSolid)
     check.list_param(prev_nodes, 'prev_nodes', of_type=ComputeNode)
     check.invariant(len(prev_nodes) > 0)
     check.str_param(prev_output_name, 'output_name')
@@ -796,38 +802,44 @@ def _create_join_lambda(_context, _compute_node, inputs):
 
 
 def _create_expectation_lambda(solid, inout_def, expectation_def, internal_output_name):
-    check.inst_param(solid, 'solid', SolidDefinition)
+    check.inst_param(solid, 'solid', PipelineSolid)
     check.inst_param(inout_def, 'inout_def', (InputDefinition, OutputDefinition))
     check.inst_param(expectation_def, 'expectations_def', ExpectationDefinition)
     check.str_param(internal_output_name, 'internal_output_name')
 
     def _do_expectation(context, compute_node, inputs):
-        with context.values({
-            'solid': solid.name,
-            inout_def.descriptive_key: inout_def.name,
-            'expectation': expectation_def.name
-        }):
+        with context.values(
+            {
+                'solid': solid.name,
+                inout_def.descriptive_key: inout_def.name,
+                'expectation': expectation_def.name
+            }
+        ):
             value = inputs[EXPECTATION_INPUT]
             info = ExpectationExecutionInfo(context, inout_def, solid, expectation_def)
             expt_result = expectation_def.expectation_fn(info, value)
             if expt_result.success:
-                context.debug('Expectation {friendly_name} succeeded on {value}.'.format(
-                    friendly_name=compute_node.friendly_name,
-                    value=value,
-                ))
+                context.debug(
+                    'Expectation {friendly_name} succeeded on {value}.'.format(
+                        friendly_name=compute_node.friendly_name,
+                        value=value,
+                    )
+                )
                 yield Result(output_name=internal_output_name, value=inputs[EXPECTATION_INPUT])
             else:
-                context.debug('Expectation {friendly_name} failed on {value}.'.format(
-                    friendly_name=compute_node.friendly_name,
-                    value=value,
-                ))
+                context.debug(
+                    'Expectation {friendly_name} failed on {value}.'.format(
+                        friendly_name=compute_node.friendly_name,
+                        value=value,
+                    )
+                )
                 raise DagsterExpectationFailedError(info, value)
 
     return _do_expectation
 
 
 def create_compute_node_from_solid_transform(solid, node_inputs, conf):
-    check.inst_param(solid, 'solid', SolidDefinition)
+    check.inst_param(solid, 'solid', PipelineSolid)
     check.list_param(node_inputs, 'node_inputs', of_type=ComputeNodeInput)
 
     return ComputeNode(
@@ -835,7 +847,7 @@ def create_compute_node_from_solid_transform(solid, node_inputs, conf):
         node_inputs=node_inputs,
         node_outputs=[
             ComputeNodeOutput(name=output_def.name, dagster_type=output_def.dagster_type)
-            for output_def in solid.output_defs
+            for output_def in solid.definition.output_defs
         ],
         arg_dict={},
         compute_fn=lambda context, compute_node, inputs: _execute_core_transform(

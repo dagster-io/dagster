@@ -3,6 +3,7 @@ from dagster import (
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
+    PipelineSolid,
     check,
     config,
     execute_pipeline,
@@ -173,7 +174,9 @@ def test_disconnected_graphs_adjaceny_lists():
 
 
 def create_diamond_solids():
-    a_source = define_stub_solid('A_source', [input_set('A_input')])
+    a_source = PipelineSolid(
+        name='A_source', definition=define_stub_solid('A_source', [input_set('A_input')])
+    )
     node_a = create_root_solid('A')
     node_b = create_solid_with_deps('B', node_a)
     node_c = create_solid_with_deps('C', node_a)
@@ -257,7 +260,7 @@ def test_create_single_solid_pipeline():
         'A',
         {
             'A': {
-                'A_input': stub_solid
+                'A_input': stub_solid,
             },
         },
     )
