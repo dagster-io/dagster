@@ -147,7 +147,7 @@ def _default_pipeline_context_definitions():
                 'log_level': Field(
                     dagster_type=types.String,
                     is_optional=True,
-                    default_value='ERROR',
+                    default_value='INFO',
                 )
             }
         ),
@@ -781,12 +781,13 @@ class ConfigDefinition(object):
         '''
         return ConfigDefinition(types.ConfigDictionary(field_dict))
 
-    def __init__(self, config_type=types.Any):
+    def __init__(self, config_type=types.Any, description=None):
         '''Construct a ConfigDefinition
 
         Args:
             config_type (DagsterType): Type the determines shape and values of config'''
         self.config_type = check.inst_param(config_type, 'config_type', DagsterType)
+        self.description = check.opt_str_param(description, 'description')
 
 
 class SolidDefinition(object):

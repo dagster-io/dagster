@@ -39,6 +39,12 @@ def test_multiple_outputs():
     assert solid_result.transformed_value('output_one') == 'foo'
     assert solid_result.transformed_value('output_two') == 'bar'
 
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match='not_defined not defined in solid multiple_outputs',
+    ):
+        solid_result.transformed_value('not_defined')
+
 
 def test_multiple_outputs_expectations():
     called = {}
@@ -179,3 +185,29 @@ def test_multiple_outputs_only_emit_one():
     assert result.success
 
     assert called['one']
+    solid_result = result.result_for_solid('multiple_outputs')
+    assert set(solid_result.transformed_values.keys()) == set(['output_one'])
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match='not_defined not defined in solid multiple_outputs',
+    ):
+        solid_result.transformed_value('not_defined')
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match='Did not find result output_two',
+    ):
+        solid_result.transformed_value('output_two')
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match='Try to get result for solid not_present in <<unnamed>>. No such solid.',
+    ):
+        result.result_for_solid('not_present')
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match='Did not find result for solid downstream_two in pipeline execution result',
+    ):
+        result.result_for_solid('downstream_two')

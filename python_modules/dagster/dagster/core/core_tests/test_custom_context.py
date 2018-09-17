@@ -27,7 +27,7 @@ def test_default_context():
     def default_context_transform(info):
         called['yes'] = True
         for logger in info.context._logger.loggers:
-            assert logger.level == ERROR
+            assert logger.level == INFO
 
     pipeline = PipelineDefinition(solids=[default_context_transform])
     execute_pipeline(pipeline)

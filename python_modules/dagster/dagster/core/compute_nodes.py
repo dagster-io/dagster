@@ -224,7 +224,7 @@ def _yield_transform_results(context, compute_node, conf, inputs):
 
 def _collect_result_list(context, compute_node, conf, inputs):
     for result in _yield_transform_results(context, compute_node, conf, inputs):
-        context.debug(
+        context.info(
             'Solid {solid} emitted output "{output}" value {value}'.format(
                 solid=compute_node.solid.name,
                 output=result.output_name,
@@ -245,15 +245,26 @@ def _execute_core_transform(context, compute_node, conf, inputs):
 
     error_str = 'Error occured during core transform'
 
-    with context.value('solid', compute_node.solid.name):
+    solid = compute_node.solid
+
+    with context.value('solid', solid.name):
         context.debug(
-            'Executing core transform for solid {solid}.'.format(solid=compute_node.solid.name)
+            'Executing core transform for solid {solid}.'.format(solid=solid.name)
         )
 
         with time_execution_scope() as timer_result, \
             _user_code_error_boundary(context, error_str):
 
             all_results = list(_collect_result_list(context, compute_node, conf, inputs))
+
+        if len(all_results) != len(solid.output_defs):
+            emitted_result_names = set([r.output_name for r in all_results])
+            solid_output_names = set([output_def.name for output_def in solid.output_defs])
+            omitted_outputs = solid_output_names.difference(emitted_result_names)
+            context.info('Solid {solid} did not fire outputs {outputs}'.format(
+                solid=solid.name,
+                outputs=repr(omitted_outputs),
+            ))
 
         context.debug(
             'Finished executing transform for solid {solid}. Time elapsed: {millis:.3f} ms'.format(
