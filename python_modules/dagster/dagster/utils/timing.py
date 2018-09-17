@@ -3,7 +3,8 @@ import time
 
 from dagster import check
 
-class TimerResult:
+
+class TimerResult(object):
     def __init__(self):
         self.start_time = time.time()
         self.end_time = None
@@ -17,6 +18,7 @@ class TimerResult:
     def millis(self):
         return self.seconds * 1000
 
+
 @contextmanager
 def time_execution_scope():
     '''Usage:
@@ -24,7 +26,7 @@ def time_execution_scope():
     from solid_util.timing import time_execution_scope
     with time_execution_scope() as timer_result:
         do_some_operation()
-    print(f'do_some_operation took {timer_result.millis} milliseconds')
+    print('do_some_operation took {timer_result.millis} milliseconds'.format(timer_result=timer_result))
     '''
 
     timer_result = TimerResult()

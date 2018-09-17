@@ -1,181 +1,340 @@
-import inspect
+from collections import namedtuple
 from functools import wraps
-from dagster import check
+import inspect
+
 from .definitions import (
-    SolidDefinition,
-    SourceDefinition,
+    ConfigDefinition,
+    DagsterInvalidDefinitionError,
     InputDefinition,
     OutputDefinition,
-    MaterializationDefinition,
-    DagsterInvalidDefinitionError,
+    Result,
+    SolidDefinition,
+    check,
 )
+
+if hasattr(inspect, 'signature'):
+    funcsigs = inspect
+else:
+    import funcsigs
 
 # Error messages are long
 # pylint: disable=C0301
 
 
-def with_context(fn):
-    """Pass context as a first argument to a transform, source or materialization function.
-    """
-    return _WithContext(fn)
+class MultipleResults(namedtuple('_MultipleResults', 'results')):
+    '''A shortcut to output multiple results.
+
+    Attributes:
+      results (list[Result]): list of :py:class:`Result`
+
+    Example:
+
+    .. code-block:: python
+
+        @solid(outputs=[
+            OutputDefinition(name='foo'),
+            OutputDefinition(name='bar'),
+        ])
+        def my_solid():
+            return MultipleResults(
+                Result('Barb', 'foo'),
+                Result('Glarb', 'bar'),
+            )
 
 
-class _WithContext:
-    def __init__(self, fn):
-        self.fn = fn
+        @solid(outputs=[
+            OutputDefinition(name='foo'),
+            OutputDefinition(name='bar'),
+        ])
+        def my_solid_from_dict():
+            return MultipleResults.from_dict({
+              'foo': 'Barb',
+              'bar': 'Glarb',
+            })
+    '''
 
-    @property
-    def has_context(self):
-        return True
+    def __new__(cls, *results):
+        return super(MultipleResults, cls).__new__(
+            cls,
+            # XXX(freiksenet): should check.list_param accept tuples from rest?
+            check.opt_list_param(list(results), 'results', Result),
+        )
+
+    @staticmethod
+    def from_dict(result_dict):
+        '''Create MultipleResults object from a dictionary. Keys become result names'''
+        check.dict_param(result_dict, 'result_dict', key_type=str)
+        results = []
+        for name, value in result_dict.items():
+            results.append(Result(value, name))
+        return MultipleResults(*results)
 
 
-class _Solid:
-    def __init__(self, name=None, inputs=None, output=None, description=None):
+class _LambdaSolid(object):
+    def __init__(
+        self,
+        name=None,
+        inputs=None,
+        output=None,
+        description=None,
+    ):
         self.name = check.opt_str_param(name, 'name')
-        self.inputs = check.opt_list_param(inputs, 'inputs', InputDefinition)
-
-        check.opt_inst_param(output, 'output', OutputDefinition)
-        if not output:
-            output = OutputDefinition()
-        self.output = output
+        self.input_defs = check.opt_list_param(inputs, 'inputs', InputDefinition)
+        self.output_def = check.inst_param(output, 'output', OutputDefinition)
         self.description = check.opt_str_param(description, 'description')
 
     def __call__(self, fn):
-        expect_context = getattr(fn, 'has_context', False)
-        if expect_context:
-            fn = fn.fn
+        check.callable_param(fn, 'fn')
 
         if not self.name:
             self.name = fn.__name__
 
-        _validate_transform_fn(self.name, fn, self.inputs, expect_context)
-        transform_fn = _create_transform_wrapper(fn, self.inputs, expect_context)
+        _validate_transform_fn(self.name, fn, self.input_defs)
+        transform_fn = _create_lambda_solid_transform_wrapper(fn, self.input_defs, self.output_def)
         return SolidDefinition(
             name=self.name,
-            inputs=self.inputs,
-            output=self.output,
+            inputs=self.input_defs,
+            outputs=[self.output_def],
             transform_fn=transform_fn,
             description=self.description,
         )
 
 
-def solid(*, name=None, inputs=None, output=None, description=None):
-    return _Solid(name=name, inputs=inputs, output=output, description=description)
-
-
-def _create_transform_wrapper(fn, inputs, include_context=False):
-    input_names = [input.name for input in inputs]
-
-    @wraps(fn)
-    def transform(context, args):
-        kwargs = {}
-        for input_name in input_names:
-            kwargs[input_name] = args[input_name]
-
-        if include_context:
-            return fn(context, **kwargs)
-        else:
-            return fn(**kwargs)
-
-    return transform
-
-
-class _Source:
-    def __init__(self, name=None, argument_def_dict=None, description=None):
-        self.source_type = check.opt_str_param(name, 'name')
-        self.argument_def_dict = check.opt_dict_param(argument_def_dict, 'argument_def_dict')
-        self.description = check.opt_str_param(description, 'description')
-
-    def __call__(self, fn):
-        include_context = getattr(fn, 'has_context', False)
-        if include_context:
-            fn = fn.fn
-
-        if not self.source_type:
-            self.source_type = fn.__name__
-
-        _validate_source_fn(fn, self.source_type, self.argument_def_dict, include_context)
-        source_fn = _create_source_wrapper(fn, self.argument_def_dict, include_context)
-
-        return SourceDefinition(
-            source_type=self.source_type,
-            source_fn=source_fn,
-            argument_def_dict=self.argument_def_dict,
-            description=self.description,
-        )
-
-
-def source(*, name=None, argument_def_dict=None, description=None):
-    return _Source(name=name, argument_def_dict=argument_def_dict, description=description)
-
-
-def _create_source_wrapper(fn, arg_def_dict, include_context=False):
-    arg_names = arg_def_dict.keys()
-
-    @wraps(fn)
-    def source_fn(context, args):
-        kwargs = {}
-        for arg in arg_names:
-            kwargs[arg] = args[arg]
-
-        if include_context:
-            return fn(context, **kwargs)
-        else:
-            return fn(**kwargs)
-
-    return source_fn
-
-
-class _Materialization:
-    def __init__(self, name=None, argument_def_dict=None, description=None):
+class _Solid(object):
+    def __init__(
+        self,
+        name=None,
+        inputs=None,
+        outputs=None,
+        description=None,
+        config_def=None,
+    ):
         self.name = check.opt_str_param(name, 'name')
-        self.argument_def_dict = check.opt_dict_param(argument_def_dict, 'argument_def_dict')
+        self.input_defs = check.opt_list_param(inputs, 'inputs', InputDefinition)
+        outputs = outputs or [OutputDefinition()]
+        self.outputs = check.list_param(outputs, 'outputs', OutputDefinition)
         self.description = check.opt_str_param(description, 'description')
+        self.config_def = check.opt_inst_param(config_def, 'config_def', ConfigDefinition)
 
     def __call__(self, fn):
-        include_context = getattr(fn, 'has_context', False)
-        if include_context:
-            fn = fn.fn
+        check.callable_param(fn, 'fn')
 
         if not self.name:
             self.name = fn.__name__
 
-        _validate_materialization_fn(fn, self.name, self.argument_def_dict, include_context)
-        materialization_fn = _create_materialization_wrapper(
-            fn, self.argument_def_dict, include_context
-        )
-
-        return MaterializationDefinition(
+        _validate_transform_fn(self.name, fn, self.input_defs, ['info'])
+        transform_fn = _create_solid_transform_wrapper(fn, self.input_defs, self.outputs)
+        return SolidDefinition(
             name=self.name,
-            materialization_fn=materialization_fn,
-            argument_def_dict=self.argument_def_dict,
+            inputs=self.input_defs,
+            outputs=self.outputs,
+            transform_fn=transform_fn,
+            config_def=self.config_def,
             description=self.description,
         )
 
 
-def materialization(*, name=None, argument_def_dict=None, description=None):
-    return _Materialization(
+def lambda_solid(
+    name=None,
+    inputs=None,
+    output=None,
+    description=None,
+):
+    '''(decorator) Create a simple solid
+
+    This shortcut allows the creation of simple solids that do not require
+    configuration and whose implementations do not require a context.
+
+    Lambda solids take inputs an and produce an output. The body of the function
+    should return a single value.
+
+    Args:
+        name (str): Name of solid
+        inputs (List[InputDefinition]): List of inputs
+        output (OutputDefinition): The output of the solid. Defaults to OutputDefinition()
+        description (str): Solid description
+
+    .. code-block:: python
+
+        @lambda_solid
+        def hello_world():
+            return 'hello'
+
+        @lambda_solid(inputs=[InputDefinition(name="foo")])
+        def hello_world(foo):
+            return foo
+
+    '''
+    output = output or OutputDefinition()
+
+    if callable(name):
+        check.invariant(inputs is None)
+        check.invariant(description is None)
+        return _LambdaSolid(output=output)(name)
+
+    return _LambdaSolid(
         name=name,
-        argument_def_dict=argument_def_dict,
+        inputs=inputs,
+        output=output,
         description=description,
     )
 
 
-def _create_materialization_wrapper(fn, arg_def_dict, include_context=False):
-    arg_names = arg_def_dict.keys()
+def solid(
+    name=None,
+    inputs=None,
+    outputs=None,
+    config_def=None,
+    description=None,
+):
+    '''(decorator) Create a solid with specified parameters.
+
+    This shortcut simplifies core solid API by exploding arguments into kwargs of the
+    transform function and omitting additional parameters when they are not needed.
+    Parameters are otherwise as per :py:class:`SolidDefinition`.
+
+    Decorated function is the transform function itself. Instead of having to yield
+    result objects, transform support multiple simpler output types.
+
+    1. Return a value. This is returned as a :py:class:`Result` for a single output solid.
+    2. Return a :py:class:`Result`. Works like yielding result.
+    3. Return a :py:class:`MultipleResults`. Works like yielding several results for
+       multiple outputs. Useful for solids that have multiple outputs.
+    4. Yield :py:class:`Result`. Same as default transform behaviour.
+
+    Args:
+        name (str): Name of solid
+        inputs (List[InputDefinition]): List of inputs
+        outputs (List[OutputDefinition]): List of outputs
+        config_def (ConfigDefinition):
+            The configuration for this solid.
+        description (str): Description of this solid.
+
+    Examples:
+
+    .. code-block:: python
+
+        @solid
+        def hello_world(info):
+            print('hello')
+
+        @solid()
+        def hello_world(info):
+            print('hello')
+
+        @solid(outputs=[OutputDefinition()])
+        def hello_world(info):
+            return {'foo': 'bar'}
+
+        @solid(outputs=[OutputDefinition()])
+        def hello_world(info):
+            return Result(value={'foo': 'bar'})
+
+        @solid(outputs=[OutputDefinition()])
+        def hello_world(info):
+            yield Result(value={'foo': 'bar'})
+
+        @solid(outputs=[
+            OutputDefinition(name="left"),
+            OutputDefinition(name="right"),
+        ])
+        def hello_world(info):
+            return MultipleResults.from_dict({
+                'left': {'foo': 'left'},
+                'right': {'foo': 'right'},
+            })
+
+        @solid(
+            inputs=[InputDefinition(name="foo")],
+            outputs=[OutputDefinition()]
+        )
+        def hello_world(info, foo):
+            return foo
+
+        @solid(
+            inputs=[InputDefinition(name="foo")],
+            outputs=[OutputDefinition()],
+        )
+        def hello_world(info, foo):
+            info.context.info('log something')
+            return foo
+
+        @solid(
+            inputs=[InputDefinition(name="foo")],
+            outputs=[OutputDefinition()],
+            config_def=ConfigDefinition(types.ConfigDictionary({'str_value' : Field(types.String)})),
+        )
+        def hello_world(info, foo):
+            # info.config is a dictionary with 'str_value' key
+            return foo + info.config['str_value']
+
+    '''
+    if callable(name):
+        check.invariant(inputs is None)
+        check.invariant(outputs is None)
+        check.invariant(description is None)
+        check.invariant(config_def is None)
+        return _Solid()(name)
+
+    return _Solid(
+        name=name,
+        inputs=inputs,
+        outputs=outputs,
+        config_def=config_def,
+        description=description,
+    )
+
+
+def _create_lambda_solid_transform_wrapper(fn, input_defs, output_def):
+    check.callable_param(fn, 'fn')
+    check.list_param(input_defs, 'input_defs', of_type=InputDefinition)
+    check.inst_param(output_def, 'output_def', OutputDefinition)
+
+    input_names = [input_def.name for input_def in input_defs]
 
     @wraps(fn)
-    def materialization_fn(context, args, data):
+    def transform(_info, inputs):
         kwargs = {}
-        for arg in arg_names:
-            kwargs[arg] = args[arg]
+        for input_name in input_names:
+            kwargs[input_name] = inputs[input_name]
 
-        if include_context:
-            return fn(context, data, **kwargs)
+        result = fn(**kwargs)
+        yield Result(value=result, output_name=output_def.name)
+
+    return transform
+
+
+def _create_solid_transform_wrapper(fn, input_defs, output_defs):
+    check.callable_param(fn, 'fn')
+    check.list_param(input_defs, 'input_defs', of_type=InputDefinition)
+    check.list_param(output_defs, 'output_defs', of_type=OutputDefinition)
+
+    input_names = [input_def.name for input_def in input_defs]
+
+    @wraps(fn)
+    def transform(info, inputs):
+        kwargs = {}
+        for input_name in input_names:
+            kwargs[input_name] = inputs[input_name]
+
+        result = fn(info, **kwargs)
+
+        if inspect.isgenerator(result):
+            for item in result:
+                yield item
         else:
-            return fn(data, **kwargs)
+            if isinstance(result, Result):
+                yield result
+            elif isinstance(result, MultipleResults):
+                for item in result.results:
+                    yield item
+            elif len(output_defs) == 1:
+                yield Result(value=result, output_name=output_defs[0].name)
+            elif result is not None:
+                # XXX(freiksenet)
+                raise Exception('Output for a solid without an output.')
 
-    return materialization_fn
+    return transform
 
 
 class FunctionValidationError(Exception):
@@ -187,97 +346,47 @@ class FunctionValidationError(Exception):
     }
 
     def __init__(self, error_type, param=None, missing_names=None, **kwargs):
-        super().__init__(**kwargs)
+        super(FunctionValidationError, self).__init__(**kwargs)
         self.error_type = error_type
         self.param = param
         self.missing_names = missing_names
 
 
-def _validate_transform_fn(solid_name, transform_fn, inputs, expect_context=False):
+def _validate_transform_fn(solid_name, transform_fn, inputs, expected_positionals=None):
+    check.str_param(solid_name, 'solid_name')
+    check.callable_param(transform_fn, 'transform_fn')
+    check.list_param(inputs, 'inputs', of_type=InputDefinition)
+    expected_positionals = check.opt_list_param(
+        expected_positionals,
+        'expected_positionals',
+        of_type=str,
+    )
+
     names = set(inp.name for inp in inputs)
-    if expect_context:
-        expected_positionals = ('context', )
-    else:
-        expected_positionals = ()
+    # Currently being super strict about naming. Might be a good idea to relax. Starting strict.
     try:
         _validate_decorated_fn(transform_fn, names, expected_positionals)
     except FunctionValidationError as e:
         if e.error_type == FunctionValidationError.TYPES['vararg']:
             raise DagsterInvalidDefinitionError(
-                f"solid '{solid_name}' transform function has positional vararg parameter '{e.param}'. Transform functions should only have keyword arguments that match input names and optionally a first positional parameter named 'context'."
+                "solid '{solid_name}' transform function has positional vararg parameter '{e.param}'. Transform functions should only have keyword arguments that match input names and a first positional parameter named 'info'.".
+                format(solid_name=solid_name, e=e)
             )
         elif e.error_type == FunctionValidationError.TYPES['missing_name']:
             raise DagsterInvalidDefinitionError(
-                f"solid '{solid_name}' transform function has parameter '{e.param}' that is not one of the solid inputs. Transform functions should only have keyword arguments that match input names and optionally a first positional parameter named 'context'."
+                "solid '{solid_name}' transform function has parameter '{e.param}' that is not one of the solid inputs. Transform functions should only have keyword arguments that match input names and a first positional parameter named 'info'.".
+                format(solid_name=solid_name, e=e)
             )
         elif e.error_type == FunctionValidationError.TYPES['missing_positional']:
             raise DagsterInvalidDefinitionError(
-                f"solid '{solid_name}' transform function do not have required positional parameter '{e.param}'. Transform functions should only have keyword arguments that match input names and optionally a first positional parameter named 'context'."
+                "solid '{solid_name}' transform function do not have required positional parameter '{e.param}'. Transform functions should only have keyword arguments that match input names and a first positional parameter named 'info'.".
+                format(solid_name=solid_name, e=e)
             )
         elif e.error_type == FunctionValidationError.TYPES['extra']:
             undeclared_inputs_printed = ", '".join(e.missing_names)
             raise DagsterInvalidDefinitionError(
-                f"solid '{solid_name}' transform function do not have parameter(s) '{undeclared_inputs_printed}', which are in solid's inputs. Transform functions should only have keyword arguments that match input names and optionally a first positional parameter named 'context'."
-            )
-        else:
-            raise e
-
-
-def _validate_source_fn(fn, source_name, arg_def_dict, expect_context=False):
-    names = set(arg_def_dict.keys())
-    if expect_context:
-        expected_positionals = ('context', )
-    else:
-        expected_positionals = ()
-    try:
-        _validate_decorated_fn(fn, names, expected_positionals)
-    except FunctionValidationError as e:
-        if e.error_type == FunctionValidationError.TYPES['vararg']:
-            raise DagsterInvalidDefinitionError(
-                f"source '{source_name}' source function has positional vararg parameter '{e.param}'. Source functions should only have keyword arguments that match argument definition names and optionally a first positional parameter named 'context'."
-            )
-        elif e.error_type == FunctionValidationError.TYPES['missing_name']:
-            raise DagsterInvalidDefinitionError(
-                f"source '{source_name}' source function has parameter '{e.param}' that is not one of the source arguments. Source functions should only have keyword arguments that match argument definition names and optionally a first positional parameter named 'context'."
-            )
-        elif e.error_type == FunctionValidationError.TYPES['missing_positional']:
-            raise DagsterInvalidDefinitionError(
-                f"source '{source_name}' transform function do not have required positional argument '{e.param}'. Source functions should only have keyword arguments that match argument definition names and optionally a first positional parameter named 'context"
-            )
-        elif e.error_type == FunctionValidationError.TYPES['extra']:
-            undeclared_inputs_printed = ", '".join(e.missing_names)
-            raise DagsterInvalidDefinitionError(
-                f"source '{source_name}' transform function do not have parameter(s) '{undeclared_inputs_printed}', which are in source's argument definitions.  Source functions should only have keyword arguments that match argument definition names and optionally a first positional parameter named 'context'"
-            )
-        else:
-            raise e
-
-
-def _validate_materialization_fn(fn, materialization_name, arg_def_dict, expect_context=False):
-    names = set(arg_def_dict.keys())
-    if expect_context:
-        expected_positionals = ('context', 'data')
-    else:
-        expected_positionals = ('data', )
-    try:
-        _validate_decorated_fn(fn, names, expected_positionals)
-    except FunctionValidationError as e:
-        if e.error_type == FunctionValidationError.TYPES['vararg']:
-            raise DagsterInvalidDefinitionError(
-                f"materialization '{materialization_name}' materialization function has positional vararg parameter '{e.param}'. Materialization functions should only have keyword arguments that match argument definition names, positional parameter 'data' and optionally a first positional parameter named 'context'."
-            )
-        elif e.error_type == FunctionValidationError.TYPES['missing_name']:
-            raise DagsterInvalidDefinitionError(
-                f"materialization '{materialization_name}' transform function has parameter '{e.param}' that is not one of the materialization's argument definitions. Materialization functions should only have keyword arguments that match argument definition names, positional parameter 'data' and optionally a first positional parameter named 'context'."
-            )
-        elif e.error_type == FunctionValidationError.TYPES['missing_positional']:
-            raise DagsterInvalidDefinitionError(
-                f"materialization '{materialization_name}' materialization function do not have parameter {e.param}'. Materialization functions should only have keyword arguments that match argument definition names, positional parameter 'data' and optionally a first positional parameter named 'context'."
-            )
-        elif e.error_type == FunctionValidationError.TYPES['extra']:
-            undeclared_inputs_printed = ", '".join(e.missing_names)
-            raise DagsterInvalidDefinitionError(
-                f"materialization '{materialization_name}' materialization function do not have parameter(s) '{undeclared_inputs_printed}', which are in materialization's argument definitinio. Materialization functions should only have keyword arguments that match argument definition names, positional parameter 'data' and optionally a first positional parameter named 'context'."
+                "solid '{solid_name}' transform function do not have parameter(s) '{undeclared_inputs_printed}', which are in solid's inputs. Transform functions should only have keyword arguments that match input names and a first positional parameter named 'info'.".
+                format(solid_name=solid_name, undeclared_inputs_printed=undeclared_inputs_printed)
             )
         else:
             raise e
@@ -287,17 +396,22 @@ def _validate_decorated_fn(fn, names, expected_positionals):
     used_inputs = set()
     has_kwargs = False
 
-    signature = inspect.signature(fn)
+    signature = funcsigs.signature(fn)
     params = list(signature.parameters.values())
 
     expected_positional_params = params[0:len(expected_positionals)]
     other_params = params[len(expected_positionals):]
 
     for expected, actual in zip(expected_positionals, expected_positional_params):
-        possible_names = [expected, f'_{expected}', f'{expected}_']
+        possible_names = [
+            '_',
+            expected,
+            '_{expected}'.format(expected=expected),
+            '{expected}_'.format(expected=expected),
+        ]
         if (
             actual.kind not in [
-                inspect.Parameter.POSITIONAL_OR_KEYWORD, inspect.Parameter.POSITIONAL_ONLY
+                funcsigs.Parameter.POSITIONAL_OR_KEYWORD, funcsigs.Parameter.POSITIONAL_ONLY
             ]
         ) or (actual.name not in possible_names):
             raise FunctionValidationError(
@@ -305,9 +419,9 @@ def _validate_decorated_fn(fn, names, expected_positionals):
             )
 
     for param in other_params:
-        if param.kind == inspect.Parameter.VAR_KEYWORD:
+        if param.kind == funcsigs.Parameter.VAR_KEYWORD:
             has_kwargs = True
-        elif param.kind == inspect.Parameter.VAR_POSITIONAL:
+        elif param.kind == funcsigs.Parameter.VAR_POSITIONAL:
             raise FunctionValidationError(error_type=FunctionValidationError.TYPES['vararg'])
 
         else:

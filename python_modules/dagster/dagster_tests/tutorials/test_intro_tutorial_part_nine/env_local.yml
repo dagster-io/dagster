@@ -1,0 +1,9 @@
+context:
+  name: local
+
+solids:
+  injest_a:
+    config: 2
+  injest_b: 
+    config: 3
+

@@ -21,7 +21,7 @@ class NotImplementedCheckError(CheckError):
 def _param_type_mismatch_exception(obj, ttype, param_name):
     return ParameterCheckError(
         'Param "{name}" is not a {type}. Got {obj} with is type {obj_type}.'.format(
-            name=param_name, obj=repr(obj), type=ttype.__name__, obj_type=type(obj).__name__
+            name=param_name, obj=repr(obj), type=ttype.__name__, obj_type=type(obj)
         )
     )
 
@@ -30,13 +30,13 @@ def _type_mismatch_error(obj, ttype, desc):
     if desc:
         return CheckError(
             'Object {obj} is not a {type}. Got {obj} with type {obj_type}. Desc: {desc}'.format(
-                obj=repr(obj), type=ttype.__name__, obj_type=type(obj).__name__, desc=desc
+                obj=repr(obj), type=ttype.__name__, obj_type=type(obj), desc=desc
             )
         )
     else:
         return CheckError(
             'Object {obj} is not a {type}. Got {obj} with type {obj_type}.'.format(
-                obj=repr(obj), type=ttype.__name__, obj_type=type(obj).__name__
+                obj=repr(obj), type=ttype.__name__, obj_type=type(obj)
             )
         )
 
@@ -77,9 +77,26 @@ def inst(obj, ttype, desc=None):
     return obj
 
 
-def is_callable(obj):
+def is_callable(obj, desc=None):
     if not callable(obj):
-        raise_with_traceback(CheckError('must be callable'))
+        if desc:
+            raise_with_traceback(
+                CheckError(
+                    'Must be callable. Got {obj}. Description: {desc}'.format(
+                        obj=repr(obj),
+                        desc=desc,
+                    )
+                )
+            )
+        else:
+            raise_with_traceback(
+                CheckError(
+                    'Must be callable. Got {obj}. Description: {desc}'.format(
+                        obj=obj,
+                        desc=desc,
+                    )
+                )
+            )
 
     return obj
 
@@ -205,6 +222,10 @@ def opt_tuple_param(obj, param_name, default=None):
 
 def _check_list_items(obj_list, of_type):
     for obj in obj_list:
+
+        if of_type is str:
+            key_type = string_types
+
         if not isinstance(obj, of_type):
             raise_with_traceback(
                 CheckError(
@@ -245,6 +266,12 @@ def type_param(obj, param_name):
 
 
 def _check_key_value_types(obj, key_type, value_type):
+    if key_type is str:
+        key_type = string_types
+
+    if value_type is str:
+        value_type = string_types
+
     for key, value in obj.items():
         if key_type and not isinstance(key, key_type):
             raise_with_traceback(

@@ -1,7 +1,7 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
-import { Card, Colors } from "@blueprintjs/core";
+import { Colors } from "@blueprintjs/core";
 import { LinkHorizontal as Link } from "@vx/shape";
 import PanAndZoom from "./PanAndZoom";
 import SolidNode from "./SolidNode";
@@ -35,7 +35,7 @@ export default class PipelineGraph extends React.Component<
   };
 
   renderSolids(layout: IFullPipelineLayout) {
-    return this.props.pipeline.solids.map((solid, i) => {
+    return this.props.pipeline.solids.map(solid => {
       const solidLayout = layout.solids[solid.name];
       return (
         <SolidNode
@@ -51,7 +51,7 @@ export default class PipelineGraph extends React.Component<
 
   renderConnections(layout: IFullPipelineLayout) {
     const connections: Array<{
-      from: string;
+      from: { solidName: string; outputName: string };
       to: { solidName: string; inputName: string };
     }> = [];
 
@@ -59,7 +59,10 @@ export default class PipelineGraph extends React.Component<
       solid.inputs.forEach(input => {
         if (input.dependsOn) {
           connections.push({
-            from: input.dependsOn.name,
+            from: {
+              solidName: input.dependsOn.solid.name,
+              outputName: input.dependsOn.name
+            },
             to: {
               solidName: solid.name,
               inputName: input.name
@@ -70,12 +73,18 @@ export default class PipelineGraph extends React.Component<
     });
 
     const links = connections.map(
-      ({ from, to: { solidName, inputName } }, i) => (
+      (
+        {
+          from: { solidName: outputSolidName, outputName },
+          to: { solidName: inputSolidName, inputName }
+        },
+        i
+      ) => (
         <StyledLink
           key={i}
           data={{
-            source: layout.solids[from].output.port,
-            target: layout.solids[solidName].inputs[inputName].port
+            source: layout.solids[outputSolidName].outputs[outputName].port,
+            target: layout.solids[inputSolidName].inputs[inputName].port
           }}
           x={(d: { x: number; y: number }) => d.x}
           y={(d: { x: number; y: number }) => d.y}
@@ -126,15 +135,6 @@ const PanAndZoomStyled = styled(PanAndZoom)`
 
 const SVGContainer = styled.svg`
   border-radius: 0;
-`;
-
-const LegendWrapper = styled.div`
-  padding: 10px;
-  margin: 5px;
-  border: 1px solid ${Colors.GRAY1};
-  border-radius: 3px;
-  width: auto;
-  position: absolute;
 `;
 
 const StyledLink = styled(Link)`

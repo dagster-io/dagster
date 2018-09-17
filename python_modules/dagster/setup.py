@@ -16,17 +16,22 @@ def long_description():
         return fh.read()
 
 
+version = {}
+with open("dagster/version.py") as fp:
+    exec(fp.read(), version) # pylint: disable=W0122
+
 setup(
     name='dagster',
-    version='0.1.9',
+    version=version['__version__'],
     author='Elementl',
-    author_email='schrockn@elementl.com',
     license='Apache-2.0',
-    description='Dagster is an opinionated pipeline runner.',
+    description='Dagster is an opinionated programming model for data pipelines.',
     long_description=long_description(),
     long_description_content_type='text/markdown',
     url='https://github.com/dagster-io/dagster',
     classifiers=(
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'License :: OSI Approved :: Apache Software License',
         'Operating System :: OS Independent',
@@ -36,6 +41,7 @@ setup(
         # standard python 2/3 compatability things
         'enum34>=1.1.6',
         'future>=0.16.0',
+        'funcsigs>=1.0.2',
 
         # cli
         'click>=6.7',

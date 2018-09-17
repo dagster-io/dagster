@@ -1,0 +1,81 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`renders without error 1`] = `
+Array [
+  <div
+    className="bp3-navbar"
+  >
+    <div
+      className="bp3-navbar-group bp3-align-left"
+    >
+      <div
+        className="bp3-navbar-heading"
+      >
+        <img
+          style={
+            Object {
+              "height": 34,
+            }
+          }
+        />
+      </div>
+      <div
+        className="bp3-navbar-divider"
+      />
+    </div>
+  </div>,
+  <div
+    className="sc-cMljjf fjCaRe"
+  >
+    <div
+      className="bp3-tabs bp3-vertical sc-jAaTju kPqiQR"
+    >
+      <div
+        className="bp3-tab-list"
+        onKeyDown={[Function]}
+        onKeyPress={[Function]}
+        role="tablist"
+      >
+        <div
+          className="bp3-tab-indicator-wrapper"
+          style={
+            Object {
+              "display": "none",
+            }
+          }
+        >
+          <div
+            className="bp3-tab-indicator"
+          />
+        </div>
+        <div
+          aria-controls="bp3-tab-panel_PipelinesTabs_pandas_hello_world"
+          aria-disabled={false}
+          aria-expanded={false}
+          aria-selected={false}
+          className="bp3-tab"
+          data-tab-id="pandas_hello_world"
+          id="bp3-tab-title_PipelinesTabs_pandas_hello_world"
+          onClick={[Function]}
+          role="tab"
+          tabIndex={0}
+        >
+          pandas_hello_world
+        </div>
+      </div>
+    </div>
+    <div
+      className="bp3-non-ideal-state"
+    >
+      <h4
+        className="bp3-heading"
+      >
+        No pipeline selected
+      </h4>
+      <div>
+        Select a pipeline in the sidebar on the left
+      </div>
+    </div>
+  </div>,
+]
+`;

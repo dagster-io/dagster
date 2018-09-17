@@ -39,10 +39,10 @@ def test_list_param():
 
 
 def test_typed_list_param():
-    class Foo:
+    class Foo(object):
         pass
 
-    class Bar:
+    class Bar(object):
         pass
 
     assert check.list_param([], 'list_param', Foo) == []
@@ -73,10 +73,10 @@ def test_opt_list_param():
 
 
 def test_opt_typed_list_param():
-    class Foo:
+    class Foo(object):
         pass
 
-    class Bar:
+    class Bar(object):
         pass
 
     assert check.opt_list_param(None, 'list_param', Foo) == []
@@ -127,7 +127,7 @@ def test_dict_param_with_type():
     assert check.dict_param({}, 'str_to_int', key_type=str) == {}
     assert check.dict_param({}, 'str_to_int') == {}
 
-    class Wrong:
+    class Wrong(object):
         pass
 
     with pytest.raises(CheckError):
@@ -163,7 +163,7 @@ def test_opt_dict_param_with_type():
     assert check.opt_dict_param(None, 'str_to_int', key_type=str) == {}
     assert check.opt_dict_param(None, 'str_to_int') == {}
 
-    class Wrong:
+    class Wrong(object):
         pass
 
     with pytest.raises(CheckError):
@@ -375,10 +375,10 @@ def test_not_implemented():
 
 
 def test_inst():
-    class Foo:
+    class Foo(object):
         pass
 
-    class Bar:
+    class Bar(object):
         pass
 
     obj = Foo()
@@ -390,10 +390,10 @@ def test_inst():
 
 
 def test_inst_param():
-    class Foo:
+    class Foo(object):
         pass
 
-    class Bar:
+    class Bar(object):
         pass
 
     obj = Foo()
@@ -408,10 +408,10 @@ def test_inst_param():
 
 
 def test_opt_inst_param():
-    class Foo:
+    class Foo(object):
         pass
 
-    class Bar:
+    class Bar(object):
         pass
 
     obj = Foo()
@@ -485,12 +485,16 @@ def test_is_callable():
 
     assert check.is_callable(fn) == fn
     assert check.is_callable(lambda: None)
+    assert check.is_callable(lambda: None, 'some desc')
 
     with pytest.raises(CheckError):
         check.is_callable(None)
 
     with pytest.raises(CheckError):
         check.is_callable(1)
+
+    with pytest.raises(CheckError, message='some other desc'):
+        check.is_callable(1, 'some other desc')
 
 
 def test_tuple_param():
@@ -531,7 +535,7 @@ def test_opt_tuple_param():
 
 
 def test_type_param():
-    class Bar:
+    class Bar(object):
         pass
 
     assert check.type_param(int, 'foo')

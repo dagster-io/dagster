@@ -16,13 +16,16 @@ def long_description():
         return fh.read()
 
 
+version = {}
+with open("dagit/version.py") as fp:
+    exec(fp.read(), version) # pylint: disable=W0122
+
 setup(
     name='dagit',
-    version='0.1.11',
+    version=version['__version__'],
     author='Elementl',
-    author_email='schrockn@elementl.com',
     license='Apache-2.0',
-    description='Web UI for dagster, an opinionated pipeline runner.',
+    description='Web UI for dagster.',
     long_description=long_description(),
     long_description_content_type='text/markdown',
     url='https://github.com/dagster-io/dagster',
@@ -51,7 +54,7 @@ setup(
         'click>=6.7',
 
         # dagster
-        'dagster>=0.1.7',
+        'dagster>=0.2.0',
 
         # graphql
         'graphql-core>=2.1',

@@ -23,18 +23,16 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
           type {
             name
           }
-          sources {
-            name: sourceType
-          }
           dependsOn {
             name
+            solid {
+              name
+            }
           }
         }
-        output {
+        outputs {
+          name
           type {
-            name
-          }
-          materializations {
             name
           }
           expectations {
@@ -83,41 +81,43 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
     });
   }
 
-  renderOutput() {
-    const {
-      layout: { x, y, width, height }
-    } = this.props.layout.output;
+  renderOutputs() {
+    return this.props.solid.outputs.map((output, i) => {
+      const {
+        layout: { x, y, width, height }
+      } = this.props.layout.outputs[output.name];
 
-    return (
-      <foreignObject
-        x={x - this.props.layout.solid.x}
-        y={y - this.props.layout.solid.y}
-        width={width}
-        height={height}
-      >
-        <Card
-          elevation={3}
-          style={{
-            backgroundColor: PipelineColorScale("output"),
-            height: "100%"
-          }}
+      return (
+        <foreignObject
+          key={i}
+          x={x - this.props.layout.solid.x}
+          y={y - this.props.layout.solid.y}
+          width={width}
+          height={height}
         >
-          <H5>({this.props.solid.output.type.name})</H5>
-        </Card>
-      </foreignObject>
-    );
+          <Card
+            elevation={3}
+            style={{
+              backgroundColor: PipelineColorScale("output"),
+              height: "100%"
+            }}
+          >
+            <H5>
+              <Code>{output.name}</Code> ({output.type.name})
+            </H5>
+          </Card>
+        </foreignObject>
+      );
+    });
   }
 
   renderSelectedBox() {
     if (this.props.selected) {
-      const width =
-        this.props.layout.solid.width +
-        this.props.layout.output.layout.width * 2 +
-        20;
+      const width = this.props.layout.solid.width + 200 * 2 + 20;
       const height = this.props.layout.solid.height + 20;
       return (
         <rect
-          x={-10 - this.props.layout.output.layout.width}
+          x={-10 - 200}
           y={-10}
           height={height}
           width={width}
@@ -158,7 +158,7 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
           </Card>
         </foreignObject>
         {this.renderInputs()}
-        {this.renderOutput()}
+        {this.renderOutputs()}
       </g>
     );
   }

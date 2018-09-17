@@ -1,18 +1,28 @@
+from __future__ import print_function
 import logging
-import os
 import re
 import textwrap
 
 import click
 import yaml
 
-import dagster
-from dagster import check
-from dagster.core.execution import (DagsterExecutionFailureReason, execute_pipeline_iterator)
+from dagster import (
+    PipelineDefinition,
+    check,
+    config,
+)
+
+from dagster.core.definitions import ExecutionGraph
+from dagster.core.execution import execute_pipeline_iterator
+from dagster.core.errors import DagsterExecutionFailureReason
 from dagster.graphviz import build_graphviz_graph
+from dagster.utils import load_yaml_from_path
 from dagster.utils.indenting_printer import IndentingPrinter
 
-from .context import Config
+from .repository_config import (
+    load_repository_from_file,
+    repository_config_argument,
+)
 
 
 def create_pipeline_cli():
@@ -25,20 +35,28 @@ def create_pipeline_cli():
 
 
 @click.command(name='list', help="list")
-@Config.pass_object
-def list_command(config):
-    pipeline_configs = config.create_pipelines()
+@repository_config_argument
+def list_command(conf):
+    repository = load_repository_from_file(conf).repository
+    title = 'Repository {name}'.format(name=repository.name)
+    click.echo(title)
+    click.echo('*' * len(title))
+    first = True
+    for pipeline in repository.get_all_pipelines():
+        pipeline_title = 'Pipeline: {name}'.format(name=pipeline.name)
 
-    for pipeline_config in pipeline_configs:
-        pipeline = pipeline_config.pipeline
-        click.echo('Pipeline: {name}'.format(name=pipeline.name))
+        if not first:
+            click.echo('*' * len(pipeline_title))
+        first = False
+
+        click.echo(pipeline_title)
         if pipeline.description:
             click.echo('Description:')
             click.echo(format_description(pipeline.description, indent=' ' * 4))
         click.echo('Solids: (Execution Order)')
-        for solid in pipeline.solid_graph.topological_solids:
+        solid_graph = ExecutionGraph(pipeline, pipeline.solids, pipeline.dependency_structure)
+        for solid in solid_graph.topological_solids:
             click.echo('    ' + solid.name)
-        click.echo('*************')
 
 
 def format_description(desc, indent):
@@ -51,26 +69,25 @@ def format_description(desc, indent):
     return filled
 
 
-def set_pipeline(ctx, _arg, value):
-    ctx.params['pipeline_config'] = ctx.find_object(Config).get_pipeline(value)
-
-
-def pipeline_name_argument(f):
-    return click.argument('pipeline_name', callback=set_pipeline, expose_value=False)(f)
+def pipeline_from_conf(conf, name):
+    repository = load_repository_from_file(conf).repository
+    return repository.get_pipeline(name)
 
 
 @click.command(name='print', help="print <<pipeline_name>>")
+@repository_config_argument
 @click.option('--verbose', is_flag=True)
-@pipeline_name_argument
-def print_command(pipeline_config, verbose):
+@click.argument('name')
+def print_command(conf, name, verbose):
+    pipeline = pipeline_from_conf(conf, name)
     if verbose:
-        print_pipeline(pipeline_config.pipeline, full=True, print_fn=click.echo)
+        print_pipeline(pipeline, full=True, print_fn=click.echo)
     else:
-        print_solids(pipeline_config.pipeline, print_fn=click.echo)
+        print_solids(pipeline, print_fn=click.echo)
 
 
 def print_solids(pipeline, print_fn):
-    check.inst_param(pipeline, 'pipeline', dagster.PipelineDefinition)
+    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.callable_param(print_fn, 'print_fn')
 
     printer = IndentingPrinter(indent_level=2, printer=print_fn)
@@ -83,7 +100,7 @@ def print_solids(pipeline, print_fn):
 
 
 def print_pipeline(pipeline, full, print_fn):
-    check.inst_param(pipeline, 'pipeline', dagster.PipelineDefinition)
+    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.bool_param(full, 'full')
     check.callable_param(print_fn, 'print_fn')
 
@@ -121,15 +138,9 @@ def print_context_definition(printer, context_name, context_definition):
 
     print_description(printer, context_definition.description)
 
-    printer.line('Args:')
-
-    with printer.with_indent():
-        for arg_name, arg_def in context_definition.argument_def_dict.items():
-            printer.line('Arg: {name}'.format(name=arg_name))
-            with printer.with_indent():
-                printer.line('Type: {arg_type}'.format(arg_type=arg_def.dagster_type.name))
-
-                print_description(printer, arg_def.description)
+    printer.line(
+        'Type: {config_type}'.format(config_type=context_definition.config_def.config_type.name)
+    )
 
 
 def print_solid(printer, solid):
@@ -138,49 +149,17 @@ def print_solid(printer, solid):
     with printer.with_indent():
         print_inputs(printer, solid)
 
-        printer.line('Output:')
+        printer.line('Outputs:')
 
-        if solid.output.materializations:
-            printer.line('Materializations:')
-            for materialization_def in solid.output.materializations:
-                arg_list = format_argument_dict(materialization_def.argument_def_dict)
-                with printer.with_indent():
-                    printer.line(
-                        '{name}({arg_list})'.format(
-                            name=materialization_def.name, arg_list=arg_list
-                        )
-                    )
+        for output_def in solid.output_defs:
+            print(output_def.name)
 
 
 def print_inputs(printer, solid):
     printer.line('Inputs:')
-    for input_def in solid.inputs:
+    for input_def in solid.input_defs:
         with printer.with_indent():
-            if input_def.depends_on:
-                printer.line(
-                    'Input: {name} (depends on {dep_name})'.format(
-                        name=input_def.name, dep_name=input_def.depends_on.name
-                    )
-                )
-            else:
-                printer.line('Input: {name}'.format(name=input_def.name))
-
-            if input_def.sources:
-                print_sources(printer, input_def.sources)
-
-
-def print_sources(printer, sources):
-    with printer.with_indent():
-        printer.line('Sources:')
-        with printer.with_indent():
-            for source_def in sources:
-                arg_list = format_argument_dict(source_def.argument_def_dict)
-                printer.line(
-                    '{input_name}({arg_list})'.format(
-                        input_name=source_def.source_type,
-                        arg_list=arg_list,
-                    )
-                )
+            printer.line('Input: {name}'.format(name=input_def.name))
 
 
 def format_argument_dict(arg_def_dict):
@@ -193,16 +172,12 @@ def format_argument_dict(arg_def_dict):
 
 
 @click.command(name='graphviz', help="graphviz <<pipeline_name>>")
-@pipeline_name_argument
-def graphviz_command(pipeline_config):
-    build_graphviz_graph(pipeline_config.pipeline).view(cleanup=True)
-
-
-def get_default_config_for_pipeline():
-    ctx = click.get_current_context()
-    pipeline_config = ctx.params['pipeline_config']
-    module_path = os.path.dirname(pipeline_config.module.__file__)
-    return os.path.join(module_path, 'env.yml')
+@repository_config_argument
+@click.argument('name')
+@click.option('--only-solids', is_flag=True)
+def graphviz_command(conf, name, only_solids):
+    pipeline = pipeline_from_conf(conf, name)
+    build_graphviz_graph(pipeline, only_solids).view(cleanup=True)
 
 
 LOGGING_DICT = {
@@ -214,14 +189,9 @@ LOGGING_DICT = {
 }
 
 
-def load_yaml_from_path(path):
-    check.str_param(path, 'path')
-    with open(path, 'r') as ff:
-        return yaml.load(ff)
-
-
 @click.command(name='execute', help="execute <<pipeline_name>>")
-@pipeline_name_argument
+@repository_config_argument
+@click.argument('name')
 @click.option(
     '-e',
     '--env',
@@ -232,70 +202,32 @@ def load_yaml_from_path(path):
         readable=True,
         resolve_path=True,
     ),
-    default=get_default_config_for_pipeline,
-    help="Path to environment file. Defaults to ./PIPELINE_DIR/env.yml."
 )
-def execute_command(pipeline_config, env):
-    do_execute_command(pipeline_config.pipeline, env, print)
+def execute_command(conf, name, env):
+    pipeline = pipeline_from_conf(conf, name)
+    do_execute_command(pipeline, env, print)
 
 
 def do_execute_command(pipeline, env, printer):
-    check.inst_param(pipeline, 'pipeline', dagster.PipelineDefinition)
+    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.str_param(env, 'env')
     check.callable_param(printer, 'printer')
 
     env_config = load_yaml_from_path(env)
 
-    environment = dagster.config.construct_environment(env_config)
+    environment = config.construct_environment(env_config)
 
     pipeline_iter = execute_pipeline_iterator(pipeline, environment)
 
-    process_results_for_console(pipeline_iter, printer)
+    process_results_for_console(pipeline_iter)
 
 
-def process_results_for_console(pipeline_iter, printer):
+def process_results_for_console(pipeline_iter):
     results = []
 
     for result in pipeline_iter:
         if not result.success:
-            if result.reason == DagsterExecutionFailureReason.USER_CODE_ERROR:
-                raise result.user_exception
-            elif result.reason == DagsterExecutionFailureReason.EXPECTATION_FAILURE:
-                for expectation_result in result.failed_expectation_results:
-                    result.context.error(expectation_result.message, solid=result.solid.name)
-                click_context = click.get_current_context()
-                click_context.exit(1)
+            result.reraise_user_error()
         results.append(result)
 
-    print_metrics_to_console(results, printer)
-
-
-def print_metrics_to_console(results, printer):
-    for result in results:
-        context = result.context
-        metrics_of_solid = list(context.metrics_matching_context({'solid': result.name}))
-
-        printer('Metrics for {name}'.format(name=result.name))
-
-        for input_def in result.solid.inputs:
-            metrics_for_input = list(
-                context.metrics_covering_context({
-                    'solid': result.name,
-                    'input': input_def.name,
-                })
-            )
-            if metrics_for_input:
-                printer('    Input {input_name}'.format(input_name=input_def.name))
-                for metric in metrics_for_input:
-                    printer(
-                        '{indent}{metric_name}: {value}'.format(
-                            indent=' ' * 8, metric_name=metric.metric_name, value=metric.value
-                        )
-                    )
-
-        for metric in metrics_of_solid:
-            printer(
-                '{indent}{metric_name}: {value}'.format(
-                    indent=' ' * 4, metric_name=metric.metric_name, value=metric.value
-                )
-            )
+    return results

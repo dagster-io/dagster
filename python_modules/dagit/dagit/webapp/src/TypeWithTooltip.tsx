@@ -2,10 +2,10 @@ import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
 import { Code, Position, Tooltip, Text } from "@blueprintjs/core";
-import { TypeFragment } from "./types/TypeFragment";
+import { TypeWithTooltipFragment } from "./types/TypeWithTooltipFragment";
 
 interface ITypeWithTooltipProps {
-  type: TypeFragment;
+  type: TypeWithTooltipFragment;
 }
 
 export default class TypeWithTooltip extends React.Component<
@@ -13,8 +13,8 @@ export default class TypeWithTooltip extends React.Component<
   {}
 > {
   static fragments = {
-    TypeFragment: gql`
-      fragment TypeFragment on Type {
+    TypeWithTooltipFragment: gql`
+      fragment TypeWithTooltipFragment on Type {
         name
         description
       }
@@ -29,16 +29,25 @@ export default class TypeWithTooltip extends React.Component<
             <TypeDescription>{this.props.type.description}</TypeDescription>
           }
         >
-          <TypeName>{this.props.type.name}</TypeName>
+          <TypeNameWithHelp>{this.props.type.name}</TypeNameWithHelp>
         </Tooltip>
       );
     } else {
-      return <Code>{this.props.type.name}</Code>;
+      return <TypeName>{this.props.type.name}</TypeName>;
     }
   }
 }
 
-const TypeName = styled(Code)`
+const TypeName = styled.code`
+  background: #d6ecff;
+  border: none;
+  padding: 1px 4px;
+  border-bottom: 1px solid #2491eb;
+  border-radius: 0.25em;
+  font-weight: 500;
+`;
+
+const TypeNameWithHelp = styled(TypeName)`
   cursor: help;
 `;
 

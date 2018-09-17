@@ -7,13 +7,14 @@
 // GraphQL fragment: SolidListItemFragment
 // ====================================================
 
-export interface SolidListItemFragment_output_type {
+export interface SolidListItemFragment_outputs_type {
   name: string;
   description: string | null;
 }
 
-export interface SolidListItemFragment_output {
-  type: SolidListItemFragment_output_type;
+export interface SolidListItemFragment_outputs {
+  name: string;
+  type: SolidListItemFragment_outputs_type;
 }
 
 export interface SolidListItemFragment_inputs_type {
@@ -29,7 +30,7 @@ export interface SolidListItemFragment_inputs {
 export interface SolidListItemFragment {
   name: string;
   description: string | null;
-  output: SolidListItemFragment_output;
+  outputs: SolidListItemFragment_outputs[];
   inputs: SolidListItemFragment_inputs[];
 }
 

@@ -21,8 +21,8 @@
 from recommonmark.parser import CommonMarkParser
 
 project = 'Dagster'
-copyright = '2018, Nicholas Schrock'
-author = 'Nicholas Schrock'
+copyright = '2018, Elementl, Inc'  # pylint: disable=W0622
+author = 'The Dagster Team'
 
 # The short X.Y version
 version = ''
@@ -154,3 +154,7 @@ texinfo_documents = [
 ]
 
 # -- Extension configuration -------------------------------------------------
+
+extensions = ['sphinx.ext.napoleon']
+
+html_sidebars = {'**': ['globaltoc.html', 'relations.html', 'sourcelink.html', 'searchbox.html']}

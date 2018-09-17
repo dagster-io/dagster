@@ -10,9 +10,8 @@ else:
 
 setup(
     name='dagster-ge',
-    version='0.0.0',
+    version='0.2.0',
     author='Elementl',
-    author_email='schrockn@elementl.com',
     license='Apache-2.0',
     description='Great Expectations plugin for Dagster',
     url='https://github.com/dagster-io/dagster',
@@ -26,7 +25,7 @@ setup(
         # standard python 2/3 compatability things
         'enum34>=1.1.6',
         'future>=0.16.0',
-        'dagster>=0.1.2',
+        'dagster>=0.2.0',
         'great-expectations>=0.4.2',
     ]
     # scripts=['bin/dagster']

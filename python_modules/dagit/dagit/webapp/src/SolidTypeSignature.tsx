@@ -1,7 +1,7 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
-import { Code } from "@blueprintjs/core";
+import { Code, Colors } from "@blueprintjs/core";
 import TypeWithTooltip from "./TypeWithTooltip";
 import { SolidTypeSignatureFragment } from "./types/SolidTypeSignatureFragment";
 
@@ -16,38 +16,40 @@ export default class SolidTypeSignature extends React.Component<
   static fragments = {
     SolidTypeSignatureFragment: gql`
       fragment SolidTypeSignatureFragment on Solid {
-        output {
+        outputs {
+          name
           type {
-            ...TypeFragment
+            ...TypeWithTooltipFragment
           }
         }
         inputs {
           name
           type {
-            ...TypeFragment
+            ...TypeWithTooltipFragment
           }
         }
       }
 
-      ${TypeWithTooltip.fragments.TypeFragment}
+      ${TypeWithTooltip.fragments.TypeWithTooltipFragment}
     `
   };
 
   render() {
     const inputSide = this.props.solid.inputs.map((input, i) => (
-      <span>
+      <span key={i}>
         {input.name}: <TypeWithTooltip type={input.type} />
         {i < this.props.solid.inputs.length - 1 ? ", " : ""}
       </span>
     ));
-    const outputSide = (
-      <span>
-        <TypeWithTooltip type={this.props.solid.output.type} />
+    const outputSide = this.props.solid.outputs.map((output, i) => (
+      <span key={i}>
+        {output.name}: <TypeWithTooltip type={output.type} />
+        {i < this.props.solid.outputs.length - 1 ? ", " : ""}
       </span>
-    );
+    ));
     return (
       <TypeSignature>
-        ({inputSide}) ⇒ {outputSide}
+        ({inputSide}) ⇒ ({outputSide})
       </TypeSignature>
     );
   }
@@ -55,6 +57,9 @@ export default class SolidTypeSignature extends React.Component<
 
 const TypeSignature = styled(Code)`
   && {
-    padding: 5px;
+    background: ${Colors.LIGHT_GRAY5};
+    padding: 5px 10px;
+    box-shadow: none;
+    color: black;
   }
 `;

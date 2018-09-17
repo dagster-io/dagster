@@ -1,25 +1,53 @@
-.. Dagster documentation master file, created by
-   sphinx-quickstart on Mon Jun 11 11:00:41 2018.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
-Dagster's documentation!
-===================================
-
-.. include:: ../README.rst
-  :start-after: docs-include
+.. image:: https://user-images.githubusercontent.com/28738937/44878798-b6e17e00-ac5c-11e8-8d25-2e47e5a53418.png
+   :align: center
 
 
-
-Other docs
-==========
+Welcome to Dagster, an opinionated programming model for data pipelines.
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+  :maxdepth: 1
+  :caption: Documentation
+  :name: Documentation
 
-   developing/index
+  motivations
+  principles
+  topic_guides
+  contributing
 
+Intro Tutorial
+==============
+.. toctree::
+  :maxdepth: 1
+  :name: Intro Tutorial
+  :caption: Intro Tutorial
+
+  intro_tutorial/part_one
+  intro_tutorial/part_two
+  intro_tutorial/part_three
+  intro_tutorial/part_four
+  intro_tutorial/part_five
+  intro_tutorial/part_six
+  intro_tutorial/part_seven
+  intro_tutorial/part_eight
+  intro_tutorial/part_nine
+  intro_tutorial/part_ten
+  intro_tutorial/part_eleven
+  intro_tutorial/part_twelve
+
+
+API Reference
+================
+
+.. toctree::
+  :maxdepth: 1
+  :name: API Reference
+  :caption: API Reference
+
+  apidocs/definitions
+  apidocs/decorators
+  apidocs/execution
+  apidocs/errors
+  apidocs/types
 
 Indices and tables
 ==================
