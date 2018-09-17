@@ -1,4 +1,3 @@
-from collections import namedtuple
 from six import (string_types, integer_types)
 
 from dagster import check
@@ -7,7 +6,8 @@ from dagster.core.errors import DagsterEvaluateValueError
 
 
 class DagsterType(object):
-    '''Base class for Dagster Type system. Should be inherited by a subclass. Subclass must implement `evaluate_value`
+    '''Base class for Dagster Type system. Should be inherited by a subclass.
+    Subclass must implement `evaluate_value`
 
     Attributes:
       name (str): Name of the type
@@ -24,7 +24,11 @@ class DagsterType(object):
         return 'DagsterType({name})'.format(name=self.name)
 
     def evaluate_value(self, _value):
-        '''Subclasses must implement this method. Check if the value is a valid one and return a processed version of it. If value is invalid, raise `DagsterEvaluateValueError`.
+        '''Subclasses can implement this method. Check if the value is a valid one
+        and return a processed version of it. If value is invalid,
+        raise `DagsterEvaluateValueError`.
+
+        This class provides a default implementation of this method
 
         Args:
           value: The value to check
@@ -35,25 +39,12 @@ class DagsterType(object):
         check.not_implemented('Must implement in subclass')
 
 
-class DagsterScalarType(DagsterType):
-    '''Base class for dagster types that are scalar python values.
-
-    Attributes:
-      name (str): Name of the type
-
-      description (str): Description of the type
+class UncoercedTypeMixin(object):
+    '''This is a helper mixin used when you only want to do a type check
+    against an in-memory value and then leave that value uncoerced. Only
+    is_python_valid_value must be implemented for these classes.
+    evaluate_value is implemented for you.
     '''
-
-    def __init__(self, *args, **kwargs):
-        super(DagsterScalarType, self).__init__(*args, **kwargs)
-
-    def process_value(self, value):
-        '''Modify the value before it's evaluated. Subclasses may override.
-
-        Returns:
-          any: New value
-        '''
-        return value
 
     def is_python_valid_value(self, _value):
         '''Subclasses must implement this method. Check if the value and output a boolean.
@@ -61,7 +52,7 @@ class DagsterScalarType(DagsterType):
         Returns:
           bool: Whether the value is valid.
         '''
-        raise Exception('must implement')
+        check.failed('must implement')
 
     def evaluate_value(self, value):
         if not self.is_python_valid_value(value):
@@ -73,7 +64,20 @@ class DagsterScalarType(DagsterType):
         return value
 
 
-class _DagsterAnyType(DagsterType):
+class DagsterScalarType(UncoercedTypeMixin, DagsterType):
+    '''Base class for dagster types that are scalar python values.
+
+    Attributes:
+      name (str): Name of the type
+
+      description (str): Description of the type
+    '''
+
+    def __init__(self, *args, **kwargs):
+        super(DagsterScalarType, self).__init__(*args, **kwargs)
+
+
+class _DagsterAnyType(UncoercedTypeMixin, DagsterType):
     def __init__(self):
         super(_DagsterAnyType, self).__init__(
             name='Any', description='The type that allows any value, including no value.'
@@ -82,18 +86,12 @@ class _DagsterAnyType(DagsterType):
     def is_python_valid_value(self, _value):
         return True
 
-    def process_value(self, value):
-        return value
-
-    def evaluate_value(self, value):
-        return value
-
 
 def nullable_isinstance(value, typez):
     return value is None or isinstance(value, typez)
 
 
-class PythonObjectType(DagsterType):
+class PythonObjectType(UncoercedTypeMixin, DagsterType):
     '''Dagster Type that checks if the value is an instance of some `python_type`'''
 
     def __init__(
@@ -107,15 +105,6 @@ class PythonObjectType(DagsterType):
 
     def is_python_valid_value(self, value):
         return nullable_isinstance(value, self.python_type)
-
-    def evaluate_value(self, value):
-        if not self.is_python_valid_value(value):
-            raise DagsterEvaluateValueError(
-                'Expected valid value for {type_name} but got {value}'.format(
-                    type_name=self.name, value=repr(value)
-                )
-            )
-        return value
 
 
 class _DagsterStringType(DagsterScalarType):

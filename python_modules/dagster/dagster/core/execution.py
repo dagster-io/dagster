@@ -200,21 +200,21 @@ class SolidExecutionResult(object):
             ):
                 if not result.success:
                     if isinstance(
-                        result.failure_data.dagster_user_exception,
+                        result.failure_data.dagster_error,
                         DagsterUserCodeExecutionError,
                     ):
-                        six.reraise(*result.failure_data.dagster_user_exception.original_exc_info)
+                        six.reraise(*result.failure_data.dagster_error.original_exc_info)
                     else:
-                        raise result.failure_data.dagster_user_exception
+                        raise result.failure_data.dagster_error
 
     @property
-    def dagster_user_exception(self):
+    def dagster_error(self):
         '''Returns exception that happened during this solid's execution, if any'''
         for result in itertools.chain(
             self.input_expectations, self.output_expectations, self.transforms
         ):
             if not result.success:
-                return result.failure_data.dagster_user_exception
+                return result.failure_data.dagster_error
 
 
 def _wrap_in_yield(context_or_generator):

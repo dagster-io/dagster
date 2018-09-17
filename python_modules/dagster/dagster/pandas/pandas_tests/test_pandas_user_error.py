@@ -6,6 +6,8 @@ import pandas as pd
 
 import dagster.pandas as dagster_pd
 from dagster import (
+    DagsterInvariantViolationError,
+    DagsterTypeError,
     DependencyDefinition,
     InputDefinition,
     OutputDefinition,
@@ -15,17 +17,7 @@ from dagster import (
     execute_pipeline,
     lambda_solid,
 )
-from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.utility_solids import define_stub_solid
-
-
-def _dataframe_solid(name, inputs, transform_fn):
-    return SolidDefinition.single_output_transform(
-        name=name,
-        inputs=inputs,
-        transform_fn=transform_fn,
-        output=OutputDefinition(dagster_pd.DataFrame),
-    )
 
 
 def test_wrong_output_value():
@@ -69,5 +61,5 @@ def test_wrong_input_value():
         }}
     )
 
-    with pytest.raises(DagsterInvariantViolationError):
+    with pytest.raises(DagsterTypeError):
         execute_pipeline(pipeline)

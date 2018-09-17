@@ -5,6 +5,8 @@ from enum import Enum
 import uuid
 import sys
 
+from future.utils import raise_from
+
 import toposort
 
 from dagster import (
@@ -110,15 +112,11 @@ class ComputeNodeSuccessData(namedtuple('_ComputeNodeSuccessData', 'output_name 
         )
 
 
-class ComputeNodeFailureData(namedtuple('_ComputeNodeFailureData', 'dagster_user_exception')):
-    def __new__(cls, dagster_user_exception):
+class ComputeNodeFailureData(namedtuple('_ComputeNodeFailureData', 'dagster_error')):
+    def __new__(cls, dagster_error):
         return super(ComputeNodeFailureData, cls).__new__(
             cls,
-            dagster_user_exception=check.inst_param(
-                dagster_user_exception,
-                'dagster_user_exception',
-                DagsterError,
-            ),
+            dagster_error=check.inst_param(dagster_error, 'dagster_error', DagsterError),
         )
 
 
@@ -149,10 +147,6 @@ class ComputeNodeResult(
         )
 
 
-LOG_LEVEL = ERROR
-logger = define_colored_console_logger('dagster-compute-nodes', LOG_LEVEL)
-
-
 @contextmanager
 def _user_code_error_boundary(context, msg, **kwargs):
     '''
@@ -172,11 +166,16 @@ def _user_code_error_boundary(context, msg, **kwargs):
         stack_trace = get_formatted_stack_trace(de)
         context.error(str(de), stack_trace=stack_trace)
         raise de
-    except Exception as e:
+    except Exception as e: # pylint: disable=W0703
         stack_trace = get_formatted_stack_trace(e)
         context.error(str(e), stack_trace=stack_trace)
-        raise DagsterUserCodeExecutionError(
-            msg.format(**kwargs), e, user_exception=e, original_exc_info=sys.exc_info()
+        raise_from(
+            DagsterUserCodeExecutionError(
+                msg.format(**kwargs),
+                user_exception=e,
+                original_exc_info=sys.exc_info(),
+            ),
+            e,
         )
 
 
@@ -354,80 +353,88 @@ class ComputeNode(object):
             ),
         )
 
-    def execute(self, context, inputs):
-        check.inst_param(context, 'context', ExecutionContext)
-        check.dict_param(inputs, 'inputs', key_type=str)
-
-        logger.debug('Entering execution for {self.friendly_name}'.format(self=self))
-
-        # do runtime type checks of inputs versus node inputs
-        for input_name, input_value in inputs.items():
-            compute_node_input = self._node_input_dict[input_name]
-            if not compute_node_input.dagster_type.is_python_valid_value(input_value):
-                raise DagsterInvariantViolationError(
-                    '''Solid {cn.solid.name} input {input_name}
-                   received value {input_value} which does not match the type for Dagster type
-                   {compute_node_input.dagster_type.name}. Compute node {cn.friendly_name}'''
-                    .format(
+    def _get_evaluated_input(self, input_name, input_value):
+        compute_node_input = self._node_input_dict[input_name]
+        try:
+            return compute_node_input.dagster_type.evaluate_value(input_value)
+        except DagsterEvaluateValueError as evaluate_error:
+            raise_from(
+                DagsterTypeError((
+                    'Solid {cn.solid.name} input {input_name} received value {input_value} ' +
+                    'which does not pass the typecheck for Dagster type ' +
+                    '{compute_node_input.dagster_type.name}. Compute node {cn.friendly_name}'
+                    ).format(
                         cn=self,
                         input_name=input_name,
                         input_value=input_value,
-                        compute_node_input=compute_node_input
+                        compute_node_input=compute_node_input,
                     )
-                )
+                ),
+                evaluate_error,
+            )
 
+    def _compute_result_list(self, context, evaluated_inputs):
         error_str = 'Error occured during compute node {friendly_name}'.format(
             friendly_name=self.friendly_name,
         )
 
+        with _user_code_error_boundary(context, error_str):
+            gen = self.compute_fn(context, self, evaluated_inputs)
+
+            if gen is None:
+                check.invariant(not self.node_outputs)
+                return
+
+            return list(gen)
+
+    def _error_check_results(self, results):
         seen_outputs = set()
+        for result in results:
+            if not self.has_node(result.output_name):
+                output_names = list([output_def.name for output_def in self.solid.output_defs])
+                raise DagsterInvariantViolationError(
+                    '''Core transform for {cn.solid.name} returned an output
+                    {result.output_name} that does not exist. The available
+                    outputs are {output_names}'''
+                    .format(cn=self, result=result, output_names=output_names)
+                )
+
+            if result.output_name in seen_outputs:
+                raise DagsterInvariantViolationError(
+                    '''Core transform for {cn.solid.name} returned an output
+                    {result.output_name} multiple times'''.format(cn=self, result=result)
+                )
+
+            seen_outputs.add(result.output_name)
+
+
+    def _execute_inner_compute_node_loop(self, context, inputs):
+        evaluated_inputs = {}
+        # do runtime type checks of inputs versus node inputs
+        for input_name, input_value in inputs.items():
+            evaluated_inputs[input_name] = self._get_evaluated_input(input_name, input_value)
+
+        results = self._compute_result_list(context, evaluated_inputs)
+
+        self._error_check_results(results)
+
+        return [self._create_compute_node_result(result) for result in results]
+
+    def execute(self, context, inputs):
+        check.inst_param(context, 'context', ExecutionContext)
+        check.dict_param(inputs, 'inputs', key_type=str)
 
         try:
+            for compute_node_result in self._execute_inner_compute_node_loop(context, inputs):
+                yield compute_node_result
 
-            with _user_code_error_boundary(context, error_str):
-                gen = self.compute_fn(context, self, inputs)
-
-                if gen is None:
-                    check.invariant(not self.node_outputs)
-                    return
-
-                results = list(gen)
-
-            for result in results:
-                if not self.has_node(result.output_name):
-                    output_names = list([output_def.name for output_def in self.solid.output_defs])
-                    raise DagsterInvariantViolationError(
-                        '''Core transform for {cn.solid.name} returned an output
-                        {result.output_name} that does not exist. The available
-                        outputs are {output_names}'''
-                        .format(cn=self, result=result, output_names=output_names)
-                    )
-
-                if result.output_name in seen_outputs:
-                    raise DagsterInvariantViolationError(
-                        '''Core transform for {cn.solid.name} returned an output
-                        {result.output_name} multiple times'''.format(cn=self, result=result)
-                    )
-
-                seen_outputs.add(result.output_name)
-
-                yield self._create_compute_node_result(result)
-
-        except DagsterUserCodeExecutionError as dagster_user_exception:
-            yield ComputeNodeResult.failure_result(
-                compute_node=self,
-                tag=self.tag,
-                failure_data=ComputeNodeFailureData(
-                    dagster_user_exception=dagster_user_exception,
-                ),
-            )
-            return
         except DagsterError as dagster_error:
+            context.error(str(dagster_error))
             yield ComputeNodeResult.failure_result(
                 compute_node=self,
                 tag=self.tag,
                 failure_data=ComputeNodeFailureData(
-                    dagster_user_exception=dagster_error,
+                    dagster_error=dagster_error,
                 ),
             )
             return

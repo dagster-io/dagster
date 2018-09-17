@@ -1,4 +1,14 @@
-from dagster.core.types import (DagsterType, PythonObjectType)
+from collections import namedtuple
+import pytest
+from dagster.core.types import (
+    DagsterCompositeType,
+    DagsterEvaluateValueError,
+    DagsterType,
+    Field,
+    Int,
+    PythonObjectType,
+    String,
+)
 
 
 def test_desc():
@@ -15,6 +25,7 @@ def test_python_object_type():
 
     assert type_bar.name == 'Bar'
     assert type_bar.description == 'A bar.'
-    assert type_bar.is_python_valid_value(Bar())
-    assert type_bar.is_python_valid_value(None)  # allow nulls
-    assert not type_bar.is_python_valid_value('not_a_bar')
+    assert type_bar.evaluate_value(Bar())
+    assert type_bar.evaluate_value(None) is None  # allow nulls
+    with pytest.raises(DagsterEvaluateValueError):
+        type_bar.evaluate_value('not_a_bar')

@@ -70,7 +70,7 @@ def test_transform_failure_pipeline():
 
     assert len(result_list) == 1
     assert not result_list[0].success
-    assert result_list[0].dagster_user_exception
+    assert result_list[0].dagster_error
 
 
 def test_failure_midstream():
@@ -107,7 +107,7 @@ def test_failure_midstream():
     assert result_list[0].success
     assert result_list[1].success
     assert not result_list[2].success
-    assert isinstance(result_list[2].dagster_user_exception, DagsterUserCodeExecutionError)
+    assert isinstance(result_list[2].dagster_error, DagsterUserCodeExecutionError)
 
 
 def test_do_not_yield_result():

@@ -1,3 +1,5 @@
+from collections import namedtuple
+
 import pytest
 from dagster import (
     ConfigDefinition,
@@ -313,3 +315,45 @@ def test_nested_optional_with_no_default():
     }
 
     assert _validate(_nested_optional_config_with_no_default(), {'nested': {}}) == {'nested': {}}
+
+
+CustomStructConfig = namedtuple('CustomStructConfig', 'foo bar')
+
+
+class CustomStructConfigType(types.DagsterCompositeType):
+    def __init__(self):
+        super(CustomStructConfigType, self).__init__(
+            'CustomStructConfigType',
+            {
+                'foo': Field(types.String),
+                'bar': Field(types.Int),
+            },
+            lambda val: CustomStructConfig(foo=val['foo'], bar=val['bar']),
+        )
+
+
+def test_custom_composite_type():
+    config_type = CustomStructConfigType()
+
+    assert config_type.evaluate_value({
+        'foo': 'some_string',
+        'bar': 2
+    }) == CustomStructConfig(
+        foo='some_string', bar=2
+    )
+
+    with pytest.raises(DagsterEvaluateValueError):
+        assert config_type.evaluate_value({
+            'foo': 'some_string',
+        })
+
+    with pytest.raises(DagsterEvaluateValueError):
+        assert config_type.evaluate_value({
+            'bar': 'some_string',
+        })
+
+    with pytest.raises(DagsterEvaluateValueError):
+        assert config_type.evaluate_value({
+            'foo': 'some_string',
+            'bar': 'not_an_int',
+        })
