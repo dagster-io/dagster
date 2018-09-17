@@ -18,7 +18,7 @@ def long_description():
 
 version = {}
 with open("dagit/version.py") as fp:
-    exec(fp.read(), version)
+    exec(fp.read(), version) # pylint: disable=W0122
 
 setup(
     name='dagit',
@@ -55,7 +55,7 @@ setup(
         'click>=6.7',
 
         # dagster
-        'dagster>=0.2.0.dev3',
+        'dagster>=0.2.0',
 
         # graphql
         'graphql-core>=2.1',

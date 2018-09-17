@@ -2,8 +2,6 @@ import sqlalchemy
 
 from dagster import (
     ExecutionContext,
-    Result,
-    SolidDefinition,
     check,
 )
 
