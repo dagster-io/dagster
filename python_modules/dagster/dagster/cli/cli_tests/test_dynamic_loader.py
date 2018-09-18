@@ -1,6 +1,10 @@
 import pytest
 
-from dagster import (RepositoryDefinition, PipelineDefinition)
+from dagster import (
+    PipelineDefinition,
+    RepositoryDefinition,
+    lambda_solid,
+)
 
 from dagster.cli.dynamic_loader import (
     FileTargetFunction,
@@ -440,8 +444,13 @@ def test_repo_file_dynamic_load_from_pipeline():
     assert repository.get_pipeline('foo').name == 'foo'
 
 
+@lambda_solid
+def do_something():
+    return 1
+
+
 def define_foo_pipeline():
-    return PipelineDefinition(name='foo', solids=[])
+    return PipelineDefinition(name='foo', solids=[do_something])
 
 
 def define_bar_repo():
