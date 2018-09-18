@@ -4,7 +4,7 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     SolidDefinition,
-    Solid,
+    SolidInstance,
     check,
     config,
     execute_pipeline,
@@ -27,10 +27,10 @@ def test_aliased_solids():
             'not_first': {
                 'prev': DependencyDefinition('first'),
             },
-            Solid('not_first', alias='second'): {
+            SolidInstance('not_first', alias='second'): {
                 'prev': DependencyDefinition('not_first'),
             },
-            Solid('not_first', alias='third'): {
+            SolidInstance('not_first', alias='third'): {
                 'prev': DependencyDefinition('second'),
             },
         },

@@ -283,7 +283,7 @@ def _build_named_dict(things):
     return ddict
 
 
-class Solid(namedtuple('Solid', 'name alias')):
+class SolidInstance(namedtuple('Solid', 'name alias')):
     '''
     A solid identifier in a dependency structure. Allows supplying parameters to the solid, like the alias.
 
@@ -294,7 +294,7 @@ class Solid(namedtuple('Solid', 'name alias')):
             pipeline = Pipeline(
                 solids=[solid_1, solid_2]
                 dependencies={
-                    Solid('solid_2', alias='other_name') : {
+                    SolidInstance('solid_2', alias='other_name') : {
                         'input_name' : DependencyDefinition('solid_2'),
                     },
                     'solid_1' : {
@@ -307,7 +307,7 @@ class Solid(namedtuple('Solid', 'name alias')):
     def __new__(cls, name, alias=None):
         name = check.str_param(name, 'name')
         alias = check.opt_str_param(alias, 'alias')
-        return super(cls, Solid).__new__(cls, name, alias)
+        return super(cls, SolidInstance).__new__(cls, name, alias)
 
 
 class PipelineSolid(object):
@@ -409,7 +409,7 @@ class PipelineDefinition(object):
     '''
 
     def __init__(
-        self, solids=None, name=None, description=None, context_definitions=None, dependencies=None
+        self, solids, name=None, description=None, context_definitions=None, dependencies=None
     ):
         '''
         Args:
@@ -442,7 +442,7 @@ class PipelineDefinition(object):
         solid_aliases = defaultdict(list)
 
         for solid_key, definition in dependencies.items():
-            if isinstance(solid_key, Solid):
+            if isinstance(solid_key, SolidInstance):
                 if solid_key.alias:
                     solid_aliases[solid_key.name].append(solid_key.alias)
                     processed_dependencies[solid_key.alias] = definition
@@ -1056,12 +1056,7 @@ class ExecutionGraph(object):
 
         for from_solid_name, targets_by_input in injected_solids.items():
             for from_input_name, target_solid in targets_by_input.items():
-                if isinstance(target_solid, PipelineSolid):
-                    new_solids.append(target_solid)
-                else:
-                    new_solids.append(
-                        PipelineSolid(name=target_solid.name, definition=target_solid)
-                    )
+                new_solids.append(PipelineSolid(name=target_solid.name, definition=target_solid))
                 new_deps[from_solid_name][from_input_name] = DependencyDefinition(
                     solid=target_solid.name
                 )
