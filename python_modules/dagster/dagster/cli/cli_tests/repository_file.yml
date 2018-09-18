@@ -1,0 +1,3 @@
+repository:
+  file: test_dynamic_loader.py
+  fn: define_bar_repo

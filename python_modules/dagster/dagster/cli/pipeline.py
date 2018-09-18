@@ -4,9 +4,9 @@ import re
 import textwrap
 
 import click
-import yaml
 
 from dagster import (
+    RepositoryDefinition,
     PipelineDefinition,
     check,
     config,
@@ -14,14 +14,19 @@ from dagster import (
 
 from dagster.core.definitions import ExecutionGraph
 from dagster.core.execution import execute_pipeline_iterator
-from dagster.core.errors import DagsterExecutionFailureReason
 from dagster.graphviz import build_graphviz_graph
 from dagster.utils import load_yaml_from_path
 from dagster.utils.indenting_printer import IndentingPrinter
 
-from .repository_config import (
+from .dynamic_loader import (
+    PipelineTargetInfo,
+    RepositoryTargetInfo,
+    load_pipeline_from_target_info,
     load_repository_from_file,
+    load_repository_from_target_info,
+    pipeline_target_command,
     repository_config_argument,
+    load_target_info_from_kwargs,
 )
 
 
@@ -34,10 +39,20 @@ def create_pipeline_cli():
     return group
 
 
-@click.command(name='list', help="list")
+REPO_TARGET_WARNING = (
+    'Can only use ONE of --repository-yaml/-y, --python-file/-f, --module-name/-m.'
+)
+
+
+@click.command(
+    name='list',
+    help="List the pipelines in a repository. {warning}".format(warning=REPO_TARGET_WARNING),
+)
 @repository_config_argument
-def list_command(conf):
-    repository = load_repository_from_file(conf).repository
+def list_command(**kwargs):
+    repository_target_info = load_target_info_from_kwargs(kwargs)
+    repository = load_repository_from_target_info(repository_target_info)
+
     title = 'Repository {name}'.format(name=repository.name)
     click.echo(title)
     click.echo('*' * len(title))
@@ -69,17 +84,58 @@ def format_description(desc, indent):
     return filled
 
 
-def pipeline_from_conf(conf, name):
-    repository = load_repository_from_file(conf).repository
-    return repository.get_pipeline(name)
+def create_pipeline_from_cli_args(kwargs):
+    check.dict_param(kwargs, 'kwargs')
+
+    pipeline_names = list(kwargs['pipeline_name'])
+
+    if not pipeline_names:
+        pipeline_name = None
+    elif len(pipeline_names) == 1:
+        pipeline_name = pipeline_names[0]
+    else:
+        check.failed('Can only handle zero or one pipeline args')
+
+    if kwargs['pipeline_name'] and kwargs['repository_yaml'] is None:
+        repository_yaml = 'repository.yml'
+    else:
+        repository_yaml = kwargs['repository_yaml']
+
+    return load_pipeline_from_target_info(
+        PipelineTargetInfo(
+            repository_yaml=repository_yaml,
+            pipeline_name=pipeline_name,
+            python_file=kwargs['python_file'],
+            pipeline_fn_name=kwargs['pipeline_fn_name'],
+            module_name=kwargs['module_name'],
+            repository_fn_name=kwargs['repository_fn_name'],
+        )
+    )
 
 
-@click.command(name='print', help="print <<pipeline_name>>")
-@repository_config_argument
+def get_pipeline_instructions(command_name):
+    return (
+        'This commands targets a pipeline. The pipeline can be specified in a number of ways:'
+        '\n\n1. dagster {command_name} <<pipeline_name>> (works if .repository.yml exists)'
+        '\n\n2. dagster {command_name} <<pipeline_name>> -y path/to/repository.yml'
+        '\n\n3. dagster {command_name} -f /path/to/file.py -p define_some_pipeline'
+        '\n\n4. dagster {command_name} -m a_module.submodule  -p define_some_pipeline'
+        '\n\n5. dagster {command_name} -f /path/to/file.py -r define_some_repo -p pipeline_name'
+        '\n\n6. dagster {command_name} -m a_module.submodule  -r define_some_repo -p pipeline_name'
+    ).format(command_name=command_name)
+
+
+@click.command(
+    name='print',
+    help='Print a pipeline.\n\n{instructions}'.format(
+        instructions=get_pipeline_instructions('print')
+    ),
+)
 @click.option('--verbose', is_flag=True)
-@click.argument('name')
-def print_command(conf, name, verbose):
-    pipeline = pipeline_from_conf(conf, name)
+@pipeline_target_command
+def print_command(verbose, **kwargs):
+    pipeline = create_pipeline_from_cli_args(kwargs)
+
     if verbose:
         print_pipeline(pipeline, full=True, print_fn=click.echo)
     else:
@@ -171,12 +227,20 @@ def format_argument_dict(arg_def_dict):
     )
 
 
-@click.command(name='graphviz', help="graphviz <<pipeline_name>>")
-@repository_config_argument
-@click.argument('name')
+@click.command(
+    name='graphviz',
+    help=(
+        'Visualize a pipeline using graphviz. Must be installed on your system '
+        '(e.g. homebrew install graphviz on mac). \n\n{instructions}'.format(
+            instructions=get_pipeline_instructions('graphviz')
+        )
+    ),
+)
 @click.option('--only-solids', is_flag=True)
-def graphviz_command(conf, name, only_solids):
-    pipeline = pipeline_from_conf(conf, name)
+@pipeline_target_command
+def graphviz_command(only_solids, **kwargs):
+    pipeline_target_info = PipelineTargetInfo(**kwargs)
+    pipeline = load_pipeline_from_target_info(pipeline_target_info)
     build_graphviz_graph(pipeline, only_solids).view(cleanup=True)
 
 
@@ -189,9 +253,13 @@ LOGGING_DICT = {
 }
 
 
-@click.command(name='execute', help="execute <<pipeline_name>>")
-@repository_config_argument
-@click.argument('name')
+@click.command(
+    name='execute',
+    help='Execute a pipeline.\n\n{instructions}'.format(
+        instructions=get_pipeline_instructions('execute')
+    ),
+)
+@pipeline_target_command
 @click.option(
     '-e',
     '--env',
@@ -203,8 +271,9 @@ LOGGING_DICT = {
         resolve_path=True,
     ),
 )
-def execute_command(conf, name, env):
-    pipeline = pipeline_from_conf(conf, name)
+def execute_command(env, **kwargs):
+    pipeline_target_info = PipelineTargetInfo(**kwargs)
+    pipeline = load_pipeline_from_target_info(pipeline_target_info)
     do_execute_command(pipeline, env, print)
 
 
