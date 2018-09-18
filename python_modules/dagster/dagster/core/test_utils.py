@@ -5,7 +5,6 @@ from dagster import (
     PipelineContextDefinition,
     Result,
     SolidDefinition,
-    PipelineSolid,
     check,
     config,
     execute_pipeline,
@@ -14,9 +13,7 @@ from dagster import (
 
 def execute_single_solid(context, solid, environment=None, throw_on_error=True):
     check.inst_param(context, 'context', ExecutionContext)
-    if isinstance(solid, SolidDefinition):
-        solid = PipelineSolid(name=solid.name, definition=solid)
-    check.inst_param(solid, 'solid', PipelineSolid)
+    check.inst_param(solid, 'solid', SolidDefinition)
     environment = check.opt_inst_param(
         environment,
         'environment',
@@ -82,13 +79,10 @@ def single_output_transform(name, inputs, transform_fn, output, description=None
             )
         yield Result(value=value)
 
-    return PipelineSolid(
+    return SolidDefinition(
         name=name,
-        definition=SolidDefinition(
-            name=name,
-            inputs=inputs,
-            transform_fn=_new_transform_fn,
-            outputs=[output],
-            description=description,
-        )
+        inputs=inputs,
+        transform_fn=_new_transform_fn,
+        outputs=[output],
+        description=description,
     )

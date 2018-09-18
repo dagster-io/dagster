@@ -9,7 +9,6 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     SolidDefinition,
-    PipelineSolid,
     check,
     config,
     lambda_solid,
@@ -46,7 +45,7 @@ def get_solid_transformed_value(_context, solid_inst, environment):
         solids=[dagster_pd.load_csv_solid('load_csv'), solid_inst],
         dependencies={
             solid_inst.name: {
-                solid_inst.definition.input_defs[0].name: DependencyDefinition('load_csv'),
+                solid_inst.input_defs[0].name: DependencyDefinition('load_csv'),
             }
         }
     )

@@ -193,18 +193,26 @@ class InputToOutputHandleDict(dict):
         return dict.__setitem__(self, key, val)
 
 
-def check_two_dim_str_dict(ddict, param_name, value_type):
-    check.dict_param(ddict, param_name, key_type=str, value_type=dict)
+def check_two_dim_dict(ddict, param_name, key_type=None, value_type=None):
+    check.dict_param(ddict, param_name, key_type=key_type, value_type=dict)
     for sub_dict in ddict.values():
-        check.dict_param(sub_dict, 'sub_dict', key_type=str, value_type=value_type)
+        check.dict_param(sub_dict, 'sub_dict', key_type=key_type, value_type=value_type)
     return ddict
+
+
+def check_opt_two_dim_dict(ddict, param_name, key_type=None, value_type=None):
+    ddict = check.opt_dict_param(ddict, param_name, key_type=key_type, value_type=dict)
+    for sub_dict in ddict.values():
+        check.dict_param(sub_dict, 'sub_dict', key_type=key_type, value_type=value_type)
+    return ddict
+
+
+def check_two_dim_str_dict(ddict, param_name, value_type):
+    return check_two_dim_dict(ddict, param_name, key_type=str, value_type=value_type)
 
 
 def check_opt_two_dim_str_dict(ddict, param_name, value_type):
-    ddict = check.opt_dict_param(ddict, param_name, key_type=str, value_type=dict)
-    for sub_dict in ddict.values():
-        check.dict_param(sub_dict, 'sub_dict', key_type=str, value_type=value_type)
-    return ddict
+    return check_opt_two_dim_dict(ddict, param_name, key_type=str, value_type=value_type)
 
 
 def _create_handle_dict(solid_dict, dep_dict):
@@ -273,6 +281,33 @@ def _build_named_dict(things):
     for thing in things:
         ddict[thing.name] = thing
     return ddict
+
+
+class Solid(namedtuple('Solid', 'name alias')):
+    '''
+    A solid identifier in a dependency structure. Allows supplying parameters to the solid, like the alias.
+
+    Example:
+
+        .. code-block:: python
+
+            pipeline = Pipeline(
+                solids=[solid_1, solid_2]
+                dependencies={
+                    Solid('solid_2', alias='other_name') : {
+                        'input_name' : DependencyDefinition('solid_2'),
+                    },
+                    'solid_1' : {
+                        'input_name': DependencyDefinition('other_name'),
+                    },
+                }
+            )
+    '''
+
+    def __new__(cls, name, alias=None):
+        name = check.str_param(name, 'name')
+        alias = check.opt_str_param(alias, 'alias')
+        return super(cls, Solid).__new__(cls, name, alias)
 
 
 class PipelineSolid(object):
@@ -358,7 +393,7 @@ class PipelineDefinition(object):
             Name of the pipeline. Must be unique per-repository.
         description (str):
             Description of the pipeline. Optional.
-        solids (List[SolidDefinition | PipelineSolid]):
+        solids (List[SolidDefinition]):
             List of the solids in this pipeline.
         dependencies (Dict[str, Dict[str, DependencyDefinition]]) :
             Dependencies that constitute the structure of the pipeline. This is a two-dimensional
@@ -374,11 +409,11 @@ class PipelineDefinition(object):
     '''
 
     def __init__(
-        self, solids, name=None, description=None, context_definitions=None, dependencies=None
+        self, solids=None, name=None, description=None, context_definitions=None, dependencies=None
     ):
         '''
         Args:
-            solids (List[SolidDefinition | PipelineSolid]): Solids in the pipeline
+            solids (List[SolidDefinition]): Solids in the pipeline
             name (str): Name. This is optional, mostly for situations that require ephemeral
                 pipeline definitions for fast scaffolding or testing.
             description (str): Description of the pipline.
@@ -397,51 +432,49 @@ class PipelineDefinition(object):
             key_type=str,
             value_type=PipelineContextDefinition,
         )
+        dependencies = check_opt_two_dim_dict(
+            dependencies,
+            'dependencies',
+            value_type=DependencyDefinition,
+        )
 
-        solids_with_names = []
+        processed_dependencies = {}
+        solid_aliases = defaultdict(list)
+
+        for solid_key, definition in dependencies.items():
+            if isinstance(solid_key, Solid):
+                if solid_key.alias:
+                    solid_aliases[solid_key.name].append(solid_key.alias)
+                    processed_dependencies[solid_key.alias] = definition
+                else:
+                    processed_dependencies[solid_key.name] = definition
+            else:
+                processed_dependencies[solid_key] = definition
+
+        pipeline_solids = []
         for solid in solids:
             if isinstance(solid, SolidDefinition):
-                solids_with_names.append(PipelineSolid(name=solid.name, definition=solid))
-            elif isinstance(solid, PipelineSolid):
-                solids_with_names.append(solid)
+                for alias in solid_aliases[solid.name]:
+                    pipeline_solids.append(PipelineSolid(name=alias, definition=solid))
+                pipeline_solids.append(PipelineSolid(name=solid.name, definition=solid))
             elif callable(solid):
                 raise DagsterInvalidDefinitionError(
                     '''You have passed a lambda or function {func} into
-                a pipeline that is not a solid. You have likely forgetten to annotate this function
-                with an @solid or @lambda_solid decorator located in dagster.core.decorators
-                '''.format(func=solid.__name__)
+                    a pipeline that is not a solid. You have likely forgetten to annotate this function
+                    with an @solid or @lambda_solid decorator located in dagster.core.decorators
+                    '''.format(func=solid.__name__)
                 )
+            else:
+                check.list_param(solids, 'solids', SolidDefinition)
 
-        self._solid_dict = _build_named_dict(solids_with_names)
+        self._solid_dict = _build_named_dict(pipeline_solids)
 
-        dependencies = check_two_dim_str_dict(
-            dependencies,
-            'dependencies',
-            DependencyDefinition,
-        ) if dependencies else {}
-
-        self.__validate_dependences(dependencies)
-        dependency_structure = DependencyStructure.from_definitions(solids_with_names, dependencies)
-        self.__validate_dependency_structure(name, solids_with_names, dependency_structure)
+        self.__validate_dependences(processed_dependencies)
+        dependency_structure = DependencyStructure.from_definitions(
+            pipeline_solids, processed_dependencies
+        )
+        self.__validate_dependency_structure(name, pipeline_solids, dependency_structure)
         self.dependency_structure = dependency_structure
-
-    @staticmethod
-    def create_from_solid_map(solid_map, **kwargs):
-        '''
-            Create pipeline from a map of solid aliases to solid definitions.
-
-            Args:
-                solid_map (Dict[str, SolidDefinition]): Solids in the pipeline
-                name (str): Name. This is optional, mostly for situations that require ephemeral
-                    pipeline definitions for fast scaffolding or testing.
-                description (str): Description of the pipline.
-                context_definitions (Dict[str, PipelineContextDefinition]): See class description.
-                dependencies: (Dict[str, Dict[str, DependencyDefinition]]): See class description.
-            '''
-        solids = []
-        for name, solid in solid_map.items():
-            solids.append(PipelineSolid(name=name, definition=solid))
-        return PipelineDefinition(solids=solids, **kwargs)
 
     @staticmethod
     def create_single_solid_pipeline(pipeline, solid_name, injected_solids=None):
@@ -1011,7 +1044,7 @@ class ExecutionGraph(object):
 
     def to_pipeline(self):
         return PipelineDefinition(
-            solids=self.solids,
+            solids=[solid.definition for solid in self.solids],
             dependencies=_dependency_structure_to_dep_dict(self.dependency_structure),
             context_definitions=self.pipeline.context_definitions
         )
@@ -1155,15 +1188,11 @@ class ExecutionGraph(object):
         return involved_solid_set
 
 
-def _build_named_dict(things, key_key=None, value_key=None):
-    if not key_key:
-        key_key = lambda thing: thing.name
-    if not value_key:
-        value_key = lambda thing: thing
+def _build_named_dict(things):
     ddict = {}
     for thing in things:
-        ddict[key_key(thing)] = value_key(thing)
-    return ddict\
+        ddict[thing.name] = thing
+    return ddict
 
 
 def _all_depended_on_solids(execution_graph):

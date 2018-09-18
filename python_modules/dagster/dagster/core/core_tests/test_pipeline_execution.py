@@ -3,7 +3,6 @@ from dagster import (
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
-    PipelineSolid,
     check,
     config,
     execute_pipeline,
@@ -13,6 +12,7 @@ from dagster.core.definitions import (
     DependencyStructure,
     ExecutionGraph,
     _create_adjacency_lists,
+    PipelineSolid,
 )
 
 from dagster.core.execution import (
@@ -82,6 +82,7 @@ def create_root_solid(name):
 
 
 def _do_construct(solids, dependencies):
+    solids = [PipelineSolid(name=solid.name, definition=solid) for solid in solids]
     dependency_structure = DependencyStructure.from_definitions(solids, dependencies)
     return _create_adjacency_lists(solids, dependency_structure)
 
@@ -174,9 +175,7 @@ def test_disconnected_graphs_adjaceny_lists():
 
 
 def create_diamond_solids():
-    a_source = PipelineSolid(
-        name='A_source', definition=define_stub_solid('A_source', [input_set('A_input')])
-    )
+    a_source = define_stub_solid('A_source', [input_set('A_input')])
     node_a = create_root_solid('A')
     node_b = create_solid_with_deps('B', node_a)
     node_c = create_solid_with_deps('C', node_a)

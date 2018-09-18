@@ -4,6 +4,7 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     SolidDefinition,
+    Solid,
     check,
     config,
     execute_pipeline,
@@ -20,21 +21,16 @@ def test_aliased_solids():
     def not_first(prev):
         return prev + ['not_first']
 
-    pipeline = PipelineDefinition.create_from_solid_map(
-        solid_map={
-            'first': first,
-            'not_first': not_first,
-            'second': not_first,
-            'third': not_first,
-        },
+    pipeline = PipelineDefinition(
+        solids=[first, not_first],
         dependencies={
             'not_first': {
                 'prev': DependencyDefinition('first'),
             },
-            'second': {
+            Solid('not_first', alias='second'): {
                 'prev': DependencyDefinition('not_first'),
             },
-            'third': {
+            Solid('not_first', alias='third'): {
                 'prev': DependencyDefinition('second'),
             },
         },
