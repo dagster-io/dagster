@@ -93,7 +93,16 @@ def check_info_fields(info, *fields):
 
     for none_field in INFO_FIELDS.difference(set(fields)):
         if info_dict[none_field] is not None:
-            raise InvalidPipelineLoadingComboError()
+            raise InvalidPipelineLoadingComboError(
+                (
+                    'field: {none_field} with value {value} should not be set if'
+                    '{fields} were provided'
+                ).format(
+                    value=repr(info_dict[none_field]),
+                    none_field=none_field,
+                    fields=repr(fields),
+                )
+            )
 
     return True
 
@@ -265,6 +274,26 @@ def load_repository_from_target_info(info):
     return check.inst(load_repository_object_from_target_info(info).fn(), RepositoryDefinition)
 
 
+# Keeping this code around for a week. I might need to be able to
+# coerce a single pipeline repo into a pipeline at some point while
+# we work out the kinks in the command line tool.
+#
+# If this is still around in a week or two delete this -- schrockn (09/18/18)
+
+# def _pipeline_from_dynamic_object(mode_data, dynamic_object):
+#     check.inst_param(mode_data, 'mode_data', PipelineLoadingModeData)
+#     check.inst_param(dynamic_object, 'dynamic_object', DynamicObject)
+
+#     repository = check.inst(
+#         ensure_in_repo(dynamic_object).object,
+#         RepositoryDefinition,
+#     )
+#     if len(repository.pipeline_dict) == 1:
+#         return repository.get_all_pipelines()[0]
+
+#     return repository.get_pipeline(mode_data.data.pipeline_name)
+
+
 def load_pipeline_from_target_info(info):
     check.inst_param(info, 'info', PipelineTargetInfo)
 
@@ -276,12 +305,18 @@ def load_pipeline_from_target_info(info):
             RepositoryDefinition,
         )
         return repository.get_pipeline(mode_data.data.pipeline_name)
+        # dynamic_object = load_file_target_function(mode_data.data.file_target_function)
+        # return _pipeline_from_dynamic_object(mode_data, dynamic_object)
+        # If this is still around in a week or two delete this -- schrockn (09/18/18)
     elif mode_data.mode == PipelineTargetMode.REPOSITORY_MODULE:
         repository = check.inst(
             load_module_target_function(mode_data.data.module_target_function).object,
             RepositoryDefinition,
         )
         return repository.get_pipeline(mode_data.data.pipeline_name)
+        # dynamic_object = load_module_target_function(mode_data.data.module_target_function)
+        # return _pipeline_from_dynamic_object(mode_data, dynamic_object)
+        # If this is still around in a week or two delete this -- schrockn (09/18/18)
     elif mode_data.mode == PipelineTargetMode.PIPELINE_PYTHON_FILE:
         return check.inst(
             load_file_target_function(mode_data.data).object,
@@ -332,7 +367,10 @@ def repository_config_argument(f):
             '--repository-yaml',
             '-y',
             type=click.STRING,
-            help="Path to config file. Defaults to ./repository.yml."
+            help=(
+                'Path to config file. Defaults to ./repository.yml. if --python-file '
+                'and --module-name are not specified'
+            )
         ),
         click.option(
             '--python-file',
@@ -359,7 +397,10 @@ def pipeline_target_command(f):
             '--repository-yaml',
             '-y',
             type=click.STRING,
-            help="Path to config file. Defaults to ./repository.yml."
+            help=(
+                'Path to config file. Defaults to ./repository.yml. if --python-file '
+                'and --module-name are not specified'
+            )
         ),
         click.argument('pipeline_name', nargs=-1),
         click.option('--python-file', '-f'),
@@ -376,13 +417,13 @@ def all_none(kwargs):
     return True
 
 
-def load_target_info_from_kwargs(kwargs):
-    check.dict_param(kwargs, 'kwargs')
+def load_target_info_from_cli_args(cli_args):
+    check.dict_param(cli_args, 'cli_args')
 
-    if all_none(kwargs):
-        kwargs['repository_yaml'] = 'repository.yml'
+    if all_none(cli_args):
+        cli_args['repository_yaml'] = 'repository.yml'
 
-    return RepositoryTargetInfo(**kwargs)
+    return RepositoryTargetInfo(**cli_args)
 
 
 def reload_dynamic_object(dynamic_obj):

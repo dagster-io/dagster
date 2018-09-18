@@ -326,7 +326,7 @@ class PipelineDefinition(object):
             dependencies: (Dict[str, Dict[str, DependencyDefinition]]): See class description.
         '''
         self.description = check.opt_str_param(description, 'description')
-        self.name = check.opt_str_param(name, 'name')
+        self.name = check.opt_str_param(name, 'name', '<<unnamed>>')
 
         if context_definitions is None:
             context_definitions = _default_pipeline_context_definitions()
