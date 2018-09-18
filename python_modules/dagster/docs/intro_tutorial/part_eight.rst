@@ -7,7 +7,7 @@ as well as improve documentation and understandability.
 
 There actually *have* been types during all previous parts of this tutorial. If the
 use does not specify types for inputs, outputs, or config in dagster, they default
-to the Any type, which can accept any and all values.
+to the ``Any`` type, which can accept any and all values.
 
 We are going to incrementally add typing to the example in part eight.
 
@@ -49,7 +49,7 @@ The previous env.yml file works as before:
             config:
                 word: quux
 
-Now let's imagine we made a mistake and passed an int to word:
+Now let's imagine we made a mistake and passed an ``int`` to word configuration:
 
 .. code-block:: yaml
 

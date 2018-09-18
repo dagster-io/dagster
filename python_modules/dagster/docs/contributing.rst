@@ -1,10 +1,12 @@
 Contributing
 =======================
 
+To contribute to dagster you will need to set up a local development environment.
+
 Local development setup
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-1. Create and activate virtualenv
+1. Create and activate a virtualenv
 
 ::
 
@@ -61,6 +63,8 @@ Dagster and dagit both have `./bin/publish.sh` scripts.
 
 Developing docs
 ---------------
+
+Running a live html version of the docs can expedite documentation development.
 
 ::
 

@@ -6,7 +6,6 @@ Welcome to Dagster, an opinionated programming model for data pipelines.
 
 .. toctree::
   :maxdepth: 1
-  :caption: Documentation
   :name: Documentation
 
   motivations
@@ -19,7 +18,6 @@ Intro Tutorial
 .. toctree::
   :maxdepth: 1
   :name: Intro Tutorial
-  :caption: Intro Tutorial
 
   intro_tutorial/part_one
   intro_tutorial/part_two
@@ -41,7 +39,6 @@ API Reference
 .. toctree::
   :maxdepth: 1
   :name: API Reference
-  :caption: API Reference
 
   apidocs/definitions
   apidocs/decorators

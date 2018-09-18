@@ -43,11 +43,11 @@ now aware of this input and can perform tasks like manage it dependencies.
 The first layer of keys are the names of solids. The second layer of keys are the names of
 the inputs to that particular solid. Each input in the DAG must be provided a
 ``DependencyDefinition``. In this case the dictionary encodes the fact that the input ``arg_one``
-of solid ``solid_two`` should be sourced from the output of ``solid_one``.
+of solid ``solid_two`` should flow from the output of ``solid_one``.
 
 One of the distinguishing features of dagster that separates it from many workflow engines is that
 dependencies connect *inputs* and *outputs* rather than just *tasks*. An author of a dagster
-pipeline is not just defining the flow of execution, but also the flow of *data* within that
+pipeline defines the flow of execution, and also the flow of *data* within that
 execution. Understanding this is critical to understanding the programming model of dagster, where
 each step in the pipeline -- the solid -- is a *functional* unit of computation. 
 

@@ -44,7 +44,7 @@ effects execution order. In this case will be build a diamond dag:
     if __name__ == '__main__':
         execute_pipeline(
             PipelineDefinition(
-                # Order of this solid list does not matter.
+                # The order of this solid list does not matter.
                 # The dependencies argument determines execution order.
                 # Solids will execute in topological order.
                 solids=[solid_d, solid_c, solid_b, solid_a],
