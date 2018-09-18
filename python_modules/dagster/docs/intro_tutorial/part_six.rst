@@ -8,10 +8,10 @@ to interact with pipelines.
 In order for a tool to interact with a pipeline, it must be made aware of the pipelines.
 
 Dagster has a concept of a repositories which is used to organize a collection of pipelines
-(and eventually other concepts). Dagster tools are pointed a repository or many repositories
+(and eventually other concepts). Dagster tools must be pointed to a repository or many repositories
 into order to function.
 
-Repostories are declared like the following:
+Repostories are declared like this:
 
 .. code-block:: python
 
@@ -36,7 +36,7 @@ Repostories are declared like the following:
 
 Save this file as "part_six.py"
 
-For tools to operate they must be able to access and create a repo. The current mechanism is to
+For tools to operate they must be able to access and create a `Repository`. The current mechanism is to
 create a yaml file (default name: 'repository.yml') where you state the module or file and the
 function that creates the repository you want to operate on.
 
@@ -67,7 +67,7 @@ To do that you can specify a module instead of a file in the repository.yml file
 
 .. code-block:: yaml
 
-    # this works if you this works in your python enviroment
+    # To verify this will work, run this in your python enviroment:
     # from some_module import define_some_repository
     repository:
         module: some_module 

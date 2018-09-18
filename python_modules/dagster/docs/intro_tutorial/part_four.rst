@@ -13,8 +13,8 @@ We return to our hello world example, but now we will be able to parameterize
 the string printed via config.
  
 In order to accomplish this we need to change APIs, from ``lambda_solid`` to ``solid``.
-``lambda_solid`` only exposes a subset of solid features in order to provide a more
-minimal API. ``solid`` is more complicated, but has more capabilities:
+A ``lambda_solid`` only exposes a subset of solid features in order to provide a more
+minimal API. ``solid`` is more complicated, and has more capabilities:
 
 .. code-block:: python
 
@@ -34,10 +34,10 @@ minimal API. ``solid`` is more complicated, but has more capabilities:
             ),
         )
 
-You'll notice a new API, ``solid``. We will be exploring this API in much more detail as this
-tutorial proceeds. For now, the only is that the function annotated by solid now
+You'll notice a new API, ``solid``. We will be exploring this API in much more detail as these
+tutorials proceed. For now, the only difference is that the function annotated by solid now
 takes one parameter where before it took zero (if it accepted no inputs). This
-takes an info parameter, which is of type :py:class:`TransformExecutionInfo`. It
+new paramater is the info parameter, which is of type :py:class:`TransformExecutionInfo`. It
 has a property config, which is the configuration that is passed into this
 particular solid.
 
