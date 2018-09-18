@@ -8,10 +8,14 @@ def hello_world(info):
     return info.config
 
 
+def define_pipeline():
+    return PipelineDefinition(solids=[hello_world])
+
+
 def test_tutorial_part_four():
 
     result = execute_pipeline(
-        PipelineDefinition(solids=[hello_world]),
+        define_pipeline(),
         config.Environment(solids={'hello_world': config.Solid('Hello, World!')}),
     )
 

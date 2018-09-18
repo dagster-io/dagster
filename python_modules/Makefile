@@ -2,6 +2,7 @@ watch:
 	watchmedo shell-command --recursive --patterns="*.py" -i "*.pyc"  --command \
 	"pytest -s -vv "\
 	"dagster/dagster/check/check_tests "\
+	"dagster/dagster/cli/cli_tests "\
 	"dagster/dagster/core/core_tests "\
 	"dagster/dagster/dagster_examples/dagster_examples_tests "\
 	"dagster/dagster/pandas/pandas_tests "\

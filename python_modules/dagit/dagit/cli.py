@@ -6,9 +6,10 @@ from waitress import serve
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
-from dagster.cli.repository_config import (
-    load_repository_from_file,
+from dagster.cli.dynamic_loader import (
     repository_config_argument,
+    load_target_info_from_kwargs,
+    load_repository_object_from_target_info,
 )
 
 from .app import (
@@ -31,16 +32,36 @@ class ReloaderHandler(FileSystemEventHandler):
             self.repository_container.reload()
 
 
-@click.command(name='ui', help='run web ui')
+REPO_TARGET_WARNING = (
+    'Can only use ONE of --repository-yaml/-y, --python-file/-f, --module-name/-m.'
+)
+
+
+@click.command(
+    name='ui',
+    help=(
+        'Run dagit. Loads a repository or pipeline.\n\n{warning}'.
+        format(warning=REPO_TARGET_WARNING) + '\n\n Examples:'
+        '\n\n1. dagit'
+        '\n\n2. dagit -y path/to/repository.yml'
+        '\n\n3. dagit -f path/to/file.py -r define_repo'
+        '\n\n4. dagit -m some_module -r define_repo'
+        '\n\n5. dagit -f path/to/file.py -r define_pipeline'
+        '\n\n6. dagit -m some_module -r define_pipeline'
+    )
+)
 @repository_config_argument
 @click.option('--host', '-h', type=click.STRING, default='127.0.0.1', help="Host to run server on")
 @click.option('--port', '-p', type=click.INT, default=3000, help="Port to run server on")
-def ui(conf, host, port):
+def ui(host, port, **kwargs):
+    repository_target_info = load_target_info_from_kwargs(kwargs)
+    dynamic_obj_repo = load_repository_object_from_target_info(repository_target_info)
+
     sys.path.append(os.getcwd())
-    repository_container = RepositoryContainer(load_repository_from_file(conf))
+    repository_container = RepositoryContainer(dynamic_obj_repo)
     observer = Observer()
     handler = ReloaderHandler(repository_container)
-    observer.schedule(handler, os.path.dirname(os.path.abspath(conf)), recursive=True)
+    observer.schedule(handler, os.path.dirname(os.path.abspath(os.getcwd())), recursive=True)
     observer.start()
     try:
         app = create_app(repository_container)

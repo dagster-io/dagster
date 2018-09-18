@@ -13,8 +13,8 @@ class Context(namedtuple('ContextData', 'name config')):
             cls,
             check.opt_str_param(name, 'name', DEFAULT_CONTEXT_NAME),
             config,
-
         )
+
 
 class Solid(namedtuple('Solid', 'config')):
     def __new__(cls, config):
@@ -84,7 +84,7 @@ def _construct_solids(yml_config_object):
 
 
 def construct_environment(yml_config_object):
-    check.dict_param(yml_config_object, 'yml_config_object')
+    yml_config_object = check.opt_dict_param(yml_config_object, 'yml_config_object')
 
     return Environment(
         solids=_construct_solids(yml_config_object),

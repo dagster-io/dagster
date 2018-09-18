@@ -1,13 +1,13 @@
 import json
 from dagit import app
-from dagster.cli.repository_config import RepositoryInfo
+from dagster.cli.dynamic_loader import DynamicObject
 from dagster.dagster_examples.repository import define_example_repository
 
 
 def test_smoke_app():
     repository_container = app.RepositoryContainer(
-        RepositoryInfo(
-            repository=define_example_repository(),
+        DynamicObject(
+            object=define_example_repository(),
             module=None,
             fn_name=None,
             fn=None,

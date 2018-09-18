@@ -8,9 +8,10 @@ from flask_graphql import GraphQLView
 from flask_cors import CORS
 
 from dagster import check
-from dagster.cli.repository_config import (
-    RepositoryInfo,
-    reload_repository_info,
+
+from dagster.cli.dynamic_loader import (
+    DynamicObject,
+    reload_pipeline_or_repo,
 )
 
 from .schema import create_schema
@@ -23,15 +24,19 @@ class RepositoryContainer(object):
     object allows the RepositoryInfo to be written in an immutable fashion.
     '''
 
-    def __init__(self, repository_info):
-        self.repository_info = check.inst_param(repository_info, 'repository_info', RepositoryInfo)
+    def __init__(self, repo_dynamic_obj):
+        self.repo_dynamic_obj = check.inst_param(
+            repo_dynamic_obj,
+            'repo_dynamic_obj',
+            DynamicObject,
+        )
 
     def reload(self):
-        self.repository_info = reload_repository_info(self.repository_info)
+        self.repo_dynamic_obj = reload_pipeline_or_repo(self.repo_dynamic_obj)
 
     @property
     def repository(self):
-        return self.repository_info.repository
+        return self.repo_dynamic_obj.object
 
 
 class DagsterGraphQLView(GraphQLView):
