@@ -11,7 +11,7 @@ from dagster import (
     config,
 )
 
-from dagster.core.definitions import ExecutionGraph
+from dagster.core.definitions import ExecutionGraph, Solid
 from dagster.core.execution import execute_pipeline_iterator
 from dagster.graphviz import build_graphviz_graph
 from dagster.utils import load_yaml_from_path
@@ -212,6 +212,7 @@ def print_context_definition(printer, context_name, context_definition):
 
 
 def print_solid(printer, solid):
+    check.inst_param(solid, 'solid', Solid)
     printer.line('Solid: {name}'.format(name=solid.name))
 
     with printer.with_indent():
@@ -219,13 +220,13 @@ def print_solid(printer, solid):
 
         printer.line('Outputs:')
 
-        for output_def in solid.output_defs:
+        for output_def in solid.definition.output_defs:
             print(output_def.name)
 
 
 def print_inputs(printer, solid):
     printer.line('Inputs:')
-    for input_def in solid.input_defs:
+    for input_def in solid.definition.input_defs:
         with printer.with_indent():
             printer.line('Input: {name}'.format(name=input_def.name))
 

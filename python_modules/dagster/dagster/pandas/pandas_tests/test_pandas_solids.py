@@ -131,11 +131,13 @@ def execute_transform_in_temp_csv_files(solid_inst):
     load_csv_solid = dagster_pd.load_csv_solid('load_csv')
     to_csv_solid = dagster_pd.to_csv_solid('to_csv')
 
+    key = solid_inst.input_defs[0].name
+
     pipeline = PipelineDefinition(
         solids=[load_csv_solid, solid_inst, to_csv_solid],
         dependencies={
             solid_inst.name: {
-                solid_inst.input_defs[0].name: DependencyDefinition('load_csv'),
+                key: DependencyDefinition('load_csv'),
             },
             'to_csv': {
                 'df': DependencyDefinition(solid_inst.name),

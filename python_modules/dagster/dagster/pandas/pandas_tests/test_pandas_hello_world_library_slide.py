@@ -4,11 +4,11 @@ from dagster import (
     DependencyDefinition,
     InputDefinition,
     OutputDefinition,
-    PipelineDefinition,
     SolidDefinition,
     config,
     execute_pipeline,
     lambda_solid,
+    PipelineDefinition,
 )
 
 from dagster.core.test_utils import single_output_transform
