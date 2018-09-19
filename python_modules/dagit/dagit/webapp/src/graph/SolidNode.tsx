@@ -59,17 +59,20 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
   };
 
   renderInputs() {
-    return this.props.solid.inputs.map((input, i) => {
-      const {
-        layout: { x, y, width, height }
-      } = this.props.layout.inputs[input.definition.name];
+    return Object.keys(this.props.layout.inputs).map((key, i) => {
+      const { x, y, width, height } = this.props.layout.inputs[key].layout;
 
+      const input = this.props.solid.inputs.find(
+        o => o.definition.name === key
+      );
       return (
         <foreignObject key={i} x={x} y={y} height={height}>
           <InputContainer>
-            <Port filled={input.dependsOn != null} />
-            <InputOutputName>{input.definition.name}</InputOutputName>
-            <TypeName>{input.definition.type.name} </TypeName>
+            <Port filled={true} />
+            {width == 0 && (
+              <InputOutputName>{input!.definition.name}</InputOutputName>
+            )}
+            {width == 0 && <TypeName>{input!.definition.type.name}</TypeName>}
           </InputContainer>
         </foreignObject>
       );
@@ -77,17 +80,20 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
   }
 
   renderOutputs() {
-    return this.props.solid.outputs.map((output, i) => {
-      const {
-        layout: { x, y, width, height }
-      } = this.props.layout.outputs[output.definition.name];
+    return Object.keys(this.props.layout.outputs).map((key, i) => {
+      const { x, y, width, height } = this.props.layout.outputs[key].layout;
+      const output = this.props.solid.outputs.find(
+        o => o.definition.name === key
+      );
 
       return (
         <foreignObject key={i} x={x} y={y} height={height}>
           <OutputContainer>
             <Port filled={true} />
-            <InputOutputName>{output.definition.name}</InputOutputName>
-            <TypeName>{output.definition.type.name}</TypeName>
+            {width == 0 && (
+              <InputOutputName>{output!.definition.name}</InputOutputName>
+            )}
+            {width == 0 && <TypeName>{output!.definition.type.name}</TypeName>}
           </OutputContainer>
         </foreignObject>
       );
@@ -179,15 +185,17 @@ const InputOutputName = styled.div`
   font-size: 15px;
   color: white;
   overflow: hidden;
+  padding-left: 7px;
   text-overflow: ellipsis;
   padding-right: 12px;
+  white-space: nowrap;
+  max-width: 300px;
 `;
 
 const Port = styled.div<{ filled: boolean }>`
   display: inline-block;
   width: 14px;
   height: 14px;
-  margin-right: 7px;
   border-radius: 7px;
   border: 2px solid rgba(255, 255, 255, 0.7);
   background: ${props =>

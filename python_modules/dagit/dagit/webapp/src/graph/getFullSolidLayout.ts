@@ -77,11 +77,12 @@ export interface IPoint {
 
 const SOLID_WIDTH = 350;
 const SOLID_BASE_HEIGHT = 60;
-const INPUT_HEIGHT = 36;
-const OUTPUT_HEIGHT = 36;
-const INPUT_OUTPUT_INSET = 6;
+const IO_HEIGHT = 36;
+const IO_INSET = 6;
+const IO_MINI_WIDTH = 35;
+const IO_THRESHOLD_FOR_MINI = 4;
 const PORT_INSET_X = 15;
-const PORT_INSET_Y = OUTPUT_HEIGHT / 2;
+const PORT_INSET_Y = IO_HEIGHT / 2;
 
 export function getDagrePipelineLayout(
   pipeline: ILayoutPipeline
@@ -181,24 +182,50 @@ function layoutSolid(solid: ILayoutSolid, root: IPoint): IFullSolidLayout {
     [inputName: string]: { layout: ILayout; port: IPoint };
   } = {};
 
-  solid.inputs.forEach((input, i) => {
-    inputsLayouts[input.definition.name] = {
+  const buildIOSmallLayout = (idx: number) => {
+    return {
+      port: {
+        x: root.x + PORT_INSET_X + IO_MINI_WIDTH * idx,
+        y: accY + PORT_INSET_Y
+      },
+      layout: {
+        x: root.x + IO_MINI_WIDTH * idx,
+        y: accY,
+        width: IO_MINI_WIDTH,
+        height: IO_HEIGHT
+      }
+    };
+  };
+
+  const buildIOLayout = () => {
+    const layout: { layout: ILayout; port: IPoint } = {
       port: { x: root.x + PORT_INSET_X, y: accY + PORT_INSET_Y },
       layout: {
         x: root.x,
         y: accY,
         width: 0,
-        height: INPUT_HEIGHT
+        height: IO_HEIGHT
       }
     };
-    accY += INPUT_HEIGHT;
+    accY += IO_HEIGHT;
+    return layout;
+  };
+
+  solid.inputs.forEach((input, idx) => {
+    inputsLayouts[input.definition.name] =
+      solid.inputs.length > IO_THRESHOLD_FOR_MINI
+        ? buildIOSmallLayout(idx)
+        : buildIOLayout();
   });
+  if (solid.inputs.length > IO_THRESHOLD_FOR_MINI) {
+    accY += IO_HEIGHT;
+  }
 
   const solidLayout: ILayout = {
     x: root.x,
-    y: Math.max(root.y, accY - INPUT_OUTPUT_INSET),
+    y: Math.max(root.y, accY - IO_INSET),
     width: SOLID_WIDTH,
-    height: SOLID_BASE_HEIGHT + INPUT_OUTPUT_INSET * 2
+    height: SOLID_BASE_HEIGHT + IO_INSET * 2
   };
 
   accY += SOLID_BASE_HEIGHT;
@@ -210,16 +237,15 @@ function layoutSolid(solid: ILayoutSolid, root: IPoint): IFullSolidLayout {
     };
   } = {};
 
-  solid.outputs.forEach((output, i) => {
-    outputLayouts[output.definition.name] = {
-      port: {
-        x: root.x + PORT_INSET_X,
-        y: accY + OUTPUT_HEIGHT - PORT_INSET_Y
-      },
-      layout: { x: root.x, y: accY, width: 0, height: OUTPUT_HEIGHT }
-    };
-    accY += OUTPUT_HEIGHT;
+  solid.outputs.forEach((output, idx) => {
+    outputLayouts[output.definition.name] =
+      solid.outputs.length > IO_THRESHOLD_FOR_MINI
+        ? buildIOSmallLayout(idx)
+        : buildIOLayout();
   });
+  if (solid.outputs.length > IO_THRESHOLD_FOR_MINI) {
+    accY += IO_HEIGHT;
+  }
 
   return {
     boundingBox: {
