@@ -7,31 +7,46 @@
 // GraphQL query operation: AppQuery
 // ====================================================
 
-export interface AppQuery_pipelines_solids_outputs_type {
+export interface AppQuery_pipelines_solids_outputs_definition_type {
   name: string;
   description: string | null;
 }
 
-export interface AppQuery_pipelines_solids_outputs_expectations {
+export interface AppQuery_pipelines_solids_outputs_definition_expectations {
   name: string;
   description: string | null;
+}
+
+export interface AppQuery_pipelines_solids_outputs_definition {
+  name: string;
+  type: AppQuery_pipelines_solids_outputs_definition_type;
+  description: string | null;
+  expectations: AppQuery_pipelines_solids_outputs_definition_expectations[];
 }
 
 export interface AppQuery_pipelines_solids_outputs {
-  name: string;
-  type: AppQuery_pipelines_solids_outputs_type;
-  description: string | null;
-  expectations: AppQuery_pipelines_solids_outputs_expectations[];
+  definition: AppQuery_pipelines_solids_outputs_definition;
 }
 
-export interface AppQuery_pipelines_solids_inputs_type {
+export interface AppQuery_pipelines_solids_inputs_definition_type {
   name: string;
   description: string | null;
 }
 
-export interface AppQuery_pipelines_solids_inputs_expectations {
+export interface AppQuery_pipelines_solids_inputs_definition_expectations {
   name: string;
   description: string | null;
+}
+
+export interface AppQuery_pipelines_solids_inputs_definition {
+  name: string;
+  type: AppQuery_pipelines_solids_inputs_definition_type;
+  description: string | null;
+  expectations: AppQuery_pipelines_solids_inputs_definition_expectations[];
+}
+
+export interface AppQuery_pipelines_solids_inputs_dependsOn_definition {
+  name: string;
 }
 
 export interface AppQuery_pipelines_solids_inputs_dependsOn_solid {
@@ -39,56 +54,57 @@ export interface AppQuery_pipelines_solids_inputs_dependsOn_solid {
 }
 
 export interface AppQuery_pipelines_solids_inputs_dependsOn {
-  name: string;
+  definition: AppQuery_pipelines_solids_inputs_dependsOn_definition;
   solid: AppQuery_pipelines_solids_inputs_dependsOn_solid;
 }
 
 export interface AppQuery_pipelines_solids_inputs {
-  name: string;
-  type: AppQuery_pipelines_solids_inputs_type;
-  description: string | null;
-  expectations: AppQuery_pipelines_solids_inputs_expectations[];
+  definition: AppQuery_pipelines_solids_inputs_definition;
   dependsOn: AppQuery_pipelines_solids_inputs_dependsOn | null;
 }
 
-export interface AppQuery_pipelines_solids_config_type_RegularType {
+export interface AppQuery_pipelines_solids_definition_configDefinition_type_RegularType {
   __typename: "RegularType";
   name: string;
   description: string | null;
 }
 
-export interface AppQuery_pipelines_solids_config_type_CompositeType_fields_type {
+export interface AppQuery_pipelines_solids_definition_configDefinition_type_CompositeType_fields_type {
   name: string;
   description: string | null;
 }
 
-export interface AppQuery_pipelines_solids_config_type_CompositeType_fields {
+export interface AppQuery_pipelines_solids_definition_configDefinition_type_CompositeType_fields {
   name: string;
   description: string | null;
   isOptional: boolean;
   defaultValue: string | null;
-  type: AppQuery_pipelines_solids_config_type_CompositeType_fields_type;
+  type: AppQuery_pipelines_solids_definition_configDefinition_type_CompositeType_fields_type;
 }
 
-export interface AppQuery_pipelines_solids_config_type_CompositeType {
+export interface AppQuery_pipelines_solids_definition_configDefinition_type_CompositeType {
   __typename: "CompositeType";
   name: string;
   description: string | null;
-  fields: AppQuery_pipelines_solids_config_type_CompositeType_fields[];
+  fields: AppQuery_pipelines_solids_definition_configDefinition_type_CompositeType_fields[];
 }
 
-export type AppQuery_pipelines_solids_config_type = AppQuery_pipelines_solids_config_type_RegularType | AppQuery_pipelines_solids_config_type_CompositeType;
+export type AppQuery_pipelines_solids_definition_configDefinition_type = AppQuery_pipelines_solids_definition_configDefinition_type_RegularType | AppQuery_pipelines_solids_definition_configDefinition_type_CompositeType;
 
-export interface AppQuery_pipelines_solids_config {
-  type: AppQuery_pipelines_solids_config_type;
+export interface AppQuery_pipelines_solids_definition_configDefinition {
+  type: AppQuery_pipelines_solids_definition_configDefinition_type;
+}
+
+export interface AppQuery_pipelines_solids_definition {
+  description: string | null;
+  configDefinition: AppQuery_pipelines_solids_definition_configDefinition;
 }
 
 export interface AppQuery_pipelines_solids {
   outputs: AppQuery_pipelines_solids_outputs[];
   inputs: AppQuery_pipelines_solids_inputs[];
   name: string;
-  description: string | null;
-  config: AppQuery_pipelines_solids_config;
+  definition: AppQuery_pipelines_solids_definition;
 }
 
 export interface AppQuery_pipelines_contexts_config_type_RegularType {

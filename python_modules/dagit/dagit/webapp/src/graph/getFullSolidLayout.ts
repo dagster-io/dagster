@@ -31,16 +31,23 @@ export interface ILayoutPipeline {
 interface ILayoutSolid {
   name: string;
   inputs: Array<{
-    name: string;
-    dependsOn: {
+    definition: {
       name: string;
+    };
+    dependsOn: {
+      definition: {
+        name: string;
+      };
+
       solid: {
         name: string;
       };
     } | null;
   }>;
   outputs: Array<{
-    name: string;
+    definition: {
+      name: string;
+    };
   }>;
 }
 
@@ -150,7 +157,7 @@ function layoutSolid({
   solid.inputs.forEach((input, i) => {
     const inputX = solidX + INPUT_OUTPUT_INSET - INPUT_WIDTH;
     const inputY = solidY + INPUT_GAP + (INPUT_HEIGHT + INPUT_GAP) * i;
-    inputs[input.name] = {
+    inputs[input.definition.name] = {
       layout: {
         x: inputX,
         y: inputY,
@@ -173,7 +180,7 @@ function layoutSolid({
   solid.outputs.forEach((output, i) => {
     const outputX = solidX + SOLID_WIDTH - INPUT_OUTPUT_INSET;
     const outputY = solidY + INPUT_GAP + (OUTPUT_HEIGHT + INPUT_GAP) * i;
-    outputs[output.name] = {
+    outputs[output.definition.name] = {
       layout: {
         x: outputX,
         y: outputY,

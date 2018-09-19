@@ -7,7 +7,16 @@
 // GraphQL fragment: PipelineGraphFragment
 // ====================================================
 
-export interface PipelineGraphFragment_solids_inputs_type {
+export interface PipelineGraphFragment_solids_inputs_definition_type {
+  name: string;
+}
+
+export interface PipelineGraphFragment_solids_inputs_definition {
+  name: string;
+  type: PipelineGraphFragment_solids_inputs_definition_type;
+}
+
+export interface PipelineGraphFragment_solids_inputs_dependsOn_definition {
   name: string;
 }
 
@@ -16,29 +25,32 @@ export interface PipelineGraphFragment_solids_inputs_dependsOn_solid {
 }
 
 export interface PipelineGraphFragment_solids_inputs_dependsOn {
-  name: string;
+  definition: PipelineGraphFragment_solids_inputs_dependsOn_definition;
   solid: PipelineGraphFragment_solids_inputs_dependsOn_solid;
 }
 
 export interface PipelineGraphFragment_solids_inputs {
-  name: string;
-  type: PipelineGraphFragment_solids_inputs_type;
+  definition: PipelineGraphFragment_solids_inputs_definition;
   dependsOn: PipelineGraphFragment_solids_inputs_dependsOn | null;
 }
 
-export interface PipelineGraphFragment_solids_outputs_type {
+export interface PipelineGraphFragment_solids_outputs_definition_type {
   name: string;
 }
 
-export interface PipelineGraphFragment_solids_outputs_expectations {
+export interface PipelineGraphFragment_solids_outputs_definition_expectations {
   name: string;
   description: string | null;
 }
 
-export interface PipelineGraphFragment_solids_outputs {
+export interface PipelineGraphFragment_solids_outputs_definition {
   name: string;
-  type: PipelineGraphFragment_solids_outputs_type;
-  expectations: PipelineGraphFragment_solids_outputs_expectations[];
+  type: PipelineGraphFragment_solids_outputs_definition_type;
+  expectations: PipelineGraphFragment_solids_outputs_definition_expectations[];
+}
+
+export interface PipelineGraphFragment_solids_outputs {
+  definition: PipelineGraphFragment_solids_outputs_definition;
 }
 
 export interface PipelineGraphFragment_solids {

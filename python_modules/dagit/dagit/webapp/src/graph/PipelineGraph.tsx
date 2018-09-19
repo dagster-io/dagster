@@ -61,11 +61,11 @@ export default class PipelineGraph extends React.Component<
           connections.push({
             from: {
               solidName: input.dependsOn.solid.name,
-              outputName: input.dependsOn.name
+              outputName: input.dependsOn.definition.name
             },
             to: {
               solidName: solid.name,
-              inputName: input.name
+              inputName: input.definition.name
             }
           });
         }

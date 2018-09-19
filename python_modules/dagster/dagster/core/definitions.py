@@ -262,7 +262,7 @@ class DependencyStructure(object):
         result = defaultdict(list)
         for input_handle, output_handle in self._handle_dict.items():
             if output_handle.solid.name == solid_name:
-                result[output_handle].extend(input_handle)
+                result[output_handle].append(input_handle)
         return result
 
     def get_dep(self, solid_input_handle):
@@ -336,6 +336,12 @@ class Solid(object):
             output_handles[output_def.name] = SolidOutputHandle(self, output_def)
 
         self._output_handles = output_handles
+
+    def input_handles(self):
+        return self._input_handles.values()
+
+    def output_handles(self):
+        return self._output_handles.values()
 
     def input_handle(self, name):
         check.str_param(name, 'name')
@@ -835,7 +841,7 @@ class SolidOutputHandle(namedtuple('_SolidOutputHandle', 'solid output_def')):
         return 'SolidOutputHandle(name="{solid_name}", solid="{definition_name}", output_name="{output_name}")'.format(
             solid_name=self.solid.name,
             definition_name=self.solid.definition.name,
-            output_name=self.output_name.name,
+            output_name=self.output_def.name,
         )
 
     def __str__(self):

@@ -20,40 +20,48 @@ export default class Solid extends React.Component<ISolidProps, {}> {
       fragment SolidFragment on Solid {
         ...SolidTypeSignatureFragment
         name
-        description
-        config {
-          ...ConfigFragment
+        definition {
+          description
+          configDefinition {
+            ...ConfigFragment
+          }
         }
         inputs {
-          name
-          description
-          type {
-            ...TypeWithTooltipFragment
-          }
-          expectations {
+          definition {
             name
             description
+            type {
+              ...TypeWithTooltipFragment
+            }
+            expectations {
+              name
+              description
+            }
           }
           dependsOn {
-            name
+            definition {
+              name
+            }
             solid {
               name
             }
           }
         }
         outputs {
-          name
-          description
-          type {
-            ...TypeWithTooltipFragment
-          }
-          expectations {
+          definition {
             name
             description
-          }
-          expectations {
-            name
-            description
+            type {
+              ...TypeWithTooltipFragment
+            }
+            expectations {
+              name
+              description
+            }
+            expectations {
+              name
+              description
+            }
           }
         }
       }
@@ -68,23 +76,25 @@ export default class Solid extends React.Component<ISolidProps, {}> {
     return this.props.solid.inputs.map((input, i: number) => (
       <SolidPartCard key={i} elevation={3} horizontal={true}>
         <H6>
-          Input <Code>{input.name}</Code>
+          Input <Code>{input.definition.name}</Code>
         </H6>
         <TypeWrapper>
-          <TypeWithTooltip type={input.type} />
+          <TypeWithTooltip type={input.definition.type} />
         </TypeWrapper>
-        <Description description={input.description} />
+        <Description description={input.definition.description} />
         {input.dependsOn && (
           <Text>
             Depends on{" "}
-            <Link to={`./${input.dependsOn.name}`}>
-              <Code>{input.dependsOn.name}</Code>
+            <Link to={`./${input.dependsOn.definition.name}`}>
+              <Code>{input.dependsOn.definition.name}</Code>
             </Link>
           </Text>
         )}
-        {input.expectations.length > 0 ? <H6>Expectations</H6> : null}
+        {input.definition.expectations.length > 0 ? (
+          <H6>Expectations</H6>
+        ) : null}
         <UL>
-          {input.expectations.map((expectation, i) => (
+          {input.definition.expectations.map((expectation, i) => (
             <li>
               {expectation.name}
               <Description description={expectation.description} />
@@ -99,15 +109,17 @@ export default class Solid extends React.Component<ISolidProps, {}> {
     return this.props.solid.outputs.map((output, i: number) => (
       <SolidPartCard key={i} elevation={3} horizontal={true}>
         <H6>
-          Output <Code>{output.name}</Code>
+          Output <Code>{output.definition.name}</Code>
         </H6>
         <TypeWrapper>
-          <TypeWithTooltip type={output.type} />
+          <TypeWithTooltip type={output.definition.type} />
         </TypeWrapper>
-        <Description description={output.description} />
-        {output.expectations.length > 0 ? <H6>Expectations</H6> : null}
+        <Description description={output.definition.description} />
+        {output.definition.expectations.length > 0 ? (
+          <H6>Expectations</H6>
+        ) : null}
         <UL>
-          {output.expectations.map((expectation, i) => (
+          {output.definition.expectations.map((expectation, i) => (
             <li>
               {expectation.name}
               <Description description={expectation.description} />
@@ -137,9 +149,9 @@ export default class Solid extends React.Component<ISolidProps, {}> {
         </TypeSignatureWrapper>
         <SolidHeader>{this.props.solid.name}</SolidHeader>
         <DescriptionWrapper>
-          <Description description={this.props.solid.description} />
+          <Description description={this.props.solid.definition.description} />
         </DescriptionWrapper>
-        <Config config={this.props.solid.config} />
+        <Config config={this.props.solid.definition.configDefinition} />
         <Cards>
           {this.renderInputs()}
           {this.renderSeparator()}

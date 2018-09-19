@@ -7,31 +7,46 @@
 // GraphQL fragment: PipelinesFragment
 // ====================================================
 
-export interface PipelinesFragment_solids_outputs_type {
+export interface PipelinesFragment_solids_outputs_definition_type {
   name: string;
   description: string | null;
 }
 
-export interface PipelinesFragment_solids_outputs_expectations {
+export interface PipelinesFragment_solids_outputs_definition_expectations {
   name: string;
   description: string | null;
+}
+
+export interface PipelinesFragment_solids_outputs_definition {
+  name: string;
+  type: PipelinesFragment_solids_outputs_definition_type;
+  description: string | null;
+  expectations: PipelinesFragment_solids_outputs_definition_expectations[];
 }
 
 export interface PipelinesFragment_solids_outputs {
-  name: string;
-  type: PipelinesFragment_solids_outputs_type;
-  description: string | null;
-  expectations: PipelinesFragment_solids_outputs_expectations[];
+  definition: PipelinesFragment_solids_outputs_definition;
 }
 
-export interface PipelinesFragment_solids_inputs_type {
+export interface PipelinesFragment_solids_inputs_definition_type {
   name: string;
   description: string | null;
 }
 
-export interface PipelinesFragment_solids_inputs_expectations {
+export interface PipelinesFragment_solids_inputs_definition_expectations {
   name: string;
   description: string | null;
+}
+
+export interface PipelinesFragment_solids_inputs_definition {
+  name: string;
+  type: PipelinesFragment_solids_inputs_definition_type;
+  description: string | null;
+  expectations: PipelinesFragment_solids_inputs_definition_expectations[];
+}
+
+export interface PipelinesFragment_solids_inputs_dependsOn_definition {
+  name: string;
 }
 
 export interface PipelinesFragment_solids_inputs_dependsOn_solid {
@@ -39,56 +54,57 @@ export interface PipelinesFragment_solids_inputs_dependsOn_solid {
 }
 
 export interface PipelinesFragment_solids_inputs_dependsOn {
-  name: string;
+  definition: PipelinesFragment_solids_inputs_dependsOn_definition;
   solid: PipelinesFragment_solids_inputs_dependsOn_solid;
 }
 
 export interface PipelinesFragment_solids_inputs {
-  name: string;
-  type: PipelinesFragment_solids_inputs_type;
-  description: string | null;
-  expectations: PipelinesFragment_solids_inputs_expectations[];
+  definition: PipelinesFragment_solids_inputs_definition;
   dependsOn: PipelinesFragment_solids_inputs_dependsOn | null;
 }
 
-export interface PipelinesFragment_solids_config_type_RegularType {
+export interface PipelinesFragment_solids_definition_configDefinition_type_RegularType {
   __typename: "RegularType";
   name: string;
   description: string | null;
 }
 
-export interface PipelinesFragment_solids_config_type_CompositeType_fields_type {
+export interface PipelinesFragment_solids_definition_configDefinition_type_CompositeType_fields_type {
   name: string;
   description: string | null;
 }
 
-export interface PipelinesFragment_solids_config_type_CompositeType_fields {
+export interface PipelinesFragment_solids_definition_configDefinition_type_CompositeType_fields {
   name: string;
   description: string | null;
   isOptional: boolean;
   defaultValue: string | null;
-  type: PipelinesFragment_solids_config_type_CompositeType_fields_type;
+  type: PipelinesFragment_solids_definition_configDefinition_type_CompositeType_fields_type;
 }
 
-export interface PipelinesFragment_solids_config_type_CompositeType {
+export interface PipelinesFragment_solids_definition_configDefinition_type_CompositeType {
   __typename: "CompositeType";
   name: string;
   description: string | null;
-  fields: PipelinesFragment_solids_config_type_CompositeType_fields[];
+  fields: PipelinesFragment_solids_definition_configDefinition_type_CompositeType_fields[];
 }
 
-export type PipelinesFragment_solids_config_type = PipelinesFragment_solids_config_type_RegularType | PipelinesFragment_solids_config_type_CompositeType;
+export type PipelinesFragment_solids_definition_configDefinition_type = PipelinesFragment_solids_definition_configDefinition_type_RegularType | PipelinesFragment_solids_definition_configDefinition_type_CompositeType;
 
-export interface PipelinesFragment_solids_config {
-  type: PipelinesFragment_solids_config_type;
+export interface PipelinesFragment_solids_definition_configDefinition {
+  type: PipelinesFragment_solids_definition_configDefinition_type;
+}
+
+export interface PipelinesFragment_solids_definition {
+  description: string | null;
+  configDefinition: PipelinesFragment_solids_definition_configDefinition;
 }
 
 export interface PipelinesFragment_solids {
   outputs: PipelinesFragment_solids_outputs[];
   inputs: PipelinesFragment_solids_inputs[];
   name: string;
-  description: string | null;
-  config: PipelinesFragment_solids_config;
+  definition: PipelinesFragment_solids_definition;
 }
 
 export interface PipelinesFragment_contexts_config_type_RegularType {

@@ -19,25 +19,31 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
       fragment SolidNodeFragment on Solid {
         name
         inputs {
-          name
-          type {
+          definition {
             name
+            type {
+              name
+            }
           }
           dependsOn {
-            name
+            definition {
+              name
+            }
             solid {
               name
             }
           }
         }
         outputs {
-          name
-          type {
+          definition {
             name
-          }
-          expectations {
-            name
-            description
+            type {
+              name
+            }
+            expectations {
+              name
+              description
+            }
           }
         }
       }
@@ -55,7 +61,7 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
     return this.props.solid.inputs.map((input, i) => {
       const {
         layout: { x, y, width, height }
-      } = this.props.layout.inputs[input.name];
+      } = this.props.layout.inputs[input.definition.name];
 
       return (
         <foreignObject
@@ -73,7 +79,8 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
             }}
           >
             <H5>
-              <Code>{input.name}</Code> ({input.type.name})
+              <Code>{input.definition.name}</Code> ({input.definition.type.name}
+              )
             </H5>
           </Card>
         </foreignObject>
@@ -85,7 +92,7 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
     return this.props.solid.outputs.map((output, i) => {
       const {
         layout: { x, y, width, height }
-      } = this.props.layout.outputs[output.name];
+      } = this.props.layout.outputs[output.definition.name];
 
       return (
         <foreignObject
@@ -103,7 +110,8 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
             }}
           >
             <H5>
-              <Code>{output.name}</Code> ({output.type.name})
+              <Code>{output.definition.name}</Code> (
+              {output.definition.type.name})
             </H5>
           </Card>
         </foreignObject>
