@@ -11,9 +11,9 @@ from dagster import (
 )
 
 
-def execute_single_solid(context, solid, environment=None, throw_on_error=True):
+def execute_single_solid(context, solid_def, environment=None, throw_on_error=True):
     check.inst_param(context, 'context', ExecutionContext)
-    check.inst_param(solid, 'solid', SolidDefinition)
+    check.inst_param(solid_def, 'solid_def', SolidDefinition)
     environment = check.opt_inst_param(
         environment,
         'environment',
@@ -25,13 +25,13 @@ def execute_single_solid(context, solid, environment=None, throw_on_error=True):
     single_solid_environment = config.Environment(
         expectations=environment.expectations,
         context=environment.context,
-        solids={solid.name: environment.solids[solid.name]}
-        if solid.name in environment.solids else None
+        solids={solid_def.name: environment.solids[solid_def.name]}
+        if solid_def.name in environment.solids else None
     )
 
     pipeline_result = execute_pipeline(
         PipelineDefinition(
-            solids=[solid],
+            solids=[solid_def],
             context_definitions=PipelineContextDefinition.passthrough_context_definition(context),
         ),
         environment=single_solid_environment,

@@ -1,9 +1,12 @@
-# pylint: disable=W0622,W0614,W0401
-from dagster import *
+from dagster import (
+    PipelineDefinition,
+    execute_pipeline,
+    lambda_solid,
+)
 
 
 def test_tutorial_part_one():
-    pipeline = PipelineDefinition(solids=[hello_world])
+    pipeline = define_pipeline()
 
     result = execute_pipeline(pipeline)
 
@@ -11,6 +14,10 @@ def test_tutorial_part_one():
     assert len(result.result_list) == 1
     assert result.result_for_solid('hello_world').transformed_value() is None
     return result
+
+
+def define_pipeline():
+    return PipelineDefinition(name='hello_world_pipeline', solids=[hello_world])
 
 
 @lambda_solid

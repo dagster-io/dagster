@@ -6,13 +6,12 @@ import textwrap
 import click
 
 from dagster import (
-    RepositoryDefinition,
     PipelineDefinition,
     check,
     config,
 )
 
-from dagster.core.definitions import ExecutionGraph
+from dagster.core.definitions import ExecutionGraph, Solid
 from dagster.core.execution import execute_pipeline_iterator
 from dagster.graphviz import build_graphviz_graph
 from dagster.utils import load_yaml_from_path
@@ -20,13 +19,11 @@ from dagster.utils.indenting_printer import IndentingPrinter
 
 from .dynamic_loader import (
     PipelineTargetInfo,
-    RepositoryTargetInfo,
     load_pipeline_from_target_info,
-    load_repository_from_file,
     load_repository_from_target_info,
     pipeline_target_command,
     repository_config_argument,
-    load_target_info_from_kwargs,
+    load_target_info_from_cli_args,
 )
 
 
@@ -50,28 +47,32 @@ REPO_TARGET_WARNING = (
 )
 @repository_config_argument
 def list_command(**kwargs):
-    repository_target_info = load_target_info_from_kwargs(kwargs)
+    return execute_list_command(kwargs, click.echo)
+
+
+def execute_list_command(cli_args, print_fn):
+    repository_target_info = load_target_info_from_cli_args(cli_args)
     repository = load_repository_from_target_info(repository_target_info)
 
     title = 'Repository {name}'.format(name=repository.name)
-    click.echo(title)
-    click.echo('*' * len(title))
+    print_fn(title)
+    print_fn('*' * len(title))
     first = True
     for pipeline in repository.get_all_pipelines():
         pipeline_title = 'Pipeline: {name}'.format(name=pipeline.name)
 
         if not first:
-            click.echo('*' * len(pipeline_title))
+            print_fn('*' * len(pipeline_title))
         first = False
 
-        click.echo(pipeline_title)
+        print_fn(pipeline_title)
         if pipeline.description:
-            click.echo('Description:')
-            click.echo(format_description(pipeline.description, indent=' ' * 4))
-        click.echo('Solids: (Execution Order)')
+            print_fn('Description:')
+            print_fn(format_description(pipeline.description, indent=' ' * 4))
+        print_fn('Solids: (Execution Order)')
         solid_graph = ExecutionGraph(pipeline, pipeline.solids, pipeline.dependency_structure)
         for solid in solid_graph.topological_solids:
-            click.echo('    ' + solid.name)
+            print_fn('    ' + solid.name)
 
 
 def format_description(desc, indent):
@@ -94,9 +95,16 @@ def create_pipeline_from_cli_args(kwargs):
     elif len(pipeline_names) == 1:
         pipeline_name = pipeline_names[0]
     else:
-        check.failed('Can only handle zero or one pipeline args')
+        check.failed(
+            'Can only handle zero or one pipeline args. Got {pipeline_names}'.format(
+                pipeline_names=repr(pipeline_names)
+            )
+        )
 
-    if kwargs['pipeline_name'] and kwargs['repository_yaml'] is None:
+    if (
+        kwargs['pipeline_name'] and kwargs['repository_yaml'] is None
+        and kwargs['module_name'] is None and kwargs['python_file'] is None
+    ):
         repository_yaml = 'repository.yml'
     else:
         repository_yaml = kwargs['repository_yaml']
@@ -133,13 +141,17 @@ def get_pipeline_instructions(command_name):
 )
 @click.option('--verbose', is_flag=True)
 @pipeline_target_command
-def print_command(verbose, **kwargs):
-    pipeline = create_pipeline_from_cli_args(kwargs)
+def print_command(verbose, **cli_args):
+    return execute_print_command(verbose, cli_args, click.echo)
+
+
+def execute_print_command(verbose, cli_args, print_fn):
+    pipeline = create_pipeline_from_cli_args(cli_args)
 
     if verbose:
-        print_pipeline(pipeline, full=True, print_fn=click.echo)
+        print_pipeline(pipeline, full=True, print_fn=print_fn)
     else:
-        print_solids(pipeline, print_fn=click.echo)
+        print_solids(pipeline, print_fn=print_fn)
 
 
 def print_solids(pipeline, print_fn):
@@ -200,6 +212,7 @@ def print_context_definition(printer, context_name, context_definition):
 
 
 def print_solid(printer, solid):
+    check.inst_param(solid, 'solid', Solid)
     printer.line('Solid: {name}'.format(name=solid.name))
 
     with printer.with_indent():
@@ -207,13 +220,13 @@ def print_solid(printer, solid):
 
         printer.line('Outputs:')
 
-        for output_def in solid.output_defs:
+        for output_def in solid.definition.output_defs:
             print(output_def.name)
 
 
 def print_inputs(printer, solid):
     printer.line('Inputs:')
-    for input_def in solid.input_defs:
+    for input_def in solid.definition.input_defs:
         with printer.with_indent():
             printer.line('Input: {name}'.format(name=input_def.name))
 
@@ -239,8 +252,7 @@ def format_argument_dict(arg_def_dict):
 @click.option('--only-solids', is_flag=True)
 @pipeline_target_command
 def graphviz_command(only_solids, **kwargs):
-    pipeline_target_info = PipelineTargetInfo(**kwargs)
-    pipeline = load_pipeline_from_target_info(pipeline_target_info)
+    pipeline = create_pipeline_from_cli_args(kwargs)
     build_graphviz_graph(pipeline, only_solids).view(cleanup=True)
 
 
@@ -272,19 +284,24 @@ LOGGING_DICT = {
     ),
 )
 def execute_command(env, **kwargs):
-    pipeline_target_info = PipelineTargetInfo(**kwargs)
-    pipeline = load_pipeline_from_target_info(pipeline_target_info)
-    do_execute_command(pipeline, env, print)
+    execute_execute_command(env, kwargs, click.echo)
+
+
+def execute_execute_command(env, cli_args, print_fn):
+    pipeline = create_pipeline_from_cli_args(cli_args)
+    do_execute_command(pipeline, env, print_fn)
 
 
 def do_execute_command(pipeline, env, printer):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    check.str_param(env, 'env')
+    check.opt_str_param(env, 'env')
     check.callable_param(printer, 'printer')
 
-    env_config = load_yaml_from_path(env)
-
-    environment = config.construct_environment(env_config)
+    if env:
+        env_config = load_yaml_from_path(env)
+        environment = config.construct_environment(env_config)
+    else:
+        environment = config.Environment()
 
     pipeline_iter = execute_pipeline_iterator(pipeline, environment)
 

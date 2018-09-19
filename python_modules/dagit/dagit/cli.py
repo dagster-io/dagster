@@ -8,7 +8,7 @@ from watchdog.events import FileSystemEventHandler
 
 from dagster.cli.dynamic_loader import (
     repository_config_argument,
-    load_target_info_from_kwargs,
+    load_target_info_from_cli_args,
     load_repository_object_from_target_info,
 )
 
@@ -54,7 +54,7 @@ REPO_TARGET_WARNING = (
 @click.option('--host', '-h', type=click.STRING, default='127.0.0.1', help="Host to run server on")
 @click.option('--port', '-p', type=click.INT, default=3000, help="Port to run server on")
 def ui(host, port, **kwargs):
-    repository_target_info = load_target_info_from_kwargs(kwargs)
+    repository_target_info = load_target_info_from_cli_args(kwargs)
     dynamic_obj_repo = load_repository_object_from_target_info(repository_target_info)
 
     sys.path.append(os.getcwd())
