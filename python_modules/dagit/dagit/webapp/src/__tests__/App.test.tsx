@@ -14,186 +14,210 @@ const mocks = [
       data: {
         pipelines: [
           {
-            __typename: "Pipeline",
             name: "pandas_hello_world",
             description: null,
             solids: [
               {
-                __typename: "Solid",
                 outputs: [
                   {
-                    __typename: "Output",
-                    name: "result",
+                    definition: {
+                      name: "result",
+                      type: {
+                        name: "PandasDataFrame",
+                        description:
+                          "Two-dimensional size-mutable, potentially heterogeneous\ntabular data structure with labeled axes (rows and columns). See http://pandas.pydata.org/",
+                        __typename: "RegularType"
+                      },
+                      __typename: "OutputDefinition",
+                      description: null,
+                      expectations: []
+                    },
+                    __typename: "Output"
+                  }
+                ],
+                inputs: [
+                  {
+                    definition: {
+                      name: "sum_df",
+                      type: {
+                        name: "PandasDataFrame",
+                        description:
+                          "Two-dimensional size-mutable, potentially heterogeneous\ntabular data structure with labeled axes (rows and columns). See http://pandas.pydata.org/",
+                        __typename: "RegularType"
+                      },
+                      __typename: "InputDefinition",
+                      description: null,
+                      expectations: []
+                    },
+                    __typename: "Input",
+                    dependsOn: {
+                      definition: {
+                        name: "result",
+                        __typename: "OutputDefinition"
+                      },
+                      solid: { name: "sum_solid", __typename: "Solid" },
+                      __typename: "Output"
+                    }
+                  }
+                ],
+                __typename: "Solid",
+                name: "sum_sq_solid",
+                definition: {
+                  description: null,
+                  configDefinition: {
                     type: {
                       __typename: "RegularType",
-                      name: "PandasDataFrame",
+                      name: "Any",
                       description:
-                        "Two-dimensional size-mutable, potentially heterogeneous\ntabular data structure with labeled axes (rows and columns). See http://pandas.pydata.org/"
+                        "The type that allows any value, including no value."
                     },
-                    description: null,
-                    expectations: []
+                    __typename: "Config"
+                  },
+                  __typename: "SolidDefinition"
+                }
+              },
+              {
+                outputs: [
+                  {
+                    definition: {
+                      name: "result",
+                      type: {
+                        name: "PandasDataFrame",
+                        description:
+                          "Two-dimensional size-mutable, potentially heterogeneous\ntabular data structure with labeled axes (rows and columns). See http://pandas.pydata.org/",
+                        __typename: "RegularType"
+                      },
+                      __typename: "OutputDefinition",
+                      description: null,
+                      expectations: []
+                    },
+                    __typename: "Output"
                   }
                 ],
                 inputs: [],
+                __typename: "Solid",
                 name: "load_num_csv",
-                description: null,
-                config: {
-                  __typename: "Config",
-                  type: {
-                    __typename: "CompositeType",
-                    name: "ConfigDictionary",
-                    description:
-                      "Configuration dictionary.\n            Typed-checked but then passed to implementations as a python dict",
-                    fields: [
-                      {
-                        __typename: "Field",
-                        name: "path",
-                        description: null,
-                        isOptional: false,
-                        defaultValue:
-                          "<class 'dagster.core.types.__FieldValueSentinel'>",
-                        type: {
-                          __typename: "RegularType",
-                          name: "Path",
-                          description:
-                            "\nA string the represents a path. It is very useful for some tooling\nto know that a string indeed represents a file path. That way they\ncan, for example, make the paths relative to a different location\nfor a particular execution environment.\n"
+                definition: {
+                  description: null,
+                  configDefinition: {
+                    type: {
+                      __typename: "CompositeType",
+                      name: "ConfigDictionary",
+                      description:
+                        "Configuration dictionary.\n\n    Typed-checked but then passed to implementations as a python dict\n\n    Arguments:\n      fields (dict): dictonary of :py:class:`Field` objects keyed by name",
+                      fields: [
+                        {
+                          name: "path",
+                          description: null,
+                          isOptional: false,
+                          defaultValue:
+                            "<class 'dagster.core.types.__FieldValueSentinel'>",
+                          type: {
+                            name: "Path",
+                            description:
+                              "\nA string the represents a path. It is very useful for some tooling\nto know that a string indeed represents a file path. That way they\ncan, for example, make the paths relative to a different location\nfor a particular execution environment.\n",
+                            __typename: "RegularType"
+                          },
+                          __typename: "TypeField"
                         }
-                      }
-                    ]
-                  }
+                      ]
+                    },
+                    __typename: "Config"
+                  },
+                  __typename: "SolidDefinition"
                 }
               },
               {
-                __typename: "Solid",
                 outputs: [
                   {
-                    __typename: "Output",
-                    name: "result",
-                    type: {
-                      __typename: "RegularType",
-                      name: "PandasDataFrame",
-                      description:
-                        "Two-dimensional size-mutable, potentially heterogeneous\ntabular data structure with labeled axes (rows and columns). See http://pandas.pydata.org/"
+                    definition: {
+                      name: "result",
+                      type: {
+                        name: "PandasDataFrame",
+                        description:
+                          "Two-dimensional size-mutable, potentially heterogeneous\ntabular data structure with labeled axes (rows and columns). See http://pandas.pydata.org/",
+                        __typename: "RegularType"
+                      },
+                      __typename: "OutputDefinition",
+                      description: null,
+                      expectations: []
                     },
-                    description: null,
-                    expectations: []
+                    __typename: "Output"
                   }
                 ],
                 inputs: [
                   {
-                    __typename: "Input",
-                    name: "num",
-                    type: {
-                      __typename: "RegularType",
-                      name: "PandasDataFrame",
-                      description:
-                        "Two-dimensional size-mutable, potentially heterogeneous\ntabular data structure with labeled axes (rows and columns). See http://pandas.pydata.org/"
+                    definition: {
+                      name: "num",
+                      type: {
+                        name: "PandasDataFrame",
+                        description:
+                          "Two-dimensional size-mutable, potentially heterogeneous\ntabular data structure with labeled axes (rows and columns). See http://pandas.pydata.org/",
+                        __typename: "RegularType"
+                      },
+                      __typename: "InputDefinition",
+                      description: null,
+                      expectations: []
                     },
-                    description: null,
-                    expectations: [],
+                    __typename: "Input",
                     dependsOn: {
-                      __typename: "Output",
-                      name: "result",
-                      solid: {
-                        __typename: "Solid",
-                        name: "load_num_csv"
-                      }
+                      definition: {
+                        name: "result",
+                        __typename: "OutputDefinition"
+                      },
+                      solid: { name: "load_num_csv", __typename: "Solid" },
+                      __typename: "Output"
                     }
                   }
                 ],
+                __typename: "Solid",
                 name: "sum_solid",
-                description: null,
-                config: {
-                  __typename: "Config",
-                  type: {
-                    __typename: "RegularType",
-                    name: "Any",
-                    description:
-                      "The type that allows any value, including no value."
-                  }
-                }
-              },
-              {
-                __typename: "Solid",
-                outputs: [
-                  {
-                    __typename: "Output",
-                    name: "result",
+                definition: {
+                  description: null,
+                  configDefinition: {
                     type: {
                       __typename: "RegularType",
-                      name: "PandasDataFrame",
+                      name: "Any",
                       description:
-                        "Two-dimensional size-mutable, potentially heterogeneous\ntabular data structure with labeled axes (rows and columns). See http://pandas.pydata.org/"
+                        "The type that allows any value, including no value."
                     },
-                    description: null,
-                    expectations: []
-                  }
-                ],
-                inputs: [
-                  {
-                    __typename: "Input",
-                    name: "sum_df",
-                    type: {
-                      __typename: "RegularType",
-                      name: "PandasDataFrame",
-                      description:
-                        "Two-dimensional size-mutable, potentially heterogeneous\ntabular data structure with labeled axes (rows and columns). See http://pandas.pydata.org/"
-                    },
-                    description: null,
-                    expectations: [],
-                    dependsOn: {
-                      __typename: "Output",
-                      name: "result",
-                      solid: {
-                        __typename: "Solid",
-                        name: "sum_solid"
-                      }
-                    }
-                  }
-                ],
-                name: "sum_sq_solid",
-                description: null,
-                config: {
-                  __typename: "Config",
-                  type: {
-                    __typename: "RegularType",
-                    name: "Any",
-                    description:
-                      "The type that allows any value, including no value."
-                  }
+                    __typename: "Config"
+                  },
+                  __typename: "SolidDefinition"
                 }
               }
             ],
             contexts: [
               {
-                __typename: "Context",
                 name: "default",
                 description: null,
                 config: {
-                  __typename: "Config",
                   type: {
                     __typename: "CompositeType",
                     name: "ConfigDictionary",
                     description:
-                      "Configuration dictionary.\n            Typed-checked but then passed to implementations as a python dict",
+                      "Configuration dictionary.\n\n    Typed-checked but then passed to implementations as a python dict\n\n    Arguments:\n      fields (dict): dictonary of :py:class:`Field` objects keyed by name",
                     fields: [
                       {
-                        __typename: "Field",
                         name: "log_level",
                         description: null,
                         isOptional: true,
-                        defaultValue: "ERROR",
+                        defaultValue: "INFO",
                         type: {
-                          __typename: "RegularType",
                           name: "String",
-                          description: "A string."
-                        }
+                          description: "A string.",
+                          __typename: "RegularType"
+                        },
+                        __typename: "TypeField"
                       }
                     ]
-                  }
-                }
+                  },
+                  __typename: "Config"
+                },
+                __typename: "PipelineContext"
               }
-            ]
+            ],
+            __typename: "Pipeline"
           }
         ]
       }

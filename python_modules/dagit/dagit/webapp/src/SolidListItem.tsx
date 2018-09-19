@@ -20,7 +20,9 @@ export default class SolidListItem extends React.Component<
     SolidListItemFragment: gql`
       fragment SolidListItemFragment on Solid {
         name
-        description
+        definition {
+          description
+        }
         ...SolidTypeSignatureFragment
       }
 
@@ -38,7 +40,7 @@ export default class SolidListItem extends React.Component<
           <TitleCode>{this.props.solid.name}</TitleCode>
         </Link>
         <DescriptionWrapper>
-          <Description description={this.props.solid.description} />
+          <Description description={this.props.solid.definition.description} />
         </DescriptionWrapper>
       </SolidCard>
     );
