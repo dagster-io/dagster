@@ -12,7 +12,7 @@ from dagster import (
     config,
 )
 
-from dagster.core.definitions import ExecutionGraph
+from dagster.core.definitions import ExecutionGraph, Solid
 from dagster.core.execution import execute_pipeline_iterator
 from dagster.core.errors import DagsterExecutionFailureReason
 from dagster.graphviz import build_graphviz_graph
@@ -144,6 +144,7 @@ def print_context_definition(printer, context_name, context_definition):
 
 
 def print_solid(printer, solid):
+    check.inst_param(solid, 'solid', Solid)
     printer.line('Solid: {name}'.format(name=solid.name))
 
     with printer.with_indent():
