@@ -44,16 +44,22 @@ export interface ILayoutPipeline {
 interface ILayoutSolid {
   name: string;
   inputs: Array<{
-    name: string;
-    dependsOn: {
+    definition: {
       name: string;
+    };
+    dependsOn: {
+      definition: {
+        name: string;
+      };
       solid: {
         name: string;
       };
     } | null;
   }>;
   outputs: Array<{
-    name: string;
+    definition: {
+      name: string;
+    };
   }>;
 }
 
