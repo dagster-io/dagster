@@ -47,16 +47,7 @@ export default class PipelineGraph extends React.Component<
             height={layout.height}
             onMouseDown={evt => evt.preventDefault()}
           >
-            {pipeline.solids.map(solid => (
-              <SolidNode
-                key={solid.name}
-                solid={solid}
-                onClick={onClickSolid}
-                layout={layout.solids[solid.name]}
-                selected={selectedSolid === solid.name}
-              />
-            ))}
-            <g>
+            <g style={{ opacity: 0.2 }}>
               {layout.connections.map(({ from, to }, i) => (
                 <StyledLink
                   key={i}
@@ -71,6 +62,15 @@ export default class PipelineGraph extends React.Component<
                 />
               ))}
             </g>
+            {pipeline.solids.map(solid => (
+              <SolidNode
+                key={solid.name}
+                solid={solid}
+                onClick={onClickSolid}
+                layout={layout.solids[solid.name]}
+                selected={selectedSolid === solid.name}
+              />
+            ))}
           </SVGContainer>
         </PanAndZoomStyled>
       </GraphWrapper>
@@ -97,8 +97,7 @@ const SVGContainer = styled.svg`
 `;
 
 const StyledLink = styled(Link)`
-  stroke-width: 2;
+  stroke-width: 6;
   stroke: ${Colors.BLACK}
-  strokeOpacity: 0.6;
   fill: none;
 `;
