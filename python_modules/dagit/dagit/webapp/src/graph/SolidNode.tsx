@@ -20,25 +20,31 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
       fragment SolidNodeFragment on Solid {
         name
         inputs {
-          name
-          type {
+          definition {
             name
+            type {
+              name
+            }
           }
           dependsOn {
-            name
+            definition {
+              name
+            }
             solid {
               name
             }
           }
         }
         outputs {
-          name
-          type {
+          definition {
             name
-          }
-          expectations {
-            name
-            description
+            type {
+              name
+            }
+            expectations {
+              name
+              description
+            }
           }
         }
       }
@@ -56,14 +62,14 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
     return this.props.solid.inputs.map((input, i) => {
       const {
         layout: { x, y, width, height }
-      } = this.props.layout.inputs[input.name];
+      } = this.props.layout.inputs[input.definition.name];
 
       return (
         <foreignObject key={i} x={x} y={y} height={height}>
           <InputContainer>
             <Port filled={input.dependsOn != null} />
-            <InputOutputName>{input.name}</InputOutputName>
-            <TypeName>{input.type.name} </TypeName>
+            <InputOutputName>{input.definition.name}</InputOutputName>
+            <TypeName>{input.definition.type.name} </TypeName>
           </InputContainer>
         </foreignObject>
       );
@@ -74,14 +80,14 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
     return this.props.solid.outputs.map((output, i) => {
       const {
         layout: { x, y, width, height }
-      } = this.props.layout.outputs[output.name];
+      } = this.props.layout.outputs[output.definition.name];
 
       return (
         <foreignObject key={i} x={x} y={y} height={height}>
           <OutputContainer>
             <Port filled={true} />
-            <InputOutputName>{output.name}</InputOutputName>
-            <TypeName>{output.type.name}</TypeName>
+            <InputOutputName>{output.definition.name}</InputOutputName>
+            <TypeName>{output.definition.type.name}</TypeName>
           </OutputContainer>
         </foreignObject>
       );
