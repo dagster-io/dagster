@@ -33,11 +33,11 @@ from .definitions import (
     SolidDefinition,
     SolidOutputHandle,
     Solid,
+    TransformExecutionInfo,
 )
 
 from .execution_context import (
     ExecutionContext,
-    TransformExecutionInfo,
 )
 
 from .errors import (
@@ -193,7 +193,10 @@ EXPECTATION_INPUT = 'expectation_input'
 
 
 def _yield_transform_results(context, compute_node, conf, inputs):
-    gen = compute_node.solid.definition.transform_fn(TransformExecutionInfo(context, conf), inputs)
+    gen = compute_node.solid.definition.transform_fn(
+        TransformExecutionInfo(context, conf, compute_node.solid.definition),
+        inputs,
+    )
 
     if isinstance(gen, Result):
         raise DagsterInvariantViolationError(

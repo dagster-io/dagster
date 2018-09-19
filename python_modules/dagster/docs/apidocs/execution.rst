@@ -17,6 +17,3 @@ Executing pipelines and solids.
 
 .. autoclass:: SolidExecutionResult
    :members:
-
-.. autoclass:: TransformExecutionInfo
-   :members:

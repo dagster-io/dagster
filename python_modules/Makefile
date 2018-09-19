@@ -9,6 +9,8 @@ watch:
 	"dagster/dagster/sqlalchemy/sqlalchemy_tests "\
 	"dagster/dagster/utils/utils_tests "\
 	"dagster/dagster_tests "\
+	"dagit/dagit_tests "\
+	"dagstermill/dagstermill_tests "\
 	"dagster-ge/dagster_ge_tests " \
 	--drop dagster/dagster dagster/dagster_tests/ dagster-ge/dagster_ge dagster-ge/dagster_ge_tests
 	

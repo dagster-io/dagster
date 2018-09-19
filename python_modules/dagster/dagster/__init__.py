@@ -7,7 +7,6 @@ from dagster.core.execution import (
 
 from dagster.core.execution_context import (
     ExecutionContext,
-    TransformExecutionInfo,
 )
 
 from dagster.core.definitions import (
@@ -26,6 +25,7 @@ from dagster.core.definitions import (
     Result,
     SolidDefinition,
     SolidInstance,
+    TransformExecutionInfo,
 )
 
 from dagster.core.decorators import (
