@@ -91,7 +91,6 @@ export function getDagrePipelineLayout(
   // Define a new top-down, left to right graph layout
   g.setGraph({
     rankdir: "TB",
-    align: "DR",
     marginx: 100,
     marginy: 100
   });
@@ -121,12 +120,12 @@ export function getDagrePipelineLayout(
           from: {
             point: { x: 0, y: 0 },
             solidName: input.dependsOn.solid.name,
-            edgeName: input.dependsOn.name
+            edgeName: input.dependsOn.definition.name
           },
           to: {
             point: { x: 0, y: 0 },
             solidName: solid.name,
-            edgeName: input.name
+            edgeName: input.definition.name
           }
         });
       }
@@ -183,7 +182,7 @@ function layoutSolid(solid: ILayoutSolid, root: IPoint): IFullSolidLayout {
   } = {};
 
   solid.inputs.forEach((input, i) => {
-    inputsLayouts[input.name] = {
+    inputsLayouts[input.definition.name] = {
       port: { x: root.x + PORT_INSET_X, y: accY + PORT_INSET_Y },
       layout: {
         x: root.x,
@@ -212,7 +211,7 @@ function layoutSolid(solid: ILayoutSolid, root: IPoint): IFullSolidLayout {
   } = {};
 
   solid.outputs.forEach((output, i) => {
-    outputLayouts[output.name] = {
+    outputLayouts[output.definition.name] = {
       port: {
         x: root.x + PORT_INSET_X,
         y: accY + OUTPUT_HEIGHT - PORT_INSET_Y
