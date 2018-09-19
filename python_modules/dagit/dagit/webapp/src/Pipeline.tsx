@@ -4,7 +4,7 @@ import styled from "styled-components";
 import { History } from "history";
 import { Switch, Route, match } from "react-router";
 import { Link } from "react-router-dom";
-import { Card, H3, H5, Text, Code, UL, H6 } from "@blueprintjs/core";
+import { Card, H3, H5, Code } from "@blueprintjs/core";
 import SpacedCard from "./SpacedCard";
 import Config from "./Config";
 import Solid from "./Solid";
@@ -194,7 +194,7 @@ const Section = styled.div`
 `;
 
 const PipelineGraphWrapper = styled(Section)`
-  height: 500px;
+  height: 700px;
   width: 100%;
   display: flex;
 `;
