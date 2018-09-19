@@ -25,7 +25,7 @@
     "--no-strict-optional",
     "--allow-subclassing-any"
   ],
-  "files.autoSave": "onFocusChange",
+  // "files.autoSave": "onSave",
   "files.exclude": {
     "**/.git": true,
     "**/.svn": true,
@@ -55,7 +55,7 @@
   },
   "python.venvPath": "/Users/schrockn/venvs",
   "editor.formatOnSave": true,
-  "editor.formatOnPaste": true,
+  // "editor.formatOnPaste": true,
   "python.formatting.provider": "yapf",
   "python.formatting.yapfArgs": [
     "--style",

@@ -1,15 +1,28 @@
 import * as dagre from "dagre";
 
+export type ILayoutConnectionMember = {
+  point: IPoint;
+  solidName: string;
+  edgeName: string;
+};
+
+export type ILayoutConnection = {
+  from: ILayoutConnectionMember;
+  to: ILayoutConnectionMember;
+};
+
 export type IFullPipelineLayout = {
   solids: {
     [solidName: string]: IFullSolidLayout;
   };
+  connections: Array<ILayoutConnection>;
   width: number;
   height: number;
 };
 
 export interface IFullSolidLayout {
   solid: ILayout;
+  boundingBox: ILayout;
   inputs: {
     [inputName: string]: {
       layout: ILayout;
@@ -31,23 +44,16 @@ export interface ILayoutPipeline {
 interface ILayoutSolid {
   name: string;
   inputs: Array<{
-    definition: {
-      name: string;
-    };
+    name: string;
     dependsOn: {
-      definition: {
-        name: string;
-      };
-
+      name: string;
       solid: {
         name: string;
       };
     } | null;
   }>;
   outputs: Array<{
-    definition: {
-      name: string;
-    };
+    name: string;
   }>;
 }
 
@@ -63,23 +69,23 @@ export interface IPoint {
   y: number;
 }
 
-const SOLID_WIDTH = 250;
+const SOLID_WIDTH = 350;
 const SOLID_BASE_HEIGHT = 60;
-const SOLID_GAP = 100;
-const INPUT_WIDTH = 200;
-const INPUT_HEIGHT = 80;
-const INPUT_GAP = 20;
-const OUTPUT_WIDTH = 200;
-const OUTPUT_HEIGHT = 80;
-const INPUT_OUTPUT_INSET = 10;
+const INPUT_HEIGHT = 36;
+const OUTPUT_HEIGHT = 36;
+const INPUT_OUTPUT_INSET = 6;
+const PORT_INSET_X = 15;
+const PORT_INSET_Y = OUTPUT_HEIGHT / 2;
 
 export function getDagrePipelineLayout(
   pipeline: ILayoutPipeline
 ): IFullPipelineLayout {
   const g = new dagre.graphlib.Graph();
+
+  // Define a new top-down, left to right graph layout
   g.setGraph({
-    rankdir: "LR",
-    align: "UL",
+    rankdir: "TB",
+    align: "DR",
     marginx: 100,
     marginy: 100
   });
@@ -87,16 +93,36 @@ export function getDagrePipelineLayout(
     return {};
   });
 
+  const connections: Array<ILayoutConnection> = [];
+
   pipeline.solids.forEach(solid => {
-    const layout = layoutSolid({ solid, x: 0, y: 0 });
+    // Lay out each solid individually to get it's width and height based on it's
+    // inputs and outputs, and then attach it to the graph. Dagre will give us it's
+    // x,y position.
+    const layout = layoutSolid(solid, { x: 0, y: 0 });
     g.setNode(solid.name, {
-      height: layout.solid.height,
-      width: layout.solid.width + INPUT_WIDTH * 2 - INPUT_OUTPUT_INSET * 2
+      width: layout.boundingBox.width,
+      height: layout.boundingBox.height
     });
 
+    // Give Dagre the dependency edges and build a flat set of them so we
+    // can reference them in a single pass later
     solid.inputs.forEach(input => {
       if (input.dependsOn) {
         g.setEdge(input.dependsOn.solid.name, solid.name);
+
+        connections.push({
+          from: {
+            point: { x: 0, y: 0 },
+            solidName: input.dependsOn.solid.name,
+            edgeName: input.dependsOn.name
+          },
+          to: {
+            point: { x: 0, y: 0 },
+            solidName: solid.name,
+            edgeName: input.name
+          }
+        });
       }
     });
   });
@@ -106,97 +132,99 @@ export function getDagrePipelineLayout(
   const solids: {
     [solidName: string]: IFullSolidLayout;
   } = {};
+
+  // Read the Dagre layout and map "nodes" back to our solids, but with
+  // X,Y coordinates this time.
   g.nodes().forEach(function(solidName) {
     const node = g.node(solidName);
     const solid = pipeline.solids.find(({ name }) => name === solidName);
     if (solid) {
-      solids[solidName] = layoutSolid({
-        solid: solid,
-        x: node.x,
-        y: node.y
+      solids[solidName] = layoutSolid(solid, {
+        x: node.x - node.width / 2, // Dagre's x/y is the center, we want top left
+        y: node.y - node.height / 2
       });
     }
   });
-  // g.edges().forEach(function(e) {
-  //   console.log(
-  //     "Edge " + e.v + " -> " + e.w + ": " + JSON.stringify(g.edge(e))
-  //   );
-  // });
+
+  // Read the Dagre layout and map "edges" back to our data model. We don't
+  // currently use the "closest points on the node" Dagre suggests (but we could).
+  g.edges().forEach(function(e) {
+    const conn = connections.find(
+      c => c.from.solidName === e.v && c.to.solidName === e.w
+    );
+    const points = g.edge(e).points;
+    if (conn) {
+      conn.from.point = points[0];
+      conn.to.point = points[points.length - 1];
+    }
+  });
 
   return {
     solids,
+    connections,
     width: g.graph().width as number,
     height: g.graph().height as number
   };
 }
 
-function layoutSolid({
-  solid,
-  x: solidX,
-  y: solidY
-}: {
-  solid: ILayoutSolid;
-  x: number;
-  y: number;
-}): IFullSolidLayout {
-  const solidLayout: ILayout = {
-    x: solidX,
-    y: solidY,
-    width: SOLID_WIDTH,
-    height:
-      SOLID_BASE_HEIGHT +
-      (INPUT_HEIGHT + INPUT_GAP) *
-        Math.max(solid.inputs.length, solid.outputs.length)
-  };
-  const inputs: {
-    [inputName: string]: {
-      layout: ILayout;
-      port: IPoint;
-    };
+function layoutSolid(solid: ILayoutSolid, root: IPoint): IFullSolidLayout {
+  // Starting at the root (top left) X,Y, return the layout information for a solid with
+  // input blocks, then the main block, then output blocks (arranged vertically)
+  let accY = root.y;
+
+  const inputsLayouts: {
+    [inputName: string]: { layout: ILayout; port: IPoint };
   } = {};
+
   solid.inputs.forEach((input, i) => {
-    const inputX = solidX + INPUT_OUTPUT_INSET - INPUT_WIDTH;
-    const inputY = solidY + INPUT_GAP + (INPUT_HEIGHT + INPUT_GAP) * i;
-    inputs[input.definition.name] = {
+    inputsLayouts[input.name] = {
+      port: { x: root.x + PORT_INSET_X, y: accY + PORT_INSET_Y },
       layout: {
-        x: inputX,
-        y: inputY,
-        width: INPUT_WIDTH,
+        x: root.x,
+        y: accY,
+        width: 0,
         height: INPUT_HEIGHT
-      },
-      port: {
-        x: inputX,
-        y: inputY + INPUT_HEIGHT / 2
       }
     };
+    accY += INPUT_HEIGHT;
   });
 
-  const outputs: {
+  const solidLayout: ILayout = {
+    x: root.x,
+    y: Math.max(root.y, accY - INPUT_OUTPUT_INSET),
+    width: SOLID_WIDTH,
+    height: SOLID_BASE_HEIGHT + INPUT_OUTPUT_INSET * 2
+  };
+
+  accY += SOLID_BASE_HEIGHT;
+
+  const outputLayouts: {
     [outputName: string]: {
       layout: ILayout;
       port: IPoint;
     };
   } = {};
+
   solid.outputs.forEach((output, i) => {
-    const outputX = solidX + SOLID_WIDTH - INPUT_OUTPUT_INSET;
-    const outputY = solidY + INPUT_GAP + (OUTPUT_HEIGHT + INPUT_GAP) * i;
-    outputs[output.definition.name] = {
-      layout: {
-        x: outputX,
-        y: outputY,
-        width: OUTPUT_WIDTH,
-        height: OUTPUT_HEIGHT
-      },
+    outputLayouts[output.name] = {
       port: {
-        x: outputX,
-        y: outputY + OUTPUT_HEIGHT / 2
-      }
+        x: root.x + PORT_INSET_X,
+        y: accY + OUTPUT_HEIGHT - PORT_INSET_Y
+      },
+      layout: { x: root.x, y: accY, width: 0, height: OUTPUT_HEIGHT }
     };
+    accY += OUTPUT_HEIGHT;
   });
 
   return {
+    boundingBox: {
+      x: root.x,
+      y: root.y,
+      width: SOLID_WIDTH,
+      height: accY - root.y
+    },
     solid: solidLayout,
-    inputs,
-    outputs
+    inputs: inputsLayouts,
+    outputs: outputLayouts
   };
 }
