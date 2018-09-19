@@ -32,7 +32,7 @@ from .definitions import (
     Result,
     SolidDefinition,
     SolidOutputHandle,
-    PipelineSolid,
+    Solid,
 )
 
 from .execution_context import (
@@ -318,7 +318,7 @@ class ComputeNode(object):
         self.arg_dict = check.dict_param(arg_dict, 'arg_dict', key_type=str)
         self.compute_fn = check.callable_param(compute_fn, 'compute_fn')
         self.tag = check.inst_param(tag, 'tag', ComputeNodeTag)
-        self.solid = check.inst_param(solid, 'solid', PipelineSolid)
+        self.solid = check.inst_param(solid, 'solid', Solid)
 
     def has_node(self, name):
         check.str_param(name, 'name')
@@ -540,7 +540,7 @@ def create_expectation_cn(
     inout_def,
 ):
 
-    check.inst_param(solid, 'solid', PipelineSolid)
+    check.inst_param(solid, 'solid', Solid)
     check.inst_param(expectation_def, 'input_expct_def', ExpectationDefinition)
     check.inst_param(prev_node_output_handle, 'prev_node_output_handle', ComputeNodeOutputHandle)
     check.inst_param(inout_def, 'inout_def', (InputDefinition, OutputDefinition))
@@ -578,7 +578,7 @@ ComputeNodeSubgraph = namedtuple(
 
 
 def create_expectations_cn_graph(solid, inout_def, prev_node_output_handle, tag):
-    check.inst_param(solid, 'solid', PipelineSolid)
+    check.inst_param(solid, 'solid', Solid)
     check.inst_param(inout_def, 'inout_def', (InputDefinition, OutputDefinition))
     check.inst_param(prev_node_output_handle, 'prev_node_output_handle', ComputeNodeOutputHandle)
     check.inst_param(tag, 'tag', ComputeNodeTag)
@@ -619,20 +619,20 @@ class ComputeNodeOutputMap(dict):
         return dict.__setitem__(self, key, val)
 
 
-def create_conf_value(execution_info, solid):
+def create_conf_value(execution_info, solid_def):
     check.inst_param(execution_info, 'execution_info', ComputeNodeExecutionInfo)
-    check.inst_param(solid, 'solid', SolidDefinition)
+    check.inst_param(solid_def, 'solid_def', SolidDefinition)
 
-    name = solid.name
+    name = solid_def.name
     solid_configs = execution_info.environment.solids
     config_input = solid_configs[name].config if name in solid_configs else {}
 
     try:
-        return solid.config_def.config_type.evaluate_value(config_input)
+        return solid_def.config_def.config_type.evaluate_value(config_input)
     except DagsterEvaluateValueError as e:
         raise DagsterTypeError(
             'Error evaluating config for {solid_name}: {error_msg}'.format(
-                solid_name=solid.name,
+                solid_name=solid_def.name,
                 error_msg=','.join(e.args),
             )
         )
@@ -723,7 +723,7 @@ def _create_compute_node_graph(compute_nodes):
 
 def create_subgraph_for_input(execution_info, solid, prev_cn_output_handle, input_def):
     check.inst_param(execution_info, 'execution_info', ComputeNodeExecutionInfo)
-    check.inst_param(solid, 'solid', PipelineSolid)
+    check.inst_param(solid, 'solid', Solid)
     check.inst_param(prev_cn_output_handle, 'prev_cn_output_handle', ComputeNodeOutputHandle)
     check.inst_param(input_def, 'input_def', InputDefinition)
 
@@ -743,7 +743,7 @@ def create_subgraph_for_input(execution_info, solid, prev_cn_output_handle, inpu
 
 def create_subgraph_for_output(execution_info, solid, solid_transform_cn, output_def):
     check.inst_param(execution_info, 'execution_info', ComputeNodeExecutionInfo)
-    check.inst_param(solid, 'solid', PipelineSolid)
+    check.inst_param(solid, 'solid', Solid)
     check.inst_param(solid_transform_cn, 'solid_transform_cn', ComputeNode)
     check.inst_param(output_def, 'output_def', OutputDefinition)
 
@@ -765,7 +765,7 @@ def create_subgraph_for_output(execution_info, solid, solid_transform_cn, output
 
 
 def _create_join_node(solid, prev_nodes, prev_output_name):
-    check.inst_param(solid, 'solid', PipelineSolid)
+    check.inst_param(solid, 'solid', Solid)
     check.list_param(prev_nodes, 'prev_nodes', of_type=ComputeNode)
     check.invariant(len(prev_nodes) > 0)
     check.str_param(prev_output_name, 'output_name')
@@ -802,7 +802,7 @@ def _create_join_lambda(_context, _compute_node, inputs):
 
 
 def _create_expectation_lambda(solid, inout_def, expectation_def, internal_output_name):
-    check.inst_param(solid, 'solid', PipelineSolid)
+    check.inst_param(solid, 'solid', Solid)
     check.inst_param(inout_def, 'inout_def', (InputDefinition, OutputDefinition))
     check.inst_param(expectation_def, 'expectations_def', ExpectationDefinition)
     check.str_param(internal_output_name, 'internal_output_name')
@@ -839,7 +839,7 @@ def _create_expectation_lambda(solid, inout_def, expectation_def, internal_outpu
 
 
 def create_compute_node_from_solid_transform(solid, node_inputs, conf):
-    check.inst_param(solid, 'solid', PipelineSolid)
+    check.inst_param(solid, 'solid', Solid)
     check.list_param(node_inputs, 'node_inputs', of_type=ComputeNodeInput)
 
     return ComputeNode(

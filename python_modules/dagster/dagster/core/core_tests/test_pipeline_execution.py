@@ -12,7 +12,7 @@ from dagster.core.definitions import (
     DependencyStructure,
     ExecutionGraph,
     _create_adjacency_lists,
-    PipelineSolid,
+    Solid,
 )
 
 from dagster.core.execution import (
@@ -82,7 +82,7 @@ def create_root_solid(name):
 
 
 def _do_construct(solids, dependencies):
-    solids = [PipelineSolid(name=solid.name, definition=solid) for solid in solids]
+    solids = [Solid(name=solid.name, definition=solid) for solid in solids]
     dependency_structure = DependencyStructure.from_definitions(solids, dependencies)
     return _create_adjacency_lists(solids, dependency_structure)
 

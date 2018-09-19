@@ -216,7 +216,7 @@ def check_opt_two_dim_str_dict(ddict, param_name, value_type):
 
 
 def _create_handle_dict(solid_dict, dep_dict):
-    check.dict_param(solid_dict, 'solid_dict', key_type=str, value_type=PipelineSolid)
+    check.dict_param(solid_dict, 'solid_dict', key_type=str, value_type=Solid)
     check_two_dim_str_dict(dep_dict, 'dep_dict', DependencyDefinition)
 
     handle_dict = InputToOutputHandleDict()
@@ -310,7 +310,7 @@ class SolidInstance(namedtuple('Solid', 'name alias')):
         return super(cls, SolidInstance).__new__(cls, name, alias)
 
 
-class PipelineSolid(object):
+class Solid(object):
     '''
     Solid instance within a pipeline. Defined by it's name inside the pipeline.
 
@@ -455,8 +455,8 @@ class PipelineDefinition(object):
         for solid in solids:
             if isinstance(solid, SolidDefinition):
                 for alias in solid_aliases[solid.name]:
-                    pipeline_solids.append(PipelineSolid(name=alias, definition=solid))
-                pipeline_solids.append(PipelineSolid(name=solid.name, definition=solid))
+                    pipeline_solids.append(Solid(name=alias, definition=solid))
+                pipeline_solids.append(Solid(name=solid.name, definition=solid))
             elif callable(solid):
                 raise DagsterInvalidDefinitionError(
                     '''You have passed a lambda or function {func} into
@@ -799,7 +799,7 @@ class SolidInputHandle(namedtuple('_SolidInputHandle', 'solid input_def')):
     def __new__(cls, solid, input_def):
         return super(SolidInputHandle, cls).__new__(
             cls,
-            check.inst_param(solid, 'solid', PipelineSolid),
+            check.inst_param(solid, 'solid', Solid),
             check.inst_param(input_def, 'input_def', InputDefinition),
         )
 
@@ -827,7 +827,7 @@ class SolidOutputHandle(namedtuple('_SolidOutputHandle', 'solid output_def')):
     def __new__(cls, solid, output_def):
         return super(SolidOutputHandle, cls).__new__(
             cls,
-            check.inst_param(solid, 'solid', PipelineSolid),
+            check.inst_param(solid, 'solid', Solid),
             check.inst_param(output_def, 'output_def', OutputDefinition),
         )
 
@@ -991,7 +991,7 @@ class SolidDefinition(object):
 
 
 def _create_adjacency_lists(solids, dep_structure):
-    check.list_param(solids, 'solids', PipelineSolid)
+    check.list_param(solids, 'solids', Solid)
     check.inst_param(dep_structure, 'dep_structure', DependencyStructure)
 
     visit_dict = {s.name: False for s in solids}
@@ -1056,12 +1056,12 @@ class ExecutionGraph(object):
 
         for from_solid_name, targets_by_input in injected_solids.items():
             for from_input_name, target_solid in targets_by_input.items():
-                new_solids.append(PipelineSolid(name=target_solid.name, definition=target_solid))
+                new_solids.append(Solid(name=target_solid.name, definition=target_solid))
                 new_deps[from_solid_name][from_input_name] = DependencyDefinition(
                     solid=target_solid.name
                 )
 
-        check.list_param(new_solids, 'new_solids', of_type=PipelineSolid)
+        check.list_param(new_solids, 'new_solids', of_type=Solid)
 
         solids = self.solids + new_solids
 
@@ -1078,7 +1078,7 @@ class ExecutionGraph(object):
 
     def __init__(self, pipeline, solids, dependency_structure):
         self.pipeline = pipeline
-        solids = check.list_param(solids, 'solids', of_type=PipelineSolid)
+        solids = check.list_param(solids, 'solids', of_type=Solid)
         self.dependency_structure = check.inst_param(
             dependency_structure, 'dependency_structure', DependencyStructure
         )

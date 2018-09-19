@@ -31,7 +31,7 @@ from .definitions import (
     ExecutionGraph,
     PipelineDefinition,
     SolidDefinition,
-    PipelineSolid,
+    Solid,
 )
 
 from .errors import (
@@ -113,7 +113,7 @@ class SolidExecutionResult(object):
 
     def __init__(self, context, solid, input_expectations, transforms, output_expectations):
         self.context = check.inst_param(context, 'context', ExecutionContext)
-        self.solid = check.inst_param(solid, 'solid', PipelineSolid)
+        self.solid = check.inst_param(solid, 'solid', Solid)
         self.input_expectations = check.list_param(
             input_expectations, 'input_expectations', ComputeNodeResult
         )
