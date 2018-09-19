@@ -10,7 +10,8 @@
     "dagster/dagster/sqlalchemy/sqlalchemy_tests",
     "dagster/dagster/dagster_examples/dagster_examples_tests",
     "dagster-ge/dagster_ge_tests",
-    "dagit/dagit_tests"
+    "dagit/dagit_tests",
+    "dagstermill/dagstermill_tests"
   ],
   "python.unitTest.pyTestEnabled": true,
   "python.pythonPath": "/Users/schrockn/code/venvs/dagster/bin/python",

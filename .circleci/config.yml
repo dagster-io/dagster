@@ -11,6 +11,9 @@ workflows:
       - dagit-python-3.5
       - dagit-python-2.7
       - dagit-webapp
+      - dagstermill-python-3.6
+      - dagstermill-python-3.5
+      - dagstermill-python-2.7
 
 jobs:
   dagster-python-3.6: &dagster-template
@@ -120,3 +123,37 @@ jobs:
       - store_artifacts:
           path: test-reports
           destination: test-reports
+
+  dagstermill-python-3.6: &dagstermill-template
+    <<: *dagster-template
+    steps:
+      - checkout
+
+      - run:
+          name: Install Dependencies
+          command: |
+            sudo pip install tox
+
+      - run:
+          name: Run dagstermill Tests
+          command: |
+            cd python_modules/dagstermill
+            tox -e $TOXENV
+
+      - store_artifacts:
+          path: test-reports
+          destination: test-reports
+
+  dagstermill-python-3.5:
+    <<: *dagstermill-template
+    docker:
+      - image: circleci/python:3.5.6
+    environment:
+      TOXENV: py35
+
+  dagstermill-python-2.7:
+    <<: *dagstermill-template
+    docker:
+      - image: circleci/python:2.7.15
+    environment:
+      TOXENV: py27

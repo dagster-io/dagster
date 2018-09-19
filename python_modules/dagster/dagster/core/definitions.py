@@ -1335,3 +1335,21 @@ ExpectationExecutionInfo = namedtuple(
     'ExpectationExecutionInfo',
     'context inout_def solid_def expectation_def',
 )
+
+
+class TransformExecutionInfo(namedtuple('_TransformExecutionInfo', 'context config solid_def')):
+    '''An instance of TransformExecutionInfo is passed every solid transform function.
+
+    Attributes:
+
+        context (ExecutionContext): Context instance for this pipeline invocation
+        config (Any): Config object for current solid
+    '''
+
+    def __new__(cls, context, config, solid_def):
+        return super(TransformExecutionInfo, cls).__new__(
+            cls,
+            check.inst_param(context, 'context', ExecutionContext),
+            config,
+            check.inst_param(solid_def, 'solid_def', SolidDefinition),
+        )
