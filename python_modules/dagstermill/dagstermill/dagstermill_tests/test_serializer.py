@@ -21,42 +21,47 @@ import dagstermill as dm
 
 
 def test_basic_get_in_memory_input():
-    inputs = dm.define_inputs(a=1)
-    assert dm.get_input(inputs, 'a') == 1
+    manager = dm.define_manager()
+    inputs = manager.define_inputs(a=1)
+    assert manager.get_input(inputs, 'a') == 1
 
 
 def test_basic_get_in_memory_inputs():
-    inputs = dm.define_inputs(a=1, b=2)
-    assert dm.get_input(inputs, 'a') == 1
-    assert dm.get_input(inputs, 'b') == 2
+    manager = dm.define_manager()
+    inputs = manager.define_inputs(a=1, b=2)
+    assert manager.get_input(inputs, 'a') == 1
+    assert manager.get_input(inputs, 'b') == 2
 
-    a, b = dm.get_inputs(inputs, 'a', 'b')
+    a, b = manager.get_inputs(inputs, 'a', 'b')
 
     assert a == 1
     assert b == 2
 
 
 def test_basic_get_serialized_inputs():
+    manager = dm.define_manager()
     inputs = dm.serialize_dm_object(dict(a=1, b=2))
-    assert dm.get_input(inputs, 'a') == 1
-    assert dm.get_input(inputs, 'b') == 2
+    assert manager.get_input(inputs, 'a') == 1
+    assert manager.get_input(inputs, 'b') == 2
 
-    a, b = dm.get_inputs(inputs, 'a', 'b')
+    a, b = manager.get_inputs(inputs, 'a', 'b')
 
     assert a == 1
     assert b == 2
 
 
 def test_basic_in_memory_config():
+    manager = dm.define_manager()
     value = {'path': 'some_path.csv'}
-    config_ = dm.define_config(value)
-    assert dm.get_config(config_) == value
+    config_ = manager.define_config(value)
+    assert manager.get_config(config_) == value
 
 
 def test_basic_serialized_config():
+    manager = dm.define_manager()
     value = {'path': 'some_path.csv'}
     config_ = dm.serialize_dm_object(value)
-    assert dm.get_config(config_) == value
+    assert manager.get_config(config_) == value
 
 
 def test_serialize_unserialize():
@@ -226,3 +231,25 @@ def test_notebook_dag():
     assert pipeline_result.success
     assert pipeline_result.result_for_solid('add_two').transformed_value() == 3
     assert pipeline_result.result_for_solid('mult_two').transformed_value() == 6
+
+
+@notebook_test
+def test_demonstrate_solid_include():
+    pipeline_result = execute_pipeline(
+        PipelineDefinition(
+            solids=[
+                dm.define_dagstermill_solid(
+                    name='demo_include',
+                    notebook_path=nb_test_path('demonstrate_solid_include'),
+                    outputs=[OutputDefinition()]
+                ),
+            ],
+            dependencies={
+                'demo_include': {},
+            }
+        )
+    )
+
+    assert pipeline_result.success
+    assert len(pipeline_result.result_list) == 1
+    assert pipeline_result.result_for_solid('demo_include').transformed_value() == 1
