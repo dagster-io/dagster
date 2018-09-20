@@ -182,14 +182,16 @@ function layoutSolid(solid: ILayoutSolid, root: IPoint): IFullSolidLayout {
     [inputName: string]: { layout: ILayout; port: IPoint };
   } = {};
 
-  const buildIOSmallLayout = (idx: number) => {
+  const buildIOSmallLayout = (idx: number, count: number) => {
+    const centeringOffsetX = (SOLID_WIDTH - IO_MINI_WIDTH * count) / 2;
+    const x = root.x + IO_MINI_WIDTH * idx + centeringOffsetX;
     return {
       port: {
-        x: root.x + PORT_INSET_X + IO_MINI_WIDTH * idx,
+        x: x + PORT_INSET_X,
         y: accY + PORT_INSET_Y
       },
       layout: {
-        x: root.x + IO_MINI_WIDTH * idx,
+        x: x,
         y: accY,
         width: IO_MINI_WIDTH,
         height: IO_HEIGHT
@@ -214,7 +216,7 @@ function layoutSolid(solid: ILayoutSolid, root: IPoint): IFullSolidLayout {
   solid.inputs.forEach((input, idx) => {
     inputsLayouts[input.definition.name] =
       solid.inputs.length > IO_THRESHOLD_FOR_MINI
-        ? buildIOSmallLayout(idx)
+        ? buildIOSmallLayout(idx, solid.inputs.length)
         : buildIOLayout();
   });
   if (solid.inputs.length > IO_THRESHOLD_FOR_MINI) {
@@ -240,7 +242,7 @@ function layoutSolid(solid: ILayoutSolid, root: IPoint): IFullSolidLayout {
   solid.outputs.forEach((output, idx) => {
     outputLayouts[output.definition.name] =
       solid.outputs.length > IO_THRESHOLD_FOR_MINI
-        ? buildIOSmallLayout(idx)
+        ? buildIOSmallLayout(idx, solid.outputs.length)
         : buildIOLayout();
   });
   if (solid.outputs.length > IO_THRESHOLD_FOR_MINI) {
