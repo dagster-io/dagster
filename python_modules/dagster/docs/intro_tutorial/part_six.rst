@@ -23,7 +23,7 @@ Repostories are declared like this:
 
 
     def define_part_six_pipeline():
-        return PipelineDefinition(name='part_six', solids=[hello_world])
+        return PipelineDefinition(name='part_six', solids=[hello_world]
 
 
     def define_part_six_repo():
@@ -34,7 +34,7 @@ Repostories are declared like this:
             },
         )
 
-Save this file as "part_six.py"
+Save this file as ``part_six.py``.
 
 For tools to operate they must be able to access and create a `Repository`. The current mechanism is to
 create a yaml file (default name: 'repository.yml') where you state the module or file and the

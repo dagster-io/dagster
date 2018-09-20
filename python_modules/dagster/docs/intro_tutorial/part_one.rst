@@ -60,9 +60,20 @@ In order to execute this pipeline we can use the dagster CLI tool:
 
 Note the logs that indicate that this actually execute something.
 
+This can also be fixed using an in-memory python API. Add this to end of your file
+(as well as adding ``execute_pipeline`` to your include list):
+
+.. code-block:: python
+
+    if __name__ == '__main__':
+        result = execute_pipeline(define_pipeline())
+        assert result.success
+
+Assuming the file is saved as ``step_one.py``:
+
 .. code-block:: sh
 
     $ python3 step_one.py
     hello
 
-Congrats! You have run your first dagster pipeline.
+And now you have run your first pipeline in using both the CLI and the python API.
