@@ -85,4 +85,4 @@ the CLI tool.
     $ dagit
     Serving on http://localhost:3000
 
-Now navigate to http:://localhost:3000 in your web browser and you can visualize your pipelines!
+Now navigate to http://localhost:3000 in your web browser and you can visualize your pipelines!
