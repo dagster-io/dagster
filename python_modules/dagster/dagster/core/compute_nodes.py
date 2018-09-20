@@ -249,7 +249,7 @@ def _execute_core_transform(context, compute_node, conf, inputs):
 
     solid = compute_node.solid
 
-    with context.value('solid', solid.name):
+    with context.values({'solid': solid.name, 'solid_definition': solid.definition.name}):
         context.debug('Executing core transform for solid {solid}.'.format(solid=solid.name))
 
         with time_execution_scope() as timer_result, \

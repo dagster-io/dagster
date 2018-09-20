@@ -1,10 +1,10 @@
+from collections import defaultdict
+
 from dagster import (
     ConfigDefinition,
     DependencyDefinition,
     InputDefinition,
-    OutputDefinition,
     PipelineDefinition,
-    SolidDefinition,
     SolidInstance,
     check,
     config,
@@ -97,3 +97,26 @@ def test_aliased_configs():
     assert result.success
     assert result.result_for_solid('load_a').transformed_value() == 2
     assert result.result_for_solid('load_b').transformed_value() == 3
+
+
+def test_aliased_solids_context():
+    record = defaultdict(set)
+
+    @solid
+    def log_things(info):
+        solid_value = info.context.get_context_value('solid')
+        solid_def_value = info.context.get_context_value('solid_definition')
+        record[solid_def_value].add(solid_value)
+
+    pipeline = PipelineDefinition(
+        solids=[log_things],
+        dependencies={
+            SolidInstance('log_things', 'log_a'): {},
+            SolidInstance('log_things', 'log_b'): {},
+        }
+    )
+
+    result = execute_pipeline(pipeline)
+    assert result.success
+
+    assert record == {'log_things': set(['log_a', 'log_b'])}
