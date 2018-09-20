@@ -4,6 +4,9 @@ workflows:
   version: 2
   test:
     jobs:
+      - dagstermill-python-3.6
+      - dagstermill-python-3.5
+      - dagstermill-python-2.7
       - dagster-python-3.6
       - dagster-python-3.5
       - dagster-python-2.7
@@ -11,9 +14,6 @@ workflows:
       - dagit-python-3.5
       - dagit-python-2.7
       - dagit-webapp
-      - dagstermill-python-3.6
-      - dagstermill-python-3.5
-      - dagstermill-python-2.7
 
 jobs:
   dagster-python-3.6: &dagster-template
