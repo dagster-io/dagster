@@ -9,6 +9,7 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     Result,
+    check,
     config,
     execute_pipeline,
     lambda_solid,

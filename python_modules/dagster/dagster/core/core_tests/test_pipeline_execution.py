@@ -6,6 +6,7 @@ from dagster import (
     check,
     config,
     execute_pipeline,
+    SolidInstance,
 )
 
 from dagster.core.definitions import (
@@ -268,15 +269,31 @@ def test_create_single_solid_pipeline():
     assert result.success
 
 
-# def test_pipeline_execution_graph_diamond_in_memory():
-#     pipeline = PipelineDefinition(solids=create_diamond_solids(), dependencies=diamond_deps())
-#     # input_values = {'A_input': [{'A_input': 'input_set'}]}
-#     return _do_test(lambda: execute_pipeline_iterator_in_memory(
-#         ExecutionContext(),
-#         pipeline,
-#         {}
-#         # input_values={'A': input_values},
-#     ))
+def test_create_single_solid_pipeline_with_alias():
+    a_source = define_stub_solid('A_source', [input_set('A_input')])
+    stub_solid = define_stub_solid('stub', [{'a_key': 'stubbed_thing'}])
+    single_solid_pipeline = PipelineDefinition.create_single_solid_pipeline(
+        PipelineDefinition(
+            solids=[a_source, create_root_solid('A')],
+            dependencies={
+                SolidInstance('A', alias='aliased'): {
+                    'A_input': DependencyDefinition(a_source.name)
+                },
+            },
+        ),
+        'aliased',
+        {
+            'aliased': {
+                'A_input': stub_solid,
+            },
+        },
+    )
+
+    result = execute_pipeline(single_solid_pipeline)
+    assert result.success
+
+    expected = [{'a_key': 'stubbed_thing'}, {'A': 'transform_called'}]
+    assert result.result_for_solid('aliased').transformed_value() == expected
 
 
 def _do_test(pipeline, do_execute_pipeline_iter):

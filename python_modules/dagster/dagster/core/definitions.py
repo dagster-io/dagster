@@ -426,8 +426,8 @@ class PipelineDefinition(object):
             context_definitions (Dict[str, PipelineContextDefinition]): See class description.
             dependencies: (Dict[str, Dict[str, DependencyDefinition]]): See class description.
         '''
-        self.description = check.opt_str_param(description, 'description')
         self.name = check.opt_str_param(name, 'name', '<<unnamed>>')
+        self.description = check.opt_str_param(description, 'description')
 
         if context_definitions is None:
             context_definitions = _default_pipeline_context_definitions()
@@ -1043,7 +1043,8 @@ def _create_adjacency_lists(solids, dep_structure):
 def _dependency_structure_to_dep_dict(dependency_structure):
     dep_dict = defaultdict(dict)
     for input_handle, output_handle in dependency_structure.items():
-        dep_dict[input_handle.solid.name][input_handle.input_def.name] = DependencyDefinition(
+        solid_instance = SolidInstance(input_handle.solid.definition.name, input_handle.solid.name)
+        dep_dict[solid_instance][input_handle.input_def.name] = DependencyDefinition(
             solid=output_handle.solid.name,
             output=output_handle.output_def.name,
         )
