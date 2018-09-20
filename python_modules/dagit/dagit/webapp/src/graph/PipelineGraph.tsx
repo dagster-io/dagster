@@ -5,13 +5,66 @@ import { Colors } from "@blueprintjs/core";
 import { LinkVertical as Link } from "@vx/shape";
 import PanAndZoom from "./PanAndZoom";
 import SolidNode from "./SolidNode";
-import { getDagrePipelineLayout, IPoint } from "./getFullSolidLayout";
+import {
+  getDagrePipelineLayout,
+  IPoint,
+  IFullPipelineLayout
+} from "./getFullSolidLayout";
 import { PipelineGraphFragment } from "./types/PipelineGraphFragment";
 
 interface IPipelineGraphProps {
   pipeline: PipelineGraphFragment;
   selectedSolid?: string;
   onClickSolid?: (solidName: string) => void;
+}
+
+interface IPipelineContentsProps extends IPipelineGraphProps {
+  showText: boolean;
+  layout: IFullPipelineLayout;
+}
+
+class PipelineGraphContents extends React.PureComponent<
+  IPipelineContentsProps
+> {
+  render() {
+    const {
+      layout,
+      showText,
+      pipeline,
+      onClickSolid,
+      selectedSolid
+    } = this.props;
+
+    return (
+      <g>
+        <g style={{ opacity: 0.2 }}>
+          {layout.connections.map(({ from, to }, i) => (
+            <StyledLink
+              key={i}
+              x={(d: IPoint) => d.x}
+              y={(d: IPoint) => d.y}
+              data={{
+                // can also use from.point for the "Dagre" closest point on node
+                source:
+                  layout.solids[from.solidName].outputs[from.edgeName].port,
+                target: layout.solids[to.solidName].inputs[to.edgeName].port
+              }}
+            />
+          ))}
+        </g>
+        {pipeline.solids.map(solid => (
+          <SolidNode
+            key={solid.name}
+            solid={solid}
+            showText={showText}
+            onClick={onClickSolid}
+            layout={layout.solids[solid.name]}
+            selected={selectedSolid === solid.name}
+          />
+        ))}
+      </g>
+    );
+  }
 }
 
 export default class PipelineGraph extends React.Component<
@@ -32,64 +85,39 @@ export default class PipelineGraph extends React.Component<
   };
 
   render() {
-    const { pipeline, onClickSolid, selectedSolid } = this.props;
     const layout = getDagrePipelineLayout(this.props.pipeline);
 
     return (
-      <GraphWrapper>
-        <PanAndZoomStyled
-          key={pipeline.name}
-          graphWidth={layout.width}
-          graphHeight={layout.height}
-        >
+      <PanAndZoomStyled
+        key={this.props.pipeline.name}
+        graphWidth={layout.width}
+        graphHeight={layout.height}
+      >
+        {({ scale, x, y }: any) => (
           <SVGContainer
             width={layout.width}
             height={layout.height}
             onMouseDown={evt => evt.preventDefault()}
           >
-            <g style={{ opacity: 0.2 }}>
-              {layout.connections.map(({ from, to }, i) => (
-                <StyledLink
-                  key={i}
-                  x={(d: IPoint) => d.x}
-                  y={(d: IPoint) => d.y}
-                  data={{
-                    // can also use from.point for the "Dagre" closest point on node
-                    source:
-                      layout.solids[from.solidName].outputs[from.edgeName].port,
-                    target: layout.solids[to.solidName].inputs[to.edgeName].port
-                  }}
-                />
-              ))}
-            </g>
-            {pipeline.solids.map(solid => (
-              <SolidNode
-                key={solid.name}
-                solid={solid}
-                onClick={onClickSolid}
-                layout={layout.solids[solid.name]}
-                selected={selectedSolid === solid.name}
-              />
-            ))}
+            <PipelineGraphContents
+              layout={layout}
+              showText={scale > 0.4}
+              {...this.props}
+            />
           </SVGContainer>
-        </PanAndZoomStyled>
-      </GraphWrapper>
+        )}
+      </PanAndZoomStyled>
     );
   }
 }
 
-const GraphWrapper = styled.div`
+const PanAndZoomStyled = styled(PanAndZoom)`
   width: 100%;
   height: 100%;
   position: relative;
   overflow: hidden;
   user-select: none;
   background-color: ${Colors.LIGHT_GRAY5};
-`;
-
-const PanAndZoomStyled = styled(PanAndZoom)`
-  width: 100%;
-  height: 100%;
 `;
 
 const SVGContainer = styled.svg`

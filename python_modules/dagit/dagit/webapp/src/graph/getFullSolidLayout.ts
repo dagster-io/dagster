@@ -139,6 +139,10 @@ export function getDagrePipelineLayout(
     [solidName: string]: IFullSolidLayout;
   } = {};
 
+  // Due to a bug in Dagre when run without an "align" value, we need to calculate
+  // the total width of the graph coordinate space ourselves.
+  let maxWidth = 0;
+
   // Read the Dagre layout and map "nodes" back to our solids, but with
   // X,Y coordinates this time.
   g.nodes().forEach(function(solidName) {
@@ -149,6 +153,7 @@ export function getDagrePipelineLayout(
         x: node.x - node.width / 2, // Dagre's x/y is the center, we want top left
         y: node.y - node.height / 2
       });
+      maxWidth = Math.max(maxWidth, node.x + node.width);
     }
   });
 
@@ -168,7 +173,7 @@ export function getDagrePipelineLayout(
   return {
     solids,
     connections,
-    width: g.graph().width as number,
+    width: maxWidth,
     height: g.graph().height as number
   };
 }

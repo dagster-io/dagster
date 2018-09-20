@@ -10,6 +10,7 @@ import { TypeName } from "../TypeWithTooltip";
 interface ISolidNodeProps {
   layout: IFullSolidLayout;
   solid: SolidNodeFragment;
+  showText: boolean;
   selected?: boolean;
   onClick?: (solid: any) => void;
 }
@@ -69,10 +70,14 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
         <foreignObject key={i} x={x} y={y} height={height}>
           <InputContainer>
             <Port filled={true} />
-            {width == 0 && (
-              <InputOutputName>{input!.definition.name}</InputOutputName>
-            )}
-            {width == 0 && <TypeName>{input!.definition.type.name}</TypeName>}
+            {width == 0 &&
+              this.props.showText && (
+                <InputOutputName>{input!.definition.name}</InputOutputName>
+              )}
+            {width == 0 &&
+              this.props.showText && (
+                <TypeName>{input!.definition.type.name}</TypeName>
+              )}
           </InputContainer>
         </foreignObject>
       );
@@ -90,10 +95,14 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
         <foreignObject key={i} x={x} y={y} height={height}>
           <OutputContainer>
             <Port filled={true} />
-            {width == 0 && (
-              <InputOutputName>{output!.definition.name}</InputOutputName>
-            )}
-            {width == 0 && <TypeName>{output!.definition.type.name}</TypeName>}
+            {width == 0 &&
+              this.props.showText && (
+                <InputOutputName>{output!.definition.name}</InputOutputName>
+              )}
+            {width == 0 &&
+              this.props.showText && (
+                <TypeName>{output!.definition.type.name}</TypeName>
+              )}
           </OutputContainer>
         </foreignObject>
       );
