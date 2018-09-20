@@ -467,6 +467,7 @@ class PipelineDefinition(object):
         pipeline_solids = []
         for solid_def in solids:
             if isinstance(solid_def, SolidDefinition):
+                # For the case when solids are passed, but no dependency structure.
                 if not processed_dependencies:
                     pipeline_solids.append(Solid(name=solid_def.name, definition=solid_def))
                 elif not solid_uses[solid_def.name]:
