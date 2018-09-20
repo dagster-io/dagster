@@ -2,13 +2,16 @@ import sys
 import pytest
 
 from dagster import (
+    ConfigDefinition,
     DependencyDefinition,
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
+    SolidInstance,
     config,
     execute_pipeline,
     lambda_solid,
+    solid,
     types,
 )
 
@@ -179,22 +182,31 @@ def test_hello_world_config():
     assert pipeline_result.result_for_solid('with_config').transformed_value() == 100
 
 
+@solid(
+    inputs=[],
+    config_def=ConfigDefinition(types.Int),
+)
+def load_constant(info):
+    return info.config
+
+
 def define_test_notebook_dag_pipeline():
     return PipelineDefinition(
         solids=[
-            return_one,
-            return_two,
-            add_two_numbers_pm_solid('add_two'),
-            mult_two_numbers_pm_solid('mult_two'),
+            load_constant,
+            add_two_numbers_pm_solid('adder'),
+            mult_two_numbers_pm_solid('multer'),
         ],
         dependencies={
-            'add_two': {
-                'a': DependencyDefinition('return_one'),
-                'b': DependencyDefinition('return_two'),
+            SolidInstance('load_constant', alias='load_a'): {},
+            SolidInstance('load_constant', alias='load_b'): {},
+            SolidInstance(name='adder', alias='add_two'): {
+                'a': DependencyDefinition('load_a'),
+                'b': DependencyDefinition('load_b'),
             },
-            'mult_two': {
+            SolidInstance(name='multer', alias='mult_two'): {
                 'a': DependencyDefinition('add_two'),
-                'b': DependencyDefinition('return_two'),
+                'b': DependencyDefinition('load_b'),
             },
         },
     )
@@ -202,7 +214,15 @@ def define_test_notebook_dag_pipeline():
 
 @notebook_test
 def test_notebook_dag():
-    pipeline_result = execute_pipeline(define_test_notebook_dag_pipeline())
+    pipeline_result = execute_pipeline(
+        define_test_notebook_dag_pipeline(),
+        environment=config.Environment(
+            solids={
+                'load_a': config.Solid(1),
+                'load_b': config.Solid(2),
+            }
+        )
+    )
     assert pipeline_result.success
     assert pipeline_result.result_for_solid('add_two').transformed_value() == 3
     assert pipeline_result.result_for_solid('mult_two').transformed_value() == 6

@@ -1,4 +1,5 @@
 from dagster import (
+    ConfigDefinition,
     DependencyDefinition,
     InputDefinition,
     OutputDefinition,
@@ -9,6 +10,8 @@ from dagster import (
     config,
     execute_pipeline,
     lambda_solid,
+    solid,
+    types,
 )
 
 
@@ -65,3 +68,32 @@ def test_only_aliased_solids():
     assert result.success
     solid_result = result.result_for_solid('the_consequence')
     assert solid_result.transformed_value() == ['first', 'not_first']
+
+
+def test_aliased_configs():
+    @solid(
+        inputs=[],
+        config_def=ConfigDefinition(types.Int),
+    )
+    def load_constant(info):
+        return info.config
+
+    pipeline = PipelineDefinition(
+        solids=[load_constant],
+        dependencies={
+            SolidInstance(load_constant.name, 'load_a'): {},
+            SolidInstance(load_constant.name, 'load_b'): {},
+        }
+    )
+
+    result = execute_pipeline(
+        pipeline,
+        config.Environment(solids={
+            'load_a': config.Solid(2),
+            'load_b': config.Solid(3),
+        })
+    )
+
+    assert result.success
+    assert result.result_for_solid('load_a').transformed_value() == 2
+    assert result.result_for_solid('load_b').transformed_value() == 3

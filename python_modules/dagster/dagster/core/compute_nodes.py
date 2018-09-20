@@ -622,11 +622,13 @@ class ComputeNodeOutputMap(dict):
         return dict.__setitem__(self, key, val)
 
 
-def create_conf_value(execution_info, solid_def):
+def create_conf_value(execution_info, pipeline_solid):
     check.inst_param(execution_info, 'execution_info', ComputeNodeExecutionInfo)
-    check.inst_param(solid_def, 'solid_def', SolidDefinition)
+    check.inst_param(pipeline_solid, 'pipeline_solid', Solid)
 
-    name = solid_def.name
+    solid_def = pipeline_solid.definition
+
+    name = pipeline_solid.name
     solid_configs = execution_info.environment.solids
     config_input = solid_configs[name].config if name in solid_configs else {}
 
@@ -686,7 +688,7 @@ def create_compute_node_graph(execution_info):
                 )
             )
 
-        conf = create_conf_value(execution_info, topo_solid)
+        conf = create_conf_value(execution_info, topo_pipeline_solid)
 
         solid_transform_cn = create_compute_node_from_solid_transform(
             topo_pipeline_solid, cn_inputs, conf
