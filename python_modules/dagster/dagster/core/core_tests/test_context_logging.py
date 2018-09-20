@@ -84,6 +84,13 @@ def test_context_value():
     assert 'message="some message"' in logger.messages[0].msg
 
 
+def test_get_context_value():
+    context = ExecutionContext()
+
+    with context.value('some_key', 'some_value'):
+        assert context.get_context_value('some_key') == 'some_value'
+
+
 def test_log_message_id():
     logger = LoggerForTest()
     context = ExecutionContext(loggers=[logger])

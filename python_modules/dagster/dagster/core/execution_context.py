@@ -140,6 +140,10 @@ class ExecutionContext(object):
         See debug()'''
         return self._log('critical', msg, kwargs)
 
+    def get_context_value(self, key):
+        check.str_param(key, 'key')
+        return self._context_dict[key]
+
     # FIXME: Actually make this work
     # def exception(self, e):
     #     check.inst_param(e, 'e', Exception)
