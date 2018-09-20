@@ -445,30 +445,46 @@ class PipelineDefinition(object):
         )
 
         processed_dependencies = {}
-        solid_aliases = defaultdict(list)
+        solid_uses = defaultdict(set)
 
         for solid_key, definition in dependencies.items():
-            if isinstance(solid_key, SolidInstance):
-                if solid_key.alias:
-                    solid_aliases[solid_key.name].append(solid_key.alias)
-                    processed_dependencies[solid_key.alias] = definition
-                else:
-                    processed_dependencies[solid_key.name] = definition
+            if not isinstance(solid_key, SolidInstance):
+                solid_key = SolidInstance(solid_key)
+
+            if solid_key.alias:
+                key = solid_key.name
+                alias = solid_key.alias
             else:
-                processed_dependencies[solid_key] = definition
+                key = solid_key.name
+                alias = solid_key.name
+
+            solid_uses[key].add(alias)
+            processed_dependencies[alias] = definition
+
+            for dependency in definition.values():
+                solid_uses[dependency.solid].add(dependency.solid)
 
         pipeline_solids = []
-        for solid in solids:
-            if isinstance(solid, SolidDefinition):
-                for alias in solid_aliases[solid.name]:
-                    pipeline_solids.append(Solid(name=alias, definition=solid))
-                pipeline_solids.append(Solid(name=solid.name, definition=solid))
-            elif callable(solid):
+        for solid_def in solids:
+            if isinstance(solid_def, SolidDefinition):
+                # For the case when solids are passed, but no dependency structure.
+                if not processed_dependencies:
+                    pipeline_solids.append(Solid(name=solid_def.name, definition=solid_def))
+                elif not solid_uses[solid_def.name]:
+                    raise DagsterInvalidDefinitionError(
+                        'Solid {name} is passed to list of pipeline solids, but is not used'.format(
+                            name=solid_def.name
+                        )
+                    )
+                else:
+                    for alias in solid_uses[solid_def.name]:
+                        pipeline_solids.append(Solid(name=alias, definition=solid_def))
+            elif callable(solid_def):
                 raise DagsterInvalidDefinitionError(
                     '''You have passed a lambda or function {func} into
                     a pipeline that is not a solid. You have likely forgetten to annotate this function
                     with an @solid or @lambda_solid decorator located in dagster.core.decorators
-                    '''.format(func=solid.__name__)
+                    '''.format(func=solid_def.__name__)
                 )
             else:
                 check.list_param(solids, 'solids', SolidDefinition)

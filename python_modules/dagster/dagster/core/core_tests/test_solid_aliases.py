@@ -40,3 +40,28 @@ def test_aliased_solids():
     assert result.success
     solid_result = result.result_for_solid('third')
     assert solid_result.transformed_value() == ['first', 'not_first', 'not_first', 'not_first']
+
+
+def test_only_aliased_solids():
+    @lambda_solid()
+    def first():
+        return ['first']
+
+    @lambda_solid(inputs=[InputDefinition(name="prev")])
+    def not_first(prev):
+        return prev + ['not_first']
+
+    pipeline = PipelineDefinition(
+        solids=[first, not_first],
+        dependencies={
+            SolidInstance('first', alias='the_root'): {},
+            SolidInstance('not_first', alias='the_consequence'): {
+                'prev': DependencyDefinition('the_root'),
+            },
+        },
+    )
+
+    result = execute_pipeline(pipeline)
+    assert result.success
+    solid_result = result.result_for_solid('the_consequence')
+    assert solid_result.transformed_value() == ['first', 'not_first']
