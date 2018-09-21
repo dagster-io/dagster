@@ -37,7 +37,10 @@ Save this as part_five.py and run
 .. code-block:: sh
 
     $ python3 part_five.py
+    ...
     2018-09-09 07:14:19 - dagster - ERROR - message="An error occurred." pipeline=<<unnamed>> solid=solid_two
+    2018-09-20 17:44:47 - dagster - INFO - orig_message="Something you should know about occurred." log_message_id="c59070a1-f24c-4ac2-a3d4-42f52122e4c5" pipeline="<<unnamed>>" solid="solid_one" solid_definition="solid_one"
+    ...
 
 Notice that even though the user only logged the message "An error occurred", by 
 routing logging through the context we are able to provide richer error information and then
@@ -64,7 +67,7 @@ And then run it:
 You'll note that the metadata in the log message now has the pipeline name.
 
 But what about the info message? The default context provided by dagster logs error messages only at 
-``ERROR`` level to the console. The context must be configured in order to do something that is
+``INFO`` level to the console. The context must be configured in order to do something that is
 not default. Just like we used the configuration system to configure a particular solid, we also
 use that same system to configure a context.
 
@@ -94,6 +97,6 @@ If we re-run the pipeline, you'll see a lot more output.
     ...
 
 This just touches on the capabilities of the execution context. The context is
- the system by which pipeline authors actually are able to make their pipelines
+the system by which pipeline authors actually are able to make their pipelines
 executable in different operating contexts (e.g. unit-testing, CI/CD, prod, etc) without
 changing business logic.

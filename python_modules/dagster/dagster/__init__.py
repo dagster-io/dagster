@@ -43,6 +43,8 @@ from dagster.core.errors import (
     DagsterEvaluateValueError,
 )
 
+from dagster.core.utility_solids import define_stub_solid
+
 import dagster.config as config
 import dagster.core.types as types
 
@@ -89,7 +91,12 @@ __all__ = [
     'DagsterExpectationFailedError',
     'DagsterEvaluateValueError',
 
-    # types
+    # utility_solids
+    'define_stub_solid',
+
+    # config
     'config',
+
+    # types
     'types',
 ]
