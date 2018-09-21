@@ -9,6 +9,7 @@ import SpacedCard from "./SpacedCard";
 import Config from "./Config";
 import Solid from "./Solid";
 import PipelineGraph from "./graph/PipelineGraph";
+import ConfigEditor from "./configeditor/ConfigEditor";
 import { Breadcrumbs, Breadcrumb } from "./Breadcrumbs";
 import SolidListItem from "./SolidListItem";
 import Description from "./Description";
@@ -39,12 +40,14 @@ export default class Pipeline extends React.Component<IPipelineProps, {}> {
           }
         }
         ...PipelineGraphFragment
+        ...ConfigEditorFragment
       }
 
       ${Solid.fragments.SolidFragment}
       ${PipelineGraph.fragments.PipelineGraphFragment}
       ${SolidListItem.fragments.SolidListItemFragment}
       ${Config.fragments.ConfigFragment}
+      ${ConfigEditor.fragments.ConfigEditorFragment}
     `
   };
 
@@ -64,6 +67,21 @@ export default class Pipeline extends React.Component<IPipelineProps, {}> {
     return (
       <Breadcrumbs>
         <Switch>
+          <Route
+            path="/:pipeline/config-editor"
+            render={() => (
+              <>
+                <Breadcrumb>
+                  <Link to={`/${this.props.pipeline.name}`}>
+                    <BreadcrumbText>{this.props.pipeline.name}</BreadcrumbText>
+                  </Link>
+                </Breadcrumb>
+                <Breadcrumb current={true}>
+                  <BreadcrumbText>Config Editor</BreadcrumbText>
+                </Breadcrumb>
+              </>
+            )}
+          />
           <Route
             path="/:pipeline/:solid"
             render={({ match }) => (
@@ -95,7 +113,7 @@ export default class Pipeline extends React.Component<IPipelineProps, {}> {
   }
 
   renderContext() {
-    return this.props.pipeline.contexts.map((context: any, i: number) => (
+    return this.props.pipeline.contexts.map((context, i: number) => (
       <SpacedCard key={i}>
         <H5>
           <Code>{context.name}</Code>
@@ -109,7 +127,7 @@ export default class Pipeline extends React.Component<IPipelineProps, {}> {
   }
 
   renderSolids() {
-    return this.props.pipeline.solids.map((solid: any, i: number) => (
+    return this.props.pipeline.solids.map((solid, i: number) => (
       <SolidListItem
         pipelineName={this.props.pipeline.name}
         solid={solid}
@@ -156,6 +174,10 @@ export default class Pipeline extends React.Component<IPipelineProps, {}> {
     );
   };
 
+  renderEditor = () => {
+    return <ConfigEditor pipeline={this.props.pipeline} />;
+  };
+
   renderSolidList = () => {
     return (
       <>
@@ -178,7 +200,10 @@ export default class Pipeline extends React.Component<IPipelineProps, {}> {
         <DescriptionWrapper>
           <Description description={this.props.pipeline.description} />
         </DescriptionWrapper>
-        <Route path="/:pipeline/:solid?" render={this.renderBody} />
+        <Switch>
+          <Route path="/:pipeline/config-editor" render={this.renderEditor} />
+          <Route path="/:pipeline/:solid?" render={this.renderBody} />
+        </Switch>
       </PipelineCard>
     );
   }
@@ -202,6 +227,8 @@ const PipelineGraphWrapper = styled(Section)`
 const PipelineCard = styled(Card)`
   flex: 1 1;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 `;
 
 const SpacedWrapper = styled.div`
