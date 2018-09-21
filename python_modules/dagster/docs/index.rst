@@ -8,7 +8,6 @@ Welcome to Dagster, an opinionated programming model for data pipelines.
   :maxdepth: 1
   :name: Documentation
 
-  motivations
   principles
   topic_guides
   contributing
