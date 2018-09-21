@@ -16,9 +16,8 @@ from dagster import (
     types,
 )
 
-from dagster.utils import script_relative_path
-
 from dagster.pandas import DataFrame
+from dagster.utils import script_relative_path
 
 from .test_basic_dagstermill_solids import (
     nb_test_path,
