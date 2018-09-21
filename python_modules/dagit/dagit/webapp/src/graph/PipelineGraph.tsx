@@ -5,17 +5,16 @@ import { Colors } from "@blueprintjs/core";
 import { LinkVertical as Link } from "@vx/shape";
 import PanAndZoom from "./PanAndZoom";
 import SolidNode from "./SolidNode";
-import {
-  getDagrePipelineLayout,
-  IPoint,
-  IFullPipelineLayout
-} from "./getFullSolidLayout";
+import { IPoint, IFullPipelineLayout } from "./getFullSolidLayout";
 import { PipelineGraphFragment } from "./types/PipelineGraphFragment";
 
 interface IPipelineGraphProps {
   pipeline: PipelineGraphFragment;
+  layout: IFullPipelineLayout;
   selectedSolid?: string;
   onClickSolid?: (solidName: string) => void;
+  onDoubleClickSolid?: (solidName: string) => void;
+  onClickBackground?: () => void;
 }
 
 interface IPipelineContentsProps extends IPipelineGraphProps {
@@ -32,6 +31,7 @@ class PipelineGraphContents extends React.PureComponent<
       showText,
       pipeline,
       onClickSolid,
+      onDoubleClickSolid,
       selectedSolid
     } = this.props;
 
@@ -58,6 +58,7 @@ class PipelineGraphContents extends React.PureComponent<
             solid={solid}
             showText={showText}
             onClick={onClickSolid}
+            onDoubleClick={onDoubleClickSolid}
             layout={layout.solids[solid.name]}
             selected={selectedSolid === solid.name}
           />
@@ -84,41 +85,58 @@ export default class PipelineGraph extends React.Component<
     `
   };
 
+  viewportEl: React.RefObject<PanAndZoom> = React.createRef();
+
+  componentWillReceiveProps(nextProps: IPipelineGraphProps) {
+    const solid = this.props.selectedSolid;
+
+    if (solid && !nextProps.selectedSolid) {
+      this.viewportEl.current!.autocenter(true);
+    }
+    if (nextProps.selectedSolid && solid !== nextProps.selectedSolid) {
+      this.focusOnSolid(nextProps.selectedSolid);
+    }
+  }
+
+  focusOnSolid = (solidName: string) => {
+    const solidLayout = this.props.layout.solids[solidName];
+    if (!solidLayout) {
+      return;
+    }
+    const cx = solidLayout.boundingBox.x + solidLayout.boundingBox.width / 2;
+    const cy = solidLayout.boundingBox.y + solidLayout.boundingBox.height / 2;
+    this.viewportEl.current!.smoothZoomToSVGCoords(cx, cy, 1);
+  };
+
   render() {
-    const layout = getDagrePipelineLayout(this.props.pipeline);
+    const { layout, pipeline, onClickBackground } = this.props;
 
     return (
-      <PanAndZoomStyled
+      <PanAndZoom
         key={this.props.pipeline.name}
+        ref={this.viewportEl}
         graphWidth={layout.width}
         graphHeight={layout.height}
       >
-        {({ scale, x, y }: any) => (
+        {({ scale }: any) => (
           <SVGContainer
             width={layout.width}
             height={layout.height}
             onMouseDown={evt => evt.preventDefault()}
+            onClick={onClickBackground}
           >
             <PipelineGraphContents
               layout={layout}
               showText={scale > 0.4}
+              onDoubleClickSolid={this.focusOnSolid}
               {...this.props}
             />
           </SVGContainer>
         )}
-      </PanAndZoomStyled>
+      </PanAndZoom>
     );
   }
 }
-
-const PanAndZoomStyled = styled(PanAndZoom)`
-  width: 100%;
-  height: 100%;
-  position: relative;
-  overflow: hidden;
-  user-select: none;
-  background-color: ${Colors.LIGHT_GRAY5};
-`;
 
 const SVGContainer = styled.svg`
   border-radius: 0;

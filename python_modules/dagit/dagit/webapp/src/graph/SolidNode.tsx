@@ -12,7 +12,8 @@ interface ISolidNodeProps {
   solid: SolidNodeFragment;
   showText: boolean;
   selected?: boolean;
-  onClick?: (solid: any) => void;
+  onClick?: (solid: string) => void;
+  onDoubleClick?: (solid: string) => void;
 }
 
 export default class SolidNode extends React.Component<ISolidNodeProps> {
@@ -54,8 +55,17 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
 
   handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     if (this.props.onClick) {
       this.props.onClick(this.props.solid.name);
+    }
+  };
+
+  handleDoubleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (this.props.onDoubleClick) {
+      this.props.onDoubleClick(this.props.solid.name);
     }
   };
 
@@ -140,7 +150,7 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
   }
   public render() {
     return (
-      <g onClick={this.handleClick}>
+      <g onClick={this.handleClick} onDoubleClick={this.handleDoubleClick}>
         {this.renderSelectedBox()}
         {this.renderSolid()}
         {this.renderInputs()}

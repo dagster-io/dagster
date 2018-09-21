@@ -1,5 +1,7 @@
 import * as React from "react";
 import animate from "amator";
+import styled from "styled-components";
+import { Colors } from "@blueprintjs/core";
 
 interface PanAndZoomProps {
   className?: string;
@@ -38,7 +40,7 @@ export default class PanAndZoom extends React.Component<
     this.autocenter();
   }
 
-  autocenter() {
+  autocenter(animate: boolean = false) {
     const el = this.element.current!;
     const ownerRect = el.getBoundingClientRect();
 
@@ -46,12 +48,17 @@ export default class PanAndZoom extends React.Component<
     var dh = ownerRect.height / this.props.graphHeight;
     var scale = Math.min(dw, dh, MAX_OVERVIEW_ZOOM);
 
-    this.setState({
+    const target = {
       x: -(this.props.graphWidth / 2) * scale + ownerRect.width / 2,
       y: -(this.props.graphHeight / 2) * scale + ownerRect.height / 2,
-      scale: scale,
-      minScale: scale
-    });
+      scale: scale
+    };
+
+    if (animate) {
+      this.smoothZoom(target);
+    } else {
+      this.setState(Object.assign(target, { minScale: scale }));
+    }
   }
 
   client(x: number, y: number): { x: number; y: number } {
@@ -67,9 +74,18 @@ export default class PanAndZoom extends React.Component<
     return { x: e.clientX - ownerRect.left, y: e.clientY - ownerRect.top };
   }
 
-  smoothZoom(clientX: number, clientY: number, targetScale: number) {
-    var from = { scale: this.state.scale };
-    var to = { scale: targetScale };
+  public smoothZoomToSVGCoords(x: number, y: number, targetScale: number) {
+    const el = this.element.current!;
+    var ownerRect = el.getBoundingClientRect();
+    this.smoothZoom({
+      x: -x * targetScale + ownerRect.width / 2,
+      y: -y * targetScale + ownerRect.height / 2,
+      scale: targetScale
+    });
+  }
+
+  public smoothZoom(to: { x: number; y: number; scale: number }) {
+    var from = { scale: this.state.scale, x: this.state.x, y: this.state.y };
 
     if (this._animation) {
       this._animation.cancel();
@@ -77,42 +93,45 @@ export default class PanAndZoom extends React.Component<
 
     this._animation = animate(from, to, {
       step: (v: any) => {
-        var ratio = v.scale / this.state.scale;
-        this.zoomByRatio(clientX, clientY, ratio);
+        this.setState({
+          x: v.x,
+          y: v.y,
+          scale: v.scale
+        });
       }
     });
   }
 
-  zoomByRatio(clientX: number, clientY: number, ratio: number) {
-    if (isNaN(clientX) || isNaN(clientY) || isNaN(ratio)) {
-      throw new Error("zoom requires valid numbers");
-    }
+  // zoomByRatio(clientX: number, clientY: number, ratio: number) {
+  //   if (isNaN(clientX) || isNaN(clientY) || isNaN(ratio)) {
+  //     throw new Error("zoom requires valid numbers");
+  //   }
 
-    const { scale, minScale } = this.state;
+  //   const { scale, minScale } = this.state;
 
-    if (scale * ratio < minScale) {
-      if (scale === minScale) return;
-      ratio = minScale / scale;
-    }
+  //   if (scale * ratio < minScale) {
+  //     if (scale === minScale) return;
+  //     ratio = minScale / scale;
+  //   }
 
-    if (scale * ratio > DETAIL_ZOOM) {
-      if (scale === DETAIL_ZOOM) return;
-      ratio = DETAIL_ZOOM / scale;
-    }
+  //   if (scale * ratio > DETAIL_ZOOM) {
+  //     if (scale === DETAIL_ZOOM) return;
+  //     ratio = DETAIL_ZOOM / scale;
+  //   }
 
-    this.setState({
-      x: clientX - ratio * (clientX - this.state.x),
-      y: clientY - ratio * (clientY - this.state.y),
-      scale: this.state.scale * ratio
-    });
-  }
+  //   this.setState({
+  //     x: clientX - ratio * (clientX - this.state.x),
+  //     y: clientY - ratio * (clientY - this.state.y),
+  //     scale: this.state.scale * ratio
+  //   });
+  // }
 
-  onDoubleClick = (event: React.MouseEvent<HTMLDivElement>) => {
+  onZoomAndCenter = (event: React.MouseEvent<HTMLDivElement>) => {
     var offset = this.getOffsetXY(event);
     if (Math.abs(1 - this.state.scale) < 0.01) {
-      this.smoothZoom(offset.x, offset.y, this.state.minScale);
+      this.smoothZoom({ x: offset.x, y: offset.y, scale: this.state.minScale });
     } else {
-      this.smoothZoom(offset.x, offset.y, 1);
+      this.smoothZoom({ x: offset.x, y: offset.y, scale: 1 });
     }
   };
 
@@ -152,8 +171,7 @@ export default class PanAndZoom extends React.Component<
     return (
       <div
         ref={this.element}
-        className={className}
-        onDoubleClick={this.onDoubleClick}
+        style={PanAndZoomStyles}
         onMouseDown={this.onMouseDown}
       >
         <div
@@ -168,3 +186,12 @@ export default class PanAndZoom extends React.Component<
     );
   }
 }
+
+const PanAndZoomStyles: React.CSSProperties = {
+  width: "100%",
+  height: "100%",
+  position: "relative",
+  overflow: "hidden",
+  userSelect: "none",
+  backgroundColor: Colors.LIGHT_GRAY5
+};

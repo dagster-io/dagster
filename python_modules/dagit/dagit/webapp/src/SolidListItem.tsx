@@ -33,12 +33,12 @@ export default class SolidListItem extends React.Component<
   render() {
     return (
       <SolidCard elevation={1}>
-        <SolidTypeSignatureWrapper>
-          <SolidTypeSignature solid={this.props.solid} />
-        </SolidTypeSignatureWrapper>
         <Link to={`/${this.props.pipelineName}/${this.props.solid.name}`}>
           <TitleCode>{this.props.solid.name}</TitleCode>
         </Link>
+        <SolidTypeSignatureWrapper>
+          <SolidTypeSignature solid={this.props.solid} />
+        </SolidTypeSignatureWrapper>
         <DescriptionWrapper>
           <Description description={this.props.solid.definition.description} />
         </DescriptionWrapper>
@@ -67,8 +67,6 @@ const DescriptionWrapper = styled.div`
   max-width: 500px;
 `;
 
-const SolidTypeSignatureWrapper = styled.span`
-  position: absolute;
-  right: 18px;
-  top: 18px;
+const SolidTypeSignatureWrapper = styled.div`
+  margin-bottom: 20px;
 `;
