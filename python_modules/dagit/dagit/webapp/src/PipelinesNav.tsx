@@ -50,6 +50,9 @@ export default class PipelinesNav extends React.Component<IPipelinesProps, {}> {
   }
 
   onGlobalKeydown = (event: KeyboardEvent) => {
+    if (event.target && (event.target as HTMLElement).nodeName === "INPUT") {
+      return;
+    }
     if (event.key === "s") {
       const el = (ReactDOM.findDOMNode(
         this.solidSelect.current!
@@ -62,7 +65,7 @@ export default class PipelinesNav extends React.Component<IPipelinesProps, {}> {
       ) as HTMLElement).querySelector("button")!;
       el.click();
     }
-    if (event.key === "Esc") {
+    if (event.key === "Escape") {
       this.props.history.push(`/${this.props.selectedPipeline}`);
     }
   };
