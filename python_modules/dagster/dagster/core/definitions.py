@@ -978,9 +978,21 @@ class SolidDefinition(object):
         outputs (List[OutputDefinition]): Outputs of the solid.
         config_def (ConfigDefinition): How the solid configured.
         description (str): Description of the solid.
+        metadata (dict):
+            Arbitrary metadata for the solid. Some frameworks expect and require
+            certain metadata to be attached to a solid.
     '''
 
-    def __init__(self, name, inputs, transform_fn, outputs, config_def=None, description=None):
+    def __init__(
+        self,
+        name,
+        inputs,
+        transform_fn,
+        outputs,
+        config_def=None,
+        description=None,
+        metadata=None,
+    ):
         self.name = check_valid_name(name)
         self.input_defs = check.list_param(inputs, 'inputs', InputDefinition)
         self.transform_fn = check.callable_param(transform_fn, 'transform_fn')
@@ -992,6 +1004,7 @@ class SolidDefinition(object):
             ConfigDefinition,
             ConfigDefinition(types.Any),
         )
+        self.metadata = check.opt_dict_param(metadata, 'metadata', key_type=str)
         self._input_dict = _build_named_dict(inputs)
         self._output_dict = _build_named_dict(outputs)
 

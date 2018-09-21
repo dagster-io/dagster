@@ -1,5 +1,8 @@
 import sys
+
 import pytest
+
+import dagstermill as dm
 
 from dagster import (
     ConfigDefinition,
@@ -16,57 +19,6 @@ from dagster import (
 )
 
 from dagster.utils import script_relative_path
-
-import dagstermill as dm
-
-
-def test_basic_get_in_memory_input():
-    manager = dm.define_manager()
-    inputs = manager.define_inputs(a=1)
-    assert manager.get_input(inputs, 'a') == 1
-
-
-def test_basic_get_in_memory_inputs():
-    manager = dm.define_manager()
-    inputs = manager.define_inputs(a=1, b=2)
-    assert manager.get_input(inputs, 'a') == 1
-    assert manager.get_input(inputs, 'b') == 2
-
-    a, b = manager.get_inputs(inputs, 'a', 'b')
-
-    assert a == 1
-    assert b == 2
-
-
-def test_basic_get_serialized_inputs():
-    manager = dm.define_manager()
-    inputs = dm.serialize_dm_object(dict(a=1, b=2))
-    assert manager.get_input(inputs, 'a') == 1
-    assert manager.get_input(inputs, 'b') == 2
-
-    a, b = manager.get_inputs(inputs, 'a', 'b')
-
-    assert a == 1
-    assert b == 2
-
-
-def test_basic_in_memory_config():
-    manager = dm.define_manager()
-    value = {'path': 'some_path.csv'}
-    config_ = manager.define_config(value)
-    assert manager.get_config(config_) == value
-
-
-def test_basic_serialized_config():
-    manager = dm.define_manager()
-    value = {'path': 'some_path.csv'}
-    config_ = dm.serialize_dm_object(value)
-    assert manager.get_config(config_) == value
-
-
-def test_serialize_unserialize():
-    value = {'a': 1, 'b': 2}
-    assert dm.deserialize_dm_object(dm.serialize_dm_object(value)) == value
 
 
 def nb_test_path(name):
