@@ -46,7 +46,7 @@ Save this to a file called ``step_one.py`` and can visualize it and execute it.
 
 .. code-block:: sh
 
-   dagit -f step_one.py -r define_pipeline
+   dagit -f step_one.py -n define_pipeline
 
 And send your web browser to http://localhost:3000/ and you can view your pipeline.
 
@@ -54,7 +54,7 @@ In order to execute this pipeline we can use the dagster CLI tool:
 
 .. code-block:: sh
 
-    $ dagster pipeline execute -f step_one.py -r define_pipeline
+    $ dagster pipeline execute -f step_one.py -n define_pipeline
     hello
     2018-09-18 08:48:50 - dagster - INFO - orig_message="Solid hello_world emitted output \"result\" value None" log_message_id="d315f5f2-4f36-443b-b225-05cd31e6f10c" solid="hello_world"
 

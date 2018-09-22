@@ -32,10 +32,9 @@ def test_repository_python_file():
     mode_data = create_pipeline_loading_mode_data(
         PipelineTargetInfo(
             module_name=None,
-            pipeline_fn_name=None,
             pipeline_name='foo',
             python_file='bar_repo.py',
-            repository_fn_name='define_bar_repo',
+            fn_name='define_bar_repo',
             repository_yaml=None,
         )
     )
@@ -55,10 +54,9 @@ def test_repository_python_file():
         create_pipeline_loading_mode_data(
             PipelineTargetInfo(
                 module_name='kdjfkd',
-                pipeline_fn_name=None,
                 pipeline_name='foo',
                 python_file='bar_repo.py',
-                repository_fn_name='define_bar_repo',
+                fn_name='define_bar_repo',
                 repository_yaml=None,
             )
         )
@@ -67,22 +65,9 @@ def test_repository_python_file():
         create_pipeline_loading_mode_data(
             PipelineTargetInfo(
                 module_name=None,
-                pipeline_fn_name='kjdfd',
                 pipeline_name='foo',
                 python_file='bar_repo.py',
-                repository_fn_name='define_bar_repo',
-                repository_yaml=None,
-            )
-        )
-
-    with pytest.raises(InvalidPipelineLoadingComboError):
-        create_pipeline_loading_mode_data(
-            PipelineTargetInfo(
-                module_name=None,
-                pipeline_fn_name=None,
-                pipeline_name='foo',
-                python_file='bar_repo.py',
-                repository_fn_name='define_bar_repo',
+                fn_name='define_bar_repo',
                 repository_yaml='kjdfkdjf',
             )
         )
@@ -92,10 +77,9 @@ def test_repository_module():
     mode_data = create_pipeline_loading_mode_data(
         PipelineTargetInfo(
             module_name='bar_module',
-            pipeline_fn_name=None,
             pipeline_name='foo',
             python_file=None,
-            repository_fn_name='define_bar_repo',
+            fn_name='define_bar_repo',
             repository_yaml=None,
         )
     )
@@ -116,10 +100,9 @@ def test_pipeline_python_file():
     mode_data = create_pipeline_loading_mode_data(
         PipelineTargetInfo(
             module_name=None,
-            pipeline_fn_name='define_pipeline',
+            fn_name='define_pipeline',
             pipeline_name=None,
             python_file='foo.py',
-            repository_fn_name=None,
             repository_yaml=None,
         )
     )
@@ -137,10 +120,9 @@ def test_pipeline_module():
     mode_data = create_pipeline_loading_mode_data(
         PipelineTargetInfo(
             module_name='foo_module',
-            pipeline_fn_name='define_pipeline',
+            fn_name='define_pipeline',
             pipeline_name=None,
             python_file=None,
-            repository_fn_name=None,
             repository_yaml=None,
         )
     )
@@ -158,10 +140,9 @@ def test_yaml_file():
     assert create_pipeline_loading_mode_data(
         PipelineTargetInfo(
             module_name=None,
-            pipeline_fn_name=None,
             pipeline_name='foobar',
             python_file=None,
-            repository_fn_name=None,
+            fn_name=None,
             repository_yaml='some_file.yml',
         )
     ) == PipelineLoadingModeData(
@@ -173,10 +154,9 @@ def test_yaml_file():
         assert create_pipeline_loading_mode_data(
             PipelineTargetInfo(
                 module_name='kdjfdk',
-                pipeline_fn_name=None,
                 pipeline_name='foobar',
                 python_file=None,
-                repository_fn_name=None,
+                fn_name=None,
                 repository_yaml=None,
             )
         )
@@ -185,10 +165,9 @@ def test_yaml_file():
         assert create_pipeline_loading_mode_data(
             PipelineTargetInfo(
                 module_name=None,
-                pipeline_fn_name='kjdfkd',
+                fn_name='kjdfkd',
                 pipeline_name='foobar',
                 python_file=None,
-                repository_fn_name=None,
                 repository_yaml=None,
             )
         )
@@ -197,22 +176,9 @@ def test_yaml_file():
         assert create_pipeline_loading_mode_data(
             PipelineTargetInfo(
                 module_name=None,
-                pipeline_fn_name=None,
                 pipeline_name='foobar',
                 python_file='kjdfkdj',
-                repository_fn_name=None,
-                repository_yaml=None,
-            )
-        )
-
-    with pytest.raises(InvalidPipelineLoadingComboError):
-        assert create_pipeline_loading_mode_data(
-            PipelineTargetInfo(
-                module_name=None,
-                pipeline_fn_name=None,
-                pipeline_name='foobar',
-                python_file=None,
-                repository_fn_name='kjdkfjd',
+                fn_name=None,
                 repository_yaml=None,
             )
         )
@@ -222,10 +188,9 @@ def test_load_from_repository_file():
     pipeline = load_pipeline_from_target_info(
         PipelineTargetInfo(
             module_name=None,
-            pipeline_fn_name=None,
             pipeline_name='foo',
             python_file=script_relative_path('test_dynamic_loader.py'),
-            repository_fn_name='define_bar_repo',
+            fn_name='define_bar_repo',
             repository_yaml=None,
         )
     )
@@ -238,10 +203,9 @@ def test_load_from_repository_module():
     pipeline = load_pipeline_from_target_info(
         PipelineTargetInfo(
             module_name='dagster.cli.cli_tests.test_dynamic_loader',
-            pipeline_fn_name=None,
             pipeline_name='foo',
             python_file=None,
-            repository_fn_name='define_bar_repo',
+            fn_name='define_bar_repo',
             repository_yaml=None,
         )
     )
@@ -254,10 +218,9 @@ def test_load_from_pipeline_file():
     pipeline = load_pipeline_from_target_info(
         PipelineTargetInfo(
             module_name=None,
-            pipeline_fn_name='define_foo_pipeline',
+            fn_name='define_foo_pipeline',
             pipeline_name=None,
             python_file=script_relative_path('test_dynamic_loader.py'),
-            repository_fn_name=None,
             repository_yaml=None,
         )
     )
@@ -270,10 +233,9 @@ def test_load_from_pipeline_module():
     pipeline = load_pipeline_from_target_info(
         PipelineTargetInfo(
             module_name='dagster.cli.cli_tests.test_dynamic_loader',
-            pipeline_fn_name='define_foo_pipeline',
+            fn_name='define_foo_pipeline',
             pipeline_name=None,
             python_file=None,
-            repository_fn_name=None,
             repository_yaml=None,
         )
     )
@@ -286,10 +248,9 @@ def test_loader_from_default_repository_module_yaml():
     pipeline = load_pipeline_from_target_info(
         PipelineTargetInfo(
             module_name=None,
-            pipeline_fn_name=None,
             pipeline_name='foo',
             python_file=None,
-            repository_fn_name=None,
+            fn_name=None,
             repository_yaml=script_relative_path('repository_module.yml'),
         )
     )
@@ -302,10 +263,9 @@ def test_loader_from_default_repository_file_yaml():
     pipeline = load_pipeline_from_target_info(
         PipelineTargetInfo(
             module_name=None,
-            pipeline_fn_name=None,
             pipeline_name='foo',
             python_file=None,
-            repository_fn_name=None,
+            fn_name=None,
             repository_yaml=script_relative_path('repository_file.yml'),
         )
     )

@@ -14,20 +14,17 @@ from dagster import (
 
 from dagster.utils import load_yaml_from_path
 
-INFO_FIELDS = set(
-    [
-        'repository_yaml',
-        'pipeline_name',
-        'python_file',
-        'pipeline_fn_name',
-        'module_name',
-        'repository_fn_name',
-    ]
-)
+INFO_FIELDS = set([
+    'repository_yaml',
+    'pipeline_name',
+    'python_file',
+    'fn_name',
+    'module_name',
+])
 
 PipelineTargetInfo = namedtuple(
     'PipelineTargetInfo',
-    'repository_yaml pipeline_name python_file pipeline_fn_name module_name repository_fn_name',
+    'repository_yaml pipeline_name python_file fn_name module_name',
 )
 
 
@@ -150,46 +147,46 @@ def create_repository_loading_mode_data(info):
 def create_pipeline_loading_mode_data(info):
     check.inst_param(info, 'info', PipelineTargetInfo)
 
-    if check_info_fields(info, 'python_file', 'repository_fn_name', 'pipeline_name'):
+    if check_info_fields(info, 'python_file', 'fn_name', 'pipeline_name'):
         return PipelineLoadingModeData(
             mode=PipelineTargetMode.REPOSITORY_PYTHON_FILE,
             data=RepositoryPythonFileData(
                 file_target_function=FileTargetFunction(
                     python_file=info.python_file,
-                    fn_name=info.repository_fn_name,
+                    fn_name=info.fn_name,
                 ),
                 pipeline_name=info.pipeline_name,
             )
         )
-    elif check_info_fields(info, 'module_name', 'repository_fn_name', 'pipeline_name'):
+    elif check_info_fields(info, 'module_name', 'fn_name', 'pipeline_name'):
         return PipelineLoadingModeData(
             mode=PipelineTargetMode.REPOSITORY_MODULE,
             data=RepositoryModuleData(
                 module_target_function=ModuleTargetFunction(
                     module_name=info.module_name,
-                    fn_name=info.repository_fn_name,
+                    fn_name=info.fn_name,
                 ),
                 pipeline_name=info.pipeline_name,
             )
         )
-    elif check_info_fields(info, 'python_file', 'pipeline_fn_name'):
+    elif check_info_fields(info, 'python_file', 'fn_name'):
         return PipelineLoadingModeData(
             mode=PipelineTargetMode.PIPELINE_PYTHON_FILE,
             data=FileTargetFunction(
                 python_file=info.python_file,
-                fn_name=info.pipeline_fn_name,
+                fn_name=info.fn_name,
             )
         )
-    elif check_info_fields(info, 'module_name', 'pipeline_fn_name'):
+    elif check_info_fields(info, 'module_name', 'fn_name'):
         return PipelineLoadingModeData(
             mode=PipelineTargetMode.PIPELINE_MODULE,
             data=ModuleTargetFunction(
                 module_name=info.module_name,
-                fn_name=info.pipeline_fn_name,
+                fn_name=info.fn_name,
             )
         )
     elif info.pipeline_name:
-        for none_field in ['python_file', 'pipeline_fn_name', 'module_name', 'repository_fn_name']:
+        for none_field in ['python_file', 'fn_name', 'module_name']:
             if getattr(info, none_field) is not None:
                 raise InvalidPipelineLoadingComboError(
                     '{none_field} is not None. Got {value}'.format(
@@ -259,7 +256,8 @@ def ensure_in_repo(dynamic_obj):
 
     pipeline = dynamic_obj.object
     repo_fn = lambda: RepositoryDefinition(
-        name=EMPHERMAL_NAME, pipeline_dict={pipeline.name: lambda: pipeline}
+        name=EMPHERMAL_NAME,
+        pipeline_dict={pipeline.name: lambda: pipeline},
     )
     return DynamicObject(
         module=dynamic_obj.module,
@@ -360,7 +358,7 @@ def apply_click_params(command, *click_params):
     return command
 
 
-def repository_config_argument(f):
+def repository_target_argument(f):
     return apply_click_params(
         f,
         click.option(
@@ -382,7 +380,7 @@ def repository_config_argument(f):
             '-m',
             help='Specify module where repository or pipeline function lives'
         ),
-        click.option('--fn-name', '-r', help='Function that returns either repository or pipeline'),
+        click.option('--fn-name', '-n', help='Function that returns either repository or pipeline'),
     )
 
 
@@ -405,8 +403,7 @@ def pipeline_target_command(f):
         click.argument('pipeline_name', nargs=-1),
         click.option('--python-file', '-f'),
         click.option('--module-name', '-m'),
-        click.option('--repository-fn-name', '-r'),
-        click.option('--pipeline-fn-name', '-p'),
+        click.option('--fn-name', '-n'),
     )
 
 

@@ -123,7 +123,7 @@ their instance name.
 
 .. code-block:: sh
 
-        $ dagit -f part_thirteen.py -r define_part_thirteen_step_two 
+        $ dagit -f part_thirteen.py -n define_part_thirteen_step_two 
 
 These can obviously get more complicated and involved, with solids being reused
 many times:
