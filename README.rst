@@ -13,9 +13,7 @@ integration, and so on -- but in essence they all describe the same activity: Pe
 computations structured as a DAG (directed, acyclic graph) that end up producing data assets,
 whether those assets be tables, files, machine-learning models, etc.
 
-There are a few tools in this repo
-
-This repo has several modules.
+There are a few tools in this repo:
 
 - **Dagster**: The core programming model and abstraction stack; a stateless single-node and -process execution engine; and a CLI tool for driving that engine.
 * **Dagit**: Dagit is a rich viewer for Dagster assets.
