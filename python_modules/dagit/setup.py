@@ -54,7 +54,7 @@ setup(
         'click>=6.7',
 
         # dagster
-        'dagster>=0.2.2',
+        'dagster>=0.2.3',
 
         # graphql
         'graphql-core>=2.1',
