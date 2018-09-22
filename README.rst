@@ -20,5 +20,6 @@ This repo has a few primary components:
 - **Dagster**: The core programming model and abstraction stack; a stateless single-node and -process execution engine; and a CLI tool for driving that engine.
 * **Dagit**: Dagit is a rich viewer for Dagster assets.
 * **Dagster GE**: A Dagster integration with Great Expectations. (see https://github.com/great-expectations/great_expectations)
+* **Dagstermill**: An experimental prototype for integrating productionized notebooks into dagster pipelines. Built on the papermill library (https://github.com/nteract/papermill)
 
 Go to https://dagster.readthedocs.io/en/latest/ for documentation!
