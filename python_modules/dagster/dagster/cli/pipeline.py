@@ -22,7 +22,7 @@ from .dynamic_loader import (
     load_pipeline_from_target_info,
     load_repository_from_target_info,
     pipeline_target_command,
-    repository_config_argument,
+    repository_target_argument,
     load_target_info_from_cli_args,
 )
 
@@ -45,7 +45,7 @@ REPO_TARGET_WARNING = (
     name='list',
     help="List the pipelines in a repository. {warning}".format(warning=REPO_TARGET_WARNING),
 )
-@repository_config_argument
+@repository_target_argument
 def list_command(**kwargs):
     return execute_list_command(kwargs, click.echo)
 
@@ -114,9 +114,8 @@ def create_pipeline_from_cli_args(kwargs):
             repository_yaml=repository_yaml,
             pipeline_name=pipeline_name,
             python_file=kwargs['python_file'],
-            pipeline_fn_name=kwargs['pipeline_fn_name'],
             module_name=kwargs['module_name'],
-            repository_fn_name=kwargs['repository_fn_name'],
+            fn_name=kwargs['fn_name'],
         )
     )
 
@@ -126,10 +125,10 @@ def get_pipeline_instructions(command_name):
         'This commands targets a pipeline. The pipeline can be specified in a number of ways:'
         '\n\n1. dagster {command_name} <<pipeline_name>> (works if .repository.yml exists)'
         '\n\n2. dagster {command_name} <<pipeline_name>> -y path/to/repository.yml'
-        '\n\n3. dagster {command_name} -f /path/to/file.py -p define_some_pipeline'
-        '\n\n4. dagster {command_name} -m a_module.submodule  -p define_some_pipeline'
-        '\n\n5. dagster {command_name} -f /path/to/file.py -r define_some_repo -p pipeline_name'
-        '\n\n6. dagster {command_name} -m a_module.submodule  -r define_some_repo -p pipeline_name'
+        '\n\n3. dagster {command_name} -f /path/to/file.py -n define_some_pipeline'
+        '\n\n4. dagster {command_name} -m a_module.submodule  -n define_some_pipeline'
+        '\n\n5. dagster {command_name} -f /path/to/file.py -n define_some_repo -p pipeline_name'
+        '\n\n6. dagster {command_name} -m a_module.submodule -n define_some_repo -p pipeline_name'
     ).format(command_name=command_name)
 
 

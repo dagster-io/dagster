@@ -7,7 +7,7 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
 from dagster.cli.dynamic_loader import (
-    repository_config_argument,
+    repository_target_argument,
     load_target_info_from_cli_args,
     load_repository_object_from_target_info,
 )
@@ -44,13 +44,13 @@ REPO_TARGET_WARNING = (
         format(warning=REPO_TARGET_WARNING) + '\n\n Examples:'
         '\n\n1. dagit'
         '\n\n2. dagit -y path/to/repository.yml'
-        '\n\n3. dagit -f path/to/file.py -r define_repo'
-        '\n\n4. dagit -m some_module -r define_repo'
-        '\n\n5. dagit -f path/to/file.py -r define_pipeline'
-        '\n\n6. dagit -m some_module -r define_pipeline'
+        '\n\n3. dagit -f path/to/file.py -n define_repo'
+        '\n\n4. dagit -m some_module -n define_repo'
+        '\n\n5. dagit -f path/to/file.py -n define_pipeline'
+        '\n\n6. dagit -m some_module -n define_pipeline'
     )
 )
-@repository_config_argument
+@repository_target_argument
 @click.option('--host', '-h', type=click.STRING, default='127.0.0.1', help="Host to run server on")
 @click.option('--port', '-p', type=click.INT, default=3000, help="Port to run server on")
 def ui(host, port, **kwargs):

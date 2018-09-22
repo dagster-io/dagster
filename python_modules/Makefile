@@ -1,6 +1,6 @@
 watch:
 	watchmedo shell-command --recursive --patterns="*.py" -i "*.pyc"  --command \
-	"pytest -s -vv "\
+	"pytest -vv "\
 	"dagster/dagster/check/check_tests "\
 	"dagster/dagster/cli/cli_tests "\
 	"dagster/dagster/core/core_tests "\
@@ -10,7 +10,6 @@ watch:
 	"dagster/dagster/utils/utils_tests "\
 	"dagster/dagster_tests "\
 	"dagit/dagit_tests "\
-	"dagstermill/dagstermill_tests "\
 	"dagster-ge/dagster_ge_tests " \
 	--drop dagster/dagster dagster/dagster_tests/ dagster-ge/dagster_ge dagster-ge/dagster_ge_tests
 	
