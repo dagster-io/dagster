@@ -15,7 +15,7 @@ whether those assets be tables, files, machine-learning models, etc.
 
 There are a few tools in this repo
 
-This repo has a few primary components:
+This repo has several modules.
 
 - **Dagster**: The core programming model and abstraction stack; a stateless single-node and -process execution engine; and a CLI tool for driving that engine.
 * **Dagit**: Dagit is a rich viewer for Dagster assets.
