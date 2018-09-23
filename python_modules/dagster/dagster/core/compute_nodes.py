@@ -15,11 +15,7 @@ from dagster import (
 )
 
 from dagster.utils.indenting_printer import IndentingPrinter
-from dagster.utils.logging import (
-    get_formatted_stack_trace,
-    define_colored_console_logger,
-    ERROR,
-)
+from dagster.utils.logging import get_formatted_stack_trace
 
 from dagster.utils.timing import time_execution_scope
 
@@ -30,7 +26,6 @@ from .definitions import (
     InputDefinition,
     OutputDefinition,
     Result,
-    SolidDefinition,
     SolidOutputHandle,
     Solid,
     TransformExecutionInfo,

@@ -14,7 +14,7 @@ from dagster import (
     types,
 )
 from dagster.core.errors import (DagsterTypeError, DagsterInvariantViolationError)
-from dagster.utils.logging import (INFO, ERROR)
+from dagster.utils.logging import INFO
 
 # protected variable. need to test loggers
 # pylint: disable=W0212

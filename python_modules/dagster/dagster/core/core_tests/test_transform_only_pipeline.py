@@ -3,8 +3,6 @@ from dagster import (
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
-    SolidDefinition,
-    config,
     execute_pipeline,
 )
 

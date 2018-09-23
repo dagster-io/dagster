@@ -62,11 +62,13 @@ def index_view(_path):
     try:
         return send_file(os.path.join(os.path.dirname(__file__), './webapp/build/index.html'))
     except FileNotFoundError:
-        text = """<p>Can't find webapp files. Probably webapp isn't built. If you are using dagit, then probably it's a corrupted installation or a bug. However, if you are developing dagit locally, you problem can be fixed as follows:</p>
+        text = '''<p>Can't find webapp files. Probably webapp isn't built. If you are using
+        dagit, then probably it's a corrupted installation or a bug. However, if you are
+        developing dagit locally, you problem can be fixed as follows:</p>
 
 <pre>cd ./python_modules/dagit/dagit/webapp
 yarn
-yarn build</pre>"""
+yarn build</pre>'''
         return text, 500
 
 

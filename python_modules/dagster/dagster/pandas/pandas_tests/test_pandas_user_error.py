@@ -4,7 +4,6 @@ import pytest
 
 import pandas as pd
 
-import dagster.pandas as dagster_pd
 from dagster import (
     DagsterInvariantViolationError,
     DagsterTypeError,
@@ -12,11 +11,12 @@ from dagster import (
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
-    SolidDefinition,
-    config,
     execute_pipeline,
     lambda_solid,
 )
+
+import dagster.pandas as dagster_pd
+
 from dagster.core.utility_solids import define_stub_solid
 
 

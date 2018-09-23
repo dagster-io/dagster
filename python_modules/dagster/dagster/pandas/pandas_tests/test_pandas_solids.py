@@ -8,7 +8,6 @@ from dagster import (
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
-    SolidDefinition,
     check,
     config,
     lambda_solid,

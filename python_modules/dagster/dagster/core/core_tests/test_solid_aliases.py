@@ -6,7 +6,6 @@ from dagster import (
     InputDefinition,
     PipelineDefinition,
     SolidInstance,
-    check,
     config,
     execute_pipeline,
     lambda_solid,

@@ -30,7 +30,6 @@ from .definitions import (
     ContextCreationExecutionInfo,
     ExecutionGraph,
     PipelineDefinition,
-    SolidDefinition,
     Solid,
 )
 

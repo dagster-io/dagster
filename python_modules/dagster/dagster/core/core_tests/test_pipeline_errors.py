@@ -11,7 +11,6 @@ from dagster import (
     Result,
     SolidDefinition,
     check,
-    config,
     execute_pipeline,
 )
 
