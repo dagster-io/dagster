@@ -4,7 +4,6 @@ from dagster import (
     DependencyDefinition,
     InputDefinition,
     OutputDefinition,
-    SolidDefinition,
     config,
     execute_pipeline,
     lambda_solid,

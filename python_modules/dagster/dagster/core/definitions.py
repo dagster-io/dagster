@@ -285,7 +285,8 @@ def _build_named_dict(things):
 
 class SolidInstance(namedtuple('Solid', 'name alias')):
     '''
-    A solid identifier in a dependency structure. Allows supplying parameters to the solid, like the alias.
+    A solid identifier in a dependency structure. Allows supplying parameters to the solid,
+    like the alias.
 
     Example:
 
@@ -481,7 +482,7 @@ class PipelineDefinition(object):
                         pipeline_solids.append(Solid(name=alias, definition=solid_def))
             elif callable(solid_def):
                 raise DagsterInvalidDefinitionError(
-                    '''You have passed a lambda or function {func} into a pipeline that is 
+                    '''You have passed a lambda or function {func} into a pipeline that is
                     not a solid. You have likely forgetten to annotate this function with
                     an @solid or @lambda_solid decorator located in dagster.core.decorators
                     '''.format(func=solid_def.__name__)
@@ -636,23 +637,16 @@ class PipelineDefinition(object):
             solid = pipeline_solid.definition
             for input_def in solid.input_defs:
                 if not dependency_structure.has_dep(pipeline_solid.input_handle(input_def.name)):
+                    error_msg = (
+                        'Dependency must be specified for solid ' +
+                        '{pipeline_name} input {input_name}'.format(
+                            pipeline_name=pipeline_solid.name,
+                            input_name=input_def.name,
+                        )
+                    )
                     if name:
-                        raise DagsterInvalidDefinitionError(
-                            'Dependency must be specified for solid {pipeline_solid.name} input '.format(
-                                pipeline_solid=pipeline_solid
-                            ) + \
-                            '{input_def.name} in pipeline {name}'.format(
-                                input_def=input_def,
-                                name=name,
-                            )
-                        )
-                    else:
-                        raise DagsterInvalidDefinitionError(
-                            'Dependency must be specified for solid {pipeline_solid.name} input '.format(
-                                pipeline_solid=pipeline_solid,
-                             ) + \
-                            '{input_def.name}'.format(input_def=input_def)
-                        )
+                        error_msg += ' in pipeline {name}'.format(name=name)
+                    raise DagsterInvalidDefinitionError(error_msg)
 
     @property
     def display_name(self):
@@ -817,6 +811,15 @@ class OutputDefinition(object):
         return 'output'
 
 
+def _kv_str(key, value):
+    return '{key}="{value}"'.format(key=key, value=repr(value))
+
+
+def struct_to_string(name, **kwargs):
+    props_str = ', '.join([_kv_str(key, value) for key, value in kwargs.items()])
+    return '{name}({props_str})'.format(name=name, props_str=props_str)
+
+
 class SolidInputHandle(namedtuple('_SolidInputHandle', 'solid input_def')):
     def __new__(cls, solid, input_def):
         return super(SolidInputHandle, cls).__new__(
@@ -826,7 +829,8 @@ class SolidInputHandle(namedtuple('_SolidInputHandle', 'solid input_def')):
         )
 
     def _inner_str(self):
-        return 'SolidInputHandle(name="{solid_name}", solid="{definition_name}", input_name="{input_name}")'.format(
+        return struct_to_string(
+            'SolidInputHandle',
             solid_name=self.solid.name,
             definition_name=self.solid.definition.name,
             input_name=self.input_def.name,
@@ -854,7 +858,8 @@ class SolidOutputHandle(namedtuple('_SolidOutputHandle', 'solid output_def')):
         )
 
     def _inner_str(self):
-        return 'SolidOutputHandle(name="{solid_name}", solid="{definition_name}", output_name="{output_name}")'.format(
+        return struct_to_string(
+            'SolidOutputHandle',
             solid_name=self.solid.name,
             definition_name=self.solid.definition.name,
             output_name=self.output_def.name,

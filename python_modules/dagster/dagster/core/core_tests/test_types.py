@@ -1,13 +1,9 @@
-from collections import namedtuple
 import pytest
+
 from dagster.core.types import (
-    DagsterCompositeType,
     DagsterEvaluateValueError,
     DagsterType,
-    Field,
-    Int,
     PythonObjectType,
-    String,
 )
 
 

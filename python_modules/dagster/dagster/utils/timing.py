@@ -26,7 +26,12 @@ def time_execution_scope():
     from solid_util.timing import time_execution_scope
     with time_execution_scope() as timer_result:
         do_some_operation()
-    print('do_some_operation took {timer_result.millis} milliseconds'.format(timer_result=timer_result))
+
+    print(
+        'do_some_operation took {timer_result.millis} milliseconds'.format(
+            timer_result=timer_result
+        )
+    )
     '''
 
     timer_result = TimerResult()

@@ -3,7 +3,6 @@ from dagster import (
     InputDefinition,
     PipelineContextDefinition,
     PipelineDefinition,
-    config,
     execute_pipeline,
 )
 from dagster.core.test_utils import execute_single_solid
