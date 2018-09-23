@@ -18,6 +18,7 @@ def script_relative_path(file_path):
     scriptdir = inspect.stack()[1][1]
     return os.path.join(os.path.dirname(os.path.abspath(scriptdir)), file_path)
 
+
 def load_yaml_from_path(path):
     check.str_param(path, 'path')
     with open(path, 'r') as ff:
