@@ -92,3 +92,11 @@ def test_to_solid_output_not_there():
                 'b_input': DependencyDefinition('A', output='NOTTHERE')
             }},
         )
+
+
+def test_invalid_item_in_solid_list():
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Invalid item in solid list: 'not_a_solid'",
+    ):
+        PipelineDefinition(solids=['not_a_solid'])

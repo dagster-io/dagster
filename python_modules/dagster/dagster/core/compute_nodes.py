@@ -648,6 +648,7 @@ def create_config_value(execution_info, pipeline_solid):
 # and one wants to be able to attach to the logical output of a solid during execution
 ComputeNodeBuilderState = namedtuple('ComputeNodeBuilderState', 'compute_nodes cn_output_node_map')
 
+
 def create_compute_node_inputs(info, state, pipeline_solid):
     check.inst_param(info, 'info', ComputeNodeExecutionInfo)
     check.inst_param(state, 'state', ComputeNodeBuilderState)
@@ -663,9 +664,7 @@ def create_compute_node_inputs(info, state, pipeline_solid):
 
         check.invariant(
             dependency_structure.has_dep(input_handle),
-            '{input_handle} not found in dependency structure'.format(
-                input_handle=input_handle
-            ),
+            '{input_handle} not found in dependency structure'.format(input_handle=input_handle),
         )
 
         solid_output_handle = dependency_structure.get_dep(input_handle)
@@ -688,6 +687,7 @@ def create_compute_node_inputs(info, state, pipeline_solid):
         )
 
     return cn_inputs
+
 
 def create_compute_node_graph(execution_info):
     check.inst_param(execution_info, 'execution_info', ComputeNodeExecutionInfo)

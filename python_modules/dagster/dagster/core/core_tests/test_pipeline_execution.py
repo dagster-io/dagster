@@ -83,9 +83,9 @@ def create_root_solid(name):
 
 
 def _do_construct(solids, dependencies):
-    solids = [Solid(name=solid.name, definition=solid) for solid in solids]
+    solids = {s.name: Solid(name=s.name, definition=s) for s in solids}
     dependency_structure = DependencyStructure.from_definitions(solids, dependencies)
-    return _create_adjacency_lists(solids, dependency_structure)
+    return _create_adjacency_lists(list(solids.values()), dependency_structure)
 
 
 def test_empty_adjaceny_lists():
