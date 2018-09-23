@@ -226,7 +226,6 @@ def _check_list_items(obj_list, of_type):
 
     for obj in obj_list:
 
-
         if not isinstance(obj, of_type):
             raise_with_traceback(
                 CheckError(

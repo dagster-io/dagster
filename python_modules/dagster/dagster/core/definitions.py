@@ -814,9 +814,11 @@ class OutputDefinition(object):
 def _kv_str(key, value):
     return '{key}="{value}"'.format(key=key, value=repr(value))
 
+
 def struct_to_string(name, **kwargs):
     props_str = ', '.join([_kv_str(key, value) for key, value in kwargs.items()])
     return '{name}({props_str})'.format(name=name, props_str=props_str)
+
 
 class SolidInputHandle(namedtuple('_SolidInputHandle', 'solid input_def')):
     def __new__(cls, solid, input_def):
