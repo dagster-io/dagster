@@ -16,6 +16,7 @@ def set_value_in_cloud_store(_conn, _key, _value):
     # imagine this doing something
     pass
 
+
 class PublicCloudStore:
     def __init__(self, credentials):
         # create credential and store it
@@ -46,14 +47,12 @@ def define_contextless_solids():
     def injest_a(info):
         return info.config
 
-
     @solid(
         config_def=ConfigDefinition(types.Int),
         outputs=[OutputDefinition(types.Int)],
     )
     def injest_b(info):
         return info.config
-
 
     @lambda_solid(
         inputs=[InputDefinition('num_one', types.Int),
@@ -62,7 +61,6 @@ def define_contextless_solids():
     )
     def add_ints(num_one, num_two):
         return num_one + num_two
-
 
     @lambda_solid(
         inputs=[InputDefinition('num_one', types.Int),
@@ -73,6 +71,7 @@ def define_contextless_solids():
         return num_one * num_two
 
     return [injest_a, injest_b, add_ints, mult_ints]
+
 
 def define_contextful_solids():
     @solid(
@@ -91,7 +90,6 @@ def define_contextful_solids():
         info.context.resources.store.record_value(info.context, 'b', info.config)
         return info.config
 
-
     @solid(
         inputs=[InputDefinition('num_one', types.Int),
                 InputDefinition('num_two', types.Int)],
@@ -101,7 +99,6 @@ def define_contextful_solids():
         result = num_one + num_two
         info.context.resources.store.record_value(info.context, 'add', result)
         return result
-
 
     @solid(
         inputs=[InputDefinition('num_one', types.Int),
@@ -114,6 +111,7 @@ def define_contextful_solids():
         return result
 
     return [injest_a, injest_b, add_ints, mult_ints]
+
 
 def define_part_nine_step_one():
     return PipelineDefinition(
@@ -133,6 +131,7 @@ def define_part_nine_step_one():
 
 
 PartNineResources = namedtuple('PartNineResources', 'store')
+
 
 def define_part_nine_step_two():
     return PipelineDefinition(
@@ -198,24 +197,24 @@ def define_part_nine_final():
         }
     )
 
+
 def define_part_nine_repo():
     return RepositoryDefinition(
         name='part_nine_repo',
         pipeline_dict={
             'part_nine_step_one': define_part_nine_step_one,
-            'part_nine_final':  define_part_nine_final,
+            'part_nine_final': define_part_nine_final,
         }
     )
+
 
 def test_intro_tutorial_part_nine_step_one():
     result = execute_pipeline(
         define_part_nine_step_one(),
-        config.Environment(
-            solids={
-                'injest_a': config.Solid(2),
-                'injest_b': config.Solid(3),
-            },
-        )
+        config.Environment(solids={
+            'injest_a': config.Solid(2),
+            'injest_b': config.Solid(3),
+        }, )
     )
 
     assert result.success
@@ -223,7 +222,6 @@ def test_intro_tutorial_part_nine_step_one():
     assert result.result_for_solid('injest_b').transformed_value() == 3
     assert result.result_for_solid('add_ints').transformed_value() == 5
     assert result.result_for_solid('mult_ints').transformed_value() == 6
-
 
 
 def test_intro_tutorial_part_nine_final_local_success():
@@ -273,6 +271,7 @@ def test_intro_tutorial_part_nine_final_cloud_success():
     )
 
     assert result.success
+
 
 def test_intro_tutorial_part_nine_final_error():
     with pytest.raises(DagsterTypeError, match='Field username not found'):
