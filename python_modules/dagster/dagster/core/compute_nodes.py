@@ -617,7 +617,7 @@ class ComputeNodeOutputMap(dict):
         return dict.__setitem__(self, key, val)
 
 
-def create_conf_value(execution_info, pipeline_solid):
+def create_config_value(execution_info, pipeline_solid):
     check.inst_param(execution_info, 'execution_info', ComputeNodeExecutionInfo)
     check.inst_param(pipeline_solid, 'pipeline_solid', Solid)
 
@@ -625,85 +625,104 @@ def create_conf_value(execution_info, pipeline_solid):
 
     name = pipeline_solid.name
     solid_configs = execution_info.environment.solids
-    config_input = solid_configs[name].config if name in solid_configs else {}
+    config_input = solid_configs[name].config if name in solid_configs else None
 
     try:
         return solid_def.config_def.config_type.evaluate_value(config_input)
-    except DagsterEvaluateValueError as e:
-        raise DagsterTypeError(
-            'Error evaluating config for {solid_name}: {error_msg}'.format(
-                solid_name=solid_def.name,
-                error_msg=','.join(e.args),
+    except DagsterEvaluateValueError as eval_error:
+        raise_from(
+            DagsterTypeError(
+                'Error evaluating config for {solid_name}: {error_msg}'.format(
+                    solid_name=solid_def.name,
+                    error_msg=','.join(eval_error.args),
+                )
+            ),
+            eval_error,
+        )
+
+
+# This is the state that is built up during the compute node graph build process.
+# compute_nodes is just a list of the compute nodes that have been created
+# cn_output_node_map maps logical solid outputs (solid_name, output_name) to particular
+# compute_node outputs. This covers the case where a solid maps to multiple compute nodes
+# and one wants to be able to attach to the logical output of a solid during execution
+ComputeNodeBuilderState = namedtuple('ComputeNodeBuilderState', 'compute_nodes cn_output_node_map')
+
+def create_compute_node_inputs(info, state, pipeline_solid):
+    check.inst_param(info, 'info', ComputeNodeExecutionInfo)
+    check.inst_param(state, 'state', ComputeNodeBuilderState)
+    check.inst_param(pipeline_solid, 'pipeline_solid', Solid)
+
+    cn_inputs = []
+
+    topo_solid = pipeline_solid.definition
+    dependency_structure = info.execution_graph.dependency_structure
+
+    for input_def in topo_solid.input_defs:
+        input_handle = pipeline_solid.input_handle(input_def.name)
+
+        check.invariant(
+            dependency_structure.has_dep(input_handle),
+            '{input_handle} not found in dependency structure'.format(
+                input_handle=input_handle
+            ),
+        )
+
+        solid_output_handle = dependency_structure.get_dep(input_handle)
+        prev_cn_output_handle = state.cn_output_node_map[solid_output_handle]
+
+        subgraph = create_subgraph_for_input(
+            info,
+            pipeline_solid,
+            prev_cn_output_handle,
+            input_def,
+        )
+
+        state.compute_nodes.extend(subgraph.nodes)
+        cn_inputs.append(
+            ComputeNodeInput(
+                input_def.name,
+                input_def.dagster_type,
+                subgraph.terminal_cn_output_handle,
             )
         )
 
+    return cn_inputs
 
 def create_compute_node_graph(execution_info):
     check.inst_param(execution_info, 'execution_info', ComputeNodeExecutionInfo)
 
     execution_graph = execution_info.execution_graph
 
-    dependency_structure = execution_graph.dependency_structure
+    state = ComputeNodeBuilderState(
+        compute_nodes=[],
+        cn_output_node_map=ComputeNodeOutputMap(),
+    )
 
-    compute_nodes = []
-
-    cn_output_node_map = ComputeNodeOutputMap()
-
-    for topo_pipeline_solid in execution_graph.topological_solids:
-        cn_inputs = []
-
-        topo_solid = topo_pipeline_solid.definition
-
-        for input_def in topo_solid.input_defs:
-            input_handle = topo_pipeline_solid.input_handle(input_def.name)
-
-            check.invariant(
-                dependency_structure.has_dep(input_handle),
-                '{input_handle} not found in dependency structure'.format(
-                    input_handle=input_handle
-                ),
-            )
-
-            solid_output_handle = dependency_structure.get_dep(input_handle)
-            prev_cn_output_handle = cn_output_node_map[solid_output_handle]
-
-            subgraph = create_subgraph_for_input(
-                execution_info,
-                topo_pipeline_solid,
-                prev_cn_output_handle,
-                input_def,
-            )
-
-            compute_nodes.extend(subgraph.nodes)
-            cn_inputs.append(
-                ComputeNodeInput(
-                    input_def.name,
-                    input_def.dagster_type,
-                    subgraph.terminal_cn_output_handle,
-                )
-            )
-
-        conf = create_conf_value(execution_info, topo_pipeline_solid)
+    for pipeline_solid in execution_graph.topological_solids:
+        cn_inputs = create_compute_node_inputs(execution_info, state, pipeline_solid)
 
         solid_transform_cn = create_compute_node_from_solid_transform(
-            topo_pipeline_solid, cn_inputs, conf
+            pipeline_solid,
+            cn_inputs,
+            create_config_value(execution_info, pipeline_solid),
         )
 
-        compute_nodes.append(solid_transform_cn)
+        state.compute_nodes.append(solid_transform_cn)
 
-        for output_def in topo_solid.output_defs:
+        for output_def in pipeline_solid.definition.output_defs:
             subgraph = create_subgraph_for_output(
                 execution_info,
-                topo_pipeline_solid,
+                pipeline_solid,
                 solid_transform_cn,
                 output_def,
             )
-            compute_nodes.extend(subgraph.nodes)
+            state.compute_nodes.extend(subgraph.nodes)
 
-            output_handle = topo_pipeline_solid.output_handle(output_def.name)
-            cn_output_node_map[output_handle] = subgraph.terminal_cn_output_handle
+            output_handle = pipeline_solid.output_handle(output_def.name)
+            state.cn_output_node_map[output_handle] = subgraph.terminal_cn_output_handle
 
-    return _create_compute_node_graph(compute_nodes)
+    return _create_compute_node_graph(state.compute_nodes)
 
 
 def _create_compute_node_graph(compute_nodes):
