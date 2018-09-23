@@ -147,6 +147,7 @@ class ComputeNodeResult(
             failure_data=check.inst_param(failure_data, 'failure_data', ComputeNodeFailureData),
         )
 
+
 @contextmanager
 def _user_code_error_boundary(context, msg, **kwargs):
     '''
