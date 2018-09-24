@@ -627,6 +627,18 @@ def create_config_value(execution_info, pipeline_solid):
     solid_configs = execution_info.environment.solids
     config_input = solid_configs[name].config if name in solid_configs else None
 
+    if solid_def.config_def is None:
+        if config_input is not None:
+            raise DagsterInvariantViolationError(
+                (
+                    'Solid {solid} was provided {config_input} but does not take config'.format(
+                        solid=solid_def.name,
+                        config_input=repr(config_input)
+                    )
+                )
+            )
+        return None
+
     try:
         return solid_def.config_def.config_type.evaluate_value(config_input)
     except DagsterEvaluateValueError as eval_error:

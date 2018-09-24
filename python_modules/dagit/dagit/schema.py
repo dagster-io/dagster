@@ -54,14 +54,14 @@ class Pipeline(graphene.ObjectType):
 class PipelineContext(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
-    config = graphene.NonNull(lambda: Config)
+    config = graphene.Field(lambda: Config)
 
     def __init__(self, name, context):
         super(PipelineContext, self).__init__(name=name, description=context.description)
         self._context = check.inst_param(context, 'context', dagster.PipelineContextDefinition)
 
     def resolve_config(self, _info):
-        return Config(self._context.config_def)
+        return Config(self._context.config_def) if self._context.config_def else None
 
 
 class Solid(graphene.ObjectType):
@@ -155,7 +155,7 @@ class SolidDefinition(graphene.ObjectType):
     description = graphene.String()
     input_definitions = graphene.NonNull(graphene.List(lambda: graphene.NonNull(InputDefinition)))
     output_definitions = graphene.NonNull(graphene.List(lambda: graphene.NonNull(OutputDefinition)))
-    config_definition = graphene.NonNull(lambda: Config)
+    config_definition = graphene.Field(lambda: Config)
 
     # solids - ?
 
@@ -179,7 +179,7 @@ class SolidDefinition(graphene.ObjectType):
         ]
 
     def resolve_config_definition(self, _info):
-        return Config(self._solid_def.config_def)
+        return Config(self._solid_def.config_def) if self._solid_def.config_def else None
 
 
 class InputDefinition(graphene.ObjectType):
@@ -258,7 +258,7 @@ class Config(graphene.ObjectType):
 
     def __init__(self, config_def):
         super(Config, self).__init__()
-        self._config_def = check.inst_param(config_def, 'config_def', dagster.ConfigDefinition)
+        self._config_def = check.opt_inst_param(config_def, 'config_def', dagster.ConfigDefinition)
 
     def resolve_type(self, _info):
         return Type.from_dagster_type(dagster_type=self._config_def.config_type)

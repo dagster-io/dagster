@@ -61,13 +61,17 @@ export default class Config extends React.Component<ConfigProps, {}> {
   }
 
   public render() {
-    return (
-      <ConfigCard elevation={3}>
-        <H6>Config</H6>
-        <TypeWithTooltip type={this.props.config.type} />
-        {this.renderFields()}
-      </ConfigCard>
-    );
+    if (this.props.config) {
+      return (
+        <ConfigCard elevation={3}>
+          <H6>Config</H6>
+          <TypeWithTooltip type={this.props.config.type} />
+          {this.renderFields()}
+        </ConfigCard>
+      );
+    } else {
+      return null;
+    }
   }
 }
 

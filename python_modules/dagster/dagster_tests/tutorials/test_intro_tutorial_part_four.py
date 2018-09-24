@@ -2,7 +2,7 @@
 from dagster import *
 
 
-@solid
+@solid(config_def=ConfigDefinition(types.String))
 def hello_world(info):
     print(info.config)
     return info.config
