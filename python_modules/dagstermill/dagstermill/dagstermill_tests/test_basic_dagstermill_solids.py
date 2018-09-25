@@ -127,6 +127,7 @@ def test_hello_world_config():
         nb_test_path('hello_world_with_config'),
         [],
         [OutputDefinition()],
+        config_def=ConfigDefinition(types.String),
     )
 
     pipeline = PipelineDefinition(solids=[with_config_solid])
