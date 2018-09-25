@@ -17,3 +17,8 @@ yapf:
 	find . -name "*.py" | grep -v ".tox" | grep -v ".vscode" | xargs yapf -i
 		
 
+reinstall:
+	pip uninstall dagit
+	pip uninstall dagster
+	pip install -e dagster
+	pip install -e dagit
