@@ -97,7 +97,7 @@ export interface AppQuery_pipelines_solids_definition_configDefinition {
 
 export interface AppQuery_pipelines_solids_definition {
   description: string | null;
-  configDefinition: AppQuery_pipelines_solids_definition_configDefinition;
+  configDefinition: AppQuery_pipelines_solids_definition_configDefinition | null;
 }
 
 export interface AppQuery_pipelines_solids {
@@ -142,7 +142,7 @@ export interface AppQuery_pipelines_contexts_config {
 export interface AppQuery_pipelines_contexts {
   name: string;
   description: string | null;
-  config: AppQuery_pipelines_contexts_config;
+  config: AppQuery_pipelines_contexts_config | null;
 }
 
 export interface AppQuery_pipelines {

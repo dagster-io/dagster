@@ -20,7 +20,7 @@ minimal API. ``solid`` is more complicated, and has more capabilities:
 
     from dagster import *
 
-    @solid
+    @solid(config_def=ConfigDefinition(types.String))
     def hello_world(info):
         print(info.config)
         return conf

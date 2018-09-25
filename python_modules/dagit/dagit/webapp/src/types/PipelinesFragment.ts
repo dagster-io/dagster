@@ -97,7 +97,7 @@ export interface PipelinesFragment_solids_definition_configDefinition {
 
 export interface PipelinesFragment_solids_definition {
   description: string | null;
-  configDefinition: PipelinesFragment_solids_definition_configDefinition;
+  configDefinition: PipelinesFragment_solids_definition_configDefinition | null;
 }
 
 export interface PipelinesFragment_solids {
@@ -142,7 +142,7 @@ export interface PipelinesFragment_contexts_config {
 export interface PipelinesFragment_contexts {
   name: string;
   description: string | null;
-  config: PipelinesFragment_contexts_config;
+  config: PipelinesFragment_contexts_config | null;
 }
 
 export interface PipelinesFragment {

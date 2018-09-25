@@ -97,7 +97,7 @@ export interface SolidFragment_definition_configDefinition {
 
 export interface SolidFragment_definition {
   description: string | null;
-  configDefinition: SolidFragment_definition_configDefinition;
+  configDefinition: SolidFragment_definition_configDefinition | null;
 }
 
 export interface SolidFragment {

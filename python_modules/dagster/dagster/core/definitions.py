@@ -1038,7 +1038,6 @@ class SolidDefinition(object):
             config_def,
             'config_def',
             ConfigDefinition,
-            ConfigDefinition(types.Any),
         )
         self.metadata = check.opt_dict_param(metadata, 'metadata', key_type=str)
         self._input_dict = {inp.name: inp for inp in inputs}

@@ -90,3 +90,30 @@ def test_solid_not_found():
                 }),
             }),
         )
+
+
+def test_config_for_no_config():
+    def _t_fn(*_args):
+        raise Exception('should not reach')
+
+    solid_def = SolidDefinition(
+        name='no_config_solid',
+        inputs=[],
+        outputs=[],
+        transform_fn=_t_fn,
+    )
+
+    pipeline = PipelineDefinition(solids=[solid_def])
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Solid no_config_solid was provided {'some_config': 1} but does not take config",
+    ):
+        execute_pipeline(
+            pipeline,
+            config.Environment(solids={
+                'no_config_solid': config.Solid({
+                    'some_config': 1,
+                }),
+            }),
+        )
