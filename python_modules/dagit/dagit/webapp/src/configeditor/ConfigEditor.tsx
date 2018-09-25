@@ -1,13 +1,18 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
+import { History } from "history";
+import { Switch, Route, match } from "react-router";
 import { Colors } from "@blueprintjs/core";
 import ConfigCodeEditor from "./ConfigCodeEditor";
 import ConfigExplorer from "./ConfigExplorer";
+import TypeExplorerContainer from "./TypeExplorerContainer";
 import { ConfigEditorFragment } from "./types/ConfigEditorFragment";
 
 interface IConfigEditorProps {
   pipeline: ConfigEditorFragment;
+  match: match<any>;
+  history: History;
 }
 
 export default class ConfigEditor extends React.Component<
@@ -17,6 +22,7 @@ export default class ConfigEditor extends React.Component<
   static fragments = {
     ConfigEditorFragment: gql`
       fragment ConfigEditorFragment on Pipeline {
+        name
         ...ConfigExplorerFragment
       }
 
@@ -34,6 +40,20 @@ export default class ConfigEditor extends React.Component<
         <ConfigExplorerWrapper>
           <ConfigExplorer pipeline={this.props.pipeline} />
         </ConfigExplorerWrapper>
+        <Border />
+        <TypeExplorerWrapper>
+          <Route
+            path={`${this.props.match.url}/:typePath`}
+            render={({ match }: { match: match<{ typePath: string }> }) => {
+              return (
+                <TypeExplorerContainer
+                  pipelineName={this.props.pipeline.name}
+                  typePath={match.params.typePath}
+                />
+              );
+            }}
+          />
+        </TypeExplorerWrapper>
       </Split>
     );
   }
@@ -58,5 +78,9 @@ const ConfigCodeEditorWrapper = styled.div`
 `;
 
 const ConfigExplorerWrapper = styled.div`
+  flex: 1 1;
+`;
+
+const TypeExplorerWrapper = styled.div`
   flex: 1 1;
 `;

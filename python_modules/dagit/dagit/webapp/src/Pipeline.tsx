@@ -174,8 +174,20 @@ export default class Pipeline extends React.Component<IPipelineProps, {}> {
     );
   };
 
-  renderEditor = () => {
-    return <ConfigEditor pipeline={this.props.pipeline} />;
+  renderEditor = ({
+    match,
+    history
+  }: {
+    match: match<{ pipeline: string }>;
+    history: History;
+  }) => {
+    return (
+      <ConfigEditor
+        pipeline={this.props.pipeline}
+        match={match}
+        history={history}
+      />
+    );
   };
 
   renderSolidList = () => {

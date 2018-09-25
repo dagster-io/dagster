@@ -1,0 +1,3 @@
+extend type Query {
+  type(pipelineName: String!, typePath: String!): Type
+}

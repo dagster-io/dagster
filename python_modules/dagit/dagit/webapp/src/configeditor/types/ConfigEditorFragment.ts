@@ -88,6 +88,7 @@ export interface ConfigEditorFragment_solids {
 }
 
 export interface ConfigEditorFragment {
+  name: string;
   contexts: ConfigEditorFragment_contexts[];
   solids: ConfigEditorFragment_solids[];
 }
