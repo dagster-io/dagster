@@ -1,8 +1,34 @@
 from six import (string_types, integer_types)
+import os
+import uuid
 
 from dagster import check
 
 from dagster.core.errors import DagsterEvaluateValueError
+
+
+class ITempFileStore:
+    def get_file(self):
+        check.not_implemented('must implement in subclass')
+
+
+from contextlib import contextmanager
+from collections import namedtuple
+import pickle
+
+TempFileInfo = namedtuple('TempFileInfo', 'file path')
+
+
+class TempFileStore(ITempFileStore):
+    def __init__(self, base_dir):
+        self.base_dir = check.str_param(base_dir, 'base_dir')
+
+    @contextmanager
+    def get_file(self):
+        file_name = str(uuid.uuid4())
+        new_path = os.path.join(self.base_dir, file_name)
+        with open(new_path, 'w') as ff:
+            yield TempFileInfo(file=ff, path=new_path)
 
 
 class DagsterType(object):
@@ -41,6 +67,15 @@ class DagsterType(object):
     def iterate_types(self):
         yield self
 
+    def serialize_value(self, temp_file_store, value):
+        check.inst(temp_file_store, ITempFileStore)
+
+        with temp_file_store.get_file() as info:
+            bytes_ = pickle.dumps(value)
+            info.file.write('foo')
+
+        return info
+
 
 class UncoercedTypeMixin(object):
     '''This is a helper mixin used when you only want to do a type check
@@ -61,7 +96,8 @@ class UncoercedTypeMixin(object):
         if not self.is_python_valid_value(value):
             raise DagsterEvaluateValueError(
                 'Expected valid value for {type_name} but got {value}'.format(
-                    type_name=self.name, value=repr(value)
+                    type_name=self.name,
+                    value=repr(value),
                 )
             )
         return value
@@ -83,7 +119,8 @@ class DagsterScalarType(UncoercedTypeMixin, DagsterType):
 class _DagsterAnyType(UncoercedTypeMixin, DagsterType):
     def __init__(self):
         super(_DagsterAnyType, self).__init__(
-            name='Any', description='The type that allows any value, including no value.'
+            name='Any',
+            description='The type that allows any value, including no value.',
         )
 
     def is_python_valid_value(self, _value):
