@@ -8,7 +8,7 @@ import Description from "./Description";
 import { ConfigFragment } from "./types/ConfigFragment";
 
 interface ConfigProps {
-  config: ConfigFragment;
+  config: ConfigFragment | null;
 }
 
 export default class Config extends React.Component<ConfigProps, {}> {
@@ -40,11 +40,11 @@ export default class Config extends React.Component<ConfigProps, {}> {
     `
   };
 
-  renderFields() {
-    if (this.props.config.type.__typename === "CompositeType") {
+  renderFields(config: ConfigFragment) {
+    if (config.type.__typename === "CompositeType") {
       return (
         <UL>
-          {this.props.config.type.fields.map((field, i: number) => (
+          {config.type.fields.map((field, i: number) => (
             <li key={i}>
               {field.name} {field.isOptional ? "(optional)" : null}{" "}
               <TypeWithTooltip type={field.type} />
@@ -66,7 +66,7 @@ export default class Config extends React.Component<ConfigProps, {}> {
         <ConfigCard elevation={3}>
           <H6>Config</H6>
           <TypeWithTooltip type={this.props.config.type} />
-          {this.renderFields()}
+          {this.renderFields(this.props.config)}
         </ConfigCard>
       );
     } else {
