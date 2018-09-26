@@ -9,7 +9,7 @@ from dagster.pandas import DataFrame
 
 
 def roundtrip(value):
-    base_dir = f'/tmp/dagster/scratch/unittests/{str(uuid.uuid4())}'
+    base_dir = '/tmp/dagster/scratch/unittests/{uuid}'.format(uuid=str(uuid.uuid4()))
     os.mkdir(base_dir)
     full_path = os.path.join(base_dir, 'value.p')
 
@@ -21,7 +21,7 @@ def roundtrip(value):
 
 
 def roundtrip_typed_value(value, dagster_type):
-    base_dir = f'/tmp/dagster/scratch/unittests/{str(uuid.uuid4())}'
+    base_dir = '/tmp/dagster/scratch/unittests/{uuid}'.format(uuid=str(uuid.uuid4()))
     os.mkdir(base_dir)
     full_path = os.path.join(base_dir, 'value.p')
 

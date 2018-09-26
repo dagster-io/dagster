@@ -200,8 +200,6 @@ def serialize_inputs(inputs, input_defs):
         type_values[input_name] = type_value
 
     return serialize_dm_object(type_values)
-    # return json.dumps(type_values)
-    # return serialize_dm_object(inputs)
 
 
 def deserialize_inputs(inputs_str, input_defs):
