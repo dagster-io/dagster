@@ -619,7 +619,6 @@ class PipelineDefinition(object):
             value_type=PipelineContextDefinition,
         )
 
-
         dependencies = check_opt_two_dim_dict(
             dependencies,
             'dependencies',
@@ -771,6 +770,14 @@ class PipelineDefinition(object):
         '''
         check.str_param(name, 'name')
         return self._solid_dict[name]
+
+    def has_type(self, name):
+        check.str_param(name, 'name')
+        return name in self._type_dict
+
+    def type_named(self, name):
+        check.str_param(name, 'name')
+        return self._type_dict[name]
 
 
 class ExpectationResult(object):
