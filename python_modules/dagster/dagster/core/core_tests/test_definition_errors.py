@@ -1,12 +1,16 @@
 import pytest
 
 from dagster import (
+    ConfigDefinition,
     DagsterInvalidDefinitionError,
+    Field,
     DependencyDefinition,
     PipelineDefinition,
     SolidDefinition,
     OutputDefinition,
     InputDefinition,
+    solid,
+    types,
 )
 
 
@@ -100,3 +104,30 @@ def test_invalid_item_in_solid_list():
         match="Invalid item in solid list: 'not_a_solid'",
     ):
         PipelineDefinition(solids=['not_a_solid'])
+
+
+def test_double_type():
+    @solid(
+        config_def=ConfigDefinition(
+            types.ConfigDictionary(
+                'SomeTypeName',
+                {'some_field': Field(types.String)},
+            ),
+        )
+    )
+    def solid_one(_info):
+        raise Exception('should not execute')
+
+    @solid(
+        config_def=ConfigDefinition(
+            types.ConfigDictionary(
+                'SomeTypeName',
+                {'some_field': Field(types.String)},
+            ),
+        )
+    )
+    def solid_two(_info):
+        raise Exception('should not execute')
+
+    with pytest.raises(DagsterInvalidDefinitionError, match='Type names must be unique.'):
+        PipelineDefinition(solids=[solid_one, solid_two])

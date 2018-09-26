@@ -513,6 +513,44 @@ def _validate_dependency_structure(name, pipeline_solid_dict, dependency_structu
                 raise DagsterInvalidDefinitionError(error_msg)
 
 
+def _gather_all_types(solids, context_definitions):
+    check.list_param(solids, 'solids', SolidDefinition)
+    check.dict_param(
+        context_definitions,
+        'context_definitions',
+        key_type=str,
+        value_type=PipelineContextDefinition,
+    )
+
+    for solid in solids:
+        for dagster_type in solid.iterate_types():
+            yield dagster_type
+
+    for context_definition in context_definitions.values():
+        if context_definition.config_def:
+            for dagster_type in context_definition.config_def.config_type.iterate_types():
+                yield dagster_type
+
+
+def construct_type_dictionary(solids, context_definitions):
+    type_dict = {}
+    all_types = list(_gather_all_types(solids, context_definitions))
+    for dagster_type in all_types:
+        name = dagster_type.name
+        if name in type_dict:
+            if dagster_type is not type_dict[name]:
+                raise DagsterInvalidDefinitionError(
+                    (
+                        'Type names must be unique. You have construct two instances of types '
+                        'with the same name {name} but have different instances'.format(name=name)
+                    )
+                )
+        else:
+            type_dict[dagster_type.name] = dagster_type
+
+    return type_dict
+
+
 class PipelineDefinition(object):
     '''A instance of a PipelineDefinition represents a pipeline in dagster.
 
@@ -552,7 +590,12 @@ class PipelineDefinition(object):
     '''
 
     def __init__(
-        self, solids, name=None, description=None, context_definitions=None, dependencies=None
+        self,
+        solids,
+        name=None,
+        description=None,
+        context_definitions=None,
+        dependencies=None,
     ):
         '''
         Args:
@@ -576,6 +619,7 @@ class PipelineDefinition(object):
             value_type=PipelineContextDefinition,
         )
 
+
         dependencies = check_opt_two_dim_dict(
             dependencies,
             'dependencies',
@@ -590,6 +634,7 @@ class PipelineDefinition(object):
 
         self._solid_dict = pipeline_solid_dict
         self.dependency_structure = dependency_structure
+        self._type_dict = construct_type_dictionary(solids, self.context_definitions)
 
     @staticmethod
     def create_single_solid_pipeline(pipeline, solid_name, injected_solids=None):
@@ -1063,6 +1108,19 @@ class SolidDefinition(object):
     def output_def_named(self, name):
         check.str_param(name, 'name')
         return self._output_dict[name]
+
+    def iterate_types(self):
+        for input_def in self.input_defs:
+            for dagster_type in input_def.dagster_type.iterate_types():
+                yield dagster_type
+
+        for output_def in self.output_defs:
+            for dagster_type in output_def.dagster_type.iterate_types():
+                yield dagster_type
+
+        if self.config_def:
+            for dagster_type in self.config_def.config_type.iterate_types():
+                yield dagster_type
 
 
 def _create_adjacency_lists(solids, dep_structure):

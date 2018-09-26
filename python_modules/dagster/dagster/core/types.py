@@ -38,6 +38,9 @@ class DagsterType(object):
         '''
         check.not_implemented('Must implement in subclass')
 
+    def iterate_types(self):
+        yield self
+
 
 class UncoercedTypeMixin(object):
     '''This is a helper mixin used when you only want to do a type check
@@ -201,6 +204,12 @@ class DagsterCompositeType(DagsterType):
         if value is not None and not isinstance(value, dict):
             raise DagsterEvaluateValueError('Incoming value for composite must be dict')
         return process_incoming_composite_value(self, value, self.ctor)
+
+    def iterate_types(self):
+        for field_type in self.field_dict.values():
+            for inner_type in field_type.dagster_type.iterate_types():
+                yield inner_type
+        yield self
 
 
 class ConfigDictionary(DagsterCompositeType):
