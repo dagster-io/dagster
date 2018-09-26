@@ -1,34 +1,26 @@
-from six import (string_types, integer_types)
-import os
-import uuid
-
-from dagster import check
-
-from dagster.core.errors import DagsterEvaluateValueError
-
-
-class ITempFileStore:
-    def get_file(self):
-        check.not_implemented('must implement in subclass')
-
-
-from contextlib import contextmanager
-from collections import namedtuple
 import pickle
 
-TempFileInfo = namedtuple('TempFileInfo', 'file path')
+from six import integer_types, string_types
 
+from dagster import check
+from dagster.core.errors import DagsterEvaluateValueError
 
-class TempFileStore(ITempFileStore):
-    def __init__(self, base_dir):
-        self.base_dir = check.str_param(base_dir, 'base_dir')
+# TempFileInfo = namedtuple('TempFileInfo', 'file path')
 
-    @contextmanager
-    def get_file(self):
-        file_name = str(uuid.uuid4())
-        new_path = os.path.join(self.base_dir, file_name)
-        with open(new_path, 'w') as ff:
-            yield TempFileInfo(file=ff, path=new_path)
+# class ITempFileStore:
+#     def get_file(self):
+#         check.not_implemented('must implement in subclass')
+
+# class TempFileStore(ITempFileStore):
+#     def __init__(self, base_dir):
+#         self.base_dir = check.str_param(base_dir, 'base_dir')
+
+#     @contextmanager
+#     def get_file(self):
+#         file_name = str(uuid.uuid4())
+#         new_path = os.path.join(self.base_dir, file_name)
+#         with open(new_path, 'wb') as ff:
+#             yield TempFileInfo(file=ff, path=new_path)
 
 
 class DagsterType(object):
@@ -67,14 +59,11 @@ class DagsterType(object):
     def iterate_types(self):
         yield self
 
-    def serialize_value(self, temp_file_store, value):
-        check.inst(temp_file_store, ITempFileStore)
+    def serialize_value(self, ff, value):
+        pickle.dump(self.evaluate_value(value), ff)
 
-        with temp_file_store.get_file() as info:
-            bytes_ = pickle.dumps(value)
-            info.file.write('foo')
-
-        return info
+    def deserialize_value(self, ff):
+        return pickle.load(ff)
 
 
 class UncoercedTypeMixin(object):
@@ -150,6 +139,12 @@ class PythonObjectType(UncoercedTypeMixin, DagsterType):
 class _DagsterStringType(DagsterScalarType):
     def is_python_valid_value(self, value):
         return nullable_isinstance(value, string_types)
+
+    # def serialize_value(self, ff, value):
+    #     ff.write(self.evaluate_value(value).encode('utf-8'))
+
+    # def deserialize_value(self, ff):
+    #     return ff.read().decode('utf-8')
 
 
 class _DagsterIntType(DagsterScalarType):
