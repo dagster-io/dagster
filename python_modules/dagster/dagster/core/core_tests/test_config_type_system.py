@@ -14,17 +14,22 @@ def test_noop_config():
 
 
 def test_int_field():
-    config_def = ConfigDefinition.config_dict({
-        'int_field': Field(types.Int),
-    })
+    config_def = ConfigDefinition.config_dict(
+        'SingleRequiredInt',
+        {
+            'int_field': Field(types.Int),
+        },
+    )
 
     assert config_def.config_type.evaluate_value({'int_field': 1}) == {'int_field': 1}
 
 
 def test_int_fails():
-    config_def = ConfigDefinition.config_dict({
-        'int_field': Field(types.Int),
-    })
+    config_def = ConfigDefinition.config_dict(
+        'SingleRequiredInt', {
+            'int_field': Field(types.Int),
+        }
+    )
 
     with pytest.raises(DagsterEvaluateValueError):
         config_def.config_type.evaluate_value({'int_field': 'fjkdj'})
@@ -35,7 +40,7 @@ def test_int_fails():
 
 def test_default_arg():
     config_def = ConfigDefinition.config_dict(
-        {
+        'TestDefaultArg', {
             'int_field': Field(types.Int, default_value=2, is_optional=True),
         }
     )
@@ -44,12 +49,14 @@ def test_default_arg():
 
 
 def _single_required_string_config_dict():
-    return ConfigDefinition.config_dict({'string_field': Field(types.String)})
+    return ConfigDefinition.config_dict(
+        'SingleRequiredField', {'string_field': Field(types.String)}
+    )
 
 
 def _multiple_required_fields_config_dict():
     return ConfigDefinition.config_dict(
-        {
+        'MultipleRequiredFields', {
             'field_one': Field(types.String),
             'field_two': Field(types.String),
         }
@@ -57,7 +64,9 @@ def _multiple_required_fields_config_dict():
 
 
 def _single_optional_string_config_dict():
-    return ConfigDefinition.config_dict({'optional_field': Field(types.String, is_optional=True)})
+    return ConfigDefinition.config_dict(
+        'SingleOptionalString', {'optional_field': Field(types.String, is_optional=True)}
+    )
 
 
 def _single_optional_string_field_config_dict_with_default():
@@ -66,12 +75,15 @@ def _single_optional_string_field_config_dict_with_default():
         is_optional=True,
         default_value='some_default',
     )
-    return ConfigDefinition.config_dict({'optional_field': optional_field_def})
+    return ConfigDefinition.config_dict(
+        'SingleOptionalStringWithDefault',
+        {'optional_field': optional_field_def},
+    )
 
 
 def _mixed_required_optional_string_config_dict_with_default():
     return ConfigDefinition.config_dict(
-        {
+        'MixedRequired', {
             'optional_arg': Field(
                 types.String,
                 is_optional=True,
@@ -218,11 +230,14 @@ def test_mixed_args_passing():
 def _single_nested_config():
     return ConfigDefinition(
         config_type=types.ConfigDictionary(
-            {
+            'ParentType', {
                 'nested':
-                Field(dagster_type=types.ConfigDictionary({
-                    'int_field': Field(types.Int)
-                })),
+                Field(
+                    dagster_type=types.ConfigDictionary(
+                        'NestedType',
+                        {'int_field': Field(types.Int)},
+                    )
+                ),
             }
         )
     )
@@ -231,17 +246,16 @@ def _single_nested_config():
 def _nested_optional_config_with_default():
     return ConfigDefinition(
         config_type=types.ConfigDictionary(
-            {
+            'ParentType', {
                 'nested':
                 Field(
                     dagster_type=types.ConfigDictionary(
-                        {
-                            'int_field': Field(
-                                types.Int,
-                                is_optional=True,
-                                default_value=3,
-                            )
-                        }
+                        'NestedType',
+                        {'int_field': Field(
+                            types.Int,
+                            is_optional=True,
+                            default_value=3,
+                        )}
                     )
                 ),
             }
@@ -250,20 +264,19 @@ def _nested_optional_config_with_default():
 
 
 def _nested_optional_config_with_no_default():
+    nested_type = types.ConfigDictionary(
+        'NestedType',
+        {
+            'int_field': Field(
+                types.Int,
+                is_optional=True,
+            ),
+        },
+    )
     return ConfigDefinition(
         config_type=types.ConfigDictionary(
-            {
-                'nested':
-                Field(
-                    dagster_type=types.
-                    ConfigDictionary({
-                        'int_field': Field(
-                            types.Int,
-                            is_optional=True,
-                        )
-                    })
-                ),
-            }
+            'ParentType',
+            {'nested': Field(dagster_type=nested_type)},
         )
     )
 

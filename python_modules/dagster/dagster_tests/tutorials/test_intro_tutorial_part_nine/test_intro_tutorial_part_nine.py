@@ -4,7 +4,23 @@ from logging import DEBUG
 
 import pytest
 
-from dagster import *
+from dagster import (
+    ConfigDefinition,
+    DagsterTypeError,
+    DependencyDefinition,
+    ExecutionContext,
+    Field,
+    InputDefinition,
+    OutputDefinition,
+    PipelineContextDefinition,
+    PipelineDefinition,
+    RepositoryDefinition,
+    config,
+    execute_pipeline,
+    lambda_solid,
+    solid,
+    types,
+)
 
 
 class PublicCloudConn:
@@ -187,8 +203,12 @@ def define_part_nine_final():
                 context_fn=lambda info: ExecutionContext.console_logging(
                     resources=PartNineResources(PublicCloudStore(info.config['credentials']))
                 ),
-                config_def=ConfigDefinition(config_type=types.ConfigDictionary({
-                    'credentials': Field(types.ConfigDictionary({
+                config_def=ConfigDefinition(config_type=types.ConfigDictionary(
+                    name='CloudConfigDict',
+                    fields={
+                    'credentials': Field(types.ConfigDictionary(
+                        name='CredentialsConfigDict',
+                        fields={
                         'user' : Field(types.String),
                         'pass' : Field(types.String),
                     })),

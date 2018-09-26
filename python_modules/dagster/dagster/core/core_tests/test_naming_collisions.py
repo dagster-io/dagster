@@ -17,6 +17,8 @@ from dagster import (
 
 from dagster.core.test_utils import single_output_transform
 
+SingleValueDict = types.ConfigDictionary('SingleValueDict', {'value': Field(types.String)})
+
 
 def define_pass_value_solid(name, description=None):
     check.str_param(name, 'name')
@@ -30,9 +32,7 @@ def define_pass_value_solid(name, description=None):
         description=description,
         inputs=[],
         outputs=[OutputDefinition(types.String)],
-        config_def=ConfigDefinition.config_dict({
-            'value': Field(types.String)
-        }),
+        config_def=ConfigDefinition(SingleValueDict),
         transform_fn=_value_t_fn,
     )
 

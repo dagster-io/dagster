@@ -20,6 +20,7 @@ from .errors import DagsterInvalidDefinitionError
 from .execution_context import ExecutionContext
 
 from .types import (
+    ConfigDictionary,
     DagsterType,
     Field,
 )
@@ -133,6 +134,18 @@ class PipelineContextDefinition(object):
         self.description = description
 
 
+DefaultContextConfigDict = ConfigDictionary(
+    'DefaultContextConfigDict',
+    {
+        'log_level': Field(
+            dagster_type=types.String,
+            is_optional=True,
+            default_value='INFO',
+        ),
+    },
+)
+
+
 def _default_pipeline_context_definitions():
     def _default_context_fn(info):
         log_level = level_from_string(info.config['log_level'])
@@ -142,15 +155,7 @@ def _default_pipeline_context_definitions():
         return context
 
     default_context_def = PipelineContextDefinition(
-        config_def=ConfigDefinition.config_dict(
-            {
-                'log_level': Field(
-                    dagster_type=types.String,
-                    is_optional=True,
-                    default_value='INFO',
-                )
-            }
-        ),
+        config_def=ConfigDefinition(DefaultContextConfigDict),
         context_fn=_default_context_fn,
     )
     return {DEFAULT_CONTEXT_NAME: default_context_def}
@@ -508,6 +513,44 @@ def _validate_dependency_structure(name, pipeline_solid_dict, dependency_structu
                 raise DagsterInvalidDefinitionError(error_msg)
 
 
+def _gather_all_types(solids, context_definitions):
+    check.list_param(solids, 'solids', SolidDefinition)
+    check.dict_param(
+        context_definitions,
+        'context_definitions',
+        key_type=str,
+        value_type=PipelineContextDefinition,
+    )
+
+    for solid in solids:
+        for dagster_type in solid.iterate_types():
+            yield dagster_type
+
+    for context_definition in context_definitions.values():
+        if context_definition.config_def:
+            for dagster_type in context_definition.config_def.config_type.iterate_types():
+                yield dagster_type
+
+
+def construct_type_dictionary(solids, context_definitions):
+    type_dict = {}
+    all_types = list(_gather_all_types(solids, context_definitions))
+    for dagster_type in all_types:
+        name = dagster_type.name
+        if name in type_dict:
+            if dagster_type is not type_dict[name]:
+                raise DagsterInvalidDefinitionError(
+                    (
+                        'Type names must be unique. You have construct two instances of types '
+                        'with the same name {name} but have different instances'.format(name=name)
+                    )
+                )
+        else:
+            type_dict[dagster_type.name] = dagster_type
+
+    return type_dict
+
+
 class PipelineDefinition(object):
     '''A instance of a PipelineDefinition represents a pipeline in dagster.
 
@@ -547,7 +590,12 @@ class PipelineDefinition(object):
     '''
 
     def __init__(
-        self, solids, name=None, description=None, context_definitions=None, dependencies=None
+        self,
+        solids,
+        name=None,
+        description=None,
+        context_definitions=None,
+        dependencies=None,
     ):
         '''
         Args:
@@ -585,6 +633,7 @@ class PipelineDefinition(object):
 
         self._solid_dict = pipeline_solid_dict
         self.dependency_structure = dependency_structure
+        self._type_dict = construct_type_dictionary(solids, self.context_definitions)
 
     @staticmethod
     def create_single_solid_pipeline(pipeline, solid_name, injected_solids=None):
@@ -721,6 +770,14 @@ class PipelineDefinition(object):
         '''
         check.str_param(name, 'name')
         return self._solid_dict[name]
+
+    def has_type(self, name):
+        check.str_param(name, 'name')
+        return name in self._type_dict
+
+    def type_named(self, name):
+        check.str_param(name, 'name')
+        return self._type_dict[name]
 
 
 class ExpectationResult(object):
@@ -940,7 +997,7 @@ class ConfigDefinition(object):
     '''
 
     @staticmethod
-    def config_dict(field_dict):
+    def config_dict(name, field_dict):
         '''Shortcut to create a dictionary based config definition.
 
 
@@ -957,7 +1014,7 @@ class ConfigDefinition(object):
              })
 
         '''
-        return ConfigDefinition(types.ConfigDictionary(field_dict))
+        return ConfigDefinition(types.ConfigDictionary(name, field_dict))
 
     def __init__(self, config_type=types.Any, description=None):
         '''Construct a ConfigDefinition
@@ -1058,6 +1115,19 @@ class SolidDefinition(object):
     def output_def_named(self, name):
         check.str_param(name, 'name')
         return self._output_dict[name]
+
+    def iterate_types(self):
+        for input_def in self.input_defs:
+            for dagster_type in input_def.dagster_type.iterate_types():
+                yield dagster_type
+
+        for output_def in self.output_defs:
+            for dagster_type in output_def.dagster_type.iterate_types():
+                yield dagster_type
+
+        if self.config_def:
+            for dagster_type in self.config_def.config_type.iterate_types():
+                yield dagster_type
 
 
 def _create_adjacency_lists(solids, dep_structure):
