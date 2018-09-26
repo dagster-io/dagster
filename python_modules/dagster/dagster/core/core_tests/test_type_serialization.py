@@ -1,9 +1,13 @@
 import pickle
 import os
 import uuid
-from dagster import types
 
-TempFileStore = types.TempFileStore
+import pandas as pd
+
+from dagster import types
+from dagster.pandas import DataFrame
+
+# TempFileStore = types.TempFileStore
 
 
 def roundtrip(value):
@@ -35,11 +39,34 @@ def test_pickle():
     assert roundtrip('foo') == 'foo'
 
 
+from collections import namedtuple
+SomeTuple = namedtuple('SomeTuple', 'foo')
+
+
+def test_namedtuple_pickle():
+
+    value = SomeTuple(foo='bar')
+    assert roundtrip(value) == value
+
+
 def test_basic_serialization_string():
     assert roundtrip_typed_value('foo', types.String)
 
 
 def test_basic_serialization():
-    assert roundtrip_typed_value(1, types.Int)
-    assert roundtrip_typed_value(True, types.Bool)
-    assert roundtrip_typed_value({'bar': 'foo'}, types.Dict)
+    assert roundtrip_typed_value(1, types.Int) == 1
+    assert roundtrip_typed_value(True, types.Bool) is True
+    assert roundtrip_typed_value({'bar': 'foo'}, types.Dict) == {'bar': 'foo'}
+
+
+def test_pandasmeta_serialization():
+    from dagster.pandas import DataFrameMeta
+
+    value = DataFrameMeta(format='csv', path='/tmp/some_path.csv')
+    assert roundtrip(value) == value
+
+
+def test_basic_pandas():
+    df = pd.DataFrame({'a': [1, 2], 'b': [3, 4]})
+    out_df = roundtrip_typed_value(df, DataFrame)
+    assert out_df.equals(df)

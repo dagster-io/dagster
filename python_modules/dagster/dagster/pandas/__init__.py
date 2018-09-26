@@ -1,5 +1,6 @@
-from __future__ import (absolute_import, division, print_function, unicode_literals)
-from builtins import *  # pylint: disable=W0622,W0401
+from collections import namedtuple
+import pickle
+import tempfile
 
 import pandas as pd
 
@@ -15,17 +16,37 @@ from dagster import (
     types,
 )
 
-
-def _create_dataframe_type():
-    return types.PythonObjectType(
-        name='PandasDataFrame',
-        python_type=pd.DataFrame,
-        description='''Two-dimensional size-mutable, potentially heterogeneous
-tabular data structure with labeled axes (rows and columns). See http://pandas.pydata.org/''',
-    )
+DataFrameMeta = namedtuple('DataFrameMeta', 'format path')
 
 
-DataFrame = _create_dataframe_type()
+class _DataFrameType(types.PythonObjectType):
+    def __init__(self):
+        super(_DataFrameType, self).__init__(
+            name='PandasDataFrame',
+            python_type=pd.DataFrame,
+            description='''Two-dimensional size-mutable, potentially heterogeneous
+    tabular data structure with labeled axes (rows and columns). See http://pandas.pydata.org/''',
+        )
+
+    def serialize_value(self, ff, value):
+        check.inst_param(value, 'value', pd.DataFrame)
+
+        csv_path = tempfile.NamedTemporaryFile(mode='w', delete=False)
+        value.to_csv(csv_path.name, index=False)
+        df_meta = DataFrameMeta(format='csv', path=csv_path.name)
+        pickle.dump(df_meta, ff)
+
+    def deserialize_value(self, ff):
+        df_meta = pickle.load(ff)
+        check.inst(df_meta, DataFrameMeta)
+
+        if df_meta.format == 'csv':
+            return pd.read_csv(df_meta.path)
+        else:
+            raise Exception('unsupported')
+
+
+DataFrame = _DataFrameType()
 
 LoadDataFrameConfigDict = types.ConfigDictionary(
     'LoadDataFrameConfigDict',

@@ -60,6 +60,7 @@ class DagsterType(object):
         yield self
 
     def serialize_value(self, ff, value):
+        # Probably should force calling code to call evaluate value?
         pickle.dump(self.evaluate_value(value), ff)
 
     def deserialize_value(self, ff):
@@ -139,12 +140,6 @@ class PythonObjectType(UncoercedTypeMixin, DagsterType):
 class _DagsterStringType(DagsterScalarType):
     def is_python_valid_value(self, value):
         return nullable_isinstance(value, string_types)
-
-    # def serialize_value(self, ff, value):
-    #     ff.write(self.evaluate_value(value).encode('utf-8'))
-
-    # def deserialize_value(self, ff):
-    #     return ff.read().decode('utf-8')
 
 
 class _DagsterIntType(DagsterScalarType):
