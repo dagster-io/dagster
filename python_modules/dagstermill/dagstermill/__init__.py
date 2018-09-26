@@ -225,10 +225,10 @@ def _dm_solid_transform(name, notebook_path):
     do_cleanup = False  # for now
 
     def _t_fn(info, inputs):
-        if not os.path.exists('/tmp/dagstermill/'):
-            os.mkdir('/tmp/dagstermill/')
+        base_dir = '/tmp/dagstermill/output_notebooks'
+        os.makedirs(base_dir, exist_ok=True)
 
-        temp_path = '/tmp/dagstermill/{prefix}-out.ipynb'.format(prefix=str(uuid.uuid4()))
+        temp_path = os.path.join(base_dir, '{prefix}-out.ipynb'.format(prefix=str(uuid.uuid4())))
 
         try:
             _source_nb = pm.execute_notebook(

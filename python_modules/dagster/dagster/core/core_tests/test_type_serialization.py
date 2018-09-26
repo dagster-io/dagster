@@ -8,10 +8,14 @@ from dagster import types
 from dagster.pandas import DataFrame
 
 
-def roundtrip(value):
+def get_unittest_path():
     base_dir = '/tmp/dagster/scratch/unittests/{uuid}'.format(uuid=str(uuid.uuid4()))
-    os.mkdir(base_dir)
-    full_path = os.path.join(base_dir, 'value.p')
+    os.makedirs(base_dir, exist_ok=True)
+    return os.path.join(base_dir, 'value.p')
+
+
+def roundtrip(value):
+    full_path = get_unittest_path()
 
     with open(full_path, 'wb') as wf:
         pickle.dump(value, wf)
@@ -21,9 +25,7 @@ def roundtrip(value):
 
 
 def roundtrip_typed_value(value, dagster_type):
-    base_dir = '/tmp/dagster/scratch/unittests/{uuid}'.format(uuid=str(uuid.uuid4()))
-    os.mkdir(base_dir)
-    full_path = os.path.join(base_dir, 'value.p')
+    full_path = get_unittest_path()
 
     with open(full_path, 'wb') as wf:
         dagster_type.serialize_value(wf, value)
