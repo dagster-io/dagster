@@ -20,6 +20,7 @@ from .errors import DagsterInvalidDefinitionError
 from .execution_context import ExecutionContext
 
 from .types import (
+    ConfigDictionary,
     DagsterType,
     Field,
 )
@@ -133,6 +134,18 @@ class PipelineContextDefinition(object):
         self.description = description
 
 
+DefaultContextConfigDict = ConfigDictionary(
+    'DefaultContextConfigDict',
+    {
+        'log_level': Field(
+            dagster_type=types.String,
+            is_optional=True,
+            default_value='INFO',
+        ),
+    },
+)
+
+
 def _default_pipeline_context_definitions():
     def _default_context_fn(info):
         log_level = level_from_string(info.config['log_level'])
@@ -142,15 +155,7 @@ def _default_pipeline_context_definitions():
         return context
 
     default_context_def = PipelineContextDefinition(
-        config_def=ConfigDefinition.config_dict(
-            {
-                'log_level': Field(
-                    dagster_type=types.String,
-                    is_optional=True,
-                    default_value='INFO',
-                )
-            }
-        ),
+        config_def=ConfigDefinition(DefaultContextConfigDict),
         context_fn=_default_context_fn,
     )
     return {DEFAULT_CONTEXT_NAME: default_context_def}
@@ -940,7 +945,7 @@ class ConfigDefinition(object):
     '''
 
     @staticmethod
-    def config_dict(field_dict):
+    def config_dict(name, field_dict):
         '''Shortcut to create a dictionary based config definition.
 
 
@@ -957,7 +962,7 @@ class ConfigDefinition(object):
              })
 
         '''
-        return ConfigDefinition(types.ConfigDictionary(field_dict))
+        return ConfigDefinition(types.ConfigDictionary(name, field_dict))
 
     def __init__(self, config_type=types.Any, description=None):
         '''Construct a ConfigDefinition

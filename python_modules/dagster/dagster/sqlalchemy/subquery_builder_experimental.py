@@ -49,6 +49,13 @@ class DagsterSqlTableExpression(DagsterSqlExpression):
         return self._table_name
 
 
+CreateTableConfigDict = types.ConfigDictionary(
+    'CreateTableConfigDict', {
+        'table_name': Field(types.String),
+    }
+)
+
+
 def define_create_table_solid(name):
     def _materialization_fn(info, inputs):
         sql_expr = inputs['expr']
@@ -64,9 +71,7 @@ def define_create_table_solid(name):
         inputs=[InputDefinition('expr')],
         outputs=[],
         transform_fn=_materialization_fn,
-        config_def=ConfigDefinition.config_dict({
-            'table_name': Field(types.String),
-        }),
+        config_def=ConfigDefinition(CreateTableConfigDict),
     )
 
 

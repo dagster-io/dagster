@@ -27,6 +27,20 @@ tabular data structure with labeled axes (rows and columns). See http://pandas.p
 
 DataFrame = _create_dataframe_type()
 
+LoadDataFrameConfigDict = types.ConfigDictionary(
+    'LoadDataFrameConfigDict',
+    {
+        'path': Field(types.Path),
+    },
+)
+
+WriteDataFrameConfigDict = types.ConfigDictionary(
+    'WriteDataFrameConfigDict',
+    {
+        'path': Field(types.Path),
+    },
+)
+
 
 def load_csv_solid(name):
     check.str_param(name, 'name')
@@ -39,9 +53,7 @@ def load_csv_solid(name):
         inputs=[],
         outputs=[OutputDefinition(DataFrame)],
         transform_fn=_t_fn,
-        config_def=ConfigDefinition.config_dict({
-            'path': Field(types.Path),
-        }),
+        config_def=ConfigDefinition(LoadDataFrameConfigDict),
     )
 
 
@@ -53,9 +65,7 @@ def to_csv_solid(name):
         name=name,
         inputs=[InputDefinition('df', DataFrame)],
         outputs=[],
-        config_def=ConfigDefinition.config_dict({
-            'path': Field(types.Path)
-        }),
+        config_def=ConfigDefinition(WriteDataFrameConfigDict),
         transform_fn=_t_fn,
     )
 
@@ -68,8 +78,6 @@ def to_parquet_solid(name):
         name=name,
         inputs=[InputDefinition('df', DataFrame)],
         outputs=[],
-        config_def=ConfigDefinition.config_dict({
-            'path': Field(types.Path)
-        }),
+        config_def=ConfigDefinition(WriteDataFrameConfigDict),
         transform_fn=_t_fn,
     )

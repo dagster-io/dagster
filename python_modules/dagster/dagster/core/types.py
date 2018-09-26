@@ -211,9 +211,9 @@ class ConfigDictionary(DagsterCompositeType):
     Arguments:
       fields (dict): dictonary of :py:class:`Field` objects keyed by name'''
 
-    def __init__(self, fields):
+    def __init__(self, name, fields):
         super(ConfigDictionary, self).__init__(
-            'ConfigDictionary',
+            name,
             fields,
             lambda val: val,
             self.__doc__,

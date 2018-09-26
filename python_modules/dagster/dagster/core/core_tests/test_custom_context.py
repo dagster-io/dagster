@@ -68,14 +68,15 @@ def test_default_value():
             'custom_one':
             PipelineContextDefinition(
                 config_def=ConfigDefinition.config_dict(
+                    'CustomOneDict',
                     {
                         'field_one':
                         Field(
                             dagster_type=types.String,
                             is_optional=True,
                             default_value='heyo',
-                        )
-                    }
+                        ),
+                    },
                 ),
                 context_fn=lambda info: ExecutionContext(resources=info.config),
             ),
@@ -98,18 +99,16 @@ def test_custom_contexts():
             'custom_one':
             PipelineContextDefinition(
                 config_def=ConfigDefinition.config_dict(
-                    {
-                        'field_one': Field(dagster_type=types.String)
-                    }
+                    'CustomOneDict',
+                    {'field_one': Field(dagster_type=types.String)},
                 ),
                 context_fn=lambda info: ExecutionContext(resources=info.config),
             ),
             'custom_two':
             PipelineContextDefinition(
                 config_def=ConfigDefinition.config_dict(
-                    {
-                        'field_one': Field(dagster_type=types.String)
-                    }
+                    'CustomTwoDict',
+                    {'field_one': Field(dagster_type=types.String)},
                 ),
                 context_fn=lambda info: ExecutionContext(resources=info.config),
             )
@@ -151,9 +150,7 @@ def test_yield_context():
             'custom_one':
             PipelineContextDefinition(
                 config_def=ConfigDefinition.config_dict(
-                    {
-                        'field_one': Field(dagster_type=types.String)
-                    }
+                    'CustomOneDict', {'field_one': Field(dagster_type=types.String)}
                 ),
                 context_fn=_yield_context,
             ),
@@ -203,9 +200,9 @@ def test_invalid_context():
         context_definitions={
             'default':
             PipelineContextDefinition(
-                config_def=ConfigDefinition.config_dict({
-                    'string_field': Field(types.String)
-                }),
+                config_def=ConfigDefinition.config_dict(
+                    'SingleStringDict', {'string_field': Field(types.String)}
+                ),
                 context_fn=lambda info: info.config,
             )
         }
