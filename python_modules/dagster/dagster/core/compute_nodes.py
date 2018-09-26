@@ -632,7 +632,8 @@ def create_config_value(execution_info, pipeline_solid):
             raise DagsterInvariantViolationError(
                 (
                     'Solid {solid} was provided {config_input} but does not take config'.format(
-                        solid=solid_def.name, config_input=repr(config_input)
+                        solid=solid_def.name,
+                        config_input=repr(config_input),
                     )
                 )
             )
