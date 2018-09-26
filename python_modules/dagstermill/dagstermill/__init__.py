@@ -18,6 +18,7 @@ from dagster import (
     Result,
     SolidDefinition,
     check,
+    types,
 )
 
 # magic incantation for syncing up notebooks to enclosing virtual environment.
@@ -98,7 +99,8 @@ class Manager:
         if inputs in self.cache:
             return self.cache[inputs]
 
-        ddict = deserialize_dm_object(inputs)
+        ddict = deserialize_inputs(inputs, self.solid_def.input_defs if self.solid_def else None)
+        # ddict = deserialize_dm_object(inputs)
         self.cache[inputs] = self._typecheck_evaluate_inputs(ddict)
         return ddict
 
@@ -186,17 +188,41 @@ def serialize_dm_object(dm_object):
     return base64.b64encode(pickle.dumps(dm_object)).decode('ascii')
 
 
-def define_dagstermill_solid(
-    name,
-    notebook_path,
-    inputs=None,
-    outputs=None,
-    config_def=None,
-):
+import json
+
+
+def serialize_inputs(inputs, input_defs):
+    type_values = {}
+    input_def_dict = {inp.name: inp for inp in input_defs} if input_defs else None
+    for input_name, input_value in inputs.items():
+        dagster_type = input_def_dict[input_name].dagster_type if input_defs else types.Any
+        type_value = dagster_type.create_serializable_type_value(input_value)
+        type_values[input_name] = type_value
+
+    return serialize_dm_object(type_values)
+    # return json.dumps(type_values)
+    # return serialize_dm_object(inputs)
+
+
+def deserialize_inputs(inputs_str, input_defs):
+    type_values = deserialize_dm_object(inputs_str)
+    input_def_dict = {inp.name: inp for inp in input_defs} if input_defs else None
+    inputs = {}
+    for name, type_value in type_values.items():
+        dagster_type = input_def_dict[name].dagster_type if input_defs else types.Any
+        inputs[name] = dagster_type.deserialize_from_type_value(type_value)
+        # if input_defs:
+        #     value = input_def_dict[name].dagster_type.deserialize_from_type_value(type_value)
+        #     inputs[name] = value
+        # else:
+        #     value = types.Any.
+        # pass
+    return inputs
+
+
+def _dm_solid_transform(name, notebook_path):
     check.str_param(name, 'name')
     check.str_param(notebook_path, 'notebook_path')
-    inputs = check.opt_list_param(inputs, 'input_defs', of_type=InputDefinition)
-    outputs = check.opt_list_param(outputs, 'output_defs', of_type=OutputDefinition)
 
     do_cleanup = False  # for now
 
@@ -211,7 +237,7 @@ def define_dagstermill_solid(
                 notebook_path,
                 temp_path,
                 parameters=dict(
-                    inputs=serialize_dm_object(inputs),
+                    inputs=serialize_inputs(inputs, info.solid_def.input_defs),
                     config=serialize_dm_object(info.config),
                 ),
             )
@@ -236,10 +262,25 @@ def define_dagstermill_solid(
             if do_cleanup and os.path.exists(temp_path):
                 os.remove(temp_path)
 
+    return _t_fn
+
+
+def define_dagstermill_solid(
+    name,
+    notebook_path,
+    inputs=None,
+    outputs=None,
+    config_def=None,
+):
+    check.str_param(name, 'name')
+    check.str_param(notebook_path, 'notebook_path')
+    inputs = check.opt_list_param(inputs, 'input_defs', of_type=InputDefinition)
+    outputs = check.opt_list_param(outputs, 'output_defs', of_type=OutputDefinition)
+
     return SolidDefinition(
         name=name,
         inputs=inputs,
-        transform_fn=_t_fn,
+        transform_fn=_dm_solid_transform(name, notebook_path),
         outputs=outputs,
         config_def=config_def,
         description='This solid is backed by the notebook at {path}'.format(path=notebook_path),

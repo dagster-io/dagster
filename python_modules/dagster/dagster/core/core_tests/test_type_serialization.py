@@ -7,8 +7,6 @@ import pandas as pd
 from dagster import types
 from dagster.pandas import DataFrame
 
-# TempFileStore = types.TempFileStore
-
 
 def roundtrip(value):
     base_dir = f'/tmp/dagster/scratch/unittests/{str(uuid.uuid4())}'

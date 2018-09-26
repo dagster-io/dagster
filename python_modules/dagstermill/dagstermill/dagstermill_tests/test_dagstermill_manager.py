@@ -32,7 +32,7 @@ def test_basic_get_in_memory_inputs():
 
 def test_basic_get_serialized_inputs():
     manager = dm.define_manager()
-    inputs = dm.serialize_dm_object(dict(a=1, b=2))
+    inputs = dm.serialize_inputs(dict(a=1, b=2), input_defs=None)
     assert manager.get_input(inputs, 'a') == 1
     assert manager.get_input(inputs, 'b') == 2
 
@@ -114,3 +114,18 @@ def test_config_typecheck():
 
     with pytest.raises(dm.DagstermillError, match='Config for solid stuff failed type check'):
         manager.define_config('2k3j4k3')
+
+
+def test_serialize_inputs():
+    output = dm.serialize_inputs(
+        {
+            'foo': 'value_for_foo',
+            'bar': 123
+        },
+        [
+            InputDefinition('foo'),
+            InputDefinition('bar'),
+        ],
+    )
+
+    print(repr(output))

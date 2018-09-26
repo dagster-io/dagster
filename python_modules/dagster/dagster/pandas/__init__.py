@@ -28,16 +28,14 @@ class _DataFrameType(types.PythonObjectType):
     tabular data structure with labeled axes (rows and columns). See http://pandas.pydata.org/''',
         )
 
-    def serialize_value(self, ff, value):
-        check.inst_param(value, 'value', pd.DataFrame)
-
+    def create_serializable_type_value(self, value):
         csv_path = tempfile.NamedTemporaryFile(mode='w', delete=False)
         value.to_csv(csv_path.name, index=False)
         df_meta = DataFrameMeta(format='csv', path=csv_path.name)
-        pickle.dump(df_meta, ff)
+        return types.SerializedTypeValue(name=self.name, value=df_meta)
 
-    def deserialize_value(self, ff):
-        df_meta = pickle.load(ff)
+    def deserialize_from_type_value(self, type_value):
+        df_meta = type_value.value
         check.inst(df_meta, DataFrameMeta)
 
         if df_meta.format == 'csv':

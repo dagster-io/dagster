@@ -22,6 +22,10 @@ from dagster.core.errors import DagsterEvaluateValueError
 #         with open(new_path, 'wb') as ff:
 #             yield TempFileInfo(file=ff, path=new_path)
 
+from collections import namedtuple
+
+SerializedTypeValue = namedtuple('SerializedTypeValue', 'name value')
+
 
 class DagsterType(object):
     '''Base class for Dagster Type system. Should be inherited by a subclass.
@@ -61,10 +65,21 @@ class DagsterType(object):
 
     def serialize_value(self, ff, value):
         # Probably should force calling code to call evaluate value?
-        pickle.dump(self.evaluate_value(value), ff)
+        # type_value = TypeValue(self.name, self.evaluate_value(value))
+        type_value = self.create_serializable_type_value(self.evaluate_value(value))
+        pickle.dump(type_value, ff)
+
+    def create_serializable_type_value(self, value):
+        return SerializedTypeValue(self.name, value)
+
+    def deserialize_from_type_value(self, type_value):
+        return type_value.value
 
     def deserialize_value(self, ff):
-        return pickle.load(ff)
+        type_value = pickle.load(ff)
+        if type_value.name != self.name:
+            raise Exception('type mistmatch')
+        return self.deserialize_from_type_value(type_value)
 
 
 class UncoercedTypeMixin(object):
