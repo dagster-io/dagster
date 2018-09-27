@@ -32,7 +32,7 @@ export default class SidebarPipelineInfo extends React.Component<
             <SectionItemContainer>
               <SectionItemHeader>{context.name}</SectionItemHeader>
               <Description description={context.description} />
-              <Config config={context.config} />
+              {context.config && <Config config={context.config} />}
             </SectionItemContainer>
           ))}
         </SidebarSection>
