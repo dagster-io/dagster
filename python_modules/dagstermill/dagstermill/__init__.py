@@ -226,7 +226,8 @@ def _dm_solid_transform(name, notebook_path):
 
     def _t_fn(info, inputs):
         base_dir = '/tmp/dagstermill/output_notebooks'
-        os.makedirs(base_dir, exist_ok=True)
+        if not os.path.exists(base_dir):
+            os.makedirs(base_dir)
 
         temp_path = os.path.join(base_dir, '{prefix}-out.ipynb'.format(prefix=str(uuid.uuid4())))
 

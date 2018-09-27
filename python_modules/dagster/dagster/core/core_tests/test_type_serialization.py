@@ -10,7 +10,8 @@ from dagster.pandas import DataFrame
 
 def get_unittest_path():
     base_dir = '/tmp/dagster/scratch/unittests/{uuid}'.format(uuid=str(uuid.uuid4()))
-    os.makedirs(base_dir, exist_ok=True)
+    if not os.path.exists(base_dir):
+        os.makedirs(base_dir)
     return os.path.join(base_dir, 'value.p')
 
 
