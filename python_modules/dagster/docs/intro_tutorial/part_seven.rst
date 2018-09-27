@@ -1,9 +1,6 @@
 Pipeline Execution
 ------------------
 
-So far we've been driving execution of pipelines from python APIs. Now it is
-time to instead drive these from the command line.
-
 Similar to the the part six tutorial, we are going to create a pipeline, a repository,
 and a yaml file so that the CLI tool can know about the repository.
 
@@ -48,9 +45,7 @@ And now the repository file:
         fn: define_part_seven_repo
 
 Now we want to execute it from the command line. In order to do that we need to create a yaml file
-with all the elements we need to create an environment. The form of this file is very similar
-to the in-memory ``config.Environment`` and related objects that were used in previous steps
-in the tutorial.
+with all the elements we need to create an environment. 
 
 .. code-block:: yaml
 
@@ -63,7 +58,8 @@ in the tutorial.
             config:
                 word: bar
 
-With these elements in place we can now drive execution from the CLI
+With these elements in place we can now drive execution from the CLI specifying only the pipeline name.
+The tool loads the repository using the repository.yml file and looks up the pipeline by name.
 
 .. code-block:: sh
 
