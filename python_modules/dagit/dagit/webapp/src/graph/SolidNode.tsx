@@ -93,7 +93,7 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
           <Port filled={true} />
           {width == 0 &&
             !this.props.minified && (
-              <InputOutputName>{input!.definition.name}</InputOutputName>
+              <InputOutputName>{input!.definition.name}:</InputOutputName>
             )}
           {width == 0 &&
             !this.props.minified && (

@@ -3,17 +3,16 @@ import gql from "graphql-tag";
 import styled from "styled-components";
 import { History } from "history";
 import { Colors } from "@blueprintjs/core";
-
 import {
   PipelinesFragment,
   PipelinesFragment_solids
 } from "./types/PipelinesFragment";
-import Description from "./Description";
-import Config from "./Config";
-import Solid from "./Solid";
 import PipelineGraph from "./graph/PipelineGraph";
 import { getDagrePipelineLayout } from "./graph/getFullSolidLayout";
 import { PanelDivider } from "./PanelDivider";
+import Config from "./Config";
+import SidebarSolidInfo from "./SidebarSolidInfo";
+import SidebarPipelineInfo from "./SidebarPipelineInfo";
 
 interface IPipelineExplorerProps {
   history: History;
@@ -22,7 +21,7 @@ interface IPipelineExplorerProps {
 }
 
 interface IPipelineExplorerState {
-  search: string;
+  filter: string;
   graphVW: number;
 }
 
@@ -48,14 +47,14 @@ export default class PipelineExplorer extends React.Component<
         ...PipelineGraphFragment
       }
 
-      ${Solid.fragments.SolidFragment}
+      ${SidebarSolidInfo.fragments.SolidFragment}
       ${PipelineGraph.fragments.PipelineGraphFragment}
       ${Config.fragments.ConfigFragment}
     `
   };
 
   state = {
-    search: "",
+    filter: "",
     graphVW: 70
   };
 
@@ -71,7 +70,7 @@ export default class PipelineExplorer extends React.Component<
 
   public render() {
     const { pipeline, solid } = this.props;
-    const { search, graphVW } = this.state;
+    const { filter, graphVW } = this.state;
 
     return (
       <PipelinesContainer>
@@ -79,31 +78,28 @@ export default class PipelineExplorer extends React.Component<
           <SearchOverlay>
             <input
               type="text"
-              placeholder="Search..."
-              value={search}
-              onChange={e => this.setState({ search: e.target.value })}
+              placeholder="Filter..."
+              value={filter}
+              onChange={e => this.setState({ filter: e.target.value })}
             />
           </SearchOverlay>
           <PipelineGraph
             pipeline={pipeline}
+            onClickSolid={this.handleClickSolid}
+            onClickBackground={this.handleClickBackground}
             layout={getDagrePipelineLayout(pipeline)}
             selectedSolid={solid}
             highlightedSolids={pipeline.solids.filter(
-              s => search && s.name.includes(search)
+              s => filter && s.name.includes(filter)
             )}
-            onClickSolid={this.handleClickSolid}
-            onClickBackground={this.handleClickBackground}
           />
         </PipelinePanel>
         <PanelDivider onMove={(vw: number) => this.setState({ graphVW: vw })} />
         <RightInfoPanel style={{ width: `${100 - graphVW}vw` }}>
           {solid ? (
-            <Solid solid={solid} key={solid.name} />
+            <SidebarSolidInfo solid={solid} key={solid.name} />
           ) : (
-            <DescriptionWrapper>
-              <h2>{pipeline.name}</h2>
-              <Description description={pipeline ? pipeline.description : ""} />
-            </DescriptionWrapper>
+            <SidebarPipelineInfo pipeline={pipeline} key={pipeline.name} />
           )}
         </RightInfoPanel>
       </PipelinesContainer>
@@ -130,11 +126,6 @@ const RightInfoPanel = styled.div`
   height: 100%;
   overflow-y: scroll;
   background: ${Colors.WHITE};
-`;
-
-const DescriptionWrapper = styled.div`
-  max-width: 500px;
-  padding: 20px;
 `;
 
 const SearchOverlay = styled.div`

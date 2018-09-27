@@ -2,48 +2,28 @@ import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
 import { Link } from "react-router-dom";
-import {
-  H5,
-  H6,
-  Text,
-  Colors,
-  Code,
-  UL,
-  Collapse,
-  Button
-} from "@blueprintjs/core";
-import Config from "./Config";
+import { H6, Text, Code, UL } from "@blueprintjs/core";
 import SolidTypeSignature from "./SolidTypeSignature";
-import TypeWithTooltip from "./TypeWithTooltip";
-import Description from "./Description";
 import { SolidFragment } from "./types/SolidFragment";
+import TypeWithTooltip from "./TypeWithTooltip";
+import {
+  SidebarSection,
+  SidebarTitle,
+  SidebarSubhead,
+  SectionItemHeader,
+  SectionItemContainer
+} from "./SidebarComponents";
+import Description from "./Description";
+import Config from "./Config";
 
-interface ISolidProps {
+interface ISidebarSolidInfoProps {
   solid: SolidFragment;
 }
 
-class Section extends React.Component<{ title: string }, { isOpen: boolean }> {
-  state = {
-    isOpen: true
-  };
-
-  render() {
-    return (
-      <div>
-        <SectionHeader
-          onClick={() => this.setState({ isOpen: !this.state.isOpen })}
-        >
-          {this.props.title}
-        </SectionHeader>
-        <Collapse isOpen={this.state.isOpen}>
-          <SectionInner>{this.props.children}</SectionInner>
-        </Collapse>
-      </div>
-    );
-  }
-}
-
-export default class Solid extends React.Component<ISolidProps, {}> {
+export default class SidebarSolidInfo extends React.Component<
+  ISidebarSolidInfoProps,
+  {}
+> {
   static fragments = {
     SolidFragment: gql`
       fragment SolidFragment on Solid {
@@ -103,8 +83,8 @@ export default class Solid extends React.Component<ISolidProps, {}> {
 
   renderInputs() {
     return this.props.solid.inputs.map((input, i: number) => (
-      <IOItemContainer key={i}>
-        <IOHeader>{input.definition.name}</IOHeader>
+      <SectionItemContainer key={i}>
+        <SectionItemHeader>{input.definition.name}</SectionItemHeader>
         <TypeWrapper>
           <TypeWithTooltip type={input.definition.type} />
         </TypeWrapper>
@@ -128,14 +108,14 @@ export default class Solid extends React.Component<ISolidProps, {}> {
             </li>
           ))}
         </UL>
-      </IOItemContainer>
+      </SectionItemContainer>
     ));
   }
 
   renderOutputs() {
     return this.props.solid.outputs.map((output, i: number) => (
-      <IOItemContainer key={i}>
-        <IOHeader>{output.definition.name}</IOHeader>
+      <SectionItemContainer key={i}>
+        <SectionItemHeader>{output.definition.name}</SectionItemHeader>
         <TypeWrapper>
           <TypeWithTooltip type={output.definition.type} />
         </TypeWrapper>
@@ -151,68 +131,34 @@ export default class Solid extends React.Component<ISolidProps, {}> {
             </li>
           ))}
         </UL>
-      </IOItemContainer>
+      </SectionItemContainer>
     ));
   }
 
   public render() {
     return (
       <div>
-        <SolidHeader>{this.props.solid.name}</SolidHeader>
-        <Section title={"Type Signature"}>
+        <SidebarSubhead>Solid</SidebarSubhead>
+        <SidebarTitle>{this.props.solid.name}</SidebarTitle>
+        <SidebarSection title={"Type Signature"}>
           <SolidTypeSignature solid={this.props.solid} />
-        </Section>
-        <Section title={"Description"}>
+        </SidebarSection>
+        <SidebarSection title={"Description"}>
           <Description description={this.props.solid.definition.description} />
-        </Section>
+        </SidebarSection>
         {this.props.solid.definition.configDefinition && (
-          <Section title={"Config"}>
+          <SidebarSection title={"Config"}>
             <Config config={this.props.solid.definition.configDefinition} />
-          </Section>
+          </SidebarSection>
         )}
-        <Section title={"Inputs"}>{this.renderInputs()}</Section>
-        <Section title={"Outputs"}>{this.renderOutputs()}</Section>
+        <SidebarSection title={"Inputs"}>{this.renderInputs()}</SidebarSection>
+        <SidebarSection title={"Outputs"}>
+          {this.renderOutputs()}
+        </SidebarSection>
       </div>
     );
   }
 }
-
-const SectionHeader = styled.div`
-  padding: 6px;
-  padding-left: 12px;
-  background: linear-gradient(
-    to bottom,
-    ${Colors.LIGHT_GRAY5},
-    ${Colors.LIGHT_GRAY4}
-  );
-  border-top: 1px solid ${Colors.LIGHT_GRAY4};
-  border-bottom: 1px solid ${Colors.LIGHT_GRAY3};
-  color: ${Colors.GRAY1};
-  text-transform: uppercase;
-  font-size: 0.75rem;
-`;
-
-const SectionInner = styled.div`
-  padding: 12px;
-`;
-
-const SolidHeader = styled.h3`
-  font-family: "Source Code Pro", monospace;
-  margin-bottom: 2px;
-  margin-top: 8px;
-  overflow: hidden;
-  padding: 12px;
-  text-overflow: ellipsis;
-`;
-
-const IOHeader = styled.h4`
-  font-family: "Source Code Pro", monospace;
-  margin: 8px 0;
-`;
-
-const IOItemContainer = styled.div`
-  margin-bottom: 10px;
-`;
 
 const TypeWrapper = styled.div`
   margin-bottom: 10px;

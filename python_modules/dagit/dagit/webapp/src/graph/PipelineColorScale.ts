@@ -7,7 +7,7 @@ const PipelineColorScale = scaleOrdinal({
     Colors.TURQUOISE5,
     Colors.TURQUOISE3,
     "#DBE6EE",
-    Colors.ORANGE3,
+    Colors.BLUE3,
     Colors.ORANGE5
   ]
 });

@@ -2,14 +2,17 @@ import * as React from "react";
 import styled from "styled-components";
 import { Colors } from "@blueprintjs/core";
 
-interface DividerProps {
+interface IDividerProps {
   onMove: (vw: number) => void;
 }
-interface DividerState {
+interface IDividerState {
   down: boolean;
 }
 
-export class PanelDivider extends React.Component<DividerProps, DividerState> {
+export class PanelDivider extends React.Component<
+  IDividerProps,
+  IDividerState
+> {
   state = {
     down: false
   };
