@@ -1,3 +1,4 @@
+from collections import namedtuple
 import pickle
 import os
 import uuid
@@ -6,6 +7,8 @@ import pandas as pd
 
 from dagster import types
 from dagster.pandas import DataFrame
+
+SomeTuple = namedtuple('SomeTuple', 'foo')
 
 
 def get_unittest_path():
@@ -38,10 +41,6 @@ def roundtrip_typed_value(value, dagster_type):
 def test_pickle():
     assert roundtrip(1) == 1
     assert roundtrip('foo') == 'foo'
-
-
-from collections import namedtuple
-SomeTuple = namedtuple('SomeTuple', 'foo')
 
 
 def test_namedtuple_pickle():
