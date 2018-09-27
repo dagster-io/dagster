@@ -20,11 +20,15 @@ const AppCache = new InMemoryCache({
       pipeline: (_, args, { getCacheKey }) => {
         return getCacheKey({ __typename: "Pipeline", name: args.name });
       },
-      type: (_, args, { getCacheKey }) => {
-        return getCacheKey({
-          __typename: "Type",
-          name: args.typeName
-        });
+      type: (_, args) => {
+        // That's "IdValue" from 'apollo-utilities'.
+        // Magical thing to make it work with interfaces, getCacheKey gets
+        // incorrect typename and breaks
+        return {
+          type: "id",
+          generated: true,
+          id: `Type.${args.typeName}`
+        };
       }
     }
   },
