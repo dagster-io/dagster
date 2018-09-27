@@ -1,16 +1,24 @@
 import * as React from "react";
 import gql from "graphql-tag";
-import styled from "styled-components";
-import { Card, H5, Code, Colors } from "@blueprintjs/core";
+import styled, { StyledComponentClass } from "styled-components";
+import { Colors } from "@blueprintjs/core";
 import PipelineColorScale from "./PipelineColorScale";
-import { SolidNodeFragment } from "./types/SolidNodeFragment";
-import { IFullSolidLayout } from "./getFullSolidLayout";
+import {
+  SolidNodeFragment,
+  SolidNodeFragment_inputs,
+  SolidNodeFragment_outputs
+} from "./types/SolidNodeFragment";
+import { IFullSolidLayout, ILayout } from "./getFullSolidLayout";
+import { TypeName } from "../TypeWithTooltip";
 
 interface ISolidNodeProps {
   layout: IFullSolidLayout;
   solid: SolidNodeFragment;
-  selected?: boolean;
-  onClick?: (solid: any) => void;
+  minified: boolean;
+  selected: boolean;
+  dim: boolean;
+  onClick?: (solid: string) => void;
+  onDoubleClick?: (solid: string) => void;
 }
 
 export default class SolidNode extends React.Component<ISolidNodeProps> {
@@ -52,122 +60,155 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
 
   handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     if (this.props.onClick) {
       this.props.onClick(this.props.solid.name);
     }
   };
 
-  renderInputs() {
-    return this.props.solid.inputs.map((input, i) => {
-      const {
-        layout: { x, y, width, height }
-      } = this.props.layout.inputs[input.definition.name];
+  handleDoubleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (this.props.onDoubleClick) {
+      this.props.onDoubleClick(this.props.solid.name);
+    }
+  };
+
+  renderIO(
+    ComponentClass: StyledComponentClass<any, any, any>,
+    items: Array<SolidNodeFragment_inputs | SolidNodeFragment_outputs>,
+    layout: { [inputName: string]: { layout: ILayout } }
+  ) {
+    const root = this.props.layout.solid;
+
+    return Object.keys(layout).map((key, i) => {
+      const { x, y, width, height } = layout[key].layout;
+      const input = items.find(o => o.definition.name === key);
 
       return (
-        <foreignObject
+        <ComponentClass
           key={i}
-          x={x - this.props.layout.solid.x}
-          y={y - this.props.layout.solid.y}
-          width={width}
-          height={height}
+          style={{ left: x - root.x, top: y - root.y, height: height }}
         >
-          <Card
-            elevation={3}
-            style={{
-              backgroundColor: PipelineColorScale("input"),
-              height: "100%"
-            }}
-          >
-            <H5>
-              <Code>{input.definition.name}</Code> ({input.definition.type.name}
-              )
-            </H5>
-          </Card>
-        </foreignObject>
-      );
-    });
-  }
-
-  renderOutputs() {
-    return this.props.solid.outputs.map((output, i) => {
-      const {
-        layout: { x, y, width, height }
-      } = this.props.layout.outputs[output.definition.name];
-
-      return (
-        <foreignObject
-          key={i}
-          x={x - this.props.layout.solid.x}
-          y={y - this.props.layout.solid.y}
-          width={width}
-          height={height}
-        >
-          <Card
-            elevation={3}
-            style={{
-              backgroundColor: PipelineColorScale("output"),
-              height: "100%"
-            }}
-          >
-            <H5>
-              <Code>{output.definition.name}</Code> (
-              {output.definition.type.name})
-            </H5>
-          </Card>
-        </foreignObject>
+          <Port filled={true} />
+          {width == 0 &&
+            !this.props.minified && (
+              <InputOutputName>{input!.definition.name}:</InputOutputName>
+            )}
+          {width == 0 &&
+            !this.props.minified && (
+              <TypeName>{input!.definition.type.name}</TypeName>
+            )}
+        </ComponentClass>
       );
     });
   }
 
   renderSelectedBox() {
-    if (this.props.selected) {
-      const width = this.props.layout.solid.width + 200 * 2 + 20;
-      const height = this.props.layout.solid.height + 20;
-      return (
-        <rect
-          x={-10 - 200}
-          y={-10}
-          height={height}
-          width={width}
-          fill="transparent"
-          stroke={Colors.GRAY3}
-          strokeWidth="1"
-          strokeDasharray="4"
-        />
-      );
-    } else {
+    if (!this.props.selected) {
       return null;
     }
+    const { x, y, width, height } = this.props.layout.boundingBox;
+    return (
+      <rect
+        x={x - 10}
+        y={y - 10}
+        width={width + 20}
+        height={height + 20}
+        stroke={Colors.GRAY3}
+        fill="transparent"
+        strokeWidth={this.props.minified ? 3 : 1}
+        strokeDasharray={this.props.minified ? 12 : 4}
+      />
+    );
+  }
+
+  renderSolid() {
+    return (
+      <SolidContainer>
+        <SolidName fontSize={this.props.minified ? 30 : 18}>
+          {this.props.solid.name}
+        </SolidName>
+      </SolidContainer>
+    );
   }
 
   public render() {
+    const { solid, layout } = this.props;
+
     return (
-      <g
-        onClick={this.handleClick}
-        transform={`translate(${this.props.layout.solid.x}, ${
-          this.props.layout.solid.y
-        })`}
-      >
+      <>
         {this.renderSelectedBox()}
         <foreignObject
-          width={this.props.layout.solid.width}
-          height={this.props.layout.solid.height}
+          {...this.props.layout.solid}
+          onClick={this.handleClick}
+          onDoubleClick={this.handleDoubleClick}
+          style={{ opacity: this.props.dim ? 0.3 : 1 }}
         >
-          <Card
-            elevation={2}
-            style={{
-              backgroundColor: PipelineColorScale("solid"),
-              height: "100%"
-            }}
-          >
-            <H5>
-              <Code>{this.props.solid.name}</Code>
-            </H5>
-          </Card>
+          {this.renderSolid()}
+          {this.renderIO(InputContainer, solid.inputs, layout.inputs)}
+          {this.renderIO(OutputContainer, solid.outputs, layout.outputs)}
         </foreignObject>
-        {this.renderInputs()}
-        {this.renderOutputs()}
-      </g>
+      </>
     );
   }
 }
+
+const SolidContainer = styled.div`
+  padding: 12px;
+  border: 1px solid #979797;
+  background-color: ${PipelineColorScale("solid")};
+  height: 100%;
+  margin-top: 0;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+`;
+
+const SolidName = styled.div<{ fontSize: number }>`
+  font-family: "Source Code Pro", monospace;
+  font-weight: 500;
+  font-size: ${props => props.fontSize}px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
+
+const IOContainer = styled.div`
+  padding: 7px;
+  position: absolute;
+  display: flex;
+  align-items: center;
+`;
+
+const InputContainer = styled(IOContainer)`
+  border: 1px solid #979797;
+  background-color: ${PipelineColorScale("input")};
+`;
+
+const OutputContainer = styled(IOContainer)`
+  border: 1px solid #979797;
+  background-color: ${PipelineColorScale("output")};
+`;
+
+const InputOutputName = styled.div`
+  font-family: "Source Code Pro", monospace;
+  font-size: 15px;
+  color: white;
+  overflow: hidden;
+  padding-left: 7px;
+  text-overflow: ellipsis;
+  padding-right: 12px;
+  white-space: nowrap;
+  max-width: 300px;
+`;
+
+const Port = styled.div<{ filled: boolean }>`
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 7px;
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  background: ${props =>
+    props.filled ? "rgba(0, 0, 0, 0.3)" : "rgba(255, 255, 255, 0.3)"};
+`;

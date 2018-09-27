@@ -1,7 +1,7 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
-import { Code, Position, Tooltip, Text } from "@blueprintjs/core";
+import { Tooltip, Text } from "@blueprintjs/core";
 import { TypeWithTooltipFragment } from "./types/TypeWithTooltipFragment";
 
 interface ITypeWithTooltipProps {
@@ -38,7 +38,7 @@ export default class TypeWithTooltip extends React.Component<
   }
 }
 
-const TypeName = styled.code`
+export const TypeName = styled.code`
   background: #d6ecff;
   border: none;
   padding: 1px 4px;

@@ -7,6 +7,7 @@ import App from "./App";
 import AppCache from "./AppCache";
 import "@blueprintjs/core/lib/css/blueprint.css";
 import "@blueprintjs/icons/lib/css/blueprint-icons.css";
+import "@blueprintjs/select/lib/css/blueprint-select.css";
 
 const client = new ApolloClient({
   cache: AppCache,
@@ -42,5 +43,10 @@ injectGlobal`
     margin: 0;
     padding: 0;
     font-family: sans-serif;
+  }
+
+  /* Prevent Blueprint's Select dropdowns from having duplicate icons */
+  .bp3-popover-content {
+    svg[data-icon] { display: none; }
   }
 `;

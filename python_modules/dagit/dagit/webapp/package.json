@@ -5,6 +5,7 @@
   "dependencies": {
     "@blueprintjs/core": "^3.0.1",
     "@blueprintjs/icons": "^3.0.0",
+    "@blueprintjs/select": "^3.2.0",
     "@types/dagre": "^0.7.40",
     "@types/prop-types": "^15.5.4",
     "@types/react-router": "^4.0.30",
@@ -16,11 +17,11 @@
     "@vx/responsive": "^0.0.165",
     "@vx/scale": "^0.0.165",
     "@vx/shape": "^0.0.170",
+    "amator": "^1.1.0",
     "apollo-boost": "^0.1.12",
     "d3-hierarchy": "^1.1.6",
     "dagre": "^0.8.2",
     "graphql-tag": "^2.9.2",
-    "panzoom": "^6.1.3",
     "react": "^16.4.2",
     "react-apollo": "^2.1.9",
     "react-dom": "^16.4.2",
@@ -61,12 +62,20 @@
     "watch-types": "apollo codegen:generate --queries \"./src/**/*.tsx\" --target typescript types --schema ./src/schema.json --watch"
   },
   "jest": {
-    "roots": ["<rootDir>/src"],
+    "roots": [
+      "<rootDir>/src"
+    ],
     "transform": {
       "^.+\\.(ts|tsx)$": "ts-jest",
       "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/jest/fileTransformer.js"
     },
-    "moduleFileExtensions": ["js", "jsx", "json", "ts", "tsx"],
+    "moduleFileExtensions": [
+      "js",
+      "jsx",
+      "json",
+      "ts",
+      "tsx"
+    ],
     "testRegex": "/__tests__/.*\\.test\\.(ts|tsx)$",
     "testURL": "http://localhost"
   }
