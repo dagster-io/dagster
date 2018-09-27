@@ -6,7 +6,7 @@ export default class Page extends React.Component {
   public render() {
     return (
       <>
-        <Navbar>
+        <Navbar style={{ zIndex: 1 }}>
           <Navbar.Group align={Alignment.LEFT}>
             <Navbar.Heading>
               <img src={navBarImage} style={{ height: 34 }} />

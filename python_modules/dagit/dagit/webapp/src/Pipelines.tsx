@@ -2,7 +2,8 @@ import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
 import { History } from "history";
-import { withRouter } from "react-router-dom";
+import { Route } from "react-router";
+import { withRouter, Link } from "react-router-dom";
 import {
   Tabs,
   ITabsProps,
@@ -10,7 +11,10 @@ import {
   NonIdealState,
   Colors
 } from "@blueprintjs/core";
+import { parse as parseQueryString } from "query-string";
 import Pipeline from "./Pipeline";
+import Sidebar from "./Sidebar";
+import TypeExplorerContainer from "./configeditor/TypeExplorerContainer";
 import { PipelinesFragment } from "./types/PipelinesFragment";
 
 interface IPipelinesProps {
@@ -64,6 +68,59 @@ export default class Pipelines extends React.Component<IPipelinesProps, {}> {
     );
   }
 
+  renderSidebar() {
+    if (this.props.selectedPipeline !== null) {
+      const pipeline = this.props.pipelines.find(
+        ({ name }) => name === this.props.selectedPipeline
+      );
+      if (pipeline) {
+        return (
+          <Route
+            children={({ location }) => {
+              if (location.pathname.endsWith("config-editor")) {
+                return null;
+              } else if (location.search) {
+                const search = parseQueryString(location.search);
+                let sidebarContents;
+                if (search.typeExplorer === null) {
+                  sidebarContents = <div />;
+                } else if (search.typeExplorer) {
+                  sidebarContents = (
+                    <TypeExplorerContainer
+                      pipelineName={this.props.selectedPipeline}
+                      typeName={search.typeExplorer}
+                    />
+                  );
+                }
+                if (sidebarContents) {
+                  return (
+                    <Sidebar
+                      onClose={() => {
+                        this.props.history.push(
+                          `/${this.props.selectedPipeline}`
+                        );
+                      }}
+                    >
+                      {sidebarContents}
+                    </Sidebar>
+                  );
+                }
+              }
+
+              return (
+                <OpenSidebarButton to={{ search: "?typeExplorer" }}>
+                  Docs
+                </OpenSidebarButton>
+              );
+            }}
+          />
+        );
+      }
+    }
+
+    return null;
+  }
+
   public render() {
     return (
       <PipelinesContainer>
@@ -76,6 +133,7 @@ export default class Pipelines extends React.Component<IPipelinesProps, {}> {
           {this.renderTabs()}
         </LeftTabs>
         {this.renderPipeline()}
+        {this.renderSidebar()}
       </PipelinesContainer>
     );
   }
@@ -90,4 +148,27 @@ const PipelinesContainer = styled.div`
 // XXX(freiksenet): Some weirdness caused by weird blueprint type hierarchy
 const LeftTabs = styled((Tabs as any) as React.StatelessComponent<ITabsProps>)`
   background: ${Colors.LIGHT_GRAY4};
+`;
+
+const OpenSidebarButton = styled(Link)`
+  position: fixed;
+  right: 0;
+  top: 10%;
+  width: 40px;
+  line-height: 40px;
+  padding: 20px 0;
+  height: auto;
+  background-color: ${Colors.GREEN5};
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-size: 30px;
+  text-transform: uppercase;
+  cursor: pointer;
+  text-decoration: none;
+  color: black;
+
+  &:hover {
+    text-decoration: none;
+    color: black;
+  }
 `;

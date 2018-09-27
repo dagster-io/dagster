@@ -3,6 +3,7 @@ import gql from "graphql-tag";
 import styled from "styled-components";
 import { History } from "history";
 import { Switch, Route, match } from "react-router";
+import { parse as parseQueryString } from "query-string";
 import { Colors } from "@blueprintjs/core";
 import ConfigCodeEditor from "./ConfigCodeEditor";
 import ConfigExplorer from "./ConfigExplorer";
@@ -43,14 +44,20 @@ export default class ConfigEditor extends React.Component<
         <Border />
         <TypeExplorerWrapper>
           <Route
-            path={`${this.props.match.url}/:typeName`}
-            render={({ match }: { match: match<{ typeName: string }> }) => {
-              return (
-                <TypeExplorerContainer
-                  pipelineName={this.props.pipeline.name}
-                  typeName={match.params.typeName}
-                />
-              );
+            children={({ location }) => {
+              if (location.search) {
+                const search = parseQueryString(location.search);
+                if (search.typeExplorer) {
+                  return (
+                    <TypeExplorerContainer
+                      pipelineName={this.props.pipeline.name}
+                      typeName={search.typeExplorer}
+                    />
+                  );
+                }
+              }
+
+              return null;
             }}
           />
         </TypeExplorerWrapper>

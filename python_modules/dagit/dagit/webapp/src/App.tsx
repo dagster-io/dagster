@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Switch, Route } from "react-router";
+import { Route } from "react-router";
 import { BrowserRouter } from "react-router-dom";
 import Page from "./Page";
 import PipelinesContainer from "./PipelinesContainer";
@@ -7,8 +7,8 @@ import PipelinesContainer from "./PipelinesContainer";
 export default class App extends React.Component {
   public render() {
     return (
-      <Page>
-        <BrowserRouter>
+      <BrowserRouter>
+        <Page>
           <Route
             path="/:pipeline?"
             render={({ match, history }) => {
@@ -20,8 +20,8 @@ export default class App extends React.Component {
               );
             }}
           />
-        </BrowserRouter>
-      </Page>
+        </Page>
+      </BrowserRouter>
     );
   }
 }

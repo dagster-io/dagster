@@ -45,7 +45,7 @@ export default class TypeExplorer extends React.Component<
             return (
               <li key={i}>
                 {field.name} {field.isOptional ? "(optional)" : null}{" "}
-                <TypeWithTooltip type={field.type} />
+                <TypeWithTooltip link={true} type={field.type} />
                 <Description description={field.description} />
               </li>
             );
