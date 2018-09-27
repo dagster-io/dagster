@@ -1,12 +1,12 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import gql from "graphql-tag";
-import styled from "styled-components";
-import { History } from "history";
-import Pipeline from "./Pipeline";
-import { PipelinesFragment } from "./types/PipelinesFragment";
 import { Select } from "@blueprintjs/select";
 import { Button, MenuItem } from "@blueprintjs/core";
+import styled from "styled-components";
+import { History } from "history";
+import gql from "graphql-tag";
+import PipelineExplorer from "./PipelineExplorer";
+import { PipelinesFragment } from "./types/PipelinesFragment";
 import {
   PipelineFragment,
   PipelineFragment_solids
@@ -15,21 +15,50 @@ import {
 interface IPipelinesProps {
   history: History;
   pipelines: Array<PipelinesFragment>;
-  selectedPipeline: string;
-  selectedSolid: string;
+  selectedPipeline: PipelinesFragment | undefined;
+  selectedSolid: PipelineFragment_solids | undefined;
 }
 
 const PipelineSelect = Select.ofType<PipelinesFragment>();
 const SolidSelect = Select.ofType<PipelineFragment_solids>();
 
-export default class PipelinesNav extends React.Component<IPipelinesProps, {}> {
+const BasicNamePredicate = (text: string, items: any) =>
+  items
+    .filter((i: any) => i.name.toLowerCase().includes(text.toLowerCase()))
+    .slice(0, 20);
+
+const BasicNameRenderer = (
+  item: { name: string },
+  options: { handleClick: any; modifiers: any }
+) => (
+  <MenuItem
+    key={item.name}
+    text={item.name}
+    active={options.modifiers.active}
+    onClick={options.handleClick}
+  />
+);
+
+function activateSelect(select: Select<any> | null) {
+  if (!select) return;
+  const selectEl = ReactDOM.findDOMNode(select) as HTMLElement;
+  const btnEl = selectEl.querySelector("button");
+  if (btnEl) {
+    btnEl.click();
+  }
+}
+
+export default class PipelineJumpBar extends React.Component<
+  IPipelinesProps,
+  {}
+> {
   static fragments = {
     PipelinesFragment: gql`
       fragment PipelinesFragment on Pipeline {
         ...PipelineFragment
       }
 
-      ${Pipeline.fragments.PipelineFragment}
+      ${PipelineExplorer.fragments.PipelineFragment}
     `
   };
 
@@ -50,23 +79,20 @@ export default class PipelinesNav extends React.Component<IPipelinesProps, {}> {
   }
 
   onGlobalKeydown = (event: KeyboardEvent) => {
-    if (event.target && (event.target as HTMLElement).nodeName === "INPUT") {
+    const { history, selectedPipeline } = this.props;
+    const { key, target } = event;
+
+    if (target && (target as HTMLElement).nodeName === "INPUT") {
       return;
     }
-    if (event.key === "s") {
-      const el = (ReactDOM.findDOMNode(
-        this.solidSelect.current!
-      ) as HTMLElement).querySelector("button")!;
-      el.click();
+    if (key === "s") {
+      activateSelect(this.solidSelect.current);
     }
-    if (event.key === "p") {
-      const el = (ReactDOM.findDOMNode(
-        this.pipelineSelect.current!
-      ) as HTMLElement).querySelector("button")!;
-      el.click();
+    if (key === "p") {
+      activateSelect(this.pipelineSelect.current);
     }
-    if (event.key === "Escape") {
-      this.props.history.push(`/${this.props.selectedPipeline}`);
+    if (key === "Escape" && selectedPipeline) {
+      history.push(`/${selectedPipeline.name}`);
     }
   };
 
@@ -75,35 +101,30 @@ export default class PipelinesNav extends React.Component<IPipelinesProps, {}> {
   };
 
   onSelectSolid = (solid: PipelineFragment_solids) => {
-    this.props.history.push(`/${this.props.selectedPipeline}/${solid.name}`);
+    const { history, selectedPipeline } = this.props;
+
+    if (selectedPipeline) {
+      history.push(`/${selectedPipeline.name}/${solid.name}`);
+    }
   };
 
   render() {
-    const selectedPipeline = this.props.pipelines.find(
-      ({ name }) => name === this.props.selectedPipeline
-    );
+    const { pipelines, selectedPipeline, selectedSolid } = this.props;
 
     return (
-      <PipelinesNavWrapper>
+      <PipelinesJumpBarWrapper>
         <PipelineSelect
           ref={this.pipelineSelect}
-          items={this.props.pipelines}
-          itemListPredicate={(text, items) =>
-            items.filter(i => i.name.startsWith(text)).slice(0, 20)
-          }
-          itemRenderer={(pipeline, { handleClick, modifiers }) => (
-            <MenuItem
-              active={modifiers.active}
-              key={pipeline.name}
-              text={pipeline.name}
-              onClick={handleClick}
-            />
-          )}
+          items={pipelines}
+          itemRenderer={BasicNameRenderer}
+          itemListPredicate={BasicNamePredicate}
           noResults={<MenuItem disabled={true} text="No results." />}
           onItemSelect={this.onSelectPipeline}
         >
           <Button
-            text={this.props.selectedPipeline || "Select a Pipeline..."}
+            text={
+              selectedPipeline ? selectedPipeline.name : "Select a Pipeline..."
+            }
             rightIcon="double-caret-vertical"
           />
         </PipelineSelect>
@@ -112,37 +133,23 @@ export default class PipelinesNav extends React.Component<IPipelinesProps, {}> {
           <SolidSelect
             ref={this.solidSelect}
             items={selectedPipeline.solids}
-            itemListPredicate={(text, items) =>
-              items.filter(i => i.name.startsWith(text)).slice(0, 20)
-            }
-            itemRenderer={(solid, { handleClick, modifiers }) => (
-              <MenuItem
-                active={modifiers.active}
-                key={solid.name}
-                text={solid.name}
-                onClick={handleClick}
-              />
-            )}
+            itemRenderer={BasicNameRenderer}
+            itemListPredicate={BasicNamePredicate}
             noResults={<MenuItem disabled={true} text="No results." />}
             onItemSelect={this.onSelectSolid}
           >
             <Button
-              text={this.props.selectedSolid || "Select a Solid..."}
+              text={selectedSolid ? selectedSolid.name : "Select a Solid..."}
               rightIcon="double-caret-vertical"
             />
           </SolidSelect>
         )}
-      </PipelinesNavWrapper>
+      </PipelinesJumpBarWrapper>
     );
   }
 }
 
-const BreadcrumbText = styled.h2`
-  font-family: "Source Code Pro", monospace;
-  font-weight: 500;
-`;
-
-const PipelinesNavWrapper = styled.div`
+const PipelinesJumpBarWrapper = styled.div`
   display: flex;
   align-items: center;
 `;

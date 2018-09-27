@@ -1,17 +1,22 @@
 import * as React from "react";
 import gql from "graphql-tag";
-import styled from "styled-components";
+import styled, { StyledComponentClass } from "styled-components";
 import { Colors } from "@blueprintjs/core";
 import PipelineColorScale from "./PipelineColorScale";
-import { SolidNodeFragment } from "./types/SolidNodeFragment";
-import { IFullSolidLayout } from "./getFullSolidLayout";
+import {
+  SolidNodeFragment,
+  SolidNodeFragment_inputs,
+  SolidNodeFragment_outputs
+} from "./types/SolidNodeFragment";
+import { IFullSolidLayout, ILayout } from "./getFullSolidLayout";
 import { TypeName } from "../TypeWithTooltip";
 
 interface ISolidNodeProps {
   layout: IFullSolidLayout;
   solid: SolidNodeFragment;
-  showText: boolean;
-  selected?: boolean;
+  minified: boolean;
+  selected: boolean;
+  dim: boolean;
   onClick?: (solid: string) => void;
   onDoubleClick?: (solid: string) => void;
 }
@@ -69,93 +74,82 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
     }
   };
 
-  renderInputs() {
-    return Object.keys(this.props.layout.inputs).map((key, i) => {
-      const { x, y, width, height } = this.props.layout.inputs[key].layout;
+  renderIO(
+    ComponentClass: StyledComponentClass<any, any, any>,
+    items: Array<SolidNodeFragment_inputs | SolidNodeFragment_outputs>,
+    layout: { [inputName: string]: { layout: ILayout } }
+  ) {
+    const root = this.props.layout.solid;
 
-      const input = this.props.solid.inputs.find(
-        o => o.definition.name === key
-      );
-      return (
-        <foreignObject key={i} x={x} y={y} height={height}>
-          <InputContainer>
-            <Port filled={true} />
-            {width == 0 &&
-              this.props.showText && (
-                <InputOutputName>{input!.definition.name}</InputOutputName>
-              )}
-            {width == 0 &&
-              this.props.showText && (
-                <TypeName>{input!.definition.type.name}</TypeName>
-              )}
-          </InputContainer>
-        </foreignObject>
-      );
-    });
-  }
-
-  renderOutputs() {
-    return Object.keys(this.props.layout.outputs).map((key, i) => {
-      const { x, y, width, height } = this.props.layout.outputs[key].layout;
-      const output = this.props.solid.outputs.find(
-        o => o.definition.name === key
-      );
+    return Object.keys(layout).map((key, i) => {
+      const { x, y, width, height } = layout[key].layout;
+      const input = items.find(o => o.definition.name === key);
 
       return (
-        <foreignObject key={i} x={x} y={y} height={height}>
-          <OutputContainer>
-            <Port filled={true} />
-            {width == 0 &&
-              this.props.showText && (
-                <InputOutputName>{output!.definition.name}</InputOutputName>
-              )}
-            {width == 0 &&
-              this.props.showText && (
-                <TypeName>{output!.definition.type.name}</TypeName>
-              )}
-          </OutputContainer>
-        </foreignObject>
+        <ComponentClass
+          key={i}
+          style={{ left: x - root.x, top: y - root.y, height: height }}
+        >
+          <Port filled={true} />
+          {width == 0 &&
+            !this.props.minified && (
+              <InputOutputName>{input!.definition.name}</InputOutputName>
+            )}
+          {width == 0 &&
+            !this.props.minified && (
+              <TypeName>{input!.definition.type.name}</TypeName>
+            )}
+        </ComponentClass>
       );
     });
   }
 
   renderSelectedBox() {
-    if (this.props.selected) {
-      const { x, y, width, height } = this.props.layout.boundingBox;
-      return (
-        <rect
-          x={x - 10}
-          y={y - 10}
-          width={width + 20}
-          height={height + 20}
-          fill="transparent"
-          stroke={Colors.GRAY3}
-          strokeWidth="1"
-          strokeDasharray="4"
-        />
-      );
-    } else {
+    if (!this.props.selected) {
       return null;
     }
-  }
-
-  public renderSolid() {
+    const { x, y, width, height } = this.props.layout.boundingBox;
     return (
-      <foreignObject {...this.props.layout.solid}>
-        <SolidContainer>
-          <SolidName>{this.props.solid.name}</SolidName>
-        </SolidContainer>
-      </foreignObject>
+      <rect
+        x={x - 10}
+        y={y - 10}
+        width={width + 20}
+        height={height + 20}
+        stroke={Colors.GRAY3}
+        fill="transparent"
+        strokeWidth={this.props.minified ? 3 : 1}
+        strokeDasharray={this.props.minified ? 12 : 4}
+      />
     );
   }
-  public render() {
+
+  renderSolid() {
     return (
-      <g onClick={this.handleClick} onDoubleClick={this.handleDoubleClick}>
+      <SolidContainer>
+        <SolidName fontSize={this.props.minified ? 30 : 18}>
+          {this.props.solid.name}
+        </SolidName>
+      </SolidContainer>
+    );
+  }
+
+  public render() {
+    const { solid, layout } = this.props;
+
+    return (
+      <>
         {this.renderSelectedBox()}
-        {this.renderSolid()}
-        {this.renderInputs()}
-        {this.renderOutputs()}
-      </g>
+        <foreignObject
+          {...this.props.layout.solid}
+          onClick={this.handleClick}
+          onDoubleClick={this.handleDoubleClick}
+          style={{ opacity: this.props.dim ? 0.3 : 1 }}
+        >
+          {this.renderSolid()}
+          {this.renderIO(InputContainer, solid.inputs, layout.inputs)}
+          {this.renderIO(OutputContainer, solid.outputs, layout.outputs)}
+        </foreignObject>
+      </>
     );
   }
 }
@@ -171,10 +165,10 @@ const SolidContainer = styled.div`
   box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
 `;
 
-const SolidName = styled.div`
+const SolidName = styled.div<{ fontSize: number }>`
   font-family: "Source Code Pro", monospace;
   font-weight: 500;
-  font-size: 18px;
+  font-size: ${props => props.fontSize}px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -182,11 +176,9 @@ const SolidName = styled.div`
 
 const IOContainer = styled.div`
   padding: 7px;
-  height: 100%;
   position: absolute;
   display: flex;
   align-items: center;
-  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
 `;
 
 const InputContainer = styled(IOContainer)`

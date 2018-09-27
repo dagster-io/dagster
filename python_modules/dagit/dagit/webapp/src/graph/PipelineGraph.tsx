@@ -6,19 +6,23 @@ import { LinkVertical as Link } from "@vx/shape";
 import PanAndZoom from "./PanAndZoom";
 import SolidNode from "./SolidNode";
 import { IPoint, IFullPipelineLayout } from "./getFullSolidLayout";
-import { PipelineGraphFragment } from "./types/PipelineGraphFragment";
+import {
+  PipelineGraphFragment,
+  PipelineGraphFragment_solids
+} from "./types/PipelineGraphFragment";
 
 interface IPipelineGraphProps {
   pipeline: PipelineGraphFragment;
   layout: IFullPipelineLayout;
-  selectedSolid?: string;
+  selectedSolid?: PipelineGraphFragment_solids;
+  highlightedSolids: Array<PipelineGraphFragment_solids>;
   onClickSolid?: (solidName: string) => void;
   onDoubleClickSolid?: (solidName: string) => void;
   onClickBackground?: () => void;
 }
 
 interface IPipelineContentsProps extends IPipelineGraphProps {
-  showText: boolean;
+  minified: boolean;
   layout: IFullPipelineLayout;
 }
 
@@ -28,10 +32,11 @@ class PipelineGraphContents extends React.PureComponent<
   render() {
     const {
       layout,
-      showText,
+      minified,
       pipeline,
       onClickSolid,
       onDoubleClickSolid,
+      highlightedSolids,
       selectedSolid
     } = this.props;
 
@@ -56,11 +61,15 @@ class PipelineGraphContents extends React.PureComponent<
           <SolidNode
             key={solid.name}
             solid={solid}
-            showText={showText}
+            minified={minified}
             onClick={onClickSolid}
             onDoubleClick={onDoubleClickSolid}
             layout={layout.solids[solid.name]}
-            selected={selectedSolid === solid.name}
+            selected={selectedSolid === solid}
+            dim={
+              highlightedSolids.length > 0 &&
+              highlightedSolids.indexOf(solid) == -1
+            }
           />
         ))}
       </g>
@@ -87,17 +96,6 @@ export default class PipelineGraph extends React.Component<
 
   viewportEl: React.RefObject<PanAndZoom> = React.createRef();
 
-  componentWillReceiveProps(nextProps: IPipelineGraphProps) {
-    const solid = this.props.selectedSolid;
-
-    if (solid && !nextProps.selectedSolid) {
-      this.viewportEl.current!.autocenter(true);
-    }
-    if (nextProps.selectedSolid && solid !== nextProps.selectedSolid) {
-      this.focusOnSolid(nextProps.selectedSolid);
-    }
-  }
-
   focusOnSolid = (solidName: string) => {
     const solidLayout = this.props.layout.solids[solidName];
     if (!solidLayout) {
@@ -106,6 +104,10 @@ export default class PipelineGraph extends React.Component<
     const cx = solidLayout.boundingBox.x + solidLayout.boundingBox.width / 2;
     const cy = solidLayout.boundingBox.y + solidLayout.boundingBox.height / 2;
     this.viewportEl.current!.smoothZoomToSVGCoords(cx, cy, 1);
+  };
+
+  unfocus = () => {
+    this.viewportEl.current!.autocenter(true);
   };
 
   render() {
@@ -124,10 +126,11 @@ export default class PipelineGraph extends React.Component<
             height={layout.height}
             onMouseDown={evt => evt.preventDefault()}
             onClick={onClickBackground}
+            onDoubleClick={this.unfocus}
           >
             <PipelineGraphContents
               layout={layout}
-              showText={scale > 0.4}
+              minified={scale < 0.4}
               onDoubleClickSolid={this.focusOnSolid}
               {...this.props}
             />

@@ -2,9 +2,17 @@ import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
 import { Link } from "react-router-dom";
-import { H5, H6, Text, Colors, Code, UL } from "@blueprintjs/core";
+import {
+  H5,
+  H6,
+  Text,
+  Colors,
+  Code,
+  UL,
+  Collapse,
+  Button
+} from "@blueprintjs/core";
 import Config from "./Config";
-import SpacedCard from "./SpacedCard";
 import SolidTypeSignature from "./SolidTypeSignature";
 import TypeWithTooltip from "./TypeWithTooltip";
 import Description from "./Description";
@@ -12,6 +20,27 @@ import { SolidFragment } from "./types/SolidFragment";
 
 interface ISolidProps {
   solid: SolidFragment;
+}
+
+class Section extends React.Component<{ title: string }, { isOpen: boolean }> {
+  state = {
+    isOpen: true
+  };
+
+  render() {
+    return (
+      <div>
+        <SectionHeader
+          onClick={() => this.setState({ isOpen: !this.state.isOpen })}
+        >
+          {this.props.title}
+        </SectionHeader>
+        <Collapse isOpen={this.state.isOpen}>
+          <SectionInner>{this.props.children}</SectionInner>
+        </Collapse>
+      </div>
+    );
+  }
 }
 
 export default class Solid extends React.Component<ISolidProps, {}> {
@@ -74,10 +103,8 @@ export default class Solid extends React.Component<ISolidProps, {}> {
 
   renderInputs() {
     return this.props.solid.inputs.map((input, i: number) => (
-      <SolidPartCard key={i} elevation={3} horizontal={true}>
-        <H6>
-          Input <Code>{input.definition.name}</Code>
-        </H6>
+      <IOItemContainer key={i}>
+        <IOHeader>{input.definition.name}</IOHeader>
         <TypeWrapper>
           <TypeWithTooltip type={input.definition.type} />
         </TypeWrapper>
@@ -95,22 +122,20 @@ export default class Solid extends React.Component<ISolidProps, {}> {
         ) : null}
         <UL>
           {input.definition.expectations.map((expectation, i) => (
-            <li>
+            <li key={i}>
               {expectation.name}
               <Description description={expectation.description} />
             </li>
           ))}
         </UL>
-      </SolidPartCard>
+      </IOItemContainer>
     ));
   }
 
   renderOutputs() {
     return this.props.solid.outputs.map((output, i: number) => (
-      <SolidPartCard key={i} elevation={3} horizontal={true}>
-        <H6>
-          Output <Code>{output.definition.name}</Code>
-        </H6>
+      <IOItemContainer key={i}>
+        <IOHeader>{output.definition.name}</IOHeader>
         <TypeWrapper>
           <TypeWithTooltip type={output.definition.type} />
         </TypeWrapper>
@@ -120,78 +145,72 @@ export default class Solid extends React.Component<ISolidProps, {}> {
         ) : null}
         <UL>
           {output.definition.expectations.map((expectation, i) => (
-            <li>
+            <li key={i}>
               {expectation.name}
               <Description description={expectation.description} />
             </li>
           ))}
         </UL>
-      </SolidPartCard>
+      </IOItemContainer>
     ));
-  }
-
-  renderSeparator() {
-    if (
-      this.props.solid.inputs.length > 0 &&
-      this.props.solid.outputs.length > 0
-    ) {
-      return <CardSeparator />;
-    } else {
-      return null;
-    }
   }
 
   public render() {
     return (
-      <SpacedCard elevation={2}>
-        <TypeSignatureWrapper>
-          <SolidTypeSignature solid={this.props.solid} />
-        </TypeSignatureWrapper>
+      <div>
         <SolidHeader>{this.props.solid.name}</SolidHeader>
-        <DescriptionWrapper>
+        <Section title={"Type Signature"}>
+          <SolidTypeSignature solid={this.props.solid} />
+        </Section>
+        <Section title={"Description"}>
           <Description description={this.props.solid.definition.description} />
-        </DescriptionWrapper>
-        <Config config={this.props.solid.definition.configDefinition} />
-        <Cards>
-          {this.renderInputs()}
-          {this.renderSeparator()}
-          {this.renderOutputs()}
-        </Cards>
-      </SpacedCard>
+        </Section>
+        {this.props.solid.definition.configDefinition && (
+          <Section title={"Config"}>
+            <Config config={this.props.solid.definition.configDefinition} />
+          </Section>
+        )}
+        <Section title={"Inputs"}>{this.renderInputs()}</Section>
+        <Section title={"Outputs"}>{this.renderOutputs()}</Section>
+      </div>
     );
   }
 }
 
+const SectionHeader = styled.div`
+  padding: 6px;
+  padding-left: 12px;
+  background: linear-gradient(
+    to bottom,
+    ${Colors.LIGHT_GRAY5},
+    ${Colors.LIGHT_GRAY4}
+  );
+  border-top: 1px solid ${Colors.LIGHT_GRAY4};
+  border-bottom: 1px solid ${Colors.LIGHT_GRAY3};
+  color: ${Colors.GRAY1};
+  text-transform: uppercase;
+  font-size: 0.75rem;
+`;
+
+const SectionInner = styled.div`
+  padding: 12px;
+`;
+
 const SolidHeader = styled.h3`
   font-family: "Source Code Pro", monospace;
-  margin-bottom: 8px;
-  margin-top: 0;
+  margin-bottom: 2px;
+  margin-top: 8px;
   overflow: hidden;
+  padding: 12px;
   text-overflow: ellipsis;
 `;
 
-const Cards = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  align-items: stretch;
+const IOHeader = styled.h4`
+  font-family: "Source Code Pro", monospace;
+  margin: 8px 0;
 `;
 
-const CardSeparator = styled.div`
-  flex: 0 0 1px;
-  background-color: ${Colors.LIGHT_GRAY3};
-  margin-right: 10px;
-`;
-
-const SolidPartCard = styled(SpacedCard)`
-  width: 400px;
-  margin-bottom: 10px;
-`;
-
-const TypeSignatureWrapper = styled.div`
-  margin-bottom: 10px;
-`;
-
-const DescriptionWrapper = styled.div`
+const IOItemContainer = styled.div`
   margin-bottom: 10px;
 `;
 

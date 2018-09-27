@@ -1,6 +1,5 @@
 import * as React from "react";
 import animate from "amator";
-import styled from "styled-components";
 import { Colors } from "@blueprintjs/core";
 
 interface PanAndZoomProps {
@@ -17,6 +16,11 @@ interface PanAndZoomState {
   minScale: number;
 }
 
+interface Point {
+  x: number;
+  y: number;
+}
+
 const DETAIL_ZOOM = 1;
 const MAX_OVERVIEW_ZOOM = 0.39;
 
@@ -28,6 +32,8 @@ export default class PanAndZoom extends React.Component<
   panzoom: any;
 
   _animation: any = null;
+  _lastWheelTime: number = 0;
+  _lastWheelDir: number = 0;
 
   state = {
     x: 0,
@@ -61,14 +67,16 @@ export default class PanAndZoom extends React.Component<
     }
   }
 
-  client(x: number, y: number): { x: number; y: number } {
+  screenToSVGCoords({ x, y }: Point): Point {
+    const el = this.element.current!;
+    var { width, height } = el.getBoundingClientRect();
     return {
-      x: x * this.state.scale + this.state.x,
-      y: y * this.state.scale + this.state.y
+      x: (-(this.state.x - width / 2) + x - width / 2) / this.state.scale,
+      y: (-(this.state.y - height / 2) + y - height / 2) / this.state.scale
     };
   }
 
-  getOffsetXY(e: MouseEvent | React.MouseEvent): { x: number; y: number } {
+  getOffsetXY(e: MouseEvent | React.MouseEvent): Point {
     const el = this.element.current!;
     var ownerRect = el.getBoundingClientRect();
     return { x: e.clientX - ownerRect.left, y: e.clientY - ownerRect.top };
@@ -98,40 +106,19 @@ export default class PanAndZoom extends React.Component<
           y: v.y,
           scale: v.scale
         });
+      },
+      done: () => {
+        this._animation = null;
       }
     });
   }
 
-  // zoomByRatio(clientX: number, clientY: number, ratio: number) {
-  //   if (isNaN(clientX) || isNaN(clientY) || isNaN(ratio)) {
-  //     throw new Error("zoom requires valid numbers");
-  //   }
-
-  //   const { scale, minScale } = this.state;
-
-  //   if (scale * ratio < minScale) {
-  //     if (scale === minScale) return;
-  //     ratio = minScale / scale;
-  //   }
-
-  //   if (scale * ratio > DETAIL_ZOOM) {
-  //     if (scale === DETAIL_ZOOM) return;
-  //     ratio = DETAIL_ZOOM / scale;
-  //   }
-
-  //   this.setState({
-  //     x: clientX - ratio * (clientX - this.state.x),
-  //     y: clientY - ratio * (clientY - this.state.y),
-  //     scale: this.state.scale * ratio
-  //   });
-  // }
-
   onZoomAndCenter = (event: React.MouseEvent<HTMLDivElement>) => {
-    var offset = this.getOffsetXY(event);
+    var offset = this.screenToSVGCoords(this.getOffsetXY(event));
     if (Math.abs(1 - this.state.scale) < 0.01) {
-      this.smoothZoom({ x: offset.x, y: offset.y, scale: this.state.minScale });
+      this.smoothZoomToSVGCoords(offset.x, offset.y, this.state.minScale);
     } else {
-      this.smoothZoom({ x: offset.x, y: offset.y, scale: 1 });
+      this.smoothZoomToSVGCoords(offset.x, offset.y, 1);
     }
   };
 
@@ -164,8 +151,28 @@ export default class PanAndZoom extends React.Component<
     event.stopPropagation();
   };
 
+  onWheel = (event: React.WheelEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    // Because of inertial scrolling on macOS, we receive wheel events for ~1000ms
+    // after we trigger the zoom and this can cause a second zoom.
+    const wheelWasIdle = Date.now() - this._lastWheelTime > 2000;
+    const wheelChangedDir = this._lastWheelDir !== Math.sign(event.deltaY);
+    if (wheelWasIdle || wheelChangedDir) {
+      if (event.deltaY > 0) {
+        this.onZoomAndCenter(event);
+      } else {
+        this.autocenter(true);
+      }
+    }
+
+    this._lastWheelTime = Date.now();
+    this._lastWheelDir = Math.sign(event.deltaY);
+  };
+
   render() {
-    const { className, children } = this.props;
+    const { children } = this.props;
     const { x, y, scale } = this.state;
 
     return (
@@ -173,6 +180,7 @@ export default class PanAndZoom extends React.Component<
         ref={this.element}
         style={PanAndZoomStyles}
         onMouseDown={this.onMouseDown}
+        onWheel={this.onWheel}
       >
         <div
           style={{
@@ -187,6 +195,10 @@ export default class PanAndZoom extends React.Component<
   }
 }
 
+/*
+BG: Not using styled-components here because I need a `ref` to an actual DOM element.
+Styled-component with a ref returns a React component we need to findDOMNode to use.
+*/
 const PanAndZoomStyles: React.CSSProperties = {
   width: "100%",
   height: "100%",
