@@ -8,28 +8,27 @@ We will be building a very simple pipeline where the first step returns a hardco
 passes that value to the next solid, which concatenates it to itself, and prints it.
 
 
-    .. code-block:: python
+.. code-block:: python
 
-        @lambda_solid
-        def solid_one():
-            return 'foo'
-
-
-        @lambda_solid(inputs=[InputDefinition('arg_one')])
-        def solid_two(arg_one):
-            print(arg_one * 2)
+    @lambda_solid
+    def solid_one():
+        return 'foo'
 
 
-        if __name__ == '__main__':
-            pipeline = PipelineDefinition(
-                solids=[solid_one, solid_two],
-                dependencies={
-                    'solid_two': {
-                        'arg_one': DependencyDefinition('solid_one'),
-                    },
-                }
-            )
-            pipeline_result = execute_pipeline(pipeline)
+    @lambda_solid(inputs=[InputDefinition('arg_one')])
+    def solid_two(arg_one):
+        print(arg_one * 2)
+
+    def define_pipeline():
+        return PipelineDefinition(
+            solids=[solid_one, solid_two],
+            dependencies={
+                'solid_two': {
+                    'arg_one': DependencyDefinition('solid_one'),
+                },
+            }
+        )
+
 
 We have a couple new concepts here.
 
@@ -51,9 +50,8 @@ each step in the pipeline -- the solid -- is a *functional* unit of computation.
 
 Save this file to ``step_two.py``
 
-and run
+and run it:
 
 .. code-block:: sh
 
-    $ python3 step_two.py
-    foofoo
+	$ dagster pipeline execute -f part_two.py -n define_pipeline

@@ -37,24 +37,26 @@ def solid_d(arg_b, arg_c):
     print('d: {d}'.format(d=arg_b * arg_c))
 
 
-def test_tutorial_part_three():
-    execute_pipeline(
-        PipelineDefinition(
-            solids=[solid_d, solid_c, solid_b, solid_a],
-            dependencies={
-                'solid_b': {
-                    'arg_a': DependencyDefinition('solid_a'),
-                },
-                'solid_c': {
-                    'arg_a': DependencyDefinition('solid_a'),
-                },
-                'solid_d': {
-                    'arg_b': DependencyDefinition('solid_b'),
-                    'arg_c': DependencyDefinition('solid_c'),
-                }
+def define_pipeline():
+    return PipelineDefinition(
+        solids=[solid_d, solid_c, solid_b, solid_a],
+        dependencies={
+            'solid_b': {
+                'arg_a': DependencyDefinition('solid_a'),
+            },
+            'solid_c': {
+                'arg_a': DependencyDefinition('solid_a'),
+            },
+            'solid_d': {
+                'arg_b': DependencyDefinition('solid_b'),
+                'arg_c': DependencyDefinition('solid_c'),
             }
-        )
+        }
     )
+
+
+def test_tutorial_part_three():
+    execute_pipeline(define_pipeline())
 
 
 if __name__ == '__main__':

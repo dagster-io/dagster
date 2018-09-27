@@ -24,17 +24,15 @@ Let's use the context for one of its core capabilities: logging.
         info.context.error('An error occurred.')
 
 
-    if __name__ == '__main__':
-        execute_pipeline(
-            PipelineDefinition(solids=[solid_one, solid_two])
-        )
+    def define_step_one_pipeline():
+        return PipelineDefinition(solids=[solid_one, solid_two])
 
 
 Save this as part_five.py and run
 
 .. code-block:: sh
 
-    $ python3 part_five.py
+	$ dagster pipeline execute -f part_five.py -n define_step_one_pipeline 
     ...
     2018-09-09 07:14:19 - dagster - ERROR - message="An error occurred." pipeline=<<unnamed>> solid=solid_two
     2018-09-20 17:44:47 - dagster - INFO - orig_message="Something you should know about occurred." log_message_id="c59070a1-f24c-4ac2-a3d4-42f52122e4c5" pipeline="<<unnamed>>" solid="solid_one" solid_definition="solid_one"
@@ -48,19 +46,15 @@ For example, let's change the example by adding a name to the pipeline. (Naming 
 
 .. code-block:: python
 
-    execute_pipeline(
-        PipelineDefinition(
-            name='part_five',
-            solids=[solid_one, solid_two]
-        )
-    )
+    def define_step_two_pipeline():
+        return PipelineDefinition(name='part_five_step_two', solids=[solid_one, solid_two])
 
 And then run it:
 
 .. code-block:: sh
 
-    $ python3 part_five.py
-    2018-09-09 07:17:31 - dagster - ERROR - message="An error occurred." pipeline=part_five solid=solid_two
+	$ dagster pipeline execute -f part_five.py -n define_step_two_pipeline
+    2018-09-09 07:17:31 - dagster - ERROR - message="An error occurred." pipeline=part_five_step_two solid=solid_two
 
 You'll note that the metadata in the log message now has the pipeline name.
 
@@ -69,18 +63,19 @@ But what about the info message? The default context provided by dagster logs er
 not default. Just like we used the configuration system to configure a particular solid, we also
 use that same system to configure a context.
 
-
 .. code-block:: python
 
-    execute_pipeline(
-        PipelineDefinition(
-            name='part_five',
-            solids=[solid_one, solid_two]
-        ),
-        config.Environment(
-            context=config.Context(config={'log_level': 'DEBUG'})
-        ),
-    )
+    def define_step_three_pipeline():
+        return PipelineDefinition(name='part_five_step_three', solids=[solid_one, solid_two])
+
+And now we want to configure this. We use a config file:
+
+.. code-block:: yaml
+
+    context:
+        config:
+            log_level: DEBUG
+
 
 If we re-run the pipeline, you'll see a lot more output.
 
