@@ -69,10 +69,31 @@ export interface SolidFragment_definition_configDefinition_type_RegularType {
   description: string | null;
 }
 
-export interface SolidFragment_definition_configDefinition_type_CompositeType_fields_type {
+export interface SolidFragment_definition_configDefinition_type_CompositeType_fields_type_RegularType {
   name: string;
   description: string | null;
 }
+
+export interface SolidFragment_definition_configDefinition_type_CompositeType_fields_type_CompositeType_fields_type {
+  name: string;
+  description: string | null;
+}
+
+export interface SolidFragment_definition_configDefinition_type_CompositeType_fields_type_CompositeType_fields {
+  name: string;
+  description: string | null;
+  isOptional: boolean;
+  defaultValue: string | null;
+  type: SolidFragment_definition_configDefinition_type_CompositeType_fields_type_CompositeType_fields_type;
+}
+
+export interface SolidFragment_definition_configDefinition_type_CompositeType_fields_type_CompositeType {
+  name: string;
+  description: string | null;
+  fields: SolidFragment_definition_configDefinition_type_CompositeType_fields_type_CompositeType_fields[];
+}
+
+export type SolidFragment_definition_configDefinition_type_CompositeType_fields_type = SolidFragment_definition_configDefinition_type_CompositeType_fields_type_RegularType | SolidFragment_definition_configDefinition_type_CompositeType_fields_type_CompositeType;
 
 export interface SolidFragment_definition_configDefinition_type_CompositeType_fields {
   name: string;

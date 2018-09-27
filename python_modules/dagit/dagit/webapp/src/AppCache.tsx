@@ -13,16 +13,30 @@ const fragmentMatcher = new IntrospectionFragmentMatcher({
 });
 
 const AppCache = new InMemoryCache({
+  addTypename: true,
   fragmentMatcher,
   cacheRedirects: {
     Query: {
-      pipeline: (_, args, { getCacheKey }) =>
-        getCacheKey({ __typename: "Pipeline", name: args.name })
+      pipeline: (_, args, { getCacheKey }) => {
+        return getCacheKey({ __typename: "Pipeline", name: args.name });
+      },
+      type: (_, args, { getCacheKey }) => {
+        return getCacheKey({
+          __typename: "Type",
+          name: args.typeName
+        });
+      }
     }
   },
   dataIdFromObject: (object: any) => {
-    if (object.__typename === "Pipeline" && object.name) {
-      return `Pipeline.${object.name}`;
+    if (object.name && object.__typename === "Pipeline") {
+      return `${object.__typename}.${object.name}`;
+    } else if (
+      object.name &&
+      (object.__typename === "RegularType" ||
+        object.__typename === "CompositeType")
+    ) {
+      return `Type.${object.name}`;
     } else {
       return defaultDataIdFromObject(object);
     }

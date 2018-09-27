@@ -22,6 +22,7 @@ export interface TypeExplorerContainerQuery_type_CompositeType_fields {
   name: string;
   description: string | null;
   isOptional: boolean;
+  defaultValue: string | null;
   type: TypeExplorerContainerQuery_type_CompositeType_fields_type;
 }
 

@@ -16,6 +16,10 @@ class Query(graphene.ObjectType):
         pipelineName=graphene.NonNull(graphene.String),
         typeName=graphene.NonNull(graphene.String)
     )
+    types = graphene.NonNull(
+        graphene.List(graphene.NonNull(lambda: Type)),
+        pipelineName=graphene.NonNull(graphene.String),
+    )
 
     def resolve_pipeline(self, info, name):
         check.str_param(name, 'name')
@@ -35,6 +39,15 @@ class Query(graphene.ObjectType):
         repository = info.context['repository_container'].repository
         pipeline = repository.get_pipeline(pipelineName)
         return Type.from_dagster_type(pipeline.type_named(typeName))
+
+    def resolve_types(self, info, pipelineName):
+        check.str_param(pipelineName, 'pipelineName')
+        repository = info.context['repository_container'].repository
+        pipeline = repository.get_pipeline(pipelineName)
+        return sorted(
+            [Type.from_dagster_type(type) for type in pipeline.all_types()],
+            key=lambda type: type.name
+        )
 
 
 class Pipeline(graphene.ObjectType):

@@ -1,7 +1,7 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import SpacedCard from "../SpacedCard";
-import { H3, H5, H6, Text, Colors, Code, UL } from "@blueprintjs/core";
+import { H3, UL } from "@blueprintjs/core";
 import TypeWithTooltip from "../TypeWithTooltip";
 import Description from "../Description";
 import { TypeExplorerFragment } from "./types/TypeExplorerFragment";
@@ -25,12 +25,13 @@ export default class TypeExplorer extends React.Component<
             name
             description
             isOptional
+            defaultValue
             type {
-              name
               ...TypeWithTooltipFragment
             }
           }
         }
+        ...TypeWithTooltipFragment
       }
 
       ${TypeWithTooltip.fragments.TypeWithTooltipFragment}

@@ -15,6 +15,7 @@ import { parse as parseQueryString } from "query-string";
 import Pipeline from "./Pipeline";
 import Sidebar from "./Sidebar";
 import TypeExplorerContainer from "./configeditor/TypeExplorerContainer";
+import TypeListContainer from "./configeditor/TypeListContainer";
 import { PipelinesFragment } from "./types/PipelinesFragment";
 
 interface IPipelinesProps {
@@ -81,10 +82,8 @@ export default class Pipelines extends React.Component<IPipelinesProps, {}> {
                 return null;
               } else if (location.search) {
                 const search = parseQueryString(location.search);
-                let sidebarContents;
-                if (search.typeExplorer === null) {
-                  sidebarContents = <div />;
-                } else if (search.typeExplorer) {
+                let sidebarContents = null;
+                if (search.typeExplorer !== null) {
                   sidebarContents = (
                     <TypeExplorerContainer
                       pipelineName={this.props.selectedPipeline}
@@ -92,19 +91,21 @@ export default class Pipelines extends React.Component<IPipelinesProps, {}> {
                     />
                   );
                 }
-                if (sidebarContents) {
-                  return (
-                    <Sidebar
-                      onClose={() => {
-                        this.props.history.push(
-                          `/${this.props.selectedPipeline}`
-                        );
-                      }}
-                    >
-                      {sidebarContents}
-                    </Sidebar>
-                  );
-                }
+                return (
+                  <Sidebar
+                    onClose={() => {
+                      this.props.history.push(
+                        `/${this.props.selectedPipeline}`
+                      );
+                    }}
+                  >
+                    {sidebarContents}
+                    <Spacer />
+                    <TypeListContainer
+                      pipelineName={this.props.selectedPipeline}
+                    />
+                  </Sidebar>
+                );
               }
 
               return (
@@ -171,4 +172,8 @@ const OpenSidebarButton = styled(Link)`
     text-decoration: none;
     color: black;
   }
+`;
+
+const Spacer = styled.div`
+  flex: 0 0 5px;
 `;

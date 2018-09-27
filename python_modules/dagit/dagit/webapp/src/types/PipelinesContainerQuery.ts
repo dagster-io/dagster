@@ -69,10 +69,31 @@ export interface PipelinesContainerQuery_pipelines_solids_definition_configDefin
   description: string | null;
 }
 
-export interface PipelinesContainerQuery_pipelines_solids_definition_configDefinition_type_CompositeType_fields_type {
+export interface PipelinesContainerQuery_pipelines_solids_definition_configDefinition_type_CompositeType_fields_type_RegularType {
   name: string;
   description: string | null;
 }
+
+export interface PipelinesContainerQuery_pipelines_solids_definition_configDefinition_type_CompositeType_fields_type_CompositeType_fields_type {
+  name: string;
+  description: string | null;
+}
+
+export interface PipelinesContainerQuery_pipelines_solids_definition_configDefinition_type_CompositeType_fields_type_CompositeType_fields {
+  name: string;
+  description: string | null;
+  isOptional: boolean;
+  defaultValue: string | null;
+  type: PipelinesContainerQuery_pipelines_solids_definition_configDefinition_type_CompositeType_fields_type_CompositeType_fields_type;
+}
+
+export interface PipelinesContainerQuery_pipelines_solids_definition_configDefinition_type_CompositeType_fields_type_CompositeType {
+  name: string;
+  description: string | null;
+  fields: PipelinesContainerQuery_pipelines_solids_definition_configDefinition_type_CompositeType_fields_type_CompositeType_fields[];
+}
+
+export type PipelinesContainerQuery_pipelines_solids_definition_configDefinition_type_CompositeType_fields_type = PipelinesContainerQuery_pipelines_solids_definition_configDefinition_type_CompositeType_fields_type_RegularType | PipelinesContainerQuery_pipelines_solids_definition_configDefinition_type_CompositeType_fields_type_CompositeType;
 
 export interface PipelinesContainerQuery_pipelines_solids_definition_configDefinition_type_CompositeType_fields {
   name: string;
@@ -114,10 +135,31 @@ export interface PipelinesContainerQuery_pipelines_contexts_config_type_RegularT
   description: string | null;
 }
 
-export interface PipelinesContainerQuery_pipelines_contexts_config_type_CompositeType_fields_type {
+export interface PipelinesContainerQuery_pipelines_contexts_config_type_CompositeType_fields_type_RegularType {
   name: string;
   description: string | null;
 }
+
+export interface PipelinesContainerQuery_pipelines_contexts_config_type_CompositeType_fields_type_CompositeType_fields_type {
+  name: string;
+  description: string | null;
+}
+
+export interface PipelinesContainerQuery_pipelines_contexts_config_type_CompositeType_fields_type_CompositeType_fields {
+  name: string;
+  description: string | null;
+  isOptional: boolean;
+  defaultValue: string | null;
+  type: PipelinesContainerQuery_pipelines_contexts_config_type_CompositeType_fields_type_CompositeType_fields_type;
+}
+
+export interface PipelinesContainerQuery_pipelines_contexts_config_type_CompositeType_fields_type_CompositeType {
+  name: string;
+  description: string | null;
+  fields: PipelinesContainerQuery_pipelines_contexts_config_type_CompositeType_fields_type_CompositeType_fields[];
+}
+
+export type PipelinesContainerQuery_pipelines_contexts_config_type_CompositeType_fields_type = PipelinesContainerQuery_pipelines_contexts_config_type_CompositeType_fields_type_RegularType | PipelinesContainerQuery_pipelines_contexts_config_type_CompositeType_fields_type_CompositeType;
 
 export interface PipelinesContainerQuery_pipelines_contexts_config_type_CompositeType_fields {
   name: string;

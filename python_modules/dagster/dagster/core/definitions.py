@@ -779,6 +779,9 @@ class PipelineDefinition(object):
         check.str_param(name, 'name')
         return self._type_dict[name]
 
+    def all_types(self):
+        return self._type_dict.values()
+
 
 class ExpectationResult(object):
     '''

@@ -8,6 +8,7 @@ import { Colors } from "@blueprintjs/core";
 import ConfigCodeEditor from "./ConfigCodeEditor";
 import ConfigExplorer from "./ConfigExplorer";
 import TypeExplorerContainer from "./TypeExplorerContainer";
+import TypeListContainer from "./TypeListContainer";
 import { ConfigEditorFragment } from "./types/ConfigEditorFragment";
 
 interface IConfigEditorProps {
@@ -52,6 +53,12 @@ export default class ConfigEditor extends React.Component<
                     <TypeExplorerContainer
                       pipelineName={this.props.pipeline.name}
                       typeName={search.typeExplorer}
+                    />
+                  );
+                } else {
+                  return (
+                    <TypeListContainer
+                      pipelineName={this.props.pipeline.name}
                     />
                   );
                 }

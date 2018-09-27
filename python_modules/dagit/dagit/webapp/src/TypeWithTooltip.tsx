@@ -35,22 +35,6 @@ export default class TypeWithTooltip extends React.Component<
         </Link>
       );
     }
-    //   } else if (
-    //     this.props.type.description &&
-    //     this.props.type.description.length > 0
-    //   ) {
-    //     return (
-    //       <Tooltip
-    //         content={
-    //           <TypeDescription>{this.props.type.description}</TypeDescription>
-    //         }
-    //       >
-    //         <TypeNameWithHelp>{this.props.type.name}</TypeNameWithHelp>
-    //       </Tooltip>
-    //     );
-    //   } else {
-    //     return <TypeName>{this.props.type.name}</TypeName>;
-    //   }
   }
 }
 

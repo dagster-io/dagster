@@ -22,6 +22,7 @@ export interface TypeExplorerFragment_CompositeType_fields {
   name: string;
   description: string | null;
   isOptional: boolean;
+  defaultValue: string | null;
   type: TypeExplorerFragment_CompositeType_fields_type;
 }
 
