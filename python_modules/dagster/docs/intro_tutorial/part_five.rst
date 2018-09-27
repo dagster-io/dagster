@@ -32,7 +32,7 @@ Save this as part_five.py and run
 
 .. code-block:: sh
 
-	$ dagster pipeline execute -f part_five.py -n define_step_one_pipeline 
+    $ dagster pipeline execute -f part_five.py -n define_step_one_pipeline 
     ...
     2018-09-09 07:14:19 - dagster - ERROR - message="An error occurred." pipeline=<<unnamed>> solid=solid_two
     2018-09-20 17:44:47 - dagster - INFO - orig_message="Something you should know about occurred." log_message_id="c59070a1-f24c-4ac2-a3d4-42f52122e4c5" pipeline="<<unnamed>>" solid="solid_one" solid_definition="solid_one"
@@ -53,7 +53,7 @@ And then run it:
 
 .. code-block:: sh
 
-	$ dagster pipeline execute -f part_five.py -n define_step_two_pipeline
+    $ dagster pipeline execute -f part_five.py -n define_step_two_pipeline
     2018-09-09 07:17:31 - dagster - ERROR - message="An error occurred." pipeline=part_five_step_two solid=solid_two
 
 You'll note that the metadata in the log message now has the pipeline name.
@@ -77,11 +77,13 @@ And now we want to configure this. We use a config file:
             log_level: DEBUG
 
 
+Save this as ``step_three.yaml``.
+
 If we re-run the pipeline, you'll see a lot more output.
 
 .. code-block:: sh
 
-    $ python3 part_five.py
+    $ dagster pipeline execute -f part_five.py -n define_step_two_pipeline
     ...
     2018-09-09 07:49:51 - dagster - INFO - message="Something you should know about occurred." pipeline=part_five solid=solid_one
     2018-09-09 07:49:51 - dagster - INFO - metric:core_transform_time_ms=0.137 pipeline=part_five solid=solid_one
