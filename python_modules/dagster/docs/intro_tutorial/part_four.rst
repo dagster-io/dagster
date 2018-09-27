@@ -23,10 +23,13 @@ minimal API. ``solid`` is more complicated, and has more capabilities:
         print(info.config)
         return conf
 
+    def define_pipeline():
+        return PipelineDefinition(solids=[hello_world])
+
 
     if __name__ == '__main__':
         execute_pipeline(
-            PipelineDefinition(solids=[hello_world]),
+            define_pipeline(),
             config.Environment(
                 solids={'hello_world': config.Solid('Hello, World!')}
             ),
@@ -51,5 +54,4 @@ So save this example as step_four.py
 
 .. code-block:: sh
 
-    $ python3 step_four.py
-    Hello, World!
+	$ dagster pipeline execute -f part_four.py -n define_pipeline
