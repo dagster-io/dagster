@@ -42,7 +42,7 @@ export interface ConfigEditorFragment_contexts_config {
 export interface ConfigEditorFragment_contexts {
   name: string;
   description: string | null;
-  config: ConfigEditorFragment_contexts_config;
+  config: ConfigEditorFragment_contexts_config | null;
 }
 
 export interface ConfigEditorFragment_solids_definition_configDefinition_type_RegularType {
@@ -80,7 +80,7 @@ export interface ConfigEditorFragment_solids_definition_configDefinition {
 export interface ConfigEditorFragment_solids_definition {
   name: string;
   description: string | null;
-  configDefinition: ConfigEditorFragment_solids_definition_configDefinition;
+  configDefinition: ConfigEditorFragment_solids_definition_configDefinition | null;
 }
 
 export interface ConfigEditorFragment_solids {

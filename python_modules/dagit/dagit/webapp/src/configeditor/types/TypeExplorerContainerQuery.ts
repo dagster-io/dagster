@@ -7,10 +7,32 @@
 // GraphQL query operation: TypeExplorerContainerQuery
 // ====================================================
 
-export interface TypeExplorerContainerQuery_type {
+export interface TypeExplorerContainerQuery_type_RegularType {
+  __typename: "RegularType";
   name: string;
   description: string | null;
 }
+
+export interface TypeExplorerContainerQuery_type_CompositeType_fields_type {
+  name: string;
+  description: string | null;
+}
+
+export interface TypeExplorerContainerQuery_type_CompositeType_fields {
+  name: string;
+  description: string | null;
+  isOptional: boolean;
+  type: TypeExplorerContainerQuery_type_CompositeType_fields_type;
+}
+
+export interface TypeExplorerContainerQuery_type_CompositeType {
+  __typename: "CompositeType";
+  name: string;
+  description: string | null;
+  fields: TypeExplorerContainerQuery_type_CompositeType_fields[];
+}
+
+export type TypeExplorerContainerQuery_type = TypeExplorerContainerQuery_type_RegularType | TypeExplorerContainerQuery_type_CompositeType;
 
 export interface TypeExplorerContainerQuery {
   type: TypeExplorerContainerQuery_type | null;
@@ -18,7 +40,7 @@ export interface TypeExplorerContainerQuery {
 
 export interface TypeExplorerContainerQueryVariables {
   pipelineName: string;
-  typePath: string;
+  typeName: string;
 }
 
 /* tslint:disable */

@@ -97,7 +97,7 @@ export interface PipelinesContainerQuery_pipelines_solids_definition_configDefin
 
 export interface PipelinesContainerQuery_pipelines_solids_definition {
   description: string | null;
-  configDefinition: PipelinesContainerQuery_pipelines_solids_definition_configDefinition;
+  configDefinition: PipelinesContainerQuery_pipelines_solids_definition_configDefinition | null;
   name: string;
 }
 
@@ -143,7 +143,7 @@ export interface PipelinesContainerQuery_pipelines_contexts_config {
 export interface PipelinesContainerQuery_pipelines_contexts {
   name: string;
   description: string | null;
-  config: PipelinesContainerQuery_pipelines_contexts_config;
+  config: PipelinesContainerQuery_pipelines_contexts_config | null;
 }
 
 export interface PipelinesContainerQuery_pipelines {

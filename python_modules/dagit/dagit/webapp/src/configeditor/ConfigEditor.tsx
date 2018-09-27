@@ -43,12 +43,12 @@ export default class ConfigEditor extends React.Component<
         <Border />
         <TypeExplorerWrapper>
           <Route
-            path={`${this.props.match.url}/:typePath`}
-            render={({ match }: { match: match<{ typePath: string }> }) => {
+            path={`${this.props.match.url}/:typeName`}
+            render={({ match }: { match: match<{ typeName: string }> }) => {
               return (
                 <TypeExplorerContainer
                   pipelineName={this.props.pipeline.name}
-                  typePath={match.params.typePath}
+                  typeName={match.params.typeName}
                 />
               );
             }}

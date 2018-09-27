@@ -98,6 +98,7 @@ export interface PipelineFragment_solids_definition_configDefinition {
 export interface PipelineFragment_solids_definition {
   description: string | null;
   configDefinition: PipelineFragment_solids_definition_configDefinition | null;
+  name: string;
 }
 
 export interface PipelineFragment_solids {

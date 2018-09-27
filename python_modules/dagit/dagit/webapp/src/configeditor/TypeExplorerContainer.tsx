@@ -7,7 +7,7 @@ import { TypeExplorerContainerQuery } from "./types/TypeExplorerContainerQuery";
 
 interface ITypeExplorerContainerProps {
   pipelineName: string;
-  typePath: string;
+  typeName: string;
 }
 
 export default class TypeExplorerContainer extends React.Component<
@@ -20,13 +20,13 @@ export default class TypeExplorerContainer extends React.Component<
         query={TYPE_EXPLORER_CONTAINER_QUERY}
         variables={{
           pipelineName: this.props.pipelineName,
-          typePath: this.props.typePath
+          typeName: this.props.typeName
         }}
       >
         {(
           queryResult: QueryResult<
             TypeExplorerContainerQuery,
-            { pipelineName: string; typePath: string }
+            { pipelineName: string; typeName: string }
           >
         ) => {
           return (
@@ -47,8 +47,8 @@ export default class TypeExplorerContainer extends React.Component<
 }
 
 export const TYPE_EXPLORER_CONTAINER_QUERY = gql`
-  query TypeExplorerContainerQuery($pipelineName: String!, $typePath: String!) {
-    type(pipelineName: $pipelineName, typePath: $typePath) @client {
+  query TypeExplorerContainerQuery($pipelineName: String!, $typeName: String!) {
+    type(pipelineName: $pipelineName, typeName: $typeName) {
       ...TypeExplorerFragment
     }
   }
