@@ -4,6 +4,11 @@ exports[`renders without error 1`] = `
 Array [
   <div
     className="bp3-navbar"
+    style={
+      Object {
+        "zIndex": 1,
+      }
+    }
   >
     <div
       className="bp3-navbar-group bp3-align-left"
@@ -25,10 +30,10 @@ Array [
     </div>
   </div>,
   <div
-    className="sc-cMljjf fjCaRe"
+    className="sc-jhAzac fmWzSL"
   >
     <div
-      className="bp3-tabs bp3-vertical sc-jAaTju kPqiQR"
+      className="bp3-tabs bp3-vertical sc-fBuWsC cZmYXP"
     >
       <div
         className="bp3-tab-list"
