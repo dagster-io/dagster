@@ -10,8 +10,6 @@ passes that value to the next solid, which concatenates it to itself, and prints
 
     .. code-block:: python
 
-        from dagster import * 
-
         @lambda_solid
         def solid_one():
             return 'foo'

@@ -9,8 +9,6 @@ and a yaml file so that the CLI tool can know about the repository.
 
 .. code-block:: python
 
-    from dagster import *
-
     @solid(config_def=ConfigDefinition(types.Any))
     def double_the_word(info):
         return info.config['word'] * 2

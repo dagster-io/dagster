@@ -6,8 +6,6 @@ effects execution order. In this case will be build a diamond dag:
 
 .. code-block:: python
 
-    from dagster import *
-
     #   B
     #  / \
     # A   D

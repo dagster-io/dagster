@@ -15,8 +15,6 @@ Repostories are declared like this:
 
 .. code-block:: python
 
-    from dagster import *
-
     @lambda_solid
     def hello_world():
         pass
