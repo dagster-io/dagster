@@ -65,15 +65,11 @@ Again it is worth noting how we are connecting *inputs* and *outputs* rather tha
 Point your attention to the ``solid_d`` entry in the dependencies dictionary. We are declaring
 dependencies on a per-input basis.
 
-Save this to a file named ``step_three.py``
+Save this to a file named ``part_three.py``
 
 .. code-block:: sh
 
-    $ python3 step_three.py
-    a: 1
-    b: 2
-    c: 3
-    d: 6
+	$ dagster pipeline execute -f part_three.py -n define_pipeline
 
 In this case ``solid_b`` happens to execute before ``solid_c``. However ``solid_c`` executing
 before ``solid_b`` would also be a valid execution order given this DAG.

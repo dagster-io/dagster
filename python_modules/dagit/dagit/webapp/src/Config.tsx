@@ -1,14 +1,13 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
-import { UL, H6, Colors } from "@blueprintjs/core";
-import SpacedCard from "./SpacedCard";
+import { UL, Colors } from "@blueprintjs/core";
 import TypeWithTooltip from "./TypeWithTooltip";
 import Description from "./Description";
 import { ConfigFragment } from "./types/ConfigFragment";
 
 interface ConfigProps {
-  config: ConfigFragment | null;
+  config: ConfigFragment;
 }
 
 export default class Config extends React.Component<ConfigProps, {}> {
@@ -74,27 +73,16 @@ export default class Config extends React.Component<ConfigProps, {}> {
   }
 
   public render() {
-    if (this.props.config) {
-      return (
-        <ConfigCard elevation={3}>
-          <H6>Config</H6>
-          <TypeWithTooltip type={this.props.config.type} />
-          {this.renderFields(this.props.config)}
-        </ConfigCard>
-      );
-    } else {
-      return null;
-    }
+    return (
+      <div>
+        <TypeWithTooltip type={this.props.config.type} />
+        {this.renderFields(this.props.config)}
+      </div>
+    );
   }
 }
 
-const ConfigCard = styled(SpacedCard)`
-  width: 400px;
-  margin-bottom: 10px;
-`;
-
 const DescriptionWrapper = styled.div`
-  max-width: 400px;
   margin-top: 10px;
   margin-bottom: 10px;
   color: ${Colors.GRAY2};

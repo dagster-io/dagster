@@ -2,19 +2,79 @@ import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
 import { Colors } from "@blueprintjs/core";
-import { LinkHorizontal as Link } from "@vx/shape";
+import { LinkVertical as Link } from "@vx/shape";
 import PanAndZoom from "./PanAndZoom";
 import SolidNode from "./SolidNode";
+import { IPoint, IFullPipelineLayout } from "./getFullSolidLayout";
 import {
-  getDagrePipelineLayout,
-  IFullPipelineLayout
-} from "./getFullSolidLayout";
-import { PipelineGraphFragment } from "./types/PipelineGraphFragment";
+  PipelineGraphFragment,
+  PipelineGraphFragment_solids
+} from "./types/PipelineGraphFragment";
 
 interface IPipelineGraphProps {
   pipeline: PipelineGraphFragment;
-  selectedSolid?: string;
+  layout: IFullPipelineLayout;
+  selectedSolid?: PipelineGraphFragment_solids;
+  highlightedSolids: Array<PipelineGraphFragment_solids>;
   onClickSolid?: (solidName: string) => void;
+  onDoubleClickSolid?: (solidName: string) => void;
+  onClickBackground?: () => void;
+}
+
+interface IPipelineContentsProps extends IPipelineGraphProps {
+  minified: boolean;
+  layout: IFullPipelineLayout;
+}
+
+class PipelineGraphContents extends React.PureComponent<
+  IPipelineContentsProps
+> {
+  render() {
+    const {
+      layout,
+      minified,
+      pipeline,
+      onClickSolid,
+      onDoubleClickSolid,
+      highlightedSolids,
+      selectedSolid
+    } = this.props;
+
+    return (
+      <g>
+        <g style={{ opacity: 0.2 }}>
+          {layout.connections.map(({ from, to }, i) => (
+            <StyledLink
+              key={i}
+              x={(d: IPoint) => d.x}
+              y={(d: IPoint) => d.y}
+              data={{
+                // can also use from.point for the "Dagre" closest point on node
+                source:
+                  layout.solids[from.solidName].outputs[from.edgeName].port,
+                target: layout.solids[to.solidName].inputs[to.edgeName].port
+              }}
+            />
+          ))}
+        </g>
+        {pipeline.solids.map(solid => (
+          <SolidNode
+            key={solid.name}
+            solid={solid}
+            minified={minified}
+            onClick={onClickSolid}
+            onDoubleClick={onDoubleClickSolid}
+            layout={layout.solids[solid.name]}
+            selected={selectedSolid === solid}
+            dim={
+              highlightedSolids.length > 0 &&
+              highlightedSolids.indexOf(solid) == -1
+            }
+          />
+        ))}
+      </g>
+    );
+  }
 }
 
 export default class PipelineGraph extends React.Component<
@@ -34,112 +94,59 @@ export default class PipelineGraph extends React.Component<
     `
   };
 
-  renderSolids(layout: IFullPipelineLayout) {
-    return this.props.pipeline.solids.map(solid => {
-      const solidLayout = layout.solids[solid.name];
-      return (
-        <SolidNode
-          key={solid.name}
-          solid={solid}
-          layout={solidLayout}
-          onClick={this.props.onClickSolid}
-          selected={this.props.selectedSolid === solid.name}
-        />
-      );
-    });
-  }
+  viewportEl: React.RefObject<PanAndZoom> = React.createRef();
 
-  renderConnections(layout: IFullPipelineLayout) {
-    const connections: Array<{
-      from: { solidName: string; outputName: string };
-      to: { solidName: string; inputName: string };
-    }> = [];
+  focusOnSolid = (solidName: string) => {
+    const solidLayout = this.props.layout.solids[solidName];
+    if (!solidLayout) {
+      return;
+    }
+    const cx = solidLayout.boundingBox.x + solidLayout.boundingBox.width / 2;
+    const cy = solidLayout.boundingBox.y + solidLayout.boundingBox.height / 2;
+    this.viewportEl.current!.smoothZoomToSVGCoords(cx, cy, 1);
+  };
 
-    this.props.pipeline.solids.forEach(solid => {
-      solid.inputs.forEach(input => {
-        if (input.dependsOn) {
-          connections.push({
-            from: {
-              solidName: input.dependsOn.solid.name,
-              outputName: input.dependsOn.definition.name
-            },
-            to: {
-              solidName: solid.name,
-              inputName: input.definition.name
-            }
-          });
-        }
-      });
-    });
-
-    const links = connections.map(
-      (
-        {
-          from: { solidName: outputSolidName, outputName },
-          to: { solidName: inputSolidName, inputName }
-        },
-        i
-      ) => (
-        <StyledLink
-          key={i}
-          data={{
-            source: layout.solids[outputSolidName].outputs[outputName].port,
-            target: layout.solids[inputSolidName].inputs[inputName].port
-          }}
-          x={(d: { x: number; y: number }) => d.x}
-          y={(d: { x: number; y: number }) => d.y}
-        />
-      )
-    );
-
-    return <g>{links}</g>;
-  }
+  unfocus = () => {
+    this.viewportEl.current!.autocenter(true);
+  };
 
   render() {
-    const layout = getDagrePipelineLayout(this.props.pipeline);
+    const { layout, pipeline, onClickBackground } = this.props;
 
     return (
-      <GraphWrapper>
-        <PanAndZoomStyled
-          key={this.props.pipeline.name}
-          graphWidth={layout.width}
-          graphHeight={layout.height}
-        >
+      <PanAndZoom
+        key={this.props.pipeline.name}
+        ref={this.viewportEl}
+        graphWidth={layout.width}
+        graphHeight={layout.height}
+      >
+        {({ scale }: any) => (
           <SVGContainer
             width={layout.width}
             height={layout.height}
             onMouseDown={evt => evt.preventDefault()}
+            onClick={onClickBackground}
+            onDoubleClick={this.unfocus}
           >
-            {this.renderConnections(layout)}
-            {this.renderSolids(layout)}
+            <PipelineGraphContents
+              layout={layout}
+              minified={scale < 0.4}
+              onDoubleClickSolid={this.focusOnSolid}
+              {...this.props}
+            />
           </SVGContainer>
-        </PanAndZoomStyled>
-      </GraphWrapper>
+        )}
+      </PanAndZoom>
     );
   }
 }
-
-const GraphWrapper = styled.div`
-  width: 100%;
-  height: 100%;
-  position: relative;
-  overflow: hidden;
-  user-select: none;
-  background-color: ${Colors.LIGHT_GRAY5};
-`;
-
-const PanAndZoomStyled = styled(PanAndZoom)`
-  width: 100%;
-  height: 100%;
-`;
 
 const SVGContainer = styled.svg`
   border-radius: 0;
 `;
 
 const StyledLink = styled(Link)`
-  stroke-width: 2;
+  stroke-width: 6;
   stroke: ${Colors.BLACK}
-  strokeOpacity: 0.6;
   fill: none;
 `;

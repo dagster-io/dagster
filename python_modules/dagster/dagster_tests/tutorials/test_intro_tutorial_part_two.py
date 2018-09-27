@@ -18,18 +18,19 @@ def solid_two(arg_one):
     print(arg_one * 2)
 
 
-def test_tutorial_part_two():
-    pipeline_result = execute_pipeline(
-        PipelineDefinition(
-            solids=[solid_one, solid_two],
-            dependencies={
-                'solid_two': {
-                    'arg_one': DependencyDefinition('solid_one'),
-                },
-            }
-        )
+def define_pipeline():
+    return PipelineDefinition(
+        solids=[solid_one, solid_two],
+        dependencies={
+            'solid_two': {
+                'arg_one': DependencyDefinition('solid_one'),
+            },
+        }
     )
 
+
+def test_tutorial_part_two():
+    pipeline_result = execute_pipeline(define_pipeline())
     assert pipeline_result.success
     return pipeline_result
 

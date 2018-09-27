@@ -18,25 +18,35 @@ def solid_two(info):
     info.context.error('An error occurred.')
 
 
+def define_step_one_pipeline():
+    return PipelineDefinition(solids=[solid_one, solid_two])
+
+
 def test_tutorial_part_five_sample_one():
-    pipeline_result = execute_pipeline(PipelineDefinition(solids=[solid_one, solid_two]))
+    pipeline_result = execute_pipeline(define_step_one_pipeline())
 
     assert pipeline_result.success
     return pipeline_result
+
+
+def define_step_two_pipeline():
+    return PipelineDefinition(name='part_five_step_two', solids=[solid_one, solid_two])
 
 
 def test_tutorial_part_five_sample_two():
-    pipeline_result = execute_pipeline(
-        PipelineDefinition(name='part_five', solids=[solid_one, solid_two])
-    )
+    pipeline_result = execute_pipeline(define_step_two_pipeline())
 
     assert pipeline_result.success
     return pipeline_result
+
+
+def define_step_three_pipeline():
+    return PipelineDefinition(name='part_five_step_three', solids=[solid_one, solid_two])
 
 
 def test_tutorial_part_five_sample_three():
     pipeline_result = execute_pipeline(
-        PipelineDefinition(name='part_five', solids=[solid_one, solid_two]),
+        define_step_two_pipeline(),
         config.Environment(context=config.Context(config={'log_level': 'DEBUG'}))
     )
 
