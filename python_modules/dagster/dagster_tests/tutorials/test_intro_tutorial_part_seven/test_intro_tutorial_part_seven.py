@@ -1,7 +1,18 @@
 # pylint: disable=W0622,W0614,W0401
 from collections import defaultdict
 
-from dagster import *
+from dagster import (
+    ConfigDefinition,
+    DependencyDefinition,
+    InputDefinition,
+    PipelineDefinition,
+    RepositoryDefinition,
+    config,
+    execute_pipeline,
+    lambda_solid,
+    solid,
+    types,
+)
 
 
 @solid(

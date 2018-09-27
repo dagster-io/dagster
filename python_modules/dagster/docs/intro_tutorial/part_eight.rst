@@ -15,8 +15,6 @@ Before we had this:
 
 .. code-block:: python
 
-    from dagster import *
-
     @solid
     def double_the_word(info):
         return info.config['word'] * 2
@@ -25,8 +23,6 @@ We are going to make the configuration of this strongly typed prevent errors and
 documentation.
 
 .. code-block:: python
-
-    from dagster import *
 
     @solid(
         config_def=ConfigDefinition(

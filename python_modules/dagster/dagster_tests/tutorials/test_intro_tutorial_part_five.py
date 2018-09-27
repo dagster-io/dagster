@@ -1,5 +1,11 @@
 # pylint: disable=W0622,W0614,W0401
-from dagster import *
+
+from dagster import (
+    PipelineDefinition,
+    config,
+    execute_pipeline,
+    solid,
+)
 
 
 @solid

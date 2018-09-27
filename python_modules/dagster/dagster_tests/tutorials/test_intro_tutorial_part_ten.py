@@ -3,7 +3,21 @@ from logging import DEBUG
 
 import pytest
 
-from dagster import *
+from dagster import (
+    ConfigDefinition,
+    DagsterExpectationFailedError,
+    DependencyDefinition,
+    ExpectationDefinition,
+    ExpectationResult,
+    InputDefinition,
+    OutputDefinition,
+    PipelineDefinition,
+    config,
+    execute_pipeline,
+    lambda_solid,
+    solid,
+    types,
+)
 
 
 @solid(

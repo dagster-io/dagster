@@ -2,7 +2,21 @@
 from collections import defaultdict
 import pytest
 
-from dagster import *
+from dagster import (
+    ConfigDefinition,
+    DagsterInvariantViolationError,
+    DagsterTypeError,
+    DependencyDefinition,
+    Field,
+    InputDefinition,
+    OutputDefinition,
+    PipelineDefinition,
+    config,
+    execute_pipeline,
+    lambda_solid,
+    solid,
+    types,
+)
 
 from dagster.utils import script_relative_path
 

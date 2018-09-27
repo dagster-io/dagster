@@ -1,7 +1,20 @@
 # pylint: disable=W0622,W0614,W0401
 import pytest
 
-from dagster import *
+from dagster import (
+    ConfigDefinition,
+    DagsterInvariantViolationError,
+    DependencyDefinition,
+    InputDefinition,
+    MultipleResults,
+    OutputDefinition,
+    PipelineDefinition,
+    Result,
+    config,
+    execute_pipeline,
+    solid,
+    types,
+)
 
 
 @solid(

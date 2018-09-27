@@ -1,5 +1,9 @@
 # pylint: disable=W0622,W0614,W0401
-from dagster import *
+from dagster import (
+    PipelineDefinition,
+    RepositoryDefinition,
+    lambda_solid,
+)
 
 
 @lambda_solid
