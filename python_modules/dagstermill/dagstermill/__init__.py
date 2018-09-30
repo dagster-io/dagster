@@ -100,7 +100,6 @@ class Manager:
             return self.cache[inputs]
 
         ddict = deserialize_inputs(inputs, self.solid_def.input_defs if self.solid_def else None)
-        # ddict = deserialize_dm_object(inputs)
         self.cache[inputs] = self._typecheck_evaluate_inputs(ddict)
         return ddict
 
@@ -207,14 +206,8 @@ def deserialize_inputs(inputs_str, input_defs):
     input_def_dict = {inp.name: inp for inp in input_defs} if input_defs else None
     inputs = {}
     for name, type_value in type_values.items():
-        dagster_type = input_def_dict[name].dagster_type if input_defs else types.Any
+        dagster_type = input_def_dict[name].dagster_type if input_def_dict else types.Any
         inputs[name] = dagster_type.deserialize_from_type_value(type_value)
-        # if input_defs:
-        #     value = input_def_dict[name].dagster_type.deserialize_from_type_value(type_value)
-        #     inputs[name] = value
-        # else:
-        #     value = types.Any.
-        # pass
     return inputs
 
 

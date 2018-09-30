@@ -29,6 +29,7 @@ class _DataFrameType(types.PythonObjectType):
         )
 
     def create_serializable_type_value(self, value):
+        # TODO use some passed in value
         csv_path = tempfile.NamedTemporaryFile(mode='w', delete=False)
         value.to_csv(csv_path.name, index=False)
         df_meta = DataFrameMeta(format='csv', path=csv_path.name)

@@ -1,28 +1,10 @@
+from collections import namedtuple
 import pickle
 
 from six import integer_types, string_types
 
 from dagster import check
 from dagster.core.errors import DagsterEvaluateValueError
-
-# TempFileInfo = namedtuple('TempFileInfo', 'file path')
-
-# class ITempFileStore:
-#     def get_file(self):
-#         check.not_implemented('must implement in subclass')
-
-# class TempFileStore(ITempFileStore):
-#     def __init__(self, base_dir):
-#         self.base_dir = check.str_param(base_dir, 'base_dir')
-
-#     @contextmanager
-#     def get_file(self):
-#         file_name = str(uuid.uuid4())
-#         new_path = os.path.join(self.base_dir, file_name)
-#         with open(new_path, 'wb') as ff:
-#             yield TempFileInfo(file=ff, path=new_path)
-
-from collections import namedtuple
 
 SerializedTypeValue = namedtuple('SerializedTypeValue', 'name value')
 
@@ -63,23 +45,26 @@ class DagsterType(object):
     def iterate_types(self):
         yield self
 
+    # If python had final methods, these would be final
     def serialize_value(self, ff, value):
         # Probably should force calling code to call evaluate value?
-        # type_value = TypeValue(self.name, self.evaluate_value(value))
         type_value = self.create_serializable_type_value(self.evaluate_value(value))
         pickle.dump(type_value, ff)
 
-    def create_serializable_type_value(self, value):
-        return SerializedTypeValue(self.name, value)
-
-    def deserialize_from_type_value(self, type_value):
-        return type_value.value
-
+    # If python had final methods, these would be final
     def deserialize_value(self, ff):
         type_value = pickle.load(ff)
         if type_value.name != self.name:
-            raise Exception('type mistmatch')
+            raise Exception('type mismatch')
         return self.deserialize_from_type_value(type_value)
+
+    # Override these in subclasses for customizable serialization
+    def create_serializable_type_value(self, value):
+        return SerializedTypeValue(self.name, value)
+
+    # Override these in subclasses for customizable serialization
+    def deserialize_from_type_value(self, type_value):
+        return type_value.value
 
 
 class UncoercedTypeMixin(object):
