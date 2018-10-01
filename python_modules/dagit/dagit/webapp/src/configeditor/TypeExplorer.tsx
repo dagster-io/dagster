@@ -1,10 +1,15 @@
 import * as React from "react";
 import gql from "graphql-tag";
-import SpacedCard from "../SpacedCard";
-import { H3, UL } from "@blueprintjs/core";
+import { UL } from "@blueprintjs/core";
+import { Link } from "react-router-dom";
 import TypeWithTooltip from "../TypeWithTooltip";
 import Description from "../Description";
 import { TypeExplorerFragment } from "./types/TypeExplorerFragment";
+import {
+  SidebarSubhead,
+  SidebarSection,
+  SidebarTitle
+} from "../SidebarComponents";
 
 interface ITypeExplorerProps {
   type: TypeExplorerFragment;
@@ -60,12 +65,16 @@ export default class TypeExplorer extends React.Component<
 
   render() {
     return (
-      <SpacedCard>
-        <H3>{this.props.type.name}</H3>
-        <Description description={this.props.type.description} />
-
-        {this.renderFields()}
-      </SpacedCard>
+      <div>
+        <SidebarSubhead />
+        <SidebarTitle>
+          <Link to="?types=true">Pipeline Types</Link> > {this.props.type.name}
+        </SidebarTitle>
+        <SidebarSection title={"Description"}>
+          <Description description={this.props.type.description} />
+        </SidebarSection>
+        <SidebarSection title={"Fields"}>{this.renderFields()}</SidebarSection>
+      </div>
     );
   }
 }

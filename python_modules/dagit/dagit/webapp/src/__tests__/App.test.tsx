@@ -1,14 +1,13 @@
 import * as React from "react";
 import * as TestRenderer from "react-test-renderer";
-import App from "../App";
-import { PIPELINES_CONTAINER_QUERY } from "../PipelinesContainer";
+import App, { APP_QUERY } from "../App";
 import AppCache from "../AppCache";
 import { MockedProvider } from "./MockedProvider";
 const mocks = [
   {
     request: {
       operationName: "PipelineseContainerQuery",
-      query: PIPELINES_CONTAINER_QUERY
+      query: APP_QUERY
     },
     result: {
       data: {
