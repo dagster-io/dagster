@@ -50,6 +50,7 @@ class DagsterType(object):
         # Probably should force calling code to call evaluate value?
         type_value = self.create_serializable_type_value(self.evaluate_value(value))
         pickle.dump(type_value, ff)
+        return type_value
 
     # If python had final methods, these would be final
     def deserialize_value(self, ff):

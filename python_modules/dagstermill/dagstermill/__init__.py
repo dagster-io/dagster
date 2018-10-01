@@ -1,6 +1,7 @@
 from __future__ import (absolute_import, division, print_function, unicode_literals)
 from builtins import *  # pylint: disable=W0622,W0401
 
+import json
 import os
 import uuid
 
@@ -120,33 +121,32 @@ class Manager:
 
     def yield_result(self, value, output_name='result'):
         if not self.solid_def:
-            return pm.record(output_name, serialize_dm_object(value))
-
-        if not self.solid_def.has_output(output_name):
-            raise DagstermillError(
-                'Solid {solid_name} does not have output named {output_name}'.format(
-                    solid_name=self.solid_def.name,
-                    output_name=output_name,
+            dagster_type = types.Any
+        else:
+            if not self.solid_def.has_output(output_name):
+                raise DagstermillError(
+                    'Solid {solid_name} does not have output named {output_name}'.format(
+                        solid_name=self.solid_def.name,
+                        output_name=output_name,
+                    )
                 )
-            )
 
-        output_def = self.solid_def.output_def_named(output_name)
+            dagster_type = self.solid_def.output_def_named(output_name).dagster_type
 
         try:
             return pm.record(
                 output_name,
-                serialize_dm_object(output_def.dagster_type.evaluate_value(value)),
+                serialize_dm_object(dagster_type.evaluate_value(value)),
             )
         except DagsterEvaluateValueError as de:
             raise_from(
                 DagstermillError(
                     (
-                        'Solid {solid_name} output {output_name} output_type {output_type} ' +
+                        'Output {output_name} output_type {output_type} ' +
                         'failed type check on value {value}'
                     ).format(
-                        solid_name=self.solid_def.name,
                         output_name=output_name,
-                        output_type=output_def.dagster_type.name,
+                        output_type=dagster_type.name,
                         value=repr(value),
                     )
                 ),
@@ -185,9 +185,6 @@ def deserialize_dm_object(dm_object):
 
 def serialize_dm_object(dm_object):
     return base64.b64encode(pickle.dumps(dm_object)).decode('ascii')
-
-
-import json
 
 
 def serialize_inputs(inputs, input_defs):
@@ -245,8 +242,10 @@ def _dm_solid_transform(name, notebook_path):
 
             for output_def in info.solid_def.output_defs:
                 if output_def.name in output_nb.data:
+                    value = deserialize_dm_object(output_nb.data[output_def.name])
+                    # value = output_def.dagster_type.deserialize_from_type_value(type_value)
                     yield Result(
-                        deserialize_dm_object(output_nb.data[output_def.name]),
+                        value,
                         output_def.name,
                     )
 

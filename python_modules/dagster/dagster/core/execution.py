@@ -17,6 +17,7 @@ will not invoke *any* outputs (and their APIs don't allow the user to).
 
 from contextlib import contextmanager
 import itertools
+import uuid
 
 import six
 

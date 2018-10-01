@@ -103,7 +103,7 @@ def test_output_typemismatch():
 
     with pytest.raises(
         dm.DagstermillError,
-        match='Solid stuff output bar output_type Int failed type check',
+        match='Output bar output_type Int failed type check',
     ):
         manager.yield_result('not_a_string', output_name='bar')
 
