@@ -1,6 +1,5 @@
 import * as React from "react";
 import gql from "graphql-tag";
-import styled, { StyledComponentClass } from "styled-components";
 import { Colors } from "@blueprintjs/core";
 import PipelineColorScale from "./PipelineColorScale";
 import {
@@ -9,7 +8,6 @@ import {
   SolidNodeFragment_outputs
 } from "./types/SolidNodeFragment";
 import { IFullSolidLayout, ILayout } from "./getFullSolidLayout";
-import { TypeName } from "../TypeWithTooltip";
 
 interface ISolidNodeProps {
   layout: IFullSolidLayout;
@@ -19,6 +17,30 @@ interface ISolidNodeProps {
   dim: boolean;
   onClick?: (solid: string) => void;
   onDoubleClick?: (solid: string) => void;
+}
+
+interface ITextDimensions {
+  text: string;
+  textSize: number;
+  maxWidth: number;
+}
+
+const PX_TO_UNITS = 0.62;
+
+function measureAndClip({
+  text,
+  textSize,
+  maxWidth
+}: ITextDimensions): { text: string; width: number } {
+  const chars = maxWidth / (textSize * PX_TO_UNITS);
+  let textClipped = text;
+  if (textClipped.length > chars) {
+    textClipped = textClipped.substr(0, chars - 1) + "…";
+  }
+  return {
+    width: textClipped.length * textSize * PX_TO_UNITS,
+    text: textClipped
+  };
 }
 
 export default class SolidNode extends React.Component<ISolidNodeProps> {
@@ -75,39 +97,115 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
   };
 
   renderIO(
-    ComponentClass: StyledComponentClass<any, any, any>,
+    colorKey: string,
     items: Array<SolidNodeFragment_inputs | SolidNodeFragment_outputs>,
     layout: { [inputName: string]: { layout: ILayout } }
   ) {
-    const root = this.props.layout.solid;
-
     return Object.keys(layout).map((key, i) => {
       const { x, y, width, height } = layout[key].layout;
       const input = items.find(o => o.definition.name === key);
 
+      const portInset = 9;
+      const portRadius = 7;
+      const textSize = 15;
+      const namePadding = 7;
+      const typePadding = 4;
+      const name = measureAndClip({
+        text: `${input!.definition.name}: `,
+        textSize,
+        maxWidth: 200
+      });
+      const type = measureAndClip({
+        text: input!.definition.type.name,
+        textSize,
+        maxWidth: 200
+      });
+
+      const baseline = y + height / 2 + textSize / 2;
+
+      let containerWidth =
+        portInset +
+        portRadius * 2 +
+        namePadding +
+        name.width +
+        typePadding +
+        type.width +
+        typePadding +
+        namePadding;
+
+      if (this.props.minified) {
+        containerWidth = 30;
+      }
+
       return (
-        <ComponentClass
-          key={i}
-          style={{ left: x - root.x, top: y - root.y, height: height }}
-        >
-          <Port filled={true} />
+        <g key={i}>
+          <rect
+            x={x}
+            y={y}
+            stroke="#979797"
+            strokeWidth={1}
+            width={width || containerWidth}
+            height={height}
+            fill={PipelineColorScale(colorKey)}
+          />
+          <ellipse
+            cx={x + portInset + portRadius}
+            cy={y + height / 2}
+            rx={portRadius}
+            ry={portRadius}
+            fill="rgba(0, 0, 0, 0.3)"
+            stroke="white"
+          />
           {width == 0 &&
             !this.props.minified && (
-              <InputOutputName>{input!.definition.name}:</InputOutputName>
+              <text
+                x={x + portInset + portRadius * 2 + namePadding}
+                y={baseline}
+                fill="white"
+                style={{ font: `${textSize}px "Source Code Pro", monospace` }}
+              >
+                {name.text}
+              </text>
             )}
           {width == 0 &&
             !this.props.minified && (
-              <TypeName>{input!.definition.type.name}</TypeName>
+              <>
+                <rect
+                  x={x + portInset + portRadius * 2 + namePadding + name.width}
+                  y={y + 5}
+                  rx={4}
+                  ry={4}
+                  stroke="#2491eb"
+                  strokeWidth={1}
+                  width={type.width + typePadding * 2}
+                  height={27}
+                  fill="#d6ecff"
+                />
+                <text
+                  x={
+                    x +
+                    portInset +
+                    portRadius * 2 +
+                    namePadding +
+                    name.width +
+                    typePadding
+                  }
+                  y={baseline}
+                  style={{
+                    font: `500 ${textSize}px "Source Code Pro", monospace`
+                  }}
+                  fill="#222"
+                >
+                  {type.text}
+                </text>
+              </>
             )}
-        </ComponentClass>
+        </g>
       );
     });
   }
 
   renderSelectedBox() {
-    if (!this.props.selected) {
-      return null;
-    }
     const { x, y, width, height } = this.props.layout.boundingBox;
     return (
       <rect
@@ -124,12 +222,31 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
   }
 
   renderSolid() {
+    const textPadding = 12;
+    const textSize = this.props.minified ? 30 : 16;
+    const bounds = this.props.layout.solid;
+    const name = measureAndClip({
+      maxWidth: bounds.width - textPadding * 2,
+      text: this.props.solid.name,
+      textSize
+    });
+
     return (
-      <SolidContainer>
-        <SolidName fontSize={this.props.minified ? 30 : 18}>
-          {this.props.solid.name}
-        </SolidName>
-      </SolidContainer>
+      <>
+        <rect
+          {...bounds}
+          fill={PipelineColorScale("solid")}
+          stroke="#979797"
+          strokeWidth={1}
+        />
+        <text
+          x={bounds.x + textPadding}
+          y={bounds.y + bounds.height / 2 + textSize / 2}
+          style={{ font: `500 ${textSize}px "Source Code Pro", monospace` }}
+        >
+          {name.text}
+        </text>
+      </>
     );
   }
 
@@ -137,78 +254,16 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
     const { solid, layout } = this.props;
 
     return (
-      <>
-        {this.renderSelectedBox()}
-        <foreignObject
-          {...this.props.layout.solid}
-          onClick={this.handleClick}
-          onDoubleClick={this.handleDoubleClick}
-          style={{ opacity: this.props.dim ? 0.3 : 1 }}
-        >
-          {this.renderSolid()}
-          {this.renderIO(InputContainer, solid.inputs, layout.inputs)}
-          {this.renderIO(OutputContainer, solid.outputs, layout.outputs)}
-        </foreignObject>
-      </>
+      <g
+        onClick={this.handleClick}
+        onDoubleClick={this.handleDoubleClick}
+        opacity={this.props.dim ? 0.3 : 1}
+      >
+        {this.props.selected && this.renderSelectedBox()}
+        {this.renderSolid()}
+        {this.renderIO("input", solid.inputs, layout.inputs)}
+        {this.renderIO("output", solid.outputs, layout.outputs)}
+      </g>
     );
   }
 }
-
-const SolidContainer = styled.div`
-  padding: 12px;
-  border: 1px solid #979797;
-  background-color: ${PipelineColorScale("solid")};
-  height: 100%;
-  margin-top: 0;
-  display: flex;
-  align-items: center;
-  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
-`;
-
-const SolidName = styled.div<{ fontSize: number }>`
-  font-family: "Source Code Pro", monospace;
-  font-weight: 500;
-  font-size: ${props => props.fontSize}px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-`;
-
-const IOContainer = styled.div`
-  padding: 7px;
-  position: absolute;
-  display: flex;
-  align-items: center;
-`;
-
-const InputContainer = styled(IOContainer)`
-  border: 1px solid #979797;
-  background-color: ${PipelineColorScale("input")};
-`;
-
-const OutputContainer = styled(IOContainer)`
-  border: 1px solid #979797;
-  background-color: ${PipelineColorScale("output")};
-`;
-
-const InputOutputName = styled.div`
-  font-family: "Source Code Pro", monospace;
-  font-size: 15px;
-  color: white;
-  overflow: hidden;
-  padding-left: 7px;
-  text-overflow: ellipsis;
-  padding-right: 12px;
-  white-space: nowrap;
-  max-width: 300px;
-`;
-
-const Port = styled.div<{ filled: boolean }>`
-  display: inline-block;
-  width: 14px;
-  height: 14px;
-  border-radius: 7px;
-  border: 2px solid rgba(255, 255, 255, 0.7);
-  background: ${props =>
-    props.filled ? "rgba(0, 0, 0, 0.3)" : "rgba(255, 255, 255, 0.3)"};
-`;
