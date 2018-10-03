@@ -66,8 +66,7 @@ class DagsterExpectationFailedError(DagsterError):
     def __repr__(self):
         inout_def = self.info.inout_def
         return (
-            'DagsterExpectationFailedError(' +
-            'solid={name}, '.format(name=self.info.solid_def.name) +
+            'DagsterExpectationFailedError(' + 'solid={name}, '.format(name=self.info.solid.name) +
             '{key}={name}, '.format(key=inout_def.descriptive_key, name=inout_def.name) +
             'expectation={name}'.format(name=self.info.expectation_def.name
                                         ) + 'value={value}'.format(value=repr(self.value)) + ')'

@@ -134,7 +134,7 @@ def test_yield_context():
     @solid(inputs=[], outputs=[OutputDefinition()])
     def custom_context_transform(info):
         assert info.context.resources == {'field_one': 'value_two'}
-        assert info.context._context_dict['foo'] == 'bar'  # pylint: disable=W0212
+        assert info.context._context_stack['foo'] == 'bar'  # pylint: disable=W0212
         events.append('during')
 
     def _yield_context(info):

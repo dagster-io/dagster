@@ -149,7 +149,7 @@ DefaultContextConfigDict = ConfigDictionary(
 def _default_pipeline_context_definitions():
     def _default_context_fn(info):
         log_level = level_from_string(info.config['log_level'])
-        context = ExecutionContext(
+        context = ExecutionContext.for_run(
             loggers=[define_colored_console_logger('dagster', level=log_level)]
         )
         return context
@@ -1462,10 +1462,20 @@ class ContextCreationExecutionInfo(
         )
 
 
-ExpectationExecutionInfo = namedtuple(
-    'ExpectationExecutionInfo',
-    'context inout_def solid_def expectation_def',
-)
+class ExpectationExecutionInfo(
+    namedtuple(
+        '_ExpectationExecutionInfo',
+        'context inout_def solid expectation_def',
+    )
+):
+    def __new__(cls, context, inout_def, solid, expectation_def):
+        return super(ExpectationExecutionInfo, cls).__new__(
+            cls,
+            check.inst_param(context, 'context', ExecutionContext),
+            check.inst_param(inout_def, 'inout_def', (InputDefinition, OutputDefinition)),
+            check.inst_param(solid, 'solid', Solid),
+            check.inst_param(expectation_def, 'expectation_def', ExpectationDefinition),
+        )
 
 
 class TransformExecutionInfo(namedtuple('_TransformExecutionInfo', 'context config solid_def')):
