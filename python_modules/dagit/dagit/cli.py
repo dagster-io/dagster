@@ -53,18 +53,21 @@ REPO_TARGET_WARNING = (
 @repository_target_argument
 @click.option('--host', '-h', type=click.STRING, default='127.0.0.1', help="Host to run server on")
 @click.option('--port', '-p', type=click.INT, default=3000, help="Port to run server on")
-def ui(host, port, **kwargs):
+@click.option('--watch/--no-watch', default=True)
+def ui(host, port, watch, **kwargs):
     repository_target_info = load_target_info_from_cli_args(kwargs)
     dynamic_obj_repo = load_repository_object_from_target_info(repository_target_info)
 
     sys.path.append(os.getcwd())
     repository_container = RepositoryContainer(dynamic_obj_repo)
-    observer = Observer()
-    handler = ReloaderHandler(repository_container)
-    observer.schedule(handler, os.path.dirname(os.path.abspath(os.getcwd())), recursive=True)
-    observer.start()
+    if watch:
+        observer = Observer()
+        handler = ReloaderHandler(repository_container)
+        observer.schedule(handler, os.path.dirname(os.path.abspath(os.getcwd())), recursive=True)
+        observer.start()
     try:
         app = create_app(repository_container)
         serve(app, host=host, port=port)
     except KeyboardInterrupt:
-        observer.stop()
+        if watch:
+            observer.stop()
