@@ -56,6 +56,9 @@ class ExecutionContext(object):
     '''
 
     def __init__(self, loggers=None, resources=None, reentrant_info=None):
+        if loggers is None:
+            loggers = [define_colored_console_logger('dagster')]
+
         self._logger = CompositeLogger(loggers=loggers)
         self.resources = resources
         self._reentrant_info = check.opt_inst_param(
