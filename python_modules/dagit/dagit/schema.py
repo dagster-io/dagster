@@ -9,8 +9,17 @@ from dagster.core.types import DagsterCompositeType
 
 
 class Query(graphene.ObjectType):
-    pipeline = graphene.Field(lambda: Pipeline, name=graphene.String())
+    pipeline = graphene.Field(lambda: Pipeline, name=graphene.NonNull(graphene.String))
     pipelines = graphene.NonNull(graphene.List(lambda: graphene.NonNull(Pipeline)))
+    type = graphene.Field(
+        lambda: Type,
+        pipelineName=graphene.NonNull(graphene.String),
+        typeName=graphene.NonNull(graphene.String)
+    )
+    types = graphene.NonNull(
+        graphene.List(graphene.NonNull(lambda: Type)),
+        pipelineName=graphene.NonNull(graphene.String),
+    )
 
     def resolve_pipeline(self, info, name):
         check.str_param(name, 'name')
@@ -23,6 +32,22 @@ class Query(graphene.ObjectType):
         for pipeline_def in repository.get_all_pipelines():
             pipelines.append(Pipeline(pipeline_def))
         return pipelines
+
+    def resolve_type(self, info, pipelineName, typeName):
+        check.str_param(pipelineName, 'pipelineName')
+        check.str_param(typeName, 'typeName')
+        repository = info.context['repository_container'].repository
+        pipeline = repository.get_pipeline(pipelineName)
+        return Type.from_dagster_type(pipeline.type_named(typeName))
+
+    def resolve_types(self, info, pipelineName):
+        check.str_param(pipelineName, 'pipelineName')
+        repository = info.context['repository_container'].repository
+        pipeline = repository.get_pipeline(pipelineName)
+        return sorted(
+            [Type.from_dagster_type(type) for type in pipeline.all_types()],
+            key=lambda type: type.name
+        )
 
 
 class Pipeline(graphene.ObjectType):

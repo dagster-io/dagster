@@ -4,6 +4,11 @@ exports[`renders without error 1`] = `
 Array [
   <div
     className="bp3-navbar"
+    style={
+      Object {
+        "zIndex": 1,
+      }
+    }
   >
     <div
       className="bp3-navbar-group bp3-align-left"
@@ -22,69 +27,59 @@ Array [
       <div
         className="bp3-navbar-divider"
       />
-      <div
-        className="sc-eHgmQL fFTaty"
-      >
-        <span
-          className="bp3-popover-wrapper"
-        >
-          <span
-            className="bp3-popover-target"
-            onClick={[Function]}
-          >
-            <div
-              className=""
-              onKeyDown={[Function]}
-            >
-              <button
-                className="bp3-button"
-                onKeyDown={[Function]}
-                onKeyUp={[Function]}
-                type="button"
-              >
-                <span
-                  className="bp3-button-text"
-                >
-                  Select a Pipeline...
-                </span>
-                <svg
-                  className="bp3-icon"
-                  data-icon="double-caret-vertical"
-                  height={16}
-                  style={Object {}}
-                  viewBox="0 0 16 16"
-                  width={16}
-                >
-                  <desc>
-                    double-caret-vertical
-                  </desc>
-                  <path
-                    d="M5 7h6a1.003 1.003 0 0 0 .71-1.71l-3-3C8.53 2.11 8.28 2 8 2s-.53.11-.71.29l-3 3A1.003 1.003 0 0 0 5 7zm6 2H5a1.003 1.003 0 0 0-.71 1.71l3 3c.18.18.43.29.71.29s.53-.11.71-.29l3-3A1.003 1.003 0 0 0 11 9z"
-                    fillRule="evenodd"
-                  />
-                </svg>
-              </button>
-            </div>
-          </span>
-        </span>
-        <div
-          className="sc-cvbbAY csjBXg"
-        >
-          /
-        </div>
-      </div>
     </div>
   </div>,
   <div
-    className="bp3-non-ideal-state"
+    className="sc-jhAzac fmWzSL"
   >
-    <h4
-      className="bp3-heading"
+    <div
+      className="bp3-tabs bp3-vertical sc-fBuWsC cZmYXP"
     >
-      No pipeline selected
-    </h4>
-    <div>
-      Select a pipeline in the sidebar on the left
+      <div
+        className="bp3-tab-list"
+        onKeyDown={[Function]}
+        onKeyPress={[Function]}
+        role="tablist"
+      >
+        <div
+          className="bp3-tab-indicator-wrapper"
+          style={
+            Object {
+              "display": "none",
+            }
+          }
+        >
+          <div
+            className="bp3-tab-indicator"
+          />
+        </div>
+        <div
+          aria-controls="bp3-tab-panel_PipelinesTabs_pandas_hello_world"
+          aria-disabled={false}
+          aria-expanded={false}
+          aria-selected={false}
+          className="bp3-tab"
+          data-tab-id="pandas_hello_world"
+          id="bp3-tab-title_PipelinesTabs_pandas_hello_world"
+          onClick={[Function]}
+          role="tab"
+          tabIndex={0}
+        >
+          pandas_hello_world
+        </div>
+      </div>
+    </div>
+    <div
+      className="bp3-non-ideal-state"
+    >
+      <h4
+        className="bp3-heading"
+      >
+        No pipeline selected
+      </h4>
+      <div>
+        Select a pipeline in the sidebar on the left
+      </div>
     </div>
   </div>,
 ]

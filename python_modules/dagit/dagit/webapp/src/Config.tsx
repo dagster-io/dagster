@@ -28,6 +28,19 @@ export default class Config extends React.Component<ConfigProps, {}> {
                 name
                 description
                 ...TypeWithTooltipFragment
+                ... on CompositeType {
+                  fields {
+                    name
+                    description
+                    isOptional
+                    defaultValue
+                    type {
+                      name
+                      description
+                      ...TypeWithTooltipFragment
+                    }
+                  }
+                }
               }
             }
             ...TypeWithTooltipFragment

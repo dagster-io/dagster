@@ -3,6 +3,8 @@ import gql from "graphql-tag";
 import styled from "styled-components";
 import { History } from "history";
 import { Colors } from "@blueprintjs/core";
+import { Route } from "react-router";
+import { parse as parseQueryString } from "query-string";
 import {
   PipelinesFragment,
   PipelinesFragment_solids
@@ -11,8 +13,9 @@ import PipelineGraph from "./graph/PipelineGraph";
 import { getDagrePipelineLayout } from "./graph/getFullSolidLayout";
 import { PanelDivider } from "./PanelDivider";
 import Config from "./Config";
+import SidebarTabbedContainer from "./SidebarTabbedContainer";
 import SidebarSolidInfo from "./SidebarSolidInfo";
-import SidebarPipelineInfo from "./SidebarPipelineInfo";
+import ConfigEditor from "./configeditor/ConfigEditor";
 
 interface IPipelineExplorerProps {
   history: History;
@@ -45,18 +48,17 @@ export default class PipelineExplorer extends React.Component<
           }
         }
         ...PipelineGraphFragment
+        ...ConfigEditorFragment
       }
 
       ${SidebarSolidInfo.fragments.SolidFragment}
       ${PipelineGraph.fragments.PipelineGraphFragment}
       ${Config.fragments.ConfigFragment}
+      ${ConfigEditor.fragments.ConfigEditorFragment}
     `
   };
 
-  state = {
-    filter: "",
-    graphVW: 70
-  };
+  state = { filter: "", graphVW: 70 };
 
   handleClickSolid = (solidName: string) => {
     const { history, pipeline } = this.props;
@@ -96,11 +98,15 @@ export default class PipelineExplorer extends React.Component<
         </PipelinePanel>
         <PanelDivider onMove={(vw: number) => this.setState({ graphVW: vw })} />
         <RightInfoPanel style={{ width: `${100 - graphVW}vw` }}>
-          {solid ? (
-            <SidebarSolidInfo solid={solid} key={solid.name} />
-          ) : (
-            <SidebarPipelineInfo pipeline={pipeline} key={pipeline.name} />
-          )}
+          <Route
+            children={({ location }: { location: any }) => (
+              <SidebarTabbedContainer
+                pipeline={pipeline}
+                solid={solid}
+                {...parseQueryString(location.search || "")}
+              />
+            )}
+          />
         </RightInfoPanel>
       </PipelinesContainer>
     );

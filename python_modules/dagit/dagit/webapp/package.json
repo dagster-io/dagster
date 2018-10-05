@@ -4,10 +4,12 @@
   "private": true,
   "dependencies": {
     "@blueprintjs/core": "^3.0.1",
-    "@blueprintjs/icons": "^3.0.0",
+    "@blueprintjs/icons": "^3.1.0",
     "@blueprintjs/select": "^3.2.0",
+    "@types/codemirror": "^0.0.60",
     "@types/dagre": "^0.7.40",
     "@types/prop-types": "^15.5.4",
+    "@types/query-string": "^6.1.0",
     "@types/react-router": "^4.0.30",
     "@types/react-router-dom": "^4.3.0",
     "@vx/gradient": "^0.0.165",
@@ -19,17 +21,21 @@
     "@vx/shape": "^0.0.170",
     "amator": "^1.1.0",
     "apollo-boost": "^0.1.12",
+    "codemirror": "^5.40.2",
     "d3-hierarchy": "^1.1.6",
     "dagre": "^0.8.2",
     "graphql-tag": "^2.9.2",
+    "query-string": "^6.1.0",
     "react": "^16.4.2",
     "react-apollo": "^2.1.9",
+    "react-codemirror2": "^5.1.0",
     "react-dom": "^16.4.2",
     "react-markdown": "^3.4.1",
     "react-router": "^4.3.1",
     "react-router-dom": "^4.3.1",
     "styled-components": "^3.3.3",
-    "ts-jest": "^23.1.4"
+    "ts-jest": "^23.1.4",
+    "yaml-language-server": "^0.0.19"
   },
   "devDependencies": {
     "@types/jest": "^23.3.1",
@@ -67,7 +73,10 @@
     ],
     "transform": {
       "^.+\\.(ts|tsx)$": "ts-jest",
-      "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/jest/fileTransformer.js"
+      "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga|css)$": "<rootDir>/jest/fileTransformer.js"
+    },
+    "moduleNameMapper": {
+      "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga|css)$": "<rootDir>/jest/fileTransformer.js"
     },
     "moduleFileExtensions": [
       "js",

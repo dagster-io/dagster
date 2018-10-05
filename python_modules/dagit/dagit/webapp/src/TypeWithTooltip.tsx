@@ -1,11 +1,13 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
-import { Tooltip, Text } from "@blueprintjs/core";
+import { Link } from "react-router-dom";
+import { Text } from "@blueprintjs/core";
 import { TypeWithTooltipFragment } from "./types/TypeWithTooltipFragment";
 
 interface ITypeWithTooltipProps {
   type: TypeWithTooltipFragment;
+  link?: Boolean;
 }
 
 export default class TypeWithTooltip extends React.Component<
@@ -22,18 +24,16 @@ export default class TypeWithTooltip extends React.Component<
   };
 
   render() {
-    if (this.props.type.description && this.props.type.description.length > 0) {
+    if (true || this.props.link) {
       return (
-        <Tooltip
-          content={
-            <TypeDescription>{this.props.type.description}</TypeDescription>
-          }
+        <Link
+          to={{
+            search: `?typeExplorer=${this.props.type.name}`
+          }}
         >
-          <TypeNameWithHelp>{this.props.type.name}</TypeNameWithHelp>
-        </Tooltip>
+          <TypeName>{this.props.type.name}</TypeName>
+        </Link>
       );
-    } else {
-      return <TypeName>{this.props.type.name}</TypeName>;
     }
   }
 }

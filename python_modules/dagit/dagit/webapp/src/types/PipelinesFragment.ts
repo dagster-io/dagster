@@ -69,10 +69,31 @@ export interface PipelinesFragment_solids_definition_configDefinition_type_Regul
   description: string | null;
 }
 
-export interface PipelinesFragment_solids_definition_configDefinition_type_CompositeType_fields_type {
+export interface PipelinesFragment_solids_definition_configDefinition_type_CompositeType_fields_type_RegularType {
   name: string;
   description: string | null;
 }
+
+export interface PipelinesFragment_solids_definition_configDefinition_type_CompositeType_fields_type_CompositeType_fields_type {
+  name: string;
+  description: string | null;
+}
+
+export interface PipelinesFragment_solids_definition_configDefinition_type_CompositeType_fields_type_CompositeType_fields {
+  name: string;
+  description: string | null;
+  isOptional: boolean;
+  defaultValue: string | null;
+  type: PipelinesFragment_solids_definition_configDefinition_type_CompositeType_fields_type_CompositeType_fields_type;
+}
+
+export interface PipelinesFragment_solids_definition_configDefinition_type_CompositeType_fields_type_CompositeType {
+  name: string;
+  description: string | null;
+  fields: PipelinesFragment_solids_definition_configDefinition_type_CompositeType_fields_type_CompositeType_fields[];
+}
+
+export type PipelinesFragment_solids_definition_configDefinition_type_CompositeType_fields_type = PipelinesFragment_solids_definition_configDefinition_type_CompositeType_fields_type_RegularType | PipelinesFragment_solids_definition_configDefinition_type_CompositeType_fields_type_CompositeType;
 
 export interface PipelinesFragment_solids_definition_configDefinition_type_CompositeType_fields {
   name: string;
@@ -98,6 +119,7 @@ export interface PipelinesFragment_solids_definition_configDefinition {
 export interface PipelinesFragment_solids_definition {
   description: string | null;
   configDefinition: PipelinesFragment_solids_definition_configDefinition | null;
+  name: string;
 }
 
 export interface PipelinesFragment_solids {
@@ -113,10 +135,31 @@ export interface PipelinesFragment_contexts_config_type_RegularType {
   description: string | null;
 }
 
-export interface PipelinesFragment_contexts_config_type_CompositeType_fields_type {
+export interface PipelinesFragment_contexts_config_type_CompositeType_fields_type_RegularType {
   name: string;
   description: string | null;
 }
+
+export interface PipelinesFragment_contexts_config_type_CompositeType_fields_type_CompositeType_fields_type {
+  name: string;
+  description: string | null;
+}
+
+export interface PipelinesFragment_contexts_config_type_CompositeType_fields_type_CompositeType_fields {
+  name: string;
+  description: string | null;
+  isOptional: boolean;
+  defaultValue: string | null;
+  type: PipelinesFragment_contexts_config_type_CompositeType_fields_type_CompositeType_fields_type;
+}
+
+export interface PipelinesFragment_contexts_config_type_CompositeType_fields_type_CompositeType {
+  name: string;
+  description: string | null;
+  fields: PipelinesFragment_contexts_config_type_CompositeType_fields_type_CompositeType_fields[];
+}
+
+export type PipelinesFragment_contexts_config_type_CompositeType_fields_type = PipelinesFragment_contexts_config_type_CompositeType_fields_type_RegularType | PipelinesFragment_contexts_config_type_CompositeType_fields_type_CompositeType;
 
 export interface PipelinesFragment_contexts_config_type_CompositeType_fields {
   name: string;
