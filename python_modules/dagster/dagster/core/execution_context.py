@@ -38,10 +38,9 @@ import os
 
 class SystemResources:
     def __init__(self, run_id):
-        tmp_path = f'/tmp/dagster/runs/{run_id}/scratch_fs'
+        tmp_path = '/tmp/dagster/runs/{run_id}/scratch_fs'.format(run_id=run_id)
         os.makedirs(tmp_path)
         self.scratch_fs = ScratchFilesystemResource(tmp_path)
-        pass
 
 
 class ExecutionContext(object):
