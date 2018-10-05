@@ -24,6 +24,10 @@ def _kv_message(all_items):
     )
 
 
+class ReentrantContextInfo(namedtuple('ReentrantContextInfo', 'context_stack')):
+    pass
+
+
 class ExecutionContext(object):
     '''
     A context object flowed through the entire scope of single execution of a
@@ -46,16 +50,34 @@ class ExecutionContext(object):
             then access during pipeline execution. This exists so that a user can
             inject their own objects into the context without having to subclass
             ExecutionContext.
+
+        reentrant_info(ReentractContextInfo):
+            This allows to one to, in effect, reconstruct a context that is already running.
     '''
 
-    def __init__(self, loggers=None, resources=None):
+    def __init__(self, loggers=None, resources=None, reentrant_info=None):
         self._logger = CompositeLogger(loggers=loggers)
-        self._context_dict = OrderedDict()
         self.resources = resources
+        self._reentrant_info = check.opt_inst_param(
+            reentrant_info,
+            'reentrant_info',
+            ReentrantContextInfo,
+        )
+        self._context_stack = reentrant_info.context_stack if reentrant_info else OrderedDict()
+
+    @staticmethod
+    def for_run(loggers=None, resources=None):
+        return ExecutionContext(
+            loggers,
+            resources,
+            ReentrantContextInfo(context_stack=OrderedDict({
+                'run_id': str(uuid.uuid4()),
+            }), ),
+        )
 
     @staticmethod
     def console_logging(log_level=INFO, resources=None):
-        return ExecutionContext(
+        return ExecutionContext.for_run(
             loggers=[define_colored_console_logger('dagster', log_level)],
             resources=resources,
         )
@@ -87,7 +109,7 @@ class ExecutionContext(object):
         all_props = dict(
             itertools.chain(
                 synth_props.items(),
-                self._context_dict.items(),
+                self._context_stack.items(),
                 message_props.items(),
             )
         )
@@ -142,7 +164,7 @@ class ExecutionContext(object):
 
     def get_context_value(self, key):
         check.str_param(key, 'key')
-        return self._context_dict[key]
+        return self._context_stack[key]
 
     # FIXME: Actually make this work
     # def exception(self, e):
@@ -179,10 +201,14 @@ class ExecutionContext(object):
         check.dict_param(ddict, 'ddict')
 
         for key, value in ddict.items():
-            check.invariant(not key in self._context_dict, 'Should not be in context')
-            self._context_dict[key] = value
+            check.invariant(not key in self._context_stack, 'Should not be in context')
+            self._context_stack[key] = value
 
         yield
 
         for key in ddict.keys():
-            self._context_dict.pop(key)
+            self._context_stack.pop(key)
+
+    @property
+    def run_id(self):
+        return self._context_stack['run_id']

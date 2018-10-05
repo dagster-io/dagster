@@ -273,12 +273,14 @@ def yield_context(pipeline, environment):
     config_type = context_definition.config_def.config_type
 
     config_value = _create_config_value(config_type, environment.context.config)
+
     context_or_generator = context_definition.context_fn(
         ContextCreationExecutionInfo(
             config=config_value,
             pipeline_def=pipeline,
         )
     )
+
     return _wrap_in_yield(context_or_generator)
 
 
@@ -395,27 +397,28 @@ def _execute_graph(
 
     display_name = execution_graph.pipeline.display_name
     results = []
-    with yield_context(execution_graph.pipeline, environment) as context, \
-         context.value('pipeline', execution_graph.pipeline.display_name):
+    with yield_context(execution_graph.pipeline, environment) as context:
+        with context.value('pipeline', execution_graph.pipeline.display_name):
+            context.info('Beginning execution of pipeline {pipeline}'.format(pipeline=display_name))
 
-        context.info('Beginning execution of pipeline {pipeline}'.format(pipeline=display_name))
+            for result in _execute_graph_iterator(context, execution_graph, environment):
+                if throw_on_error and not result.success:
+                    result.reraise_user_error()
 
-        for result in _execute_graph_iterator(context, execution_graph, environment):
-            if throw_on_error and not result.success:
-                result.reraise_user_error()
+                results.append(result)
 
-            results.append(result)
-
-        pipeline_result = PipelineExecutionResult(execution_graph.pipeline, context, results)
-        if pipeline_result.success:
-            context.info(
-                'Completing successful execution of pipeline {pipeline}'.format(
-                    pipeline=display_name
+            pipeline_result = PipelineExecutionResult(execution_graph.pipeline, context, results)
+            if pipeline_result.success:
+                context.info(
+                    'Completing successful execution of pipeline {pipeline}'.format(
+                        pipeline=display_name
+                    )
                 )
-            )
-        else:
-            context.info(
-                'Completing failing execution of pipeline {pipeline}'.format(pipeline=display_name)
-            )
+            else:
+                context.info(
+                    'Completing failing execution of pipeline {pipeline}'.format(
+                        pipeline=display_name
+                    )
+                )
 
-        return pipeline_result
+            return pipeline_result
