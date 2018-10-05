@@ -90,6 +90,7 @@ class ExecutionContext(object):
         return ExecutionContext(
             loggers,
             resources,
+            None,
             ReentrantContextInfo(context_stack=OrderedDict({
                 'run_id': str(uuid.uuid4()),
             }), ),
