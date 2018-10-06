@@ -295,7 +295,7 @@ class ComputeNodeOutput(object):
 
 
 class ComputeNode(object):
-    def __init__(self, friendly_name, node_inputs, node_outputs, arg_dict, compute_fn, tag, solid):
+    def __init__(self, friendly_name, node_inputs, node_outputs, compute_fn, tag, solid):
         self.guid = str(uuid.uuid4())
         self.friendly_name = check.str_param(friendly_name, 'friendly_name')
         self.node_inputs = check.list_param(node_inputs, 'node_inputs', of_type=ComputeNodeInput)
@@ -313,7 +313,6 @@ class ComputeNode(object):
             node_output_dict[node_output.name] = node_output
 
         self._node_output_dict = node_output_dict
-        self.arg_dict = check.dict_param(arg_dict, 'arg_dict', key_type=str)
         self.compute_fn = check.callable_param(compute_fn, 'compute_fn')
         self.tag = check.inst_param(tag, 'tag', ComputeNodeTag)
         self.solid = check.inst_param(solid, 'solid', Solid)
@@ -557,7 +556,6 @@ def create_expectation_cn(
         node_outputs=[
             ComputeNodeOutput(name=EXPECTATION_VALUE_OUTPUT, dagster_type=value_type),
         ],
-        arg_dict={},
         compute_fn=_create_expectation_lambda(
             solid,
             inout_def,
@@ -821,7 +819,6 @@ def _create_join_node(solid, prev_nodes, prev_output_name):
         friendly_name='join',
         node_inputs=node_inputs,
         node_outputs=[ComputeNodeOutput(JOIN_OUTPUT, seen_dagster_type)],
-        arg_dict={},
         compute_fn=_create_join_lambda,
         tag=ComputeNodeTag.JOIN,
         solid=solid,
@@ -880,7 +877,6 @@ def create_compute_node_from_solid_transform(solid, node_inputs, conf):
             ComputeNodeOutput(name=output_def.name, dagster_type=output_def.dagster_type)
             for output_def in solid.definition.output_defs
         ],
-        arg_dict={},
         compute_fn=lambda context, compute_node, inputs: _execute_core_transform(
             context,
             compute_node,
