@@ -45,7 +45,7 @@ from dagster.core.errors import (
 
 from dagster.core.utility_solids import define_stub_solid
 
-import dagster.config as config
+import dagster.core.config as config
 import dagster.core.types as types
 
 from .version import __version__

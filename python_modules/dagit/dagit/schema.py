@@ -55,6 +55,7 @@ class Pipeline(graphene.ObjectType):
     description = graphene.String()
     solids = graphene.NonNull(graphene.List(lambda: graphene.NonNull(Solid)))
     contexts = graphene.NonNull(graphene.List(lambda: graphene.NonNull(PipelineContext)))
+    environment_type = graphene.NonNull(lambda: Type)
 
     def __init__(self, pipeline):
         super(Pipeline, self).__init__(name=pipeline.name, description=pipeline.description)
@@ -74,6 +75,9 @@ class Pipeline(graphene.ObjectType):
             PipelineContext(name=name, context=context)
             for name, context in self._pipeline.context_definitions.items()
         ]
+
+    def resolve_environment_type(self, _info):
+        return Type.from_dagster_type(self._pipeline.environment_type)
 
 
 class PipelineContext(graphene.ObjectType):

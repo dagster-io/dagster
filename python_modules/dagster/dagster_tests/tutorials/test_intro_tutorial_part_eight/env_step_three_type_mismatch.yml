@@ -1,8 +1,9 @@
 context:
-  config:
-    log_level: DEBUG
+  default:
+    config:
+      log_level: DEBUG
 
 solids:
   typed_double_word_mismatch:
     config:
-      word: quux 
+      word: quux

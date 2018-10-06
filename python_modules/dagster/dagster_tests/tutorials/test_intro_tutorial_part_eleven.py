@@ -136,8 +136,13 @@ def test_intro_tutorial_part_eleven_step_two():
 
 def test_intro_tutorial_part_eleven_step_three():
     result = execute_pipeline(
-        define_part_eleven_step_three(),
-        config.Environment(solids={'conditional': config.Solid('out_two')})
+        define_part_eleven_step_three(), {
+            'solids': {
+                'conditional': {
+                    'config': 'out_two',
+                },
+            },
+        }
     )
 
     # successful things

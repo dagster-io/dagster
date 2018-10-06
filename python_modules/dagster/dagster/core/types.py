@@ -195,15 +195,12 @@ class DagsterCompositeType(DagsterType):
     '''Dagster type representing a type with a list of named :py:class:`Field` objects.
     '''
 
-    def __init__(self, name, fields, ctor, description=None):
+    def __init__(self, name, fields, description=None):
         self.field_dict = FieldDefinitionDictionary(fields)
-        self.ctor = check.callable_param(ctor, 'ctor')
         super(DagsterCompositeType, self).__init__(name, description)
 
-    def evaluate_value(self, value):
-        if value is not None and not isinstance(value, dict):
-            raise DagsterEvaluateValueError('Incoming value for composite must be dict')
-        return process_incoming_composite_value(self, value, self.ctor)
+    def evaluate_value(self, _value):
+        check.not_implemented('Must override')
 
     def iterate_types(self):
         for field_type in self.field_dict.values():
@@ -224,9 +221,13 @@ class ConfigDictionary(DagsterCompositeType):
         super(ConfigDictionary, self).__init__(
             name,
             fields,
-            lambda val: val,
-            self.__doc__,
+            'A configuration dictionary with typed fields',
         )
+
+    def evaluate_value(self, value):
+        if value is not None and not isinstance(value, dict):
+            raise DagsterEvaluateValueError('Incoming value for composite must be dict')
+        return process_incoming_composite_value(self, value, lambda val: val)
 
 
 def process_incoming_composite_value(dagster_composite_type, incoming_value, ctor):

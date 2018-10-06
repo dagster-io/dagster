@@ -8,6 +8,8 @@ from dagster import (
     DagsterEvaluateValueError,
 )
 
+from dagster.core.types import process_incoming_composite_value
+
 
 def test_noop_config():
     assert ConfigDefinition(types.Any)
@@ -341,6 +343,15 @@ class CustomStructConfigType(types.DagsterCompositeType):
                 'foo': Field(types.String),
                 'bar': Field(types.Int),
             },
+        )
+
+    def evaluate_value(self, value):
+        if value is not None and not isinstance(value, dict):
+            raise DagsterEvaluateValueError('Incoming value for composite must be dict')
+
+        return process_incoming_composite_value(
+            self,
+            value,
             lambda val: CustomStructConfig(foo=val['foo'], bar=val['bar']),
         )
 

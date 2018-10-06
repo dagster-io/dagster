@@ -272,22 +272,26 @@ def test_intro_tutorial_part_nine_final_local_success():
 
 def test_intro_tutorial_part_nine_final_cloud_success():
     result = execute_pipeline(
-        define_part_nine_final(),
-        config.Environment(
-            solids={
-                'injest_a': config.Solid(2),
-                'injest_b': config.Solid(3),
+        define_part_nine_final(), {
+            'context': {
+                'cloud': {
+                    'config': {
+                        'credentials': {
+                            'user': 'some_user',
+                            'pass': 'some_pass',
+                        }
+                    }
+                }
             },
-            context=config.Context(
-                name='cloud',
-                config={
-                    'credentials': {
-                        'user': 'some_user',
-                        'pass': 'some_pass',
-                    },
+            'solids': {
+                'injest_a': {
+                    'config': 2,
                 },
-            ),
-        ),
+                'injest_b': {
+                    'config': 3,
+                },
+            }
+        }
     )
 
     assert result.success
