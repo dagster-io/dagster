@@ -45,3 +45,13 @@ class Expectations(namedtuple('ExpectationsData', 'evaluate')):
             cls,
             evaluate=check.bool_param(evaluate, 'evaluate'),
         )
+
+
+class Execution(namedtuple('ExecutionData', 'serialize_intermediates')):
+    def __new__(cls, serialize_intermediates):
+        check.bool_param(serialize_intermediates, 'serialize_intermediates')
+
+        return super(Execution, cls).__new__(
+            cls,
+            serialize_intermediates=serialize_intermediates,
+        )
