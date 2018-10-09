@@ -3,6 +3,7 @@ from builtins import *  # pylint: disable=W0622,W0401
 
 import json
 import os
+import six
 import uuid
 
 import base64
@@ -196,7 +197,7 @@ def serialize_dm_object(dm_object):
 
 
 def serialize_inputs(inputs, input_defs, scratch_dir):
-    check.dict_param(inputs, 'inputs', key_type=str)
+    check.dict_param(inputs, 'inputs', key_type=six.string_types)
     input_defs = check.opt_list_param(input_defs, 'input_defs', of_type=InputDefinition)
     check.str_param(scratch_dir, 'scratch_dir')
 
