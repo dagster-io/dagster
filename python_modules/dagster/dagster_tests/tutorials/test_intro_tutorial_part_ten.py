@@ -71,48 +71,60 @@ def define_part_ten_step_one():
 def test_intro_tutorial_part_ten_step_one():
     result = execute_pipeline(
         define_part_ten_step_one(),
-        config.Environment(
-            context=config.Context(config={
-                'log_level': 'DEBUG',
-            }),
-            solids={
-                'injest_a': config.Solid(2),
-                'injest_b': config.Solid(3),
+        {
+            'context': {
+                'default': {
+                    'config': {
+                        'log_level': 'DEBUG',
+                    }
+                }
+            },
+            'solids': {
+                'injest_a': {
+                    'config': 2,
+                },
+                'injest_b': {
+                    'config': 3,
+                },
             }
-        ),
+        },
     )
 
     assert result.success
+
+
+def define_failing_environment_config():
+    return {
+        'context': {
+            'default': {
+                'config': {
+                    'log_level': 'DEBUG',
+                }
+            }
+        },
+        'solids': {
+            'injest_a': {
+                'config': -2,
+            },
+            'injest_b': {
+                'config': 3,
+            },
+        }
+    }
 
 
 def test_intro_tutorial_part_ten_step_two_fails_hard():
     with pytest.raises(DagsterExpectationFailedError):
         execute_pipeline(
             define_part_ten_step_one(),
-            config.Environment(
-                context=config.Context(config={
-                    'log_level': 'DEBUG',
-                }),
-                solids={
-                    'injest_a': config.Solid(-2),
-                    'injest_b': config.Solid(3),
-                }
-            ),
+            define_failing_environment_config(),
         )
 
 
 def test_intro_tutorial_part_ten_step_two_fails_soft():
     result = execute_pipeline(
         define_part_ten_step_one(),
-        config.Environment(
-            context=config.Context(config={
-                'log_level': 'DEBUG',
-            }),
-            solids={
-                'injest_a': config.Solid(-2),
-                'injest_b': config.Solid(3),
-            }
-        ),
+        define_failing_environment_config(),
         throw_on_error=False,
     )
 
@@ -122,14 +134,24 @@ def test_intro_tutorial_part_ten_step_two_fails_soft():
 if __name__ == '__main__':
     execute_pipeline(
         define_part_ten_step_one(),
-        config.Environment(
-            context=config.Context(config={
-                'log_level': 'DEBUG',
-            }),
-            solids={
-                'injest_a': config.Solid(-2),
-                'injest_b': config.Solid(3),
+        {
+            'context': {
+                'default': {
+                    'config': {
+                        'log_level': 'DEBUG',
+                    }
+                }
             },
-            expectations=config.Expectations(evaluate=False),
-        ),
+            'solids': {
+                'injest_a': {
+                    'config': -2,
+                },
+                'injest_b': {
+                    'config': 3,
+                },
+            },
+            'expectations': {
+                'evaluate': True,
+            },
+        },
     )

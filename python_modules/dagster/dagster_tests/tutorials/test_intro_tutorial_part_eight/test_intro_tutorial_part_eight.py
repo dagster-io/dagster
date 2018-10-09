@@ -11,6 +11,7 @@ from dagster import (
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
+    RepositoryDefinition,
     config,
     execute_pipeline,
     lambda_solid,
@@ -18,7 +19,10 @@ from dagster import (
     types,
 )
 
-from dagster.utils import script_relative_path
+from dagster.utils import (
+    load_yaml_from_path,
+    script_relative_path,
+)
 
 name = 'WordConfig'
 fields = {'word': Field(types.String)}
@@ -102,7 +106,7 @@ def define_part_eight_repo():
 
 
 def test_part_eight_repo_step_one():
-    environment = config.load_environment(script_relative_path('env_step_one_works.yml'))
+    environment = load_yaml_from_path(script_relative_path('env_step_one_works.yml'))
 
     pipeline_result = execute_pipeline(define_part_eight_step_one_pipeline(), environment)
 
@@ -117,20 +121,20 @@ def test_part_eight_repo_step_one():
 
 
 def test_part_eight_repo_step_one_wrong_env():
-    environment = config.load_environment(script_relative_path('env_step_one_type_error.yml'))
+    environment = load_yaml_from_path(script_relative_path('env_step_one_type_error.yml'))
     with pytest.raises(DagsterTypeError, match='Expected valid value for String'):
         execute_pipeline(define_part_eight_step_one_pipeline(), environment)
 
 
 def test_part_eight_repo_step_one_wrong_field():
-    environment = config.load_environment(script_relative_path('env_step_one_field_error.yml'))
+    environment = load_yaml_from_path(script_relative_path('env_step_one_field_error.yml'))
 
     with pytest.raises(DagsterTypeError, match='Field wrong_word not found'):
         execute_pipeline(define_part_eight_step_one_pipeline(), environment)
 
 
 def test_part_eight_repo_step_two():
-    environment = config.load_environment(script_relative_path('env_step_two_works.yml'))
+    environment = load_yaml_from_path(script_relative_path('env_step_two_works.yml'))
 
     pipeline_result = execute_pipeline(define_part_eight_step_two_pipeline(), environment)
 
@@ -139,7 +143,7 @@ def test_part_eight_repo_step_two():
 
 
 def test_part_eight_repo_step_three():
-    environment = config.load_environment(script_relative_path('env_step_three_type_mismatch.yml'))
+    environment = load_yaml_from_path(script_relative_path('env_step_three_type_mismatch.yml'))
 
     with pytest.raises(
         DagsterInvariantViolationError,

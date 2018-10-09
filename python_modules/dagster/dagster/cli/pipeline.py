@@ -296,13 +296,9 @@ def do_execute_command(pipeline, env, printer):
     check.opt_str_param(env, 'env')
     check.callable_param(printer, 'printer')
 
-    if env:
-        env_config = load_yaml_from_path(env)
-        environment = config.construct_environment(env_config)
-    else:
-        environment = config.Environment()
+    env_config = load_yaml_from_path(env) if env else {}
 
-    pipeline_iter = execute_pipeline_iterator(pipeline, environment)
+    pipeline_iter = execute_pipeline_iterator(pipeline, env_config)
 
     process_results_for_console(pipeline_iter)
 

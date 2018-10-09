@@ -176,7 +176,13 @@ and then execute that pipeline.
     if __name__ == '__main__':
         execute_pipeline(
             define_part_eleven_step_three(),
-            config.Environment(solids={'conditional': config.Solid('out_two')})
+            {
+                'solids': {
+                    'conditional': {
+                        'config': 'out_two'
+                    },
+                },
+            },
         ) 
 
 Note that we are configuring this solid to *only* emit out_two which will end up

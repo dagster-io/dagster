@@ -71,8 +71,6 @@ def test_pipeline_types():
         assert pipeline_def.type_named(name).name == name
 
     not_present_types = [
-        types.Bool,
-        types.Dict,
         types.PythonObjectType('Duisjdfke', dict),
     ]
 

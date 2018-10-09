@@ -13,7 +13,7 @@ from dagster.utils.logging import (
     define_colored_console_logger,
 )
 
-from dagster.config import DEFAULT_CONTEXT_NAME
+from .config import DEFAULT_CONTEXT_NAME
 
 from .errors import DagsterInvalidDefinitionError
 
@@ -128,7 +128,7 @@ class PipelineContextDefinition(object):
             config_def,
             'config_def',
             ConfigDefinition,
-            ConfigDefinition(),
+            ConfigDefinition(types.Any),
         )
         self.context_fn = check.callable_param(context_fn, 'context_fn')
         self.description = description
@@ -513,7 +513,7 @@ def _validate_dependency_structure(name, pipeline_solid_dict, dependency_structu
                 raise DagsterInvalidDefinitionError(error_msg)
 
 
-def _gather_all_types(solids, context_definitions):
+def _gather_all_types(solids, context_definitions, environment_type):
     check.list_param(solids, 'solids', SolidDefinition)
     check.dict_param(
         context_definitions,
@@ -521,6 +521,8 @@ def _gather_all_types(solids, context_definitions):
         key_type=str,
         value_type=PipelineContextDefinition,
     )
+
+    check.inst_param(environment_type, 'environment_type', types.DagsterType)
 
     for solid in solids:
         for dagster_type in solid.iterate_types():
@@ -531,10 +533,13 @@ def _gather_all_types(solids, context_definitions):
             for dagster_type in context_definition.config_def.config_type.iterate_types():
                 yield dagster_type
 
+    for dagster_type in environment_type.iterate_types():
+        yield dagster_type
 
-def construct_type_dictionary(solids, context_definitions):
+
+def construct_type_dictionary(solids, context_definitions, environment_type):
     type_dict = {}
-    all_types = list(_gather_all_types(solids, context_definitions))
+    all_types = list(_gather_all_types(solids, context_definitions, environment_type))
     for dagster_type in all_types:
         name = dagster_type.name
         if name in type_dict:
@@ -633,7 +638,16 @@ class PipelineDefinition(object):
 
         self._solid_dict = pipeline_solid_dict
         self.dependency_structure = dependency_structure
-        self._type_dict = construct_type_dictionary(solids, self.context_definitions)
+
+        from .config_types import EnvironmentConfigType
+
+        self.environment_type = EnvironmentConfigType(self)
+
+        self._type_dict = construct_type_dictionary(
+            solids,
+            self.context_definitions,
+            self.environment_type,
+        )
 
     @staticmethod
     def create_single_solid_pipeline(pipeline, solid_name, injected_solids=None):
@@ -1005,6 +1019,7 @@ class ConfigDefinition(object):
 
 
         Args:
+            name (str): The name of the type that will be created.
             field_dict (dict): dictionary of `Field` objects keyed by their names.
 
         Example:

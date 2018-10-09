@@ -33,6 +33,10 @@ from .definitions import (
     Solid,
 )
 
+from .config_types import EnvironmentConfigType
+
+from .execution_context import ExecutionContext
+
 from .errors import (
     DagsterEvaluateValueError,
     DagsterInvariantViolationError,
@@ -47,8 +51,6 @@ from .compute_nodes import (
     create_compute_node_graph,
     execute_compute_nodes,
 )
-
-from .execution_context import ExecutionContext
 
 
 class PipelineExecutionResult(object):
@@ -69,7 +71,9 @@ class PipelineExecutionResult(object):
         self.pipeline = check.inst_param(pipeline, 'pipeline', PipelineDefinition)
         self.context = check.inst_param(context, 'context', ExecutionContext)
         self.result_list = check.list_param(
-            result_list, 'result_list', of_type=SolidExecutionResult
+            result_list,
+            'result_list',
+            of_type=SolidExecutionResult,
         )
 
     @property
@@ -293,6 +297,10 @@ def execute_pipeline_iterator(pipeline, environment):
       execution (ExecutionContext): execution context of the run
     '''
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+
+    pipeline_env_type = EnvironmentConfigType(pipeline)
+    environment = _create_config_value(pipeline_env_type, environment)
+
     check.inst_param(environment, 'enviroment', config.Environment)
 
     execution_graph = ExecutionGraph.from_pipeline(pipeline)
@@ -364,8 +372,8 @@ def execute_pipeline(
     Note: throw_on_error is very useful in testing contexts when not testing for error conditions
 
     Parameters:
-      pipeline (PipelineDefinition): pipeline to run
-      execution (ExecutionContext): execution context of the run
+      pipeline (PipelineDefinition): Pipeline to run
+      environment (config.Environment | dict): The enviroment that parameterizes this run
       throw_on_error (bool):
         throw_on_error makes the function throw when an error is encoutered rather than returning
         the py:class:`SolidExecutionResult` in an error-state.
@@ -376,12 +384,10 @@ def execute_pipeline(
     '''
 
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    environment = check.opt_inst_param(
-        environment,
-        'environment',
-        config.Environment,
-        config.Environment(),
-    )
+
+    pipeline_env_type = EnvironmentConfigType(pipeline)
+    environment = _create_config_value(pipeline_env_type, environment)
+
     execution_graph = ExecutionGraph.from_pipeline(pipeline)
     return _execute_graph(execution_graph, environment, throw_on_error)
 
