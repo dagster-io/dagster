@@ -3,6 +3,7 @@ from collections import (namedtuple, defaultdict)
 from contextlib import contextmanager
 from enum import Enum
 import uuid
+import os
 import sys
 
 from future.utils import raise_from
@@ -806,8 +807,6 @@ def create_subgraph_for_output(execution_info, solid, solid_transform_cn, output
         )
     else:
         return subgraph
-
-import os
 
 def _create_serialization_lambda(solid, output_def):
     check.inst_param(solid, 'solid', Solid)

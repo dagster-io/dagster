@@ -203,7 +203,6 @@ def serialize_inputs(inputs, input_defs, scratch_dir):
 
     type_values = {}
     input_def_dict = {inp.name: inp for inp in input_defs}
-    # os.makedirs(output_path)
     for input_name, input_value in inputs.items():
         dagster_type = input_def_dict[input_name].dagster_type if input_defs else types.Any
         type_value = dagster_type.create_serializable_type_value(input_value, scratch_dir)
@@ -270,7 +269,6 @@ def _dm_solid_transform(name, notebook_path):
             for output_def in info.solid_def.output_defs:
                 if output_def.name in output_nb.data:
                     value = deserialize_dm_object(output_nb.data[output_def.name])
-                    # value = output_def.dagster_type.deserialize_from_type_value(type_value)
                     yield Result(
                         value,
                         output_def.name,

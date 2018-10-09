@@ -52,7 +52,6 @@ class DagsterType(object):
         type_value = self.create_serializable_type_value(self.evaluate_value(value), output_dir)
         output_path = os.path.join(output_dir, 'type_value')
         with open(output_path, 'w') as ff:
-            print('Writing out to {output_path}'.format(output_path=output_path))
             json.dump(
                 {
                     'type': type_value.name,

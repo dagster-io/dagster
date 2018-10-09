@@ -28,21 +28,6 @@ class ReentrantContextInfo(namedtuple('ReentrantContextInfo', 'context_stack')):
     pass
 
 
-class ScratchFilesystemResource:
-    def __init__(self, root):
-        self.root = check.str_param(root, 'root')
-
-
-import os
-
-
-class SystemResources:
-    def __init__(self, run_id):
-        tmp_path = '/tmp/dagster/runs/{run_id}/scratch_fs'.format(run_id=run_id)
-        os.makedirs(tmp_path)
-        self.scratch_fs = ScratchFilesystemResource(tmp_path)
-
-
 class ExecutionContext(object):
     '''
     A context object flowed through the entire scope of single execution of a
@@ -70,7 +55,7 @@ class ExecutionContext(object):
             This allows to one to, in effect, reconstruct a context that is already running.
     '''
 
-    def __init__(self, loggers=None, resources=None, system_resources=None, reentrant_info=None):
+    def __init__(self, loggers=None, resources=None, reentrant_info=None):
         if loggers is None:
             loggers = [define_colored_console_logger('dagster')]
 
@@ -82,14 +67,12 @@ class ExecutionContext(object):
             ReentrantContextInfo,
         )
         self._context_stack = reentrant_info.context_stack if reentrant_info else OrderedDict()
-        self.system_resources = system_resources
 
     @staticmethod
     def for_run(loggers=None, resources=None):
         return ExecutionContext(
             loggers,
             resources,
-            None,
             ReentrantContextInfo(context_stack=OrderedDict({
                 'run_id': str(uuid.uuid4()),
             }), ),
