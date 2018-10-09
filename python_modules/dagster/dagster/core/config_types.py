@@ -4,6 +4,7 @@ from dagster import check
 from .config import (
     Context,
     Environment,
+    Execution,
     Expectations,
     Solid,
 )
@@ -128,12 +129,21 @@ class EnvironmentConfigType(DagsterCompositeType):
             default_value=Expectations(evaluate=True),
         )
 
+        execution_value = Field(
+            ExecutionConfigType(
+                '{pipeline_name}.ExecutionConfig'.format(pipeline_name=pipeline_name)
+            ),
+            is_optional=True,
+            default_value=Execution(serialize_intermediates=False),
+        )
+
         super(EnvironmentConfigType, self).__init__(
             '{pipeline_name}.Environment'.format(pipeline_name=pipeline_name),
             fields={
                 'context': context_field,
                 'solids': solids_field,
                 'expectations': expectations_field,
+                'execution': execution_value,
             },
         )
 
@@ -188,6 +198,20 @@ class SolidDictionaryType(DagsterCompositeType):
 
     def evaluate_value(self, value):
         return process_incoming_composite_value(self, value, lambda val: val)
+
+
+class ExecutionConfigType(DagsterCompositeType):
+    def __init__(self, name):
+        check.str_param(name, 'name')
+        super(ExecutionConfigType, self).__init__(
+            name,
+            {
+                'serialize_intermediates': Field(Bool),
+            },
+        )
+
+    def evaluate_value(self, value):
+        return process_incoming_composite_value(self, value, lambda val: Execution(**val))
 
 
 # Adapted from https://github.com/okunishinishi/python-stringcase/blob/master/stringcase.py

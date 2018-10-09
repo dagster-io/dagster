@@ -3,6 +3,7 @@ from collections import (namedtuple, defaultdict)
 from contextlib import contextmanager
 from enum import Enum
 import uuid
+import os
 import sys
 
 from future.utils import raise_from
@@ -61,6 +62,10 @@ class ComputeNodeExecutionInfo(
     @property
     def pipeline(self):
         return self.execution_graph.pipeline
+
+    @property
+    def serialize_intermediates(self):
+        return self.environment.execution.serialize_intermediates
 
 
 class ComputeNodeOutputHandle(namedtuple('_ComputeNodeOutputHandle', 'compute_node output_name')):
@@ -180,6 +185,7 @@ class ComputeNodeTag(Enum):
     INPUT_EXPECTATION = 'INPUT_EXPECTATION'
     OUTPUT_EXPECTATION = 'OUTPUT_EXPECTATION'
     JOIN = 'JOIN'
+    SERIALIZE = 'SERIALIZE'
 
 
 EXPECTATION_VALUE_OUTPUT = 'expectation_value'
@@ -216,11 +222,7 @@ def _yield_transform_results(context, compute_node, conf, inputs):
                     solid_name=compute_node.solid.name,
                 )
             )
-        yield result
 
-
-def _collect_result_list(context, compute_node, conf, inputs):
-    for result in _yield_transform_results(context, compute_node, conf, inputs):
         context.info(
             'Solid {solid} emitted output "{output}" value {value}'.format(
                 solid=compute_node.solid.name,
@@ -250,7 +252,7 @@ def _execute_core_transform(context, compute_node, conf, inputs):
         with time_execution_scope() as timer_result, \
             _user_code_error_boundary(context, error_str):
 
-            all_results = list(_collect_result_list(context, compute_node, conf, inputs))
+            all_results = list(_yield_transform_results(context, compute_node, conf, inputs))
 
         if len(all_results) != len(solid.definition.output_defs):
             emitted_result_names = set([r.output_name for r in all_results])
@@ -770,7 +772,11 @@ def create_subgraph_for_input(execution_info, solid, prev_cn_output_handle, inpu
         )
 
 
-def create_subgraph_for_output(execution_info, solid, solid_transform_cn, output_def):
+SERIALIZE_INPUT = 'serialize_input'
+SERIALIZE_OUTPUT = 'serialize_output'
+
+
+def _decorate_with_expectations(execution_info, solid, solid_transform_cn, output_def):
     check.inst_param(execution_info, 'execution_info', ComputeNodeExecutionInfo)
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(solid_transform_cn, 'solid_transform_cn', ComputeNode)
@@ -791,6 +797,86 @@ def create_subgraph_for_output(execution_info, solid, solid_transform_cn, output
                 output_def.name,
             ),
         )
+
+
+def _decorate_with_serialization(execution_info, solid, output_def, subgraph):
+    check.inst_param(execution_info, 'execution_info', ComputeNodeExecutionInfo)
+    check.inst_param(solid, 'solid', Solid)
+    check.inst_param(output_def, 'output_def', OutputDefinition)
+    check.inst_param(subgraph, 'subgraph', ComputeNodeSubgraph)
+
+    if execution_info.serialize_intermediates:
+        serialize_cn = _create_serialization_node(solid, output_def, subgraph)
+        return ComputeNodeSubgraph(
+            nodes=subgraph.nodes + [serialize_cn],
+            terminal_cn_output_handle=ComputeNodeOutputHandle(
+                serialize_cn,
+                SERIALIZE_OUTPUT,
+            )
+        )
+    else:
+        return subgraph
+
+
+def create_subgraph_for_output(execution_info, solid, solid_transform_cn, output_def):
+    check.inst_param(execution_info, 'execution_info', ComputeNodeExecutionInfo)
+    check.inst_param(solid, 'solid', Solid)
+    check.inst_param(solid_transform_cn, 'solid_transform_cn', ComputeNode)
+    check.inst_param(output_def, 'output_def', OutputDefinition)
+
+    subgraph = _decorate_with_expectations(execution_info, solid, solid_transform_cn, output_def)
+
+    return _decorate_with_serialization(execution_info, solid, output_def, subgraph)
+
+
+def _create_serialization_lambda(solid, output_def):
+    check.inst_param(solid, 'solid', Solid)
+    check.inst_param(output_def, 'output_def', OutputDefinition)
+
+    def fn(context, _compute_node, inputs):
+        value = inputs[SERIALIZE_INPUT]
+        path = '/tmp/dagster/runs/{run_id}/{solid_name}/outputs/{output_name}'.format(
+            run_id=context.run_id,
+            solid_name=solid.name,
+            output_name=output_def.name,
+        )
+
+        if not os.path.exists(path):
+            os.makedirs(path)
+
+        output_def.dagster_type.serialize_value(path, value)
+
+        context.info('Serialized output to {path}'.format(path=path))
+
+        yield Result(value, SERIALIZE_OUTPUT)
+
+    return fn
+
+
+def _create_serialization_node(solid, output_def, prev_subgraph):
+    check.inst_param(solid, 'solid', Solid)
+    check.inst_param(output_def, 'output_def', OutputDefinition)
+    check.inst_param(prev_subgraph, 'prev_subgraph', ComputeNodeSubgraph)
+
+    return ComputeNode(
+        friendly_name='serialize.' + solid.name + '.' + output_def.name,
+        node_inputs=[
+            ComputeNodeInput(
+                name=SERIALIZE_INPUT,
+                dagster_type=output_def.dagster_type,
+                prev_output_handle=prev_subgraph.terminal_cn_output_handle,
+            )
+        ],
+        node_outputs=[
+            ComputeNodeOutput(
+                name=SERIALIZE_OUTPUT,
+                dagster_type=output_def.dagster_type,
+            )
+        ],
+        compute_fn=_create_serialization_lambda(solid, output_def),
+        tag=ComputeNodeTag.SERIALIZE,
+        solid=solid,
+    )
 
 
 def _create_join_node(solid, prev_nodes, prev_output_name):
