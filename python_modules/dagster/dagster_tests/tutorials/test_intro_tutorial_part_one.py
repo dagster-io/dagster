@@ -17,7 +17,7 @@ def test_tutorial_part_one():
 
 
 def define_pipeline():
-    return PipelineDefinition(name='hello_world_pipeline', solids=[hello_world])
+    return PipelineDefinition(name='part_one_pipeline', solids=[hello_world])
 
 
 @lambda_solid
