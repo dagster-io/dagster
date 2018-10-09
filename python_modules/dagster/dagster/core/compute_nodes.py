@@ -836,7 +836,9 @@ def _create_serialization_lambda(solid, output_def):
     def fn(context, _compute_node, inputs):
         value = inputs[SERIALIZE_INPUT]
         path = '/tmp/dagster/runs/{run_id}/{solid_name}/outputs/{output_name}'.format(
-            run_id=context.run_id, solid_name=solid.name, output_name=output_def.name
+            run_id=context.run_id,
+            solid_name=solid.name,
+            output_name=output_def.name,
         )
 
         if not os.path.exists(path):
