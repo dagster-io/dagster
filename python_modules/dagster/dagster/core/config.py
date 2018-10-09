@@ -20,8 +20,8 @@ class Solid(namedtuple('Solid', 'config')):
         return super(Solid, cls).__new__(cls, config)
 
 
-class Environment(namedtuple('EnvironmentData', 'context solids expectations')):
-    def __new__(cls, solids=None, context=None, expectations=None):
+class Environment(namedtuple('EnvironmentData', 'context solids expectations execution')):
+    def __new__(cls, solids=None, context=None, expectations=None, execution=None):
         check.opt_inst_param(context, 'context', Context)
         check.opt_inst_param(expectations, 'expectations', Expectations)
 
@@ -31,11 +31,15 @@ class Environment(namedtuple('EnvironmentData', 'context solids expectations')):
         if expectations is None:
             expectations = Expectations(evaluate=True)
 
+        if execution is None:
+            execution = Execution(serialize_intermediates=False)
+
         return super(Environment, cls).__new__(
             cls,
             context=context,
             solids=check.opt_dict_param(solids, 'solids', key_type=str, value_type=Solid),
             expectations=expectations,
+            execution=execution,
         )
 
 
