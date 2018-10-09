@@ -807,10 +807,30 @@ def create_subgraph_for_output(execution_info, solid, solid_transform_cn, output
     else:
         return subgraph
 
-def _serialization_lambda(_context, _compute_node, inputs):
-    value = inputs[SERIALIZE_INPUT]
+import os
 
-    yield Result(value, SERIALIZE_OUTPUT)
+def _create_serialization_lambda(solid, output_def):
+    check.inst_param(solid, 'solid', Solid)
+    check.inst_param(output_def, 'output_def', OutputDefinition)
+
+    def fn(context, _compute_node, inputs):
+        value = inputs[SERIALIZE_INPUT]
+        path = '/tmp/dagster/runs/{run_id}/{solid_name}/outputs/{output_name}'.format(
+            run_id=context.run_id,
+            solid_name=solid.name,
+            output_name=output_def.name
+        )
+
+        if not os.path.exists(path):
+            os.makedirs(path)
+
+        output_def.dagster_type.serialize_value(path, value)
+
+        context.info('Serialized output to {path}'.format(path=path))
+
+        yield Result(value, SERIALIZE_OUTPUT)
+
+    return fn
 
 def _create_serialization_node(solid, output_def, prev_subgraph):
     check.inst_param(solid, 'solid', Solid)
@@ -832,7 +852,7 @@ def _create_serialization_node(solid, output_def, prev_subgraph):
                 dagster_type=output_def.dagster_type,
             )
         ],
-        compute_fn=_serialization_lambda,
+        compute_fn=_create_serialization_lambda(solid, output_def),
         tag=ComputeNodeTag.SERIALIZE,
         solid=solid,
     )

@@ -1,5 +1,6 @@
 from collections import namedtuple
-import pickle
+import json
+import os
 
 from six import integer_types, string_types
 
@@ -46,25 +47,39 @@ class DagsterType(object):
         yield self
 
     # If python had final methods, these would be final
-    def serialize_value(self, ff, value):
+    def serialize_value(self, output_dir, value):
         # Probably should force calling code to call evaluate value?
-        type_value = self.create_serializable_type_value(self.evaluate_value(value))
-        pickle.dump(type_value, ff)
+        type_value = self.create_serializable_type_value(self.evaluate_value(value), output_dir)
+        output_path = os.path.join(output_dir, 'type_value')
+        with open(output_path, 'w') as ff:
+            print('Writing out to {output_path}'.format(output_path=output_path))
+            json.dump(
+                {
+                    'type': type_value.name,
+                    'value': type_value.value,
+                },
+                ff,
+            )
         return type_value
 
     # If python had final methods, these would be final
-    def deserialize_value(self, ff):
-        type_value = pickle.load(ff)
-        if type_value.name != self.name:
-            raise Exception('type mismatch')
-        return self.deserialize_from_type_value(type_value)
+    def deserialize_value(self, output_dir):
+        with open(os.path.join(output_dir, 'type_value'), 'r') as ff:
+            type_value_dict = json.load(ff)
+            type_value = SerializedTypeValue(
+                name=type_value_dict['type'],
+                value=type_value_dict['value'],
+            )
+            if type_value.name != self.name:
+                raise Exception('type mismatch')
+            return self.deserialize_from_type_value(type_value, output_dir)
 
     # Override these in subclasses for customizable serialization
-    def create_serializable_type_value(self, value):
+    def create_serializable_type_value(self, value, _output_dir):
         return SerializedTypeValue(self.name, value)
 
     # Override these in subclasses for customizable serialization
-    def deserialize_from_type_value(self, type_value):
+    def deserialize_from_type_value(self, type_value, _output_dir):
         return type_value.value
 
 

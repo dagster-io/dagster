@@ -1,4 +1,5 @@
 from collections import namedtuple
+import os
 import pickle
 import tempfile
 
@@ -28,19 +29,23 @@ class _DataFrameType(types.PythonObjectType):
     tabular data structure with labeled axes (rows and columns). See http://pandas.pydata.org/''',
         )
 
-    def create_serializable_type_value(self, value):
-        # TODO use some passed in value to create temp files
-        csv_path = tempfile.NamedTemporaryFile(mode='w', delete=False)
-        value.to_csv(csv_path.name, index=False)
-        df_meta = DataFrameMeta(format='csv', path=csv_path.name)
-        return types.SerializedTypeValue(name=self.name, value=df_meta)
+    def create_serializable_type_value(self, value, output_dir):
+        check.str_param(output_dir, 'output_dir')
+        csv_path = os.path.join(output_dir, 'csv')
+        value.to_csv(csv_path, index=False)
+        df_meta = DataFrameMeta(format='csv', path='csv')
+        return types.SerializedTypeValue(name=self.name, value=df_meta._asdict())
 
-    def deserialize_from_type_value(self, type_value):
-        df_meta = type_value.value
-        check.inst(df_meta, DataFrameMeta)
+    def deserialize_from_type_value(self, type_value, output_dir):
+        check.str_param(output_dir, 'output_dir')
+
+        df_meta_dict = type_value.value
+        check.inst(df_meta_dict, dict)
+        df_meta = DataFrameMeta(**df_meta_dict)
 
         if df_meta.format == 'csv':
-            return pd.read_csv(df_meta.path)
+            csv_path = os.path.join(output_dir, df_meta.path)
+            return pd.read_csv(csv_path)
         else:
             raise Exception('unsupported')
 

@@ -24,6 +24,7 @@ class Environment(namedtuple('EnvironmentData', 'context solids expectations exe
     def __new__(cls, solids=None, context=None, expectations=None, execution=None):
         check.opt_inst_param(context, 'context', Context)
         check.opt_inst_param(expectations, 'expectations', Expectations)
+        check.opt_inst_param(execution, 'execution', Execution)
 
         if context is None:
             context = Context()
@@ -53,9 +54,8 @@ class Expectations(namedtuple('ExpectationsData', 'evaluate')):
 
 class Execution(namedtuple('ExecutionData', 'serialize_intermediates')):
     def __new__(cls, serialize_intermediates):
-        check.bool_param(serialize_intermediates, 'serialize_intermediates')
 
         return super(Execution, cls).__new__(
             cls,
-            serialize_intermediates=serialize_intermediates,
+            check.bool_param(serialize_intermediates, 'serialize_intermediates'),
         )

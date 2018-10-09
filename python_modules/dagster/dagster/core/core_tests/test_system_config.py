@@ -321,3 +321,10 @@ def test_solid_config_error():
 
     with pytest.raises(DagsterEvaluateValueError):
         int_solid_config.evaluate_value(1)
+
+
+def test_execution_config():
+    env_type = EnvironmentConfigType(define_test_solids_config_pipeline())
+    env_obj = env_type.evaluate_value({'execution': {'serialize_intermediates': True}})
+    assert isinstance(env_obj.execution, config.Execution)
+    assert env_obj.execution.serialize_intermediates

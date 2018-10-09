@@ -190,9 +190,11 @@ def serialize_dm_object(dm_object):
 def serialize_inputs(inputs, input_defs):
     type_values = {}
     input_def_dict = {inp.name: inp for inp in input_defs} if input_defs else None
+    output_path = '/tmp/dagstermill/temp_values/{some_id}'.format(some_id=str(uuid.uuid4()))
+    os.makedirs(output_path)
     for input_name, input_value in inputs.items():
         dagster_type = input_def_dict[input_name].dagster_type if input_defs else types.Any
-        type_value = dagster_type.create_serializable_type_value(input_value)
+        type_value = dagster_type.create_serializable_type_value(input_value, output_path)
         type_values[input_name] = type_value
 
     return serialize_dm_object(type_values)
