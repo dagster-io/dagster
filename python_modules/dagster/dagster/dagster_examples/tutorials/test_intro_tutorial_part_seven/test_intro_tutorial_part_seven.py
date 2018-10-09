@@ -32,7 +32,7 @@ def count_letters(word):
 
 def define_part_seven_pipeline():
     return PipelineDefinition(
-        name='part_seven',
+        name='part_seven_pipeline',
         solids=[double_the_word, count_letters],
         dependencies={
             'count_letters': {

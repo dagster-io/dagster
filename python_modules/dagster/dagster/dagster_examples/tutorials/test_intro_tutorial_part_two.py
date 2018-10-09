@@ -20,6 +20,7 @@ def solid_two(arg_one):
 
 def define_pipeline():
     return PipelineDefinition(
+        name='part_two_pipeline',
         solids=[solid_one, solid_two],
         dependencies={
             'solid_two': {

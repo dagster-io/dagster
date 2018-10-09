@@ -75,9 +75,9 @@ def consume_ssn(info, ssn):
     info.context.info('ssn: {ssn}'.format(ssn=ssn))
 
 
-def define_part_twelve_step_one():
+def define_part_twelve_step_one_pipeline():
     return PipelineDefinition(
-        name='part_twelve_step_one',
+        name='part_twelve_step_one_pipeline',
         solids=[produce_valid_value, consume_string_tuple],
         dependencies={
             'consume_string_tuple': {
@@ -87,9 +87,9 @@ def define_part_twelve_step_one():
     )
 
 
-def define_part_twelve_step_two():
+def define_part_twelve_step_two_pipeline():
     return PipelineDefinition(
-        name='part_twelve_step_two',
+        name='part_twelve_step_two_pipeline',
         solids=[produce_invalid_value, consume_string_tuple],
         dependencies={
             'consume_string_tuple': {
@@ -99,9 +99,9 @@ def define_part_twelve_step_two():
     )
 
 
-def define_part_twelve_step_three():
+def define_part_twelve_step_three_pipeline():
     return PipelineDefinition(
-        name='part_twelve_step_three',
+        name='part_twelve_step_three_pipeline',
         solids=[produce_valid_ssn_string, consume_ssn],
         dependencies={'consume_ssn': {
             'ssn': DependencyDefinition('produce_valid_ssn_string')
@@ -109,9 +109,9 @@ def define_part_twelve_step_three():
     )
 
 
-def define_part_twelve_step_four():
+def define_part_twelve_step_four_pipeline():
     return PipelineDefinition(
-        name='part_twelve_step_four',
+        name='part_twelve_step_four_pipeline',
         solids=[produce_invalid_ssn_string, consume_ssn],
         dependencies={'consume_ssn': {
             'ssn': DependencyDefinition('produce_invalid_ssn_string')
@@ -139,16 +139,16 @@ def test_ssn_type():
 
 
 def test_intro_tutorial_part_twelve_step_one():
-    execute_pipeline(define_part_twelve_step_one())
+    execute_pipeline(define_part_twelve_step_one_pipeline())
 
 
-def test_intro_tutorial_part_twelve_step_two():
+def test_intro_tutorial_part_twelve_step_two_pipeline():
     with pytest.raises(DagsterTypeError):
-        execute_pipeline(define_part_twelve_step_two())
+        execute_pipeline(define_part_twelve_step_two_pipeline())
 
 
-def test_intro_tutorial_part_twelve_step_three():
-    execute_pipeline(define_part_twelve_step_three())
+def test_intro_tutorial_part_twelve_step_three_pipeline():
+    execute_pipeline(define_part_twelve_step_three_pipeline())
 
 
 def test_intro_tutorial_part_twelve_step_four():
@@ -156,8 +156,8 @@ def test_intro_tutorial_part_twelve_step_four():
         DagsterTypeError,
         match='Solid consume_ssn input ssn received value 394-30-203239483 ',
     ):
-        execute_pipeline(define_part_twelve_step_four())
+        execute_pipeline(define_part_twelve_step_four_pipeline())
 
 
 if __name__ == '__main__':
-    execute_pipeline(define_part_twelve_step_three(), throw_on_error=True)
+    execute_pipeline(define_part_twelve_step_three_pipeline(), throw_on_error=True)

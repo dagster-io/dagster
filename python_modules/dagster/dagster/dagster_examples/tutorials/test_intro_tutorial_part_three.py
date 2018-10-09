@@ -39,6 +39,7 @@ def solid_d(arg_b, arg_c):
 
 def define_pipeline():
     return PipelineDefinition(
+        name='part_three_pipeline',
         solids=[solid_d, solid_c, solid_b, solid_a],
         dependencies={
             'solid_b': {

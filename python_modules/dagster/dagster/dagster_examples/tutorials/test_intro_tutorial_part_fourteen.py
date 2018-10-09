@@ -43,11 +43,11 @@ def multer(num1, num2):
     return num1 * num2
 
 
-def define_part_fourteen_step_one():
+def define_part_fourteen_step_one_pipeline():
     # (a + b) * (c + d)
 
     return PipelineDefinition(
-        name='tutorial_part_thirteen_step_one',
+        name='part_fourteen_step_one_pipeline',
         solids=[load_number, adder, multer],
         dependencies={
             SolidInstance(load_number.name, 'a'): {},
@@ -72,7 +72,7 @@ def define_part_fourteen_step_one():
 
 def test_only_final():
     pipeline = PipelineDefinition.create_single_solid_pipeline(
-        define_part_fourteen_step_one(),
+        define_part_fourteen_step_one_pipeline(),
         'final',
         injected_solids={
             'final': {
@@ -93,7 +93,7 @@ def test_only_final():
 
 def test_a_plus_b_final_subdag():
     pipeline = PipelineDefinition.create_sub_pipeline(
-        define_part_fourteen_step_one(),
+        define_part_fourteen_step_one_pipeline(),
         ['a_plus_b', 'final'],
         ['final'],
         injected_solids={

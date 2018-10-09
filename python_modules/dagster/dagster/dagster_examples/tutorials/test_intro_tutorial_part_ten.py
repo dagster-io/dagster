@@ -55,9 +55,9 @@ def add_ints(num_one, num_two):
     return num_one + num_two
 
 
-def define_part_ten_step_one():
+def define_part_ten_step_one_pipeline():
     return PipelineDefinition(
-        name='part_ten_step_one',
+        name='part_ten_step_one_pipeline',
         solids=[injest_a, injest_b, add_ints],
         dependencies={
             'add_ints': {
@@ -70,7 +70,7 @@ def define_part_ten_step_one():
 
 def test_intro_tutorial_part_ten_step_one():
     result = execute_pipeline(
-        define_part_ten_step_one(),
+        define_part_ten_step_one_pipeline(),
         {
             'context': {
                 'default': {
@@ -116,14 +116,14 @@ def define_failing_environment_config():
 def test_intro_tutorial_part_ten_step_two_fails_hard():
     with pytest.raises(DagsterExpectationFailedError):
         execute_pipeline(
-            define_part_ten_step_one(),
+            define_part_ten_step_one_pipeline(),
             define_failing_environment_config(),
         )
 
 
 def test_intro_tutorial_part_ten_step_two_fails_soft():
     result = execute_pipeline(
-        define_part_ten_step_one(),
+        define_part_ten_step_one_pipeline(),
         define_failing_environment_config(),
         throw_on_error=False,
     )
@@ -133,7 +133,7 @@ def test_intro_tutorial_part_ten_step_two_fails_soft():
 
 if __name__ == '__main__':
     execute_pipeline(
-        define_part_ten_step_one(),
+        define_part_ten_step_one_pipeline(),
         {
             'context': {
                 'default': {
