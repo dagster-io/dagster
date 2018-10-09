@@ -372,8 +372,8 @@ def execute_pipeline(
     Note: throw_on_error is very useful in testing contexts when not testing for error conditions
 
     Parameters:
-      pipeline (PipelineDefinition): pipeline to run
-      execution (ExecutionContext): execution context of the run
+      pipeline (PipelineDefinition): Pipeline to run
+      environment (config.Environment | dict): The enviroment that parameterizes this run
       throw_on_error (bool):
         throw_on_error makes the function throw when an error is encoutered rather than returning
         the py:class:`SolidExecutionResult` in an error-state.
@@ -387,8 +387,6 @@ def execute_pipeline(
 
     pipeline_env_type = EnvironmentConfigType(pipeline)
     environment = _create_config_value(pipeline_env_type, environment)
-
-    environment = check.inst_param(environment, 'environment', config.Environment)
 
     execution_graph = ExecutionGraph.from_pipeline(pipeline)
     return _execute_graph(execution_graph, environment, throw_on_error)

@@ -89,11 +89,7 @@ class ContextConfigType(DagsterCompositeType):
 class SolidConfigType(DagsterCompositeType):
     def __init__(self, name, config_type):
         check.str_param(name, 'name')
-        self.config_type = check.inst_param(config_type, 'config_type', DagsterType)
-        super(SolidConfigType, self).__init__(
-            name,
-            {'config': Field(config_type)},
-        )
+        super(SolidConfigType, self).__init__(name, {'config': Field(config_type)})
 
     def evaluate_value(self, value):
         if isinstance(value, Solid):
