@@ -232,6 +232,10 @@ class ConfigDictionary(DagsterCompositeType):
 
 def process_incoming_composite_value(dagster_composite_type, incoming_value, ctor):
     check.inst_param(dagster_composite_type, 'dagster_composite_type', DagsterCompositeType)
+
+    if incoming_value and not isinstance(incoming_value, dict):
+        raise DagsterEvaluateValueError('Value for composite type must be a dict')
+
     incoming_value = check.opt_dict_param(incoming_value, 'incoming_value', key_type=str)
     check.callable_param(ctor, 'ctor')
 

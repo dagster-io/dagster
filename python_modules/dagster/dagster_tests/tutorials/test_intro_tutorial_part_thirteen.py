@@ -50,10 +50,16 @@ def define_part_thirteen_step_one():
 def test_part_thirteen_step_one():
     pipeline_result = execute_pipeline(
         define_part_thirteen_step_one(),
-        config.Environment(solids={
-            'load_a': config.Solid(234),
-            'load_b': config.Solid(384),
-        })
+        {
+            'solids': {
+                'load_a': {
+                    'config': 234,
+                },
+                'load_b': {
+                    'config': 384
+                },
+            },
+        },
     )
 
     assert pipeline_result.success
@@ -98,10 +104,16 @@ def define_part_thirteen_step_two():
 def test_part_thirteen_step_two():
     pipeline_result = execute_pipeline(
         define_part_thirteen_step_two(),
-        config.Environment(solids={
-            'load_a': config.Solid(23),
-            'load_b': config.Solid(38),
-        })
+        {
+            'solids': {
+                'load_a': {
+                    'config': 23,
+                },
+                'load_b': {
+                    'config': 38
+                },
+            },
+        },
     )
 
     assert pipeline_result.success

@@ -23,7 +23,13 @@ def test_tutorial_part_four():
 
     result = execute_pipeline(
         define_pipeline(),
-        config.Environment(solids={'hello_world': config.Solid('Hello, World!')}),
+        {
+            'solids': {
+                'hello_world': {
+                    'config': 'Hello, World!',
+                },
+            },
+        },
     )
 
     assert result.success

@@ -164,7 +164,13 @@ def test_intro_tutorial_part_eleven_step_three():
 if __name__ == '__main__':
     execute_pipeline(
         define_part_eleven_step_three(),
-        config.Environment(solids={'conditional': config.Solid('out_two')})
+        {
+            'solids': {
+                'conditional': {
+                    'config': 'out_two'
+                },
+            },
+        },
     )
 
     # execute_pipeline(define_part_eleven_step_two())

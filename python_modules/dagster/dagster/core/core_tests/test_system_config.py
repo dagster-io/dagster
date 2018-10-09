@@ -176,24 +176,7 @@ def test_expectations_config():
 
 
 def test_solid_dictionary_type():
-    pipeline_def = PipelineDefinition(
-        solids=[
-            SolidDefinition(
-                name='int_config_solid',
-                config_def=ConfigDefinition(types.Int),
-                inputs=[],
-                outputs=[],
-                transform_fn=lambda *args: None,
-            ),
-            SolidDefinition(
-                name='string_config_solid',
-                config_def=ConfigDefinition(types.String),
-                inputs=[],
-                outputs=[],
-                transform_fn=lambda *args: None,
-            )
-        ]
-    )
+    pipeline_def = define_test_solids_config_pipeline()
 
     solid_dict_type = SolidDictionaryType('foobar', pipeline_def)
 
@@ -213,6 +196,27 @@ def test_solid_dictionary_type():
         'int_config_solid': config.Solid(1),
         'string_config_solid': config.Solid('bar'),
     }
+
+
+def define_test_solids_config_pipeline():
+    return PipelineDefinition(
+        solids=[
+            SolidDefinition(
+                name='int_config_solid',
+                config_def=ConfigDefinition(types.Int),
+                inputs=[],
+                outputs=[],
+                transform_fn=lambda *args: None,
+            ),
+            SolidDefinition(
+                name='string_config_solid',
+                config_def=ConfigDefinition(types.String),
+                inputs=[],
+                outputs=[],
+                transform_fn=lambda *args: None,
+            )
+        ]
+    )
 
 
 def test_solid_dictionary_some_no_config():
@@ -306,3 +310,14 @@ def test_whole_environment():
         'int_config_solid': config.Solid(123),
     }
     assert env.expectations == config.Expectations(evaluate=True)
+
+
+def test_solid_config_error():
+    solid_dict_type = SolidDictionaryType('slkdfjkjdsf', define_test_solids_config_pipeline())
+    int_solid_config = solid_dict_type.field_dict['int_config_solid'].dagster_type
+
+    with pytest.raises(DagsterEvaluateValueError, match='Field notconfig not found.'):
+        int_solid_config.evaluate_value({'notconfig': 1})
+
+    with pytest.raises(DagsterEvaluateValueError):
+        int_solid_config.evaluate_value(1)

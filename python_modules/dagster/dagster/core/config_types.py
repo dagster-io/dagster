@@ -1,11 +1,20 @@
 import re
 from dagster import check
 
+from .config import (
+    Context,
+    Environment,
+    Expectations,
+    Solid,
+)
+
 from .definitions import (
     Field,
     PipelineContextDefinition,
     PipelineDefinition,
 )
+
+from .errors import DagsterTypeError
 
 from .types import (
     Bool,
@@ -14,13 +23,6 @@ from .types import (
     DagsterEvaluateValueError,
     DagsterType,
     process_incoming_composite_value,
-)
-
-from .config import (
-    Context,
-    Environment,
-    Expectations,
-    Solid,
 )
 
 
@@ -97,8 +99,7 @@ class SolidConfigType(DagsterCompositeType):
         if isinstance(value, Solid):
             return value
 
-        processed_config = self.config_type.evaluate_value(value['config'])
-        return Solid(processed_config)
+        return process_incoming_composite_value(self, value, lambda val: Solid(**val))
 
 
 class EnvironmentConfigType(DagsterCompositeType):
@@ -107,36 +108,37 @@ class EnvironmentConfigType(DagsterCompositeType):
 
         pipeline_name = camelcase(pipeline_def.name)
 
-        field_dict = {
-            'context':
-            Field(
-                ContextConfigType(
-                    pipeline_name,
-                    pipeline_def.context_definitions,
-                ),
-                is_optional=True,
+        context_field = Field(
+            ContextConfigType(
+                pipeline_name,
+                pipeline_def.context_definitions,
             ),
-            'solids':
-            Field(
-                SolidDictionaryType(
-                    '{pipeline_name}.SolidsConfigDictionary'.format(pipeline_name=pipeline_name),
-                    pipeline_def,
-                ),
-                is_optional=True,
+            is_optional=True,
+        )
+
+        solids_field = Field(
+            SolidDictionaryType(
+                '{pipeline_name}.SolidsConfigDictionary'.format(pipeline_name=pipeline_name),
+                pipeline_def,
             ),
-            'expectations':
-            Field(
-                ExpectationsConfigType(
-                    '{pipeline_name}.ExpectationsConfig'.format(pipeline_name=pipeline_name)
-                ),
-                is_optional=True,
-                default_value=Expectations(evaluate=True),
+            is_optional=True,
+        )
+
+        expectations_field = Field(
+            ExpectationsConfigType(
+                '{pipeline_name}.ExpectationsConfig'.format(pipeline_name=pipeline_name)
             ),
-        }
+            is_optional=True,
+            default_value=Expectations(evaluate=True),
+        )
 
         super(EnvironmentConfigType, self).__init__(
             '{pipeline_name}.Environment'.format(pipeline_name=pipeline_name),
-            field_dict,
+            fields={
+                'context': context_field,
+                'solids': solids_field,
+                'expectations': expectations_field,
+            },
         )
 
     def evaluate_value(self, value):
@@ -149,11 +151,7 @@ class EnvironmentConfigType(DagsterCompositeType):
         return process_incoming_composite_value(
             self,
             value,
-            lambda val: Environment(
-                context=val.get('context'),
-                solids=val.get('solids'),
-                expectations=val.get('expectations'),
-            )
+            lambda val: Environment(**val),
         )
 
 
@@ -168,11 +166,7 @@ class ExpectationsConfigType(DagsterCompositeType):
         if isinstance(value, Expectations):
             return value
 
-        return process_incoming_composite_value(
-            self,
-            value,
-            lambda val: Expectations(evaluate=val.get('evaluate', True)),
-        )
+        return process_incoming_composite_value(self, value, lambda val: Expectations(**val))
 
 
 class SolidDictionaryType(DagsterCompositeType):
