@@ -59,6 +59,10 @@ class Manager:
         else:
             self.notebook_dir = None
 
+        path = '/tmp/dagstermill/{some_id}/values'.format(some_id=str(uuid.uuid4()))
+        os.makedirs(path)
+        self.base_path = path
+
     def _typecheck_evaluate_inputs(self, inputs):
         if not self.solid_def:
             return inputs
@@ -100,7 +104,11 @@ class Manager:
         if inputs in self.cache:
             return self.cache[inputs]
 
-        ddict = deserialize_inputs(inputs, self.solid_def.input_defs if self.solid_def else None)
+        ddict = deserialize_inputs(
+            inputs,
+            self.solid_def.input_defs if self.solid_def else None,
+            self.base_path,
+        )
         self.cache[inputs] = self._typecheck_evaluate_inputs(ddict)
         return ddict
 
@@ -187,26 +195,33 @@ def serialize_dm_object(dm_object):
     return base64.b64encode(pickle.dumps(dm_object)).decode('ascii')
 
 
-def serialize_inputs(inputs, input_defs):
+def serialize_inputs(inputs, input_defs, scratch_dir):
+    check.dict_param(inputs, 'inputs', key_type=str)
+    input_defs = check.opt_list_param(input_defs, 'input_defs', of_type=InputDefinition)
+    check.str_param(scratch_dir, 'scratch_dir')
+
     type_values = {}
-    input_def_dict = {inp.name: inp for inp in input_defs} if input_defs else None
-    output_path = '/tmp/dagstermill/temp_values/{some_id}'.format(some_id=str(uuid.uuid4()))
-    os.makedirs(output_path)
+    input_def_dict = {inp.name: inp for inp in input_defs}
+    # os.makedirs(output_path)
     for input_name, input_value in inputs.items():
         dagster_type = input_def_dict[input_name].dagster_type if input_defs else types.Any
-        type_value = dagster_type.create_serializable_type_value(input_value, output_path)
+        type_value = dagster_type.create_serializable_type_value(input_value, scratch_dir)
         type_values[input_name] = type_value
 
     return serialize_dm_object(type_values)
 
 
-def deserialize_inputs(inputs_str, input_defs):
+def deserialize_inputs(inputs_str, input_defs, scratch_dir):
+    check.str_param(inputs_str, 'inputs_str')
+    input_defs = check.opt_list_param(input_defs, 'input_defs', of_type=InputDefinition)
+    check.str_param(scratch_dir, 'scratch_dir')
+
     type_values = deserialize_dm_object(inputs_str)
     input_def_dict = {inp.name: inp for inp in input_defs} if input_defs else None
     inputs = {}
     for name, type_value in type_values.items():
         dagster_type = input_def_dict[name].dagster_type if input_def_dict else types.Any
-        inputs[name] = dagster_type.deserialize_from_type_value(type_value)
+        inputs[name] = dagster_type.deserialize_from_type_value(type_value, scratch_dir)
     return inputs
 
 
@@ -217,18 +232,27 @@ def _dm_solid_transform(name, notebook_path):
     do_cleanup = False  # for now
 
     def _t_fn(info, inputs):
-        base_dir = '/tmp/dagstermill/output_notebooks'
-        if not os.path.exists(base_dir):
-            os.makedirs(base_dir)
+        base_dir = '/tmp/dagstermill/{run_id}/'
+        output_notebook_dir = os.path.join(base_dir, 'output_notebooks/')
 
-        temp_path = os.path.join(base_dir, '{prefix}-out.ipynb'.format(prefix=str(uuid.uuid4())))
+        if not os.path.exists(output_notebook_dir):
+            os.makedirs(output_notebook_dir)
+
+        temp_path = os.path.join(
+            output_notebook_dir, '{prefix}-out.ipynb'.format(prefix=str(uuid.uuid4()))
+        )
+
+        values_dir = os.path.join(base_dir, 'values/')
+
+        if not os.path.exists(values_dir):
+            os.makedirs(values_dir)
 
         try:
             _source_nb = pm.execute_notebook(
                 notebook_path,
                 temp_path,
                 parameters=dict(
-                    inputs=serialize_inputs(inputs, info.solid_def.input_defs),
+                    inputs=serialize_inputs(inputs, info.solid_def.input_defs, values_dir),
                     config=serialize_dm_object(info.config),
                 ),
             )

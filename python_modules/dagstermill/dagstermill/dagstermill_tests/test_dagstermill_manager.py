@@ -1,3 +1,5 @@
+import uuid
+
 import pytest
 
 import dagstermill as dm
@@ -32,7 +34,8 @@ def test_basic_get_in_memory_inputs():
 
 def test_basic_get_serialized_inputs():
     manager = dm.define_manager()
-    inputs = dm.serialize_inputs(dict(a=1, b=2), input_defs=None)
+    output_path = '/tmp/dagstermill/temp_values/{some_id}'.format(some_id=str(uuid.uuid4()))
+    inputs = dm.serialize_inputs(dict(a=1, b=2), input_defs=None, scratch_dir=output_path)
     assert manager.get_input(inputs, 'a') == 1
     assert manager.get_input(inputs, 'b') == 2
 
@@ -117,6 +120,7 @@ def test_config_typecheck():
 
 
 def test_serialize_inputs():
+    output_path = '/tmp/dagstermill/temp_values/{some_id}'.format(some_id=str(uuid.uuid4()))
     output = dm.serialize_inputs(
         {
             'foo': 'value_for_foo',
@@ -126,6 +130,7 @@ def test_serialize_inputs():
             InputDefinition('foo'),
             InputDefinition('bar'),
         ],
+        output_path,
     )
 
     print(repr(output))
