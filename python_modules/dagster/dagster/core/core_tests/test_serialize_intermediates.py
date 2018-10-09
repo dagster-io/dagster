@@ -12,7 +12,7 @@ def return_one():
     return 1
 
 
-class Some:
+class Some(object):
     def __init__(self, value):
         self.value = value
 

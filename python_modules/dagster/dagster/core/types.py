@@ -178,7 +178,6 @@ class PythonObjectType(UncoercedTypeMixin, DagsterType):
         path = type_value_dict['path']
         with open(os.path.join(output_dir, path), 'rb') as pf:
             return pickle.load(pf)
-        # return self.deserialize_from_type_value(type_value, output_dir)
 
 
 class _DagsterStringType(DagsterScalarType):
