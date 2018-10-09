@@ -1,6 +1,7 @@
 from collections import namedtuple
 import json
 import os
+import pickle
 
 from six import integer_types, string_types
 
@@ -149,6 +150,34 @@ class PythonObjectType(UncoercedTypeMixin, DagsterType):
 
     def is_python_valid_value(self, value):
         return nullable_isinstance(value, self.python_type)
+
+    def serialize_value(self, output_dir, value):
+        type_value = self.create_serializable_type_value(self.evaluate_value(value), output_dir)
+        output_path = os.path.join(output_dir, 'type_value')
+        with open(output_path, 'w') as ff:
+            json.dump(
+                {
+                    'type': type_value.name,
+                    'path': 'pickle'
+                },
+                ff,
+            )
+        pickle_path = os.path.join(output_dir, 'pickle')
+        with open(pickle_path, 'wb') as pf:
+            pickle.dump(value, pf)
+
+        return type_value
+
+    # If python had final methods, these would be final
+    def deserialize_value(self, output_dir):
+        with open(os.path.join(output_dir, 'type_value'), 'r') as ff:
+            type_value_dict = json.load(ff)
+            if type_value_dict['type'] != self.name:
+                raise Exception('type mismatch')
+
+        path = type_value_dict['path']
+        with open(os.path.join(output_dir, path), 'rb') as pf:
+            return pickle.load(pf)
 
 
 class _DagsterStringType(DagsterScalarType):
