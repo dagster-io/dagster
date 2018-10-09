@@ -232,7 +232,7 @@ def _dm_solid_transform(name, notebook_path):
     do_cleanup = False  # for now
 
     def _t_fn(info, inputs):
-        base_dir = '/tmp/dagstermill/{run_id}/'
+        base_dir = '/tmp/dagstermill/{run_id}/'.format(run_id=info.context.run_id)
         output_notebook_dir = os.path.join(base_dir, 'output_notebooks/')
 
         if not os.path.exists(output_notebook_dir):
