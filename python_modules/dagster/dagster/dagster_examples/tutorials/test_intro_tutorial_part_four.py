@@ -16,7 +16,7 @@ def hello_world(info):
 
 
 def define_pipeline():
-    return PipelineDefinition(solids=[hello_world])
+    return PipelineDefinition(name='part_four_pipeline', solids=[hello_world])
 
 
 def test_tutorial_part_four():

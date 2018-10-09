@@ -19,7 +19,7 @@ def solid_two(info):
 
 
 def define_step_one_pipeline():
-    return PipelineDefinition(solids=[solid_one, solid_two])
+    return PipelineDefinition(name='part_five_step_one_pipeline', solids=[solid_one, solid_two])
 
 
 def test_tutorial_part_five_sample_one():
@@ -30,7 +30,7 @@ def test_tutorial_part_five_sample_one():
 
 
 def define_step_two_pipeline():
-    return PipelineDefinition(name='part_five_step_two', solids=[solid_one, solid_two])
+    return PipelineDefinition(name='part_five_step_two_pipeline', solids=[solid_one, solid_two])
 
 
 def test_tutorial_part_five_sample_two():
@@ -41,7 +41,7 @@ def test_tutorial_part_five_sample_two():
 
 
 def define_step_three_pipeline():
-    return PipelineDefinition(name='part_five_step_three', solids=[solid_one, solid_two])
+    return PipelineDefinition(name='part_five_step_three_pipeline', solids=[solid_one, solid_two])
 
 
 def test_tutorial_part_five_sample_three():

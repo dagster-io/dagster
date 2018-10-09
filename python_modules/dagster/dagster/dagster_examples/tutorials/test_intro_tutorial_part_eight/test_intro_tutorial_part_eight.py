@@ -60,7 +60,7 @@ def count_letters(word):
 
 def define_part_eight_step_one_pipeline():
     return PipelineDefinition(
-        name='part_eight_step_one',
+        name='part_eight_step_one_pipeline',
         solids=[double_the_word_with_typed_config, count_letters],
         dependencies={
             'count_letters': {
@@ -72,7 +72,7 @@ def define_part_eight_step_one_pipeline():
 
 def define_part_eight_step_two_pipeline():
     return PipelineDefinition(
-        name='part_eight_step_two',
+        name='part_eight_step_two_pipeline',
         solids=[typed_double_word, count_letters],
         dependencies={
             'count_letters': {
@@ -84,7 +84,7 @@ def define_part_eight_step_two_pipeline():
 
 def define_part_eight_step_three_pipeline():
     return PipelineDefinition(
-        name='part_eight_step_three',
+        name='part_eight_step_three_pipeline',
         solids=[typed_double_word_mismatch, count_letters],
         dependencies={
             'count_letters': {

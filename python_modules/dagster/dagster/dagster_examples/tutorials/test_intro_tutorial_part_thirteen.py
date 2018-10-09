@@ -34,9 +34,9 @@ def a_plus_b(a, b):
     return a + b
 
 
-def define_part_thirteen_step_one():
+def define_part_thirteen_step_one_pipeline():
     return PipelineDefinition(
-        name='thirteen_step_one',
+        name='part_thirteen_step_one_pipeline',
         solids=[load_a, load_b, a_plus_b],
         dependencies={
             'a_plus_b': {
@@ -49,7 +49,7 @@ def define_part_thirteen_step_one():
 
 def test_part_thirteen_step_one():
     pipeline_result = execute_pipeline(
-        define_part_thirteen_step_one(),
+        define_part_thirteen_step_one_pipeline(),
         {
             'solids': {
                 'load_a': {
@@ -86,9 +86,9 @@ def adder(num1, num2):
     return num1 + num2
 
 
-def define_part_thirteen_step_two():
+def define_part_thirteen_step_two_pipeline():
     return PipelineDefinition(
-        name='thirteen_step_two',
+        name='part_thirteen_step_two_pipeline',
         solids=[load_number, adder],
         dependencies={
             SolidInstance('load_number', alias='load_a'): {},
@@ -103,7 +103,7 @@ def define_part_thirteen_step_two():
 
 def test_part_thirteen_step_two():
     pipeline_result = execute_pipeline(
-        define_part_thirteen_step_two(),
+        define_part_thirteen_step_two_pipeline(),
         {
             'solids': {
                 'load_a': {
@@ -132,11 +132,11 @@ def multer(num1, num2):
     return num1 * num2
 
 
-def define_part_thirteen_step_three():
+def define_part_thirteen_step_three_pipeline():
     # (a + b) * (c + d)
 
     return PipelineDefinition(
-        name='tutorial_part_thirteen_step_one',
+        name='part_thirteen_step_three_pipeline',
         solids=[load_number, adder, multer],
         dependencies={
             SolidInstance(load_number.name, 'a'): {},
@@ -160,7 +160,7 @@ def define_part_thirteen_step_three():
 
 
 def test_run_whole_pipeline():
-    pipeline = define_part_thirteen_step_three()
+    pipeline = define_part_thirteen_step_three_pipeline()
     pipeline_result = execute_pipeline(
         pipeline,
         config.Environment(
