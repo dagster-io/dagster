@@ -49,7 +49,7 @@ def define_part_thirteen_step_one_pipeline():
 
 def test_part_thirteen_step_one():
     pipeline_result = execute_pipeline(
-        define_part_thirteen_step_one(),
+        define_part_thirteen_step_one_pipeline(),
         {
             'solids': {
                 'load_a': {

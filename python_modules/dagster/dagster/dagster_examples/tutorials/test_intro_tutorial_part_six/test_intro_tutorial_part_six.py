@@ -17,11 +17,12 @@ def define_part_six_pipeline():
 
 def define_part_six_repo():
     return RepositoryDefinition(
-        name='part_six_repo', pipeline_dict={
-            'part_six': define_part_six_pipeline,
-        }
+        name='part_six_repo',
+        pipeline_dict={
+            'part_six_pipeline': define_part_six_pipeline,
+        },
     )
 
 
 def test_part_six_repo():
-    assert define_part_six_repo().get_pipeline('part_six').name == 'part_six'
+    assert define_part_six_repo().get_pipeline('part_six_pipeline').name == 'part_six_pipeline'
