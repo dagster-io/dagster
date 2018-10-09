@@ -48,7 +48,6 @@ class DagsterType(object):
 
     # If python had final methods, these would be final
     def serialize_value(self, output_dir, value):
-        # Probably should force calling code to call evaluate value?
         type_value = self.create_serializable_type_value(self.evaluate_value(value), output_dir)
         output_path = os.path.join(output_dir, 'type_value')
         with open(output_path, 'w') as ff:
