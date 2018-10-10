@@ -150,6 +150,7 @@ def load_constant(info):
 
 def define_test_notebook_dag_pipeline():
     return PipelineDefinition(
+        name='test_notebook_dag',
         solids=[
             load_constant,
             add_two_numbers_pm_solid('adder'),

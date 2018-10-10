@@ -1,0 +1,3 @@
+repository:
+  module: dagstermill.dagstermill_tests.repository
+  fn: define_example_repository
