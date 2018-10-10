@@ -1,6 +1,5 @@
 import * as React from "react";
 import gql from "graphql-tag";
-import styled, { StyledComponentClass } from "styled-components";
 import { Colors } from "@blueprintjs/core";
 import PipelineColorScale from "./PipelineColorScale";
 import {
@@ -9,7 +8,11 @@ import {
   SolidNodeFragment_outputs
 } from "./types/SolidNodeFragment";
 import { IFullSolidLayout, ILayout } from "./getFullSolidLayout";
-import { TypeName } from "../TypeWithTooltip";
+import {
+  SVGEllipseInRect,
+  SVGFlowLayoutRect,
+  SVGMonospaceText
+} from "./SVGComponents";
 
 interface ISolidNodeProps {
   layout: IFullSolidLayout;
@@ -75,39 +78,61 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
   };
 
   renderIO(
-    ComponentClass: StyledComponentClass<any, any, any>,
+    colorKey: string,
     items: Array<SolidNodeFragment_inputs | SolidNodeFragment_outputs>,
     layout: { [inputName: string]: { layout: ILayout } }
   ) {
-    const root = this.props.layout.solid;
-
     return Object.keys(layout).map((key, i) => {
       const { x, y, width, height } = layout[key].layout;
       const input = items.find(o => o.definition.name === key);
+      const showText = width == 0 && !this.props.minified;
 
       return (
-        <ComponentClass
-          key={i}
-          style={{ left: x - root.x, top: y - root.y, height: height }}
-        >
-          <Port filled={true} />
-          {width == 0 &&
-            !this.props.minified && (
-              <InputOutputName>{input!.definition.name}:</InputOutputName>
+        <g key={i}>
+          <SVGFlowLayoutRect
+            x={x}
+            y={y}
+            stroke="#979797"
+            strokeWidth={1}
+            maxWidth={300}
+            fill={PipelineColorScale(colorKey)}
+            padding={8}
+            spacing={7}
+            height={height}
+          >
+            <SVGEllipseInRect width={14} height={14} />
+            {showText && (
+              <SVGMonospaceText
+                text={`${input!.definition.name}:`}
+                fill="#FFF"
+                size={14}
+              />
             )}
-          {width == 0 &&
-            !this.props.minified && (
-              <TypeName>{input!.definition.type.name}</TypeName>
+            {showText && (
+              <SVGFlowLayoutRect
+                rx={4}
+                ry={4}
+                stroke="#2491eb"
+                strokeWidth={1}
+                height={27}
+                spacing={0}
+                padding={4}
+                fill="#d6ecff"
+              >
+                <SVGMonospaceText
+                  text={input!.definition.type.name}
+                  size={14}
+                  fill="#222"
+                />
+              </SVGFlowLayoutRect>
             )}
-        </ComponentClass>
+          </SVGFlowLayoutRect>
+        </g>
       );
     });
   }
 
   renderSelectedBox() {
-    if (!this.props.selected) {
-      return null;
-    }
     const { x, y, width, height } = this.props.layout.boundingBox;
     return (
       <rect
@@ -125,11 +150,20 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
 
   renderSolid() {
     return (
-      <SolidContainer>
-        <SolidName fontSize={this.props.minified ? 30 : 18}>
-          {this.props.solid.name}
-        </SolidName>
-      </SolidContainer>
+      <SVGFlowLayoutRect
+        {...this.props.layout.solid}
+        fill={PipelineColorScale("solid")}
+        stroke="#979797"
+        strokeWidth={1}
+        spacing={0}
+        padding={12}
+      >
+        <SVGMonospaceText
+          size={this.props.minified ? 30 : 16}
+          text={this.props.solid.name}
+          fill={"#222"}
+        />
+      </SVGFlowLayoutRect>
     );
   }
 
@@ -137,78 +171,16 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
     const { solid, layout } = this.props;
 
     return (
-      <>
-        {this.renderSelectedBox()}
-        <foreignObject
-          {...this.props.layout.solid}
-          onClick={this.handleClick}
-          onDoubleClick={this.handleDoubleClick}
-          style={{ opacity: this.props.dim ? 0.3 : 1 }}
-        >
-          {this.renderSolid()}
-          {this.renderIO(InputContainer, solid.inputs, layout.inputs)}
-          {this.renderIO(OutputContainer, solid.outputs, layout.outputs)}
-        </foreignObject>
-      </>
+      <g
+        onClick={this.handleClick}
+        onDoubleClick={this.handleDoubleClick}
+        opacity={this.props.dim ? 0.3 : 1}
+      >
+        {this.props.selected && this.renderSelectedBox()}
+        {this.renderSolid()}
+        {this.renderIO("input", solid.inputs, layout.inputs)}
+        {this.renderIO("output", solid.outputs, layout.outputs)}
+      </g>
     );
   }
 }
-
-const SolidContainer = styled.div`
-  padding: 12px;
-  border: 1px solid #979797;
-  background-color: ${PipelineColorScale("solid")};
-  height: 100%;
-  margin-top: 0;
-  display: flex;
-  align-items: center;
-  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
-`;
-
-const SolidName = styled.div<{ fontSize: number }>`
-  font-family: "Source Code Pro", monospace;
-  font-weight: 500;
-  font-size: ${props => props.fontSize}px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-`;
-
-const IOContainer = styled.div`
-  padding: 7px;
-  position: absolute;
-  display: flex;
-  align-items: center;
-`;
-
-const InputContainer = styled(IOContainer)`
-  border: 1px solid #979797;
-  background-color: ${PipelineColorScale("input")};
-`;
-
-const OutputContainer = styled(IOContainer)`
-  border: 1px solid #979797;
-  background-color: ${PipelineColorScale("output")};
-`;
-
-const InputOutputName = styled.div`
-  font-family: "Source Code Pro", monospace;
-  font-size: 15px;
-  color: white;
-  overflow: hidden;
-  padding-left: 7px;
-  text-overflow: ellipsis;
-  padding-right: 12px;
-  white-space: nowrap;
-  max-width: 300px;
-`;
-
-const Port = styled.div<{ filled: boolean }>`
-  display: inline-block;
-  width: 14px;
-  height: 14px;
-  border-radius: 7px;
-  border: 2px solid rgba(255, 255, 255, 0.7);
-  background: ${props =>
-    props.filled ? "rgba(0, 0, 0, 0.3)" : "rgba(255, 255, 255, 0.3)"};
-`;

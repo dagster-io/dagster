@@ -130,7 +130,7 @@ export default class PipelineGraph extends React.Component<
           >
             <PipelineGraphContents
               layout={layout}
-              minified={scale < 0.4}
+              minified={scale < 0.99}
               onDoubleClickSolid={this.focusOnSolid}
               {...this.props}
             />
