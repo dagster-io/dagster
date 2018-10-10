@@ -1,8 +1,9 @@
 context:
-  config:
-    log_level: DEBUG
+  default:
+    config:
+      log_level: DEBUG
 
 solids:
   double_the_word_with_typed_config:
     config:
-      word: 1 
+      word: 1

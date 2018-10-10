@@ -30,9 +30,13 @@ minimal API. ``solid`` is more complicated, and has more capabilities:
     if __name__ == '__main__':
         execute_pipeline(
             define_pipeline(),
-            config.Environment(
-                solids={'hello_world': config.Solid('Hello, World!')}
-            ),
+            {
+                'solids': {
+                    'hello_world': {
+                        'config': 'Hello, World!',
+                    },
+                },
+            },
         )
 
 You'll notice a new API, ``solid``. We will be exploring this API in much more detail as these
@@ -43,11 +47,13 @@ has a property config, which is the configuration that is passed into this
 particular solid.
 
 We must provide that configuration. And thusly turn your attention to the second argument
-of execute_pipeline, which must be an instance of ``config.Environment``. An ``Environment``
-encompasses *all* of the configuration to execute an entire pipeline. It has many
+of execute_pipeline, which must be a dictinoary. This dictinoary 
+encompasses *all* of the configuration to execute an entire pipeline, and directly mirrors
+the structure of the environment yaml file. It has many
 sections. One of these is configuration provided on a per-solid basis, which is what
-we are using here. The ``solids`` property of ``Environment`` is a dictionary keyed by
-solid name. It points to a ``config.Solid`` object which in this case takes the value
+we are using here. The ``solids`` property is a dictionary keyed by
+solid name. These dictionaries take a 'config' property which must correspond to the user-
+defined configuration of that particular solid. In this case it takes the value
 that will be passed directly to the solid in question, in this case a string to be printed.
 
 So save this example as step_four.py

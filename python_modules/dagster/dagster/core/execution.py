@@ -33,6 +33,10 @@ from .definitions import (
     Solid,
 )
 
+from .config_types import EnvironmentConfigType
+
+from .execution_context import ExecutionContext
+
 from .errors import (
     DagsterEvaluateValueError,
     DagsterInvariantViolationError,
@@ -47,8 +51,6 @@ from .compute_nodes import (
     create_compute_node_graph,
     execute_compute_nodes,
 )
-
-from .execution_context import ExecutionContext
 
 
 class PipelineExecutionResult(object):
@@ -69,8 +71,11 @@ class PipelineExecutionResult(object):
         self.pipeline = check.inst_param(pipeline, 'pipeline', PipelineDefinition)
         self.context = check.inst_param(context, 'context', ExecutionContext)
         self.result_list = check.list_param(
-            result_list, 'result_list', of_type=SolidExecutionResult
+            result_list,
+            'result_list',
+            of_type=SolidExecutionResult,
         )
+        self.run_id = context.run_id if context.has_run_id() else None
 
     @property
     def success(self):
@@ -273,12 +278,14 @@ def yield_context(pipeline, environment):
     config_type = context_definition.config_def.config_type
 
     config_value = _create_config_value(config_type, environment.context.config)
+
     context_or_generator = context_definition.context_fn(
         ContextCreationExecutionInfo(
             config=config_value,
             pipeline_def=pipeline,
         )
     )
+
     return _wrap_in_yield(context_or_generator)
 
 
@@ -291,6 +298,10 @@ def execute_pipeline_iterator(pipeline, environment):
       execution (ExecutionContext): execution context of the run
     '''
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+
+    pipeline_env_type = EnvironmentConfigType(pipeline)
+    environment = _create_config_value(pipeline_env_type, environment)
+
     check.inst_param(environment, 'enviroment', config.Environment)
 
     execution_graph = ExecutionGraph.from_pipeline(pipeline)
@@ -362,8 +373,8 @@ def execute_pipeline(
     Note: throw_on_error is very useful in testing contexts when not testing for error conditions
 
     Parameters:
-      pipeline (PipelineDefinition): pipeline to run
-      execution (ExecutionContext): execution context of the run
+      pipeline (PipelineDefinition): Pipeline to run
+      environment (config.Environment | dict): The enviroment that parameterizes this run
       throw_on_error (bool):
         throw_on_error makes the function throw when an error is encoutered rather than returning
         the py:class:`SolidExecutionResult` in an error-state.
@@ -374,12 +385,10 @@ def execute_pipeline(
     '''
 
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    environment = check.opt_inst_param(
-        environment,
-        'environment',
-        config.Environment,
-        config.Environment(),
-    )
+
+    pipeline_env_type = EnvironmentConfigType(pipeline)
+    environment = _create_config_value(pipeline_env_type, environment)
+
     execution_graph = ExecutionGraph.from_pipeline(pipeline)
     return _execute_graph(execution_graph, environment, throw_on_error)
 
@@ -395,27 +404,28 @@ def _execute_graph(
 
     display_name = execution_graph.pipeline.display_name
     results = []
-    with yield_context(execution_graph.pipeline, environment) as context, \
-         context.value('pipeline', execution_graph.pipeline.display_name):
+    with yield_context(execution_graph.pipeline, environment) as context:
+        with context.value('pipeline', execution_graph.pipeline.display_name):
+            context.info('Beginning execution of pipeline {pipeline}'.format(pipeline=display_name))
 
-        context.info('Beginning execution of pipeline {pipeline}'.format(pipeline=display_name))
+            for result in _execute_graph_iterator(context, execution_graph, environment):
+                if throw_on_error and not result.success:
+                    result.reraise_user_error()
 
-        for result in _execute_graph_iterator(context, execution_graph, environment):
-            if throw_on_error and not result.success:
-                result.reraise_user_error()
+                results.append(result)
 
-            results.append(result)
-
-        pipeline_result = PipelineExecutionResult(execution_graph.pipeline, context, results)
-        if pipeline_result.success:
-            context.info(
-                'Completing successful execution of pipeline {pipeline}'.format(
-                    pipeline=display_name
+            pipeline_result = PipelineExecutionResult(execution_graph.pipeline, context, results)
+            if pipeline_result.success:
+                context.info(
+                    'Completing successful execution of pipeline {pipeline}'.format(
+                        pipeline=display_name
+                    )
                 )
-            )
-        else:
-            context.info(
-                'Completing failing execution of pipeline {pipeline}'.format(pipeline=display_name)
-            )
+            else:
+                context.info(
+                    'Completing failing execution of pipeline {pipeline}'.format(
+                        pipeline=display_name
+                    )
+                )
 
-        return pipeline_result
+            return pipeline_result

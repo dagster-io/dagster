@@ -129,9 +129,9 @@ def define_contextful_solids():
     return [injest_a, injest_b, add_ints, mult_ints]
 
 
-def define_part_nine_step_one():
+def define_part_nine_step_one_pipeline():
     return PipelineDefinition(
-        name='part_nine_step_one',
+        name='part_nine_step_one_pipeline',
         solids=define_contextless_solids(),
         dependencies={
             'add_ints': {
@@ -149,9 +149,9 @@ def define_part_nine_step_one():
 PartNineResources = namedtuple('PartNineResources', 'store')
 
 
-def define_part_nine_step_two():
+def define_part_nine_step_two_pipeline():
     return PipelineDefinition(
-        name='part_nine_step_two',
+        name='part_nine_step_two_pipeline',
         solids=define_contextful_solids(),
         dependencies={
             'add_ints': {
@@ -176,9 +176,9 @@ def define_part_nine_step_two():
     )
 
 
-def define_part_nine_final():
+def define_part_nine_final_pipeline():
     return PipelineDefinition(
-        name='part_nine_final',
+        name='part_nine_final_pipeline',
         solids=define_contextful_solids(),
         dependencies={
             'add_ints': {
@@ -222,15 +222,15 @@ def define_part_nine_repo():
     return RepositoryDefinition(
         name='part_nine_repo',
         pipeline_dict={
-            'part_nine_step_one': define_part_nine_step_one,
-            'part_nine_final': define_part_nine_final,
+            'part_nine_step_one': define_part_nine_step_one_pipeline,
+            'part_nine_final': define_part_nine_final_pipeline,
         }
     )
 
 
 def test_intro_tutorial_part_nine_step_one():
     result = execute_pipeline(
-        define_part_nine_step_one(),
+        define_part_nine_step_one_pipeline(),
         config.Environment(solids={
             'injest_a': config.Solid(2),
             'injest_b': config.Solid(3),
@@ -246,7 +246,7 @@ def test_intro_tutorial_part_nine_step_one():
 
 def test_intro_tutorial_part_nine_final_local_success():
     result = execute_pipeline(
-        define_part_nine_final(),
+        define_part_nine_final_pipeline(),
         config.Environment(
             solids={
                 'injest_a': config.Solid(2),
@@ -272,22 +272,26 @@ def test_intro_tutorial_part_nine_final_local_success():
 
 def test_intro_tutorial_part_nine_final_cloud_success():
     result = execute_pipeline(
-        define_part_nine_final(),
-        config.Environment(
-            solids={
-                'injest_a': config.Solid(2),
-                'injest_b': config.Solid(3),
+        define_part_nine_final_pipeline(), {
+            'context': {
+                'cloud': {
+                    'config': {
+                        'credentials': {
+                            'user': 'some_user',
+                            'pass': 'some_pass',
+                        }
+                    }
+                }
             },
-            context=config.Context(
-                name='cloud',
-                config={
-                    'credentials': {
-                        'user': 'some_user',
-                        'pass': 'some_pass',
-                    },
+            'solids': {
+                'injest_a': {
+                    'config': 2,
                 },
-            ),
-        ),
+                'injest_b': {
+                    'config': 3,
+                },
+            }
+        }
     )
 
     assert result.success
@@ -296,7 +300,7 @@ def test_intro_tutorial_part_nine_final_cloud_success():
 def test_intro_tutorial_part_nine_final_error():
     with pytest.raises(DagsterTypeError, match='Field username not found'):
         execute_pipeline(
-            define_part_nine_final(),
+            define_part_nine_final_pipeline(),
             config.Environment(
                 solids={
                     'injest_a': config.Solid(2),

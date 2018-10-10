@@ -16,14 +16,20 @@ def hello_world(info):
 
 
 def define_pipeline():
-    return PipelineDefinition(solids=[hello_world])
+    return PipelineDefinition(name='part_four_pipeline', solids=[hello_world])
 
 
 def test_tutorial_part_four():
 
     result = execute_pipeline(
         define_pipeline(),
-        config.Environment(solids={'hello_world': config.Solid('Hello, World!')}),
+        {
+            'solids': {
+                'hello_world': {
+                    'config': 'Hello, World!',
+                },
+            },
+        },
     )
 
     assert result.success

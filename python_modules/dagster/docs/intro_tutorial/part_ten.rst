@@ -94,15 +94,23 @@ was processed:
 
     execute_pipeline(
         define_part_ten_step_one(), 
-        config.Environment(
-            context=config.Context(config={
-                'log_level': 'DEBUG',
-            }),
-            solids={
-                'injest_a': config.Solid(2),
-                'injest_b': config.Solid(3),
+        {
+            'context': {
+                'default': {
+                    'config': {
+                        'log_level': 'DEBUG',
+                    }
+                }
+            },
+            'solids': {
+                'injest_a': {
+                    'config': 2,
+                },
+                'injest_b': {
+                    'config': 3,
+                },
             }
-        ),
+        },
     )
 
 And run it...
@@ -121,15 +129,23 @@ when an expectation fails. So:
 
     execute_pipeline(
         define_part_ten_step_one(), 
-        config.Environment(
-            context=config.Context(config={
-                'log_level': 'DEBUG',
-            }),
-            solids={
-                'injest_a': config.Solid(-2), # oh noes!
-                'injest_b': config.Solid(3),
+        {
+            'context': {
+                'default': {
+                    'config': {
+                        'log_level': 'DEBUG',
+                    }
+                }
+            },
+            'solids': {
+                'injest_a': {
+                    'config': -2,
+                },
+                'injest_b': {
+                    'config': 3,
+                },
             }
-        ),
+        },
     )
 
 And then:
@@ -146,15 +162,23 @@ We can also tell execute_pipeline to not throw on error:
 
     execute_pipeline(
         define_part_ten_step_one(), 
-        config.Environment(
-            context=config.Context(config={
-                'log_level': 'DEBUG',
-            }),
-            solids={
-                'injest_a': config.Solid(-2), # oh noes!
-                'injest_b': config.Solid(3),
+        {
+            'context': {
+                'default': {
+                    'config': {
+                        'log_level': 'DEBUG',
+                    }
+                }
+            },
+            'solids': {
+                'injest_a': {
+                    'config': -2,
+                },
+                'injest_b': {
+                    'config': 3,
+                },
             }
-        ),
+        },
         throw_on_error=False,
     )
 
@@ -176,16 +200,26 @@ configure the pipeline to skip expectations entirely.
 
     execute_pipeline(
         define_part_ten_step_one(), 
-        config.Environment(
-            context=config.Context(config={
-                'log_level': 'DEBUG',
-            }),
-            solids={
-                'injest_a': config.Solid(-2), # oh noes!
-                'injest_b': config.Solid(3),
+        {
+            'context': {
+                'default': {
+                    'config': {
+                        'log_level': 'DEBUG',
+                    }
+                }
             },
-            expectations=config.Expectations(evaluate=True),
-        ),
+            'solids': {
+                'injest_a': {
+                    'config': -2,
+                },
+                'injest_b': {
+                    'config': 3,
+                },
+            },
+            'expectations': {
+                'evaluate': True,
+            },
+        },
     )
 
 .. code-block:: sh

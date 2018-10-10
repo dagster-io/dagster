@@ -1,8 +1,14 @@
-from six import (string_types, integer_types)
+from collections import namedtuple
+import json
+import os
+import pickle
+
+from six import integer_types, string_types
 
 from dagster import check
-
 from dagster.core.errors import DagsterEvaluateValueError
+
+SerializedTypeValue = namedtuple('SerializedTypeValue', 'name value')
 
 
 class DagsterType(object):
@@ -41,6 +47,40 @@ class DagsterType(object):
     def iterate_types(self):
         yield self
 
+    # If python had final methods, these would be final
+    def serialize_value(self, output_dir, value):
+        type_value = self.create_serializable_type_value(self.evaluate_value(value), output_dir)
+        output_path = os.path.join(output_dir, 'type_value')
+        with open(output_path, 'w') as ff:
+            json.dump(
+                {
+                    'type': type_value.name,
+                    'value': type_value.value,
+                },
+                ff,
+            )
+        return type_value
+
+    # If python had final methods, these would be final
+    def deserialize_value(self, output_dir):
+        with open(os.path.join(output_dir, 'type_value'), 'r') as ff:
+            type_value_dict = json.load(ff)
+            type_value = SerializedTypeValue(
+                name=type_value_dict['type'],
+                value=type_value_dict['value'],
+            )
+            if type_value.name != self.name:
+                raise Exception('type mismatch')
+            return self.deserialize_from_type_value(type_value, output_dir)
+
+    # Override these in subclasses for customizable serialization
+    def create_serializable_type_value(self, value, _output_dir):
+        return SerializedTypeValue(self.name, value)
+
+    # Override these in subclasses for customizable serialization
+    def deserialize_from_type_value(self, type_value, _output_dir):
+        return type_value.value
+
 
 class UncoercedTypeMixin(object):
     '''This is a helper mixin used when you only want to do a type check
@@ -61,7 +101,8 @@ class UncoercedTypeMixin(object):
         if not self.is_python_valid_value(value):
             raise DagsterEvaluateValueError(
                 'Expected valid value for {type_name} but got {value}'.format(
-                    type_name=self.name, value=repr(value)
+                    type_name=self.name,
+                    value=repr(value),
                 )
             )
         return value
@@ -83,7 +124,8 @@ class DagsterScalarType(UncoercedTypeMixin, DagsterType):
 class _DagsterAnyType(UncoercedTypeMixin, DagsterType):
     def __init__(self):
         super(_DagsterAnyType, self).__init__(
-            name='Any', description='The type that allows any value, including no value.'
+            name='Any',
+            description='The type that allows any value, including no value.',
         )
 
     def is_python_valid_value(self, _value):
@@ -108,6 +150,34 @@ class PythonObjectType(UncoercedTypeMixin, DagsterType):
 
     def is_python_valid_value(self, value):
         return nullable_isinstance(value, self.python_type)
+
+    def serialize_value(self, output_dir, value):
+        type_value = self.create_serializable_type_value(self.evaluate_value(value), output_dir)
+        output_path = os.path.join(output_dir, 'type_value')
+        with open(output_path, 'w') as ff:
+            json.dump(
+                {
+                    'type': type_value.name,
+                    'path': 'pickle'
+                },
+                ff,
+            )
+        pickle_path = os.path.join(output_dir, 'pickle')
+        with open(pickle_path, 'wb') as pf:
+            pickle.dump(value, pf)
+
+        return type_value
+
+    # If python had final methods, these would be final
+    def deserialize_value(self, output_dir):
+        with open(os.path.join(output_dir, 'type_value'), 'r') as ff:
+            type_value_dict = json.load(ff)
+            if type_value_dict['type'] != self.name:
+                raise Exception('type mismatch')
+
+        path = type_value_dict['path']
+        with open(os.path.join(output_dir, path), 'rb') as pf:
+            return pickle.load(pf)
 
 
 class _DagsterStringType(DagsterScalarType):
@@ -195,15 +265,12 @@ class DagsterCompositeType(DagsterType):
     '''Dagster type representing a type with a list of named :py:class:`Field` objects.
     '''
 
-    def __init__(self, name, fields, ctor, description=None):
+    def __init__(self, name, fields, description=None):
         self.field_dict = FieldDefinitionDictionary(fields)
-        self.ctor = check.callable_param(ctor, 'ctor')
         super(DagsterCompositeType, self).__init__(name, description)
 
-    def evaluate_value(self, value):
-        if value is not None and not isinstance(value, dict):
-            raise DagsterEvaluateValueError('Incoming value for composite must be dict')
-        return process_incoming_composite_value(self, value, self.ctor)
+    def evaluate_value(self, _value):
+        check.not_implemented('Must override')
 
     def iterate_types(self):
         for field_type in self.field_dict.values():
@@ -224,13 +291,21 @@ class ConfigDictionary(DagsterCompositeType):
         super(ConfigDictionary, self).__init__(
             name,
             fields,
-            lambda val: val,
-            self.__doc__,
+            'A configuration dictionary with typed fields',
         )
+
+    def evaluate_value(self, value):
+        if value is not None and not isinstance(value, dict):
+            raise DagsterEvaluateValueError('Incoming value for composite must be dict')
+        return process_incoming_composite_value(self, value, lambda val: val)
 
 
 def process_incoming_composite_value(dagster_composite_type, incoming_value, ctor):
     check.inst_param(dagster_composite_type, 'dagster_composite_type', DagsterCompositeType)
+
+    if incoming_value and not isinstance(incoming_value, dict):
+        raise DagsterEvaluateValueError('Value for composite type must be a dict')
+
     incoming_value = check.opt_dict_param(incoming_value, 'incoming_value', key_type=str)
     check.callable_param(ctor, 'ctor')
 

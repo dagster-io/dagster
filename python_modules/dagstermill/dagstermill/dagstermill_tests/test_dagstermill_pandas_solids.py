@@ -1,6 +1,7 @@
 import os
 
 import pandas as pd
+import pytest
 
 import dagstermill as dm
 
@@ -67,6 +68,7 @@ def define_pandas_source_test_pipeline():
     )
 
 
+@pytest.mark.skip('Must ship over run id to notebook process')
 @notebook_test
 def test_pandas_input_transform_test_pipeline():
     pipeline = define_pandas_input_transform_test_pipeline()

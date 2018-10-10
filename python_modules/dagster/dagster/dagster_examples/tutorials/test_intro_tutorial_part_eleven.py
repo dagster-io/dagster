@@ -69,9 +69,9 @@ def log_num_squared(info, num):
     return num * num
 
 
-def define_part_eleven_step_one():
+def define_part_eleven_step_one_pipeline():
     return PipelineDefinition(
-        name='part_eleven_step_one',
+        name='part_eleven_step_one_pipeline',
         solids=[return_dict_results, log_num, log_num_squared],
         dependencies={
             'log_num': {
@@ -84,9 +84,9 @@ def define_part_eleven_step_one():
     )
 
 
-def define_part_eleven_step_two():
+def define_part_eleven_step_two_pipeline():
     return PipelineDefinition(
-        name='part_eleven_step_two',
+        name='part_eleven_step_two_pipeline',
         solids=[yield_outputs, log_num, log_num_squared],
         dependencies={
             'log_num': {
@@ -99,9 +99,9 @@ def define_part_eleven_step_two():
     )
 
 
-def define_part_eleven_step_three():
+def define_part_eleven_step_three_pipeline():
     return PipelineDefinition(
-        name='part_eleven_step_three',
+        name='part_eleven_step_three_pipeline',
         solids=[conditional, log_num, log_num_squared],
         dependencies={
             'log_num': {
@@ -115,7 +115,7 @@ def define_part_eleven_step_three():
 
 
 def test_intro_tutorial_part_eleven_step_one():
-    result = execute_pipeline(define_part_eleven_step_one())
+    result = execute_pipeline(define_part_eleven_step_one_pipeline())
 
     assert result.success
     assert result.result_for_solid('return_dict_results').transformed_value('out_one') == 23
@@ -125,7 +125,7 @@ def test_intro_tutorial_part_eleven_step_one():
 
 
 def test_intro_tutorial_part_eleven_step_two():
-    result = execute_pipeline(define_part_eleven_step_two())
+    result = execute_pipeline(define_part_eleven_step_two_pipeline())
 
     assert result.success
     assert result.result_for_solid('yield_outputs').transformed_value('out_one') == 23
@@ -136,8 +136,13 @@ def test_intro_tutorial_part_eleven_step_two():
 
 def test_intro_tutorial_part_eleven_step_three():
     result = execute_pipeline(
-        define_part_eleven_step_three(),
-        config.Environment(solids={'conditional': config.Solid('out_two')})
+        define_part_eleven_step_three_pipeline(), {
+            'solids': {
+                'conditional': {
+                    'config': 'out_two',
+                },
+            },
+        }
     )
 
     # successful things
@@ -158,8 +163,14 @@ def test_intro_tutorial_part_eleven_step_three():
 
 if __name__ == '__main__':
     execute_pipeline(
-        define_part_eleven_step_three(),
-        config.Environment(solids={'conditional': config.Solid('out_two')})
+        define_part_eleven_step_three_pipeline(),
+        {
+            'solids': {
+                'conditional': {
+                    'config': 'out_two'
+                },
+            },
+        },
     )
 
     # execute_pipeline(define_part_eleven_step_two())
