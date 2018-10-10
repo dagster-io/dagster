@@ -69,6 +69,9 @@ setup(
         # watchdog
         'watchdog>=0.8.3',
 
+        # notebooks support
+        'nbconvert>=5.4.0',
+
         # dev/test - Installed via dev-requirements.txt
         # 'pylint>=1.8.4',
         # 'pytest>=3.5.1',
