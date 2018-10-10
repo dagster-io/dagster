@@ -8,6 +8,11 @@ import {
   SolidNodeFragment_outputs
 } from "./types/SolidNodeFragment";
 import { IFullSolidLayout, ILayout } from "./getFullSolidLayout";
+import {
+  SVGEllipseInRect,
+  SVGFlowLayoutRect,
+  SVGMonospaceText
+} from "./SVGComponents";
 
 interface ISolidNodeProps {
   layout: IFullSolidLayout;
@@ -17,30 +22,6 @@ interface ISolidNodeProps {
   dim: boolean;
   onClick?: (solid: string) => void;
   onDoubleClick?: (solid: string) => void;
-}
-
-interface ITextDimensions {
-  text: string;
-  textSize: number;
-  maxWidth: number;
-}
-
-const PX_TO_UNITS = 0.62;
-
-function measureAndClip({
-  text,
-  textSize,
-  maxWidth
-}: ITextDimensions): { text: string; width: number } {
-  const chars = maxWidth / (textSize * PX_TO_UNITS);
-  let textClipped = text;
-  if (textClipped.length > chars) {
-    textClipped = textClipped.substr(0, chars - 1) + "…";
-  }
-  return {
-    width: textClipped.length * textSize * PX_TO_UNITS,
-    text: textClipped
-  };
 }
 
 export default class SolidNode extends React.Component<ISolidNodeProps> {
@@ -104,102 +85,48 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
     return Object.keys(layout).map((key, i) => {
       const { x, y, width, height } = layout[key].layout;
       const input = items.find(o => o.definition.name === key);
-
-      const portInset = 9;
-      const portRadius = 7;
-      const textSize = 15;
-      const namePadding = 7;
-      const typePadding = 4;
-      const name = measureAndClip({
-        text: `${input!.definition.name}: `,
-        textSize,
-        maxWidth: 200
-      });
-      const type = measureAndClip({
-        text: input!.definition.type.name,
-        textSize,
-        maxWidth: 200
-      });
-
-      const baseline = y + height / 2 + textSize / 2;
-
-      let containerWidth =
-        portInset +
-        portRadius * 2 +
-        namePadding +
-        name.width +
-        typePadding +
-        type.width +
-        typePadding +
-        namePadding;
-
-      if (this.props.minified) {
-        containerWidth = 30;
-      }
+      const showText = width == 0 && !this.props.minified;
 
       return (
         <g key={i}>
-          <rect
+          <SVGFlowLayoutRect
             x={x}
             y={y}
             stroke="#979797"
             strokeWidth={1}
-            width={width || containerWidth}
-            height={height}
+            maxWidth={300}
             fill={PipelineColorScale(colorKey)}
-          />
-          <ellipse
-            cx={x + portInset + portRadius}
-            cy={y + height / 2}
-            rx={portRadius}
-            ry={portRadius}
-            fill="rgba(0, 0, 0, 0.3)"
-            stroke="white"
-          />
-          {width == 0 &&
-            !this.props.minified && (
-              <text
-                x={x + portInset + portRadius * 2 + namePadding}
-                y={baseline}
-                fill="white"
-                style={{ font: `${textSize}px "Source Code Pro", monospace` }}
+            padding={8}
+            spacing={7}
+            height={height}
+          >
+            <SVGEllipseInRect width={14} height={14} />
+            {showText && (
+              <SVGMonospaceText
+                text={`${input!.definition.name}:`}
+                fill="#FFF"
+                size={14}
+              />
+            )}
+            {showText && (
+              <SVGFlowLayoutRect
+                rx={4}
+                ry={4}
+                stroke="#2491eb"
+                strokeWidth={1}
+                height={27}
+                spacing={0}
+                padding={4}
+                fill="#d6ecff"
               >
-                {name.text}
-              </text>
-            )}
-          {width == 0 &&
-            !this.props.minified && (
-              <>
-                <rect
-                  x={x + portInset + portRadius * 2 + namePadding + name.width}
-                  y={y + 5}
-                  rx={4}
-                  ry={4}
-                  stroke="#2491eb"
-                  strokeWidth={1}
-                  width={type.width + typePadding * 2}
-                  height={27}
-                  fill="#d6ecff"
-                />
-                <text
-                  x={
-                    x +
-                    portInset +
-                    portRadius * 2 +
-                    namePadding +
-                    name.width +
-                    typePadding
-                  }
-                  y={baseline}
-                  style={{
-                    font: `500 ${textSize}px "Source Code Pro", monospace`
-                  }}
+                <SVGMonospaceText
+                  text={input!.definition.type.name}
+                  size={14}
                   fill="#222"
-                >
-                  {type.text}
-                </text>
-              </>
+                />
+              </SVGFlowLayoutRect>
             )}
+          </SVGFlowLayoutRect>
         </g>
       );
     });
@@ -222,31 +149,21 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
   }
 
   renderSolid() {
-    const textPadding = 12;
-    const textSize = this.props.minified ? 30 : 16;
-    const bounds = this.props.layout.solid;
-    const name = measureAndClip({
-      maxWidth: bounds.width - textPadding * 2,
-      text: this.props.solid.name,
-      textSize
-    });
-
     return (
-      <>
-        <rect
-          {...bounds}
-          fill={PipelineColorScale("solid")}
-          stroke="#979797"
-          strokeWidth={1}
+      <SVGFlowLayoutRect
+        {...this.props.layout.solid}
+        fill={PipelineColorScale("solid")}
+        stroke="#979797"
+        strokeWidth={1}
+        spacing={0}
+        padding={12}
+      >
+        <SVGMonospaceText
+          size={this.props.minified ? 30 : 16}
+          text={this.props.solid.name}
+          fill={"#222"}
         />
-        <text
-          x={bounds.x + textPadding}
-          y={bounds.y + bounds.height / 2 + textSize / 2}
-          style={{ font: `500 ${textSize}px "Source Code Pro", monospace` }}
-        >
-          {name.text}
-        </text>
-      </>
+      </SVGFlowLayoutRect>
     );
   }
 
