@@ -37,58 +37,6 @@ const mocks = [
                 inputs: [
                   {
                     definition: {
-                      name: "num",
-                      type: {
-                        name: "PandasDataFrame",
-                        description:
-                          "Two-dimensional size-mutable, potentially heterogeneous\ntabular data structure with labeled axes (rows and columns). See http://pandas.pydata.org/",
-                        __typename: "RegularType"
-                      },
-                      __typename: "InputDefinition",
-                      description: null,
-                      expectations: []
-                    },
-                    __typename: "Input",
-                    dependsOn: {
-                      definition: {
-                        name: "result",
-                        __typename: "OutputDefinition"
-                      },
-                      solid: { name: "load_num_csv", __typename: "Solid" },
-                      __typename: "Output"
-                    }
-                  }
-                ],
-                __typename: "Solid",
-                name: "sum_solid",
-                definition: {
-                  description: null,
-                  configDefinition: null,
-                  __typename: "SolidDefinition",
-                  name: "sum_solid"
-                }
-              },
-              {
-                outputs: [
-                  {
-                    definition: {
-                      name: "result",
-                      type: {
-                        name: "PandasDataFrame",
-                        description:
-                          "Two-dimensional size-mutable, potentially heterogeneous\ntabular data structure with labeled axes (rows and columns). See http://pandas.pydata.org/",
-                        __typename: "RegularType"
-                      },
-                      __typename: "OutputDefinition",
-                      description: null,
-                      expectations: []
-                    },
-                    __typename: "Output"
-                  }
-                ],
-                inputs: [
-                  {
-                    definition: {
                       name: "sum_df",
                       type: {
                         name: "PandasDataFrame",
@@ -115,6 +63,7 @@ const mocks = [
                 name: "sum_sq_solid",
                 definition: {
                   description: null,
+                  metadata: [],
                   configDefinition: null,
                   __typename: "SolidDefinition",
                   name: "sum_sq_solid"
@@ -143,12 +92,13 @@ const mocks = [
                 name: "load_num_csv",
                 definition: {
                   description: null,
+                  metadata: [],
                   configDefinition: {
                     type: {
                       __typename: "CompositeType",
                       name: "LoadDataFrameConfigDict",
                       description:
-                        "Configuration dictionary.\n\n    Typed-checked but then passed to implementations as a python dict\n\n    Arguments:\n      fields (dict): dictonary of :py:class:`Field` objects keyed by name",
+                        "A configuration dictionary with typed fields",
                       fields: [
                         {
                           name: "path",
@@ -171,6 +121,59 @@ const mocks = [
                   __typename: "SolidDefinition",
                   name: "load_num_csv"
                 }
+              },
+              {
+                outputs: [
+                  {
+                    definition: {
+                      name: "result",
+                      type: {
+                        name: "PandasDataFrame",
+                        description:
+                          "Two-dimensional size-mutable, potentially heterogeneous\ntabular data structure with labeled axes (rows and columns). See http://pandas.pydata.org/",
+                        __typename: "RegularType"
+                      },
+                      __typename: "OutputDefinition",
+                      description: null,
+                      expectations: []
+                    },
+                    __typename: "Output"
+                  }
+                ],
+                inputs: [
+                  {
+                    definition: {
+                      name: "num",
+                      type: {
+                        name: "PandasDataFrame",
+                        description:
+                          "Two-dimensional size-mutable, potentially heterogeneous\ntabular data structure with labeled axes (rows and columns). See http://pandas.pydata.org/",
+                        __typename: "RegularType"
+                      },
+                      __typename: "InputDefinition",
+                      description: null,
+                      expectations: []
+                    },
+                    __typename: "Input",
+                    dependsOn: {
+                      definition: {
+                        name: "result",
+                        __typename: "OutputDefinition"
+                      },
+                      solid: { name: "load_num_csv", __typename: "Solid" },
+                      __typename: "Output"
+                    }
+                  }
+                ],
+                __typename: "Solid",
+                name: "sum_solid",
+                definition: {
+                  description: null,
+                  metadata: [],
+                  configDefinition: null,
+                  __typename: "SolidDefinition",
+                  name: "sum_solid"
+                }
               }
             ],
             contexts: [
@@ -181,8 +184,7 @@ const mocks = [
                   type: {
                     __typename: "CompositeType",
                     name: "DefaultContextConfigDict",
-                    description:
-                      "Configuration dictionary.\n\n    Typed-checked but then passed to implementations as a python dict\n\n    Arguments:\n      fields (dict): dictonary of :py:class:`Field` objects keyed by name",
+                    description: "A configuration dictionary with typed fields",
                     fields: [
                       {
                         name: "log_level",
