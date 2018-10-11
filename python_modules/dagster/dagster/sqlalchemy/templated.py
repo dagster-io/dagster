@@ -1,6 +1,7 @@
-import jinja2
 import json
 import os
+
+import jinja2
 
 from dagster import (
     ConfigDefinition,
@@ -18,9 +19,11 @@ from .common import execute_sql_text_on_context
 
 class DagsterSqlTextType(types.DagsterStringType):
     def __init__(self):
-        super(DagsterSqlTextType, self).__init__(name='SqlText')
+        super(DagsterSqlTextType, self).__init__(
+            name='SqlText',
+            description='A string of SQL text that is directly executable.',
+        )
 
-    # If python had final methods, these would be final
     def serialize_value(self, output_dir, value):
         type_value = self.create_serializable_type_value(self.evaluate_value(value), output_dir)
         output_path = os.path.join(output_dir, 'type_value')
