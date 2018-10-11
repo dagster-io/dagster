@@ -38,6 +38,9 @@ class DagsterSqlTextType(types.DagsterStringType):
             sf.write(value)
 
 
+SqlTextType = DagsterSqlTextType()
+
+
 def create_templated_sql_transform_solid(name, sql, table_arguments, dependant_solids=None):
     check.str_param(name, 'name')
     check.str_param(sql, 'sql')
@@ -58,7 +61,7 @@ def create_templated_sql_transform_solid(name, sql, table_arguments, dependant_s
         transform_fn=_create_templated_sql_transform_with_output(sql),
         outputs=[
             OutputDefinition(name='result', dagster_type=types.Any),
-            OutputDefinition(name='sql_text', dagster_type=DagsterSqlTextType()),
+            OutputDefinition(name='sql_text', dagster_type=SqlTextType),
         ],
     )
 
