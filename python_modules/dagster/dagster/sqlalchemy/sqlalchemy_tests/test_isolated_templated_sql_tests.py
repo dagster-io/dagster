@@ -32,12 +32,9 @@ def pipeline_test_def(solids, context, dependencies=None):
     )
 
 
-def test_single_templated_sql_solid_single_table_with_api():
-
+def define_sum_table_pipeline():
     sql = '''CREATE TABLE {{sum_table}} AS
     SELECT num1, num2, num1 + num2 as sum FROM num_table'''
-
-    sum_table_arg = 'specific_sum_table'
 
     sum_table_transform = create_templated_sql_transform_solid(
         name='sum_table_transform',
@@ -46,6 +43,13 @@ def test_single_templated_sql_solid_single_table_with_api():
     )
 
     pipeline = pipeline_test_def(solids=[sum_table_transform], context=in_mem_context())
+    return pipeline
+
+
+def test_single_templated_sql_solid_single_table_with_api():
+    pipeline = define_sum_table_pipeline()
+
+    sum_table_arg = 'specific_sum_table'
 
     environment = config.Environment(
         solids={'sum_table_transform': config.Solid({
@@ -57,6 +61,29 @@ def test_single_templated_sql_solid_single_table_with_api():
     assert result.success
 
     assert _load_table(result.context, sum_table_arg) == [(1, 2, 3), (3, 4, 7)]
+
+
+def test_single_templated_sql_solid_single_table_with_api_serialize_intermediates():
+    pipeline = define_sum_table_pipeline()
+
+    sum_table_arg = 'specific_sum_table'
+
+    environment = config.Environment(
+        solids={'sum_table_transform': config.Solid({
+            'sum_table': sum_table_arg
+        })},
+        execution=config.Execution(serialize_intermediates=True),
+    )
+
+    result = execute_pipeline(pipeline, environment=environment)
+    assert result.success
+
+    sql_output = '/tmp/dagster/runs/{run_id}/sum_table_transform/outputs/sql_text/sql'.format(
+        run_id=result.run_id,
+    )
+
+    assert open(sql_output).read() == '''CREATE TABLE specific_sum_table AS
+    SELECT num1, num2, num1 + num2 as sum FROM num_table'''
 
 
 def test_single_templated_sql_solid_double_table_raw_api():
@@ -118,6 +145,11 @@ def test_single_templated_sql_solid_double_table_with_api():
 
     assert _load_table(result.context, sum_table_arg) == [(1, 2, 3), (3, 4, 7)]
 
+    assert result.result_for_solid('sum_solid').transformed_value(
+        'sql_text'
+    ) == '''CREATE TABLE specific_sum_table AS
+    SELECT num1, num2, num1 + num2 as sum FROM specific_num_table'''
+
 
 def test_templated_sql_solid_pipeline():
     sum_sql_template = '''CREATE TABLE {{sum_table}} AS
@@ -164,12 +196,6 @@ def test_templated_sql_solid_pipeline():
                 'sum_table': first_sum_table,
                 'sum_sq_table': first_sum_sq_table,
             }),
-            #  {
-            #     'sum_table': table_name_source(first_sum_table)
-            # },
-            # 'sum_sq_table': {
-            #     'sum_sq_table': table_name_source(first_sum_sq_table)
-            # },
         }
     )
     first_result = execute_pipeline(pipeline, environment=environment_one)

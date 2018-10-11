@@ -47,7 +47,6 @@ class DagsterType(object):
     def iterate_types(self):
         yield self
 
-    # If python had final methods, these would be final
     def serialize_value(self, output_dir, value):
         type_value = self.create_serializable_type_value(self.evaluate_value(value), output_dir)
         output_path = os.path.join(output_dir, 'type_value')
@@ -61,7 +60,6 @@ class DagsterType(object):
             )
         return type_value
 
-    # If python had final methods, these would be final
     def deserialize_value(self, output_dir):
         with open(os.path.join(output_dir, 'type_value'), 'r') as ff:
             type_value_dict = json.load(ff)
@@ -180,7 +178,7 @@ class PythonObjectType(UncoercedTypeMixin, DagsterType):
             return pickle.load(pf)
 
 
-class _DagsterStringType(DagsterScalarType):
+class DagsterStringType(DagsterScalarType):
     def is_python_valid_value(self, value):
         return nullable_isinstance(value, string_types)
 
@@ -353,8 +351,8 @@ def process_incoming_composite_value(dagster_composite_type, incoming_value, cto
     return ctor(fields_to_pass)
 
 
-String = _DagsterStringType(name='String', description='A string.')
-Path = _DagsterStringType(
+String = DagsterStringType(name='String', description='A string.')
+Path = DagsterStringType(
     name='Path',
     description='''
 A string the represents a path. It is very useful for some tooling
