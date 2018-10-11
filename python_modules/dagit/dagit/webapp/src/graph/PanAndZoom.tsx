@@ -3,9 +3,9 @@ import animate from "amator";
 import { Colors } from "@blueprintjs/core";
 
 interface PanAndZoomProps {
-  className?: string;
   graphWidth: number;
   graphHeight: number;
+  onKeyDown: (event: React.KeyboardEvent<HTMLDivElement>) => void;
   children: (state: PanAndZoomState) => React.ReactNode;
 }
 
@@ -172,7 +172,7 @@ export default class PanAndZoom extends React.Component<
   };
 
   render() {
-    const { children } = this.props;
+    const { children, graphWidth, graphHeight, onKeyDown } = this.props;
     const { x, y, scale } = this.state;
 
     return (
@@ -181,6 +181,8 @@ export default class PanAndZoom extends React.Component<
         style={PanAndZoomStyles}
         onMouseDown={this.onMouseDown}
         onWheel={this.onWheel}
+        onKeyDown={onKeyDown}
+        tabIndex={-1}
       >
         <div
           style={{
