@@ -1,4 +1,6 @@
 import jinja2
+import json
+import os
 
 from dagster import (
     ConfigDefinition,
@@ -12,9 +14,6 @@ from dagster import (
 )
 
 from .common import execute_sql_text_on_context
-
-import json
-import os
 
 
 class DagsterSqlTextType(types.DagsterStringType):
