@@ -520,8 +520,8 @@ def print_graph(graph, printer=print):
 
 class ComputeNodeGraph(object):
     def __init__(self, cn_dict, deps):
-        self.cn_dict = cn_dict
-        self.deps = deps
+        self.cn_dict = check.dict_param(cn_dict, 'cn_dict', key_type=str, value_type=ComputeNode)
+        self.deps = check.dict_param(deps, 'deps', key_type=str, value_type=set)
         self.nodes = list(cn_dict.values())
 
     def topological_nodes(self):
@@ -714,7 +714,7 @@ def create_compute_node_graph(execution_info):
     for pipeline_solid in execution_graph.topological_solids:
         cn_inputs = create_compute_node_inputs(execution_info, state, pipeline_solid)
 
-        solid_transform_cn = create_compute_node_from_solid_transform(
+        solid_transform_cn = create_transform_compute_node(
             pipeline_solid,
             cn_inputs,
             create_config_value(execution_info, pipeline_solid),
@@ -952,7 +952,7 @@ def _create_expectation_lambda(solid, inout_def, expectation_def, internal_outpu
     return _do_expectation
 
 
-def create_compute_node_from_solid_transform(solid, node_inputs, conf):
+def create_transform_compute_node(solid, node_inputs, conf):
     check.inst_param(solid, 'solid', Solid)
     check.list_param(node_inputs, 'node_inputs', of_type=ComputeNodeInput)
 
