@@ -11,8 +11,8 @@ from flask_cors import CORS
 from dagster import check
 
 from dagster.cli.dynamic_loader import (
+    load_repository_object_from_target_info,
     DynamicObject,
-    reload_pipeline_or_repo,
 )
 
 from .schema import create_schema
@@ -26,29 +26,24 @@ class RepositoryContainer(object):
     '''
 
     def __init__(self, repository_target_info):
-        try:
-            self.repo_dynamic_obj = check.inst_param(
-                load_repository_object_from_target_info(repository_target_info),
-                'repo_dynamic_obj',
-                DynamicObject,
-            )
-            self.repo_error = None
-        except Exception as ex:
-            self.repo_dynamic_obj = None
-            self.repo_error = ''.join(traceback.format_exception(etype=type(ex), value=ex, tb=ex.__traceback__))
+        self.repo_dynamic_obj = check.inst_param(
+            load_repository_object_from_target_info(repository_target_info),
+            'repo_dynamic_obj',
+            DynamicObject,
+        )
+        self.repo_error = None
+        self.reload()
 
     def reload(self):
         try:
-            self.repo_dynamic_obj = reload_pipeline_or_repo(self.repo_dynamic_obj)
+            self.repo_dynamic_obj.eval()
             self.repo_error = None
         except Exception as ex:
-            self.repo_dynamic_obj = None
+            print(ex)
             self.repo_error = ''.join(traceback.format_exception(etype=type(ex), value=ex, tb=ex.__traceback__))
 
     @property
     def repository(self):
-        if self.repo_dynamic_obj == None:
-            return None
         return self.repo_dynamic_obj.object
 
     @property

@@ -29,6 +29,7 @@ class ReloaderHandler(FileSystemEventHandler):
 
     def on_any_event(self, event):
         if event.src_path.endswith('.py'):
+            print('Reloading repository...')
             self.repository_container.reload()
 
 

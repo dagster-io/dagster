@@ -208,25 +208,40 @@ def create_pipeline_loading_mode_data(info):
         raise InvalidPipelineLoadingComboError()
 
 
-DynamicObject = namedtuple('DynamicObject', 'module fn module_name fn_name object')
+class DynamicObject:
+    def __init__(self, module, module_name, fn_name):
+        self.module = module
+        self.module_name = module_name
+        self.fn_name = fn_name
+        self.object = None
+
+    def eval(self):
+        module = importlib.reload(self.module)
+        fn = getattr(self.module, self.fn_name)
+        check.is_callable(fn)
+        result = fn()
+        if isinstance(result, RepositoryDefinition):
+            self.object = result
+        else:
+            self.object = RepositoryDefinition(
+                name=EMPHERMAL_NAME,
+                pipeline_dict={pipeline.name: lambda: result},
+            )
+
 
 
 def load_file_target_function(file_target_function):
     check.inst_param(file_target_function, 'file_target_function', FileTargetFunction)
     module_name = os.path.splitext(os.path.basename(file_target_function.python_file))[0]
     module = imp.load_source(module_name, file_target_function.python_file)
-    fn = getattr(module, file_target_function.fn_name)
-    check.is_callable(fn)
-    return DynamicObject(module, fn, module_name, file_target_function.fn_name, object=fn())
+    return DynamicObject(module, module_name, file_target_function.fn_name)
 
 
 def load_module_target_function(module_target_function):
     check.inst_param(module_target_function, 'module_target_function', ModuleTargetFunction)
     module = importlib.import_module(module_target_function.module_name)
-    fn = getattr(module, module_target_function.fn_name)
-    check.is_callable(fn)
     return DynamicObject(
-        module, fn, module_target_function.module_name, module_target_function.fn_name, object=fn()
+        module, module_target_function.module_name, module_target_function.fn_name
     )
 
 
@@ -241,31 +256,11 @@ def load_repository_object_from_target_info(info):
     if mode_data.mode == RepositoryTargetMode.YAML_FILE:
         return load_repository_from_file(mode_data.data)
     elif mode_data.mode == RepositoryTargetMode.MODULE:
-        dynamic_obj = load_module_target_function(mode_data.data)
-        return ensure_in_repo(dynamic_obj)
+        return load_module_target_function(mode_data.data)
     elif mode_data.mode == RepositoryTargetMode.FILE:
-        dynamic_obj = load_file_target_function(mode_data.data)
-        return ensure_in_repo(dynamic_obj)
+        return load_file_target_function(mode_data.data)
     else:
         check.failed('should not reach')
-
-
-def ensure_in_repo(dynamic_obj):
-    if isinstance(dynamic_obj.object, RepositoryDefinition):
-        return dynamic_obj
-
-    pipeline = dynamic_obj.object
-    repo_fn = lambda: RepositoryDefinition(
-        name=EMPHERMAL_NAME,
-        pipeline_dict={pipeline.name: lambda: pipeline},
-    )
-    return DynamicObject(
-        module=dynamic_obj.module,
-        fn=repo_fn,
-        module_name=dynamic_obj.module_name,
-        fn_name=dynamic_obj.fn_name,
-        object=repo_fn(),
-    )
 
 
 def load_repository_from_target_info(info):
@@ -421,25 +416,3 @@ def load_target_info_from_cli_args(cli_args):
         cli_args['repository_yaml'] = 'repository.yml'
 
     return RepositoryTargetInfo(**cli_args)
-
-
-def reload_dynamic_object(dynamic_obj):
-    check.inst_param(dynamic_obj, 'dynamic_obj', DynamicObject)
-
-    module_name, fn_name = dynamic_obj.module_name, dynamic_obj.fn_name
-
-    module = importlib.reload(dynamic_obj.module)
-    fn = getattr(module, fn_name)
-    check.is_callable(fn)
-
-    return DynamicObject(
-        object=fn(),
-        module=module,
-        fn=fn,
-        module_name=module_name,
-        fn_name=fn_name,
-    )
-
-
-def reload_pipeline_or_repo(dynamic_obj):
-    return ensure_in_repo(reload_dynamic_object(dynamic_obj))

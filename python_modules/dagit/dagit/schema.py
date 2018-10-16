@@ -23,7 +23,7 @@ class Query(graphene.ObjectType):
     )
 
     def resolve_error(self, info):
-        return str(info.context['repository_container'].error)
+        return info.context['repository_container'].error
 
     def resolve_pipeline(self, info, name):
         check.str_param(name, 'name')
