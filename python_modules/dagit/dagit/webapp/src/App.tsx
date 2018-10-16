@@ -6,6 +6,7 @@ import { BrowserRouter } from "react-router-dom";
 import Loading from "./Loading";
 import PipelineExplorer from "./PipelineExplorer";
 import PipelineJumpBar from "./PipelineJumpBar";
+import PythonErrorInfo from "./PythonErrorInfo";
 import { AppQuery } from "./types/AppQuery";
 
 import { Alignment, Navbar, NonIdealState } from "@blueprintjs/core";
@@ -46,7 +47,9 @@ export default class App extends React.Component {
                             />
                           </Navbar.Group>
                         </Navbar>
-                        {selectedPipeline ? (
+                        {data.error ? (
+                          <PythonErrorInfo error={data.error} />
+                        ) : selectedPipeline ? (
                           <PipelineExplorer
                             pipeline={selectedPipeline}
                             solid={selectedSolid}
@@ -73,6 +76,7 @@ export default class App extends React.Component {
 
 export const APP_QUERY = gql`
   query AppQuery {
+    error
     pipelines {
       ...PipelineFragment
     }
