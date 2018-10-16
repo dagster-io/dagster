@@ -60,10 +60,9 @@ REPO_TARGET_WARNING = (
 )
 def ui(host, port, watch, **kwargs):
     repository_target_info = load_target_info_from_cli_args(kwargs)
-    dynamic_obj_repo = load_repository_object_from_target_info(repository_target_info)
 
     sys.path.append(os.getcwd())
-    repository_container = RepositoryContainer(dynamic_obj_repo)
+    repository_container = RepositoryContainer(repository_target_info)
     if watch:
         observer = Observer()
         handler = ReloaderHandler(repository_container)

@@ -9,6 +9,7 @@ from dagster.core.types import DagsterCompositeType
 
 
 class Query(graphene.ObjectType):
+    error = graphene.String()
     pipeline = graphene.Field(lambda: Pipeline, name=graphene.NonNull(graphene.String))
     pipelines = graphene.NonNull(graphene.List(lambda: graphene.NonNull(Pipeline)))
     type = graphene.Field(
@@ -21,13 +22,20 @@ class Query(graphene.ObjectType):
         pipelineName=graphene.NonNull(graphene.String),
     )
 
+    def resolve_error(self, info):
+        return str(info.context['repository_container'].error)
+
     def resolve_pipeline(self, info, name):
         check.str_param(name, 'name')
         repository = info.context['repository_container'].repository
+        if repository == None:
+            return None
         return Pipeline(repository.get_pipeline(name))
 
     def resolve_pipelines(self, info):
         repository = info.context['repository_container'].repository
+        if repository == None:
+            return []
         pipelines = []
         for pipeline_def in repository.get_all_pipelines():
             pipelines.append(Pipeline(pipeline_def))
