@@ -119,14 +119,19 @@ export default class PipelineGraph extends React.Component<
       x: solid.boundingBox.x + solid.boundingBox.width / 2,
       y: solid.boundingBox.y + solid.boundingBox.height / 2
     });
+
+    /* Sort all the solids in the graph based on their attractiveness
+    as a jump target. We want the nearest node in the exact same row for left/right,
+    and the visually "closest" node above/below for up/down. */
     const score = (solid: IFullSolidLayout): number => {
-      const dx = center(current).x - center(solid).x;
-      const dy = center(current).y - center(solid).y;
-      if (dir === "left") {
-        return dy === 0 && dx > 0 ? dx : 100000;
+      const dx = center(solid).x - center(current).x;
+      const dy = center(solid).y - center(current).y;
+
+      if (dir === "left" && dy === 0 && dx < 0) {
+        return -dx;
       }
-      if (dir === "right") {
-        return dy === 0 && dx < 0 ? -dx : 100000;
+      if (dir === "right" && dy === 0 && dx > 0) {
+        return dx;
       }
       if (dir === "up" && dy < 0) {
         return -dy + Math.abs(dx) / 5;
@@ -134,12 +139,12 @@ export default class PipelineGraph extends React.Component<
       if (dir === "down" && dy > 0) {
         return dy + Math.abs(dx) / 5;
       }
-      return 100000;
+      return Number.NaN;
     };
 
-    const closest = Object.keys(layout.solids)
-      .map(name => ({ name: name, score: score(layout.solids[name]) }))
-      .filter(({ name }) => name != selectedSolid.name)
+    let closest = Object.keys(layout.solids)
+      .map(name => ({ name, score: score(layout.solids[name]) }))
+      .filter(e => e.name !== selectedSolid.name && !Number.isNaN(e.score))
       .sort((a, b) => b.score - a.score)
       .pop();
 
@@ -149,20 +154,14 @@ export default class PipelineGraph extends React.Component<
   onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.target && (e.target as HTMLElement).nodeName === "INPUT") return;
 
-    let next: string | undefined;
-    if (e.keyCode === 37) {
-      next = this.closestSolidInDirection("left");
-    } else if (e.keyCode === 39) {
-      next = this.closestSolidInDirection("right");
-    } else if (e.keyCode === 38) {
-      next = this.closestSolidInDirection("down");
-    } else if (e.keyCode === 40) {
-      next = this.closestSolidInDirection("up");
-    }
-    if (next && this.props.onClickSolid) {
+    const dir = { 37: "left", 38: "up", 39: "right", 40: "down" }[e.keyCode];
+    if (!dir) return;
+
+    const nextSolid = this.closestSolidInDirection(dir);
+    if (nextSolid && this.props.onClickSolid) {
       e.preventDefault();
       e.stopPropagation();
-      this.props.onClickSolid(next);
+      this.props.onClickSolid(nextSolid);
     }
   };
 

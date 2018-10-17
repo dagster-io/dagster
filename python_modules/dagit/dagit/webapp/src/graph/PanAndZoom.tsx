@@ -172,7 +172,7 @@ export default class PanAndZoom extends React.Component<
   };
 
   render() {
-    const { children, graphWidth, graphHeight, onKeyDown } = this.props;
+    const { children, onKeyDown } = this.props;
     const { x, y, scale } = this.state;
 
     return (
