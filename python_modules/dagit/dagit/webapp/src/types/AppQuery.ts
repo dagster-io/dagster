@@ -196,6 +196,7 @@ export interface AppQuery_pipelines {
 }
 
 export interface AppQuery {
+  error: string | null;
   pipelines: AppQuery_pipelines[];
 }
 
