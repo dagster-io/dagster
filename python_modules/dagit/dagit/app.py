@@ -25,18 +25,24 @@ class RepositoryContainer(object):
     object allows the RepositoryInfo to be written in an immutable fashion.
     '''
 
-    def __init__(self, repository_target_info):
-        self.repo_dynamic_obj = check.inst_param(
-            load_repository_object_from_target_info(repository_target_info),
-            'repo_dynamic_obj',
-            DynamicObject,
-        )
-        self.repo_error = None
-        self.reload()
+    def __init__(self, repository_target_info=None, repository=None):
+        if repository_target_info != None:
+            self.repo_dynamic_obj = check.inst_param(
+                load_repository_object_from_target_info(repository_target_info),
+                'repo_dynamic_obj',
+                DynamicObject,
+            )
+            self.repo = None
+            self.repo_error = None
+            self.reload()
+        elif repository != None:
+            self.repo = repository
 
     def reload(self):
+        if not self.repo_dynamic_obj:
+            return
         try:
-            self.repo_dynamic_obj.eval()
+            self.repo = self.repo_dynamic_obj.eval()
             self.repo_error = None
         except Exception as ex:
             print(ex)
@@ -44,7 +50,7 @@ class RepositoryContainer(object):
 
     @property
     def repository(self):
-        return self.repo_dynamic_obj.object
+        return self.repo
 
     @property
     def error(self):

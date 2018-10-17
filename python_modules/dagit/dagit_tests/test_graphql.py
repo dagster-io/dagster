@@ -9,6 +9,7 @@ from dagster import (
 import dagster.pandas as dagster_pd
 
 from dagit.schema import create_schema
+from dagit.app import RepositoryContainer
 
 from graphql import graphql
 
@@ -70,19 +71,11 @@ def define_repo():
     )
 
 
-class FakeRepositoryContainer:
-    def __init__(self, repository):
-        self.repository = repository
-
-    def reload(self):
-        raise Exception('not implemented for test')
-
-
 def execute_dagster_graphql(repo, query):
     return graphql(
         create_schema(),
         query,
-        context={'repository_container': FakeRepositoryContainer(repo)},
+        context={'repository_container': RepositoryContainer(repository=repo)},
     )
 
 
