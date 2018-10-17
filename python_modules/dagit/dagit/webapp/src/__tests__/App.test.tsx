@@ -11,6 +11,7 @@ const mocks = [
     },
     result: {
       data: {
+        error: null,
         pipelines: [
           {
             name: "pandas_hello_world",
