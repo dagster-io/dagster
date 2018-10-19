@@ -21,10 +21,10 @@ interface ISidebarSolidInfoProps {
   solid: SolidFragment;
 }
 
-const NOTEBOOK_RENDERER_URI = (process.env.REACT_APP_GRAPHQL_URI || "").replace(
-  "/graphql",
-  "/notebook"
-);
+// TODO: Replace REACT_APP_GRAPHQL_URI with "DAGIT_SERVER_URI" without path
+const NOTEBOOK_RENDERER_URI = process.env.REACT_APP_GRAPHQL_URI
+  ? process.env.REACT_APP_GRAPHQL_URI.replace("/graphql", "/notebook")
+  : "/notebook";
 
 class PythonNotebookButton extends React.Component<{ path: string }> {
   state = {
