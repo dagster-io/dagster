@@ -74,7 +74,7 @@ You can also specify a module instead of a file in the repository.yml file.
 Dagit
 ^^^^^
 
-Dagit is an essential tool for managaging and visualizing dagster pipelines. Install dagit
+Dagit is an essential tool for managing and visualizing dagster pipelines. Install dagit
 via pypi (``pip install dagit``) and then run it on your repository in the same way as
 the CLI tool.
 
