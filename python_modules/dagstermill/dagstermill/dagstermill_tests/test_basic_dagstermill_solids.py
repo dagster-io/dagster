@@ -102,6 +102,7 @@ def return_two():
 def define_hello_world_inputs_pipeline():
     with_inputs_solid = add_two_numbers_pm_solid('with_inputs')
     return PipelineDefinition(
+        name='test_inputs_dag',
         solids=[return_one, return_two, with_inputs_solid],
         dependencies={
             with_inputs_solid.name: {
@@ -120,8 +121,7 @@ def test_hello_world_inputs():
     assert result.result_for_solid('with_inputs').transformed_value() == 3
 
 
-@notebook_test
-def test_hello_world_config():
+def define_hello_world_config_pipeline():
     with_config_solid = dm.define_dagstermill_solid(
         'with_config',
         nb_test_path('hello_world_with_config'),
@@ -129,8 +129,12 @@ def test_hello_world_config():
         [OutputDefinition()],
         config_def=ConfigDefinition(types.String),
     )
+    return PipelineDefinition(name='test_config_dag', solids=[with_config_solid])
 
-    pipeline = PipelineDefinition(solids=[with_config_solid])
+
+@notebook_test
+def test_hello_world_config():
+    pipeline = define_hello_world_config_pipeline()
     pipeline_result = execute_pipeline(
         pipeline,
         config.Environment(solids={'with_config': config.Solid(script_relative_path('num.csv'))}),

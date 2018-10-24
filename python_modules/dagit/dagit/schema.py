@@ -201,7 +201,6 @@ class SolidDefinition(graphene.ObjectType):
         self._solid_def = check.inst_param(solid_def, 'solid_def', dagster.SolidDefinition)
 
     def resolve_metadata(self, _info):
-        print(self._solid_def.metadata)
         return [
             SolidMetadataItemDefinition(key=item[0], value=item[1])
             for item in self._solid_def.metadata.items()

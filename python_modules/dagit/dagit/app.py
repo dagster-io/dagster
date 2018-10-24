@@ -77,16 +77,16 @@ from nbconvert import HTMLExporter
 
 def notebook_view(_path):
     # This currently provides open access to your file system - the very least we can
-    # do is limit it to notebook files until we craete a more permanent solution.
+    # do is limit it to notebook files until we create a more permanent solution.
     if not _path.endswith(".ipynb"):
         return "Invalid Path", 400
 
     with open(os.path.join('/', _path)) as f:
         read_data = f.read()
-        jake_notebook = nbformat.reads(read_data, as_version=4)
+        notebook = nbformat.reads(read_data, as_version=4)
         html_exporter = HTMLExporter()
         html_exporter.template_file = 'basic'
-        (body, resources) = html_exporter.from_notebook_node(jake_notebook)
+        (body, resources) = html_exporter.from_notebook_node(notebook)
         return "<style>" + resources['inlining']['css'][0] + "</style>" + body, 200
 
 
