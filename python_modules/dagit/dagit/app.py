@@ -42,7 +42,7 @@ class RepositoryContainer(object):
         if not self.repo_dynamic_obj:
             return
         try:
-            self.repo = self.repo_dynamic_obj.eval()
+            self.repo = self.repo_dynamic_obj.load()
             self.repo_error = None
         except Exception as ex:
             print(ex)

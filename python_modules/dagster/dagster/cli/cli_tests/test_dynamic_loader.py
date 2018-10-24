@@ -326,7 +326,7 @@ def test_repo_yaml_module_dynamic_load():
             python_file=None,
             fn_name=None,
         )
-    ).eval()
+    ).load()
 
     assert isinstance(repository, RepositoryDefinition)
     assert repository.name == 'bar'
@@ -340,7 +340,7 @@ def test_repo_yaml_file_dynamic_load():
             python_file=None,
             fn_name=None,
         )
-    ).eval()
+    ).load()
 
     assert isinstance(repository, RepositoryDefinition)
     assert repository.name == 'bar'
@@ -354,7 +354,7 @@ def test_repo_module_dynamic_load():
             python_file=None,
             fn_name='define_bar_repo',
         )
-    ).eval()
+    ).load()
 
     assert isinstance(repository, RepositoryDefinition)
     assert repository.name == 'bar'
@@ -368,7 +368,7 @@ def test_repo_file_dynamic_load():
             python_file=script_relative_path('test_dynamic_loader.py'),
             fn_name='define_bar_repo',
         )
-    ).eval()
+    ).load()
 
     assert isinstance(repository, RepositoryDefinition)
     assert repository.name == 'bar'
@@ -382,7 +382,7 @@ def test_repo_module_dynamic_load_from_pipeline():
             python_file=None,
             fn_name='define_foo_pipeline',
         )
-    ).eval()
+    ).load()
 
     assert isinstance(repository, RepositoryDefinition)
     assert repository.name == '<<unnamed>>'
@@ -397,7 +397,7 @@ def test_repo_file_dynamic_load_from_pipeline():
             python_file=script_relative_path('test_dynamic_loader.py'),
             fn_name='define_foo_pipeline',
         )
-    ).eval()
+    ).load()
 
     assert isinstance(repository, RepositoryDefinition)
     assert repository.name == '<<unnamed>>'

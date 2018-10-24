@@ -217,7 +217,7 @@ class DynamicObject:
         self.coerce_to_repo = False
         self.loaded = False
 
-    def eval(self):
+    def load(self):
         if self.loaded:
             module = importlib.reload(self.module)
         self.loaded = True
@@ -274,7 +274,7 @@ def load_repository_object_from_target_info(info):
 
 
 def load_repository_from_target_info(info):
-    return check.inst(load_repository_object_from_target_info(info).eval(), RepositoryDefinition)
+    return check.inst(load_repository_object_from_target_info(info).load(), RepositoryDefinition)
 
 
 # Keeping this code around for a week. I might need to be able to
@@ -304,7 +304,7 @@ def load_pipeline_from_target_info(info):
 
     if mode_data.mode == PipelineTargetMode.REPOSITORY_PYTHON_FILE:
         repository = check.inst(
-            load_file_target_function(mode_data.data.file_target_function).eval(),
+            load_file_target_function(mode_data.data.file_target_function).load(),
             RepositoryDefinition,
         )
         return repository.get_pipeline(mode_data.data.pipeline_name)
@@ -313,7 +313,7 @@ def load_pipeline_from_target_info(info):
         # If this is still around in a week or two delete this -- schrockn (09/18/18)
     elif mode_data.mode == PipelineTargetMode.REPOSITORY_MODULE:
         repository = check.inst(
-            load_module_target_function(mode_data.data.module_target_function).eval(),
+            load_module_target_function(mode_data.data.module_target_function).load(),
             RepositoryDefinition,
         )
         return repository.get_pipeline(mode_data.data.pipeline_name)
@@ -322,17 +322,17 @@ def load_pipeline_from_target_info(info):
         # If this is still around in a week or two delete this -- schrockn (09/18/18)
     elif mode_data.mode == PipelineTargetMode.PIPELINE_PYTHON_FILE:
         return check.inst(
-            load_file_target_function(mode_data.data).eval(),
+            load_file_target_function(mode_data.data).load(),
             PipelineDefinition,
         )
     elif mode_data.mode == PipelineTargetMode.PIPELINE_MODULE:
         return check.inst(
-            load_module_target_function(mode_data.data).eval(),
+            load_module_target_function(mode_data.data).load(),
             PipelineDefinition,
         )
     elif mode_data.mode == PipelineTargetMode.REPOSITORY_YAML_FILE:
         repository = check.inst(
-            load_repository_from_file(mode_data.data.repository_yaml).eval(),
+            load_repository_from_file(mode_data.data.repository_yaml).load(),
             RepositoryDefinition,
         )
         return repository.get_pipeline(mode_data.data.pipeline_name)
