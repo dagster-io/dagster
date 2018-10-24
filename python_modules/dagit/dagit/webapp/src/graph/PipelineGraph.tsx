@@ -5,7 +5,11 @@ import { Colors } from "@blueprintjs/core";
 import { LinkVertical as Link } from "@vx/shape";
 import PanAndZoom from "./PanAndZoom";
 import SolidNode from "./SolidNode";
-import { IPoint, IFullPipelineLayout } from "./getFullSolidLayout";
+import {
+  IPoint,
+  IFullPipelineLayout,
+  IFullSolidLayout
+} from "./getFullSolidLayout";
 import {
   PipelineGraphFragment,
   PipelineGraphFragment_solids
@@ -106,12 +110,67 @@ export default class PipelineGraph extends React.Component<
     this.viewportEl.current!.smoothZoomToSVGCoords(cx, cy, 1);
   };
 
+  closestSolidInDirection = (dir: string): string | undefined => {
+    const { layout, selectedSolid } = this.props;
+    if (!selectedSolid) return;
+
+    const current = layout.solids[selectedSolid.name];
+    const center = (solid: IFullSolidLayout): { x: number; y: number } => ({
+      x: solid.boundingBox.x + solid.boundingBox.width / 2,
+      y: solid.boundingBox.y + solid.boundingBox.height / 2
+    });
+
+    /* Sort all the solids in the graph based on their attractiveness
+    as a jump target. We want the nearest node in the exact same row for left/right,
+    and the visually "closest" node above/below for up/down. */
+    const score = (solid: IFullSolidLayout): number => {
+      const dx = center(solid).x - center(current).x;
+      const dy = center(solid).y - center(current).y;
+
+      if (dir === "left" && dy === 0 && dx < 0) {
+        return -dx;
+      }
+      if (dir === "right" && dy === 0 && dx > 0) {
+        return dx;
+      }
+      if (dir === "up" && dy < 0) {
+        return -dy + Math.abs(dx) / 5;
+      }
+      if (dir === "down" && dy > 0) {
+        return dy + Math.abs(dx) / 5;
+      }
+      return Number.NaN;
+    };
+
+    let closest = Object.keys(layout.solids)
+      .map(name => ({ name, score: score(layout.solids[name]) }))
+      .filter(e => e.name !== selectedSolid.name && !Number.isNaN(e.score))
+      .sort((a, b) => b.score - a.score)
+      .pop();
+
+    return closest ? closest.name : undefined;
+  };
+
+  onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.target && (e.target as HTMLElement).nodeName === "INPUT") return;
+
+    const dir = { 37: "left", 38: "up", 39: "right", 40: "down" }[e.keyCode];
+    if (!dir) return;
+
+    const nextSolid = this.closestSolidInDirection(dir);
+    if (nextSolid && this.props.onClickSolid) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.props.onClickSolid(nextSolid);
+    }
+  };
+
   unfocus = () => {
     this.viewportEl.current!.autocenter(true);
   };
 
   render() {
-    const { layout, pipeline, onClickBackground } = this.props;
+    const { layout, onClickBackground } = this.props;
 
     return (
       <PanAndZoom
@@ -119,12 +178,12 @@ export default class PipelineGraph extends React.Component<
         ref={this.viewportEl}
         graphWidth={layout.width}
         graphHeight={layout.height}
+        onKeyDown={this.onKeyDown}
       >
         {({ scale }: any) => (
           <SVGContainer
             width={layout.width}
             height={layout.height}
-            onMouseDown={evt => evt.preventDefault()}
             onClick={onClickBackground}
             onDoubleClick={this.unfocus}
           >
