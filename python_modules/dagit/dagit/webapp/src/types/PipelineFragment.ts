@@ -63,6 +63,11 @@ export interface PipelineFragment_solids_inputs {
   dependsOn: PipelineFragment_solids_inputs_dependsOn | null;
 }
 
+export interface PipelineFragment_solids_definition_metadata {
+  key: string | null;
+  value: string | null;
+}
+
 export interface PipelineFragment_solids_definition_configDefinition_type_RegularType {
   __typename: "RegularType";
   name: string;
@@ -118,6 +123,7 @@ export interface PipelineFragment_solids_definition_configDefinition {
 
 export interface PipelineFragment_solids_definition {
   description: string | null;
+  metadata: PipelineFragment_solids_definition_metadata[] | null;
   configDefinition: PipelineFragment_solids_definition_configDefinition | null;
   name: string;
 }

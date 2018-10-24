@@ -70,7 +70,7 @@ export default class SidebarTabbedContainer extends React.Component<
       <div>
         <Tabs id="TabsExample">
           {TabInfo.map(({ name, icon, key, link }) => (
-            <Link to={link}>
+            <Link to={link} key={key}>
               <Tab key={key} active={key === activeTab}>
                 <Icon icon={icon} style={{ marginRight: 5 }} />
                 {name}

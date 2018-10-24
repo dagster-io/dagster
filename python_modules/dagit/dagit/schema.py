@@ -179,9 +179,14 @@ class Output(graphene.ObjectType):
         ]
 
 
+class SolidMetadataItemDefinition(graphene.ObjectType):
+    key = graphene.String()
+    value = graphene.String()
+
 class SolidDefinition(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
+    metadata = graphene.Field(graphene.List(lambda: graphene.NonNull(SolidMetadataItemDefinition)))
     input_definitions = graphene.NonNull(graphene.List(lambda: graphene.NonNull(InputDefinition)))
     output_definitions = graphene.NonNull(graphene.List(lambda: graphene.NonNull(OutputDefinition)))
     config_definition = graphene.Field(lambda: Config)
@@ -194,6 +199,12 @@ class SolidDefinition(graphene.ObjectType):
         )
 
         self._solid_def = check.inst_param(solid_def, 'solid_def', dagster.SolidDefinition)
+
+    def resolve_metadata(self, _info):
+        return [
+            SolidMetadataItemDefinition(key=item[0], value=item[1])
+            for item in self._solid_def.metadata.items()
+        ]
 
     def resolve_input_definitions(self, _info):
         return [

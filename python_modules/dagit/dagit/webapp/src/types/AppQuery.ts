@@ -63,6 +63,11 @@ export interface AppQuery_pipelines_solids_inputs {
   dependsOn: AppQuery_pipelines_solids_inputs_dependsOn | null;
 }
 
+export interface AppQuery_pipelines_solids_definition_metadata {
+  key: string | null;
+  value: string | null;
+}
+
 export interface AppQuery_pipelines_solids_definition_configDefinition_type_RegularType {
   __typename: "RegularType";
   name: string;
@@ -118,6 +123,7 @@ export interface AppQuery_pipelines_solids_definition_configDefinition {
 
 export interface AppQuery_pipelines_solids_definition {
   description: string | null;
+  metadata: AppQuery_pipelines_solids_definition_metadata[] | null;
   configDefinition: AppQuery_pipelines_solids_definition_configDefinition | null;
   name: string;
 }
