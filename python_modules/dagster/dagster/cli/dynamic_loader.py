@@ -213,8 +213,8 @@ class DynamicObject:
         self.module = module
         self.module_name = module_name
         self.fn_name = fn_name
+        self.after_load_fn = None
         self.object = None
-        self.coerce_to_repo = False
         self.loaded = False
 
     def load(self):
@@ -225,14 +225,8 @@ class DynamicObject:
         fn = getattr(self.module, self.fn_name)
         check.is_callable(fn)
         self.object = fn()
-
-        if self.coerce_to_repo and not isinstance(self.object, RepositoryDefinition):
-            pipeline = self.object
-            self.object = RepositoryDefinition(
-                name=EMPHERMAL_NAME,
-                pipeline_dict={pipeline.name: lambda: pipeline},
-            )
-
+        if self.after_load_fn:
+            self.object = self.after_load_fn(self.object)
         return self.object
 
 
@@ -255,6 +249,15 @@ def load_module_target_function(module_target_function):
 EMPHERMAL_NAME = '<<unnamed>>'
 
 
+def coerce_to_pipeline_to_repository(obj):
+    if not isinstance(obj, RepositoryDefinition):
+        return RepositoryDefinition(
+            name=EMPHERMAL_NAME,
+            pipeline_dict={obj.name: lambda: obj},
+        )
+    return obj
+
+
 def load_repository_object_from_target_info(info):
     check.inst_param(info, 'info', RepositoryTargetInfo)
 
@@ -269,7 +272,7 @@ def load_repository_object_from_target_info(info):
     else:
         check.failed('should not reach')
 
-    dynamic_obj.coerce_to_repo = True
+    dynamic_obj.after_load_fn = coerce_to_pipeline_to_repository
     return dynamic_obj
 
 
