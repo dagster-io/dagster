@@ -2,6 +2,7 @@ from collections import namedtuple
 from enum import Enum
 import imp
 import importlib
+import reloader
 import os
 
 import click
@@ -77,6 +78,21 @@ class InvalidPipelineLoadingComboError(Exception):
 
 class InvalidRepositoryLoadingComboError(Exception):
     pass
+
+
+# The reloader module allows us to specify a blacklist of modules not to reload,
+# but we want something a bit more flexible. We only want to reload the user's
+# pipeline code, not dagster imports, installed packages, or parts of the python
+# install. Some of these things (like numpy) actually cannot be reloaded.
+#
+_oldreload = reloader._reload
+def newreload(m, visited):
+    if "/usr/local" in m.__file__ or "site-packages" in m.__file__:
+        return
+    if m.__name__.startswith("dagster.core") or m.__name__.startswith("dagster.utils"):
+        return
+    _oldreload(m, visited)
+reloader._reload = newreload
 
 
 def check_info_fields(info, *fields):
@@ -219,7 +235,7 @@ class DynamicObject:
 
     def load(self):
         if self.loaded:
-            module = importlib.reload(self.module)
+            reloader.reload(self.module)
         self.loaded = True
 
         fn = getattr(self.module, self.fn_name)
@@ -232,6 +248,7 @@ class DynamicObject:
 
 
 def load_file_target_function(file_target_function):
+    reloader.enable()
     check.inst_param(file_target_function, 'file_target_function', FileTargetFunction)
     module_name = os.path.splitext(os.path.basename(file_target_function.python_file))[0]
     module = imp.load_source(module_name, file_target_function.python_file)
@@ -239,6 +256,7 @@ def load_file_target_function(file_target_function):
 
 
 def load_module_target_function(module_target_function):
+    reloader.enable()
     check.inst_param(module_target_function, 'module_target_function', ModuleTargetFunction)
     module = importlib.import_module(module_target_function.module_name)
     return DynamicObject(

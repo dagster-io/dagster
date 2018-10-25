@@ -68,6 +68,7 @@ setup(
 
         # watchdog
         'watchdog>=0.8.3',
+        'reloader>=0.6',
 
         # dev/test - Installed via dev-requirements.txt
         # 'pylint>=1.8.4',
