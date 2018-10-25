@@ -63,6 +63,11 @@ export interface SolidFragment_inputs {
   dependsOn: SolidFragment_inputs_dependsOn | null;
 }
 
+export interface SolidFragment_definition_metadata {
+  key: string | null;
+  value: string | null;
+}
+
 export interface SolidFragment_definition_configDefinition_type_RegularType {
   __typename: "RegularType";
   name: string;
@@ -118,6 +123,7 @@ export interface SolidFragment_definition_configDefinition {
 
 export interface SolidFragment_definition {
   description: string | null;
+  metadata: SolidFragment_definition_metadata[] | null;
   configDefinition: SolidFragment_definition_configDefinition | null;
 }
 

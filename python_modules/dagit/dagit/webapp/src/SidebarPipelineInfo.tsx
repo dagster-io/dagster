@@ -29,7 +29,7 @@ export default class SidebarPipelineInfo extends React.Component<
         </SidebarSection>
         <SidebarSection title={"Contexts"}>
           {pipeline.contexts.map(context => (
-            <SectionItemContainer>
+            <SectionItemContainer key={context.name}>
               <SectionItemHeader>{context.name}</SectionItemHeader>
               <Description description={context.description} />
               {context.config && <Config config={context.config} />}

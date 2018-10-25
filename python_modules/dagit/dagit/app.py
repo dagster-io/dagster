@@ -87,6 +87,24 @@ yarn
 yarn build</pre>'''
         return text, 500
 
+import nbformat
+from traitlets.config import Config
+from nbconvert import HTMLExporter
+
+def notebook_view(_path):
+    # This currently provides open access to your file system - the very least we can
+    # do is limit it to notebook files until we create a more permanent solution.
+    if not _path.endswith(".ipynb"):
+        return "Invalid Path", 400
+
+    with open(os.path.join('/', _path)) as f:
+        read_data = f.read()
+        notebook = nbformat.reads(read_data, as_version=4)
+        html_exporter = HTMLExporter()
+        html_exporter.template_file = 'basic'
+        (body, resources) = html_exporter.from_notebook_node(notebook)
+        return "<style>" + resources['inlining']['css'][0] + "</style>" + body, 200
+
 
 def create_app(repository_container):
     app = Flask('dagster-ui')
@@ -102,6 +120,7 @@ def create_app(repository_container):
             repository_container=repository_container,
         )
     )
+    app.add_url_rule('/notebook/<path:_path>', 'notebook', notebook_view)
     app.add_url_rule('/static/<path:path>/<string:file>', 'static_view', static_view)
     app.add_url_rule('/<path:_path>', 'index_catchall', index_view)
     app.add_url_rule(
