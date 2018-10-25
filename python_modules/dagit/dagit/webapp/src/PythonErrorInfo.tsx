@@ -3,7 +3,10 @@ import styled from "styled-components";
 import { Button } from "@blueprintjs/core";
 
 interface IPythonErrorInfoProps {
-  error: string;
+  error: {
+    message: string;
+    stack: string[];
+  };
 }
 
 export default class PythonErrorInfo extends React.Component<
@@ -11,15 +14,12 @@ export default class PythonErrorInfo extends React.Component<
   {}
 > {
   render() {
-    const lastLine = this.props.error
-      .trim()
-      .split("\n")
-      .pop();
+    const { message, stack } = this.props.error;
 
     return (
       <ErrorWrapper>
-        <ErrorHeader>{lastLine}</ErrorHeader>
-        <Trace>{this.props.error}</Trace>
+        <ErrorHeader>{message}</ErrorHeader>
+        <Trace>{stack.join("")}</Trace>
         <Button icon="refresh" onClick={() => window.location.reload()}>
           Reload
         </Button>

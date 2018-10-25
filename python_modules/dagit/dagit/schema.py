@@ -64,7 +64,7 @@ class Query(graphene.ObjectType):
         return pipelines
 
     def resolve_pipelinesOrErrors(self, info):
-        return Query.results_or_errors(self, Query.resolve_pipeline, info)
+        return Query.results_or_errors(self, Query.resolve_pipelines, info)
 
     def resolve_type(self, info, pipelineName, typeName):
         check.str_param(pipelineName, 'pipelineName')
@@ -116,7 +116,7 @@ class Pipeline(graphene.ObjectType):
 
 class Error(graphene.Interface):
     message = graphene.String(required=True)
-    stack = graphene.List(graphene.String)
+    stack = graphene.NonNull(graphene.List(graphene.NonNull(graphene.String)))
 
 
 class PythonError(graphene.ObjectType):
