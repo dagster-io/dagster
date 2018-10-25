@@ -1,8 +1,8 @@
 from collections import namedtuple
 from enum import Enum
 import imp
+import sys
 import importlib
-import reloader
 import os
 
 import click
@@ -14,6 +14,31 @@ from dagster import (
 )
 
 from dagster.utils import load_yaml_from_path
+
+if sys.version_info[0] >= 3:
+    import reloader
+
+    # The reloader module allows us to specify a blacklist of modules not to reload,
+    # but we want something a bit more flexible. We only want to reload the user's
+    # pipeline code, not dagster imports, installed packages, or parts of the python
+    # install. Some of these things (like numpy) actually cannot be reloaded.
+    #
+    _reload = reloader._reload
+    def conditional_reload(m, visited):
+        if "/usr/local" in m.__file__ or "site-packages" in m.__file__:
+            return
+        if m.__name__.startswith("dagster.core") or m.__name__.startswith("dagster.utils"):
+            return
+        _reload(m, visited)
+    reloader._reload = conditional_reload
+else:
+    class ReloaderStub:
+        def reload(self, module):
+            pass
+        def enable(self):
+            print('Hot-reloading only supports Python 3+')
+    reloader = ReloaderStub()
+
 
 INFO_FIELDS = set([
     'repository_yaml',
@@ -91,21 +116,6 @@ class InvalidPipelineLoadingComboError(Exception):
 
 class InvalidRepositoryLoadingComboError(Exception):
     pass
-
-
-# The reloader module allows us to specify a blacklist of modules not to reload,
-# but we want something a bit more flexible. We only want to reload the user's
-# pipeline code, not dagster imports, installed packages, or parts of the python
-# install. Some of these things (like numpy) actually cannot be reloaded.
-#
-_oldreload = reloader._reload
-def newreload(m, visited):
-    if "/usr/local" in m.__file__ or "site-packages" in m.__file__:
-        return
-    if m.__name__.startswith("dagster.core") or m.__name__.startswith("dagster.utils"):
-        return
-    _oldreload(m, visited)
-reloader._reload = newreload
 
 
 def check_info_fields(info, *fields):
