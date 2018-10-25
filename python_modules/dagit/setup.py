@@ -68,7 +68,6 @@ setup(
 
         # watchdog
         'watchdog>=0.8.3',
-        'reloader>=0.6',
 
         # notebooks support
         'nbconvert>=5.4.0',

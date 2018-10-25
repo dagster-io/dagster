@@ -48,6 +48,7 @@ setup(
         'coloredlogs>=10.0',
         'graphviz>=0.8.3',
         'pyyaml>=3.12',
+        'reloader>=0.6',
 
         # core (not explicitly expressed atm)
         'six>=1.11.0',
