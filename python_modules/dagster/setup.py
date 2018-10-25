@@ -48,7 +48,6 @@ setup(
         'coloredlogs>=10.0',
         'graphviz>=0.8.3',
         'pyyaml>=3.12',
-        'reloader>=0.6',
 
         # core (not explicitly expressed atm)
         'six>=1.11.0',
@@ -73,5 +72,8 @@ setup(
         # 'twine>=1.11.0',
         # 'pre-commit'>=1.10.1',
     ],
+    extras_require={
+        ":python_version>'3'": ["reloader>=0.6"],
+    },
     scripts=['bin/dagster']
 )
