@@ -49,8 +49,15 @@ class PipelineTargetMode(Enum):
     REPOSITORY_YAML_FILE = 4
 
 
-FileTargetFunction = namedtuple('FileTargetFunction', 'python_file fn_name')
-ModuleTargetFunction = namedtuple('ModuleTargetFunction', 'module_name fn_name')
+FileTargetFunction = namedtuple(
+    'FileTargetFunction',
+    'python_file fn_name'
+)
+
+ModuleTargetFunction = namedtuple(
+    'ModuleTargetFunction',
+    'module_name fn_name'
+)
 
 RepositoryPythonFileData = namedtuple(
     'RepositoryPythonFileData',
@@ -67,9 +74,15 @@ RepositoryYamlData = namedtuple(
     'repository_yaml pipeline_name',
 )
 
-PipelineLoadingModeData = namedtuple('PipelineLoadingModeData', 'mode data')
+PipelineLoadingModeData = namedtuple(
+    'PipelineLoadingModeData',
+    'mode data'
+)
 
-RepositoryLoadingModeData = namedtuple('RepositoryLoadingModeData', 'mode data')
+RepositoryLoadingModeData = namedtuple(
+    'RepositoryLoadingModeData',
+    'mode data'
+)
 
 
 class InvalidPipelineLoadingComboError(Exception):
@@ -252,7 +265,11 @@ def load_file_target_function(file_target_function):
     check.inst_param(file_target_function, 'file_target_function', FileTargetFunction)
     module_name = os.path.splitext(os.path.basename(file_target_function.python_file))[0]
     module = imp.load_source(module_name, file_target_function.python_file)
-    return DynamicObject(module, module_name, file_target_function.fn_name)
+    return DynamicObject(
+        module,
+        module_name,
+        file_target_function.fn_name
+    )
 
 
 def load_module_target_function(module_target_function):
@@ -260,7 +277,9 @@ def load_module_target_function(module_target_function):
     check.inst_param(module_target_function, 'module_target_function', ModuleTargetFunction)
     module = importlib.import_module(module_target_function.module_name)
     return DynamicObject(
-        module, module_target_function.module_name, module_target_function.fn_name
+        module,
+        module_target_function.module_name,
+        module_target_function.fn_name,
     )
 
 
