@@ -287,12 +287,15 @@ EMPHERMAL_NAME = '<<unnamed>>'
 
 
 def coerce_to_pipeline_to_repository(obj):
-    if not isinstance(obj, RepositoryDefinition):
+    if isinstance(obj, RepositoryDefinition):
+        return obj
+    if isinstance(obj, PipelineDefinition):
         return RepositoryDefinition(
             name=EMPHERMAL_NAME,
             pipeline_dict={obj.name: lambda: obj},
         )
-    return obj
+    raise InvalidPipelineLoadingComboError(
+        'entry point must return a repository or pipeline')
 
 
 def load_repository_object_from_target_info(info):
