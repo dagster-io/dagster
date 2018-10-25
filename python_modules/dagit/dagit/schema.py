@@ -1,5 +1,6 @@
 import graphene
-
+import sys
+import traceback
 import dagster
 import dagster.core.definitions
 
@@ -9,9 +10,12 @@ from dagster.core.types import DagsterCompositeType
 
 
 class Query(graphene.ObjectType):
-    error = graphene.String()
     pipeline = graphene.Field(lambda: Pipeline, name=graphene.NonNull(graphene.String))
+    pipelineOrError = graphene.Field(lambda: PipelineOrError, name=graphene.NonNull(graphene.String))
+
     pipelines = graphene.NonNull(graphene.List(lambda: graphene.NonNull(Pipeline)))
+    pipelinesOrErrors = graphene.NonNull(graphene.List(lambda: graphene.NonNull(PipelineOrError)))
+
     type = graphene.Field(
         lambda: Type,
         pipelineName=graphene.NonNull(graphene.String),
@@ -22,8 +26,23 @@ class Query(graphene.ObjectType):
         pipelineName=graphene.NonNull(graphene.String),
     )
 
-    def resolve_error(self, info):
-        return info.context['repository_container'].error
+    def result_or_error(self, fn, info, *argv):
+        error = info.context['repository_container'].error
+        if error != None:
+            return PythonError(*error)
+        try:
+            return fn(self, info, *argv)
+        except:
+            return PythonError(*sys.exc_info())
+
+    def results_or_errors(self, fn, info, *argv):
+        error = info.context['repository_container'].error
+        if error != None:
+            return [PythonError(*error)]
+        try:
+            return fn(self, info, *argv)
+        except:
+            return [PythonError(*sys.exc_info())]
 
     def resolve_pipeline(self, info, name):
         check.str_param(name, 'name')
@@ -31,6 +50,9 @@ class Query(graphene.ObjectType):
         if repository == None:
             return None
         return Pipeline(repository.get_pipeline(name))
+
+    def resolve_pipelineOrError(self, info, name):
+        return Query.result_or_error(self, Query.resolve_pipeline, info, name)
 
     def resolve_pipelines(self, info):
         repository = info.context['repository_container'].repository
@@ -40,6 +62,9 @@ class Query(graphene.ObjectType):
         for pipeline_def in repository.get_all_pipelines():
             pipelines.append(Pipeline(pipeline_def))
         return pipelines
+
+    def resolve_pipelinesOrErrors(self, info):
+        return Query.results_or_errors(self, Query.resolve_pipeline, info)
 
     def resolve_type(self, info, pipelineName, typeName):
         check.str_param(pipelineName, 'pipelineName')
@@ -86,6 +111,26 @@ class Pipeline(graphene.ObjectType):
 
     def resolve_environment_type(self, _info):
         return Type.from_dagster_type(self._pipeline.environment_type)
+
+
+
+class Error(graphene.Interface):
+    message = graphene.String(required=True)
+    stack = graphene.List(graphene.String)
+
+
+class PythonError(graphene.ObjectType):
+    class Meta:
+        interfaces = (Error, )
+
+    def __init__(self, exc_type, exc_value, exc_tb):
+        self.message=traceback.format_exception_only(exc_type, exc_value)[0]
+        self.stack=traceback.format_tb(tb=exc_tb)
+
+
+class PipelineOrError(graphene.Union):
+    class Meta:
+        types = (Pipeline, PythonError)
 
 
 class PipelineContext(graphene.ObjectType):

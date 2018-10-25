@@ -1,5 +1,5 @@
 import os
-import traceback
+import sys
 try:
     from graphql.execution.executors.asyncio import AsyncioExecutor as Executor
 except ImportError:
@@ -44,9 +44,8 @@ class RepositoryContainer(object):
         try:
             self.repo = self.repo_dynamic_obj.load()
             self.repo_error = None
-        except Exception as ex:
-            print(ex)
-            self.repo_error = ''.join(traceback.format_exception(etype=type(ex), value=ex, tb=ex.__traceback__))
+        except:
+            self.repo_error = sys.exc_info()
 
     @property
     def repository(self):
