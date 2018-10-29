@@ -261,14 +261,18 @@ class DynamicObject:
 
         fn = getattr(self.module, self.fn_name)
         check.is_callable(fn)
-        self.object = fn()
+        obj = fn()
 
-        if self.coerce_to_repo and not isinstance(self.object, RepositoryDefinition):
-            pipeline = self.object
+        if isinstance(obj, RepositoryDefinition):
+            self.object = obj
+        if isinstance(obj, PipelineDefinition):
             self.object = RepositoryDefinition(
                 name=EMPHERMAL_NAME,
-                pipeline_dict={pipeline.name: lambda: pipeline},
+                pipeline_dict={obj.name: lambda: obj},
             )
+        else:
+            raise InvalidPipelineLoadingComboError(
+                'entry point must return a repository or pipeline')
 
         return self.object
 
