@@ -27,8 +27,6 @@ if sys.version_info[0] >= 3:
     def conditional_reload(m, visited):
         if "/usr/local" in m.__file__ or "site-packages" in m.__file__:
             return
-        if m.__name__.startswith("dagster.core") or m.__name__.startswith("dagster.utils"):
-            return
         _reload(m, visited)
     reloader._reload = conditional_reload
 else:
