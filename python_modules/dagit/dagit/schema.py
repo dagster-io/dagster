@@ -47,8 +47,6 @@ class Query(graphene.ObjectType):
     def resolve_pipeline(self, info, name):
         check.str_param(name, 'name')
         repository = info.context['repository_container'].repository
-        if repository == None:
-            return None
         return Pipeline(repository.get_pipeline(name))
 
     def resolve_pipelineOrError(self, info, name):
@@ -56,8 +54,6 @@ class Query(graphene.ObjectType):
 
     def resolve_pipelines(self, info):
         repository = info.context['repository_container'].repository
-        if repository == None:
-            return []
         pipelines = []
         for pipeline_def in repository.get_all_pipelines():
             pipelines.append(Pipeline(pipeline_def))
