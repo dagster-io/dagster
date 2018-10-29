@@ -11,6 +11,7 @@ export interface TypeExplorerContainerQuery_type_RegularType {
   __typename: "RegularType";
   name: string;
   description: string | null;
+  builtin: boolean;
 }
 
 export interface TypeExplorerContainerQuery_type_CompositeType_fields_type {
@@ -30,6 +31,7 @@ export interface TypeExplorerContainerQuery_type_CompositeType {
   __typename: "CompositeType";
   name: string;
   description: string | null;
+  builtin: boolean;
   fields: TypeExplorerContainerQuery_type_CompositeType_fields[];
 }
 

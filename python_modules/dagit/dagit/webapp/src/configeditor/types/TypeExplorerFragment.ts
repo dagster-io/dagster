@@ -11,6 +11,7 @@ export interface TypeExplorerFragment_RegularType {
   __typename: "RegularType";
   name: string;
   description: string | null;
+  builtin: boolean;
 }
 
 export interface TypeExplorerFragment_CompositeType_fields_type {
@@ -30,6 +31,7 @@ export interface TypeExplorerFragment_CompositeType {
   __typename: "CompositeType";
   name: string;
   description: string | null;
+  builtin: boolean;
   fields: TypeExplorerFragment_CompositeType_fields[];
 }
 

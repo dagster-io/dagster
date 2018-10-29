@@ -9,6 +9,7 @@
 
 export interface TypeListContainerQuery_types {
   name: string;
+  builtin: boolean;
   description: string | null;
 }
 

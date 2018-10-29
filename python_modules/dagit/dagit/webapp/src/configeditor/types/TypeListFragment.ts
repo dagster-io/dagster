@@ -9,6 +9,7 @@
 
 export interface TypeListFragment {
   name: string;
+  builtin: boolean;
   description: string | null;
 }
 
