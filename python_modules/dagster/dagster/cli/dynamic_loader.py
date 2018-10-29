@@ -263,6 +263,9 @@ class DynamicObject:
         check.is_callable(fn)
         obj = fn()
 
+        # Eventually this class will be generic and not coupled to
+        # Pipeline / Repository types. Tracking this issue here:
+        # https://github.com/dagster-io/dagster/issues/246
         if self.coerce_to_repo:
             if isinstance(obj, RepositoryDefinition):
                 self.object = obj
