@@ -27,7 +27,7 @@ class RepositoryContainer(object):
 
     def __init__(self, repository_target_info=None, repository=None):
         if repository_target_info != None:
-            self.repo_dynamic_obj = check.inst_param(
+            self.repo_dynamic_obj = check.inst(
                 load_repository_object_from_target_info(repository_target_info),
                 'repo_dynamic_obj',
                 DynamicObject,
