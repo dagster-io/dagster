@@ -98,6 +98,10 @@ class SolidConfigType(DagsterCompositeType):
 
         return process_incoming_composite_value(self, value, lambda val: Solid(**val))
 
+    @property
+    def user_config_field(self):
+        return self.field_dict['config']
+
 
 class EnvironmentConfigType(DagsterCompositeType):
     def __init__(self, pipeline_def):
@@ -175,6 +179,22 @@ class ExpectationsConfigType(DagsterCompositeType):
         return process_incoming_composite_value(self, value, lambda val: Expectations(**val))
 
 
+def all_optional(config_type):
+    check.inst_param(config_type, 'config_type', SolidConfigType)
+
+    user_config_field = config_type.field_dict['config']
+
+    if user_config_field.is_optional:
+        return True
+
+    if isinstance(user_config_field.dagster_type, DagsterCompositeType):
+        for field in user_config_field.dagster_type.field_dict.values():
+            if not field.is_optional:
+                return False
+
+    return True
+
+
 class SolidDictionaryType(DagsterCompositeType):
     def __init__(self, name, pipeline_def):
         check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
@@ -184,14 +204,16 @@ class SolidDictionaryType(DagsterCompositeType):
         for solid in pipeline_def.solids:
             if solid.definition.config_def:
                 solid_name = camelcase(solid.name)
+                solid_config_type = SolidConfigType(
+                    '{pipeline_name}.{solid_name}.SolidConfig'.format(
+                        pipeline_name=pipeline_name,
+                        solid_name=solid_name,
+                    ),
+                    solid.definition.config_def.config_type,
+                )
                 field_dict[solid.name] = Field(
-                    SolidConfigType(
-                        '{pipeline_name}.{solid_name}.SolidConfig'.format(
-                            pipeline_name=pipeline_name,
-                            solid_name=solid_name,
-                        ),
-                        solid.definition.config_def.config_type,
-                    )
+                    solid_config_type,
+                    is_optional=all_optional(solid_config_type),
                 )
 
         super(SolidDictionaryType, self).__init__(name, field_dict)
