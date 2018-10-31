@@ -1,6 +1,7 @@
 from collections import namedtuple
 
 import pytest
+
 from dagster import (
     ConfigDefinition,
     types,
@@ -381,3 +382,4 @@ def test_custom_composite_type():
             'foo': 'some_string',
             'bar': 'not_an_int',
         })
+

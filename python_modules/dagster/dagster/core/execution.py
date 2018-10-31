@@ -258,11 +258,16 @@ def _validate_environment(environment, pipeline):
 
 
 def _create_config_value(config_type, config_input):
+    print(f'CREATE_CONFIG_VALUE name {config_type.name} input {config_input}')
     try:
         return config_type.evaluate_value(config_input)
     except DagsterEvaluateValueError as e:
         raise DagsterTypeError(
-            'Invalid config value: {error_msg}'.format(error_msg=','.join(e.args))
+            'Invalid config value {value} on type {config_type}: {error_msg}'.format(
+                value=config_input,
+                config_type=config_type.name,
+                error_msg=','.join(e.args),
+            )
         )
 
 
@@ -271,11 +276,15 @@ def yield_context(pipeline, environment):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.inst_param(environment, 'environment', config.Environment)
 
+    print(f'INCOMING ENVIRONMENT {environment}')
+
     _validate_environment(environment, pipeline)
 
     context_name = environment.context.name
     context_definition = pipeline.context_definitions[context_name]
     config_type = context_definition.config_def.config_type
+
+    print('About to create config value out of ' + str(environment.context))
 
     config_value = _create_config_value(config_type, environment.context.config)
 
@@ -300,6 +309,8 @@ def execute_pipeline_iterator(pipeline, environment):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
 
     pipeline_env_type = EnvironmentConfigType(pipeline)
+
+    print(f'RIGHT BEFORE _create_config_value {environment}')
     environment = _create_config_value(pipeline_env_type, environment)
 
     check.inst_param(environment, 'enviroment', config.Environment)
@@ -387,6 +398,7 @@ def execute_pipeline(
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
 
     pipeline_env_type = EnvironmentConfigType(pipeline)
+    print(f'Right before in execute_pipeline {environment}')
     environment = _create_config_value(pipeline_env_type, environment)
 
     execution_graph = ExecutionGraph.from_pipeline(pipeline)
@@ -404,6 +416,7 @@ def _execute_graph(
 
     display_name = execution_graph.pipeline.display_name
     results = []
+    print(f'Right before in execute graph {environment}')
     with yield_context(execution_graph.pipeline, environment) as context:
         with context.value('pipeline', execution_graph.pipeline.display_name):
             context.info('Beginning execution of pipeline {pipeline}'.format(pipeline=display_name))

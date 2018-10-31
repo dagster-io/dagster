@@ -10,16 +10,22 @@ from dagster import (
     SolidDefinition,
     config,
     types,
+    execute_pipeline,
 )
 
 from dagster.core.config_types import (
     ContextConfigType,
     EnvironmentConfigType,
+    ExecutionConfigType,
     ExpectationsConfigType,
     SolidConfigType,
     SolidDictionaryType,
+    SpecificContextConfig,
+    all_optional_user_config,
     camelcase,
 )
+
+from dagster.core.definitions import DefaultContextConfigDict
 
 
 def test_camelcase():
@@ -83,11 +89,111 @@ def test_memoized_context():
     assert output.config == 'whatever'
 
 
+def test_default_expectations():
+    expect_config_type = ExpectationsConfigType('some_name')
+    assert expect_config_type.evaluate_value({}).evaluate is True
+    assert expect_config_type.evaluate_value(None).evaluate is True
+
+
+def test_default_execution():
+    execution_config_type = ExecutionConfigType('some_name')
+    assert execution_config_type.evaluate_value({}).serialize_intermediates is False
+    assert execution_config_type.evaluate_value(None).serialize_intermediates is False
+
+
+def test_default_context_config():
+    pipeline_def = PipelineDefinition(
+        solids=[
+            SolidDefinition(
+                name='some_solid',
+                inputs=[],
+                outputs=[],
+                transform_fn=lambda *args: None,
+            ),
+        ],
+    )
+
+    context_config_type = ContextConfigType(pipeline_def.name, pipeline_def.context_definitions)
+    assert 'default' in context_config_type.field_dict
+    assert context_config_type.field_dict['default'].is_optional
+    default_context_config_type = context_config_type.field_dict['default'].dagster_type
+
+    assert isinstance(default_context_config_type, SpecificContextConfig)
+    assert 'config' in default_context_config_type.field_dict
+
+    assert all_optional_user_config(default_context_config_type)
+
+    context_dict = context_config_type.evaluate_value({})
+
+    assert 'default' in context_dict
+
+
+def test_provided_default_config():
+    pipeline_def = PipelineDefinition(
+        context_definitions={
+            'some_context':
+            PipelineContextDefinition(
+                config_def=ConfigDefinition(
+                    config_type=types.ConfigDictionary(
+                        'ksjdkfjd', {
+                            'with_default_int':
+                            Field(
+                                types.Int,
+                                is_optional=True,
+                                default_value=23434,
+                            ),
+                        }
+                    )
+                ),
+                context_fn=lambda *args: None
+            )
+        },
+        solids=[
+            SolidDefinition(
+                name='some_solid',
+                inputs=[],
+                outputs=[],
+                transform_fn=lambda *args: None,
+            ),
+        ],
+    )
+
+    env_type = EnvironmentConfigType(pipeline_def)
+    env_obj = env_type.evaluate_value({})
+    assert env_obj.context.name == 'some_context'
+
+
+def test_default_environment():
+    pipeline_def = PipelineDefinition(
+        solids=[
+            SolidDefinition(
+                name='some_solid',
+                inputs=[],
+                outputs=[],
+                transform_fn=lambda *args: None,
+            ),
+        ],
+    )
+
+    env_type = EnvironmentConfigType(pipeline_def)
+    env_obj = env_type.evaluate_value({})
+
+    assert env_obj.expectations.evaluate is True
+    assert env_obj.execution.serialize_intermediates is False
+
+
 def test_errors():
     context_defs = {
         'test':
         PipelineContextDefinition(
-            config_def=ConfigDefinition(),
+            config_def=ConfigDefinition(
+                types.ConfigDictionary(
+                    'something',
+                    {
+                        'required_int': types.Field(types.Int),
+                    },
+                )
+            ),
             context_fn=lambda *args: ExecutionContext(),
         )
     }
@@ -97,7 +203,7 @@ def test_errors():
     with pytest.raises(DagsterEvaluateValueError, match='must be dict'):
         context_config_type.evaluate_value(1)
 
-    with pytest.raises(DagsterEvaluateValueError, match='Must specify a context'):
+    with pytest.raises(DagsterEvaluateValueError, match='Must specify in config'):
         context_config_type.evaluate_value({})
 
     with pytest.raises(DagsterEvaluateValueError, match='You can only specify a single context'):
@@ -141,6 +247,7 @@ def test_select_context():
         config='bar',
     )
 
+    # mismatched field type mismatch
     with pytest.raises(DagsterEvaluateValueError):
         assert context_config_type.evaluate_value({
             'int_context': {
@@ -148,6 +255,7 @@ def test_select_context():
             },
         })
 
+    # mismatched field type mismatch
     with pytest.raises(DagsterEvaluateValueError):
         assert context_config_type.evaluate_value({
             'string_context': {
@@ -328,3 +436,103 @@ def test_execution_config():
     env_obj = env_type.evaluate_value({'execution': {'serialize_intermediates': True}})
     assert isinstance(env_obj.execution, config.Execution)
     assert env_obj.execution.serialize_intermediates
+
+
+def test_optional_solid_with_no_config():
+    def _assert_config_none(info, value):
+        assert info.config is value
+
+    pipeline_def = PipelineDefinition(
+        name='some_pipeline',
+        solids=[
+            SolidDefinition(
+                name='int_config_solid',
+                config_def=ConfigDefinition(types.Int),
+                inputs=[],
+                outputs=[],
+                transform_fn=lambda info, _inputs: _assert_config_none(info, 234),
+            ),
+            SolidDefinition(
+                name='no_config_solid',
+                inputs=[],
+                outputs=[],
+                transform_fn=lambda info, _inputs: _assert_config_none(info, None),
+            )
+        ]
+    )
+
+    env_type = EnvironmentConfigType(pipeline_def)
+    env_obj = env_type.evaluate_value({'solids': {'int_config_solid': {'config': 234}}})
+
+    assert env_obj.solids['int_config_solid'].config == 234
+
+    assert execute_pipeline(pipeline_def, env_obj).success
+
+
+def test_optional_solid_with_optional_scalar_config():
+    def _assert_config_none(info, value):
+        assert info.config is value
+
+    pipeline_def = PipelineDefinition(
+        name='some_pipeline',
+        solids=[
+            SolidDefinition(
+                name='int_config_solid',
+                config_def=ConfigDefinition(types.Int),
+                inputs=[],
+                outputs=[],
+                transform_fn=lambda info, _inputs: _assert_config_none(info, 234),
+            ),
+        ]
+    )
+
+    env_type = EnvironmentConfigType(pipeline_def)
+    env_obj = env_type.evaluate_value({})
+
+    assert 'int_config_solid' not in env_obj.solids
+
+
+def test_required_solid_with_required_subfield():
+    pipeline_def = PipelineDefinition(
+        name='some_pipeline',
+        solids=[
+            SolidDefinition(
+                name='int_config_solid',
+                config_def=ConfigDefinition(
+                    types.ConfigDictionary(
+                        'TestRequiredSolidConfig', {
+                            'required_field': types.Field(types.String),
+                        }
+                    )
+                ),
+                inputs=[],
+                outputs=[],
+                transform_fn=lambda *_args: None,
+            ),
+        ]
+    )
+
+    env_type = EnvironmentConfigType(pipeline_def)
+    env_obj = env_type.evaluate_value(
+        {
+            'solids': {
+                'int_config_solid': {
+                    'config': {
+                        'required_field': 'foobar',
+                    },
+                },
+            },
+        },
+    )
+
+    assert env_obj.solids['int_config_solid'].config['required_field'] == 'foobar'
+
+    with pytest.raises(DagsterEvaluateValueError):
+        env_type.evaluate_value({'solids': {}})
+
+    # with pytest.raises(DagsterEvaluateValueError):
+    #     env_type.evaluate_value({})
+
+
+def test_all_optional_on_default_context_dict():
+    assert all_optional_user_config(SpecificContextConfig('fokjdfd', DefaultContextConfigDict))
