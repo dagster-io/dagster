@@ -62,10 +62,7 @@ def define_possibly_optional_field(config_type, is_optional):
 class SpecificContextConfig(DagsterCompositeType, HasUserConfig):
     def __init__(self, name, config_type):
         check.str_param(name, 'name')
-        is_optional = all_optional_type(config_type)
-
         config_field = define_possibly_optional_field(config_type, all_optional_type(config_type))
-
         super(SpecificContextConfig, self).__init__(name, {'config': config_field})
 
     def evaluate_value(self, value):
@@ -190,12 +187,7 @@ class SolidConfigType(DagsterCompositeType, HasUserConfig):
 
 def define_environment_field(field_type):
     check.inst_param(field_type, 'field_type', DagsterType)
-
-    return Field(
-        field_type,
-        is_optional=True,
-        default_value=lambda: field_type.evaluate_value({}),
-    )
+    return define_possibly_optional_field(field_type, all_optional_type(field_type))
 
 
 class EnvironmentConfigType(DagsterCompositeType):

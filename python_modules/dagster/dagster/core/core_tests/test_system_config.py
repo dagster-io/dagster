@@ -526,9 +526,10 @@ def test_required_solid_with_required_subfield():
                 name='int_config_solid',
                 config_def=ConfigDefinition(
                     types.ConfigDictionary(
-                        'TestRequiredSolidConfig', {
+                        'TestRequiredSolidConfig',
+                        {
                             'required_field': types.Field(types.String),
-                        }
+                        },
                     )
                 ),
                 inputs=[],
@@ -539,6 +540,19 @@ def test_required_solid_with_required_subfield():
     )
 
     env_type = EnvironmentConfigType(pipeline_def)
+
+    assert env_type.field_dict['solids'].is_optional is False
+    assert env_type.field_dict['solids'].dagster_type
+
+    solids_type = env_type.field_dict['solids'].dagster_type
+    assert solids_type.field_dict['int_config_solid'].is_optional is False
+    int_config_solid_type = solids_type.field_dict['int_config_solid'].dagster_type
+    assert int_config_solid_type.field_dict['config'].is_optional is False
+
+    assert env_type.field_dict['context'].is_optional
+    assert env_type.field_dict['execution'].is_optional
+    assert env_type.field_dict['expectations'].is_optional
+
     env_obj = env_type.evaluate_value(
         {
             'solids': {
@@ -558,6 +572,62 @@ def test_required_solid_with_required_subfield():
 
     with pytest.raises(DagsterEvaluateValueError):
         env_type.evaluate_value({})
+
+
+def test_optional_solid_with_optional_subfield():
+    pipeline_def = PipelineDefinition(
+        name='some_pipeline',
+        solids=[
+            SolidDefinition(
+                name='int_config_solid',
+                config_def=ConfigDefinition(
+                    types.ConfigDictionary(
+                        'TestOptionalSolidConfig', {
+                            'optional_field': types.Field(types.String, is_optional=True),
+                        }
+                    )
+                ),
+                inputs=[],
+                outputs=[],
+                transform_fn=lambda *_args: None,
+            ),
+        ]
+    )
+
+    env_type = EnvironmentConfigType(pipeline_def)
+    assert env_type.field_dict['solids'].is_optional
+    assert env_type.field_dict['context'].is_optional
+    assert env_type.field_dict['execution'].is_optional
+    assert env_type.field_dict['expectations'].is_optional
+
+
+def test_required_context_with_required_subfield():
+    pipeline_def = PipelineDefinition(
+        name='some_pipeline',
+        solids=[],
+        context_definitions={
+            'some_context': PipelineContextDefinition(
+                context_fn=lambda *args: None,
+                config_def=ConfigDefinition(
+                    config_type=types.ConfigDictionary(
+                        name='some_context_config',
+                        fields={
+                            'required_field': types.Field(types.String),
+                        },
+                    ),
+                ),
+            ),
+        },
+    )
+
+    env_type = EnvironmentConfigType(pipeline_def)
+    assert env_type.field_dict['solids'].is_optional
+    assert env_type.field_dict['context'].is_optional is False
+    assert env_type.field_dict['execution'].is_optional
+    assert env_type.field_dict['expectations'].is_optional
+
+    context_union_config_type = env_type.field_dict['context'].dagster_type
+    assert context_union_config_type.field_dict['some_context'].is_optional is False
 
 
 def test_all_optional_on_default_context_dict():
