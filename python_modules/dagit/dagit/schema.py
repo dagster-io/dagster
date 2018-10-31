@@ -9,6 +9,26 @@ from dagster import check
 from dagster.core.types import DagsterCompositeType
 
 
+def result_or_error(fn, info, *argv):
+    error = info.context['repository_container'].error
+    if error != None:
+        return PythonError(*error)
+    try:
+        return fn(self, info, *argv)
+    except:
+        return PythonError(*sys.exc_info())
+
+
+def results_or_errors(fn, info, *argv):
+    error = info.context['repository_container'].error
+    if error != None:
+        return [PythonError(*error)]
+    try:
+        return fn(self, info, *argv)
+    except:
+        return [PythonError(*sys.exc_info())]
+
+
 class Query(graphene.ObjectType):
     pipeline = graphene.Field(lambda: Pipeline, name=graphene.NonNull(graphene.String))
     pipelineOrError = graphene.Field(
@@ -28,31 +48,13 @@ class Query(graphene.ObjectType):
         pipelineName=graphene.NonNull(graphene.String),
     )
 
-    def result_or_error(self, fn, info, *argv):
-        error = info.context['repository_container'].error
-        if error != None:
-            return PythonError(*error)
-        try:
-            return fn(self, info, *argv)
-        except:
-            return PythonError(*sys.exc_info())
-
-    def results_or_errors(self, fn, info, *argv):
-        error = info.context['repository_container'].error
-        if error != None:
-            return [PythonError(*error)]
-        try:
-            return fn(self, info, *argv)
-        except:
-            return [PythonError(*sys.exc_info())]
-
     def resolve_pipeline(self, info, name):
         check.str_param(name, 'name')
         repository = info.context['repository_container'].repository
         return Pipeline(repository.get_pipeline(name))
 
     def resolve_pipelineOrError(self, info, name):
-        return Query.result_or_error(self, Query.resolve_pipeline, info, name)
+        return result_or_error(Query.resolve_pipeline, info, name)
 
     def resolve_pipelines(self, info):
         repository = info.context['repository_container'].repository
@@ -62,7 +64,7 @@ class Query(graphene.ObjectType):
         return pipelines
 
     def resolve_pipelinesOrErrors(self, info):
-        return Query.results_or_errors(self, Query.resolve_pipelines, info)
+        return results_or_errors(Query.resolve_pipelines, info)
 
     def resolve_type(self, info, pipelineName, typeName):
         check.str_param(pipelineName, 'pipelineName')
