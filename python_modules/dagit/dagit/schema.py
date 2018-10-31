@@ -11,7 +11,9 @@ from dagster.core.types import DagsterCompositeType
 
 class Query(graphene.ObjectType):
     pipeline = graphene.Field(lambda: Pipeline, name=graphene.NonNull(graphene.String))
-    pipelineOrError = graphene.Field(lambda: PipelineOrError, name=graphene.NonNull(graphene.String))
+    pipelineOrError = graphene.Field(
+        lambda: PipelineOrError, name=graphene.NonNull(graphene.String)
+    )
 
     pipelines = graphene.NonNull(graphene.List(lambda: graphene.NonNull(Pipeline)))
     pipelinesOrErrors = graphene.NonNull(graphene.List(lambda: graphene.NonNull(PipelineOrError)))
@@ -109,7 +111,6 @@ class Pipeline(graphene.ObjectType):
         return Type.from_dagster_type(self._pipeline.environment_type)
 
 
-
 class Error(graphene.Interface):
     message = graphene.String(required=True)
     stack = graphene.NonNull(graphene.List(graphene.NonNull(graphene.String)))
@@ -120,8 +121,8 @@ class PythonError(graphene.ObjectType):
         interfaces = (Error, )
 
     def __init__(self, exc_type, exc_value, exc_tb):
-        self.message=traceback.format_exception_only(exc_type, exc_value)[0]
-        self.stack=traceback.format_tb(tb=exc_tb)
+        self.message = traceback.format_exception_only(exc_type, exc_value)[0]
+        self.stack = traceback.format_tb(tb=exc_tb)
 
 
 class PipelineOrError(graphene.Union):
@@ -409,7 +410,7 @@ class TypeField(graphene.ObjectType):
         super(TypeField, self).__init__(
             name=name,
             description=field.description,
-            default_value=str(field.default_value),
+            default_value=str(field.default_value) if field.default_provided else None,
             is_optional=field.is_optional
         )
         self._field = field
