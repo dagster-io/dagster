@@ -220,9 +220,6 @@ class EnvironmentConfigType(DagsterCompositeType):
         )
 
     def evaluate_value(self, value):
-        # if value is None:
-        #     return Environment()
-
         if isinstance(value, Environment):
             return value
 
