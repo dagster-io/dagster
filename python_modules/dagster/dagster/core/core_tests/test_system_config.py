@@ -1,5 +1,3 @@
-import re
-
 import pytest
 
 from dagster import (
@@ -211,9 +209,9 @@ def test_errors():
     expected_message = (
         "You can only specify a single context. You specified ['context_one', 'context_two']. "
         "The available contexts are ['test']"
-    )
+    ).replace('[', r'\[').replace(']', r'\]')
 
-    with pytest.raises(DagsterEvaluateValueError, match=re.escape(expected_message)):
+    with pytest.raises(DagsterEvaluateValueError, match=expected_message):
         context_config_type.evaluate_value({
             'context_one': 1,
             'context_two': 2,
