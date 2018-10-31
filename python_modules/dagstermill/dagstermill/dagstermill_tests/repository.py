@@ -1,9 +1,9 @@
 from dagster import (RepositoryDefinition)
 from dagstermill.dagstermill_tests.test_basic_dagstermill_solids import (
-    define_test_notebook_dag_pipeline,
-    define_hello_world_config_pipeline,
+    define_test_notebook_dag_pipeline, define_hello_world_config_pipeline,
     define_hello_world_inputs_pipeline
 )
+
 
 def define_example_repository():
     return RepositoryDefinition(

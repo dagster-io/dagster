@@ -262,7 +262,11 @@ def _create_config_value(config_type, config_input):
         return config_type.evaluate_value(config_input)
     except DagsterEvaluateValueError as e:
         raise DagsterTypeError(
-            'Invalid config value: {error_msg}'.format(error_msg=','.join(e.args))
+            'Invalid config value {value} on type {config_type}: {error_msg}'.format(
+                value=config_input,
+                config_type=config_type.name,
+                error_msg=','.join(e.args),
+            )
         )
 
 
@@ -300,6 +304,7 @@ def execute_pipeline_iterator(pipeline, environment):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
 
     pipeline_env_type = EnvironmentConfigType(pipeline)
+
     environment = _create_config_value(pipeline_env_type, environment)
 
     check.inst_param(environment, 'enviroment', config.Environment)

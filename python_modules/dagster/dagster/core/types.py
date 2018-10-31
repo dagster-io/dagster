@@ -238,7 +238,7 @@ class Field:
         self.dagster_type = check.inst_param(dagster_type, 'dagster_type', DagsterType)
         self.description = check.opt_str_param(description, 'description')
         self.is_optional = check.bool_param(is_optional, 'is_optional')
-        self.default_value = default_value
+        self._default_value = default_value
 
     @property
     def default_provided(self):
@@ -247,7 +247,16 @@ class Field:
         Returns:
             bool: Yes or no
         '''
-        return self.default_value != FIELD_NO_DEFAULT_PROVIDED
+        return self._default_value != FIELD_NO_DEFAULT_PROVIDED
+
+    @property
+    def default_value(self):
+        check.invariant(self.default_provided)
+
+        if callable(self._default_value):
+            return self._default_value()
+
+        return self._default_value
 
 
 class FieldDefinitionDictionary(dict):
@@ -302,7 +311,12 @@ def process_incoming_composite_value(dagster_composite_type, incoming_value, cto
     check.inst_param(dagster_composite_type, 'dagster_composite_type', DagsterCompositeType)
 
     if incoming_value and not isinstance(incoming_value, dict):
-        raise DagsterEvaluateValueError('Value for composite type must be a dict')
+        raise DagsterEvaluateValueError(
+            'Value for composite type {type_name} must be a dict got {value}'.format(
+                type_name=dagster_composite_type.name,
+                value=incoming_value,
+            )
+        )
 
     incoming_value = check.opt_dict_param(incoming_value, 'incoming_value', key_type=str)
     check.callable_param(ctor, 'ctor')
@@ -329,8 +343,9 @@ def process_incoming_composite_value(dagster_composite_type, incoming_value, cto
 
         if expected_field not in received_args:
             raise DagsterEvaluateValueError(
-                'Did not not find {expected}. Defined fields: {defined}'.format(
+                'Did not not find {expected} on {type_name}. Defined fields: {defined}'.format(
                     expected=expected_field,
+                    type_name=dagster_composite_type.name,
                     defined=repr(defined_args),
                 )
             )

@@ -183,6 +183,7 @@ class SolidMetadataItemDefinition(graphene.ObjectType):
     key = graphene.String()
     value = graphene.String()
 
+
 class SolidDefinition(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     description = graphene.String()

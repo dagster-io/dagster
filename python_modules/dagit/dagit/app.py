@@ -71,9 +71,11 @@ yarn
 yarn build</pre>'''
         return text, 500
 
+
 import nbformat
 from traitlets.config import Config
 from nbconvert import HTMLExporter
+
 
 def notebook_view(_path):
     # This currently provides open access to your file system - the very least we can

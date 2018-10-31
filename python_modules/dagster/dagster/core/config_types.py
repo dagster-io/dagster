@@ -27,12 +27,65 @@ from .types import (
 )
 
 
+class HasUserConfig:
+    def __init__(self):
+        check.inst(self, DagsterCompositeType, 'HasUserConfig must be mixined on Composite')
+        check.invariant(
+            'config' in self.field_dict,  # pylint: disable=E1101
+            'HasUserConfig must have "config" field',
+        )
+
+    @property
+    def user_config_field(self):
+        return self.field_dict['config']  # pylint: disable=E1101
+
+
 def load_environment(pipeline_def, environment_dict):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     check.dict_param(environment_dict, 'environment_dict')
 
     env_type = EnvironmentConfigType(pipeline_def)
     return env_type.evaluate_value(environment_dict)
+
+
+def define_possibly_optional_field(config_type, is_optional):
+    check.inst_param(config_type, 'config_type', DagsterType)
+    check.bool_param(is_optional, 'is_optional')
+
+    return Field(
+        config_type,
+        is_optional=True,
+        default_value=lambda: config_type.evaluate_value(None),
+    ) if is_optional else Field(config_type)
+
+
+class SpecificContextConfig(DagsterCompositeType, HasUserConfig):
+    def __init__(self, name, config_type):
+        check.str_param(name, 'name')
+        is_optional = all_optional_type(config_type)
+
+        config_field = define_possibly_optional_field(config_type, all_optional_type(config_type))
+
+        super(SpecificContextConfig, self).__init__(name, {'config': config_field})
+
+    def evaluate_value(self, value):
+        config_output = process_incoming_composite_value(self, value, lambda val: val)
+        return config_output['config']
+
+
+def define_specific_context_field(pipeline_name, context_name, context_def):
+    specific_context_config_type = SpecificContextConfig(
+        '{pipeline_name}.ContextDefinitionConfig.{context_name}'.format(
+            pipeline_name=pipeline_name,
+            context_name=camelcase(context_name),
+        ),
+        context_def.config_def.config_type,
+    )
+
+    return define_possibly_optional_field(
+        specific_context_config_type,
+        all_optional_user_config(specific_context_config_type),
+    )
 
 
 class ContextConfigType(DagsterCompositeType):
@@ -49,15 +102,10 @@ class ContextConfigType(DagsterCompositeType):
 
         field_dict = {}
         for context_name, context_definition in context_definitions.items():
-            field_dict[context_name] = Field(
-                ConfigDictionary(
-                    '{pipeline_name}.ContextDefinitionConfig.{context_name}'.format(
-                        pipeline_name=pipeline_name,
-                        context_name=camelcase(context_name),
-                    ), {
-                        'config': Field(context_definition.config_def.config_type),
-                    }
-                )
+            field_dict[context_name] = define_specific_context_field(
+                pipeline_name,
+                context_name,
+                context_definition,
             )
 
         super(ContextConfigType, self).__init__(
@@ -77,7 +125,26 @@ class ContextConfigType(DagsterCompositeType):
             raise DagsterEvaluateValueError('You can only specify a single context')
 
         if not value:
-            raise DagsterEvaluateValueError('Must specify a context')
+            if 'default' not in self.field_dict and len(self.field_dict) > 1:
+                raise DagsterEvaluateValueError(
+                    'More than one context defined. Must provide one in config'
+                )
+
+            # if default is defined use that otherwise use the single context name
+            single_context_name, single_context_field = (
+                'default', self.field_dict['default']
+            ) if 'default' in self.field_dict else list(self.field_dict.items())[0]
+
+            if single_context_field.is_optional and single_context_field.default_provided:
+                return Context(single_context_name, single_context_field.default_value)
+
+            raise DagsterEvaluateValueError(
+                (
+                    'Single context or default context {context_name} defined is not optional '
+                    'or default value is not provided. '
+                    'Must specify in config'
+                ).format(context_name=single_context_name)
+            )
 
         context_name, context_config_value = list(value.items())[0]
 
@@ -87,7 +154,7 @@ class ContextConfigType(DagsterCompositeType):
         return Context(context_name, processed_value)
 
 
-class SolidConfigType(DagsterCompositeType):
+class SolidConfigType(DagsterCompositeType, HasUserConfig):
     def __init__(self, name, config_type):
         check.str_param(name, 'name')
         super(SolidConfigType, self).__init__(name, {'config': Field(config_type)})
@@ -98,6 +165,20 @@ class SolidConfigType(DagsterCompositeType):
 
         return process_incoming_composite_value(self, value, lambda val: Solid(**val))
 
+    @property
+    def user_config_field(self):
+        return self.field_dict['config']
+
+
+def define_environment_field(field_type):
+    check.inst_param(field_type, 'field_type', DagsterType)
+
+    return Field(
+        field_type,
+        is_optional=True,
+        default_value=lambda: field_type.evaluate_value({}),
+    )
+
 
 class EnvironmentConfigType(DagsterCompositeType):
     def __init__(self, pipeline_def):
@@ -105,36 +186,27 @@ class EnvironmentConfigType(DagsterCompositeType):
 
         pipeline_name = camelcase(pipeline_def.name)
 
-        context_field = Field(
-            ContextConfigType(
-                pipeline_name,
-                pipeline_def.context_definitions,
-            ),
-            is_optional=True,
+        context_field = define_environment_field(
+            ContextConfigType(pipeline_name, pipeline_def.context_definitions)
         )
 
-        solids_field = Field(
+        solids_field = define_environment_field(
             SolidDictionaryType(
                 '{pipeline_name}.SolidsConfigDictionary'.format(pipeline_name=pipeline_name),
                 pipeline_def,
-            ),
-            is_optional=True,
+            )
         )
 
-        expectations_field = Field(
+        expectations_field = define_environment_field(
             ExpectationsConfigType(
                 '{pipeline_name}.ExpectationsConfig'.format(pipeline_name=pipeline_name)
-            ),
-            is_optional=True,
-            default_value=Expectations(evaluate=True),
+            )
         )
 
-        execution_value = Field(
+        execution_field = define_environment_field(
             ExecutionConfigType(
                 '{pipeline_name}.ExecutionConfig'.format(pipeline_name=pipeline_name)
-            ),
-            is_optional=True,
-            default_value=Execution(serialize_intermediates=False),
+            )
         )
 
         super(EnvironmentConfigType, self).__init__(
@@ -143,14 +215,11 @@ class EnvironmentConfigType(DagsterCompositeType):
                 'context': context_field,
                 'solids': solids_field,
                 'expectations': expectations_field,
-                'execution': execution_value,
+                'execution': execution_field,
             },
         )
 
     def evaluate_value(self, value):
-        if value is None:
-            return Environment()
-
         if isinstance(value, Environment):
             return value
 
@@ -165,7 +234,7 @@ class ExpectationsConfigType(DagsterCompositeType):
     def __init__(self, name):
         super(ExpectationsConfigType, self).__init__(
             name,
-            {'evaluate': Field(Bool)},
+            {'evaluate': Field(Bool, is_optional=True, default_value=True)},
         )
 
     def evaluate_value(self, value):
@@ -173,6 +242,22 @@ class ExpectationsConfigType(DagsterCompositeType):
             return value
 
         return process_incoming_composite_value(self, value, lambda val: Expectations(**val))
+
+
+def all_optional_type(dagster_type):
+    check.inst_param(dagster_type, 'dagster_type', DagsterType)
+
+    if isinstance(dagster_type, DagsterCompositeType):
+        for field in dagster_type.field_dict.values():
+            if not field.is_optional:
+                return False
+    return True
+
+
+def all_optional_user_config(config_type):
+    check.inst_param(config_type, 'config_type', HasUserConfig)
+    user_config_field = config_type.field_dict['config']
+    return all_optional_type(user_config_field.dagster_type)
 
 
 class SolidDictionaryType(DagsterCompositeType):
@@ -184,14 +269,16 @@ class SolidDictionaryType(DagsterCompositeType):
         for solid in pipeline_def.solids:
             if solid.definition.config_def:
                 solid_name = camelcase(solid.name)
+                solid_config_type = SolidConfigType(
+                    '{pipeline_name}.{solid_name}.SolidConfig'.format(
+                        pipeline_name=pipeline_name,
+                        solid_name=solid_name,
+                    ),
+                    solid.definition.config_def.config_type,
+                )
                 field_dict[solid.name] = Field(
-                    SolidConfigType(
-                        '{pipeline_name}.{solid_name}.SolidConfig'.format(
-                            pipeline_name=pipeline_name,
-                            solid_name=solid_name,
-                        ),
-                        solid.definition.config_def.config_type,
-                    )
+                    solid_config_type,
+                    is_optional=all_optional_user_config(solid_config_type),
                 )
 
         super(SolidDictionaryType, self).__init__(name, field_dict)
@@ -206,7 +293,7 @@ class ExecutionConfigType(DagsterCompositeType):
         super(ExecutionConfigType, self).__init__(
             name,
             {
-                'serialize_intermediates': Field(Bool),
+                'serialize_intermediates': Field(Bool, is_optional=True, default_value=False),
             },
         )
 

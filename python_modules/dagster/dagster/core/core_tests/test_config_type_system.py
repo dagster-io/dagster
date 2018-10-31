@@ -1,6 +1,7 @@
 from collections import namedtuple
 
 import pytest
+
 from dagster import (
     ConfigDefinition,
     types,
