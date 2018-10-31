@@ -1,4 +1,5 @@
 import os
+import sys
 try:
     from graphql.execution.executors.asyncio import AsyncioExecutor as Executor
 except ImportError:
@@ -10,8 +11,8 @@ from flask_cors import CORS
 from dagster import check
 
 from dagster.cli.dynamic_loader import (
+    load_repository_object_from_target_info,
     DynamicObject,
-    reload_pipeline_or_repo,
 )
 
 from .schema import create_schema
@@ -24,20 +25,34 @@ class RepositoryContainer(object):
     object allows the RepositoryInfo to be written in an immutable fashion.
     '''
 
-    def __init__(self, repo_dynamic_obj):
-        self.repo_dynamic_obj = check.inst_param(
-            repo_dynamic_obj,
-            'repo_dynamic_obj',
-            DynamicObject,
-        )
+    def __init__(self, repository_target_info=None, repository=None):
+        if repository_target_info != None:
+            self.repo_dynamic_obj = check.inst(
+                load_repository_object_from_target_info(repository_target_info),
+                DynamicObject,
+            )
+            self.repo = None
+            self.repo_error = None
+            self.reload()
+        elif repository != None:
+            self.repo = repository
 
     def reload(self):
-        self.repo_dynamic_obj = reload_pipeline_or_repo(self.repo_dynamic_obj)
+        if not self.repo_dynamic_obj:
+            return
+        try:
+            self.repo = self.repo_dynamic_obj.load()
+            self.repo_error = None
+        except:
+            self.repo_error = sys.exc_info()
 
     @property
     def repository(self):
-        return self.repo_dynamic_obj.object
+        return self.repo
 
+    @property
+    def error(self):
+        return self.repo_error
 
 class DagsterGraphQLView(GraphQLView):
     def __init__(self, repository_container, **kwargs):

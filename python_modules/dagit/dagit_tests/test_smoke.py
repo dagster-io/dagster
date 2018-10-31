@@ -6,14 +6,7 @@ from dagster.dagster_examples.repository import define_example_repository
 
 def test_smoke_app():
     repository_container = app.RepositoryContainer(
-        DynamicObject(
-            object=define_example_repository(),
-            module=None,
-            fn_name=None,
-            fn=None,
-            module_name=None,
-        )
-    )
+        repository=define_example_repository())
 
     flask_app = app.create_app(repository_container)
     client = flask_app.test_client()

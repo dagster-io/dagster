@@ -72,5 +72,8 @@ setup(
         # 'twine>=1.11.0',
         # 'pre-commit'>=1.10.1',
     ],
+    extras_require={
+        ":python_version>'3'": ["reloader>=0.6"],
+    },
     scripts=['bin/dagster']
 )
