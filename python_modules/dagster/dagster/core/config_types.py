@@ -144,8 +144,8 @@ class ContextConfigType(DagsterCompositeType):
             )
 
         if len(value) > 1:
-            specified_contexts = list(value.keys())
-            available_contexts = list(self.field_dict.keys())
+            specified_contexts = sorted(list(value.keys()))
+            available_contexts = sorted(list(self.field_dict.keys()))
             raise DagsterEvaluateValueError(
                 (
                     'You can only specify a single context. You specified {specified_contexts}. '
