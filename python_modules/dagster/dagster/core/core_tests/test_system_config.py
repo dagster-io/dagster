@@ -25,8 +25,6 @@ from dagster.core.config_types import (
     camelcase,
 )
 
-from dagster.core.definitions import DefaultContextConfigDict
-
 
 def test_camelcase():
     assert camelcase('foo') == 'Foo'
@@ -617,7 +615,8 @@ def test_required_context_with_required_subfield():
         name='some_pipeline',
         solids=[],
         context_definitions={
-            'some_context': PipelineContextDefinition(
+            'some_context':
+            PipelineContextDefinition(
                 context_fn=lambda *args: None,
                 config_def=ConfigDefinition(
                     config_type=types.ConfigDictionary(
@@ -646,7 +645,8 @@ def test_all_optional_field_on_single_context_dict():
         name='some_pipeline',
         solids=[],
         context_definitions={
-            'some_context': PipelineContextDefinition(
+            'some_context':
+            PipelineContextDefinition(
                 context_fn=lambda *args: None,
                 config_def=ConfigDefinition(
                     config_type=types.ConfigDictionary(
@@ -666,13 +666,14 @@ def test_all_optional_field_on_single_context_dict():
     assert env_type.field_dict['execution'].is_optional
     assert env_type.field_dict['expectations'].is_optional
 
+
 def test_optional_and_required_context():
     pipeline_def = PipelineDefinition(
         name='some_pipeline',
         solids=[],
         context_definitions={
-            'optional_field_context': PipelineContextDefinition(
-
+            'optional_field_context':
+            PipelineContextDefinition(
                 context_fn=lambda *args: None,
                 config_def=ConfigDefinition(
                     config_type=types.ConfigDictionary(
@@ -683,8 +684,8 @@ def test_optional_and_required_context():
                     ),
                 ),
             ),
-            'required_field_context': PipelineContextDefinition(
-
+            'required_field_context':
+            PipelineContextDefinition(
                 context_fn=lambda *args: None,
                 config_def=ConfigDefinition(
                     config_type=types.ConfigDictionary(
@@ -721,14 +722,17 @@ def test_optional_and_required_context():
         },
     )
 
+    assert env_obj.context.name == 'optional_field_context'
+    assert env_obj.context.config == {'optional_field': 'foobar'}
+
 
 def test_default_optional_and_required_context():
     pipeline_def = PipelineDefinition(
         name='some_pipeline',
         solids=[],
         context_definitions={
-            'default': PipelineContextDefinition(
-
+            'default':
+            PipelineContextDefinition(
                 context_fn=lambda *args: None,
                 config_def=ConfigDefinition(
                     config_type=types.ConfigDictionary(
@@ -739,8 +743,8 @@ def test_default_optional_and_required_context():
                     ),
                 ),
             ),
-            'required_field_context': PipelineContextDefinition(
-
+            'required_field_context':
+            PipelineContextDefinition(
                 context_fn=lambda *args: None,
                 config_def=ConfigDefinition(
                     config_type=types.ConfigDictionary(
@@ -761,19 +765,21 @@ def test_default_optional_and_required_context():
     assert env_obj.context.name == 'default'
     assert env_obj.context.config == {}
 
+
 def test_default_optional_with_default_value_and_required_context():
     pipeline_def = PipelineDefinition(
         name='some_pipeline',
         solids=[],
         context_definitions={
-            'default': PipelineContextDefinition(
-
+            'default':
+            PipelineContextDefinition(
                 context_fn=lambda *args: None,
                 config_def=ConfigDefinition(
                     config_type=types.ConfigDictionary(
                         name='some_optional_context_config',
                         fields={
-                            'optional_field': types.Field(
+                            'optional_field':
+                            types.Field(
                                 types.String,
                                 is_optional=True,
                                 default_value='foobar',
@@ -782,8 +788,8 @@ def test_default_optional_with_default_value_and_required_context():
                     ),
                 ),
             ),
-            'required_field_context': PipelineContextDefinition(
-
+            'required_field_context':
+            PipelineContextDefinition(
                 context_fn=lambda *args: None,
                 config_def=ConfigDefinition(
                     config_type=types.ConfigDictionary(

@@ -15,11 +15,8 @@ from .definitions import (
     PipelineDefinition,
 )
 
-from .errors import DagsterTypeError
-
 from .types import (
     Bool,
-    ConfigDictionary,
     DagsterCompositeType,
     DagsterEvaluateValueError,
     DagsterType,

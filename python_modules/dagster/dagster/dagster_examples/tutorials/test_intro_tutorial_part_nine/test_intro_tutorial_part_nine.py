@@ -16,7 +16,6 @@ from dagster import (
     PipelineContextDefinition,
     PipelineDefinition,
     RepositoryDefinition,
-    config,
     execute_pipeline,
     lambda_solid,
     solid,
@@ -229,11 +228,11 @@ def define_part_nine_repo():
     )
 
 
-
 def test_intro_tutorial_part_nine_step_one():
     result = execute_pipeline(
         define_part_nine_step_one_pipeline(),
-        yaml.load('''
+        yaml.load(
+            '''
 solids:
     injest_a:
         config: 2
@@ -253,9 +252,10 @@ context:
     assert result.result_for_solid('add_ints').transformed_value() == 5
     assert result.result_for_solid('mult_ints').transformed_value() == 6
 
+
 def test_intro_tutorial_part_nine_step_one_with_various_defaults():
     yaml_variants = [
-       '''
+        '''
 solids:
     injest_a:
         config: 2
@@ -289,7 +289,6 @@ solids:
     injest_b:
         config: 3
 ''',
-
     ]
     for yaml_variant in yaml_variants:
 
@@ -308,7 +307,8 @@ solids:
 def test_intro_tutorial_part_nine_final_local_success():
     result = execute_pipeline(
         define_part_nine_final_pipeline(),
-        yaml.load('''
+        yaml.load(
+            '''
 context:
     local:
 
@@ -317,7 +317,8 @@ solids:
         config: 2
     injest_b:
         config: 3
-'''),
+'''
+        ),
     )
 
     assert result.success
@@ -337,7 +338,8 @@ solids:
 def test_intro_tutorial_part_nine_final_cloud_success():
     result = execute_pipeline(
         define_part_nine_final_pipeline(),
-        yaml.load('''
+        yaml.load(
+            '''
 context:
     cloud:
         config:
@@ -350,9 +352,9 @@ solids:
         config: 2
     injest_b:
         config: 3
-'''),
-
-   )
+'''
+        ),
+    )
 
     assert result.success
 
@@ -361,7 +363,8 @@ def test_intro_tutorial_part_nine_final_error():
     with pytest.raises(DagsterTypeError, match='Field username not found'):
         execute_pipeline(
             define_part_nine_final_pipeline(),
-            yaml.load('''
+            yaml.load(
+                '''
 context:
     cloud:
         config:
@@ -374,5 +377,6 @@ solids:
         config: 2
     injest_b:
         config: 3
-'''),
+'''
+            ),
         )
