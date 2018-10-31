@@ -200,13 +200,39 @@ def test_errors():
 
     context_config_type = ContextConfigType('something', context_defs)
 
-    with pytest.raises(DagsterEvaluateValueError, match='must be dict'):
+    with pytest.raises(DagsterEvaluateValueError, match='must be None or dict'):
         context_config_type.evaluate_value(1)
 
     with pytest.raises(DagsterEvaluateValueError, match='Must specify in config'):
         context_config_type.evaluate_value({})
 
+    # I tried doing some regular expressions here but the rules differ for escaping
+    # between 2.7, 3.5, or 3.6 so gave up and did this hackneyed solution
     with pytest.raises(DagsterEvaluateValueError, match='You can only specify a single context'):
+        context_config_type.evaluate_value({
+            'context_one': 1,
+            'context_two': 2,
+        })
+
+    with pytest.raises(DagsterEvaluateValueError, match="You specified"):
+        context_config_type.evaluate_value({
+            'context_one': 1,
+            'context_two': 2,
+        })
+
+    with pytest.raises(DagsterEvaluateValueError, match="'context_one', 'context_two'"):
+        context_config_type.evaluate_value({
+            'context_one': 1,
+            'context_two': 2,
+        })
+
+    with pytest.raises(DagsterEvaluateValueError, match="The available contexts are"):
+        context_config_type.evaluate_value({
+            'context_one': 1,
+            'context_two': 2,
+        })
+
+    with pytest.raises(DagsterEvaluateValueError, match="'test'"):
         context_config_type.evaluate_value({
             'context_one': 1,
             'context_two': 2,
@@ -530,8 +556,8 @@ def test_required_solid_with_required_subfield():
     with pytest.raises(DagsterEvaluateValueError):
         env_type.evaluate_value({'solids': {}})
 
-    # with pytest.raises(DagsterEvaluateValueError):
-    #     env_type.evaluate_value({})
+    with pytest.raises(DagsterEvaluateValueError):
+        env_type.evaluate_value({})
 
 
 def test_all_optional_on_default_context_dict():
