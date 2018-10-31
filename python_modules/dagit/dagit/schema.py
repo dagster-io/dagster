@@ -40,7 +40,8 @@ def results_or_errors(root_obj, fn, info, *argv):
 class Query(graphene.ObjectType):
     pipeline = graphene.Field(lambda: Pipeline, name=graphene.NonNull(graphene.String))
     pipelineOrError = graphene.Field(
-        lambda: PipelineOrError, name=graphene.NonNull(graphene.String)
+        lambda: PipelineOrError,
+        name=graphene.NonNull(graphene.String),
     )
 
     pipelines = graphene.NonNull(graphene.List(lambda: graphene.NonNull(Pipeline)))
@@ -49,8 +50,9 @@ class Query(graphene.ObjectType):
     type = graphene.Field(
         lambda: Type,
         pipelineName=graphene.NonNull(graphene.String),
-        typeName=graphene.NonNull(graphene.String)
+        typeName=graphene.NonNull(graphene.String),
     )
+
     types = graphene.NonNull(
         graphene.List(graphene.NonNull(lambda: Type)),
         pipelineName=graphene.NonNull(graphene.String),
