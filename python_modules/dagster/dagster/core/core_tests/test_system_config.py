@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 from dagster import (
@@ -200,13 +202,18 @@ def test_errors():
 
     context_config_type = ContextConfigType('something', context_defs)
 
-    with pytest.raises(DagsterEvaluateValueError, match='must be dict'):
+    with pytest.raises(DagsterEvaluateValueError, match='must be None or dict'):
         context_config_type.evaluate_value(1)
 
     with pytest.raises(DagsterEvaluateValueError, match='Must specify in config'):
         context_config_type.evaluate_value({})
 
-    with pytest.raises(DagsterEvaluateValueError, match='You can only specify a single context'):
+    expected_message = (
+        "You can only specify a single context. You specified ['context_one', 'context_two']. "
+        "The available contexts are ['test']"
+    )
+
+    with pytest.raises(DagsterEvaluateValueError, match=re.escape(expected_message)):
         context_config_type.evaluate_value({
             'context_one': 1,
             'context_two': 2,
@@ -530,8 +537,8 @@ def test_required_solid_with_required_subfield():
     with pytest.raises(DagsterEvaluateValueError):
         env_type.evaluate_value({'solids': {}})
 
-    # with pytest.raises(DagsterEvaluateValueError):
-    #     env_type.evaluate_value({})
+    with pytest.raises(DagsterEvaluateValueError):
+        env_type.evaluate_value({})
 
 
 def test_all_optional_on_default_context_dict():

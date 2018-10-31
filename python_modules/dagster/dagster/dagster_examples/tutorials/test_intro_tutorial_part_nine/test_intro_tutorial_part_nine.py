@@ -1,6 +1,7 @@
 # pylint: disable=W0622,W0614,W0401
 from collections import namedtuple
 from logging import DEBUG
+import yaml
 
 import pytest
 
@@ -228,13 +229,22 @@ def define_part_nine_repo():
     )
 
 
+
 def test_intro_tutorial_part_nine_step_one():
     result = execute_pipeline(
         define_part_nine_step_one_pipeline(),
-        config.Environment(solids={
-            'injest_a': config.Solid(2),
-            'injest_b': config.Solid(3),
-        }, )
+        yaml.load('''
+solids:
+    injest_a:
+        config: 2
+    injest_b:
+        config: 3
+context:
+    default:
+        config:
+            log_level: DEBUG
+'''
+        )
     )
 
     assert result.success
@@ -243,17 +253,71 @@ def test_intro_tutorial_part_nine_step_one():
     assert result.result_for_solid('add_ints').transformed_value() == 5
     assert result.result_for_solid('mult_ints').transformed_value() == 6
 
+def test_intro_tutorial_part_nine_step_one_with_various_defaults():
+    yaml_variants = [
+       '''
+solids:
+    injest_a:
+        config: 2
+    injest_b:
+        config: 3
+context:
+    default:
+        config:
+''',
+        '''
+solids:
+    injest_a:
+        config: 2
+    injest_b:
+        config: 3
+context:
+    default:
+''',
+        '''
+solids:
+    injest_a:
+        config: 2
+    injest_b:
+        config: 3
+context:
+''',
+        '''
+solids:
+    injest_a:
+        config: 2
+    injest_b:
+        config: 3
+''',
+
+    ]
+    for yaml_variant in yaml_variants:
+
+        result = execute_pipeline(
+            define_part_nine_step_one_pipeline(),
+            yaml.load(yaml_variant),
+        )
+
+        assert result.success
+        assert result.result_for_solid('injest_a').transformed_value() == 2
+        assert result.result_for_solid('injest_b').transformed_value() == 3
+        assert result.result_for_solid('add_ints').transformed_value() == 5
+        assert result.result_for_solid('mult_ints').transformed_value() == 6
+
 
 def test_intro_tutorial_part_nine_final_local_success():
     result = execute_pipeline(
         define_part_nine_final_pipeline(),
-        config.Environment(
-            solids={
-                'injest_a': config.Solid(2),
-                'injest_b': config.Solid(3),
-            },
-            context=config.Context(name='local')
-        )
+        yaml.load('''
+context:
+    local:
+
+solids:
+    injest_a:
+        config: 2
+    injest_b:
+        config: 3
+'''),
     )
 
     assert result.success
@@ -272,27 +336,23 @@ def test_intro_tutorial_part_nine_final_local_success():
 
 def test_intro_tutorial_part_nine_final_cloud_success():
     result = execute_pipeline(
-        define_part_nine_final_pipeline(), {
-            'context': {
-                'cloud': {
-                    'config': {
-                        'credentials': {
-                            'user': 'some_user',
-                            'pass': 'some_pass',
-                        }
-                    }
-                }
-            },
-            'solids': {
-                'injest_a': {
-                    'config': 2,
-                },
-                'injest_b': {
-                    'config': 3,
-                },
-            }
-        }
-    )
+        define_part_nine_final_pipeline(),
+        yaml.load('''
+context:
+    cloud:
+        config:
+            credentials:
+                user: some_user
+                pass: some_password
+
+solids:
+    injest_a:
+        config: 2
+    injest_b:
+        config: 3
+'''),
+
+   )
 
     assert result.success
 
@@ -301,19 +361,18 @@ def test_intro_tutorial_part_nine_final_error():
     with pytest.raises(DagsterTypeError, match='Field username not found'):
         execute_pipeline(
             define_part_nine_final_pipeline(),
-            config.Environment(
-                solids={
-                    'injest_a': config.Solid(2),
-                    'injest_b': config.Solid(3),
-                },
-                context=config.Context(
-                    name='cloud',
-                    config={
-                        'credentials': {
-                            'username': 'some_user',
-                            'pass': 'some_pass',
-                        },
-                    },
-                ),
-            ),
+            yaml.load('''
+context:
+    cloud:
+        config:
+            credentials:
+                username: some_user
+                pass: some_password
+
+solids:
+    injest_a:
+        config: 2
+    injest_b:
+        config: 3
+'''),
         )

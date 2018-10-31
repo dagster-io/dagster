@@ -119,10 +119,7 @@ class ContextConfigType(DagsterCompositeType):
             return value
 
         if value is not None and not isinstance(value, dict):
-            raise DagsterEvaluateValueError('Incoming value for composite must be dict')
-
-        if len(value) > 1:
-            raise DagsterEvaluateValueError('You can only specify a single context')
+            raise DagsterEvaluateValueError('Incoming value for composite must be None or dict')
 
         if not value:
             if 'default' not in self.field_dict and len(self.field_dict) > 1:
@@ -146,12 +143,33 @@ class ContextConfigType(DagsterCompositeType):
                 ).format(context_name=single_context_name)
             )
 
+        if len(value) > 1:
+            specified_contexts = list(value.keys())
+            available_contexts = list(self.field_dict.keys())
+            raise DagsterEvaluateValueError(
+                (
+                    'You can only specify a single context. You specified {specified_contexts}. '
+                    'The available contexts are {available_contexts}'
+                ).format(
+                    specified_contexts=specified_contexts,
+                    available_contexts=available_contexts,
+                )
+            )
+
         context_name, context_config_value = list(value.items())[0]
 
         parent_type = self.field_dict[context_name].dagster_type
         config_type = parent_type.field_dict['config'].dagster_type
-        processed_value = config_type.evaluate_value(context_config_value['config'])
+        processed_value = config_type.evaluate_value(permissive_idx(context_config_value, 'config'))
         return Context(context_name, processed_value)
+
+
+def permissive_idx(ddict, key):
+    check.opt_dict_param(ddict, 'ddict')
+    check.str_param(key, 'key')
+    if ddict is None:
+        return None
+    return ddict.get(key)
 
 
 class SolidConfigType(DagsterCompositeType, HasUserConfig):

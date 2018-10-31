@@ -80,8 +80,9 @@ Now we configure execution using a env.yml file:
 .. code-block:: yaml
 
     context:
-        config: 
-        log_level: DEBUG
+        default:
+            config:
+                log_level: DEBUG
 
     solids:
         injest_a:
@@ -203,7 +204,7 @@ service, and one that is an in-memory implementation of this.
 Now we need to create one of these stores and put them into the context. The pipeline author must
 create a :py:class:`PipelineContextDefinition`.
 
-It two primrary attributes:
+It two primary attributes:
 
 1) A configuration definition that allows the pipeline author to define what configuration
 is needed to create the ExecutionContext.
@@ -310,7 +311,7 @@ we config it with that name.
 .. code-block:: yaml
 
     context:
-        name: local
+        local:
 
     solids:
         injest_a:
@@ -376,11 +377,11 @@ Now when you invoke this pipeline with the following yaml file:
 .. code-block:: yaml
 
     context:
-        name: cloud
-        config:
-            credentials:
-                user: some_user
-                pass: some_password
+        cloud:
+            config:
+                credentials:
+                    user: some_user
+                    pass: some_password
 
     solids:
         injest_a:
