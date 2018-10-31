@@ -127,7 +127,11 @@ def test_pipelines():
     assert not result.errors
 
     assert set([p['name'] for p in result.data['pipelines']]) == set(
-        ['pandas_hello_world', 'pandas_hello_world_two']
+        [
+            'pandas_hello_world',
+            'pandas_hello_world_two',
+            'more_complicated_config',
+        ]
     )
 
 
