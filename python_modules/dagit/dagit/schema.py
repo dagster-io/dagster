@@ -68,7 +68,7 @@ class Query(graphene.ObjectType):
         return resolve_pipelines_implementation(self, info)
 
     def resolve_pipelinesOrErrors(self, info):
-        # self is null here (because array?) for so have to call resolve_pipelines like this
+        # self is NoneType here (because array?) for so have to call resolve_pipelines like this
         return results_or_errors(self, resolve_pipelines_implementation, info)
 
     def resolve_type(self, info, pipelineName, typeName):
