@@ -2,6 +2,7 @@ from __future__ import print_function
 import logging
 import re
 import textwrap
+import yaml
 
 import click
 
@@ -16,6 +17,8 @@ from dagster.core.execution import execute_pipeline_iterator
 from dagster.graphviz import build_graphviz_graph
 from dagster.utils import load_yaml_from_path
 from dagster.utils.indenting_printer import IndentingPrinter
+
+from .config_scaffolder import scaffold_pipeline_config
 
 from .dynamic_loader import (
     PipelineTargetInfo,
@@ -33,6 +36,7 @@ def create_pipeline_cli():
     group.add_command(print_command)
     group.add_command(graphviz_command)
     group.add_command(execute_command)
+    group.add_command(scaffold_command)
     return group
 
 
@@ -220,7 +224,7 @@ def print_solid(printer, solid):
         printer.line('Outputs:')
 
         for output_def in solid.definition.output_defs:
-            print(output_def.name)
+            printer.line(output_def.name)
 
 
 def print_inputs(printer, solid):
@@ -301,6 +305,34 @@ def do_execute_command(pipeline, env, printer):
     pipeline_iter = execute_pipeline_iterator(pipeline, env_config)
 
     process_results_for_console(pipeline_iter)
+
+
+@click.command(
+    name='scaffold_config',
+    help='Scaffold the config for a pipeline.\n\n{instructions}'.format(
+        instructions=get_pipeline_instructions('scaffold_config')
+    ),
+)
+@pipeline_target_command
+@click.option('-p', '--print-only-required', default=False, is_flag=True)
+def scaffold_command(**kwargs):
+    execute_scaffold_command(kwargs, click.echo)
+
+
+def execute_scaffold_command(cli_args, print_fn):
+    pipeline = create_pipeline_from_cli_args(cli_args)
+    skip_optional = cli_args['print_only_required']
+    do_scaffold_command(pipeline, print_fn, skip_optional)
+
+
+def do_scaffold_command(pipeline, printer, skip_optional):
+    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+    check.callable_param(printer, 'printer')
+    check.bool_param(skip_optional, 'skip_optional')
+
+    config_dict = scaffold_pipeline_config(pipeline, skip_optional=skip_optional)
+    yaml_string = yaml.dump(config_dict, default_flow_style=False)
+    printer(yaml_string)
 
 
 def process_results_for_console(pipeline_iter):
