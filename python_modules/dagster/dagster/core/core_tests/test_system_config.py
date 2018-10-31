@@ -513,9 +513,20 @@ def test_optional_solid_with_optional_scalar_config():
     )
 
     env_type = EnvironmentConfigType(pipeline_def)
+
+    assert env_type.field_dict['solids'].is_optional is True
+
+    solids_type = env_type.field_dict['solids'].dagster_type
+
+    assert solids_type.field_dict['int_config_solid'].is_optional is True
+
+    solids_default_obj = solids_type.evaluate_value({})
+
+    assert solids_default_obj['int_config_solid'].config is None
+
     env_obj = env_type.evaluate_value({})
 
-    assert 'int_config_solid' not in env_obj.solids
+    assert env_obj.solids['int_config_solid'].config is None
 
 
 def test_required_solid_with_required_subfield():
@@ -630,5 +641,165 @@ def test_required_context_with_required_subfield():
     assert context_union_config_type.field_dict['some_context'].is_optional is False
 
 
-def test_all_optional_on_default_context_dict():
-    assert all_optional_user_config(SpecificContextConfig('fokjdfd', DefaultContextConfigDict))
+def test_all_optional_field_on_single_context_dict():
+    pipeline_def = PipelineDefinition(
+        name='some_pipeline',
+        solids=[],
+        context_definitions={
+            'some_context': PipelineContextDefinition(
+                context_fn=lambda *args: None,
+                config_def=ConfigDefinition(
+                    config_type=types.ConfigDictionary(
+                        name='some_context_config',
+                        fields={
+                            'optional_field': types.Field(types.String, is_optional=True),
+                        },
+                    ),
+                ),
+            ),
+        },
+    )
+
+    env_type = EnvironmentConfigType(pipeline_def)
+    assert env_type.field_dict['solids'].is_optional
+    assert env_type.field_dict['context'].is_optional
+    assert env_type.field_dict['execution'].is_optional
+    assert env_type.field_dict['expectations'].is_optional
+
+def test_optional_and_required_context():
+    pipeline_def = PipelineDefinition(
+        name='some_pipeline',
+        solids=[],
+        context_definitions={
+            'optional_field_context': PipelineContextDefinition(
+
+                context_fn=lambda *args: None,
+                config_def=ConfigDefinition(
+                    config_type=types.ConfigDictionary(
+                        name='some_optional_context_config',
+                        fields={
+                            'optional_field': types.Field(types.String, is_optional=True),
+                        },
+                    ),
+                ),
+            ),
+            'required_field_context': PipelineContextDefinition(
+
+                context_fn=lambda *args: None,
+                config_def=ConfigDefinition(
+                    config_type=types.ConfigDictionary(
+                        name='some_required_context_config',
+                        fields={
+                            'required_field': types.Field(types.String),
+                        },
+                    ),
+                ),
+            ),
+        },
+    )
+
+    env_type = EnvironmentConfigType(pipeline_def)
+    assert env_type.field_dict['solids'].is_optional
+    assert env_type.field_dict['context'].is_optional is False
+    context_type = env_type.field_dict['context'].dagster_type
+
+    assert context_type.field_dict['optional_field_context'].is_optional
+    assert context_type.field_dict['required_field_context'].is_optional
+
+    assert env_type.field_dict['execution'].is_optional
+    assert env_type.field_dict['expectations'].is_optional
+
+    env_obj = env_type.evaluate_value(
+        {
+            'context': {
+                'optional_field_context': {
+                    'config': {
+                        'optional_field': 'foobar',
+                    },
+                },
+            },
+        },
+    )
+
+
+def test_default_optional_and_required_context():
+    pipeline_def = PipelineDefinition(
+        name='some_pipeline',
+        solids=[],
+        context_definitions={
+            'default': PipelineContextDefinition(
+
+                context_fn=lambda *args: None,
+                config_def=ConfigDefinition(
+                    config_type=types.ConfigDictionary(
+                        name='some_optional_context_config',
+                        fields={
+                            'optional_field': types.Field(types.String, is_optional=True),
+                        },
+                    ),
+                ),
+            ),
+            'required_field_context': PipelineContextDefinition(
+
+                context_fn=lambda *args: None,
+                config_def=ConfigDefinition(
+                    config_type=types.ConfigDictionary(
+                        name='some_required_context_config',
+                        fields={
+                            'required_field': types.Field(types.String),
+                        },
+                    ),
+                ),
+            ),
+        },
+    )
+
+    env_type = EnvironmentConfigType(pipeline_def)
+    assert env_type.field_dict['context'].is_optional
+
+    env_obj = env_type.evaluate_value({})
+    assert env_obj.context.name == 'default'
+    assert env_obj.context.config == {}
+
+def test_default_optional_with_default_value_and_required_context():
+    pipeline_def = PipelineDefinition(
+        name='some_pipeline',
+        solids=[],
+        context_definitions={
+            'default': PipelineContextDefinition(
+
+                context_fn=lambda *args: None,
+                config_def=ConfigDefinition(
+                    config_type=types.ConfigDictionary(
+                        name='some_optional_context_config',
+                        fields={
+                            'optional_field': types.Field(
+                                types.String,
+                                is_optional=True,
+                                default_value='foobar',
+                            ),
+                        },
+                    ),
+                ),
+            ),
+            'required_field_context': PipelineContextDefinition(
+
+                context_fn=lambda *args: None,
+                config_def=ConfigDefinition(
+                    config_type=types.ConfigDictionary(
+                        name='some_required_context_config',
+                        fields={
+                            'required_field': types.Field(types.String),
+                        },
+                    ),
+                ),
+            ),
+        },
+    )
+
+    env_type = EnvironmentConfigType(pipeline_def)
+    assert env_type.field_dict['context'].is_optional
+
+    env_obj = env_type.evaluate_value({})
+    assert env_obj.context.name == 'default'
+    assert env_obj.context.config == {'optional_field': 'foobar'}
