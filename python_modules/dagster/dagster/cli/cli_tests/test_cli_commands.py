@@ -6,6 +6,7 @@ from dagster.cli.pipeline import (
     execute_print_command,
     execute_list_command,
     execute_execute_command,
+    execute_scaffold_command,
 )
 from dagster.cli.dynamic_loader import InvalidRepositoryLoadingComboError
 
@@ -149,12 +150,27 @@ def test_execute_command():
         execute_execute_command(
             env=None,
             cli_args=cli_args,
-            print_fn=print,
+            print_fn=no_print,
         )
 
     for cli_args in valid_cli_args():
         execute_execute_command(
             env=script_relative_path('env.yml'),
             cli_args=cli_args,
-            print_fn=print,
+            print_fn=no_print,
+        )
+
+
+def test_scaffold_command():
+    for cli_args in valid_cli_args():
+        cli_args['print_only_required'] = True
+        execute_scaffold_command(
+            cli_args=cli_args,
+            print_fn=no_print,
+        )
+
+        cli_args['print_only_required'] = False
+        execute_scaffold_command(
+            cli_args=cli_args,
+            print_fn=no_print,
         )
