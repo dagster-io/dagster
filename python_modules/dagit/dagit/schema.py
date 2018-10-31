@@ -9,22 +9,30 @@ from dagster import check
 from dagster.core.types import DagsterCompositeType
 
 
-def result_or_error(fn, info, *argv):
+def resolve_pipelines_implementation(root_obj, info):
+    repository = info.context['repository_container'].repository
+    pipelines = []
+    for pipeline_def in repository.get_all_pipelines():
+        pipelines.append(Pipeline(pipeline_def))
+    return pipelines
+
+
+def result_or_error(root_obj, fn, info, *argv):
     error = info.context['repository_container'].error
     if error != None:
         return PythonError(*error)
     try:
-        return fn(self, info, *argv)
+        return fn(root_obj, info, *argv)
     except:
         return PythonError(*sys.exc_info())
 
 
-def results_or_errors(fn, info, *argv):
+def results_or_errors(root_obj, fn, info, *argv):
     error = info.context['repository_container'].error
     if error != None:
         return [PythonError(*error)]
     try:
-        return fn(self, info, *argv)
+        return fn(root_obj, info, *argv)
     except:
         return [PythonError(*sys.exc_info())]
 
@@ -54,17 +62,14 @@ class Query(graphene.ObjectType):
         return Pipeline(repository.get_pipeline(name))
 
     def resolve_pipelineOrError(self, info, name):
-        return result_or_error(Query.resolve_pipeline, info, name)
+        return result_or_error(self, self.resolve_pipeline, info, name)
 
     def resolve_pipelines(self, info):
-        repository = info.context['repository_container'].repository
-        pipelines = []
-        for pipeline_def in repository.get_all_pipelines():
-            pipelines.append(Pipeline(pipeline_def))
-        return pipelines
+        return resolve_pipelines_implementation(self, info)
 
     def resolve_pipelinesOrErrors(self, info):
-        return results_or_errors(Query.resolve_pipelines, info)
+        # self is null here (because array?) for so have to call resolve_pipelines like this
+        return results_or_errors(self, resolve_pipelines_implementation, info)
 
     def resolve_type(self, info, pipelineName, typeName):
         check.str_param(pipelineName, 'pipelineName')
