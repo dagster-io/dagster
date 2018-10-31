@@ -24,19 +24,23 @@ if sys.version_info[0] >= 3:
     # install. Some of these things (like numpy) actually cannot be reloaded.
     #
     _reload = reloader._reload
+
     def conditional_reload(m, visited):
         if "/usr/local" in m.__file__ or "site-packages" in m.__file__:
             return
         _reload(m, visited)
+
     reloader._reload = conditional_reload
 else:
+
     class ReloaderStub:
         def reload(self, module):
             pass
+
         def enable(self):
             print('Hot-reloading only supports Python 3+')
-    reloader = ReloaderStub()
 
+    reloader = ReloaderStub()
 
 INFO_FIELDS = set([
     'repository_yaml',
@@ -72,15 +76,9 @@ class PipelineTargetMode(Enum):
     REPOSITORY_YAML_FILE = 4
 
 
-FileTargetFunction = namedtuple(
-    'FileTargetFunction',
-    'python_file fn_name'
-)
+FileTargetFunction = namedtuple('FileTargetFunction', 'python_file fn_name')
 
-ModuleTargetFunction = namedtuple(
-    'ModuleTargetFunction',
-    'module_name fn_name'
-)
+ModuleTargetFunction = namedtuple('ModuleTargetFunction', 'module_name fn_name')
 
 RepositoryPythonFileData = namedtuple(
     'RepositoryPythonFileData',
@@ -97,15 +95,9 @@ RepositoryYamlData = namedtuple(
     'repository_yaml pipeline_name',
 )
 
-PipelineLoadingModeData = namedtuple(
-    'PipelineLoadingModeData',
-    'mode data'
-)
+PipelineLoadingModeData = namedtuple('PipelineLoadingModeData', 'mode data')
 
-RepositoryLoadingModeData = namedtuple(
-    'RepositoryLoadingModeData',
-    'mode data'
-)
+RepositoryLoadingModeData = namedtuple('RepositoryLoadingModeData', 'mode data')
 
 
 class InvalidPipelineLoadingComboError(Exception):
@@ -276,12 +268,12 @@ class DynamicObject:
                 )
             else:
                 raise InvalidPipelineLoadingComboError(
-                    'entry point must return a repository or pipeline')
+                    'entry point must return a repository or pipeline'
+                )
         else:
             self.object = obj
 
         return self.object
-
 
 
 def load_file_target_function(file_target_function):
@@ -289,11 +281,7 @@ def load_file_target_function(file_target_function):
     check.inst_param(file_target_function, 'file_target_function', FileTargetFunction)
     module_name = os.path.splitext(os.path.basename(file_target_function.python_file))[0]
     module = imp.load_source(module_name, file_target_function.python_file)
-    return DynamicObject(
-        module,
-        module_name,
-        file_target_function.fn_name
-    )
+    return DynamicObject(module, module_name, file_target_function.fn_name)
 
 
 def load_module_target_function(module_target_function):

@@ -9,9 +9,40 @@ from dagster import check
 from dagster.core.types import DagsterCompositeType
 
 
+def resolve_pipelines_implementation(root_obj, info):
+    repository = info.context['repository_container'].repository
+    pipelines = []
+    for pipeline_def in repository.get_all_pipelines():
+        pipelines.append(Pipeline(pipeline_def))
+    return pipelines
+
+
+def result_or_error(root_obj, fn, info, *argv):
+    error = info.context['repository_container'].error
+    if error != None:
+        return PythonError(*error)
+    try:
+        return fn(root_obj, info, *argv)
+    except:
+        return PythonError(*sys.exc_info())
+
+
+def results_or_errors(root_obj, fn, info, *argv):
+    error = info.context['repository_container'].error
+    if error != None:
+        return [PythonError(*error)]
+    try:
+        return fn(root_obj, info, *argv)
+    except:
+        return [PythonError(*sys.exc_info())]
+
+
 class Query(graphene.ObjectType):
     pipeline = graphene.Field(lambda: Pipeline, name=graphene.NonNull(graphene.String))
-    pipelineOrError = graphene.Field(lambda: PipelineOrError, name=graphene.NonNull(graphene.String))
+    pipelineOrError = graphene.Field(
+        lambda: PipelineOrError,
+        name=graphene.NonNull(graphene.String),
+    )
 
     pipelines = graphene.NonNull(graphene.List(lambda: graphene.NonNull(Pipeline)))
     pipelinesOrErrors = graphene.NonNull(graphene.List(lambda: graphene.NonNull(PipelineOrError)))
@@ -19,30 +50,13 @@ class Query(graphene.ObjectType):
     type = graphene.Field(
         lambda: Type,
         pipelineName=graphene.NonNull(graphene.String),
-        typeName=graphene.NonNull(graphene.String)
+        typeName=graphene.NonNull(graphene.String),
     )
+
     types = graphene.NonNull(
         graphene.List(graphene.NonNull(lambda: Type)),
         pipelineName=graphene.NonNull(graphene.String),
     )
-
-    def result_or_error(self, fn, info, *argv):
-        error = info.context['repository_container'].error
-        if error != None:
-            return PythonError(*error)
-        try:
-            return fn(self, info, *argv)
-        except:
-            return PythonError(*sys.exc_info())
-
-    def results_or_errors(self, fn, info, *argv):
-        error = info.context['repository_container'].error
-        if error != None:
-            return [PythonError(*error)]
-        try:
-            return fn(self, info, *argv)
-        except:
-            return [PythonError(*sys.exc_info())]
 
     def resolve_pipeline(self, info, name):
         check.str_param(name, 'name')
@@ -50,17 +64,14 @@ class Query(graphene.ObjectType):
         return Pipeline(repository.get_pipeline(name))
 
     def resolve_pipelineOrError(self, info, name):
-        return Query.result_or_error(self, Query.resolve_pipeline, info, name)
+        return result_or_error(self, self.resolve_pipeline, info, name)
 
     def resolve_pipelines(self, info):
-        repository = info.context['repository_container'].repository
-        pipelines = []
-        for pipeline_def in repository.get_all_pipelines():
-            pipelines.append(Pipeline(pipeline_def))
-        return pipelines
+        return resolve_pipelines_implementation(self, info)
 
     def resolve_pipelinesOrErrors(self, info):
-        return Query.results_or_errors(self, Query.resolve_pipelines, info)
+        # self is NoneType here (because array?) for so have to call resolve_pipelines like this
+        return results_or_errors(self, resolve_pipelines_implementation, info)
 
     def resolve_type(self, info, pipelineName, typeName):
         check.str_param(pipelineName, 'pipelineName')
@@ -109,7 +120,6 @@ class Pipeline(graphene.ObjectType):
         return Type.from_dagster_type(self._pipeline.environment_type)
 
 
-
 class Error(graphene.Interface):
     message = graphene.String(required=True)
     stack = graphene.NonNull(graphene.List(graphene.NonNull(graphene.String)))
@@ -120,8 +130,8 @@ class PythonError(graphene.ObjectType):
         interfaces = (Error, )
 
     def __init__(self, exc_type, exc_value, exc_tb):
-        self.message=traceback.format_exception_only(exc_type, exc_value)[0]
-        self.stack=traceback.format_tb(tb=exc_tb)
+        self.message = traceback.format_exception_only(exc_type, exc_value)[0]
+        self.stack = traceback.format_tb(tb=exc_tb)
 
 
 class PipelineOrError(graphene.Union):
@@ -409,7 +419,7 @@ class TypeField(graphene.ObjectType):
         super(TypeField, self).__init__(
             name=name,
             description=field.description,
-            default_value=str(field.default_value),
+            default_value=str(field.default_value) if field.default_provided else None,
             is_optional=field.is_optional
         )
         self._field = field

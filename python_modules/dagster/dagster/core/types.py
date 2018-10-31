@@ -251,7 +251,10 @@ class Field:
 
     @property
     def default_value(self):
-        check.invariant(self.default_provided)
+        check.invariant(
+            self.default_provided,
+            'Asking for default value when none was provided',
+        )
 
         if callable(self._default_value):
             return self._default_value()

@@ -36,6 +36,7 @@ class RepositoryContainer(object):
             self.reload()
         elif repository != None:
             self.repo = repository
+            self.repo_error = None
 
     def reload(self):
         if not self.repo_dynamic_obj:
@@ -53,6 +54,7 @@ class RepositoryContainer(object):
     @property
     def error(self):
         return self.repo_error
+
 
 class DagsterGraphQLView(GraphQLView):
     def __init__(self, repository_container, **kwargs):
