@@ -105,12 +105,9 @@ class ContextConfigType(DagsterCompositeType):
         field_dict = {}
         for context_name, context_definition in context_definitions.items():
 
-            is_optional = None
-
-            if len(context_definitions) > 1:
-                is_optional = True
-            else:
-                is_optional = all_optional_type(context_definition.config_def.config_type)
+            is_optional = True if len(context_definitions) > 1 else all_optional_type(
+                context_definition.config_def.config_type,
+            )
 
             field_dict[context_name] = define_specific_context_field(
                 pipeline_name,
@@ -140,7 +137,8 @@ class ContextConfigType(DagsterCompositeType):
 
             # if default is defined use that otherwise use the single context name
             single_context_name, single_context_field = (
-                'default', self.field_dict['default']
+                'default',
+                self.field_dict['default'],
             ) if 'default' in self.field_dict else single_item(self.field_dict)
 
             if single_context_field.is_optional and single_context_field.default_provided:
@@ -219,23 +217,14 @@ def has_all_optional_default_context(pipeline_def):
     )
 
 
-def define_environment_context_field(pipeline_def, pipeline_name):
+def is_environment_context_field_optional(pipeline_def):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
-    check.str_param(pipeline_name, 'pipeline_name')
-
-    is_optional = None
-
     if len(pipeline_def.context_definitions) > 1:
-        is_optional = has_all_optional_default_context(pipeline_def)
+        return has_all_optional_default_context(pipeline_def)
     else:
         _, single_context_def = single_item(pipeline_def.context_definitions)
 
-        is_optional = all_optional_type(single_context_def.config_def.config_type)
-
-    return define_possibly_optional_field(
-        ContextConfigType(pipeline_name, pipeline_def.context_definitions),
-        is_optional,
-    )
+        return all_optional_type(single_context_def.config_def.config_type)
 
 
 class EnvironmentConfigType(DagsterCompositeType):
@@ -244,7 +233,10 @@ class EnvironmentConfigType(DagsterCompositeType):
 
         pipeline_name = camelcase(pipeline_def.name)
 
-        context_field = define_environment_context_field(pipeline_def, pipeline_name)
+        context_field = define_possibly_optional_field(
+            ContextConfigType(pipeline_name, pipeline_def.context_definitions),
+            is_environment_context_field_optional(pipeline_def),
+        )
 
         solids_field = define_environment_field(
             SolidDictionaryType(
