@@ -521,6 +521,7 @@ def test_build_optionality():
     assert optional_test_type.field_dict['required'].is_optional is False
     assert optional_test_type.field_dict['optional'].is_optional is True
 
+
 def test_pipeline_name_mismatch_error():
     with pytest.raises(DagsterInvalidDefinitionError, match='wrong pipeline name'):
         PipelineDefinition(
@@ -540,13 +541,13 @@ def test_pipeline_name_mismatch_error():
             ],
         )
 
-
     with pytest.raises(DagsterInvalidDefinitionError, match='wrong pipeline name'):
         PipelineDefinition(
             name='pipeline_mismatch_test',
             solids=[],
             context_definitions={
-                'some_context' : PipelineContextDefinition(
+                'some_context':
+                PipelineContextDefinition(
                     context_fn=lambda *_args: None,
                     config_def=ConfigDefinition.context_config_dict(
                         'not_a_match',
@@ -556,6 +557,7 @@ def test_pipeline_name_mismatch_error():
                 )
             }
         )
+
 
 def test_solid_name_mismatch():
     with pytest.raises(DagsterInvalidDefinitionError, match='wrong solid name'):
@@ -601,7 +603,8 @@ def test_context_name_mismatch():
             name='context_name_mismatch',
             solids=[],
             context_definitions={
-                'test' : PipelineContextDefinition(
+                'test':
+                PipelineContextDefinition(
                     context_fn=lambda *_args: None,
                     config_def=ConfigDefinition.context_config_dict(
                         'context_name_mismatch',
@@ -617,7 +620,8 @@ def test_context_name_mismatch():
             name='context_name_mismatch',
             solids=[],
             context_definitions={
-                'test' : PipelineContextDefinition(
+                'test':
+                PipelineContextDefinition(
                     context_fn=lambda *_args: None,
                     config_def=ConfigDefinition.solid_config_dict(
                         'context_name_mismatch',

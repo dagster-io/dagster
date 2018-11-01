@@ -692,7 +692,6 @@ class PipelineDefinition(object):
                         ).format(type_name=in_def_type.name, context_name=context_name)
                     )
 
-
     @staticmethod
     def create_single_solid_pipeline(pipeline, solid_name, injected_solids=None):
         '''
@@ -1314,6 +1313,7 @@ class SolidDefinition(object):
         if self.config_def:
             for dagster_type in self.config_def.config_type.iterate_types():
                 yield dagster_type
+
 
 def _create_adjacency_lists(solids, dep_structure):
     check.list_param(solids, 'solids', Solid)
