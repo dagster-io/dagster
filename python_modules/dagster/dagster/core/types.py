@@ -288,6 +288,17 @@ class DagsterCompositeType(DagsterType):
                 yield inner_type
         yield self
 
+    @property
+    def all_fields_optional(self):
+        for field in self.field_dict.values():
+            if not field.is_optional:
+                return False
+        return True
+
+    @property
+    def field_name_set(self):
+        return set(self.field_dict.keys())
+
 
 class ConfigDictionary(DagsterCompositeType):
     '''Configuration dictionary.

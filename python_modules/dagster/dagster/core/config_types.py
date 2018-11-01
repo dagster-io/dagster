@@ -1,4 +1,3 @@
-import re
 from dagster import check
 
 from dagster.utils import camelcase
@@ -298,9 +297,7 @@ def all_optional_type(dagster_type):
     check.inst_param(dagster_type, 'dagster_type', DagsterType)
 
     if isinstance(dagster_type, DagsterCompositeType):
-        for field in dagster_type.field_dict.values():
-            if not field.is_optional:
-                return False
+        return dagster_type.all_fields_optional
     return True
 
 

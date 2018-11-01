@@ -8,6 +8,7 @@ from toposort import toposort_flatten
 
 from dagster import check
 from dagster.core import types
+from dagster.utils import camelcase
 from dagster.utils.logging import (
     level_from_string,
     define_colored_console_logger,
@@ -1001,6 +1002,30 @@ class Result(namedtuple('_Result', 'value output_name')):
         )
 
 
+# PipelineName.Context.ContextName.ConfigDict
+def build_config_dict_type(name_stack, fields):
+    check.list_param(name_stack, 'name_stack', of_type=str)
+    check.dict_param(fields, 'fields', key_type=str, value_type=(Field, dict))
+
+    field_dict = {}
+    for field_name, field in fields.items():
+        if isinstance(field, Field):
+            field_dict[field_name] = field
+        elif isinstance(field, dict):
+            field_config_dict_type = build_config_dict_type(
+                name_stack + [camelcase(field_name)],
+                field,
+            )
+            field_dict[field_name] = Field(
+                dagster_type=field_config_dict_type,
+                is_optional=field_config_dict_type.all_fields_optional,
+            )
+        else:
+            check.failed('fields in not right format')
+
+    return ConfigDictionary('.'.join(name_stack + ['ConfigDict']), field_dict)
+
+
 class ConfigDefinition(object):
     '''Represents the configuration of an entity in Dagster
 
@@ -1014,12 +1039,38 @@ class ConfigDefinition(object):
     '''
 
     @staticmethod
-    def solid_config_def_dict(pipeline_name, solid_name, fields):
-        pass
+    def context_config_def_dict(pipeline_name, context_name, fields):
+        check.str_param(pipeline_name, 'pipeline_name')
+        check.str_param(context_name, 'context_name')
+        check.dict_param(fields, 'fields', key_type=str)
+
+        return ConfigDefinition(
+            build_config_dict_type(
+                [
+                    camelcase(pipeline_name),
+                    'Context',
+                    camelcase(context_name),
+                ],
+                fields,
+            )
+        )
 
     @staticmethod
-    def context_config_def_dict(pipeline_name, solid_name, fields):
-        pass
+    def solid_config_def_dict(pipeline_name, solid_name, fields):
+        check.str_param(pipeline_name, 'pipeline_name')
+        check.str_param(solid_name, 'solid_name')
+        check.dict_param(fields, 'fields', key_type=str)
+
+        return ConfigDefinition(
+            build_config_dict_type(
+                [
+                    camelcase(pipeline_name),
+                    'Solid',
+                    camelcase(solid_name),
+                ],
+                fields,
+            )
+        )
 
     @staticmethod
     def config_dict(name, field_dict):

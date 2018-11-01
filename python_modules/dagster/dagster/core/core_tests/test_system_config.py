@@ -25,7 +25,6 @@ from dagster.core.config_types import (
 )
 
 
-
 def test_context_config_any():
     context_defs = {
         'test':

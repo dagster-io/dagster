@@ -25,6 +25,7 @@ def load_yaml_from_path(path):
     with open(path, 'r') as ff:
         return yaml.load(ff)
 
+
 # Adapted from https://github.com/okunishinishi/python-stringcase/blob/master/stringcase.py
 def camelcase(string):
     string = re.sub(r'^[\-_\.]', '', str(string))
