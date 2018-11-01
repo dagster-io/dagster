@@ -1014,6 +1014,14 @@ class ConfigDefinition(object):
     '''
 
     @staticmethod
+    def solid_config_def_dict(pipeline_name, solid_name, fields):
+        pass
+
+    @staticmethod
+    def context_config_def_dict(pipeline_name, solid_name, fields):
+        pass
+
+    @staticmethod
     def config_dict(name, field_dict):
         '''Shortcut to create a dictionary based config definition.
 

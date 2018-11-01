@@ -1,5 +1,6 @@
 import inspect
 import os
+import re
 import yaml
 
 from dagster import check
@@ -23,3 +24,14 @@ def load_yaml_from_path(path):
     check.str_param(path, 'path')
     with open(path, 'r') as ff:
         return yaml.load(ff)
+
+# Adapted from https://github.com/okunishinishi/python-stringcase/blob/master/stringcase.py
+def camelcase(string):
+    string = re.sub(r'^[\-_\.]', '', str(string))
+    if not string:
+        return string
+    return str(string[0]).upper() + re.sub(
+        r'[\-_\.\s]([a-z])',
+        lambda matched: str(matched.group(1)).upper(),
+        string[1:],
+    )

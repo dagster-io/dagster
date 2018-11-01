@@ -22,15 +22,8 @@ from dagster.core.config_types import (
     SolidDictionaryType,
     SpecificContextConfig,
     all_optional_user_config,
-    camelcase,
 )
 
-
-def test_camelcase():
-    assert camelcase('foo') == 'Foo'
-    assert camelcase('foo_bar') == 'FooBar'
-    assert camelcase('foo.bar') == 'FooBar'
-    assert camelcase('foo-bar') == 'FooBar'
 
 
 def test_context_config_any():
