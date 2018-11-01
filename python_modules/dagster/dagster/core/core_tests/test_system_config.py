@@ -35,6 +35,9 @@ def test_context_config_any():
     }
 
     context_config_type = ContextConfigType('something', context_defs)
+
+    assert context_config_type.type_attributes.is_system_config
+
     output = context_config_type.evaluate_value({'test': {'config': 1}})
     assert output.name == 'test'
     assert output.config == 1
@@ -89,6 +92,7 @@ def test_default_execution():
     execution_config_type = ExecutionConfigType('some_name')
     assert execution_config_type.evaluate_value({}).serialize_intermediates is False
     assert execution_config_type.evaluate_value(None).serialize_intermediates is False
+    assert execution_config_type.type_attributes.is_system_config
 
 
 def test_default_context_config():
@@ -151,6 +155,7 @@ def test_provided_default_config():
     env_type = EnvironmentConfigType(pipeline_def)
     env_obj = env_type.evaluate_value({})
     assert env_obj.context.name == 'some_context'
+    assert env_type.type_attributes.is_system_config
 
 
 def test_default_environment():
@@ -285,6 +290,7 @@ def test_solid_config():
     solid_inst = solid_config_type.evaluate_value({'config': 1})
     assert isinstance(solid_inst, config.Solid)
     assert solid_inst.config == 1
+    assert solid_config_type.type_attributes.is_system_config
 
 
 def test_expectations_config():
@@ -320,6 +326,14 @@ def test_solid_dictionary_type():
         'int_config_solid': config.Solid(1),
         'string_config_solid': config.Solid('bar'),
     }
+
+    assert solid_dict_type.type_attributes.is_system_config
+
+    for specific_solid_config_field in solid_dict_type.field_dict.values():
+        specific_solid_config_type = specific_solid_config_field.dagster_type
+        assert specific_solid_config_type.type_attributes.is_system_config
+        user_config_field = specific_solid_config_field.dagster_type.field_dict['config']
+        assert user_config_field.dagster_type.type_attributes.is_system_config is False
 
 
 def define_test_solids_config_pipeline():

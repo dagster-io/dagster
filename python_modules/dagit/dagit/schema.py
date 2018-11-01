@@ -364,9 +364,28 @@ class Config(graphene.ObjectType):
         return Type.from_dagster_type(dagster_type=self._config_def.config_type)
 
 
+class TypeAttributes(graphene.ObjectType):
+    is_builtin = graphene.NonNull(
+        graphene.Boolean,
+        description='''
+True if the system defines it and it is the same type across pipelines.
+Examples include "Int" and "String."''',
+    )
+    is_system_config = graphene.NonNull(
+        graphene.Boolean,
+        description='''
+Dagster generates types for base elements of the config system (e.g. the solids and
+context field of the base environment). These types are always present
+and are typically not relevant to an end user. This flag allows tool authors to
+filter out those types by default.
+''',
+    )
+
+
 class Type(graphene.Interface):
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
+    type_attributes = graphene.NonNull(TypeAttributes)
 
     @classmethod
     def from_dagster_type(cls, dagster_type):
@@ -387,6 +406,10 @@ class RegularType(graphene.ObjectType):
             name=dagster_type.name,
             description=dagster_type.description,
         )
+        self._dagster_type = dagster_type
+
+    def resolve_type_attributes(self, _info):
+        return self._dagster_type.type_attributes
 
 
 class CompositeType(graphene.ObjectType):
@@ -403,6 +426,9 @@ class CompositeType(graphene.ObjectType):
             description=dagster_type.description,
         )
         self._dagster_type = dagster_type
+
+    def resolve_type_attributes(self, _info):
+        return self._dagster_type.type_attributes
 
     def resolve_fields(self, _info):
         return [TypeField(name=k, field=v) for k, v in self._dagster_type.field_dict.items()]

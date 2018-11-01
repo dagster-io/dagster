@@ -272,6 +272,10 @@ fragment SolidFragment on Solid {
 fragment TypeWithTooltipFragment on Type {
   name
   description
+  typeAttributes {
+    isBuiltin
+    isSystemConfig
+  }
   __typename
 }
 
