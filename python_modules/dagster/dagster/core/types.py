@@ -33,7 +33,7 @@ class DagsterType(object):
       description (str): Description of the type
     '''
 
-    def __init__(self, name, type_attributes, description):
+    def __init__(self, name, type_attributes=DEFAULT_TYPE_ATTRIBUTES, description=None):
         self.name = check.str_param(name, 'name')
         self.description = check.opt_str_param(description, 'description')
         self.type_attributes = check.inst_param(
