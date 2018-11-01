@@ -22,15 +22,7 @@ from dagster.core.config_types import (
     SolidDictionaryType,
     SpecificContextConfig,
     all_optional_user_config,
-    camelcase,
 )
-
-
-def test_camelcase():
-    assert camelcase('foo') == 'Foo'
-    assert camelcase('foo_bar') == 'FooBar'
-    assert camelcase('foo.bar') == 'FooBar'
-    assert camelcase('foo-bar') == 'FooBar'
 
 
 def test_context_config_any():
@@ -417,7 +409,7 @@ def test_whole_environment():
     solids_type = environment_type.field_dict['solids'].dagster_type
     assert solids_type.name == 'SomePipeline.SolidsConfigDictionary'
     assert solids_type.field_dict['int_config_solid'
-                                  ].dagster_type.name == 'SomePipeline.IntConfigSolid.SolidConfig'
+                                  ].dagster_type.name == 'SomePipeline.SolidConfig.IntConfigSolid'
     assert environment_type.field_dict['expectations'
                                        ].dagster_type.name == 'SomePipeline.ExpectationsConfig'
 

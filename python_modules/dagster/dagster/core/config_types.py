@@ -1,5 +1,6 @@
-import re
 from dagster import check
+
+from dagster.utils import camelcase
 
 from .config import (
     Context,
@@ -296,9 +297,7 @@ def all_optional_type(dagster_type):
     check.inst_param(dagster_type, 'dagster_type', DagsterType)
 
     if isinstance(dagster_type, DagsterCompositeType):
-        for field in dagster_type.field_dict.values():
-            if not field.is_optional:
-                return False
+        return dagster_type.all_fields_optional
     return True
 
 
@@ -318,7 +317,7 @@ class SolidDictionaryType(DagsterCompositeType):
             if solid.definition.config_def:
                 solid_name = camelcase(solid.name)
                 solid_config_type = SolidConfigType(
-                    '{pipeline_name}.{solid_name}.SolidConfig'.format(
+                    '{pipeline_name}.SolidConfig.{solid_name}'.format(
                         pipeline_name=pipeline_name,
                         solid_name=solid_name,
                     ),
@@ -347,15 +346,3 @@ class ExecutionConfigType(DagsterCompositeType):
 
     def evaluate_value(self, value):
         return process_incoming_composite_value(self, value, lambda val: Execution(**val))
-
-
-# Adapted from https://github.com/okunishinishi/python-stringcase/blob/master/stringcase.py
-def camelcase(string):
-    string = re.sub(r'^[\-_\.]', '', str(string))
-    if not string:
-        return string
-    return str(string[0]).upper() + re.sub(
-        r'[\-_\.\s]([a-z])',
-        lambda matched: str(matched.group(1)).upper(),
-        string[1:],
-    )
