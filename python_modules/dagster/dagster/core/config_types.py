@@ -317,7 +317,7 @@ class SolidDictionaryType(DagsterCompositeType):
             if solid.definition.config_def:
                 solid_name = camelcase(solid.name)
                 solid_config_type = SolidConfigType(
-                    '{pipeline_name}.{solid_name}.SolidConfig'.format(
+                    '{pipeline_name}.SolidConfig.{solid_name}'.format(
                         pipeline_name=pipeline_name,
                         solid_name=solid_name,
                     ),

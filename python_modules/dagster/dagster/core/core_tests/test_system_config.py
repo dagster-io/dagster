@@ -409,7 +409,7 @@ def test_whole_environment():
     solids_type = environment_type.field_dict['solids'].dagster_type
     assert solids_type.name == 'SomePipeline.SolidsConfigDictionary'
     assert solids_type.field_dict['int_config_solid'
-                                  ].dagster_type.name == 'SomePipeline.IntConfigSolid.SolidConfig'
+                                  ].dagster_type.name == 'SomePipeline.SolidConfig.IntConfigSolid'
     assert environment_type.field_dict['expectations'
                                        ].dagster_type.name == 'SomePipeline.ExpectationsConfig'
 
