@@ -131,10 +131,6 @@ class DagsterScalarType(UncoercedTypeMixin, DagsterType):
 
       description (str): Description of the type
     '''
-    pass
-    # def __init__(self, *args, **kwargs):
-    # def __init__(self, name, type_attributes, description):
-    #     super(DagsterScalarType, self).__init__(*args, **kwargs)
 
 
 class DagsterBuiltinScalarType(DagsterScalarType):

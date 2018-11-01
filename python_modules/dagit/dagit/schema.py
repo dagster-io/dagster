@@ -365,8 +365,21 @@ class Config(graphene.ObjectType):
 
 
 class TypeAttributes(graphene.ObjectType):
-    is_builtin = graphene.NonNull(graphene.Boolean)
-    is_system_config = graphene.NonNull(graphene.Boolean)
+    is_builtin = graphene.NonNull(
+        graphene.Boolean,
+        description='''
+True if the system defines it and it is the same type across pipelines.
+Examples include "Int" and "String."''',
+    )
+    is_system_config = graphene.NonNull(
+        graphene.Boolean,
+        description='''
+Dagster generates types for base elements of the config system (e.g. the solids and
+context field of the base environment). These types are always present
+and are typically not relevant to an end user. This flag allows tool authors to
+filter out those types by default.
+''',
+    )
 
 
 class Type(graphene.Interface):
