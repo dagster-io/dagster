@@ -14,16 +14,16 @@ interface ITypeListProps {
   types: Array<TypeListFragment>;
 }
 
-function groupTypes(types: TypeListFragment[]) {
+function groupTypes(types: Array<TypeListFragment>) {
   const groups = {
     Custom: Array<TypeListFragment>(),
     Generated: Array<TypeListFragment>(),
     "Built-in": Array<TypeListFragment>()
   };
   types.forEach(type => {
-    if (type.builtin) {
+    if (type.typeAttributes.isBuiltin) {
       groups["Built-in"].push(type);
-    } else if (type.name.includes(".")) {
+    } else if (type.typeAttributes.isSystemConfig) {
       groups["Generated"].push(type);
     } else {
       groups["Custom"].push(type);
@@ -37,7 +37,10 @@ export default class TypeList extends React.Component<ITypeListProps, {}> {
     TypeListFragment: gql`
       fragment TypeListFragment on Type {
         name
-        builtin
+        typeAttributes {
+          isBuiltin
+          isSystemConfig
+        }
         ...TypeWithTooltipFragment
       }
 
