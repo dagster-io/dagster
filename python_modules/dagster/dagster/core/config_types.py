@@ -21,6 +21,7 @@ from .types import (
     DagsterCompositeType,
     DagsterEvaluateValueError,
     DagsterType,
+    DagsterTypeAttributes,
     process_incoming_composite_value,
 )
 
@@ -61,7 +62,11 @@ class SpecificContextConfig(DagsterCompositeType, HasUserConfig):
     def __init__(self, name, config_type):
         check.str_param(name, 'name')
         config_field = define_possibly_optional_field(config_type, all_optional_type(config_type))
-        super(SpecificContextConfig, self).__init__(name, {'config': config_field})
+        super(SpecificContextConfig, self).__init__(
+            name,
+            {'config': config_field},
+            type_attributes=DagsterTypeAttributes(is_system_config=True),
+        )
 
     def evaluate_value(self, value):
         config_output = process_incoming_composite_value(self, value, lambda val: val)
@@ -121,6 +126,7 @@ class ContextConfigType(DagsterCompositeType):
             full_type_name,
             field_dict,
             'A configuration dictionary with typed fields',
+            type_attributes=DagsterTypeAttributes(is_system_config=True),
         )
 
     def evaluate_value(self, value):
@@ -193,6 +199,7 @@ class SolidConfigType(DagsterCompositeType, HasUserConfig):
                     all_optional_type(config_type),
                 ),
             },
+            type_attributes=DagsterTypeAttributes(is_system_config=True),
         )
 
     def evaluate_value(self, value):
@@ -266,6 +273,7 @@ class EnvironmentConfigType(DagsterCompositeType):
                 'expectations': expectations_field,
                 'execution': execution_field,
             },
+            type_attributes=DagsterTypeAttributes(is_system_config=True),
         )
 
     def evaluate_value(self, value):
@@ -284,6 +292,7 @@ class ExpectationsConfigType(DagsterCompositeType):
         super(ExpectationsConfigType, self).__init__(
             name,
             {'evaluate': Field(Bool, is_optional=True, default_value=True)},
+            type_attributes=DagsterTypeAttributes(is_system_config=True),
         )
 
     def evaluate_value(self, value):
@@ -328,7 +337,11 @@ class SolidDictionaryType(DagsterCompositeType):
                     all_optional_user_config(solid_config_type),
                 )
 
-        super(SolidDictionaryType, self).__init__(name, field_dict)
+        super(SolidDictionaryType, self).__init__(
+            name,
+            field_dict,
+            type_attributes=DagsterTypeAttributes(is_system_config=True),
+        )
 
     def evaluate_value(self, value):
         return process_incoming_composite_value(self, value, lambda val: val)
@@ -342,6 +355,7 @@ class ExecutionConfigType(DagsterCompositeType):
             {
                 'serialize_intermediates': Field(Bool, is_optional=True, default_value=False),
             },
+            type_attributes=DagsterTypeAttributes(is_system_config=True),
         )
 
     def evaluate_value(self, value):

@@ -11,6 +11,18 @@ from dagster.core.errors import DagsterEvaluateValueError
 SerializedTypeValue = namedtuple('SerializedTypeValue', 'name value')
 
 
+class DagsterTypeAttributes(namedtuple('_DagsterTypeAttributes', 'is_builtin is_system_config')):
+    def __new__(cls, is_builtin=False, is_system_config=False):
+        return super(DagsterTypeAttributes, cls).__new__(
+            cls,
+            is_builtin=check.bool_param(is_builtin, 'is_builtin'),
+            is_system_config=check.bool_param(is_system_config, 'is_system_config'),
+        )
+
+
+DEFAULT_TYPE_ATTRIBUTES = DagsterTypeAttributes()
+
+
 class DagsterType(object):
     '''Base class for Dagster Type system. Should be inherited by a subclass.
     Subclass must implement `evaluate_value`
@@ -21,9 +33,14 @@ class DagsterType(object):
       description (str): Description of the type
     '''
 
-    def __init__(self, name, description=None):
+    def __init__(self, name, type_attributes, description):
         self.name = check.str_param(name, 'name')
         self.description = check.opt_str_param(description, 'description')
+        self.type_attributes = check.inst_param(
+            type_attributes,
+            'type_attributes',
+            DagsterTypeAttributes,
+        )
         self.__doc__ = description
 
     def __repr__(self):
@@ -114,15 +131,26 @@ class DagsterScalarType(UncoercedTypeMixin, DagsterType):
 
       description (str): Description of the type
     '''
+    pass
+    # def __init__(self, *args, **kwargs):
+    # def __init__(self, name, type_attributes, description):
+    #     super(DagsterScalarType, self).__init__(*args, **kwargs)
 
-    def __init__(self, *args, **kwargs):
-        super(DagsterScalarType, self).__init__(*args, **kwargs)
+
+class DagsterBuiltinScalarType(DagsterScalarType):
+    def __init__(self, name, description=None):
+        super(DagsterBuiltinScalarType, self).__init__(
+            name=name,
+            type_attributes=DagsterTypeAttributes(is_builtin=True),
+            description=None,
+        )
 
 
 class _DagsterAnyType(UncoercedTypeMixin, DagsterType):
     def __init__(self):
         super(_DagsterAnyType, self).__init__(
             name='Any',
+            type_attributes=DagsterTypeAttributes(is_builtin=True),
             description='The type that allows any value, including no value.',
         )
 
@@ -141,9 +169,14 @@ class PythonObjectType(UncoercedTypeMixin, DagsterType):
         self,
         name,
         python_type,
+        type_attributes=DEFAULT_TYPE_ATTRIBUTES,
         description=None,
     ):
-        super(PythonObjectType, self).__init__(name, description)
+        super(PythonObjectType, self).__init__(
+            name=name,
+            type_attributes=type_attributes,
+            description=description,
+        )
         self.python_type = check.type_param(python_type, 'python_type')
 
     def is_python_valid_value(self, value):
@@ -178,12 +211,12 @@ class PythonObjectType(UncoercedTypeMixin, DagsterType):
             return pickle.load(pf)
 
 
-class DagsterStringType(DagsterScalarType):
+class DagsterStringType(DagsterBuiltinScalarType):
     def is_python_valid_value(self, value):
         return nullable_isinstance(value, string_types)
 
 
-class _DagsterIntType(DagsterScalarType):
+class _DagsterIntType(DagsterBuiltinScalarType):
     def __init__(self):
         super(_DagsterIntType, self).__init__('Int', description='An integer.')
 
@@ -193,7 +226,7 @@ class _DagsterIntType(DagsterScalarType):
         return nullable_isinstance(value, integer_types)
 
 
-class _DagsterBoolType(DagsterScalarType):
+class _DagsterBoolType(DagsterBuiltinScalarType):
     def __init__(self):
         super(_DagsterBoolType, self).__init__('Bool', description='A boolean.')
 
@@ -226,7 +259,7 @@ class Field:
         dagster_type,
         default_value=FIELD_NO_DEFAULT_PROVIDED,
         is_optional=False,
-        description=None
+        description=None,
     ):
         if not is_optional:
             check.param_invariant(
@@ -275,9 +308,13 @@ class DagsterCompositeType(DagsterType):
     '''Dagster type representing a type with a list of named :py:class:`Field` objects.
     '''
 
-    def __init__(self, name, fields, description=None):
+    def __init__(self, name, fields, description=None, type_attributes=DEFAULT_TYPE_ATTRIBUTES):
         self.field_dict = FieldDefinitionDictionary(fields)
-        super(DagsterCompositeType, self).__init__(name, description)
+        super(DagsterCompositeType, self).__init__(
+            name=name,
+            description=description,
+            type_attributes=type_attributes,
+        )
 
     def evaluate_value(self, _value):
         check.not_implemented('Must override')
@@ -416,7 +453,7 @@ for a particular execution environment.
 Int = _DagsterIntType()
 Bool = _DagsterBoolType()
 Any = _DagsterAnyType()
-Dict = PythonObjectType('Dict', dict)
+Dict = PythonObjectType('Dict', dict, type_attributes=DagsterTypeAttributes(is_builtin=True))
 
 
 class ScopedConfigInfo(

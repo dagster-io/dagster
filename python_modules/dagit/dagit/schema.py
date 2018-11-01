@@ -364,9 +364,15 @@ class Config(graphene.ObjectType):
         return Type.from_dagster_type(dagster_type=self._config_def.config_type)
 
 
+class TypeAttributes(graphene.ObjectType):
+    is_builtin = graphene.NonNull(graphene.Boolean)
+    is_system_config = graphene.NonNull(graphene.Boolean)
+
+
 class Type(graphene.Interface):
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
+    type_attributes = graphene.NonNull(TypeAttributes)
 
     @classmethod
     def from_dagster_type(cls, dagster_type):
@@ -382,15 +388,22 @@ class RegularType(graphene.ObjectType):
             Type,
         ]
 
+    type_attributes = graphene.NonNull(TypeAttributes)
+
     def __init__(self, dagster_type):
         super(RegularType, self).__init__(
             name=dagster_type.name,
             description=dagster_type.description,
         )
+        self._dagster_type = dagster_type
+
+    def resolve_type_attributes(self, _info):
+        return self._dagster_type.type_attributes
 
 
 class CompositeType(graphene.ObjectType):
     fields = graphene.NonNull(graphene.List(graphene.NonNull(lambda: TypeField)))
+    type_attributes = graphene.NonNull(TypeAttributes)
 
     class Meta:
         interfaces = [
@@ -403,6 +416,9 @@ class CompositeType(graphene.ObjectType):
             description=dagster_type.description,
         )
         self._dagster_type = dagster_type
+
+    def resolve_type_attributes(self, _info):
+        return self._dagster_type.type_attributes
 
     def resolve_fields(self, _info):
         return [TypeField(name=k, field=v) for k, v in self._dagster_type.field_dict.items()]
