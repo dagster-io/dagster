@@ -4,12 +4,19 @@ import pytest
 
 from dagster import (
     ConfigDefinition,
-    types,
-    Field,
     DagsterEvaluateValueError,
+    DagsterInvalidDefinitionError,
+    Field,
+    PipelineContextDefinition,
+    PipelineDefinition,
+    SolidDefinition,
+    types,
 )
 
-from dagster.core.types import process_incoming_composite_value
+from dagster.core.types import (
+    process_incoming_composite_value,
+    ScopedConfigInfo,
+)
 
 from dagster.core.definitions import build_config_dict_type
 
@@ -391,9 +398,16 @@ def single_elem(ddict):
 
 
 def test_build_config_dict_type():
-    single_cd_type = build_config_dict_type(['SingleField'], {'foo': types.Field(types.String)})
+    single_cd_type = build_config_dict_type(
+        ['PipelineName', 'SingleField'],
+        {'foo': types.Field(types.String)},
+        ScopedConfigInfo(
+            pipeline_def_name='pipeline_name',
+            solid_def_name='single_field',
+        ),
+    )
     assert isinstance(single_cd_type, types.ConfigDictionary)
-    assert single_cd_type.name == 'SingleField.ConfigDict'
+    assert single_cd_type.name == 'PipelineName.SingleField.ConfigDict'
     assert len(single_cd_type.field_dict) == 1
     foo_name, foo_field = single_elem(single_cd_type.field_dict)
     assert foo_name == 'foo'
@@ -416,12 +430,14 @@ def test_build_single_nested():
         types.ConfigDictionary(
             'PipelineName.Solid.SolidName.ConfigDict',
             {
-                'foo' : types.Field(types.String),
-                'nested_dict' : types.Field(
+                'foo':
+                types.Field(types.String),
+                'nested_dict':
+                types.Field(
                     types.ConfigDictionary(
                         'PipelineName.Solid.SolidName.NestedDict.ConfigDict',
                         {
-                            'bar' : types.Field(types.String),
+                            'bar': types.Field(types.String),
                         },
                     ),
                 ),
@@ -439,11 +455,15 @@ def test_build_single_nested():
                 'bar': types.Field(types.String),
             },
         },
+        ScopedConfigInfo(
+            pipeline_def_name='pipeline_name',
+            solid_def_name='solid_name',
+        ),
     )
 
     _assert_facts(single_nested_manual)
 
-    nested_from_config_def = ConfigDefinition.solid_config_def_dict(
+    nested_from_config_def = ConfigDefinition.solid_config_dict(
         'pipeline_name',
         'solid_name',
         {
@@ -458,7 +478,7 @@ def test_build_single_nested():
 
 
 def test_build_double_nested():
-    double_config_type = ConfigDefinition.context_config_def_dict(
+    double_config_type = ConfigDefinition.context_config_dict(
         'some_pipeline',
         'some_context',
         {
@@ -485,7 +505,7 @@ def test_build_double_nested():
 
 
 def test_build_optionality():
-    optional_test_type = ConfigDefinition.solid_config_def_dict(
+    optional_test_type = ConfigDefinition.solid_config_dict(
         'some_pipeline',
         'some_solid',
         {
@@ -500,3 +520,110 @@ def test_build_optionality():
 
     assert optional_test_type.field_dict['required'].is_optional is False
     assert optional_test_type.field_dict['optional'].is_optional is True
+
+def test_pipeline_name_mismatch_error():
+    with pytest.raises(DagsterInvalidDefinitionError, match='wrong pipeline name'):
+        PipelineDefinition(
+            name='pipeline_mismatch_test',
+            solids=[
+                SolidDefinition(
+                    name='some_solid',
+                    inputs=[],
+                    outputs=[],
+                    config_def=ConfigDefinition.solid_config_dict(
+                        'wrong_pipeline',
+                        'some_solid',
+                        {},
+                    ),
+                    transform_fn=lambda *_args: None,
+                ),
+            ],
+        )
+
+
+    with pytest.raises(DagsterInvalidDefinitionError, match='wrong pipeline name'):
+        PipelineDefinition(
+            name='pipeline_mismatch_test',
+            solids=[],
+            context_definitions={
+                'some_context' : PipelineContextDefinition(
+                    context_fn=lambda *_args: None,
+                    config_def=ConfigDefinition.context_config_dict(
+                        'not_a_match',
+                        'some_context',
+                        {},
+                    )
+                )
+            }
+        )
+
+def test_solid_name_mismatch():
+    with pytest.raises(DagsterInvalidDefinitionError, match='wrong solid name'):
+        PipelineDefinition(
+            name='solid_name_mismatch',
+            solids=[
+                SolidDefinition(
+                    name='dont_match_me',
+                    inputs=[],
+                    outputs=[],
+                    config_def=ConfigDefinition.solid_config_dict(
+                        'solid_name_mismatch',
+                        'nope',
+                        {},
+                    ),
+                    transform_fn=lambda *_args: None,
+                ),
+            ],
+        )
+
+    with pytest.raises(DagsterInvalidDefinitionError, match='context_config_dict'):
+        PipelineDefinition(
+            name='solid_name_mismatch',
+            solids=[
+                SolidDefinition(
+                    name='dont_match_me',
+                    inputs=[],
+                    outputs=[],
+                    config_def=ConfigDefinition.context_config_dict(
+                        'solid_name_mismatch',
+                        'dont_match_me',
+                        {},
+                    ),
+                    transform_fn=lambda *_args: None,
+                ),
+            ],
+        )
+
+
+def test_context_name_mismatch():
+    with pytest.raises(DagsterInvalidDefinitionError, match='wrong context name'):
+        PipelineDefinition(
+            name='context_name_mismatch',
+            solids=[],
+            context_definitions={
+                'test' : PipelineContextDefinition(
+                    context_fn=lambda *_args: None,
+                    config_def=ConfigDefinition.context_config_dict(
+                        'context_name_mismatch',
+                        'nope',
+                        {},
+                    )
+                )
+            }
+        )
+
+    with pytest.raises(DagsterInvalidDefinitionError, match='solid_config_dict'):
+        PipelineDefinition(
+            name='context_name_mismatch',
+            solids=[],
+            context_definitions={
+                'test' : PipelineContextDefinition(
+                    context_fn=lambda *_args: None,
+                    config_def=ConfigDefinition.solid_config_dict(
+                        'context_name_mismatch',
+                        'some_solid',
+                        {},
+                    )
+                )
+            }
+        )

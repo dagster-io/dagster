@@ -300,7 +300,25 @@ class DagsterCompositeType(DagsterType):
         return set(self.field_dict.keys())
 
 
-class ConfigDictionary(DagsterCompositeType):
+class IsScopedConfigType:
+    def __init__(self):
+        check.invariant(
+            hasattr(
+                self,
+                '_scoped_config_info',
+                (
+                    'If you use IsScopedConfigType mixin the target class must '
+                    'have _scoped_config_info property'
+                ),
+            ),
+        )
+
+    @property
+    def scoped_config_info(self):
+        return self._scoped_config_info  # pylint: disable=E1101
+
+
+class ConfigDictionary(DagsterCompositeType, IsScopedConfigType):
     '''Configuration dictionary.
 
     Typed-checked but then passed to implementations as a python dict
@@ -308,7 +326,12 @@ class ConfigDictionary(DagsterCompositeType):
     Arguments:
       fields (dict): dictonary of :py:class:`Field` objects keyed by name'''
 
-    def __init__(self, name, fields):
+    def __init__(self, name, fields, scoped_config_info=None):
+        self._scoped_config_info = check.opt_inst_param(
+            scoped_config_info,
+            'scoped_config_info',
+            ScopedConfigInfo,
+        )
         super(ConfigDictionary, self).__init__(
             name,
             fields,
@@ -394,3 +417,31 @@ Int = _DagsterIntType()
 Bool = _DagsterBoolType()
 Any = _DagsterAnyType()
 Dict = PythonObjectType('Dict', dict)
+
+
+class ScopedConfigInfo(
+    namedtuple(
+        '_ConfigScopeInfo',
+        'pipeline_def_name solid_def_name context_def_name',
+    ),
+):
+    def __new__(cls, pipeline_def_name, solid_def_name=None, context_def_name=None):
+        check.str_param(pipeline_def_name, 'pipeline_def_name')
+        check.opt_str_param(solid_def_name, 'solid_def_name')
+        check.opt_str_param(context_def_name, 'context_def_name')
+
+        check.invariant(
+            bool(solid_def_name or context_def_name),
+            'One of solid or context must be specified',
+        )
+        check.invariant(
+            not (solid_def_name and context_def_name),
+            'Both solid and context cannot be specified',
+        )
+
+        return super(ScopedConfigInfo, cls).__new__(
+            cls,
+            pipeline_def_name,
+            solid_def_name,
+            context_def_name,
+        )

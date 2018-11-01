@@ -22,6 +22,8 @@ from .execution_context import ExecutionContext
 
 from .types import (
     ConfigDictionary,
+    IsScopedConfigType,
+    ScopedConfigInfo,
     DagsterType,
     Field,
 )
@@ -650,6 +652,47 @@ class PipelineDefinition(object):
             self.environment_type,
         )
 
+        for type_ in self.all_types():
+            if isinstance(type_, IsScopedConfigType) and type_.scoped_config_info:
+                if type_.scoped_config_info.pipeline_def_name != name:
+                    raise DagsterInvalidDefinitionError(
+                        (
+                            'The type {type_name} must be used within the pipeline named '
+                            '{pipeline_name}. You have likely used '
+                            'ConfigDefinition.solid_config_dict or '
+                            'ConfigDefinition.context_config_dict and used the wrong pipeline name'
+                        ).format(type_name=type_.name, pipeline_name=name)
+                    )
+
+        for context_name, context_def in self.context_definitions.items():
+            if not context_def.config_def:
+                continue
+
+            for in_def_type in context_def.config_def.config_type.iterate_types():
+                if not isinstance(in_def_type, IsScopedConfigType):
+                    continue
+                if not in_def_type.scoped_config_info:
+                    continue
+
+                if in_def_type.scoped_config_info.context_def_name is None:
+                    raise DagsterInvalidDefinitionError(
+                        (
+                            'The type {type_name} is not scoped to a context. You have '
+                            'likely used ConfigDefinition.solid_config_dict to create '
+                            'a config for a context within context {context_name}'
+                        ).format(type_name=in_def_type.name, context_name=context_name)
+                    )
+
+                if in_def_type.scoped_config_info.context_def_name != context_name:
+                    raise DagsterInvalidDefinitionError(
+                        (
+                            'The type {type_name} must be used within the context named '
+                            '{context_name}. You have likely used '
+                            'ConfigDefinition.context_config_dict and used the wrong context name'
+                        ).format(type_name=in_def_type.name, context_name=context_name)
+                    )
+
+
     @staticmethod
     def create_single_solid_pipeline(pipeline, solid_name, injected_solids=None):
         '''
@@ -1003,9 +1046,10 @@ class Result(namedtuple('_Result', 'value output_name')):
 
 
 # PipelineName.Context.ContextName.ConfigDict
-def build_config_dict_type(name_stack, fields):
+def build_config_dict_type(name_stack, fields, scoped_config_info):
     check.list_param(name_stack, 'name_stack', of_type=str)
     check.dict_param(fields, 'fields', key_type=str, value_type=(Field, dict))
+    check.inst_param(scoped_config_info, 'scoped_config_info', ScopedConfigInfo)
 
     field_dict = {}
     for field_name, field in fields.items():
@@ -1015,6 +1059,7 @@ def build_config_dict_type(name_stack, fields):
             field_config_dict_type = build_config_dict_type(
                 name_stack + [camelcase(field_name)],
                 field,
+                scoped_config_info,
             )
             field_dict[field_name] = Field(
                 dagster_type=field_config_dict_type,
@@ -1023,7 +1068,7 @@ def build_config_dict_type(name_stack, fields):
         else:
             check.failed('fields in not right format')
 
-    return ConfigDictionary('.'.join(name_stack + ['ConfigDict']), field_dict)
+    return ConfigDictionary('.'.join(name_stack + ['ConfigDict']), field_dict, scoped_config_info)
 
 
 class ConfigDefinition(object):
@@ -1039,7 +1084,7 @@ class ConfigDefinition(object):
     '''
 
     @staticmethod
-    def context_config_def_dict(pipeline_name, context_name, fields):
+    def context_config_dict(pipeline_name, context_name, fields):
         '''
         Method to create a ConfigDefinition for a PipelineContextDefinition
 
@@ -1047,7 +1092,7 @@ class ConfigDefinition(object):
 
         PipelineContextDefinition(
             context_fn=_some_fn,
-            config_def=ConfigDefinition.context_config_def_dict(
+            config_def=ConfigDefinition.context_config_dict(
                 'pipeline_name',
                 'context_name',
                 { # creates type PipelineName.Context.ContextName.ConfigDict
@@ -1082,13 +1127,17 @@ class ConfigDefinition(object):
                     camelcase(context_name),
                 ],
                 fields,
+                ScopedConfigInfo(
+                    pipeline_def_name=pipeline_name,
+                    context_def_name=context_name,
+                ),
             )
         )
 
     @staticmethod
-    def solid_config_def_dict(pipeline_name, solid_name, fields):
+    def solid_config_dict(pipeline_name, solid_name, fields):
         '''
-            See description of context_config_def_dict.
+            See description of context_config_dict.
 
             The only difference between these two is that this method constructs
             types starting with the name '<<PipelineName>>.Solid.<<SolidName>>'
@@ -1105,7 +1154,11 @@ class ConfigDefinition(object):
                     camelcase(solid_name),
                 ],
                 fields,
-            )
+                ScopedConfigInfo(
+                    pipeline_def_name=pipeline_name,
+                    solid_def_name=solid_name,
+                ),
+            ),
         )
 
     @staticmethod
@@ -1213,6 +1266,26 @@ class SolidDefinition(object):
         self._input_dict = {inp.name: inp for inp in inputs}
         self._output_dict = {output.name: output for output in outputs}
 
+        for type_ in self.iterate_types():
+            if isinstance(type_, IsScopedConfigType) and type_.scoped_config_info:
+                if type_.scoped_config_info.solid_def_name is None:
+                    raise DagsterInvalidDefinitionError(
+                        (
+                            'The type {type_name} is not scoped to a solid. You have '
+                            'likely used ConfigDefinition.context_config_dict to create '
+                            'a config for a solid within solid {solid_name}'
+                        ).format(type_name=type_.name, solid_name=name)
+                    )
+
+                if type_.scoped_config_info.solid_def_name != name:
+                    raise DagsterInvalidDefinitionError(
+                        (
+                            'The type {type_name} must be used within the solid named '
+                            '{solid_name}. You have likely used '
+                            'ConfigDefinition.solid_config_dict and used the wrong solid name'
+                        ).format(type_name=type_.name, solid_name=name)
+                    )
+
     def has_input(self, name):
         check.str_param(name, 'name')
         return name in self._input_dict
@@ -1241,7 +1314,6 @@ class SolidDefinition(object):
         if self.config_def:
             for dagster_type in self.config_def.config_type.iterate_types():
                 yield dagster_type
-
 
 def _create_adjacency_lists(solids, dep_structure):
     check.list_param(solids, 'solids', Solid)
