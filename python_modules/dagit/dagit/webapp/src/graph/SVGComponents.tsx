@@ -60,7 +60,9 @@ export class SVGMonospaceText extends React.PureComponent<
 
   render() {
     const { width, size, text, ...rest } = this.props;
-    const chars = width ? width / (size * PX_TO_UNITS) : text.length;
+    const chars = width
+      ? Math.round(width / (size * PX_TO_UNITS))
+      : text.length;
 
     let textClipped = text;
     if (textClipped.length > chars) {
