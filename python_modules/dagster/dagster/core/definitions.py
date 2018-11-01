@@ -1044,7 +1044,6 @@ class Result(namedtuple('_Result', 'value output_name')):
         )
 
 
-# PipelineName.Context.ContextName.ConfigDict
 def build_config_dict_type(name_stack, fields, scoped_config_info):
     check.list_param(name_stack, 'name_stack', of_type=str)
     check.dict_param(fields, 'fields', key_type=str, value_type=(Field, dict))
