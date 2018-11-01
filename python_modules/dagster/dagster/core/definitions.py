@@ -1040,6 +1040,36 @@ class ConfigDefinition(object):
 
     @staticmethod
     def context_config_def_dict(pipeline_name, context_name, fields):
+        '''
+        Method to create a ConfigDefinition for a PipelineContextDefinition
+
+        e.g.
+
+        PipelineContextDefinition(
+            context_fn=_some_fn,
+            config_def=ConfigDefinition.context_config_def_dict(
+                'pipeline_name',
+                'context_name',
+                { # creates type PipelineName.Context.ContextName.ConfigDict
+                    'dict_field_one' : { # creates type named
+                                         # PipelineName.Context.ContextName.DictFieldOne.ConfigDict
+                        'sub_field' : types.Field(types.String),
+                    },
+                    'field_two' : types.Field(types.Int),
+                },
+            ),
+        )
+
+        Args:
+            pipeline_name (str): The name of the pipeline this resides within
+            contexts_name (str): The name of the context this resides within
+            fields (FieldsDict = Dict[str, Field | FieldsDict]): Dictionary that represents
+                the structure of the config. The key name at every level is the field name.
+                If the value is a field then it is just a field. If the value is a dictionary
+                then another config dictionary is constructed (recursively) and set to that
+                types. Essentially a new type is created at every non-leaf node of this tree.
+
+        '''
         check.str_param(pipeline_name, 'pipeline_name')
         check.str_param(context_name, 'context_name')
         check.dict_param(fields, 'fields', key_type=str)
@@ -1057,6 +1087,12 @@ class ConfigDefinition(object):
 
     @staticmethod
     def solid_config_def_dict(pipeline_name, solid_name, fields):
+        '''
+            See description of context_config_def_dict.
+
+            The only difference between these two is that this method constructs
+            types starting with the name '<<PipelineName>>.Solid.<<SolidName>>'
+        '''
         check.str_param(pipeline_name, 'pipeline_name')
         check.str_param(solid_name, 'solid_name')
         check.dict_param(fields, 'fields', key_type=str)
