@@ -11,7 +11,7 @@ from dagster.core.types import (
 
 
 def test_desc():
-    type_foo = DagsterType(name='Foo', type_attributes=DagsterTypeAttributes(), description='A foo')
+    type_foo = DagsterType(name='Foo', description='A foo')
     assert type_foo.name == 'Foo'
     assert type_foo.description == 'A foo'
     assert type_foo.type_attributes.is_builtin is False

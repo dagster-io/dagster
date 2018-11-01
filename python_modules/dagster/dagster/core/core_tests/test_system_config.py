@@ -94,6 +94,7 @@ def test_default_execution():
     assert execution_config_type.evaluate_value(None).serialize_intermediates is False
     assert execution_config_type.type_attributes.is_system_config
 
+
 def test_default_context_config():
     pipeline_def = PipelineDefinition(
         solids=[
@@ -333,6 +334,7 @@ def test_solid_dictionary_type():
         assert specific_solid_config_type.type_attributes.is_system_config
         user_config_field = specific_solid_config_field.dagster_type.field_dict['config']
         assert user_config_field.dagster_type.type_attributes.is_system_config is False
+
 
 def define_test_solids_config_pipeline():
     return PipelineDefinition(

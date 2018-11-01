@@ -401,8 +401,6 @@ class RegularType(graphene.ObjectType):
             Type,
         ]
 
-    type_attributes = graphene.NonNull(TypeAttributes)
-
     def __init__(self, dagster_type):
         super(RegularType, self).__init__(
             name=dagster_type.name,
@@ -416,7 +414,6 @@ class RegularType(graphene.ObjectType):
 
 class CompositeType(graphene.ObjectType):
     fields = graphene.NonNull(graphene.List(graphene.NonNull(lambda: TypeField)))
-    type_attributes = graphene.NonNull(TypeAttributes)
 
     class Meta:
         interfaces = [
