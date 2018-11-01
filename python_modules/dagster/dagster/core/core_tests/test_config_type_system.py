@@ -412,6 +412,25 @@ def test_build_single_nested():
         assert nested_field_type.name == 'PipelineName.Solid.SolidName.NestedDict.ConfigDict'
         assert nested_field_type.field_name_set == set(['bar'])
 
+    old_style_config_def = ConfigDefinition(
+        types.ConfigDictionary(
+            'PipelineName.Solid.SolidName.ConfigDict',
+            {
+                'foo' : types.Field(types.String),
+                'nested_dict' : types.Field(
+                    types.ConfigDictionary(
+                        'PipelineName.Solid.SolidName.NestedDict.ConfigDict',
+                        {
+                            'bar' : types.Field(types.String),
+                        },
+                    ),
+                ),
+            },
+        ),
+    )
+
+    _assert_facts(old_style_config_def.config_type)
+
     single_nested_manual = build_config_dict_type(
         ['PipelineName', 'Solid', 'SolidName'],
         {
