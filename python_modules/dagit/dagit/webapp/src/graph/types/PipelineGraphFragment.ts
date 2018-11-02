@@ -7,6 +7,24 @@
 // GraphQL fragment: PipelineGraphFragment
 // ====================================================
 
+export interface PipelineGraphFragment_solids_definition_metadata {
+  key: string | null;
+  value: string | null;
+}
+
+export interface PipelineGraphFragment_solids_definition_configDefinition_type {
+  description: string | null;
+}
+
+export interface PipelineGraphFragment_solids_definition_configDefinition {
+  type: PipelineGraphFragment_solids_definition_configDefinition_type;
+}
+
+export interface PipelineGraphFragment_solids_definition {
+  metadata: PipelineGraphFragment_solids_definition_metadata[] | null;
+  configDefinition: PipelineGraphFragment_solids_definition_configDefinition | null;
+}
+
 export interface PipelineGraphFragment_solids_inputs_definition_type {
   name: string;
 }
@@ -55,6 +73,7 @@ export interface PipelineGraphFragment_solids_outputs {
 
 export interface PipelineGraphFragment_solids {
   name: string;
+  definition: PipelineGraphFragment_solids_definition;
   inputs: PipelineGraphFragment_solids_inputs[];
   outputs: PipelineGraphFragment_solids_outputs[];
 }

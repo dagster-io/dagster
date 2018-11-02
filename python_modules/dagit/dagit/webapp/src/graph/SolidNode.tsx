@@ -2,18 +2,20 @@ import * as React from "react";
 import gql from "graphql-tag";
 import { Colors } from "@blueprintjs/core";
 import PipelineColorScale from "./PipelineColorScale";
+import { IFullSolidLayout, ILayout } from "./getFullSolidLayout";
 import {
   SolidNodeFragment,
   SolidNodeFragment_inputs,
   SolidNodeFragment_outputs
 } from "./types/SolidNodeFragment";
-import { IFullSolidLayout, ILayout } from "./getFullSolidLayout";
 import {
   SVGEllipseInRect,
   SVGFlowLayoutRect,
-  SVGFlowLayoutFiller,
   SVGMonospaceText
 } from "./SVGComponents";
+
+import SolidTags from "./SolidTags";
+import SolidConfigPort from "./SolidConfigPort";
 
 interface ISolidNodeProps {
   layout: IFullSolidLayout;
@@ -25,125 +27,22 @@ interface ISolidNodeProps {
   onDoubleClick?: (solid: string) => void;
 }
 
-interface ISolidTagsProps {
-  x: number;
-  y: number;
-  width: number;
-  minified: boolean;
-  tags: string[];
-}
-
-function hueForTag(text = "") {
-  return (
-    text
-      .split("")
-      .map(c => c.charCodeAt(0))
-      .reduce((n, a) => n + a) % 360
-  );
-}
-
-const SolidTags: React.SFC<ISolidTagsProps> = ({
-  tags,
-  x,
-  y,
-  width,
-  minified
-}) => {
-  const height = minified ? 32 : 20;
-  const overhang = 6;
-
-  return (
-    <SVGFlowLayoutRect
-      x={x}
-      y={y - (height - overhang)}
-      width={width}
-      height={height}
-      fill={"transparent"}
-      stroke={"transparent"}
-      spacing={minified ? 8 : 4}
-      padding={0}
-    >
-      <SVGFlowLayoutFiller />
-      {tags.map(tag => {
-        const hue = hueForTag(tag);
-        return (
-          <SVGFlowLayoutRect
-            key={tag}
-            rx={0}
-            ry={0}
-            height={height}
-            padding={minified ? 8 : 4}
-            fill={`hsl(${hue}, 10%, 95%)`}
-            stroke={`hsl(${hue}, 55%, 55%)`}
-            strokeWidth={1}
-            spacing={0}
-          >
-            <SVGMonospaceText
-              text={tag}
-              fill={`hsl(${hue}, 55%, 55%)`}
-              size={minified ? 24 : 14}
-            />
-          </SVGFlowLayoutRect>
-        );
-      })}
-    </SVGFlowLayoutRect>
-  );
-};
-
-interface ISolidConfigNubProps {
-  x: number;
-  y: number;
-  minified: boolean;
-}
-
-const SolidConfigNub: React.SFC<ISolidConfigNubProps> = ({
-  x,
-  y,
-  minified
-}) => {
-  return (
-    <>
-      <SVGEllipseInRect
-        x={x}
-        y={y}
-        width={26}
-        height={26}
-        stroke={Colors.GRAY3}
-        fill={PipelineColorScale("solid")}
-        pathLength={100}
-        strokeWidth={1}
-        strokeDasharray={`0 50 0`}
-      />
-      <SVGEllipseInRect
-        x={x + 3}
-        y={y + 3}
-        width={20}
-        height={20}
-        stroke={Colors.WHITE}
-        fill={PipelineColorScale("solidDarker")}
-        pathLength={100}
-        strokeWidth={2}
-      />
-      {!minified && (
-        <text
-          x={x + 8}
-          y={y + 7.5}
-          style={{ font: `14px "Arial", san-serif` }}
-          fill={Colors.WHITE}
-          dominantBaseline="hanging"
-        >
-          C
-        </text>
-      )}
-    </>
-  );
-};
-
 export default class SolidNode extends React.Component<ISolidNodeProps> {
   static fragments = {
     SolidNodeFragment: gql`
       fragment SolidNodeFragment on Solid {
         name
+        definition {
+          metadata {
+            key
+            value
+          }
+          configDefinition {
+            type {
+              description
+            }
+          }
+        }
         inputs {
           definition {
             name
@@ -189,6 +88,15 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
     e.stopPropagation();
     if (this.props.onDoubleClick) {
       this.props.onDoubleClick(this.props.solid.name);
+    }
+  };
+
+  handleTagClicked = (e: React.MouseEvent, tag: string) => {
+    this.handleClick(e);
+    if (tag === "ipynb") {
+      window.requestAnimationFrame(() =>
+        document.dispatchEvent(new Event("show-python-notebook"))
+      );
     }
   };
 
@@ -290,7 +198,10 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
 
   public render() {
     const { solid, layout, dim, selected, minified } = this.props;
+    const { configDefinition, metadata } = solid.definition;
     const { x, y, width, height } = layout.solid;
+
+    const kind = (metadata || []).find(m => m.key === "kind");
 
     return (
       <g
@@ -302,14 +213,20 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
         {this.renderSolid()}
         {this.renderIO("input", solid.inputs, layout.inputs)}
         {this.renderIO("output", solid.outputs, layout.outputs)}
-        <SolidConfigNub minified={minified} x={x + width - 33} y={y - 13} />
-        <SolidTags
-          x={x}
-          y={y + height}
-          width={width + 5}
-          minified={minified}
-          tags={["ipynb", "bla"]}
-        />
+        {configDefinition && (
+          <SolidConfigPort x={x + width - 33} y={y - 13} minified={minified} />
+        )}
+        {kind &&
+          kind.value && (
+            <SolidTags
+              x={x}
+              y={y + height}
+              width={width + 5}
+              minified={minified}
+              tags={[kind.value]}
+              onTagClicked={this.handleTagClicked}
+            />
+          )}
       </g>
     );
   }

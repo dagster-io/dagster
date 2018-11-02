@@ -7,6 +7,24 @@
 // GraphQL fragment: SolidNodeFragment
 // ====================================================
 
+export interface SolidNodeFragment_definition_metadata {
+  key: string | null;
+  value: string | null;
+}
+
+export interface SolidNodeFragment_definition_configDefinition_type {
+  description: string | null;
+}
+
+export interface SolidNodeFragment_definition_configDefinition {
+  type: SolidNodeFragment_definition_configDefinition_type;
+}
+
+export interface SolidNodeFragment_definition {
+  metadata: SolidNodeFragment_definition_metadata[] | null;
+  configDefinition: SolidNodeFragment_definition_configDefinition | null;
+}
+
 export interface SolidNodeFragment_inputs_definition_type {
   name: string;
 }
@@ -55,6 +73,7 @@ export interface SolidNodeFragment_outputs {
 
 export interface SolidNodeFragment {
   name: string;
+  definition: SolidNodeFragment_definition;
   inputs: SolidNodeFragment_inputs[];
   outputs: SolidNodeFragment_outputs[];
 }

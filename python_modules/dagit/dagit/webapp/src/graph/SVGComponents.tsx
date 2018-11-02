@@ -16,9 +16,6 @@ export interface ISVGEllipseInRectProps
   height: number;
 }
 
-type Element = React.ReactElement<any>;
-type ElementArray = Element[];
-
 /*
 Wraps <ellipse>, but takes a width and height rather than center + radius,
 making it compatible with SVGFlowLayoutRect (which inspects it's children's widths.)
@@ -28,6 +25,7 @@ export class SVGEllipseInRect extends React.PureComponent<
 > {
   render() {
     const { width, height, x, y, ...rest } = this.props;
+    console.log(rest);
     const rx = width / 2;
     const ry = height / 2;
     return (
@@ -74,7 +72,10 @@ export class SVGMonospaceText extends React.PureComponent<
     return (
       <text
         {...rest}
-        style={{ font: `${size}px "Source Code Pro", monospace` }}
+        style={{
+          font: `${size}px "Source Code Pro", monospace`,
+          pointerEvents: "none"
+        }}
         width={textClipped.length * size * PX_TO_UNITS}
         dominantBaseline="hanging"
       >

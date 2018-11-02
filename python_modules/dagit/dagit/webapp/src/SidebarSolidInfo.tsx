@@ -31,17 +31,24 @@ class PythonNotebookButton extends React.Component<{ path: string }> {
     open: false
   };
 
+  componentDidMount() {
+    document.addEventListener("show-python-notebook", this.onClick);
+  }
+
+  componentWillUnmount() {
+    document.removeEventListener("show-python-notebook", this.onClick);
+  }
+
+  onClick = () => {
+    this.setState({
+      open: true
+    });
+  };
+
   render() {
     return (
       <div>
-        <Button
-          icon="duplicate"
-          onClick={() =>
-            this.setState({
-              open: true
-            })
-          }
-        >
+        <Button icon="duplicate" onClick={this.onClick}>
           View Notebook
         </Button>
         <Dialog

@@ -302,5 +302,6 @@ def define_dagstermill_solid(
         description='This solid is backed by the notebook at {path}'.format(path=notebook_path),
         metadata={
             'notebook_path': notebook_path,
+            'kind': 'ipynb',
         }
     )
