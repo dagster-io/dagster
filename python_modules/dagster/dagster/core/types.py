@@ -399,7 +399,8 @@ def process_incoming_composite_value(dagster_composite_type, incoming_value, cto
     for received_arg in received_args:
         if received_arg not in defined_args:
             raise DagsterEvaluateValueError(
-                'Field {received} not found. Defined fields: {defined}'.format(
+                'Field "{received}" is not defined on "{type_name}". Defined {defined}'.format(
+                    type_name=dagster_composite_type.name,
                     defined=repr(defined_args),
                     received=received_arg,
                 )
@@ -413,7 +414,8 @@ def process_incoming_composite_value(dagster_composite_type, incoming_value, cto
 
         if expected_field not in received_args:
             raise DagsterEvaluateValueError(
-                'Did not not find {expected} on {type_name}. Defined fields: {defined}'.format(
+                'Missing required field "{expected}" on "{type_name}" . Defined fields: {defined}'.
+                format(
                     expected=expected_field,
                     type_name=dagster_composite_type.name,
                     defined=repr(defined_args),

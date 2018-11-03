@@ -257,13 +257,18 @@ def _validate_environment(environment, pipeline):
             )
 
 
+import json
+
+
 def _create_config_value(config_type, config_input):
     try:
         return config_type.evaluate_value(config_input)
     except DagsterEvaluateValueError as e:
         raise DagsterTypeError(
-            'Invalid config value {value} on type {config_type}: {error_msg}'.format(
-                value=config_input,
+            'Invalid config value on type {config_type}: {error_msg}. Value received {value}'.
+            format(
+                value=json.dumps(config_input, indent=2)
+                if isinstance(config_input, dict) else config_input,
                 config_type=config_type.name,
                 error_msg=','.join(e.args),
             )
