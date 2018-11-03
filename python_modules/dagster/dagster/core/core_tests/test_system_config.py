@@ -454,7 +454,7 @@ def test_solid_config_error():
     solid_dict_type = SolidDictionaryType('slkdfjkjdsf', define_test_solids_config_pipeline())
     int_solid_config = solid_dict_type.field_dict['int_config_solid'].dagster_type
 
-    with pytest.raises(DagsterEvaluateValueError, match='Field notconfig not found.'):
+    with pytest.raises(DagsterEvaluateValueError, match='Field "notconfig" is not defined'):
         int_solid_config.evaluate_value({'notconfig': 1})
 
     with pytest.raises(DagsterEvaluateValueError):
