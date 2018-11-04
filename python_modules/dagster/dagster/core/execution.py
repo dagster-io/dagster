@@ -16,6 +16,7 @@ will not invoke *any* outputs (and their APIs don't allow the user to).
 # pylint: disable=C0302
 
 from contextlib import contextmanager
+import json
 import itertools
 
 import six
@@ -255,9 +256,6 @@ def _validate_environment(environment, pipeline):
                 ) + \
                 ' Available solids in pipeline are {solids}.'.format(solids=available_solids)
             )
-
-
-import json
 
 
 def _create_config_value(config_type, config_input):
