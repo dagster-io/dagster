@@ -360,7 +360,7 @@ solids:
 
 
 def test_intro_tutorial_part_nine_final_error():
-    with pytest.raises(DagsterTypeError, match='Field username not found'):
+    with pytest.raises(DagsterTypeError, match='Field "username" is not defined'):
         execute_pipeline(
             define_part_nine_final_pipeline(),
             yaml.load(

@@ -16,6 +16,7 @@ will not invoke *any* outputs (and their APIs don't allow the user to).
 # pylint: disable=C0302
 
 from contextlib import contextmanager
+import json
 import itertools
 
 import six
@@ -262,8 +263,10 @@ def _create_config_value(config_type, config_input):
         return config_type.evaluate_value(config_input)
     except DagsterEvaluateValueError as e:
         raise DagsterTypeError(
-            'Invalid config value {value} on type {config_type}: {error_msg}'.format(
-                value=config_input,
+            'Invalid config value on type {config_type}: {error_msg}. Value received {value}'.
+            format(
+                value=json.dumps(config_input, indent=2)
+                if isinstance(config_input, dict) else config_input,
                 config_type=config_type.name,
                 error_msg=','.join(e.args),
             )

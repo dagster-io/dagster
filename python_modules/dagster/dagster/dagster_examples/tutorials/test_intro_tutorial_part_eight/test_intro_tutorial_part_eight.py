@@ -129,7 +129,7 @@ def test_part_eight_repo_step_one_wrong_env():
 def test_part_eight_repo_step_one_wrong_field():
     environment = load_yaml_from_path(script_relative_path('env_step_one_field_error.yml'))
 
-    with pytest.raises(DagsterTypeError, match='Field wrong_word not found'):
+    with pytest.raises(DagsterTypeError, match='Field "wrong_word" is not defined'):
         execute_pipeline(define_part_eight_step_one_pipeline(), environment)
 
 

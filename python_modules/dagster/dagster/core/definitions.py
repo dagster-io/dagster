@@ -34,6 +34,7 @@ DISALLOWED_NAMES = set(
     [
         'context',
         'conf',
+        'config',
         'meta',
         'arg_dict',
         'dict',
@@ -783,7 +784,7 @@ class PipelineDefinition(object):
             injected_solids,
         )
 
-        return subgraph.to_pipeline()
+        return subgraph.to_pipeline(pipeline.name)
 
     @property
     def display_name(self):
@@ -1367,8 +1368,9 @@ class ExecutionGraph(object):
         graph = ExecutionGraph.from_pipeline(pipeline)
         return _create_subgraph(graph, from_solids, through_solids).augment(injected_solids)
 
-    def to_pipeline(self):
+    def to_pipeline(self, name=None):
         return PipelineDefinition(
+            name=name,
             solids=[solid.definition for solid in self.solids],
             dependencies=_dependency_structure_to_dep_dict(self.dependency_structure),
             context_definitions=self.pipeline.context_definitions
