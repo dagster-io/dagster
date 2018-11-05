@@ -3,17 +3,13 @@ import {
   SolidFragment_definition_metadata
 } from "../types/SolidFragment";
 
-const context = require.context(".", true);
-const plugins: { [kind: string]: IPluginInterface } = {};
-context.keys().forEach((filename: string) => {
-  const ext = filename
-    .replace("./", "")
-    .split(".")
-    .shift();
-  if (ext) {
-    plugins[ext] = context(filename);
-  }
-});
+import * as ipynb from "./ipynb";
+import * as sql from "./sql";
+
+const plugins = {
+  sql: sql,
+  ipynb: ipynb
+};
 
 export interface IPluginSidebarProps {
   solid: SolidFragment;
