@@ -33,7 +33,7 @@ export default class PipelineExplorer extends React.Component<
   IPipelineExplorerState
 > {
   static fragments = {
-    PipelineFragment: gql`
+    PipelineExplorerFragment: gql`
       fragment PipelineFragment on Pipeline {
         name
         description

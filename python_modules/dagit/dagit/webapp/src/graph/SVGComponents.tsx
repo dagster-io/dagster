@@ -152,7 +152,7 @@ export class SVGFlowLayoutRect extends React.Component<
   }
 
   render() {
-    const { x, y, spacing, children, padding, ...rest } = this.props;
+    const { x, y, spacing, children, padding, maxWidth, ...rest } = this.props;
     const layout = SVGFlowLayoutRect.computeLayout(this.props);
 
     // Use the explicit width we're given, fall back to our intrinsic layout width
@@ -179,7 +179,8 @@ export class SVGFlowLayoutRect extends React.Component<
       const clone = React.cloneElement(childLayout.el, {
         x: (x || 0) + acc,
         y: (y || 0) + layout.height / 2 - childLayout.height / 2,
-        width: childLayout.width
+        width: childLayout.width,
+        key: idx
       });
 
       acc += childLayout.width;

@@ -6,46 +6,16 @@ import styled from "styled-components";
 import { History } from "history";
 import gql from "graphql-tag";
 import PipelineExplorer from "./PipelineExplorer";
-import { PipelinesFragment } from "./types/PipelinesFragment";
 import {
-  PipelineFragment,
-  PipelineFragment_solids
-} from "./types/PipelineFragment";
+  PipelineJumpBarFragment,
+  PipelineJumpBarFragment_solids
+} from "./types/PipelineJumpBarFragment";
 
 interface IPipelinesProps {
   history: History;
-  pipelines: Array<PipelinesFragment>;
-  selectedPipeline: PipelinesFragment | undefined;
-  selectedSolid: PipelineFragment_solids | undefined;
-}
-
-const PipelineSelect = Select.ofType<PipelinesFragment>();
-const SolidSelect = Select.ofType<PipelineFragment_solids>();
-
-const BasicNamePredicate = (text: string, items: any) =>
-  items
-    .filter((i: any) => i.name.toLowerCase().includes(text.toLowerCase()))
-    .slice(0, 20);
-
-const BasicNameRenderer = (
-  item: { name: string },
-  options: { handleClick: any; modifiers: any }
-) => (
-  <MenuItem
-    key={item.name}
-    text={item.name}
-    active={options.modifiers.active}
-    onClick={options.handleClick}
-  />
-);
-
-function activateSelect(select: Select<any> | null) {
-  if (!select) return;
-  const selectEl = ReactDOM.findDOMNode(select) as HTMLElement;
-  const btnEl = selectEl.querySelector("button");
-  if (btnEl) {
-    btnEl.click();
-  }
+  pipelines: Array<PipelineJumpBarFragment>;
+  selectedPipeline: PipelineJumpBarFragment | undefined;
+  selectedSolid: PipelineJumpBarFragment_solids | undefined;
 }
 
 export default class PipelineJumpBar extends React.Component<
@@ -53,21 +23,22 @@ export default class PipelineJumpBar extends React.Component<
   {}
 > {
   static fragments = {
-    PipelinesFragment: gql`
-      fragment PipelinesFragment on Pipeline {
-        ...PipelineFragment
+    PipelineJumpBarFragment: gql`
+      fragment PipelineJumpBarFragment on Pipeline {
+        name
+        solids {
+          name
+        }
       }
-
-      ${PipelineExplorer.fragments.PipelineFragment}
     `
   };
 
   solidSelect: React.RefObject<
-    Select<PipelineFragment_solids>
+    Select<PipelineJumpBarFragment_solids>
   > = React.createRef();
 
   pipelineSelect: React.RefObject<
-    Select<PipelinesFragment>
+    Select<PipelineJumpBarFragment>
   > = React.createRef();
 
   componentDidMount() {
@@ -96,11 +67,11 @@ export default class PipelineJumpBar extends React.Component<
     }
   };
 
-  onSelectPipeline = (pipeline: PipelineFragment) => {
+  onSelectPipeline = (pipeline: PipelineJumpBarFragment) => {
     this.props.history.push(`/${pipeline.name}`);
   };
 
-  onSelectSolid = (solid: PipelineFragment_solids) => {
+  onSelectSolid = (solid: PipelineJumpBarFragment_solids) => {
     const { history, selectedPipeline } = this.props;
 
     if (selectedPipeline) {
@@ -160,3 +131,32 @@ const SelectDivider = styled.div`
   color: rgba(16, 22, 26, 0.15);
   display: inline-block;
 `;
+
+const PipelineSelect = Select.ofType<PipelineJumpBarFragment>();
+const SolidSelect = Select.ofType<PipelineJumpBarFragment_solids>();
+
+const BasicNamePredicate = (text: string, items: any) =>
+  items
+    .filter((i: any) => i.name.toLowerCase().includes(text.toLowerCase()))
+    .slice(0, 20);
+
+const BasicNameRenderer = (
+  item: { name: string },
+  options: { handleClick: any; modifiers: any }
+) => (
+  <MenuItem
+    key={item.name}
+    text={item.name}
+    active={options.modifiers.active}
+    onClick={options.handleClick}
+  />
+);
+
+function activateSelect(select: Select<any> | null) {
+  if (!select) return;
+  const selectEl = ReactDOM.findDOMNode(select) as HTMLElement;
+  const btnEl = selectEl.querySelector("button");
+  if (btnEl) {
+    btnEl.click();
+  }
+}
