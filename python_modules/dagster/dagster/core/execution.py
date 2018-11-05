@@ -370,6 +370,63 @@ def _execute_graph_iterator(context, execution_graph, environment):
         yield SolidExecutionResult.from_results(context, solid_results)
 
 
+def get_key_or_prop(obj, key):
+    check.str_param(key, 'key')
+
+    if isinstance(obj, dict):
+        return obj.get(key)
+    else:
+        if not hasattr(obj, key):
+            return None
+        return getattr(obj, key, None)
+
+
+def check_environment(pipeline, environment):
+    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+    check.opt_inst_param(environment, 'environment', (config.Environment, dict))
+
+    if not environment:
+        return
+
+    solids_in_config = get_key_or_prop(environment, 'solids')
+
+    if solids_in_config:
+        for solid_name in solids_in_config:
+            if not pipeline.has_solid(solid_name):
+                raise DagsterTypeError(
+                    (
+                        'Solid {solid_name} does not exist on pipeline {pipeline_name}. '
+                        'You passed in {solid_name} to the solids field of the environment.'
+                    ).format(
+                        solid_name=solid_name,
+                        pipeline_name=pipeline.name,
+                    )
+                )
+
+    context_in_config = get_key_or_prop(environment, 'context')
+
+    if isinstance(context_in_config, config.Context):
+        context_name = context_in_config.name
+    elif isinstance(context_in_config, dict):
+        if len(context_in_config) > 1:
+            raise DagsterTypeError('Cannot specify more than one context')
+
+        context_name = list(context_in_config.keys())[0]
+    else:
+        check.failed('invalid object')
+
+    if not pipeline.has_context(context_name):
+        raise DagsterTypeError(
+            (
+                'Context {context_name} does not exist on pipeline {pipeline_name}. '
+                'You passed in {context_name} to the context field of the Environment.'
+            ).format(
+                context_name=context_name,
+                pipeline_name=pipeline.name,
+            )
+        )
+
+
 def execute_pipeline(
     pipeline,
     environment=None,
@@ -393,8 +450,11 @@ def execute_pipeline(
     '''
 
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+    check.opt_inst_param(environment, 'environment', (dict, config.Environment))
 
-    pipeline_env_type = EnvironmentConfigType(pipeline)
+    check_environment(pipeline, environment)
+
+    pipeline_env_type = pipeline.environment_type
     environment = _create_config_value(pipeline_env_type, environment)
 
     execution_graph = ExecutionGraph.from_pipeline(pipeline)

@@ -840,6 +840,10 @@ class PipelineDefinition(object):
     def all_types(self):
         return self._type_dict.values()
 
+    def has_context(self, name):
+        check.str_param(name, 'name')
+        return name in self.context_definitions
+
 
 class ExpectationResult(object):
     '''

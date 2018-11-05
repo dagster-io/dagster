@@ -6,10 +6,12 @@ from dagster import (
     ConfigDefinition,
     DagsterEvaluateValueError,
     DagsterInvalidDefinitionError,
+    DagsterTypeError,
     Field,
     PipelineContextDefinition,
     PipelineDefinition,
     SolidDefinition,
+    execute_pipeline,
     types,
 )
 
@@ -520,6 +522,107 @@ def test_build_optionality():
 
     assert optional_test_type.field_dict['required'].is_optional is False
     assert optional_test_type.field_dict['optional'].is_optional is True
+
+
+def test_wrong_solid_name():
+    pipeline_def = PipelineDefinition(
+        name='pipeline_wrong_solid_name',
+        solids=[
+            SolidDefinition(
+                name='some_solid',
+                inputs=[],
+                outputs=[],
+                config_def=ConfigDefinition.solid_config_dict(
+                    'pipeline_wrong_solid_name',
+                    'some_solid',
+                    {},
+                ),
+                transform_fn=lambda *_args: None,
+            ),
+        ],
+    )
+
+    env_config = {
+        'solids': {
+            'another_name': {
+                'config': {},
+            },
+        },
+    }
+    with pytest.raises(
+        DagsterTypeError,
+        match='Solid another_name does not exist on pipeline pipeline_wrong_solid_name',
+    ):
+        execute_pipeline(pipeline_def, env_config)
+
+    with pytest.raises(
+        DagsterTypeError,
+        match='You passed in another_name to the solids field of the environment.'
+    ):
+        execute_pipeline(pipeline_def, env_config)
+
+
+def fail_me():
+    assert False
+    return None
+
+
+def test_multiple_context():
+    pipeline_def = PipelineDefinition(
+        name='pipeline_test_multiple_context',
+        context_definitions={
+            'context_one': PipelineContextDefinition(context_fn=lambda *_args: fail_me(), ),
+            'context_two': PipelineContextDefinition(context_fn=lambda *_args: fail_me(), ),
+        },
+        solids=[],
+    )
+
+    with pytest.raises(DagsterTypeError, match='Cannot specify more than one context'):
+        execute_pipeline(
+            pipeline_def,
+            {
+                'context': {
+                    'context_one': {},
+                    'context_two': {},
+                },
+            },
+        )
+
+def test_wrong_context():
+    pipeline_def = PipelineDefinition(
+        name='pipeline_test_multiple_context',
+        context_definitions={
+            'context_one': PipelineContextDefinition(context_fn=lambda *_args: fail_me(), ),
+            'context_two': PipelineContextDefinition(context_fn=lambda *_args: fail_me(), ),
+        },
+        solids=[],
+    )
+
+    with pytest.raises(
+        DagsterTypeError,
+        match='Context nope does not exist on pipeline pipeline_test_multiple_context',
+    ):
+        execute_pipeline(
+            pipeline_def,
+            {
+                'context': {
+                    'nope': {},
+                },
+            },
+        )
+
+    with pytest.raises(
+        DagsterTypeError,
+        match='You passed in nope to the context field of the Environment',
+    ):
+        execute_pipeline(
+            pipeline_def,
+            {
+                'context': {
+                    'nope': {},
+                },
+            },
+        )
 
 
 def test_pipeline_name_mismatch_error():
