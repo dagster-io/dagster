@@ -5,9 +5,11 @@ const PX_TO_UNITS = 0.62;
 interface ISize {
   width: number;
   height: number;
+  compressionPriority?: number;
 }
 
-export interface ISVGEllipseInRectProps {
+export interface ISVGEllipseInRectProps
+  extends React.SVGProps<SVGEllipseElement> {
   x?: number;
   y?: number;
   width: number;
@@ -22,17 +24,17 @@ export class SVGEllipseInRect extends React.PureComponent<
   ISVGEllipseInRectProps
 > {
   render() {
-    const rx = this.props.width / 2;
-    const ry = this.props.height / 2;
+    const { width, height, x, y, ...rest } = this.props;
+    console.log(rest);
+    const rx = width / 2;
+    const ry = height / 2;
     return (
       <ellipse
-        cx={(this.props.x || 0) + rx}
-        cy={(this.props.y || 0) + ry}
+        cx={(x || 0) + rx}
+        cy={(y || 0) + ry}
         rx={rx}
         ry={ry}
-        fill="rgba(0, 0, 0, 0.3)"
-        stroke="white"
-        strokeWidth={1.5}
+        {...rest}
       />
     );
   }
@@ -72,7 +74,10 @@ export class SVGMonospaceText extends React.PureComponent<
     return (
       <text
         {...rest}
-        style={{ font: `${size}px "Source Code Pro", monospace` }}
+        style={{
+          font: `${size}px "Source Code Pro", monospace`,
+          pointerEvents: "none"
+        }}
         width={textClipped.length * size * PX_TO_UNITS}
         dominantBaseline="hanging"
       >
@@ -92,6 +97,33 @@ export interface ISVGFlowLayoutRectProps {
   maxWidth?: number;
 }
 
+interface SVGFlowLayoutChildLayout {
+  el: React.ReactElement<any>;
+  width: number;
+  height: number;
+  compressionPriority: number;
+}
+
+function reactChildrenToArray(children: React.ReactNode) {
+  let flattened: React.ReactNodeArray = [];
+
+  const appendChildren = (arr: React.ReactNodeArray) => {
+    arr.forEach(item => {
+      if (!item) {
+        return;
+      }
+      if (item instanceof Array) {
+        appendChildren(item);
+      } else {
+        flattened.push(item);
+      }
+    });
+  };
+
+  appendChildren(children instanceof Array ? children : [children]);
+
+  return flattened;
+}
 /*
 Renders a <rect> and lays out it's children along a horizontal axis using the
 given `padding` and inter-item `spacing`. Children must either have a `width`
@@ -114,32 +146,33 @@ export class SVGFlowLayoutRect extends React.Component<
   ): {
     width: number;
     height: number;
-    childLayouts: Array<{
-      el: React.ReactElement<any>;
-      width: number;
-      height: number;
-      shrinkable: boolean;
-    }>;
+    childLayouts: Array<SVGFlowLayoutChildLayout>;
   } {
     let { children, spacing, padding, height } = props;
 
-    const childLayouts = (children instanceof Array ? children : [children])
-      .filter(c => !!c)
-      .map((el: React.ReactElement<any>, idx) => {
-        if ((el.type as any).intrinsicSizeForProps) {
+    const childLayouts = reactChildrenToArray(children).map(
+      (el: React.ReactElement<any>) => {
+        if (el.type && (el.type as any).intrinsicSizeForProps) {
           return {
             el,
-            shrinkable: true,
+            compressionPriority: 1,
             ...(el.type as any).intrinsicSizeForProps(el.props)
           };
         }
+        if (!el.props || el.props.width === undefined) {
+          console.error(el);
+          throw new Error(
+            `SVGFlowLayoutRect children must have a width prop or implement intrinsicSizeForProps`
+          );
+        }
         return {
           el: el,
-          shrinkable: false,
+          compressionPriority: 0,
           width: el.props.width,
           height: el.props.height
         };
-      });
+      }
+    );
 
     return {
       width:
@@ -152,23 +185,46 @@ export class SVGFlowLayoutRect extends React.Component<
   }
 
   render() {
-    const { x, y, spacing, children, padding, ...rest } = this.props;
+    const { x, y, spacing, children, padding, maxWidth, ...rest } = this.props;
     const layout = SVGFlowLayoutRect.computeLayout(this.props);
 
     // Use the explicit width we're given, fall back to our intrinsic layout width
     const finalWidth = this.props.width
       ? this.props.width
-      : Math.min(this.props.maxWidth || 10000, layout.width);
+      : Math.min(maxWidth || 10000, layout.width);
 
     // If the intrinsic layout width is greater than our final width, we need to
-    // compress the child layouts to fit in available space. For now, compress
-    // anything that defined an intrinsic width and compress them by an even percent.
+    // compress the child layouts to fit in available space. We compress children
+    // with the highest compressionPriority first, distribute compression evenly
+    // among children with that priority, and then work our way down in priority
+    // until we've created enough space.
     if (layout.width > finalWidth) {
-      const shrinkable = [...layout.childLayouts].filter(c => c.shrinkable);
-      const shrinkableWidth = shrinkable.reduce((sum, cl) => sum + cl.width, 0);
-      const ratio =
-        (shrinkableWidth - (layout.width - finalWidth)) / shrinkableWidth;
-      shrinkable.forEach(childLayout => (childLayout.width *= ratio));
+      const grouped: {
+        [priority: string]: [SVGFlowLayoutChildLayout];
+      } = {};
+
+      // Group child layouts by compression priority
+      layout.childLayouts.forEach(l => {
+        const p = `${l.compressionPriority}`;
+        grouped[p] = grouped[p] || [];
+        grouped[p].push(l);
+      });
+
+      // Sort priority values so we shrink the most compressible nodes first
+      const priorities = Object.keys(grouped).sort(
+        (a, b) => parseInt(b) - parseInt(a)
+      );
+
+      for (let i = 0; i < priorities.length; i++) {
+        const passLayouts = grouped[priorities[i]];
+        const passWidth = passLayouts.reduce((sum, cl) => sum + cl.width, 0);
+        const ratio =
+          Math.max(1, passWidth - (layout.width - finalWidth)) / passWidth;
+        if (ratio >= 0.99) break;
+
+        passLayouts.forEach(childLayout => (childLayout.width *= ratio));
+        layout.width -= passWidth * (1 - ratio);
+      }
     }
 
     let acc = padding;
@@ -179,7 +235,8 @@ export class SVGFlowLayoutRect extends React.Component<
       const clone = React.cloneElement(childLayout.el, {
         x: (x || 0) + acc,
         y: (y || 0) + layout.height / 2 - childLayout.height / 2,
-        width: childLayout.width
+        width: childLayout.width,
+        key: idx
       });
 
       acc += childLayout.width;
@@ -197,5 +254,18 @@ export class SVGFlowLayoutRect extends React.Component<
         {...arranged}
       </>
     );
+  }
+}
+
+export class SVGFlowLayoutFiller extends React.Component {
+  static intrinsicSizeForProps(): ISize {
+    return {
+      compressionPriority: 2,
+      width: 1000,
+      height: 1
+    };
+  }
+  render() {
+    return <g />;
   }
 }

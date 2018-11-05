@@ -2,17 +2,20 @@ import * as React from "react";
 import gql from "graphql-tag";
 import { Colors } from "@blueprintjs/core";
 import PipelineColorScale from "./PipelineColorScale";
+import { IFullSolidLayout, ILayout } from "./getFullSolidLayout";
 import {
   SolidNodeFragment,
   SolidNodeFragment_inputs,
   SolidNodeFragment_outputs
 } from "./types/SolidNodeFragment";
-import { IFullSolidLayout, ILayout } from "./getFullSolidLayout";
 import {
   SVGEllipseInRect,
   SVGFlowLayoutRect,
   SVGMonospaceText
 } from "./SVGComponents";
+
+import SolidTags from "./SolidTags";
+import SolidConfigPort from "./SolidConfigPort";
 
 interface ISolidNodeProps {
   layout: IFullSolidLayout;
@@ -29,6 +32,17 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
     SolidNodeFragment: gql`
       fragment SolidNodeFragment on Solid {
         name
+        definition {
+          metadata {
+            key
+            value
+          }
+          configDefinition {
+            type {
+              description
+            }
+          }
+        }
         inputs {
           definition {
             name
@@ -77,6 +91,15 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
     }
   };
 
+  handleTagClicked = (e: React.MouseEvent, tag: string) => {
+    this.handleClick(e);
+    if (tag === "ipynb") {
+      window.requestAnimationFrame(() =>
+        document.dispatchEvent(new Event("show-python-notebook"))
+      );
+    }
+  };
+
   renderIO(
     colorKey: string,
     items: Array<SolidNodeFragment_inputs | SolidNodeFragment_outputs>,
@@ -100,7 +123,13 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
             spacing={7}
             height={height}
           >
-            <SVGEllipseInRect width={14} height={14} />
+            <SVGEllipseInRect
+              width={14}
+              height={14}
+              fill="rgba(0, 0, 0, 0.3)"
+              stroke="white"
+              strokeWidth={1.5}
+            />
             {showText && (
               <SVGMonospaceText
                 text={`${input!.definition.name}:`}
@@ -168,18 +197,36 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
   }
 
   public render() {
-    const { solid, layout } = this.props;
+    const { solid, layout, dim, selected, minified } = this.props;
+    const { configDefinition, metadata } = solid.definition;
+    const { x, y, width, height } = layout.solid;
+
+    const kind = (metadata || []).find(m => m.key === "kind");
 
     return (
       <g
         onClick={this.handleClick}
         onDoubleClick={this.handleDoubleClick}
-        opacity={this.props.dim ? 0.3 : 1}
+        opacity={dim ? 0.3 : 1}
       >
-        {this.props.selected && this.renderSelectedBox()}
+        {selected && this.renderSelectedBox()}
         {this.renderSolid()}
         {this.renderIO("input", solid.inputs, layout.inputs)}
         {this.renderIO("output", solid.outputs, layout.outputs)}
+        {configDefinition && (
+          <SolidConfigPort x={x + width - 33} y={y - 13} minified={minified} />
+        )}
+        {kind &&
+          kind.value && (
+            <SolidTags
+              x={x}
+              y={y + height}
+              width={width + 5}
+              minified={minified}
+              tags={[kind.value]}
+              onTagClicked={this.handleTagClicked}
+            />
+          )}
       </g>
     );
   }
