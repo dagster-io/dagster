@@ -2,7 +2,8 @@ import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
 import { Link } from "react-router-dom";
-import { H6, Text, Code, UL, Button, Classes, Dialog } from "@blueprintjs/core";
+import { H6, Text, Code, UL } from "@blueprintjs/core";
+import { pluginForMetadata } from "./plugins";
 
 import SolidTypeSignature from "./SolidTypeSignature";
 import { SolidFragment } from "./types/SolidFragment";
@@ -142,27 +143,27 @@ export default class SidebarSolidInfo extends React.Component<
   }
 
   public render() {
-    const notebookPath = (this.props.solid.definition.metadata || []).find(
-      m => m.key === "notebook_path"
-    );
+    const { solid } = this.props;
+
+    const Plugin = pluginForMetadata(solid.definition.metadata);
 
     return (
       <div>
         <SidebarSubhead>Solid</SidebarSubhead>
-        <SidebarTitle>{this.props.solid.name}</SidebarTitle>
+        <SidebarTitle>{solid.name}</SidebarTitle>
         <SidebarSection title={"Type Signature"}>
-          <SolidTypeSignature solid={this.props.solid} />
+          <SolidTypeSignature solid={solid} />
         </SidebarSection>
         <SidebarSection title={"Description"}>
-          <Description description={this.props.solid.definition.description} />
-          {notebookPath &&
-            notebookPath.value && (
-              <PythonNotebookButton path={notebookPath.value} />
+          <Description description={solid.definition.description} />
+          {Plugin &&
+            Plugin.SidebarComponent && (
+              <Plugin.SidebarComponent solid={solid} />
             )}
         </SidebarSection>
-        {this.props.solid.definition.configDefinition && (
+        {solid.definition.configDefinition && (
           <SidebarSection title={"Config"}>
-            <Config config={this.props.solid.definition.configDefinition} />
+            <Config config={solid.definition.configDefinition} />
           </SidebarSection>
         )}
         <SidebarSection title={"Inputs"}>{this.renderInputs()}</SidebarSection>

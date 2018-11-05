@@ -241,6 +241,10 @@
   version "0.12.6"
   resolved "https://registry.yarnpkg.com/@types/graphql/-/graphql-0.12.6.tgz#3d619198585fcabe5f4e1adfb5cf5f3388c66c13"
 
+"@types/highlight.js@^9.12.3":
+  version "9.12.3"
+  resolved "https://registry.yarnpkg.com/@types/highlight.js/-/highlight.js-9.12.3.tgz#b672cfaac25cbbc634a0fd92c515f66faa18dbca"
+
 "@types/history@*":
   version "4.7.0"
   resolved "https://registry.yarnpkg.com/@types/history/-/history-4.7.0.tgz#2fac51050c68f7d6f96c5aafc631132522f4aa3f"
@@ -315,6 +319,10 @@
   dependencies:
     "@types/glob" "*"
     "@types/node" "*"
+
+"@types/webpack-env@^1.13.6":
+  version "1.13.6"
+  resolved "http://registry.npmjs.org/@types/webpack-env/-/webpack-env-1.13.6.tgz#128d1685a7c34d31ed17010fc87d6a12c1de6976"
 
 "@types/zen-observable@^0.8.0":
   version "0.8.0"
@@ -4190,6 +4198,10 @@ heroku-client@^3.0.6:
   dependencies:
     is-retry-allowed "^1.0.0"
     tunnel-agent "^0.6.0"
+
+highlight.js@^9.13.1:
+  version "9.13.1"
+  resolved "https://registry.yarnpkg.com/highlight.js/-/highlight.js-9.13.1.tgz#054586d53a6863311168488a0f58d6c505ce641e"
 
 history@^4.7.2:
   version "4.7.2"
