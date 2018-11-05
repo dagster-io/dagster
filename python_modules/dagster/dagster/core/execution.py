@@ -405,26 +405,27 @@ def check_environment(pipeline, environment):
 
     context_in_config = get_key_or_prop(environment, 'context')
 
-    if isinstance(context_in_config, config.Context):
-        context_name = context_in_config.name
-    elif isinstance(context_in_config, dict):
-        if len(context_in_config) > 1:
-            raise DagsterTypeError('Cannot specify more than one context')
+    if context_in_config:
+        if isinstance(context_in_config, config.Context):
+            context_name = context_in_config.name
+        elif isinstance(context_in_config, dict):
+            if len(context_in_config) > 1:
+                raise DagsterTypeError('Cannot specify more than one context')
 
-        context_name = list(context_in_config.keys())[0]
-    else:
-        check.failed('invalid object')
+            context_name = list(context_in_config.keys())[0]
+        else:
+            check.failed('invalid object')
 
-    if not pipeline.has_context(context_name):
-        raise DagsterTypeError(
-            (
-                'Context {context_name} does not exist on pipeline {pipeline_name}. '
-                'You passed in {context_name} to the context field of the Environment.'
-            ).format(
-                context_name=context_name,
-                pipeline_name=pipeline.name,
+        if not pipeline.has_context(context_name):
+            raise DagsterTypeError(
+                (
+                    'Context {context_name} does not exist on pipeline {pipeline_name}. '
+                    'You passed in {context_name} to the context field of the Environment.'
+                ).format(
+                    context_name=context_name,
+                    pipeline_name=pipeline.name,
+                )
             )
-        )
 
 
 def execute_pipeline(
