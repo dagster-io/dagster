@@ -10,6 +10,7 @@ Array [
     >
       <div
         className="bp3-navbar-heading"
+        onClick={[Function]}
       >
         <img
           style={
@@ -84,7 +85,7 @@ Array [
       No pipeline selected
     </h4>
     <div>
-      Select a pipeline in the sidebar on the left
+      Select a pipeline in the navbar
     </div>
   </div>,
 ]
