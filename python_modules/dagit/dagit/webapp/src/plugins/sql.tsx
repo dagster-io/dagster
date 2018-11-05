@@ -68,7 +68,12 @@ export class SidebarComponent extends React.Component<IPluginSidebarProps> {
           <div className={Classes.DIALOG_BODY} style={{ margin: 0 }}>
             <HighlightedSQL
               sql={sql.value}
-              style={{ height: 510, margin: 0, overflow: "scroll" }}
+              style={{
+                height: 510,
+                margin: 0,
+                overflow: "scroll",
+                fontSize: "0.9em"
+              }}
             />
           </div>
           <div className={Classes.DIALOG_FOOTER}>
