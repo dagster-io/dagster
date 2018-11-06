@@ -8,6 +8,7 @@
 // ====================================================
 
 export interface AppQuery_pipelinesOrErrors_PythonError {
+  __typename: "PythonError";
   message: string;
   stack: string[];
 }
@@ -200,6 +201,7 @@ export interface AppQuery_pipelinesOrErrors_Pipeline_contexts {
 }
 
 export interface AppQuery_pipelinesOrErrors_Pipeline {
+  __typename: "Pipeline";
   name: string;
   description: string | null;
   solids: AppQuery_pipelinesOrErrors_Pipeline_solids[];
