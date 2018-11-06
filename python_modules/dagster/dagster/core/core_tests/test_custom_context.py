@@ -177,7 +177,7 @@ def test_invalid_context():
 
     environment_context_not_found = config.Environment(context=config.Context('not_found', {}))
 
-    with pytest.raises(DagsterInvariantViolationError, message='Context not_found not found'):
+    with pytest.raises(DagsterTypeError, message='Context not_found does not exist'):
         execute_pipeline(
             default_context_pipeline,
             environment=environment_context_not_found,

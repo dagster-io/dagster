@@ -3,6 +3,7 @@ import pytest
 from dagster import (
     ConfigDefinition,
     DagsterInvariantViolationError,
+    DagsterTypeError,
     Field,
     PipelineDefinition,
     SolidDefinition,
@@ -77,7 +78,7 @@ def test_solid_not_found():
 
     pipeline = PipelineDefinition(solids=[solid])
 
-    with pytest.raises(DagsterInvariantViolationError):
+    with pytest.raises(DagsterTypeError):
         execute_pipeline(
             pipeline,
             config.Environment(solids={
