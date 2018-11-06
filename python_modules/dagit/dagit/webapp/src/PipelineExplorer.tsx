@@ -5,22 +5,19 @@ import { History } from "history";
 import { Colors } from "@blueprintjs/core";
 import { Route } from "react-router";
 import { parse as parseQueryString } from "query-string";
-import {
-  PipelinesFragment,
-  PipelinesFragment_solids
-} from "./types/PipelinesFragment";
+import { PipelineExplorerFragment } from "./types/PipelineExplorerFragment";
+import { PipelineExplorerSolidFragment } from "./types/PipelineExplorerSolidFragment";
 import PipelineGraph from "./graph/PipelineGraph";
 import { getDagrePipelineLayout } from "./graph/getFullSolidLayout";
 import { PanelDivider } from "./PanelDivider";
 import Config from "./Config";
 import SidebarTabbedContainer from "./SidebarTabbedContainer";
-import SidebarSolidInfo from "./SidebarSolidInfo";
 import ConfigEditor from "./configeditor/ConfigEditor";
 
 interface IPipelineExplorerProps {
   history: History;
-  pipeline: PipelinesFragment;
-  solid: PipelinesFragment_solids | undefined;
+  pipeline: PipelineExplorerFragment;
+  solid: PipelineExplorerSolidFragment | undefined;
 }
 
 interface IPipelineExplorerState {
@@ -34,12 +31,9 @@ export default class PipelineExplorer extends React.Component<
 > {
   static fragments = {
     PipelineExplorerFragment: gql`
-      fragment PipelineFragment on Pipeline {
+      fragment PipelineExplorerFragment on Pipeline {
         name
         description
-        solids {
-          ...SolidFragment
-        }
         contexts {
           name
           description
@@ -51,10 +45,17 @@ export default class PipelineExplorer extends React.Component<
         ...ConfigEditorFragment
       }
 
-      ${SidebarSolidInfo.fragments.SolidFragment}
       ${PipelineGraph.fragments.PipelineGraphFragment}
       ${Config.fragments.ConfigFragment}
       ${ConfigEditor.fragments.ConfigEditorFragment}
+    `,
+    PipelineExplorerSolidFragment: gql`
+      fragment PipelineExplorerSolidFragment on Solid {
+        name
+        ...PipelineGraphSolidFragment
+      }
+
+      ${PipelineGraph.fragments.PipelineGraphSolidFragment}
     `
   };
 

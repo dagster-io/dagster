@@ -1,21 +1,20 @@
 import * as React from "react";
+import gql from "graphql-tag";
 import styled from "styled-components";
 import { Icon, IconName, Colors } from "@blueprintjs/core";
-import {
-  PipelinesFragment,
-  PipelinesFragment_solids
-} from "./types/PipelinesFragment";
 import { Link } from "react-router-dom";
 import TypeExplorerContainer from "./configeditor/TypeExplorerContainer";
 import TypeListContainer from "./configeditor/TypeListContainer";
 import SidebarPipelineInfo from "./SidebarPipelineInfo";
 import SidebarSolidInfo from "./SidebarSolidInfo";
+import { SidebarTabbedContainerPipelineFragment } from "./types/SidebarTabbedContainerPipelineFragment";
+import { SidebarTabbedContainerSolidFragment } from "./types/SidebarTabbedContainerSolidFragment";
 
 interface ISidebarTabbedContainerProps {
   types: string | undefined;
   typeExplorer: string | undefined;
-  pipeline: PipelinesFragment;
-  solid: PipelinesFragment_solids | undefined;
+  pipeline: SidebarTabbedContainerPipelineFragment;
+  solid: SidebarTabbedContainerSolidFragment | undefined;
 }
 
 interface ITabInfo {
@@ -43,6 +42,22 @@ const TabInfo: Array<ITabInfo> = [
 export default class SidebarTabbedContainer extends React.Component<
   ISidebarTabbedContainerProps
 > {
+  static fragments = {
+    SidebarTabbedContainerPipelineFragment: gql`
+      fragment SidebarTabbedContainerPipelineFragment on Pipeline {
+        ...SidebarPipelineInfoFragment
+      }
+
+      ${SidebarPipelineInfo.fragments.SidebarPipelineInfoFragment}
+    `,
+    SidebarTabbedContainerSolidFragment: gql`
+      fragment SidebarTabbedContainerSolidFragment on Solid {
+        ...SidebarSolidInfoFragment
+      }
+      ${SidebarSolidInfo.fragments.SidebarSolidInfoFragment}
+    `
+  };
+
   render() {
     const { typeExplorer, types, solid, pipeline } = this.props;
 

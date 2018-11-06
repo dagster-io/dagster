@@ -10,16 +10,14 @@ import {
   IFullPipelineLayout,
   IFullSolidLayout
 } from "./getFullSolidLayout";
-import {
-  PipelineGraphFragment,
-  PipelineGraphFragment_solids
-} from "./types/PipelineGraphFragment";
+import { PipelineGraphFragment } from "./types/PipelineGraphFragment";
+import { PipelineGraphSolidFragment } from "./types/PipelineGraphSolidFragment";
 
 interface IPipelineGraphProps {
   pipeline: PipelineGraphFragment;
   layout: IFullPipelineLayout;
-  selectedSolid?: PipelineGraphFragment_solids;
-  highlightedSolids: Array<PipelineGraphFragment_solids>;
+  selectedSolid?: PipelineGraphSolidFragment;
+  highlightedSolids: Array<PipelineGraphSolidFragment>;
   onClickSolid?: (solidName: string) => void;
   onDoubleClickSolid?: (solidName: string) => void;
   onClickBackground?: () => void;
@@ -92,6 +90,14 @@ export default class PipelineGraph extends React.Component<
         solids {
           ...SolidNodeFragment
         }
+      }
+
+      ${SolidNode.fragments.SolidNodeFragment}
+    `,
+    PipelineGraphSolidFragment: gql`
+      fragment PipelineGraphSolidFragment on Solid {
+        name
+        ...SolidNodeFragment
       }
 
       ${SolidNode.fragments.SolidNodeFragment}

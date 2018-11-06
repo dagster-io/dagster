@@ -1,5 +1,5 @@
 import * as React from "react";
-import { PipelinesFragment } from "./types/PipelinesFragment";
+import gql from "graphql-tag";
 import {
   SidebarTitle,
   SidebarSubhead,
@@ -9,14 +9,33 @@ import {
 } from "./SidebarComponents";
 import Description from "./Description";
 import Config from "./Config";
+import { SidebarPipelineInfoFragment } from "./types/SidebarPipelineInfoFragment";
 
 interface ISidebarPipelineInfoProps {
-  pipeline: PipelinesFragment;
+  pipeline: SidebarPipelineInfoFragment;
 }
 
 export default class SidebarPipelineInfo extends React.Component<
   ISidebarPipelineInfoProps
 > {
+  static fragments = {
+    SidebarPipelineInfoFragment: gql`
+      fragment SidebarPipelineInfoFragment on Pipeline {
+        name
+        description
+        contexts {
+          name
+          description
+          config {
+            ...ConfigFragment
+          }
+        }
+      }
+
+      ${Config.fragments.ConfigFragment}
+    `
+  };
+
   render() {
     const { pipeline } = this.props;
 
