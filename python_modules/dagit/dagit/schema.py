@@ -239,14 +239,16 @@ class Output(graphene.ObjectType):
 
 
 class SolidMetadataItemDefinition(graphene.ObjectType):
-    key = graphene.String()
-    value = graphene.String()
+    key = graphene.NonNull(graphene.String)
+    value = graphene.NonNull(graphene.String)
 
 
 class SolidDefinition(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
-    metadata = graphene.Field(graphene.List(lambda: graphene.NonNull(SolidMetadataItemDefinition)))
+    metadata = graphene.NonNull(
+        graphene.List(lambda: graphene.NonNull(SolidMetadataItemDefinition))
+    )
     input_definitions = graphene.NonNull(graphene.List(lambda: graphene.NonNull(InputDefinition)))
     output_definitions = graphene.NonNull(graphene.List(lambda: graphene.NonNull(OutputDefinition)))
     config_definition = graphene.Field(lambda: Config)
