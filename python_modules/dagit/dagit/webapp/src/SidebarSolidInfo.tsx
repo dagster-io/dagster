@@ -99,16 +99,19 @@ export default class SidebarSolidInfo extends React.Component<
             </Link>
           </Text>
         )}
-        {input.definition.expectations.length > 0 ? (
+        {(input.definition.expectations &&
+          input.definition.expectations.length) > 0 ? (
           <H6>Expectations</H6>
         ) : null}
         <UL>
-          {input.definition.expectations.map((expectation, i) => (
-            <li key={i}>
-              {expectation.name}
-              <Description description={expectation.description} />
-            </li>
-          ))}
+          {(input.definition.expectations &&
+            input.definition.expectations.length > 0) ? 
+            input.definition.expectations.map((expectation, i) => (
+              <li key={i}>
+                {expectation.name}
+                <Description description={expectation.description} />
+              </li>
+          )) : null }
         </UL>
       </SectionItemContainer>
     ));
@@ -122,16 +125,19 @@ export default class SidebarSolidInfo extends React.Component<
           <TypeWithTooltip type={output.definition.type} />
         </TypeWrapper>
         <Description description={output.definition.description} />
-        {output.definition.expectations.length > 0 ? (
+        {(output.definition.expectations &&
+          output.definition.expectations.length > 0) ? (
           <H6>Expectations</H6>
         ) : null}
         <UL>
-          {output.definition.expectations.map((expectation, i) => (
-            <li key={i}>
-              {expectation.name}
-              <Description description={expectation.description} />
-            </li>
-          ))}
+          {(output.definition.expectations &&
+            output.definition.expectations.length > 0) ?
+            output.definition.expectations.map((expectation, i) => (
+              <li key={i}>
+                {expectation.name}
+                <Description description={expectation.description} />
+              </li>
+          )): null}
         </UL>
       </SectionItemContainer>
     ));
