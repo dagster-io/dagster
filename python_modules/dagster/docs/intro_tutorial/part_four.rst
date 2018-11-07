@@ -29,7 +29,6 @@ minimal API. ``solid`` is more complicated, and has more capabilities:
     @solid(config_def=ConfigDefinition(types.String))
     def hello_world(info):
         print(info.config)
-        return conf
 
     def define_pipeline():
         return PipelineDefinition(solids=[hello_world])
