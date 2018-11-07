@@ -313,7 +313,7 @@ def execute_pipeline_iterator(pipeline, environment):
 
     environment = _create_config_value(pipeline_env_type, environment)
 
-    check.inst_param(environment, 'enviroment', config.Environment)
+    check.inst_param(environment, 'environment', config.Environment)
 
     execution_graph = ExecutionGraph.from_pipeline(pipeline)
     with yield_context(pipeline, environment) as context:
