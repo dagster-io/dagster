@@ -43,6 +43,15 @@ Local development setup
     cd dagster/python_modules/dagit/dagit/webapp
     yarn test
 
+In webapp development it's handy to run `yarn run jest --watch` to have an
+interactive test runner.
+
+Some webapp tests use snapshots - auto-generated results to which the test
+rener tree is compared. Those tests are supposed to break when you change
+something, check that the change is sensible and run `yarn run jest -u` to
+update snapshot to the new result. You can also update snapshots interactively
+when you are in `--watch` mode.
+
 Running dagit webapp in development
 -------------------------------------
 
