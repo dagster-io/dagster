@@ -1,5 +1,6 @@
 import * as React from "react";
 import gql from "graphql-tag";
+import styled from "styled-components";
 import { H3, UL } from "@blueprintjs/core";
 import TypeWithTooltip from "../TypeWithTooltip";
 import { TypeListFragment } from "./types/TypeListFragment";
@@ -13,12 +14,33 @@ interface ITypeListProps {
   types: Array<TypeListFragment>;
 }
 
+function groupTypes(types: Array<TypeListFragment>) {
+  const groups = {
+    Custom: Array<TypeListFragment>(),
+    Generated: Array<TypeListFragment>(),
+    "Built-in": Array<TypeListFragment>()
+  };
+  types.forEach(type => {
+    if (type.typeAttributes.isBuiltin) {
+      groups["Built-in"].push(type);
+    } else if (type.typeAttributes.isSystemConfig) {
+      groups["Generated"].push(type);
+    } else {
+      groups["Custom"].push(type);
+    }
+  });
+  return groups;
+}
+
 export default class TypeList extends React.Component<ITypeListProps, {}> {
   static fragments = {
     TypeListFragment: gql`
       fragment TypeListFragment on Type {
         name
-
+        typeAttributes {
+          isBuiltin
+          isSystemConfig
+        }
         ...TypeWithTooltipFragment
       }
 
@@ -26,24 +48,33 @@ export default class TypeList extends React.Component<ITypeListProps, {}> {
     `
   };
 
-  renderTypes() {
-    return this.props.types.map((type, i) => (
-      <li key={i}>
+  renderTypes(types: TypeListFragment[]) {
+    return types.map((type, i) => (
+      <TypeLI key={i}>
         <TypeWithTooltip type={type} />
-      </li>
+      </TypeLI>
     ));
   }
 
   render() {
+    const groups = groupTypes(this.props.types);
+
     return (
       <div>
         <SidebarSubhead />
         <SidebarTitle>Pipeline Types</SidebarTitle>
-        <SidebarSection title={"Fields"}>
-          <UL>{this.renderTypes()}</UL>
-        </SidebarSection>
+        {Object.keys(groups).map((title, idx) => (
+          <SidebarSection title={title} collapsedByDefault={idx !== 0}>
+            <UL>{this.renderTypes(groups[title])}</UL>
+          </SidebarSection>
+        ))}
         <H3 />
       </div>
     );
   }
 }
+
+const TypeLI = styled.li`
+  text-overflow: ellipsis;
+  overflow-x: hidden;
+`;

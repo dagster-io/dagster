@@ -25,6 +25,10 @@ export default class TypeExplorer extends React.Component<
         __typename
         name
         description
+        typeAttributes {
+          isBuiltin
+          isSystemConfig
+        }
         ... on CompositeType {
           fields {
             name

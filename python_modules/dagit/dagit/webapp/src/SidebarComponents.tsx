@@ -1,9 +1,11 @@
 import * as React from "react";
 import styled from "styled-components";
-import { Colors, Collapse } from "@blueprintjs/core";
+import { Icon, Colors, Collapse } from "@blueprintjs/core";
+import { IconNames } from "@blueprintjs/icons";
 
 interface ISidebarSectionProps {
   title: string;
+  collapsedByDefault?: boolean;
 }
 
 interface ISidebarSectionState {
@@ -15,24 +17,32 @@ export class SidebarSection extends React.Component<
   ISidebarSectionState
 > {
   state = {
-    isOpen: true
+    isOpen: this.props.collapsedByDefault === true ? false : true
   };
 
   render() {
+    const { isOpen } = this.state;
+
     return (
       <div>
-        <SectionHeader
-          onClick={() => this.setState({ isOpen: !this.state.isOpen })}
-        >
+        <SectionHeader onClick={() => this.setState({ isOpen: !isOpen })}>
           {this.props.title}
+          <DisclosureIcon
+            icon={isOpen ? IconNames.CHEVRON_DOWN : IconNames.CHEVRON_UP}
+          />
         </SectionHeader>
-        <Collapse isOpen={this.state.isOpen}>
+        <Collapse isOpen={isOpen}>
           <SectionInner>{this.props.children}</SectionInner>
         </Collapse>
       </div>
     );
   }
 }
+
+export const DisclosureIcon = styled(Icon)`
+  float: right;
+  opacity: 0.5;
+`;
 
 export const SidebarTitle = styled.h3`
   font-family: "Source Code Pro", monospace;
