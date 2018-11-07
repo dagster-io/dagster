@@ -31,12 +31,16 @@ export default class PipelinePage extends React.Component<
           stack
         }
         ... on Pipeline {
-          ...PipelineFragment
+          ...PipelineExplorerFragment
           ...PipelineJumpBarFragment
+          solids {
+            ...PipelineExplorerSolidFragment
+          }
         }
       }
 
       ${PipelineExplorer.fragments.PipelineExplorerFragment}
+      ${PipelineExplorer.fragments.PipelineExplorerSolidFragment}
       ${PipelineJumpBar.fragments.PipelineJumpBarFragment}
     `
   };

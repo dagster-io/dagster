@@ -24,17 +24,15 @@ export default class TypeWithTooltip extends React.Component<
   };
 
   render() {
-    if (true || this.props.link) {
-      return (
-        <Link
-          to={{
-            search: `?typeExplorer=${this.props.type.name}`
-          }}
-        >
-          <TypeName>{this.props.type.name}</TypeName>
-        </Link>
-      );
-    }
+    return (
+      <Link
+        to={{
+          search: `?typeExplorer=${this.props.type.name}`
+        }}
+      >
+        <TypeName>{this.props.type.name}</TypeName>
+      </Link>
+    );
   }
 }
 
@@ -45,12 +43,4 @@ export const TypeName = styled.code`
   border-bottom: 1px solid #2491eb;
   border-radius: 0.25em;
   font-weight: 500;
-`;
-
-const TypeNameWithHelp = styled(TypeName)`
-  cursor: help;
-`;
-
-const TypeDescription = styled(Text)`
-  max-width: 300px;
 `;
