@@ -45,7 +45,8 @@ Save this as part_five.py and run
 
 Notice that even though the user only logged the message "An error occurred", by 
 routing logging through the context we are able to provide richer error information and then
-log that in a semi-structured format.
+log that in a semi-structured format. (Note that the order of execution of these
+two solids is indeterminate.)
 
 For example, let's change the example by adding a name to the pipeline. (Naming things is good practice).
 
