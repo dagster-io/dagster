@@ -18,6 +18,14 @@ minimal API. ``solid`` is more complicated, and has more capabilities:
 
 .. code-block:: python
 
+    from dagster import (
+        ConfigDefinition,
+        PipelineDefinition,
+        execute_pipeline,
+        solid,
+        types,
+    )
+
     @solid(config_def=ConfigDefinition(types.String))
     def hello_world(info):
         print(info.config)
