@@ -14,6 +14,11 @@ Let's use the context for one of its core capabilities: logging.
 
 .. code-block:: python
 
+    from dagster import (
+        PipelineDefinition,
+        solid,
+    )
+
     @solid
     def solid_one(info):
         info.context.info('Something you should know about occurred.')
