@@ -300,6 +300,9 @@ def execute_pipeline_iterator(pipeline, environment):
     '''Returns iterator that yields :py:class:`SolidExecutionResult` for each
     solid executed in the pipeline.
 
+    This is intended to allow the caller to do things between each executed
+    node. For the 'synchronous' API, see :py:function:`execute_pipeline`.
+
     Parameters:
       pipeline (PipelineDefinition): pipeline to run
       execution (ExecutionContext): execution context of the run
@@ -436,7 +439,7 @@ def execute_pipeline(
         throw_on_error=True,
     ):
     '''
-    "Synchronous" version of `execute_pipeline_iterator`.
+    "Synchronous" version of :py:function:`execute_pipeline_iterator`.
 
     Note: throw_on_error is very useful in testing contexts when not testing for error conditions
 
