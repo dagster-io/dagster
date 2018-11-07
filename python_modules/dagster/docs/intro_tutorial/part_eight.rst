@@ -9,7 +9,7 @@ There actually *have* been types during all previous parts of this tutorial. If 
 use does not specify types for inputs, outputs, or config in dagster, they default
 to the ``Any`` type, which can accept any and all values.
 
-We are going to incrementally add typing to the example in part eight.
+We are going to incrementally add typing to the example in part seven.
 
 Before we had this:
 
@@ -37,26 +37,28 @@ The previous env.yml file works as before:
 .. code-block:: yaml
 
     context:
+      default:
         config:
-            log_level: DEBUG
+          log_level: DEBUG
 
     solids:
-        double_the_word_with_typed_config:
-            config:
-                word: quux
+      double_the_word_with_typed_config:
+        config:
+          word: quux
 
 Now let's imagine we made a mistake and passed an ``int`` to word configuration:
 
 .. code-block:: yaml
 
     context:
+      default:
         config:
-            log_level: DEBUG
+          log_level: DEBUG
 
     solids:
-        double_the_word_with_typed_config:
-            config:
-                word: 1
+      double_the_word_with_typed_config:
+        config:
+          word: 1
 
 And then ran it:
 
@@ -71,13 +73,14 @@ Or if we passed the wrong field:
 .. code-block:: yaml
 
     context:
+      default:
         config:
-            log_level: DEBUG
+          log_level: DEBUG
 
     solids:
-        double_the_word_with_typed_config:
-            config:
-                wrong_word: quux
+      double_the_word_with_typed_config:
+        config:
+          wrong_word: quux
 
 And then ran it:
 
@@ -127,5 +130,3 @@ When we run it, it errors:
     $ dagster pipeline execute part_eight -e env.yml
     dagster.core.errors.DagsterInvariantViolationError: Solid typed_double_word_mismatch output name result
     output quuxquux type failure: Expected valid value for Int but got 'quuxquux'
-
-
