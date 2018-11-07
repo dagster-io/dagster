@@ -1,7 +1,4 @@
-import {
-  SolidFragment,
-  SolidFragment_definition_metadata
-} from "../types/SolidFragment";
+import { SidebarSolidInfoFragment } from "../types/SidebarSolidInfoFragment";
 
 import * as ipynb from "./ipynb";
 import * as sql from "./sql";
@@ -12,7 +9,7 @@ const plugins = {
 };
 
 export interface IPluginSidebarProps {
-  solid: SolidFragment;
+  solid: SidebarSolidInfoFragment;
 }
 
 export interface IPluginInterface {
@@ -22,11 +19,9 @@ export interface IPluginInterface {
 }
 
 export function pluginForMetadata(
-  metadata: SolidFragment_definition_metadata[] | null
+  metadata: { key: string; value: string }[]
 ): IPluginInterface | null {
-  if (metadata === null) return null;
-
   const kindMetadata = metadata.find(m => m.key === "kind");
-  if (!kindMetadata || !kindMetadata.value) return null;
+  if (!kindMetadata) return null;
   return plugins[kindMetadata.value];
 }

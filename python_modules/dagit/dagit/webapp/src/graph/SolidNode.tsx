@@ -199,7 +199,7 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
     const { configDefinition, metadata } = solid.definition;
     const { x, y, width, height } = layout.solid;
 
-    const kind = (metadata || []).find(m => m.key === "kind");
+    const kind = metadata.find(m => m.key === "kind");
 
     return (
       <g
