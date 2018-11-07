@@ -314,7 +314,9 @@ def execute_pipeline_iterator(pipeline, environment):
 
     execution_graph = ExecutionGraph.from_pipeline(pipeline)
     with yield_context(pipeline, environment) as context:
-        return _execute_graph_iterator(context, execution_graph, environment)
+        with context.value('pipeline', execution_graph.pipeline.display_name):
+            for result in  _execute_graph_iterator(context, execution_graph, environment):
+                yield result
 
 
 def _execute_graph_iterator(context, execution_graph, environment):
@@ -429,10 +431,10 @@ def check_environment(pipeline, environment):
 
 
 def execute_pipeline(
-    pipeline,
-    environment=None,
-    throw_on_error=True,
-):
+        pipeline,
+        environment=None,
+        throw_on_error=True,
+    ):
     '''
     "Synchronous" version of `execute_pipeline_iterator`.
 
