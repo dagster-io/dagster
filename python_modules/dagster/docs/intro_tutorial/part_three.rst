@@ -6,11 +6,19 @@ effects execution order. In this case will be build a diamond dag:
 
 .. code-block:: python
 
-    #   B
+    from dagster import (
+        DependencyDefinition,
+        InputDefinition,
+        PipelineDefinition,
+        execute_pipeline,
+        lambda_solid,
+    )
+
+    #   A
     #  / \
-    # A   D
+    # B   C
     #  \ /
-    #   C
+    #   D
 
 
     @lambda_solid
@@ -39,27 +47,26 @@ effects execution order. In this case will be build a diamond dag:
         print('d: {d}'.format(d=arg_b * arg_c))
 
 
-    if __name__ == '__main__':
-        execute_pipeline(
-            PipelineDefinition(
-                # The order of this solid list does not matter.
-                # The dependencies argument determines execution order.
-                # Solids will execute in topological order.
-                solids=[solid_d, solid_c, solid_b, solid_a],
-                dependencies={
-                    'solid_b': {
-                        'arg_a': DependencyDefinition('solid_a'),
-                    },
-                    'solid_c': {
-                        'arg_a': DependencyDefinition('solid_a'),
-                    },
-                    'solid_d': {
-                        'arg_b': DependencyDefinition('solid_b'),
-                        'arg_c': DependencyDefinition('solid_c'),
-                    }
+    def define_pipeline():
+        return PipelineDefinition(
+            # The order of this solid list does not matter.
+            # The dependencies argument determines execution order.
+            # Solids will execute in topological order.
+            solids=[solid_d, solid_c, solid_b, solid_a],
+            dependencies={
+                'solid_b': {
+                    'arg_a': DependencyDefinition('solid_a'),
+                },
+                'solid_c': {
+                    'arg_a': DependencyDefinition('solid_a'),
+                },
+                'solid_d': {
+                    'arg_b': DependencyDefinition('solid_b'),
+                    'arg_c': DependencyDefinition('solid_c'),
                 }
-            )
+            }
         )
+
 
 Again it is worth noting how we are connecting *inputs* and *outputs* rather than just *tasks*.
 Point your attention to the ``solid_d`` entry in the dependencies dictionary. We are declaring
