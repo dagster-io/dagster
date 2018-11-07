@@ -53,9 +53,11 @@ export default class PipelineExplorer extends React.Component<
       fragment PipelineExplorerSolidFragment on Solid {
         name
         ...PipelineGraphSolidFragment
+        ...SidebarTabbedContainerSolidFragment
       }
 
       ${PipelineGraph.fragments.PipelineGraphSolidFragment}
+      ${SidebarTabbedContainer.fragments.SidebarTabbedContainerSolidFragment}
     `
   };
 

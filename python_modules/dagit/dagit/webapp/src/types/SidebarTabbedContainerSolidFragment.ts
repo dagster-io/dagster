@@ -64,8 +64,8 @@ export interface SidebarTabbedContainerSolidFragment_inputs {
 }
 
 export interface SidebarTabbedContainerSolidFragment_definition_metadata {
-  key: string | null;
-  value: string | null;
+  key: string;
+  value: string;
 }
 
 export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_type_RegularType {
@@ -123,7 +123,7 @@ export interface SidebarTabbedContainerSolidFragment_definition_configDefinition
 
 export interface SidebarTabbedContainerSolidFragment_definition {
   description: string | null;
-  metadata: SidebarTabbedContainerSolidFragment_definition_metadata[] | null;
+  metadata: SidebarTabbedContainerSolidFragment_definition_metadata[];
   configDefinition: SidebarTabbedContainerSolidFragment_definition_configDefinition | null;
 }
 

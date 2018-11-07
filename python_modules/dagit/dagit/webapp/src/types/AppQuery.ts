@@ -73,8 +73,8 @@ export interface AppQuery_pipelinesOrErrors_Pipeline_contexts {
 }
 
 export interface AppQuery_pipelinesOrErrors_Pipeline_solids_definition_metadata {
-  key: string | null;
-  value: string | null;
+  key: string;
+  value: string;
 }
 
 export interface AppQuery_pipelinesOrErrors_Pipeline_solids_definition_configDefinition_type_RegularType {
@@ -131,7 +131,7 @@ export interface AppQuery_pipelinesOrErrors_Pipeline_solids_definition_configDef
 }
 
 export interface AppQuery_pipelinesOrErrors_Pipeline_solids_definition {
-  metadata: AppQuery_pipelinesOrErrors_Pipeline_solids_definition_metadata[] | null;
+  metadata: AppQuery_pipelinesOrErrors_Pipeline_solids_definition_metadata[];
   configDefinition: AppQuery_pipelinesOrErrors_Pipeline_solids_definition_configDefinition | null;
   name: string;
   description: string | null;
@@ -139,11 +139,19 @@ export interface AppQuery_pipelinesOrErrors_Pipeline_solids_definition {
 
 export interface AppQuery_pipelinesOrErrors_Pipeline_solids_inputs_definition_type {
   name: string;
+  description: string | null;
+}
+
+export interface AppQuery_pipelinesOrErrors_Pipeline_solids_inputs_definition_expectations {
+  name: string;
+  description: string | null;
 }
 
 export interface AppQuery_pipelinesOrErrors_Pipeline_solids_inputs_definition {
   name: string;
   type: AppQuery_pipelinesOrErrors_Pipeline_solids_inputs_definition_type;
+  description: string | null;
+  expectations: AppQuery_pipelinesOrErrors_Pipeline_solids_inputs_definition_expectations[];
 }
 
 export interface AppQuery_pipelinesOrErrors_Pipeline_solids_inputs_dependsOn_definition {
@@ -166,6 +174,7 @@ export interface AppQuery_pipelinesOrErrors_Pipeline_solids_inputs {
 
 export interface AppQuery_pipelinesOrErrors_Pipeline_solids_outputs_definition_type {
   name: string;
+  description: string | null;
 }
 
 export interface AppQuery_pipelinesOrErrors_Pipeline_solids_outputs_definition_expectations {
@@ -177,6 +186,7 @@ export interface AppQuery_pipelinesOrErrors_Pipeline_solids_outputs_definition {
   name: string;
   type: AppQuery_pipelinesOrErrors_Pipeline_solids_outputs_definition_type;
   expectations: AppQuery_pipelinesOrErrors_Pipeline_solids_outputs_definition_expectations[];
+  description: string | null;
 }
 
 export interface AppQuery_pipelinesOrErrors_Pipeline_solids_outputs {

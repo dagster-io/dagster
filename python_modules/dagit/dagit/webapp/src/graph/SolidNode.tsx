@@ -91,13 +91,11 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
     }
   };
 
-  handleTagClicked = (e: React.MouseEvent, tag: string) => {
+  handleKindClicked = (e: React.MouseEvent, kind: string) => {
     this.handleClick(e);
-    if (tag === "ipynb") {
-      window.requestAnimationFrame(() =>
-        document.dispatchEvent(new Event("show-python-notebook"))
-      );
-    }
+    window.requestAnimationFrame(() =>
+      document.dispatchEvent(new Event("show-kind-info"))
+    );
   };
 
   renderIO(
@@ -201,7 +199,7 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
     const { configDefinition, metadata } = solid.definition;
     const { x, y, width, height } = layout.solid;
 
-    const kind = (metadata || []).find(m => m.key === "kind");
+    const kind = metadata.find(m => m.key === "kind");
 
     return (
       <g
@@ -224,7 +222,7 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
               width={width + 5}
               minified={minified}
               tags={[kind.value]}
-              onTagClicked={this.handleTagClicked}
+              onTagClicked={this.handleKindClicked}
             />
           )}
       </g>

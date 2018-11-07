@@ -64,8 +64,8 @@ export interface SidebarSolidInfoFragment_inputs {
 }
 
 export interface SidebarSolidInfoFragment_definition_metadata {
-  key: string | null;
-  value: string | null;
+  key: string;
+  value: string;
 }
 
 export interface SidebarSolidInfoFragment_definition_configDefinition_type_RegularType {
@@ -123,7 +123,7 @@ export interface SidebarSolidInfoFragment_definition_configDefinition {
 
 export interface SidebarSolidInfoFragment_definition {
   description: string | null;
-  metadata: SidebarSolidInfoFragment_definition_metadata[] | null;
+  metadata: SidebarSolidInfoFragment_definition_metadata[];
   configDefinition: SidebarSolidInfoFragment_definition_configDefinition | null;
 }
 
