@@ -29,6 +29,7 @@ passes that value to the next solid, which concatenates it to itself, and prints
 
     def define_pipeline():
         return PipelineDefinition(
+            name='hello_dag_pipeline',
             solids=[solid_one, solid_two],
             dependencies={
                 'solid_two': {

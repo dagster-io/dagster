@@ -49,6 +49,7 @@ effects execution order. In this case will be build a diamond dag:
 
     def define_pipeline():
         return PipelineDefinition(
+            name='actual_dag',
             # The order of this solid list does not matter.
             # The dependencies argument determines execution order.
             # Solids will execute in topological order.
