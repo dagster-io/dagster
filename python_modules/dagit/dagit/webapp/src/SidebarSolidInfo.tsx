@@ -6,7 +6,6 @@ import { H6, Text, Code, UL } from "@blueprintjs/core";
 import { pluginForMetadata } from "./plugins";
 
 import SolidTypeSignature from "./SolidTypeSignature";
-import { SolidFragment } from "./types/SolidFragment";
 import TypeWithTooltip from "./TypeWithTooltip";
 import {
   SidebarSection,
@@ -20,7 +19,7 @@ import Config from "./Config";
 import { SidebarSolidInfoFragment } from "./types/SidebarSolidInfoFragment";
 
 interface ISidebarSolidInfoProps {
-  solid: SolidFragment;
+  solid: SidebarSolidInfoFragment;
 }
 
 export default class SidebarSolidInfo extends React.Component<
@@ -69,10 +68,6 @@ export default class SidebarSolidInfo extends React.Component<
             description
             type {
               ...TypeWithTooltipFragment
-            }
-            expectations {
-              name
-              description
             }
             expectations {
               name
@@ -144,7 +139,6 @@ export default class SidebarSolidInfo extends React.Component<
 
   public render() {
     const { solid } = this.props;
-
     const Plugin = pluginForMetadata(solid.definition.metadata);
 
     return (
@@ -178,67 +172,3 @@ export default class SidebarSolidInfo extends React.Component<
 const TypeWrapper = styled.div`
   margin-bottom: 10px;
 `;
-
-// TODO: Replace REACT_APP_GRAPHQL_URI with "DAGIT_SERVER_URI" without path
-const NOTEBOOK_RENDERER_URI = process.env.REACT_APP_GRAPHQL_URI
-  ? process.env.REACT_APP_GRAPHQL_URI.replace("/graphql", "/notebook")
-  : "/notebook";
-
-class PythonNotebookButton extends React.Component<{ path: string }> {
-  state = {
-    open: false
-  };
-
-  componentDidMount() {
-    document.addEventListener("show-python-notebook", this.onClick);
-  }
-
-  componentWillUnmount() {
-    document.removeEventListener("show-python-notebook", this.onClick);
-  }
-
-  onClick = () => {
-    this.setState({
-      open: true
-    });
-  };
-
-  render() {
-    return (
-      <div>
-        <Button icon="duplicate" onClick={this.onClick}>
-          View Notebook
-        </Button>
-        <Dialog
-          icon="info-sign"
-          onClose={() =>
-            this.setState({
-              open: false
-            })
-          }
-          style={{ width: "80vw", maxWidth: 900, height: 615 }}
-          title={this.props.path.split("/").pop()}
-          usePortal={true}
-          isOpen={this.state.open}
-        >
-          <div className={Classes.DIALOG_BODY} style={{ margin: 0 }}>
-            <iframe
-              src={`${NOTEBOOK_RENDERER_URI}${this.props.path}`}
-              style={{ border: 0, background: "white" }}
-              seamless={true}
-              width="100%"
-              height={500}
-            />
-          </div>
-          <div className={Classes.DIALOG_FOOTER}>
-            <div className={Classes.DIALOG_FOOTER_ACTIONS}>
-              <Button onClick={() => this.setState({ open: false })}>
-                Close
-              </Button>
-            </div>
-          </div>
-        </Dialog>
-      </div>
-    );
-  }
-}
