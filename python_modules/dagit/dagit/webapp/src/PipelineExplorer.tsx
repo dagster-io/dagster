@@ -41,21 +41,29 @@ export default class PipelineExplorer extends React.Component<
             ...ConfigFragment
           }
         }
+        solids {
+          ...SidebarTabbedContainerSolidFragment
+        }
         ...PipelineGraphFragment
         ...ConfigEditorFragment
+        ...SidebarTabbedContainerPipelineFragment
       }
 
       ${PipelineGraph.fragments.PipelineGraphFragment}
       ${Config.fragments.ConfigFragment}
       ${ConfigEditor.fragments.ConfigEditorFragment}
+      ${SidebarTabbedContainer.fragments.SidebarTabbedContainerPipelineFragment}
+      ${SidebarTabbedContainer.fragments.SidebarTabbedContainerSolidFragment}
     `,
     PipelineExplorerSolidFragment: gql`
       fragment PipelineExplorerSolidFragment on Solid {
         name
         ...PipelineGraphSolidFragment
+        ...SidebarTabbedContainerSolidFragment
       }
 
       ${PipelineGraph.fragments.PipelineGraphSolidFragment}
+      ${SidebarTabbedContainer.fragments.SidebarTabbedContainerSolidFragment}
     `
   };
 

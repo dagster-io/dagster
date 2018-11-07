@@ -72,15 +72,71 @@ export interface PipelinePageFragment_Pipeline_contexts {
   config: PipelinePageFragment_Pipeline_contexts_config | null;
 }
 
+export interface PipelinePageFragment_Pipeline_solids_outputs_definition_type {
+  name: string;
+  description: string | null;
+}
+
+export interface PipelinePageFragment_Pipeline_solids_outputs_definition_expectations {
+  name: string;
+  description: string | null;
+}
+
+export interface PipelinePageFragment_Pipeline_solids_outputs_definition {
+  name: string;
+  type: PipelinePageFragment_Pipeline_solids_outputs_definition_type;
+  description: string | null;
+  expectations: PipelinePageFragment_Pipeline_solids_outputs_definition_expectations[];
+}
+
+export interface PipelinePageFragment_Pipeline_solids_outputs {
+  definition: PipelinePageFragment_Pipeline_solids_outputs_definition;
+}
+
+export interface PipelinePageFragment_Pipeline_solids_inputs_definition_type {
+  name: string;
+  description: string | null;
+}
+
+export interface PipelinePageFragment_Pipeline_solids_inputs_definition_expectations {
+  name: string;
+  description: string | null;
+}
+
+export interface PipelinePageFragment_Pipeline_solids_inputs_definition {
+  name: string;
+  type: PipelinePageFragment_Pipeline_solids_inputs_definition_type;
+  description: string | null;
+  expectations: PipelinePageFragment_Pipeline_solids_inputs_definition_expectations[];
+}
+
+export interface PipelinePageFragment_Pipeline_solids_inputs_dependsOn_definition {
+  name: string;
+}
+
+export interface PipelinePageFragment_Pipeline_solids_inputs_dependsOn_solid {
+  name: string;
+}
+
+export interface PipelinePageFragment_Pipeline_solids_inputs_dependsOn {
+  definition: PipelinePageFragment_Pipeline_solids_inputs_dependsOn_definition;
+  solid: PipelinePageFragment_Pipeline_solids_inputs_dependsOn_solid;
+}
+
+export interface PipelinePageFragment_Pipeline_solids_inputs {
+  definition: PipelinePageFragment_Pipeline_solids_inputs_definition;
+  dependsOn: PipelinePageFragment_Pipeline_solids_inputs_dependsOn | null;
+}
+
 export interface PipelinePageFragment_Pipeline_solids_definition_metadata {
   key: string | null;
   value: string | null;
 }
 
 export interface PipelinePageFragment_Pipeline_solids_definition_configDefinition_type_RegularType {
-  description: string | null;
   __typename: "RegularType";
   name: string;
+  description: string | null;
 }
 
 export interface PipelinePageFragment_Pipeline_solids_definition_configDefinition_type_CompositeType_fields_type_RegularType {
@@ -118,9 +174,9 @@ export interface PipelinePageFragment_Pipeline_solids_definition_configDefinitio
 }
 
 export interface PipelinePageFragment_Pipeline_solids_definition_configDefinition_type_CompositeType {
-  description: string | null;
   __typename: "CompositeType";
   name: string;
+  description: string | null;
   fields: PipelinePageFragment_Pipeline_solids_definition_configDefinition_type_CompositeType_fields[];
 }
 
@@ -131,63 +187,17 @@ export interface PipelinePageFragment_Pipeline_solids_definition_configDefinitio
 }
 
 export interface PipelinePageFragment_Pipeline_solids_definition {
+  description: string | null;
   metadata: PipelinePageFragment_Pipeline_solids_definition_metadata[] | null;
   configDefinition: PipelinePageFragment_Pipeline_solids_definition_configDefinition | null;
   name: string;
-  description: string | null;
-}
-
-export interface PipelinePageFragment_Pipeline_solids_inputs_definition_type {
-  name: string;
-}
-
-export interface PipelinePageFragment_Pipeline_solids_inputs_definition {
-  name: string;
-  type: PipelinePageFragment_Pipeline_solids_inputs_definition_type;
-}
-
-export interface PipelinePageFragment_Pipeline_solids_inputs_dependsOn_definition {
-  name: string;
-}
-
-export interface PipelinePageFragment_Pipeline_solids_inputs_dependsOn_solid {
-  name: string;
-}
-
-export interface PipelinePageFragment_Pipeline_solids_inputs_dependsOn {
-  definition: PipelinePageFragment_Pipeline_solids_inputs_dependsOn_definition;
-  solid: PipelinePageFragment_Pipeline_solids_inputs_dependsOn_solid;
-}
-
-export interface PipelinePageFragment_Pipeline_solids_inputs {
-  definition: PipelinePageFragment_Pipeline_solids_inputs_definition;
-  dependsOn: PipelinePageFragment_Pipeline_solids_inputs_dependsOn | null;
-}
-
-export interface PipelinePageFragment_Pipeline_solids_outputs_definition_type {
-  name: string;
-}
-
-export interface PipelinePageFragment_Pipeline_solids_outputs_definition_expectations {
-  name: string;
-  description: string | null;
-}
-
-export interface PipelinePageFragment_Pipeline_solids_outputs_definition {
-  name: string;
-  type: PipelinePageFragment_Pipeline_solids_outputs_definition_type;
-  expectations: PipelinePageFragment_Pipeline_solids_outputs_definition_expectations[];
-}
-
-export interface PipelinePageFragment_Pipeline_solids_outputs {
-  definition: PipelinePageFragment_Pipeline_solids_outputs_definition;
 }
 
 export interface PipelinePageFragment_Pipeline_solids {
+  outputs: PipelinePageFragment_Pipeline_solids_outputs[];
+  inputs: PipelinePageFragment_Pipeline_solids_inputs[];
   name: string;
   definition: PipelinePageFragment_Pipeline_solids_definition;
-  inputs: PipelinePageFragment_Pipeline_solids_inputs[];
-  outputs: PipelinePageFragment_Pipeline_solids_outputs[];
 }
 
 export interface PipelinePageFragment_Pipeline {

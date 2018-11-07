@@ -73,10 +73,6 @@ export default class SidebarSolidInfo extends React.Component<
               name
               description
             }
-            expectations {
-              name
-              description
-            }
           }
         }
       }
