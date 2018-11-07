@@ -1,4 +1,4 @@
-Priniciples
+Principles
 -----------
 
 As noted above Dagster has a point of view and values regarding how data pipelines should be built and structured. We list them in no particular order:
