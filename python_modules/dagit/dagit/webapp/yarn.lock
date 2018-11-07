@@ -320,10 +320,6 @@
     "@types/glob" "*"
     "@types/node" "*"
 
-"@types/webpack-env@^1.13.6":
-  version "1.13.6"
-  resolved "http://registry.npmjs.org/@types/webpack-env/-/webpack-env-1.13.6.tgz#128d1685a7c34d31ed17010fc87d6a12c1de6976"
-
 "@types/zen-observable@^0.8.0":
   version "0.8.0"
   resolved "https://registry.yarnpkg.com/@types/zen-observable/-/zen-observable-0.8.0.tgz#8b63ab7f1aa5321248aad5ac890a485656dcea4d"
