@@ -73,8 +73,8 @@ export interface AppQuery_pipelinesOrErrors_Pipeline_contexts {
 }
 
 export interface AppQuery_pipelinesOrErrors_Pipeline_solids_definition_metadata {
-  key: string | null;
-  value: string | null;
+  key: string;
+  value: string;
 }
 
 export interface AppQuery_pipelinesOrErrors_Pipeline_solids_definition_configDefinition_type_RegularType {
@@ -131,7 +131,7 @@ export interface AppQuery_pipelinesOrErrors_Pipeline_solids_definition_configDef
 }
 
 export interface AppQuery_pipelinesOrErrors_Pipeline_solids_definition {
-  metadata: AppQuery_pipelinesOrErrors_Pipeline_solids_definition_metadata[] | null;
+  metadata: AppQuery_pipelinesOrErrors_Pipeline_solids_definition_metadata[];
   configDefinition: AppQuery_pipelinesOrErrors_Pipeline_solids_definition_configDefinition | null;
   name: string;
   description: string | null;

@@ -8,8 +8,8 @@
 // ====================================================
 
 export interface PipelineExplorerSolidFragment_definition_metadata {
-  key: string | null;
-  value: string | null;
+  key: string;
+  value: string;
 }
 
 export interface PipelineExplorerSolidFragment_definition_configDefinition_type {
@@ -21,7 +21,7 @@ export interface PipelineExplorerSolidFragment_definition_configDefinition {
 }
 
 export interface PipelineExplorerSolidFragment_definition {
-  metadata: PipelineExplorerSolidFragment_definition_metadata[] | null;
+  metadata: PipelineExplorerSolidFragment_definition_metadata[];
   configDefinition: PipelineExplorerSolidFragment_definition_configDefinition | null;
 }
 

@@ -73,8 +73,8 @@ export interface PipelinePageFragment_Pipeline_contexts {
 }
 
 export interface PipelinePageFragment_Pipeline_solids_definition_metadata {
-  key: string | null;
-  value: string | null;
+  key: string;
+  value: string;
 }
 
 export interface PipelinePageFragment_Pipeline_solids_definition_configDefinition_type_RegularType {
@@ -131,7 +131,7 @@ export interface PipelinePageFragment_Pipeline_solids_definition_configDefinitio
 }
 
 export interface PipelinePageFragment_Pipeline_solids_definition {
-  metadata: PipelinePageFragment_Pipeline_solids_definition_metadata[] | null;
+  metadata: PipelinePageFragment_Pipeline_solids_definition_metadata[];
   configDefinition: PipelinePageFragment_Pipeline_solids_definition_configDefinition | null;
   name: string;
   description: string | null;

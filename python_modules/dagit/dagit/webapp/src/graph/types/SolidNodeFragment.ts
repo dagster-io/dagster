@@ -8,8 +8,8 @@
 // ====================================================
 
 export interface SolidNodeFragment_definition_metadata {
-  key: string | null;
-  value: string | null;
+  key: string;
+  value: string;
 }
 
 export interface SolidNodeFragment_definition_configDefinition_type {
@@ -21,7 +21,7 @@ export interface SolidNodeFragment_definition_configDefinition {
 }
 
 export interface SolidNodeFragment_definition {
-  metadata: SolidNodeFragment_definition_metadata[] | null;
+  metadata: SolidNodeFragment_definition_metadata[];
   configDefinition: SolidNodeFragment_definition_configDefinition | null;
 }
 
