@@ -5,6 +5,7 @@ import { Colors } from "@blueprintjs/core";
 import { LinkVertical as Link } from "@vx/shape";
 import PanAndZoom from "./PanAndZoom";
 import SolidNode from "./SolidNode";
+import PipelineTypeOverlay from "./PipelineTypeOverlay";
 import {
   IPoint,
   IFullPipelineLayout,
@@ -20,6 +21,7 @@ interface IPipelineGraphProps {
   highlightedSolids: Array<PipelineGraphSolidFragment>;
   onClickSolid?: (solidName: string) => void;
   onDoubleClickSolid?: (solidName: string) => void;
+  onPreviewType?: (target: SVGElement, type: string | null) => void;
   onClickBackground?: () => void;
 }
 
@@ -36,6 +38,7 @@ class PipelineGraphContents extends React.PureComponent<
       layout,
       minified,
       pipeline,
+      onPreviewType,
       onClickSolid,
       onDoubleClickSolid,
       highlightedSolids,
@@ -66,6 +69,7 @@ class PipelineGraphContents extends React.PureComponent<
             minified={minified}
             onClick={onClickSolid}
             onDoubleClick={onDoubleClickSolid}
+            onPreviewType={onPreviewType}
             layout={layout.solids[solid.name]}
             selected={selectedSolid === solid}
             dim={
@@ -79,9 +83,13 @@ class PipelineGraphContents extends React.PureComponent<
   }
 }
 
+interface IPipelineGraphState {
+  overlay: React.ReactChild | null;
+}
+
 export default class PipelineGraph extends React.Component<
   IPipelineGraphProps,
-  {}
+  IPipelineGraphState
 > {
   static fragments = {
     PipelineGraphFragment: gql`
@@ -105,6 +113,9 @@ export default class PipelineGraph extends React.Component<
   };
 
   viewportEl: React.RefObject<PanAndZoom> = React.createRef();
+  hideOverlayTimer: any = null;
+
+  state: IPipelineGraphState = { overlay: null };
 
   focusOnSolid = (solidName: string) => {
     const solidLayout = this.props.layout.solids[solidName];
@@ -149,7 +160,10 @@ export default class PipelineGraph extends React.Component<
     };
 
     let closest = Object.keys(layout.solids)
-      .map(name => ({ name, score: score(layout.solids[name]) }))
+      .map(name => ({
+        name,
+        score: score(layout.solids[name])
+      }))
       .filter(e => e.name !== selectedSolid.name && !Number.isNaN(e.score))
       .sort((a, b) => b.score - a.score)
       .pop();
@@ -171,6 +185,32 @@ export default class PipelineGraph extends React.Component<
     }
   };
 
+  onPreviewType = (x: number, y: number, typeName: string | null) => {
+    if (!typeName) {
+      this.onClearPreviewSoon();
+      return;
+    }
+
+    clearTimeout(this.hideOverlayTimer);
+    this.setState({
+      overlay: (
+        <PipelineTypeOverlay
+          typeName={typeName}
+          pipelineName={this.props.pipeline.name}
+          onMouseOver={() => clearTimeout(this.hideOverlayTimer)}
+          onMouseOut={() => this.onClearPreviewSoon()}
+          root={{ x, y }}
+        />
+      )
+    });
+  };
+
+  onClearPreviewSoon = () => {
+    this.hideOverlayTimer = setTimeout(() => {
+      this.setState({ overlay: null });
+    }, 150);
+  };
+
   unfocus = () => {
     this.viewportEl.current!.autocenter(true);
   };
@@ -186,20 +226,44 @@ export default class PipelineGraph extends React.Component<
         graphHeight={layout.height}
         onKeyDown={this.onKeyDown}
       >
-        {({ scale }: any) => (
-          <SVGContainer
-            width={layout.width}
-            height={layout.height}
-            onClick={onClickBackground}
-            onDoubleClick={this.unfocus}
-          >
-            <PipelineGraphContents
-              layout={layout}
-              minified={scale < 0.99}
-              onDoubleClickSolid={this.focusOnSolid}
-              {...this.props}
-            />
-          </SVGContainer>
+        {({ scale, x, y }: any) => (
+          <>
+            <div
+              style={{
+                transformOrigin: `top left`,
+                transform: `matrix(${scale}, 0, 0, ${scale}, ${x}, ${y})`
+              }}
+            >
+              <SVGContainer
+                width={layout.width}
+                height={layout.height}
+                onClick={onClickBackground}
+                onDoubleClick={this.unfocus}
+              >
+                <PipelineGraphContents
+                  layout={layout}
+                  minified={scale < 0.99}
+                  onDoubleClickSolid={this.focusOnSolid}
+                  onPreviewType={(el, type) => {
+                    const r = el.getBoundingClientRect();
+                    this.onPreviewType(
+                      r.left + r.width / 2 - x / scale,
+                      r.top - r.height - 10 - y / scale,
+                      type
+                    );
+                  }}
+                  {...this.props}
+                />
+              </SVGContainer>
+            </div>
+            <OverlayContainer
+              style={{
+                transform: `matrix(1, 0, 0, 1, ${x / scale}, ${y / scale})`
+              }}
+            >
+              {this.state.overlay}
+            </OverlayContainer>
+          </>
         )}
       </PanAndZoom>
     );
@@ -208,6 +272,13 @@ export default class PipelineGraph extends React.Component<
 
 const SVGContainer = styled.svg`
   border-radius: 0;
+`;
+
+const OverlayContainer = styled.div`
+  top: 0;
+  left: 0;
+  position: absolute;
+  transform-origin: top left;
 `;
 
 const StyledLink = styled(Link)`

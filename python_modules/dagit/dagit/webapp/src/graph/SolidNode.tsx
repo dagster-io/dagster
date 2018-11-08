@@ -25,6 +25,7 @@ interface ISolidNodeProps {
   dim: boolean;
   onClick?: (solid: string) => void;
   onDoubleClick?: (solid: string) => void;
+  onPreviewType?: (el: SVGElement, type: string | null) => void;
 }
 
 export default class SolidNode extends React.Component<ISolidNodeProps> {
@@ -103,10 +104,12 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
     items: Array<SolidNodeFragment_inputs | SolidNodeFragment_outputs>,
     layout: { [inputName: string]: { layout: ILayout } }
   ) {
+    const { minified, onPreviewType } = this.props;
+
     return Object.keys(layout).map((key, i) => {
       const { x, y, width, height } = layout[key].layout;
       const input = items.find(o => o.definition.name === key);
-      const showText = width == 0 && !this.props.minified;
+      const showText = width == 0 && !minified;
 
       return (
         <g key={i}>
@@ -144,6 +147,13 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
                 height={27}
                 spacing={0}
                 padding={4}
+                onMouseOver={e =>
+                  onPreviewType &&
+                  onPreviewType(e.currentTarget, input!.definition.type.name)
+                }
+                onMouseOut={e =>
+                  onPreviewType && onPreviewType(e.currentTarget, null)
+                }
                 fill="#d6ecff"
               >
                 <SVGMonospaceText

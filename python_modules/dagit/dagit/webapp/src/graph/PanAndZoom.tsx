@@ -184,14 +184,7 @@ export default class PanAndZoom extends React.Component<
         onKeyDown={onKeyDown}
         tabIndex={-1}
       >
-        <div
-          style={{
-            transformOrigin: `top left`,
-            transform: `matrix(${scale}, 0, 0, ${scale}, ${x}, ${y})`
-          }}
-        >
-          {children(this.state)}
-        </div>
+        {children(this.state)}
       </div>
     );
   }
