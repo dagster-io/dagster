@@ -6,7 +6,9 @@ from dagster import (
     check,
     config,
     execute_pipeline,
+    execute_pipeline_iterator,
     SolidInstance,
+    solid,
 )
 
 from dagster.core.definitions import (
@@ -340,3 +342,23 @@ def test_empty_pipeline_execution():
     result = execute_pipeline(PipelineDefinition(solids=[]))
 
     assert result.success
+
+
+def test_pipeline_name_threaded_through_context():
+    name = 'foobar'
+
+    @solid()
+    def assert_name_transform(info):
+        assert info.context._context_stack['pipeline']
+        assert info.context._context_stack['pipeline'] == name
+
+    result = execute_pipeline(
+        PipelineDefinition(name="foobar", solids=[assert_name_transform]))
+
+    assert result.success
+
+    for result in execute_pipeline_iterator(
+            PipelineDefinition(name="foobar", solids=[assert_name_transform]),
+            {},
+        ):
+        assert result.success
