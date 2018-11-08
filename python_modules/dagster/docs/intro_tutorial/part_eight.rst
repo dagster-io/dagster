@@ -66,7 +66,8 @@ And then ran it:
 
     $ dagster pipeline execute part_eight -e env.yml
     ...
-    dagster.core.errors.DagsterTypeError: Error evaluating config for double_the_word_with_typed_config: Expected valid value for String but got 1
+    dagster.core.errors.DagsterTypeError: Invalid config value on type PartEight.Environment: Expected valid value for String but got 1.
+    ...
 
 Or if we passed the wrong field:
 
@@ -87,7 +88,9 @@ And then ran it:
 .. code-block:: sh
 
     $ dagster pipeline execute part_eight -e env.yml
-    dagster.core.errors.DagsterTypeError: Error evaluating config for double_the_word_with_typed_config: Field wrong_word not found. Defined fields: {'word'}
+    ...
+    dagster.core.errors.DagsterTypeError: Invalid config value on type PartEight.Environment: Field "wrong_word" is not defined on "double_the_word_with_typed_config". Defined {'word'}.
+    ...
 
 The type system is also used to evaluate the runtime values that flow between solids,
 not just config. Types are attached, optionally, to inputs and outputs. If a type is not
@@ -120,7 +123,7 @@ So imagine we made a coding error (mistyped the output) such as:
         ),
         outputs=[OutputDefinition(types.Int)],
     )
-    def typed_double_word(info):
+    def typed_double_word_mismatch(info):
         return info.config['word'] * 2
 
 When we run it, it errors:
@@ -128,5 +131,5 @@ When we run it, it errors:
 .. code-block:: sh
 
     $ dagster pipeline execute part_eight -e env.yml
-    dagster.core.errors.DagsterInvariantViolationError: Solid typed_double_word_mismatch output name result
-    output quuxquux type failure: Expected valid value for Int but got 'quuxquux'
+    dagster.core.errors.DagsterInvariantViolationError: Solid typed_double_word_mismatch output name result output quuxquux
+                type failure: Expected valid value for Int but got 'quuxquux'
