@@ -290,6 +290,18 @@ class Field:
 
         return self._default_value
 
+    @property
+    def default_value_as_str(self):
+        check.invariant(
+            self.default_provided,
+            'Asking for default value when none was provided',
+        )
+
+        if callable(self._default_value):
+            return repr(self._default_value)
+
+        return str(self._default_value)
+
 
 class FieldDefinitionDictionary(dict):
     def __init__(self, ddict):

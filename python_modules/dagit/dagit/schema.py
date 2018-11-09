@@ -465,7 +465,7 @@ class TypeField(graphene.ObjectType):
         super(TypeField, self).__init__(
             name=name,
             description=field.description,
-            default_value=str(field.default_value) if field.default_provided else None,
+            default_value=field.default_value_as_str if field.default_provided else None,
             is_optional=field.is_optional
         )
         self._field = field

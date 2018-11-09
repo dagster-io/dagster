@@ -2,13 +2,9 @@ import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
 import { History } from "history";
-import { Switch, Route, match } from "react-router";
-import { parse as parseQueryString } from "query-string";
+import { match } from "react-router";
 import { Colors } from "@blueprintjs/core";
-import ConfigCodeEditor from "./ConfigCodeEditor";
-import ConfigExplorer from "./ConfigExplorer";
-import TypeExplorerContainer from "./TypeExplorerContainer";
-import TypeListContainer from "./TypeListContainer";
+import ConfigCodeEditorContainer from "./ConfigCodeEditorContainer";
 import { ConfigEditorFragment } from "./types/ConfigEditorFragment";
 
 interface IConfigEditorProps {
@@ -25,10 +21,11 @@ export default class ConfigEditor extends React.Component<
     ConfigEditorFragment: gql`
       fragment ConfigEditorFragment on Pipeline {
         name
-        ...ConfigExplorerFragment
-      }
 
-      ${ConfigExplorer.fragments.ConfigExplorerFragment}
+        environmentType {
+          name
+        }
+      }
     `
   };
 
@@ -36,38 +33,11 @@ export default class ConfigEditor extends React.Component<
     return (
       <Split>
         <ConfigCodeEditorWrapper>
-          <ConfigCodeEditor />
-        </ConfigCodeEditorWrapper>
-        <Border />
-        <ConfigExplorerWrapper>
-          <ConfigExplorer pipeline={this.props.pipeline} />
-        </ConfigExplorerWrapper>
-        <Border />
-        <TypeExplorerWrapper>
-          <Route
-            children={({ location }) => {
-              if (location.search) {
-                const search = parseQueryString(location.search);
-                if (search.typeExplorer) {
-                  return (
-                    <TypeExplorerContainer
-                      pipelineName={this.props.pipeline.name}
-                      typeName={search.typeExplorer}
-                    />
-                  );
-                } else {
-                  return (
-                    <TypeListContainer
-                      pipelineName={this.props.pipeline.name}
-                    />
-                  );
-                }
-              }
-
-              return null;
-            }}
+          <ConfigCodeEditorContainer
+            pipelineName={this.props.pipeline.name}
+            environmentTypeName={this.props.pipeline.environmentType.name}
           />
-        </TypeExplorerWrapper>
+        </ConfigCodeEditorWrapper>
       </Split>
     );
   }
@@ -87,7 +57,7 @@ const Border = styled.div`
 `;
 
 const ConfigCodeEditorWrapper = styled.div`
-  flex: 0 0 auto;
+  flex: 1 1;
   height: 100%;
 `;
 
