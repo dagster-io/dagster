@@ -39,8 +39,8 @@ we have provided the name argument to an :py:class:`OutputDefinition`. (It
 defaults to ``'result'``, as it does in a :py:class:`DependencyDefinition`)
 These names must be unique and results returns by a solid transform function
 must be named one of these inputs. (In all previous examples the value returned
-by the transform had been wrapped in a :py:class:`Result` object with the name
-``'result'``.)
+by the transform had been implicitly wrapped in a :py:class:`Result` object
+with the name ``'result'``.)
 
 So from ``return_dict_results`` we used :py:class:`MultipleResults` to return
 all outputs from this transform.
@@ -72,26 +72,20 @@ Next let's examine the :py:class:`PipelineDefinition`:
 Just like this tutorial is the first example of an :py:class:`OutputDefinition` with
 a name, this is also the first time that a :py:class:`DependencyDefinition` has
 specified name, because dependencies point to a particular **output** of a solid,
-rather than to the solid itself. In previous examples the name of output has been
+rather than to the solid itself. In previous examples the name of output has
 defaulted to ``'result'``.
 
 With this we can run the pipeline:
-
-.. code-block:: python
-
-    execute_pipeline(define_part_eleven_step_one())
-
-and run it: foobar
 
 .. code-block:: sh
 
     python step_eleven.py
     ... log spew
-    2018-09-16 17:08:09 - dagster - INFO - orig_message="Solid return_dict_results emitted output \"out_one\" value 23" log_message_id="76fe7e9b-f11c-43a3-ac17-8bc8616bd0bd" pipeline="part_eleven_step_one" solid="return_dict_results"
-    2018-09-16 17:08:09 - dagster - INFO - orig_message="Solid return_dict_results emitted output \"out_two\" value 45" log_message_id="ef11a36a-da7b-4df1-9eeb-0f92c04d392a" pipeline="part_eleven_step_one" solid="return_dict_results"
+    2018-11-08 10:52:06 - dagster - INFO - orig_message="Solid return_dict_results emittedoutput \"out_one\" value 23" log_message_id="7d62dcbf-583d-4640-941f-48cda39e79a1" run_id="9de556c1-7f4d-4702-95af-6d6dbe6b296b" pipeline="part_eleven_step_one" solid="return_dict_results" solid_definition="return_dict_results"
+    2018-11-08 10:52:06 - dagster - INFO - orig_message="Solid return_dict_results emittedoutput \"out_two\" value 45" log_message_id="cc2ae784-6861-49ef-a463-9cbe4fa0f5e6" run_id="9de556c1-7f4d-4702-95af-6d6dbe6b296b" pipeline="part_eleven_step_one" solid="return_dict_results" solid_definition="return_dict_results"
     ... more log spew
 
-The :py:class:`MultipleResults` class is not the only way to return multiple to
+The :py:class:`MultipleResults` class is not the only way to return multiple
 results from a solid transform function. You can also yield multiple instances
 of the `Result` object. (Note: this is actually the core specification
 of the transform function: all other forms are implemented in terms of
@@ -130,8 +124,8 @@ the iterator form.)
 
 .. code-block:: sh
     $ python part_eleven.py
-    2018-09-16 17:53:15 - dagster - INFO - orig_message="Solid yield_outputs emitted output \"out_one\" value 23" log_message_id="7313cb9c-85dc-4467-9f48-a724a75db63f" pipeline="part_eleven_step_two" solid="yield_outputs"
-    2018-09-16 17:53:15 - dagster - INFO - orig_message="Solid yield_outputs emitted output \"out_two\" value 45" log_message_id="fed2866f-5f29-4bbd-b124-90bd9eda8690" pipeline="part_eleven_step_two" solid="yield_outputs"
+    2018-11-08 10:54:15 - dagster - INFO - orig_message="Solid yield_outputs emitted output \"out_one\" value 23" log_message_id="5e1cc181-b74d-47f8-8d32-bc262d555b73" run_id="4bee891c-e04f-4221-be77-17576abb9da2" pipeline="part_eleven_step_two" solid="yield_outputs" solid_definition="yield_outputs"
+    2018-11-08 10:54:15 - dagster - INFO - orig_message="Solid yield_outputs emitted output \"out_two\" value 45" log_message_id="8da32946-596d-4783-b7c5-4edbb3a1dbc2" run_id="4bee891c-e04f-4221-be77-17576abb9da2" pipeline="part_eleven_step_two" solid="yield_outputs" solid_definition="yield_outputs"
 
 Conditional Outputs
 ^^^^^^^^^^^^^^^^^^^

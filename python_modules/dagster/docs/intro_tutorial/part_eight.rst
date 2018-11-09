@@ -9,7 +9,7 @@ There actually *have* been types during all previous parts of this tutorial. If 
 use does not specify types for inputs, outputs, or config in dagster, they default
 to the ``Any`` type, which can accept any and all values.
 
-We are going to incrementally add typing to the example in part eight.
+We are going to incrementally add typing to the example in part seven.
 
 Before we had this:
 
@@ -37,26 +37,28 @@ The previous env.yml file works as before:
 .. code-block:: yaml
 
     context:
+      default:
         config:
-            log_level: DEBUG
+          log_level: DEBUG
 
     solids:
-        double_the_word_with_typed_config:
-            config:
-                word: quux
+      double_the_word_with_typed_config:
+        config:
+          word: quux
 
 Now let's imagine we made a mistake and passed an ``int`` to word configuration:
 
 .. code-block:: yaml
 
     context:
+      default:
         config:
-            log_level: DEBUG
+          log_level: DEBUG
 
     solids:
-        double_the_word_with_typed_config:
-            config:
-                word: 1
+      double_the_word_with_typed_config:
+        config:
+          word: 1
 
 And then ran it:
 
@@ -64,27 +66,31 @@ And then ran it:
 
     $ dagster pipeline execute part_eight -e env.yml
     ...
-    dagster.core.errors.DagsterTypeError: Error evaluating config for double_the_word_with_typed_config: Expected valid value for String but got 1
+    dagster.core.errors.DagsterTypeError: Invalid config value on type PartEight.Environment: Expected valid value for String but got 1.
+    ...
 
 Or if we passed the wrong field:
 
 .. code-block:: yaml
 
     context:
+      default:
         config:
-            log_level: DEBUG
+          log_level: DEBUG
 
     solids:
-        double_the_word_with_typed_config:
-            config:
-                wrong_word: quux
+      double_the_word_with_typed_config:
+        config:
+          wrong_word: quux
 
 And then ran it:
 
 .. code-block:: sh
 
     $ dagster pipeline execute part_eight -e env.yml
-    dagster.core.errors.DagsterTypeError: Error evaluating config for double_the_word_with_typed_config: Field wrong_word not found. Defined fields: {'word'}
+    ...
+    dagster.core.errors.DagsterTypeError: Invalid config value on type PartEight.Environment: Field "wrong_word" is not defined on "double_the_word_with_typed_config". Defined {'word'}.
+    ...
 
 The type system is also used to evaluate the runtime values that flow between solids,
 not just config. Types are attached, optionally, to inputs and outputs. If a type is not
@@ -117,7 +123,7 @@ So imagine we made a coding error (mistyped the output) such as:
         ),
         outputs=[OutputDefinition(types.Int)],
     )
-    def typed_double_word(info):
+    def typed_double_word_mismatch(info):
         return info.config['word'] * 2
 
 When we run it, it errors:
@@ -125,7 +131,5 @@ When we run it, it errors:
 .. code-block:: sh
 
     $ dagster pipeline execute part_eight -e env.yml
-    dagster.core.errors.DagsterInvariantViolationError: Solid typed_double_word_mismatch output name result
-    output quuxquux type failure: Expected valid value for Int but got 'quuxquux'
-
-
+    dagster.core.errors.DagsterInvariantViolationError: Solid typed_double_word_mismatch output name result output quuxquux
+                type failure: Expected valid value for Int but got 'quuxquux'

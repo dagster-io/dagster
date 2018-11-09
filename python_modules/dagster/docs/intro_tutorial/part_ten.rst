@@ -5,7 +5,7 @@ Dagster has a first-class concept to capture data quality tests. We call these
 data quality tests expectations.
 
 Data pipelines have the property that they typically do not control
-what data they injest. Unlike a traditional application where you can
+what data they ingest. Unlike a traditional application where you can
 prevent users from entering malformed data, data pipelines do not have
 that option. When unexpected data enters a pipeline and causes a software
 error, typically the only recourse is to update your code. 
@@ -24,7 +24,7 @@ Let us return to a slightly simplified version of the data pipeline from part ni
         config_def=ConfigDefinition(types.Int),
         outputs=[OutputDefinition(types.Int)],
     )
-    def injest_a(info):
+    def ingest_a(info):
         return info.config
 
 
@@ -32,7 +32,7 @@ Let us return to a slightly simplified version of the data pipeline from part ni
         config_def=ConfigDefinition(types.Int),
         outputs=[OutputDefinition(types.Int)],
     )
-    def injest_b(info):
+    def ingest_b(info):
         return info.config
 
     @solid(
@@ -47,11 +47,11 @@ Let us return to a slightly simplified version of the data pipeline from part ni
     def define_part_ten_step_one():
         return PipelineDefinition(
             name='part_ten_step_one',
-            solids=[injest_a, injest_b, add_ints],
+            solids=[ingest_a, ingest_b, add_ints],
             dependencies={
                 'add_ints': {
-                    'num_one': DependencyDefinition('injest_a'),
-                    'num_two': DependencyDefinition('injest_b'),
+                    'num_one': DependencyDefinition('ingest_a'),
+                    'num_two': DependencyDefinition('ingest_b'),
                 },
             },
         )
@@ -77,11 +77,11 @@ in clear terms. We'll add an expectation in order to do this.
             ),
         ],
     )
-    def injest_a(info):
+    def ingest_a(info):
         return info.config
 
 
-You'll notice that we added an ExpectationDefinition to the output of injest_a. Expectations
+You'll notice that we added an ExpectationDefinition to the output of ingest_a. Expectations
 can be attached to inputs or outputs and operate on the value of that input or output.
 
 Expectations perform arbitrary computation on that value and then return an ExpectationResult.
@@ -103,10 +103,10 @@ was processed:
                 }
             },
             'solids': {
-                'injest_a': {
+                'ingest_a': {
                     'config': 2,
                 },
-                'injest_b': {
+                'ingest_b': {
                     'config': 3,
                 },
             }
@@ -119,7 +119,7 @@ And run it...
 
     $ python part_ten.py
     ... log spew
-    2018-09-14 13:13:13 - dagster - DEBUG - orig_message="Expectation injest_a.result.expectation.check_positive succeeded on 2." log_message_id="938ab7fa-c955-408a-9f44-66b0b6ecdcad" pipeline="part_ten_step_one" solid="injest_a" output="result" expectation="check_positive" 
+    2018-09-14 13:13:13 - dagster - DEBUG - orig_message="Expectation ingest_a.result.expectation.check_positive succeeded on 2." log_message_id="938ab7fa-c955-408a-9f44-66b0b6ecdcad" pipeline="part_ten_step_one" solid="ingest_a" output="result" expectation="check_positive" 
     ... more log spew 
 
 Now let's make this fail. Currently the default behavior is to throw an error and halt execution
@@ -138,10 +138,10 @@ when an expectation fails. So:
                 }
             },
             'solids': {
-                'injest_a': {
-                    'config': -2,
+                'ingest_a': {
+                    'config': -5,
                 },
-                'injest_b': {
+                'ingest_b': {
                     'config': 3,
                 },
             }
@@ -154,7 +154,7 @@ And then:
 
     $ python part_ten.py
     ... bunch of log spew
-    dagster.core.errors.DagsterExpectationFailedError: DagsterExpectationFailedError(solid=injest_a, output=result, expectation=check_positivevalue=-2)
+    dagster.core.errors.DagsterExpectationFailedError: DagsterExpectationFailedError(solid=add_ints, output=result, expectation=check_positivevalue=-2)
 
 We can also tell execute_pipeline to not throw on error:
 
@@ -171,10 +171,10 @@ We can also tell execute_pipeline to not throw on error:
                 }
             },
             'solids': {
-                'injest_a': {
-                    'config': -2,
+                'ingest_a': {
+                    'config': -5,
                 },
-                'injest_b': {
+                'ingest_b': {
                     'config': 3,
                 },
             }
@@ -186,7 +186,7 @@ We can also tell execute_pipeline to not throw on error:
 
     $ python part_ten.py
     ... log spew
-    2018-09-14 13:31:09 - dagster - DEBUG - orig_message="Expectation injest_a.result.expectation.check_positive failed on -2." log_message_id="24bbaa2a-34a2-4817-b364-199a6d9f6066" pipeline="part_ten_step_one" solid="injest_a" output="result" expectation="check_positive"
+    2018-11-08 10:38:28 - dagster - DEBUG - orig_message="Expectation add_ints.result.expectation.check_positive failed on -2." log_message_id="9ca21f5c-0578-4b3f-80c2-d129552525a4" run_id="c12bdc2d-c008-47db-8b76-e257262eab79" pipeline="part_ten_step_one" solid="add_ints" output="result" expectation="check_positive"
 
 Because the system is explictly aware of these expectations they are viewable in tools like dagit.
 It can also configure the execution of these expectations. The capabilities of this aspect of the
@@ -209,15 +209,15 @@ configure the pipeline to skip expectations entirely.
                 }
             },
             'solids': {
-                'injest_a': {
-                    'config': -2,
+                'ingest_a': {
+                    'config': 2,
                 },
-                'injest_b': {
+                'ingest_b': {
                     'config': 3,
                 },
             },
             'expectations': {
-                'evaluate': True,
+                'evaluate': False,
             },
         },
     )

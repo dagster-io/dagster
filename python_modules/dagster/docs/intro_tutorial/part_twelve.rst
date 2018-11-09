@@ -21,7 +21,7 @@ Let's say we wanted to flow a tuple through a pipeline.
 
 
 And then we want to consume it. However, we want this to be type-checked
-and metadata to be surface in tools like dagit.
+and metadata to be surfaced in tools like dagit.
 
 To do this we'll introduce a dagster type.
 
@@ -62,7 +62,7 @@ And then annotate relevant functions with it.
         )
 
     if __name__ == '__main__':
-        execute_pipeline(define_part_twelve_step_())
+        execute_pipeline(define_part_twelve_step_one())
 
 .. code-block:: sh
 
@@ -101,8 +101,7 @@ If you run this you'll get some helpful error messages
 
     $ python part_twelve.py
     ... log spew
-    2018-09-17 07:00:11 - dagster - ERROR - orig_message="Solid consume_string_tuple input string_tuple received value not_a_tuple which does not pass the typecheck for Dagster type StringTuple. Compute node consume_string_tuple.transform" log_message_id="4070d30d-8b29-4130-bbd6-6049d40e742b" pipeline="part_twelve_step_two"    
-    ... stack trace
+    2018-11-08 11:03:03 - dagster - ERROR - orig_message="Solid consume_string_tuple input string_tuple received value not_a_tuple which does not pass the typecheck for Dagster type StringTuple. Compute node consume_string_tuple.transform" log_message_id="0db53fdb-183c-477c-aff9-2ee26bc76636" run_id="424047dd-e835-4016-b757-18adec0afdfc" pipeline="part_twelve_step_two"    ... stack trace
     dagster.core.errors.DagsterEvaluateValueError: Expected valid value for StringTuple but got 'not_a_tuple'
     ... more stack trace
     dagster.core.errors.DagsterTypeError: Solid consume_string_tuple input string_tuple received value not_a_tuple which does not pass the typecheck for Dagster type StringTuple. Compute node consume_string_tuple.transform

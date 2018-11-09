@@ -18,10 +18,10 @@ Let's imagine a scenario where we want to record some custom state in a key-valu
 A production time, this key-value store is a live store (e.g. DynamoDB in amazon) but we do not want to interact
 this store for unit-testing. Contexts will be our tool to accomplish this goal.
 
-We're going to have a simple pipeline that does some rudimentary arithmetic, but that wants record
-the result computations in that key value store.
+We're going to have a simple pipeline that does some rudimentary arithmetic, but that wants to record
+the result of its computations in that key value store.
 
-Let's first set up a simple pipeline. We injest two numbers (each in their own trivial solid)
+Let's first set up a simple pipeline. We ingest two numbers (each in their own trivial solid)
 and then two downstream solids add and multiple those numbers, respectively.
 
 .. code-block:: python
@@ -30,7 +30,7 @@ and then two downstream solids add and multiple those numbers, respectively.
         config_def=ConfigDefinition(types.Int),
         outputs=[OutputDefinition(types.Int)],
     )
-    def injest_a(info):
+    def ingest_a(info):
         return info.config
 
 
@@ -38,8 +38,9 @@ and then two downstream solids add and multiple those numbers, respectively.
         config_def=ConfigDefinition(types.Int),
         outputs=[OutputDefinition(types.Int)],
     )
-    def injest_b(info):
+    def ingest_b(info):
         return info.config
+
 
     @solid(
         inputs=[InputDefinition('num_one', types.Int),
@@ -62,15 +63,15 @@ and then two downstream solids add and multiple those numbers, respectively.
     def define_part_nine_step_one():
         return PipelineDefinition(
             name='part_nine',
-            solids=[injest_a, injest_b, add_ints, mult_ints],
+            solids=[ingest_a, ingest_b, add_ints, mult_ints],
             dependencies={
                 'add_ints': {
-                    'num_one': DependencyDefinition('injest_a'),
-                    'num_two': DependencyDefinition('injest_b'),
+                    'num_one': DependencyDefinition('ingest_a'),
+                    'num_two': DependencyDefinition('ingest_b'),
                 },
                 'mult_ints': {
-                    'num_one': DependencyDefinition('injest_a'),
-                    'num_two': DependencyDefinition('injest_b'),
+                    'num_one': DependencyDefinition('ingest_a'),
+                    'num_two': DependencyDefinition('ingest_b'),
                 },
             },
         )
@@ -80,20 +81,20 @@ Now we configure execution using a env.yml file:
 .. code-block:: yaml
 
     context:
-        default:
-            config:
-                log_level: DEBUG
+    default:
+        config:
+        log_level: DEBUG
 
     solids:
-        injest_a:
-            config: 2
-        injest_b: 
-            config: 3
+    ingest_a:
+        config: 2
+    ingest_b: 
+        config: 3
 
 And you should see some log spew indicating execution.
 
 Now imagine we want to log some of the values passing through these solids
-into some sort of key value store in cloud storage:
+into some sort of key value store in cloud storage.
 
 Let's say we have a module called ``cloud`` that allows for interaction
 with this key value store. You have to create an instance of a ``PublicCloudConn``
@@ -126,25 +127,25 @@ Naively let's add this to one of our transforms:
         config_def=ConfigDefinition(types.Int),
         outputs=[OutputDefinition(types.Int)],
     )
-    def injest_a(info):
+    def ingest_a(info):
         conn = PublicCloudConn('some_user', 'some_pwd')
         set_value_in_cloud_store(conn, 'a', info.config)
         return info.config 
 
-As coded above this is a bad idea on any number of dimensions. One the username/password
+As coded above this is a bad idea on any number of dimensions. Foe one, the username/password
 combo is hard coded. We could pass it in as a configuration of the solid. However that
 is only in scope for that particular solid. So now the configuration would be passed into
 each and every solid that needs it. This sucks. The connection would have to be created within
 every solid. Either you would have to implement your own connection pooling or take the hit
 of a new connection per solid. This also sucks.
 
-More subtley, what was previously a nice, isolated, testable piece of software is now hard-coded
+More subtlely, what was previously a nice, isolated, testable piece of software is now hard-coded
 to interact with some externalized resource and requires an internet connection, access to
 a cloud service, and that could intermittently fail, and that would be slow relative to pure
 in-memory compute. This code is no longer testable in any sort of reliable way.
 
 This is where the concept of the context shines. What we want to do is attach an object to the
-context object -- which a single instance of is flowed through the entire execution --  that
+context object -- which a single instance of is flowed through the entire execution -- that
 provides an interface to that cloud store that caches that connection and also provides a
 swappable implementation of that store for test isolation. We want code that ends up looking like
 this:
@@ -155,10 +156,10 @@ this:
         config_def=ConfigDefinition(types.Int),
         outputs=[OutputDefinition(types.Int)],
     )
-    def injest_a(info):
+    def ingest_a(info):
         # The store should be an interface to the cloud store 
         # We will explain the ``resources`` property later.
-        info.context.resources.store.record_value(info.context, 'a', conf)
+        info.context.resources.store.record_value(info.context, 'a', info.config)
         return info.config 
 
 The user will be able have complete control the creation of the ``store`` object attached to
@@ -241,7 +242,7 @@ which is attached the resources property of the context.
         config_def=ConfigDefinition(types.Int),
         outputs=[OutputDefinition(types.Int)],
     )
-    def injest_a(info):
+    def ingest_a(info):
         info.context.resources.store.record_value(info.context, 'a', info.config)
         return conf
 
@@ -249,7 +250,7 @@ which is attached the resources property of the context.
         config_def=ConfigDefinition(types.Int),
         outputs=[OutputDefinition(types.Int)],
     )
-    def injest_b(info):
+    def ingest_b(info):
         info.context.resources.store.record_value(info.context, 'b', info.config)
         return conf
 
@@ -282,15 +283,15 @@ We do so with the following:
 
     return PipelineDefinition(
         name='part_nine',
-        solids=[injest_a, injest_b, add_ints, mult_ints],
+        solids=[ingest_a, ingest_b, add_ints, mult_ints],
         dependencies={
             'add_ints': {
-                'num_one': DependencyDefinition('injest_a'),
-                'num_two': DependencyDefinition('injest_b'),
+                'num_one': DependencyDefinition('ingest_a'),
+                'num_two': DependencyDefinition('ingest_b'),
             },
             'mult_ints': {
-                'num_one': DependencyDefinition('injest_a'),
-                'num_two': DependencyDefinition('injest_b'),
+                'num_one': DependencyDefinition('ingest_a'),
+                'num_two': DependencyDefinition('ingest_b'),
             },
         },
         context_definitions={
@@ -314,9 +315,9 @@ we config it with that name.
         local:
 
     solids:
-        injest_a:
+        ingest_a:
             config: 2
-        injest_b:
+        ingest_b:
             config: 3
 
 Now run the pipeline and you should see logging indicating the execution is occuring.
@@ -328,15 +329,15 @@ version of that store.
 
     PipelineDefinition(
         name='part_nine',
-        solids=[injest_a, injest_b, add_ints, mult_ints],
+        solids=[ingest_a, ingest_b, add_ints, mult_ints],
         dependencies={
             'add_ints': {
-                'num_one': DependencyDefinition('injest_a'),
-                'num_two': DependencyDefinition('injest_b'),
+                'num_one': DependencyDefinition('ingest_a'),
+                'num_two': DependencyDefinition('ingest_b'),
             },
             'mult_ints': {
-                'num_one': DependencyDefinition('injest_a'),
-                'num_two': DependencyDefinition('injest_b'),
+                'num_one': DependencyDefinition('ingest_a'),
+                'num_two': DependencyDefinition('ingest_b'),
             },
         },
         context_definitions={
@@ -356,8 +357,8 @@ version of that store.
                     )
                 ),
                 config_def=ConfigDefinition(
-                    config_type=types.ConfigDictionary({
-                        'credentials': Field(types.ConfigDictionary({
+                    config_type=types.ConfigDictionary('CloudConfig', {
+                        'credentials': Field(types.ConfigDictionary('CloudCredentials', {
                             'user' : Field(types.String),
                             'pass' : Field(types.String),
                         })),
@@ -369,7 +370,7 @@ version of that store.
 
 Notice the *second* context definition. It
 
-1) Accepts configuration, the specifies that in a typed fashion.
+1) Accepts configuration, this specifies that in a typed fashion.
 2) Creates a different version of that store, to which it passes configuration.
 
 Now when you invoke this pipeline with the following yaml file:
@@ -377,17 +378,17 @@ Now when you invoke this pipeline with the following yaml file:
 .. code-block:: yaml
 
     context:
-        cloud:
-            config:
-                credentials:
-                    user: some_user
-                    pass: some_password
+      cloud:
+        config:
+          credentials:
+            user: some_user
+            pass: some_password
 
     solids:
-        injest_a:
-            config: 2
-        injest_b:
-            config: 3
+      ingest_a:
+        config: 2
+      ingest_b: 
+        config: 3
 
 It will create the production version of that store. Note that you have
 not change the implementation of any solid to do this. Only the configuration

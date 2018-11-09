@@ -142,11 +142,21 @@ many times:
 
 .. code-block:: python
 
+    @lambda_solid(
+        inputs=[
+            InputDefinition('num1', types.Int),
+            InputDefinition('num2', types.Int),
+        ],
+        output=OutputDefinition(types.Int),
+    )
+    def multer(num1, num2):
+        return num1 * num2
+
     def define_part_thirteen_step_three():
         # (a + b) * (c + d)
 
         return PipelineDefinition(
-            name='tutorial_part_thirteen_step_one',
+            name='tutorial_part_thirteen_step_three',
             solids=[load_number, adder, multer],
             dependencies={
                 SolidInstance(load_number.name, 'a'): {},

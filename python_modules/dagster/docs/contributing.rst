@@ -6,7 +6,10 @@ To contribute to dagster you will need to set up a local development environment
 Local development setup
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-1. Create and activate a virtualenv
+1. Install Python 3.6.
+  * You can't use Python 3.7+ yet because of https://github.com/apache/arrow/issues/1125
+
+2. Create and activate a virtualenv
 
 ::
 
@@ -26,34 +29,45 @@ Local development setup
 
 ::
 
-    cd python_modules/dagit/dagit/webapp
-    yarn
+    cd dagster/python_modules/dagit/dagit/webapp
+    yarn install
 
 4. Run tests
 
 ::
 
-    cd python_modules/dagster
+    cd dagster/python_modules/dagster
     tox
-    cd python_modules/dagit
+    cd dagster/python_modules/dagit
     tox
-    cd python_modules/dagit/dagit/webapp
+    cd dagster/python_modules/dagit/dagit/webapp
     yarn test
+
+In webapp development it's handy to run `yarn run jest --watch` to have an
+interactive test runner.
+
+Some webapp tests use snapshots - auto-generated results to which the test
+render tree is compared. Those tests are supposed to break when you change
+something, check that the change is sensible and run `yarn run jest -u` to
+update snapshot to the new result. You can also update snapshots interactively
+when you are in `--watch` mode.
 
 Running dagit webapp in development
 -------------------------------------
 
-Run dagit on different port
+For development, run the dagit GraphQL server on a different port than the
+webapp, from any directory that contains a repository.yml file. For example:
 
 ::
 
+    cd dagster/python_modules/dagster/dagster/dagster_examples
     dagit -p 3333
 
-Run local development version of webapp
+Run the local development (autoreloading, etc.) version of the webapp.
 
 ::
 
-    cd python_modules/dagit/dagit/webapp
+    cd dagster/python_modules/dagit/dagit/webapp
     REACT_APP_GRAPHQL_URI="http://localhost:3333/graphql" yarn start
 
 Releasing

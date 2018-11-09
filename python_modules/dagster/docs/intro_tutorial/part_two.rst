@@ -10,6 +10,14 @@ passes that value to the next solid, which concatenates it to itself, and prints
 
 .. code-block:: python
 
+    from dagster import (
+        DependencyDefinition,
+        InputDefinition,
+        PipelineDefinition,
+        execute_pipeline,
+        lambda_solid,
+    )
+
     @lambda_solid
     def solid_one():
         return 'foo'
@@ -21,6 +29,7 @@ passes that value to the next solid, which concatenates it to itself, and prints
 
     def define_pipeline():
         return PipelineDefinition(
+            name='hello_dag_pipeline',
             solids=[solid_one, solid_two],
             dependencies={
                 'solid_two': {
@@ -33,12 +42,12 @@ passes that value to the next solid, which concatenates it to itself, and prints
 We have a couple new concepts here.
 
 1) ``InputDefinition``: Creating an instance declares that a solid has an input. Dagster is
-now aware of this input and can perform tasks like manage it dependencies.
+now aware of this input and can perform tasks like managing its dependencies.
 
 2) ``DependencyDefinition``: You'll notice a new argument to ``PipelineDefinition`` called
-``dependencies``. This defines the depenedency graph of the DAG resident within a pipeline.
+``dependencies``. This defines the dependency graph of the DAG resident within a pipeline.
 The first layer of keys are the names of solids. The second layer of keys are the names of
-the inputs to that particular solid. Each input in the DAG must be provided a
+the inputs to each solid. Each input in the DAG must be provided a
 ``DependencyDefinition``. In this case the dictionary encodes the fact that the input ``arg_one``
 of solid ``solid_two`` should flow from the output of ``solid_one``.
 

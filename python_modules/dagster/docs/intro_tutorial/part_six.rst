@@ -25,7 +25,7 @@ Repostories are declared like this:
 
 
     def define_part_six_pipeline():
-        return PipelineDefinition(name='part_six', solids=[hello_world]
+        return PipelineDefinition(name='part_six', solids=[hello_world])
 
 
     def define_part_six_repo():
