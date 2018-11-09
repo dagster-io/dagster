@@ -383,6 +383,7 @@ class SolidAliasMapper:
     def __init__(self, dependencies_dict):
         aliased_dependencies_dict = {}
         solid_uses = defaultdict(set)
+        alias_lookup = {}
 
         for solid_key, input_dep_dict in dependencies_dict.items():
             if not isinstance(solid_key, SolidInstance):
@@ -397,12 +398,14 @@ class SolidAliasMapper:
 
             solid_uses[key].add(alias)
             aliased_dependencies_dict[alias] = input_dep_dict
+            alias_lookup[alias] = key
 
             for dependency in input_dep_dict.values():
                 solid_uses[dependency.solid].add(dependency.solid)
 
         self.solid_uses = solid_uses
         self.aliased_dependencies_dict = aliased_dependencies_dict
+        self.alias_lookup = alias_lookup
 
     def get_uses_of_solid(self, solid_def_name):
         # For the case when solids are passed, but no dependency structure.
@@ -446,7 +449,7 @@ def _create_execution_structure(name, solids, dependencies_dict):
 
     pipeline_solid_dict = {ps.name: ps for ps in pipeline_solids}
 
-    _validate_dependences(mapper.aliased_dependencies_dict, pipeline_solid_dict)
+    _validate_dependencies(mapper.aliased_dependencies_dict, pipeline_solid_dict, mapper.alias_lookup)
 
     dependency_structure = DependencyStructure.from_definitions(
         pipeline_solid_dict,
@@ -458,7 +461,7 @@ def _create_execution_structure(name, solids, dependencies_dict):
     return dependency_structure, pipeline_solid_dict
 
 
-def _validate_dependences(dependencies, solid_dict):
+def _validate_dependencies(dependencies, solid_dict, alias_lookup):
     for from_solid, dep_by_input in dependencies.items():
         for from_input, dep in dep_by_input.items():
             if from_solid == dep.solid:
@@ -469,12 +472,20 @@ def _validate_dependences(dependencies, solid_dict):
                 )
 
             if not from_solid in solid_dict:
-                raise DagsterInvalidDefinitionError(
-                    'Solid {from_solid} in dependency dictionary not found in solid list'.format(
-                        from_solid=from_solid
-                    ),
-                )
-
+                aliased_solid = alias_lookup.get(from_solid)
+                if aliased_solid == from_solid:
+                    raise DagsterInvalidDefinitionError(
+                        'Solid {from_solid} in dependency dictionary not found in solid list'.format(
+                            from_solid=from_solid
+                        ),
+                    )
+                else:
+                    raise DagsterInvalidDefinitionError(
+                        'Solid {aliased_solid} (aliased by {from_solid} in dependency dictionary) not found in solid list'.format(
+                            aliased_solid=aliased_solid,
+                            from_solid=from_solid,
+                        ),
+                    )
             if not solid_dict[from_solid].definition.has_input(from_input):
                 input_list = [
                     input_def.name for input_def in solid_dict[from_solid].definition.input_defs
