@@ -16,6 +16,7 @@ import {
 
 import SolidTags from "./SolidTags";
 import SolidConfigPort from "./SolidConfigPort";
+import { DEFAULT_RESULT_NAME } from "../Util";
 
 interface ISolidNodeProps {
   layout: IFullSolidLayout;
@@ -101,12 +102,16 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
   renderIO(
     colorKey: string,
     items: Array<SolidNodeFragment_inputs | SolidNodeFragment_outputs>,
-    layout: { [inputName: string]: { layout: ILayout } }
+    layout: { [ioName: string]: { layout: ILayout } }
   ) {
     return Object.keys(layout).map((key, i) => {
       const { x, y, width, height } = layout[key].layout;
-      const input = items.find(o => o.definition.name === key);
+
+      const item = items.find(o => o.definition.name === key);
+      if (!item) return <g key={i} />;
+
       const showText = width == 0 && !this.props.minified;
+      const { name, type } = item.definition;
 
       return (
         <g key={i}>
@@ -128,29 +133,22 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
               stroke="white"
               strokeWidth={1.5}
             />
-            {showText && (
-              <SVGMonospaceText
-                text={`${input!.definition.name}:`}
-                fill="#FFF"
-                size={14}
-              />
-            )}
+            {showText &&
+              name !== DEFAULT_RESULT_NAME && (
+                <SVGMonospaceText text={`${name}:`} fill="#FFF" size={14} />
+              )}
             {showText && (
               <SVGFlowLayoutRect
                 rx={4}
                 ry={4}
+                fill="#d6ecff"
                 stroke="#2491eb"
                 strokeWidth={1}
                 height={27}
                 spacing={0}
                 padding={4}
-                fill="#d6ecff"
               >
-                <SVGMonospaceText
-                  text={input!.definition.type.name}
-                  size={14}
-                  fill="#222"
-                />
+                <SVGMonospaceText text={type.name} size={14} fill="#222" />
               </SVGFlowLayoutRect>
             )}
           </SVGFlowLayoutRect>
