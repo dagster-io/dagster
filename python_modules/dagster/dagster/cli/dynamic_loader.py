@@ -23,10 +23,16 @@ if sys.version_info[0] >= 3:
     # pipeline code, not dagster imports, installed packages, or parts of the python
     # install. Some of these things (like numpy) actually cannot be reloaded.
     #
+    # Note: We cannot hot-reload Dagster itself. Re-loading RepositoryDefinition, etc.
+    # in user code causes `instanceof` checks to fail since this code still references
+    # the original copies of RespositoryDefinition, etc.
+    #
     _reload = reloader._reload
 
     def conditional_reload(m, visited):
         if "/usr/local" in m.__file__ or "site-packages" in m.__file__:
+            return
+        if m.__name__.startswith("dagster.core") or m.__name__.startswith("dagster.utils"):
             return
         _reload(m, visited)
 
