@@ -4,6 +4,7 @@ import styled from "styled-components";
 import { Link } from "react-router-dom";
 import { H6, Text, Code, UL } from "@blueprintjs/core";
 import { pluginForMetadata } from "./plugins";
+import { DEFAULT_RESULT_NAME } from "./Util";
 
 import SolidTypeSignature from "./SolidTypeSignature";
 import TypeWithTooltip from "./TypeWithTooltip";
@@ -84,34 +85,38 @@ export default class SidebarSolidInfo extends React.Component<
   };
 
   renderInputs() {
-    return this.props.solid.inputs.map((input, i: number) => (
-      <SectionItemContainer key={i}>
-        <SectionItemHeader>{input.definition.name}</SectionItemHeader>
-        <TypeWrapper>
-          <TypeWithTooltip type={input.definition.type} />
-        </TypeWrapper>
-        <Description description={input.definition.description} />
-        {input.dependsOn && (
-          <Text>
-            Depends on{" "}
-            <Link to={`./${input.dependsOn.definition.name}`}>
-              <Code>{input.dependsOn.definition.name}</Code>
-            </Link>
-          </Text>
-        )}
-        {input.definition.expectations.length > 0 ? (
-          <H6>Expectations</H6>
-        ) : null}
-        <UL>
-          {input.definition.expectations.map((expectation, i) => (
-            <li key={i}>
-              {expectation.name}
-              <Description description={expectation.description} />
-            </li>
-          ))}
-        </UL>
-      </SectionItemContainer>
-    ));
+    return this.props.solid.inputs.map(
+      ({ definition, dependsOn }, i: number) => (
+        <SectionItemContainer key={i}>
+          <SectionItemHeader>{definition.name}</SectionItemHeader>
+          <TypeWrapper>
+            <TypeWithTooltip type={definition.type} />
+          </TypeWrapper>
+          <Description description={definition.description} />
+          {dependsOn && (
+            <Text>
+              Depends on{" "}
+              <Link to={`./${dependsOn.solid.name}`}>
+                <Code>
+                  {dependsOn.definition.name !== DEFAULT_RESULT_NAME
+                    ? `${dependsOn.solid.name}:${dependsOn.definition.name}`
+                    : dependsOn.solid.name}
+                </Code>
+              </Link>
+            </Text>
+          )}
+          {definition.expectations.length > 0 ? <H6>Expectations</H6> : null}
+          <UL>
+            {definition.expectations.map((expectation, i) => (
+              <li key={i}>
+                {expectation.name}
+                <Description description={expectation.description} />
+              </li>
+            ))}
+          </UL>
+        </SectionItemContainer>
+      )
+    );
   }
 
   renderOutputs() {
