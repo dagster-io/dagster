@@ -8,7 +8,8 @@ import PipelineJumpBar from "./PipelineJumpBar";
 import PythonErrorInfo from "./PythonErrorInfo";
 import {
   PipelinePageFragment,
-  PipelinePageFragment_Pipeline
+  PipelinePageFragment_Pipeline,
+  PipelinePageFragment_PythonError
 } from "./types/PipelinePageFragment";
 
 interface IPipelinePageProps {
@@ -46,12 +47,12 @@ export default class PipelinePage extends React.Component<
   };
 
   render() {
-    let body;
-    const first = this.props.pipelinesOrErrors[0];
+    let error: PipelinePageFragment_PythonError | null = null;
     const pipelines: Array<PipelinePageFragment_Pipeline> = [];
+
     for (const pipelineOrError of this.props.pipelinesOrErrors) {
       if (pipelineOrError.__typename === "PythonError") {
-        body = <PythonErrorInfo error={pipelineOrError} />;
+        error = pipelineOrError;
       } else {
         pipelines.push(pipelineOrError);
       }
@@ -61,27 +62,29 @@ export default class PipelinePage extends React.Component<
       p => p.name === this.props.selectedPipelineName
     );
 
-    if (!selectedPipeline) {
-      body = (
-        <NonIdealState
-          title="No pipeline selected"
-          description="Select a pipeline in the navbar"
-        />
-      );
-    }
-
     const selectedSolid =
       selectedPipeline &&
       selectedPipeline.solids.find(
         s => s.name === this.props.selectedSolidName
       );
 
-    if (!body && selectedPipeline) {
+    let body;
+
+    if (error) {
+      body = <PythonErrorInfo error={error} />;
+    } else if (selectedPipeline) {
       body = (
         <PipelineExplorer
           pipeline={selectedPipeline}
           solid={selectedSolid}
           history={this.props.history}
+        />
+      );
+    } else {
+      body = (
+        <NonIdealState
+          title="No pipeline selected"
+          description="Select a pipeline in the navbar"
         />
       );
     }
