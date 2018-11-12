@@ -42,7 +42,7 @@ jobs:
           destination: test-reports
 
       - store_artifacts:
-          path: .coverage
+          path: python_modules/dagster/.coverage
           destination: .coverage-dagster-python-3.6
 
   dagit-python-3.6: &dagit-template
@@ -66,7 +66,7 @@ jobs:
           destination: test-reports
 
       - store_artifacts:
-          path: .coverage
+          path: python_modules/dagit/.coverage
           destination: .coverage-dagit-$TOXENV
 
   dagster-python-3.5:
