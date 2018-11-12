@@ -76,10 +76,6 @@ jobs:
     environment:
       TOXENV: py35
 
-      - store_artifacts:
-          path: .coverage
-          destination: .coverage-dagster-$TOXENV
-
   dagit-python-3.5:
     <<: *dagit-template
     docker:
