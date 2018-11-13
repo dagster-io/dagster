@@ -168,6 +168,7 @@ query PipelineQuery($config: String!)
         solid {
             name
         }
+        tag
         inputs { 
            name
            type {
@@ -211,6 +212,7 @@ solids:
 
     cn = get_named_thing(compute_node_graph_data['computeNodes'], 'sum_solid.transform')
 
+    assert cn['tag'] == 'TRANSFORM'
     assert cn['solid']['name'] == 'sum_solid'
 
     assert get_nameset(cn['inputs']) == set(['num'])

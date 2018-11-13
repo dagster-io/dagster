@@ -102,6 +102,35 @@ class ComputeNodeInput(graphene.ObjectType):
         return ComputeNode(self.compute_node_input.prev_output_handle.compute_node, )
 
 
+class ComputeNodeTag(graphene.Enum):
+    TRANSFORM = 'TRANSFORM'
+    INPUT_EXPECTATION = 'INPUT_EXPECTATION'
+    OUTPUT_EXPECTATION = 'OUTPUT_EXPECTATION'
+    JOIN = 'JOIN'
+    SERIALIZE = 'SERIALIZE'
+
+    @property
+    def description(self):
+        # self ends up being the internal class "EnumMeta" in graphene
+        # so we can't do a dictionary lookup which is awesome
+        if self == ComputeNodeTag.TRANSFORM:
+            return 'This is the user-defined transform node'
+        elif self == ComputeNodeTag.INPUT_EXPECTATION:
+            return 'Expectation defined on an input'
+        elif self == ComputeNodeTag.OUTPUT_EXPECTATION:
+            return 'Expectation defined on an output'
+        elif self == ComputeNodeTag.JOIN:
+            return '''Sometimes we fan out compute on identical values
+(e.g. multiple expectations in parallel). We synthesizie these in a join node to consolidate to
+a single output that the next computation can depend on.
+'''
+        elif self == ComputeNodeTag.SERIALIZE:
+            return '''This is a special system-defined node to serialize
+an intermediate value if the pipeline is configured to do that.'''
+        else:
+            return 'Unknown enum {value}'.format(value=self)
+
+
 class ComputeNode(graphene.ObjectType):
     def __init__(self, compute_node):
         super(ComputeNode, self).__init__()
@@ -115,6 +144,7 @@ class ComputeNode(graphene.ObjectType):
     inputs = non_null_list(lambda: ComputeNodeInput)
     outputs = non_null_list(lambda: ComputeNodeOutput)
     solid = graphene.NonNull(lambda: Solid)
+    tag = graphene.NonNull(lambda: ComputeNodeTag)
 
     def resolve_inputs(self, _info):
         return [ComputeNodeInput(cni) for cni in self.compute_node.node_inputs]
@@ -127,6 +157,9 @@ class ComputeNode(graphene.ObjectType):
 
     def resolve_solid(self, _info):
         return Solid(self.compute_node.solid)
+
+    def resolve_tag(self, _info):
+        return self.compute_node.tag
 
 
 class Query(graphene.ObjectType):
