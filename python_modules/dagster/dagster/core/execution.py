@@ -69,9 +69,7 @@ class PipelineExecutionResult(object):
         context,
         result_list,
     ):
-        self.pipeline = check.inst_param(
-            pipeline, 'pipeline', PipelineDefinition
-        )
+        self.pipeline = check.inst_param(pipeline, 'pipeline', PipelineDefinition)
         self.context = check.inst_param(context, 'context', ExecutionContext)
         self.result_list = check.list_param(
             result_list,
@@ -334,7 +332,7 @@ def _execute_graph_iterator(context, execution_graph, environment):
     check.inst_param(execution_graph, 'execution_graph', ExecutionGraph)
     check.inst_param(environment, 'environent', config.Environment)
 
-    cn_graph = create_compute_node_graph(
+    cn_graph = create_compute_node_graph_core(
         ComputeNodeExecutionInfo(
             context,
             execution_graph,
