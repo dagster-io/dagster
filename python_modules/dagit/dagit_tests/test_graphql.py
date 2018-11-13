@@ -165,6 +165,9 @@ query PipelineQuery($config: String!)
     computeNodeGraph(config:$config) {
       computeNodes {
         name
+        solid {
+            name
+        }
         inputs { 
            name
            type {
@@ -207,6 +210,9 @@ solids:
     assert names == set(['load_num_csv.transform', 'sum_solid.transform', 'sum_sq_solid.transform'])
 
     cn = get_named_thing(compute_node_graph_data['computeNodes'], 'sum_solid.transform')
+
+    assert cn['solid']['name'] == 'sum_solid'
+
     assert get_nameset(cn['inputs']) == set(['num'])
 
     sst_input = get_named_thing(cn['inputs'], 'num')

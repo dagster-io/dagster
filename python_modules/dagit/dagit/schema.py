@@ -114,6 +114,7 @@ class ComputeNode(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     inputs = non_null_list(lambda: ComputeNodeInput)
     outputs = non_null_list(lambda: ComputeNodeOutput)
+    solid = graphene.NonNull(lambda: Solid)
 
     def resolve_inputs(self, _info):
         return [ComputeNodeInput(cni) for cni in self.compute_node.node_inputs]
@@ -123,6 +124,9 @@ class ComputeNode(graphene.ObjectType):
 
     def resolve_name(self, _info):
         return self.compute_node.friendly_name
+
+    def resolve_solid(self, _info):
+        return Solid(self.compute_node.solid)
 
 
 class Query(graphene.ObjectType):
