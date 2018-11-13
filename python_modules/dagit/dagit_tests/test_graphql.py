@@ -174,6 +174,12 @@ query PipelineQuery($config: String!)
                name
            }
         }
+        outputs {
+            name
+            type {
+                name
+            }
+        }
       }
     }
   }
@@ -207,6 +213,9 @@ solids:
     assert sst_input['type']['name'] == 'PandasDataFrame'
 
     assert sst_input['dependsOn']['name'] == 'load_num_csv.transform'
+
+    sst_output = get_named_thing(cn['outputs'], 'result')
+    assert sst_output['type']['name'] == 'PandasDataFrame'
 
 
 def get_nameset(llist):
