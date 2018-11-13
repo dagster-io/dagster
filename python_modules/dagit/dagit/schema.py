@@ -57,12 +57,48 @@ class ComputeNodeGraph(graphene.ObjectType):
     computeNodes = non_null_list(lambda: ComputeNode)
 
     def resolve_computeNodes(self, _info):
-        return [ComputeNode(cn) for cn in self.compute_node_graph.nodes]
+        return [ComputeNode(self.compute_node_graph, cn) for cn in self.compute_node_graph.nodes]
+
+
+class ComputeNodeInput(graphene.ObjectType):
+    def __init__(self, compute_node_graph, compute_node_input):
+        super(ComputeNodeInput, self).__init__()
+        self.compute_node_graph = check.inst_param(
+            compute_node_graph,
+            'compute_node_graph',
+            dagster.core.compute_nodes.ComputeNodeGraph,
+        )
+        self.compute_node_input = check.inst_param(
+            compute_node_input,
+            'compute_node_input',
+            dagster.core.compute_nodes.ComputeNodeInput,
+        )
+
+    name = graphene.NonNull(graphene.String)
+    type = graphene.Field(graphene.NonNull(lambda: Type))
+    dependsOn = graphene.Field(graphene.NonNull(lambda: ComputeNode))
+
+    def resolve_name(self, _info):
+        return self.compute_node_input.name
+
+    def resolve_type(self, _info):
+        return Type.from_dagster_type(dagster_type=self.compute_node_input.dagster_type)
+
+    def resolve_dependsOn(self, _info):
+        return ComputeNode(
+            self.compute_node_graph,
+            self.compute_node_input.prev_output_handle.compute_node,
+        )
 
 
 class ComputeNode(graphene.ObjectType):
-    def __init__(self, compute_node):
+    def __init__(self, compute_node_graph, compute_node):
         super(ComputeNode, self).__init__()
+        self.compute_node_graph = check.inst_param(
+            compute_node_graph,
+            'compute_node_graph',
+            dagster.core.compute_nodes.ComputeNodeGraph,
+        )
         self.compute_node = check.inst_param(
             compute_node,
             'compute_node',
@@ -70,6 +106,12 @@ class ComputeNode(graphene.ObjectType):
         )
 
     name = graphene.NonNull(graphene.String)
+    inputs = non_null_list(lambda: ComputeNodeInput)
+
+    def resolve_inputs(self, _info):
+        return [
+            ComputeNodeInput(self.compute_node_graph, cni) for cni in self.compute_node.node_inputs
+        ]
 
     def resolve_name(self, _info):
         return self.compute_node.friendly_name

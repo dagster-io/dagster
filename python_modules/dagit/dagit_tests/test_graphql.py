@@ -8,6 +8,7 @@ from dagster import (
     OutputDefinition,
     RepositoryDefinition,
     SolidDefinition,
+    check,
     lambda_solid,
     types,
 )
@@ -164,6 +165,15 @@ query PipelineQuery($config: String!)
     computeNodeGraph(config:$config) {
       computeNodes {
         name
+        inputs { 
+           name
+           type {
+               name
+           }
+           dependsOn {
+               name
+           }
+        }
       }
     }
   }
@@ -185,12 +195,30 @@ solids:
 
     compute_node_graph_data = result.data['pipeline']['computeNodeGraph']
 
-    names = [cn['name'] for cn in compute_node_graph_data['computeNodes']]
+    names = get_nameset(compute_node_graph_data['computeNodes'])
     assert len(names) == 3
 
-    assert set(names) == set(
-        ['load_num_csv.transform', 'sum_solid.transform', 'sum_sq_solid.transform']
-    )
+    assert names == set(['load_num_csv.transform', 'sum_solid.transform', 'sum_sq_solid.transform'])
+
+    cn = get_named_thing(compute_node_graph_data['computeNodes'], 'sum_solid.transform')
+    assert get_nameset(cn['inputs']) == set(['num'])
+
+    sst_input = get_named_thing(cn['inputs'], 'num')
+    assert sst_input['type']['name'] == 'PandasDataFrame'
+
+    assert sst_input['dependsOn']['name'] == 'load_num_csv.transform'
+
+
+def get_nameset(llist):
+    return set([item['name'] for item in llist])
+
+
+def get_named_thing(llist, name):
+    for cn in llist:
+        if cn['name'] == name:
+            return cn
+
+    check.failed('not found')
 
 
 def test_production_query():

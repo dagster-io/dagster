@@ -11,7 +11,7 @@ watch:
 	"dagster/dagster_tests "\
 	"dagit/dagit_tests "\
 	"dagster-ge/dagster_ge_tests " \
-	--drop dagster/dagster dagster/dagster_tests/ dagster-ge/dagster_ge dagster-ge/dagster_ge_tests dagit/dagit
+	--drop dagster/dagster dagster/dagster_tests/ dagster-ge/dagster_ge dagster-ge/dagster_ge_tests dagit/dagit dagit/dagit_tests
 	
 yapf:
 	find . -name "*.py" | grep -v ".tox" | grep -v ".vscode" | xargs yapf -i

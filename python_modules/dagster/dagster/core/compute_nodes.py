@@ -286,7 +286,6 @@ class ComputeNodeInput(object):
         self.prev_output_handle = check.inst_param(
             prev_output_handle,
             'prev_output_handle',
-            
             ComputeNodeOutputHandle,
         )
 
