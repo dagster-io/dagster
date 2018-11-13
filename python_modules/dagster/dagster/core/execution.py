@@ -18,6 +18,7 @@ will not invoke *any* outputs (and their APIs don't allow the user to).
 from contextlib import contextmanager
 import json
 import itertools
+import yaml
 
 import six
 
@@ -258,9 +259,21 @@ def _validate_environment(environment, pipeline):
             )
 
 
-def create_compute_node_graph(pipeline_def, yaml_config):
-    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
+def create_compute_node_graph(pipeline, yaml_config):
+    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.str_param(yaml_config, 'yaml_config')
+
+    pipeline_env_type = EnvironmentConfigType(pipeline)
+
+    environment = create_config_value(pipeline_env_type, yaml.load(yaml_config))
+
+    check.inst(environment, config.Environment)
+
+    execution_graph = ExecutionGraph.from_pipeline(pipeline)
+    with yield_context(pipeline, environment) as context:
+        return create_compute_node_graph_core(
+            ComputeNodeExecutionInfo(context, execution_graph, environment),
+        )
 
 
 def create_config_value(config_type, config_input):

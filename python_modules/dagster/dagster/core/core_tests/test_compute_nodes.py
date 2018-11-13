@@ -7,6 +7,7 @@ from dagster import (
 )
 
 from dagster.core.execution import (
+    create_compute_node_graph,
     ComputeNodeExecutionInfo,
 )
 
@@ -28,7 +29,7 @@ def silencing_pipeline(solids):
     return PipelineDefinition(solids=solids, context_definitions=silencing_default_context())
 
 
-def test_compute_noop_node():
+def test_compute_noop_node_core():
     pipeline = silencing_pipeline(solids=[
         noop,
     ])
@@ -46,6 +47,19 @@ def test_compute_noop_node():
 
     assert len(compute_node_graph.nodes) == 1
 
+    outputs = list(compute_node_graph.nodes[0].execute(ExecutionContext(), {}))
+
+    assert outputs[0].success_data.value == 'foo'
+
+
+def test_compute_noop_node():
+    pipeline = silencing_pipeline(solids=[
+        noop,
+    ])
+
+    compute_node_graph = create_compute_node_graph(pipeline, '')
+
+    assert len(compute_node_graph.nodes) == 1
     outputs = list(compute_node_graph.nodes[0].execute(ExecutionContext(), {}))
 
     assert outputs[0].success_data.value == 'foo'
