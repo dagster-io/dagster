@@ -10,6 +10,8 @@ from dagster import check
 
 from dagster.core.types import DagsterCompositeType
 
+from dagster.core.execution import create_compute_node_graph
+
 
 def resolve_pipelines_implementation(_root_obj, info):
     repository = info.context['repository_container'].repository
@@ -44,11 +46,33 @@ def non_null_list(ttype):
 
 
 class ComputeNodeGraph(graphene.ObjectType):
+    def __init__(self, compute_node_graph):
+        super(ComputeNodeGraph, self).__init__()
+        self.compute_node_graph = check.inst_param(
+            compute_node_graph,
+            'compute_node_graph',
+            dagster.core.compute_nodes.ComputeNodeGraph,
+        )
+
     computeNodes = non_null_list(lambda: ComputeNode)
+
+    def resolve_computeNodes(self, _info):
+        return [ComputeNode(cn) for cn in self.compute_node_graph.nodes]
 
 
 class ComputeNode(graphene.ObjectType):
+    def __init__(self, compute_node):
+        super(ComputeNode, self).__init__()
+        self.compute_node = check.inst_param(
+            compute_node,
+            'compute_node',
+            dagster.core.compute_nodes.ComputeNode,
+        )
+
     name = graphene.NonNull(graphene.String)
+
+    def resolve_name(self, _info):
+        return self.compute_node.friendly_name
 
 
 class Query(graphene.ObjectType):
@@ -104,10 +128,6 @@ class Query(graphene.ObjectType):
         )
 
 
-import dagster.core.execution
-import dagster.core.compute_nodes
-
-
 class Pipeline(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
@@ -125,17 +145,8 @@ class Pipeline(graphene.ObjectType):
         super(Pipeline, self).__init__(name=pipeline.name, description=pipeline.description)
         self._pipeline = check.inst_param(pipeline, 'pipeline', dagster.PipelineDefinition)
 
-    def resolve_compute_node_graph(self, _info, args):
-        execution_graph = dagster.core.execution.ExecutionGraph.from_pipeline(self._pipeline)
-        environment = dagster.core.execution.create_config_value()
-        self._pipeline.environment_type.evaluau
-
-        compute_node_exec_info = dagster.core.compute_nodes.ComputeNodeExecutionInfo(
-            context=None,
-            execution_graph=None,
-            environment=None,
-        )
-        return dagster.core.compute_nodes.create_compute_node_graph()
+    def resolve_computeNodeGraph(self, _info, config):
+        return ComputeNodeGraph(create_compute_node_graph(self._pipeline, config))
 
     def resolve_solids(self, _info):
         return [

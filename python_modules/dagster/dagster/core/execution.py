@@ -48,6 +48,7 @@ from .errors import (
 
 from .compute_nodes import (
     ComputeNodeExecutionInfo,
+    ComputeNodeGraph,
     ComputeNodeResult,
     ComputeNodeTag,
     create_compute_node_graph_core,
@@ -271,9 +272,10 @@ def create_compute_node_graph(pipeline, yaml_config):
 
     execution_graph = ExecutionGraph.from_pipeline(pipeline)
     with yield_context(pipeline, environment) as context:
-        return create_compute_node_graph_core(
+        compute_node_graph = create_compute_node_graph_core(
             ComputeNodeExecutionInfo(context, execution_graph, environment),
         )
+        return check.inst(compute_node_graph, ComputeNodeGraph)
 
 
 def create_config_value(config_type, config_input):

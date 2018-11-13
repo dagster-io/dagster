@@ -115,11 +115,12 @@ def define_repo():
     )
 
 
-def execute_dagster_graphql(repo, query):
+def execute_dagster_graphql(repo, query, variables=None):
     return graphql(
         create_schema(),
         query,
         context={'repository_container': RepositoryContainer(repository=repo)},
+        variables=variables,
     )
 
 
@@ -139,17 +140,57 @@ def test_pipelines():
 
 def test_pipeline_by_name():
     result = execute_dagster_graphql(
-        define_repo(), '''
-    { 
-        pipeline(name: "pandas_hello_world_two") { 
-            name 
+        define_repo(),
+        '''
+    {
+        pipeline(name: "pandas_hello_world_two") {
+            name
         }
-    }'''
+    }''',
     )
 
     assert result.data
     assert not result.errors
     assert result.data['pipeline']['name'] == 'pandas_hello_world_two'
+
+
+def test_query_compute_nodes():
+    result = execute_dagster_graphql(
+        define_repo(), '''
+query PipelineQuery($config: String!)
+{
+  pipeline(name:"pandas_hello_world") {
+    name
+    computeNodeGraph(config:$config) {
+      computeNodes {
+        name
+      }
+    }
+  }
+}
+        ''', {
+            'config':
+            '''
+solids:
+  load_num_csv:
+    config:
+      path: "pandas_hello_world/num.csv"
+
+            ''',
+        }
+    )
+
+    assert result.data
+    assert not result.errors
+
+    compute_node_graph_data = result.data['pipeline']['computeNodeGraph']
+
+    names = [cn['name'] for cn in compute_node_graph_data['computeNodes']]
+    assert len(names) == 3
+
+    assert set(names) == set(
+        ['load_num_csv.transform', 'sum_solid.transform', 'sum_sq_solid.transform']
+    )
 
 
 def test_production_query():
