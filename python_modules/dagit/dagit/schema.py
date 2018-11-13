@@ -1,6 +1,8 @@
-import graphene
 import sys
 import traceback
+
+import graphene
+
 import dagster
 import dagster.core.definitions
 
@@ -9,7 +11,7 @@ from dagster import check
 from dagster.core.types import DagsterCompositeType
 
 
-def resolve_pipelines_implementation(root_obj, info):
+def resolve_pipelines_implementation(_root_obj, info):
     repository = info.context['repository_container'].repository
     pipelines = []
     for pipeline_def in repository.get_all_pipelines():
@@ -23,7 +25,7 @@ def result_or_error(root_obj, fn, info, *argv):
         return PythonError(*error)
     try:
         return fn(root_obj, info, *argv)
-    except:
+    except Exception:  # pylint: disable=broad-except
         return PythonError(*sys.exc_info())
 
 
@@ -33,7 +35,7 @@ def results_or_errors(root_obj, fn, info, *argv):
         return [PythonError(*error)]
     try:
         return fn(root_obj, info, *argv)
-    except:
+    except Exception:  # pylint: disable=broad-except
         return [PythonError(*sys.exc_info())]
 
 
@@ -130,6 +132,7 @@ class PythonError(graphene.ObjectType):
         interfaces = (Error, )
 
     def __init__(self, exc_type, exc_value, exc_tb):
+        super(PythonError, self).__init__()
         self.message = traceback.format_exception_only(exc_type, exc_value)[0]
         self.stack = traceback.format_tb(tb=exc_tb)
 
