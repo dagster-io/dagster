@@ -43,7 +43,7 @@ jobs:
 
       - store_artifacts:
           path: python_modules/dagster/.coverage
-          destination: .coverage-dagster-python-3.6
+          destination: .coverage
 
   dagit-python-3.6: &dagit-template
     <<: *dagster-template
@@ -67,7 +67,7 @@ jobs:
 
       - store_artifacts:
           path: python_modules/dagit/.coverage
-          destination: .coverage-dagit-$TOXENV
+          destination: .coverage
 
   dagster-python-3.5:
     <<: *dagster-template
