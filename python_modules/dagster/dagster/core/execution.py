@@ -49,7 +49,7 @@ from .compute_nodes import (
     ComputeNodeExecutionInfo,
     ComputeNodeResult,
     ComputeNodeTag,
-    create_compute_node_graph,
+    create_compute_node_graph_core,
     execute_compute_nodes,
 )
 
@@ -69,7 +69,9 @@ class PipelineExecutionResult(object):
         context,
         result_list,
     ):
-        self.pipeline = check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+        self.pipeline = check.inst_param(
+            pipeline, 'pipeline', PipelineDefinition
+        )
         self.context = check.inst_param(context, 'context', ExecutionContext)
         self.result_list = check.list_param(
             result_list,
@@ -258,7 +260,12 @@ def _validate_environment(environment, pipeline):
             )
 
 
-def _create_config_value(config_type, config_input):
+def create_compute_node_graph(pipeline_def, yaml_config):
+    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
+    check.str_param(yaml_config, 'yaml_config')
+
+
+def create_config_value(config_type, config_input):
     try:
         return config_type.evaluate_value(config_input)
     except DagsterEvaluateValueError as e:
@@ -284,7 +291,7 @@ def yield_context(pipeline, environment):
     context_definition = pipeline.context_definitions[context_name]
     config_type = context_definition.config_def.config_type
 
-    config_value = _create_config_value(config_type, environment.context.config)
+    config_value = create_config_value(config_type, environment.context.config)
 
     context_or_generator = context_definition.context_fn(
         ContextCreationExecutionInfo(
@@ -311,14 +318,14 @@ def execute_pipeline_iterator(pipeline, environment):
 
     pipeline_env_type = EnvironmentConfigType(pipeline)
 
-    environment = _create_config_value(pipeline_env_type, environment)
+    environment = create_config_value(pipeline_env_type, environment)
 
     check.inst_param(environment, 'environment', config.Environment)
 
     execution_graph = ExecutionGraph.from_pipeline(pipeline)
     with yield_context(pipeline, environment) as context:
         with context.value('pipeline', execution_graph.pipeline.display_name):
-            for result in  _execute_graph_iterator(context, execution_graph, environment):
+            for result in _execute_graph_iterator(context, execution_graph, environment):
                 yield result
 
 
@@ -434,10 +441,10 @@ def check_environment(pipeline, environment):
 
 
 def execute_pipeline(
-        pipeline,
-        environment=None,
-        throw_on_error=True,
-    ):
+    pipeline,
+    environment=None,
+    throw_on_error=True,
+):
     '''
     "Synchronous" version of :py:function:`execute_pipeline_iterator`.
 
@@ -461,7 +468,7 @@ def execute_pipeline(
     check_environment(pipeline, environment)
 
     pipeline_env_type = pipeline.environment_type
-    environment = _create_config_value(pipeline_env_type, environment)
+    environment = create_config_value(pipeline_env_type, environment)
 
     execution_graph = ExecutionGraph.from_pipeline(pipeline)
     return _execute_graph(execution_graph, environment, throw_on_error)
