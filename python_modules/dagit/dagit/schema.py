@@ -169,8 +169,8 @@ class Query(graphene.ObjectType):
         name=graphene.NonNull(graphene.String),
     )
 
-    pipelines = graphene.NonNull(graphene.List(graphene.NonNull(lambda: Pipeline)))
-    pipelinesOrErrors = graphene.NonNull(graphene.List(lambda: graphene.NonNull(PipelineOrError)))
+    pipelines = non_null_list(lambda: Pipeline)
+    pipelinesOrErrors = non_null_list(lambda: PipelineOrError)
 
     type = graphene.Field(
         lambda: Type,
@@ -218,8 +218,8 @@ class Query(graphene.ObjectType):
 class Pipeline(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
-    solids = graphene.NonNull(graphene.List(lambda: graphene.NonNull(Solid)))
-    contexts = graphene.NonNull(graphene.List(lambda: graphene.NonNull(PipelineContext)))
+    solids = non_null_list(lambda: Solid)
+    contexts = non_null_list(lambda: PipelineContext)
     environment_type = graphene.NonNull(lambda: Type)
     computeNodeGraph = graphene.Field(
         graphene.NonNull(lambda: ComputeNodeGraph),
@@ -256,7 +256,7 @@ class Pipeline(graphene.ObjectType):
 
 class Error(graphene.Interface):
     message = graphene.String(required=True)
-    stack = graphene.NonNull(graphene.List(graphene.NonNull(graphene.String)))
+    stack = non_null_list(graphene.String)
 
 
 class PythonError(graphene.ObjectType):
@@ -290,8 +290,8 @@ class PipelineContext(graphene.ObjectType):
 class Solid(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     definition = graphene.NonNull(lambda: SolidDefinition)
-    inputs = graphene.NonNull(graphene.List(lambda: graphene.NonNull(Input)))
-    outputs = graphene.NonNull(graphene.List(lambda: graphene.NonNull(Output)))
+    inputs = non_null_list(lambda: Input)
+    outputs = non_null_list(lambda: Output)
 
     def __init__(self, solid, depends_on=None, depended_by=None):
         super(Solid, self).__init__(name=solid.name)
@@ -381,11 +381,9 @@ class SolidMetadataItemDefinition(graphene.ObjectType):
 class SolidDefinition(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
-    metadata = graphene.NonNull(
-        graphene.List(lambda: graphene.NonNull(SolidMetadataItemDefinition))
-    )
-    input_definitions = graphene.NonNull(graphene.List(lambda: graphene.NonNull(InputDefinition)))
-    output_definitions = graphene.NonNull(graphene.List(lambda: graphene.NonNull(OutputDefinition)))
+    metadata = non_null_list(lambda: SolidMetadataItemDefinition)
+    input_definitions = non_null_list(lambda: InputDefinition)
+    output_definitions = non_null_list(lambda: OutputDefinition)
     config_definition = graphene.Field(lambda: Config)
 
     # solids - ?
@@ -424,7 +422,7 @@ class InputDefinition(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
     type = graphene.NonNull(lambda: Type)
-    expectations = graphene.NonNull(graphene.List(lambda: graphene.NonNull(Expectation)))
+    expectations = non_null_list(lambda: Expectation)
 
     # inputs - ?
 
@@ -453,7 +451,7 @@ class OutputDefinition(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
     type = graphene.NonNull(lambda: Type)
-    expectations = graphene.NonNull(graphene.List(lambda: graphene.NonNull(Expectation)))
+    expectations = non_null_list(lambda: Expectation)
 
     # outputs - ?
 
@@ -550,7 +548,7 @@ class RegularType(graphene.ObjectType):
 
 
 class CompositeType(graphene.ObjectType):
-    fields = graphene.NonNull(graphene.List(graphene.NonNull(lambda: TypeField)))
+    fields = non_null_list(lambda: TypeField)
 
     class Meta:
         interfaces = [
