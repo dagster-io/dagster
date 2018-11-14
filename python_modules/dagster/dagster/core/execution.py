@@ -121,10 +121,14 @@ class SolidExecutionResult(object):
         self.context = check.inst_param(context, 'context', ExecutionContext)
         self.solid = check.inst_param(solid, 'solid', Solid)
         self.input_expectations = check.list_param(
-            input_expectations, 'input_expectations', StepResult
+            input_expectations,
+            'input_expectations',
+            StepResult,
         )
         self.output_expectations = check.list_param(
-            output_expectations, 'output_expectations', StepResult
+            output_expectations,
+            'output_expectations',
+            StepResult,
         )
         self.transforms = check.list_param(transforms, 'transforms', StepResult)
 
@@ -271,10 +275,9 @@ def create_execution_plan(pipeline, config_dict=None):
 
     execution_graph = ExecutionGraph.from_pipeline(pipeline)
     with yield_context(pipeline, environment) as context:
-        compute_node_graph = create_execution_plan_core(
+        return create_execution_plan_core(
             ExecutionPlanInfo(context, execution_graph, environment),
         )
-        return check.inst(compute_node_graph, ExecutionPlan)
 
 
 def create_config_value(config_type, config_input):
@@ -346,7 +349,7 @@ def _execute_graph_iterator(context, execution_graph, environment):
     check.inst_param(execution_graph, 'execution_graph', ExecutionGraph)
     check.inst_param(environment, 'environent', config.Environment)
 
-    cn_graph = create_execution_plan_core(
+    execution_plan = create_execution_plan_core(
         ExecutionPlanInfo(
             context,
             execution_graph,
@@ -354,9 +357,9 @@ def _execute_graph_iterator(context, execution_graph, environment):
         ),
     )
 
-    cn_nodes = list(cn_graph.topological_steps())
+    steps = list(execution_plan.topological_steps())
 
-    if not cn_nodes:
+    if not steps:
         context.debug(
             'Pipeline {pipeline} has no nodes and no execution will happen'.format(
                 pipeline=execution_graph.pipeline.display_name
@@ -366,15 +369,15 @@ def _execute_graph_iterator(context, execution_graph, environment):
 
     context.debug(
         'About to execute the compute node graph in the following order {order}'.format(
-            order=[cn.friendly_name for cn in cn_nodes]
+            order=[cn.friendly_name for cn in steps]
         )
     )
 
-    check.invariant(len(cn_nodes[0].step_inputs) == 0)
+    check.invariant(len(steps[0].step_inputs) == 0)
 
     solid = None
     solid_results = []
-    for step_result in execute_steps(context, cn_nodes):
+    for step_result in execute_steps(context, steps):
         step = step_result.step
 
         if solid and solid is not step.solid:

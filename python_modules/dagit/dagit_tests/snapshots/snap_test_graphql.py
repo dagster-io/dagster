@@ -7,7 +7,7 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
-snapshots['test_query_compute_node_snapshot 1'] = {
+snapshots['test_query_execution_plan_snapshot 1'] = {
     'pipeline': {
         'executionPlan': {
             'pipeline': {

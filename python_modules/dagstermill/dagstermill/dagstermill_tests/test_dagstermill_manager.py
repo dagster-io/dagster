@@ -73,7 +73,7 @@ def define_solid_with_stuff():
         transform_fn=lambda *args, **kwargs: check.failed('do not execute'),
         metadata={
             'notebook_path': 'unused.ipynb',
-            'kind': 'ipynb'
+            'kind': 'ipynb',
         },
     )
 
@@ -135,5 +135,3 @@ def test_serialize_inputs():
         ],
         output_path,
     )
-
-    print(repr(output))

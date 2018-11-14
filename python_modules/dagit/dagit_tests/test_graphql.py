@@ -192,7 +192,7 @@ query PipelineQuery($config: GenericScalar)
 '''
 
 
-def test_query_compute_node_snapshot(snapshot):
+def test_query_execution_plan_snapshot(snapshot):
     result = execute_dagster_graphql(
         define_repo(),
         COMPUTE_NODE_QUERY,
@@ -215,7 +215,7 @@ def test_query_compute_node_snapshot(snapshot):
     snapshot.assert_match(result.data)
 
 
-def test_query_compute_nodes():
+def test_query_execution_plan():
     result = execute_dagster_graphql(
         define_repo(),
         COMPUTE_NODE_QUERY,
@@ -238,16 +238,16 @@ def test_query_compute_nodes():
     assert result.data
     assert not result.errors
 
-    compute_node_graph_data = result.data['pipeline']['executionPlan']
+    plan_data = result.data['pipeline']['executionPlan']
 
-    names = get_nameset(compute_node_graph_data['steps'])
+    names = get_nameset(plan_data['steps'])
     assert len(names) == 3
 
     assert names == set(['load_num_csv.transform', 'sum_solid.transform', 'sum_sq_solid.transform'])
 
     assert result.data['pipeline']['executionPlan']['pipeline']['name'] == 'pandas_hello_world'
 
-    cn = get_named_thing(compute_node_graph_data['steps'], 'sum_solid.transform')
+    cn = get_named_thing(plan_data['steps'], 'sum_solid.transform')
 
     assert cn['tag'] == 'TRANSFORM'
     assert cn['solid']['name'] == 'sum_solid'
@@ -286,7 +286,3 @@ def test_production_query():
 
     assert result.data
     assert not result.errors
-
-
-def test_compute_node():
-    pass

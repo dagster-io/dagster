@@ -37,7 +37,7 @@ def test_compute_noop_node_core():
     environment = config.Environment()
 
     execution_graph = ExecutionGraph.from_pipeline(pipeline)
-    compute_node_graph = create_execution_plan_core(
+    plan = create_execution_plan_core(
         ExecutionPlanInfo(
             ExecutionContext(),
             execution_graph,
@@ -45,9 +45,9 @@ def test_compute_noop_node_core():
         ),
     )
 
-    assert len(compute_node_graph.steps) == 1
+    assert len(plan.steps) == 1
 
-    outputs = list(compute_node_graph.steps[0].execute(ExecutionContext(), {}))
+    outputs = list(plan.steps[0].execute(ExecutionContext(), {}))
 
     assert outputs[0].success_data.value == 'foo'
 
@@ -57,9 +57,9 @@ def test_compute_noop_node():
         noop,
     ])
 
-    compute_node_graph = create_execution_plan(pipeline)
+    plan = create_execution_plan(pipeline)
 
-    assert len(compute_node_graph.steps) == 1
-    outputs = list(compute_node_graph.steps[0].execute(ExecutionContext(), {}))
+    assert len(plan.steps) == 1
+    outputs = list(plan.steps[0].execute(ExecutionContext(), {}))
 
     assert outputs[0].success_data.value == 'foo'

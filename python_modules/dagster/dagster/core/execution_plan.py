@@ -567,7 +567,7 @@ ExecutionSubPlan = namedtuple(
 )
 
 
-def create_expectations_cn_graph(solid, inout_def, prev_step_output_handle, tag):
+def create_expectations_subplan(solid, inout_def, prev_step_output_handle, tag):
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(inout_def, 'inout_def', (InputDefinition, OutputDefinition))
     check.inst_param(prev_step_output_handle, 'prev_step_output_handle', StepOutputHandle)
@@ -658,7 +658,7 @@ def create_step_inputs(info, state, pipeline_solid):
     check.inst_param(state, 'state', StepBuilderState)
     check.inst_param(pipeline_solid, 'pipeline_solid', Solid)
 
-    cn_inputs = []
+    step_inputs = []
 
     topo_solid = pipeline_solid.definition
     dependency_structure = info.execution_graph.dependency_structure
@@ -682,7 +682,7 @@ def create_step_inputs(info, state, pipeline_solid):
         )
 
         state.steps.extend(subgraph.steps)
-        cn_inputs.append(
+        step_inputs.append(
             StepInput(
                 input_def.name,
                 input_def.dagster_type,
@@ -690,7 +690,7 @@ def create_step_inputs(info, state, pipeline_solid):
             )
         )
 
-    return cn_inputs
+    return step_inputs
 
 
 def create_execution_plan_core(execution_info):
@@ -751,7 +751,7 @@ def create_subgraph_for_input(execution_info, solid, prev_step_output_handle, in
     check.inst_param(input_def, 'input_def', InputDefinition)
 
     if execution_info.environment.expectations.evaluate and input_def.expectations:
-        return create_expectations_cn_graph(
+        return create_expectations_subplan(
             solid,
             input_def,
             prev_step_output_handle,
@@ -775,7 +775,7 @@ def _decorate_with_expectations(execution_info, solid, transform_step, output_de
     check.inst_param(output_def, 'output_def', OutputDefinition)
 
     if execution_info.environment.expectations.evaluate and output_def.expectations:
-        return create_expectations_cn_graph(
+        return create_expectations_subplan(
             solid,
             output_def,
             StepOutputHandle(transform_step, output_def.name),
