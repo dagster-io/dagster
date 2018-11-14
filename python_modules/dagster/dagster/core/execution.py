@@ -18,7 +18,6 @@ will not invoke *any* outputs (and their APIs don't allow the user to).
 from contextlib import contextmanager
 import json
 import itertools
-import yaml
 
 import six
 

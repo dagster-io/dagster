@@ -61,7 +61,7 @@ class ComputeNodeGraph(graphene.ObjectType):
         self.pipeline = check.inst_param(pipeline, 'pipeline', Pipeline)
 
     def resolve_computeNodes(self, _info):
-        return [ComputeNode(cn) for cn in self.compute_node_graph.nodes]
+        return [ComputeNode(cn) for cn in self.compute_node_graph.topological_nodes()]
 
 
 class ComputeNodeOutput(graphene.ObjectType):
