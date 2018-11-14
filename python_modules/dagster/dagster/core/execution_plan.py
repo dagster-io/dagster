@@ -122,23 +122,23 @@ class StepFailureData(namedtuple('_StepFailureData', 'dagster_error')):
 
 class StepResult(namedtuple(
     '_StepResult',
-    'success compute_node tag success_data failure_data',
+    'success step tag success_data failure_data',
 )):
     @staticmethod
-    def success_result(compute_node, tag, success_data):
+    def success_result(step, tag, success_data):
         return StepResult(
             success=True,
-            compute_node=check.inst_param(compute_node, 'compute_node', ExecutionStep),
+            step=check.inst_param(step, 'step', ExecutionStep),
             tag=check.inst_param(tag, 'tag', StepTag),
             success_data=check.inst_param(success_data, 'success_data', StepSuccessData),
             failure_data=None,
         )
 
     @staticmethod
-    def failure_result(compute_node, tag, failure_data):
+    def failure_result(step, tag, failure_data):
         return StepResult(
             success=False,
-            compute_node=check.inst_param(compute_node, 'compute_node', ExecutionStep),
+            step=check.inst_param(step, 'step', ExecutionStep),
             tag=check.inst_param(tag, 'tag', StepTag),
             success_data=None,
             failure_data=check.inst_param(failure_data, 'failure_data', StepFailureData),
@@ -297,36 +297,37 @@ class ExecutionStep(object):
     def __init__(self, friendly_name, step_inputs, step_outputs, compute_fn, tag, solid):
         self.guid = str(uuid.uuid4())
         self.friendly_name = check.str_param(friendly_name, 'friendly_name')
+
         self.step_inputs = check.list_param(step_inputs, 'step_inputs', of_type=StepInput)
-
         self._step_input_dict = {si.name: si for si in step_inputs}
-        self.step_outputs = check.list_param(step_outputs, 'step_outputs', of_type=StepOutput)
 
+        self.step_outputs = check.list_param(step_outputs, 'step_outputs', of_type=StepOutput)
         self._step_output_dict = {so.name : so for so in step_outputs}
+
         self.compute_fn = check.callable_param(compute_fn, 'compute_fn')
         self.tag = check.inst_param(tag, 'tag', StepTag)
         self.solid = check.inst_param(solid, 'solid', Solid)
 
-    def has_node(self, name):
+    def has_step(self, name):
         check.str_param(name, 'name')
         return name in self._step_output_dict
 
-    def node_named(self, name):
+    def step_named(self, name):
         check.str_param(name, 'name')
         return self._step_output_dict[name]
 
-    def _create_compute_node_result(self, result):
+    def _create_step_result(self, result):
         check.inst_param(result, 'result', Result)
 
-        node_output = self.node_named(result.output_name)
+        step_output = self.step_named(result.output_name)
 
         try:
-            evaluation_result = node_output.dagster_type.evaluate_value(result.value)
+            evaluation_result = step_output.dagster_type.evaluate_value(result.value)
         except DagsterEvaluateValueError as e:
             raise DagsterInvariantViolationError(
-                '''Solid {cn.solid.name} output name {output_name} output {result.value}
+                '''Solid {step.solid.name} output name {output_name} output {result.value}
                 type failure: {error_msg}'''.format(
-                    cn=self,
+                    step=self,
                     result=result,
                     error_msg=','.join(e.args),
                     output_name=result.output_name,
@@ -334,7 +335,7 @@ class ExecutionStep(object):
             )
 
         return StepResult.success_result(
-            compute_node=self,
+            step=self,
             tag=self.tag,
             success_data=StepSuccessData(
                 output_name=result.output_name,
@@ -343,21 +344,21 @@ class ExecutionStep(object):
         )
 
     def _get_evaluated_input(self, input_name, input_value):
-        compute_node_input = self._step_input_dict[input_name]
+        step_input = self._step_input_dict[input_name]
         try:
-            return compute_node_input.dagster_type.evaluate_value(input_value)
+            return step_input.dagster_type.evaluate_value(input_value)
         except DagsterEvaluateValueError as evaluate_error:
             raise_from(
                 DagsterTypeError(
                     (
                         'Solid {cn.solid.name} input {input_name} received value {input_value} ' +
                         'which does not pass the typecheck for Dagster type ' +
-                        '{compute_node_input.dagster_type.name}. Compute node {cn.friendly_name}'
+                        '{step_input.dagster_type.name}. Compute node {cn.friendly_name}'
                     ).format(
                         cn=self,
                         input_name=input_name,
                         input_value=input_value,
-                        compute_node_input=compute_node_input,
+                        step_input=step_input,
                     )
                 ),
                 evaluate_error,
@@ -380,7 +381,7 @@ class ExecutionStep(object):
     def _error_check_results(self, results):
         seen_outputs = set()
         for result in results:
-            if not self.has_node(result.output_name):
+            if not self.has_step(result.output_name):
                 output_names = list(
                     [output_def.name for output_def in self.solid.definition.output_defs]
                 )
@@ -409,7 +410,7 @@ class ExecutionStep(object):
 
         self._error_check_results(results)
 
-        return [self._create_compute_node_result(result) for result in results]
+        return [self._create_step_result(result) for result in results]
 
     def execute(self, context, inputs):
         check.inst_param(context, 'context', ExecutionContext)
@@ -422,7 +423,7 @@ class ExecutionStep(object):
         except DagsterError as dagster_error:
             context.error(str(dagster_error))
             yield StepResult.failure_result(
-                compute_node=self,
+                step=self,
                 tag=self.tag,
                 failure_data=StepFailureData(dagster_error=dagster_error, ),
             )
@@ -594,7 +595,7 @@ def create_expectations_cn_graph(solid, inout_def, prev_node_output_handle, tag)
     )
 
 
-class ComputeNodeOutputMap(dict):
+class StepOutputMap(dict):
     def __getitem__(self, key):
         check.inst_param(key, 'key', SolidOutputHandle)
         return dict.__getitem__(self, key)
@@ -646,12 +647,12 @@ def create_config_value(execution_info, pipeline_solid):
 # cn_output_node_map maps logical solid outputs (solid_name, output_name) to particular
 # compute_node outputs. This covers the case where a solid maps to multiple compute nodes
 # and one wants to be able to attach to the logical output of a solid during execution
-ComputeNodeBuilderState = namedtuple('ComputeNodeBuilderState', 'compute_nodes cn_output_node_map')
+StepBuilderState = namedtuple('ComputeNodeBuilderState', 'compute_nodes cn_output_node_map')
 
 
-def create_compute_node_inputs(info, state, pipeline_solid):
+def create_step_inputs(info, state, pipeline_solid):
     check.inst_param(info, 'info', ExecutionPlanInfo)
-    check.inst_param(state, 'state', ComputeNodeBuilderState)
+    check.inst_param(state, 'state', StepBuilderState)
     check.inst_param(pipeline_solid, 'pipeline_solid', Solid)
 
     cn_inputs = []
@@ -694,13 +695,13 @@ def create_compute_node_graph_core(execution_info):
 
     execution_graph = execution_info.execution_graph
 
-    state = ComputeNodeBuilderState(
+    state = StepBuilderState(
         compute_nodes=[],
-        cn_output_node_map=ComputeNodeOutputMap(),
+        cn_output_node_map=StepOutputMap(),
     )
 
     for pipeline_solid in execution_graph.topological_solids:
-        cn_inputs = create_compute_node_inputs(execution_info, state, pipeline_solid)
+        cn_inputs = create_step_inputs(execution_info, state, pipeline_solid)
 
         solid_transform_cn = create_transform_compute_node(
             pipeline_solid,

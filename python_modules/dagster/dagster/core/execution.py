@@ -146,7 +146,7 @@ class SolidExecutionResult(object):
 
             return SolidExecutionResult(
                 context=context,
-                solid=results[0].compute_node.solid,
+                solid=results[0].step.solid,
                 input_expectations=input_expectations,
                 output_expectations=output_expectations,
                 transforms=transforms,
@@ -374,21 +374,21 @@ def _execute_graph_iterator(context, execution_graph, environment):
 
     solid = None
     solid_results = []
-    for cn_result in execute_compute_nodes(context, cn_nodes):
-        cn_node = cn_result.compute_node
+    for step_result in execute_compute_nodes(context, cn_nodes):
+        step = step_result.step
 
-        if solid and solid is not cn_node.solid:
+        if solid and solid is not step.solid:
             yield SolidExecutionResult.from_results(context, solid_results)
             solid_results = []
 
-        if not cn_result.success:
-            solid_results.append(cn_result)
+        if not step_result.success:
+            solid_results.append(step_result)
             yield SolidExecutionResult.from_results(context, solid_results)
             solid_results = []
             return
 
-        solid = cn_node.solid
-        solid_results.append(cn_result)
+        solid = step.solid
+        solid_results.append(step_result)
 
     if solid and solid_results:
         yield SolidExecutionResult.from_results(context, solid_results)
