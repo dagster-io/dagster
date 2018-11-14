@@ -155,10 +155,7 @@ def test_pipeline_by_name():
     assert result.data['pipeline']['name'] == 'pandas_hello_world_two'
 
 
-def test_query_compute_nodes():
-    result = execute_dagster_graphql(
-        define_repo(),
-        '''
+COMPUTE_NODE_QUERY = '''
 query PipelineQuery($config: GenericScalar)
 {
   pipeline(name:"pandas_hello_world") {
@@ -173,7 +170,7 @@ query PipelineQuery($config: GenericScalar)
             name
         }
         tag
-        inputs { 
+        inputs {
            name
            type {
                name
@@ -192,7 +189,36 @@ query PipelineQuery($config: GenericScalar)
     }
   }
 }
-        ''',
+'''
+
+
+def test_query_compute_node_snapshot(snapshot):
+    result = execute_dagster_graphql(
+        define_repo(),
+        COMPUTE_NODE_QUERY,
+        {
+            'config': {
+                'solids': {
+                    'load_num_csv': {
+                        'config': {
+                            'path': 'pandas_hello_world/num.csv',
+                        },
+                    },
+                },
+            },
+        },
+    )
+
+    assert result.data
+    assert not result.errors
+
+    snapshot.assert_match(result.data)
+
+
+def test_query_compute_nodes():
+    result = execute_dagster_graphql(
+        define_repo(),
+        COMPUTE_NODE_QUERY,
         {
             'config': {
                 'solids': {
