@@ -12,7 +12,7 @@ from dagster import check
 
 from dagster.core.types import DagsterCompositeType
 
-from dagster.core.execution import create_compute_node_graph
+from dagster.core.execution import create_execution_plan
 
 
 def resolve_pipelines_implementation(_root_obj, info):
@@ -106,8 +106,8 @@ class Pipeline(graphene.ObjectType):
     solids = non_null_list(lambda: Solid)
     contexts = non_null_list(lambda: PipelineContext)
     environment_type = graphene.NonNull(lambda: Type)
-    computeNodeGraph = graphene.Field(
-        graphene.NonNull(lambda: ComputeNodeGraph),
+    execution_plan = graphene.Field(
+        graphene.NonNull(lambda: ExecutionPlan),
         args={
             'config': graphene.Argument(GenericScalar),
         },
@@ -117,8 +117,8 @@ class Pipeline(graphene.ObjectType):
         super(Pipeline, self).__init__(name=pipeline.name, description=pipeline.description)
         self._pipeline = check.inst_param(pipeline, 'pipeline', dagster.PipelineDefinition)
 
-    def resolve_computeNodeGraph(self, _info, config):
-        return ComputeNodeGraph(self, create_compute_node_graph(self._pipeline, config))
+    def resolve_execution_plan(self, _info, config):
+        return ExecutionPlan(self, create_execution_plan(self._pipeline, config))
 
     def resolve_solids(self, _info):
         return [
@@ -474,66 +474,66 @@ class TypeField(graphene.ObjectType):
         return Type.from_dagster_type(dagster_type=self._field.dagster_type)
 
 
-class ComputeNodeGraph(graphene.ObjectType):
-    computeNodes = non_null_list(lambda: ComputeNode)
+class ExecutionPlan(graphene.ObjectType):
+    steps = non_null_list(lambda: ExecutionStep)
     pipeline = graphene.NonNull(lambda: Pipeline)
 
-    def __init__(self, pipeline, compute_node_graph):
-        super(ComputeNodeGraph, self).__init__()
-        self.compute_node_graph = check.inst_param(
-            compute_node_graph,
-            'compute_node_graph',
+    def __init__(self, pipeline, execution_plan):
+        super(ExecutionPlan, self).__init__()
+        self.execution_plan = check.inst_param(
+            execution_plan,
+            'execution_plan',
             dagster.core.execution_plan.ExecutionPlan,
         )
         self.pipeline = check.inst_param(pipeline, 'pipeline', Pipeline)
 
-    def resolve_computeNodes(self, _info):
-        return [ComputeNode(cn) for cn in self.compute_node_graph.topological_steps()]
+    def resolve_steps(self, _info):
+        return [ExecutionStep(cn) for cn in self.execution_plan.topological_steps()]
 
 
-class ComputeNodeOutput(graphene.ObjectType):
+class ExecutionStepOutput(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     type = graphene.Field(graphene.NonNull(lambda: Type))
 
-    def __init__(self, compute_node_output):
-        super(ComputeNodeOutput, self).__init__()
-        self.compute_node_output = check.inst_param(
-            compute_node_output,
-            'compute_node_output',
+    def __init__(self, execution_step_output):
+        super(ExecutionStepOutput, self).__init__()
+        self.execution_step_output = check.inst_param(
+            execution_step_output,
+            'execution_step_output',
             dagster.core.execution_plan.StepOutput,
         )
 
     def resolve_name(self, _info):
-        return self.compute_node_output.name
+        return self.execution_step_output.name
 
     def resolve_type(self, _info):
-        return Type.from_dagster_type(dagster_type=self.compute_node_output.dagster_type)
+        return Type.from_dagster_type(dagster_type=self.execution_step_output.dagster_type)
 
 
-class ComputeNodeInput(graphene.ObjectType):
+class ExecutionStepInput(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     type = graphene.Field(graphene.NonNull(lambda: Type))
-    dependsOn = graphene.Field(graphene.NonNull(lambda: ComputeNode))
+    dependsOn = graphene.Field(graphene.NonNull(lambda: ExecutionStep))
 
-    def __init__(self, compute_node_input):
-        super(ComputeNodeInput, self).__init__()
-        self.compute_node_input = check.inst_param(
-            compute_node_input,
-            'compute_node_input',
+    def __init__(self, execution_step_input):
+        super(ExecutionStepInput, self).__init__()
+        self.execution_step_input = check.inst_param(
+            execution_step_input,
+            'execution_step_input',
             dagster.core.execution_plan.StepInput,
         )
 
     def resolve_name(self, _info):
-        return self.compute_node_input.name
+        return self.execution_step_input.name
 
     def resolve_type(self, _info):
-        return Type.from_dagster_type(dagster_type=self.compute_node_input.dagster_type)
+        return Type.from_dagster_type(dagster_type=self.execution_step_input.dagster_type)
 
     def resolve_dependsOn(self, _info):
-        return ComputeNode(self.compute_node_input.prev_output_handle.step)
+        return ExecutionStep(self.execution_step_input.prev_output_handle.step)
 
 
-class ComputeNodeTag(graphene.Enum):
+class ExecutionStepTag(graphene.Enum):
     TRANSFORM = 'TRANSFORM'
     INPUT_EXPECTATION = 'INPUT_EXPECTATION'
     OUTPUT_EXPECTATION = 'OUTPUT_EXPECTATION'
@@ -544,53 +544,53 @@ class ComputeNodeTag(graphene.Enum):
     def description(self):
         # self ends up being the internal class "EnumMeta" in graphene
         # so we can't do a dictionary lookup which is awesome
-        if self == ComputeNodeTag.TRANSFORM:
-            return 'This is the user-defined transform node'
-        elif self == ComputeNodeTag.INPUT_EXPECTATION:
+        if self == ExecutionStepTag.TRANSFORM:
+            return 'This is the user-defined transform step'
+        elif self == ExecutionStepTag.INPUT_EXPECTATION:
             return 'Expectation defined on an input'
-        elif self == ComputeNodeTag.OUTPUT_EXPECTATION:
+        elif self == ExecutionStepTag.OUTPUT_EXPECTATION:
             return 'Expectation defined on an output'
-        elif self == ComputeNodeTag.JOIN:
+        elif self == ExecutionStepTag.JOIN:
             return '''Sometimes we fan out compute on identical values
-(e.g. multiple expectations in parallel). We synthesizie these in a join node to consolidate to
+(e.g. multiple expectations in parallel). We synthesizie these in a join step to consolidate to
 a single output that the next computation can depend on.
 '''
-        elif self == ComputeNodeTag.SERIALIZE:
-            return '''This is a special system-defined node to serialize
+        elif self == ExecutionStepTag.SERIALIZE:
+            return '''This is a special system-defined step to serialize
 an intermediate value if the pipeline is configured to do that.'''
         else:
             return 'Unknown enum {value}'.format(value=self)
 
 
-class ComputeNode(graphene.ObjectType):
+class ExecutionStep(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
-    inputs = non_null_list(lambda: ComputeNodeInput)
-    outputs = non_null_list(lambda: ComputeNodeOutput)
+    inputs = non_null_list(lambda: ExecutionStepInput)
+    outputs = non_null_list(lambda: ExecutionStepOutput)
     solid = graphene.NonNull(lambda: Solid)
-    tag = graphene.NonNull(lambda: ComputeNodeTag)
+    tag = graphene.NonNull(lambda: ExecutionStepTag)
 
-    def __init__(self, compute_node):
-        super(ComputeNode, self).__init__()
-        self.compute_node = check.inst_param(
-            compute_node,
-            'compute_node',
+    def __init__(self, execution_step):
+        super(ExecutionStep, self).__init__()
+        self.execution_step = check.inst_param(
+            execution_step,
+            'execution_step',
             dagster.core.execution_plan.ExecutionStep,
         )
 
     def resolve_inputs(self, _info):
-        return [ComputeNodeInput(cni) for cni in self.compute_node.step_inputs]
+        return [ExecutionStepInput(inp) for inp in self.execution_step.step_inputs]
 
     def resolve_outputs(self, _info):
-        return [ComputeNodeOutput(cno) for cno in self.compute_node.step_outputs]
+        return [ExecutionStepOutput(out) for out in self.execution_step.step_outputs]
 
     def resolve_name(self, _info):
-        return self.compute_node.friendly_name
+        return self.execution_step.friendly_name
 
     def resolve_solid(self, _info):
-        return Solid(self.compute_node.solid)
+        return Solid(self.execution_step.solid)
 
     def resolve_tag(self, _info):
-        return self.compute_node.tag
+        return self.execution_step.tag
 
 
 def create_schema():

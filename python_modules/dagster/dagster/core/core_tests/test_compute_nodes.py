@@ -7,7 +7,7 @@ from dagster import (
 )
 
 from dagster.core.execution import (
-    create_compute_node_graph,
+    create_execution_plan,
     ExecutionPlanInfo,
 )
 
@@ -45,9 +45,9 @@ def test_compute_noop_node_core():
         ),
     )
 
-    assert len(compute_node_graph.nodes) == 1
+    assert len(compute_node_graph.steps) == 1
 
-    outputs = list(compute_node_graph.nodes[0].execute(ExecutionContext(), {}))
+    outputs = list(compute_node_graph.steps[0].execute(ExecutionContext(), {}))
 
     assert outputs[0].success_data.value == 'foo'
 
@@ -57,9 +57,9 @@ def test_compute_noop_node():
         noop,
     ])
 
-    compute_node_graph = create_compute_node_graph(pipeline)
+    compute_node_graph = create_execution_plan(pipeline)
 
-    assert len(compute_node_graph.nodes) == 1
-    outputs = list(compute_node_graph.nodes[0].execute(ExecutionContext(), {}))
+    assert len(compute_node_graph.steps) == 1
+    outputs = list(compute_node_graph.steps[0].execute(ExecutionContext(), {}))
 
     assert outputs[0].success_data.value == 'foo'

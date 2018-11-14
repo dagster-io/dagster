@@ -517,7 +517,7 @@ class ExecutionPlan(object):
             value_type=ExecutionStep,
         )
         self.deps = check.dict_param(deps, 'deps', key_type=str, value_type=set)
-        self.nodes = list(step_dict.values())
+        self.steps = list(step_dict.values())
 
     def topological_steps(self):
         sorted_step_guids = toposort.toposort_flatten(self.deps)
@@ -566,7 +566,7 @@ def create_expectation_step(
 
 ExecutionSubPlan = namedtuple(
     'ExecutionSubPlan',
-    'nodes terminal_step_output_handle',
+    'steps terminal_step_output_handle',
 )
 
 
@@ -684,7 +684,7 @@ def create_step_inputs(info, state, pipeline_solid):
             input_def,
         )
 
-        state.steps.extend(subgraph.nodes)
+        state.steps.extend(subgraph.steps)
         cn_inputs.append(
             StepInput(
                 input_def.name,
@@ -724,7 +724,7 @@ def create_execution_plan_core(execution_info):
                 solid_transform_step,
                 output_def,
             )
-            state.steps.extend(subgraph.nodes)
+            state.steps.extend(subgraph.steps)
 
             output_handle = pipeline_solid.output_handle(output_def.name)
             state.step_output_map[output_handle] = subgraph.terminal_step_output_handle
@@ -762,7 +762,7 @@ def create_subgraph_for_input(execution_info, solid, prev_step_output_handle, in
         )
     else:
         return ExecutionSubPlan(
-            nodes=[],
+            steps=[],
             terminal_step_output_handle=prev_step_output_handle,
         )
 
@@ -786,7 +786,7 @@ def _decorate_with_expectations(execution_info, solid, transform_step, output_de
         )
     else:
         return ExecutionSubPlan(
-            nodes=[],
+            steps=[],
             terminal_step_output_handle=StepOutputHandle(
                 transform_step,
                 output_def.name,
@@ -803,7 +803,7 @@ def _decorate_with_serialization(execution_info, solid, output_def, subplan):
     if execution_info.serialize_intermediates:
         serialize_step = _create_serialization_step(solid, output_def, subplan)
         return ExecutionSubPlan(
-            nodes=subplan.nodes + [serialize_step],
+            steps=subplan.steps + [serialize_step],
             terminal_step_output_handle=StepOutputHandle(
                 serialize_step,
                 SERIALIZE_OUTPUT,

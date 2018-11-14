@@ -259,7 +259,7 @@ def _validate_environment(environment, pipeline):
             )
 
 
-def create_compute_node_graph(pipeline, config_dict=None):
+def create_execution_plan(pipeline, config_dict=None):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     config_dict = check.opt_dict_param(config_dict, 'config_dict')
 
