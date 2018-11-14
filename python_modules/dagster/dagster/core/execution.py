@@ -260,13 +260,13 @@ def _validate_environment(environment, pipeline):
             )
 
 
-def create_compute_node_graph(pipeline, yaml_config):
+def create_compute_node_graph(pipeline, config_dict=None):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    check.str_param(yaml_config, 'yaml_config')
+    config_dict = check.opt_dict_param(config_dict, 'config_dict')
 
     pipeline_env_type = EnvironmentConfigType(pipeline)
 
-    environment = create_config_value(pipeline_env_type, yaml.load(yaml_config))
+    environment = create_config_value(pipeline_env_type, config_dict)
 
     check.inst(environment, config.Environment)
 

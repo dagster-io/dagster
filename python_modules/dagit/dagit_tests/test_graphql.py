@@ -157,8 +157,9 @@ def test_pipeline_by_name():
 
 def test_query_compute_nodes():
     result = execute_dagster_graphql(
-        define_repo(), '''
-query PipelineQuery($config: String!)
+        define_repo(),
+        '''
+query PipelineQuery($config: GenericScalar)
 {
   pipeline(name:"pandas_hello_world") {
     name
@@ -191,16 +192,18 @@ query PipelineQuery($config: String!)
     }
   }
 }
-        ''', {
-            'config':
-            '''
-solids:
-  load_num_csv:
-    config:
-      path: "pandas_hello_world/num.csv"
-
-            ''',
-        }
+        ''',
+        {
+            'config': {
+                'solids': {
+                    'load_num_csv': {
+                        'config': {
+                            'path': 'pandas_hello_world/num.csv',
+                        },
+                    },
+                },
+            },
+        },
     )
 
     if result.errors:

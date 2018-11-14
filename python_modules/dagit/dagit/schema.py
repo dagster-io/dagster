@@ -3,6 +3,8 @@ import traceback
 
 import graphene
 
+from graphene.types.generic import GenericScalar
+
 import dagster
 import dagster.core.definitions
 
@@ -226,7 +228,7 @@ class Pipeline(graphene.ObjectType):
     computeNodeGraph = graphene.Field(
         graphene.NonNull(lambda: ComputeNodeGraph),
         args={
-            'config': graphene.Argument(graphene.NonNull(graphene.String)),
+            'config': graphene.Argument(GenericScalar),
         },
     )
 

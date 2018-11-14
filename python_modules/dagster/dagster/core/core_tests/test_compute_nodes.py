@@ -57,7 +57,7 @@ def test_compute_noop_node():
         noop,
     ])
 
-    compute_node_graph = create_compute_node_graph(pipeline, '')
+    compute_node_graph = create_compute_node_graph(pipeline)
 
     assert len(compute_node_graph.nodes) == 1
     outputs = list(compute_node_graph.nodes[0].execute(ExecutionContext(), {}))
