@@ -7,10 +7,13 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
-snapshots['test_query_compute_node_snapshot 1'] = {
+snapshots['test_query_execution_plan_snapshot 1'] = {
     'pipeline': {
-        'computeNodeGraph': {
-            'computeNodes': [
+        'executionPlan': {
+            'pipeline': {
+                'name': 'pandas_hello_world'
+            },
+            'steps': [
                 {
                     'inputs': [
                     ],
@@ -80,10 +83,7 @@ snapshots['test_query_compute_node_snapshot 1'] = {
                     },
                     'tag': 'TRANSFORM'
                 }
-            ],
-            'pipeline': {
-                'name': 'pandas_hello_world'
-            }
+            ]
         },
         'name': 'pandas_hello_world'
     }

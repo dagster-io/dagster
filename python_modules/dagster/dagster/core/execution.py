@@ -45,13 +45,13 @@ from .errors import (
     DagsterUserCodeExecutionError,
 )
 
-from .compute_nodes import (
-    ComputeNodeExecutionInfo,
-    ComputeNodeGraph,
-    ComputeNodeResult,
-    ComputeNodeTag,
-    create_compute_node_graph_core,
-    execute_compute_nodes,
+from .execution_plan import (
+    ExecutionPlanInfo,
+    ExecutionPlan,
+    StepResult,
+    StepTag,
+    create_execution_plan_core,
+    execute_steps,
 )
 
 
@@ -121,32 +121,36 @@ class SolidExecutionResult(object):
         self.context = check.inst_param(context, 'context', ExecutionContext)
         self.solid = check.inst_param(solid, 'solid', Solid)
         self.input_expectations = check.list_param(
-            input_expectations, 'input_expectations', ComputeNodeResult
+            input_expectations,
+            'input_expectations',
+            StepResult,
         )
         self.output_expectations = check.list_param(
-            output_expectations, 'output_expectations', ComputeNodeResult
+            output_expectations,
+            'output_expectations',
+            StepResult,
         )
-        self.transforms = check.list_param(transforms, 'transforms', ComputeNodeResult)
+        self.transforms = check.list_param(transforms, 'transforms', StepResult)
 
     @staticmethod
     def from_results(context, results):
-        results = check.list_param(results, 'results', ComputeNodeResult)
+        results = check.list_param(results, 'results', StepResult)
         if results:
             input_expectations = []
             output_expectations = []
             transforms = []
 
             for result in results:
-                if result.tag == ComputeNodeTag.INPUT_EXPECTATION:
+                if result.tag == StepTag.INPUT_EXPECTATION:
                     input_expectations.append(result)
-                elif result.tag == ComputeNodeTag.OUTPUT_EXPECTATION:
+                elif result.tag == StepTag.OUTPUT_EXPECTATION:
                     output_expectations.append(result)
-                elif result.tag == ComputeNodeTag.TRANSFORM:
+                elif result.tag == StepTag.TRANSFORM:
                     transforms.append(result)
 
             return SolidExecutionResult(
                 context=context,
-                solid=results[0].compute_node.solid,
+                solid=results[0].step.solid,
                 input_expectations=input_expectations,
                 output_expectations=output_expectations,
                 transforms=transforms,
@@ -259,7 +263,7 @@ def _validate_environment(environment, pipeline):
             )
 
 
-def create_compute_node_graph(pipeline, config_dict=None):
+def create_execution_plan(pipeline, config_dict=None):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     config_dict = check.opt_dict_param(config_dict, 'config_dict')
 
@@ -271,10 +275,9 @@ def create_compute_node_graph(pipeline, config_dict=None):
 
     execution_graph = ExecutionGraph.from_pipeline(pipeline)
     with yield_context(pipeline, environment) as context:
-        compute_node_graph = create_compute_node_graph_core(
-            ComputeNodeExecutionInfo(context, execution_graph, environment),
+        return create_execution_plan_core(
+            ExecutionPlanInfo(context, execution_graph, environment),
         )
-        return check.inst(compute_node_graph, ComputeNodeGraph)
 
 
 def create_config_value(config_type, config_input):
@@ -346,17 +349,17 @@ def _execute_graph_iterator(context, execution_graph, environment):
     check.inst_param(execution_graph, 'execution_graph', ExecutionGraph)
     check.inst_param(environment, 'environent', config.Environment)
 
-    cn_graph = create_compute_node_graph_core(
-        ComputeNodeExecutionInfo(
+    execution_plan = create_execution_plan_core(
+        ExecutionPlanInfo(
             context,
             execution_graph,
             environment,
         ),
     )
 
-    cn_nodes = list(cn_graph.topological_nodes())
+    steps = list(execution_plan.topological_steps())
 
-    if not cn_nodes:
+    if not steps:
         context.debug(
             'Pipeline {pipeline} has no nodes and no execution will happen'.format(
                 pipeline=execution_graph.pipeline.display_name
@@ -366,29 +369,29 @@ def _execute_graph_iterator(context, execution_graph, environment):
 
     context.debug(
         'About to execute the compute node graph in the following order {order}'.format(
-            order=[cn.friendly_name for cn in cn_nodes]
+            order=[cn.friendly_name for cn in steps]
         )
     )
 
-    check.invariant(len(cn_nodes[0].node_inputs) == 0)
+    check.invariant(len(steps[0].step_inputs) == 0)
 
     solid = None
     solid_results = []
-    for cn_result in execute_compute_nodes(context, cn_nodes):
-        cn_node = cn_result.compute_node
+    for step_result in execute_steps(context, steps):
+        step = step_result.step
 
-        if solid and solid is not cn_node.solid:
+        if solid and solid is not step.solid:
             yield SolidExecutionResult.from_results(context, solid_results)
             solid_results = []
 
-        if not cn_result.success:
-            solid_results.append(cn_result)
+        if not step_result.success:
+            solid_results.append(step_result)
             yield SolidExecutionResult.from_results(context, solid_results)
             solid_results = []
             return
 
-        solid = cn_node.solid
-        solid_results.append(cn_result)
+        solid = step.solid
+        solid_results.append(step_result)
 
     if solid and solid_results:
         yield SolidExecutionResult.from_results(context, solid_results)
