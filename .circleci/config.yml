@@ -4,16 +4,26 @@ workflows:
   version: 2
   test:
     jobs:
-      - dagster-python-3.6
+      - dagster-python-3.6:
+          context: coveralls
       - dagster-python-3.5
+          context: coveralls
       - dagster-python-2.7
+          context: coveralls
       - dagit-python-3.6
+          context: coveralls
       - dagit-python-3.5
+          context: coveralls
       - dagit-python-2.7
+          context: coveralls
       - dagit-webapp
+          context: coveralls
       - dagstermill-python-3.6
+          context: coveralls
       - dagstermill-python-3.5
+          context: coveralls
       - dagstermill-python-2.7
+          context: coveralls
 
 jobs:
   dagster-python-3.6: &dagster-template
