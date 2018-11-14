@@ -352,13 +352,12 @@ def test_pipeline_name_threaded_through_context():
         assert info.context._context_stack['pipeline']
         assert info.context._context_stack['pipeline'] == name
 
-    result = execute_pipeline(
-        PipelineDefinition(name="foobar", solids=[assert_name_transform]))
+    result = execute_pipeline(PipelineDefinition(name="foobar", solids=[assert_name_transform]))
 
     assert result.success
 
     for result in execute_pipeline_iterator(
-            PipelineDefinition(name="foobar", solids=[assert_name_transform]),
-            {},
-        ):
+        PipelineDefinition(name="foobar", solids=[assert_name_transform]),
+        {},
+    ):
         assert result.success

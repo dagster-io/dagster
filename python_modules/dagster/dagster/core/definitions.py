@@ -449,7 +449,9 @@ def _create_execution_structure(name, solids, dependencies_dict):
 
     pipeline_solid_dict = {ps.name: ps for ps in pipeline_solids}
 
-    _validate_dependencies(mapper.aliased_dependencies_dict, pipeline_solid_dict, mapper.alias_lookup)
+    _validate_dependencies(
+        mapper.aliased_dependencies_dict, pipeline_solid_dict, mapper.alias_lookup
+    )
 
     dependency_structure = DependencyStructure.from_definitions(
         pipeline_solid_dict,
@@ -475,13 +477,13 @@ def _validate_dependencies(dependencies, solid_dict, alias_lookup):
                 aliased_solid = alias_lookup.get(from_solid)
                 if aliased_solid == from_solid:
                     raise DagsterInvalidDefinitionError(
-                        'Solid {from_solid} in dependency dictionary not found in solid list'.format(
-                            from_solid=from_solid
-                        ),
+                        'Solid {from_solid} in dependency dictionary not found in solid list'.
+                        format(from_solid=from_solid),
                     )
                 else:
                     raise DagsterInvalidDefinitionError(
-                        'Solid {aliased_solid} (aliased by {from_solid} in dependency dictionary) not found in solid list'.format(
+                        'Solid {aliased_solid} (aliased by {from_solid} in dependency dictionary) not found in solid list'.
+                        format(
                             aliased_solid=aliased_solid,
                             from_solid=from_solid,
                         ),

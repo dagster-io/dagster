@@ -588,6 +588,7 @@ def test_multiple_context():
             },
         )
 
+
 def test_wrong_context():
     pipeline_def = PipelineDefinition(
         name='pipeline_test_multiple_context',

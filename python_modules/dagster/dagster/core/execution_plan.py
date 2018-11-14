@@ -100,10 +100,7 @@ class StepOutputHandle(namedtuple('_StepOutputHandle', 'step output_name')):
         return hash(self.step.guid + self.output_name)
 
     def __eq__(self, other):
-        return (
-            self.step.guid == other.step.guid
-            and self.output_name == other.output_name
-        )
+        return (self.step.guid == other.step.guid and self.output_name == other.output_name)
 
 
 class StepSuccessData(namedtuple('_StepSuccessData', 'output_name value')):
@@ -123,12 +120,10 @@ class StepFailureData(namedtuple('_StepFailureData', 'dagster_error')):
         )
 
 
-class StepResult(
-    namedtuple(
-        '_StepResult',
-        'success compute_node tag success_data failure_data',
-    )
-):
+class StepResult(namedtuple(
+    '_StepResult',
+    'success compute_node tag success_data failure_data',
+)):
     @staticmethod
     def success_result(compute_node, tag, success_data):
         return StepResult(
@@ -304,28 +299,21 @@ class ExecutionStep(object):
         self.friendly_name = check.str_param(friendly_name, 'friendly_name')
         self.step_inputs = check.list_param(step_inputs, 'step_inputs', of_type=StepInput)
 
-        node_input_dict = {}
-        for node_input in step_inputs:
-            node_input_dict[node_input.name] = node_input
-        self._node_input_dict = node_input_dict
+        self._step_input_dict = {si.name: si for si in step_inputs}
         self.step_outputs = check.list_param(step_outputs, 'step_outputs', of_type=StepOutput)
 
-        node_output_dict = {}
-        for node_output in step_outputs:
-            node_output_dict[node_output.name] = node_output
-
-        self._node_output_dict = node_output_dict
+        self._step_output_dict = {so.name : so for so in step_outputs}
         self.compute_fn = check.callable_param(compute_fn, 'compute_fn')
         self.tag = check.inst_param(tag, 'tag', StepTag)
         self.solid = check.inst_param(solid, 'solid', Solid)
 
     def has_node(self, name):
         check.str_param(name, 'name')
-        return name in self._node_output_dict
+        return name in self._step_output_dict
 
     def node_named(self, name):
         check.str_param(name, 'name')
-        return self._node_output_dict[name]
+        return self._step_output_dict[name]
 
     def _create_compute_node_result(self, result):
         check.inst_param(result, 'result', Result)
@@ -355,7 +343,7 @@ class ExecutionStep(object):
         )
 
     def _get_evaluated_input(self, input_name, input_value):
-        compute_node_input = self._node_input_dict[input_name]
+        compute_node_input = self._step_input_dict[input_name]
         try:
             return compute_node_input.dagster_type.evaluate_value(input_value)
         except DagsterEvaluateValueError as evaluate_error:
@@ -867,12 +855,10 @@ def _create_serialization_node(solid, output_def, prev_subgraph):
                 prev_output_handle=prev_subgraph.terminal_cn_output_handle,
             )
         ],
-        step_outputs=[
-            StepOutput(
-                name=SERIALIZE_OUTPUT,
-                dagster_type=output_def.dagster_type,
-            )
-        ],
+        step_outputs=[StepOutput(
+            name=SERIALIZE_OUTPUT,
+            dagster_type=output_def.dagster_type,
+        )],
         compute_fn=_create_serialization_lambda(solid, output_def),
         tag=StepTag.SERIALIZE,
         solid=solid,
@@ -897,9 +883,7 @@ def _create_join_node(solid, prev_nodes, prev_output_name):
 
         output_handle = StepOutputHandle(prev_node, prev_output_name)
 
-        step_inputs.append(
-            StepInput(prev_node.guid, prev_node_output.dagster_type, output_handle)
-        )
+        step_inputs.append(StepInput(prev_node.guid, prev_node_output.dagster_type, output_handle))
 
     return ExecutionStep(
         friendly_name='join',

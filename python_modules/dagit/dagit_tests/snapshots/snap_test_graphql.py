@@ -4,7 +4,6 @@ from __future__ import unicode_literals
 
 from snapshottest import Snapshot
 
-
 snapshots = Snapshot()
 
 snapshots['test_query_compute_node_snapshot 1'] = {
@@ -12,23 +11,19 @@ snapshots['test_query_compute_node_snapshot 1'] = {
         'computeNodeGraph': {
             'computeNodes': [
                 {
-                    'inputs': [
-                    ],
+                    'inputs': [],
                     'name': 'load_num_csv.transform',
-                    'outputs': [
-                        {
-                            'name': 'result',
-                            'type': {
-                                'name': 'PandasDataFrame'
-                            }
+                    'outputs': [{
+                        'name': 'result',
+                        'type': {
+                            'name': 'PandasDataFrame'
                         }
-                    ],
+                    }],
                     'solid': {
                         'name': 'load_num_csv'
                     },
                     'tag': 'TRANSFORM'
-                },
-                {
+                }, {
                     'inputs': [
                         {
                             'dependsOn': {
@@ -40,21 +35,20 @@ snapshots['test_query_compute_node_snapshot 1'] = {
                             }
                         }
                     ],
-                    'name': 'sum_solid.transform',
-                    'outputs': [
-                        {
-                            'name': 'result',
-                            'type': {
-                                'name': 'PandasDataFrame'
-                            }
+                    'name':
+                    'sum_solid.transform',
+                    'outputs': [{
+                        'name': 'result',
+                        'type': {
+                            'name': 'PandasDataFrame'
                         }
-                    ],
+                    }],
                     'solid': {
                         'name': 'sum_solid'
                     },
-                    'tag': 'TRANSFORM'
-                },
-                {
+                    'tag':
+                    'TRANSFORM'
+                }, {
                     'inputs': [
                         {
                             'dependsOn': {
@@ -66,19 +60,19 @@ snapshots['test_query_compute_node_snapshot 1'] = {
                             }
                         }
                     ],
-                    'name': 'sum_sq_solid.transform',
-                    'outputs': [
-                        {
-                            'name': 'result',
-                            'type': {
-                                'name': 'PandasDataFrame'
-                            }
+                    'name':
+                    'sum_sq_solid.transform',
+                    'outputs': [{
+                        'name': 'result',
+                        'type': {
+                            'name': 'PandasDataFrame'
                         }
-                    ],
+                    }],
                     'solid': {
                         'name': 'sum_sq_solid'
                     },
-                    'tag': 'TRANSFORM'
+                    'tag':
+                    'TRANSFORM'
                 }
             ],
             'pipeline': {

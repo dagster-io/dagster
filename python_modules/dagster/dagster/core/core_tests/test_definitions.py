@@ -15,6 +15,7 @@ from dagster import (
 )
 from dagster.core.errors import DagsterInvalidDefinitionError
 
+
 def test_deps_equal():
     assert DependencyDefinition('foo') == DependencyDefinition('foo')
     assert DependencyDefinition('foo') != DependencyDefinition('bar')
@@ -87,7 +88,6 @@ def test_mapper_errors():
         print('a: 1')
         return 1
 
-
     @lambda_solid(inputs=[InputDefinition('arg_a')])
     def solid_b(arg_a):
         print('b: {b}'.format(b=arg_a * 2))
@@ -95,12 +95,21 @@ def test_mapper_errors():
 
     with pytest.raises(DagsterInvalidDefinitionError) as excinfo_1:
         PipelineDefinition(
-            solids=[solid_a],
-            dependencies={'solid_b': {'arg_a': DependencyDefinition('solid_a')}})
-    assert str(excinfo_1.value) == 'Solid solid_b in dependency dictionary not found in solid list' 
+            solids=[solid_a], dependencies={'solid_b': {
+                'arg_a': DependencyDefinition('solid_a')
+            }}
+        )
+    assert str(excinfo_1.value) == 'Solid solid_b in dependency dictionary not found in solid list'
 
     with pytest.raises(DagsterInvalidDefinitionError) as excinfo_2:
         PipelineDefinition(
             solids=[solid_a],
-            dependencies={SolidInstance('solid_b', alias='solid_c'): {'arg_a': DependencyDefinition('solid_a')}})
-    assert str(excinfo_2.value) == 'Solid solid_b (aliased by solid_c in dependency dictionary) not found in solid list'
+            dependencies={
+                SolidInstance('solid_b', alias='solid_c'): {
+                    'arg_a': DependencyDefinition('solid_a')
+                }
+            }
+        )
+    assert str(
+        excinfo_2.value
+    ) == 'Solid solid_b (aliased by solid_c in dependency dictionary) not found in solid list'
