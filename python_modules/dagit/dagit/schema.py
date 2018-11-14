@@ -46,21 +46,26 @@ def non_null_list(ttype):
 
 
 class ComputeNodeGraph(graphene.ObjectType):
-    def __init__(self, compute_node_graph):
+    computeNodes = non_null_list(lambda: ComputeNode)
+    pipeline = graphene.NonNull(lambda: Pipeline)
+
+    def __init__(self, pipeline, compute_node_graph):
         super(ComputeNodeGraph, self).__init__()
         self.compute_node_graph = check.inst_param(
             compute_node_graph,
             'compute_node_graph',
             dagster.core.compute_nodes.ComputeNodeGraph,
         )
-
-    computeNodes = non_null_list(lambda: ComputeNode)
+        self.pipeline = check.inst_param(pipeline, 'pipeline', Pipeline)
 
     def resolve_computeNodes(self, _info):
         return [ComputeNode(cn) for cn in self.compute_node_graph.nodes]
 
 
 class ComputeNodeOutput(graphene.ObjectType):
+    name = graphene.NonNull(graphene.String)
+    type = graphene.Field(graphene.NonNull(lambda: Type))
+
     def __init__(self, compute_node_output):
         super(ComputeNodeOutput, self).__init__()
         self.compute_node_output = check.inst_param(
@@ -68,9 +73,6 @@ class ComputeNodeOutput(graphene.ObjectType):
             'compute_node_output',
             dagster.core.compute_nodes.ComputeNodeOutput,
         )
-
-    name = graphene.NonNull(graphene.String)
-    type = graphene.Field(graphene.NonNull(lambda: Type))
 
     def resolve_name(self, _info):
         return self.compute_node_output.name
@@ -80,6 +82,10 @@ class ComputeNodeOutput(graphene.ObjectType):
 
 
 class ComputeNodeInput(graphene.ObjectType):
+    name = graphene.NonNull(graphene.String)
+    type = graphene.Field(graphene.NonNull(lambda: Type))
+    dependsOn = graphene.Field(graphene.NonNull(lambda: ComputeNode))
+
     def __init__(self, compute_node_input):
         super(ComputeNodeInput, self).__init__()
         self.compute_node_input = check.inst_param(
@@ -87,10 +93,6 @@ class ComputeNodeInput(graphene.ObjectType):
             'compute_node_input',
             dagster.core.compute_nodes.ComputeNodeInput,
         )
-
-    name = graphene.NonNull(graphene.String)
-    type = graphene.Field(graphene.NonNull(lambda: Type))
-    dependsOn = graphene.Field(graphene.NonNull(lambda: ComputeNode))
 
     def resolve_name(self, _info):
         return self.compute_node_input.name
@@ -132,6 +134,12 @@ an intermediate value if the pipeline is configured to do that.'''
 
 
 class ComputeNode(graphene.ObjectType):
+    name = graphene.NonNull(graphene.String)
+    inputs = non_null_list(lambda: ComputeNodeInput)
+    outputs = non_null_list(lambda: ComputeNodeOutput)
+    solid = graphene.NonNull(lambda: Solid)
+    tag = graphene.NonNull(lambda: ComputeNodeTag)
+
     def __init__(self, compute_node):
         super(ComputeNode, self).__init__()
         self.compute_node = check.inst_param(
@@ -139,12 +147,6 @@ class ComputeNode(graphene.ObjectType):
             'compute_node',
             dagster.core.compute_nodes.ComputeNode,
         )
-
-    name = graphene.NonNull(graphene.String)
-    inputs = non_null_list(lambda: ComputeNodeInput)
-    outputs = non_null_list(lambda: ComputeNodeOutput)
-    solid = graphene.NonNull(lambda: Solid)
-    tag = graphene.NonNull(lambda: ComputeNodeTag)
 
     def resolve_inputs(self, _info):
         return [ComputeNodeInput(cni) for cni in self.compute_node.node_inputs]
@@ -233,7 +235,7 @@ class Pipeline(graphene.ObjectType):
         self._pipeline = check.inst_param(pipeline, 'pipeline', dagster.PipelineDefinition)
 
     def resolve_computeNodeGraph(self, _info, config):
-        return ComputeNodeGraph(create_compute_node_graph(self._pipeline, config))
+        return ComputeNodeGraph(self, create_compute_node_graph(self._pipeline, config))
 
     def resolve_solids(self, _info):
         return [

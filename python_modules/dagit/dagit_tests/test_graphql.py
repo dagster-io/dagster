@@ -163,6 +163,9 @@ query PipelineQuery($config: String!)
   pipeline(name:"pandas_hello_world") {
     name
     computeNodeGraph(config:$config) {
+      pipeline {
+        name
+      }
       computeNodes {
         name
         solid {
@@ -200,6 +203,9 @@ solids:
         }
     )
 
+    if result.errors:
+        raise Exception(result.errors[0])
+
     assert result.data
     assert not result.errors
 
@@ -209,6 +215,8 @@ solids:
     assert len(names) == 3
 
     assert names == set(['load_num_csv.transform', 'sum_solid.transform', 'sum_sq_solid.transform'])
+
+    assert result.data['pipeline']['computeNodeGraph']['pipeline']['name'] == 'pandas_hello_world'
 
     cn = get_named_thing(compute_node_graph_data['computeNodes'], 'sum_solid.transform')
 
