@@ -533,7 +533,7 @@ class ExecutionStepInput(graphene.ObjectType):
         return ExecutionStep(self.execution_step_input.prev_output_handle.step)
 
 
-class ExecutionStepTag(graphene.Enum):
+class StepTag(graphene.Enum):
     TRANSFORM = 'TRANSFORM'
     INPUT_EXPECTATION = 'INPUT_EXPECTATION'
     OUTPUT_EXPECTATION = 'OUTPUT_EXPECTATION'
@@ -544,18 +544,18 @@ class ExecutionStepTag(graphene.Enum):
     def description(self):
         # self ends up being the internal class "EnumMeta" in graphene
         # so we can't do a dictionary lookup which is awesome
-        if self == ExecutionStepTag.TRANSFORM:
+        if self == StepTag.TRANSFORM:
             return 'This is the user-defined transform step'
-        elif self == ExecutionStepTag.INPUT_EXPECTATION:
+        elif self == StepTag.INPUT_EXPECTATION:
             return 'Expectation defined on an input'
-        elif self == ExecutionStepTag.OUTPUT_EXPECTATION:
+        elif self == StepTag.OUTPUT_EXPECTATION:
             return 'Expectation defined on an output'
-        elif self == ExecutionStepTag.JOIN:
+        elif self == StepTag.JOIN:
             return '''Sometimes we fan out compute on identical values
 (e.g. multiple expectations in parallel). We synthesizie these in a join step to consolidate to
 a single output that the next computation can depend on.
 '''
-        elif self == ExecutionStepTag.SERIALIZE:
+        elif self == StepTag.SERIALIZE:
             return '''This is a special system-defined step to serialize
 an intermediate value if the pipeline is configured to do that.'''
         else:
@@ -567,7 +567,7 @@ class ExecutionStep(graphene.ObjectType):
     inputs = non_null_list(lambda: ExecutionStepInput)
     outputs = non_null_list(lambda: ExecutionStepOutput)
     solid = graphene.NonNull(lambda: Solid)
-    tag = graphene.NonNull(lambda: ExecutionStepTag)
+    tag = graphene.NonNull(lambda: StepTag)
 
     def __init__(self, execution_step):
         super(ExecutionStep, self).__init__()
