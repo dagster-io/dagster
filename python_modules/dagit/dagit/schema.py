@@ -483,7 +483,7 @@ class ComputeNodeGraph(graphene.ObjectType):
         self.compute_node_graph = check.inst_param(
             compute_node_graph,
             'compute_node_graph',
-            dagster.core.execution_plan.ComputeNodeGraph,
+            dagster.core.execution_plan.ExecutionPlan,
         )
         self.pipeline = check.inst_param(pipeline, 'pipeline', Pipeline)
 
@@ -500,7 +500,7 @@ class ComputeNodeOutput(graphene.ObjectType):
         self.compute_node_output = check.inst_param(
             compute_node_output,
             'compute_node_output',
-            dagster.core.execution_plan.ComputeNodeOutput,
+            dagster.core.execution_plan.StepOutput,
         )
 
     def resolve_name(self, _info):
@@ -520,7 +520,7 @@ class ComputeNodeInput(graphene.ObjectType):
         self.compute_node_input = check.inst_param(
             compute_node_input,
             'compute_node_input',
-            dagster.core.execution_plan.ComputeNodeInput,
+            dagster.core.execution_plan.StepInput,
         )
 
     def resolve_name(self, _info):
@@ -530,7 +530,7 @@ class ComputeNodeInput(graphene.ObjectType):
         return Type.from_dagster_type(dagster_type=self.compute_node_input.dagster_type)
 
     def resolve_dependsOn(self, _info):
-        return ComputeNode(self.compute_node_input.prev_output_handle.compute_node, )
+        return ComputeNode(self.compute_node_input.prev_output_handle.step)
 
 
 class ComputeNodeTag(graphene.Enum):
@@ -574,7 +574,7 @@ class ComputeNode(graphene.ObjectType):
         self.compute_node = check.inst_param(
             compute_node,
             'compute_node',
-            dagster.core.execution_plan.ComputeNode,
+            dagster.core.execution_plan.ExecutionStep,
         )
 
     def resolve_inputs(self, _info):

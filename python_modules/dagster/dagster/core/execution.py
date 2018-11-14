@@ -46,10 +46,10 @@ from .errors import (
 )
 
 from .execution_plan import (
-    ComputeNodeExecutionInfo,
-    ComputeNodeGraph,
-    ComputeNodeResult,
-    ComputeNodeTag,
+    ExecutionPlanInfo,
+    ExecutionPlan,
+    StepResult,
+    StepTag,
     create_compute_node_graph_core,
     execute_compute_nodes,
 )
@@ -121,27 +121,27 @@ class SolidExecutionResult(object):
         self.context = check.inst_param(context, 'context', ExecutionContext)
         self.solid = check.inst_param(solid, 'solid', Solid)
         self.input_expectations = check.list_param(
-            input_expectations, 'input_expectations', ComputeNodeResult
+            input_expectations, 'input_expectations', StepResult
         )
         self.output_expectations = check.list_param(
-            output_expectations, 'output_expectations', ComputeNodeResult
+            output_expectations, 'output_expectations', StepResult
         )
-        self.transforms = check.list_param(transforms, 'transforms', ComputeNodeResult)
+        self.transforms = check.list_param(transforms, 'transforms', StepResult)
 
     @staticmethod
     def from_results(context, results):
-        results = check.list_param(results, 'results', ComputeNodeResult)
+        results = check.list_param(results, 'results', StepResult)
         if results:
             input_expectations = []
             output_expectations = []
             transforms = []
 
             for result in results:
-                if result.tag == ComputeNodeTag.INPUT_EXPECTATION:
+                if result.tag == StepTag.INPUT_EXPECTATION:
                     input_expectations.append(result)
-                elif result.tag == ComputeNodeTag.OUTPUT_EXPECTATION:
+                elif result.tag == StepTag.OUTPUT_EXPECTATION:
                     output_expectations.append(result)
-                elif result.tag == ComputeNodeTag.TRANSFORM:
+                elif result.tag == StepTag.TRANSFORM:
                     transforms.append(result)
 
             return SolidExecutionResult(
@@ -272,9 +272,9 @@ def create_compute_node_graph(pipeline, config_dict=None):
     execution_graph = ExecutionGraph.from_pipeline(pipeline)
     with yield_context(pipeline, environment) as context:
         compute_node_graph = create_compute_node_graph_core(
-            ComputeNodeExecutionInfo(context, execution_graph, environment),
+            ExecutionPlanInfo(context, execution_graph, environment),
         )
-        return check.inst(compute_node_graph, ComputeNodeGraph)
+        return check.inst(compute_node_graph, ExecutionPlan)
 
 
 def create_config_value(config_type, config_input):
@@ -347,7 +347,7 @@ def _execute_graph_iterator(context, execution_graph, environment):
     check.inst_param(environment, 'environent', config.Environment)
 
     cn_graph = create_compute_node_graph_core(
-        ComputeNodeExecutionInfo(
+        ExecutionPlanInfo(
             context,
             execution_graph,
             environment,

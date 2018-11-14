@@ -48,11 +48,11 @@ from .errors import (
 from .types import DagsterType
 
 
-class ComputeNodeExecutionInfo(
+class ExecutionPlanInfo(
     namedtuple('_ComputeNodeExecutionInfo', 'context execution_graph environment')
 ):
     def __new__(cls, context, execution_graph, environment):
-        return super(ComputeNodeExecutionInfo, cls).__new__(
+        return super(ExecutionPlanInfo, cls).__new__(
             cls,
             check.inst_param(context, 'context', ExecutionContext),
             check.inst_param(execution_graph, 'execution_graph', ExecutionGraph),
@@ -68,11 +68,11 @@ class ComputeNodeExecutionInfo(
         return self.environment.execution.serialize_intermediates
 
 
-class ComputeNodeOutputHandle(namedtuple('_ComputeNodeOutputHandle', 'compute_node output_name')):
-    def __new__(cls, compute_node, output_name):
-        return super(ComputeNodeOutputHandle, cls).__new__(
+class StepOutputHandle(namedtuple('_StepOutputHandle', 'step output_name')):
+    def __new__(cls, step, output_name):
+        return super(StepOutputHandle, cls).__new__(
             cls,
-            compute_node=check.inst_param(compute_node, 'compute_node', ComputeNode),
+            step=check.inst_param(step, 'step', ExecutionStep),
             output_name=check.str_param(output_name, 'output_name'),
         )
 
@@ -80,71 +80,73 @@ class ComputeNodeOutputHandle(namedtuple('_ComputeNodeOutputHandle', 'compute_no
 
     def __str__(self):
         return (
-            'ComputeNodeOutputHandle'
-            '(cn="{cn.compute_node.friendly_name}", output_name="{cn.output_name}")'.format(
-                cn=self
+            'StepOutputHandle'
+            '(step="{step.friendly_name}", output_name="{output_name}")'.format(
+                step=self.step,
+                output_name=self.output_name,
             )
         )
 
     def __repr__(self):
         return (
-            'ComputeNodeOutputHandle'
-            '(cn="{cn.compute_node.friendly_name}", output_name="{cn.output_name}")'.format(
-                cn=self
+            'StepOutputHandle'
+            '(step="{step.friendly_name}", output_name="{output_name}")'.format(
+                step=self.step,
+                output_name=self.output_name,
             )
         )
 
     def __hash__(self):
-        return hash(self.compute_node.guid + self.output_name)
+        return hash(self.step.guid + self.output_name)
 
     def __eq__(self, other):
         return (
-            self.compute_node.guid == other.compute_node.guid
+            self.step.guid == other.step.guid
             and self.output_name == other.output_name
         )
 
 
-class ComputeNodeSuccessData(namedtuple('_ComputeNodeSuccessData', 'output_name value')):
+class StepSuccessData(namedtuple('_StepSuccessData', 'output_name value')):
     def __new__(cls, output_name, value):
-        return super(ComputeNodeSuccessData, cls).__new__(
+        return super(StepSuccessData, cls).__new__(
             cls,
             output_name=check.str_param(output_name, 'output_name'),
             value=value,
         )
 
 
-class ComputeNodeFailureData(namedtuple('_ComputeNodeFailureData', 'dagster_error')):
+class StepFailureData(namedtuple('_StepFailureData', 'dagster_error')):
     def __new__(cls, dagster_error):
-        return super(ComputeNodeFailureData, cls).__new__(
+        return super(StepFailureData, cls).__new__(
             cls,
             dagster_error=check.inst_param(dagster_error, 'dagster_error', DagsterError),
         )
 
 
-class ComputeNodeResult(
+class StepResult(
     namedtuple(
-        '_ComputeNodeResult',
+        '_StepResult',
         'success compute_node tag success_data failure_data',
     )
 ):
     @staticmethod
     def success_result(compute_node, tag, success_data):
-        return ComputeNodeResult(
+        return StepResult(
             success=True,
-            compute_node=check.inst_param(compute_node, 'compute_node', ComputeNode),
-            tag=check.inst_param(tag, 'tag', ComputeNodeTag),
-            success_data=check.inst_param(success_data, 'success_data', ComputeNodeSuccessData),
+            compute_node=check.inst_param(compute_node, 'compute_node', ExecutionStep),
+            tag=check.inst_param(tag, 'tag', StepTag),
+            success_data=check.inst_param(success_data, 'success_data', StepSuccessData),
             failure_data=None,
         )
 
     @staticmethod
     def failure_result(compute_node, tag, failure_data):
-        return ComputeNodeResult(
+        return StepResult(
             success=False,
-            compute_node=check.inst_param(compute_node, 'compute_node', ComputeNode),
-            tag=check.inst_param(tag, 'tag', ComputeNodeTag),
+            compute_node=check.inst_param(compute_node, 'compute_node', ExecutionStep),
+            tag=check.inst_param(tag, 'tag', StepTag),
             success_data=None,
-            failure_data=check.inst_param(failure_data, 'failure_data', ComputeNodeFailureData),
+            failure_data=check.inst_param(failure_data, 'failure_data', StepFailureData),
         )
 
 
@@ -180,7 +182,7 @@ def _user_code_error_boundary(context, msg, **kwargs):
         )
 
 
-class ComputeNodeTag(Enum):
+class StepTag(Enum):
     TRANSFORM = 'TRANSFORM'
     INPUT_EXPECTATION = 'INPUT_EXPECTATION'
     OUTPUT_EXPECTATION = 'OUTPUT_EXPECTATION'
@@ -239,7 +241,7 @@ def _execute_core_transform(context, compute_node, conf, inputs):
     all relevant logging and metrics tracking
     '''
     check.inst_param(context, 'context', ExecutionContext)
-    check.inst_param(compute_node, 'compute_node', ComputeNode)
+    check.inst_param(compute_node, 'compute_node', ExecutionStep)
     check.dict_param(inputs, 'inputs', key_type=str)
 
     error_str = 'Error occured during core transform'
@@ -279,35 +281,35 @@ def _execute_core_transform(context, compute_node, conf, inputs):
             yield result
 
 
-class ComputeNodeInput(object):
+class StepInput(object):
     def __init__(self, name, dagster_type, prev_output_handle):
         self.name = check.str_param(name, 'name')
         self.dagster_type = check.inst_param(dagster_type, 'dagster_type', DagsterType)
         self.prev_output_handle = check.inst_param(
             prev_output_handle,
             'prev_output_handle',
-            ComputeNodeOutputHandle,
+            StepOutputHandle,
         )
 
 
-class ComputeNodeOutput(object):
+class StepOutput(object):
     def __init__(self, name, dagster_type):
         self.name = check.str_param(name, 'name')
         self.dagster_type = check.inst_param(dagster_type, 'dagster_type', DagsterType)
 
 
-class ComputeNode(object):
+class ExecutionStep(object):
     def __init__(self, friendly_name, node_inputs, node_outputs, compute_fn, tag, solid):
         self.guid = str(uuid.uuid4())
         self.friendly_name = check.str_param(friendly_name, 'friendly_name')
-        self.node_inputs = check.list_param(node_inputs, 'node_inputs', of_type=ComputeNodeInput)
+        self.node_inputs = check.list_param(node_inputs, 'node_inputs', of_type=StepInput)
 
         node_input_dict = {}
         for node_input in node_inputs:
             node_input_dict[node_input.name] = node_input
         self._node_input_dict = node_input_dict
         self.node_outputs = check.list_param(
-            node_outputs, 'node_outputs', of_type=ComputeNodeOutput
+            node_outputs, 'node_outputs', of_type=StepOutput
         )
 
         node_output_dict = {}
@@ -316,7 +318,7 @@ class ComputeNode(object):
 
         self._node_output_dict = node_output_dict
         self.compute_fn = check.callable_param(compute_fn, 'compute_fn')
-        self.tag = check.inst_param(tag, 'tag', ComputeNodeTag)
+        self.tag = check.inst_param(tag, 'tag', StepTag)
         self.solid = check.inst_param(solid, 'solid', Solid)
 
     def has_node(self, name):
@@ -345,10 +347,10 @@ class ComputeNode(object):
                 )
             )
 
-        return ComputeNodeResult.success_result(
+        return StepResult.success_result(
             compute_node=self,
             tag=self.tag,
-            success_data=ComputeNodeSuccessData(
+            success_data=StepSuccessData(
                 output_name=result.output_name,
                 value=evaluation_result,
             ),
@@ -433,10 +435,10 @@ class ComputeNode(object):
 
         except DagsterError as dagster_error:
             context.error(str(dagster_error))
-            yield ComputeNodeResult.failure_result(
+            yield StepResult.failure_result(
                 compute_node=self,
                 tag=self.tag,
-                failure_data=ComputeNodeFailureData(dagster_error=dagster_error, ),
+                failure_data=StepFailureData(dagster_error=dagster_error, ),
             )
             return
 
@@ -459,7 +461,7 @@ def _all_inputs_covered(cn, results):
 
 def execute_compute_nodes(context, compute_nodes):
     check.inst_param(context, 'context', ExecutionContext)
-    check.list_param(compute_nodes, 'compute_nodes', of_type=ComputeNode)
+    check.list_param(compute_nodes, 'compute_nodes', of_type=ExecutionStep)
 
     intermediate_results = {}
     context.debug(
@@ -489,14 +491,14 @@ def execute_compute_nodes(context, compute_nodes):
             input_values[node_input.name] = input_value
 
         for result in compute_node.execute(context, input_values):
-            check.invariant(isinstance(result, ComputeNodeResult))
+            check.invariant(isinstance(result, StepResult))
             yield result
-            output_handle = ComputeNodeOutputHandle(compute_node, result.success_data.output_name)
+            output_handle = StepOutputHandle(compute_node, result.success_data.output_name)
             intermediate_results[output_handle] = result
 
 
 def print_graph(graph, printer=print):
-    check.inst_param(graph, 'graph', ComputeNodeGraph)
+    check.inst_param(graph, 'graph', ExecutionPlan)
     printer = IndentingPrinter(printer=printer)
 
     for node in graph.topological_nodes():
@@ -518,9 +520,9 @@ def print_graph(graph, printer=print):
                     )
 
 
-class ComputeNodeGraph(object):
+class ExecutionPlan(object):
     def __init__(self, cn_dict, deps):
-        self.cn_dict = check.dict_param(cn_dict, 'cn_dict', key_type=str, value_type=ComputeNode)
+        self.cn_dict = check.dict_param(cn_dict, 'cn_dict', key_type=str, value_type=ExecutionStep)
         self.deps = check.dict_param(deps, 'deps', key_type=str, value_type=set)
         self.nodes = list(cn_dict.values())
 
@@ -541,22 +543,22 @@ def create_expectation_cn(
 
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(expectation_def, 'input_expct_def', ExpectationDefinition)
-    check.inst_param(prev_node_output_handle, 'prev_node_output_handle', ComputeNodeOutputHandle)
+    check.inst_param(prev_node_output_handle, 'prev_node_output_handle', StepOutputHandle)
     check.inst_param(inout_def, 'inout_def', (InputDefinition, OutputDefinition))
 
     value_type = inout_def.dagster_type
 
-    return ComputeNode(
+    return ExecutionStep(
         friendly_name=friendly_name,
         node_inputs=[
-            ComputeNodeInput(
+            StepInput(
                 name=EXPECTATION_INPUT,
                 dagster_type=value_type,
                 prev_output_handle=prev_node_output_handle,
             )
         ],
         node_outputs=[
-            ComputeNodeOutput(name=EXPECTATION_VALUE_OUTPUT, dagster_type=value_type),
+            StepOutput(name=EXPECTATION_VALUE_OUTPUT, dagster_type=value_type),
         ],
         compute_fn=_create_expectation_lambda(
             solid,
@@ -578,8 +580,8 @@ ComputeNodeSubgraph = namedtuple(
 def create_expectations_cn_graph(solid, inout_def, prev_node_output_handle, tag):
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(inout_def, 'inout_def', (InputDefinition, OutputDefinition))
-    check.inst_param(prev_node_output_handle, 'prev_node_output_handle', ComputeNodeOutputHandle)
-    check.inst_param(tag, 'tag', ComputeNodeTag)
+    check.inst_param(prev_node_output_handle, 'prev_node_output_handle', StepOutputHandle)
+    check.inst_param(tag, 'tag', StepTag)
 
     compute_nodes = []
     input_expect_nodes = []
@@ -602,7 +604,7 @@ def create_expectations_cn_graph(solid, inout_def, prev_node_output_handle, tag)
     output_name = join_cn.node_outputs[0].name
     return ComputeNodeSubgraph(
         compute_nodes + [join_cn],
-        ComputeNodeOutputHandle(join_cn, output_name),
+        StepOutputHandle(join_cn, output_name),
     )
 
 
@@ -613,12 +615,12 @@ class ComputeNodeOutputMap(dict):
 
     def __setitem__(self, key, val):
         check.inst_param(key, 'key', SolidOutputHandle)
-        check.inst_param(val, 'val', ComputeNodeOutputHandle)
+        check.inst_param(val, 'val', StepOutputHandle)
         return dict.__setitem__(self, key, val)
 
 
 def create_config_value(execution_info, pipeline_solid):
-    check.inst_param(execution_info, 'execution_info', ComputeNodeExecutionInfo)
+    check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
     check.inst_param(pipeline_solid, 'pipeline_solid', Solid)
 
     solid_def = pipeline_solid.definition
@@ -662,7 +664,7 @@ ComputeNodeBuilderState = namedtuple('ComputeNodeBuilderState', 'compute_nodes c
 
 
 def create_compute_node_inputs(info, state, pipeline_solid):
-    check.inst_param(info, 'info', ComputeNodeExecutionInfo)
+    check.inst_param(info, 'info', ExecutionPlanInfo)
     check.inst_param(state, 'state', ComputeNodeBuilderState)
     check.inst_param(pipeline_solid, 'pipeline_solid', Solid)
 
@@ -691,7 +693,7 @@ def create_compute_node_inputs(info, state, pipeline_solid):
 
         state.compute_nodes.extend(subgraph.nodes)
         cn_inputs.append(
-            ComputeNodeInput(
+            StepInput(
                 input_def.name,
                 input_def.dagster_type,
                 subgraph.terminal_cn_output_handle,
@@ -702,7 +704,7 @@ def create_compute_node_inputs(info, state, pipeline_solid):
 
 
 def create_compute_node_graph_core(execution_info):
-    check.inst_param(execution_info, 'execution_info', ComputeNodeExecutionInfo)
+    check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
 
     execution_graph = execution_info.execution_graph
 
@@ -747,15 +749,15 @@ def _create_compute_node_graph(compute_nodes):
     for cn in compute_nodes:
         deps[cn.guid] = set()
         for cn_input in cn.node_inputs:
-            deps[cn.guid].add(cn_input.prev_output_handle.compute_node.guid)
+            deps[cn.guid].add(cn_input.prev_output_handle.step.guid)
 
-    return ComputeNodeGraph(cn_dict, deps)
+    return ExecutionPlan(cn_dict, deps)
 
 
 def create_subgraph_for_input(execution_info, solid, prev_cn_output_handle, input_def):
-    check.inst_param(execution_info, 'execution_info', ComputeNodeExecutionInfo)
+    check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
     check.inst_param(solid, 'solid', Solid)
-    check.inst_param(prev_cn_output_handle, 'prev_cn_output_handle', ComputeNodeOutputHandle)
+    check.inst_param(prev_cn_output_handle, 'prev_cn_output_handle', StepOutputHandle)
     check.inst_param(input_def, 'input_def', InputDefinition)
 
     if execution_info.environment.expectations.evaluate and input_def.expectations:
@@ -763,7 +765,7 @@ def create_subgraph_for_input(execution_info, solid, prev_cn_output_handle, inpu
             solid,
             input_def,
             prev_cn_output_handle,
-            tag=ComputeNodeTag.INPUT_EXPECTATION,
+            tag=StepTag.INPUT_EXPECTATION,
         )
     else:
         return ComputeNodeSubgraph(
@@ -777,22 +779,22 @@ SERIALIZE_OUTPUT = 'serialize_output'
 
 
 def _decorate_with_expectations(execution_info, solid, solid_transform_cn, output_def):
-    check.inst_param(execution_info, 'execution_info', ComputeNodeExecutionInfo)
+    check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
     check.inst_param(solid, 'solid', Solid)
-    check.inst_param(solid_transform_cn, 'solid_transform_cn', ComputeNode)
+    check.inst_param(solid_transform_cn, 'solid_transform_cn', ExecutionStep)
     check.inst_param(output_def, 'output_def', OutputDefinition)
 
     if execution_info.environment.expectations.evaluate and output_def.expectations:
         return create_expectations_cn_graph(
             solid,
             output_def,
-            ComputeNodeOutputHandle(solid_transform_cn, output_def.name),
-            tag=ComputeNodeTag.OUTPUT_EXPECTATION
+            StepOutputHandle(solid_transform_cn, output_def.name),
+            tag=StepTag.OUTPUT_EXPECTATION
         )
     else:
         return ComputeNodeSubgraph(
             nodes=[],
-            terminal_cn_output_handle=ComputeNodeOutputHandle(
+            terminal_cn_output_handle=StepOutputHandle(
                 solid_transform_cn,
                 output_def.name,
             ),
@@ -800,7 +802,7 @@ def _decorate_with_expectations(execution_info, solid, solid_transform_cn, outpu
 
 
 def _decorate_with_serialization(execution_info, solid, output_def, subgraph):
-    check.inst_param(execution_info, 'execution_info', ComputeNodeExecutionInfo)
+    check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(output_def, 'output_def', OutputDefinition)
     check.inst_param(subgraph, 'subgraph', ComputeNodeSubgraph)
@@ -809,7 +811,7 @@ def _decorate_with_serialization(execution_info, solid, output_def, subgraph):
         serialize_cn = _create_serialization_node(solid, output_def, subgraph)
         return ComputeNodeSubgraph(
             nodes=subgraph.nodes + [serialize_cn],
-            terminal_cn_output_handle=ComputeNodeOutputHandle(
+            terminal_cn_output_handle=StepOutputHandle(
                 serialize_cn,
                 SERIALIZE_OUTPUT,
             )
@@ -819,9 +821,9 @@ def _decorate_with_serialization(execution_info, solid, output_def, subgraph):
 
 
 def create_subgraph_for_output(execution_info, solid, solid_transform_cn, output_def):
-    check.inst_param(execution_info, 'execution_info', ComputeNodeExecutionInfo)
+    check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
     check.inst_param(solid, 'solid', Solid)
-    check.inst_param(solid_transform_cn, 'solid_transform_cn', ComputeNode)
+    check.inst_param(solid_transform_cn, 'solid_transform_cn', ExecutionStep)
     check.inst_param(output_def, 'output_def', OutputDefinition)
 
     subgraph = _decorate_with_expectations(execution_info, solid, solid_transform_cn, output_def)
@@ -858,30 +860,30 @@ def _create_serialization_node(solid, output_def, prev_subgraph):
     check.inst_param(output_def, 'output_def', OutputDefinition)
     check.inst_param(prev_subgraph, 'prev_subgraph', ComputeNodeSubgraph)
 
-    return ComputeNode(
+    return ExecutionStep(
         friendly_name='serialize.' + solid.name + '.' + output_def.name,
         node_inputs=[
-            ComputeNodeInput(
+            StepInput(
                 name=SERIALIZE_INPUT,
                 dagster_type=output_def.dagster_type,
                 prev_output_handle=prev_subgraph.terminal_cn_output_handle,
             )
         ],
         node_outputs=[
-            ComputeNodeOutput(
+            StepOutput(
                 name=SERIALIZE_OUTPUT,
                 dagster_type=output_def.dagster_type,
             )
         ],
         compute_fn=_create_serialization_lambda(solid, output_def),
-        tag=ComputeNodeTag.SERIALIZE,
+        tag=StepTag.SERIALIZE,
         solid=solid,
     )
 
 
 def _create_join_node(solid, prev_nodes, prev_output_name):
     check.inst_param(solid, 'solid', Solid)
-    check.list_param(prev_nodes, 'prev_nodes', of_type=ComputeNode)
+    check.list_param(prev_nodes, 'prev_nodes', of_type=ExecutionStep)
     check.invariant(len(prev_nodes) > 0)
     check.str_param(prev_output_name, 'output_name')
 
@@ -895,18 +897,18 @@ def _create_join_node(solid, prev_nodes, prev_output_name):
         else:
             check.invariant(seen_dagster_type == prev_node_output.dagster_type)
 
-        output_handle = ComputeNodeOutputHandle(prev_node, prev_output_name)
+        output_handle = StepOutputHandle(prev_node, prev_output_name)
 
         node_inputs.append(
-            ComputeNodeInput(prev_node.guid, prev_node_output.dagster_type, output_handle)
+            StepInput(prev_node.guid, prev_node_output.dagster_type, output_handle)
         )
 
-    return ComputeNode(
+    return ExecutionStep(
         friendly_name='join',
         node_inputs=node_inputs,
-        node_outputs=[ComputeNodeOutput(JOIN_OUTPUT, seen_dagster_type)],
+        node_outputs=[StepOutput(JOIN_OUTPUT, seen_dagster_type)],
         compute_fn=_create_join_lambda,
-        tag=ComputeNodeTag.JOIN,
+        tag=StepTag.JOIN,
         solid=solid,
     )
 
@@ -954,13 +956,13 @@ def _create_expectation_lambda(solid, inout_def, expectation_def, internal_outpu
 
 def create_transform_compute_node(solid, node_inputs, conf):
     check.inst_param(solid, 'solid', Solid)
-    check.list_param(node_inputs, 'node_inputs', of_type=ComputeNodeInput)
+    check.list_param(node_inputs, 'node_inputs', of_type=StepInput)
 
-    return ComputeNode(
+    return ExecutionStep(
         friendly_name='{solid.name}.transform'.format(solid=solid),
         node_inputs=node_inputs,
         node_outputs=[
-            ComputeNodeOutput(name=output_def.name, dagster_type=output_def.dagster_type)
+            StepOutput(name=output_def.name, dagster_type=output_def.dagster_type)
             for output_def in solid.definition.output_defs
         ],
         compute_fn=lambda context, compute_node, inputs: _execute_core_transform(
@@ -969,6 +971,6 @@ def create_transform_compute_node(solid, node_inputs, conf):
             conf,
             inputs,
         ),
-        tag=ComputeNodeTag.TRANSFORM,
+        tag=StepTag.TRANSFORM,
         solid=solid,
     )

@@ -8,7 +8,7 @@ from dagster import (
 
 from dagster.core.execution import (
     create_compute_node_graph,
-    ComputeNodeExecutionInfo,
+    ExecutionPlanInfo,
 )
 
 from dagster.core.definitions import ExecutionGraph
@@ -38,7 +38,7 @@ def test_compute_noop_node_core():
 
     execution_graph = ExecutionGraph.from_pipeline(pipeline)
     compute_node_graph = create_compute_node_graph_core(
-        ComputeNodeExecutionInfo(
+        ExecutionPlanInfo(
             ExecutionContext(),
             execution_graph,
             environment,
