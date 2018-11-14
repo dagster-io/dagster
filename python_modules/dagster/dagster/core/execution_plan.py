@@ -302,7 +302,7 @@ class ExecutionStep(object):
     def __init__(self, friendly_name, step_inputs, node_outputs, compute_fn, tag, solid):
         self.guid = str(uuid.uuid4())
         self.friendly_name = check.str_param(friendly_name, 'friendly_name')
-        self.node_inputs = check.list_param(step_inputs, 'node_inputs', of_type=StepInput)
+        self.step_inputs = check.list_param(step_inputs, 'step_inputs', of_type=StepInput)
 
         node_input_dict = {}
         for node_input in step_inputs:
@@ -453,7 +453,7 @@ class ExecutionStep(object):
 
 
 def _all_inputs_covered(cn, results):
-    for node_input in cn.node_inputs:
+    for node_input in cn.step_inputs:
         if node_input.prev_output_handle not in results:
             return False
     return True
@@ -473,7 +473,7 @@ def execute_compute_nodes(context, compute_nodes):
     for compute_node in compute_nodes:
         if not _all_inputs_covered(compute_node, intermediate_results):
             result_keys = set(intermediate_results.keys())
-            expected_outputs = [ni.prev_output_handle for ni in compute_node.node_inputs]
+            expected_outputs = [ni.prev_output_handle for ni in compute_node.step_inputs]
 
             context.debug(
                 'Not all inputs covered for {compute_name}. Not executing.'.
@@ -485,7 +485,7 @@ def execute_compute_nodes(context, compute_nodes):
             continue
 
         input_values = {}
-        for node_input in compute_node.node_inputs:
+        for node_input in compute_node.step_inputs:
             prev_output_handle = node_input.prev_output_handle
             input_value = intermediate_results[prev_output_handle].success_data.value
             input_values[node_input.name] = input_value
@@ -503,7 +503,7 @@ def print_graph(graph, printer=print):
 
     for node in graph.topological_nodes():
         with printer.with_indent('Node {node.friendly_name} Id: {node.guid}'.format(node=node)):
-            for node_input in node.node_inputs:
+            for node_input in node.step_inputs:
                 with printer.with_indent('Input: {node_input.name}'.format(node_input=node_input)):
                     printer.line(
                         'Type: {node_input.dagster_type.name}'.format(node_input=node_input)
@@ -748,7 +748,7 @@ def _create_compute_node_graph(compute_nodes):
 
     for cn in compute_nodes:
         deps[cn.guid] = set()
-        for cn_input in cn.node_inputs:
+        for cn_input in cn.step_inputs:
             deps[cn.guid].add(cn_input.prev_output_handle.step.guid)
 
     return ExecutionPlan(cn_dict, deps)
@@ -887,7 +887,7 @@ def _create_join_node(solid, prev_nodes, prev_output_name):
     check.invariant(len(prev_nodes) > 0)
     check.str_param(prev_output_name, 'output_name')
 
-    node_inputs = []
+    step_inputs = []
     seen_dagster_type = None
     for prev_node in prev_nodes:
         prev_node_output = prev_node.output_named(prev_output_name)
@@ -899,13 +899,13 @@ def _create_join_node(solid, prev_nodes, prev_output_name):
 
         output_handle = StepOutputHandle(prev_node, prev_output_name)
 
-        node_inputs.append(
+        step_inputs.append(
             StepInput(prev_node.guid, prev_node_output.dagster_type, output_handle)
         )
 
     return ExecutionStep(
         friendly_name='join',
-        step_inputs=node_inputs,
+        step_inputs=step_inputs,
         node_outputs=[StepOutput(JOIN_OUTPUT, seen_dagster_type)],
         compute_fn=_create_join_lambda,
         tag=StepTag.JOIN,
@@ -954,13 +954,13 @@ def _create_expectation_lambda(solid, inout_def, expectation_def, internal_outpu
     return _do_expectation
 
 
-def create_transform_compute_node(solid, node_inputs, conf):
+def create_transform_compute_node(solid, step_inputs, conf):
     check.inst_param(solid, 'solid', Solid)
-    check.list_param(node_inputs, 'node_inputs', of_type=StepInput)
+    check.list_param(step_inputs, 'step_inputs', of_type=StepInput)
 
     return ExecutionStep(
         friendly_name='{solid.name}.transform'.format(solid=solid),
-        step_inputs=node_inputs,
+        step_inputs=step_inputs,
         node_outputs=[
             StepOutput(name=output_def.name, dagster_type=output_def.dagster_type)
             for output_def in solid.definition.output_defs

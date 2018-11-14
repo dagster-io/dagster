@@ -578,7 +578,7 @@ class ComputeNode(graphene.ObjectType):
         )
 
     def resolve_inputs(self, _info):
-        return [ComputeNodeInput(cni) for cni in self.compute_node.node_inputs]
+        return [ComputeNodeInput(cni) for cni in self.compute_node.step_inputs]
 
     def resolve_outputs(self, _info):
         return [ComputeNodeOutput(cno) for cno in self.compute_node.node_outputs]

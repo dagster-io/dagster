@@ -370,7 +370,7 @@ def _execute_graph_iterator(context, execution_graph, environment):
         )
     )
 
-    check.invariant(len(cn_nodes[0].node_inputs) == 0)
+    check.invariant(len(cn_nodes[0].step_inputs) == 0)
 
     solid = None
     solid_results = []
