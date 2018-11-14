@@ -45,7 +45,7 @@ from .errors import (
     DagsterUserCodeExecutionError,
 )
 
-from .compute_nodes import (
+from .execution_plan import (
     ComputeNodeExecutionInfo,
     ComputeNodeGraph,
     ComputeNodeResult,

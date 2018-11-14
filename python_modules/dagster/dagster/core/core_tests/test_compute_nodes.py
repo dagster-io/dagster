@@ -13,7 +13,7 @@ from dagster.core.execution import (
 
 from dagster.core.definitions import ExecutionGraph
 
-from dagster.core.compute_nodes import create_compute_node_graph_core
+from dagster.core.execution_plan import create_compute_node_graph_core
 
 
 def silencing_default_context():
