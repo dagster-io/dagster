@@ -41,6 +41,10 @@ jobs:
           path: test-reports
           destination: test-reports
 
+      - store_artifacts:
+          path: .coverage
+          destination: .coverage-dagster-python-3.6
+
   dagit-python-3.6: &dagit-template
     <<: *dagster-template
     steps:
@@ -61,6 +65,10 @@ jobs:
           path: test-reports
           destination: test-reports
 
+      - store_artifacts:
+          path: .coverage
+          destination: .coverage-dagit-$TOXENV
+
   dagster-python-3.5:
     <<: *dagster-template
     docker:
@@ -68,12 +76,17 @@ jobs:
     environment:
       TOXENV: py35
 
+      - store_artifacts:
+          path: .coverage
+          destination: .coverage-dagster-$TOXENV
+
   dagit-python-3.5:
     <<: *dagit-template
     docker:
       - image: circleci/python:3.5.6
     environment:
       TOXENV: py35
+
 
   dagster-python-2.7:
     <<: *dagster-template
