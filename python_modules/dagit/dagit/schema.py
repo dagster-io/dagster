@@ -1,6 +1,10 @@
-import graphene
 import sys
 import traceback
+
+import graphene
+
+from graphene.types.generic import GenericScalar
+
 import dagster
 import dagster.core.definitions
 
@@ -8,8 +12,10 @@ from dagster import check
 
 from dagster.core.types import DagsterCompositeType
 
+from dagster.core.execution import create_compute_node_graph
 
-def resolve_pipelines_implementation(root_obj, info):
+
+def resolve_pipelines_implementation(_root_obj, info):
     repository = info.context['repository_container'].repository
     pipelines = []
     for pipeline_def in repository.get_all_pipelines():
@@ -23,7 +29,7 @@ def result_or_error(root_obj, fn, info, *argv):
         return PythonError(*error)
     try:
         return fn(root_obj, info, *argv)
-    except:
+    except Exception:  # pylint: disable=broad-except
         return PythonError(*sys.exc_info())
 
 
@@ -33,8 +39,12 @@ def results_or_errors(root_obj, fn, info, *argv):
         return [PythonError(*error)]
     try:
         return fn(root_obj, info, *argv)
-    except:
+    except Exception:  # pylint: disable=broad-except
         return [PythonError(*sys.exc_info())]
+
+
+def non_null_list(ttype):
+    return graphene.NonNull(graphene.List(graphene.NonNull(ttype)))
 
 
 class Query(graphene.ObjectType):
@@ -44,8 +54,8 @@ class Query(graphene.ObjectType):
         name=graphene.NonNull(graphene.String),
     )
 
-    pipelines = graphene.NonNull(graphene.List(lambda: graphene.NonNull(Pipeline)))
-    pipelinesOrErrors = graphene.NonNull(graphene.List(lambda: graphene.NonNull(PipelineOrError)))
+    pipelines = non_null_list(lambda: Pipeline)
+    pipelinesOrErrors = non_null_list(lambda: PipelineOrError)
 
     type = graphene.Field(
         lambda: Type,
@@ -93,13 +103,22 @@ class Query(graphene.ObjectType):
 class Pipeline(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
-    solids = graphene.NonNull(graphene.List(lambda: graphene.NonNull(Solid)))
-    contexts = graphene.NonNull(graphene.List(lambda: graphene.NonNull(PipelineContext)))
+    solids = non_null_list(lambda: Solid)
+    contexts = non_null_list(lambda: PipelineContext)
     environment_type = graphene.NonNull(lambda: Type)
+    computeNodeGraph = graphene.Field(
+        graphene.NonNull(lambda: ComputeNodeGraph),
+        args={
+            'config': graphene.Argument(GenericScalar),
+        },
+    )
 
     def __init__(self, pipeline):
         super(Pipeline, self).__init__(name=pipeline.name, description=pipeline.description)
         self._pipeline = check.inst_param(pipeline, 'pipeline', dagster.PipelineDefinition)
+
+    def resolve_computeNodeGraph(self, _info, config):
+        return ComputeNodeGraph(self, create_compute_node_graph(self._pipeline, config))
 
     def resolve_solids(self, _info):
         return [
@@ -122,7 +141,7 @@ class Pipeline(graphene.ObjectType):
 
 class Error(graphene.Interface):
     message = graphene.String(required=True)
-    stack = graphene.NonNull(graphene.List(graphene.NonNull(graphene.String)))
+    stack = non_null_list(graphene.String)
 
 
 class PythonError(graphene.ObjectType):
@@ -130,6 +149,7 @@ class PythonError(graphene.ObjectType):
         interfaces = (Error, )
 
     def __init__(self, exc_type, exc_value, exc_tb):
+        super(PythonError, self).__init__()
         self.message = traceback.format_exception_only(exc_type, exc_value)[0]
         self.stack = traceback.format_tb(tb=exc_tb)
 
@@ -155,8 +175,8 @@ class PipelineContext(graphene.ObjectType):
 class Solid(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     definition = graphene.NonNull(lambda: SolidDefinition)
-    inputs = graphene.NonNull(graphene.List(lambda: graphene.NonNull(Input)))
-    outputs = graphene.NonNull(graphene.List(lambda: graphene.NonNull(Output)))
+    inputs = non_null_list(lambda: Input)
+    outputs = non_null_list(lambda: Output)
 
     def __init__(self, solid, depends_on=None, depended_by=None):
         super(Solid, self).__init__(name=solid.name)
@@ -246,11 +266,9 @@ class SolidMetadataItemDefinition(graphene.ObjectType):
 class SolidDefinition(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
-    metadata = graphene.NonNull(
-        graphene.List(lambda: graphene.NonNull(SolidMetadataItemDefinition))
-    )
-    input_definitions = graphene.NonNull(graphene.List(lambda: graphene.NonNull(InputDefinition)))
-    output_definitions = graphene.NonNull(graphene.List(lambda: graphene.NonNull(OutputDefinition)))
+    metadata = non_null_list(lambda: SolidMetadataItemDefinition)
+    input_definitions = non_null_list(lambda: InputDefinition)
+    output_definitions = non_null_list(lambda: OutputDefinition)
     config_definition = graphene.Field(lambda: Config)
 
     # solids - ?
@@ -289,7 +307,7 @@ class InputDefinition(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
     type = graphene.NonNull(lambda: Type)
-    expectations = graphene.NonNull(graphene.List(lambda: graphene.NonNull(Expectation)))
+    expectations = non_null_list(lambda: Expectation)
 
     # inputs - ?
 
@@ -318,7 +336,7 @@ class OutputDefinition(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
     type = graphene.NonNull(lambda: Type)
-    expectations = graphene.NonNull(graphene.List(lambda: graphene.NonNull(Expectation)))
+    expectations = non_null_list(lambda: Expectation)
 
     # outputs - ?
 
@@ -415,7 +433,7 @@ class RegularType(graphene.ObjectType):
 
 
 class CompositeType(graphene.ObjectType):
-    fields = graphene.NonNull(graphene.List(graphene.NonNull(lambda: TypeField)))
+    fields = non_null_list(lambda: TypeField)
 
     class Meta:
         interfaces = [
@@ -454,6 +472,125 @@ class TypeField(graphene.ObjectType):
 
     def resolve_type(self, _info):
         return Type.from_dagster_type(dagster_type=self._field.dagster_type)
+
+
+class ComputeNodeGraph(graphene.ObjectType):
+    computeNodes = non_null_list(lambda: ComputeNode)
+    pipeline = graphene.NonNull(lambda: Pipeline)
+
+    def __init__(self, pipeline, compute_node_graph):
+        super(ComputeNodeGraph, self).__init__()
+        self.compute_node_graph = check.inst_param(
+            compute_node_graph,
+            'compute_node_graph',
+            dagster.core.compute_nodes.ComputeNodeGraph,
+        )
+        self.pipeline = check.inst_param(pipeline, 'pipeline', Pipeline)
+
+    def resolve_computeNodes(self, _info):
+        return [ComputeNode(cn) for cn in self.compute_node_graph.topological_nodes()]
+
+
+class ComputeNodeOutput(graphene.ObjectType):
+    name = graphene.NonNull(graphene.String)
+    type = graphene.Field(graphene.NonNull(lambda: Type))
+
+    def __init__(self, compute_node_output):
+        super(ComputeNodeOutput, self).__init__()
+        self.compute_node_output = check.inst_param(
+            compute_node_output,
+            'compute_node_output',
+            dagster.core.compute_nodes.ComputeNodeOutput,
+        )
+
+    def resolve_name(self, _info):
+        return self.compute_node_output.name
+
+    def resolve_type(self, _info):
+        return Type.from_dagster_type(dagster_type=self.compute_node_output.dagster_type)
+
+
+class ComputeNodeInput(graphene.ObjectType):
+    name = graphene.NonNull(graphene.String)
+    type = graphene.Field(graphene.NonNull(lambda: Type))
+    dependsOn = graphene.Field(graphene.NonNull(lambda: ComputeNode))
+
+    def __init__(self, compute_node_input):
+        super(ComputeNodeInput, self).__init__()
+        self.compute_node_input = check.inst_param(
+            compute_node_input,
+            'compute_node_input',
+            dagster.core.compute_nodes.ComputeNodeInput,
+        )
+
+    def resolve_name(self, _info):
+        return self.compute_node_input.name
+
+    def resolve_type(self, _info):
+        return Type.from_dagster_type(dagster_type=self.compute_node_input.dagster_type)
+
+    def resolve_dependsOn(self, _info):
+        return ComputeNode(self.compute_node_input.prev_output_handle.compute_node, )
+
+
+class ComputeNodeTag(graphene.Enum):
+    TRANSFORM = 'TRANSFORM'
+    INPUT_EXPECTATION = 'INPUT_EXPECTATION'
+    OUTPUT_EXPECTATION = 'OUTPUT_EXPECTATION'
+    JOIN = 'JOIN'
+    SERIALIZE = 'SERIALIZE'
+
+    @property
+    def description(self):
+        # self ends up being the internal class "EnumMeta" in graphene
+        # so we can't do a dictionary lookup which is awesome
+        if self == ComputeNodeTag.TRANSFORM:
+            return 'This is the user-defined transform node'
+        elif self == ComputeNodeTag.INPUT_EXPECTATION:
+            return 'Expectation defined on an input'
+        elif self == ComputeNodeTag.OUTPUT_EXPECTATION:
+            return 'Expectation defined on an output'
+        elif self == ComputeNodeTag.JOIN:
+            return '''Sometimes we fan out compute on identical values
+(e.g. multiple expectations in parallel). We synthesizie these in a join node to consolidate to
+a single output that the next computation can depend on.
+'''
+        elif self == ComputeNodeTag.SERIALIZE:
+            return '''This is a special system-defined node to serialize
+an intermediate value if the pipeline is configured to do that.'''
+        else:
+            return 'Unknown enum {value}'.format(value=self)
+
+
+class ComputeNode(graphene.ObjectType):
+    name = graphene.NonNull(graphene.String)
+    inputs = non_null_list(lambda: ComputeNodeInput)
+    outputs = non_null_list(lambda: ComputeNodeOutput)
+    solid = graphene.NonNull(lambda: Solid)
+    tag = graphene.NonNull(lambda: ComputeNodeTag)
+
+    def __init__(self, compute_node):
+        super(ComputeNode, self).__init__()
+        self.compute_node = check.inst_param(
+            compute_node,
+            'compute_node',
+            dagster.core.compute_nodes.ComputeNode,
+        )
+
+    def resolve_inputs(self, _info):
+        return [ComputeNodeInput(cni) for cni in self.compute_node.node_inputs]
+
+    def resolve_outputs(self, _info):
+        return [ComputeNodeOutput(cno) for cno in self.compute_node.node_outputs]
+
+    def resolve_name(self, _info):
+        return self.compute_node.friendly_name
+
+    def resolve_solid(self, _info):
+        return Solid(self.compute_node.solid)
+
+    def resolve_tag(self, _info):
+        return self.compute_node.tag
 
 
 def create_schema():

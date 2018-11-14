@@ -1,3 +1,5 @@
+from graphql import graphql
+
 from dagster import (
     ConfigDefinition,
     DependencyDefinition,
@@ -6,6 +8,7 @@ from dagster import (
     OutputDefinition,
     RepositoryDefinition,
     SolidDefinition,
+    check,
     lambda_solid,
     types,
 )
@@ -14,7 +17,7 @@ import dagster.pandas as dagster_pd
 from dagit.schema import create_schema
 from dagit.app import RepositoryContainer
 
-from graphql import graphql
+from .production_query import PRODUCTION_QUERY
 
 
 @lambda_solid(
@@ -113,11 +116,12 @@ def define_repo():
     )
 
 
-def execute_dagster_graphql(repo, query):
+def execute_dagster_graphql(repo, query, variables=None):
     return graphql(
         create_schema(),
         query,
         context={'repository_container': RepositoryContainer(repository=repo)},
+        variables=variables,
     )
 
 
@@ -137,17 +141,138 @@ def test_pipelines():
 
 def test_pipeline_by_name():
     result = execute_dagster_graphql(
-        define_repo(), '''
-    { 
-        pipeline(name: "pandas_hello_world_two") { 
-            name 
+        define_repo(),
+        '''
+    {
+        pipeline(name: "pandas_hello_world_two") {
+            name
         }
-    }'''
+    }''',
     )
 
     assert result.data
     assert not result.errors
     assert result.data['pipeline']['name'] == 'pandas_hello_world_two'
+
+
+COMPUTE_NODE_QUERY = '''
+query PipelineQuery($config: GenericScalar)
+{
+  pipeline(name:"pandas_hello_world") {
+    name
+    computeNodeGraph(config:$config) {
+      pipeline {
+        name
+      }
+      computeNodes {
+        name
+        solid {
+            name
+        }
+        tag
+        inputs {
+           name
+           type {
+               name
+           }
+           dependsOn {
+               name
+           }
+        }
+        outputs {
+            name
+            type {
+                name
+            }
+        }
+      }
+    }
+  }
+}
+'''
+
+
+def test_query_compute_node_snapshot(snapshot):
+    result = execute_dagster_graphql(
+        define_repo(),
+        COMPUTE_NODE_QUERY,
+        {
+            'config': {
+                'solids': {
+                    'load_num_csv': {
+                        'config': {
+                            'path': 'pandas_hello_world/num.csv',
+                        },
+                    },
+                },
+            },
+        },
+    )
+
+    assert result.data
+    assert not result.errors
+
+    snapshot.assert_match(result.data)
+
+
+def test_query_compute_nodes():
+    result = execute_dagster_graphql(
+        define_repo(),
+        COMPUTE_NODE_QUERY,
+        {
+            'config': {
+                'solids': {
+                    'load_num_csv': {
+                        'config': {
+                            'path': 'pandas_hello_world/num.csv',
+                        },
+                    },
+                },
+            },
+        },
+    )
+
+    if result.errors:
+        raise Exception(result.errors[0])
+
+    assert result.data
+    assert not result.errors
+
+    compute_node_graph_data = result.data['pipeline']['computeNodeGraph']
+
+    names = get_nameset(compute_node_graph_data['computeNodes'])
+    assert len(names) == 3
+
+    assert names == set(['load_num_csv.transform', 'sum_solid.transform', 'sum_sq_solid.transform'])
+
+    assert result.data['pipeline']['computeNodeGraph']['pipeline']['name'] == 'pandas_hello_world'
+
+    cn = get_named_thing(compute_node_graph_data['computeNodes'], 'sum_solid.transform')
+
+    assert cn['tag'] == 'TRANSFORM'
+    assert cn['solid']['name'] == 'sum_solid'
+
+    assert get_nameset(cn['inputs']) == set(['num'])
+
+    sst_input = get_named_thing(cn['inputs'], 'num')
+    assert sst_input['type']['name'] == 'PandasDataFrame'
+
+    assert sst_input['dependsOn']['name'] == 'load_num_csv.transform'
+
+    sst_output = get_named_thing(cn['outputs'], 'result')
+    assert sst_output['type']['name'] == 'PandasDataFrame'
+
+
+def get_nameset(llist):
+    return set([item['name'] for item in llist])
+
+
+def get_named_thing(llist, name):
+    for cn in llist:
+        if cn['name'] == name:
+            return cn
+
+    check.failed('not found')
 
 
 def test_production_query():
@@ -163,270 +288,5 @@ def test_production_query():
     assert not result.errors
 
 
-PRODUCTION_QUERY = '''
-query AppQuery {
-  pipelinesOrErrors {
-    ... on Error {
-      message
-      stack
-      __typename
-    }
-    ... on Pipeline {
-      ...PipelineFragment
-      __typename
-    }
-    __typename
-  }
-}
-
-fragment PipelineFragment on Pipeline {
-  name
-  description
-  solids {
-    ...SolidFragment
-    __typename
-  }
-  contexts {
-    name
-    description
-    config {
-      ...ConfigFragment
-      __typename
-    }
-    __typename
-  }
-  ...PipelineGraphFragment
-  ...ConfigEditorFragment
-  __typename
-}
-
-fragment SolidFragment on Solid {
-  ...SolidTypeSignatureFragment
-  name
-  definition {
-    description
-    metadata {
-      key
-      value
-      __typename
-    }
-    configDefinition {
-      ...ConfigFragment
-      __typename
-    }
-    __typename
-  }
-  inputs {
-    definition {
-      name
-      description
-      type {
-        ...TypeWithTooltipFragment
-        __typename
-      }
-      expectations {
-        name
-        description
-        __typename
-      }
-      __typename
-    }
-    dependsOn {
-      definition {
-        name
-        __typename
-      }
-      solid {
-        name
-        __typename
-      }
-      __typename
-    }
-    __typename
-  }
-  outputs {
-    definition {
-      name
-      description
-      type {
-        ...TypeWithTooltipFragment
-        __typename
-      }
-      expectations {
-        name
-        description
-        __typename
-      }
-      expectations {
-        name
-        description
-        __typename
-      }
-      __typename
-    }
-    __typename
-  }
-  __typename
-}
-
-fragment TypeWithTooltipFragment on Type {
-  name
-  description
-  typeAttributes {
-    isBuiltin
-    isSystemConfig
-  }
-  __typename
-}
-
-fragment SolidTypeSignatureFragment on Solid {
-  outputs {
-    definition {
-      name
-      type {
-        ...TypeWithTooltipFragment
-        __typename
-      }
-      __typename
-    }
-    __typename
-  }
-  inputs {
-    definition {
-      name
-      type {
-        ...TypeWithTooltipFragment
-        __typename
-      }
-      __typename
-    }
-    __typename
-  }
-  __typename
-}
-
-fragment ConfigFragment on Config {
-  type {
-    __typename
-    name
-    description
-    ... on CompositeType {
-      fields {
-        name
-        description
-        isOptional
-        defaultValue
-        type {
-          name
-          description
-          ...TypeWithTooltipFragment
-          ... on CompositeType {
-            fields {
-              name
-              description
-              isOptional
-              defaultValue
-              type {
-                name
-                description
-                ...TypeWithTooltipFragment
-                __typename
-              }
-              __typename
-            }
-            __typename
-          }
-          __typename
-        }
-        __typename
-      }
-      ...TypeWithTooltipFragment
-      __typename
-    }
-  }
-  __typename
-}
-
-fragment PipelineGraphFragment on Pipeline {
-  name
-  solids {
-    ...SolidNodeFragment
-    __typename
-  }
-  __typename
-}
-
-fragment SolidNodeFragment on Solid {
-  name
-  inputs {
-    definition {
-      name
-      type {
-        name
-        __typename
-      }
-      __typename
-    }
-    dependsOn {
-      definition {
-        name
-        __typename
-      }
-      solid {
-        name
-        __typename
-      }
-      __typename
-    }
-    __typename
-  }
-  outputs {
-    definition {
-      name
-      type {
-        name
-        __typename
-      }
-      expectations {
-        name
-        description
-        __typename
-      }
-      __typename
-    }
-    __typename
-  }
-  __typename
-}
-
-fragment ConfigEditorFragment on Pipeline {
-  name
-  ...ConfigExplorerFragment
-  __typename
-}
-
-fragment ConfigExplorerFragment on Pipeline {
-  contexts {
-    name
-    description
-    config {
-      ...ConfigFragment
-      __typename
-    }
-    __typename
-  }
-  solids {
-    definition {
-      name
-      description
-      configDefinition {
-        ...ConfigFragment
-        __typename
-      }
-      __typename
-    }
-    __typename
-  }
-  __typename
-}
-'''
+def test_compute_node():
+    pass

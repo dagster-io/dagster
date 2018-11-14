@@ -701,7 +701,7 @@ def create_compute_node_inputs(info, state, pipeline_solid):
     return cn_inputs
 
 
-def create_compute_node_graph(execution_info):
+def create_compute_node_graph_core(execution_info):
     check.inst_param(execution_info, 'execution_info', ComputeNodeExecutionInfo)
 
     execution_graph = execution_info.execution_graph
