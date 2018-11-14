@@ -1,6 +1,7 @@
 pre-commit==1.10.1
 pylint==1.9.2
 pytest==3.6.1
+pytest-cov==2.6.0
 recommonmark==0.4.0
 rope==0.11.0
 snapshottest==0.5.0

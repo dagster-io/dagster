@@ -1,5 +1,6 @@
 pylint==1.9.2
 pytest==3.6.1
+pytest-cov==2.6.0
 recommonmark==0.4.0
 rope==0.11
 Sphinx==1.7.5

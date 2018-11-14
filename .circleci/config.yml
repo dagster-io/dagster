@@ -4,16 +4,40 @@ workflows:
   version: 2
   test:
     jobs:
-      - dagster-python-3.6
-      - dagster-python-3.5
-      - dagster-python-2.7
-      - dagit-python-3.6
-      - dagit-python-3.5
-      - dagit-python-2.7
-      - dagit-webapp
-      - dagstermill-python-3.6
-      - dagstermill-python-3.5
-      - dagstermill-python-2.7
+      - dagster-python-3.6:
+          context: coveralls
+      - dagster-python-3.5:
+          context: coveralls
+      - dagster-python-2.7:
+          context: coveralls
+      - dagit-python-3.6:
+          context: coveralls
+      - dagit-python-3.5:
+          context: coveralls
+      - dagit-python-2.7:
+          context: coveralls
+      - dagit-webapp:
+          context: coveralls
+      - dagstermill-python-3.6:
+          context: coveralls
+      - dagstermill-python-3.5:
+          context: coveralls
+      - dagstermill-python-2.7:
+          context: coveralls
+      - coverage:
+          requires:
+            - dagster-python-3.6
+            - dagster-python-3.5
+            - dagster-python-2.7
+            - dagit-python-3.6
+            - dagit-python-3.5
+            - dagit-python-2.7
+            - dagstermill-python-3.6
+            - dagstermill-python-3.5
+            - dagstermill-python-2.7
+          context: coveralls
+
+        
 
 jobs:
   dagster-python-3.6: &dagster-template
@@ -41,6 +65,18 @@ jobs:
           path: test-reports
           destination: test-reports
 
+      - store_artifacts:
+          path: python_modules/dagster/.coverage
+          destination: .coverage
+
+      - run:
+          command: mv python_modules/dagster/.coverage python_modules/dagster/.coverage.dagster.${CIRCLE_BUILD_NUM}
+
+      - persist_to_workspace:
+          root: python_modules/dagster/
+          paths:
+            - .coverage*
+
   dagit-python-3.6: &dagit-template
     <<: *dagster-template
     steps:
@@ -61,6 +97,18 @@ jobs:
           path: test-reports
           destination: test-reports
 
+      - store_artifacts:
+          path: python_modules/dagit/.coverage
+          destination: .coverage
+
+      - run:
+          command: mv python_modules/dagit/.coverage python_modules/dagit/.coverage.dagit.${CIRCLE_BUILD_NUM}
+
+      - persist_to_workspace:
+          root: python_modules/dagit/
+          paths:
+            - .coverage*
+
   dagster-python-3.5:
     <<: *dagster-template
     docker:
@@ -74,6 +122,7 @@ jobs:
       - image: circleci/python:3.5.6
     environment:
       TOXENV: py35
+
 
   dagster-python-2.7:
     <<: *dagster-template
@@ -144,6 +193,14 @@ jobs:
           path: test-reports
           destination: test-reports
 
+      - run:
+          command: mv python_modules/dagstermill/.coverage python_modules/dagstermill/.coverage.dagstermill.${CIRCLE_BUILD_NUM}
+
+      - persist_to_workspace:
+          root: python_modules/dagstermill/
+          paths:
+            - .coverage*
+
   dagstermill-python-3.5:
     <<: *dagstermill-template
     docker:
@@ -157,3 +214,23 @@ jobs:
       - image: circleci/python:2.7.15
     environment:
       TOXENV: py27
+
+  coverage:
+    docker:
+      - image: circleci/python:3.6.6
+    working_directory: ~/repo
+    steps:
+      - checkout
+
+      - run:
+          name: Install Dependencies
+          command: |
+            sudo pip install coverage coveralls
+
+      - attach_workspace:
+          at: /tmp/workspace
+
+      - run: |
+          cp /tmp/workspace/.coverage* .
+          coverage combine
+          coveralls

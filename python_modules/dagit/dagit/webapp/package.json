@@ -70,6 +70,11 @@
     "watch-types": "apollo codegen:generate --queries \"./src/**/*.tsx\" --target typescript types --schema ./src/schema.json --watch"
   },
   "jest": {
+    "collectCoverage": true,
+    "collectCoverageFrom": [
+      "**/*.{js,jsx,ts,tsx}",
+      "!**/node_modules/**"
+    ],
     "roots": [
       "<rootDir>/src"
     ],
