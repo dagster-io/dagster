@@ -48,9 +48,7 @@ from .errors import (
 from .types import DagsterType
 
 
-class ExecutionPlanInfo(
-    namedtuple('_ExecutionPlanInfo', 'context execution_graph environment')
-):
+class ExecutionPlanInfo(namedtuple('_ExecutionPlanInfo', 'context execution_graph environment')):
     def __new__(cls, context, execution_graph, environment):
         return super(ExecutionPlanInfo, cls).__new__(
             cls,
@@ -463,9 +461,8 @@ def execute_steps(context, steps):
             expected_outputs = [ni.prev_output_handle for ni in step.step_inputs]
 
             context.debug(
-                'Not all inputs covered for {step}. Not executing.'.
-                format(step=step.friendly_name) +
-                '\nKeys in result: {result_keys}.'.format(result_keys=result_keys) +
+                'Not all inputs covered for {step}. Not executing.'.format(step=step.friendly_name)
+                + '\nKeys in result: {result_keys}.'.format(result_keys=result_keys) +
                 '\nOutputs need for inputs {expected_outputs}'.
                 format(expected_outputs=expected_outputs, )
             )
@@ -651,7 +648,7 @@ def create_config_value(execution_info, pipeline_solid):
 # This is the state that is built up during the execution plan build process.
 # steps is just a list of the steps that have been created
 # step_output_map maps logical solid outputs (solid_name, output_name) to particular
-# step outputs. This covers the case where a solid maps to multiple steps 
+# step outputs. This covers the case where a solid maps to multiple steps
 # and one wants to be able to attach to the logical output of a solid during execution
 StepBuilderState = namedtuple('StepBuilderState', 'steps step_output_map')
 
