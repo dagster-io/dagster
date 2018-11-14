@@ -49,7 +49,7 @@ from .types import DagsterType
 
 
 class ExecutionPlanInfo(
-    namedtuple('_ComputeNodeExecutionInfo', 'context execution_graph environment')
+    namedtuple('_ExecutionPlanInfo', 'context execution_graph environment')
 ):
     def __new__(cls, context, execution_graph, environment):
         return super(ExecutionPlanInfo, cls).__new__(
@@ -236,7 +236,7 @@ def _execute_core_transform(context, step, conf, inputs):
     all relevant logging and metrics tracking
     '''
     check.inst_param(context, 'context', ExecutionContext)
-    check.inst_param(step, 'compute_node', ExecutionStep)
+    check.inst_param(step, 'step', ExecutionStep)
     check.dict_param(inputs, 'inputs', key_type=str)
 
     error_str = 'Error occured during core transform'
@@ -351,11 +351,11 @@ class ExecutionStep(object):
             raise_from(
                 DagsterTypeError(
                     (
-                        'Solid {cn.solid.name} input {input_name} received value {input_value} ' +
+                        'Solid {step.solid.name} input {input_name} received value {input_value} ' +
                         'which does not pass the typecheck for Dagster type ' +
-                        '{step_input.dagster_type.name}. Compute node {cn.friendly_name}'
+                        '{step_input.dagster_type.name}. Step {step.friendly_name}'
                     ).format(
-                        cn=self,
+                        step=self,
                         input_name=input_name,
                         input_value=input_value,
                         step_input=step_input,
@@ -365,7 +365,7 @@ class ExecutionStep(object):
             )
 
     def _compute_result_list(self, context, evaluated_inputs):
-        error_str = 'Error occured during compute node {friendly_name}'.format(
+        error_str = 'Error occured during step {friendly_name}'.format(
             friendly_name=self.friendly_name,
         )
 
@@ -402,7 +402,7 @@ class ExecutionStep(object):
 
     def _execute_steps_core_loop(self, context, inputs):
         evaluated_inputs = {}
-        # do runtime type checks of inputs versus node inputs
+        # do runtime type checks of inputs versus step inputs
         for input_name, input_value in inputs.items():
             evaluated_inputs[input_name] = self._get_evaluated_input(input_name, input_value)
 
@@ -432,9 +432,9 @@ class ExecutionStep(object):
     def output_named(self, name):
         check.str_param(name, 'name')
 
-        for node_output in self.step_outputs:
-            if node_output.name == name:
-                return node_output
+        for step_output in self.step_outputs:
+            if step_output.name == name:
+                return step_output
 
         check.failed('output {name} not found'.format(name=name))
 
@@ -446,41 +446,41 @@ def _all_inputs_covered(cn, results):
     return True
 
 
-def execute_compute_nodes(context, steps):
+def execute_steps(context, steps):
     check.inst_param(context, 'context', ExecutionContext)
     check.list_param(steps, 'steps', of_type=ExecutionStep)
 
     intermediate_results = {}
     context.debug(
-        'Entering execute_compute_nodes loop. Order: {order}'.format(
+        'Entering execute_steps loop. Order: {order}'.format(
             order=[cn.friendly_name for cn in steps]
         )
     )
 
-    for compute_node in steps:
-        if not _all_inputs_covered(compute_node, intermediate_results):
+    for step in steps:
+        if not _all_inputs_covered(step, intermediate_results):
             result_keys = set(intermediate_results.keys())
-            expected_outputs = [ni.prev_output_handle for ni in compute_node.step_inputs]
+            expected_outputs = [ni.prev_output_handle for ni in step.step_inputs]
 
             context.debug(
-                'Not all inputs covered for {compute_name}. Not executing.'.
-                format(compute_name=compute_node.friendly_name) +
-                '\nKeys in result: {result_keys}.'.format(result_keys=result_keys, ) +
+                'Not all inputs covered for {step}. Not executing.'.
+                format(step=step.friendly_name) +
+                '\nKeys in result: {result_keys}.'.format(result_keys=result_keys) +
                 '\nOutputs need for inputs {expected_outputs}'.
                 format(expected_outputs=expected_outputs, )
             )
             continue
 
         input_values = {}
-        for node_input in compute_node.step_inputs:
-            prev_output_handle = node_input.prev_output_handle
+        for step_input in step.step_inputs:
+            prev_output_handle = step_input.prev_output_handle
             input_value = intermediate_results[prev_output_handle].success_data.value
-            input_values[node_input.name] = input_value
+            input_values[step_input.name] = input_value
 
-        for result in compute_node.execute(context, input_values):
+        for result in step.execute(context, input_values):
             check.invariant(isinstance(result, StepResult))
             yield result
-            output_handle = StepOutputHandle(compute_node, result.success_data.output_name)
+            output_handle = StepOutputHandle(step, result.success_data.output_name)
             intermediate_results[output_handle] = result
 
 
@@ -488,9 +488,9 @@ def print_graph(graph, printer=print):
     check.inst_param(graph, 'graph', ExecutionPlan)
     printer = IndentingPrinter(printer=printer)
 
-    for node in graph.topological_steps():
-        with printer.with_indent('Node {node.friendly_name} Id: {node.guid}'.format(node=node)):
-            for step_input in node.step_inputs:
+    for step in graph.topological_steps():
+        with printer.with_indent('Step {step.friendly_name} Id: {step.guid}'.format(step=step)):
+            for step_input in step.step_inputs:
                 with printer.with_indent('Input: {step_input.name}'.format(step_input=step_input)):
                     printer.line(
                         'Type: {step_input.dagster_type.name}'.format(step_input=step_input)
@@ -499,7 +499,7 @@ def print_graph(graph, printer=print):
                         'From: {step_input.prev_output_handle}'.format(step_input=step_input)
                     )
 
-            for step_output in node.step_outputs:
+            for step_output in step.step_outputs:
                 with printer.with_indent(
                     'Output: {step_output.name}'.format(step_output=step_output)
                 ):
@@ -566,14 +566,14 @@ def create_expectation_step(
 
 ExecutionSubPlan = namedtuple(
     'ExecutionSubPlan',
-    'nodes terminal_cn_output_handle',
+    'nodes terminal_step_output_handle',
 )
 
 
-def create_expectations_cn_graph(solid, inout_def, prev_node_output_handle, tag):
+def create_expectations_cn_graph(solid, inout_def, prev_step_output_handle, tag):
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(inout_def, 'inout_def', (InputDefinition, OutputDefinition))
-    check.inst_param(prev_node_output_handle, 'prev_node_output_handle', StepOutputHandle)
+    check.inst_param(prev_step_output_handle, 'prev_step_output_handle', StepOutputHandle)
     check.inst_param(tag, 'tag', StepTag)
 
     steps = []
@@ -586,7 +586,7 @@ def create_expectations_cn_graph(solid, inout_def, prev_node_output_handle, tag)
                 solid=solid, inout_def=inout_def, expectation_def=expectation_def
             ),
             tag=tag,
-            prev_step_output_handle=prev_node_output_handle,
+            prev_step_output_handle=prev_step_output_handle,
             inout_def=inout_def,
         )
         input_expect_steps.append(expect_step)
@@ -648,12 +648,12 @@ def create_config_value(execution_info, pipeline_solid):
         )
 
 
-# This is the state that is built up during the compute node graph build process.
-# compute_nodes is just a list of the compute nodes that have been created
-# cn_output_node_map maps logical solid outputs (solid_name, output_name) to particular
-# compute_node outputs. This covers the case where a solid maps to multiple compute nodes
+# This is the state that is built up during the execution plan build process.
+# steps is just a list of the steps that have been created
+# step_output_map maps logical solid outputs (solid_name, output_name) to particular
+# step outputs. This covers the case where a solid maps to multiple steps 
 # and one wants to be able to attach to the logical output of a solid during execution
-StepBuilderState = namedtuple('StepBuilderState', 'compute_nodes cn_output_node_map')
+StepBuilderState = namedtuple('StepBuilderState', 'steps step_output_map')
 
 
 def create_step_inputs(info, state, pipeline_solid):
@@ -675,21 +675,21 @@ def create_step_inputs(info, state, pipeline_solid):
         )
 
         solid_output_handle = dependency_structure.get_dep(input_handle)
-        prev_cn_output_handle = state.cn_output_node_map[solid_output_handle]
+        prev_step_output_handle = state.step_output_map[solid_output_handle]
 
         subgraph = create_subgraph_for_input(
             info,
             pipeline_solid,
-            prev_cn_output_handle,
+            prev_step_output_handle,
             input_def,
         )
 
-        state.compute_nodes.extend(subgraph.nodes)
+        state.steps.extend(subgraph.nodes)
         cn_inputs.append(
             StepInput(
                 input_def.name,
                 input_def.dagster_type,
-                subgraph.terminal_cn_output_handle,
+                subgraph.terminal_step_output_handle,
             )
         )
 
@@ -702,8 +702,8 @@ def create_execution_plan_core(execution_info):
     execution_graph = execution_info.execution_graph
 
     state = StepBuilderState(
-        compute_nodes=[],
-        cn_output_node_map=StepOutputMap(),
+        steps=[],
+        step_output_map=StepOutputMap(),
     )
 
     for pipeline_solid in execution_graph.topological_solids:
@@ -715,7 +715,7 @@ def create_execution_plan_core(execution_info):
             create_config_value(execution_info, pipeline_solid),
         )
 
-        state.compute_nodes.append(solid_transform_step)
+        state.steps.append(solid_transform_step)
 
         for output_def in pipeline_solid.definition.output_defs:
             subgraph = create_subplan_for_output(
@@ -724,12 +724,12 @@ def create_execution_plan_core(execution_info):
                 solid_transform_step,
                 output_def,
             )
-            state.compute_nodes.extend(subgraph.nodes)
+            state.steps.extend(subgraph.nodes)
 
             output_handle = pipeline_solid.output_handle(output_def.name)
-            state.cn_output_node_map[output_handle] = subgraph.terminal_cn_output_handle
+            state.step_output_map[output_handle] = subgraph.terminal_step_output_handle
 
-    return _create_execution_plan(state.compute_nodes)
+    return _create_execution_plan(state.steps)
 
 
 def _create_execution_plan(steps):
@@ -739,31 +739,31 @@ def _create_execution_plan(steps):
 
     deps = defaultdict()
 
-    for cn in steps:
-        deps[cn.guid] = set()
-        for cn_input in cn.step_inputs:
-            deps[cn.guid].add(cn_input.prev_output_handle.step.guid)
+    for step in steps:
+        deps[step.guid] = set()
+        for step_input in step.step_inputs:
+            deps[step.guid].add(step_input.prev_output_handle.step.guid)
 
     return ExecutionPlan(step_dict, deps)
 
 
-def create_subgraph_for_input(execution_info, solid, prev_cn_output_handle, input_def):
+def create_subgraph_for_input(execution_info, solid, prev_step_output_handle, input_def):
     check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
     check.inst_param(solid, 'solid', Solid)
-    check.inst_param(prev_cn_output_handle, 'prev_cn_output_handle', StepOutputHandle)
+    check.inst_param(prev_step_output_handle, 'prev_step_output_handle', StepOutputHandle)
     check.inst_param(input_def, 'input_def', InputDefinition)
 
     if execution_info.environment.expectations.evaluate and input_def.expectations:
         return create_expectations_cn_graph(
             solid,
             input_def,
-            prev_cn_output_handle,
+            prev_step_output_handle,
             tag=StepTag.INPUT_EXPECTATION,
         )
     else:
         return ExecutionSubPlan(
             nodes=[],
-            terminal_cn_output_handle=prev_cn_output_handle,
+            terminal_step_output_handle=prev_step_output_handle,
         )
 
 
@@ -771,46 +771,46 @@ SERIALIZE_INPUT = 'serialize_input'
 SERIALIZE_OUTPUT = 'serialize_output'
 
 
-def _decorate_with_expectations(execution_info, solid, solid_transform_cn, output_def):
+def _decorate_with_expectations(execution_info, solid, transform_step, output_def):
     check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
     check.inst_param(solid, 'solid', Solid)
-    check.inst_param(solid_transform_cn, 'solid_transform_cn', ExecutionStep)
+    check.inst_param(transform_step, 'transform_step', ExecutionStep)
     check.inst_param(output_def, 'output_def', OutputDefinition)
 
     if execution_info.environment.expectations.evaluate and output_def.expectations:
         return create_expectations_cn_graph(
             solid,
             output_def,
-            StepOutputHandle(solid_transform_cn, output_def.name),
+            StepOutputHandle(transform_step, output_def.name),
             tag=StepTag.OUTPUT_EXPECTATION
         )
     else:
         return ExecutionSubPlan(
             nodes=[],
-            terminal_cn_output_handle=StepOutputHandle(
-                solid_transform_cn,
+            terminal_step_output_handle=StepOutputHandle(
+                transform_step,
                 output_def.name,
             ),
         )
 
 
-def _decorate_with_serialization(execution_info, solid, output_def, subgraph):
+def _decorate_with_serialization(execution_info, solid, output_def, subplan):
     check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(output_def, 'output_def', OutputDefinition)
-    check.inst_param(subgraph, 'subgraph', ExecutionSubPlan)
+    check.inst_param(subplan, 'subplan', ExecutionSubPlan)
 
     if execution_info.serialize_intermediates:
-        serialize_cn = _create_serialization_node(solid, output_def, subgraph)
+        serialize_step = _create_serialization_step(solid, output_def, subplan)
         return ExecutionSubPlan(
-            nodes=subgraph.nodes + [serialize_cn],
-            terminal_cn_output_handle=StepOutputHandle(
-                serialize_cn,
+            nodes=subplan.nodes + [serialize_step],
+            terminal_step_output_handle=StepOutputHandle(
+                serialize_step,
                 SERIALIZE_OUTPUT,
             )
         )
     else:
-        return subgraph
+        return subplan
 
 
 def create_subplan_for_output(execution_info, solid, solid_transform_cn, output_def):
@@ -828,7 +828,7 @@ def _create_serialization_lambda(solid, output_def):
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(output_def, 'output_def', OutputDefinition)
 
-    def fn(context, _compute_node, inputs):
+    def fn(context, _step, inputs):
         value = inputs[SERIALIZE_INPUT]
         path = '/tmp/dagster/runs/{run_id}/{solid_name}/outputs/{output_name}'.format(
             run_id=context.run_id,
@@ -848,7 +848,7 @@ def _create_serialization_lambda(solid, output_def):
     return fn
 
 
-def _create_serialization_node(solid, output_def, prev_subgraph):
+def _create_serialization_step(solid, output_def, prev_subgraph):
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(output_def, 'output_def', OutputDefinition)
     check.inst_param(prev_subgraph, 'prev_subgraph', ExecutionSubPlan)
@@ -859,7 +859,7 @@ def _create_serialization_node(solid, output_def, prev_subgraph):
             StepInput(
                 name=SERIALIZE_INPUT,
                 dagster_type=output_def.dagster_type,
-                prev_output_handle=prev_subgraph.terminal_cn_output_handle,
+                prev_output_handle=prev_subgraph.terminal_step_output_handle,
             )
         ],
         step_outputs=[StepOutput(
@@ -872,25 +872,25 @@ def _create_serialization_node(solid, output_def, prev_subgraph):
     )
 
 
-def _create_join_step(solid, prev_nodes, prev_output_name):
+def _create_join_step(solid, prev_steps, prev_output_name):
     check.inst_param(solid, 'solid', Solid)
-    check.list_param(prev_nodes, 'prev_nodes', of_type=ExecutionStep)
-    check.invariant(len(prev_nodes) > 0)
+    check.list_param(prev_steps, 'prev_steps', of_type=ExecutionStep)
+    check.invariant(len(prev_steps) > 0)
     check.str_param(prev_output_name, 'output_name')
 
     step_inputs = []
     seen_dagster_type = None
-    for prev_node in prev_nodes:
-        prev_node_output = prev_node.output_named(prev_output_name)
+    for prev_step in prev_steps:
+        prev_step_output = prev_step.output_named(prev_output_name)
 
         if seen_dagster_type is None:
-            seen_dagster_type = prev_node_output.dagster_type
+            seen_dagster_type = prev_step_output.dagster_type
         else:
-            check.invariant(seen_dagster_type == prev_node_output.dagster_type)
+            check.invariant(seen_dagster_type == prev_step_output.dagster_type)
 
-        output_handle = StepOutputHandle(prev_node, prev_output_name)
+        output_handle = StepOutputHandle(prev_step, prev_output_name)
 
-        step_inputs.append(StepInput(prev_node.guid, prev_node_output.dagster_type, output_handle))
+        step_inputs.append(StepInput(prev_step.guid, prev_step_output.dagster_type, output_handle))
 
     return ExecutionStep(
         friendly_name='join',
@@ -902,7 +902,7 @@ def _create_join_step(solid, prev_nodes, prev_output_name):
     )
 
 
-def _create_join_lambda(_context, _compute_node, inputs):
+def _create_join_lambda(_context, _step, inputs):
     yield Result(output_name=JOIN_OUTPUT, value=list(inputs.values())[0])
 
 
@@ -912,7 +912,7 @@ def _create_expectation_lambda(solid, inout_def, expectation_def, internal_outpu
     check.inst_param(expectation_def, 'expectations_def', ExpectationDefinition)
     check.str_param(internal_output_name, 'internal_output_name')
 
-    def _do_expectation(context, compute_node, inputs):
+    def _do_expectation(context, step, inputs):
         with context.values(
             {
                 'solid': solid.name,
@@ -926,7 +926,7 @@ def _create_expectation_lambda(solid, inout_def, expectation_def, internal_outpu
             if expt_result.success:
                 context.debug(
                     'Expectation {friendly_name} succeeded on {value}.'.format(
-                        friendly_name=compute_node.friendly_name,
+                        friendly_name=step.friendly_name,
                         value=value,
                     )
                 )
@@ -934,7 +934,7 @@ def _create_expectation_lambda(solid, inout_def, expectation_def, internal_outpu
             else:
                 context.debug(
                     'Expectation {friendly_name} failed on {value}.'.format(
-                        friendly_name=compute_node.friendly_name,
+                        friendly_name=step.friendly_name,
                         value=value,
                     )
                 )
@@ -954,9 +954,9 @@ def create_transform_step(solid, step_inputs, conf):
             StepOutput(name=output_def.name, dagster_type=output_def.dagster_type)
             for output_def in solid.definition.output_defs
         ],
-        compute_fn=lambda context, compute_node, inputs: _execute_core_transform(
+        compute_fn=lambda context, step, inputs: _execute_core_transform(
             context,
-            compute_node,
+            step,
             conf,
             inputs,
         ),

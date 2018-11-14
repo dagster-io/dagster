@@ -51,7 +51,7 @@ from .execution_plan import (
     StepResult,
     StepTag,
     create_execution_plan_core,
-    execute_compute_nodes,
+    execute_steps,
 )
 
 
@@ -374,7 +374,7 @@ def _execute_graph_iterator(context, execution_graph, environment):
 
     solid = None
     solid_results = []
-    for step_result in execute_compute_nodes(context, cn_nodes):
+    for step_result in execute_steps(context, cn_nodes):
         step = step_result.step
 
         if solid and solid is not step.solid:
