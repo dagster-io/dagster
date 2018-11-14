@@ -299,7 +299,7 @@ class StepOutput(object):
 
 
 class ExecutionStep(object):
-    def __init__(self, friendly_name, step_inputs, node_outputs, compute_fn, tag, solid):
+    def __init__(self, friendly_name, step_inputs, step_outputs, compute_fn, tag, solid):
         self.guid = str(uuid.uuid4())
         self.friendly_name = check.str_param(friendly_name, 'friendly_name')
         self.step_inputs = check.list_param(step_inputs, 'step_inputs', of_type=StepInput)
@@ -308,12 +308,10 @@ class ExecutionStep(object):
         for node_input in step_inputs:
             node_input_dict[node_input.name] = node_input
         self._node_input_dict = node_input_dict
-        self.node_outputs = check.list_param(
-            node_outputs, 'node_outputs', of_type=StepOutput
-        )
+        self.step_outputs = check.list_param(step_outputs, 'step_outputs', of_type=StepOutput)
 
         node_output_dict = {}
-        for node_output in node_outputs:
+        for node_output in step_outputs:
             node_output_dict[node_output.name] = node_output
 
         self._node_output_dict = node_output_dict
@@ -386,7 +384,7 @@ class ExecutionStep(object):
             gen = self.compute_fn(context, self, evaluated_inputs)
 
             if gen is None:
-                check.invariant(not self.node_outputs)
+                check.invariant(not self.step_outputs)
                 return
 
             return list(gen)
@@ -445,7 +443,7 @@ class ExecutionStep(object):
     def output_named(self, name):
         check.str_param(name, 'name')
 
-        for node_output in self.node_outputs:
+        for node_output in self.step_outputs:
             if node_output.name == name:
                 return node_output
 
@@ -511,7 +509,7 @@ def print_graph(graph, printer=print):
                     printer.line(
                         'From: {node_input.prev_output_handle}'.format(node_input=node_input)
                     )
-            for node_output in node.node_outputs:
+            for node_output in node.step_outputs:
                 with printer.with_indent(
                     'Output: {node_output.name}'.format(node_output=node_output)
                 ):
@@ -557,7 +555,7 @@ def create_expectation_cn(
                 prev_output_handle=prev_node_output_handle,
             )
         ],
-        node_outputs=[
+        step_outputs=[
             StepOutput(name=EXPECTATION_VALUE_OUTPUT, dagster_type=value_type),
         ],
         compute_fn=_create_expectation_lambda(
@@ -601,7 +599,7 @@ def create_expectations_cn_graph(solid, inout_def, prev_node_output_handle, tag)
 
     join_cn = _create_join_node(solid, input_expect_nodes, EXPECTATION_VALUE_OUTPUT)
 
-    output_name = join_cn.node_outputs[0].name
+    output_name = join_cn.step_outputs[0].name
     return ComputeNodeSubgraph(
         compute_nodes + [join_cn],
         StepOutputHandle(join_cn, output_name),
@@ -869,7 +867,7 @@ def _create_serialization_node(solid, output_def, prev_subgraph):
                 prev_output_handle=prev_subgraph.terminal_cn_output_handle,
             )
         ],
-        node_outputs=[
+        step_outputs=[
             StepOutput(
                 name=SERIALIZE_OUTPUT,
                 dagster_type=output_def.dagster_type,
@@ -906,7 +904,7 @@ def _create_join_node(solid, prev_nodes, prev_output_name):
     return ExecutionStep(
         friendly_name='join',
         step_inputs=step_inputs,
-        node_outputs=[StepOutput(JOIN_OUTPUT, seen_dagster_type)],
+        step_outputs=[StepOutput(JOIN_OUTPUT, seen_dagster_type)],
         compute_fn=_create_join_lambda,
         tag=StepTag.JOIN,
         solid=solid,
@@ -961,7 +959,7 @@ def create_transform_compute_node(solid, step_inputs, conf):
     return ExecutionStep(
         friendly_name='{solid.name}.transform'.format(solid=solid),
         step_inputs=step_inputs,
-        node_outputs=[
+        step_outputs=[
             StepOutput(name=output_def.name, dagster_type=output_def.dagster_type)
             for output_def in solid.definition.output_defs
         ],
