@@ -302,7 +302,7 @@ class ExecutionStep(object):
         self._step_input_dict = {si.name: si for si in step_inputs}
 
         self.step_outputs = check.list_param(step_outputs, 'step_outputs', of_type=StepOutput)
-        self._step_output_dict = {so.name : so for so in step_outputs}
+        self._step_output_dict = {so.name: so for so in step_outputs}
 
         self.compute_fn = check.callable_param(compute_fn, 'compute_fn')
         self.tag = check.inst_param(tag, 'tag', StepTag)
@@ -509,15 +509,20 @@ def print_graph(graph, printer=print):
 
 
 class ExecutionPlan(object):
-    def __init__(self, cn_dict, deps):
-        self.cn_dict = check.dict_param(cn_dict, 'cn_dict', key_type=str, value_type=ExecutionStep)
+    def __init__(self, step_dict, deps):
+        self.step_dict = check.dict_param(
+            step_dict,
+            'step_dict',
+            key_type=str,
+            value_type=ExecutionStep,
+        )
         self.deps = check.dict_param(deps, 'deps', key_type=str, value_type=set)
-        self.nodes = list(cn_dict.values())
+        self.nodes = list(step_dict.values())
 
     def topological_steps(self):
-        cn_guids_sorted = toposort.toposort_flatten(self.deps)
-        for cn_guid in cn_guids_sorted:
-            yield self.cn_dict[cn_guid]
+        sorted_step_guids = toposort.toposort_flatten(self.deps)
+        for step_guid in sorted_step_guids:
+            yield self.step_dict[step_guid]
 
 
 def create_expectation_cn(
@@ -728,9 +733,9 @@ def create_compute_node_graph_core(execution_info):
 
 
 def _create_compute_node_graph(compute_nodes):
-    cn_dict = {}
+    step_dict = {}
     for cn in compute_nodes:
-        cn_dict[cn.guid] = cn
+        step_dict[cn.guid] = cn
 
     deps = defaultdict()
 
@@ -739,7 +744,7 @@ def _create_compute_node_graph(compute_nodes):
         for cn_input in cn.step_inputs:
             deps[cn.guid].add(cn_input.prev_output_handle.step.guid)
 
-    return ExecutionPlan(cn_dict, deps)
+    return ExecutionPlan(step_dict, deps)
 
 
 def create_subgraph_for_input(execution_info, solid, prev_cn_output_handle, input_def):
