@@ -354,7 +354,7 @@ def _execute_graph_iterator(context, execution_graph, environment):
         ),
     )
 
-    cn_nodes = list(cn_graph.topological_nodes())
+    cn_nodes = list(cn_graph.topological_steps())
 
     if not cn_nodes:
         context.debug(

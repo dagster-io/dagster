@@ -400,7 +400,7 @@ class ExecutionStep(object):
 
             seen_outputs.add(result.output_name)
 
-    def _execute_inner_compute_node_loop(self, context, inputs):
+    def _execute_steps_core_loop(self, context, inputs):
         evaluated_inputs = {}
         # do runtime type checks of inputs versus node inputs
         for input_name, input_value in inputs.items():
@@ -417,8 +417,8 @@ class ExecutionStep(object):
         check.dict_param(inputs, 'inputs', key_type=str)
 
         try:
-            for compute_node_result in self._execute_inner_compute_node_loop(context, inputs):
-                yield compute_node_result
+            for step_result in self._execute_steps_core_loop(context, inputs):
+                yield step_result
 
         except DagsterError as dagster_error:
             context.error(str(dagster_error))
@@ -440,24 +440,24 @@ class ExecutionStep(object):
 
 
 def _all_inputs_covered(cn, results):
-    for node_input in cn.step_inputs:
-        if node_input.prev_output_handle not in results:
+    for step_input in cn.step_inputs:
+        if step_input.prev_output_handle not in results:
             return False
     return True
 
 
-def execute_compute_nodes(context, compute_nodes):
+def execute_compute_nodes(context, steps):
     check.inst_param(context, 'context', ExecutionContext)
-    check.list_param(compute_nodes, 'compute_nodes', of_type=ExecutionStep)
+    check.list_param(steps, 'steps', of_type=ExecutionStep)
 
     intermediate_results = {}
     context.debug(
         'Entering execute_compute_nodes loop. Order: {order}'.format(
-            order=[cn.friendly_name for cn in compute_nodes]
+            order=[cn.friendly_name for cn in steps]
         )
     )
 
-    for compute_node in compute_nodes:
+    for compute_node in steps:
         if not _all_inputs_covered(compute_node, intermediate_results):
             result_keys = set(intermediate_results.keys())
             expected_outputs = [ni.prev_output_handle for ni in compute_node.step_inputs]
@@ -488,22 +488,23 @@ def print_graph(graph, printer=print):
     check.inst_param(graph, 'graph', ExecutionPlan)
     printer = IndentingPrinter(printer=printer)
 
-    for node in graph.topological_nodes():
+    for node in graph.topological_steps():
         with printer.with_indent('Node {node.friendly_name} Id: {node.guid}'.format(node=node)):
-            for node_input in node.step_inputs:
-                with printer.with_indent('Input: {node_input.name}'.format(node_input=node_input)):
+            for step_input in node.step_inputs:
+                with printer.with_indent('Input: {step_input.name}'.format(step_input=step_input)):
                     printer.line(
-                        'Type: {node_input.dagster_type.name}'.format(node_input=node_input)
+                        'Type: {step_input.dagster_type.name}'.format(step_input=step_input)
                     )
                     printer.line(
-                        'From: {node_input.prev_output_handle}'.format(node_input=node_input)
+                        'From: {step_input.prev_output_handle}'.format(step_input=step_input)
                     )
-            for node_output in node.step_outputs:
+
+            for step_output in node.step_outputs:
                 with printer.with_indent(
-                    'Output: {node_output.name}'.format(node_output=node_output)
+                    'Output: {step_output.name}'.format(step_output=step_output)
                 ):
                     printer.line(
-                        'Type: {node_output.dagster_type.name}'.format(node_output=node_output)
+                        'Type: {step_output.dagster_type.name}'.format(step_output=step_output)
                     )
 
 
@@ -513,7 +514,7 @@ class ExecutionPlan(object):
         self.deps = check.dict_param(deps, 'deps', key_type=str, value_type=set)
         self.nodes = list(cn_dict.values())
 
-    def topological_nodes(self):
+    def topological_steps(self):
         cn_guids_sorted = toposort.toposort_flatten(self.deps)
         for cn_guid in cn_guids_sorted:
             yield self.cn_dict[cn_guid]
