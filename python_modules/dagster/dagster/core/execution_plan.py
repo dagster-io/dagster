@@ -195,9 +195,9 @@ JOIN_OUTPUT = 'join_output'
 EXPECTATION_INPUT = 'expectation_input'
 
 
-def _yield_transform_results(context, compute_node, conf, inputs):
-    gen = compute_node.solid.definition.transform_fn(
-        TransformExecutionInfo(context, conf, compute_node.solid.definition),
+def _yield_transform_results(context, step, conf, inputs):
+    gen = step.solid.definition.transform_fn(
+        TransformExecutionInfo(context, conf, step.solid.definition),
         inputs,
     )
 
@@ -207,7 +207,7 @@ def _yield_transform_results(context, compute_node, conf, inputs):
                 'Transform for solid {solid_name} returned a Result rather than ' +
                 'yielding it. The transform_fn of the core SolidDefinition must yield ' +
                 'its results'
-            ).format(solid_name=compute_node.solid.name)
+            ).format(solid_name=step.solid.name)
         )
 
     if gen is None:
@@ -221,13 +221,13 @@ def _yield_transform_results(context, compute_node, conf, inputs):
                     'an instance of the Result class.'
                 ).format(
                     result=repr(result),
-                    solid_name=compute_node.solid.name,
+                    solid_name=step.solid.name,
                 )
             )
 
         context.info(
             'Solid {solid} emitted output "{output}" value {value}'.format(
-                solid=compute_node.solid.name,
+                solid=step.solid.name,
                 output=result.output_name,
                 value=repr(result.value),
             )
@@ -235,18 +235,18 @@ def _yield_transform_results(context, compute_node, conf, inputs):
         yield result
 
 
-def _execute_core_transform(context, compute_node, conf, inputs):
+def _execute_core_transform(context, step, conf, inputs):
     '''
     Execute the user-specified transform for the solid. Wrap in an error boundary and do
     all relevant logging and metrics tracking
     '''
     check.inst_param(context, 'context', ExecutionContext)
-    check.inst_param(compute_node, 'compute_node', ExecutionStep)
+    check.inst_param(step, 'compute_node', ExecutionStep)
     check.dict_param(inputs, 'inputs', key_type=str)
 
     error_str = 'Error occured during core transform'
 
-    solid = compute_node.solid
+    solid = step.solid
 
     with context.values({'solid': solid.name, 'solid_definition': solid.definition.name}):
         context.debug('Executing core transform for solid {solid}.'.format(solid=solid.name))
@@ -254,7 +254,7 @@ def _execute_core_transform(context, compute_node, conf, inputs):
         with time_execution_scope() as timer_result, \
             _user_code_error_boundary(context, error_str):
 
-            all_results = list(_yield_transform_results(context, compute_node, conf, inputs))
+            all_results = list(_yield_transform_results(context, step, conf, inputs))
 
         if len(all_results) != len(solid.definition.output_defs):
             emitted_result_names = set([r.output_name for r in all_results])
@@ -271,7 +271,7 @@ def _execute_core_transform(context, compute_node, conf, inputs):
 
         context.debug(
             'Finished executing transform for solid {solid}. Time elapsed: {millis:.3f} ms'.format(
-                solid=compute_node.solid.name,
+                solid=step.solid.name,
                 millis=timer_result.millis,
             ),
             execution_time_ms=timer_result.millis,
@@ -299,13 +299,13 @@ class StepOutput(object):
 
 
 class ExecutionStep(object):
-    def __init__(self, friendly_name, node_inputs, node_outputs, compute_fn, tag, solid):
+    def __init__(self, friendly_name, step_inputs, node_outputs, compute_fn, tag, solid):
         self.guid = str(uuid.uuid4())
         self.friendly_name = check.str_param(friendly_name, 'friendly_name')
-        self.node_inputs = check.list_param(node_inputs, 'node_inputs', of_type=StepInput)
+        self.node_inputs = check.list_param(step_inputs, 'node_inputs', of_type=StepInput)
 
         node_input_dict = {}
-        for node_input in node_inputs:
+        for node_input in step_inputs:
             node_input_dict[node_input.name] = node_input
         self._node_input_dict = node_input_dict
         self.node_outputs = check.list_param(
@@ -550,7 +550,7 @@ def create_expectation_cn(
 
     return ExecutionStep(
         friendly_name=friendly_name,
-        node_inputs=[
+        step_inputs=[
             StepInput(
                 name=EXPECTATION_INPUT,
                 dagster_type=value_type,
@@ -862,7 +862,7 @@ def _create_serialization_node(solid, output_def, prev_subgraph):
 
     return ExecutionStep(
         friendly_name='serialize.' + solid.name + '.' + output_def.name,
-        node_inputs=[
+        step_inputs=[
             StepInput(
                 name=SERIALIZE_INPUT,
                 dagster_type=output_def.dagster_type,
@@ -905,7 +905,7 @@ def _create_join_node(solid, prev_nodes, prev_output_name):
 
     return ExecutionStep(
         friendly_name='join',
-        node_inputs=node_inputs,
+        step_inputs=node_inputs,
         node_outputs=[StepOutput(JOIN_OUTPUT, seen_dagster_type)],
         compute_fn=_create_join_lambda,
         tag=StepTag.JOIN,
@@ -960,7 +960,7 @@ def create_transform_compute_node(solid, node_inputs, conf):
 
     return ExecutionStep(
         friendly_name='{solid.name}.transform'.format(solid=solid),
-        node_inputs=node_inputs,
+        step_inputs=node_inputs,
         node_outputs=[
             StepOutput(name=output_def.name, dagster_type=output_def.dagster_type)
             for output_def in solid.definition.output_defs
