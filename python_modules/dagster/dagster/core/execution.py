@@ -50,7 +50,7 @@ from .execution_plan import (
     ExecutionPlan,
     StepResult,
     StepTag,
-    create_compute_node_graph_core,
+    create_execution_plan_core,
     execute_compute_nodes,
 )
 
@@ -271,7 +271,7 @@ def create_compute_node_graph(pipeline, config_dict=None):
 
     execution_graph = ExecutionGraph.from_pipeline(pipeline)
     with yield_context(pipeline, environment) as context:
-        compute_node_graph = create_compute_node_graph_core(
+        compute_node_graph = create_execution_plan_core(
             ExecutionPlanInfo(context, execution_graph, environment),
         )
         return check.inst(compute_node_graph, ExecutionPlan)
@@ -346,7 +346,7 @@ def _execute_graph_iterator(context, execution_graph, environment):
     check.inst_param(execution_graph, 'execution_graph', ExecutionGraph)
     check.inst_param(environment, 'environent', config.Environment)
 
-    cn_graph = create_compute_node_graph_core(
+    cn_graph = create_execution_plan_core(
         ExecutionPlanInfo(
             context,
             execution_graph,

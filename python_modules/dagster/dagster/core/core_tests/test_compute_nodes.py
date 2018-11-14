@@ -13,7 +13,7 @@ from dagster.core.execution import (
 
 from dagster.core.definitions import ExecutionGraph
 
-from dagster.core.execution_plan import create_compute_node_graph_core
+from dagster.core.execution_plan import create_execution_plan_core
 
 
 def silencing_default_context():
@@ -37,7 +37,7 @@ def test_compute_noop_node_core():
     environment = config.Environment()
 
     execution_graph = ExecutionGraph.from_pipeline(pipeline)
-    compute_node_graph = create_compute_node_graph_core(
+    compute_node_graph = create_execution_plan_core(
         ExecutionPlanInfo(
             ExecutionContext(),
             execution_graph,
