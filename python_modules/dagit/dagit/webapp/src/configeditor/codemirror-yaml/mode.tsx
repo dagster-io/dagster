@@ -343,12 +343,12 @@ type CodemirrorLintError = {
   to: CodemirrorLocation;
 };
 
-type ValidationResult =
+export type ValidationResult =
   | {
-      valid: true;
+      isValid: true;
     }
   | {
-      valid: false;
+      isValid: false;
       errors: Array<ValidationError>;
     };
 
@@ -392,7 +392,7 @@ CodeMirror.registerHelper(
     if (doc.errors.length === 0) {
       const json = doc.toJSON();
       const validationResult = await lintJson(json);
-      if (!validationResult.valid) {
+      if (!validationResult.isValid) {
         validationResult.errors.forEach(error => {
           const range = findRangeInDocumentFromPath(doc, error.path);
           lints.push({

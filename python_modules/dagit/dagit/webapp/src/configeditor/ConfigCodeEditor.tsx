@@ -1,5 +1,6 @@
 import * as React from "react";
 import { injectGlobal } from "styled-components";
+import debounce from "lodash.debounce";
 import * as CodeMirror from "codemirror";
 import "codemirror/lib/codemirror.css";
 import "codemirror/theme/material.css";
@@ -43,6 +44,7 @@ export default class ConfigCodeEditor extends React.Component<
   };
 
   render() {
+    const performLint = debounce((editor: any) => editor.performLint(), 3000);
     return (
       <CodeMirrorReact
         value={this.state.code}
@@ -55,7 +57,8 @@ export default class ConfigCodeEditor extends React.Component<
             smartIndent: true,
             showCursorWhenSelecting: true,
             lint: {
-              lintJson: this.props.lintJson
+              lintJson: this.props.lintJson,
+              lintOnChange: false
             },
             hintOptions: {
               completeSingle: false,
@@ -91,6 +94,12 @@ export default class ConfigCodeEditor extends React.Component<
         }
         onBeforeChange={(editor, data, value) => {
           this.setState({ code: value });
+        }}
+        onChange={(editor: any) => {
+          performLint(editor);
+        }}
+        onBlur={(editor: any) => {
+          performLint(editor);
         }}
         onKeyUp={(editor, event: KeyboardEvent) => {
           if (AUTO_COMPLETE_AFTER_KEY.test(event.key)) {

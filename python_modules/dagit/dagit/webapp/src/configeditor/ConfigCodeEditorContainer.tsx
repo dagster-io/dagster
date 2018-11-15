@@ -1,9 +1,12 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import Loading from "../Loading";
+import { ApolloClient, ApolloQueryResult } from "apollo-boost";
 import { Query, QueryResult } from "react-apollo";
 import ConfigCodeEditor from "./ConfigCodeEditor";
+import { ValidationResult } from "./codemirror-yaml/mode";
 import { ConfigCodeEditorContainerQuery } from "./types/ConfigCodeEditorContainerQuery";
+import { ConfigCodeEditorContainerCheckConfigQuery } from "./types/ConfigCodeEditorContainerCheckConfigQuery";
 
 interface IConfigCodeEditorContainerProps {
   pipelineName: string;
@@ -38,15 +41,13 @@ export default class ConfigCodeEditorContainer extends React.Component<
                 return (
                   <ConfigCodeEditor
                     typeConfig={typeConfig}
-                    lintJson={async () => ({
-                      valid: false,
-                      errors: [
-                        {
-                          message: "There is an error",
-                          path: ["context", "production"]
-                        }
-                      ]
-                    })}
+                    lintJson={json =>
+                      checkConfig(
+                        queryResult.client,
+                        this.props.pipelineName,
+                        json
+                      )
+                    }
                   />
                 );
               }}
@@ -99,5 +100,54 @@ function createTypeConfig(
   return {
     environment: typeMap[environmentTypeName] || [],
     types: typeMap
+  };
+}
+
+export const CONFIG_CODE_EDITOR_CONTAINER_CHECK_CONFIG_QUERY = gql`
+  query ConfigCodeEditorContainerCheckConfigQuery(
+    $pipelineName: String!
+    $config: GenericScalar!
+  ) {
+    isPipelineConfigValid(pipelineName: $pipelineName, config: $config) {
+      __typename
+
+      ... on PipelineConfigValidationInvalid {
+        errors {
+          message
+          path
+        }
+      }
+    }
+  }
+`;
+
+async function checkConfig(
+  client: ApolloClient<any>,
+  pipelineName: string,
+  config: any
+): Promise<ValidationResult> {
+  if (config !== null) {
+    const result = await client.query<
+      ConfigCodeEditorContainerCheckConfigQuery
+    >({
+      query: CONFIG_CODE_EDITOR_CONTAINER_CHECK_CONFIG_QUERY,
+      variables: {
+        pipelineName,
+        config
+      }
+    });
+
+    if (
+      result.data.isPipelineConfigValid.__typename ===
+      "PipelineConfigValidationInvalid"
+    ) {
+      return {
+        isValid: false,
+        errors: result.data.isPipelineConfigValid.errors
+      };
+    }
+  }
+  return {
+    isValid: true
   };
 }
