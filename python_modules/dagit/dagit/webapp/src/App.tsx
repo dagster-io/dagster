@@ -20,35 +20,6 @@ export default class App extends React.Component {
                 <BrowserRouter>
                   <Switch>
                     <Route
-                      path="/:pipeline/config-editor"
-                      render={({
-                        match,
-                        history
-                      }: {
-                        match: match<{
-                          pipeline: string;
-                        }>;
-                        history: History;
-                      }) => {
-                        const pipeline = data.pipelinesOrErrors.find(
-                          p =>
-                            p.__typename === "Pipeline" &&
-                            p.name === match.params.pipeline
-                        );
-                        if (pipeline && pipeline.__typename === "Pipeline") {
-                          return (
-                            <ConfigEditor
-                              pipeline={pipeline}
-                              match={match}
-                              history={history}
-                            />
-                          );
-                        } else {
-                          return null;
-                        }
-                      }}
-                    />
-                    <Route
                       path="/:pipeline?/:solid?"
                       render={({
                         match,

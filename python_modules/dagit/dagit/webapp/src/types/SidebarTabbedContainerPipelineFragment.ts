@@ -7,6 +7,10 @@
 // GraphQL fragment: SidebarTabbedContainerPipelineFragment
 // ====================================================
 
+export interface SidebarTabbedContainerPipelineFragment_environmentType {
+  name: string;
+}
+
 export interface SidebarTabbedContainerPipelineFragment_contexts_config_type_RegularType {
   __typename: "RegularType";
   name: string;
@@ -68,6 +72,7 @@ export interface SidebarTabbedContainerPipelineFragment_contexts {
 
 export interface SidebarTabbedContainerPipelineFragment {
   name: string;
+  environmentType: SidebarTabbedContainerPipelineFragment_environmentType;
   description: string | null;
   contexts: SidebarTabbedContainerPipelineFragment_contexts[];
 }

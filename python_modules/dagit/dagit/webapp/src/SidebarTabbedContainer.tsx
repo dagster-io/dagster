@@ -7,12 +7,14 @@ import TypeExplorerContainer from "./configeditor/TypeExplorerContainer";
 import TypeListContainer from "./configeditor/TypeListContainer";
 import SidebarPipelineInfo from "./SidebarPipelineInfo";
 import SidebarSolidInfo from "./SidebarSolidInfo";
+import ConfigCodeEditorContainer from "./configeditor/ConfigCodeEditorContainer";
 import { SidebarTabbedContainerPipelineFragment } from "./types/SidebarTabbedContainerPipelineFragment";
 import { SidebarTabbedContainerSolidFragment } from "./types/SidebarTabbedContainerSolidFragment";
 
 interface ISidebarTabbedContainerProps {
   types: string | undefined;
   typeExplorer: string | undefined;
+  editor: string | undefined;
   pipeline: SidebarTabbedContainerPipelineFragment;
   solid: SidebarTabbedContainerSolidFragment | undefined;
 }
@@ -36,6 +38,12 @@ const TabInfo: Array<ITabInfo> = [
     icon: "manual",
     key: "types",
     link: "?types=true"
+  },
+  {
+    name: "Config Editor",
+    icon: "edit",
+    key: "editor",
+    link: "?editor=true"
   }
 ];
 
@@ -45,6 +53,10 @@ export default class SidebarTabbedContainer extends React.Component<
   static fragments = {
     SidebarTabbedContainerPipelineFragment: gql`
       fragment SidebarTabbedContainerPipelineFragment on Pipeline {
+        name
+        environmentType {
+          name
+        }
         ...SidebarPipelineInfoFragment
       }
 
@@ -59,7 +71,7 @@ export default class SidebarTabbedContainer extends React.Component<
   };
 
   render() {
-    const { typeExplorer, types, solid, pipeline } = this.props;
+    const { typeExplorer, types, solid, pipeline, editor } = this.props;
 
     let content = <div />;
     let activeTab = "info";
@@ -75,6 +87,14 @@ export default class SidebarTabbedContainer extends React.Component<
     } else if (types) {
       activeTab = "types";
       content = <TypeListContainer pipelineName={this.props.pipeline.name} />;
+    } else if (editor) {
+      activeTab = "editor";
+      content = (
+        <ConfigCodeEditorContainer
+          pipelineName={this.props.pipeline.name}
+          environmentTypeName={this.props.pipeline.environmentType.name}
+        />
+      );
     } else if (solid) {
       content = <SidebarSolidInfo solid={solid} key={solid.name} />;
     } else {
@@ -82,7 +102,7 @@ export default class SidebarTabbedContainer extends React.Component<
     }
 
     return (
-      <div>
+      <>
         <Tabs id="TabsExample">
           {TabInfo.map(({ name, icon, key, link }) => (
             <Link to={link} key={key}>
@@ -94,7 +114,7 @@ export default class SidebarTabbedContainer extends React.Component<
           ))}
         </Tabs>
         {content}
-      </div>
+      </>
     );
   }
 }
