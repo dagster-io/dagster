@@ -1,6 +1,5 @@
 import * as React from "react";
 import { injectGlobal } from "styled-components";
-import debounce from "lodash.debounce";
 import * as CodeMirror from "codemirror";
 import "codemirror/lib/codemirror.css";
 import "codemirror/theme/material.css";
@@ -14,7 +13,7 @@ import "codemirror/addon/search/search";
 import "codemirror/addon/search/searchcursor";
 import "codemirror/addon/search/jump-to-line";
 import "codemirror/addon/dialog/dialog";
-import "codemirror/addon/lint/lint";
+import "./codemirror-yaml/lint"; // Patch lint
 import "codemirror/addon/lint/lint.css";
 import "codemirror/keymap/sublime";
 import { Controlled as CodeMirrorReact } from "react-codemirror2";
@@ -23,31 +22,28 @@ import {
   TypeConfig as YamlModeTypeConfig,
   LintJson as YamlModeLintJson
 } from "./codemirror-yaml/mode";
+import { debounce } from "../Util";
 
 interface IConfigEditorProps {
   typeConfig: YamlModeTypeConfig;
   lintJson: YamlModeLintJson;
-}
-
-interface IConfigEditorState {
-  code: string;
+  configCode: string;
+  onConfigChange: (newValue: string) => void;
 }
 
 const AUTO_COMPLETE_AFTER_KEY = /^[a-zA-Z0-9_@(]$/;
+const performLint = debounce((editor: any) => {
+  editor.performLint();
+}, 1000);
 
 export default class ConfigCodeEditor extends React.Component<
   IConfigEditorProps,
-  IConfigEditorState
+  {}
 > {
-  state = {
-    code: "# This is config editor\n\n"
-  };
-
   render() {
-    const performLint = debounce((editor: any) => editor.performLint(), 3000);
     return (
       <CodeMirrorReact
-        value={this.state.code}
+        value={this.props.configCode}
         options={
           {
             mode: "yaml",
@@ -56,9 +52,11 @@ export default class ConfigCodeEditor extends React.Component<
             indentUnit: 2,
             smartIndent: true,
             showCursorWhenSelecting: true,
+            lintOnChange: false,
             lint: {
               lintJson: this.props.lintJson,
-              lintOnChange: false
+              lintOnChange: false,
+              onUpdateLinting: false
             },
             hintOptions: {
               completeSingle: false,
@@ -93,7 +91,7 @@ export default class ConfigCodeEditor extends React.Component<
           } as any
         }
         onBeforeChange={(editor, data, value) => {
-          this.setState({ code: value });
+          this.props.onConfigChange(value);
         }}
         onChange={(editor: any) => {
           performLint(editor);

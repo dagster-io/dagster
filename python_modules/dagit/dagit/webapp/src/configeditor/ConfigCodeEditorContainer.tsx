@@ -11,6 +11,8 @@ import { ConfigCodeEditorContainerCheckConfigQuery } from "./types/ConfigCodeEdi
 interface IConfigCodeEditorContainerProps {
   pipelineName: string;
   environmentTypeName: string;
+  configCode: string;
+  onConfigChange: (newValue: string) => void;
 }
 
 export default class ConfigCodeEditorContainer extends React.Component<
@@ -48,6 +50,8 @@ export default class ConfigCodeEditorContainer extends React.Component<
                         json
                       )
                     }
+                    configCode={this.props.configCode}
+                    onConfigChange={this.props.onConfigChange}
                   />
                 );
               }}
@@ -134,7 +138,8 @@ async function checkConfig(
       variables: {
         pipelineName,
         config
-      }
+      },
+      fetchPolicy: "no-cache"
     });
 
     if (

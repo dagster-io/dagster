@@ -17,6 +17,8 @@ interface ISidebarTabbedContainerProps {
   editor: string | undefined;
   pipeline: SidebarTabbedContainerPipelineFragment;
   solid: SidebarTabbedContainerSolidFragment | undefined;
+  configCode: string;
+  onConfigChange: (newValue: string) => void;
 }
 
 interface ITabInfo {
@@ -93,6 +95,8 @@ export default class SidebarTabbedContainer extends React.Component<
         <ConfigCodeEditorContainer
           pipelineName={this.props.pipeline.name}
           environmentTypeName={this.props.pipeline.environmentType.name}
+          configCode={this.props.configCode}
+          onConfigChange={this.props.onConfigChange}
         />
       );
     } else if (solid) {

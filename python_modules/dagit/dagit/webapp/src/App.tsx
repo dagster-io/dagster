@@ -6,7 +6,6 @@ import { BrowserRouter } from "react-router-dom";
 import { History } from "history";
 import Loading from "./Loading";
 import PipelinePage from "./PipelinePage";
-import ConfigEditor from "./configeditor/ConfigEditor";
 import { AppQuery } from "./types/AppQuery";
 
 export default class App extends React.Component {
