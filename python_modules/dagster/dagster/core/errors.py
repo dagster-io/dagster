@@ -1,8 +1,5 @@
 from collections import namedtuple
-from enum import (
-    Enum,
-    auto,
-)
+from enum import Enum
 
 from dagster import check
 
@@ -22,9 +19,9 @@ class DagsterUserError(DagsterError):
 
 
 class DagsterEvaluationErrorReason(Enum):
-    RUNTIME_TYPE_MISMATCH = auto()
-    MISSING_REQUIRED_FIELD = auto()
-    FIELD_NOT_DEFINED = auto()
+    RUNTIME_TYPE_MISMATCH = 'RUNTIME_TYPE_MISMATCH'
+    MISSING_REQUIRED_FIELD = 'MISSING_REQUIRED_FIELD'
+    FIELD_NOT_DEFINED = 'FIELD_NOT_DEFINED'
 
 
 FieldNotDefinedErrorData = namedtuple('FieldNotDefinedErrorData', 'field_name')
