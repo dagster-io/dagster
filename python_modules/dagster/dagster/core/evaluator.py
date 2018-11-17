@@ -109,10 +109,11 @@ def _evaluate_value(dagster_type, value, stack, collector):
         check.failed('Type not composite or scalar {name}'.format(name=dagster_type.name))
 
 
-def evaluate_composite_value(dagster_composite_type, incoming_value, collector, stack):
+def evaluate_composite_value(dagster_composite_type, incoming_value, collector, stack, ctor=None):
     check.inst_param(dagster_composite_type, 'dagster_composite_type', DagsterCompositeType)
     check.inst_param(collector, 'collector', ErrorCollector)
     check.inst_param(stack, 'stack', EvaluationStack)
+    ctor = check.opt_callable_param(ctor, 'ctor', lambda val: val)
 
     local_collector = ErrorCollector()
 
@@ -182,7 +183,7 @@ def evaluate_composite_value(dagster_composite_type, incoming_value, collector, 
                 ),
             )
 
-    fields_to_pass = {}
+    processed_fields = {}
 
     for expected_field, field_def in field_dict.items():
         if expected_field in incoming_fields:
@@ -192,9 +193,9 @@ def evaluate_composite_value(dagster_composite_type, incoming_value, collector, 
                 stack_with_field(stack, expected_field, field_def),
                 collector,
             )
-            fields_to_pass[expected_field] = evaluated_value
+            processed_fields[expected_field] = evaluated_value
         elif field_def.default_provided:
-            fields_to_pass[expected_field] = field_def.default_value
+            processed_fields[expected_field] = field_def.default_value
         else:
             check.invariant(
                 bool(local_collector.errors),
@@ -203,4 +204,4 @@ def evaluate_composite_value(dagster_composite_type, incoming_value, collector, 
 
     collector.errors = collector.errors + local_collector.errors
 
-    return None if local_collector.errors else fields_to_pass
+    return None if local_collector.errors else ctor(processed_fields)

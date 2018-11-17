@@ -39,14 +39,6 @@ class HasUserConfig:
         return self.field_dict['config']  # pylint: disable=E1101
 
 
-def load_environment(pipeline_def, environment_dict):
-    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
-    check.dict_param(environment_dict, 'environment_dict')
-
-    env_type = EnvironmentConfigType(pipeline_def)
-    return env_type.evaluate_value(environment_dict)
-
-
 def define_possibly_optional_field(config_type, is_optional):
     check.inst_param(config_type, 'config_type', DagsterType)
     check.bool_param(is_optional, 'is_optional')
