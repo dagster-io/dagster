@@ -6,7 +6,10 @@ import pickle
 from six import integer_types, string_types
 
 from dagster import check
-from dagster.core.errors import DagsterEvaluateValueError
+from dagster.core.errors import (
+    DagsterEvaluateValueError,
+    DagsterEvaluationErrorReason,
+)
 
 SerializedTypeValue = namedtuple('SerializedTypeValue', 'name value')
 
@@ -389,9 +392,8 @@ class ConfigDictionary(DagsterCompositeType, IsScopedConfigType):
         return process_incoming_composite_value(self, value, lambda val: val)
 
 
-def process_incoming_composite_value(dagster_composite_type, incoming_value, ctor):
+def process_incoming_composite_value(dagster_composite_type, incoming_value, ctor, collector=None):
     check.inst_param(dagster_composite_type, 'dagster_composite_type', DagsterCompositeType)
-
     if incoming_value and not isinstance(incoming_value, dict):
         raise DagsterEvaluateValueError(
             'Value for composite type {type_name} must be a dict got {value}'.format(

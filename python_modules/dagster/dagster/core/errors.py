@@ -1,4 +1,8 @@
-from enum import Enum
+from collections import namedtuple
+from enum import (
+    Enum,
+    auto,
+)
 
 from dagster import check
 
@@ -15,6 +19,17 @@ class DagsterError(Exception):
 
 class DagsterUserError(DagsterError):
     pass
+
+
+class DagsterEvaluationErrorReason(Enum):
+    RUNTIME_TYPE_MISMATCH = auto()
+    MISSING_REQUIRED_FIELD = auto()
+    FIELD_NOT_DEFINED = auto()
+
+
+FieldNotDefinedErrorData = namedtuple('FieldNotDefinedErrorData', 'field_name')
+MissingFieldErrorData = namedtuple('MissingFieldErrorData', 'field_name')
+RuntimeMismatchErrorData = namedtuple('RuntimeMismatchErrorData', 'dagster_type value_rep')
 
 
 class DagsterEvaluateValueError(DagsterError):
