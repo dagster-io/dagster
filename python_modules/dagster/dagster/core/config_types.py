@@ -60,9 +60,12 @@ class SpecificContextConfig(DagsterCompositeType, HasUserConfig):
             type_attributes=DagsterTypeAttributes(is_system_config=True),
         )
 
-    def evaluate_value(self, value):
-        config_output = process_incoming_composite_value(self, value, lambda val: val)
-        return config_output['config']
+    def construct_value(self, value):
+        return value['config']
+
+    # def evaluate_value(self, value):
+    #     config_output = process_incoming_composite_value(self, value, lambda val: val)
+    #     return config_output['config']
 
 
 def define_specific_context_field(pipeline_name, context_name, context_def, is_optional):

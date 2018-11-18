@@ -64,6 +64,9 @@ class DagsterType(object):
         '''
         check.not_implemented('Must implement in subclass')
 
+    def construct_value(self, value):
+        return value
+
     def iterate_types(self):
         yield self
 
@@ -333,8 +336,9 @@ class DagsterCompositeType(DagsterType):
             type_attributes=type_attributes,
         )
 
-    def evaluate_value(self, _value):
-        check.not_implemented('Must override')
+    def evaluate_value(self, value):
+        from .evaluator import throwing_evaluate_input_value
+        return throwing_evaluate_input_value(self, value)
 
     def iterate_types(self):
         for field_type in self.field_dict.values():
@@ -395,7 +399,8 @@ class ConfigDictionary(DagsterCompositeType, IsScopedConfigType):
     def evaluate_value(self, value):
         if value is not None and not isinstance(value, dict):
             raise DagsterEvaluateValueError('Incoming value for composite must be dict')
-        return process_incoming_composite_value(self, value, lambda val: val)
+        from .evaluator import throwing_evaluate_input_value
+        return throwing_evaluate_input_value(self, value)
 
 
 def process_incoming_composite_value(dagster_composite_type, incoming_value, ctor, collector=None):

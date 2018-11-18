@@ -210,4 +210,6 @@ def evaluate_composite_input_value(dagster_composite_type, incoming_value, colle
 
     collector.errors = collector.errors + local_collector.errors
 
-    return None if local_collector.errors else processed_fields
+    return None if local_collector.errors else dagster_composite_type.construct_value(
+        processed_fields
+    )

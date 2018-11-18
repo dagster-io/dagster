@@ -373,11 +373,7 @@ class CustomStructConfigType(types.DagsterCompositeType):
         return CustomStructConfig(**value)
 
     def evaluate_value(self, value):
-        return process_incoming_composite_value(
-            self,
-            value,
-            lambda val: CustomStructConfig(**val),
-        )
+        return throwing_evaluate_input_value(self, value)
 
 
 def test_custom_composite_type():
