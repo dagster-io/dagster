@@ -3,7 +3,7 @@ from dagster import types
 from dagster.core.definitions import build_config_dict_type
 
 from dagster.core.evaluator import (
-    evaluate_value,
+    evaluate_input_value,
     EvaluateValueResult,
 )
 
@@ -16,13 +16,13 @@ def assert_success(result, expected_value):
 
 
 def test_evaluate_scalar_success():
-    assert_success(evaluate_value(types.String, 'foobar'), 'foobar')
-    assert_success(evaluate_value(types.Int, 34234), 34234)
-    assert_success(evaluate_value(types.Bool, True), True)
+    assert_success(evaluate_input_value(types.String, 'foobar'), 'foobar')
+    assert_success(evaluate_input_value(types.Int, 34234), 34234)
+    assert_success(evaluate_input_value(types.Bool, True), True)
 
 
 def test_evaluate_scalar_failure():
-    result = evaluate_value(types.String, 2343)
+    result = evaluate_input_value(types.String, 2343)
     assert not result.success
     assert result.value is None
     assert len(result.errors) == 1
@@ -43,12 +43,12 @@ SingleLevelDict = types.ConfigDictionary(
 
 def test_single_error():
     success_value = {'level_one': 'ksjdfd'}
-    assert_success(evaluate_value(SingleLevelDict, success_value), success_value)
+    assert_success(evaluate_input_value(SingleLevelDict, success_value), success_value)
 
 
 def test_single_level_scalar_mismatch():
     value = {'level_one': 234}
-    result = evaluate_value(SingleLevelDict, value)
+    result = evaluate_input_value(SingleLevelDict, value)
     assert not result.success
     assert result.value is None
     assert len(result.errors) == 1
@@ -61,7 +61,7 @@ def test_single_level_scalar_mismatch():
 
 def test_single_level_dict_not_a_dict():
     value = 'not_a_dict'
-    result = evaluate_value(SingleLevelDict, value)
+    result = evaluate_input_value(SingleLevelDict, value)
     assert not result.success
     assert result.value is None
     assert len(result.errors) == 1
@@ -71,7 +71,7 @@ def test_single_level_dict_not_a_dict():
 
 
 def test_root_missing_field():
-    result = evaluate_value(SingleLevelDict, {})
+    result = evaluate_input_value(SingleLevelDict, {})
     assert not result.success
     assert result.value is None
     assert len(result.errors) == 1
@@ -108,9 +108,9 @@ def test_nested_success():
         }
     }
 
-    assert_success(evaluate_value(DoubleLevelDict, value), value)
+    assert_success(evaluate_input_value(DoubleLevelDict, value), value)
 
-    result = evaluate_value(
+    result = evaluate_input_value(
         DoubleLevelDict,
         {
             'level_one': {
@@ -136,7 +136,7 @@ def test_nested_error_one_field_not_defined():
         }
     }
 
-    result = evaluate_value(DoubleLevelDict, value)
+    result = evaluate_input_value(DoubleLevelDict, value)
 
     assert not result.success
     assert len(result.errors) == 1
@@ -167,7 +167,7 @@ def test_nested_error_two_fields_not_defined():
         }
     }
 
-    result = evaluate_value(DoubleLevelDict, value)
+    result = evaluate_input_value(DoubleLevelDict, value)
 
     assert not result.success
     assert len(result.errors) == 2
@@ -188,7 +188,7 @@ def test_nested_error_missing_fields():
         }
     }
 
-    result = evaluate_value(DoubleLevelDict, value)
+    result = evaluate_input_value(DoubleLevelDict, value)
     assert not result.success
     assert len(result.errors) == 1
     error = result.errors[0]
@@ -199,7 +199,7 @@ def test_nested_error_missing_fields():
 def test_nested_error_multiple_missing_fields():
     value = {'level_one': {}}
 
-    result = evaluate_value(DoubleLevelDict, value)
+    result = evaluate_input_value(DoubleLevelDict, value)
     assert not result.success
     assert len(result.errors) == 2
 
@@ -216,7 +216,7 @@ def test_nested_error_multiple_missing_fields():
 def test_nested_missing_and_not_defined():
     value = {'level_one': {'not_defined': 'kjdfkdj'}}
 
-    result = evaluate_value(DoubleLevelDict, value)
+    result = evaluate_input_value(DoubleLevelDict, value)
     assert not result.success
     assert len(result.errors) == 3
 
@@ -261,7 +261,7 @@ def test_multilevel_success():
         },
     }
 
-    assert_success(evaluate_value(MultiLevelDictType, working_value), working_value)
+    assert_success(evaluate_input_value(MultiLevelDictType, working_value), working_value)
 
 
 def test_deep_scalar():
@@ -275,7 +275,7 @@ def test_deep_scalar():
         },
     }
 
-    result = evaluate_value(MultiLevelDictType, value)
+    result = evaluate_input_value(MultiLevelDictType, value)
     assert not result.success
     assert len(result.errors) == 1
     error = result.errors[0]
@@ -314,7 +314,7 @@ def test_deep_mixed_level_errors():
         },
     }
 
-    result = evaluate_value(MultiLevelDictType, value)
+    result = evaluate_input_value(MultiLevelDictType, value)
     assert not result.success
     assert len(result.errors) == 3
 

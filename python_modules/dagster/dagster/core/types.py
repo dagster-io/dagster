@@ -319,7 +319,13 @@ class DagsterCompositeType(DagsterType):
     '''Dagster type representing a type with a list of named :py:class:`Field` objects.
     '''
 
-    def __init__(self, name, fields, description=None, type_attributes=DEFAULT_TYPE_ATTRIBUTES):
+    def __init__(
+        self,
+        name,
+        fields,
+        description=None,
+        type_attributes=DEFAULT_TYPE_ATTRIBUTES,
+    ):
         self.field_dict = FieldDefinitionDictionary(fields)
         super(DagsterCompositeType, self).__init__(
             name=name,

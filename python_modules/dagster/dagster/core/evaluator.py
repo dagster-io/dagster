@@ -67,17 +67,24 @@ def stack_with_field(stack, field_name, field_def):
     return EvaluationStack(entries=stack.entries + [EvaluationStackEntry(field_name, field_def)])
 
 
-def evaluate_value(dagster_type, value):
+def throwing_evaluate_input_value(dagster_type, value):
+    result = evaluate_input_value(dagster_type, value)
+    if not result.success:
+        raise DagsterEvaluateValueError()
+    return result.value
+
+
+def evaluate_input_value(dagster_type, value):
     check.inst_param(dagster_type, 'dagster_type', DagsterType)
     collector = ErrorCollector()
-    value = _evaluate_value(dagster_type, value, EvaluationStack(entries=[]), collector)
+    value = _evaluate_input_value(dagster_type, value, EvaluationStack(entries=[]), collector)
     if collector.errors:
         return EvaluateValueResult(success=False, value=None, errors=collector.errors)
     else:
         return EvaluateValueResult(success=True, value=value, errors=[])
 
 
-def _evaluate_value(dagster_type, value, stack, collector):
+def _evaluate_input_value(dagster_type, value, stack, collector):
     check.inst_param(dagster_type, 'dagster_type', DagsterType)
     check.inst_param(stack, 'stack', EvaluationStack)
     check.inst_param(collector, 'collector', ErrorCollector)
@@ -102,18 +109,17 @@ def _evaluate_value(dagster_type, value, stack, collector):
             )
             return None
     elif isinstance(dagster_type, DagsterCompositeType):
-        return evaluate_composite_value(dagster_type, value, collector, stack)
+        return evaluate_composite_input_value(dagster_type, value, collector, stack)
     elif isinstance(dagster_type, PythonObjectType):
         check.failed('PythonObjectType should not be used in a config hierarchy')
     else:
         check.failed('Type not composite or scalar {name}'.format(name=dagster_type.name))
 
 
-def evaluate_composite_value(dagster_composite_type, incoming_value, collector, stack, ctor=None):
+def evaluate_composite_input_value(dagster_composite_type, incoming_value, collector, stack):
     check.inst_param(dagster_composite_type, 'dagster_composite_type', DagsterCompositeType)
     check.inst_param(collector, 'collector', ErrorCollector)
     check.inst_param(stack, 'stack', EvaluationStack)
-    ctor = check.opt_callable_param(ctor, 'ctor', lambda val: val)
 
     local_collector = ErrorCollector()
 
@@ -187,7 +193,7 @@ def evaluate_composite_value(dagster_composite_type, incoming_value, collector, 
 
     for expected_field, field_def in field_dict.items():
         if expected_field in incoming_fields:
-            evaluated_value = _evaluate_value(
+            evaluated_value = _evaluate_input_value(
                 field_def.dagster_type,
                 incoming_value[expected_field],
                 stack_with_field(stack, expected_field, field_def),
@@ -196,7 +202,7 @@ def evaluate_composite_value(dagster_composite_type, incoming_value, collector, 
             processed_fields[expected_field] = evaluated_value
         elif field_def.default_provided:
             processed_fields[expected_field] = field_def.default_value
-        else:
+        elif not field_def.is_optional:
             check.invariant(
                 bool(local_collector.errors),
                 'Error should have been added for missing required field',
@@ -204,4 +210,4 @@ def evaluate_composite_value(dagster_composite_type, incoming_value, collector, 
 
     collector.errors = collector.errors + local_collector.errors
 
-    return None if local_collector.errors else ctor(processed_fields)
+    return None if local_collector.errors else processed_fields

@@ -15,6 +15,11 @@ from dagster import (
     types,
 )
 
+from dagster.core.evaluator import (
+    evaluate_input_value,
+    throwing_evaluate_input_value,
+)
+
 from dagster.core.types import (
     process_incoming_composite_value,
     ScopedConfigInfo,
@@ -35,7 +40,17 @@ def test_int_field():
         },
     )
 
-    assert config_def.config_type.evaluate_value({'int_field': 1}) == {'int_field': 1}
+    assert evaluate_input_value(config_def.config_type, {'int_field': 1}).value == {'int_field': 1}
+
+
+def assert_success(dagster_type, value, expected):
+    result = evaluate_input_value(dagster_type, value)
+    assert result.success
+    assert result.value == expected
+
+
+def assert_eval_failure(dagster_type, value):
+    assert not evaluate_input_value(dagster_type, value).success
 
 
 def test_int_fails():
@@ -45,11 +60,8 @@ def test_int_fails():
         }
     )
 
-    with pytest.raises(DagsterEvaluateValueError):
-        config_def.config_type.evaluate_value({'int_field': 'fjkdj'})
-
-    with pytest.raises(DagsterEvaluateValueError):
-        config_def.config_type.evaluate_value({'int_field': True})
+    assert_eval_failure(config_def.config_type, {'int_field': 'fjkdj'})
+    assert_eval_failure(config_def.config_type, {'int_field': True})
 
 
 def test_default_arg():
@@ -59,7 +71,7 @@ def test_default_arg():
         }
     )
 
-    assert config_def.config_type.evaluate_value({}) == {'int_field': 2}
+    assert_success(config_def.config_type, {}, {'int_field': 2})
 
 
 def _single_required_string_config_dict():
@@ -110,7 +122,7 @@ def _mixed_required_optional_string_config_dict_with_default():
 
 
 def _validate(config_def, value):
-    return config_def.config_type.evaluate_value(value)
+    return throwing_evaluate_input_value(config_def.config_type, value)
 
 
 def test_single_required_string_field_config_type():
@@ -357,14 +369,14 @@ class CustomStructConfigType(types.DagsterCompositeType):
             },
         )
 
-    def evaluate_value(self, value):
-        if value is not None and not isinstance(value, dict):
-            raise DagsterEvaluateValueError('Incoming value for composite must be dict')
+    def construct_value(self, value):
+        return CustomStructConfig(**value)
 
+    def evaluate_value(self, value):
         return process_incoming_composite_value(
             self,
             value,
-            lambda val: CustomStructConfig(foo=val['foo'], bar=val['bar']),
+            lambda val: CustomStructConfig(**val),
         )
 
 
