@@ -16,6 +16,8 @@ from .definitions import (
     PipelineDefinition,
 )
 
+from .evaluator import throwing_evaluate_input_value
+
 from .types import (
     Bool,
     DagsterCompositeType,
@@ -62,10 +64,6 @@ class SpecificContextConfig(DagsterCompositeType, HasUserConfig):
 
     def construct_value(self, value):
         return value['config']
-
-    # def evaluate_value(self, value):
-    #     config_output = process_incoming_composite_value(self, value, lambda val: val)
-    #     return config_output['config']
 
 
 def define_specific_context_field(pipeline_name, context_name, context_def, is_optional):
@@ -197,11 +195,8 @@ class SolidConfigType(DagsterCompositeType, HasUserConfig):
             type_attributes=DagsterTypeAttributes(is_system_config=True),
         )
 
-    def evaluate_value(self, value):
-        if isinstance(value, Solid):
-            return value
-
-        return process_incoming_composite_value(self, value, lambda val: Solid(**val))
+    def construct_value(self, value):
+        return Solid(**value)
 
     @property
     def user_config_field(self):
@@ -271,9 +266,14 @@ class EnvironmentConfigType(DagsterCompositeType):
             type_attributes=DagsterTypeAttributes(is_system_config=True),
         )
 
+    def construct_value(self, value):
+        return Environment(**value)
+
     def evaluate_value(self, value):
         if isinstance(value, Environment):
             return value
+
+        # return throwing_evaluate_input_value(self, value)
 
         return process_incoming_composite_value(
             self,
@@ -290,11 +290,8 @@ class ExpectationsConfigType(DagsterCompositeType):
             type_attributes=DagsterTypeAttributes(is_system_config=True),
         )
 
-    def evaluate_value(self, value):
-        if isinstance(value, Expectations):
-            return value
-
-        return process_incoming_composite_value(self, value, lambda val: Expectations(**val))
+    def construct_value(self, value):
+        return Expectations(**value)
 
 
 def all_optional_type(dagster_type):
@@ -338,9 +335,6 @@ class SolidDictionaryType(DagsterCompositeType):
             type_attributes=DagsterTypeAttributes(is_system_config=True),
         )
 
-    def evaluate_value(self, value):
-        return process_incoming_composite_value(self, value, lambda val: val)
-
 
 class ExecutionConfigType(DagsterCompositeType):
     def __init__(self, name):
@@ -353,5 +347,5 @@ class ExecutionConfigType(DagsterCompositeType):
             type_attributes=DagsterTypeAttributes(is_system_config=True),
         )
 
-    def evaluate_value(self, value):
-        return process_incoming_composite_value(self, value, lambda val: Execution(**val))
+    def construct_value(self, value):
+        return Execution(**value)

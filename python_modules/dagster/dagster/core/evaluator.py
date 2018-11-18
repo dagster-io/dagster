@@ -70,7 +70,7 @@ def stack_with_field(stack, field_name, field_def):
 def throwing_evaluate_input_value(dagster_type, value):
     result = evaluate_input_value(dagster_type, value)
     if not result.success:
-        raise DagsterEvaluateValueError()
+        raise DagsterEvaluateValueError(result.errors[0].message)
     return result.value
 
 

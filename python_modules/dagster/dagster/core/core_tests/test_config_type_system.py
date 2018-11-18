@@ -372,9 +372,6 @@ class CustomStructConfigType(types.DagsterCompositeType):
     def construct_value(self, value):
         return CustomStructConfig(**value)
 
-    def evaluate_value(self, value):
-        return throwing_evaluate_input_value(self, value)
-
 
 def test_custom_composite_type():
     config_type = CustomStructConfigType()
