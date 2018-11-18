@@ -16,6 +16,7 @@ from .types import (
     DagsterSelectorType,
     DagsterType,
     PythonObjectType,
+    Any,
 )
 
 
@@ -71,7 +72,8 @@ def stack_with_field(stack, field_name, field_def):
 def throwing_evaluate_input_value(dagster_type, value):
     result = evaluate_input_value(dagster_type, value)
     if not result.success:
-        raise DagsterEvaluateValueError(result.errors[0].message)
+        stack = result.errors[0].stack
+        raise DagsterEvaluateValueError(result.errors[0].message, stack=result.errors[0].stack)
     return result.value
 
 
@@ -166,8 +168,13 @@ def evaluate_selector_input_value(dagster_type, incoming_value, collector, stack
         )
         return None
 
-    parent_type = dagster_type.field_dict[field_name].dagster_type
-    field_value = _evaluate_input_value(parent_type, incoming_field_value, stack, collector)
+    parent_field = dagster_type.field_dict[field_name]
+    field_value = _evaluate_input_value(
+        parent_field.dagster_type,
+        incoming_field_value,
+        stack_with_field(stack, field_name, parent_field),
+        collector,
+    )
     return {field_name: field_value}
 
 
@@ -201,8 +208,10 @@ def _evaluate_input_value(dagster_type, value, stack, collector):
         return evaluate_composite_input_value(dagster_type, value, collector, stack)
     elif isinstance(dagster_type, PythonObjectType):
         check.failed('PythonObjectType should not be used in a config hierarchy')
+    elif dagster_type == Any:
+        return value
     else:
-        check.failed('Type not composite or scalar {name}'.format(name=dagster_type.name))
+        check.failed('Unknown type {name}'.format(name=dagster_type.name))
 
 
 def evaluate_composite_input_value(dagster_composite_type, incoming_value, collector, stack):

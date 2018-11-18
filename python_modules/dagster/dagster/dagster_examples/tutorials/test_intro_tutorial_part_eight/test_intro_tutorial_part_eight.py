@@ -122,7 +122,7 @@ def test_part_eight_repo_step_one():
 
 def test_part_eight_repo_step_one_wrong_env():
     environment = load_yaml_from_path(script_relative_path('env_step_one_type_error.yml'))
-    with pytest.raises(DagsterTypeError, match='Expected valid value for String'):
+    with pytest.raises(DagsterTypeError, match='is not valid for type String'):
         execute_pipeline(define_part_eight_step_one_pipeline(), environment)
 
 

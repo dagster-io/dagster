@@ -47,7 +47,6 @@ from .errors import (
 
 from .execution_plan import (
     ExecutionPlanInfo,
-    ExecutionPlan,
     StepResult,
     StepTag,
     create_execution_plan_core,
@@ -281,6 +280,9 @@ def create_execution_plan(pipeline, config_dict=None):
 
 
 def create_config_value(config_type, config_input):
+    if isinstance(config_input, config.Environment):
+        return config_input
+
     try:
         return config_type.evaluate_value(config_input)
     except DagsterEvaluateValueError as e:

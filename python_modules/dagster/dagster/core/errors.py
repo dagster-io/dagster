@@ -32,7 +32,10 @@ RuntimeMismatchErrorData = namedtuple('RuntimeMismatchErrorData', 'dagster_type 
 
 class DagsterEvaluateValueError(DagsterError):
     '''Indicates that invalid value was passed to a type's evaluate_value method'''
-    pass
+
+    def __init__(self, *args, stack=None, **kwargs):
+        super(DagsterEvaluateValueError, self).__init__(*args, **kwargs)
+        self.stack = stack
 
 
 class DagsterInvalidDefinitionError(DagsterUserError):
