@@ -358,6 +358,10 @@ class DagsterCompositeType(DagsterType):
         return set(self.field_dict.keys())
 
 
+class DagsterSelectorType(DagsterCompositeType):  # TODO: This inheritance sucks
+    pass
+
+
 class IsScopedConfigType:
     def __init__(self):
         check.invariant(

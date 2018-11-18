@@ -342,3 +342,71 @@ def test_deep_mixed_level_errors():
     final_level_error = final_level_errors[0]
 
     assert final_level_error.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
+
+
+class ExampleSelectorType(types.DagsterSelectorType):
+    def __init__(self):
+        super(ExampleSelectorType, self).__init__(
+            'ExampleSelector',
+            fields={
+                'option_one': types.Field(types.String),
+                'option_two': types.Field(types.String),
+            }
+        )
+
+
+ExampleSelector = ExampleSelectorType()
+
+
+def test_example_selector_success():
+    result = evaluate_input_value(ExampleSelector, {'option_one': 'foo'})
+    assert result.success
+    assert result.value == {'option_one': 'foo'}
+
+    result = evaluate_input_value(ExampleSelector, {'option_two': 'foo'})
+    assert result.success
+    assert result.value == {'option_two': 'foo'}
+
+
+def test_example_selector_error_top_level_type():
+    result = evaluate_input_value(ExampleSelector, 'kjsdkf')
+    assert not result.success
+    assert result.value is None
+    assert len(result.errors) == 1
+    assert result.errors[0].reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
+
+
+def test_example_selector_wrong_field():
+    result = evaluate_input_value(ExampleSelector, {'nope': 234})
+    assert not result.success
+    assert result.value is None
+    assert len(result.errors) == 1
+    assert result.errors[0].reason == DagsterEvaluationErrorReason.FIELD_NOT_DEFINED
+
+
+def test_example_selector_multiple_fields():
+    result = evaluate_input_value(ExampleSelector, {
+        'option_one': 'foo',
+        'option_two': 'boo',
+    })
+
+    assert not result.success
+    assert len(result.errors) == 1
+    assert result.errors[0].reason == DagsterEvaluationErrorReason.SELECTOR_FIELD_ERROR
+
+
+class SelectorWithDefaultsType(types.DagsterSelectorType):
+    def __init__(self):
+        super(SelectorWithDefaultsType, self).__init__(
+            'SelectorWithDefaultsType',
+            {'default': types.Field(types.String, is_optional=True, default_value='foo')}
+        )
+
+
+SelectorWithDefaults = SelectorWithDefaultsType()
+
+
+def test_selector_with_defaults():
+    result = evaluate_input_value(SelectorWithDefaults, {})
+    assert result.success
+    assert result.value == {'default': 'foo'}
