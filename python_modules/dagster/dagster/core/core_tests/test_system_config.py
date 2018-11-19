@@ -2,7 +2,7 @@ import pytest
 
 from dagster import (
     ConfigDefinition,
-    DagsterEvaluateValueError,
+    DagsterEvaluateConfigValueError,
     ExecutionContext,
     Field,
     PipelineContextDefinition,
@@ -254,7 +254,7 @@ def test_select_context():
     )
 
     # mismatched field type mismatch
-    with pytest.raises(DagsterEvaluateValueError):
+    with pytest.raises(DagsterEvaluateConfigValueError):
         assert throwing_evaluate_config_value(
             context_config_type, {
                 'int_context': {
@@ -264,7 +264,7 @@ def test_select_context():
         )
 
     # mismatched field type mismatch
-    with pytest.raises(DagsterEvaluateValueError):
+    with pytest.raises(DagsterEvaluateConfigValueError):
         assert throwing_evaluate_config_value(
             context_config_type, {
                 'string_context': {
@@ -445,10 +445,10 @@ def test_solid_config_error():
     solid_dict_type = SolidDictionaryType('slkdfjkjdsf', define_test_solids_config_pipeline())
     int_solid_config = solid_dict_type.field_dict['int_config_solid'].dagster_type
 
-    with pytest.raises(DagsterEvaluateValueError, match='Field "notconfig" is not defined'):
+    with pytest.raises(DagsterEvaluateConfigValueError, match='Field "notconfig" is not defined'):
         throwing_evaluate_config_value(int_solid_config, {'notconfig': 1})
 
-    with pytest.raises(DagsterEvaluateValueError):
+    with pytest.raises(DagsterEvaluateConfigValueError):
         throwing_evaluate_config_value(int_solid_config, 1)
 
 
@@ -584,10 +584,10 @@ def test_required_solid_with_required_subfield():
 
     assert env_obj.solids['int_config_solid'].config['required_field'] == 'foobar'
 
-    with pytest.raises(DagsterEvaluateValueError):
+    with pytest.raises(DagsterEvaluateConfigValueError):
         throwing_evaluate_config_value(env_type, {'solids': {}})
 
-    with pytest.raises(DagsterEvaluateValueError):
+    with pytest.raises(DagsterEvaluateConfigValueError):
         throwing_evaluate_config_value(env_type, {})
 
 

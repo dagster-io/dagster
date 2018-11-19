@@ -3,8 +3,11 @@ from collections import namedtuple
 from dagster import check
 
 from .errors import (
-    DagsterEvaluateValueError,
+    DagsterEvaluateConfigValueError,
     DagsterEvaluationErrorReason,
+    EvaluationStack,
+    EvaluationStackEntry,
+    EvaluationError,
     FieldNotDefinedErrorData,
     MissingFieldErrorData,
     RuntimeMismatchErrorData,
@@ -18,23 +21,6 @@ from .types import (
     PythonObjectType,
     Any,
 )
-
-
-class EvaluationStack(namedtuple('_EvaluationStack', 'entries')):
-    def __new__(cls, entries):
-        return super(EvaluationStack, cls).__new__(
-            cls,
-            check.list_param(entries, 'entries', of_type=EvaluationStackEntry),
-        )
-
-    @property
-    def levels(self):
-        return [entry.field_name for entry in self.entries]
-
-
-EvaluationStackEntry = namedtuple('EvaluationStackEntry', 'field_name field_def')
-
-EvaluationError = namedtuple('EvaluationError', 'stack reason message error_data')
 
 
 class EvaluateValueResult(namedtuple('_EvaluateValueResult', 'success value errors')):
@@ -72,7 +58,7 @@ def stack_with_field(stack, field_name, field_def):
 def throwing_evaluate_config_value(dagster_type, value):
     result = evaluate_config_value(dagster_type, value)
     if not result.success:
-        raise DagsterEvaluateValueError(
+        raise DagsterEvaluateConfigValueError(
             result.errors[0].stack,
             result.errors[0].message,
         )

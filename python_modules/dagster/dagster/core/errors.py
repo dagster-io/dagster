@@ -29,13 +29,41 @@ FieldNotDefinedErrorData = namedtuple('FieldNotDefinedErrorData', 'field_name')
 MissingFieldErrorData = namedtuple('MissingFieldErrorData', 'field_name')
 RuntimeMismatchErrorData = namedtuple('RuntimeMismatchErrorData', 'dagster_type value_rep')
 
+ERROR_DATA_TYPES = (
+    FieldNotDefinedErrorData,
+    MissingFieldErrorData,
+    RuntimeMismatchErrorData,
+)
 
-class DagsterEvaluateValueError(DagsterError):
-    '''Indicates that invalid value was passed to a type's evaluate_value method'''
+
+class EvaluationStack(namedtuple('_EvaluationStack', 'entries')):
+    def __new__(cls, entries):
+        return super(EvaluationStack, cls).__new__(
+            cls,
+            check.list_param(entries, 'entries', of_type=EvaluationStackEntry),
+        )
+
+    @property
+    def levels(self):
+        return [entry.field_name for entry in self.entries]
+
+
+EvaluationStackEntry = namedtuple('EvaluationStackEntry', 'field_name field_def')
+
+EvaluationError = namedtuple('EvaluationError', 'stack reason message error_data')
+
+
+class DagsterEvaluateConfigValueError(DagsterError):
+    '''Indicates invalid value was passed to a type's evaluate_value method'''
 
     def __init__(self, stack, *args, **kwargs):
-        super(DagsterEvaluateValueError, self).__init__(*args, **kwargs)
-        self.stack = stack
+        super(DagsterEvaluateConfigValueError, self).__init__(*args, **kwargs)
+        self.stack = check.inst_param(stack, 'stack', EvaluationStack)
+
+
+class DagsterRuntimeCoercionError(DagsterError):
+    '''Runtime checked faild'''
+    pass
 
 
 class DagsterInvalidDefinitionError(DagsterUserError):

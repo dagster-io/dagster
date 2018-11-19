@@ -3,7 +3,7 @@ import pytest
 from dagster import types
 
 from dagster.core.types import (
-    DagsterEvaluateValueError,
+    DagsterRuntimeCoercionError,
     DagsterType,
     PythonObjectType,
 )
@@ -29,7 +29,7 @@ def test_python_object_type():
     assert type_bar.coerce_runtime_value(None) is None  # allow nulls
     assert type_bar.type_attributes.is_builtin is False
     assert type_bar.type_attributes.is_system_config is False
-    with pytest.raises(DagsterEvaluateValueError):
+    with pytest.raises(DagsterRuntimeCoercionError):
         type_bar.coerce_runtime_value('not_a_bar')
 
 

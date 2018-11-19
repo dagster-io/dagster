@@ -21,7 +21,7 @@ from .evaluator import throwing_evaluate_config_value
 from .types import (
     Bool,
     DagsterCompositeType,
-    DagsterEvaluateValueError,
+    DagsterEvaluateConfigValueError,
     DagsterType,
     DagsterTypeAttributes,
 )

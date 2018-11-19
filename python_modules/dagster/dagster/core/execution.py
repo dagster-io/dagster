@@ -39,7 +39,7 @@ from .config_types import EnvironmentConfigType
 from .execution_context import ExecutionContext
 
 from .errors import (
-    DagsterEvaluateValueError,
+    DagsterEvaluateConfigValueError,
     DagsterInvariantViolationError,
     DagsterTypeError,
     DagsterUserCodeExecutionError,
@@ -288,7 +288,7 @@ def create_config_value(config_type, config_input):
     try:
         # TODO: we should bubble up multiple errors from here
         return throwing_evaluate_config_value(config_type, config_input)
-    except DagsterEvaluateValueError as e:
+    except DagsterEvaluateConfigValueError as e:
         raise DagsterTypeError(
             'Invalid config value on type {config_type}: {error_msg}. Value received {value}'.
             format(

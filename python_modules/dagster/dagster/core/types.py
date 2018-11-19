@@ -6,7 +6,10 @@ import pickle
 from six import integer_types, string_types
 
 from dagster import check
-from dagster.core.errors import DagsterEvaluateValueError
+from dagster.core.errors import (
+    DagsterEvaluateConfigValueError,
+    DagsterRuntimeCoercionError,
+)
 
 SerializedTypeValue = namedtuple('SerializedTypeValue', 'name value')
 
@@ -108,8 +111,7 @@ class UncoercedTypeMixin(object):
 
     def coerce_runtime_value(self, value):
         if not self.is_python_valid_value(value):
-            raise DagsterEvaluateValueError(
-                None,
+            raise DagsterRuntimeCoercionError(
                 'Expected valid value for {type_name} but got {value}'.format(
                     type_name=self.name,
                     value=repr(value),
@@ -393,7 +395,8 @@ class ConfigDictionary(DagsterCompositeType, IsScopedConfigType):
 
     def coerce_runtime_value(self, value):
         if value is not None and not isinstance(value, dict):
-            raise DagsterEvaluateValueError(None, 'Incoming value for composite must be dict')
+            raise DagsterRuntimeCoercionError('Incoming value for composite must be dict')
+        ## TODO make this return value
         from .evaluator import throwing_evaluate_config_value
         return throwing_evaluate_config_value(self, value)
 

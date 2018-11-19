@@ -14,7 +14,7 @@ from future.utils import raise_from
 import papermill as pm
 
 from dagster import (
-    DagsterEvaluateValueError,
+    DagsterRuntimeCoercionError,
     InputDefinition,
     OutputDefinition,
     Result,
@@ -82,7 +82,7 @@ class Manager:
             input_def = self.solid_def.input_def_named(input_name)
             try:
                 new_inputs[input_name] = input_def.dagster_type.coerce_runtime_value(input_value)
-            except DagsterEvaluateValueError as de:
+            except as de:
                 raise_from(
                     DagstermillError(
                         'Input {input_name} failed type check on value {value}'.format(
@@ -147,7 +147,7 @@ class Manager:
                 output_name,
                 serialize_dm_object(dagster_type.coerce_runtime_value(value)),
             )
-        except DagsterEvaluateValueError as de:
+        except DagsterRuntimeCoercionError as de:
             raise_from(
                 DagstermillError(
                     (
@@ -168,7 +168,7 @@ class Manager:
 
         try:
             return InMemoryConfig(self.solid_def.config_def.config_type.coerce_runtime_value(value))
-        except DagsterEvaluateValueError as de:
+        except DagsterRuntimeCoercionError as de:
             raise_from(
                 DagstermillError(
                     'Config for solid {solid} failed type check on value {value}'.format(

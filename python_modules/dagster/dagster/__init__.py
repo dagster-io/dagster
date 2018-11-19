@@ -35,12 +35,13 @@ from dagster.core.decorators import (
 )
 
 from dagster.core.errors import (
+    DagsterEvaluateConfigValueError,
+    DagsterExpectationFailedError,
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
+    DagsterRuntimeCoercionError,
     DagsterTypeError,
     DagsterUserCodeExecutionError,
-    DagsterExpectationFailedError,
-    DagsterEvaluateValueError,
 )
 
 from dagster.core.utility_solids import define_stub_solid
@@ -89,7 +90,7 @@ __all__ = [
     'DagsterTypeError',
     'DagsterUserCodeExecutionError',
     'DagsterExpectationFailedError',
-    'DagsterEvaluateValueError',
+    'DagsterEvaluateConfigValueError',
 
     # utility_solids
     'define_stub_solid',
