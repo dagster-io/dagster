@@ -6,10 +6,7 @@ import pickle
 from six import integer_types, string_types
 
 from dagster import check
-from dagster.core.errors import (
-    DagsterEvaluateValueError,
-    DagsterEvaluationErrorReason,
-)
+from dagster.core.errors import DagsterEvaluateValueError
 
 SerializedTypeValue = namedtuple('SerializedTypeValue', 'name value')
 
@@ -49,7 +46,7 @@ class DagsterType(object):
     def __repr__(self):
         return 'DagsterType({name})'.format(name=self.name)
 
-    def coerce_runtime_value(self, value):
+    def coerce_runtime_value(self, _value):
         check.not_implemented('Must implement in subclass')
 
     def construct_from_config_value(self, config_value):

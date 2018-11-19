@@ -1,13 +1,13 @@
 from __future__ import (absolute_import, division, print_function, unicode_literals)
 from builtins import *  # pylint: disable=W0622,W0401
 
+import base64
 import json
 import os
-import six
+import pickle
 import uuid
 
-import base64
-import pickle
+import six
 
 from future.utils import raise_from
 

@@ -100,7 +100,7 @@ class StepOutputHandle(namedtuple('_StepOutputHandle', 'step output_name')):
         return hash(self.step.guid + self.output_name)
 
     def __eq__(self, other):
-        return (self.step.guid == other.step.guid and self.output_name == other.output_name)
+        return self.step.guid == other.step.guid and self.output_name == other.output_name
 
 
 class StepSuccessData(namedtuple('_StepSuccessData', 'output_name value')):
