@@ -43,7 +43,7 @@ export default class ConfigCodeEditorContainer extends React.Component<
                 return (
                   <ConfigCodeEditor
                     typeConfig={typeConfig}
-                    lintJson={json =>
+                    checkConfig={json =>
                       checkConfig(
                         queryResult.client,
                         this.props.pipelineName,

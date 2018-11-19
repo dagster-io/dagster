@@ -26,7 +26,7 @@ import { debounce } from "../Util";
 
 interface IConfigEditorProps {
   typeConfig: YamlModeTypeConfig;
-  lintJson: YamlModeLintJson;
+  checkConfig: YamlModeLintJson;
   configCode: string;
   onConfigChange: (newValue: string) => void;
 }
@@ -54,7 +54,7 @@ export default class ConfigCodeEditor extends React.Component<
             showCursorWhenSelecting: true,
             lintOnChange: false,
             lint: {
-              lintJson: this.props.lintJson,
+              checkConfig: this.props.checkConfig,
               lintOnChange: false,
               onUpdateLinting: false
             },

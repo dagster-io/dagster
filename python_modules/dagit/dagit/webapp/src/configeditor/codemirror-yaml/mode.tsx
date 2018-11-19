@@ -364,7 +364,7 @@ CodeMirror.registerHelper(
   "yaml",
   async (
     text: string,
-    { lintJson }: { lintJson: LintJson },
+    { checkConfig }: { checkConfig: LintJson },
     editor: any
   ): Promise<Array<CodemirrorLintError>> => {
     const codeMirrorDoc = editor.getDoc();
@@ -391,7 +391,7 @@ CodeMirror.registerHelper(
 
     if (doc.errors.length === 0) {
       const json = doc.toJSON();
-      const validationResult = await lintJson(json);
+      const validationResult = await checkConfig(json);
       if (!validationResult.isValid) {
         validationResult.errors.forEach(error => {
           const range = findRangeInDocumentFromPath(doc, error.path);

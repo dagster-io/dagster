@@ -287,6 +287,10 @@ CodeMirror.defineOption("lint", false, function(cm, val, old) {
     if (state.options.tooltips != false && state.options.tooltips != "gutter")
       CodeMirror.on(cm.getWrapperElement(), "mouseover", state.onMouseOver);
   }
+
+  // XXX(freiksenet): This is commented out because currently codemirror
+  // reloads plugins on every change, causing infinite linting
+  // startLinting(this);
 });
 
 CodeMirror.defineExtension("performLint", function() {
