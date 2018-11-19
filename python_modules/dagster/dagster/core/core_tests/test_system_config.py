@@ -67,22 +67,6 @@ def test_context_config():
     assert output.config == {'some_str': 'something'}
 
 
-# def test_memoized_context():
-#     context_defs = {
-#         'test':
-#         PipelineContextDefinition(
-#             config_def=ConfigDefinition(),
-#             context_fn=lambda *args: ExecutionContext(),
-#         )
-#     }
-
-#     context_config_type = ContextConfigType('something', context_defs)
-
-#     output = context_config_type.evaluate_value(config.Context(name='test', config='whatever'))
-#     assert isinstance(output, config.Context)
-#     assert output.name == 'test'
-#     assert output.config == 'whatever'
-
 
 def test_default_expectations():
     expect_config_type = ExpectationsConfigType('some_name')
@@ -211,45 +195,15 @@ def test_errors():
 
     context_config_type = ContextConfigType('something', context_defs)
 
-    with pytest.raises(DagsterEvaluateValueError, match='must be a dict'):
-        context_config_type.evaluate_value(1)
+    assert not evaluate_input_value(context_config_type, 1).success
+    assert not evaluate_input_value(context_config_type, {}).success
 
-    # with pytest.raises(DagsterEvaluateValueError, match='Must specify in config'):
-    with pytest.raises(DagsterEvaluateValueError):
-        context_config_type.evaluate_value({})
+    invalid_value = { 'context_one': 1, 'context_two': 2 }
 
-    # I tried doing some regular expressions here but the rules differ for escaping
-    # between 2.7, 3.5, or 3.6 so gave up and did this hackneyed solution
-    # with pytest.raises(DagsterEvaluateValueError, match='Field "context_one" is not defined'):
-    with pytest.raises(DagsterEvaluateValueError):
-        context_config_type.evaluate_value({
-            'context_one': 1,
-            'context_two': 2,
-        })
-
-    # with pytest.raises(DagsterEvaluateValueError, match="You specified"):
-    #     context_config_type.evaluate_value({
-    #         'context_one': 1,
-    #         'context_two': 2,
-    #     })
-
-    # with pytest.raises(DagsterEvaluateValueError, match="'context_one', 'context_two'"):
-    #     context_config_type.evaluate_value({
-    #         'context_one': 1,
-    #         'context_two': 2,
-    #     })
-
-    # with pytest.raises(DagsterEvaluateValueError, match="The available contexts are"):
-    #     context_config_type.evaluate_value({
-    #         'context_one': 1,
-    #         'context_two': 2,
-    #     })
-
-    with pytest.raises(DagsterEvaluateValueError, match="'test'"):
-        context_config_type.evaluate_value({
-            'context_one': 1,
-            'context_two': 2,
-        })
+    result = evaluate_input_value(context_config_type, invalid_value)
+    assert not result.success
+    # two field not defined. one field missing
+    assert len(result.errors) == 3
 
 
 def test_select_context():

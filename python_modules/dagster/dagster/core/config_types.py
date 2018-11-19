@@ -63,12 +63,17 @@ class SpecificContextConfig(DagsterCompositeType, HasUserConfig):
 
 
 def define_specific_context_field(
-    pipeline_name, context_name, context_def, is_optional, provide_default=False
+    pipeline_name,
+    context_name,
+    context_def,
+    is_optional,
+    provide_default=False,
 ):
     check.str_param(pipeline_name, 'pipeline_name')
     check.str_param(context_name, 'context_name')
     check.inst_param(context_def, 'context_def', PipelineContextDefinition)
     check.bool_param(is_optional, 'is_optional')
+    check.bool_param(provide_default, 'provide_default')
 
     specific_context_config_type = SpecificContextConfig(
         '{pipeline_name}.ContextDefinitionConfig.{context_name}'.format(
@@ -86,9 +91,7 @@ def define_specific_context_field(
 
 def single_item(ddict):
     check.dict_param(ddict, 'ddict')
-    check.param_invariant(
-        len(ddict) == 1, 'ddict', 'Dict length: {length}'.format(length=len(ddict))
-    )
+    check.param_invariant(len(ddict) == 1, 'ddict')
     return list(ddict.items())[0]
 
 
