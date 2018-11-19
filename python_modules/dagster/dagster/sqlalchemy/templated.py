@@ -26,7 +26,8 @@ class DagsterSqlTextType(types.DagsterStringType):
 
     def serialize_value(self, output_dir, value):
         type_value = self.create_serializable_type_value(
-            self.coerce_runtime_value(value), output_dir
+            self.coerce_runtime_value(value),
+            output_dir,
         )
         output_path = os.path.join(output_dir, 'type_value')
         with open(output_path, 'w') as ff:

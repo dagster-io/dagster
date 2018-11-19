@@ -88,6 +88,7 @@ __all__ = [
     'DagsterInvalidDefinitionError',
     'DagsterInvariantViolationError',
     'DagsterTypeError',
+    'DagsterRuntimeCoercionError',
     'DagsterUserCodeExecutionError',
     'DagsterExpectationFailedError',
     'DagsterEvaluateConfigValueError',

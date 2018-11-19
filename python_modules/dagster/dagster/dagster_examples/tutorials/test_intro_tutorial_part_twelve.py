@@ -125,16 +125,16 @@ def test_ssn_type():
     assert SSNStringType.coerce_runtime_value(good_ssn_string) == good_ssn
     assert SSNStringType.coerce_runtime_value(good_ssn) == good_ssn
 
-    with pytest.raises(DagsterEvaluateConfigValueError):
+    with pytest.raises(DagsterRuntimeCoercionError):
         SSNStringType.coerce_runtime_value(123)
 
-    with pytest.raises(DagsterEvaluateConfigValueError):
+    with pytest.raises(DagsterRuntimeCoercionError):
         SSNStringType.coerce_runtime_value(None)
 
-    with pytest.raises(DagsterEvaluateConfigValueError):
+    with pytest.raises(DagsterRuntimeCoercionError):
         SSNStringType.coerce_runtime_value('12932-9234892038-384')
 
-    with pytest.raises(DagsterEvaluateConfigValueError):
+    with pytest.raises(DagsterRuntimeCoercionError):
         SSNStringType.coerce_runtime_value('1292-34-383434')
 
 
