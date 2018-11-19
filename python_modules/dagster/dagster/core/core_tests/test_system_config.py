@@ -24,7 +24,10 @@ from dagster.core.config_types import (
     all_optional_user_config,
 )
 
-from dagster.core.evaluator import evaluate_config_value
+from dagster.core.evaluator import (
+    evaluate_config_value,
+    throwing_evaluate_config_value,
+)
 
 
 def test_context_config_any():
@@ -40,7 +43,7 @@ def test_context_config_any():
 
     assert context_config_type.type_attributes.is_system_config
 
-    output = context_config_type.evaluate_value({'test': {'config': 1}})
+    output = throwing_evaluate_config_value(context_config_type, {'test': {'config': 1}})
     assert output.name == 'test'
     assert output.config == 1
 
@@ -61,23 +64,31 @@ def test_context_config():
 
     context_config_type = ContextConfigType('something', context_defs)
 
-    output = context_config_type.evaluate_value({'test': {'config': {'some_str': 'something'}}})
+    output = throwing_evaluate_config_value(
+        context_config_type, {'test': {
+            'config': {
+                'some_str': 'something'
+            }
+        }}
+    )
     assert isinstance(output, config.Context)
     assert output.name == 'test'
     assert output.config == {'some_str': 'something'}
 
 
-
 def test_default_expectations():
     expect_config_type = ExpectationsConfigType('some_name')
-    assert expect_config_type.evaluate_value({}).evaluate is True
-    assert expect_config_type.evaluate_value(None).evaluate is True
+    assert throwing_evaluate_config_value(expect_config_type, {}).evaluate is True
+    assert throwing_evaluate_config_value(expect_config_type, None).evaluate is True
 
 
 def test_default_execution():
     execution_config_type = ExecutionConfigType('some_name')
-    assert execution_config_type.evaluate_value({}).serialize_intermediates is False
-    assert execution_config_type.evaluate_value(None).serialize_intermediates is False
+    assert throwing_evaluate_config_value(execution_config_type,
+                                          {}).serialize_intermediates is False
+    assert throwing_evaluate_config_value(
+        execution_config_type, None
+    ).serialize_intermediates is False
     assert execution_config_type.type_attributes.is_system_config
 
 
@@ -103,7 +114,7 @@ def test_default_context_config():
 
     assert all_optional_user_config(default_context_config_type)
 
-    context_dict = context_config_type.evaluate_value({})
+    context_dict = throwing_evaluate_config_value(context_config_type, {})
 
     assert 'default' in context_dict
 
@@ -171,7 +182,7 @@ def test_default_environment():
     )
 
     env_type = EnvironmentConfigType(pipeline_def)
-    env_obj = env_type.evaluate_value({})
+    env_obj = throwing_evaluate_config_value(env_type, {})
 
     assert env_obj.expectations.evaluate is True
     assert env_obj.execution.serialize_intermediates is False
@@ -198,7 +209,7 @@ def test_errors():
     assert not evaluate_config_value(context_config_type, 1).success
     assert not evaluate_config_value(context_config_type, {}).success
 
-    invalid_value = { 'context_one': 1, 'context_two': 2 }
+    invalid_value = {'context_one': 1, 'context_two': 2}
 
     result = evaluate_config_value(context_config_type, invalid_value)
     assert not result.success
@@ -222,7 +233,7 @@ def test_select_context():
 
     context_config_type = ContextConfigType('something', context_defs)
 
-    assert context_config_type.evaluate_value({
+    assert throwing_evaluate_config_value(context_config_type, {
         'int_context': {
             'config': 1
         },
@@ -231,35 +242,41 @@ def test_select_context():
         config=1,
     )
 
-    assert context_config_type.evaluate_value({
-        'string_context': {
-            'config': 'bar'
-        },
-    }) == config.Context(
+    assert throwing_evaluate_config_value(
+        context_config_type, {
+            'string_context': {
+                'config': 'bar'
+            },
+        }
+    ) == config.Context(
         name='string_context',
         config='bar',
     )
 
     # mismatched field type mismatch
     with pytest.raises(DagsterEvaluateValueError):
-        assert context_config_type.evaluate_value({
-            'int_context': {
-                'config': 'bar'
-            },
-        })
+        assert throwing_evaluate_config_value(
+            context_config_type, {
+                'int_context': {
+                    'config': 'bar'
+                },
+            }
+        )
 
     # mismatched field type mismatch
     with pytest.raises(DagsterEvaluateValueError):
-        assert context_config_type.evaluate_value({
-            'string_context': {
-                'config': 1
-            },
-        })
+        assert throwing_evaluate_config_value(
+            context_config_type, {
+                'string_context': {
+                    'config': 1
+                },
+            }
+        )
 
 
 def test_solid_config():
     solid_config_type = SolidConfigType('kdjfkd', types.Int)
-    solid_inst = solid_config_type.evaluate_value({'config': 1})
+    solid_inst = throwing_evaluate_config_value(solid_config_type, {'config': 1})
     assert isinstance(solid_inst, config.Solid)
     assert solid_inst.config == 1
     assert solid_config_type.type_attributes.is_system_config
@@ -267,14 +284,14 @@ def test_solid_config():
 
 def test_expectations_config():
     expectations_config_type = ExpectationsConfigType('ksjdfkd')
-    expectations = expectations_config_type.evaluate_value({'evaluate': True})
+    expectations = throwing_evaluate_config_value(expectations_config_type, {'evaluate': True})
 
     assert isinstance(expectations, config.Expectations)
     assert expectations.evaluate is True
 
-    assert expectations_config_type.evaluate_value({
-        'evaluate': False
-    }) == config.Expectations(evaluate=False)
+    assert throwing_evaluate_config_value(expectations_config_type,
+                                          {'evaluate': False
+                                           }) == config.Expectations(evaluate=False)
 
 
 def test_solid_dictionary_type():
@@ -282,8 +299,8 @@ def test_solid_dictionary_type():
 
     solid_dict_type = SolidDictionaryType('foobar', pipeline_def)
 
-    value = solid_dict_type.evaluate_value(
-        {
+    value = throwing_evaluate_config_value(
+        solid_dict_type, {
             'int_config_solid': {
                 'config': 1,
             },
@@ -350,11 +367,13 @@ def test_solid_dictionary_some_no_config():
 
     solid_dict_type = SolidDictionaryType('foobar', pipeline_def)
 
-    value = solid_dict_type.evaluate_value({
-        'int_config_solid': {
-            'config': 1,
-        },
-    })
+    value = throwing_evaluate_config_value(
+        solid_dict_type, {
+            'int_config_solid': {
+                'config': 1,
+            },
+        }
+    )
 
     assert set(['int_config_solid']) == set(value.keys())
     assert value == {
@@ -399,8 +418,8 @@ def test_whole_environment():
     assert environment_type.field_dict['expectations'
                                        ].dagster_type.name == 'SomePipeline.ExpectationsConfig'
 
-    env = environment_type.evaluate_value(
-        {
+    env = throwing_evaluate_config_value(
+        environment_type, {
             'context': {
                 'test': {
                     'config': 1,
@@ -427,15 +446,19 @@ def test_solid_config_error():
     int_solid_config = solid_dict_type.field_dict['int_config_solid'].dagster_type
 
     with pytest.raises(DagsterEvaluateValueError, match='Field "notconfig" is not defined'):
-        int_solid_config.evaluate_value({'notconfig': 1})
+        throwing_evaluate_config_value(int_solid_config, {'notconfig': 1})
 
     with pytest.raises(DagsterEvaluateValueError):
-        int_solid_config.evaluate_value(1)
+        throwing_evaluate_config_value(int_solid_config, 1)
 
 
 def test_execution_config():
     env_type = EnvironmentConfigType(define_test_solids_config_pipeline())
-    env_obj = env_type.evaluate_value({'execution': {'serialize_intermediates': True}})
+    env_obj = throwing_evaluate_config_value(
+        env_type, {'execution': {
+            'serialize_intermediates': True
+        }}
+    )
     assert isinstance(env_obj.execution, config.Execution)
     assert env_obj.execution.serialize_intermediates
 
@@ -464,7 +487,13 @@ def test_optional_solid_with_no_config():
     )
 
     env_type = EnvironmentConfigType(pipeline_def)
-    env_obj = env_type.evaluate_value({'solids': {'int_config_solid': {'config': 234}}})
+    env_obj = throwing_evaluate_config_value(
+        env_type, {'solids': {
+            'int_config_solid': {
+                'config': 234
+            }
+        }}
+    )
 
     assert env_obj.solids['int_config_solid'].config == 234
 
@@ -496,11 +525,11 @@ def test_optional_solid_with_optional_scalar_config():
 
     assert solids_type.field_dict['int_config_solid'].is_optional is True
 
-    solids_default_obj = solids_type.evaluate_value({})
+    solids_default_obj = throwing_evaluate_config_value(solids_type, {})
 
     assert solids_default_obj['int_config_solid'].config is None
 
-    env_obj = env_type.evaluate_value({})
+    env_obj = throwing_evaluate_config_value(env_type, {})
 
     assert env_obj.solids['int_config_solid'].config is None
 
@@ -540,7 +569,8 @@ def test_required_solid_with_required_subfield():
     assert env_type.field_dict['execution'].is_optional
     assert env_type.field_dict['expectations'].is_optional
 
-    env_obj = env_type.evaluate_value(
+    env_obj = throwing_evaluate_config_value(
+        env_type,
         {
             'solids': {
                 'int_config_solid': {
@@ -555,10 +585,10 @@ def test_required_solid_with_required_subfield():
     assert env_obj.solids['int_config_solid'].config['required_field'] == 'foobar'
 
     with pytest.raises(DagsterEvaluateValueError):
-        env_type.evaluate_value({'solids': {}})
+        throwing_evaluate_config_value(env_type, {'solids': {}})
 
     with pytest.raises(DagsterEvaluateValueError):
-        env_type.evaluate_value({})
+        throwing_evaluate_config_value(env_type, {})
 
 
 def test_optional_solid_with_optional_subfield():
@@ -688,7 +718,8 @@ def test_optional_and_required_context():
     assert env_type.field_dict['execution'].is_optional
     assert env_type.field_dict['expectations'].is_optional
 
-    env_obj = env_type.evaluate_value(
+    env_obj = throwing_evaluate_config_value(
+        env_type,
         {
             'context': {
                 'optional_field_context': {
@@ -738,7 +769,7 @@ def test_default_optional_and_required_context():
 
     env_type = EnvironmentConfigType(pipeline_def)
     assert env_type.field_dict['context'].is_optional
-    env_obj = env_type.evaluate_value({})
+    env_obj = throwing_evaluate_config_value(env_type, {})
     assert env_obj.context.name == 'default'
     assert env_obj.context.config is None
 

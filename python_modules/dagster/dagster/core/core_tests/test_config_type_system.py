@@ -375,7 +375,7 @@ class CustomStructConfigType(types.DagsterCompositeType):
 def test_custom_composite_type():
     config_type = CustomStructConfigType()
 
-    assert config_type.evaluate_value({
+    assert throwing_evaluate_config_value(config_type, {
         'foo': 'some_string',
         'bar': 2
     }) == CustomStructConfig(
@@ -383,20 +383,22 @@ def test_custom_composite_type():
     )
 
     with pytest.raises(DagsterEvaluateValueError):
-        assert config_type.evaluate_value({
+        assert throwing_evaluate_config_value(config_type, {
             'foo': 'some_string',
         })
 
     with pytest.raises(DagsterEvaluateValueError):
-        assert config_type.evaluate_value({
+        assert throwing_evaluate_config_value(config_type, {
             'bar': 'some_string',
         })
 
     with pytest.raises(DagsterEvaluateValueError):
-        assert config_type.evaluate_value({
-            'foo': 'some_string',
-            'bar': 'not_an_int',
-        })
+        assert throwing_evaluate_config_value(
+            config_type, {
+                'foo': 'some_string',
+                'bar': 'not_an_int',
+            }
+        )
 
 
 def single_elem(ddict):
