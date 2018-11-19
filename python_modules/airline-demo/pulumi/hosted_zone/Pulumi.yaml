@@ -1,0 +1,5 @@
+name: hosted_zone
+runtime: nodejs
+description: Sets up the hosted zone for dagster.io
+template:
+  description: A minimal TypeScript Pulumi program

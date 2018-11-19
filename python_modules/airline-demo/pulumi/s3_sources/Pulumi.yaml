@@ -1,0 +1,5 @@
+name: s3_sources
+runtime: nodejs
+description: Orchestration for shared public S3 buckets
+template:
+  description: A minimal TypeScript Pulumi program
