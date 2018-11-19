@@ -23,7 +23,7 @@ class SSNStringTypeClass(types.DagsterType):
     def __init__(self):
         super(SSNStringTypeClass, self).__init__(name='SSNString')
 
-    def evaluate_value(self, value):
+    def coerce_runtime_value(self, value):
         if isinstance(value, SSNString):
             return value
 
@@ -124,20 +124,20 @@ def define_part_twelve_step_four_pipeline():
 def test_ssn_type():
     good_ssn_string = '123-43-4939'
     good_ssn = SSNString(good_ssn_string)
-    assert SSNStringType.evaluate_value(good_ssn_string) == good_ssn
-    assert SSNStringType.evaluate_value(good_ssn) == good_ssn
+    assert SSNStringType.coerce_runtime_value(good_ssn_string) == good_ssn
+    assert SSNStringType.coerce_runtime_value(good_ssn) == good_ssn
 
     with pytest.raises(DagsterEvaluateValueError):
-        SSNStringType.evaluate_value(123)
+        SSNStringType.coerce_runtime_value(123)
 
     with pytest.raises(DagsterEvaluateValueError):
-        SSNStringType.evaluate_value(None)
+        SSNStringType.coerce_runtime_value(None)
 
     with pytest.raises(DagsterEvaluateValueError):
-        SSNStringType.evaluate_value('12932-9234892038-384')
+        SSNStringType.coerce_runtime_value('12932-9234892038-384')
 
     with pytest.raises(DagsterEvaluateValueError):
-        SSNStringType.evaluate_value('1292-34-383434')
+        SSNStringType.coerce_runtime_value('1292-34-383434')
 
 
 def test_intro_tutorial_part_twelve_step_one():

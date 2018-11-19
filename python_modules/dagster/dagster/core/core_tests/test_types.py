@@ -3,7 +3,6 @@ import pytest
 from dagster import types
 
 from dagster.core.types import (
-    DagsterTypeAttributes,
     DagsterEvaluateValueError,
     DagsterType,
     PythonObjectType,
@@ -26,12 +25,12 @@ def test_python_object_type():
 
     assert type_bar.name == 'Bar'
     assert type_bar.description == 'A bar.'
-    assert type_bar.evaluate_value(Bar())
-    assert type_bar.evaluate_value(None) is None  # allow nulls
+    assert type_bar.coerce_runtime_value(Bar())
+    assert type_bar.coerce_runtime_value(None) is None  # allow nulls
     assert type_bar.type_attributes.is_builtin is False
     assert type_bar.type_attributes.is_system_config is False
     with pytest.raises(DagsterEvaluateValueError):
-        type_bar.evaluate_value('not_a_bar')
+        type_bar.coerce_runtime_value('not_a_bar')
 
 
 def test_builtin_scalars():

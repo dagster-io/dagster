@@ -49,19 +49,7 @@ class DagsterType(object):
     def __repr__(self):
         return 'DagsterType({name})'.format(name=self.name)
 
-    def evaluate_value(self, _value):
-        '''Subclasses can implement this method. Check if the value is a valid one
-        and return a processed version of it. If value is invalid,
-        raise `DagsterEvaluateValueError`.
-
-        This class provides a default implementation of this method
-
-        Args:
-          value: The value to check
-
-        Returns:
-          value: A transformed value
-        '''
+    def coerce_runtime_value(self, value):
         check.not_implemented('Must implement in subclass')
 
     def construct_from_config_value(self, config_value):
@@ -71,7 +59,10 @@ class DagsterType(object):
         yield self
 
     def serialize_value(self, output_dir, value):
-        type_value = self.create_serializable_type_value(self.evaluate_value(value), output_dir)
+        type_value = self.create_serializable_type_value(
+            self.coerce_runtime_value(value),
+            output_dir,
+        )
         output_path = os.path.join(output_dir, 'type_value')
         with open(output_path, 'w') as ff:
             json.dump(
@@ -118,7 +109,7 @@ class UncoercedTypeMixin(object):
         '''
         check.failed('must implement')
 
-    def evaluate_value(self, value):
+    def coerce_runtime_value(self, value):
         if not self.is_python_valid_value(value):
             raise DagsterEvaluateValueError(
                 None,
@@ -186,7 +177,9 @@ class PythonObjectType(UncoercedTypeMixin, DagsterType):
         return nullable_isinstance(value, self.python_type)
 
     def serialize_value(self, output_dir, value):
-        type_value = self.create_serializable_type_value(self.evaluate_value(value), output_dir)
+        type_value = self.create_serializable_type_value(
+            self.coerce_runtime_value(value), output_dir
+        )
         output_path = os.path.join(output_dir, 'type_value')
         with open(output_path, 'w') as ff:
             json.dump(
@@ -337,7 +330,7 @@ class DagsterCompositeType(DagsterType):
             type_attributes=type_attributes,
         )
 
-    def evaluate_value(self, value):
+    def coerce_runtime_value(self, value):
         from .evaluator import throwing_evaluate_config_value
         return throwing_evaluate_config_value(self, value)
 
@@ -401,7 +394,7 @@ class ConfigDictionary(DagsterCompositeType, IsScopedConfigType):
             'A configuration dictionary with typed fields',
         )
 
-    def evaluate_value(self, value):
+    def coerce_runtime_value(self, value):
         if value is not None and not isinstance(value, dict):
             raise DagsterEvaluateValueError(None, 'Incoming value for composite must be dict')
         from .evaluator import throwing_evaluate_config_value

@@ -32,6 +32,8 @@ from .definitions import (
     TransformExecutionInfo,
 )
 
+from .evaluator import throwing_evaluate_config_value
+
 from .execution_context import (
     ExecutionContext,
 )
@@ -320,7 +322,7 @@ class ExecutionStep(object):
         step_output = self.step_named(result.output_name)
 
         try:
-            evaluation_result = step_output.dagster_type.evaluate_value(result.value)
+            coerced_value = step_output.dagster_type.coerce_runtime_value(result.value)
         except DagsterEvaluateValueError as e:
             raise DagsterInvariantViolationError(
                 '''Solid {step.solid.name} output name {output_name} output {result.value}
@@ -337,14 +339,14 @@ class ExecutionStep(object):
             tag=self.tag,
             success_data=StepSuccessData(
                 output_name=result.output_name,
-                value=evaluation_result,
+                value=coerced_value,
             ),
         )
 
     def _get_evaluated_input(self, input_name, input_value):
         step_input = self._step_input_dict[input_name]
         try:
-            return step_input.dagster_type.evaluate_value(input_value)
+            return step_input.dagster_type.coerce_runtime_value(input_value)
         except DagsterEvaluateValueError as evaluate_error:
             raise_from(
                 DagsterTypeError(
@@ -632,7 +634,7 @@ def create_config_value(execution_info, pipeline_solid):
         return None
 
     try:
-        return solid_def.config_def.config_type.evaluate_value(config_input)
+        return throwing_evaluate_config_value(solid_def.config_def.config_type, config_input)
     except DagsterEvaluateValueError as eval_error:
         raise_from(
             DagsterTypeError(

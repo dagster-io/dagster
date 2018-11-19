@@ -81,7 +81,7 @@ class Manager:
 
             input_def = self.solid_def.input_def_named(input_name)
             try:
-                new_inputs[input_name] = input_def.dagster_type.evaluate_value(input_value)
+                new_inputs[input_name] = input_def.dagster_type.coerce_runtime_value(input_value)
             except DagsterEvaluateValueError as de:
                 raise_from(
                     DagstermillError(
@@ -145,7 +145,7 @@ class Manager:
         try:
             return pm.record(
                 output_name,
-                serialize_dm_object(dagster_type.evaluate_value(value)),
+                serialize_dm_object(dagster_type.coerce_runtime_value(value)),
             )
         except DagsterEvaluateValueError as de:
             raise_from(
@@ -167,7 +167,7 @@ class Manager:
             return InMemoryConfig(value)
 
         try:
-            return InMemoryConfig(self.solid_def.config_def.config_type.evaluate_value(value))
+            return InMemoryConfig(self.solid_def.config_def.config_type.coerce_runtime_value(value))
         except DagsterEvaluateValueError as de:
             raise_from(
                 DagstermillError(

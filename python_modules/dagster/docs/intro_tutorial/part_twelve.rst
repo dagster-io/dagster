@@ -125,7 +125,7 @@ In order to do this we'll define a type.
         def __init__(self):
             super(SSNStringTypeClass, self).__init__(name='SSNString')
 
-        def evaluate_value(self, value):
+        def coerce_runtime_value(self, value):
             if isinstance(value, SSNString):
                 return value
 

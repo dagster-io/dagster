@@ -45,6 +45,8 @@ from .errors import (
     DagsterUserCodeExecutionError,
 )
 
+from .evaluator import throwing_evaluate_config_value
+
 from .execution_plan import (
     ExecutionPlanInfo,
     StepResult,
@@ -284,7 +286,8 @@ def create_config_value(config_type, config_input):
         return config_input
 
     try:
-        return config_type.evaluate_value(config_input)
+        # TODO: we should bubble up multiple errors from here
+        return throwing_evaluate_config_value(config_type, config_input)
     except DagsterEvaluateValueError as e:
         raise DagsterTypeError(
             'Invalid config value on type {config_type}: {error_msg}. Value received {value}'.
