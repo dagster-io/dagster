@@ -55,8 +55,17 @@ manually delete the VPC from the console, which will force-delete dependencies.
 - Add config option for local ingestion (Postgres)
 - Add config option for Spark running on EMR cluster
 - Add S3 bucket for data sources
-- Add solid to download from S3
+- Add solid to download from S3 (option to short-circuit)
 - Wire up unzip file solid
 - Wire up Spark join
 - Write sql_solid
-  
+- Set up tox
+- Set up builds for airline_demo on CircleCI
+- Update README with instructions for AWS creds
+
+### Issues with general availability
+- Right now the pulumi spec, as well as the sample config, expect that you will
+be able to orchestrate a Redshift cluster at `db.dagster.io` and an EMR cluster
+at `spark.dagster.io`. If you are running this demo and you do not control
+`dagster.io`, you will need to edit both the pulumi project and the config to
+point these at DNS you do control.
