@@ -24,7 +24,6 @@ from .types import (
     DagsterEvaluateValueError,
     DagsterType,
     DagsterTypeAttributes,
-    process_incoming_composite_value,
 )
 
 

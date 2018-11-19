@@ -21,7 +21,6 @@ from dagster.core.evaluator import (
 )
 
 from dagster.core.types import (
-    process_incoming_composite_value,
     ScopedConfigInfo,
 )
 

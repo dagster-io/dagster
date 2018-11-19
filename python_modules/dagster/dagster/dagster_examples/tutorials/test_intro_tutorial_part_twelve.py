@@ -29,12 +29,14 @@ class SSNStringTypeClass(types.DagsterType):
 
         if not isinstance(value, str):
             raise DagsterEvaluateValueError(
-                '{value} is not a string. SSNStringType typecheck failed'.format(value=repr(value))
+                None,
+                '{value} is not a string. SSNStringType typecheck failed'.format(value=repr(value)),
             )
 
         if not re.match(r'^(\d\d\d)-(\d\d)-(\d\d\d\d)$', value):
             raise DagsterEvaluateValueError(
-                '{value} did not match SSN regex'.format(value=repr(value))
+                None,
+                '{value} did not match SSN regex'.format(value=repr(value)),
             )
 
         return SSNString(value)
