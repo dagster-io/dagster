@@ -42,8 +42,8 @@ def test_int_field():
     assert evaluate_config_value(config_def.config_type, {'int_field': 1}).value == {'int_field': 1}
 
 
-def assert_success(dagster_type, value, expected):
-    result = evaluate_config_value(dagster_type, value)
+def assert_config_value_success(dagster_type, config_value, expected):
+    result = evaluate_config_value(dagster_type, config_value)
     assert result.success
     assert result.value == expected
 
@@ -70,7 +70,7 @@ def test_default_arg():
         }
     )
 
-    assert_success(config_def.config_type, {}, {'int_field': 2})
+    assert_config_value_success(config_def.config_type, {}, {'int_field': 2})
 
 
 def _single_required_string_config_dict():
