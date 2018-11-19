@@ -69,8 +69,8 @@ def stack_with_field(stack, field_name, field_def):
     return EvaluationStack(entries=stack.entries + [EvaluationStackEntry(field_name, field_def)])
 
 
-def throwing_evaluate_input_value(dagster_type, value):
-    result = evaluate_input_value(dagster_type, value)
+def throwing_evaluate_config_value(dagster_type, value):
+    result = evaluate_config_value(dagster_type, value)
     if not result.success:
         raise DagsterEvaluateValueError(
             result.errors[0].stack,
@@ -79,7 +79,7 @@ def throwing_evaluate_input_value(dagster_type, value):
     return result.value
 
 
-def evaluate_input_value(dagster_type, value):
+def evaluate_config_value(dagster_type, value):
     check.inst_param(dagster_type, 'dagster_type', DagsterType)
     collector = ErrorCollector()
     value = _evaluate_input_value(dagster_type, value, EvaluationStack(entries=[]), collector)

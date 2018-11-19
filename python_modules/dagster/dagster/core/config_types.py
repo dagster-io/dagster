@@ -16,7 +16,7 @@ from .definitions import (
     PipelineDefinition,
 )
 
-from .evaluator import throwing_evaluate_input_value
+from .evaluator import throwing_evaluate_config_value
 
 from .types import (
     Bool,
@@ -47,7 +47,7 @@ def define_possibly_optional_field(config_type, is_optional):
     return Field(
         config_type,
         is_optional=True,
-        default_value=lambda: throwing_evaluate_input_value(config_type, None),
+        default_value=lambda: throwing_evaluate_config_value(config_type, None),
     ) if is_optional else Field(config_type)
 
 

@@ -24,7 +24,7 @@ from dagster.core.config_types import (
     all_optional_user_config,
 )
 
-from dagster.core.evaluator import evaluate_input_value
+from dagster.core.evaluator import evaluate_config_value
 
 
 def test_context_config_any():
@@ -152,7 +152,7 @@ def test_provided_default_config():
         }
     }
 
-    result = evaluate_input_value(env_type, {})
+    result = evaluate_config_value(env_type, {})
     assert result.success
     assert result.value.context.name == 'some_context'
     assert env_type.type_attributes.is_system_config
@@ -195,12 +195,12 @@ def test_errors():
 
     context_config_type = ContextConfigType('something', context_defs)
 
-    assert not evaluate_input_value(context_config_type, 1).success
-    assert not evaluate_input_value(context_config_type, {}).success
+    assert not evaluate_config_value(context_config_type, 1).success
+    assert not evaluate_config_value(context_config_type, {}).success
 
     invalid_value = { 'context_one': 1, 'context_two': 2 }
 
-    result = evaluate_input_value(context_config_type, invalid_value)
+    result = evaluate_config_value(context_config_type, invalid_value)
     assert not result.success
     # two field not defined. one field missing
     assert len(result.errors) == 3
@@ -786,7 +786,7 @@ def test_default_optional_with_default_value_and_required_context():
     default_field = context_type.field_dict['default']
     assert default_field.dagster_type.field_dict['config'].is_optional
 
-    result = evaluate_input_value(env_type, {'context': {'default': {}}})
+    result = evaluate_config_value(env_type, {'context': {'default': {}}})
     assert result.success
     env_obj = result.value
     assert env_obj.context.name == 'default'

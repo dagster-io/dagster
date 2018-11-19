@@ -338,8 +338,8 @@ class DagsterCompositeType(DagsterType):
         )
 
     def evaluate_value(self, value):
-        from .evaluator import throwing_evaluate_input_value
-        return throwing_evaluate_input_value(self, value)
+        from .evaluator import throwing_evaluate_config_value
+        return throwing_evaluate_config_value(self, value)
 
     def iterate_types(self):
         for field_type in self.field_dict.values():
@@ -404,8 +404,8 @@ class ConfigDictionary(DagsterCompositeType, IsScopedConfigType):
     def evaluate_value(self, value):
         if value is not None and not isinstance(value, dict):
             raise DagsterEvaluateValueError(None, 'Incoming value for composite must be dict')
-        from .evaluator import throwing_evaluate_input_value
-        return throwing_evaluate_input_value(self, value)
+        from .evaluator import throwing_evaluate_config_value
+        return throwing_evaluate_config_value(self, value)
 
 
 String = DagsterStringType(name='String', description='A string.')

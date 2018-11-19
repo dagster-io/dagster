@@ -16,8 +16,8 @@ from dagster import (
 )
 
 from dagster.core.evaluator import (
-    evaluate_input_value,
-    throwing_evaluate_input_value,
+    evaluate_config_value,
+    throwing_evaluate_config_value,
 )
 
 from dagster.core.types import (
@@ -39,17 +39,17 @@ def test_int_field():
         },
     )
 
-    assert evaluate_input_value(config_def.config_type, {'int_field': 1}).value == {'int_field': 1}
+    assert evaluate_config_value(config_def.config_type, {'int_field': 1}).value == {'int_field': 1}
 
 
 def assert_success(dagster_type, value, expected):
-    result = evaluate_input_value(dagster_type, value)
+    result = evaluate_config_value(dagster_type, value)
     assert result.success
     assert result.value == expected
 
 
 def assert_eval_failure(dagster_type, value):
-    assert not evaluate_input_value(dagster_type, value).success
+    assert not evaluate_config_value(dagster_type, value).success
 
 
 def test_int_fails():
@@ -121,7 +121,7 @@ def _mixed_required_optional_string_config_dict_with_default():
 
 
 def _validate(config_def, value):
-    return throwing_evaluate_input_value(config_def.config_type, value)
+    return throwing_evaluate_config_value(config_def.config_type, value)
 
 
 def test_single_required_string_field_config_type():
