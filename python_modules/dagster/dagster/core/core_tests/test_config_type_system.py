@@ -368,8 +368,8 @@ class CustomStructConfigType(types.DagsterCompositeType):
             },
         )
 
-    def construct_value(self, value):
-        return CustomStructConfig(**value)
+    def construct_from_config_value(self, config_value):
+        return CustomStructConfig(**config_value)
 
 
 def test_custom_composite_type():

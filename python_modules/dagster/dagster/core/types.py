@@ -64,8 +64,8 @@ class DagsterType(object):
         '''
         check.not_implemented('Must implement in subclass')
 
-    def construct_value(self, value):
-        return value
+    def construct_from_config_value(self, config_value):
+        return config_value
 
     def iterate_types(self):
         yield self

@@ -129,10 +129,10 @@ class ContextConfigType(DagsterCompositeType):
             type_attributes=DagsterTypeAttributes(is_system_config=True),
         )
 
-    def construct_value(self, value):
-        if not value:
+    def construct_from_config_value(self, config_value):
+        if not config_value:
             return None
-        context_name, context_value = single_item(value)
+        context_name, context_value = single_item(config_value)
         return Context(name=context_name, config=context_value['config'])
 
 
@@ -150,8 +150,8 @@ class SolidConfigType(DagsterCompositeType, HasUserConfig):
             type_attributes=DagsterTypeAttributes(is_system_config=True),
         )
 
-    def construct_value(self, value):
-        return Solid(**value)
+    def construct_from_config_value(self, config_value):
+        return Solid(**config_value)
 
     @property
     def user_config_field(self):
@@ -221,8 +221,8 @@ class EnvironmentConfigType(DagsterCompositeType):
             type_attributes=DagsterTypeAttributes(is_system_config=True),
         )
 
-    def construct_value(self, value):
-        return Environment(**value)
+    def construct_from_config_value(self, config_value):
+        return Environment(**config_value)
 
 
 class ExpectationsConfigType(DagsterCompositeType):
@@ -233,8 +233,8 @@ class ExpectationsConfigType(DagsterCompositeType):
             type_attributes=DagsterTypeAttributes(is_system_config=True),
         )
 
-    def construct_value(self, value):
-        return Expectations(**value)
+    def construct_from_config_value(self, config_value):
+        return Expectations(**config_value)
 
 
 def all_optional_type(dagster_type):
@@ -290,5 +290,5 @@ class ExecutionConfigType(DagsterCompositeType):
             type_attributes=DagsterTypeAttributes(is_system_config=True),
         )
 
-    def construct_value(self, value):
-        return Execution(**value)
+    def construct_from_config_value(self, config_value):
+        return Execution(**config_value)
