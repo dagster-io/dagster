@@ -185,7 +185,8 @@ def _evaluate_input_value(dagster_type, value, stack, collector):
 
     if isinstance(dagster_type, DagsterScalarType):
         if dagster_type.is_python_valid_value(value):
-            return dagster_type.evaluate_value(value)
+            # currently there is no coercion
+            return value
         else:
             collector.add_error(
                 EvaluationError(

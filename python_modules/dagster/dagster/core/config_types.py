@@ -48,7 +48,7 @@ def define_possibly_optional_field(config_type, is_optional):
     return Field(
         config_type,
         is_optional=True,
-        default_value=lambda: config_type.evaluate_value(None),
+        default_value=lambda: throwing_evaluate_input_value(config_type, None),
     ) if is_optional else Field(config_type)
 
 
