@@ -82,7 +82,7 @@ class Manager:
             input_def = self.solid_def.input_def_named(input_name)
             try:
                 new_inputs[input_name] = input_def.dagster_type.coerce_runtime_value(input_value)
-            except as de:
+            except DagsterRuntimeCoercionError as de:
                 raise_from(
                     DagstermillError(
                         'Input {input_name} failed type check on value {value}'.format(
