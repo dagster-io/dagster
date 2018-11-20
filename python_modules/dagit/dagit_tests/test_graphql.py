@@ -83,32 +83,31 @@ def define_more_complicated_config():
                 inputs=[],
                 outputs=[],
                 transform_fn=lambda *_args: None,
-                config_def=ConfigDefinition(
-                    types.ConfigDictionary(
-                        'SomeSolidWithConfig',
-                        {
-                            'field_one':
-                            types.Field(types.String),
-                            'field_two':
-                            types.Field(types.String, is_optional=True),
-                            'field_three':
-                            types.Field(
-                                types.String,
-                                is_optional=True,
-                                default_value='some_value',
-                            )
-                        },
-                    )
-                )
-            )
-        ]
+                config_def=ConfigDefinition.solid_config_dict(
+                    'more_complicated_config',
+                    'a_solid_with_config',
+                    {
+                        'field_one':
+                        types.Field(types.String),
+                        'field_two':
+                        types.Field(types.String, is_optional=True),
+                        'field_three':
+                        types.Field(
+                            types.String,
+                            is_optional=True,
+                            default_value='some_value',
+                        )
+                    },
+                ),
+            ),
+        ],
     )
 
 
 CONFIG_VALIDATION_QUERY = '''
-query PipelineQuery($config: GenericScalar)
+query PipelineQuery($pipelineName: String!, $config: GenericScalar)
 {
-    isPipelineConfigValid(pipelineName: "pandas_hello_world", config: $config) {
+    isPipelineConfigValid(pipelineName: $pipelineName, config: $config) {
         __typename
         ... on PipelineConfigValidationValid {
             pipeline { name }
@@ -121,6 +120,12 @@ query PipelineQuery($config: GenericScalar)
                     ... on RuntimeMismatchErrorData {
                         type { name } 
                         valueRep 
+                    }
+                    ... on MissingFieldErrorData {
+                        field { name }
+                    }
+                    ... on FieldNotDefinedErrorData {
+                        fieldName
                     }
                 }
                 message
@@ -147,6 +152,7 @@ def test_basic_valid_config():
         define_repo(),
         CONFIG_VALIDATION_QUERY,
         {
+            'pipelineName' : 'pandas_hello_world',
             'config': {
                 'solids': {
                     'load_num_csv': {
@@ -169,11 +175,12 @@ def field_stack(error_data):
     return [entry['field']['name'] for entry in error_data['stack']['entries']]
 
 
-def test_basic_invalid_config():
+def test_basic_invalid_config_type_mismatch():
     result = execute_dagster_graphql(
         define_repo(),
         CONFIG_VALIDATION_QUERY,
         {
+            'pipelineName' : 'pandas_hello_world',
             'config': {
                 'solids': {
                     'load_num_csv': {
@@ -196,8 +203,188 @@ def test_basic_invalid_config():
     assert error_data['stack']
     assert error_data['stack']['entries']
     assert error_data['reason'] == 'RUNTIME_TYPE_MISMATCH'
+    assert error_data['errorData']['valueRep'] == '123'
+    assert error_data['errorData']['type']['name'] == 'Path'
 
     assert ['solids', 'load_num_csv', 'config', 'path'] == field_stack(error_data)
+
+
+def test_basic_invalid_config_missing_field():
+    result = execute_dagster_graphql(
+        define_repo(),
+        CONFIG_VALIDATION_QUERY,
+        {
+            'pipelineName' : 'pandas_hello_world',
+            'config': {
+                'solids': {
+                    'load_num_csv': {
+                        'config': {},
+                    },
+                },
+            },
+        },
+    )
+
+    assert not result.errors
+    assert result.data
+    assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationInvalid'
+    assert result.data['isPipelineConfigValid']['pipeline']['name'] == 'pandas_hello_world'
+    assert len(result.data['isPipelineConfigValid']['errors']) == 1
+    error_data = result.data['isPipelineConfigValid']['errors'][0]
+
+    assert ['solids', 'load_num_csv', 'config'] == field_stack(error_data)
+    assert error_data['reason'] == 'MISSING_REQUIRED_FIELD'
+    assert error_data['errorData']['field']['name'] == 'path'
+
+
+def test_basic_invalid_not_defined_field():
+    result = execute_dagster_graphql(
+        define_repo(),
+        CONFIG_VALIDATION_QUERY,
+        {
+            'pipelineName' : 'pandas_hello_world',
+            'config': {
+                'solids': {
+                    'load_num_csv': {
+                        'config': {
+                            'path': 'foo.txt',
+                            'extra': 'nope',
+                        },
+                    },
+                },
+            },
+        },
+    )
+
+    assert not result.errors
+    assert result.data
+    assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationInvalid'
+    assert result.data['isPipelineConfigValid']['pipeline']['name'] == 'pandas_hello_world'
+    assert len(result.data['isPipelineConfigValid']['errors']) == 1
+    error_data = result.data['isPipelineConfigValid']['errors'][0]
+    assert ['solids', 'load_num_csv', 'config'] == field_stack(error_data)
+    assert error_data['reason'] == 'FIELD_NOT_DEFINED'
+    assert error_data['errorData']['fieldName'] == 'extra'
+
+
+def define_more_complicated_nested_config():
+    return PipelineDefinition(
+        name='more_complicated_nested_config',
+        solids=[
+            SolidDefinition(
+                name='a_solid_with_config',
+                inputs=[],
+                outputs=[],
+                transform_fn=lambda *_args: None,
+                config_def=ConfigDefinition.solid_config_dict(
+                    'more_complicated_nested_config',
+                    'a_solid_with_config',
+                    {
+                        'field_one':
+                        types.Field(types.String),
+                        'field_two':
+                        types.Field(types.String, is_optional=True),
+                        'field_three':
+                        types.Field(
+                            types.String,
+                            is_optional=True,
+                            default_value='some_value',
+                        ),
+                        'nested_field' : {
+                            'field_four_str' : types.Field(types.String),
+                            'field_five_int' : types.Field(types.Int),
+                        }
+                    },
+                ),
+            ),
+        ],
+    )
+
+def test_more_complicated_works():
+    result = execute_dagster_graphql(
+        define_repo(),
+        CONFIG_VALIDATION_QUERY,
+        {
+            'pipelineName' : 'more_complicated_nested_config',
+            'config': {
+                'solids': {
+                    'a_solid_with_config': {
+                        'config': {
+                            'field_one': 'foo.txt',
+                            'field_two': 'yup',
+                            'field_three': 'mmmhmmm',
+                            'nested_field' : {
+                                'field_four_str' : 'yaya',
+                                'field_five_int': 234,
+                            }
+                        },
+                    },
+                },
+            },
+        },
+    )
+
+    assert not result.errors
+    assert result.data
+    assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationValid'
+    assert result.data['isPipelineConfigValid']['pipeline']['name'] == 'more_complicated_nested_config'
+
+
+def test_more_complicated_multiple_errors():
+    result = execute_dagster_graphql(
+        define_repo(),
+        CONFIG_VALIDATION_QUERY,
+        {
+            'pipelineName' : 'more_complicated_nested_config',
+            'config': {
+                'solids': {
+                    'a_solid_with_config': {
+                        'config': {
+                            # 'field_one': 'foo.txt', # missing
+                            'field_two': 'yup',
+                            'field_three': 'mmmhmmm',
+                            'extra_one' : 'kjsdkfjd', # extra
+                            'nested_field' : {
+                                'field_four_str' : 23434, # runtime type
+                                'field_five_int': 234,
+                                'extra_two': 'ksjdkfjd', # another extra
+                            }
+                        },
+                    },
+                },
+            },
+        },
+    )
+
+    assert not result.errors
+    assert result.data
+    assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationInvalid'
+    assert result.data['isPipelineConfigValid']['pipeline']['name'] == 'more_complicated_nested_config'
+    assert len(result.data['isPipelineConfigValid']['errors']) == 4
+
+    missing_error_one = find_error(result, ['solids', 'a_solid_with_config', 'config'], 'MISSING_REQUIRED_FIELD')
+    assert ['solids', 'a_solid_with_config', 'config'] == field_stack(missing_error_one)
+    assert missing_error_one['reason'] == 'MISSING_REQUIRED_FIELD'
+    assert missing_error_one['errorData']['field']['name'] == 'field_one'
+
+    not_defined_one = find_error(result, ['solids', 'a_solid_with_config', 'config'], 'FIELD_NOT_DEFINED')
+    assert ['solids', 'a_solid_with_config', 'config'] == field_stack(not_defined_one)
+    assert not_defined_one['reason'] == 'FIELD_NOT_DEFINED'
+    assert not_defined_one['errorData']['fieldName'] == 'extra_one'
+
+    # TODO: two more errors
+
+
+def find_error(result, field_stack_to_find, reason):
+    llist = list(find_errors(result, field_stack_to_find, reason))
+    assert len(llist) == 1
+    return llist[0]
+
+def find_errors(result, field_stack_to_find, reason):
+    error_datas = result.data['isPipelineConfigValid']['errors']
+    for error_data in error_datas:
+        if field_stack_to_find == field_stack(error_data) and error_data['reason'] == reason:
+            yield error_data
 
 
 def define_repo():
@@ -207,6 +394,7 @@ def define_repo():
             'pandas_hello_world': define_pipeline_one,
             'pandas_hello_world_two': define_pipeline_two,
             'more_complicated_config': define_more_complicated_config,
+            'more_complicated_nested_config': define_more_complicated_nested_config,
         }
     )
 
@@ -230,6 +418,7 @@ def test_pipelines():
             'pandas_hello_world',
             'pandas_hello_world_two',
             'more_complicated_config',
+            'more_complicated_nested_config',
         ]
     )
 
@@ -371,10 +560,7 @@ def get_named_thing(llist, name):
 
 
 def test_production_query():
-    result = execute_dagster_graphql(
-        define_repo(),
-        PRODUCTION_QUERY,
-    )
+    result = execute_dagster_graphql(define_repo(), PRODUCTION_QUERY)
 
     if result.errors:
         raise Exception(result.errors)

@@ -679,9 +679,13 @@ class MissingFieldErrorData(graphene.ObjectType):
     field = graphene.NonNull(TypeField)
 
 
+class FieldNotDefinedErrorData(graphene.ObjectType):
+    field_name = graphene.NonNull(graphene.String)
+
+
 class ConfigErrorData(graphene.Union):
     class Meta:
-        types = (RuntimeMismatchErrorData, MissingFieldErrorData)
+        types = (RuntimeMismatchErrorData, MissingFieldErrorData, FieldNotDefinedErrorData)
 
 
 class PipelineConfigValidationError(graphene.ObjectType):
@@ -706,9 +710,15 @@ class PipelineConfigValidationError(graphene.ObjectType):
                 value_rep=error_data.value_rep,
             )
         elif isinstance(error_data, dagster.core.evaluator.MissingFieldErrorData):
-            pass
+            return MissingFieldErrorData(
+                field=TypeField(name=error_data.field_name, field=error_data.field_def)
+            )
+        elif isinstance(error_data, dagster.core.evaluator.FieldNotDefinedErrorData):
+            return FieldNotDefinedErrorData(field_name=error_data.field_name)
         else:
-            pass
+            check.failed(
+                'Error type not supported {error_data}'.format(error_data=repr(error_data))
+            )
 
 
 def create_schema():
