@@ -39,13 +39,15 @@ from .config_types import EnvironmentConfigType
 from .execution_context import ExecutionContext
 
 from .errors import (
-    DagsterEvaluateConfigValueError,
     DagsterInvariantViolationError,
     DagsterTypeError,
     DagsterUserCodeExecutionError,
 )
 
-from .evaluator import throwing_evaluate_config_value
+from .evaluator import (
+    throwing_evaluate_config_value,
+    DagsterEvaluateConfigValueError,
+)
 
 from .execution_plan import (
     ExecutionPlanInfo,

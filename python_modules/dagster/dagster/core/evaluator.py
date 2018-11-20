@@ -1,26 +1,98 @@
 from collections import namedtuple
+from enum import Enum
 
 from dagster import check
 
-from .errors import (
-    DagsterEvaluateConfigValueError,
-    DagsterEvaluationErrorReason,
-    EvaluationStack,
-    EvaluationStackEntry,
-    EvaluationError,
+from .errors import DagsterError
+
+from .types import (
+    Any,
+    DagsterCompositeType,
+    DagsterScalarType,
+    DagsterSelectorType,
+    DagsterType,
+    Field,
+    PythonObjectType,
+)
+
+
+class DagsterEvaluationErrorReason(Enum):
+    RUNTIME_TYPE_MISMATCH = 'RUNTIME_TYPE_MISMATCH'
+    MISSING_REQUIRED_FIELD = 'MISSING_REQUIRED_FIELD'
+    FIELD_NOT_DEFINED = 'FIELD_NOT_DEFINED'
+    SELECTOR_FIELD_ERROR = 'MULTIPLE_FIELDS_DEFINED'
+
+
+class FieldNotDefinedErrorData(namedtuple('_FieldNotDefinedErrorData', 'field_name')):
+    def __new__(cls, field_name):
+        return super(FieldNotDefinedErrorData, cls).__new__(
+            cls,
+            check.str_param(field_name, 'field_name'),
+        )
+
+
+class MissingFieldErrorData(namedtuple('_MissingFieldErrorData', 'field_name')):
+    def __new__(cls, field_name):
+        return super(MissingFieldErrorData, cls).__new__(
+            cls,
+            check.str_param(field_name, 'field_name'),
+        )
+
+
+class RuntimeMismatchErrorData(namedtuple('_RuntimeMismatchErrorData', 'dagster_type value_rep')):
+    def __new__(cls, dagster_type, value_rep):
+        return super(RuntimeMismatchErrorData, cls).__new__(
+            cls,
+            check.inst_param(dagster_type, 'dagster_type', DagsterType),
+            check.str_param(value_rep, 'value_rep'),
+        )
+
+
+ERROR_DATA_TYPES = (
     FieldNotDefinedErrorData,
     MissingFieldErrorData,
     RuntimeMismatchErrorData,
 )
 
-from .types import (
-    DagsterCompositeType,
-    DagsterScalarType,
-    DagsterSelectorType,
-    DagsterType,
-    PythonObjectType,
-    Any,
-)
+
+class EvaluationStack(namedtuple('_EvaluationStack', 'entries')):
+    def __new__(cls, entries):
+        return super(EvaluationStack, cls).__new__(
+            cls,
+            check.list_param(entries, 'entries', of_type=EvaluationStackEntry),
+        )
+
+    @property
+    def levels(self):
+        return [entry.field_name for entry in self.entries]
+
+
+class EvaluationStackEntry(namedtuple('_EvaluationStackEntry', 'field_name field_def')):
+    def __new__(cls, field_name, field_def):
+        return super(EvaluationStackEntry, cls).__new__(
+            cls,
+            check.str_param(field_name, 'field_name'),
+            check.inst_param(field_def, 'field_def', Field),
+        )
+
+
+class EvaluationError(namedtuple('_EvaluationError', 'stack reason message error_data')):
+    def __new__(cls, stack, reason, message, error_data):
+        return super(EvaluationError, cls).__new__(
+            cls,
+            check.inst_param(stack, 'stack', EvaluationStack),
+            check.inst_param(reason, 'reason', DagsterEvaluationErrorReason),
+            check.str_param(message, 'message'),
+            check.opt_inst_param(error_data, 'error_data', ERROR_DATA_TYPES),
+        )
+
+
+class DagsterEvaluateConfigValueError(DagsterError):
+    '''Indicates invalid value was passed to a type's evaluate_value method'''
+
+    def __init__(self, stack, *args, **kwargs):
+        super(DagsterEvaluateConfigValueError, self).__init__(*args, **kwargs)
+        self.stack = check.inst_param(stack, 'stack', EvaluationStack)
 
 
 class EvaluateValueResult(namedtuple('_EvaluateValueResult', 'success value errors')):

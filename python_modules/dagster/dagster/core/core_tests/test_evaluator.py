@@ -3,12 +3,10 @@ from dagster import types
 from dagster.core.definitions import build_config_dict_type
 
 from dagster.core.evaluator import (
-    evaluate_config_value,
+    DagsterEvaluationErrorReason,
     EvaluateValueResult,
+    evaluate_config_value,
 )
-
-from dagster.core.errors import DagsterEvaluationErrorReason
-
 
 def assert_success(result, expected_value):
     assert result.success

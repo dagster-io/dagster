@@ -32,7 +32,10 @@ from .definitions import (
     TransformExecutionInfo,
 )
 
-from .evaluator import throwing_evaluate_config_value
+from .evaluator import (
+    throwing_evaluate_config_value,
+    DagsterEvaluateConfigValueError,
+)
 
 from .execution_context import (
     ExecutionContext,
@@ -40,7 +43,6 @@ from .execution_context import (
 
 from .errors import (
     DagsterError,
-    DagsterEvaluateConfigValueError,
     DagsterExpectationFailedError,
     DagsterInvariantViolationError,
     DagsterRuntimeCoercionError,
