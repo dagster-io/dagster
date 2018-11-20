@@ -99,13 +99,13 @@ def return_two():
     return 2
 
 
-def define_hello_world_inputs_pipeline():
-    with_inputs_solid = add_two_numbers_pm_solid('with_inputs')
+def define_add_pipeline():
+    add_two_numbers = add_two_numbers_pm_solid('add_two_numbers')
     return PipelineDefinition(
-        name='test_inputs_dag',
-        solids=[return_one, return_two, with_inputs_solid],
+        name='test_add_pipeline',
+        solids=[return_one, return_two, add_two_numbers],
         dependencies={
-            with_inputs_solid.name: {
+            add_two_numbers.name: {
                 'a': DependencyDefinition('return_one'),
                 'b': DependencyDefinition('return_two'),
             }
@@ -115,10 +115,10 @@ def define_hello_world_inputs_pipeline():
 
 @notebook_test
 def test_hello_world_inputs():
-    pipeline = define_hello_world_inputs_pipeline()
+    pipeline = define_add_pipeline()
     result = execute_pipeline(pipeline)
     assert result.success
-    assert result.result_for_solid('with_inputs').transformed_value() == 3
+    assert result.result_for_solid('add_two_numbers').transformed_value() == 3
 
 
 def define_hello_world_config_pipeline():
