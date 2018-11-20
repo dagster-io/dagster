@@ -133,7 +133,6 @@ export interface AppQuery_pipelinesOrErrors_Pipeline_solids_definition_configDef
 export interface AppQuery_pipelinesOrErrors_Pipeline_solids_definition {
   metadata: AppQuery_pipelinesOrErrors_Pipeline_solids_definition_metadata[];
   configDefinition: AppQuery_pipelinesOrErrors_Pipeline_solids_definition_configDefinition | null;
-  name: string;
   description: string | null;
 }
 
@@ -200,12 +199,17 @@ export interface AppQuery_pipelinesOrErrors_Pipeline_solids {
   outputs: AppQuery_pipelinesOrErrors_Pipeline_solids_outputs[];
 }
 
+export interface AppQuery_pipelinesOrErrors_Pipeline_environmentType {
+  name: string;
+}
+
 export interface AppQuery_pipelinesOrErrors_Pipeline {
   __typename: "Pipeline";
   name: string;
   description: string | null;
   contexts: AppQuery_pipelinesOrErrors_Pipeline_contexts[];
   solids: AppQuery_pipelinesOrErrors_Pipeline_solids[];
+  environmentType: AppQuery_pipelinesOrErrors_Pipeline_environmentType;
 }
 
 export type AppQuery_pipelinesOrErrors = AppQuery_pipelinesOrErrors_PythonError | AppQuery_pipelinesOrErrors_Pipeline;

@@ -133,7 +133,6 @@ export interface PipelinePageFragment_Pipeline_solids_definition_configDefinitio
 export interface PipelinePageFragment_Pipeline_solids_definition {
   metadata: PipelinePageFragment_Pipeline_solids_definition_metadata[];
   configDefinition: PipelinePageFragment_Pipeline_solids_definition_configDefinition | null;
-  name: string;
   description: string | null;
 }
 
@@ -200,12 +199,17 @@ export interface PipelinePageFragment_Pipeline_solids {
   outputs: PipelinePageFragment_Pipeline_solids_outputs[];
 }
 
+export interface PipelinePageFragment_Pipeline_environmentType {
+  name: string;
+}
+
 export interface PipelinePageFragment_Pipeline {
   __typename: "Pipeline";
   name: string;
   description: string | null;
   contexts: PipelinePageFragment_Pipeline_contexts[];
   solids: PipelinePageFragment_Pipeline_solids[];
+  environmentType: PipelinePageFragment_Pipeline_environmentType;
 }
 
 export type PipelinePageFragment = PipelinePageFragment_PythonError | PipelinePageFragment_Pipeline;

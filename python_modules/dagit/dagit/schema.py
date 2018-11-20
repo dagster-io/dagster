@@ -7,12 +7,14 @@ from graphene.types.generic import GenericScalar
 
 import dagster
 import dagster.core.definitions
+import dagster.core.config_types
+import dagster.core.errors
 
 from dagster import check
 
 from dagster.core.types import DagsterCompositeType
 
-from dagster.core.execution import create_execution_plan
+from dagster.core.execution import create_execution_plan, create_config_value
 
 
 def resolve_pipelines_implementation(_root_obj, info):
@@ -68,6 +70,14 @@ class Query(graphene.ObjectType):
         pipelineName=graphene.NonNull(graphene.String),
     )
 
+    isPipelineConfigValid = graphene.Field(
+        graphene.NonNull(lambda: PipelineConfigValidationResult),
+        args={
+            'pipelineName': graphene.Argument(graphene.NonNull(graphene.String)),
+            'config': graphene.Argument(GenericScalar),
+        },
+    )
+
     def resolve_pipeline(self, info, name):
         check.str_param(name, 'name')
         repository = info.context['repository_container'].repository
@@ -98,6 +108,18 @@ class Query(graphene.ObjectType):
             [Type.from_dagster_type(type) for type in pipeline.all_types()],
             key=lambda type: type.name
         )
+
+    def resolve_isPipelineConfigValid(self, info, pipelineName, config):
+        check.str_param(pipelineName, 'pipelineName')
+        repository = info.context['repository_container'].repository
+        pipeline = repository.get_pipeline(pipelineName)
+        pipeline_env_type = dagster.core.config_types.EnvironmentConfigType(pipeline)
+        try:
+            environment = create_config_value(pipeline_env_type, config)
+            return PipelineConfigValidationValid(pipeline=Pipeline(pipeline))
+        except dagster.core.errors.DagsterTypeError as e:
+            error = PipelineConfigValidationError(message=e.args[0], path=[])
+            return PipelineConfigValidationInvalid(pipeline=Pipeline(pipeline), errors=[error])
 
 
 class Pipeline(graphene.ObjectType):
@@ -465,7 +487,7 @@ class TypeField(graphene.ObjectType):
         super(TypeField, self).__init__(
             name=name,
             description=field.description,
-            default_value=str(field.default_value) if field.default_provided else None,
+            default_value=field.default_value_as_str if field.default_provided else None,
             is_optional=field.is_optional
         )
         self._field = field
@@ -591,6 +613,25 @@ class ExecutionStep(graphene.ObjectType):
 
     def resolve_tag(self, _info):
         return self.execution_step.tag
+
+
+class PipelineConfigValidationValid(graphene.ObjectType):
+    pipeline = graphene.Field(graphene.NonNull(lambda: Pipeline))
+
+
+class PipelineConfigValidationInvalid(graphene.ObjectType):
+    pipeline = graphene.Field(graphene.NonNull(lambda: Pipeline))
+    errors = non_null_list(lambda: PipelineConfigValidationError)
+
+
+class PipelineConfigValidationResult(graphene.Union):
+    class Meta:
+        types = (PipelineConfigValidationValid, PipelineConfigValidationInvalid)
+
+
+class PipelineConfigValidationError(graphene.ObjectType):
+    message = graphene.NonNull(graphene.String)
+    path = non_null_list(graphene.String)
 
 
 def create_schema():

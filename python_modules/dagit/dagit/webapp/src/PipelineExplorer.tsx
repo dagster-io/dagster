@@ -12,7 +12,6 @@ import { getDagrePipelineLayout } from "./graph/getFullSolidLayout";
 import { PanelDivider } from "./PanelDivider";
 import Config from "./Config";
 import SidebarTabbedContainer from "./SidebarTabbedContainer";
-import ConfigEditor from "./configeditor/ConfigEditor";
 
 interface IPipelineExplorerProps {
   history: History;
@@ -23,6 +22,7 @@ interface IPipelineExplorerProps {
 interface IPipelineExplorerState {
   filter: string;
   graphVW: number;
+  configCode: string;
 }
 
 export default class PipelineExplorer extends React.Component<
@@ -42,12 +42,12 @@ export default class PipelineExplorer extends React.Component<
           }
         }
         ...PipelineGraphFragment
-        ...ConfigEditorFragment
+        ...SidebarTabbedContainerPipelineFragment
       }
 
-      ${PipelineGraph.fragments.PipelineGraphFragment}
       ${Config.fragments.ConfigFragment}
-      ${ConfigEditor.fragments.ConfigEditorFragment}
+      ${PipelineGraph.fragments.PipelineGraphFragment}
+      ${SidebarTabbedContainer.fragments.SidebarTabbedContainerPipelineFragment}
     `,
     PipelineExplorerSolidFragment: gql`
       fragment PipelineExplorerSolidFragment on Solid {
@@ -61,7 +61,27 @@ export default class PipelineExplorer extends React.Component<
     `
   };
 
-  state = { filter: "", graphVW: 70 };
+  constructor(props: IPipelineExplorerProps) {
+    super(props);
+    const configKey = getConfigStorageKey(props.pipeline);
+    let configCode = localStorage.getItem(configKey);
+    if (!configCode || typeof configCode !== "string") {
+      configCode = "# This is config editor. Enjoy!";
+    }
+    this.state = {
+      filter: "",
+      graphVW: 70,
+      configCode
+    };
+  }
+
+  handleConfigChange = (newValue: string) => {
+    const configKey = getConfigStorageKey(this.props.pipeline);
+    localStorage.setItem(configKey, newValue);
+    this.setState({
+      configCode: newValue
+    });
+  };
 
   handleClickSolid = (solidName: string) => {
     const { history, pipeline } = this.props;
@@ -106,6 +126,8 @@ export default class PipelineExplorer extends React.Component<
               <SidebarTabbedContainer
                 pipeline={pipeline}
                 solid={solid}
+                configCode={this.state.configCode}
+                onConfigChange={this.handleConfigChange}
                 {...parseQueryString(location.search || "")}
               />
             )}
@@ -114,6 +136,10 @@ export default class PipelineExplorer extends React.Component<
       </PipelinesContainer>
     );
   }
+}
+
+function getConfigStorageKey(pipeline: PipelineExplorerFragment) {
+  return `dagit.pipelineConfigStorage.${pipeline.name}`;
 }
 
 const PipelinesContainer = styled.div`

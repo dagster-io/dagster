@@ -25,7 +25,6 @@ export class SVGEllipseInRect extends React.PureComponent<
 > {
   render() {
     const { width, height, x, y, ...rest } = this.props;
-    console.log(rest);
     const rx = width / 2;
     const ry = height / 2;
     return (

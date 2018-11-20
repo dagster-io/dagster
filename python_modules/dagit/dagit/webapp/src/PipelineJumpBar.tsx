@@ -53,7 +53,10 @@ export default class PipelineJumpBar extends React.Component<
     const { history, selectedPipeline } = this.props;
     const { key, target } = event;
 
-    if (target && (target as HTMLElement).nodeName === "INPUT") {
+    if (
+      (target && (target as HTMLElement).nodeName === "INPUT") ||
+      (target as HTMLElement).nodeName === "TEXTAREA"
+    ) {
       return;
     }
     if (key === "s") {

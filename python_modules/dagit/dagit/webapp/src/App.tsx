@@ -1,7 +1,7 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import { Query, QueryResult } from "react-apollo";
-import { Route, match } from "react-router";
+import { Route, match, Switch } from "react-router";
 import { BrowserRouter } from "react-router-dom";
 import { History } from "history";
 import Loading from "./Loading";
@@ -17,24 +17,32 @@ export default class App extends React.Component {
             {data => {
               return (
                 <BrowserRouter>
-                  <Route path="/:pipeline/:solid?">
-                    {({
-                      match,
-                      history
-                    }: {
-                      match: match<{ pipeline: string; solid: string | null }>;
-                      history: History;
-                    }) => {
-                      return (
-                        <PipelinePage
-                          selectedPipelineName={match && match.params.pipeline}
-                          selectedSolidName={match && match.params.solid}
-                          history={history}
-                          pipelinesOrErrors={data.pipelinesOrErrors}
-                        />
-                      );
-                    }}
-                  </Route>
+                  <Switch>
+                    <Route
+                      path="/:pipeline?/:solid?"
+                      render={({
+                        match,
+                        history
+                      }: {
+                        match: match<{
+                          pipeline: string | null;
+                          solid: string | null;
+                        }>;
+                        history: History;
+                      }) => {
+                        return (
+                          <PipelinePage
+                            selectedPipelineName={
+                              match && match.params.pipeline
+                            }
+                            selectedSolidName={match && match.params.solid}
+                            history={history}
+                            pipelinesOrErrors={data.pipelinesOrErrors}
+                          />
+                        );
+                      }}
+                    />
+                  </Switch>
                 </BrowserRouter>
               );
             }}

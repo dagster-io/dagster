@@ -60,16 +60,20 @@ export default class TypeList extends React.Component<ITypeListProps, {}> {
     const groups = groupTypes(this.props.types);
 
     return (
-      <div>
+      <>
         <SidebarSubhead />
         <SidebarTitle>Pipeline Types</SidebarTitle>
         {Object.keys(groups).map((title, idx) => (
-          <SidebarSection title={title} collapsedByDefault={idx !== 0}>
+          <SidebarSection
+            key={idx}
+            title={title}
+            collapsedByDefault={idx !== 0}
+          >
             <UL>{this.renderTypes(groups[title])}</UL>
           </SidebarSection>
         ))}
         <H3 />
-      </div>
+      </>
     );
   }
 }
