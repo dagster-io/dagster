@@ -105,6 +105,101 @@ def define_more_complicated_config():
     )
 
 
+CONFIG_VALIDATION_QUERY = '''
+query PipelineQuery($config: GenericScalar)
+{
+    isPipelineConfigValid(pipelineName: "pandas_hello_world", config: $config) {
+        __typename
+        ... on PipelineConfigValidationValid {
+            pipeline { name }
+        }
+        ... on PipelineConfigValidationInvalid {
+            pipeline { name }
+            errors {
+                errorData {
+                    __typename
+                    ... on RuntimeMismatchErrorData {
+                        type { name } 
+                        valueRep 
+                    }
+                }
+                message
+                reason
+                stack {
+                    entries {
+                        field { 
+                            name
+                            type { 
+                                name
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+'''
+
+
+def test_basic_valid_config():
+    result = execute_dagster_graphql(
+        define_repo(),
+        CONFIG_VALIDATION_QUERY,
+        {
+            'config': {
+                'solids': {
+                    'load_num_csv': {
+                        'config': {
+                            'path': 'pandas_hello_world/num.csv',
+                        },
+                    },
+                },
+            },
+        },
+    )
+
+    assert not result.errors
+    assert result.data
+    assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationValid'
+    assert result.data['isPipelineConfigValid']['pipeline']['name'] == 'pandas_hello_world'
+
+
+def field_stack(error_data):
+    return [entry['field']['name'] for entry in error_data['stack']['entries']]
+
+
+def test_basic_invalid_config():
+    result = execute_dagster_graphql(
+        define_repo(),
+        CONFIG_VALIDATION_QUERY,
+        {
+            'config': {
+                'solids': {
+                    'load_num_csv': {
+                        'config': {
+                            'path': 123,
+                        },
+                    },
+                },
+            },
+        },
+    )
+
+    assert not result.errors
+    assert result.data
+    assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationInvalid'
+    assert result.data['isPipelineConfigValid']['pipeline']['name'] == 'pandas_hello_world'
+    assert len(result.data['isPipelineConfigValid']['errors']) == 1
+    error_data = result.data['isPipelineConfigValid']['errors'][0]
+    assert error_data['message']
+    assert error_data['stack']
+    assert error_data['stack']['entries']
+    assert error_data['reason'] == 'RUNTIME_TYPE_MISMATCH'
+
+    assert ['solids', 'load_num_csv', 'config', 'path'] == field_stack(error_data)
+
+
 def define_repo():
     return RepositoryDefinition(
         name='test',

@@ -14,6 +14,7 @@ from dagster import check
 
 from dagster.core.types import DagsterCompositeType
 
+from dagster.core.evaluator import evaluate_config_value
 from dagster.core.execution import create_execution_plan, create_config_value
 
 
@@ -114,12 +115,30 @@ class Query(graphene.ObjectType):
         repository = info.context['repository_container'].repository
         pipeline = repository.get_pipeline(pipelineName)
         pipeline_env_type = dagster.core.config_types.EnvironmentConfigType(pipeline)
-        try:
-            environment = create_config_value(pipeline_env_type, config)
+        result = evaluate_config_value(pipeline_env_type, config)
+        if result.success:
             return PipelineConfigValidationValid(pipeline=Pipeline(pipeline))
-        except dagster.core.errors.DagsterTypeError as e:
-            error = PipelineConfigValidationError(message=e.args[0], path=[])
-            return PipelineConfigValidationInvalid(pipeline=Pipeline(pipeline), errors=[error])
+        else:
+            errors = []
+            for error in result.errors:
+                errors.append(
+                    PipelineConfigValidationError(
+                        message=error.message,
+                        path=[],  # TODO: remove
+                        stack=error.stack,
+                        reason=error.reason,
+                        error_data=error.error_data,
+                    )
+                )
+            return PipelineConfigValidationInvalid(pipeline=Pipeline(pipeline), errors=errors)
+
+        # try:
+
+        #     environment = create_config_value(pipeline_env_type, config)
+        #     return PipelineConfigValidationValid(pipeline=Pipeline(pipeline))
+        # except dagster.core.errors.DagsterTypeError as e:
+        #     error = PipelineConfigValidationError(message=e.args[0], path=[])
+        #     return PipelineConfigValidationInvalid(pipeline=Pipeline(pipeline), errors=[error])
 
 
 class Pipeline(graphene.ObjectType):
@@ -615,6 +634,24 @@ class ExecutionStep(graphene.ObjectType):
         return self.execution_step.tag
 
 
+class EvaluationErrorReason(graphene.Enum):
+    RUNTIME_TYPE_MISMATCH = 'RUNTIME_TYPE_MISMATCH'
+    MISSING_REQUIRED_FIELD = 'MISSING_REQUIRED_FIELD'
+    FIELD_NOT_DEFINED = 'FIELD_NOT_DEFINED'
+    SELECTOR_FIELD_ERROR = 'SELECTOR_FIELD_ERROR'
+
+
+class EvaluationStackEntry(graphene.ObjectType):
+    field = graphene.NonNull(TypeField)
+
+    def resolve_field(self, _info):
+        return TypeField(name=self.field_name, field=self.field_def)  # pylint: disable=E1101
+
+
+class EvaluationStack(graphene.ObjectType):
+    entries = non_null_list(EvaluationStackEntry)
+
+
 class PipelineConfigValidationValid(graphene.ObjectType):
     pipeline = graphene.Field(graphene.NonNull(lambda: Pipeline))
 
@@ -629,9 +666,48 @@ class PipelineConfigValidationResult(graphene.Union):
         types = (PipelineConfigValidationValid, PipelineConfigValidationInvalid)
 
 
+class RuntimeMismatchErrorData(graphene.ObjectType):
+    type = graphene.NonNull(Type)
+    value_rep = graphene.Field(graphene.String)
+
+    def resolve_type(self, _info):
+        return Type.from_dagster_type(self.type)
+
+
+class MissingFieldErrorData(graphene.ObjectType):
+    field = graphene.NonNull(TypeField)
+
+
+class ConfigErrorData(graphene.Union):
+    class Meta:
+        types = (RuntimeMismatchErrorData, MissingFieldErrorData)
+
+
+import dagster.core.evaluator
+
+
 class PipelineConfigValidationError(graphene.ObjectType):
     message = graphene.NonNull(graphene.String)
     path = non_null_list(graphene.String)
+    stack = graphene.NonNull(EvaluationStack)
+    reason = graphene.NonNull(EvaluationErrorReason)
+    error_data = graphene.NonNull(ConfigErrorData)
+
+    def resolve_error_data(self, _info):
+        print('resolve_error_data')
+        print(self)
+        print(self.error_data)
+        error_data = self.error_data
+
+        if isinstance(error_data, dagster.core.evaluator.RuntimeMismatchErrorData):
+            return RuntimeMismatchErrorData(
+                type=error_data.dagster_type,
+                value_rep=error_data.value_rep,
+            )
+        elif isinstance(error_data, dagster.core.evaluator.MissingFieldErrorData):
+            pass
+        else:
+            pass
 
 
 def create_schema():

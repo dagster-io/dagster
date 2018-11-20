@@ -20,7 +20,7 @@ class DagsterEvaluationErrorReason(Enum):
     RUNTIME_TYPE_MISMATCH = 'RUNTIME_TYPE_MISMATCH'
     MISSING_REQUIRED_FIELD = 'MISSING_REQUIRED_FIELD'
     FIELD_NOT_DEFINED = 'FIELD_NOT_DEFINED'
-    SELECTOR_FIELD_ERROR = 'MULTIPLE_FIELDS_DEFINED'
+    SELECTOR_FIELD_ERROR = 'SELECTOR_FIELD_ERROR'
 
 
 class FieldNotDefinedErrorData(namedtuple('_FieldNotDefinedErrorData', 'field_name')):
