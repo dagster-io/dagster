@@ -39,15 +39,18 @@ from .config_types import EnvironmentConfigType
 from .execution_context import ExecutionContext
 
 from .errors import (
-    DagsterEvaluateValueError,
     DagsterInvariantViolationError,
     DagsterTypeError,
     DagsterUserCodeExecutionError,
 )
 
+from .evaluator import (
+    throwing_evaluate_config_value,
+    DagsterEvaluateConfigValueError,
+)
+
 from .execution_plan import (
     ExecutionPlanInfo,
-    ExecutionPlan,
     StepResult,
     StepTag,
     create_execution_plan_core,
@@ -281,9 +284,13 @@ def create_execution_plan(pipeline, config_dict=None):
 
 
 def create_config_value(config_type, config_input):
+    if isinstance(config_input, config.Environment):
+        return config_input
+
     try:
-        return config_type.evaluate_value(config_input)
-    except DagsterEvaluateValueError as e:
+        # TODO: we should bubble up multiple errors from here
+        return throwing_evaluate_config_value(config_type, config_input)
+    except DagsterEvaluateConfigValueError as e:
         raise DagsterTypeError(
             'Invalid config value on type {config_type}: {error_msg}. Value received {value}'.
             format(

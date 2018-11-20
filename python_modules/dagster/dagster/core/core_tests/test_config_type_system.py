@@ -4,7 +4,7 @@ import pytest
 
 from dagster import (
     ConfigDefinition,
-    DagsterEvaluateValueError,
+    DagsterEvaluateConfigValueError,
     DagsterInvalidDefinitionError,
     DagsterTypeError,
     Field,
@@ -15,8 +15,12 @@ from dagster import (
     types,
 )
 
+from dagster.core.evaluator import (
+    evaluate_config_value,
+    throwing_evaluate_config_value,
+)
+
 from dagster.core.types import (
-    process_incoming_composite_value,
     ScopedConfigInfo,
 )
 
@@ -35,7 +39,17 @@ def test_int_field():
         },
     )
 
-    assert config_def.config_type.evaluate_value({'int_field': 1}) == {'int_field': 1}
+    assert evaluate_config_value(config_def.config_type, {'int_field': 1}).value == {'int_field': 1}
+
+
+def assert_config_value_success(dagster_type, config_value, expected):
+    result = evaluate_config_value(dagster_type, config_value)
+    assert result.success
+    assert result.value == expected
+
+
+def assert_eval_failure(dagster_type, value):
+    assert not evaluate_config_value(dagster_type, value).success
 
 
 def test_int_fails():
@@ -45,11 +59,8 @@ def test_int_fails():
         }
     )
 
-    with pytest.raises(DagsterEvaluateValueError):
-        config_def.config_type.evaluate_value({'int_field': 'fjkdj'})
-
-    with pytest.raises(DagsterEvaluateValueError):
-        config_def.config_type.evaluate_value({'int_field': True})
+    assert_eval_failure(config_def.config_type, {'int_field': 'fjkdj'})
+    assert_eval_failure(config_def.config_type, {'int_field': True})
 
 
 def test_default_arg():
@@ -59,7 +70,7 @@ def test_default_arg():
         }
     )
 
-    assert config_def.config_type.evaluate_value({}) == {'int_field': 2}
+    assert_config_value_success(config_def.config_type, {}, {'int_field': 2})
 
 
 def _single_required_string_config_dict():
@@ -110,7 +121,7 @@ def _mixed_required_optional_string_config_dict_with_default():
 
 
 def _validate(config_def, value):
-    return config_def.config_type.evaluate_value(value)
+    return throwing_evaluate_config_value(config_def.config_type, value)
 
 
 def test_single_required_string_field_config_type():
@@ -121,16 +132,16 @@ def test_single_required_string_field_config_type():
         'string_field': None
     }
 
-    with pytest.raises(DagsterEvaluateValueError):
+    with pytest.raises(DagsterEvaluateConfigValueError):
         _validate(_single_required_string_config_dict(), {})
 
-    with pytest.raises(DagsterEvaluateValueError):
+    with pytest.raises(DagsterEvaluateConfigValueError):
         _validate(_single_required_string_config_dict(), {'extra': 'yup'})
 
-    with pytest.raises(DagsterEvaluateValueError):
+    with pytest.raises(DagsterEvaluateConfigValueError):
         _validate(_single_required_string_config_dict(), {'string_field': 'yupup', 'extra': 'yup'})
 
-    with pytest.raises(DagsterEvaluateValueError):
+    with pytest.raises(DagsterEvaluateConfigValueError):
         _validate(_single_required_string_config_dict(), {'string_field': 1})
 
 
@@ -159,16 +170,16 @@ def test_multiple_required_fields_passing():
 
 
 def test_multiple_required_fields_failing():
-    with pytest.raises(DagsterEvaluateValueError):
+    with pytest.raises(DagsterEvaluateConfigValueError):
         _validate(_multiple_required_fields_config_dict(), {})
 
-    with pytest.raises(DagsterEvaluateValueError):
+    with pytest.raises(DagsterEvaluateConfigValueError):
         _validate(_multiple_required_fields_config_dict(), {'field_one': 'yup'})
 
-    with pytest.raises(DagsterEvaluateValueError):
+    with pytest.raises(DagsterEvaluateConfigValueError):
         _validate(_multiple_required_fields_config_dict(), {'field_one': 'yup', 'extra': 'yup'})
 
-    with pytest.raises(DagsterEvaluateValueError):
+    with pytest.raises(DagsterEvaluateConfigValueError):
         _validate(
             _multiple_required_fields_config_dict(), {
                 'field_one': 'value_one',
@@ -189,11 +200,11 @@ def test_single_optional_field_passing():
 
 
 def test_single_optional_field_failing():
-    with pytest.raises(DagsterEvaluateValueError):
+    with pytest.raises(DagsterEvaluateConfigValueError):
 
         _validate(_single_optional_string_config_dict(), {'optional_field': 1})
 
-    with pytest.raises(DagsterEvaluateValueError):
+    with pytest.raises(DagsterEvaluateConfigValueError):
         _validate(_single_optional_string_config_dict(), {'dlkjfalksdjflksaj': 1})
 
 
@@ -306,13 +317,13 @@ def test_single_nested_config():
 
 
 def test_single_nested_config_failures():
-    with pytest.raises(DagsterEvaluateValueError):
+    with pytest.raises(DagsterEvaluateConfigValueError):
         _validate(_single_nested_config(), {'nested': 'dkjfdk'})
 
-    with pytest.raises(DagsterEvaluateValueError):
+    with pytest.raises(DagsterEvaluateConfigValueError):
         _validate(_single_nested_config(), {'nested': {'int_field': 'dkjfdk'}})
 
-    with pytest.raises(DagsterEvaluateValueError):
+    with pytest.raises(DagsterEvaluateConfigValueError):
         _validate(_single_nested_config(), {'nested': {'int_field': {'too_nested': 'dkjfdk'}}})
 
 
@@ -357,42 +368,37 @@ class CustomStructConfigType(types.DagsterCompositeType):
             },
         )
 
-    def evaluate_value(self, value):
-        if value is not None and not isinstance(value, dict):
-            raise DagsterEvaluateValueError('Incoming value for composite must be dict')
-
-        return process_incoming_composite_value(
-            self,
-            value,
-            lambda val: CustomStructConfig(foo=val['foo'], bar=val['bar']),
-        )
+    def construct_from_config_value(self, config_value):
+        return CustomStructConfig(**config_value)
 
 
 def test_custom_composite_type():
     config_type = CustomStructConfigType()
 
-    assert config_type.evaluate_value({
+    assert throwing_evaluate_config_value(config_type, {
         'foo': 'some_string',
         'bar': 2
     }) == CustomStructConfig(
         foo='some_string', bar=2
     )
 
-    with pytest.raises(DagsterEvaluateValueError):
-        assert config_type.evaluate_value({
+    with pytest.raises(DagsterEvaluateConfigValueError):
+        assert throwing_evaluate_config_value(config_type, {
             'foo': 'some_string',
         })
 
-    with pytest.raises(DagsterEvaluateValueError):
-        assert config_type.evaluate_value({
+    with pytest.raises(DagsterEvaluateConfigValueError):
+        assert throwing_evaluate_config_value(config_type, {
             'bar': 'some_string',
         })
 
-    with pytest.raises(DagsterEvaluateValueError):
-        assert config_type.evaluate_value({
-            'foo': 'some_string',
-            'bar': 'not_an_int',
-        })
+    with pytest.raises(DagsterEvaluateConfigValueError):
+        assert throwing_evaluate_config_value(
+            config_type, {
+                'foo': 'some_string',
+                'bar': 'not_an_int',
+            }
+        )
 
 
 def single_elem(ddict):

@@ -6,7 +6,9 @@ import pickle
 from six import integer_types, string_types
 
 from dagster import check
-from dagster.core.errors import DagsterEvaluateValueError
+from dagster.core.errors import (
+    DagsterRuntimeCoercionError,
+)
 
 SerializedTypeValue = namedtuple('SerializedTypeValue', 'name value')
 
@@ -46,26 +48,20 @@ class DagsterType(object):
     def __repr__(self):
         return 'DagsterType({name})'.format(name=self.name)
 
-    def evaluate_value(self, _value):
-        '''Subclasses can implement this method. Check if the value is a valid one
-        and return a processed version of it. If value is invalid,
-        raise `DagsterEvaluateValueError`.
-
-        This class provides a default implementation of this method
-
-        Args:
-          value: The value to check
-
-        Returns:
-          value: A transformed value
-        '''
+    def coerce_runtime_value(self, _value):
         check.not_implemented('Must implement in subclass')
+
+    def construct_from_config_value(self, config_value):
+        return config_value
 
     def iterate_types(self):
         yield self
 
     def serialize_value(self, output_dir, value):
-        type_value = self.create_serializable_type_value(self.evaluate_value(value), output_dir)
+        type_value = self.create_serializable_type_value(
+            self.coerce_runtime_value(value),
+            output_dir,
+        )
         output_path = os.path.join(output_dir, 'type_value')
         with open(output_path, 'w') as ff:
             json.dump(
@@ -112,13 +108,13 @@ class UncoercedTypeMixin(object):
         '''
         check.failed('must implement')
 
-    def evaluate_value(self, value):
+    def coerce_runtime_value(self, value):
         if not self.is_python_valid_value(value):
-            raise DagsterEvaluateValueError(
+            raise DagsterRuntimeCoercionError(
                 'Expected valid value for {type_name} but got {value}'.format(
                     type_name=self.name,
                     value=repr(value),
-                )
+                ),
             )
         return value
 
@@ -179,7 +175,9 @@ class PythonObjectType(UncoercedTypeMixin, DagsterType):
         return nullable_isinstance(value, self.python_type)
 
     def serialize_value(self, output_dir, value):
-        type_value = self.create_serializable_type_value(self.evaluate_value(value), output_dir)
+        type_value = self.create_serializable_type_value(
+            self.coerce_runtime_value(value), output_dir
+        )
         output_path = os.path.join(output_dir, 'type_value')
         with open(output_path, 'w') as ff:
             json.dump(
@@ -316,7 +314,13 @@ class DagsterCompositeType(DagsterType):
     '''Dagster type representing a type with a list of named :py:class:`Field` objects.
     '''
 
-    def __init__(self, name, fields, description=None, type_attributes=DEFAULT_TYPE_ATTRIBUTES):
+    def __init__(
+        self,
+        name,
+        fields,
+        description=None,
+        type_attributes=DEFAULT_TYPE_ATTRIBUTES,
+    ):
         self.field_dict = FieldDefinitionDictionary(fields)
         super(DagsterCompositeType, self).__init__(
             name=name,
@@ -324,8 +328,9 @@ class DagsterCompositeType(DagsterType):
             type_attributes=type_attributes,
         )
 
-    def evaluate_value(self, _value):
-        check.not_implemented('Must override')
+    def coerce_runtime_value(self, value):
+        from .evaluator import throwing_evaluate_config_value
+        return throwing_evaluate_config_value(self, value)
 
     def iterate_types(self):
         for field_type in self.field_dict.values():
@@ -343,6 +348,15 @@ class DagsterCompositeType(DagsterType):
     @property
     def field_name_set(self):
         return set(self.field_dict.keys())
+
+
+class DagsterSelectorType(DagsterCompositeType):
+    '''This subclass "marks" a composite type as one where only
+    one of its fields can be configured at a time. This was originally designed
+    for context definition selection (only one context can be used for a particular
+    pipeline invocation); this is generalization of that concept.
+    '''
+    pass
 
 
 class IsScopedConfigType:
@@ -383,71 +397,12 @@ class ConfigDictionary(DagsterCompositeType, IsScopedConfigType):
             'A configuration dictionary with typed fields',
         )
 
-    def evaluate_value(self, value):
+    def coerce_runtime_value(self, value):
         if value is not None and not isinstance(value, dict):
-            raise DagsterEvaluateValueError('Incoming value for composite must be dict')
-        return process_incoming_composite_value(self, value, lambda val: val)
-
-
-def process_incoming_composite_value(dagster_composite_type, incoming_value, ctor):
-    check.inst_param(dagster_composite_type, 'dagster_composite_type', DagsterCompositeType)
-
-    if incoming_value and not isinstance(incoming_value, dict):
-        raise DagsterEvaluateValueError(
-            'Value for composite type {type_name} must be a dict got {value}'.format(
-                type_name=dagster_composite_type.name,
-                value=incoming_value,
-            )
-        )
-
-    incoming_value = check.opt_dict_param(incoming_value, 'incoming_value', key_type=str)
-    check.callable_param(ctor, 'ctor')
-
-    field_dict = dagster_composite_type.field_dict
-
-    defined_args = set(field_dict.keys())
-    received_args = set(incoming_value.keys())
-
-    for received_arg in received_args:
-        if received_arg not in defined_args:
-            raise DagsterEvaluateValueError(
-                'Field "{received}" is not defined on "{type_name}". Defined {defined}'.format(
-                    type_name=dagster_composite_type.name,
-                    defined=repr(defined_args),
-                    received=received_arg,
-                )
-            )
-
-    for expected_field, field_def in field_dict.items():
-        if field_def.is_optional:
-            continue
-
-        check.invariant(not field_def.default_provided)
-
-        if expected_field not in received_args:
-            raise DagsterEvaluateValueError(
-                'Missing required field "{expected}" on "{type_name}" . Defined fields: {defined}'.
-                format(
-                    expected=expected_field,
-                    type_name=dagster_composite_type.name,
-                    defined=repr(defined_args),
-                )
-            )
-
-    fields_to_pass = {}
-
-    for expected_field, field_def in field_dict.items():
-        if expected_field in received_args:
-            evaluation_result = field_def.dagster_type.evaluate_value(
-                incoming_value[expected_field]
-            )
-            fields_to_pass[expected_field] = evaluation_result
-        elif field_def.default_provided:
-            fields_to_pass[expected_field] = field_def.default_value
-        else:
-            check.invariant(field_def.is_optional and not field_def.default_provided)
-
-    return ctor(fields_to_pass)
+            raise DagsterRuntimeCoercionError('Incoming value for composite must be dict')
+        ## TODO make this return value
+        from .evaluator import throwing_evaluate_config_value
+        return throwing_evaluate_config_value(self, value)
 
 
 String = DagsterStringType(name='String', description='A string.')

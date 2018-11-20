@@ -1062,10 +1062,10 @@ class Result(namedtuple('_Result', 'value output_name')):
         )
 
 
-def build_config_dict_type(name_stack, fields, scoped_config_info):
+def build_config_dict_type(name_stack, fields, scoped_config_info=None):
     check.list_param(name_stack, 'name_stack', of_type=str)
     check.dict_param(fields, 'fields', key_type=str, value_type=(Field, dict))
-    check.inst_param(scoped_config_info, 'scoped_config_info', ScopedConfigInfo)
+    check.opt_inst_param(scoped_config_info, 'scoped_config_info', ScopedConfigInfo)
 
     field_dict = {}
     for field_name, field in fields.items():

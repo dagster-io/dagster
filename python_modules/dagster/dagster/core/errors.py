@@ -1,3 +1,4 @@
+from collections import namedtuple
 from enum import Enum
 
 from dagster import check
@@ -17,8 +18,8 @@ class DagsterUserError(DagsterError):
     pass
 
 
-class DagsterEvaluateValueError(DagsterError):
-    '''Indicates that invalid value was passed to a type's evaluate_value method'''
+class DagsterRuntimeCoercionError(DagsterError):
+    '''Runtime checked faild'''
     pass
 
 

@@ -23,18 +23,18 @@ class SSNStringTypeClass(types.DagsterType):
     def __init__(self):
         super(SSNStringTypeClass, self).__init__(name='SSNString')
 
-    def evaluate_value(self, value):
+    def coerce_runtime_value(self, value):
         if isinstance(value, SSNString):
             return value
 
         if not isinstance(value, str):
-            raise DagsterEvaluateValueError(
-                '{value} is not a string. SSNStringType typecheck failed'.format(value=repr(value))
+            raise DagsterRuntimeCoercionError(
+                '{value} is not a string. SSNStringType typecheck failed'.format(value=repr(value)),
             )
 
         if not re.match(r'^(\d\d\d)-(\d\d)-(\d\d\d\d)$', value):
-            raise DagsterEvaluateValueError(
-                '{value} did not match SSN regex'.format(value=repr(value))
+            raise DagsterRuntimeCoercionError(
+                '{value} did not match SSN regex'.format(value=repr(value)),
             )
 
         return SSNString(value)
@@ -122,20 +122,20 @@ def define_part_twelve_step_four_pipeline():
 def test_ssn_type():
     good_ssn_string = '123-43-4939'
     good_ssn = SSNString(good_ssn_string)
-    assert SSNStringType.evaluate_value(good_ssn_string) == good_ssn
-    assert SSNStringType.evaluate_value(good_ssn) == good_ssn
+    assert SSNStringType.coerce_runtime_value(good_ssn_string) == good_ssn
+    assert SSNStringType.coerce_runtime_value(good_ssn) == good_ssn
 
-    with pytest.raises(DagsterEvaluateValueError):
-        SSNStringType.evaluate_value(123)
+    with pytest.raises(DagsterRuntimeCoercionError):
+        SSNStringType.coerce_runtime_value(123)
 
-    with pytest.raises(DagsterEvaluateValueError):
-        SSNStringType.evaluate_value(None)
+    with pytest.raises(DagsterRuntimeCoercionError):
+        SSNStringType.coerce_runtime_value(None)
 
-    with pytest.raises(DagsterEvaluateValueError):
-        SSNStringType.evaluate_value('12932-9234892038-384')
+    with pytest.raises(DagsterRuntimeCoercionError):
+        SSNStringType.coerce_runtime_value('12932-9234892038-384')
 
-    with pytest.raises(DagsterEvaluateValueError):
-        SSNStringType.evaluate_value('1292-34-383434')
+    with pytest.raises(DagsterRuntimeCoercionError):
+        SSNStringType.coerce_runtime_value('1292-34-383434')
 
 
 def test_intro_tutorial_part_twelve_step_one():

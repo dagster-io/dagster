@@ -16,13 +16,13 @@ from .definitions import (
     PipelineDefinition,
 )
 
+from .evaluator import throwing_evaluate_config_value
+
 from .types import (
     Bool,
     DagsterCompositeType,
-    DagsterEvaluateValueError,
     DagsterType,
     DagsterTypeAttributes,
-    process_incoming_composite_value,
 )
 
 
@@ -39,14 +39,6 @@ class HasUserConfig:
         return self.field_dict['config']  # pylint: disable=E1101
 
 
-def load_environment(pipeline_def, environment_dict):
-    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
-    check.dict_param(environment_dict, 'environment_dict')
-
-    env_type = EnvironmentConfigType(pipeline_def)
-    return env_type.evaluate_value(environment_dict)
-
-
 def define_possibly_optional_field(config_type, is_optional):
     check.inst_param(config_type, 'config_type', DagsterType)
     check.bool_param(is_optional, 'is_optional')
@@ -54,7 +46,7 @@ def define_possibly_optional_field(config_type, is_optional):
     return Field(
         config_type,
         is_optional=True,
-        default_value=lambda: config_type.evaluate_value(None),
+        default_value=lambda: throwing_evaluate_config_value(config_type, None),
     ) if is_optional else Field(config_type)
 
 
@@ -68,16 +60,19 @@ class SpecificContextConfig(DagsterCompositeType, HasUserConfig):
             type_attributes=DagsterTypeAttributes(is_system_config=True),
         )
 
-    def evaluate_value(self, value):
-        config_output = process_incoming_composite_value(self, value, lambda val: val)
-        return config_output['config']
 
-
-def define_specific_context_field(pipeline_name, context_name, context_def, is_optional):
+def define_specific_context_field(
+    pipeline_name,
+    context_name,
+    context_def,
+    is_optional,
+    provide_default=False,
+):
     check.str_param(pipeline_name, 'pipeline_name')
     check.str_param(context_name, 'context_name')
     check.inst_param(context_def, 'context_def', PipelineContextDefinition)
     check.bool_param(is_optional, 'is_optional')
+    check.bool_param(provide_default, 'provide_default')
 
     specific_context_config_type = SpecificContextConfig(
         '{pipeline_name}.ContextDefinitionConfig.{context_name}'.format(
@@ -87,7 +82,10 @@ def define_specific_context_field(pipeline_name, context_name, context_def, is_o
         context_def.config_def.config_type,
     )
 
-    return define_possibly_optional_field(specific_context_config_type, is_optional)
+    if is_optional and provide_default:
+        return define_possibly_optional_field(specific_context_config_type, is_optional)
+
+    return Field(specific_context_config_type, is_optional=is_optional)
 
 
 def single_item(ddict):
@@ -119,7 +117,8 @@ class ContextConfigType(DagsterCompositeType):
                 pipeline_name,
                 context_name,
                 context_definition,
-                is_optional,
+                is_optional=is_optional,
+                provide_default=is_optional and len(context_definitions) == 1,
             )
 
         super(ContextConfigType, self).__init__(
@@ -129,63 +128,11 @@ class ContextConfigType(DagsterCompositeType):
             type_attributes=DagsterTypeAttributes(is_system_config=True),
         )
 
-    def evaluate_value(self, value):
-        if isinstance(value, Context):
-            return value
-
-        if value is not None and not isinstance(value, dict):
-            raise DagsterEvaluateValueError('Incoming value for composite must be None or dict')
-
-        if not value:
-            if 'default' not in self.field_dict and len(self.field_dict) > 1:
-                raise DagsterEvaluateValueError(
-                    'More than one context defined. Must provide one in config'
-                )
-
-            # if default is defined use that otherwise use the single context name
-            single_context_name, single_context_field = (
-                'default',
-                self.field_dict['default'],
-            ) if 'default' in self.field_dict else single_item(self.field_dict)
-
-            if single_context_field.is_optional and single_context_field.default_provided:
-                return Context(single_context_name, single_context_field.default_value)
-
-            raise DagsterEvaluateValueError(
-                (
-                    'Single context or default context {context_name} defined is not optional '
-                    'or default value is not provided. '
-                    'Must specify in config'
-                ).format(context_name=single_context_name)
-            )
-
-        if len(value) > 1:
-            specified_contexts = sorted(list(value.keys()))
-            available_contexts = sorted(list(self.field_dict.keys()))
-            raise DagsterEvaluateValueError(
-                (
-                    'You can only specify a single context. You specified {specified_contexts}. '
-                    'The available contexts are {available_contexts}'
-                ).format(
-                    specified_contexts=specified_contexts,
-                    available_contexts=available_contexts,
-                )
-            )
-
-        context_name, context_config_value = single_item(value)
-
-        parent_type = self.field_dict[context_name].dagster_type
-        config_type = parent_type.field_dict['config'].dagster_type
-        processed_value = config_type.evaluate_value(permissive_idx(context_config_value, 'config'))
-        return Context(context_name, processed_value)
-
-
-def permissive_idx(ddict, key):
-    check.opt_dict_param(ddict, 'ddict')
-    check.str_param(key, 'key')
-    if ddict is None:
-        return None
-    return ddict.get(key)
+    def construct_from_config_value(self, config_value):
+        if not config_value:
+            return None
+        context_name, context_value = single_item(config_value)
+        return Context(name=context_name, config=context_value['config'])
 
 
 class SolidConfigType(DagsterCompositeType, HasUserConfig):
@@ -202,11 +149,8 @@ class SolidConfigType(DagsterCompositeType, HasUserConfig):
             type_attributes=DagsterTypeAttributes(is_system_config=True),
         )
 
-    def evaluate_value(self, value):
-        if isinstance(value, Solid):
-            return value
-
-        return process_incoming_composite_value(self, value, lambda val: Solid(**val))
+    def construct_from_config_value(self, config_value):
+        return Solid(**config_value)
 
     @property
     def user_config_field(self):
@@ -276,15 +220,8 @@ class EnvironmentConfigType(DagsterCompositeType):
             type_attributes=DagsterTypeAttributes(is_system_config=True),
         )
 
-    def evaluate_value(self, value):
-        if isinstance(value, Environment):
-            return value
-
-        return process_incoming_composite_value(
-            self,
-            value,
-            lambda val: Environment(**val),
-        )
+    def construct_from_config_value(self, config_value):
+        return Environment(**config_value)
 
 
 class ExpectationsConfigType(DagsterCompositeType):
@@ -295,11 +232,8 @@ class ExpectationsConfigType(DagsterCompositeType):
             type_attributes=DagsterTypeAttributes(is_system_config=True),
         )
 
-    def evaluate_value(self, value):
-        if isinstance(value, Expectations):
-            return value
-
-        return process_incoming_composite_value(self, value, lambda val: Expectations(**val))
+    def construct_from_config_value(self, config_value):
+        return Expectations(**config_value)
 
 
 def all_optional_type(dagster_type):
@@ -343,9 +277,6 @@ class SolidDictionaryType(DagsterCompositeType):
             type_attributes=DagsterTypeAttributes(is_system_config=True),
         )
 
-    def evaluate_value(self, value):
-        return process_incoming_composite_value(self, value, lambda val: val)
-
 
 class ExecutionConfigType(DagsterCompositeType):
     def __init__(self, name):
@@ -358,5 +289,5 @@ class ExecutionConfigType(DagsterCompositeType):
             type_attributes=DagsterTypeAttributes(is_system_config=True),
         )
 
-    def evaluate_value(self, value):
-        return process_incoming_composite_value(self, value, lambda val: Execution(**val))
+    def construct_from_config_value(self, config_value):
+        return Execution(**config_value)
