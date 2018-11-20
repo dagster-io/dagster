@@ -1,14 +1,17 @@
+"""A fully fleshed out demo dagster repository with many configurable options."""
+
 import logging
 import os
 import zipfile
 
-import sqlalchemy
-
 from collections import namedtuple
+
+import boto3
+import sqlalchemy
 
 from pyspark.sql import (
     DataFrame,
-    SparkSession
+    SparkSession,
 )
 
 from dagster import (
@@ -32,30 +35,83 @@ AirlineDemoResources = namedtuple(
     ('spark', 's3', 'redshift'),
 )
 
-
 SparkDataFrameType = types.PythonObjectType(
     'SparkDataFrameType',
     python_type=DataFrame,
     description='A Pyspark data frame.',
 )
 
+# SqlAlchemyQueryType = types.PythonObjectType(
+#     'SqlAlchemyQueryType',
+#     python_type=sqlalchemy.orm.query.Query,
+#     description='A SQLAlchemy query.',
+# )
+
+# SqlAlchemySubqueryType = types.PythonObjectType(
+#     'SqlAlchemySubqueryType',
+#     python_type=sqlalchemy.sql.expression.Alias,
+#     description='A SQLAlchemy subquery',
+# )
+
+# SqlAlchemyResultProxyType = types.PythonObjectType(
+#     'SqlAlchemyResultProxyType',
+#     python_type=sqlalchemy.engine.ResultProxy,
+#     description='A SQLAlchemy result proxy',
+# )
+
 # need a sql context w a sqlalchemy engine
-def sql_solid(select_string):
-    pass
+def sql_solid(name, select_statement, materialize, table_name=None):
+    materialization_strategy_output_types = {
+        'table': types.String,
+        # 'view': types.String,
+        # 'query': SqlAlchemyQueryType,
+        # 'subquery': SqlAlchemySubqueryType,
+        # 'result_proxy': SqlAlchemyResultProxyType,
+        # could also materialize as a Pandas table, as a Spark table, as an intermediate file, etc.
+    }
+
+    if materialize not in materialization_strategy_output_types:
+        raise Exception(
+            "Invalid materialization strategy {materialize}, must "
+            "be one of {materialization_strategies}".format(
+                materialize=materialize,
+                materialization_strategies=materialization_strategy_output_types.keys()
+            )
+        )
+
+    if materialize == 'table':
+        if table_name is None:
+            raise Exception("Missing table_name")
+
+    @solid(
+        name=name,
+        outputs=[OutputDefinition(materialization_strategy_output_types[materialize])]
+    )
+    def sql_solid_fn(info):
+        # n.b., we will eventually want to make this resources key configurable
+        info.context.resources.db.execute(
+            'create table :tablename as :statement', {
+                'tablename': table_name,
+                'statement': select_statement,
+            })
+        return table_name
+
+    return sql_solid_fn
 
 
-def create_spark_session_local():
+def _create_spark_session_local():
     # Need two versions of this, one for test/local and one with a
     # configurable cluster
     spark = SparkSession.builder.appName("AirlineDemo").getOrCreate()
     return spark
 
 
-def create_s3_session():
-    return None
+def _create_s3_session():
+    s3 = boto3.resource('s3')
+    return s3
 
 
-def create_redshift_engine(username, password, hostname, db_name):
+def _create_redshift_engine(username, password, hostname, db_name):
     db_url = (
         "redshift_psycopg2://{username}:{password}@{hostname}:5439/{db_name}".format(
             username=username,
@@ -67,7 +123,7 @@ def create_redshift_engine(username, password, hostname, db_name):
     return sqlalchemy.create_engine(db_url)
 
 
-def create_postgres_engine(username, password, hostname, db_name):
+def _create_postgres_engine(username, password, hostname, db_name):
     db_url = (
         "postgresql://{username}:{password}@{hostname}:5432/{db_name}".format(
             username=username,
@@ -80,31 +136,32 @@ def create_postgres_engine(username, password, hostname, db_name):
 
 
 test_context = PipelineContextDefinition(
-    context_fn=lambda info:
-        ExecutionContext.console_logging(
+    context_fn=(
+        lambda info: ExecutionContext.console_logging(
             log_level=logging.DEBUG,
             resources=AirlineDemoResources(
-                create_spark_session_local(), # FIXME
-                create_s3_session(),
-                create_redshift_engine(
+                _create_spark_session_local(), # FIXME
+                _create_s3_session(),
+                _create_redshift_engine(
                     info.config['redshift_username'],
                     info.config['redshift_password'],
-                    info.config['redshift_cluster_dns'],
+                    info.config['redshift_hostname'],
                     info.config('redshift_db_name'),
                 ),
             )
         )
+    )
 )
 
 
 local_context = PipelineContextDefinition(
-    context_fn=lambda info:
-        ExecutionContext.console_logging(
+    context_fn=(
+        lambda info: ExecutionContext.console_logging(
             log_level=logging.DEBUG,
             resources=AirlineDemoResources(
-                create_spark_session_local(),
-                create_s3_session(),
-                create_postgres_engine(
+                _create_spark_session_local(),
+                _create_s3_session(),
+                _create_postgres_engine(
                     info.config['postgres_username'],
                     info.config['postgres_password'],
                     info.config['postgres_cluster_dns'],
@@ -112,17 +169,18 @@ local_context = PipelineContextDefinition(
                 ),
             )
         )
+    )
 )
 
 
 cloud_context = PipelineContextDefinition(
-    context_fn=lambda info:
-        ExecutionContext.console_logging(
+    context_fn=(
+        lambda info: ExecutionContext.console_logging(
             log_level=logging.DEBUG,
             resources=AirlineDemoResources(
-                create_spark_session_local(), # FIXME
-                create_s3_session(),
-                create_redshift_engine(
+                _create_spark_session_local(), # FIXME
+                _create_s3_session(),
+                _create_redshift_engine(
                     info.config['redshift_username'],
                     info.config['redshift_password'],
                     info.config['redshift_cluster_dns'],
@@ -130,10 +188,27 @@ cloud_context = PipelineContextDefinition(
                 ),
             )
         )
+    )
 )
 
 
-# FIXME: This is less obvious than it looks at first glance
+@solid(
+    name='download_from_s3',
+    config_def=ConfigDefinition(
+        types.ConfigDictionary(name='DownloadFromS3ConfigType', fields={
+            # Probably want to make the region configuable too
+            'bucket': Field(types.String, description=''),
+            'key': Field(types.String, description=''),
+            'target_path': Field(types.String, description=''),
+        })
+    ))
+def download_from_s3(info):
+    bucket = info.config['bucket']
+    key = info.config['key']
+    target_path = info.config.get('target_path') or key
+    info.s3.meta.client.download_file(bucket, key, target_path)
+    return target_path
+
 @solid(
     name='unzip_file',
     config_def=ConfigDefinition(
@@ -142,7 +217,8 @@ cloud_context = PipelineContextDefinition(
             'archive_member': Field(types.String, description=''),
             'destination_dir': Field(types.String, description=''),
         })
-    )
+    ),
+    inputs=
 )
 def unzip_file(info):
     archive_path = info.config['archive_path']
@@ -150,17 +226,12 @@ def unzip_file(info):
     destination_dir = info.config['destination_dir'] or os.path.dirname(archive_path)
 
     zip_ref = zipfile.ZipFile(archive_path, 'r')
-    
+
     if archive_member is not None:
         zip_ref.extract(archive_member, destination_dir)
     else:
         zip_ref.extractall(destination_dir)
     zip_ref.close()
-
-
-# FIXME
-def archive_to_s3(info):
-    pass
 
 
 @solid(
@@ -170,18 +241,23 @@ def archive_to_s3(info):
             'input_csv': Field(types.String, description=''),
         })
     ),
+    inputs=InputDefinition(
+        'input_csv',
+        types.String,
+        description=''
+    )
     outputs=[OutputDefinition(SparkDataFrameType)]
 )
-def ingest_csv_to_spark(info):
+def ingest_csv_to_spark(info, input_csv=None):
     data_frame = (
         info.context.resources.spark
-            .read
-            .format('csv')
-            .options(
-                header='true',
-                # inferSchema='true',
-            )
-            .load(info.config['input_csv'])
+        .read
+        .format('csv')
+        .options(
+            header='true',
+            # inferSchema='true',
+        )
+        .load(input_csv or info.config['input_csv'])
     )
     return data_frame
 
@@ -324,6 +400,7 @@ def define_airline_demo_spark_ingest_pipeline():
     }
 
     solids = [
+        download_from_s3,
         ingest_csv_to_spark,
         batch_load_data_to_redshift_from_spark,
         subsample_spark_dataset,
@@ -332,6 +409,26 @@ def define_airline_demo_spark_ingest_pipeline():
     ]
 
     dependencies = {
+        SolidInstance('download_from_s3', alias='download_april_on_time_data'): {},
+        SolidInstance('download_from_s3', alias='download_may_on_time_data'): {},
+        SolidInstance('download_from_s3', alias='download_june_on_time_data'): {},
+        SolidInstance('download_from_s3', alias='download_april_sfo_weather'): {},
+        SolidInstance('download_from_s3', alias='download_may_sfo_weather'): {},
+        SolidInstance('download_from_s3', alias='download_june_sfo_weather'): {},
+        SolidInstance('download_from_s3', alias='download_q2_coupon_data'): {},
+        SolidInstance('download_from_s3', alias='download_q2_market_data'): {},
+        SolidInstance('download_from_s3', alias='download_q2_ticket_data'): {},
+
+        SolidInstance('unzip_file', alias='download_april_on_time_data'): {},
+        SolidInstance('download_from_s3', alias='download_may_on_time_data'): {},
+        SolidInstance('download_from_s3', alias='download_june_on_time_data'): {},
+        SolidInstance('download_from_s3', alias='download_april_sfo_weather'): {},
+        SolidInstance('download_from_s3', alias='download_may_sfo_weather'): {},
+        SolidInstance('download_from_s3', alias='download_june_sfo_weather'): {},
+        SolidInstance('download_from_s3', alias='download_q2_coupon_data'): {},
+        SolidInstance('download_from_s3', alias='download_q2_market_data'): {},
+        SolidInstance('download_from_s3', alias='download_q2_ticket_data'): {},
+
         SolidInstance('ingest_csv_to_spark', alias='ingest_april_on_time_data'): {},
         SolidInstance('ingest_csv_to_spark', alias='ingest_may_on_time_data'): {},
         SolidInstance('ingest_csv_to_spark', alias='ingest_june_on_time_data'): {},
