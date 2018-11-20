@@ -8,6 +8,7 @@ from graphene.types.generic import GenericScalar
 import dagster
 import dagster.core.definitions
 import dagster.core.config_types
+import dagster.core.evaluator
 import dagster.core.errors
 
 from dagster import check
@@ -15,7 +16,7 @@ from dagster import check
 from dagster.core.types import DagsterCompositeType
 
 from dagster.core.evaluator import evaluate_config_value
-from dagster.core.execution import create_execution_plan, create_config_value
+from dagster.core.execution import create_execution_plan
 
 
 def resolve_pipelines_implementation(_root_obj, info):
@@ -683,9 +684,6 @@ class ConfigErrorData(graphene.Union):
         types = (RuntimeMismatchErrorData, MissingFieldErrorData)
 
 
-import dagster.core.evaluator
-
-
 class PipelineConfigValidationError(graphene.ObjectType):
     message = graphene.NonNull(graphene.String)
     path = non_null_list(graphene.String)
@@ -694,9 +692,12 @@ class PipelineConfigValidationError(graphene.ObjectType):
     error_data = graphene.NonNull(ConfigErrorData)
 
     def resolve_error_data(self, _info):
-        print('resolve_error_data')
-        print(self)
-        print(self.error_data)
+        # false positives on this because self is weird in graphene
+        # the field assignments above end up masking the actual
+        # value of the field at runtime from pylint's perspective
+
+        # pylint: disable=E1101
+
         error_data = self.error_data
 
         if isinstance(error_data, dagster.core.evaluator.RuntimeMismatchErrorData):

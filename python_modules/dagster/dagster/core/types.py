@@ -349,6 +349,10 @@ class DagsterCompositeType(DagsterType):
     def field_name_set(self):
         return set(self.field_dict.keys())
 
+    def field_named(self, name):
+        check.str_param(name, 'name')
+        return self.field_dict[name]
+
 
 class DagsterSelectorType(DagsterCompositeType):
     '''This subclass "marks" a composite type as one where only

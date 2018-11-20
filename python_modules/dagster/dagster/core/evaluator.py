@@ -31,11 +31,12 @@ class FieldNotDefinedErrorData(namedtuple('_FieldNotDefinedErrorData', 'field_na
         )
 
 
-class MissingFieldErrorData(namedtuple('_MissingFieldErrorData', 'field_name')):
-    def __new__(cls, field_name):
+class MissingFieldErrorData(namedtuple('_MissingFieldErrorData', 'field_name field_def')):
+    def __new__(cls, field_name, field_def):
         return super(MissingFieldErrorData, cls).__new__(
             cls,
             check.str_param(field_name, 'field_name'),
+            check.inst_param(field_def, 'field_def', Field),
         )
 
 
@@ -392,5 +393,7 @@ def create_missing_required_field_error(dagster_type, stack, defined_fields, exp
             type_name=dagster_type.name,
             defined=repr(defined_fields),
         ),
-        error_data=MissingFieldErrorData(field_name=expected_field),
+        error_data=MissingFieldErrorData(
+            field_name=expected_field, field_def=dagster_type.field_named(expected_field),
+        ),
     )
