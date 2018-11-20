@@ -149,7 +149,7 @@ def throwing_evaluate_config_value(dagster_type, value):
 def evaluate_config_value(dagster_type, value):
     check.inst_param(dagster_type, 'dagster_type', DagsterType)
     collector = ErrorCollector()
-    value = _evaluate_input_value(dagster_type, value, EvaluationStack(entries=[]), collector)
+    value = _evaluate_config_value(dagster_type, value, EvaluationStack(entries=[]), collector)
     if collector.errors:
         return EvaluateValueResult(success=False, value=None, errors=collector.errors)
     else:
@@ -238,7 +238,7 @@ def evaluate_selector_input_value(dagster_type, incoming_value, collector, stack
         return None
 
     parent_field = dagster_type.field_dict[field_name]
-    field_value = _evaluate_input_value(
+    field_value = _evaluate_config_value(
         parent_field.dagster_type,
         incoming_field_value,
         stack_with_field(stack, field_name, parent_field),
@@ -247,15 +247,14 @@ def evaluate_selector_input_value(dagster_type, incoming_value, collector, stack
     return {field_name: field_value}
 
 
-def _evaluate_input_value(dagster_type, value, stack, collector):
+def _evaluate_config_value(dagster_type, value, stack, collector):
     check.inst_param(dagster_type, 'dagster_type', DagsterType)
     check.inst_param(stack, 'stack', EvaluationStack)
     check.inst_param(collector, 'collector', ErrorCollector)
 
     if isinstance(dagster_type, DagsterScalarType):
         if dagster_type.is_python_valid_value(value):
-            # currently there is no coercion
-            return value
+            return dagster_type.coerce_runtime_value(value)
         else:
             collector.add_error(
                 EvaluationError(
@@ -289,10 +288,8 @@ def evaluate_composite_input_value(dagster_composite_type, incoming_value, colle
     check.inst_param(collector, 'collector', ErrorCollector)
     check.inst_param(stack, 'stack', EvaluationStack)
 
-    local_collector = ErrorCollector()
-
     if incoming_value and not isinstance(incoming_value, dict):
-        local_collector.add_error(
+        collector.add_error(
             EvaluationError(
                 stack=stack,
                 reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
@@ -306,7 +303,6 @@ def evaluate_composite_input_value(dagster_composite_type, incoming_value, colle
                 ),
             )
         )
-        collector.errors = collector.errors + local_collector.errors
         return None
 
     incoming_value = check.opt_dict_param(incoming_value, 'incoming_value', key_type=str)
@@ -316,9 +312,11 @@ def evaluate_composite_input_value(dagster_composite_type, incoming_value, colle
     defined_fields = set(field_dict.keys())
     incoming_fields = set(incoming_value.keys())
 
+    local_errors = []
+
     for received_field in incoming_fields:
         if received_field not in defined_fields:
-            local_collector.add_error(
+            local_errors.append(
                 create_field_not_defined_error(
                     dagster_composite_type,
                     stack,
@@ -334,7 +332,7 @@ def evaluate_composite_input_value(dagster_composite_type, incoming_value, colle
         check.invariant(not field_def.default_provided)
 
         if expected_field not in incoming_fields:
-            local_collector.add_error(
+            local_errors.append(
                 create_missing_required_field_error(
                     dagster_composite_type,
                     stack,
@@ -347,7 +345,7 @@ def evaluate_composite_input_value(dagster_composite_type, incoming_value, colle
 
     for expected_field, field_def in field_dict.items():
         if expected_field in incoming_fields:
-            evaluated_value = _evaluate_input_value(
+            evaluated_value = _evaluate_config_value(
                 field_def.dagster_type,
                 incoming_value[expected_field],
                 stack_with_field(stack, expected_field, field_def),
@@ -358,15 +356,15 @@ def evaluate_composite_input_value(dagster_composite_type, incoming_value, colle
             processed_fields[expected_field] = field_def.default_value
         elif not field_def.is_optional:
             check.invariant(
-                bool(local_collector.errors),
+                bool(local_errors),
                 'Error should have been added for missing required field',
             )
 
-    collector.errors = collector.errors + local_collector.errors
-
-    return None if local_collector.errors else dagster_composite_type.construct_from_config_value(
-        processed_fields
-    )
+    if local_errors:
+        collector.errors = collector.errors + local_errors
+        return None
+    else:
+        return dagster_composite_type.construct_from_config_value(processed_fields)
 
 
 def create_field_not_defined_error(dagster_composite_type, stack, defined_fields, received_field):

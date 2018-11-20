@@ -350,7 +350,12 @@ class DagsterCompositeType(DagsterType):
         return set(self.field_dict.keys())
 
 
-class DagsterSelectorType(DagsterCompositeType):  # TODO: This inheritance sucks
+class DagsterSelectorType(DagsterCompositeType):
+    '''This subclass "marks" a composite type as one where only
+    one of its fields can be configured at a time. This was originally designed
+    for context definition selection (only one context can be used for a particular
+    pipeline invocation); this is generalization of that concept.
+    '''
     pass
 
 
