@@ -48,9 +48,26 @@ class EvaluationStack(namedtuple('_EvaluationStack', 'entries')):
         return [entry.field_name for entry in self.entries]
 
 
-EvaluationStackEntry = namedtuple('EvaluationStackEntry', 'field_name field_def')
+class EvaluationStackEntry(namedtuple('_EvaluationStackEntry', 'field_name field_def')):
+    def __new__(cls, field_name, field_def):
+        # TODO: fix circular import
+        from dagster.core.types import Field
+        return super(EvaluationStackEntry, cls).__new__(
+            cls,
+            check.str_param(field_name, 'field_name'),
+            check.inst_param(field_def, 'field_def', Field),
+        )
 
-EvaluationError = namedtuple('EvaluationError', 'stack reason message error_data')
+
+class EvaluationError(namedtuple('_EvaluationError', 'stack reason message error_data')):
+    def __new__(cls, stack, reason, message, error_data):
+        return super(EvaluationError, cls).__new__(
+            cls,
+            check.inst_param(stack, 'stack', EvaluationStack),
+            check.inst_param(reason, 'reason', DagsterEvaluationErrorReason),
+            check.str_param(message, 'message'),
+            check.opt_inst_param(error_data, 'error_data', ERROR_DATA_TYPES),
+        )
 
 
 class DagsterEvaluateConfigValueError(DagsterError):

@@ -7,7 +7,6 @@ from six import integer_types, string_types
 
 from dagster import check
 from dagster.core.errors import (
-    DagsterEvaluateConfigValueError,
     DagsterRuntimeCoercionError,
 )
 
