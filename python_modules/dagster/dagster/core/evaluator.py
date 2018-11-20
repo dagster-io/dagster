@@ -48,10 +48,19 @@ class RuntimeMismatchErrorData(namedtuple('_RuntimeMismatchErrorData', 'dagster_
         )
 
 
+class SelectorTypeErrorData(namedtuple('_SelectorTypeErrorData', 'incoming_fields')):
+    def __new__(cls, incoming_fields):
+        return super(SelectorTypeErrorData, cls).__new__(
+            cls,
+            check.list_param(incoming_fields, 'incoming_fields', of_type=str),
+        )
+
+
 ERROR_DATA_TYPES = (
     FieldNotDefinedErrorData,
     MissingFieldErrorData,
     RuntimeMismatchErrorData,
+    SelectorTypeErrorData,
 )
 
 
@@ -83,7 +92,7 @@ class EvaluationError(namedtuple('_EvaluationError', 'stack reason message error
             check.inst_param(stack, 'stack', EvaluationStack),
             check.inst_param(reason, 'reason', DagsterEvaluationErrorReason),
             check.str_param(message, 'message'),
-            check.opt_inst_param(error_data, 'error_data', ERROR_DATA_TYPES),
+            check.inst_param(error_data, 'error_data', ERROR_DATA_TYPES),
         )
 
 
@@ -197,7 +206,7 @@ def evaluate_selector_input_value(dagster_type, incoming_value, collector, stack
                     incoming_fields=incoming_fields,
                     defined_fields=defined_fields,
                 ),
-                error_data=None
+                error_data=SelectorTypeErrorData(incoming_fields=incoming_fields),
             )
         )
         return None
@@ -209,7 +218,7 @@ def evaluate_selector_input_value(dagster_type, incoming_value, collector, stack
                     stack=stack,
                     reason=DagsterEvaluationErrorReason.SELECTOR_FIELD_ERROR,
                     message='Must specify a field if more than one defined',
-                    error_data=None,
+                    error_data=SelectorTypeErrorData(incoming_fields=[]),
                 )
             )
         field_name, field_def = single_item(dagster_type.field_dict)
