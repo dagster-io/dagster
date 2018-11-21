@@ -394,6 +394,7 @@ def create_missing_required_field_error(dagster_type, stack, defined_fields, exp
             defined=repr(defined_fields),
         ),
         error_data=MissingFieldErrorData(
-            field_name=expected_field, field_def=dagster_type.field_named(expected_field),
+            field_name=expected_field,
+            field_def=dagster_type.field_named(expected_field),
         ),
     )

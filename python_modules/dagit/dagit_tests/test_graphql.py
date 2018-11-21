@@ -127,6 +127,9 @@ query PipelineQuery($pipelineName: String!, $config: GenericScalar)
                     ... on FieldNotDefinedErrorData {
                         fieldName
                     }
+                    ... on SelectorTypeErrorData {
+                        incomingFields
+                    }
                 }
                 message
                 reason
@@ -152,7 +155,7 @@ def test_basic_valid_config():
         define_repo(),
         CONFIG_VALIDATION_QUERY,
         {
-            'pipelineName' : 'pandas_hello_world',
+            'pipelineName': 'pandas_hello_world',
             'config': {
                 'solids': {
                     'load_num_csv': {
@@ -180,7 +183,7 @@ def test_basic_invalid_config_type_mismatch():
         define_repo(),
         CONFIG_VALIDATION_QUERY,
         {
-            'pipelineName' : 'pandas_hello_world',
+            'pipelineName': 'pandas_hello_world',
             'config': {
                 'solids': {
                     'load_num_csv': {
@@ -214,7 +217,7 @@ def test_basic_invalid_config_missing_field():
         define_repo(),
         CONFIG_VALIDATION_QUERY,
         {
-            'pipelineName' : 'pandas_hello_world',
+            'pipelineName': 'pandas_hello_world',
             'config': {
                 'solids': {
                     'load_num_csv': {
@@ -242,7 +245,7 @@ def test_basic_invalid_not_defined_field():
         define_repo(),
         CONFIG_VALIDATION_QUERY,
         {
-            'pipelineName' : 'pandas_hello_world',
+            'pipelineName': 'pandas_hello_world',
             'config': {
                 'solids': {
                     'load_num_csv': {
@@ -290,9 +293,9 @@ def define_more_complicated_nested_config():
                             is_optional=True,
                             default_value='some_value',
                         ),
-                        'nested_field' : {
-                            'field_four_str' : types.Field(types.String),
-                            'field_five_int' : types.Field(types.Int),
+                        'nested_field': {
+                            'field_four_str': types.Field(types.String),
+                            'field_five_int': types.Field(types.Int),
                         }
                     },
                 ),
@@ -300,12 +303,13 @@ def define_more_complicated_nested_config():
         ],
     )
 
+
 def test_more_complicated_works():
     result = execute_dagster_graphql(
         define_repo(),
         CONFIG_VALIDATION_QUERY,
         {
-            'pipelineName' : 'more_complicated_nested_config',
+            'pipelineName': 'more_complicated_nested_config',
             'config': {
                 'solids': {
                     'a_solid_with_config': {
@@ -313,8 +317,8 @@ def test_more_complicated_works():
                             'field_one': 'foo.txt',
                             'field_two': 'yup',
                             'field_three': 'mmmhmmm',
-                            'nested_field' : {
-                                'field_four_str' : 'yaya',
+                            'nested_field': {
+                                'field_four_str': 'yaya',
                                 'field_five_int': 234,
                             }
                         },
@@ -327,7 +331,8 @@ def test_more_complicated_works():
     assert not result.errors
     assert result.data
     assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationValid'
-    assert result.data['isPipelineConfigValid']['pipeline']['name'] == 'more_complicated_nested_config'
+    assert result.data['isPipelineConfigValid']['pipeline']['name'
+                                                            ] == 'more_complicated_nested_config'
 
 
 def test_more_complicated_multiple_errors():
@@ -335,7 +340,7 @@ def test_more_complicated_multiple_errors():
         define_repo(),
         CONFIG_VALIDATION_QUERY,
         {
-            'pipelineName' : 'more_complicated_nested_config',
+            'pipelineName': 'more_complicated_nested_config',
             'config': {
                 'solids': {
                     'a_solid_with_config': {
@@ -343,11 +348,11 @@ def test_more_complicated_multiple_errors():
                             # 'field_one': 'foo.txt', # missing
                             'field_two': 'yup',
                             'field_three': 'mmmhmmm',
-                            'extra_one' : 'kjsdkfjd', # extra
-                            'nested_field' : {
-                                'field_four_str' : 23434, # runtime type
+                            'extra_one': 'kjsdkfjd',  # extra
+                            'nested_field': {
+                                'field_four_str': 23434,  # runtime type
                                 'field_five_int': 234,
-                                'extra_two': 'ksjdkfjd', # another extra
+                                'extra_two': 'ksjdkfjd',  # another extra
                             }
                         },
                     },
@@ -359,18 +364,40 @@ def test_more_complicated_multiple_errors():
     assert not result.errors
     assert result.data
     assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationInvalid'
-    assert result.data['isPipelineConfigValid']['pipeline']['name'] == 'more_complicated_nested_config'
+    assert result.data['isPipelineConfigValid']['pipeline']['name'
+                                                            ] == 'more_complicated_nested_config'
     assert len(result.data['isPipelineConfigValid']['errors']) == 4
 
-    missing_error_one = find_error(result, ['solids', 'a_solid_with_config', 'config'], 'MISSING_REQUIRED_FIELD')
+    missing_error_one = find_error(
+        result, ['solids', 'a_solid_with_config', 'config'], 'MISSING_REQUIRED_FIELD',
+    )
     assert ['solids', 'a_solid_with_config', 'config'] == field_stack(missing_error_one)
     assert missing_error_one['reason'] == 'MISSING_REQUIRED_FIELD'
     assert missing_error_one['errorData']['field']['name'] == 'field_one'
 
-    not_defined_one = find_error(result, ['solids', 'a_solid_with_config', 'config'], 'FIELD_NOT_DEFINED')
+    not_defined_one = find_error(
+        result, ['solids', 'a_solid_with_config', 'config'], 'FIELD_NOT_DEFINED',
+    )
     assert ['solids', 'a_solid_with_config', 'config'] == field_stack(not_defined_one)
     assert not_defined_one['reason'] == 'FIELD_NOT_DEFINED'
     assert not_defined_one['errorData']['fieldName'] == 'extra_one'
+
+    runtime_type_error = find_error(
+        result, ['solids', 'a_solid_with_config', 'config', 'nested_field', 'field_four_str'], 'RUNTIME_TYPE_MISMATCH',
+    )
+    assert ['solids', 'a_solid_with_config', 'config', 'nested_field', 'field_four_str'] == field_stack(runtime_type_error)
+    assert runtime_type_error['reason'] == 'RUNTIME_TYPE_MISMATCH'
+    assert runtime_type_error['errorData']['valueRep'] == '23434'
+    assert runtime_type_error['errorData']['type']['name'] == 'String'
+
+    not_defined_two = find_error(
+        result, ['solids', 'a_solid_with_config', 'config', 'nested_field'], 'FIELD_NOT_DEFINED',
+    )
+
+    assert ['solids', 'a_solid_with_config', 'config', 'nested_field'] == field_stack(not_defined_two)
+    assert not_defined_two['reason'] == 'FIELD_NOT_DEFINED'
+    assert not_defined_two['errorData']['fieldName'] == 'extra_two'
+
 
     # TODO: two more errors
 
@@ -379,6 +406,7 @@ def find_error(result, field_stack_to_find, reason):
     llist = list(find_errors(result, field_stack_to_find, reason))
     assert len(llist) == 1
     return llist[0]
+
 
 def find_errors(result, field_stack_to_find, reason):
     error_datas = result.data['isPipelineConfigValid']['errors']

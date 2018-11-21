@@ -133,14 +133,6 @@ class Query(graphene.ObjectType):
                 )
             return PipelineConfigValidationInvalid(pipeline=Pipeline(pipeline), errors=errors)
 
-        # try:
-
-        #     environment = create_config_value(pipeline_env_type, config)
-        #     return PipelineConfigValidationValid(pipeline=Pipeline(pipeline))
-        # except dagster.core.errors.DagsterTypeError as e:
-        #     error = PipelineConfigValidationError(message=e.args[0], path=[])
-        #     return PipelineConfigValidationInvalid(pipeline=Pipeline(pipeline), errors=[error])
-
 
 class Pipeline(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
@@ -683,9 +675,18 @@ class FieldNotDefinedErrorData(graphene.ObjectType):
     field_name = graphene.NonNull(graphene.String)
 
 
+class SelectorTypeErrorData(graphene.ObjectType):
+    incoming_fields = non_null_list(graphene.String)
+
+
 class ConfigErrorData(graphene.Union):
     class Meta:
-        types = (RuntimeMismatchErrorData, MissingFieldErrorData, FieldNotDefinedErrorData)
+        types = (
+            RuntimeMismatchErrorData,
+            MissingFieldErrorData,
+            FieldNotDefinedErrorData,
+            SelectorTypeErrorData,
+        )
 
 
 class PipelineConfigValidationError(graphene.ObjectType):
@@ -715,6 +716,8 @@ class PipelineConfigValidationError(graphene.ObjectType):
             )
         elif isinstance(error_data, dagster.core.evaluator.FieldNotDefinedErrorData):
             return FieldNotDefinedErrorData(field_name=error_data.field_name)
+        elif isinstance(error_data, dagster.core.evaluator.SelectorTypeErrorData):
+            return SelectorTypeErrorData(incoming_fields=error_data.incoming_fields)
         else:
             check.failed(
                 'Error type not supported {error_data}'.format(error_data=repr(error_data))
