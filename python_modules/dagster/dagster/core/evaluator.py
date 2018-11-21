@@ -163,14 +163,6 @@ def single_item(ddict):
     return list(ddict.items())[0]
 
 
-def permissive_idx(ddict, key):
-    check.opt_dict_param(ddict, 'ddict')
-    check.str_param(key, 'key')
-    if ddict is None:
-        return None
-    return ddict.get(key)
-
-
 def evaluate_selector_input_value(dagster_type, incoming_value, collector, stack):
     check.inst_param(dagster_type, 'dagster_type', DagsterSelectorType)
     check.inst_param(collector, 'collector', ErrorCollector)
@@ -211,32 +203,38 @@ def evaluate_selector_input_value(dagster_type, incoming_value, collector, stack
             )
         )
         return None
-
-    if not incoming_value:
+    elif not incoming_value:
+        defined_fields = sorted(list(dagster_type.field_dict.keys()))
         if len(dagster_type.field_dict) > 1:
             collector.add_error(
                 EvaluationError(
                     stack=stack,
                     reason=DagsterEvaluationErrorReason.SELECTOR_FIELD_ERROR,
-                    message='Must specify a field if more than one defined',
+                    message=(
+                        'Must specify a field if more than one defined. Defined fields: '
+                        '{defined_fields}'
+                    ).format(defined_fields=defined_fields),
                     error_data=SelectorTypeErrorData(incoming_fields=[]),
                 )
             )
+            return None
+
         field_name, field_def = single_item(dagster_type.field_dict)
         incoming_field_value = field_def.default_value if field_def.default_provided else None
     else:
-        field_name, incoming_field_value = single_item(incoming_value)
+        check.invariant(incoming_value and len(incoming_value) == 1)
 
-    if field_name not in dagster_type.field_dict:
-        collector.add_error(
-            create_field_not_defined_error(
-                dagster_type,
-                stack,
-                set(dagster_type.field_dict.keys()),
-                field_name,
+        field_name, incoming_field_value = single_item(incoming_value)
+        if field_name not in dagster_type.field_dict:
+            collector.add_error(
+                create_field_not_defined_error(
+                    dagster_type,
+                    stack,
+                    set(dagster_type.field_dict.keys()),
+                    field_name,
+                )
             )
-        )
-        return None
+            return None
 
     parent_field = dagster_type.field_dict[field_name]
     field_value = _evaluate_config_value(
@@ -245,7 +243,11 @@ def evaluate_selector_input_value(dagster_type, incoming_value, collector, stack
         stack_with_field(stack, field_name, parent_field),
         collector,
     )
-    return {field_name: field_value}
+
+    if collector.errors:
+        return None
+
+    return dagster_type.construct_from_config_value({field_name: field_value})
 
 
 def _evaluate_config_value(dagster_type, value, stack, collector):

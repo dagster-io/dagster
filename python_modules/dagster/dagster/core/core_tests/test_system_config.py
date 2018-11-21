@@ -213,8 +213,7 @@ def test_errors():
 
     result = evaluate_config_value(context_config_type, invalid_value)
     assert not result.success
-    # two field not defined. one field missing
-    assert len(result.errors) == 3
+    assert len(result.errors) == 1
 
 
 def test_select_context():
@@ -733,45 +732,6 @@ def test_optional_and_required_context():
 
     assert env_obj.context.name == 'optional_field_context'
     assert env_obj.context.config == {'optional_field': 'foobar'}
-
-
-def test_default_optional_and_required_context():
-    pipeline_def = PipelineDefinition(
-        name='some_pipeline',
-        solids=[],
-        context_definitions={
-            'default':
-            PipelineContextDefinition(
-                context_fn=lambda *args: None,
-                config_def=ConfigDefinition(
-                    config_type=types.ConfigDictionary(
-                        name='some_optional_context_config',
-                        fields={
-                            'optional_field': types.Field(types.String, is_optional=True),
-                        },
-                    ),
-                ),
-            ),
-            'required_field_context':
-            PipelineContextDefinition(
-                context_fn=lambda *args: None,
-                config_def=ConfigDefinition(
-                    config_type=types.ConfigDictionary(
-                        name='some_required_context_config',
-                        fields={
-                            'required_field': types.Field(types.String),
-                        },
-                    ),
-                ),
-            ),
-        },
-    )
-
-    env_type = EnvironmentConfigType(pipeline_def)
-    assert env_type.field_dict['context'].is_optional
-    env_obj = throwing_evaluate_config_value(env_type, {})
-    assert env_obj.context.name == 'default'
-    assert env_obj.context.config is None
 
 
 def test_default_optional_with_default_value_and_required_context():
