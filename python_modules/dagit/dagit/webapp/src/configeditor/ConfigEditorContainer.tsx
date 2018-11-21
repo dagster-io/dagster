@@ -3,20 +3,25 @@ import gql from "graphql-tag";
 import Loading from "../Loading";
 import { ApolloClient, ApolloQueryResult } from "apollo-boost";
 import { Query, QueryResult } from "react-apollo";
-import ConfigCodeEditor from "./ConfigCodeEditor";
-import { ValidationResult } from "./codemirror-yaml/mode";
-import { ConfigCodeEditorContainerQuery } from "./types/ConfigCodeEditorContainerQuery";
-import { ConfigCodeEditorContainerCheckConfigQuery } from "./types/ConfigCodeEditorContainerCheckConfigQuery";
+import ConfigEditor from "./ConfigEditor";
+import { ValidationResult, TypeConfig } from "./codemirror-yaml/mode";
+import { ConfigEditorContainerQuery } from "./types/ConfigEditorContainerQuery";
+import { ConfigEditorContainerCheckConfigQuery } from "./types/ConfigEditorContainerCheckConfigQuery";
 
-interface IConfigCodeEditorContainerProps {
+interface IConfigEditorContainerProps {
   pipelineName: string;
   environmentTypeName: string;
-  configCode: string;
-  onConfigChange: (newValue: string) => void;
+  availableConfigs: Array<string>;
+  selectedConfig: string | null;
+  configCode: string | null;
+  onCreateConfig: (newConfig: string) => void;
+  onChangeConfig: (newValue: string) => void;
+  onSelectConfig: (newConfig: string | null) => void;
+  onDeleteConfig: (configName: string) => void;
 }
 
-export default class ConfigCodeEditorContainer extends React.Component<
-  IConfigCodeEditorContainerProps,
+export default class ConfigEditorContainer extends React.Component<
+  IConfigEditorContainerProps,
   {}
 > {
   render() {
@@ -29,7 +34,7 @@ export default class ConfigCodeEditorContainer extends React.Component<
       >
         {(
           queryResult: QueryResult<
-            ConfigCodeEditorContainerQuery,
+            ConfigEditorContainerQuery,
             { pipelineName: string }
           >
         ) => {
@@ -41,17 +46,22 @@ export default class ConfigCodeEditorContainer extends React.Component<
                   this.props.environmentTypeName
                 );
                 return (
-                  <ConfigCodeEditor
+                  <ConfigEditor
                     typeConfig={typeConfig}
-                    checkConfig={json =>
+                    configCode={this.props.configCode}
+                    availableConfigs={this.props.availableConfigs}
+                    selectedConfig={this.props.selectedConfig}
+                    onCreateConfig={this.props.onCreateConfig}
+                    onSelectConfig={this.props.onSelectConfig}
+                    onChangeConfig={this.props.onChangeConfig}
+                    onDeleteConfig={this.props.onDeleteConfig}
+                    onCheckConfig={json =>
                       checkConfig(
                         queryResult.client,
                         this.props.pipelineName,
                         json
                       )
                     }
-                    configCode={this.props.configCode}
-                    onConfigChange={this.props.onConfigChange}
                   />
                 );
               }}
@@ -64,7 +74,7 @@ export default class ConfigCodeEditorContainer extends React.Component<
 }
 
 export const CONFIG_CODE_EDITOR_CONTAINER_QUERY = gql`
-  query ConfigCodeEditorContainerQuery($pipelineName: String!) {
+  query ConfigEditorContainerQuery($pipelineName: String!) {
     types(pipelineName: $pipelineName) {
       __typename
       name
@@ -81,17 +91,9 @@ export const CONFIG_CODE_EDITOR_CONTAINER_QUERY = gql`
 `;
 
 function createTypeConfig(
-  types: ConfigCodeEditorContainerQuery,
+  types: ConfigEditorContainerQuery,
   environmentTypeName: string
-): {
-  environment: Array<{ name: string; typeName: string }>;
-  types: {
-    [name: string]: Array<{
-      name: string;
-      typeName: string;
-    }>;
-  };
-} {
+): TypeConfig {
   const typeMap = {};
   for (const type of types.types) {
     if (type.__typename === "CompositeType") {
@@ -108,7 +110,7 @@ function createTypeConfig(
 }
 
 export const CONFIG_CODE_EDITOR_CONTAINER_CHECK_CONFIG_QUERY = gql`
-  query ConfigCodeEditorContainerCheckConfigQuery(
+  query ConfigEditorContainerCheckConfigQuery(
     $pipelineName: String!
     $config: GenericScalar!
   ) {
@@ -131,9 +133,7 @@ async function checkConfig(
   config: any
 ): Promise<ValidationResult> {
   if (config !== null) {
-    const result = await client.query<
-      ConfigCodeEditorContainerCheckConfigQuery
-    >({
+    const result = await client.query<ConfigEditorContainerCheckConfigQuery>({
       query: CONFIG_CODE_EDITOR_CONTAINER_CHECK_CONFIG_QUERY,
       variables: {
         pipelineName,

@@ -1,4 +1,5 @@
 import * as React from "react";
+import produce from "immer";
 import gql from "graphql-tag";
 import styled from "styled-components";
 import { History } from "history";
@@ -22,8 +23,16 @@ interface IPipelineExplorerProps {
 interface IPipelineExplorerState {
   filter: string;
   graphVW: number;
-  configCode: string;
+  configStorage: ConfigStorage;
+  selectedConfigName: string | null;
 }
+
+type ConfigStorage = {
+  availableConfigs: Array<string>;
+  configCode: {
+    [name: string]: string;
+  };
+};
 
 export default class PipelineExplorer extends React.Component<
   IPipelineExplorerProps,
@@ -64,22 +73,65 @@ export default class PipelineExplorer extends React.Component<
   constructor(props: IPipelineExplorerProps) {
     super(props);
     const configKey = getConfigStorageKey(props.pipeline);
-    let configCode = localStorage.getItem(configKey);
-    if (!configCode || typeof configCode !== "string") {
-      configCode = "# This is config editor. Enjoy!";
+    let configJson = localStorage.getItem(configKey);
+    let configStorage: ConfigStorage;
+    if (!configJson || typeof configJson !== "string") {
+      configStorage = {
+        availableConfigs: [],
+        configCode: {}
+      };
+    } else {
+      configStorage = JSON.parse(configJson);
     }
     this.state = {
       filter: "",
       graphVW: 70,
-      configCode
+      selectedConfigName: null,
+      configStorage
     };
+    this.saveConfig(configStorage);
   }
 
-  handleConfigChange = (newValue: string) => {
-    const configKey = getConfigStorageKey(this.props.pipeline);
-    localStorage.setItem(configKey, newValue);
+  handleCreateConfig = (configName: string) => {
+    const newConfig = produce(this.state.configStorage, draftState => {
+      draftState.configCode[configName] = "# This is a new config \n\n";
+      draftState.availableConfigs.push(configName);
+    });
+    this.saveConfig(newConfig);
     this.setState({
-      configCode: newValue
+      selectedConfigName: configName,
+      configStorage: newConfig
+    });
+  };
+
+  handleChangeSelectedConfig = (newConfigName: string | null) => {
+    this.setState({
+      selectedConfigName: newConfigName
+    });
+  };
+
+  handleChangeConfig = (newValue: string) => {
+    const newConfig = produce(this.state.configStorage, draftState => {
+      if (this.state.selectedConfigName) {
+        draftState.configCode[this.state.selectedConfigName] = newValue;
+      }
+    });
+    this.saveConfig(newConfig);
+    this.setState({
+      configStorage: newConfig
+    });
+  };
+
+  handleDeleteConfig = (configName: string) => {
+    const newConfig = produce(this.state.configStorage, draftState => {
+      delete draftState.configCode[configName];
+      draftState.availableConfigs = draftState.availableConfigs.filter(
+        config => config !== configName
+      );
+    });
+    this.saveConfig(newConfig);
+    this.setState({
+      configStorage: newConfig
     });
   };
 
@@ -93,9 +145,21 @@ export default class PipelineExplorer extends React.Component<
     history.push(`/${pipeline.name}`);
   };
 
+  saveConfig(newConfig: ConfigStorage) {
+    const configKey = getConfigStorageKey(this.props.pipeline);
+    localStorage.setItem(configKey, JSON.stringify(newConfig));
+  }
+
   public render() {
     const { pipeline, solid } = this.props;
     const { filter, graphVW } = this.state;
+
+    let configCode: string | null = null;
+    if (this.state.selectedConfigName) {
+      configCode = this.state.configStorage.configCode[
+        this.state.selectedConfigName
+      ];
+    }
 
     return (
       <PipelinesContainer>
@@ -126,8 +190,13 @@ export default class PipelineExplorer extends React.Component<
               <SidebarTabbedContainer
                 pipeline={pipeline}
                 solid={solid}
-                configCode={this.state.configCode}
-                onConfigChange={this.handleConfigChange}
+                configCode={configCode}
+                selectedConfig={this.state.selectedConfigName}
+                availableConfigs={this.state.configStorage.availableConfigs}
+                onCreateConfig={this.handleCreateConfig}
+                onSelectConfig={this.handleChangeSelectedConfig}
+                onChangeConfig={this.handleChangeConfig}
+                onDeleteConfig={this.handleDeleteConfig}
                 {...parseQueryString(location.search || "")}
               />
             )}

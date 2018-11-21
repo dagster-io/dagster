@@ -24,7 +24,7 @@ Array [
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-hMqMXs hfbTqN"
+        className="sc-kEYyzF fEebBv"
       >
         <span
           className="bp3-popover-wrapper"
@@ -69,7 +69,7 @@ Array [
           </span>
         </span>
         <div
-          className="sc-kEYyzF jlZFun"
+          className="sc-kkGfuU jfZvWZ"
         >
           /
         </div>
@@ -119,10 +119,10 @@ Array [
     </div>
   </div>,
   <div
-    className="sc-dxgOiQ fawXxP"
+    className="sc-ckVGcZ ehHoqC"
   >
     <div
-      className="sc-ckVGcZ MbMYM"
+      className="sc-jKJlTe GKEVM"
       style={
         Object {
           "width": "70vw",
@@ -130,7 +130,7 @@ Array [
       }
     >
       <div
-        className="sc-eNQAEJ hOygc"
+        className="sc-hMqMXs gVsftg"
       >
         <input
           onChange={[Function]}
@@ -422,7 +422,7 @@ Array [
       />
     </div>
     <div
-      className="sc-jKJlTe fLumyX"
+      className="sc-eNQAEJ hvbIvv"
       style={
         Object {
           "width": "30vw",
@@ -430,7 +430,7 @@ Array [
       }
     >
       <div
-        className="sc-kGXeez hKehno"
+        className="sc-kpOJdX gHiCUl"
         id="TabsExample"
       >
         <a
@@ -438,7 +438,7 @@ Array [
           onClick={[Function]}
         >
           <div
-            className="sc-kpOJdX UFDXE"
+            className="sc-dxgOiQ dIPaTj"
           >
             <svg
               className="bp3-icon"
@@ -468,7 +468,7 @@ Array [
           onClick={[Function]}
         >
           <div
-            className="sc-kpOJdX eJHeWd"
+            className="sc-dxgOiQ haWjxe"
           >
             <svg
               className="bp3-icon"
@@ -498,7 +498,7 @@ Array [
           onClick={[Function]}
         >
           <div
-            className="sc-kpOJdX eJHeWd"
+            className="sc-dxgOiQ haWjxe"
           >
             <svg
               className="bp3-icon"
@@ -896,7 +896,7 @@ Array [
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-hMqMXs hfbTqN"
+        className="sc-kEYyzF fEebBv"
       >
         <span
           className="bp3-popover-wrapper"
@@ -941,7 +941,7 @@ Array [
           </span>
         </span>
         <div
-          className="sc-kEYyzF jlZFun"
+          className="sc-kkGfuU jfZvWZ"
         >
           /
         </div>
@@ -987,7 +987,7 @@ Array [
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-hMqMXs hfbTqN"
+        className="sc-kEYyzF fEebBv"
       >
         <span
           className="bp3-popover-wrapper"
@@ -1032,7 +1032,7 @@ Array [
           </span>
         </span>
         <div
-          className="sc-kEYyzF jlZFun"
+          className="sc-kkGfuU jfZvWZ"
         >
           /
         </div>
@@ -1082,10 +1082,10 @@ Array [
     </div>
   </div>,
   <div
-    className="sc-dxgOiQ fawXxP"
+    className="sc-ckVGcZ ehHoqC"
   >
     <div
-      className="sc-ckVGcZ MbMYM"
+      className="sc-jKJlTe GKEVM"
       style={
         Object {
           "width": "70vw",
@@ -1093,7 +1093,7 @@ Array [
       }
     >
       <div
-        className="sc-eNQAEJ hOygc"
+        className="sc-hMqMXs gVsftg"
       >
         <input
           onChange={[Function]}
@@ -1375,7 +1375,7 @@ Array [
       />
     </div>
     <div
-      className="sc-jKJlTe fLumyX"
+      className="sc-eNQAEJ hvbIvv"
       style={
         Object {
           "width": "30vw",
@@ -1383,7 +1383,7 @@ Array [
       }
     >
       <div
-        className="sc-kGXeez hKehno"
+        className="sc-kpOJdX gHiCUl"
         id="TabsExample"
       >
         <a
@@ -1391,7 +1391,7 @@ Array [
           onClick={[Function]}
         >
           <div
-            className="sc-kpOJdX UFDXE"
+            className="sc-dxgOiQ dIPaTj"
           >
             <svg
               className="bp3-icon"
@@ -1421,7 +1421,7 @@ Array [
           onClick={[Function]}
         >
           <div
-            className="sc-kpOJdX eJHeWd"
+            className="sc-dxgOiQ haWjxe"
           >
             <svg
               className="bp3-icon"
@@ -1451,7 +1451,7 @@ Array [
           onClick={[Function]}
         >
           <div
-            className="sc-kpOJdX eJHeWd"
+            className="sc-dxgOiQ haWjxe"
           >
             <svg
               className="bp3-icon"
@@ -1661,7 +1661,7 @@ Array [
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-hMqMXs hfbTqN"
+        className="sc-kEYyzF fEebBv"
       >
         <span
           className="bp3-popover-wrapper"
@@ -1706,7 +1706,7 @@ Array [
           </span>
         </span>
         <div
-          className="sc-kEYyzF jlZFun"
+          className="sc-kkGfuU jfZvWZ"
         >
           /
         </div>
@@ -1756,10 +1756,10 @@ Array [
     </div>
   </div>,
   <div
-    className="sc-dxgOiQ fawXxP"
+    className="sc-ckVGcZ ehHoqC"
   >
     <div
-      className="sc-ckVGcZ MbMYM"
+      className="sc-jKJlTe GKEVM"
       style={
         Object {
           "width": "70vw",
@@ -1767,7 +1767,7 @@ Array [
       }
     >
       <div
-        className="sc-eNQAEJ hOygc"
+        className="sc-hMqMXs gVsftg"
       >
         <input
           onChange={[Function]}
@@ -2059,7 +2059,7 @@ Array [
       />
     </div>
     <div
-      className="sc-jKJlTe fLumyX"
+      className="sc-eNQAEJ hvbIvv"
       style={
         Object {
           "width": "30vw",
@@ -2067,7 +2067,7 @@ Array [
       }
     >
       <div
-        className="sc-kGXeez hKehno"
+        className="sc-kpOJdX gHiCUl"
         id="TabsExample"
       >
         <a
@@ -2075,7 +2075,7 @@ Array [
           onClick={[Function]}
         >
           <div
-            className="sc-kpOJdX UFDXE"
+            className="sc-dxgOiQ dIPaTj"
           >
             <svg
               className="bp3-icon"
@@ -2105,7 +2105,7 @@ Array [
           onClick={[Function]}
         >
           <div
-            className="sc-kpOJdX eJHeWd"
+            className="sc-dxgOiQ haWjxe"
           >
             <svg
               className="bp3-icon"
@@ -2135,7 +2135,7 @@ Array [
           onClick={[Function]}
         >
           <div
-            className="sc-kpOJdX eJHeWd"
+            className="sc-dxgOiQ haWjxe"
           >
             <svg
               className="bp3-icon"
@@ -2533,7 +2533,7 @@ Array [
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-hMqMXs hfbTqN"
+        className="sc-kEYyzF fEebBv"
       >
         <span
           className="bp3-popover-wrapper"
@@ -2578,7 +2578,7 @@ Array [
           </span>
         </span>
         <div
-          className="sc-kEYyzF jlZFun"
+          className="sc-kkGfuU jfZvWZ"
         >
           /
         </div>

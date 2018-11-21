@@ -7,7 +7,7 @@ import TypeExplorerContainer from "./configeditor/TypeExplorerContainer";
 import TypeListContainer from "./configeditor/TypeListContainer";
 import SidebarPipelineInfo from "./SidebarPipelineInfo";
 import SidebarSolidInfo from "./SidebarSolidInfo";
-import ConfigCodeEditorContainer from "./configeditor/ConfigCodeEditorContainer";
+import ConfigEditorContainer from "./configeditor/ConfigEditorContainer";
 import { SidebarTabbedContainerPipelineFragment } from "./types/SidebarTabbedContainerPipelineFragment";
 import { SidebarTabbedContainerSolidFragment } from "./types/SidebarTabbedContainerSolidFragment";
 
@@ -17,8 +17,13 @@ interface ISidebarTabbedContainerProps {
   editor: string | undefined;
   pipeline: SidebarTabbedContainerPipelineFragment;
   solid: SidebarTabbedContainerSolidFragment | undefined;
-  configCode: string;
-  onConfigChange: (newValue: string) => void;
+  availableConfigs: Array<string>;
+  selectedConfig: string | null;
+  configCode: string | null;
+  onCreateConfig: (newConfig: string) => void;
+  onChangeConfig: (newValue: string) => void;
+  onSelectConfig: (newConfig: string | null) => void;
+  onDeleteConfig: (configName: string) => void;
 }
 
 interface ITabInfo {
@@ -92,11 +97,16 @@ export default class SidebarTabbedContainer extends React.Component<
     } else if (editor) {
       activeTab = "editor";
       content = (
-        <ConfigCodeEditorContainer
+        <ConfigEditorContainer
           pipelineName={this.props.pipeline.name}
           environmentTypeName={this.props.pipeline.environmentType.name}
+          availableConfigs={this.props.availableConfigs}
+          selectedConfig={this.props.selectedConfig}
           configCode={this.props.configCode}
-          onConfigChange={this.props.onConfigChange}
+          onCreateConfig={this.props.onCreateConfig}
+          onChangeConfig={this.props.onChangeConfig}
+          onSelectConfig={this.props.onSelectConfig}
+          onDeleteConfig={this.props.onDeleteConfig}
         />
       );
     } else if (solid) {

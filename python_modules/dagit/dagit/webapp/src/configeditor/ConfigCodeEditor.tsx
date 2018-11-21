@@ -26,9 +26,9 @@ import { debounce } from "../Util";
 
 interface IConfigEditorProps {
   typeConfig: YamlModeTypeConfig;
-  checkConfig: YamlModeLintJson;
   configCode: string;
-  onConfigChange: (newValue: string) => void;
+  onChangeConfig: (newValue: string) => void;
+  onCheckConfig: YamlModeLintJson;
 }
 
 const AUTO_COMPLETE_AFTER_KEY = /^[a-zA-Z0-9_@(]$/;
@@ -54,7 +54,7 @@ export default class ConfigCodeEditor extends React.Component<
             showCursorWhenSelecting: true,
             lintOnChange: false,
             lint: {
-              checkConfig: this.props.checkConfig,
+              checkConfig: this.props.onCheckConfig,
               lintOnChange: false,
               onUpdateLinting: false
             },
@@ -91,7 +91,7 @@ export default class ConfigCodeEditor extends React.Component<
           } as any
         }
         onBeforeChange={(editor, data, value) => {
-          this.props.onConfigChange(value);
+          this.props.onChangeConfig(value);
         }}
         onChange={(editor: any) => {
           performLint(editor);
