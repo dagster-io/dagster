@@ -59,7 +59,7 @@ def test_sql_create_tables():
 
     pipeline = create_mem_sql_pipeline_context_tuple(solids=[create_all_tables_solids])
 
-    pipeline_result = execute_pipeline(pipeline)
+    pipeline_result = execute_pipeline(pipeline, {'context': {'default': {}}})
     assert pipeline_result.success
 
     assert set(pipeline_engine(pipeline_result).table_names()) == set(
@@ -83,7 +83,7 @@ def test_sql_populate_tables():
         }
     )
 
-    pipeline_result = execute_pipeline(pipeline)
+    pipeline_result = execute_pipeline(pipeline, {'context': {'default': {}}})
 
     assert pipeline_result.success
 
@@ -134,7 +134,7 @@ def create_full_pipeline():
 def test_full_in_memory_pipeline():
 
     pipeline = create_full_pipeline()
-    pipeline_result = execute_pipeline(pipeline)
+    pipeline_result = execute_pipeline(pipeline, {'context': {'default': {}}})
     assert pipeline_result.success
 
     engine = pipeline_engine(pipeline_result)

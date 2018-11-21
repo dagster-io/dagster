@@ -8,6 +8,7 @@ from dagster.core.evaluator import (
     evaluate_config_value,
 )
 
+
 def assert_success(result, expected_value):
     assert result.success
     assert result.value == expected_value

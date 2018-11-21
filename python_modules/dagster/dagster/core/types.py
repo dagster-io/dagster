@@ -52,6 +52,8 @@ class DagsterType(object):
         check.not_implemented('Must implement in subclass')
 
     def construct_from_config_value(self, config_value):
+        '''This function is called *after* the config value has been processed
+        (error-checked and default values applied)'''
         return config_value
 
     def iterate_types(self):
@@ -348,6 +350,10 @@ class DagsterCompositeType(DagsterType):
     @property
     def field_name_set(self):
         return set(self.field_dict.keys())
+
+    def field_named(self, name):
+        check.str_param(name, 'name')
+        return self.field_dict[name]
 
 
 class DagsterSelectorType(DagsterCompositeType):

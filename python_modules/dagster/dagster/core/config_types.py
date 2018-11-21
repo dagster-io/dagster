@@ -21,6 +21,7 @@ from .evaluator import throwing_evaluate_config_value
 from .types import (
     Bool,
     DagsterCompositeType,
+    DagsterSelectorType,
     DagsterType,
     DagsterTypeAttributes,
 )
@@ -94,7 +95,7 @@ def single_item(ddict):
     return list(ddict.items())[0]
 
 
-class ContextConfigType(DagsterCompositeType):
+class ContextConfigType(DagsterSelectorType):
     def __init__(self, pipeline_name, context_definitions):
         check.str_param(pipeline_name, 'pipeline_name')
         check.dict_param(
@@ -129,8 +130,6 @@ class ContextConfigType(DagsterCompositeType):
         )
 
     def construct_from_config_value(self, config_value):
-        if not config_value:
-            return None
         context_name, context_value = single_item(config_value)
         return Context(name=context_name, config=context_value['config'])
 
