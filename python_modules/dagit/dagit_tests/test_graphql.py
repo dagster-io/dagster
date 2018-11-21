@@ -369,35 +369,44 @@ def test_more_complicated_multiple_errors():
     assert len(result.data['isPipelineConfigValid']['errors']) == 4
 
     missing_error_one = find_error(
-        result, ['solids', 'a_solid_with_config', 'config'], 'MISSING_REQUIRED_FIELD',
+        result,
+        ['solids', 'a_solid_with_config', 'config'],
+        'MISSING_REQUIRED_FIELD',
     )
     assert ['solids', 'a_solid_with_config', 'config'] == field_stack(missing_error_one)
     assert missing_error_one['reason'] == 'MISSING_REQUIRED_FIELD'
     assert missing_error_one['errorData']['field']['name'] == 'field_one'
 
     not_defined_one = find_error(
-        result, ['solids', 'a_solid_with_config', 'config'], 'FIELD_NOT_DEFINED',
+        result,
+        ['solids', 'a_solid_with_config', 'config'],
+        'FIELD_NOT_DEFINED',
     )
     assert ['solids', 'a_solid_with_config', 'config'] == field_stack(not_defined_one)
     assert not_defined_one['reason'] == 'FIELD_NOT_DEFINED'
     assert not_defined_one['errorData']['fieldName'] == 'extra_one'
 
     runtime_type_error = find_error(
-        result, ['solids', 'a_solid_with_config', 'config', 'nested_field', 'field_four_str'], 'RUNTIME_TYPE_MISMATCH',
+        result,
+        ['solids', 'a_solid_with_config', 'config', 'nested_field', 'field_four_str'],
+        'RUNTIME_TYPE_MISMATCH',
     )
-    assert ['solids', 'a_solid_with_config', 'config', 'nested_field', 'field_four_str'] == field_stack(runtime_type_error)
+    assert ['solids', 'a_solid_with_config', 'config', 'nested_field',
+            'field_four_str'] == field_stack(runtime_type_error)
     assert runtime_type_error['reason'] == 'RUNTIME_TYPE_MISMATCH'
     assert runtime_type_error['errorData']['valueRep'] == '23434'
     assert runtime_type_error['errorData']['type']['name'] == 'String'
 
     not_defined_two = find_error(
-        result, ['solids', 'a_solid_with_config', 'config', 'nested_field'], 'FIELD_NOT_DEFINED',
+        result,
+        ['solids', 'a_solid_with_config', 'config', 'nested_field'],
+        'FIELD_NOT_DEFINED',
     )
 
-    assert ['solids', 'a_solid_with_config', 'config', 'nested_field'] == field_stack(not_defined_two)
+    assert ['solids', 'a_solid_with_config', 'config',
+            'nested_field'] == field_stack(not_defined_two)
     assert not_defined_two['reason'] == 'FIELD_NOT_DEFINED'
     assert not_defined_two['errorData']['fieldName'] == 'extra_two'
-
 
     # TODO: two more errors
 
