@@ -137,8 +137,9 @@ def stack_with_field(stack, field_name, field_def):
     return EvaluationStack(entries=stack.entries + [EvaluationStackEntry(field_name, field_def)])
 
 
-def throwing_evaluate_config_value(dagster_type, value):
-    result = evaluate_config_value(dagster_type, value)
+def throwing_evaluate_config_value(dagster_type, config_value):
+    check.inst_param(dagster_type, 'dagster_type', DagsterType)
+    result = evaluate_config_value(dagster_type, config_value)
     if not result.success:
         raise DagsterEvaluateConfigValueError(
             result.errors[0].stack,
@@ -147,10 +148,15 @@ def throwing_evaluate_config_value(dagster_type, value):
     return result.value
 
 
-def evaluate_config_value(dagster_type, value):
+def evaluate_config_value(dagster_type, config_value):
     check.inst_param(dagster_type, 'dagster_type', DagsterType)
     collector = ErrorCollector()
-    value = _evaluate_config_value(dagster_type, value, EvaluationStack(entries=[]), collector)
+    value = _evaluate_config_value(
+        dagster_type,
+        config_value,
+        EvaluationStack(entries=[]),
+        collector,
+    )
     if collector.errors:
         return EvaluateValueResult(success=False, value=None, errors=collector.errors)
     else:
@@ -163,30 +169,30 @@ def single_item(ddict):
     return list(ddict.items())[0]
 
 
-def evaluate_selector_input_value(dagster_type, incoming_value, collector, stack):
+def evaluate_selector_config_value(dagster_type, config_value, collector, stack):
     check.inst_param(dagster_type, 'dagster_type', DagsterSelectorType)
     check.inst_param(collector, 'collector', ErrorCollector)
     check.inst_param(stack, 'stack', EvaluationStack)
 
-    if incoming_value and not isinstance(incoming_value, dict):
+    if config_value and not isinstance(config_value, dict):
         collector.add_error(
             EvaluationError(
                 stack=stack,
                 reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
                 message='Value for selector type {type_name} must be a dict got {value}'.format(
                     type_name=dagster_type.name,
-                    value=incoming_value,
+                    value=config_value,
                 ),
                 error_data=RuntimeMismatchErrorData(
                     dagster_type=dagster_type,
-                    value_rep=repr(incoming_value),
+                    value_rep=repr(config_value),
                 ),
             )
         )
         return None
 
-    if incoming_value and len(incoming_value) > 1:
-        incoming_fields = sorted(list(incoming_value.keys()))
+    if config_value and len(config_value) > 1:
+        incoming_fields = sorted(list(config_value.keys()))
         defined_fields = sorted(list(dagster_type.field_dict.keys()))
         collector.add_error(
             EvaluationError(
@@ -203,7 +209,7 @@ def evaluate_selector_input_value(dagster_type, incoming_value, collector, stack
             )
         )
         return None
-    elif not incoming_value:
+    elif not config_value:
         defined_fields = sorted(list(dagster_type.field_dict.keys()))
         if len(dagster_type.field_dict) > 1:
             collector.add_error(
@@ -222,9 +228,9 @@ def evaluate_selector_input_value(dagster_type, incoming_value, collector, stack
         field_name, field_def = single_item(dagster_type.field_dict)
         incoming_field_value = field_def.default_value if field_def.default_provided else None
     else:
-        check.invariant(incoming_value and len(incoming_value) == 1)
+        check.invariant(config_value and len(config_value) == 1)
 
-        field_name, incoming_field_value = single_item(incoming_value)
+        field_name, incoming_field_value = single_item(config_value)
         if field_name not in dagster_type.field_dict:
             collector.add_error(
                 create_field_not_defined_error(
@@ -250,70 +256,70 @@ def evaluate_selector_input_value(dagster_type, incoming_value, collector, stack
     return dagster_type.construct_from_config_value({field_name: field_value})
 
 
-def _evaluate_config_value(dagster_type, value, stack, collector):
+def _evaluate_config_value(dagster_type, config_value, stack, collector):
     check.inst_param(dagster_type, 'dagster_type', DagsterType)
     check.inst_param(stack, 'stack', EvaluationStack)
     check.inst_param(collector, 'collector', ErrorCollector)
 
     if isinstance(dagster_type, DagsterScalarType):
-        if dagster_type.is_python_valid_value(value):
-            return dagster_type.coerce_runtime_value(value)
+        if dagster_type.is_python_valid_value(config_value):
+            return config_value
         else:
             collector.add_error(
                 EvaluationError(
                     stack=stack,
                     reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
                     message='Value {value} is not valid for type {type_name}'.format(
-                        value=value,
+                        value=config_value,
                         type_name=dagster_type.name,
                     ),
                     error_data=RuntimeMismatchErrorData(
                         dagster_type=dagster_type,
-                        value_rep=repr(value),
+                        value_rep=repr(config_value),
                     ),
                 )
             )
             return None
     elif isinstance(dagster_type, DagsterSelectorType):
-        return evaluate_selector_input_value(dagster_type, value, collector, stack)
+        return evaluate_selector_config_value(dagster_type, config_value, collector, stack)
     elif isinstance(dagster_type, DagsterCompositeType):
-        return evaluate_composite_input_value(dagster_type, value, collector, stack)
+        return evaluate_composite_config_value(dagster_type, config_value, collector, stack)
     elif isinstance(dagster_type, PythonObjectType):
         check.failed('PythonObjectType should not be used in a config hierarchy')
     elif dagster_type == Any:
-        return value
+        return config_value
     else:
         check.failed('Unknown type {name}'.format(name=dagster_type.name))
 
 
-def evaluate_composite_input_value(dagster_composite_type, incoming_value, collector, stack):
+def evaluate_composite_config_value(dagster_composite_type, config_value, collector, stack):
     check.inst_param(dagster_composite_type, 'dagster_composite_type', DagsterCompositeType)
     check.inst_param(collector, 'collector', ErrorCollector)
     check.inst_param(stack, 'stack', EvaluationStack)
 
-    if incoming_value and not isinstance(incoming_value, dict):
+    if config_value and not isinstance(config_value, dict):
         collector.add_error(
             EvaluationError(
                 stack=stack,
                 reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
                 message='Value for composite type {type_name} must be a dict got {value}'.format(
                     type_name=dagster_composite_type.name,
-                    value=incoming_value,
+                    value=config_value,
                 ),
                 error_data=RuntimeMismatchErrorData(
                     dagster_type=dagster_composite_type,
-                    value_rep=repr(incoming_value),
+                    value_rep=repr(config_value),
                 ),
             )
         )
         return None
 
-    incoming_value = check.opt_dict_param(incoming_value, 'incoming_value', key_type=str)
+    config_value = check.opt_dict_param(config_value, 'incoming_value', key_type=str)
 
     field_dict = dagster_composite_type.field_dict
 
     defined_fields = set(field_dict.keys())
-    incoming_fields = set(incoming_value.keys())
+    incoming_fields = set(config_value.keys())
 
     local_errors = []
 
@@ -350,7 +356,7 @@ def evaluate_composite_input_value(dagster_composite_type, incoming_value, colle
         if expected_field in incoming_fields:
             evaluated_value = _evaluate_config_value(
                 field_def.dagster_type,
-                incoming_value[expected_field],
+                config_value[expected_field],
                 stack_with_field(stack, expected_field, field_def),
                 collector,
             )
