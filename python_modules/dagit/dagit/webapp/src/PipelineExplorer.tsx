@@ -74,15 +74,22 @@ export default class PipelineExplorer extends React.Component<
     super(props);
     const configKey = getConfigStorageKey(props.pipeline);
     let configJson = localStorage.getItem(configKey);
-    let configStorage: ConfigStorage;
-    if (!configJson || typeof configJson !== "string") {
+    let configStorage = null;
+    try {
+      configStorage = JSON.parse(configJson || "");
+    } catch (e) {}
+
+    if (
+      !configStorage ||
+      !configStorage.availableConfigs ||
+      !configStorage.configCode
+    ) {
       configStorage = {
         availableConfigs: [],
         configCode: {}
       };
-    } else {
-      configStorage = JSON.parse(configJson);
     }
+
     this.state = {
       filter: "",
       graphVW: 70,
