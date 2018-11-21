@@ -307,21 +307,25 @@ def define_more_complicated_nested_config():
         ],
     )
 
+
 def define_context_config_pipeline():
     return PipelineDefinition(
         name='context_config_pipeline',
         solids=[],
         context_definitions={
-            'context_one' : PipelineContextDefinition(
+            'context_one':
+            PipelineContextDefinition(
                 context_fn=lambda *args, **kwargs: None,
                 config_def=ConfigDefinition(types.String),
             ),
-            'context_two' : PipelineContextDefinition(
+            'context_two':
+            PipelineContextDefinition(
                 context_fn=lambda *args, **kwargs: None,
                 config_def=ConfigDefinition(types.Int),
             ),
         }
     )
+
 
 def test_context_config_works():
     result = execute_dagster_graphql(
@@ -331,8 +335,8 @@ def test_context_config_works():
             'pipelineName': 'context_config_pipeline',
             'config': {
                 'context': {
-                    'context_one' : {
-                        'config' : 'kj23k4j3'
+                    'context_one': {
+                        'config': 'kj23k4j3'
                     },
                 },
             },
@@ -342,8 +346,7 @@ def test_context_config_works():
     assert not result.errors
     assert result.data
     assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationValid'
-    assert result.data['isPipelineConfigValid']['pipeline']['name'
-                                                            ] == 'context_config_pipeline'
+    assert result.data['isPipelineConfigValid']['pipeline']['name'] == 'context_config_pipeline'
 
     result = execute_dagster_graphql(
         define_repo(),
@@ -352,8 +355,8 @@ def test_context_config_works():
             'pipelineName': 'context_config_pipeline',
             'config': {
                 'context': {
-                    'context_two' : {
-                        'config' : 38934
+                    'context_two': {
+                        'config': 38934
                     },
                 },
             },
@@ -363,8 +366,7 @@ def test_context_config_works():
     assert not result.errors
     assert result.data
     assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationValid'
-    assert result.data['isPipelineConfigValid']['pipeline']['name'
-                                                            ] == 'context_config_pipeline'
+    assert result.data['isPipelineConfigValid']['pipeline']['name'] == 'context_config_pipeline'
 
 
 def test_context_config_selector_error():
@@ -386,6 +388,7 @@ def test_context_config_selector_error():
     assert error_data['reason'] == 'SELECTOR_FIELD_ERROR'
     assert error_data['incomingFields'] == []
 
+
 def test_context_config_wrong_selector():
     result = execute_dagster_graphql(
         define_repo(),
@@ -393,7 +396,9 @@ def test_context_config_wrong_selector():
         {
             'pipelineName': 'context_config_pipeline',
             'config': {
-                'context': {'not_defined': {}},
+                'context': {
+                    'not_defined': {}
+                },
             },
         },
     )
@@ -405,6 +410,7 @@ def test_context_config_wrong_selector():
     assert error_data['reason'] == 'FIELD_NOT_DEFINED'
     assert error_data['fieldName'] == 'not_defined'
 
+
 def test_context_config_multiple_selectors():
     result = execute_dagster_graphql(
         define_repo(),
@@ -414,10 +420,10 @@ def test_context_config_multiple_selectors():
             'config': {
                 'context': {
                     'context_one': {
-                        'config' : 'kdjfd'
+                        'config': 'kdjfd'
                     },
                     'context_two': {
-                        'config' : 123,
+                        'config': 123,
                     },
                 },
             },
