@@ -21,6 +21,7 @@ from .errors import DagsterInvalidDefinitionError
 from .execution_context import ExecutionContext
 
 from .types import (
+    FIELD_NO_DEFAULT_PROVIDED,
     ConfigDictionary,
     IsScopedConfigType,
     ScopedConfigInfo,
@@ -1087,7 +1088,7 @@ def build_config_dict_type(name_stack, fields, scoped_config_info=None):
     return ConfigDictionary('.'.join(name_stack + ['ConfigDict']), field_dict, scoped_config_info)
 
 
-class ConfigDefinition(object):
+class ConfigDefinition(Field):
     '''Represents the configuration of an entity in Dagster
 
     Broadly defined, configs determine how computations within dagster interact with
@@ -1198,11 +1199,26 @@ class ConfigDefinition(object):
         '''
         return ConfigDefinition(types.ConfigDictionary(name, field_dict))
 
-    def __init__(self, config_type=types.Any, description=None):
+    def __init__(
+        self,
+        config_type=types.Any,
+        default_value=FIELD_NO_DEFAULT_PROVIDED,
+        is_optional=False,
+        description=None,
+    ):
+
         '''Construct a ConfigDefinition
 
         Args:
             config_type (DagsterType): Type the determines shape and values of config'''
+
+        super(ConfigDefinition, self).__init__(
+            config_type,
+            default_value=default_value,
+            is_optional=is_optional,
+            description=description,
+        )
+
         self.config_type = check.inst_param(config_type, 'config_type', DagsterType)
         self.description = check.opt_str_param(description, 'description')
 
