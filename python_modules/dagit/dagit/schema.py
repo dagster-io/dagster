@@ -54,33 +54,38 @@ def non_null_list(ttype):
 def create_graphql_error(error):
     check.inst_param(error, 'error', dagster.core.evaluator.EvaluationError)
 
-    common_args = dict(
-        message=error.message,
-        path=[],  # TODO: remove
-        stack=error.stack,
-        reason=error.reason,
-    )
-
     if isinstance(error.error_data, dagster.core.evaluator.RuntimeMismatchErrorData):
         return RuntimeMismatchConfigError(
+            message=error.message,
+            path=[],  # TODO: remove
+            stack=error.stack,
+            reason=error.reason,
             type=error.error_data.dagster_type,
             value_rep=error.error_data.value_rep,
-            **common_args,
         )
     elif isinstance(error.error_data, dagster.core.evaluator.MissingFieldErrorData):
         return MissingFieldConfigError(
+            message=error.message,
+            path=[],  # TODO: remove
+            stack=error.stack,
+            reason=error.reason,
             field=TypeField(name=error.error_data.field_name, field=error.error_data.field_def),
-            **common_args,
         )
     elif isinstance(error.error_data, dagster.core.evaluator.FieldNotDefinedErrorData):
         return FieldNotDefinedConfigError(
+            message=error.message,
+            path=[],  # TODO: remove
+            stack=error.stack,
+            reason=error.reason,
             field_name=error.error_data.field_name,
-            **common_args,
         )
     elif isinstance(error.error_data, dagster.core.evaluator.SelectorTypeErrorData):
         return SelectorTypeConfigError(
+            message=error.message,
+            path=[],  # TODO: remove
+            stack=error.stack,
+            reason=error.reason,
             incoming_fields=error.error_data.incoming_fields,
-            **common_args,
         )
     else:
         check.failed(
