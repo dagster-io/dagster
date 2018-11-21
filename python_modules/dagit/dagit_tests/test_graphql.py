@@ -115,21 +115,19 @@ query PipelineQuery($pipelineName: String!, $config: GenericScalar)
         ... on PipelineConfigValidationInvalid {
             pipeline { name }
             errors {
-                errorData {
-                    __typename
-                    ... on RuntimeMismatchErrorData {
-                        type { name } 
-                        valueRep 
-                    }
-                    ... on MissingFieldErrorData {
-                        field { name }
-                    }
-                    ... on FieldNotDefinedErrorData {
-                        fieldName
-                    }
-                    ... on SelectorTypeErrorData {
-                        incomingFields
-                    }
+                __typename
+                ... on RuntimeMismatchConfigError {
+                    type { name }
+                    valueRep
+                }
+                ... on MissingFieldConfigError {
+                    field { name }
+                }
+                ... on FieldNotDefinedConfigError {
+                    fieldName
+                }
+                ... on SelectorTypeConfigError {
+                    incomingFields
                 }
                 message
                 reason
@@ -206,8 +204,8 @@ def test_basic_invalid_config_type_mismatch():
     assert error_data['stack']
     assert error_data['stack']['entries']
     assert error_data['reason'] == 'RUNTIME_TYPE_MISMATCH'
-    assert error_data['errorData']['valueRep'] == '123'
-    assert error_data['errorData']['type']['name'] == 'Path'
+    assert error_data['valueRep'] == '123'
+    assert error_data['type']['name'] == 'Path'
 
     assert ['solids', 'load_num_csv', 'config', 'path'] == field_stack(error_data)
 
@@ -237,7 +235,7 @@ def test_basic_invalid_config_missing_field():
 
     assert ['solids', 'load_num_csv', 'config'] == field_stack(error_data)
     assert error_data['reason'] == 'MISSING_REQUIRED_FIELD'
-    assert error_data['errorData']['field']['name'] == 'path'
+    assert error_data['field']['name'] == 'path'
 
 
 def test_basic_invalid_not_defined_field():
@@ -267,7 +265,7 @@ def test_basic_invalid_not_defined_field():
     error_data = result.data['isPipelineConfigValid']['errors'][0]
     assert ['solids', 'load_num_csv', 'config'] == field_stack(error_data)
     assert error_data['reason'] == 'FIELD_NOT_DEFINED'
-    assert error_data['errorData']['fieldName'] == 'extra'
+    assert error_data['fieldName'] == 'extra'
 
 
 def define_more_complicated_nested_config():
@@ -375,7 +373,7 @@ def test_more_complicated_multiple_errors():
     )
     assert ['solids', 'a_solid_with_config', 'config'] == field_stack(missing_error_one)
     assert missing_error_one['reason'] == 'MISSING_REQUIRED_FIELD'
-    assert missing_error_one['errorData']['field']['name'] == 'field_one'
+    assert missing_error_one['field']['name'] == 'field_one'
 
     not_defined_one = find_error(
         result,
@@ -384,7 +382,7 @@ def test_more_complicated_multiple_errors():
     )
     assert ['solids', 'a_solid_with_config', 'config'] == field_stack(not_defined_one)
     assert not_defined_one['reason'] == 'FIELD_NOT_DEFINED'
-    assert not_defined_one['errorData']['fieldName'] == 'extra_one'
+    assert not_defined_one['fieldName'] == 'extra_one'
 
     runtime_type_error = find_error(
         result,
@@ -394,8 +392,8 @@ def test_more_complicated_multiple_errors():
     assert ['solids', 'a_solid_with_config', 'config', 'nested_field',
             'field_four_str'] == field_stack(runtime_type_error)
     assert runtime_type_error['reason'] == 'RUNTIME_TYPE_MISMATCH'
-    assert runtime_type_error['errorData']['valueRep'] == '23434'
-    assert runtime_type_error['errorData']['type']['name'] == 'String'
+    assert runtime_type_error['valueRep'] == '23434'
+    assert runtime_type_error['type']['name'] == 'String'
 
     not_defined_two = find_error(
         result,
@@ -406,7 +404,7 @@ def test_more_complicated_multiple_errors():
     assert ['solids', 'a_solid_with_config', 'config',
             'nested_field'] == field_stack(not_defined_two)
     assert not_defined_two['reason'] == 'FIELD_NOT_DEFINED'
-    assert not_defined_two['errorData']['fieldName'] == 'extra_two'
+    assert not_defined_two['fieldName'] == 'extra_two'
 
     # TODO: two more errors
 

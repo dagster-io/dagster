@@ -51,6 +51,43 @@ def non_null_list(ttype):
     return graphene.NonNull(graphene.List(graphene.NonNull(ttype)))
 
 
+def create_graphql_error(error):
+    check.inst_param(error, 'error', dagster.core.evaluator.EvaluationError)
+
+    common_args = dict(
+        message=error.message,
+        path=[],  # TODO: remove
+        stack=error.stack,
+        reason=error.reason,
+    )
+
+    if isinstance(error.error_data, dagster.core.evaluator.RuntimeMismatchErrorData):
+        return RuntimeMismatchConfigError(
+            type=error.error_data.dagster_type,
+            value_rep=error.error_data.value_rep,
+            **common_args,
+        )
+    elif isinstance(error.error_data, dagster.core.evaluator.MissingFieldErrorData):
+        return MissingFieldConfigError(
+            field=TypeField(name=error.error_data.field_name, field=error.error_data.field_def),
+            **common_args,
+        )
+    elif isinstance(error.error_data, dagster.core.evaluator.FieldNotDefinedErrorData):
+        return FieldNotDefinedConfigError(
+            field_name=error.error_data.field_name,
+            **common_args,
+        )
+    elif isinstance(error.error_data, dagster.core.evaluator.SelectorTypeErrorData):
+        return SelectorTypeConfigError(
+            incoming_fields=error.error_data.incoming_fields,
+            **common_args,
+        )
+    else:
+        check.failed(
+            'Error type not supported {error_data}'.format(error_data=repr(error.error_data))
+        )
+
+
 class Query(graphene.ObjectType):
     pipeline = graphene.Field(lambda: Pipeline, name=graphene.NonNull(graphene.String))
     pipelineOrError = graphene.Field(
@@ -120,18 +157,10 @@ class Query(graphene.ObjectType):
         if result.success:
             return PipelineConfigValidationValid(pipeline=Pipeline(pipeline))
         else:
-            errors = []
-            for error in result.errors:
-                errors.append(
-                    PipelineConfigValidationError(
-                        message=error.message,
-                        path=[],  # TODO: remove
-                        stack=error.stack,
-                        reason=error.reason,
-                        error_data=error.error_data,
-                    )
-                )
-            return PipelineConfigValidationInvalid(pipeline=Pipeline(pipeline), errors=errors)
+            return PipelineConfigValidationInvalid(
+                pipeline=Pipeline(pipeline),
+                errors=map(create_graphql_error, result.errors),
+            )
 
 
 class Pipeline(graphene.ObjectType):
@@ -689,40 +718,54 @@ class ConfigErrorData(graphene.Union):
         )
 
 
-class PipelineConfigValidationError(graphene.ObjectType):
+class PipelineConfigValidationError(graphene.Interface):
     message = graphene.NonNull(graphene.String)
     path = non_null_list(graphene.String)
     stack = graphene.NonNull(EvaluationStack)
     reason = graphene.NonNull(EvaluationErrorReason)
-    error_data = graphene.NonNull(ConfigErrorData)
 
-    def resolve_error_data(self, _info):
-        # false positives on this because self is weird in graphene
-        # the field assignments above end up masking the actual
-        # value of the field at runtime from pylint's perspective
 
-        # pylint: disable=E1101
+class RuntimeMismatchConfigError(graphene.ObjectType):
+    class Meta:
+        interfaces = (PipelineConfigValidationError, )
 
-        error_data = self.error_data
+    type = graphene.NonNull(Type)
+    value_rep = graphene.Field(graphene.String)
 
-        if isinstance(error_data, dagster.core.evaluator.RuntimeMismatchErrorData):
-            return RuntimeMismatchErrorData(
-                type=error_data.dagster_type,
-                value_rep=error_data.value_rep,
-            )
-        elif isinstance(error_data, dagster.core.evaluator.MissingFieldErrorData):
-            return MissingFieldErrorData(
-                field=TypeField(name=error_data.field_name, field=error_data.field_def)
-            )
-        elif isinstance(error_data, dagster.core.evaluator.FieldNotDefinedErrorData):
-            return FieldNotDefinedErrorData(field_name=error_data.field_name)
-        elif isinstance(error_data, dagster.core.evaluator.SelectorTypeErrorData):
-            return SelectorTypeErrorData(incoming_fields=error_data.incoming_fields)
-        else:
-            check.failed(
-                'Error type not supported {error_data}'.format(error_data=repr(error_data))
-            )
+    def resolve_type(self, _info):
+        return Type.from_dagster_type(self.type)
+
+
+class MissingFieldConfigError(graphene.ObjectType):
+    class Meta:
+        interfaces = (PipelineConfigValidationError, )
+
+    field = graphene.NonNull(TypeField)
+
+
+class FieldNotDefinedConfigError(graphene.ObjectType):
+    class Meta:
+        interfaces = (PipelineConfigValidationError, )
+
+    field_name = graphene.NonNull(graphene.String)
+
+
+class SelectorTypeConfigError(graphene.ObjectType):
+    class Meta:
+        interfaces = (PipelineConfigValidationError, )
+
+    incoming_fields = non_null_list(graphene.String)
 
 
 def create_schema():
-    return graphene.Schema(query=Query, types=[RegularType, CompositeType])
+    return graphene.Schema(
+        query=Query,
+        types=[
+            RegularType,
+            CompositeType,
+            RuntimeMismatchConfigError,
+            MissingFieldConfigError,
+            FieldNotDefinedConfigError,
+            SelectorTypeConfigError,
+        ]
+    )
