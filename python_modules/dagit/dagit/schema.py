@@ -167,8 +167,8 @@ class Query(graphene.ObjectType):
         repository = info.context['repository_container'].repository
         pipeline = repository.get_pipeline(pipelineName)
         return sorted(
-            [Type.from_dagster_type(type) for type in pipeline.all_types()],
-            key=lambda type: type.name
+            [Type.from_dagster_type(type_) for type_ in pipeline.all_types()],
+            key=lambda type_: type_.name
         )
 
     def resolve_isPipelineConfigValid(self, info, executionParams):
