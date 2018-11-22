@@ -51,7 +51,7 @@ def resolve_pipelines_implementation(_root_obj, info):
     return pipelines
 
 
-def result_or_error(root_obj, fn, info, *argv):
+def result_or_python_error(root_obj, fn, info, *argv):
     error = info.context['repository_container'].error
     if error != None:
         return PythonError(*error)
@@ -61,7 +61,7 @@ def result_or_error(root_obj, fn, info, *argv):
         return PythonError(*sys.exc_info())
 
 
-def results_or_errors(root_obj, fn, info, *argv):
+def results_or_python_errors(root_obj, fn, info, *argv):
     error = info.context['repository_container'].error
     if error != None:
         return [PythonError(*error)]
@@ -148,15 +148,22 @@ class Query(graphene.ObjectType):
         args={'executionParams': graphene.Argument(graphene.NonNull(PipelineExecutionParams))},
     )
 
-    def resolve_execution_plan(self, info, executionParams):
+    def resolve_executionPlan(self, info, executionParams):
         execution_params = PipelineExecutionParams.validate(executionParams)
         repository = info.context['repository_container'].repository
+        if not repository.has_pipeline(execution_params.pipeline_name):
+            return PipelineNotFoundError(execution_params.pipeline_name)
+
         pipeline = repository.get_pipeline(execution_params.pipeline_name)
         result = evaluate_config_value(pipeline.environment_type, execution_params.config)
+
         if result.success:
-            return ExecutionPlan(self, create_execution_plan(pipeline, result.value))
+            return ExecutionPlan(Pipeline(pipeline), create_execution_plan(pipeline, result.value))
         else:
-            check.failed('TODO')
+            return PipelineConfigValidationInvalid(
+                pipeline=Pipeline(pipeline),
+                errors=map(create_graphql_error, result.errors),
+            )
 
     def resolve_pipeline(self, info, name):
         check.str_param(name, 'name')
@@ -164,14 +171,20 @@ class Query(graphene.ObjectType):
         return Pipeline(repository.get_pipeline(name))
 
     def resolve_pipelineOrError(self, info, name):
-        return result_or_error(self, self.resolve_pipeline, info, name)
+        def _fn(_root_obj, info, name):
+            repository = info.context['repository_container'].repository
+            if not repository.has_pipeline(name):
+                return PipelineNotFoundError(pipeline_name=name)
+            return Query.resolve_pipeline(None, info, name)
+
+        return result_or_python_error(self, _fn, info, name)
 
     def resolve_pipelines(self, info):
         return resolve_pipelines_implementation(self, info)
 
     def resolve_pipelinesOrErrors(self, info):
         # self is NoneType here (because array?) for so have to call resolve_pipelines like this
-        return results_or_errors(self, resolve_pipelines_implementation, info)
+        return results_or_python_errors(self, resolve_pipelines_implementation, info)
 
     def resolve_type(self, info, pipelineName, typeName):
         check.str_param(pipelineName, 'pipelineName')
@@ -193,6 +206,10 @@ class Query(graphene.ObjectType):
         execution_params = PipelineExecutionParams.validate(executionParams)
 
         repository = info.context['repository_container'].repository
+
+        if not repository.has_pipeline(execution_params.pipeline_name):
+            return PipelineNotFoundError(execution_params.pipeline_name)
+
         pipeline = repository.get_pipeline(execution_params.pipeline_name)
         pipeline_env_type = pipeline.environment_type
         result = evaluate_config_value(pipeline_env_type, execution_params.config)
@@ -211,23 +228,10 @@ class Pipeline(graphene.ObjectType):
     solids = non_null_list(lambda: Solid)
     contexts = non_null_list(lambda: PipelineContext)
     environment_type = graphene.NonNull(lambda: Type)
-    execution_plan = graphene.Field(
-        graphene.NonNull(lambda: ExecutionPlan),
-        args={
-            'config': graphene.Argument(GenericScalar),
-        },
-    )
 
     def __init__(self, pipeline):
         super(Pipeline, self).__init__(name=pipeline.name, description=pipeline.description)
         self._pipeline = check.inst_param(pipeline, 'pipeline', dagster.PipelineDefinition)
-
-    def resolve_execution_plan(self, _info, config):
-        result = evaluate_config_value(self._pipeline.environment_type, config)
-        if result.success:
-            return ExecutionPlan(self, create_execution_plan(self._pipeline, result.value))
-        else:
-            check.failed('TODO')
 
     def resolve_solids(self, _info):
         return [
@@ -263,9 +267,21 @@ class PythonError(graphene.ObjectType):
         self.stack = traceback.format_tb(tb=exc_tb)
 
 
+class PipelineNotFoundError(graphene.ObjectType):
+    pipeline_name = graphene.NonNull(graphene.String)
+
+    class Meta:
+        interfaces = (Error, )
+
+    def __init__(self, pipeline_name):
+        super(PipelineNotFoundError, self).__init__()
+        self.pipeline_name = check.str_param(pipeline_name, 'pipeline_name')
+        self.message = 'Pipeline {pipeline_name} does not exist'.format(pipeline_name=pipeline_name)
+
+
 class PipelineOrError(graphene.Union):
     class Meta:
-        types = (Pipeline, PythonError)
+        types = (Pipeline, PythonError, PipelineNotFoundError)
 
 
 class PipelineContext(graphene.ObjectType):
@@ -732,12 +748,16 @@ class PipelineConfigValidationInvalid(graphene.ObjectType):
 
 class ExecutionPlanResult(graphene.Union):
     class Meta:
-        types = (ExecutionPlan, PipelineConfigValidationInvalid)
+        types = (ExecutionPlan, PipelineConfigValidationInvalid, PipelineNotFoundError)
 
 
 class PipelineConfigValidationResult(graphene.Union):
     class Meta:
-        types = (PipelineConfigValidationValid, PipelineConfigValidationInvalid)
+        types = (
+            PipelineConfigValidationValid,
+            PipelineConfigValidationInvalid,
+            PipelineNotFoundError,
+        )
 
 
 class RuntimeMismatchErrorData(graphene.ObjectType):

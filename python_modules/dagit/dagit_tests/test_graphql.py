@@ -144,6 +144,9 @@ query PipelineQuery($executionParams: PipelineExecutionParams!)
                 }
             }
         }
+        ... on PipelineNotFoundError {
+            pipelineName
+        }
     }
 }
 '''
@@ -159,6 +162,18 @@ def execute_config_graphql(pipeline_name, config):
             },
         },
     )
+
+def test_pipeline_not_found():
+    result = execute_config_graphql(
+        pipeline_name='nope',
+        config={},
+    )
+
+    assert not result.errors
+    assert result.data
+    assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineNotFoundError'
+    assert result.data['isPipelineConfigValid']['pipelineName'] == 'nope'
+
 
 def test_basic_valid_config():
     result = execute_config_graphql(
@@ -577,58 +592,91 @@ def test_pipeline_by_name():
     assert not result.errors
     assert result.data['pipeline']['name'] == 'pandas_hello_world_two'
 
-
-COMPUTE_NODE_QUERY = '''
-query PipelineQuery($config: GenericScalar)
-{
-  pipeline(name:"pandas_hello_world") {
-    name
-    executionPlan(config:$config) {
-      pipeline {
-        name
-      }
+EXECUTION_PLAN_QUERY = '''
+query PipelineQuery($executionParams: PipelineExecutionParams!) {
+  executionPlan(executionParams: $executionParams) {
+    __typename
+    ... on ExecutionPlan {
+      pipeline { name }
       steps {
         name
         solid {
-            name
+          name
         }
         tag
         inputs {
-           name
-           type {
-               name
-           }
-           dependsOn {
-               name
-           }
+          name
+          type {
+            name
+          }
+          dependsOn {
+            name
+          }
         }
         outputs {
+          name
+          type {
             name
-            type {
-                name
-            }
+          }
         }
       }
+    }
+    ... on PipelineNotFoundError {
+        pipelineName
     }
   }
 }
 '''
 
+def test_query_execution_plan_errors():
+    result = execute_dagster_graphql(
+        define_repo(),
+        EXECUTION_PLAN_QUERY,
+        {
+            'executionParams' : {
+                'pipelineName' : 'pandas_hello_world',
+                'config' : 2334893,
+            }
+        }
+    )
+
+    assert result.data
+    assert not result.errors
+    assert result.data['executionPlan']['__typename'] == 'PipelineConfigValidationInvalid'
+
+    result = execute_dagster_graphql(
+        define_repo(),
+        EXECUTION_PLAN_QUERY,
+        {
+            'executionParams' : {
+                'pipelineName' : 'nope',
+                'config' : 2334893,
+            }
+        }
+    )
+
+    assert result.data
+    assert not result.errors
+    assert result.data['executionPlan']['__typename'] == 'PipelineNotFoundError'
+    assert result.data['executionPlan']['pipelineName'] == 'nope'
 
 def test_query_execution_plan_snapshot(snapshot):
     result = execute_dagster_graphql(
         define_repo(),
-        COMPUTE_NODE_QUERY,
+        EXECUTION_PLAN_QUERY,
         {
-            'config': {
-                'solids': {
-                    'load_num_csv': {
-                        'config': {
-                            'path': 'pandas_hello_world/num.csv',
+            'executionParams' : {
+                'pipelineName' : 'pandas_hello_world',
+                'config': {
+                    'solids': {
+                        'load_num_csv': {
+                            'config': {
+                                'path': 'pandas_hello_world/num.csv',
+                            },
                         },
                     },
                 },
-            },
+            }
         },
     )
 
@@ -641,17 +689,20 @@ def test_query_execution_plan_snapshot(snapshot):
 def test_query_execution_plan():
     result = execute_dagster_graphql(
         define_repo(),
-        COMPUTE_NODE_QUERY,
+        EXECUTION_PLAN_QUERY,
         {
-            'config': {
-                'solids': {
-                    'load_num_csv': {
-                        'config': {
-                            'path': 'pandas_hello_world/num.csv',
+            'executionParams' : {
+                'pipelineName' : 'pandas_hello_world',
+                'config': {
+                    'solids': {
+                        'load_num_csv': {
+                            'config': {
+                                'path': 'pandas_hello_world/num.csv',
+                            },
                         },
                     },
                 },
-            },
+            }
         },
     )
 
@@ -661,14 +712,14 @@ def test_query_execution_plan():
     assert result.data
     assert not result.errors
 
-    plan_data = result.data['pipeline']['executionPlan']
+    plan_data = result.data['executionPlan']
 
     names = get_nameset(plan_data['steps'])
     assert len(names) == 3
 
     assert names == set(['load_num_csv.transform', 'sum_solid.transform', 'sum_sq_solid.transform'])
 
-    assert result.data['pipeline']['executionPlan']['pipeline']['name'] == 'pandas_hello_world'
+    assert result.data['executionPlan']['pipeline']['name'] == 'pandas_hello_world'
 
     cn = get_named_thing(plan_data['steps'], 'sum_solid.transform')
 
