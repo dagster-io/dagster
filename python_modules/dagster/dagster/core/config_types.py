@@ -243,12 +243,6 @@ def all_optional_type(dagster_type):
     return True
 
 
-def all_optional_user_config(config_type):
-    check.inst_param(config_type, 'config_type', HasUserConfig)
-    user_config_field = config_type.field_dict['config']
-    return all_optional_type(user_config_field.dagster_type)
-
-
 class SolidDictionaryType(DagsterCompositeType):
     def __init__(self, name, pipeline_def):
         check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
@@ -267,7 +261,7 @@ class SolidDictionaryType(DagsterCompositeType):
                 )
                 field_dict[solid.name] = define_possibly_optional_field(
                     solid_config_type,
-                    all_optional_user_config(solid_config_type),
+                    solid.definition.config_def.is_optional,
                 )
 
         super(SolidDictionaryType, self).__init__(

@@ -21,7 +21,6 @@ from dagster.core.config_types import (
     SolidConfigType,
     SolidDictionaryType,
     SpecificContextConfig,
-    all_optional_user_config,
 )
 
 from dagster.core.evaluator import (
@@ -111,8 +110,6 @@ def test_default_context_config():
 
     assert isinstance(default_context_config_type, SpecificContextConfig)
     assert 'config' in default_context_config_type.field_dict
-
-    assert all_optional_user_config(default_context_config_type)
 
     context_dict = throwing_evaluate_config_value(context_config_type, {})
 
@@ -329,14 +326,14 @@ def define_test_solids_config_pipeline():
         solids=[
             SolidDefinition(
                 name='int_config_solid',
-                config_def=ConfigDefinition(types.Int),
+                config_def=ConfigDefinition(types.Int, is_optional=True),
                 inputs=[],
                 outputs=[],
                 transform_fn=lambda *args: None,
             ),
             SolidDefinition(
                 name='string_config_solid',
-                config_def=ConfigDefinition(types.String),
+                config_def=ConfigDefinition(types.String, is_optional=True),
                 inputs=[],
                 outputs=[],
                 transform_fn=lambda *args: None,
@@ -508,7 +505,7 @@ def test_optional_solid_with_optional_scalar_config():
         solids=[
             SolidDefinition(
                 name='int_config_solid',
-                config_def=ConfigDefinition(types.Int),
+                config_def=ConfigDefinition(types.Int, is_optional=True),
                 inputs=[],
                 outputs=[],
                 transform_fn=lambda info, _inputs: _assert_config_none(info, 234),
@@ -601,7 +598,8 @@ def test_optional_solid_with_optional_subfield():
                         'TestOptionalSolidConfig', {
                             'optional_field': types.Field(types.String, is_optional=True),
                         }
-                    )
+                    ),
+                    is_optional=True,
                 ),
                 inputs=[],
                 outputs=[],
