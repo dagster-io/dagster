@@ -206,7 +206,7 @@ def solid(
         name (str): Name of solid
         inputs (List[InputDefinition]): List of inputs
         outputs (List[OutputDefinition]): List of outputs
-        config_def (ConfigDefinition):
+        config_field (ConfigField):
             The configuration for this solid.
         description (str): Description of this solid.
 
@@ -262,7 +262,7 @@ def solid(
         @solid(
             inputs=[InputDefinition(name="foo")],
             outputs=[OutputDefinition()],
-            config_field=ConfigDefinition(types.ConfigDictionary({'str_value' : Field(types.String)})),
+            config_field=ConfigField(types.ConfigDictionary({'str_value' : Field(types.String)})),
         )
         def hello_world(info, foo):
             # info.config is a dictionary with 'str_value' key

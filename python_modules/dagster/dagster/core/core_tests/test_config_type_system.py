@@ -32,14 +32,14 @@ def test_noop_config():
 
 
 def test_int_field():
-    config_def = ConfigField.config_dict_field(
+    config_field = ConfigField.config_dict_field(
         'SingleRequiredInt',
         {
             'int_field': Field(types.Int),
         },
     )
 
-    assert evaluate_config_value(config_def.config_type, {'int_field': 1}).value == {'int_field': 1}
+    assert evaluate_config_value(config_field.dagster_type, {'int_field': 1}).value == {'int_field': 1}
 
 
 def assert_config_value_success(dagster_type, config_value, expected):
@@ -53,24 +53,24 @@ def assert_eval_failure(dagster_type, value):
 
 
 def test_int_fails():
-    config_def = ConfigField.config_dict_field(
+    config_field = ConfigField.config_dict_field(
         'SingleRequiredInt', {
             'int_field': Field(types.Int),
         }
     )
 
-    assert_eval_failure(config_def.config_type, {'int_field': 'fjkdj'})
-    assert_eval_failure(config_def.config_type, {'int_field': True})
+    assert_eval_failure(config_field.dagster_type, {'int_field': 'fjkdj'})
+    assert_eval_failure(config_field.dagster_type, {'int_field': True})
 
 
 def test_default_arg():
-    config_def = ConfigField.config_dict_field(
+    config_field = ConfigField.config_dict_field(
         'TestDefaultArg', {
             'int_field': Field(types.Int, default_value=2, is_optional=True),
         }
     )
 
-    assert_config_value_success(config_def.config_type, {}, {'int_field': 2})
+    assert_config_value_success(config_field.dagster_type, {}, {'int_field': 2})
 
 
 def _single_required_string_config_dict():
@@ -120,8 +120,8 @@ def _mixed_required_optional_string_config_dict_with_default():
     )
 
 
-def _validate(config_def, value):
-    return throwing_evaluate_config_value(config_def.config_type, value)
+def _validate(config_field, value):
+    return throwing_evaluate_config_value(config_field.config_type, value)
 
 
 def test_single_required_string_field_config_type():
@@ -434,7 +434,7 @@ def test_build_single_nested():
         assert nested_field_type.name == 'PipelineName.Solid.SolidName.NestedDict.ConfigDict'
         assert nested_field_type.field_name_set == set(['bar'])
 
-    old_style_config_def = ConfigField(
+    old_style_config_field = ConfigField(
         types.ConfigDictionary(
             'PipelineName.Solid.SolidName.ConfigDict',
             {
@@ -453,7 +453,7 @@ def test_build_single_nested():
         ),
     )
 
-    _assert_facts(old_style_config_def.config_type)
+    _assert_facts(old_style_config_field.config_type)
 
     single_nested_manual = build_config_dict_type(
         ['PipelineName', 'Solid', 'SolidName'],
@@ -471,7 +471,7 @@ def test_build_single_nested():
 
     _assert_facts(single_nested_manual)
 
-    nested_from_config_def = ConfigField.solid_config_dict(
+    nested_from_config_field = ConfigField.solid_config_dict(
         'pipeline_name',
         'solid_name',
         {
@@ -482,7 +482,7 @@ def test_build_single_nested():
         },
     )
 
-    _assert_facts(nested_from_config_def.config_type)
+    _assert_facts(nested_from_config_field.config_type)
 
 
 def test_build_double_nested():

@@ -167,7 +167,9 @@ class Manager:
             return InMemoryConfig(value)
 
         try:
-            return InMemoryConfig(self.solid_def.config_field.config_type.coerce_runtime_value(value))
+            return InMemoryConfig(
+                self.solid_def.config_field.dagster_type.coerce_runtime_value(value)
+            )
         except DagsterRuntimeCoercionError as de:
             raise_from(
                 DagstermillError(
@@ -298,7 +300,7 @@ def define_dagstermill_solid(
         inputs=inputs,
         transform_fn=_dm_solid_transform(name, notebook_path),
         outputs=outputs,
-        config_field=config_def,
+        config_field=config_field,
         description='This solid is backed by the notebook at {path}'.format(path=notebook_path),
         metadata={
             'notebook_path': notebook_path,

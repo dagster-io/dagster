@@ -40,21 +40,21 @@ class HasUserConfig:
         return self.field_dict['config']  # pylint: disable=E1101
 
 
-def define_possibly_optional_field(config_type, is_optional):
-    check.inst_param(config_type, 'config_type', DagsterType)
+def define_possibly_optional_field(dagster_type, is_optional):
+    check.inst_param(dagster_type, 'dagster_type', DagsterType)
     check.bool_param(is_optional, 'is_optional')
 
     return Field(
-        config_type,
+        dagster_type,
         is_optional=True,
-        default_value=lambda: throwing_evaluate_config_value(config_type, None),
-    ) if is_optional else Field(config_type)
+        default_value=lambda: throwing_evaluate_config_value(dagster_type, None),
+    ) if is_optional else Field(dagster_type)
 
 
 class SpecificContextConfig(DagsterCompositeType, HasUserConfig):
-    def __init__(self, name, config_type):
+    def __init__(self, name, dagster_type):
         check.str_param(name, 'name')
-        config_field = define_possibly_optional_field(config_type, all_optional_type(config_type))
+        config_field = define_possibly_optional_field(dagster_type, all_optional_type(dagster_type))
         super(SpecificContextConfig, self).__init__(
             name,
             {'config': config_field},
@@ -80,7 +80,7 @@ def define_specific_context_field(
             pipeline_name=pipeline_name,
             context_name=camelcase(context_name),
         ),
-        context_def.config_field.config_type,
+        context_def.config_field.dagster_type,
     )
 
     if is_optional and provide_default:
@@ -111,7 +111,7 @@ class ContextConfigType(DagsterSelectorType):
         for context_name, context_definition in context_definitions.items():
 
             is_optional = True if len(context_definitions) > 1 else all_optional_type(
-                context_definition.config_field.config_type,
+                context_definition.config_field.dagster_type,
             )
 
             field_dict[context_name] = define_specific_context_field(
@@ -135,14 +135,15 @@ class ContextConfigType(DagsterSelectorType):
 
 
 class SolidConfigType(DagsterCompositeType, HasUserConfig):
-    def __init__(self, name, config_type):
+    def __init__(self, name, dagster_type):
         check.str_param(name, 'name')
         super(SolidConfigType, self).__init__(
             name,
             {
-                'config': define_possibly_optional_field(
-                    config_type,
-                    all_optional_type(config_type),
+                'config':
+                define_possibly_optional_field(
+                    dagster_type,
+                    all_optional_type(dagster_type),
                 ),
             },
             type_attributes=DagsterTypeAttributes(is_system_config=True),
@@ -164,7 +165,7 @@ def define_environment_field(field_type):
 def has_all_optional_default_context(pipeline_def):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     return 'default' in pipeline_def.context_definitions and all_optional_type(
-        pipeline_def.context_definitions['default'].config_field.config_type
+        pipeline_def.context_definitions['default'].config_field.dagster_type
     )
 
 
@@ -175,7 +176,7 @@ def is_environment_context_field_optional(pipeline_def):
     else:
         _, single_context_def = single_item(pipeline_def.context_definitions)
 
-        return all_optional_type(single_context_def.config_field.config_type)
+        return all_optional_type(single_context_def.config_field.dagster_type)
 
 
 class EnvironmentConfigType(DagsterCompositeType):
@@ -257,7 +258,7 @@ class SolidDictionaryType(DagsterCompositeType):
                         pipeline_name=pipeline_name,
                         solid_name=solid_name,
                     ),
-                    solid.definition.config_field.config_type,
+                    solid.definition.config_field.dagster_type,
                 )
                 field_dict[solid.name] = define_possibly_optional_field(
                     solid_config_type,

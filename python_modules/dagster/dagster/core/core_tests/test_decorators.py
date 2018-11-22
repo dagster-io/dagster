@@ -331,7 +331,7 @@ def test_descriptions():
     assert solid_desc.description == 'foo'
 
 
-def test_any_config_definition():
+def test_any_config_field():
     called = {}
     conf_value = 234
 
