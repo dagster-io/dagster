@@ -133,7 +133,9 @@ context_fn (callable):
             config_field,
             'config_field',
             ConfigField,
-            # TODO: Do not check this in
+            # For now we are defaulting to allowing any config for a
+            # pipeline context definition. This should instead default
+            # to having no config like a SolidDefinition
             ConfigField(types.Any, is_optional=True, default_value=None),
         )
         self.context_fn = check.callable_param(context_fn, 'context_fn')
