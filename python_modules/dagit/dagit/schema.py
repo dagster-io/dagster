@@ -143,6 +143,21 @@ class Query(graphene.ObjectType):
         args={'executionParams': graphene.Argument(graphene.NonNull(PipelineExecutionParams))},
     )
 
+    executionPlan = graphene.Field(
+        graphene.NonNull(lambda: ExecutionPlanResult),
+        args={'executionParams': graphene.Argument(graphene.NonNull(PipelineExecutionParams))},
+    )
+
+    def resolve_execution_plan(self, info, executionParams):
+        execution_params = PipelineExecutionParams.validate(executionParams)
+        repository = info.context['repository_container'].repository
+        pipeline = repository.get_pipeline(execution_params.pipeline_name)
+        result = evaluate_config_value(pipeline.environment_type, execution_params.config)
+        if result.success:
+            return ExecutionPlan(self, create_execution_plan(pipeline, result.value))
+        else:
+            check.failed('TODO')
+
     def resolve_pipeline(self, info, name):
         check.str_param(name, 'name')
         repository = info.context['repository_container'].repository
@@ -208,7 +223,11 @@ class Pipeline(graphene.ObjectType):
         self._pipeline = check.inst_param(pipeline, 'pipeline', dagster.PipelineDefinition)
 
     def resolve_execution_plan(self, _info, config):
-        return ExecutionPlan(self, create_execution_plan(self._pipeline, config))
+        result = evaluate_config_value(self._pipeline.environment_type, config)
+        if result.success:
+            return ExecutionPlan(self, create_execution_plan(self._pipeline, result.value))
+        else:
+            check.failed('TODO')
 
     def resolve_solids(self, _info):
         return [
@@ -709,6 +728,11 @@ class PipelineConfigValidationValid(graphene.ObjectType):
 class PipelineConfigValidationInvalid(graphene.ObjectType):
     pipeline = graphene.Field(graphene.NonNull(lambda: Pipeline))
     errors = non_null_list(lambda: PipelineConfigValidationError)
+
+
+class ExecutionPlanResult(graphene.Union):
+    class Meta:
+        types = (ExecutionPlan, PipelineConfigValidationInvalid)
 
 
 class PipelineConfigValidationResult(graphene.Union):
