@@ -62,7 +62,7 @@ def create_templated_sql_transform_solid(name, sql, table_arguments, dependant_s
     return SolidDefinition(
         name=name,
         inputs=[InputDefinition(solid.name) for solid in dependant_solids],
-        config_field=ConfigField.config_dict('{name}_Type'.format(name=name), field_dict),
+        config_field=ConfigField.config_dict_field('{name}_Type'.format(name=name), field_dict),
         transform_fn=_create_templated_sql_transform_with_output(sql),
         outputs=[
             OutputDefinition(name='result', dagster_type=types.Any),

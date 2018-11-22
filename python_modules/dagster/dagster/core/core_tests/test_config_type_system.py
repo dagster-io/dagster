@@ -32,7 +32,7 @@ def test_noop_config():
 
 
 def test_int_field():
-    config_def = ConfigField.config_dict(
+    config_def = ConfigField.config_dict_field(
         'SingleRequiredInt',
         {
             'int_field': Field(types.Int),
@@ -53,7 +53,7 @@ def assert_eval_failure(dagster_type, value):
 
 
 def test_int_fails():
-    config_def = ConfigField.config_dict(
+    config_def = ConfigField.config_dict_field(
         'SingleRequiredInt', {
             'int_field': Field(types.Int),
         }
@@ -64,7 +64,7 @@ def test_int_fails():
 
 
 def test_default_arg():
-    config_def = ConfigField.config_dict(
+    config_def = ConfigField.config_dict_field(
         'TestDefaultArg', {
             'int_field': Field(types.Int, default_value=2, is_optional=True),
         }
@@ -74,13 +74,13 @@ def test_default_arg():
 
 
 def _single_required_string_config_dict():
-    return ConfigField.config_dict(
+    return ConfigField.config_dict_field(
         'SingleRequiredField', {'string_field': Field(types.String)}
     )
 
 
 def _multiple_required_fields_config_dict():
-    return ConfigField.config_dict(
+    return ConfigField.config_dict_field(
         'MultipleRequiredFields', {
             'field_one': Field(types.String),
             'field_two': Field(types.String),
@@ -89,7 +89,7 @@ def _multiple_required_fields_config_dict():
 
 
 def _single_optional_string_config_dict():
-    return ConfigField.config_dict(
+    return ConfigField.config_dict_field(
         'SingleOptionalString', {'optional_field': Field(types.String, is_optional=True)}
     )
 
@@ -100,14 +100,14 @@ def _single_optional_string_field_config_dict_with_default():
         is_optional=True,
         default_value='some_default',
     )
-    return ConfigField.config_dict(
+    return ConfigField.config_dict_field(
         'SingleOptionalStringWithDefault',
         {'optional_field': optional_field_def},
     )
 
 
 def _mixed_required_optional_string_config_dict_with_default():
-    return ConfigField.config_dict(
+    return ConfigField.config_dict_field(
         'MixedRequired', {
             'optional_arg': Field(
                 types.String,

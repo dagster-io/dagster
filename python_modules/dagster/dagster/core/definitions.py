@@ -1175,7 +1175,7 @@ class ConfigField(Field):
         )
 
     @staticmethod
-    def config_dict(name, field_dict):
+    def config_dict_field(name, field_dict):
         '''Shortcut to create a dictionary based config definition.
 
 
@@ -1187,7 +1187,7 @@ class ConfigField(Field):
 
         .. code-block:: python
 
-            ConfigField.config_dict({
+            ConfigField.config_dict_field({
                 'int_field': Field(types.Int),
                 'string_field': Field(types.String),
              })
