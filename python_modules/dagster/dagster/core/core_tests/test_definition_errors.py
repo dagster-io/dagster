@@ -108,7 +108,7 @@ def test_invalid_item_in_solid_list():
 
 def test_double_type():
     @solid(
-        config_def=ConfigField(
+        config_field=ConfigField(
             types.ConfigDictionary(
                 'SomeTypeName',
                 {'some_field': Field(types.String)},
@@ -119,7 +119,7 @@ def test_double_type():
         raise Exception('should not execute')
 
     @solid(
-        config_def=ConfigField(
+        config_field=ConfigField(
             types.ConfigDictionary(
                 'SomeTypeName',
                 {'some_field': Field(types.String)},

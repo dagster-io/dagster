@@ -69,7 +69,7 @@ def define_solid_with_stuff():
         name='stuff',
         inputs=[InputDefinition('foo', types.Int)],
         outputs=[OutputDefinition(name='bar', dagster_type=types.Int)],
-        config_def=ConfigField(types.Int),
+        config_field=ConfigField(types.Int),
         transform_fn=lambda *args, **kwargs: check.failed('do not execute'),
         metadata={
             'notebook_path': 'unused.ipynb',

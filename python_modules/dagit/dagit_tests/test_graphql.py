@@ -84,7 +84,7 @@ def define_more_complicated_config():
                 inputs=[],
                 outputs=[],
                 transform_fn=lambda *_args: None,
-                config_def=ConfigField.solid_config_dict(
+                config_field=ConfigField.solid_config_dict(
                     'more_complicated_config',
                     'a_solid_with_config',
                     {
@@ -283,7 +283,7 @@ def define_more_complicated_nested_config():
                 inputs=[],
                 outputs=[],
                 transform_fn=lambda *_args: None,
-                config_def=ConfigField.solid_config_dict(
+                config_field=ConfigField.solid_config_dict(
                     'more_complicated_nested_config',
                     'a_solid_with_config',
                     {
@@ -316,12 +316,12 @@ def define_context_config_pipeline():
             'context_one':
             PipelineContextDefinition(
                 context_fn=lambda *args, **kwargs: None,
-                config_def=ConfigField(types.String),
+                config_field=ConfigField(types.String),
             ),
             'context_two':
             PipelineContextDefinition(
                 context_fn=lambda *args, **kwargs: None,
-                config_def=ConfigField(types.Int),
+                config_field=ConfigField(types.Int),
             ),
         }
     )

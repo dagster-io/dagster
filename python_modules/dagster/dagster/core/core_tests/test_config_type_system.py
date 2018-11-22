@@ -538,7 +538,7 @@ def test_wrong_solid_name():
                 name='some_solid',
                 inputs=[],
                 outputs=[],
-                config_def=ConfigField.solid_config_dict(
+                config_field=ConfigField.solid_config_dict(
                     'pipeline_wrong_solid_name',
                     'some_solid',
                     {},
@@ -641,7 +641,7 @@ def test_pipeline_name_mismatch_error():
                     name='some_solid',
                     inputs=[],
                     outputs=[],
-                    config_def=ConfigField.solid_config_dict(
+                    config_field=ConfigField.solid_config_dict(
                         'wrong_pipeline',
                         'some_solid',
                         {},
@@ -659,7 +659,7 @@ def test_pipeline_name_mismatch_error():
                 'some_context':
                 PipelineContextDefinition(
                     context_fn=lambda *_args: None,
-                    config_def=ConfigField.context_config_dict(
+                    config_field=ConfigField.context_config_dict(
                         'not_a_match',
                         'some_context',
                         {},
@@ -678,7 +678,7 @@ def test_solid_name_mismatch():
                     name='dont_match_me',
                     inputs=[],
                     outputs=[],
-                    config_def=ConfigField.solid_config_dict(
+                    config_field=ConfigField.solid_config_dict(
                         'solid_name_mismatch',
                         'nope',
                         {},
@@ -696,7 +696,7 @@ def test_solid_name_mismatch():
                     name='dont_match_me',
                     inputs=[],
                     outputs=[],
-                    config_def=ConfigField.context_config_dict(
+                    config_field=ConfigField.context_config_dict(
                         'solid_name_mismatch',
                         'dont_match_me',
                         {},
@@ -716,7 +716,7 @@ def test_context_name_mismatch():
                 'test':
                 PipelineContextDefinition(
                     context_fn=lambda *_args: None,
-                    config_def=ConfigField.context_config_dict(
+                    config_field=ConfigField.context_config_dict(
                         'context_name_mismatch',
                         'nope',
                         {},
@@ -733,7 +733,7 @@ def test_context_name_mismatch():
                 'test':
                 PipelineContextDefinition(
                     context_fn=lambda *_args: None,
-                    config_def=ConfigField.solid_config_dict(
+                    config_field=ConfigField.solid_config_dict(
                         'context_name_mismatch',
                         'some_solid',
                         {},

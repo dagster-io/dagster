@@ -21,7 +21,7 @@ from dagster import (
 
 
 @solid(
-    config_def=ConfigField(types.Int),
+    config_field=ConfigField(types.Int),
     outputs=[
         OutputDefinition(
             types.Int,
@@ -39,7 +39,7 @@ def injest_a(info):
 
 
 @solid(
-    config_def=ConfigField(types.Int),
+    config_field=ConfigField(types.Int),
     outputs=[OutputDefinition(types.Int)],
 )
 def injest_b(info):

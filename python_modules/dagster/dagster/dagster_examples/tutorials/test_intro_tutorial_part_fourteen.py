@@ -14,7 +14,7 @@ from dagster import (
 
 
 @solid(
-    config_def=ConfigField(types.Int),
+    config_field=ConfigField(types.Int),
     outputs=[OutputDefinition(types.Int)],
 )
 def load_number(info):

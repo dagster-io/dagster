@@ -25,7 +25,7 @@ def test_basic_solid_with_config():
         name='solid_with_context',
         inputs=[],
         outputs=[],
-        config_def=ConfigField.config_dict('SomeConfig', {'some_config': Field(types.String)}),
+        config_field=ConfigField.config_dict('SomeConfig', {'some_config': Field(types.String)}),
         transform_fn=_t_fn,
     )
 
@@ -50,7 +50,7 @@ def test_config_arg_mismatch():
         name='solid_with_context',
         inputs=[],
         outputs=[],
-        config_def=ConfigField.config_dict('SomeConfig', {'some_config': Field(types.String)}),
+        config_field=ConfigField.config_dict('SomeConfig', {'some_config': Field(types.String)}),
         transform_fn=_t_fn,
     )
 

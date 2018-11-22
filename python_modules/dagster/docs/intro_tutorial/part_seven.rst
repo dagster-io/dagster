@@ -6,7 +6,7 @@ and a yaml file so that the CLI tool can know about the repository.
 
 .. code-block:: python
 
-    @solid(config_def=ConfigDefinition(types.Any))
+    @solid(config_field=ConfigDefinition(types.Any))
     def double_the_word(info):
         return info.config['word'] * 2
 

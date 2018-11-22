@@ -57,7 +57,7 @@ def define_pandas_source_test_solid():
         notebook_path=nb_test_path('pandas_source_test'),
         inputs=[],
         outputs=[OutputDefinition(DataFrame)],
-        config_def=ConfigField(types.String),
+        config_field=ConfigField(types.String),
     )
 
 

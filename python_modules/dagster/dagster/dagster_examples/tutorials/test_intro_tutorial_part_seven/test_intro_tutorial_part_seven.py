@@ -16,7 +16,7 @@ from dagster import (
 
 
 @solid(
-    config_def=ConfigField(types.Any),
+    config_field=ConfigField(types.Any),
 )
 def double_the_word(info):
     return info.config['word'] * 2

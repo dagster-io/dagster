@@ -80,7 +80,7 @@ def define_specific_context_field(
             pipeline_name=pipeline_name,
             context_name=camelcase(context_name),
         ),
-        context_def.config_def.config_type,
+        context_def.config_field.config_type,
     )
 
     if is_optional and provide_default:
@@ -111,7 +111,7 @@ class ContextConfigType(DagsterSelectorType):
         for context_name, context_definition in context_definitions.items():
 
             is_optional = True if len(context_definitions) > 1 else all_optional_type(
-                context_definition.config_def.config_type,
+                context_definition.config_field.config_type,
             )
 
             field_dict[context_name] = define_specific_context_field(
@@ -164,7 +164,7 @@ def define_environment_field(field_type):
 def has_all_optional_default_context(pipeline_def):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     return 'default' in pipeline_def.context_definitions and all_optional_type(
-        pipeline_def.context_definitions['default'].config_def.config_type
+        pipeline_def.context_definitions['default'].config_field.config_type
     )
 
 
@@ -175,7 +175,7 @@ def is_environment_context_field_optional(pipeline_def):
     else:
         _, single_context_def = single_item(pipeline_def.context_definitions)
 
-        return all_optional_type(single_context_def.config_def.config_type)
+        return all_optional_type(single_context_def.config_field.config_type)
 
 
 class EnvironmentConfigType(DagsterCompositeType):
@@ -250,18 +250,18 @@ class SolidDictionaryType(DagsterCompositeType):
         pipeline_name = camelcase(pipeline_def.name)
         field_dict = {}
         for solid in pipeline_def.solids:
-            if solid.definition.config_def:
+            if solid.definition.config_field:
                 solid_name = camelcase(solid.name)
                 solid_config_type = SolidConfigType(
                     '{pipeline_name}.SolidConfig.{solid_name}'.format(
                         pipeline_name=pipeline_name,
                         solid_name=solid_name,
                     ),
-                    solid.definition.config_def.config_type,
+                    solid.definition.config_field.config_type,
                 )
                 field_dict[solid.name] = define_possibly_optional_field(
                     solid_config_type,
-                    solid.definition.config_def.is_optional,
+                    solid.definition.config_field.is_optional,
                 )
 
         super(SolidDictionaryType, self).__init__(

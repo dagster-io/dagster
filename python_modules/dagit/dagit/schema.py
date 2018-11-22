@@ -237,7 +237,7 @@ class PipelineContext(graphene.ObjectType):
         self._context = check.inst_param(context, 'context', dagster.PipelineContextDefinition)
 
     def resolve_config(self, _info):
-        return Config(self._context.config_def) if self._context.config_def else None
+        return Config(self._context.config_field) if self._context.config_field else None
 
 
 class Solid(graphene.ObjectType):
@@ -367,7 +367,7 @@ class SolidDefinition(graphene.ObjectType):
         ]
 
     def resolve_config_definition(self, _info):
-        return Config(self._solid_def.config_def) if self._solid_def.config_def else None
+        return Config(self._solid_def.config_field) if self._solid_def.config_field else None
 
 
 class InputDefinition(graphene.ObjectType):

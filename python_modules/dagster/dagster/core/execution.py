@@ -311,7 +311,7 @@ def yield_context(pipeline, environment):
 
     context_name = environment.context.name
     context_definition = pipeline.context_definitions[context_name]
-    config_type = context_definition.config_def.config_type
+    config_type = context_definition.config_field.config_type
 
     config_value = create_config_value(config_type, environment.context.config)
 

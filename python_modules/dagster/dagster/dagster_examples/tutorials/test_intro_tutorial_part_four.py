@@ -9,7 +9,7 @@ from dagster import (
 )
 
 
-@solid(config_def=ConfigField(types.String))
+@solid(config_field=ConfigField(types.String))
 def hello_world(info):
     print(info.config)
     return info.config

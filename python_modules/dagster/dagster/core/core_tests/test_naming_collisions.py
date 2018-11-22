@@ -32,7 +32,7 @@ def define_pass_value_solid(name, description=None):
         description=description,
         inputs=[],
         outputs=[OutputDefinition(types.String)],
-        config_def=ConfigField(SingleValueDict),
+        config_field=ConfigField(SingleValueDict),
         transform_fn=_value_t_fn,
     )
 

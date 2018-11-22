@@ -26,7 +26,7 @@ minimal API. ``solid`` is more complicated, and has more capabilities:
         types,
     )
 
-    @solid(config_def=ConfigDefinition(types.String))
+    @solid(config_field=ConfigDefinition(types.String))
     def hello_world(info):
         print(info.config)
 

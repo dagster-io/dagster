@@ -78,7 +78,7 @@ def load_csv_solid(name):
         inputs=[],
         outputs=[OutputDefinition(DataFrame)],
         transform_fn=_t_fn,
-        config_def=ConfigField(LoadDataFrameConfigDict),
+        config_field=ConfigField(LoadDataFrameConfigDict),
     )
 
 
@@ -90,7 +90,7 @@ def to_csv_solid(name):
         name=name,
         inputs=[InputDefinition('df', DataFrame)],
         outputs=[],
-        config_def=ConfigField(WriteDataFrameConfigDict),
+        config_field=ConfigField(WriteDataFrameConfigDict),
         transform_fn=_t_fn,
     )
 
@@ -103,6 +103,6 @@ def to_parquet_solid(name):
         name=name,
         inputs=[InputDefinition('df', DataFrame)],
         outputs=[],
-        config_def=ConfigField(WriteDataFrameConfigDict),
+        config_field=ConfigField(WriteDataFrameConfigDict),
         transform_fn=_t_fn,
     )

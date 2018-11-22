@@ -9,12 +9,12 @@ Now imagine we a pipeline like the following:
 
 .. code-block:: python
 
-    @solid(config_def=ConfigDefinition(types.Int), outputs=[OutputDefinition(types.Int)])
+    @solid(config_field=ConfigDefinition(types.Int), outputs=[OutputDefinition(types.Int)])
     def load_a(info):
         return info.config
 
 
-    @solid(config_def=ConfigDefinition(types.Int), outputs=[OutputDefinition(types.Int)])
+    @solid(config_field=ConfigDefinition(types.Int), outputs=[OutputDefinition(types.Int)])
     def load_b(info):
         return info.config
 
@@ -72,7 +72,7 @@ graph:
 .. code-block:: python
 
     @solid(
-        config_def=ConfigDefinition(types.Int),
+        config_field=ConfigDefinition(types.Int),
         outputs=[OutputDefinition(types.Int)],
     )
     def load_number(info):

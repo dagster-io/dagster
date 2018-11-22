@@ -71,7 +71,7 @@ def define_create_table_solid(name):
         inputs=[InputDefinition('expr')],
         outputs=[],
         transform_fn=_materialization_fn,
-        config_def=ConfigField(CreateTableConfigDict),
+        config_field=ConfigField(CreateTableConfigDict),
     )
 
 

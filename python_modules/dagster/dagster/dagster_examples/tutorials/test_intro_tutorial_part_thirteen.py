@@ -13,12 +13,12 @@ from dagster import (
 )
 
 
-@solid(config_def=ConfigField(types.Int), outputs=[OutputDefinition(types.Int)])
+@solid(config_field=ConfigField(types.Int), outputs=[OutputDefinition(types.Int)])
 def load_a(info):
     return info.config
 
 
-@solid(config_def=ConfigField(types.Int), outputs=[OutputDefinition(types.Int)])
+@solid(config_field=ConfigField(types.Int), outputs=[OutputDefinition(types.Int)])
 def load_b(info):
     return info.config
 
@@ -68,7 +68,7 @@ def test_part_thirteen_step_one():
 
 
 @solid(
-    config_def=ConfigField(types.Int),
+    config_field=ConfigField(types.Int),
     outputs=[OutputDefinition(types.Int)],
 )
 def load_number(info):

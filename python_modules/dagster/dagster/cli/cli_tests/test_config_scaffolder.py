@@ -36,7 +36,7 @@ def test_basic_solids_config():
                 name='required_field_solid',
                 inputs=[],
                 outputs=[],
-                config_def=ConfigField(
+                config_field=ConfigField(
                     types.ConfigDictionary(
                         'RequiredFieldSolidConfigDict',
                         {'required_int': types.Field(types.Int)},
@@ -103,7 +103,7 @@ def test_two_contexts():
             'context_one':
             PipelineContextDefinition(
                 context_fn=lambda *args: fail_me(),
-                config_def=ConfigField(
+                config_field=ConfigField(
                     types.ConfigDictionary(
                         'ContextOneConfigDict',
                         {
@@ -115,7 +115,7 @@ def test_two_contexts():
             'context_two':
             PipelineContextDefinition(
                 context_fn=lambda *args: fail_me(),
-                config_def=ConfigField(
+                config_field=ConfigField(
                     types.ConfigDictionary(
                         'ContextTwoConfigDict',
                         {

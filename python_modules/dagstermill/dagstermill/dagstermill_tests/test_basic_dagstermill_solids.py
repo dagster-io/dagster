@@ -127,7 +127,7 @@ def define_hello_world_config_pipeline():
         nb_test_path('hello_world_with_config'),
         [],
         [OutputDefinition()],
-        config_def=ConfigField(types.String),
+        config_field=ConfigField(types.String),
     )
     return PipelineDefinition(name='test_config_dag', solids=[with_config_solid])
 
@@ -146,7 +146,7 @@ def test_hello_world_config():
 
 @solid(
     inputs=[],
-    config_def=ConfigField(types.Int),
+    config_field=ConfigField(types.Int),
 )
 def load_constant(info):
     return info.config
