@@ -124,8 +124,7 @@ def test_provided_default_config():
                 config_field=ConfigField.config_dict_field(
                     'ksjdkfjd',
                     {
-                        'with_default_int':
-                        Field(
+                        'with_default_int': Field(
                             types.Int,
                             is_optional=True,
                             default_value=23434,
@@ -340,8 +339,10 @@ def define_test_solids_config_pipeline():
         ]
     )
 
+
 def assert_has_fields(dtype, *fields):
     return set(dtype.field_dict.keys()) == set(fields)
+
 
 def test_solid_configs_defaults():
     env_type = define_test_solids_config_pipeline().environment_type
@@ -353,7 +354,7 @@ def test_solid_configs_defaults():
     int_solid_field = solids_field.dagster_type.field_named('int_config_solid')
 
     assert int_solid_field.is_optional
-    assert int_solid_field.default_provided # TODO: this is the test case the exposes the default dodginess
+    assert int_solid_field.default_provided  # TODO: this is the test case the exposes the default dodginess
 
     assert_has_fields(int_solid_field.dagster_type, 'config')
 
@@ -361,7 +362,6 @@ def test_solid_configs_defaults():
 
     assert int_solid_config_field.is_optional
     assert not int_solid_config_field.default_provided
-
 
 
 def test_solid_dictionary_some_no_config():
@@ -473,7 +473,10 @@ def test_solid_config_error():
 def test_execution_config():
     env_type = EnvironmentConfigType(define_test_solids_config_pipeline())
     env_obj = throwing_evaluate_config_value(
-        env_type, {'execution': { 'serialize_intermediates': True }},
+        env_type,
+        {'execution': {
+            'serialize_intermediates': True
+        }},
     )
     assert isinstance(env_obj.execution, config.Execution)
     assert env_obj.execution.serialize_intermediates
@@ -533,7 +536,7 @@ def test_optional_solid_with_optional_scalar_config():
         ]
     )
 
-    env_type = EnvironmentConfigType(pipeline_def)
+    env_type = pipeline_def.environment_type
 
     assert env_type.field_dict['solids'].is_optional is True
 
@@ -548,6 +551,49 @@ def test_optional_solid_with_optional_scalar_config():
     env_obj = throwing_evaluate_config_value(env_type, {})
 
     assert env_obj.solids['int_config_solid'].config is None
+
+
+def test_optional_solid_with_required_scalar_config():
+    def _assert_config_none(info, value):
+        assert info.config is value
+
+    pipeline_def = PipelineDefinition(
+        name='some_pipeline',
+        solids=[
+            SolidDefinition(
+                name='int_config_solid',
+                config_field=ConfigField(types.Int),
+                inputs=[],
+                outputs=[],
+                transform_fn=lambda info, _inputs: _assert_config_none(info, 234),
+            ),
+        ]
+    )
+
+    env_type = pipeline_def.environment_type
+
+    assert env_type.field_dict['solids'].is_optional is False
+
+    solids_type = env_type.field_dict['solids'].dagster_type
+
+    assert solids_type.field_dict['int_config_solid'].is_optional is False
+
+    int_config_solid_type = solids_type.field_dict['int_config_solid'].dagster_type
+
+    assert_has_fields(int_config_solid_type, 'config')
+
+    int_config_solid_config_field = int_config_solid_type.field_named('config')
+
+    assert int_config_solid_config_field.is_optional is False
+
+    execute_pipeline(
+        pipeline_def,
+        {'solids': {
+            'int_config_solid': {
+                'config': 234
+            }
+        }},
+    )
 
 
 def test_required_solid_with_required_subfield():
@@ -748,4 +794,3 @@ def test_optional_and_required_context():
 
     assert env_obj.context.name == 'optional_field_context'
     assert env_obj.context.config == {'optional_field': 'foobar'}
-

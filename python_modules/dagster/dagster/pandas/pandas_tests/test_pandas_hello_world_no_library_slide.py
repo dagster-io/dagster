@@ -27,7 +27,9 @@ def define_read_csv_solid(name):
         name=name,
         inputs=[],
         outputs=[OutputDefinition()],
-        config_field=ConfigField.config_dict_field('ReadCsvConfigDict', {'path': Field(types.Path)}),
+        config_field=ConfigField.config_dict_field(
+            'ReadCsvConfigDict', {'path': Field(types.Path)}
+        ),
         transform_fn=_t_fn
     )
 

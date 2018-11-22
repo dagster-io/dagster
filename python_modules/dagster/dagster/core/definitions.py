@@ -1199,6 +1199,7 @@ class ConfigField(Field):
                 default_value=lambda: throwing_evaluate_config_value(config_dict_type, None),
             )
 
+
 def all_fields_optional(field_dict):
     for field in field_dict.values():
         if not field.is_optional:

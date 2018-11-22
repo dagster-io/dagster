@@ -39,7 +39,11 @@ def test_int_field():
         },
     )
 
-    assert evaluate_config_value(config_field.dagster_type, {'int_field': 1}).value == {'int_field': 1}
+    assert evaluate_config_value(config_field.dagster_type, {
+        'int_field': 1
+    }).value == {
+        'int_field': 1
+    }
 
 
 def assert_config_value_success(dagster_type, config_value, expected):
