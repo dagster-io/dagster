@@ -21,7 +21,10 @@ from dagster.core.execution import create_execution_plan
 
 
 class PipelineConfig(GenericScalar):
-    pass
+    class Meta:
+        description = '''This type is used when passing in a configuration object
+        for pipeline configuration. This is any-typed in the GraphQL type system,
+        but must conform to the constraints of the dagster config type system'''
 
 
 ExecutionParams = namedtuple('ExecutionParams', 'pipeline_name config')
@@ -32,11 +35,11 @@ class PipelineExecutionParams(graphene.InputObjectType):
     config = graphene.Field(PipelineConfig)
 
     @staticmethod
-    def validate(ddict):
-        check.invariant(set(ddict.keys()) == set(['pipelineName', 'config']))
+    def validate(dict_):
+        check.invariant(set(dict_.keys()) == set(['pipelineName', 'config']))
         return ExecutionParams(
-            pipeline_name=check.str_elem(ddict, 'pipelineName'),
-            config=ddict['config'],
+            pipeline_name=check.str_elem(dict_, 'pipelineName'),
+            config=dict_['config'],
         )
 
 
@@ -362,7 +365,8 @@ class SolidDefinition(graphene.ObjectType):
 
     def __init__(self, solid_def):
         super(SolidDefinition, self).__init__(
-            name=solid_def.name, description=solid_def.description
+            name=solid_def.name,
+            description=solid_def.description,
         )
 
         self._solid_def = check.inst_param(solid_def, 'solid_def', dagster.SolidDefinition)

@@ -6,7 +6,10 @@ import { Query, QueryResult } from "react-apollo";
 import ConfigCodeEditor from "./ConfigCodeEditor";
 import { ValidationResult } from "./codemirror-yaml/mode";
 import { ConfigCodeEditorContainerQuery } from "./types/ConfigCodeEditorContainerQuery";
-import { ConfigCodeEditorContainerCheckConfigQuery } from "./types/ConfigCodeEditorContainerCheckConfigQuery";
+import {
+  ConfigCodeEditorContainerCheckConfigQuery,
+  ConfigCodeEditorContainerCheckConfigQueryVariables
+} from "./types/ConfigCodeEditorContainerCheckConfigQuery";
 
 interface IConfigCodeEditorContainerProps {
   pipelineName: string;
@@ -109,10 +112,9 @@ function createTypeConfig(
 
 export const CONFIG_CODE_EDITOR_CONTAINER_CHECK_CONFIG_QUERY = gql`
   query ConfigCodeEditorContainerCheckConfigQuery(
-    $pipelineName: String!
-    $config: GenericScalar!
+    $executionParams: PipelineExecutionParams!
   ) {
-    isPipelineConfigValid(pipelineName: $pipelineName, config: $config) {
+    isPipelineConfigValid(executionParams: $executionParams) {
       __typename
 
       ... on PipelineConfigValidationInvalid {
@@ -132,12 +134,15 @@ async function checkConfig(
 ): Promise<ValidationResult> {
   if (config !== null) {
     const result = await client.query<
-      ConfigCodeEditorContainerCheckConfigQuery
+      ConfigCodeEditorContainerCheckConfigQuery,
+      ConfigCodeEditorContainerCheckConfigQueryVariables
     >({
       query: CONFIG_CODE_EDITOR_CONTAINER_CHECK_CONFIG_QUERY,
       variables: {
-        pipelineName,
-        config
+        executionParams: {
+          pipelineName: pipelineName,
+          config: config
+        }
       },
       fetchPolicy: "no-cache"
     });
