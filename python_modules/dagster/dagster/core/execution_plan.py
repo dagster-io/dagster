@@ -637,7 +637,7 @@ def create_config_value(execution_info, pipeline_solid):
         return None
 
     try:
-        return throwing_evaluate_config_value(solid_def.config_field.config_type, config_input)
+        return throwing_evaluate_config_value(solid_def.config_field.dagster_type, config_input)
     except DagsterEvaluateConfigValueError as eval_error:
         raise_from(
             DagsterTypeError(

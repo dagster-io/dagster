@@ -449,7 +449,7 @@ class Config(graphene.ObjectType):
         self._config_def = check.opt_inst_param(config_def, 'config_def', dagster.ConfigField)
 
     def resolve_type(self, _info):
-        return Type.from_dagster_type(dagster_type=self._config_def.config_type)
+        return Type.from_dagster_type(dagster_type=self._config_def.dagster_type)
 
 
 class TypeAttributes(graphene.ObjectType):

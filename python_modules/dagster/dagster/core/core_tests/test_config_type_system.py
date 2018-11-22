@@ -121,7 +121,7 @@ def _mixed_required_optional_string_config_dict_with_default():
 
 
 def _validate(config_field, value):
-    return throwing_evaluate_config_value(config_field.config_type, value)
+    return throwing_evaluate_config_value(config_field.dagster_type, value)
 
 
 def test_single_required_string_field_config_type():
@@ -453,7 +453,7 @@ def test_build_single_nested():
         ),
     )
 
-    _assert_facts(old_style_config_field.config_type)
+    _assert_facts(old_style_config_field.dagster_type)
 
     single_nested_manual = build_config_dict_type(
         ['PipelineName', 'Solid', 'SolidName'],
@@ -482,7 +482,7 @@ def test_build_single_nested():
         },
     )
 
-    _assert_facts(nested_from_config_field.config_type)
+    _assert_facts(nested_from_config_field.dagster_type)
 
 
 def test_build_double_nested():
@@ -496,7 +496,7 @@ def test_build_double_nested():
                 }
             }
         },
-    ).config_type
+    ).dagster_type
 
     assert double_config_type.name == 'SomePipeline.Context.SomeContext.ConfigDict'
 
@@ -524,7 +524,7 @@ def test_build_optionality():
                 'value': types.Field(types.String, is_optional=True),
             }
         },
-    ).config_type
+    ).dagster_type
 
     assert optional_test_type.field_dict['required'].is_optional is False
     assert optional_test_type.field_dict['optional'].is_optional is True

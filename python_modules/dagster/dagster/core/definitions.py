@@ -544,7 +544,7 @@ def _gather_all_types(solids, context_definitions, environment_type):
 
     for context_definition in context_definitions.values():
         if context_definition.config_field:
-            for dagster_type in context_definition.config_field.config_type.iterate_types():
+            for dagster_type in context_definition.config_field.dagster_type.iterate_types():
                 yield dagster_type
 
     for dagster_type in environment_type.iterate_types():
@@ -679,7 +679,7 @@ class PipelineDefinition(object):
             if not context_def.config_field:
                 continue
 
-            for in_def_type in context_def.config_field.config_type.iterate_types():
+            for in_def_type in context_def.config_field.dagster_type.iterate_types():
                 if not isinstance(in_def_type, IsScopedConfigType):
                     continue
                 if not in_def_type.scoped_config_info:
@@ -1085,17 +1085,6 @@ def build_config_dict_type(name_stack, fields, scoped_config_info=None):
 
 
 class ConfigField(Field):
-    '''Represents the configuration of an entity in Dagster
-
-    Broadly defined, configs determine how computations within dagster interact with
-    the external world. Example values that would end up in configs would be file paths,
-    database table names, and so forth.
-
-    Attributes:
-
-        config_type (DagsterType): Type of the config.
-    '''
-
     @staticmethod
     def context_config_dict(pipeline_name, context_name, fields):
         '''
@@ -1194,10 +1183,6 @@ class ConfigField(Field):
 
         '''
         return ConfigField(types.ConfigDictionary(name, field_dict))
-
-    @property
-    def config_type(self):
-        return self.dagster_type
 
 
 class SolidDefinition(object):
