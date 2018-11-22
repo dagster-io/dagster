@@ -34,7 +34,7 @@ def test_context_config_any():
     context_defs = {
         'test':
         PipelineContextDefinition(
-            config_def=ConfigDefinition(),
+            config_def=ConfigDefinition(types.Any),
             context_fn=lambda *args: ExecutionContext(),
         )
     }
@@ -53,7 +53,7 @@ def test_context_config():
         'test':
         PipelineContextDefinition(
             config_def=ConfigDefinition(
-                config_type=types.
+                dagster_type=types.
                 ConfigDictionary('TestConfigDict', {
                     'some_str': Field(types.String),
                 })
@@ -125,7 +125,7 @@ def test_provided_default_config():
             'some_context':
             PipelineContextDefinition(
                 config_def=ConfigDefinition(
-                    config_type=types.ConfigDictionary(
+                    dagster_type=types.ConfigDictionary(
                         'ksjdkfjd', {
                             'with_default_int':
                             Field(
@@ -386,7 +386,7 @@ def test_whole_environment():
         context_definitions={
             'test':
             PipelineContextDefinition(
-                config_def=ConfigDefinition(),
+                config_def=ConfigDefinition(types.Any),
                 context_fn=lambda *args: ExecutionContext(),
             )
         },
@@ -626,7 +626,7 @@ def test_required_context_with_required_subfield():
             PipelineContextDefinition(
                 context_fn=lambda *args: None,
                 config_def=ConfigDefinition(
-                    config_type=types.ConfigDictionary(
+                    dagster_type=types.ConfigDictionary(
                         name='some_context_config',
                         fields={
                             'required_field': types.Field(types.String),
@@ -656,7 +656,7 @@ def test_all_optional_field_on_single_context_dict():
             PipelineContextDefinition(
                 context_fn=lambda *args: None,
                 config_def=ConfigDefinition(
-                    config_type=types.ConfigDictionary(
+                    dagster_type=types.ConfigDictionary(
                         name='some_context_config',
                         fields={
                             'optional_field': types.Field(types.String, is_optional=True),
@@ -683,7 +683,7 @@ def test_optional_and_required_context():
             PipelineContextDefinition(
                 context_fn=lambda *args: None,
                 config_def=ConfigDefinition(
-                    config_type=types.ConfigDictionary(
+                    dagster_type=types.ConfigDictionary(
                         name='some_optional_context_config',
                         fields={
                             'optional_field': types.Field(types.String, is_optional=True),
@@ -695,7 +695,7 @@ def test_optional_and_required_context():
             PipelineContextDefinition(
                 context_fn=lambda *args: None,
                 config_def=ConfigDefinition(
-                    config_type=types.ConfigDictionary(
+                    dagster_type=types.ConfigDictionary(
                         name='some_required_context_config',
                         fields={
                             'required_field': types.Field(types.String),
@@ -743,7 +743,7 @@ def test_default_optional_with_default_value_and_required_context():
             PipelineContextDefinition(
                 context_fn=lambda *args: None,
                 config_def=ConfigDefinition(
-                    config_type=types.ConfigDictionary(
+                    dagster_type=types.ConfigDictionary(
                         name='some_optional_context_config',
                         fields={
                             'optional_field':
@@ -760,7 +760,7 @@ def test_default_optional_with_default_value_and_required_context():
             PipelineContextDefinition(
                 context_fn=lambda *args: None,
                 config_def=ConfigDefinition(
-                    config_type=types.ConfigDictionary(
+                    dagster_type=types.ConfigDictionary(
                         name='some_required_context_config',
                         fields={
                             'required_field': types.Field(types.String),

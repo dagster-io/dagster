@@ -254,7 +254,7 @@ def test_mixed_args_passing():
 
 def _single_nested_config():
     return ConfigDefinition(
-        config_type=types.ConfigDictionary(
+        dagster_type=types.ConfigDictionary(
             'ParentType', {
                 'nested':
                 Field(
@@ -270,7 +270,7 @@ def _single_nested_config():
 
 def _nested_optional_config_with_default():
     return ConfigDefinition(
-        config_type=types.ConfigDictionary(
+        dagster_type=types.ConfigDictionary(
             'ParentType', {
                 'nested':
                 Field(
@@ -299,7 +299,7 @@ def _nested_optional_config_with_no_default():
         },
     )
     return ConfigDefinition(
-        config_type=types.ConfigDictionary(
+        dagster_type=types.ConfigDictionary(
             'ParentType',
             {'nested': Field(dagster_type=nested_type)},
         )

@@ -203,7 +203,7 @@ def define_part_nine_final_pipeline():
                 context_fn=lambda info: ExecutionContext.console_logging(
                     resources=PartNineResources(PublicCloudStore(info.config['credentials']))
                 ),
-                config_def=ConfigDefinition(config_type=types.ConfigDictionary(
+                config_def=ConfigDefinition(dagster_type=types.ConfigDictionary(
                     name='CloudConfigDict',
                     fields={
                     'credentials': Field(types.ConfigDictionary(

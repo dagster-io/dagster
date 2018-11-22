@@ -357,7 +357,7 @@ version of that store.
                     )
                 ),
                 config_def=ConfigDefinition(
-                    config_type=types.ConfigDictionary('CloudConfig', {
+                    dagster_type=types.ConfigDictionary('CloudConfig', {
                         'credentials': Field(types.ConfigDictionary('CloudCredentials', {
                             'user' : Field(types.String),
                             'pass' : Field(types.String),

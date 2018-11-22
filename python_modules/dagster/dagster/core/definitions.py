@@ -1199,28 +1199,9 @@ class ConfigDefinition(Field):
         '''
         return ConfigDefinition(types.ConfigDictionary(name, field_dict))
 
-    def __init__(
-        self,
-        config_type=types.Any,
-        default_value=FIELD_NO_DEFAULT_PROVIDED,
-        is_optional=False,
-        description=None,
-    ):
-
-        '''Construct a ConfigDefinition
-
-        Args:
-            config_type (DagsterType): Type the determines shape and values of config'''
-
-        super(ConfigDefinition, self).__init__(
-            config_type,
-            default_value=default_value,
-            is_optional=is_optional,
-            description=description,
-        )
-
-        self.config_type = check.inst_param(config_type, 'config_type', DagsterType)
-        self.description = check.opt_str_param(description, 'description')
+    @property
+    def config_type(self):
+        return self.dagster_type
 
 
 class SolidDefinition(object):

@@ -292,11 +292,11 @@ def create_config_value(config_type, config_input):
         return throwing_evaluate_config_value(config_type, config_input)
     except DagsterEvaluateConfigValueError as e:
         raise DagsterTypeError(
-            'Invalid config value on type {config_type}: {error_msg}. Value received {value}'.
+            'Invalid config value on type {dagster_type}: {error_msg}. Value received {value}'.
             format(
                 value=json.dumps(config_input, indent=2)
                 if isinstance(config_input, dict) else config_input,
-                config_type=config_type.name,
+                dagster_type=config_type.name,
                 error_msg=','.join(e.args),
             )
         )
