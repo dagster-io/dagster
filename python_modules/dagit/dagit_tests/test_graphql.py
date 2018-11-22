@@ -433,9 +433,9 @@ def test_more_complicated_works():
 
     assert not result.errors
     assert result.data
-    assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationValid'
-    assert result.data['isPipelineConfigValid']['pipeline']['name'
-                                                            ] == 'more_complicated_nested_config'
+    valid_data = result.data['isPipelineConfigValid']
+    assert valid_data['__typename'] == 'PipelineConfigValidationValid'
+    assert valid_data['pipeline']['name'] == 'more_complicated_nested_config'
 
 
 def test_more_complicated_multiple_errors():
@@ -462,10 +462,11 @@ def test_more_complicated_multiple_errors():
 
     assert not result.errors
     assert result.data
-    assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationInvalid'
-    assert result.data['isPipelineConfigValid']['pipeline']['name'
-                                                            ] == 'more_complicated_nested_config'
-    assert len(result.data['isPipelineConfigValid']['errors']) == 4
+    valid_data = result.data['isPipelineConfigValid']
+
+    assert valid_data['__typename'] == 'PipelineConfigValidationInvalid'
+    assert valid_data['pipeline']['name'] == 'more_complicated_nested_config'
+    assert len(valid_data['errors']) == 4
 
     missing_error_one = find_error(
         result,
