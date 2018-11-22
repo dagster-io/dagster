@@ -132,8 +132,8 @@ class PipelineContextDefinition(object):
         self.config_def = check.opt_inst_param(
             config_def,
             'config_def',
-            ConfigDefinition,
-            ConfigDefinition(types.Any),
+            ConfigField,
+            ConfigField(types.Any),
         )
         self.context_fn = check.callable_param(context_fn, 'context_fn')
         self.description = description
@@ -160,7 +160,7 @@ def _default_pipeline_context_definitions():
         return context
 
     default_context_def = PipelineContextDefinition(
-        config_def=ConfigDefinition(DefaultContextConfigDict),
+        config_def=ConfigField(DefaultContextConfigDict),
         context_fn=_default_context_fn,
     )
     return {DEFAULT_CONTEXT_NAME: default_context_def}
@@ -1088,7 +1088,7 @@ def build_config_dict_type(name_stack, fields, scoped_config_info=None):
     return ConfigDictionary('.'.join(name_stack + ['ConfigDict']), field_dict, scoped_config_info)
 
 
-class ConfigDefinition(Field):
+class ConfigField(Field):
     '''Represents the configuration of an entity in Dagster
 
     Broadly defined, configs determine how computations within dagster interact with
@@ -1136,7 +1136,7 @@ class ConfigDefinition(Field):
         check.str_param(context_name, 'context_name')
         check.dict_param(fields, 'fields', key_type=str)
 
-        return ConfigDefinition(
+        return ConfigField(
             build_config_dict_type(
                 [
                     camelcase(pipeline_name),
@@ -1163,7 +1163,7 @@ class ConfigDefinition(Field):
         check.str_param(solid_name, 'solid_name')
         check.dict_param(fields, 'fields', key_type=str)
 
-        return ConfigDefinition(
+        return ConfigField(
             build_config_dict_type(
                 [
                     camelcase(pipeline_name),
@@ -1197,7 +1197,7 @@ class ConfigDefinition(Field):
              })
 
         '''
-        return ConfigDefinition(types.ConfigDictionary(name, field_dict))
+        return ConfigField(types.ConfigDictionary(name, field_dict))
 
     @property
     def config_type(self):
@@ -1273,7 +1273,7 @@ class SolidDefinition(object):
         self.config_def = check.opt_inst_param(
             config_def,
             'config_def',
-            ConfigDefinition,
+            ConfigField,
         )
         self.metadata = check.opt_dict_param(metadata, 'metadata', key_type=str)
         self._input_dict = {inp.name: inp for inp in inputs}

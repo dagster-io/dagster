@@ -3,7 +3,7 @@ from collections import namedtuple
 import pytest
 
 from dagster import (
-    ConfigDefinition,
+    ConfigField,
     DagsterEvaluateConfigValueError,
     DagsterInvalidDefinitionError,
     DagsterTypeError,
@@ -28,11 +28,11 @@ from dagster.core.definitions import build_config_dict_type
 
 
 def test_noop_config():
-    assert ConfigDefinition(types.Any)
+    assert ConfigField(types.Any)
 
 
 def test_int_field():
-    config_def = ConfigDefinition.config_dict(
+    config_def = ConfigField.config_dict(
         'SingleRequiredInt',
         {
             'int_field': Field(types.Int),
@@ -53,7 +53,7 @@ def assert_eval_failure(dagster_type, value):
 
 
 def test_int_fails():
-    config_def = ConfigDefinition.config_dict(
+    config_def = ConfigField.config_dict(
         'SingleRequiredInt', {
             'int_field': Field(types.Int),
         }
@@ -64,7 +64,7 @@ def test_int_fails():
 
 
 def test_default_arg():
-    config_def = ConfigDefinition.config_dict(
+    config_def = ConfigField.config_dict(
         'TestDefaultArg', {
             'int_field': Field(types.Int, default_value=2, is_optional=True),
         }
@@ -74,13 +74,13 @@ def test_default_arg():
 
 
 def _single_required_string_config_dict():
-    return ConfigDefinition.config_dict(
+    return ConfigField.config_dict(
         'SingleRequiredField', {'string_field': Field(types.String)}
     )
 
 
 def _multiple_required_fields_config_dict():
-    return ConfigDefinition.config_dict(
+    return ConfigField.config_dict(
         'MultipleRequiredFields', {
             'field_one': Field(types.String),
             'field_two': Field(types.String),
@@ -89,7 +89,7 @@ def _multiple_required_fields_config_dict():
 
 
 def _single_optional_string_config_dict():
-    return ConfigDefinition.config_dict(
+    return ConfigField.config_dict(
         'SingleOptionalString', {'optional_field': Field(types.String, is_optional=True)}
     )
 
@@ -100,14 +100,14 @@ def _single_optional_string_field_config_dict_with_default():
         is_optional=True,
         default_value='some_default',
     )
-    return ConfigDefinition.config_dict(
+    return ConfigField.config_dict(
         'SingleOptionalStringWithDefault',
         {'optional_field': optional_field_def},
     )
 
 
 def _mixed_required_optional_string_config_dict_with_default():
-    return ConfigDefinition.config_dict(
+    return ConfigField.config_dict(
         'MixedRequired', {
             'optional_arg': Field(
                 types.String,
@@ -253,7 +253,7 @@ def test_mixed_args_passing():
 
 
 def _single_nested_config():
-    return ConfigDefinition(
+    return ConfigField(
         dagster_type=types.ConfigDictionary(
             'ParentType', {
                 'nested':
@@ -269,7 +269,7 @@ def _single_nested_config():
 
 
 def _nested_optional_config_with_default():
-    return ConfigDefinition(
+    return ConfigField(
         dagster_type=types.ConfigDictionary(
             'ParentType', {
                 'nested':
@@ -298,7 +298,7 @@ def _nested_optional_config_with_no_default():
             ),
         },
     )
-    return ConfigDefinition(
+    return ConfigField(
         dagster_type=types.ConfigDictionary(
             'ParentType',
             {'nested': Field(dagster_type=nested_type)},
@@ -434,7 +434,7 @@ def test_build_single_nested():
         assert nested_field_type.name == 'PipelineName.Solid.SolidName.NestedDict.ConfigDict'
         assert nested_field_type.field_name_set == set(['bar'])
 
-    old_style_config_def = ConfigDefinition(
+    old_style_config_def = ConfigField(
         types.ConfigDictionary(
             'PipelineName.Solid.SolidName.ConfigDict',
             {
@@ -471,7 +471,7 @@ def test_build_single_nested():
 
     _assert_facts(single_nested_manual)
 
-    nested_from_config_def = ConfigDefinition.solid_config_dict(
+    nested_from_config_def = ConfigField.solid_config_dict(
         'pipeline_name',
         'solid_name',
         {
@@ -486,7 +486,7 @@ def test_build_single_nested():
 
 
 def test_build_double_nested():
-    double_config_type = ConfigDefinition.context_config_dict(
+    double_config_type = ConfigField.context_config_dict(
         'some_pipeline',
         'some_context',
         {
@@ -513,7 +513,7 @@ def test_build_double_nested():
 
 
 def test_build_optionality():
-    optional_test_type = ConfigDefinition.solid_config_dict(
+    optional_test_type = ConfigField.solid_config_dict(
         'some_pipeline',
         'some_solid',
         {
@@ -538,7 +538,7 @@ def test_wrong_solid_name():
                 name='some_solid',
                 inputs=[],
                 outputs=[],
-                config_def=ConfigDefinition.solid_config_dict(
+                config_def=ConfigField.solid_config_dict(
                     'pipeline_wrong_solid_name',
                     'some_solid',
                     {},
@@ -641,7 +641,7 @@ def test_pipeline_name_mismatch_error():
                     name='some_solid',
                     inputs=[],
                     outputs=[],
-                    config_def=ConfigDefinition.solid_config_dict(
+                    config_def=ConfigField.solid_config_dict(
                         'wrong_pipeline',
                         'some_solid',
                         {},
@@ -659,7 +659,7 @@ def test_pipeline_name_mismatch_error():
                 'some_context':
                 PipelineContextDefinition(
                     context_fn=lambda *_args: None,
-                    config_def=ConfigDefinition.context_config_dict(
+                    config_def=ConfigField.context_config_dict(
                         'not_a_match',
                         'some_context',
                         {},
@@ -678,7 +678,7 @@ def test_solid_name_mismatch():
                     name='dont_match_me',
                     inputs=[],
                     outputs=[],
-                    config_def=ConfigDefinition.solid_config_dict(
+                    config_def=ConfigField.solid_config_dict(
                         'solid_name_mismatch',
                         'nope',
                         {},
@@ -696,7 +696,7 @@ def test_solid_name_mismatch():
                     name='dont_match_me',
                     inputs=[],
                     outputs=[],
-                    config_def=ConfigDefinition.context_config_dict(
+                    config_def=ConfigField.context_config_dict(
                         'solid_name_mismatch',
                         'dont_match_me',
                         {},
@@ -716,7 +716,7 @@ def test_context_name_mismatch():
                 'test':
                 PipelineContextDefinition(
                     context_fn=lambda *_args: None,
-                    config_def=ConfigDefinition.context_config_dict(
+                    config_def=ConfigField.context_config_dict(
                         'context_name_mismatch',
                         'nope',
                         {},
@@ -733,7 +733,7 @@ def test_context_name_mismatch():
                 'test':
                 PipelineContextDefinition(
                     context_fn=lambda *_args: None,
-                    config_def=ConfigDefinition.solid_config_dict(
+                    config_def=ConfigField.solid_config_dict(
                         'context_name_mismatch',
                         'some_solid',
                         {},

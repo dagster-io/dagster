@@ -446,7 +446,7 @@ class Config(graphene.ObjectType):
 
     def __init__(self, config_def):
         super(Config, self).__init__()
-        self._config_def = check.opt_inst_param(config_def, 'config_def', dagster.ConfigDefinition)
+        self._config_def = check.opt_inst_param(config_def, 'config_def', dagster.ConfigField)
 
     def resolve_type(self, _info):
         return Type.from_dagster_type(dagster_type=self._config_def.config_type)

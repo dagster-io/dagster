@@ -5,7 +5,7 @@ import pytest
 import dagstermill as dm
 
 from dagster import (
-    ConfigDefinition,
+    ConfigField,
     DependencyDefinition,
     InputDefinition,
     OutputDefinition,
@@ -127,7 +127,7 @@ def define_hello_world_config_pipeline():
         nb_test_path('hello_world_with_config'),
         [],
         [OutputDefinition()],
-        config_def=ConfigDefinition(types.String),
+        config_def=ConfigField(types.String),
     )
     return PipelineDefinition(name='test_config_dag', solids=[with_config_solid])
 
@@ -146,7 +146,7 @@ def test_hello_world_config():
 
 @solid(
     inputs=[],
-    config_def=ConfigDefinition(types.Int),
+    config_def=ConfigField(types.Int),
 )
 def load_constant(info):
     return info.config

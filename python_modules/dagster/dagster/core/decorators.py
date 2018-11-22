@@ -3,7 +3,7 @@ from functools import wraps
 import inspect
 
 from .definitions import (
-    ConfigDefinition,
+    ConfigField,
     DagsterInvalidDefinitionError,
     InputDefinition,
     OutputDefinition,
@@ -114,7 +114,7 @@ class _Solid(object):
         outputs = outputs or [OutputDefinition()]
         self.outputs = check.list_param(outputs, 'outputs', OutputDefinition)
         self.description = check.opt_str_param(description, 'description')
-        self.config_def = check.opt_inst_param(config_def, 'config_def', ConfigDefinition)
+        self.config_def = check.opt_inst_param(config_def, 'config_def', ConfigField)
 
     def __call__(self, fn):
         check.callable_param(fn, 'fn')

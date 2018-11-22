@@ -1,7 +1,7 @@
 import pytest
 
 from dagster import (
-    ConfigDefinition,
+    ConfigField,
     ExecutionContext,
     Field,
     OutputDefinition,
@@ -67,7 +67,7 @@ def test_default_value():
         context_definitions={
             'custom_one':
             PipelineContextDefinition(
-                config_def=ConfigDefinition.config_dict(
+                config_def=ConfigField.config_dict(
                     'CustomOneDict',
                     {
                         'field_one':
@@ -98,7 +98,7 @@ def test_custom_contexts():
         context_definitions={
             'custom_one':
             PipelineContextDefinition(
-                config_def=ConfigDefinition.config_dict(
+                config_def=ConfigField.config_dict(
                     'CustomOneDict',
                     {'field_one': Field(dagster_type=types.String)},
                 ),
@@ -106,7 +106,7 @@ def test_custom_contexts():
             ),
             'custom_two':
             PipelineContextDefinition(
-                config_def=ConfigDefinition.config_dict(
+                config_def=ConfigField.config_dict(
                     'CustomTwoDict',
                     {'field_one': Field(dagster_type=types.String)},
                 ),
@@ -149,7 +149,7 @@ def test_yield_context():
         context_definitions={
             'custom_one':
             PipelineContextDefinition(
-                config_def=ConfigDefinition.config_dict(
+                config_def=ConfigField.config_dict(
                     'CustomOneDict', {'field_one': Field(dagster_type=types.String)}
                 ),
                 context_fn=_yield_context,
@@ -200,7 +200,7 @@ def test_invalid_context():
         context_definitions={
             'default':
             PipelineContextDefinition(
-                config_def=ConfigDefinition.config_dict(
+                config_def=ConfigField.config_dict(
                     'SingleStringDict', {'string_field': Field(types.String)}
                 ),
                 context_fn=lambda info: info.config,

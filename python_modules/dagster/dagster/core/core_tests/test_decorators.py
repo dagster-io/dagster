@@ -1,7 +1,7 @@
 import pytest
 
 from dagster import (
-    ConfigDefinition,
+    ConfigField,
     DagsterInvalidDefinitionError,
     DependencyDefinition,
     ExecutionContext,
@@ -335,7 +335,7 @@ def test_any_config_definition():
     called = {}
     conf_value = 234
 
-    @solid(config_def=ConfigDefinition(types.Any))
+    @solid(config_def=ConfigField(types.Any))
     def hello_world(info):
         assert info.config == conf_value
         called['yup'] = True
