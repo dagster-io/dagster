@@ -18,14 +18,14 @@ from .config import DEFAULT_CONTEXT_NAME
 
 from .errors import DagsterInvalidDefinitionError
 
+from .evaluator import throwing_evaluate_config_value
+
 from .execution_context import ExecutionContext
 
 from .types import (
-    FIELD_NO_DEFAULT_PROVIDED,
     ConfigDictionary,
     IsScopedConfigType,
     ScopedConfigInfo,
-    DagsterType,
     Field,
 )
 
@@ -133,7 +133,8 @@ context_fn (callable):
             config_field,
             'config_field',
             ConfigField,
-            ConfigField(types.Any),
+            # TODO: Do not check this in
+            ConfigField(types.Any, is_optional=True, default_value=None),
         )
         self.context_fn = check.callable_param(context_fn, 'context_fn')
         self.description = description
@@ -160,7 +161,11 @@ def _default_pipeline_context_definitions():
         return context
 
     default_context_def = PipelineContextDefinition(
-        config_field=ConfigField(DefaultContextConfigDict),
+        config_field=ConfigField(
+            DefaultContextConfigDict,
+            is_optional=True,
+            default_value=lambda: throwing_evaluate_config_value(DefaultContextConfigDict, None),
+        ),
         context_fn=_default_context_fn,
     )
     return {DEFAULT_CONTEXT_NAME: default_context_def}
@@ -1182,7 +1187,23 @@ class ConfigField(Field):
              })
 
         '''
-        return ConfigField(types.ConfigDictionary(name, field_dict))
+
+        config_dict_type = types.ConfigDictionary(name, field_dict)
+        is_optional = all_fields_optional(field_dict)
+        if not is_optional:
+            return ConfigField(config_dict_type)
+        else:
+            return ConfigField(
+                config_dict_type,
+                is_optional=True,
+                default_value=lambda: throwing_evaluate_config_value(config_dict_type, None),
+            )
+
+def all_fields_optional(field_dict):
+    for field in field_dict.values():
+        if not field.is_optional:
+            return False
+    return True
 
 
 class SolidDefinition(object):

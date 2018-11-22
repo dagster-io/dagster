@@ -11,6 +11,7 @@ from .config import (
 )
 
 from .definitions import (
+    ConfigField,
     Field,
     PipelineContextDefinition,
     PipelineDefinition,
@@ -52,9 +53,9 @@ def define_possibly_optional_field(dagster_type, is_optional):
 
 
 class SpecificContextConfig(DagsterCompositeType, HasUserConfig):
-    def __init__(self, name, dagster_type):
+    def __init__(self, name, config_field):
         check.str_param(name, 'name')
-        config_field = define_possibly_optional_field(dagster_type, all_optional_type(dagster_type))
+        check.inst_param(config_field, 'config_field', ConfigField)
         super(SpecificContextConfig, self).__init__(
             name,
             {'config': config_field},
@@ -80,7 +81,7 @@ def define_specific_context_field(
             pipeline_name=pipeline_name,
             context_name=camelcase(context_name),
         ),
-        context_def.config_field.dagster_type,
+        context_def.config_field,
     )
 
     if is_optional and provide_default:
@@ -110,9 +111,9 @@ class ContextConfigType(DagsterSelectorType):
         field_dict = {}
         for context_name, context_definition in context_definitions.items():
 
-            is_optional = True if len(context_definitions) > 1 else all_optional_type(
-                context_definition.config_field.dagster_type,
-            )
+            is_optional = True if len(
+                context_definitions
+            ) > 1 else context_definition.config_field.is_optional
 
             field_dict[context_name] = define_specific_context_field(
                 pipeline_name,
@@ -135,22 +136,19 @@ class ContextConfigType(DagsterSelectorType):
 
 
 class SolidConfigType(DagsterCompositeType, HasUserConfig):
-    def __init__(self, name, dagster_type):
+    def __init__(self, name, config_field):
         check.str_param(name, 'name')
+        check.inst_param(config_field, 'config_field', ConfigField)
         super(SolidConfigType, self).__init__(
             name,
-            {
-                'config':
-                define_possibly_optional_field(
-                    dagster_type,
-                    all_optional_type(dagster_type),
-                ),
-            },
+            {'config': config_field},
             type_attributes=DagsterTypeAttributes(is_system_config=True),
         )
 
     def construct_from_config_value(self, config_value):
-        return Solid(**config_value)
+        # TODO we need better rules around optional and default evaluation
+        # making this permissive for now
+        return Solid(config=config_value.get('config'))
 
     @property
     def user_config_field(self):
@@ -162,21 +160,14 @@ def define_environment_field(field_type):
     return define_possibly_optional_field(field_type, all_optional_type(field_type))
 
 
-def has_all_optional_default_context(pipeline_def):
-    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
-    return 'default' in pipeline_def.context_definitions and all_optional_type(
-        pipeline_def.context_definitions['default'].config_field.dagster_type
-    )
-
-
 def is_environment_context_field_optional(pipeline_def):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     if len(pipeline_def.context_definitions) > 1:
-        return has_all_optional_default_context(pipeline_def)
+        return False
     else:
         _, single_context_def = single_item(pipeline_def.context_definitions)
 
-        return all_optional_type(single_context_def.config_field.dagster_type)
+        return single_context_def.config_field.is_optional
 
 
 class EnvironmentConfigType(DagsterCompositeType):
@@ -258,7 +249,7 @@ class SolidDictionaryType(DagsterCompositeType):
                         pipeline_name=pipeline_name,
                         solid_name=solid_name,
                     ),
-                    solid.definition.config_field.dagster_type,
+                    solid.definition.config_field,
                 )
                 field_dict[solid.name] = define_possibly_optional_field(
                     solid_config_type,
