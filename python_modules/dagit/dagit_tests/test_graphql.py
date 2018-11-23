@@ -3,6 +3,7 @@ from graphql import graphql
 from dagster import (
     ConfigField,
     DependencyDefinition,
+    Field,
     PipelineContextDefinition,
     PipelineDefinition,
     InputDefinition,
@@ -316,12 +317,12 @@ def define_context_config_pipeline():
             'context_one':
             PipelineContextDefinition(
                 context_fn=lambda *args, **kwargs: None,
-                config_field=ConfigField(types.String),
+                config_field=Field(types.String),
             ),
             'context_two':
             PipelineContextDefinition(
                 context_fn=lambda *args, **kwargs: None,
-                config_field=ConfigField(types.Int),
+                config_field=Field(types.Int),
             ),
         }
     )

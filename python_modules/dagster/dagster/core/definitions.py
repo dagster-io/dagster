@@ -132,7 +132,7 @@ context_fn (callable):
         self.config_field = check.opt_inst_param(
             config_field,
             'config_field',
-            ConfigField,
+            Field,
             # For now we are defaulting to allowing any config for a
             # pipeline context definition. This should instead default
             # to having no config like a SolidDefinition
@@ -1275,11 +1275,7 @@ class SolidDefinition(object):
         self.transform_fn = check.callable_param(transform_fn, 'transform_fn')
         self.output_defs = check.list_param(outputs, 'outputs', OutputDefinition)
         self.description = check.opt_str_param(description, 'description')
-        self.config_field = check.opt_inst_param(
-            config_field,
-            'config_field',
-            ConfigField,
-        )
+        self.config_field = check.opt_inst_param(config_field, 'config_field', Field)
         self.metadata = check.opt_dict_param(metadata, 'metadata', key_type=str)
         self._input_dict = {inp.name: inp for inp in inputs}
         self._output_dict = {output.name: output for output in outputs}

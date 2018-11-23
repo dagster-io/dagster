@@ -444,12 +444,12 @@ class Expectation(graphene.ObjectType):
 class Config(graphene.ObjectType):
     type = graphene.NonNull(lambda: Type)
 
-    def __init__(self, config_def):
+    def __init__(self, config_field):
         super(Config, self).__init__()
-        self._config_def = check.opt_inst_param(config_def, 'config_def', dagster.ConfigField)
+        self._config_field = check.opt_inst_param(config_field, 'config_field', dagster.Field)
 
     def resolve_type(self, _info):
-        return Type.from_dagster_type(dagster_type=self._config_def.dagster_type)
+        return Type.from_dagster_type(dagster_type=self._config_field.dagster_type)
 
 
 class TypeAttributes(graphene.ObjectType):

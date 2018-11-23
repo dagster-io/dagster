@@ -28,7 +28,7 @@ from dagster.core.definitions import build_config_dict_type
 
 
 def test_noop_config():
-    assert ConfigField(types.Any)
+    assert Field(types.Any)
 
 
 def test_int_field():
@@ -257,7 +257,7 @@ def test_mixed_args_passing():
 
 
 def _single_nested_config():
-    return ConfigField(
+    return Field(
         dagster_type=types.ConfigDictionary(
             'ParentType', {
                 'nested':
@@ -273,7 +273,7 @@ def _single_nested_config():
 
 
 def _nested_optional_config_with_default():
-    return ConfigField(
+    return Field(
         dagster_type=types.ConfigDictionary(
             'ParentType', {
                 'nested':
@@ -302,7 +302,7 @@ def _nested_optional_config_with_no_default():
             ),
         },
     )
-    return ConfigField(
+    return Field(
         dagster_type=types.ConfigDictionary(
             'ParentType',
             {'nested': Field(dagster_type=nested_type)},
@@ -438,7 +438,7 @@ def test_build_single_nested():
         assert nested_field_type.name == 'PipelineName.Solid.SolidName.NestedDict.ConfigDict'
         assert nested_field_type.field_name_set == set(['bar'])
 
-    old_style_config_field = ConfigField(
+    old_style_config_field = Field(
         types.ConfigDictionary(
             'PipelineName.Solid.SolidName.ConfigDict',
             {
