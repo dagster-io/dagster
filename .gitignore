@@ -110,3 +110,4 @@ tags
 
 docs/_build
 python_modules/dagster/docs/_build
+.vscode/
