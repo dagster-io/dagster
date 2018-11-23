@@ -1091,7 +1091,7 @@ def build_config_dict_type(name_stack, fields, scoped_config_info=None):
     return ConfigDictionary('.'.join(name_stack + ['ConfigDict']), field_dict, scoped_config_info)
 
 
-class ConfigField(Field):
+class ConfigField:
     @staticmethod
     def context_config_dict(pipeline_name, context_name, fields):
         '''
