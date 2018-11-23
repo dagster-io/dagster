@@ -49,8 +49,11 @@
     "**/build": true,
     "**/spark-warehouse": true,
     "**/.ipynb_checkpoints": true,
-    "dist": true,
-    "**/.tox": true
+    "**/dist": true,
+    "**/.tox": true,
+    "**/htmlcov": true,
+    "**/coverage.xml": true,
+    "**/.coverage": true
   },
   "python.venvPath": "/Users/schrockn/venvs",
   "editor.formatOnSave": true,
