@@ -80,7 +80,7 @@ class PipelineContextDefinition(object):
     a dictionary key'ed by its name so the name is not present in this object.
 
     Attributes:
-        config_field (ConfigField): The configuration for the pipeline context.
+        config_field (Field): The configuration for the pipeline context.
 
 context_fn (callable):
             Signature is (pipeline: PipelineDefintion, config_value: Any) => ExecutionContext
@@ -124,7 +124,7 @@ context_fn (callable):
                 resources object be a namedtuple, where each property is an object that
                 manages a particular resource, e.g. aws, a local filesystem manager, etc.
 
-            config_field (ConfigField):
+            config_field (Field):
                 Define the configuration for the context
 
             description (str): Description of the context definition.
@@ -132,11 +132,11 @@ context_fn (callable):
         self.config_field = check.opt_inst_param(
             config_field,
             'config_field',
-            ConfigField,
+            Field,
             # For now we are defaulting to allowing any config for a
             # pipeline context definition. This should instead default
             # to having no config like a SolidDefinition
-            ConfigField(types.Any, is_optional=True, default_value=None),
+            Field(types.Any, is_optional=True, default_value=None),
         )
         self.context_fn = check.callable_param(context_fn, 'context_fn')
         self.description = description
@@ -163,7 +163,7 @@ def _default_pipeline_context_definitions():
         return context
 
     default_context_def = PipelineContextDefinition(
-        config_field=ConfigField(
+        config_field=Field(
             DefaultContextConfigDict,
             is_optional=True,
             default_value=lambda: throwing_evaluate_config_value(DefaultContextConfigDict, None),
@@ -1091,7 +1091,7 @@ def build_config_dict_type(name_stack, fields, scoped_config_info=None):
     return ConfigDictionary('.'.join(name_stack + ['ConfigDict']), field_dict, scoped_config_info)
 
 
-class ConfigField(Field):
+class ConfigField:
     @staticmethod
     def context_config_dict(pipeline_name, context_name, fields):
         '''
@@ -1128,7 +1128,7 @@ class ConfigField(Field):
         check.str_param(context_name, 'context_name')
         check.dict_param(fields, 'fields', key_type=str)
 
-        return ConfigField(
+        return Field(
             build_config_dict_type(
                 [
                     camelcase(pipeline_name),
@@ -1155,7 +1155,7 @@ class ConfigField(Field):
         check.str_param(solid_name, 'solid_name')
         check.dict_param(fields, 'fields', key_type=str)
 
-        return ConfigField(
+        return Field(
             build_config_dict_type(
                 [
                     camelcase(pipeline_name),
@@ -1193,9 +1193,9 @@ class ConfigField(Field):
         config_dict_type = types.ConfigDictionary(name, field_dict)
         is_optional = all_fields_optional(field_dict)
         if not is_optional:
-            return ConfigField(config_dict_type)
+            return Field(config_dict_type)
         else:
-            return ConfigField(
+            return Field(
                 config_dict_type,
                 is_optional=True,
                 default_value=lambda: throwing_evaluate_config_value(config_dict_type, None),
@@ -1238,7 +1238,7 @@ class SolidDefinition(object):
             SolidDefinition(
                 name='read_csv',
                 inputs=[],
-                config_field=ConfigField(types.ConfigDictionary({'path' => types.Path})),
+                config_field=Field(types.ConfigDictionary({'path' => types.Path})),
                 outputs=[OutputDefinition()] # default name ('result') and any typed
                 transform_fn
             )
@@ -1253,7 +1253,7 @@ class SolidDefinition(object):
                 inputs: Dict[str, Any],
             ) : Iterable<Result>
         outputs (List[OutputDefinition]): Outputs of the solid.
-        config_field (ConfigField): How the solid configured.
+        config_field (Field): How the solid configured.
         description (str): Description of the solid.
         metadata (dict):
             Arbitrary metadata for the solid. Some frameworks expect and require
@@ -1275,11 +1275,7 @@ class SolidDefinition(object):
         self.transform_fn = check.callable_param(transform_fn, 'transform_fn')
         self.output_defs = check.list_param(outputs, 'outputs', OutputDefinition)
         self.description = check.opt_str_param(description, 'description')
-        self.config_field = check.opt_inst_param(
-            config_field,
-            'config_field',
-            ConfigField,
-        )
+        self.config_field = check.opt_inst_param(config_field, 'config_field', Field)
         self.metadata = check.opt_dict_param(metadata, 'metadata', key_type=str)
         self._input_dict = {inp.name: inp for inp in inputs}
         self._output_dict = {output.name: output for output in outputs}

@@ -1,6 +1,6 @@
 from dagster import (
-    ConfigField,
     DependencyDefinition,
+    Field,
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
@@ -14,7 +14,7 @@ from dagster import (
 
 
 @solid(
-    config_field=ConfigField(types.Int),
+    config_field=Field(types.Int),
     outputs=[OutputDefinition(types.Int)],
 )
 def load_number(info):

@@ -2,9 +2,9 @@
 import pytest
 
 from dagster import (
-    ConfigField,
     DagsterInvariantViolationError,
     DependencyDefinition,
+    Field,
     InputDefinition,
     MultipleResults,
     OutputDefinition,
@@ -42,7 +42,7 @@ def return_dict_results(_info):
 
 
 @solid(
-    config_field=ConfigField(types.String, description='Should be either out_one or out_two'),
+    config_field=Field(types.String, description='Should be either out_one or out_two'),
     outputs=[
         OutputDefinition(dagster_type=types.Int, name='out_one'),
         OutputDefinition(dagster_type=types.Int, name='out_two'),

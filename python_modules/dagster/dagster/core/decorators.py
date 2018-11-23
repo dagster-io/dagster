@@ -3,8 +3,8 @@ from functools import wraps
 import inspect
 
 from .definitions import (
-    ConfigField,
     DagsterInvalidDefinitionError,
+    Field,
     InputDefinition,
     OutputDefinition,
     Result,
@@ -114,7 +114,7 @@ class _Solid(object):
         outputs = outputs or [OutputDefinition()]
         self.outputs = check.list_param(outputs, 'outputs', OutputDefinition)
         self.description = check.opt_str_param(description, 'description')
-        self.config_field = check.opt_inst_param(config_field, 'config_field', ConfigField)
+        self.config_field = check.opt_inst_param(config_field, 'config_field', Field)
 
     def __call__(self, fn):
         check.callable_param(fn, 'fn')
@@ -206,7 +206,7 @@ def solid(
         name (str): Name of solid
         inputs (List[InputDefinition]): List of inputs
         outputs (List[OutputDefinition]): List of outputs
-        config_field (ConfigField):
+        config_field (Field):
             The configuration for this solid.
         description (str): Description of this solid.
 
@@ -262,7 +262,7 @@ def solid(
         @solid(
             inputs=[InputDefinition(name="foo")],
             outputs=[OutputDefinition()],
-            config_field=ConfigField(types.ConfigDictionary({'str_value' : Field(types.String)})),
+            config_field=Field(types.ConfigDictionary({'str_value' : Field(types.String)})),
         )
         def hello_world(info, foo):
             # info.config is a dictionary with 'str_value' key
