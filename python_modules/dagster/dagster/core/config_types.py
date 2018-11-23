@@ -11,7 +11,6 @@ from .config import (
 )
 
 from .definitions import (
-    ConfigField,
     Field,
     PipelineContextDefinition,
     PipelineDefinition,
