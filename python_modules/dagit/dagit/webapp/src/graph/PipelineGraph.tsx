@@ -47,7 +47,6 @@ class PipelineGraphContents extends React.PureComponent<
     return connections.map(({ from, to }, i) => (
       <StyledLink
         key={i}
-        onClick={() => console.log({ from, to })}
         x={(d: IPoint) => d.x}
         y={(d: IPoint) => d.y}
         data={{

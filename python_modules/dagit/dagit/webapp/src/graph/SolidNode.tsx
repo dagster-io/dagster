@@ -130,6 +130,7 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
           onMouseEnter={() => this.props.onHighlightConnections(connections)}
           onMouseLeave={() => this.props.onHighlightConnections([])}
         >
+          <title>{`${name}: ${type.name}`}</title>
           <SVGFlowLayoutRect
             x={x}
             y={y}
