@@ -7,6 +7,7 @@ import PanAndZoom from "./PanAndZoom";
 import SolidNode from "./SolidNode";
 import {
   IPoint,
+  ILayoutConnection,
   IFullPipelineLayout,
   IFullSolidLayout
 } from "./getFullSolidLayout";
@@ -28,36 +29,66 @@ interface IPipelineContentsProps extends IPipelineGraphProps {
   layout: IFullPipelineLayout;
 }
 
+interface IPipelineContentsState {
+  highlightedConnections: { a: string; b: string }[];
+}
+
 class PipelineGraphContents extends React.PureComponent<
-  IPipelineContentsProps
+  IPipelineContentsProps,
+  IPipelineContentsState
 > {
+  state: IPipelineContentsState = {
+    highlightedConnections: []
+  };
+
+  renderConnections(connections: ILayoutConnection[]) {
+    const solids = this.props.layout.solids;
+
+    return connections.map(({ from, to }, i) => (
+      <StyledLink
+        key={i}
+        onClick={() => console.log({ from, to })}
+        x={(d: IPoint) => d.x}
+        y={(d: IPoint) => d.y}
+        data={{
+          // can also use from.point for the "Dagre" closest point on node
+          source: solids[from.solidName].outputs[from.edgeName].port,
+          target: solids[to.solidName].inputs[to.edgeName].port
+        }}
+      />
+    ));
+  }
+
   render() {
     const {
       layout,
       minified,
       pipeline,
-      onClickSolid,
-      onDoubleClickSolid,
+      onClickSolid = () => {},
+      onDoubleClickSolid = () => {},
       highlightedSolids,
       selectedSolid
     } = this.props;
 
+    const isHighlighted = (c: ILayoutConnection) => {
+      const from = c.from.solidName;
+      const to = c.to.solidName;
+      return this.state.highlightedConnections.find(
+        h => (h.a === from && h.b === to) || (h.b === from && h.a === to)
+      );
+    };
+
     return (
       <g>
         <g style={{ opacity: 0.2 }}>
-          {layout.connections.map(({ from, to }, i) => (
-            <StyledLink
-              key={i}
-              x={(d: IPoint) => d.x}
-              y={(d: IPoint) => d.y}
-              data={{
-                // can also use from.point for the "Dagre" closest point on node
-                source:
-                  layout.solids[from.solidName].outputs[from.edgeName].port,
-                target: layout.solids[to.solidName].inputs[to.edgeName].port
-              }}
-            />
-          ))}
+          {this.renderConnections(
+            layout.connections.filter(c => !isHighlighted(c))
+          )}
+        </g>
+        <g style={{ opacity: 0.75 }}>
+          {this.renderConnections(
+            layout.connections.filter(c => isHighlighted(c))
+          )}
         </g>
         {pipeline.solids.map(solid => (
           <SolidNode
@@ -66,6 +97,9 @@ class PipelineGraphContents extends React.PureComponent<
             minified={minified}
             onClick={onClickSolid}
             onDoubleClick={onDoubleClickSolid}
+            onHighlightConnections={connections =>
+              this.setState({ highlightedConnections: connections })
+            }
             layout={layout.solids[solid.name]}
             selected={selectedSolid === solid}
             dim={

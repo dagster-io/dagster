@@ -24,8 +24,9 @@ interface ISolidNodeProps {
   minified: boolean;
   selected: boolean;
   dim: boolean;
-  onClick?: (solid: string) => void;
-  onDoubleClick?: (solid: string) => void;
+  onClick: (solidName: string) => void;
+  onDoubleClick: (solidName: string) => void;
+  onHighlightConnections: (conns: Array<{ a: string; b: string }>) => void;
 }
 
 export default class SolidNode extends React.Component<ISolidNodeProps> {
@@ -71,6 +72,11 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
               description
             }
           }
+          dependedBy {
+            solid {
+              name
+            }
+          }
         }
       }
     `
@@ -79,17 +85,13 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
   handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (this.props.onClick) {
-      this.props.onClick(this.props.solid.name);
-    }
+    this.props.onClick(this.props.solid.name);
   };
 
   handleDoubleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (this.props.onDoubleClick) {
-      this.props.onDoubleClick(this.props.solid.name);
-    }
+    this.props.onDoubleClick(this.props.solid.name);
   };
 
   handleKindClicked = (e: React.MouseEvent, kind: string) => {
@@ -113,8 +115,21 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
       const showText = width == 0 && !this.props.minified;
       const { name, type } = item.definition;
 
+      const connected =
+        "dependsOn" in item
+          ? item.dependsOn && [item.dependsOn]
+          : item.dependedBy;
+      const connections = (connected || []).map(other => ({
+        a: other.solid.name,
+        b: this.props.solid.name
+      }));
+
       return (
-        <g key={i}>
+        <g
+          key={i}
+          onMouseEnter={() => this.props.onHighlightConnections(connections)}
+          onMouseLeave={() => this.props.onHighlightConnections([])}
+        >
           <SVGFlowLayoutRect
             x={x}
             y={y}
