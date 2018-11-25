@@ -12,6 +12,7 @@ import { getDagrePipelineLayout } from "./graph/getFullSolidLayout";
 import { PanelDivider } from "./PanelDivider";
 import Config from "./Config";
 import SidebarTabbedContainer from "./SidebarTabbedContainer";
+import { SolidJumpBar } from "./PipelineJumpComponents";
 
 interface IPipelineExplorerProps {
   history: History;
@@ -24,7 +25,6 @@ interface IPipelineExplorerState {
   graphVW: number;
   configCode: string;
 }
-
 export default class PipelineExplorer extends React.Component<
   IPipelineExplorerProps,
   IPipelineExplorerState
@@ -101,7 +101,12 @@ export default class PipelineExplorer extends React.Component<
       <PipelinesContainer>
         <PipelinePanel key="graph" style={{ width: `${graphVW}vw` }}>
           <SearchOverlay>
-            <input
+            <SolidJumpBar
+              solids={pipeline.solids}
+              selectedSolid={solid}
+              onItemSelect={solid => this.handleClickSolid(solid.name)}
+            />
+            <SolidSearchInput
               type="text"
               placeholder="Filter..."
               value={filter}
@@ -119,7 +124,13 @@ export default class PipelineExplorer extends React.Component<
             )}
           />
         </PipelinePanel>
-        <PanelDivider onMove={(vw: number) => this.setState({ graphVW: vw })} />
+        <PanelDivider
+          onMove={(vw: number) =>
+            this.setState({
+              graphVW: vw
+            })
+          }
+        />
         <RightInfoPanel style={{ width: `${100 - graphVW}vw` }}>
           <Route
             children={({ location }: { location: any }) => (
@@ -167,8 +178,15 @@ const SearchOverlay = styled.div`
   background: rgba(0, 0, 0, 0.2);
   z-index: 2;
   padding: 7px;
-  display: inline-block;
-  width: 150px;
+  display: inline-flex;
+  align-items: stretch;
   position: absolute;
   right: 0;
+`;
+
+const SolidSearchInput = styled.input`
+  margin-left: 7px;
+  padding: 5px 5px;
+  font-size: 14px;
+  border: 1px solid ${Colors.GRAY4};
 `;

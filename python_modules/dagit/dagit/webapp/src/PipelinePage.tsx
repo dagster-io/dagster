@@ -4,7 +4,7 @@ import { History } from "history";
 import { NonIdealState } from "@blueprintjs/core";
 import Page from "./Page";
 import PipelineExplorer from "./PipelineExplorer";
-import PipelineJumpBar from "./PipelineJumpBar";
+import { PipelineJumpBar } from "./PipelineJumpComponents";
 import PythonErrorInfo from "./PythonErrorInfo";
 import {
   PipelinePageFragment,
@@ -94,10 +94,11 @@ export default class PipelinePage extends React.Component<
         history={this.props.history}
         navbarContents={
           <PipelineJumpBar
-            selectedPipeline={selectedPipeline}
-            selectedSolid={selectedSolid}
             pipelines={pipelines}
-            history={this.props.history}
+            selectedPipeline={selectedPipeline}
+            onItemSelect={pipeline => {
+              this.props.history.push(`/${pipeline.name}`);
+            }}
           />
         }
       >

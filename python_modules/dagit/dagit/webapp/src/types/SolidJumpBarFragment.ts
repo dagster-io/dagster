@@ -4,11 +4,15 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL fragment: PipelineJumpBarFragment
+// GraphQL fragment: SolidJumpBarFragment
 // ====================================================
 
-export interface PipelineJumpBarFragment {
+export interface SolidJumpBarFragment_solids {
   name: string;
+}
+
+export interface SolidJumpBarFragment {
+  solids: SolidJumpBarFragment_solids[];
 }
 
 /* tslint:disable */
