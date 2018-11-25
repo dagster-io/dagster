@@ -126,8 +126,17 @@ export interface PipelineExplorerFragment_solids_outputs_definition {
   expectations: PipelineExplorerFragment_solids_outputs_definition_expectations[];
 }
 
+export interface PipelineExplorerFragment_solids_outputs_dependedBy_solid {
+  name: string;
+}
+
+export interface PipelineExplorerFragment_solids_outputs_dependedBy {
+  solid: PipelineExplorerFragment_solids_outputs_dependedBy_solid;
+}
+
 export interface PipelineExplorerFragment_solids_outputs {
   definition: PipelineExplorerFragment_solids_outputs_definition;
+  dependedBy: PipelineExplorerFragment_solids_outputs_dependedBy[] | null;
 }
 
 export interface PipelineExplorerFragment_solids {

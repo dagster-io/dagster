@@ -188,8 +188,17 @@ export interface PipelinePageFragment_Pipeline_solids_outputs_definition {
   description: string | null;
 }
 
+export interface PipelinePageFragment_Pipeline_solids_outputs_dependedBy_solid {
+  name: string;
+}
+
+export interface PipelinePageFragment_Pipeline_solids_outputs_dependedBy {
+  solid: PipelinePageFragment_Pipeline_solids_outputs_dependedBy_solid;
+}
+
 export interface PipelinePageFragment_Pipeline_solids_outputs {
   definition: PipelinePageFragment_Pipeline_solids_outputs_definition;
+  dependedBy: PipelinePageFragment_Pipeline_solids_outputs_dependedBy[] | null;
 }
 
 export interface PipelinePageFragment_Pipeline_solids {

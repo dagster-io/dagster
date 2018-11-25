@@ -67,8 +67,17 @@ export interface PipelineGraphSolidFragment_outputs_definition {
   expectations: PipelineGraphSolidFragment_outputs_definition_expectations[];
 }
 
+export interface PipelineGraphSolidFragment_outputs_dependedBy_solid {
+  name: string;
+}
+
+export interface PipelineGraphSolidFragment_outputs_dependedBy {
+  solid: PipelineGraphSolidFragment_outputs_dependedBy_solid;
+}
+
 export interface PipelineGraphSolidFragment_outputs {
   definition: PipelineGraphSolidFragment_outputs_definition;
+  dependedBy: PipelineGraphSolidFragment_outputs_dependedBy[] | null;
 }
 
 export interface PipelineGraphSolidFragment {

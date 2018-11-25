@@ -123,8 +123,17 @@ export interface PipelineExplorerSolidFragment_outputs_definition {
   description: string | null;
 }
 
+export interface PipelineExplorerSolidFragment_outputs_dependedBy_solid {
+  name: string;
+}
+
+export interface PipelineExplorerSolidFragment_outputs_dependedBy {
+  solid: PipelineExplorerSolidFragment_outputs_dependedBy_solid;
+}
+
 export interface PipelineExplorerSolidFragment_outputs {
   definition: PipelineExplorerSolidFragment_outputs_definition;
+  dependedBy: PipelineExplorerSolidFragment_outputs_dependedBy[] | null;
 }
 
 export interface PipelineExplorerSolidFragment {
