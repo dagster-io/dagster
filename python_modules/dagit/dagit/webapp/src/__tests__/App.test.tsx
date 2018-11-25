@@ -47,6 +47,59 @@ const mocks = [
             ],
             solids: [
               {
+                name: "sum_sq_solid",
+                definition: {
+                  metadata: [],
+                  configDefinition: null,
+                  __typename: "SolidDefinition",
+                  description: null
+                },
+                inputs: [
+                  {
+                    definition: {
+                      name: "sum_df",
+                      type: {
+                        name: "PandasDataFrame",
+                        __typename: "RegularType",
+                        description:
+                          "Two-dimensional size-mutable, potentially heterogeneous\n    tabular data structure with labeled axes (rows and columns). See http://pandas.pydata.org/"
+                      },
+                      __typename: "InputDefinition",
+                      description: null,
+                      expectations: []
+                    },
+                    dependsOn: {
+                      definition: {
+                        name: "result",
+                        __typename: "OutputDefinition"
+                      },
+                      solid: { name: "sum_solid", __typename: "Solid" },
+                      __typename: "Output"
+                    },
+                    __typename: "Input"
+                  }
+                ],
+                outputs: [
+                  {
+                    definition: {
+                      name: "result",
+                      type: {
+                        name: "PandasDataFrame",
+                        __typename: "RegularType",
+                        description:
+                          "Two-dimensional size-mutable, potentially heterogeneous\n    tabular data structure with labeled axes (rows and columns). See http://pandas.pydata.org/"
+                      },
+                      expectations: [],
+                      __typename: "OutputDefinition",
+                      description: null
+                    },
+                    dependedBy: [],
+                    __typename: "Output"
+                  }
+                ],
+                __typename: "Solid"
+              },
+              {
                 name: "load_num_csv",
                 definition: {
                   metadata: [],
@@ -91,6 +144,12 @@ const mocks = [
                       __typename: "OutputDefinition",
                       description: null
                     },
+                    dependedBy: [
+                      {
+                        solid: { name: "sum_solid", __typename: "Solid" },
+                        __typename: "Input"
+                      }
+                    ],
                     __typename: "Output"
                   }
                 ],
@@ -143,58 +202,12 @@ const mocks = [
                       __typename: "OutputDefinition",
                       description: null
                     },
-                    __typename: "Output"
-                  }
-                ],
-                __typename: "Solid"
-              },
-              {
-                name: "sum_sq_solid",
-                definition: {
-                  metadata: [],
-                  configDefinition: null,
-                  __typename: "SolidDefinition",
-                  description: null
-                },
-                inputs: [
-                  {
-                    definition: {
-                      name: "sum_df",
-                      type: {
-                        name: "PandasDataFrame",
-                        __typename: "RegularType",
-                        description:
-                          "Two-dimensional size-mutable, potentially heterogeneous\n    tabular data structure with labeled axes (rows and columns). See http://pandas.pydata.org/"
-                      },
-                      __typename: "InputDefinition",
-                      description: null,
-                      expectations: []
-                    },
-                    dependsOn: {
-                      definition: {
-                        name: "result",
-                        __typename: "OutputDefinition"
-                      },
-                      solid: { name: "sum_solid", __typename: "Solid" },
-                      __typename: "Output"
-                    },
-                    __typename: "Input"
-                  }
-                ],
-                outputs: [
-                  {
-                    definition: {
-                      name: "result",
-                      type: {
-                        name: "PandasDataFrame",
-                        __typename: "RegularType",
-                        description:
-                          "Two-dimensional size-mutable, potentially heterogeneous\n    tabular data structure with labeled axes (rows and columns). See http://pandas.pydata.org/"
-                      },
-                      expectations: [],
-                      __typename: "OutputDefinition",
-                      description: null
-                    },
+                    dependedBy: [
+                      {
+                        solid: { name: "sum_sq_solid", __typename: "Solid" },
+                        __typename: "Input"
+                      }
+                    ],
                     __typename: "Output"
                   }
                 ],
