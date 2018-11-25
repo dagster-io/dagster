@@ -45,16 +45,25 @@ class PipelineGraphContents extends React.PureComponent<
     const solids = this.props.layout.solids;
 
     return connections.map(({ from, to }, i) => (
-      <StyledLink
-        key={i}
-        x={(d: IPoint) => d.x}
-        y={(d: IPoint) => d.y}
-        data={{
-          // can also use from.point for the "Dagre" closest point on node
-          source: solids[from.solidName].outputs[from.edgeName].port,
-          target: solids[to.solidName].inputs[to.edgeName].port
-        }}
-      />
+      <g
+        onMouseLeave={() => this.setState({ highlightedConnections: [] })}
+        onMouseEnter={() =>
+          this.setState({
+            highlightedConnections: [{ a: from.solidName, b: to.solidName }]
+          })
+        }
+      >
+        <StyledLink
+          key={i}
+          x={(d: IPoint) => d.x}
+          y={(d: IPoint) => d.y}
+          data={{
+            // can also use from.point for the "Dagre" closest point on node
+            source: solids[from.solidName].outputs[from.edgeName].port,
+            target: solids[to.solidName].inputs[to.edgeName].port
+          }}
+        />
+      </g>
     ));
   }
 

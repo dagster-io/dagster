@@ -26,7 +26,7 @@ interface ISolidNodeProps {
   dim: boolean;
   onClick: (solidName: string) => void;
   onDoubleClick: (solidName: string) => void;
-  onHighlightConnections: (conns: Array<{ a: string; b: string }>) => void;
+  onHighlightConnections: (conns: { a: string; b: string }[]) => void;
 }
 
 export default class SolidNode extends React.Component<ISolidNodeProps> {
