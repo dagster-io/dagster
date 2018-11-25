@@ -24,7 +24,7 @@ Array [
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-hMqMXs hfbTqN"
+        className="sc-cvbbAY iReTcD"
       >
         <span
           className="bp3-popover-wrapper"
@@ -69,60 +69,36 @@ Array [
           </span>
         </span>
         <div
-          className="sc-kEYyzF jlZFun"
+          className="bp3-navbar-divider"
+        />
+        <div
+          className="sc-jWBwVP dfpoEp"
         >
-          /
-        </div>
-        <span
-          className="bp3-popover-wrapper"
-        >
-          <span
-            className="bp3-popover-target"
+          <a
+            active={false}
+            className="sc-brqgnP fACWVH"
+            href="/pandas_hello_world/explore"
             onClick={[Function]}
           >
-            <div
-              className=""
-              onKeyDown={[Function]}
-            >
-              <button
-                className="bp3-button"
-                onKeyDown={[Function]}
-                onKeyUp={[Function]}
-                type="button"
-              >
-                <span
-                  className="bp3-button-text"
-                >
-                  load_num_csv
-                </span>
-                <svg
-                  className="bp3-icon"
-                  data-icon="double-caret-vertical"
-                  height={16}
-                  style={Object {}}
-                  viewBox="0 0 16 16"
-                  width={16}
-                >
-                  <desc>
-                    double-caret-vertical
-                  </desc>
-                  <path
-                    d="M5 7h6a1.003 1.003 0 0 0 .71-1.71l-3-3C8.53 2.11 8.28 2 8 2s-.53.11-.71.29l-3 3A1.003 1.003 0 0 0 5 7zm6 2H5a1.003 1.003 0 0 0-.71 1.71l3 3c.18.18.43.29.71.29s.53-.11.71-.29l3-3A1.003 1.003 0 0 0 11 9z"
-                    fillRule="evenodd"
-                  />
-                </svg>
-              </button>
-            </div>
-          </span>
-        </span>
+            Explore
+          </a>
+          <a
+            active={false}
+            className="sc-brqgnP fACWVH"
+            href="/pandas_hello_world/execute"
+            onClick={[Function]}
+          >
+            Execute
+          </a>
+        </div>
       </div>
     </div>
   </div>,
   <div
-    className="sc-dxgOiQ fawXxP"
+    className="sc-hMqMXs blsxbv"
   >
     <div
-      className="sc-ckVGcZ MbMYM"
+      className="sc-kEYyzF ctUZez"
       style={
         Object {
           "width": "70vw",
@@ -130,912 +106,8 @@ Array [
       }
     >
       <div
-        className="sc-eNQAEJ hOygc"
+        className="sc-iAyFgw bDzZEW"
       >
-        <input
-          onChange={[Function]}
-          placeholder="Filter..."
-          type="text"
-          value=""
-        />
-      </div>
-      <div
-        onKeyDown={[Function]}
-        onMouseDown={[Function]}
-        onWheel={[Function]}
-        style={
-          Object {
-            "backgroundColor": "#F5F8FA",
-            "height": "100%",
-            "overflow": "hidden",
-            "position": "relative",
-            "userSelect": "none",
-            "width": "100%",
-          }
-        }
-        tabIndex={-1}
-      >
-        <div
-          style={
-            Object {
-              "transform": "matrix(0.39, 0, 0, 0.39, 378.125, 371.29999999999995)",
-              "transformOrigin": "top left",
-            }
-          }
-        >
-          <svg
-            className="sc-htpNat ZstKo"
-            height={660}
-            onClick={[Function]}
-            onDoubleClick={[Function]}
-            width={625}
-          >
-            <g>
-              <g
-                style={
-                  Object {
-                    "opacity": 0.2,
-                  }
-                }
-              >
-                <path
-                  className="vx-link-vertical sc-bxivhb gcwZHG"
-                  d="M115,178C115,221,115,221,115,264"
-                />
-                <path
-                  className="vx-link-vertical sc-bxivhb gcwZHG"
-                  d="M115,360C115,403,115,403,115,446"
-                />
-              </g>
-              <g
-                onClick={[Function]}
-                onDoubleClick={[Function]}
-                opacity={1}
-              >
-                <rect
-                  fill="transparent"
-                  height={116}
-                  stroke="#8A9BA8"
-                  strokeDasharray={12}
-                  strokeWidth={3}
-                  width={370}
-                  x={90}
-                  y={90}
-                />
-                <rect
-                  fill="#DBE6EE"
-                  height={72}
-                  stroke="#979797"
-                  strokeWidth={1}
-                  width={350}
-                  x={100}
-                  y={100}
-                />
-                <text
-                  dominantBaseline="hanging"
-                  fill="#222"
-                  style={
-                    Object {
-                      "font": "30px \\"Source Code Pro\\", monospace",
-                      "pointerEvents": "none",
-                    }
-                  }
-                  width={223.2}
-                  x={112}
-                  y={121}
-                >
-                  load_num_csv
-                </text>
-                <g>
-                  <rect
-                    fill="#137CBD"
-                    height={36}
-                    stroke="#979797"
-                    strokeWidth={1}
-                    width={30}
-                    x={100}
-                    y={160}
-                  />
-                  <ellipse
-                    cx={115}
-                    cy={178}
-                    fill="rgba(0, 0, 0, 0.3)"
-                    rx={7}
-                    ry={7}
-                    stroke="white"
-                    strokeWidth={1.5}
-                  />
-                </g>
-                <ellipse
-                  cx={430}
-                  cy={100}
-                  fill="#DBE6EE"
-                  pathLength={100}
-                  rx={13}
-                  ry={13}
-                  stroke="#8A9BA8"
-                  strokeDasharray="0 50 0"
-                  strokeWidth={1}
-                />
-                <ellipse
-                  cx={430}
-                  cy={100}
-                  fill="#7D8C97"
-                  pathLength={100}
-                  rx={10}
-                  ry={10}
-                  stroke="#FFFFFF"
-                  strokeWidth={2}
-                />
-              </g>
-              <g
-                onClick={[Function]}
-                onDoubleClick={[Function]}
-                opacity={1}
-              >
-                <rect
-                  fill="#DBE6EE"
-                  height={72}
-                  stroke="#979797"
-                  strokeWidth={1}
-                  width={350}
-                  x={100}
-                  y={276}
-                />
-                <text
-                  dominantBaseline="hanging"
-                  fill="#222"
-                  style={
-                    Object {
-                      "font": "30px \\"Source Code Pro\\", monospace",
-                      "pointerEvents": "none",
-                    }
-                  }
-                  width={167.4}
-                  x={112}
-                  y={297}
-                >
-                  sum_solid
-                </text>
-                <g>
-                  <rect
-                    fill="#00B3A4"
-                    height={36}
-                    stroke="#979797"
-                    strokeWidth={1}
-                    width={30}
-                    x={100}
-                    y={246}
-                  />
-                  <ellipse
-                    cx={115}
-                    cy={264}
-                    fill="rgba(0, 0, 0, 0.3)"
-                    rx={7}
-                    ry={7}
-                    stroke="white"
-                    strokeWidth={1.5}
-                  />
-                </g>
-                <g>
-                  <rect
-                    fill="#137CBD"
-                    height={36}
-                    stroke="#979797"
-                    strokeWidth={1}
-                    width={30}
-                    x={100}
-                    y={342}
-                  />
-                  <ellipse
-                    cx={115}
-                    cy={360}
-                    fill="rgba(0, 0, 0, 0.3)"
-                    rx={7}
-                    ry={7}
-                    stroke="white"
-                    strokeWidth={1.5}
-                  />
-                </g>
-              </g>
-              <g
-                onClick={[Function]}
-                onDoubleClick={[Function]}
-                opacity={1}
-              >
-                <rect
-                  fill="#DBE6EE"
-                  height={72}
-                  stroke="#979797"
-                  strokeWidth={1}
-                  width={350}
-                  x={100}
-                  y={458}
-                />
-                <text
-                  dominantBaseline="hanging"
-                  fill="#222"
-                  style={
-                    Object {
-                      "font": "30px \\"Source Code Pro\\", monospace",
-                      "pointerEvents": "none",
-                    }
-                  }
-                  width={223.2}
-                  x={112}
-                  y={479}
-                >
-                  sum_sq_solid
-                </text>
-                <g>
-                  <rect
-                    fill="#00B3A4"
-                    height={36}
-                    stroke="#979797"
-                    strokeWidth={1}
-                    width={30}
-                    x={100}
-                    y={428}
-                  />
-                  <ellipse
-                    cx={115}
-                    cy={446}
-                    fill="rgba(0, 0, 0, 0.3)"
-                    rx={7}
-                    ry={7}
-                    stroke="white"
-                    strokeWidth={1.5}
-                  />
-                </g>
-                <g>
-                  <rect
-                    fill="#137CBD"
-                    height={36}
-                    stroke="#979797"
-                    strokeWidth={1}
-                    width={30}
-                    x={100}
-                    y={524}
-                  />
-                  <ellipse
-                    cx={115}
-                    cy={542}
-                    fill="rgba(0, 0, 0, 0.3)"
-                    rx={7}
-                    ry={7}
-                    stroke="white"
-                    strokeWidth={1.5}
-                  />
-                </g>
-              </g>
-            </g>
-          </svg>
-        </div>
-      </div>
-    </div>
-    <div
-      className="sc-ifAKCX eEZyq"
-    >
-      <div
-        className="sc-EHOje hEMzCV"
-        onMouseDown={[Function]}
-      />
-    </div>
-    <div
-      className="sc-jKJlTe fLumyX"
-      style={
-        Object {
-          "width": "30vw",
-        }
-      }
-    >
-      <div
-        className="sc-kGXeez hKehno"
-        id="TabsExample"
-      >
-        <a
-          href="/pandas_hello_world/load_num_csv"
-          onClick={[Function]}
-        >
-          <div
-            className="sc-kpOJdX UFDXE"
-          >
-            <svg
-              className="bp3-icon"
-              data-icon="diagram-tree"
-              height={16}
-              style={
-                Object {
-                  "marginRight": 5,
-                }
-              }
-              viewBox="0 0 16 16"
-              width={16}
-            >
-              <desc>
-                diagram-tree
-              </desc>
-              <path
-                d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 0 1 1-1h5V5h2v2h5a1 1 0 0 1 1 1zM1 12h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1zm12 0h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1zm-6 0h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1zM7 0h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V1a1 1 0 0 1 1-1z"
-                fillRule="evenodd"
-              />
-            </svg>
-            Info
-          </div>
-        </a>
-        <a
-          href="/pandas_hello_world/load_num_csv?types=true"
-          onClick={[Function]}
-        >
-          <div
-            className="sc-kpOJdX eJHeWd"
-          >
-            <svg
-              className="bp3-icon"
-              data-icon="manual"
-              height={16}
-              style={
-                Object {
-                  "marginRight": 5,
-                }
-              }
-              viewBox="0 0 16 16"
-              width={16}
-            >
-              <desc>
-                manual
-              </desc>
-              <path
-                d="M15.99 1.13c-.02-.41-.33-.77-.78-.87C12.26-.36 9.84.13 8 1.7 6.16.13 3.74-.36.78.26.33.35.03.72.01 1.13H0v12c0 .08 0 .17.02.26.12.51.65.82 1.19.71 2.63-.55 4.59-.04 6.01 1.57.02.03.06.04.08.06.02.02.03.04.05.06.04.03.09.04.13.07.05.03.09.05.14.07.11.04.23.07.35.07h.04c.12 0 .24-.03.35-.07.05-.02.09-.05.14-.07.04-.02.09-.04.13-.07.02-.02.03-.04.05-.06.03-.02.06-.03.08-.06 1.42-1.6 3.39-2.12 6.01-1.57.54.11 1.07-.21 1.19-.71.04-.09.04-.18.04-.26l-.01-12zM7 12.99c-1.4-.83-3.07-1.14-5-.93V1.96c2.11-.28 3.75.2 5 1.46v9.57zm7-.92c-1.93-.21-3.6.1-5 .93V3.42c1.25-1.26 2.89-1.74 5-1.46v10.11z"
-                fillRule="evenodd"
-              />
-            </svg>
-            Types
-          </div>
-        </a>
-        <a
-          href="/pandas_hello_world/load_num_csv?editor=true"
-          onClick={[Function]}
-        >
-          <div
-            className="sc-kpOJdX eJHeWd"
-          >
-            <svg
-              className="bp3-icon"
-              data-icon="edit"
-              height={16}
-              style={
-                Object {
-                  "marginRight": 5,
-                }
-              }
-              viewBox="0 0 16 16"
-              width={16}
-            >
-              <desc>
-                edit
-              </desc>
-              <path
-                d="M3.25 10.26l2.47 2.47 6.69-6.69-2.46-2.48-6.7 6.7zM.99 14.99l3.86-1.39-2.46-2.44-1.4 3.83zm12.25-14c-.48 0-.92.2-1.24.51l-1.44 1.44 2.47 2.47 1.44-1.44c.32-.32.51-.75.51-1.24.01-.95-.77-1.74-1.74-1.74z"
-                fillRule="evenodd"
-              />
-            </svg>
-            Config Editor
-          </div>
-        </a>
-      </div>
-      <div>
-        <div
-          className="sc-jTzLTM hdCjmb"
-        >
-          Solid
-        </div>
-        <h3
-          className="sc-gqjmRU jkWuVE"
-        >
-          load_num_csv
-        </h3>
-        <div>
-          <div
-            className="sc-jzJRlG fUwugY"
-            onClick={[Function]}
-          >
-            Type Signature
-            <svg
-              className="bp3-icon sc-gZMcBi cCPeWO"
-              data-icon="chevron-down"
-              height={16}
-              style={Object {}}
-              viewBox="0 0 16 16"
-              width={16}
-            >
-              <desc>
-                chevron-down
-              </desc>
-              <path
-                d="M12 5c-.28 0-.53.11-.71.29L8 8.59l-3.29-3.3a1.003 1.003 0 0 0-1.42 1.42l4 4c.18.18.43.29.71.29s.53-.11.71-.29l4-4A1.003 1.003 0 0 0 12 5z"
-                fillRule="evenodd"
-              />
-            </svg>
-          </div>
-          <div
-            className="bp3-collapse"
-            style={
-              Object {
-                "height": "auto",
-                "overflowY": "visible",
-                "transition": "none",
-              }
-            }
-          >
-            <div
-              aria-hidden={false}
-              className="bp3-collapse-body"
-              style={
-                Object {
-                  "transform": "translateY(0)",
-                  "transition": "none",
-                }
-              }
-            >
-              <div
-                className="sc-cSHVUG gbhRjM"
-              >
-                <code
-                  className="bp3-code sc-chPdSV jYxskL"
-                >
-                  (
-                  ) ⇒ (
-                  <span>
-                    result
-                    :
-                     
-                    <a
-                      href="/?typeExplorer=PandasDataFrame"
-                      onClick={[Function]}
-                    >
-                      <code
-                        className="sc-bZQynM doTlsQ"
-                      >
-                        PandasDataFrame
-                      </code>
-                    </a>
-                    
-                  </span>
-                  )
-                </code>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div>
-          <div
-            className="sc-jzJRlG fUwugY"
-            onClick={[Function]}
-          >
-            Description
-            <svg
-              className="bp3-icon sc-gZMcBi cCPeWO"
-              data-icon="chevron-down"
-              height={16}
-              style={Object {}}
-              viewBox="0 0 16 16"
-              width={16}
-            >
-              <desc>
-                chevron-down
-              </desc>
-              <path
-                d="M12 5c-.28 0-.53.11-.71.29L8 8.59l-3.29-3.3a1.003 1.003 0 0 0-1.42 1.42l4 4c.18.18.43.29.71.29s.53-.11.71-.29l4-4A1.003 1.003 0 0 0 12 5z"
-                fillRule="evenodd"
-              />
-            </svg>
-          </div>
-          <div
-            className="bp3-collapse"
-            style={
-              Object {
-                "height": "auto",
-                "overflowY": "visible",
-                "transition": "none",
-              }
-            }
-          >
-            <div
-              aria-hidden={false}
-              className="bp3-collapse-body"
-              style={
-                Object {
-                  "transform": "translateY(0)",
-                  "transition": "none",
-                }
-              }
-            >
-              <div
-                className="sc-cSHVUG gbhRjM"
-              />
-            </div>
-          </div>
-        </div>
-        <div>
-          <div
-            className="sc-jzJRlG fUwugY"
-            onClick={[Function]}
-          >
-            Config
-            <svg
-              className="bp3-icon sc-gZMcBi cCPeWO"
-              data-icon="chevron-down"
-              height={16}
-              style={Object {}}
-              viewBox="0 0 16 16"
-              width={16}
-            >
-              <desc>
-                chevron-down
-              </desc>
-              <path
-                d="M12 5c-.28 0-.53.11-.71.29L8 8.59l-3.29-3.3a1.003 1.003 0 0 0-1.42 1.42l4 4c.18.18.43.29.71.29s.53-.11.71-.29l4-4A1.003 1.003 0 0 0 12 5z"
-                fillRule="evenodd"
-              />
-            </svg>
-          </div>
-          <div
-            className="bp3-collapse"
-            style={
-              Object {
-                "height": "auto",
-                "overflowY": "visible",
-                "transition": "none",
-              }
-            }
-          >
-            <div
-              aria-hidden={false}
-              className="bp3-collapse-body"
-              style={
-                Object {
-                  "transform": "translateY(0)",
-                  "transition": "none",
-                }
-              }
-            >
-              <div
-                className="sc-cSHVUG gbhRjM"
-              >
-                <div>
-                  <a
-                    href="/?typeExplorer=LoadDataFrameConfigDict"
-                    onClick={[Function]}
-                  >
-                    <code
-                      className="sc-bZQynM doTlsQ"
-                    >
-                      LoadDataFrameConfigDict
-                    </code>
-                  </a>
-                  <ul
-                    className="bp3-list"
-                  >
-                    <li>
-                      path
-                       
-                       
-                      <a
-                        href="/?typeExplorer=Path"
-                        onClick={[Function]}
-                      >
-                        <code
-                          className="sc-bZQynM doTlsQ"
-                        >
-                          Path
-                        </code>
-                      </a>
-                      <div
-                        className="sc-iwsKbI hwFvq"
-                      />
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div>
-          <div
-            className="sc-jzJRlG fUwugY"
-            onClick={[Function]}
-          >
-            Inputs
-            <svg
-              className="bp3-icon sc-gZMcBi cCPeWO"
-              data-icon="chevron-down"
-              height={16}
-              style={Object {}}
-              viewBox="0 0 16 16"
-              width={16}
-            >
-              <desc>
-                chevron-down
-              </desc>
-              <path
-                d="M12 5c-.28 0-.53.11-.71.29L8 8.59l-3.29-3.3a1.003 1.003 0 0 0-1.42 1.42l4 4c.18.18.43.29.71.29s.53-.11.71-.29l4-4A1.003 1.003 0 0 0 12 5z"
-                fillRule="evenodd"
-              />
-            </svg>
-          </div>
-          <div
-            className="bp3-collapse"
-            style={
-              Object {
-                "height": "auto",
-                "overflowY": "visible",
-                "transition": "none",
-              }
-            }
-          >
-            <div
-              aria-hidden={false}
-              className="bp3-collapse-body"
-              style={
-                Object {
-                  "transform": "translateY(0)",
-                  "transition": "none",
-                }
-              }
-            >
-              <div
-                className="sc-cSHVUG gbhRjM"
-              />
-            </div>
-          </div>
-        </div>
-        <div>
-          <div
-            className="sc-jzJRlG fUwugY"
-            onClick={[Function]}
-          >
-            Outputs
-            <svg
-              className="bp3-icon sc-gZMcBi cCPeWO"
-              data-icon="chevron-down"
-              height={16}
-              style={Object {}}
-              viewBox="0 0 16 16"
-              width={16}
-            >
-              <desc>
-                chevron-down
-              </desc>
-              <path
-                d="M12 5c-.28 0-.53.11-.71.29L8 8.59l-3.29-3.3a1.003 1.003 0 0 0-1.42 1.42l4 4c.18.18.43.29.71.29s.53-.11.71-.29l4-4A1.003 1.003 0 0 0 12 5z"
-                fillRule="evenodd"
-              />
-            </svg>
-          </div>
-          <div
-            className="bp3-collapse"
-            style={
-              Object {
-                "height": "auto",
-                "overflowY": "visible",
-                "transition": "none",
-              }
-            }
-          >
-            <div
-              aria-hidden={false}
-              className="bp3-collapse-body"
-              style={
-                Object {
-                  "transform": "translateY(0)",
-                  "transition": "none",
-                }
-              }
-            >
-              <div
-                className="sc-cSHVUG gbhRjM"
-              >
-                <div
-                  className="sc-fjdhpX eVJyLe"
-                >
-                  <h4
-                    className="sc-VigVT cObvZk"
-                  >
-                    result
-                  </h4>
-                  <div
-                    className="sc-kgoBCf cIvQix"
-                  >
-                    <a
-                      href="/?typeExplorer=PandasDataFrame"
-                      onClick={[Function]}
-                    >
-                      <code
-                        className="sc-bZQynM doTlsQ"
-                      >
-                        PandasDataFrame
-                      </code>
-                    </a>
-                  </div>
-                  <ul
-                    className="bp3-list"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>,
-]
-`;
-
-exports[`renders pipeline page 1`] = `
-Array [
-  <div
-    className="bp3-navbar"
-  >
-    <div
-      className="bp3-navbar-group bp3-align-left"
-    >
-      <div
-        className="bp3-navbar-heading"
-        onClick={[Function]}
-      >
-        <img
-          style={
-            Object {
-              "height": 34,
-            }
-          }
-        />
-      </div>
-      <div
-        className="bp3-navbar-divider"
-      />
-      <div
-        className="sc-hMqMXs hfbTqN"
-      >
-        <span
-          className="bp3-popover-wrapper"
-        >
-          <span
-            className="bp3-popover-target"
-            onClick={[Function]}
-          >
-            <div
-              className=""
-              onKeyDown={[Function]}
-            >
-              <button
-                className="bp3-button"
-                onKeyDown={[Function]}
-                onKeyUp={[Function]}
-                type="button"
-              >
-                <span
-                  className="bp3-button-text"
-                >
-                  Select a Pipeline...
-                </span>
-                <svg
-                  className="bp3-icon"
-                  data-icon="double-caret-vertical"
-                  height={16}
-                  style={Object {}}
-                  viewBox="0 0 16 16"
-                  width={16}
-                >
-                  <desc>
-                    double-caret-vertical
-                  </desc>
-                  <path
-                    d="M5 7h6a1.003 1.003 0 0 0 .71-1.71l-3-3C8.53 2.11 8.28 2 8 2s-.53.11-.71.29l-3 3A1.003 1.003 0 0 0 5 7zm6 2H5a1.003 1.003 0 0 0-.71 1.71l3 3c.18.18.43.29.71.29s.53-.11.71-.29l3-3A1.003 1.003 0 0 0 11 9z"
-                    fillRule="evenodd"
-                  />
-                </svg>
-              </button>
-            </div>
-          </span>
-        </span>
-        <div
-          className="sc-kEYyzF jlZFun"
-        >
-          /
-        </div>
-      </div>
-    </div>
-  </div>,
-  <div
-    className="bp3-non-ideal-state"
-  >
-    <h4
-      className="bp3-heading"
-    >
-      No pipeline selected
-    </h4>
-    <div>
-      Select a pipeline in the navbar
-    </div>
-  </div>,
-]
-`;
-
-exports[`renders pipeline solid page 1`] = `
-Array [
-  <div
-    className="bp3-navbar"
-  >
-    <div
-      className="bp3-navbar-group bp3-align-left"
-    >
-      <div
-        className="bp3-navbar-heading"
-        onClick={[Function]}
-      >
-        <img
-          style={
-            Object {
-              "height": 34,
-            }
-          }
-        />
-      </div>
-      <div
-        className="bp3-navbar-divider"
-      />
-      <div
-        className="sc-hMqMXs hfbTqN"
-      >
-        <span
-          className="bp3-popover-wrapper"
-        >
-          <span
-            className="bp3-popover-target"
-            onClick={[Function]}
-          >
-            <div
-              className=""
-              onKeyDown={[Function]}
-            >
-              <button
-                className="bp3-button"
-                onKeyDown={[Function]}
-                onKeyUp={[Function]}
-                type="button"
-              >
-                <span
-                  className="bp3-button-text"
-                >
-                  pandas_hello_world
-                </span>
-                <svg
-                  className="bp3-icon"
-                  data-icon="double-caret-vertical"
-                  height={16}
-                  style={Object {}}
-                  viewBox="0 0 16 16"
-                  width={16}
-                >
-                  <desc>
-                    double-caret-vertical
-                  </desc>
-                  <path
-                    d="M5 7h6a1.003 1.003 0 0 0 .71-1.71l-3-3C8.53 2.11 8.28 2 8 2s-.53.11-.71.29l-3 3A1.003 1.003 0 0 0 5 7zm6 2H5a1.003 1.003 0 0 0-.71 1.71l3 3c.18.18.43.29.71.29s.53-.11.71-.29l3-3A1.003 1.003 0 0 0 11 9z"
-                    fillRule="evenodd"
-                  />
-                </svg>
-              </button>
-            </div>
-          </span>
-        </span>
-        <div
-          className="sc-kEYyzF jlZFun"
-        >
-          /
-        </div>
         <span
           className="bp3-popover-wrapper"
         >
@@ -1078,24 +150,8 @@ Array [
             </div>
           </span>
         </span>
-      </div>
-    </div>
-  </div>,
-  <div
-    className="sc-dxgOiQ fawXxP"
-  >
-    <div
-      className="sc-ckVGcZ MbMYM"
-      style={
-        Object {
-          "width": "70vw",
-        }
-      }
-    >
-      <div
-        className="sc-eNQAEJ hOygc"
-      >
         <input
+          className="sc-hSdWYo HVIoH"
           onChange={[Function]}
           placeholder="Filter..."
           type="text"
@@ -1127,7 +183,7 @@ Array [
           }
         >
           <svg
-            className="sc-htpNat ZstKo"
+            className="sc-bZQynM iLpcha"
             height={660}
             onClick={[Function]}
             onDoubleClick={[Function]}
@@ -1142,11 +198,11 @@ Array [
                 }
               >
                 <path
-                  className="vx-link-vertical sc-bxivhb gcwZHG"
+                  className="vx-link-vertical sc-gzVnrw kEbVHY"
                   d="M115,178C115,221,115,221,115,264"
                 />
                 <path
-                  className="vx-link-vertical sc-bxivhb gcwZHG"
+                  className="vx-link-vertical sc-gzVnrw kEbVHY"
                   d="M115,360C115,403,115,403,115,446"
                 />
               </g>
@@ -1367,15 +423,15 @@ Array [
       </div>
     </div>
     <div
-      className="sc-ifAKCX eEZyq"
+      className="sc-htoDjs kHmEgB"
     >
       <div
-        className="sc-EHOje hEMzCV"
+        className="sc-dnqmqq heTnR"
         onMouseDown={[Function]}
       />
     </div>
     <div
-      className="sc-jKJlTe fLumyX"
+      className="sc-kkGfuU eNYQdw"
       style={
         Object {
           "width": "30vw",
@@ -1383,15 +439,14 @@ Array [
       }
     >
       <div
-        className="sc-kGXeez hKehno"
-        id="TabsExample"
+        className="sc-jKJlTe gtPCsZ"
       >
         <a
-          href="/pandas_hello_world"
+          href="/pandas_hello_world/load_num_csv"
           onClick={[Function]}
         >
           <div
-            className="sc-kpOJdX UFDXE"
+            className="sc-eNQAEJ itRwud"
           >
             <svg
               className="bp3-icon"
@@ -1417,11 +472,11 @@ Array [
           </div>
         </a>
         <a
-          href="/pandas_hello_world?types=true"
+          href="/pandas_hello_world/load_num_csv?types=true"
           onClick={[Function]}
         >
           <div
-            className="sc-kpOJdX eJHeWd"
+            className="sc-eNQAEJ bVaysM"
           >
             <svg
               className="bp3-icon"
@@ -1446,56 +501,26 @@ Array [
             Types
           </div>
         </a>
-        <a
-          href="/pandas_hello_world?editor=true"
-          onClick={[Function]}
-        >
-          <div
-            className="sc-kpOJdX eJHeWd"
-          >
-            <svg
-              className="bp3-icon"
-              data-icon="edit"
-              height={16}
-              style={
-                Object {
-                  "marginRight": 5,
-                }
-              }
-              viewBox="0 0 16 16"
-              width={16}
-            >
-              <desc>
-                edit
-              </desc>
-              <path
-                d="M3.25 10.26l2.47 2.47 6.69-6.69-2.46-2.48-6.7 6.7zM.99 14.99l3.86-1.39-2.46-2.44-1.4 3.83zm12.25-14c-.48 0-.92.2-1.24.51l-1.44 1.44 2.47 2.47 1.44-1.44c.32-.32.51-.75.51-1.24.01-.95-.77-1.74-1.74-1.74z"
-                fillRule="evenodd"
-              />
-            </svg>
-            Config Editor
-          </div>
-        </a>
       </div>
       <div>
         <div
-          className="sc-jTzLTM hdCjmb"
+          className="sc-cSHVUG eSGNkD"
         >
           Pipeline
         </div>
         <h3
-          className="sc-gqjmRU jkWuVE"
+          className="sc-fjdhpX jXEEJU"
         >
           pandas_hello_world
         </h3>
         <div>
           <div
-            className="sc-jzJRlG fUwugY"
+            className="sc-chPdSV ksGKbe"
             onClick={[Function]}
           >
             Description
             <svg
-              className="bp3-icon sc-gZMcBi cCPeWO"
+              className="bp3-icon sc-jTzLTM bIGIKP"
               data-icon="chevron-down"
               height={16}
               style={Object {}}
@@ -1532,19 +557,19 @@ Array [
               }
             >
               <div
-                className="sc-cSHVUG gbhRjM"
+                className="sc-kgoBCf boHZSW"
               />
             </div>
           </div>
         </div>
         <div>
           <div
-            className="sc-jzJRlG fUwugY"
+            className="sc-chPdSV ksGKbe"
             onClick={[Function]}
           >
             Contexts
             <svg
-              className="bp3-icon sc-gZMcBi cCPeWO"
+              className="bp3-icon sc-jTzLTM bIGIKP"
               data-icon="chevron-down"
               height={16}
               style={Object {}}
@@ -1581,13 +606,13 @@ Array [
               }
             >
               <div
-                className="sc-cSHVUG gbhRjM"
+                className="sc-kgoBCf boHZSW"
               >
                 <div
-                  className="sc-fjdhpX eVJyLe"
+                  className="sc-kAzzGY eZlNEh"
                 >
                   <h4
-                    className="sc-VigVT cObvZk"
+                    className="sc-jzJRlG jCRkIb"
                   >
                     default
                   </h4>
@@ -1597,7 +622,7 @@ Array [
                       onClick={[Function]}
                     >
                       <code
-                        className="sc-bZQynM doTlsQ"
+                        className="sc-iwsKbI gOyrFn"
                       >
                         DefaultContextConfigDict
                       </code>
@@ -1615,13 +640,13 @@ Array [
                           onClick={[Function]}
                         >
                           <code
-                            className="sc-bZQynM doTlsQ"
+                            className="sc-iwsKbI gOyrFn"
                           >
                             String
                           </code>
                         </a>
                         <div
-                          className="sc-iwsKbI hwFvq"
+                          className="sc-kpOJdX irQCFF"
                         />
                       </li>
                     </ul>
@@ -1637,7 +662,7 @@ Array [
 ]
 `;
 
-exports[`renders type page 1`] = `
+exports[`renders pipeline page 1`] = `
 Array [
   <div
     className="bp3-navbar"
@@ -1661,7 +686,93 @@ Array [
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-hMqMXs hfbTqN"
+        className="sc-cvbbAY iReTcD"
+      >
+        <span
+          className="bp3-popover-wrapper"
+        >
+          <span
+            className="bp3-popover-target"
+            onClick={[Function]}
+          >
+            <div
+              className=""
+              onKeyDown={[Function]}
+            >
+              <button
+                className="bp3-button"
+                onKeyDown={[Function]}
+                onKeyUp={[Function]}
+                type="button"
+              >
+                <span
+                  className="bp3-button-text"
+                >
+                  Select a Pipeline...
+                </span>
+                <svg
+                  className="bp3-icon"
+                  data-icon="double-caret-vertical"
+                  height={16}
+                  style={Object {}}
+                  viewBox="0 0 16 16"
+                  width={16}
+                >
+                  <desc>
+                    double-caret-vertical
+                  </desc>
+                  <path
+                    d="M5 7h6a1.003 1.003 0 0 0 .71-1.71l-3-3C8.53 2.11 8.28 2 8 2s-.53.11-.71.29l-3 3A1.003 1.003 0 0 0 5 7zm6 2H5a1.003 1.003 0 0 0-.71 1.71l3 3c.18.18.43.29.71.29s.53-.11.71-.29l3-3A1.003 1.003 0 0 0 11 9z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </button>
+            </div>
+          </span>
+        </span>
+      </div>
+    </div>
+  </div>,
+  <div
+    className="bp3-non-ideal-state"
+  >
+    <h4
+      className="bp3-heading"
+    >
+      No pipeline selected
+    </h4>
+    <div>
+      Select a pipeline in the navbar
+    </div>
+  </div>,
+]
+`;
+
+exports[`renders pipeline solid page 1`] = `
+Array [
+  <div
+    className="bp3-navbar"
+  >
+    <div
+      className="bp3-navbar-group bp3-align-left"
+    >
+      <div
+        className="bp3-navbar-heading"
+        onClick={[Function]}
+      >
+        <img
+          style={
+            Object {
+              "height": 34,
+            }
+          }
+        />
+      </div>
+      <div
+        className="bp3-navbar-divider"
+      />
+      <div
+        className="sc-cvbbAY iReTcD"
       >
         <span
           className="bp3-popover-wrapper"
@@ -1706,10 +817,45 @@ Array [
           </span>
         </span>
         <div
-          className="sc-kEYyzF jlZFun"
+          className="bp3-navbar-divider"
+        />
+        <div
+          className="sc-jWBwVP dfpoEp"
         >
-          /
+          <a
+            active={false}
+            className="sc-brqgnP fACWVH"
+            href="/pandas_hello_world/explore"
+            onClick={[Function]}
+          >
+            Explore
+          </a>
+          <a
+            active={false}
+            className="sc-brqgnP fACWVH"
+            href="/pandas_hello_world/execute"
+            onClick={[Function]}
+          >
+            Execute
+          </a>
         </div>
+      </div>
+    </div>
+  </div>,
+  <div
+    className="sc-hMqMXs blsxbv"
+  >
+    <div
+      className="sc-kEYyzF ctUZez"
+      style={
+        Object {
+          "width": "70vw",
+        }
+      }
+    >
+      <div
+        className="sc-iAyFgw bDzZEW"
+      >
         <span
           className="bp3-popover-wrapper"
         >
@@ -1730,7 +876,7 @@ Array [
                 <span
                   className="bp3-button-text"
                 >
-                  load_num_csv
+                  Select a Solid...
                 </span>
                 <svg
                   className="bp3-icon"
@@ -1752,24 +898,8 @@ Array [
             </div>
           </span>
         </span>
-      </div>
-    </div>
-  </div>,
-  <div
-    className="sc-dxgOiQ fawXxP"
-  >
-    <div
-      className="sc-ckVGcZ MbMYM"
-      style={
-        Object {
-          "width": "70vw",
-        }
-      }
-    >
-      <div
-        className="sc-eNQAEJ hOygc"
-      >
         <input
+          className="sc-hSdWYo HVIoH"
           onChange={[Function]}
           placeholder="Filter..."
           type="text"
@@ -1801,7 +931,7 @@ Array [
           }
         >
           <svg
-            className="sc-htpNat ZstKo"
+            className="sc-bZQynM iLpcha"
             height={660}
             onClick={[Function]}
             onDoubleClick={[Function]}
@@ -1816,11 +946,11 @@ Array [
                 }
               >
                 <path
-                  className="vx-link-vertical sc-bxivhb gcwZHG"
+                  className="vx-link-vertical sc-gzVnrw kEbVHY"
                   d="M115,178C115,221,115,221,115,264"
                 />
                 <path
-                  className="vx-link-vertical sc-bxivhb gcwZHG"
+                  className="vx-link-vertical sc-gzVnrw kEbVHY"
                   d="M115,360C115,403,115,403,115,446"
                 />
               </g>
@@ -1829,16 +959,6 @@ Array [
                 onDoubleClick={[Function]}
                 opacity={1}
               >
-                <rect
-                  fill="transparent"
-                  height={116}
-                  stroke="#8A9BA8"
-                  strokeDasharray={12}
-                  strokeWidth={3}
-                  width={370}
-                  x={90}
-                  y={90}
-                />
                 <rect
                   fill="#DBE6EE"
                   height={72}
@@ -2051,15 +1171,15 @@ Array [
       </div>
     </div>
     <div
-      className="sc-ifAKCX eEZyq"
+      className="sc-htoDjs kHmEgB"
     >
       <div
-        className="sc-EHOje hEMzCV"
+        className="sc-dnqmqq heTnR"
         onMouseDown={[Function]}
       />
     </div>
     <div
-      className="sc-jKJlTe fLumyX"
+      className="sc-kkGfuU eNYQdw"
       style={
         Object {
           "width": "30vw",
@@ -2067,15 +1187,676 @@ Array [
       }
     >
       <div
-        className="sc-kGXeez hKehno"
-        id="TabsExample"
+        className="sc-jKJlTe gtPCsZ"
+      >
+        <a
+          href="/pandas_hello_world"
+          onClick={[Function]}
+        >
+          <div
+            className="sc-eNQAEJ itRwud"
+          >
+            <svg
+              className="bp3-icon"
+              data-icon="diagram-tree"
+              height={16}
+              style={
+                Object {
+                  "marginRight": 5,
+                }
+              }
+              viewBox="0 0 16 16"
+              width={16}
+            >
+              <desc>
+                diagram-tree
+              </desc>
+              <path
+                d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 0 1 1-1h5V5h2v2h5a1 1 0 0 1 1 1zM1 12h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1zm12 0h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1zm-6 0h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1zM7 0h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V1a1 1 0 0 1 1-1z"
+                fillRule="evenodd"
+              />
+            </svg>
+            Info
+          </div>
+        </a>
+        <a
+          href="/pandas_hello_world?types=true"
+          onClick={[Function]}
+        >
+          <div
+            className="sc-eNQAEJ bVaysM"
+          >
+            <svg
+              className="bp3-icon"
+              data-icon="manual"
+              height={16}
+              style={
+                Object {
+                  "marginRight": 5,
+                }
+              }
+              viewBox="0 0 16 16"
+              width={16}
+            >
+              <desc>
+                manual
+              </desc>
+              <path
+                d="M15.99 1.13c-.02-.41-.33-.77-.78-.87C12.26-.36 9.84.13 8 1.7 6.16.13 3.74-.36.78.26.33.35.03.72.01 1.13H0v12c0 .08 0 .17.02.26.12.51.65.82 1.19.71 2.63-.55 4.59-.04 6.01 1.57.02.03.06.04.08.06.02.02.03.04.05.06.04.03.09.04.13.07.05.03.09.05.14.07.11.04.23.07.35.07h.04c.12 0 .24-.03.35-.07.05-.02.09-.05.14-.07.04-.02.09-.04.13-.07.02-.02.03-.04.05-.06.03-.02.06-.03.08-.06 1.42-1.6 3.39-2.12 6.01-1.57.54.11 1.07-.21 1.19-.71.04-.09.04-.18.04-.26l-.01-12zM7 12.99c-1.4-.83-3.07-1.14-5-.93V1.96c2.11-.28 3.75.2 5 1.46v9.57zm7-.92c-1.93-.21-3.6.1-5 .93V3.42c1.25-1.26 2.89-1.74 5-1.46v10.11z"
+                fillRule="evenodd"
+              />
+            </svg>
+            Types
+          </div>
+        </a>
+      </div>
+      <div>
+        <div
+          className="sc-cSHVUG eSGNkD"
+        >
+          Pipeline
+        </div>
+        <h3
+          className="sc-fjdhpX jXEEJU"
+        >
+          pandas_hello_world
+        </h3>
+        <div>
+          <div
+            className="sc-chPdSV ksGKbe"
+            onClick={[Function]}
+          >
+            Description
+            <svg
+              className="bp3-icon sc-jTzLTM bIGIKP"
+              data-icon="chevron-down"
+              height={16}
+              style={Object {}}
+              viewBox="0 0 16 16"
+              width={16}
+            >
+              <desc>
+                chevron-down
+              </desc>
+              <path
+                d="M12 5c-.28 0-.53.11-.71.29L8 8.59l-3.29-3.3a1.003 1.003 0 0 0-1.42 1.42l4 4c.18.18.43.29.71.29s.53-.11.71-.29l4-4A1.003 1.003 0 0 0 12 5z"
+                fillRule="evenodd"
+              />
+            </svg>
+          </div>
+          <div
+            className="bp3-collapse"
+            style={
+              Object {
+                "height": "auto",
+                "overflowY": "visible",
+                "transition": "none",
+              }
+            }
+          >
+            <div
+              aria-hidden={false}
+              className="bp3-collapse-body"
+              style={
+                Object {
+                  "transform": "translateY(0)",
+                  "transition": "none",
+                }
+              }
+            >
+              <div
+                className="sc-kgoBCf boHZSW"
+              />
+            </div>
+          </div>
+        </div>
+        <div>
+          <div
+            className="sc-chPdSV ksGKbe"
+            onClick={[Function]}
+          >
+            Contexts
+            <svg
+              className="bp3-icon sc-jTzLTM bIGIKP"
+              data-icon="chevron-down"
+              height={16}
+              style={Object {}}
+              viewBox="0 0 16 16"
+              width={16}
+            >
+              <desc>
+                chevron-down
+              </desc>
+              <path
+                d="M12 5c-.28 0-.53.11-.71.29L8 8.59l-3.29-3.3a1.003 1.003 0 0 0-1.42 1.42l4 4c.18.18.43.29.71.29s.53-.11.71-.29l4-4A1.003 1.003 0 0 0 12 5z"
+                fillRule="evenodd"
+              />
+            </svg>
+          </div>
+          <div
+            className="bp3-collapse"
+            style={
+              Object {
+                "height": "auto",
+                "overflowY": "visible",
+                "transition": "none",
+              }
+            }
+          >
+            <div
+              aria-hidden={false}
+              className="bp3-collapse-body"
+              style={
+                Object {
+                  "transform": "translateY(0)",
+                  "transition": "none",
+                }
+              }
+            >
+              <div
+                className="sc-kgoBCf boHZSW"
+              >
+                <div
+                  className="sc-kAzzGY eZlNEh"
+                >
+                  <h4
+                    className="sc-jzJRlG jCRkIb"
+                  >
+                    default
+                  </h4>
+                  <div>
+                    <a
+                      href="/?typeExplorer=DefaultContextConfigDict"
+                      onClick={[Function]}
+                    >
+                      <code
+                        className="sc-iwsKbI gOyrFn"
+                      >
+                        DefaultContextConfigDict
+                      </code>
+                    </a>
+                    <ul
+                      className="bp3-list"
+                    >
+                      <li>
+                        log_level
+                         
+                        (optional)
+                         
+                        <a
+                          href="/?typeExplorer=String"
+                          onClick={[Function]}
+                        >
+                          <code
+                            className="sc-iwsKbI gOyrFn"
+                          >
+                            String
+                          </code>
+                        </a>
+                        <div
+                          className="sc-kpOJdX irQCFF"
+                        />
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>,
+]
+`;
+
+exports[`renders type page 1`] = `
+Array [
+  <div
+    className="bp3-navbar"
+  >
+    <div
+      className="bp3-navbar-group bp3-align-left"
+    >
+      <div
+        className="bp3-navbar-heading"
+        onClick={[Function]}
+      >
+        <img
+          style={
+            Object {
+              "height": 34,
+            }
+          }
+        />
+      </div>
+      <div
+        className="bp3-navbar-divider"
+      />
+      <div
+        className="sc-cvbbAY iReTcD"
+      >
+        <span
+          className="bp3-popover-wrapper"
+        >
+          <span
+            className="bp3-popover-target"
+            onClick={[Function]}
+          >
+            <div
+              className=""
+              onKeyDown={[Function]}
+            >
+              <button
+                className="bp3-button"
+                onKeyDown={[Function]}
+                onKeyUp={[Function]}
+                type="button"
+              >
+                <span
+                  className="bp3-button-text"
+                >
+                  pandas_hello_world
+                </span>
+                <svg
+                  className="bp3-icon"
+                  data-icon="double-caret-vertical"
+                  height={16}
+                  style={Object {}}
+                  viewBox="0 0 16 16"
+                  width={16}
+                >
+                  <desc>
+                    double-caret-vertical
+                  </desc>
+                  <path
+                    d="M5 7h6a1.003 1.003 0 0 0 .71-1.71l-3-3C8.53 2.11 8.28 2 8 2s-.53.11-.71.29l-3 3A1.003 1.003 0 0 0 5 7zm6 2H5a1.003 1.003 0 0 0-.71 1.71l3 3c.18.18.43.29.71.29s.53-.11.71-.29l3-3A1.003 1.003 0 0 0 11 9z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </button>
+            </div>
+          </span>
+        </span>
+        <div
+          className="bp3-navbar-divider"
+        />
+        <div
+          className="sc-jWBwVP dfpoEp"
+        >
+          <a
+            active={false}
+            className="sc-brqgnP fACWVH"
+            href="/pandas_hello_world/explore"
+            onClick={[Function]}
+          >
+            Explore
+          </a>
+          <a
+            active={false}
+            className="sc-brqgnP fACWVH"
+            href="/pandas_hello_world/execute"
+            onClick={[Function]}
+          >
+            Execute
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>,
+  <div
+    className="sc-hMqMXs blsxbv"
+  >
+    <div
+      className="sc-kEYyzF ctUZez"
+      style={
+        Object {
+          "width": "70vw",
+        }
+      }
+    >
+      <div
+        className="sc-iAyFgw bDzZEW"
+      >
+        <span
+          className="bp3-popover-wrapper"
+        >
+          <span
+            className="bp3-popover-target"
+            onClick={[Function]}
+          >
+            <div
+              className=""
+              onKeyDown={[Function]}
+            >
+              <button
+                className="bp3-button"
+                onKeyDown={[Function]}
+                onKeyUp={[Function]}
+                type="button"
+              >
+                <span
+                  className="bp3-button-text"
+                >
+                  Select a Solid...
+                </span>
+                <svg
+                  className="bp3-icon"
+                  data-icon="double-caret-vertical"
+                  height={16}
+                  style={Object {}}
+                  viewBox="0 0 16 16"
+                  width={16}
+                >
+                  <desc>
+                    double-caret-vertical
+                  </desc>
+                  <path
+                    d="M5 7h6a1.003 1.003 0 0 0 .71-1.71l-3-3C8.53 2.11 8.28 2 8 2s-.53.11-.71.29l-3 3A1.003 1.003 0 0 0 5 7zm6 2H5a1.003 1.003 0 0 0-.71 1.71l3 3c.18.18.43.29.71.29s.53-.11.71-.29l3-3A1.003 1.003 0 0 0 11 9z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </button>
+            </div>
+          </span>
+        </span>
+        <input
+          className="sc-hSdWYo HVIoH"
+          onChange={[Function]}
+          placeholder="Filter..."
+          type="text"
+          value=""
+        />
+      </div>
+      <div
+        onKeyDown={[Function]}
+        onMouseDown={[Function]}
+        onWheel={[Function]}
+        style={
+          Object {
+            "backgroundColor": "#F5F8FA",
+            "height": "100%",
+            "overflow": "hidden",
+            "position": "relative",
+            "userSelect": "none",
+            "width": "100%",
+          }
+        }
+        tabIndex={-1}
+      >
+        <div
+          style={
+            Object {
+              "transform": "matrix(0.39, 0, 0, 0.39, 378.125, 371.29999999999995)",
+              "transformOrigin": "top left",
+            }
+          }
+        >
+          <svg
+            className="sc-bZQynM iLpcha"
+            height={660}
+            onClick={[Function]}
+            onDoubleClick={[Function]}
+            width={625}
+          >
+            <g>
+              <g
+                style={
+                  Object {
+                    "opacity": 0.2,
+                  }
+                }
+              >
+                <path
+                  className="vx-link-vertical sc-gzVnrw kEbVHY"
+                  d="M115,178C115,221,115,221,115,264"
+                />
+                <path
+                  className="vx-link-vertical sc-gzVnrw kEbVHY"
+                  d="M115,360C115,403,115,403,115,446"
+                />
+              </g>
+              <g
+                onClick={[Function]}
+                onDoubleClick={[Function]}
+                opacity={1}
+              >
+                <rect
+                  fill="#DBE6EE"
+                  height={72}
+                  stroke="#979797"
+                  strokeWidth={1}
+                  width={350}
+                  x={100}
+                  y={100}
+                />
+                <text
+                  dominantBaseline="hanging"
+                  fill="#222"
+                  style={
+                    Object {
+                      "font": "30px \\"Source Code Pro\\", monospace",
+                      "pointerEvents": "none",
+                    }
+                  }
+                  width={223.2}
+                  x={112}
+                  y={121}
+                >
+                  load_num_csv
+                </text>
+                <g>
+                  <rect
+                    fill="#137CBD"
+                    height={36}
+                    stroke="#979797"
+                    strokeWidth={1}
+                    width={30}
+                    x={100}
+                    y={160}
+                  />
+                  <ellipse
+                    cx={115}
+                    cy={178}
+                    fill="rgba(0, 0, 0, 0.3)"
+                    rx={7}
+                    ry={7}
+                    stroke="white"
+                    strokeWidth={1.5}
+                  />
+                </g>
+                <ellipse
+                  cx={430}
+                  cy={100}
+                  fill="#DBE6EE"
+                  pathLength={100}
+                  rx={13}
+                  ry={13}
+                  stroke="#8A9BA8"
+                  strokeDasharray="0 50 0"
+                  strokeWidth={1}
+                />
+                <ellipse
+                  cx={430}
+                  cy={100}
+                  fill="#7D8C97"
+                  pathLength={100}
+                  rx={10}
+                  ry={10}
+                  stroke="#FFFFFF"
+                  strokeWidth={2}
+                />
+              </g>
+              <g
+                onClick={[Function]}
+                onDoubleClick={[Function]}
+                opacity={1}
+              >
+                <rect
+                  fill="#DBE6EE"
+                  height={72}
+                  stroke="#979797"
+                  strokeWidth={1}
+                  width={350}
+                  x={100}
+                  y={276}
+                />
+                <text
+                  dominantBaseline="hanging"
+                  fill="#222"
+                  style={
+                    Object {
+                      "font": "30px \\"Source Code Pro\\", monospace",
+                      "pointerEvents": "none",
+                    }
+                  }
+                  width={167.4}
+                  x={112}
+                  y={297}
+                >
+                  sum_solid
+                </text>
+                <g>
+                  <rect
+                    fill="#00B3A4"
+                    height={36}
+                    stroke="#979797"
+                    strokeWidth={1}
+                    width={30}
+                    x={100}
+                    y={246}
+                  />
+                  <ellipse
+                    cx={115}
+                    cy={264}
+                    fill="rgba(0, 0, 0, 0.3)"
+                    rx={7}
+                    ry={7}
+                    stroke="white"
+                    strokeWidth={1.5}
+                  />
+                </g>
+                <g>
+                  <rect
+                    fill="#137CBD"
+                    height={36}
+                    stroke="#979797"
+                    strokeWidth={1}
+                    width={30}
+                    x={100}
+                    y={342}
+                  />
+                  <ellipse
+                    cx={115}
+                    cy={360}
+                    fill="rgba(0, 0, 0, 0.3)"
+                    rx={7}
+                    ry={7}
+                    stroke="white"
+                    strokeWidth={1.5}
+                  />
+                </g>
+              </g>
+              <g
+                onClick={[Function]}
+                onDoubleClick={[Function]}
+                opacity={1}
+              >
+                <rect
+                  fill="#DBE6EE"
+                  height={72}
+                  stroke="#979797"
+                  strokeWidth={1}
+                  width={350}
+                  x={100}
+                  y={458}
+                />
+                <text
+                  dominantBaseline="hanging"
+                  fill="#222"
+                  style={
+                    Object {
+                      "font": "30px \\"Source Code Pro\\", monospace",
+                      "pointerEvents": "none",
+                    }
+                  }
+                  width={223.2}
+                  x={112}
+                  y={479}
+                >
+                  sum_sq_solid
+                </text>
+                <g>
+                  <rect
+                    fill="#00B3A4"
+                    height={36}
+                    stroke="#979797"
+                    strokeWidth={1}
+                    width={30}
+                    x={100}
+                    y={428}
+                  />
+                  <ellipse
+                    cx={115}
+                    cy={446}
+                    fill="rgba(0, 0, 0, 0.3)"
+                    rx={7}
+                    ry={7}
+                    stroke="white"
+                    strokeWidth={1.5}
+                  />
+                </g>
+                <g>
+                  <rect
+                    fill="#137CBD"
+                    height={36}
+                    stroke="#979797"
+                    strokeWidth={1}
+                    width={30}
+                    x={100}
+                    y={524}
+                  />
+                  <ellipse
+                    cx={115}
+                    cy={542}
+                    fill="rgba(0, 0, 0, 0.3)"
+                    rx={7}
+                    ry={7}
+                    stroke="white"
+                    strokeWidth={1.5}
+                  />
+                </g>
+              </g>
+            </g>
+          </svg>
+        </div>
+      </div>
+    </div>
+    <div
+      className="sc-htoDjs kHmEgB"
+    >
+      <div
+        className="sc-dnqmqq heTnR"
+        onMouseDown={[Function]}
+      />
+    </div>
+    <div
+      className="sc-kkGfuU eNYQdw"
+      style={
+        Object {
+          "width": "30vw",
+        }
+      }
+    >
+      <div
+        className="sc-jKJlTe gtPCsZ"
       >
         <a
           href="/pandas_hello_world/load_num_csv"
           onClick={[Function]}
         >
           <div
-            className="sc-kpOJdX UFDXE"
+            className="sc-eNQAEJ itRwud"
           >
             <svg
               className="bp3-icon"
@@ -2105,7 +1886,7 @@ Array [
           onClick={[Function]}
         >
           <div
-            className="sc-kpOJdX eJHeWd"
+            className="sc-eNQAEJ bVaysM"
           >
             <svg
               className="bp3-icon"
@@ -2130,129 +1911,26 @@ Array [
             Types
           </div>
         </a>
-        <a
-          href="/pandas_hello_world/load_num_csv?editor=true"
-          onClick={[Function]}
-        >
-          <div
-            className="sc-kpOJdX eJHeWd"
-          >
-            <svg
-              className="bp3-icon"
-              data-icon="edit"
-              height={16}
-              style={
-                Object {
-                  "marginRight": 5,
-                }
-              }
-              viewBox="0 0 16 16"
-              width={16}
-            >
-              <desc>
-                edit
-              </desc>
-              <path
-                d="M3.25 10.26l2.47 2.47 6.69-6.69-2.46-2.48-6.7 6.7zM.99 14.99l3.86-1.39-2.46-2.44-1.4 3.83zm12.25-14c-.48 0-.92.2-1.24.51l-1.44 1.44 2.47 2.47 1.44-1.44c.32-.32.51-.75.51-1.24.01-.95-.77-1.74-1.74-1.74z"
-                fillRule="evenodd"
-              />
-            </svg>
-            Config Editor
-          </div>
-        </a>
       </div>
       <div>
         <div
-          className="sc-jTzLTM hdCjmb"
+          className="sc-cSHVUG eSGNkD"
         >
-          Solid
+          Pipeline
         </div>
         <h3
-          className="sc-gqjmRU jkWuVE"
+          className="sc-fjdhpX jXEEJU"
         >
-          load_num_csv
+          pandas_hello_world
         </h3>
         <div>
           <div
-            className="sc-jzJRlG fUwugY"
-            onClick={[Function]}
-          >
-            Type Signature
-            <svg
-              className="bp3-icon sc-gZMcBi cCPeWO"
-              data-icon="chevron-down"
-              height={16}
-              style={Object {}}
-              viewBox="0 0 16 16"
-              width={16}
-            >
-              <desc>
-                chevron-down
-              </desc>
-              <path
-                d="M12 5c-.28 0-.53.11-.71.29L8 8.59l-3.29-3.3a1.003 1.003 0 0 0-1.42 1.42l4 4c.18.18.43.29.71.29s.53-.11.71-.29l4-4A1.003 1.003 0 0 0 12 5z"
-                fillRule="evenodd"
-              />
-            </svg>
-          </div>
-          <div
-            className="bp3-collapse"
-            style={
-              Object {
-                "height": "auto",
-                "overflowY": "visible",
-                "transition": "none",
-              }
-            }
-          >
-            <div
-              aria-hidden={false}
-              className="bp3-collapse-body"
-              style={
-                Object {
-                  "transform": "translateY(0)",
-                  "transition": "none",
-                }
-              }
-            >
-              <div
-                className="sc-cSHVUG gbhRjM"
-              >
-                <code
-                  className="bp3-code sc-chPdSV jYxskL"
-                >
-                  (
-                  ) ⇒ (
-                  <span>
-                    result
-                    :
-                     
-                    <a
-                      href="/?typeExplorer=PandasDataFrame"
-                      onClick={[Function]}
-                    >
-                      <code
-                        className="sc-bZQynM doTlsQ"
-                      >
-                        PandasDataFrame
-                      </code>
-                    </a>
-                    
-                  </span>
-                  )
-                </code>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div>
-          <div
-            className="sc-jzJRlG fUwugY"
+            className="sc-chPdSV ksGKbe"
             onClick={[Function]}
           >
             Description
             <svg
-              className="bp3-icon sc-gZMcBi cCPeWO"
+              className="bp3-icon sc-jTzLTM bIGIKP"
               data-icon="chevron-down"
               height={16}
               style={Object {}}
@@ -2289,19 +1967,19 @@ Array [
               }
             >
               <div
-                className="sc-cSHVUG gbhRjM"
+                className="sc-kgoBCf boHZSW"
               />
             </div>
           </div>
         </div>
         <div>
           <div
-            className="sc-jzJRlG fUwugY"
+            className="sc-chPdSV ksGKbe"
             onClick={[Function]}
           >
-            Config
+            Contexts
             <svg
-              className="bp3-icon sc-gZMcBi cCPeWO"
+              className="bp3-icon sc-jTzLTM bIGIKP"
               data-icon="chevron-down"
               height={16}
               style={Object {}}
@@ -2338,166 +2016,51 @@ Array [
               }
             >
               <div
-                className="sc-cSHVUG gbhRjM"
-              >
-                <div>
-                  <a
-                    href="/?typeExplorer=LoadDataFrameConfigDict"
-                    onClick={[Function]}
-                  >
-                    <code
-                      className="sc-bZQynM doTlsQ"
-                    >
-                      LoadDataFrameConfigDict
-                    </code>
-                  </a>
-                  <ul
-                    className="bp3-list"
-                  >
-                    <li>
-                      path
-                       
-                       
-                      <a
-                        href="/?typeExplorer=Path"
-                        onClick={[Function]}
-                      >
-                        <code
-                          className="sc-bZQynM doTlsQ"
-                        >
-                          Path
-                        </code>
-                      </a>
-                      <div
-                        className="sc-iwsKbI hwFvq"
-                      />
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div>
-          <div
-            className="sc-jzJRlG fUwugY"
-            onClick={[Function]}
-          >
-            Inputs
-            <svg
-              className="bp3-icon sc-gZMcBi cCPeWO"
-              data-icon="chevron-down"
-              height={16}
-              style={Object {}}
-              viewBox="0 0 16 16"
-              width={16}
-            >
-              <desc>
-                chevron-down
-              </desc>
-              <path
-                d="M12 5c-.28 0-.53.11-.71.29L8 8.59l-3.29-3.3a1.003 1.003 0 0 0-1.42 1.42l4 4c.18.18.43.29.71.29s.53-.11.71-.29l4-4A1.003 1.003 0 0 0 12 5z"
-                fillRule="evenodd"
-              />
-            </svg>
-          </div>
-          <div
-            className="bp3-collapse"
-            style={
-              Object {
-                "height": "auto",
-                "overflowY": "visible",
-                "transition": "none",
-              }
-            }
-          >
-            <div
-              aria-hidden={false}
-              className="bp3-collapse-body"
-              style={
-                Object {
-                  "transform": "translateY(0)",
-                  "transition": "none",
-                }
-              }
-            >
-              <div
-                className="sc-cSHVUG gbhRjM"
-              />
-            </div>
-          </div>
-        </div>
-        <div>
-          <div
-            className="sc-jzJRlG fUwugY"
-            onClick={[Function]}
-          >
-            Outputs
-            <svg
-              className="bp3-icon sc-gZMcBi cCPeWO"
-              data-icon="chevron-down"
-              height={16}
-              style={Object {}}
-              viewBox="0 0 16 16"
-              width={16}
-            >
-              <desc>
-                chevron-down
-              </desc>
-              <path
-                d="M12 5c-.28 0-.53.11-.71.29L8 8.59l-3.29-3.3a1.003 1.003 0 0 0-1.42 1.42l4 4c.18.18.43.29.71.29s.53-.11.71-.29l4-4A1.003 1.003 0 0 0 12 5z"
-                fillRule="evenodd"
-              />
-            </svg>
-          </div>
-          <div
-            className="bp3-collapse"
-            style={
-              Object {
-                "height": "auto",
-                "overflowY": "visible",
-                "transition": "none",
-              }
-            }
-          >
-            <div
-              aria-hidden={false}
-              className="bp3-collapse-body"
-              style={
-                Object {
-                  "transform": "translateY(0)",
-                  "transition": "none",
-                }
-              }
-            >
-              <div
-                className="sc-cSHVUG gbhRjM"
+                className="sc-kgoBCf boHZSW"
               >
                 <div
-                  className="sc-fjdhpX eVJyLe"
+                  className="sc-kAzzGY eZlNEh"
                 >
                   <h4
-                    className="sc-VigVT cObvZk"
+                    className="sc-jzJRlG jCRkIb"
                   >
-                    result
+                    default
                   </h4>
-                  <div
-                    className="sc-kgoBCf cIvQix"
-                  >
+                  <div>
                     <a
-                      href="/?typeExplorer=PandasDataFrame"
+                      href="/?typeExplorer=DefaultContextConfigDict"
                       onClick={[Function]}
                     >
                       <code
-                        className="sc-bZQynM doTlsQ"
+                        className="sc-iwsKbI gOyrFn"
                       >
-                        PandasDataFrame
+                        DefaultContextConfigDict
                       </code>
                     </a>
+                    <ul
+                      className="bp3-list"
+                    >
+                      <li>
+                        log_level
+                         
+                        (optional)
+                         
+                        <a
+                          href="/?typeExplorer=String"
+                          onClick={[Function]}
+                        >
+                          <code
+                            className="sc-iwsKbI gOyrFn"
+                          >
+                            String
+                          </code>
+                        </a>
+                        <div
+                          className="sc-kpOJdX irQCFF"
+                        />
+                      </li>
+                    </ul>
                   </div>
-                  <ul
-                    className="bp3-list"
-                  />
                 </div>
               </div>
             </div>
@@ -2533,7 +2096,7 @@ Array [
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-hMqMXs hfbTqN"
+        className="sc-cvbbAY iReTcD"
       >
         <span
           className="bp3-popover-wrapper"
@@ -2577,11 +2140,6 @@ Array [
             </div>
           </span>
         </span>
-        <div
-          className="sc-kEYyzF jlZFun"
-        >
-          /
-        </div>
       </div>
     </div>
   </div>,
