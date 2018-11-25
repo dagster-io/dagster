@@ -46,6 +46,7 @@ class PipelineGraphContents extends React.PureComponent<
 
     return connections.map(({ from, to }, i) => (
       <g
+        key={i}
         onMouseLeave={() => this.setState({ highlightedConnections: [] })}
         onMouseEnter={() =>
           this.setState({
@@ -54,7 +55,6 @@ class PipelineGraphContents extends React.PureComponent<
         }
       >
         <StyledLink
-          key={i}
           x={(d: IPoint) => d.x}
           y={(d: IPoint) => d.y}
           data={{
@@ -62,7 +62,9 @@ class PipelineGraphContents extends React.PureComponent<
             source: solids[from.solidName].outputs[from.edgeName].port,
             target: solids[to.solidName].inputs[to.edgeName].port
           }}
-        />
+        >
+          <title>{`${from.solidName} - ${to.solidName}`}</title>
+        </StyledLink>
       </g>
     ));
   }
