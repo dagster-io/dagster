@@ -23,7 +23,6 @@ interface IPipelineExplorerProps {
 interface IPipelineExplorerState {
   filter: string;
   graphVW: number;
-  configCode: string;
 }
 export default class PipelineExplorer extends React.Component<
   IPipelineExplorerProps,
@@ -37,15 +36,11 @@ export default class PipelineExplorer extends React.Component<
         contexts {
           name
           description
-          config {
-            ...ConfigFragment
-          }
         }
         ...PipelineGraphFragment
         ...SidebarTabbedContainerPipelineFragment
       }
 
-      ${Config.fragments.ConfigFragment}
       ${PipelineGraph.fragments.PipelineGraphFragment}
       ${SidebarTabbedContainer.fragments.SidebarTabbedContainerPipelineFragment}
     `,
@@ -63,34 +58,20 @@ export default class PipelineExplorer extends React.Component<
 
   constructor(props: IPipelineExplorerProps) {
     super(props);
-    const configKey = getConfigStorageKey(props.pipeline);
-    let configCode = localStorage.getItem(configKey);
-    if (!configCode || typeof configCode !== "string") {
-      configCode = "# This is config editor. Enjoy!";
-    }
     this.state = {
       filter: "",
-      graphVW: 70,
-      configCode
+      graphVW: 70
     };
   }
 
-  handleConfigChange = (newValue: string) => {
-    const configKey = getConfigStorageKey(this.props.pipeline);
-    localStorage.setItem(configKey, newValue);
-    this.setState({
-      configCode: newValue
-    });
-  };
-
   handleClickSolid = (solidName: string) => {
     const { history, pipeline } = this.props;
-    history.push(`/${pipeline.name}/${solidName}`);
+    history.push(`/${pipeline.name}/explore/${solidName}`);
   };
 
   handleClickBackground = () => {
     const { history, pipeline } = this.props;
-    history.push(`/${pipeline.name}`);
+    history.push(`/${pipeline.name}/explore`);
   };
 
   public render() {
@@ -137,8 +118,6 @@ export default class PipelineExplorer extends React.Component<
               <SidebarTabbedContainer
                 pipeline={pipeline}
                 solid={solid}
-                configCode={this.state.configCode}
-                onConfigChange={this.handleConfigChange}
                 {...parseQueryString(location.search || "")}
               />
             )}
