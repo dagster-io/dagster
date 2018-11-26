@@ -15,7 +15,7 @@ from dagster import (
 )
 
 from dagster.core.test_utils import (
-    execute_single_solid,
+    execute_single_solid_in_isolation,
     single_output_transform,
 )
 from dagster.core.errors import DagsterUserCodeExecutionError
@@ -121,7 +121,7 @@ def test_do_not_yield_result():
         DagsterInvariantViolationError,
         message='Tranform for solid do_not_yield_result return a Result',
     ):
-        execute_single_solid(ExecutionContext(), solid_inst)
+        execute_single_solid_in_isolation(ExecutionContext(), solid_inst)
 
 
 def test_yield_non_result():
@@ -139,7 +139,7 @@ def test_yield_non_result():
         DagsterInvariantViolationError,
         message="Tranform for solid yield_wrong_thing yielded 'foo'",
     ):
-        execute_single_solid(ExecutionContext(), solid_inst)
+        execute_single_solid_in_isolation(ExecutionContext(), solid_inst)
 
 
 def test_single_transform_returning_result():
@@ -151,4 +151,4 @@ def test_single_transform_returning_result():
     )
 
     with pytest.raises(DagsterInvariantViolationError):
-        execute_single_solid(ExecutionContext(), solid_inst)
+        execute_single_solid_in_isolation(ExecutionContext(), solid_inst)

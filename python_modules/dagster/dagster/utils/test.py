@@ -46,7 +46,7 @@ def get_temp_file_names(number):
             _unlink_swallow_errors(temp_file_name)
 
 
-def execute_solid_in_isolation(
+def execute_solid(
     pipeline_def,
     solid_name,
     inputs=None,

@@ -14,7 +14,7 @@ from dagster import (
     types,
 )
 
-from dagster.utils.test import execute_solid_in_isolation
+from dagster.utils.test import execute_solid
 
 
 def test_single_solid_in_isolation():
@@ -24,7 +24,7 @@ def test_single_solid_in_isolation():
 
     pipeline_def = PipelineDefinition(solids=[solid_one])
 
-    result = execute_solid_in_isolation(pipeline_def, 'solid_one')
+    result = execute_solid(pipeline_def, 'solid_one')
     assert result.success
     assert result.transformed_value() == 1
 
@@ -47,7 +47,7 @@ def test_single_solid_with_single():
         },
     )
 
-    result = execute_solid_in_isolation(pipeline_def, 'add_one_solid', inputs={'num': 2})
+    result = execute_solid(pipeline_def, 'add_one_solid', inputs={'num': 2})
     assert result.success
     assert result.transformed_value() == 3
 
@@ -71,7 +71,7 @@ def test_single_solid_with_multiple_inputs():
         },
     )
 
-    result = execute_solid_in_isolation(
+    result = execute_solid(
         pipeline_def,
         'add_solid',
         inputs={
@@ -93,7 +93,7 @@ def test_single_solid_with_config():
         ran['check_config_for_two'] = True
 
     pipeline_def = PipelineDefinition(solids=[check_config_for_two])
-    result = execute_solid_in_isolation(
+    result = execute_solid(
         pipeline_def,
         'check_config_for_two',
         environment={
@@ -128,7 +128,7 @@ def test_single_solid_with_context_config():
         },
     )
 
-    result = execute_solid_in_isolation(
+    result = execute_solid(
         pipeline_def,
         'check_context_config_for_two',
         environment={
@@ -143,7 +143,7 @@ def test_single_solid_with_context_config():
     assert result.success
     assert ran['check_context_config_for_two'] == 1
 
-    result = execute_solid_in_isolation(pipeline_def, 'check_context_config_for_two')
+    result = execute_solid(pipeline_def, 'check_context_config_for_two')
 
     assert result.success
     assert ran['check_context_config_for_two'] == 2
@@ -160,7 +160,7 @@ def test_single_solid_error():
     pipeline_def = PipelineDefinition(solids=[throw_error])
 
     with pytest.raises(SomeError):
-        execute_solid_in_isolation(pipeline_def, 'throw_error')
+        execute_solid(pipeline_def, 'throw_error')
 
 
 def test_single_solid_type_checking_output_error():
@@ -171,4 +171,4 @@ def test_single_solid_type_checking_output_error():
     pipeline_def = PipelineDefinition(solids=[return_string])
 
     with pytest.raises(DagsterInvariantViolationError):
-        execute_solid_in_isolation(pipeline_def, 'return_string')
+        execute_solid(pipeline_def, 'return_string')
