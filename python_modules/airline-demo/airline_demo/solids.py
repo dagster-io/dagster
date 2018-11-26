@@ -262,8 +262,8 @@ def unzip_file(info, archive_path, archive_member=None, destination_dir=None):
     inputs=InputDefinition(
         'input_csv',
         types.String,
-        description=''
-    )
+        description='',
+    ),
     outputs=[OutputDefinition(SparkDataFrameType)]
 )
 def ingest_csv_to_spark(info, input_csv=None):
