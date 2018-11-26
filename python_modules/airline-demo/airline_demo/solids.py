@@ -29,7 +29,6 @@ from dagster import (
     types,
 )
 
-
 AirlineDemoResources = namedtuple(
     'AirlineDemoResources',
     ('spark', 's3', 'redshift'),
@@ -59,6 +58,7 @@ SparkDataFrameType = types.PythonObjectType(
 #     description='A SQLAlchemy result proxy',
 # )
 
+
 # need a sql context w a sqlalchemy engine
 def sql_solid(name, select_statement, materialize, table_name=None):
     materialization_strategy_output_types = {
@@ -84,8 +84,7 @@ def sql_solid(name, select_statement, materialize, table_name=None):
             raise Exception("Missing table_name")
 
     @solid(
-        name=name,
-        outputs=[OutputDefinition(materialization_strategy_output_types[materialize])]
+        name=name, outputs=[OutputDefinition(materialization_strategy_output_types[materialize])]
     )
     def sql_solid_fn(info):
         # n.b., we will eventually want to make this resources key configurable
@@ -93,7 +92,8 @@ def sql_solid(name, select_statement, materialize, table_name=None):
             'create table :tablename as :statement', {
                 'tablename': table_name,
                 'statement': select_statement,
-            })
+            }
+        )
         return table_name
 
     return sql_solid_fn
@@ -195,19 +195,24 @@ cloud_context = PipelineContextDefinition(
 @solid(
     name='download_from_s3',
     config_def=ConfigDefinition(
-        types.ConfigDictionary(name='DownloadFromS3ConfigType', fields={
-            # Probably want to make the region configuable too
-            'bucket': Field(types.String, description=''),
-            'key': Field(types.String, description=''),
-            'target_path': Field(types.String, description=''),
-        })
-    ))
+        types.ConfigDictionary(
+            name='DownloadFromS3ConfigType',
+            fields={
+                # Probably want to make the region configuable too
+                'bucket': Field(types.String, description=''),
+                'key': Field(types.String, description=''),
+                'target_path': Field(types.String, description=''),
+            }
+        )
+    )
+)
 def download_from_s3(info):
     bucket = info.config['bucket']
     key = info.config['key']
     target_path = info.config.get('target_path') or key
     info.s3.meta.client.download_file(bucket, key, target_path)
     return target_path
+
 
 @solid(
     name='unzip_file',
@@ -234,7 +239,6 @@ def download_from_s3(info):
             types.String,
             description='',
         ),
-
     ]
 )
 def unzip_file(info, archive_path, archive_member=None, destination_dir=None):
@@ -255,9 +259,12 @@ def unzip_file(info, archive_path, archive_member=None, destination_dir=None):
 @solid(
     name='ingest_csv_to_spark',
     config_def=ConfigDefinition(
-        types.ConfigDictionary(name='IngestCsvToSparkConfigType', fields={
-            'input_csv': Field(types.String, description=''),
-        })
+        types.ConfigDictionary(
+            name='IngestCsvToSparkConfigType',
+            fields={
+                'input_csv': Field(types.String, description=''),
+            }
+        )
     ),
     inputs=InputDefinition(
         'input_csv',
@@ -268,14 +275,10 @@ def unzip_file(info, archive_path, archive_member=None, destination_dir=None):
 )
 def ingest_csv_to_spark(info, input_csv=None):
     data_frame = (
-        info.context.resources.spark
-        .read
-        .format('csv')
-        .options(
+        info.context.resources.spark.read.format('csv').options(
             header='true',
             # inferSchema='true',
-        )
-        .load(input_csv or info.config['input_csv'])
+        ).load(input_csv or info.config['input_csv'])
     )
     return data_frame
 
@@ -323,12 +326,15 @@ def normalize_weather_na_values(info, data_frame):
     ],
     outputs=[OutputDefinition(SparkDataFrameType)],
     config_def=ConfigDefinition(
-        types.ConfigDictionary(name='BatchLoadDataToRedshiftFromSparkConfigType', fields={
-            'db_url': Field(types.String, description=''),
-            'table_name': Field(types.String, description=''),
-        })
+        types.ConfigDictionary(
+            name='BatchLoadDataToRedshiftFromSparkConfigType',
+            fields={
+                'db_url': Field(types.String, description=''),
+                'table_name': Field(types.String, description=''),
+            }
+        )
     ),
-)            # "jdbc:redshift://redshifthost:5439/database?user=username&password=pass") \
+)  # "jdbc:redshift://redshifthost:5439/database?user=username&password=pass") \
 def batch_load_data_to_redshift_from_spark(info, data_frame):
     data_frame.write \
         .format("com.databricks.spark.redshift") \
@@ -361,9 +367,12 @@ def batch_load_data_to_postgres_from_spark(info, data_frame):
     name='subsample_spark_dataset',
     description='Subsample a spark dataset.',
     config_def=ConfigDefinition(
-        types.ConfigDictionary(name='SubsampleSparkDataFrameConfigType', fields={
-            'subsample_pct': Field(types.Int, description=''),
-        })
+        types.ConfigDictionary(
+            name='SubsampleSparkDataFrameConfigType',
+            fields={
+                'subsample_pct': Field(types.Int, description=''),
+            }
+        )
         # description='The integer percentage of rows to sample from the input dataset.'
     ),
     inputs=[
@@ -434,7 +443,6 @@ def define_airline_demo_spark_ingest_pipeline():
         SolidInstance('download_from_s3', alias='download_q2_coupon_data'): {},
         SolidInstance('download_from_s3', alias='download_q2_market_data'): {},
         SolidInstance('download_from_s3', alias='download_q2_ticket_data'): {},
-
         SolidInstance('unzip_file', alias='unzip_april_on_time_data'): {
             'archive_path': DependencyDefinition('download_april_on_time_data')
         },
@@ -442,20 +450,19 @@ def define_airline_demo_spark_ingest_pipeline():
             'archive_path': DependencyDefinition('download_may_on_time_data')
         },
         SolidInstance('unzip_file', alias='unzip_june_on_time_data'): {},
-            'archive_path': DependencyDefinition('download_june_on_time_data')
+        'archive_path': DependencyDefinition('download_june_on_time_data'),
         SolidInstance('unzip_file', alias='unzip_q2_sfo_weather'): {
             'archive_path': DependencyDefinition('download_q2_sfo_weather')
         },
         SolidInstance('unzip_file', alias='unzip_q2_coupon_data'): {
-# FIXME
+            # FIXME
         },
         SolidInstance('unzip_file', alias='unzip_q2_market_data'): {
-# FIXME
+            # FIXME
         },
         SolidInstance('unzip_file', alias='unzip_q2_ticket_data'): {
-# FIXME
+            # FIXME
         },
-
         SolidInstance('ingest_csv_to_spark', alias='ingest_april_on_time_data'): {},
         SolidInstance('ingest_csv_to_spark', alias='ingest_may_on_time_data'): {},
         SolidInstance('ingest_csv_to_spark', alias='ingest_june_on_time_data'): {},
@@ -505,20 +512,17 @@ def define_airline_demo_spark_ingest_pipeline():
             'right_data_frame': DependencyDefinition('normalize_june_weather_na_values'),
         },
         SolidInstance(
-            'batch_load_data_to_redshift_from_spark',
-            alias='load_april_weather_and_on_time_data'
+            'batch_load_data_to_redshift_from_spark', alias='load_april_weather_and_on_time_data'
         ): {
             'data_frame': DependencyDefinition('join_april_weather_to_on_time_data'),
         },
         SolidInstance(
-            'batch_load_data_to_redshift_from_spark',
-            alias='load_may_weather_and_on_time_data'
+            'batch_load_data_to_redshift_from_spark', alias='load_may_weather_and_on_time_data'
         ): {
             'data_frame': DependencyDefinition('join_may_weather_to_on_time_data'),
         },
         SolidInstance(
-            'batch_load_data_to_redshift_from_spark',
-            alias='load_june_weather_and_on_time_data'
+            'batch_load_data_to_redshift_from_spark', alias='load_june_weather_and_on_time_data'
         ): {
             'data_frame': DependencyDefinition('join_june_weather_to_on_time_data'),
         },
@@ -532,39 +536,27 @@ def define_airline_demo_spark_ingest_pipeline():
             'data_frame': DependencyDefinition('ingest_q2_ticket_data'),
         },
         SolidInstance(
-            'batch_load_data_to_postgres_from_spark',
-            alias='load_april_weather_and_on_time_data'
+            'batch_load_data_to_postgres_from_spark', alias='load_april_weather_and_on_time_data'
         ): {
             'data_frame': DependencyDefinition('join_april_weather_to_on_time_data'),
         },
         SolidInstance(
-            'batch_load_data_to_postgres_from_spark',
-            alias='load_may_weather_and_on_time_data'
+            'batch_load_data_to_postgres_from_spark', alias='load_may_weather_and_on_time_data'
         ): {
             'data_frame': DependencyDefinition('join_may_weather_to_on_time_data'),
         },
         SolidInstance(
-            'batch_load_data_to_postgres_from_spark',
-            alias='load_june_weather_and_on_time_data'
+            'batch_load_data_to_postgres_from_spark', alias='load_june_weather_and_on_time_data'
         ): {
             'data_frame': DependencyDefinition('join_june_weather_to_on_time_data'),
         },
-        SolidInstance(
-            'batch_load_data_to_postgres_from_spark',
-            alias='load_q2_coupon_data'
-        ): {
+        SolidInstance('batch_load_data_to_postgres_from_spark', alias='load_q2_coupon_data'): {
             'data_frame': DependencyDefinition('ingest_q2_coupon_data'),
         },
-        SolidInstance(
-            'batch_load_data_to_postgres_from_spark',
-            alias='load_q2_market_data'
-        ): {
+        SolidInstance('batch_load_data_to_postgres_from_spark', alias='load_q2_market_data'): {
             'data_frame': DependencyDefinition('ingest_q2_market_data'),
         },
-        SolidInstance(
-            'batch_load_data_to_postgres_from_spark', 
-            alias='load_q2_ticket_data'
-        ): {
+        SolidInstance('batch_load_data_to_postgres_from_spark', alias='load_q2_ticket_data'): {
             'data_frame': DependencyDefinition('ingest_q2_ticket_data'),
         },
     }
@@ -576,6 +568,7 @@ def define_airline_demo_spark_ingest_pipeline():
         context_definitions=context_definitions,
     )
 
+
 def define_airline_demo_warehouse_pipeline():
     context_definitions = {
         'test': test_context,
@@ -585,10 +578,8 @@ def define_airline_demo_warehouse_pipeline():
 
     return PipelineDefinition(
         name="airline_demo_warehouse_pipeline",
-        solids=[
-        ],
-        dependencies={
-        },
+        solids=[],
+        dependencies={},
         context_definitions=context_definitions,
     )
 
@@ -597,8 +588,7 @@ def define_repo():
     return RepositoryDefinition(
         name='airline_demo_repo',
         pipeline_dict={
-            'airline_demo_spark_ingest_pipeline':
-            define_airline_demo_spark_ingest_pipeline,
-            'airline_demo_warehouse_pipeline':
-            define_airline_demo_warehouse_pipeline,
-        })
+            'airline_demo_spark_ingest_pipeline': define_airline_demo_spark_ingest_pipeline,
+            'airline_demo_warehouse_pipeline': define_airline_demo_warehouse_pipeline,
+        }
+    )
