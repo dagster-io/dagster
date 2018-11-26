@@ -1,5 +1,6 @@
-import sys
+from collections import namedtuple
 import traceback
+import sys
 
 import graphene
 
@@ -17,6 +18,29 @@ from dagster.core.types import DagsterCompositeType
 
 from dagster.core.evaluator import evaluate_config_value
 from dagster.core.execution import create_execution_plan
+
+
+class PipelineConfig(GenericScalar):
+    class Meta:
+        description = '''This type is used when passing in a configuration object
+        for pipeline configuration. This is any-typed in the GraphQL type system,
+        but must conform to the constraints of the dagster config type system'''
+
+
+ExecutionParams = namedtuple('ExecutionParams', 'pipeline_name config')
+
+
+class PipelineExecutionParams(graphene.InputObjectType):
+    pipelineName = graphene.NonNull(graphene.String)
+    config = graphene.Field(PipelineConfig)
+
+    @staticmethod
+    def validate(dict_):
+        check.invariant(set(dict_.keys()) == set(['pipelineName', 'config']))
+        return ExecutionParams(
+            pipeline_name=check.str_elem(dict_, 'pipelineName'),
+            config=dict_['config'],
+        )
 
 
 def resolve_pipelines_implementation(_root_obj, info):
@@ -116,10 +140,7 @@ class Query(graphene.ObjectType):
 
     isPipelineConfigValid = graphene.Field(
         graphene.NonNull(lambda: PipelineConfigValidationResult),
-        args={
-            'pipelineName': graphene.Argument(graphene.NonNull(graphene.String)),
-            'config': graphene.Argument(GenericScalar),
-        },
+        args={'executionParams': graphene.Argument(graphene.NonNull(PipelineExecutionParams))},
     )
 
     def resolve_pipeline(self, info, name):
@@ -149,16 +170,17 @@ class Query(graphene.ObjectType):
         repository = info.context['repository_container'].repository
         pipeline = repository.get_pipeline(pipelineName)
         return sorted(
-            [Type.from_dagster_type(type) for type in pipeline.all_types()],
-            key=lambda type: type.name
+            [Type.from_dagster_type(type_) for type_ in pipeline.all_types()],
+            key=lambda type_: type_.name
         )
 
-    def resolve_isPipelineConfigValid(self, info, pipelineName, config):
-        check.str_param(pipelineName, 'pipelineName')
+    def resolve_isPipelineConfigValid(self, info, executionParams):
+        execution_params = PipelineExecutionParams.validate(executionParams)
+
         repository = info.context['repository_container'].repository
-        pipeline = repository.get_pipeline(pipelineName)
-        pipeline_env_type = dagster.core.config_types.EnvironmentConfigType(pipeline)
-        result = evaluate_config_value(pipeline_env_type, config)
+        pipeline = repository.get_pipeline(execution_params.pipeline_name)
+        pipeline_env_type = pipeline.environment_type
+        result = evaluate_config_value(pipeline_env_type, execution_params.config)
         if result.success:
             return PipelineConfigValidationValid(pipeline=Pipeline(pipeline))
         else:
@@ -343,7 +365,8 @@ class SolidDefinition(graphene.ObjectType):
 
     def __init__(self, solid_def):
         super(SolidDefinition, self).__init__(
-            name=solid_def.name, description=solid_def.description
+            name=solid_def.name,
+            description=solid_def.description,
         )
 
         self._solid_def = check.inst_param(solid_def, 'solid_def', dagster.SolidDefinition)
