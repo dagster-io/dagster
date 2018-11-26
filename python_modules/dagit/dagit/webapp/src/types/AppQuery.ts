@@ -13,6 +13,10 @@ export interface AppQuery_pipelinesOrErrors_PythonError {
   stack: string[];
 }
 
+export interface AppQuery_pipelinesOrErrors_Pipeline_environmentType {
+  name: string;
+}
+
 export interface AppQuery_pipelinesOrErrors_Pipeline_contexts_config_type_RegularType {
   __typename: "RegularType";
   name: string;
@@ -67,9 +71,9 @@ export interface AppQuery_pipelinesOrErrors_Pipeline_contexts_config {
 }
 
 export interface AppQuery_pipelinesOrErrors_Pipeline_contexts {
+  config: AppQuery_pipelinesOrErrors_Pipeline_contexts_config | null;
   name: string;
   description: string | null;
-  config: AppQuery_pipelinesOrErrors_Pipeline_contexts_config | null;
 }
 
 export interface AppQuery_pipelinesOrErrors_Pipeline_solids_definition_metadata {
@@ -208,17 +212,13 @@ export interface AppQuery_pipelinesOrErrors_Pipeline_solids {
   outputs: AppQuery_pipelinesOrErrors_Pipeline_solids_outputs[];
 }
 
-export interface AppQuery_pipelinesOrErrors_Pipeline_environmentType {
-  name: string;
-}
-
 export interface AppQuery_pipelinesOrErrors_Pipeline {
   __typename: "Pipeline";
   name: string;
-  description: string | null;
-  contexts: AppQuery_pipelinesOrErrors_Pipeline_contexts[];
-  solids: AppQuery_pipelinesOrErrors_Pipeline_solids[];
   environmentType: AppQuery_pipelinesOrErrors_Pipeline_environmentType;
+  contexts: AppQuery_pipelinesOrErrors_Pipeline_contexts[];
+  description: string | null;
+  solids: AppQuery_pipelinesOrErrors_Pipeline_solids[];
 }
 
 export type AppQuery_pipelinesOrErrors = AppQuery_pipelinesOrErrors_PythonError | AppQuery_pipelinesOrErrors_Pipeline;
