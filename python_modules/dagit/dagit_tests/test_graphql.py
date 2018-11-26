@@ -149,17 +149,19 @@ query PipelineQuery($executionParams: PipelineExecutionParams!)
 }
 '''
 
+
 def execute_config_graphql(pipeline_name, config):
     return execute_dagster_graphql(
         define_repo(),
         CONFIG_VALIDATION_QUERY,
         {
-            'executionParams' : {
+            'executionParams': {
                 'pipelineName': pipeline_name,
                 'config': config,
             },
         },
     )
+
 
 def test_basic_valid_config():
     result = execute_config_graphql(
