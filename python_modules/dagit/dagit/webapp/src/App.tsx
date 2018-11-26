@@ -1,11 +1,11 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import { Query, QueryResult } from "react-apollo";
-import { Route, match, Switch } from "react-router";
+import { Route, Switch } from "react-router";
 import { BrowserRouter } from "react-router-dom";
 import { History } from "history";
 import Loading from "./Loading";
-import PipelinePage from "./PipelinePage";
+import PipelinePage, { IPipelinePageMatch } from "./PipelinePage";
 import { AppQuery } from "./types/AppQuery";
 
 export default class App extends React.Component {
@@ -14,38 +14,29 @@ export default class App extends React.Component {
       <Query query={APP_QUERY}>
         {(queryResult: QueryResult<AppQuery, any>) => (
           <Loading queryResult={queryResult}>
-            {data => {
-              return (
-                <BrowserRouter>
-                  <Switch>
-                    <Route
-                      path="/:pipeline?/:solid?"
-                      render={({
-                        match,
-                        history
-                      }: {
-                        match: match<{
-                          pipeline: string | null;
-                          solid: string | null;
-                        }>;
-                        history: History;
-                      }) => {
-                        return (
-                          <PipelinePage
-                            selectedPipelineName={
-                              match && match.params.pipeline
-                            }
-                            selectedSolidName={match && match.params.solid}
-                            history={history}
-                            pipelinesOrErrors={data.pipelinesOrErrors}
-                          />
-                        );
-                      }}
-                    />
-                  </Switch>
-                </BrowserRouter>
-              );
-            }}
+            {data => (
+              <BrowserRouter>
+                <Switch>
+                  <Route
+                    path="/:pipeline?/:tab?"
+                    render={({
+                      match,
+                      history
+                    }: {
+                      match: IPipelinePageMatch;
+                      history: History;
+                    }) => (
+                      <PipelinePage
+                        pipelinesOrErrors={data.pipelinesOrErrors}
+                        history={history}
+                        match={match}
+                      />
+                    )}
+                  />
+                  />
+                </Switch>
+              </BrowserRouter>
+            )}
           </Loading>
         )}
       </Query>
