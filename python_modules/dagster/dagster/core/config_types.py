@@ -11,7 +11,6 @@ from .config import (
 )
 
 from .definitions import (
-    ConfigField,
     Field,
     PipelineContextDefinition,
     PipelineDefinition,
@@ -55,7 +54,7 @@ def define_possibly_optional_field(dagster_type, is_optional):
 class SpecificContextConfig(DagsterCompositeType, HasUserConfig):
     def __init__(self, name, config_field):
         check.str_param(name, 'name')
-        check.inst_param(config_field, 'config_field', ConfigField)
+        check.inst_param(config_field, 'config_field', Field)
         super(SpecificContextConfig, self).__init__(
             name,
             {'config': config_field},
@@ -138,7 +137,7 @@ class ContextConfigType(DagsterSelectorType):
 class SolidConfigType(DagsterCompositeType, HasUserConfig):
     def __init__(self, name, config_field):
         check.str_param(name, 'name')
-        check.inst_param(config_field, 'config_field', ConfigField)
+        check.inst_param(config_field, 'config_field', Field)
         super(SolidConfigType, self).__init__(
             name,
             {'config': config_field},

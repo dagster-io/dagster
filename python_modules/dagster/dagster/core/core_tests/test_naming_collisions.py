@@ -1,7 +1,6 @@
 import dagster
 
 from dagster import (
-    ConfigField,
     DependencyDefinition,
     Field,
     InputDefinition,
@@ -32,7 +31,7 @@ def define_pass_value_solid(name, description=None):
         description=description,
         inputs=[],
         outputs=[OutputDefinition(types.String)],
-        config_field=ConfigField(SingleValueDict),
+        config_field=Field(SingleValueDict),
         transform_fn=_value_t_fn,
     )
 

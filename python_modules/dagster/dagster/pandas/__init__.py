@@ -6,7 +6,6 @@ import tempfile
 import pandas as pd
 
 from dagster import (
-    ConfigField,
     Field,
     ExecutionContext,
     InputDefinition,
@@ -78,7 +77,7 @@ def load_csv_solid(name):
         inputs=[],
         outputs=[OutputDefinition(DataFrame)],
         transform_fn=_t_fn,
-        config_field=ConfigField(LoadDataFrameConfigDict),
+        config_field=Field(LoadDataFrameConfigDict),
     )
 
 
@@ -90,7 +89,7 @@ def to_csv_solid(name):
         name=name,
         inputs=[InputDefinition('df', DataFrame)],
         outputs=[],
-        config_field=ConfigField(WriteDataFrameConfigDict),
+        config_field=Field(WriteDataFrameConfigDict),
         transform_fn=_t_fn,
     )
 
@@ -103,6 +102,6 @@ def to_parquet_solid(name):
         name=name,
         inputs=[InputDefinition('df', DataFrame)],
         outputs=[],
-        config_field=ConfigField(WriteDataFrameConfigDict),
+        config_field=Field(WriteDataFrameConfigDict),
         transform_fn=_t_fn,
     )

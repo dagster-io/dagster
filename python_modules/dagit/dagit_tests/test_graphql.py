@@ -3,6 +3,7 @@ from graphql import graphql
 from dagster import (
     ConfigField,
     DependencyDefinition,
+    Field,
     PipelineContextDefinition,
     PipelineDefinition,
     InputDefinition,
@@ -148,17 +149,19 @@ query PipelineQuery($executionParams: PipelineExecutionParams!)
 }
 '''
 
+
 def execute_config_graphql(pipeline_name, config):
     return execute_dagster_graphql(
         define_repo(),
         CONFIG_VALIDATION_QUERY,
         {
-            'executionParams' : {
+            'executionParams': {
                 'pipelineName': pipeline_name,
                 'config': config,
             },
         },
     )
+
 
 def test_basic_valid_config():
     result = execute_config_graphql(
@@ -311,12 +314,12 @@ def define_context_config_pipeline():
             'context_one':
             PipelineContextDefinition(
                 context_fn=lambda *args, **kwargs: None,
-                config_field=ConfigField(types.String),
+                config_field=Field(types.String),
             ),
             'context_two':
             PipelineContextDefinition(
                 context_fn=lambda *args, **kwargs: None,
-                config_field=ConfigField(types.Int),
+                config_field=Field(types.Int),
             ),
         }
     )

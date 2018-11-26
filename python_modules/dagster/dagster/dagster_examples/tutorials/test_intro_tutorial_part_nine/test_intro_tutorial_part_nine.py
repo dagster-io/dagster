@@ -6,7 +6,6 @@ import yaml
 import pytest
 
 from dagster import (
-    ConfigField,
     DagsterTypeError,
     DependencyDefinition,
     ExecutionContext,
@@ -57,14 +56,14 @@ PartNineResources = namedtuple('PartNineResources', 'store')
 
 def define_contextless_solids():
     @solid(
-        config_field=ConfigField(types.Int),
+        config_field=Field(types.Int),
         outputs=[OutputDefinition(types.Int)],
     )
     def injest_a(info):
         return info.config
 
     @solid(
-        config_field=ConfigField(types.Int),
+        config_field=Field(types.Int),
         outputs=[OutputDefinition(types.Int)],
     )
     def injest_b(info):
@@ -91,7 +90,7 @@ def define_contextless_solids():
 
 def define_contextful_solids():
     @solid(
-        config_field=ConfigField(types.Int),
+        config_field=Field(types.Int),
         outputs=[OutputDefinition(types.Int)],
     )
     def injest_a(info):
@@ -99,7 +98,7 @@ def define_contextful_solids():
         return info.config
 
     @solid(
-        config_field=ConfigField(types.Int),
+        config_field=Field(types.Int),
         outputs=[OutputDefinition(types.Int)],
     )
     def injest_b(info):
@@ -203,7 +202,7 @@ def define_part_nine_final_pipeline():
                 context_fn=lambda info: ExecutionContext.console_logging(
                     resources=PartNineResources(PublicCloudStore(info.config['credentials']))
                 ),
-                config_field=ConfigField(dagster_type=types.ConfigDictionary(
+                config_field=Field(dagster_type=types.ConfigDictionary(
                     name='CloudConfigDict',
                     fields={
                     'credentials': Field(types.ConfigDictionary(

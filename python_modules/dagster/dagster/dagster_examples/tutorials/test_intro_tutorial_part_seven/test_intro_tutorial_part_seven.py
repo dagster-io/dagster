@@ -2,8 +2,8 @@
 from collections import defaultdict
 
 from dagster import (
-    ConfigField,
     DependencyDefinition,
+    Field,
     InputDefinition,
     PipelineDefinition,
     RepositoryDefinition,
@@ -16,7 +16,7 @@ from dagster import (
 
 
 @solid(
-    config_field=ConfigField(types.Any),
+    config_field=Field(types.Any),
 )
 def double_the_word(info):
     return info.config['word'] * 2
