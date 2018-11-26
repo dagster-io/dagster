@@ -1,28 +1,65 @@
 import * as React from "react";
 import gql from "graphql-tag";
+import styled from "styled-components";
+import { Link } from "react-router-dom";
+import { Route, match } from "react-router";
 import { History } from "history";
-import { NonIdealState } from "@blueprintjs/core";
+import { Colors, NonIdealState, Navbar } from "@blueprintjs/core";
 import Page from "./Page";
-import PipelineExplorer from "./PipelineExplorer";
-import PipelineJumpBar from "./PipelineJumpBar";
+import { PipelineJumpBar } from "./PipelineJumpComponents";
 import PythonErrorInfo from "./PythonErrorInfo";
+import PipelineExplorer from "./PipelineExplorer";
+import PipelineExecution from "./PipelineExecution";
 import {
   PipelinePageFragment,
   PipelinePageFragment_Pipeline,
   PipelinePageFragment_PythonError
 } from "./types/PipelinePageFragment";
 
+export type IPipelinePageMatch = match<{
+  pipeline: string | null;
+  tab: string | null;
+}>;
+
 interface IPipelinePageProps {
-  pipelinesOrErrors: Array<PipelinePageFragment>;
-  selectedPipelineName: string | null;
-  selectedSolidName: string | null;
   history: History;
+  match: IPipelinePageMatch;
+  pipelinesOrErrors: Array<PipelinePageFragment>;
 }
 
-export default class PipelinePage extends React.Component<
-  IPipelinePageProps,
-  {}
-> {
+interface IPipelinePageTabProps extends IPipelinePageProps {
+  pipeline: PipelinePageFragment_Pipeline;
+}
+
+const TABS = [
+  {
+    slug: "explore",
+    title: "Explore",
+    render: (props: IPipelinePageTabProps) => (
+      <Route
+        path={`${props.match.url}/:solid?`}
+        render={({ match }: { match: match<{ solid: string | null }> }) => (
+          <PipelineExplorer
+            history={props.history}
+            pipeline={props.pipeline}
+            solid={props.pipeline.solids.find(
+              s => s.name === match.params.solid
+            )}
+          />
+        )}
+      />
+    )
+  },
+  {
+    slug: "execute",
+    title: "Execute",
+    render: (props: IPipelinePageTabProps) => (
+      <PipelineExecution pipeline={props.pipeline} />
+    )
+  }
+];
+
+export default class PipelinePage extends React.Component<IPipelinePageProps> {
   static fragments = {
     PipelinePageFragment: gql`
       fragment PipelinePageFragment on PipelineOrError {
@@ -32,6 +69,7 @@ export default class PipelinePage extends React.Component<
           stack
         }
         ... on Pipeline {
+          ...PipelineExecutionFragment
           ...PipelineExplorerFragment
           ...PipelineJumpBarFragment
           solids {
@@ -40,6 +78,7 @@ export default class PipelinePage extends React.Component<
         }
       }
 
+      ${PipelineExecution.fragments.PipelineExecutionFragment}
       ${PipelineExplorer.fragments.PipelineExplorerFragment}
       ${PipelineExplorer.fragments.PipelineExplorerSolidFragment}
       ${PipelineJumpBar.fragments.PipelineJumpBarFragment}
@@ -47,10 +86,12 @@ export default class PipelinePage extends React.Component<
   };
 
   render() {
+    const { history, match, pipelinesOrErrors } = this.props;
+
     let error: PipelinePageFragment_PythonError | null = null;
     const pipelines: Array<PipelinePageFragment_Pipeline> = [];
 
-    for (const pipelineOrError of this.props.pipelinesOrErrors) {
+    for (const pipelineOrError of pipelinesOrErrors) {
       if (pipelineOrError.__typename === "PythonError") {
         error = pipelineOrError;
       } else {
@@ -58,27 +99,18 @@ export default class PipelinePage extends React.Component<
       }
     }
 
+    const selectedTab = TABS.find(t => t.slug === match.params.tab) || TABS[0];
     const selectedPipeline = pipelines.find(
-      p => p.name === this.props.selectedPipelineName
+      p => p.name === match.params.pipeline
     );
-
-    const selectedSolid =
-      selectedPipeline &&
-      selectedPipeline.solids.find(
-        s => s.name === this.props.selectedSolidName
-      );
 
     let body;
 
     if (error) {
       body = <PythonErrorInfo error={error} />;
-    } else if (selectedPipeline) {
-      body = (
-        <PipelineExplorer
-          pipeline={selectedPipeline}
-          solid={selectedSolid}
-          history={this.props.history}
-        />
+    } else if (selectedPipeline && selectedTab) {
+      body = selectedTab.render(
+        Object.assign({ pipeline: selectedPipeline }, this.props)
       );
     } else {
       body = (
@@ -93,12 +125,29 @@ export default class PipelinePage extends React.Component<
       <Page
         history={this.props.history}
         navbarContents={
-          <PipelineJumpBar
-            selectedPipeline={selectedPipeline}
-            selectedSolid={selectedSolid}
-            pipelines={pipelines}
-            history={this.props.history}
-          />
+          <PipelineNavbar>
+            <PipelineJumpBar
+              pipelines={pipelines}
+              selectedPipeline={selectedPipeline}
+              onItemSelect={pipeline => {
+                history.push(`/${pipeline.name}/${match.params.tab}`);
+              }}
+            />
+            {selectedPipeline && <Navbar.Divider />}
+            {selectedPipeline && (
+              <Tabs>
+                {TABS.map(({ slug, title }) => (
+                  <Tab
+                    key={slug}
+                    to={`/${selectedPipeline.name}/${slug}`}
+                    active={match.params.tab === slug}
+                  >
+                    {title}
+                  </Tab>
+                ))}
+              </Tabs>
+            )}
+          </PipelineNavbar>
         }
       >
         {body}
@@ -106,3 +155,29 @@ export default class PipelinePage extends React.Component<
     );
   }
 }
+
+const PipelineNavbar = styled.div`
+  display: flex;
+  align-items: center;
+`;
+
+const Tabs = styled.div`
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+const Tab = styled(Link)<{ active: boolean }>`
+  color: ${p => (p.active ? Colors.COBALT3 : Colors.GRAY2)}
+  border-top: 3px solid transparent;
+  border-bottom: 3px solid ${p => (p.active ? Colors.COBALT3 : "transparent")}
+  text-decoration: none;
+  white-space: nowrap;
+  min-width: 40px;
+  padding: 0 10px;
+  display: flex;
+  height: 50px;
+  align-items: center;
+  outline: 0;
+`;

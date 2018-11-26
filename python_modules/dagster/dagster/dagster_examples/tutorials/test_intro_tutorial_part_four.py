@@ -1,6 +1,6 @@
 # pylint: disable=W0622,W0614,W0401
 from dagster import (
-    ConfigDefinition,
+    ConfigField,
     PipelineDefinition,
     config,
     execute_pipeline,
@@ -9,7 +9,7 @@ from dagster import (
 )
 
 
-@solid(config_def=ConfigDefinition(types.String))
+@solid(config_field=ConfigField(types.String))
 def hello_world(info):
     print(info.config)
     return info.config

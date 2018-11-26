@@ -1,7 +1,7 @@
 import os
 
 from dagster import (
-    ConfigDefinition,
+    ConfigField,
     Field,
     InputDefinition,
     OutputDefinition,
@@ -71,7 +71,7 @@ def define_create_table_solid(name):
         inputs=[InputDefinition('expr')],
         outputs=[],
         transform_fn=_materialization_fn,
-        config_def=ConfigDefinition(CreateTableConfigDict),
+        config_field=ConfigField(CreateTableConfigDict),
     )
 
 

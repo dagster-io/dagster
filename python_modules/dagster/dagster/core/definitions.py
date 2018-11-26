@@ -18,13 +18,14 @@ from .config import DEFAULT_CONTEXT_NAME
 
 from .errors import DagsterInvalidDefinitionError
 
+from .evaluator import throwing_evaluate_config_value
+
 from .execution_context import ExecutionContext
 
 from .types import (
     ConfigDictionary,
     IsScopedConfigType,
     ScopedConfigInfo,
-    DagsterType,
     Field,
 )
 
@@ -79,9 +80,9 @@ class PipelineContextDefinition(object):
     a dictionary key'ed by its name so the name is not present in this object.
 
     Attributes:
-        config_def (ConfigurationDefinition): The configuration for the pipeline context.
+        config_field (ConfigField): The configuration for the pipeline context.
 
-        context_fn (callable):
+context_fn (callable):
             Signature is (pipeline: PipelineDefintion, config_value: Any) => ExecutionContext
 
             A callable that either returns *or* yields an ExecutionContext.
@@ -105,7 +106,7 @@ class PipelineContextDefinition(object):
         context_definition = PipelineContextDefinition(context_fn=lambda *_args: context)
         return {DEFAULT_CONTEXT_NAME: context_definition}
 
-    def __init__(self, context_fn, config_def=None, description=None):
+    def __init__(self, context_fn, config_field=None, description=None):
         '''
         Args:
             context_fn (callable):
@@ -123,16 +124,19 @@ class PipelineContextDefinition(object):
                 resources object be a namedtuple, where each property is an object that
                 manages a particular resource, e.g. aws, a local filesystem manager, etc.
 
-            config_def (ConfigDefinition):
+            config_field (ConfigField):
                 Define the configuration for the context
 
             description (str): Description of the context definition.
         '''
-        self.config_def = check.opt_inst_param(
-            config_def,
-            'config_def',
-            ConfigDefinition,
-            ConfigDefinition(types.Any),
+        self.config_field = check.opt_inst_param(
+            config_field,
+            'config_field',
+            ConfigField,
+            # For now we are defaulting to allowing any config for a
+            # pipeline context definition. This should instead default
+            # to having no config like a SolidDefinition
+            ConfigField(types.Any, is_optional=True, default_value=None),
         )
         self.context_fn = check.callable_param(context_fn, 'context_fn')
         self.description = description
@@ -159,7 +163,11 @@ def _default_pipeline_context_definitions():
         return context
 
     default_context_def = PipelineContextDefinition(
-        config_def=ConfigDefinition(DefaultContextConfigDict),
+        config_field=ConfigField(
+            DefaultContextConfigDict,
+            is_optional=True,
+            default_value=lambda: throwing_evaluate_config_value(DefaultContextConfigDict, None),
+        ),
         context_fn=_default_context_fn,
     )
     return {DEFAULT_CONTEXT_NAME: default_context_def}
@@ -374,10 +382,6 @@ class Solid(object):
     def output_defs(self):
         return self.definition.output_defs
 
-    @property
-    def config_def(self):
-        return self.definition.config_def
-
 
 class SolidAliasMapper:
     def __init__(self, dependencies_dict):
@@ -546,8 +550,8 @@ def _gather_all_types(solids, context_definitions, environment_type):
             yield dagster_type
 
     for context_definition in context_definitions.values():
-        if context_definition.config_def:
-            for dagster_type in context_definition.config_def.config_type.iterate_types():
+        if context_definition.config_field:
+            for dagster_type in context_definition.config_field.dagster_type.iterate_types():
                 yield dagster_type
 
     for dagster_type in environment_type.iterate_types():
@@ -673,16 +677,16 @@ class PipelineDefinition(object):
                         (
                             'The type {type_name} must be used within the pipeline named '
                             '{pipeline_name}. You have likely used '
-                            'ConfigDefinition.solid_config_dict or '
-                            'ConfigDefinition.context_config_dict and used the wrong pipeline name'
+                            'ConfigField.solid_config_dict or '
+                            'ConfigField.context_config_dict and used the wrong pipeline name'
                         ).format(type_name=type_.name, pipeline_name=name)
                     )
 
         for context_name, context_def in self.context_definitions.items():
-            if not context_def.config_def:
+            if not context_def.config_field:
                 continue
 
-            for in_def_type in context_def.config_def.config_type.iterate_types():
+            for in_def_type in context_def.config_field.dagster_type.iterate_types():
                 if not isinstance(in_def_type, IsScopedConfigType):
                     continue
                 if not in_def_type.scoped_config_info:
@@ -692,7 +696,7 @@ class PipelineDefinition(object):
                     raise DagsterInvalidDefinitionError(
                         (
                             'The type {type_name} is not scoped to a context. You have '
-                            'likely used ConfigDefinition.solid_config_dict to create '
+                            'likely used ConfigField.solid_config_dict to create '
                             'a config for a context within context {context_name}'
                         ).format(type_name=in_def_type.name, context_name=context_name)
                     )
@@ -702,7 +706,7 @@ class PipelineDefinition(object):
                         (
                             'The type {type_name} must be used within the context named '
                             '{context_name}. You have likely used '
-                            'ConfigDefinition.context_config_dict and used the wrong context name'
+                            'ConfigField.context_config_dict and used the wrong context name'
                         ).format(type_name=in_def_type.name, context_name=context_name)
                     )
 
@@ -1087,28 +1091,17 @@ def build_config_dict_type(name_stack, fields, scoped_config_info=None):
     return ConfigDictionary('.'.join(name_stack + ['ConfigDict']), field_dict, scoped_config_info)
 
 
-class ConfigDefinition(object):
-    '''Represents the configuration of an entity in Dagster
-
-    Broadly defined, configs determine how computations within dagster interact with
-    the external world. Example values that would end up in configs would be file paths,
-    database table names, and so forth.
-
-    Attributes:
-
-        config_type (DagsterType): Type of the config.
-    '''
-
+class ConfigField(Field):
     @staticmethod
     def context_config_dict(pipeline_name, context_name, fields):
         '''
-        Method to create a ConfigDefinition for a PipelineContextDefinition
+        Method to create a ConfigField for a PipelineContextDefinition
 
         e.g.
 
         PipelineContextDefinition(
             context_fn=_some_fn,
-            config_def=ConfigDefinition.context_config_dict(
+            config_field=ConfigField.context_config_dict(
                 'pipeline_name',
                 'context_name',
                 { # creates type PipelineName.Context.ContextName.ConfigDict
@@ -1135,7 +1128,7 @@ class ConfigDefinition(object):
         check.str_param(context_name, 'context_name')
         check.dict_param(fields, 'fields', key_type=str)
 
-        return ConfigDefinition(
+        return ConfigField(
             build_config_dict_type(
                 [
                     camelcase(pipeline_name),
@@ -1162,7 +1155,7 @@ class ConfigDefinition(object):
         check.str_param(solid_name, 'solid_name')
         check.dict_param(fields, 'fields', key_type=str)
 
-        return ConfigDefinition(
+        return ConfigField(
             build_config_dict_type(
                 [
                     camelcase(pipeline_name),
@@ -1178,7 +1171,7 @@ class ConfigDefinition(object):
         )
 
     @staticmethod
-    def config_dict(name, field_dict):
+    def config_dict_field(name, field_dict):
         '''Shortcut to create a dictionary based config definition.
 
 
@@ -1190,21 +1183,30 @@ class ConfigDefinition(object):
 
         .. code-block:: python
 
-            ConfigDefinition.config_dict({
+            ConfigField.config_dict_field({
                 'int_field': Field(types.Int),
                 'string_field': Field(types.String),
              })
 
         '''
-        return ConfigDefinition(types.ConfigDictionary(name, field_dict))
 
-    def __init__(self, config_type=types.Any, description=None):
-        '''Construct a ConfigDefinition
+        config_dict_type = types.ConfigDictionary(name, field_dict)
+        is_optional = all_fields_optional(field_dict)
+        if not is_optional:
+            return ConfigField(config_dict_type)
+        else:
+            return ConfigField(
+                config_dict_type,
+                is_optional=True,
+                default_value=lambda: throwing_evaluate_config_value(config_dict_type, None),
+            )
 
-        Args:
-            config_type (DagsterType): Type the determines shape and values of config'''
-        self.config_type = check.inst_param(config_type, 'config_type', DagsterType)
-        self.description = check.opt_str_param(description, 'description')
+
+def all_fields_optional(field_dict):
+    for field in field_dict.values():
+        if not field.is_optional:
+            return False
+    return True
 
 
 class SolidDefinition(object):
@@ -1236,7 +1238,7 @@ class SolidDefinition(object):
             SolidDefinition(
                 name='read_csv',
                 inputs=[],
-                config_def=ConfigDefinition(types.ConfigDictionary({'path' => types.Path})),
+                config_field=ConfigField(types.ConfigDictionary({'path' => types.Path})),
                 outputs=[OutputDefinition()] # default name ('result') and any typed
                 transform_fn
             )
@@ -1251,7 +1253,7 @@ class SolidDefinition(object):
                 inputs: Dict[str, Any],
             ) : Iterable<Result>
         outputs (List[OutputDefinition]): Outputs of the solid.
-        config_def (ConfigDefinition): How the solid configured.
+        config_field (ConfigField): How the solid configured.
         description (str): Description of the solid.
         metadata (dict):
             Arbitrary metadata for the solid. Some frameworks expect and require
@@ -1264,7 +1266,7 @@ class SolidDefinition(object):
         inputs,
         transform_fn,
         outputs,
-        config_def=None,
+        config_field=None,
         description=None,
         metadata=None,
     ):
@@ -1273,10 +1275,10 @@ class SolidDefinition(object):
         self.transform_fn = check.callable_param(transform_fn, 'transform_fn')
         self.output_defs = check.list_param(outputs, 'outputs', OutputDefinition)
         self.description = check.opt_str_param(description, 'description')
-        self.config_def = check.opt_inst_param(
-            config_def,
-            'config_def',
-            ConfigDefinition,
+        self.config_field = check.opt_inst_param(
+            config_field,
+            'config_field',
+            ConfigField,
         )
         self.metadata = check.opt_dict_param(metadata, 'metadata', key_type=str)
         self._input_dict = {inp.name: inp for inp in inputs}
@@ -1288,7 +1290,7 @@ class SolidDefinition(object):
                     raise DagsterInvalidDefinitionError(
                         (
                             'The type {type_name} is not scoped to a solid. You have '
-                            'likely used ConfigDefinition.context_config_dict to create '
+                            'likely used ConfigField.context_config_dict to create '
                             'a config for a solid within solid {solid_name}'
                         ).format(type_name=type_.name, solid_name=name)
                     )
@@ -1298,7 +1300,7 @@ class SolidDefinition(object):
                         (
                             'The type {type_name} must be used within the solid named '
                             '{solid_name}. You have likely used '
-                            'ConfigDefinition.solid_config_dict and used the wrong solid name'
+                            'ConfigField.solid_config_dict and used the wrong solid name'
                         ).format(type_name=type_.name, solid_name=name)
                     )
 
@@ -1327,8 +1329,8 @@ class SolidDefinition(object):
             for dagster_type in output_def.dagster_type.iterate_types():
                 yield dagster_type
 
-        if self.config_def:
-            for dagster_type in self.config_def.config_type.iterate_types():
+        if self.config_field:
+            for dagster_type in self.config_field.dagster_type.iterate_types():
                 yield dagster_type
 
 

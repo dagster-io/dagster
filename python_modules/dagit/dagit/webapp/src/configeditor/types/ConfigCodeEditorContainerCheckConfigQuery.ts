@@ -28,8 +28,7 @@ export interface ConfigCodeEditorContainerCheckConfigQuery {
 }
 
 export interface ConfigCodeEditorContainerCheckConfigQueryVariables {
-  pipelineName: string;
-  config: any;
+  executionParams: PipelineExecutionParams;
 }
 
 /* tslint:disable */
@@ -38,6 +37,14 @@ export interface ConfigCodeEditorContainerCheckConfigQueryVariables {
 //==============================================================
 // START Enums and Input Objects
 //==============================================================
+
+/**
+ * 
+ */
+export interface PipelineExecutionParams {
+  pipelineName: string;
+  config?: any | null;
+}
 
 //==============================================================
 // END Enums and Input Objects

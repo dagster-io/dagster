@@ -1,7 +1,7 @@
 from graphql import graphql
 
 from dagster import (
-    ConfigDefinition,
+    ConfigField,
     DependencyDefinition,
     PipelineContextDefinition,
     PipelineDefinition,
@@ -84,7 +84,7 @@ def define_more_complicated_config():
                 inputs=[],
                 outputs=[],
                 transform_fn=lambda *_args: None,
-                config_def=ConfigDefinition.solid_config_dict(
+                config_field=ConfigField.solid_config_dict(
                     'more_complicated_config',
                     'a_solid_with_config',
                     {
@@ -106,9 +106,9 @@ def define_more_complicated_config():
 
 
 CONFIG_VALIDATION_QUERY = '''
-query PipelineQuery($pipelineName: String!, $config: GenericScalar)
+query PipelineQuery($executionParams: PipelineExecutionParams!)
 {
-    isPipelineConfigValid(pipelineName: $pipelineName, config: $config) {
+    isPipelineConfigValid(executionParams: $executionParams) {
         __typename
         ... on PipelineConfigValidationValid {
             pipeline { name }
@@ -148,19 +148,26 @@ query PipelineQuery($pipelineName: String!, $config: GenericScalar)
 }
 '''
 
-
-def test_basic_valid_config():
-    result = execute_dagster_graphql(
+def execute_config_graphql(pipeline_name, config):
+    return execute_dagster_graphql(
         define_repo(),
         CONFIG_VALIDATION_QUERY,
         {
-            'pipelineName': 'pandas_hello_world',
-            'config': {
-                'solids': {
-                    'load_num_csv': {
-                        'config': {
-                            'path': 'pandas_hello_world/num.csv',
-                        },
+            'executionParams' : {
+                'pipelineName': pipeline_name,
+                'config': config,
+            },
+        },
+    )
+
+def test_basic_valid_config():
+    result = execute_config_graphql(
+        pipeline_name='pandas_hello_world',
+        config={
+            'solids': {
+                'load_num_csv': {
+                    'config': {
+                        'path': 'pandas_hello_world/num.csv',
                     },
                 },
             },
@@ -178,17 +185,13 @@ def field_stack(error_data):
 
 
 def test_basic_invalid_config_type_mismatch():
-    result = execute_dagster_graphql(
-        define_repo(),
-        CONFIG_VALIDATION_QUERY,
-        {
-            'pipelineName': 'pandas_hello_world',
-            'config': {
-                'solids': {
-                    'load_num_csv': {
-                        'config': {
-                            'path': 123,
-                        },
+    result = execute_config_graphql(
+        pipeline_name='pandas_hello_world',
+        config={
+            'solids': {
+                'load_num_csv': {
+                    'config': {
+                        'path': 123,
                     },
                 },
             },
@@ -212,16 +215,12 @@ def test_basic_invalid_config_type_mismatch():
 
 
 def test_basic_invalid_config_missing_field():
-    result = execute_dagster_graphql(
-        define_repo(),
-        CONFIG_VALIDATION_QUERY,
-        {
-            'pipelineName': 'pandas_hello_world',
-            'config': {
-                'solids': {
-                    'load_num_csv': {
-                        'config': {},
-                    },
+    result = execute_config_graphql(
+        pipeline_name='pandas_hello_world',
+        config={
+            'solids': {
+                'load_num_csv': {
+                    'config': {},
                 },
             },
         },
@@ -245,18 +244,14 @@ def single_error_data(result):
 
 
 def test_basic_invalid_not_defined_field():
-    result = execute_dagster_graphql(
-        define_repo(),
-        CONFIG_VALIDATION_QUERY,
-        {
-            'pipelineName': 'pandas_hello_world',
-            'config': {
-                'solids': {
-                    'load_num_csv': {
-                        'config': {
-                            'path': 'foo.txt',
-                            'extra': 'nope',
-                        },
+    result = execute_config_graphql(
+        pipeline_name='pandas_hello_world',
+        config={
+            'solids': {
+                'load_num_csv': {
+                    'config': {
+                        'path': 'foo.txt',
+                        'extra': 'nope',
                     },
                 },
             },
@@ -283,7 +278,7 @@ def define_more_complicated_nested_config():
                 inputs=[],
                 outputs=[],
                 transform_fn=lambda *_args: None,
-                config_def=ConfigDefinition.solid_config_dict(
+                config_field=ConfigField.solid_config_dict(
                     'more_complicated_nested_config',
                     'a_solid_with_config',
                     {
@@ -316,28 +311,24 @@ def define_context_config_pipeline():
             'context_one':
             PipelineContextDefinition(
                 context_fn=lambda *args, **kwargs: None,
-                config_def=ConfigDefinition(types.String),
+                config_field=ConfigField(types.String),
             ),
             'context_two':
             PipelineContextDefinition(
                 context_fn=lambda *args, **kwargs: None,
-                config_def=ConfigDefinition(types.Int),
+                config_field=ConfigField(types.Int),
             ),
         }
     )
 
 
 def test_context_config_works():
-    result = execute_dagster_graphql(
-        define_repo(),
-        CONFIG_VALIDATION_QUERY,
-        {
-            'pipelineName': 'context_config_pipeline',
-            'config': {
-                'context': {
-                    'context_one': {
-                        'config': 'kj23k4j3'
-                    },
+    result = execute_config_graphql(
+        pipeline_name='context_config_pipeline',
+        config={
+            'context': {
+                'context_one': {
+                    'config': 'kj23k4j3'
                 },
             },
         },
@@ -348,16 +339,12 @@ def test_context_config_works():
     assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationValid'
     assert result.data['isPipelineConfigValid']['pipeline']['name'] == 'context_config_pipeline'
 
-    result = execute_dagster_graphql(
-        define_repo(),
-        CONFIG_VALIDATION_QUERY,
-        {
-            'pipelineName': 'context_config_pipeline',
-            'config': {
-                'context': {
-                    'context_two': {
-                        'config': 38934
-                    },
+    result = execute_config_graphql(
+        pipeline_name='context_config_pipeline',
+        config={
+            'context': {
+                'context_two': {
+                    'config': 38934
                 },
             },
         },
@@ -370,15 +357,9 @@ def test_context_config_works():
 
 
 def test_context_config_selector_error():
-    result = execute_dagster_graphql(
-        define_repo(),
-        CONFIG_VALIDATION_QUERY,
-        {
-            'pipelineName': 'context_config_pipeline',
-            'config': {
-                'context': {},
-            },
-        },
+    result = execute_config_graphql(
+        pipeline_name='context_config_pipeline',
+        config={'context': {}},
     )
 
     assert not result.errors
@@ -390,15 +371,11 @@ def test_context_config_selector_error():
 
 
 def test_context_config_wrong_selector():
-    result = execute_dagster_graphql(
-        define_repo(),
-        CONFIG_VALIDATION_QUERY,
-        {
-            'pipelineName': 'context_config_pipeline',
-            'config': {
-                'context': {
-                    'not_defined': {}
-                },
+    result = execute_config_graphql(
+        pipeline_name='context_config_pipeline',
+        config={
+            'context': {
+                'not_defined': {}
             },
         },
     )
@@ -412,19 +389,15 @@ def test_context_config_wrong_selector():
 
 
 def test_context_config_multiple_selectors():
-    result = execute_dagster_graphql(
-        define_repo(),
-        CONFIG_VALIDATION_QUERY,
-        {
-            'pipelineName': 'context_config_pipeline',
-            'config': {
-                'context': {
-                    'context_one': {
-                        'config': 'kdjfd'
-                    },
-                    'context_two': {
-                        'config': 123,
-                    },
+    result = execute_config_graphql(
+        pipeline_name='context_config_pipeline',
+        config={
+            'context': {
+                'context_one': {
+                    'config': 'kdjfd'
+                },
+                'context_two': {
+                    'config': 123,
                 },
             },
         },
@@ -439,23 +412,19 @@ def test_context_config_multiple_selectors():
 
 
 def test_more_complicated_works():
-    result = execute_dagster_graphql(
-        define_repo(),
-        CONFIG_VALIDATION_QUERY,
-        {
-            'pipelineName': 'more_complicated_nested_config',
-            'config': {
-                'solids': {
-                    'a_solid_with_config': {
-                        'config': {
-                            'field_one': 'foo.txt',
-                            'field_two': 'yup',
-                            'field_three': 'mmmhmmm',
-                            'nested_field': {
-                                'field_four_str': 'yaya',
-                                'field_five_int': 234,
-                            }
-                        },
+    result = execute_config_graphql(
+        pipeline_name='more_complicated_nested_config',
+        config={
+            'solids': {
+                'a_solid_with_config': {
+                    'config': {
+                        'field_one': 'foo.txt',
+                        'field_two': 'yup',
+                        'field_three': 'mmmhmmm',
+                        'nested_field': {
+                            'field_four_str': 'yaya',
+                            'field_five_int': 234,
+                        }
                     },
                 },
             },
@@ -464,31 +433,27 @@ def test_more_complicated_works():
 
     assert not result.errors
     assert result.data
-    assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationValid'
-    assert result.data['isPipelineConfigValid']['pipeline']['name'
-                                                            ] == 'more_complicated_nested_config'
+    valid_data = result.data['isPipelineConfigValid']
+    assert valid_data['__typename'] == 'PipelineConfigValidationValid'
+    assert valid_data['pipeline']['name'] == 'more_complicated_nested_config'
 
 
 def test_more_complicated_multiple_errors():
-    result = execute_dagster_graphql(
-        define_repo(),
-        CONFIG_VALIDATION_QUERY,
-        {
-            'pipelineName': 'more_complicated_nested_config',
-            'config': {
-                'solids': {
-                    'a_solid_with_config': {
-                        'config': {
-                            # 'field_one': 'foo.txt', # missing
-                            'field_two': 'yup',
-                            'field_three': 'mmmhmmm',
-                            'extra_one': 'kjsdkfjd',  # extra
-                            'nested_field': {
-                                'field_four_str': 23434,  # runtime type
-                                'field_five_int': 234,
-                                'extra_two': 'ksjdkfjd',  # another extra
-                            }
-                        },
+    result = execute_config_graphql(
+        pipeline_name='more_complicated_nested_config',
+        config={
+            'solids': {
+                'a_solid_with_config': {
+                    'config': {
+                        # 'field_one': 'foo.txt', # missing
+                        'field_two': 'yup',
+                        'field_three': 'mmmhmmm',
+                        'extra_one': 'kjsdkfjd',  # extra
+                        'nested_field': {
+                            'field_four_str': 23434,  # runtime type
+                            'field_five_int': 234,
+                            'extra_two': 'ksjdkfjd',  # another extra
+                        }
                     },
                 },
             },
@@ -497,10 +462,11 @@ def test_more_complicated_multiple_errors():
 
     assert not result.errors
     assert result.data
-    assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationInvalid'
-    assert result.data['isPipelineConfigValid']['pipeline']['name'
-                                                            ] == 'more_complicated_nested_config'
-    assert len(result.data['isPipelineConfigValid']['errors']) == 4
+    valid_data = result.data['isPipelineConfigValid']
+
+    assert valid_data['__typename'] == 'PipelineConfigValidationInvalid'
+    assert valid_data['pipeline']['name'] == 'more_complicated_nested_config'
+    assert len(valid_data['errors']) == 4
 
     missing_error_one = find_error(
         result,

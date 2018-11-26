@@ -15,7 +15,7 @@ We have the following pipeline:
 .. code-block:: python
 
     @solid(
-        config_def=ConfigDefinition(types.Int),
+        config_field=ConfigDefinition(types.Int),
         outputs=[OutputDefinition(types.Int)],
     )
     def load_number(info):
