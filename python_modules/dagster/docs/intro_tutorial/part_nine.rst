@@ -27,7 +27,7 @@ and then two downstream solids add and multiple those numbers, respectively.
 .. code-block:: python
 
     @solid(
-        config_def=ConfigDefinition(types.Int),
+        config_field=ConfigDefinition(types.Int),
         outputs=[OutputDefinition(types.Int)],
     )
     def ingest_a(info):
@@ -35,7 +35,7 @@ and then two downstream solids add and multiple those numbers, respectively.
 
 
     @solid(
-        config_def=ConfigDefinition(types.Int),
+        config_field=ConfigDefinition(types.Int),
         outputs=[OutputDefinition(types.Int)],
     )
     def ingest_b(info):
@@ -124,7 +124,7 @@ Naively let's add this to one of our transforms:
 .. code-block:: python
 
     @solid(
-        config_def=ConfigDefinition(types.Int),
+        config_field=ConfigDefinition(types.Int),
         outputs=[OutputDefinition(types.Int)],
     )
     def ingest_a(info):
@@ -153,7 +153,7 @@ this:
 .. code-block:: python
 
     @solid(
-        config_def=ConfigDefinition(types.Int),
+        config_field=ConfigDefinition(types.Int),
         outputs=[OutputDefinition(types.Int)],
     )
     def ingest_a(info):
@@ -239,7 +239,7 @@ which is attached the resources property of the context.
 .. code-block:: python
 
     @solid(
-        config_def=ConfigDefinition(types.Int),
+        config_field=ConfigDefinition(types.Int),
         outputs=[OutputDefinition(types.Int)],
     )
     def ingest_a(info):
@@ -247,7 +247,7 @@ which is attached the resources property of the context.
         return conf
 
     @solid(
-        config_def=ConfigDefinition(types.Int),
+        config_field=ConfigDefinition(types.Int),
         outputs=[OutputDefinition(types.Int)],
     )
     def ingest_b(info):
@@ -356,8 +356,8 @@ version of that store.
                         )
                     )
                 ),
-                config_def=ConfigDefinition(
-                    config_type=types.ConfigDictionary('CloudConfig', {
+                config_field=ConfigDefinition(
+                    dagster_type=types.ConfigDictionary('CloudConfig', {
                         'credentials': Field(types.ConfigDictionary('CloudCredentials', {
                             'user' : Field(types.String),
                             'pass' : Field(types.String),

@@ -1,7 +1,7 @@
 import pytest
 
 from dagster import (
-    ConfigDefinition,
+    ConfigField,
     DependencyDefinition,
     Field,
     PipelineContextDefinition,
@@ -42,7 +42,7 @@ def test_pipeline_types():
     @solid(
         inputs=[InputDefinition('input_one', types.String)],
         outputs=[OutputDefinition(types.Any)],
-        config_def=ConfigDefinition(SolidOneConfigDict),
+        config_field=ConfigField(SolidOneConfigDict),
     )
     def solid_one(_info, input_one):
         raise Exception('should not execute')
@@ -56,7 +56,7 @@ def test_pipeline_types():
             'context_one':
             PipelineContextDefinition(
                 context_fn=lambda: None,
-                config_def=ConfigDefinition(ContextOneConfigDict),
+                config_field=ConfigField(ContextOneConfigDict),
             )
         }
     )

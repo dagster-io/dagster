@@ -3,7 +3,7 @@ from functools import wraps
 import inspect
 
 from .definitions import (
-    ConfigDefinition,
+    ConfigField,
     DagsterInvalidDefinitionError,
     InputDefinition,
     OutputDefinition,
@@ -107,14 +107,14 @@ class _Solid(object):
         inputs=None,
         outputs=None,
         description=None,
-        config_def=None,
+        config_field=None,
     ):
         self.name = check.opt_str_param(name, 'name')
         self.input_defs = check.opt_list_param(inputs, 'inputs', InputDefinition)
         outputs = outputs or [OutputDefinition()]
         self.outputs = check.list_param(outputs, 'outputs', OutputDefinition)
         self.description = check.opt_str_param(description, 'description')
-        self.config_def = check.opt_inst_param(config_def, 'config_def', ConfigDefinition)
+        self.config_field = check.opt_inst_param(config_field, 'config_field', ConfigField)
 
     def __call__(self, fn):
         check.callable_param(fn, 'fn')
@@ -129,7 +129,7 @@ class _Solid(object):
             inputs=self.input_defs,
             outputs=self.outputs,
             transform_fn=transform_fn,
-            config_def=self.config_def,
+            config_field=self.config_field,
             description=self.description,
         )
 
@@ -184,7 +184,7 @@ def solid(
     name=None,
     inputs=None,
     outputs=None,
-    config_def=None,
+    config_field=None,
     description=None,
 ):
     '''(decorator) Create a solid with specified parameters.
@@ -206,7 +206,7 @@ def solid(
         name (str): Name of solid
         inputs (List[InputDefinition]): List of inputs
         outputs (List[OutputDefinition]): List of outputs
-        config_def (ConfigDefinition):
+        config_field (ConfigField):
             The configuration for this solid.
         description (str): Description of this solid.
 
@@ -262,7 +262,7 @@ def solid(
         @solid(
             inputs=[InputDefinition(name="foo")],
             outputs=[OutputDefinition()],
-            config_def=ConfigDefinition(types.ConfigDictionary({'str_value' : Field(types.String)})),
+            config_field=ConfigField(types.ConfigDictionary({'str_value' : Field(types.String)})),
         )
         def hello_world(info, foo):
             # info.config is a dictionary with 'str_value' key
@@ -273,14 +273,14 @@ def solid(
         check.invariant(inputs is None)
         check.invariant(outputs is None)
         check.invariant(description is None)
-        check.invariant(config_def is None)
+        check.invariant(config_field is None)
         return _Solid()(name)
 
     return _Solid(
         name=name,
         inputs=inputs,
         outputs=outputs,
-        config_def=config_def,
+        config_field=config_field,
         description=description,
     )
 

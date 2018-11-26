@@ -1,7 +1,7 @@
 import pytest
 
 from dagster import (
-    ConfigDefinition,
+    ConfigField,
     DagsterInvalidDefinitionError,
     DependencyDefinition,
     ExecutionContext,
@@ -14,6 +14,7 @@ from dagster import (
     execute_pipeline,
     lambda_solid,
     solid,
+    types,
 )
 
 from dagster.core.test_utils import execute_single_solid
@@ -330,11 +331,11 @@ def test_descriptions():
     assert solid_desc.description == 'foo'
 
 
-def test_any_config_definition():
+def test_any_config_field():
     called = {}
     conf_value = 234
 
-    @solid(config_def=ConfigDefinition())
+    @solid(config_field=ConfigField(types.Any))
     def hello_world(info):
         assert info.config == conf_value
         called['yup'] = True

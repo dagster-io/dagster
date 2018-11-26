@@ -1,7 +1,7 @@
 import pytest
 
 from dagster import (
-    ConfigDefinition,
+    ConfigField,
     DagsterEvaluateConfigValueError,
     ExecutionContext,
     Field,
@@ -21,7 +21,6 @@ from dagster.core.config_types import (
     SolidConfigType,
     SolidDictionaryType,
     SpecificContextConfig,
-    all_optional_user_config,
 )
 
 from dagster.core.evaluator import (
@@ -34,7 +33,7 @@ def test_context_config_any():
     context_defs = {
         'test':
         PipelineContextDefinition(
-            config_def=ConfigDefinition(),
+            config_field=ConfigField(types.Any),
             context_fn=lambda *args: ExecutionContext(),
         )
     }
@@ -52,8 +51,8 @@ def test_context_config():
     context_defs = {
         'test':
         PipelineContextDefinition(
-            config_def=ConfigDefinition(
-                config_type=types.
+            config_field=ConfigField(
+                dagster_type=types.
                 ConfigDictionary('TestConfigDict', {
                     'some_str': Field(types.String),
                 })
@@ -112,8 +111,6 @@ def test_default_context_config():
     assert isinstance(default_context_config_type, SpecificContextConfig)
     assert 'config' in default_context_config_type.field_dict
 
-    assert all_optional_user_config(default_context_config_type)
-
     context_dict = throwing_evaluate_config_value(context_config_type, {})
 
     assert 'default' in context_dict
@@ -124,17 +121,15 @@ def test_provided_default_config():
         context_definitions={
             'some_context':
             PipelineContextDefinition(
-                config_def=ConfigDefinition(
-                    config_type=types.ConfigDictionary(
-                        'ksjdkfjd', {
-                            'with_default_int':
-                            Field(
-                                types.Int,
-                                is_optional=True,
-                                default_value=23434,
-                            ),
-                        }
-                    )
+                config_field=ConfigField.config_dict_field(
+                    'ksjdkfjd',
+                    {
+                        'with_default_int': Field(
+                            types.Int,
+                            is_optional=True,
+                            default_value=23434,
+                        ),
+                    },
                 ),
                 context_fn=lambda *args: None
             )
@@ -192,7 +187,7 @@ def test_errors():
     context_defs = {
         'test':
         PipelineContextDefinition(
-            config_def=ConfigDefinition(
+            config_field=ConfigField(
                 types.ConfigDictionary(
                     'something',
                     {
@@ -220,12 +215,12 @@ def test_select_context():
     context_defs = {
         'int_context':
         PipelineContextDefinition(
-            config_def=ConfigDefinition(types.Int),
+            config_field=ConfigField(types.Int),
             context_fn=lambda *args: ExecutionContext(),
         ),
         'string_context':
         PipelineContextDefinition(
-            config_def=ConfigDefinition(types.String),
+            config_field=ConfigField(types.String),
             context_fn=lambda *args: ExecutionContext(),
         ),
     }
@@ -274,7 +269,7 @@ def test_select_context():
 
 
 def test_solid_config():
-    solid_config_type = SolidConfigType('kdjfkd', types.Int)
+    solid_config_type = SolidConfigType('kdjfkd', ConfigField(types.Int))
     solid_inst = throwing_evaluate_config_value(solid_config_type, {'config': 1})
     assert isinstance(solid_inst, config.Solid)
     assert solid_inst.config == 1
@@ -329,14 +324,14 @@ def define_test_solids_config_pipeline():
         solids=[
             SolidDefinition(
                 name='int_config_solid',
-                config_def=ConfigDefinition(types.Int),
+                config_field=ConfigField(types.Int, is_optional=True),
                 inputs=[],
                 outputs=[],
                 transform_fn=lambda *args: None,
             ),
             SolidDefinition(
                 name='string_config_solid',
-                config_def=ConfigDefinition(types.String),
+                config_field=ConfigField(types.String, is_optional=True),
                 inputs=[],
                 outputs=[],
                 transform_fn=lambda *args: None,
@@ -345,12 +340,36 @@ def define_test_solids_config_pipeline():
     )
 
 
+def assert_has_fields(dtype, *fields):
+    return set(dtype.field_dict.keys()) == set(fields)
+
+
+def test_solid_configs_defaults():
+    env_type = define_test_solids_config_pipeline().environment_type
+
+    solids_field = env_type.field_named('solids')
+
+    assert_has_fields(solids_field.dagster_type, 'int_config_solid', 'string_config_solid')
+
+    int_solid_field = solids_field.dagster_type.field_named('int_config_solid')
+
+    assert int_solid_field.is_optional
+    assert int_solid_field.default_provided  # TODO: this is the test case the exposes the default dodginess
+
+    assert_has_fields(int_solid_field.dagster_type, 'config')
+
+    int_solid_config_field = int_solid_field.dagster_type.field_named('config')
+
+    assert int_solid_config_field.is_optional
+    assert not int_solid_config_field.default_provided
+
+
 def test_solid_dictionary_some_no_config():
     pipeline_def = PipelineDefinition(
         solids=[
             SolidDefinition(
                 name='int_config_solid',
-                config_def=ConfigDefinition(types.Int),
+                config_field=ConfigField(types.Int),
                 inputs=[],
                 outputs=[],
                 transform_fn=lambda *args: None,
@@ -386,14 +405,14 @@ def test_whole_environment():
         context_definitions={
             'test':
             PipelineContextDefinition(
-                config_def=ConfigDefinition(),
+                config_field=ConfigField(types.Any),
                 context_fn=lambda *args: ExecutionContext(),
             )
         },
         solids=[
             SolidDefinition(
                 name='int_config_solid',
-                config_def=ConfigDefinition(types.Int),
+                config_field=ConfigField(types.Int),
                 inputs=[],
                 outputs=[],
                 transform_fn=lambda *args: None,
@@ -454,9 +473,10 @@ def test_solid_config_error():
 def test_execution_config():
     env_type = EnvironmentConfigType(define_test_solids_config_pipeline())
     env_obj = throwing_evaluate_config_value(
-        env_type, {'execution': {
+        env_type,
+        {'execution': {
             'serialize_intermediates': True
-        }}
+        }},
     )
     assert isinstance(env_obj.execution, config.Execution)
     assert env_obj.execution.serialize_intermediates
@@ -471,7 +491,7 @@ def test_optional_solid_with_no_config():
         solids=[
             SolidDefinition(
                 name='int_config_solid',
-                config_def=ConfigDefinition(types.Int),
+                config_field=ConfigField(types.Int),
                 inputs=[],
                 outputs=[],
                 transform_fn=lambda info, _inputs: _assert_config_none(info, 234),
@@ -508,7 +528,7 @@ def test_optional_solid_with_optional_scalar_config():
         solids=[
             SolidDefinition(
                 name='int_config_solid',
-                config_def=ConfigDefinition(types.Int),
+                config_field=ConfigField(types.Int, is_optional=True),
                 inputs=[],
                 outputs=[],
                 transform_fn=lambda info, _inputs: _assert_config_none(info, 234),
@@ -516,7 +536,7 @@ def test_optional_solid_with_optional_scalar_config():
         ]
     )
 
-    env_type = EnvironmentConfigType(pipeline_def)
+    env_type = pipeline_def.environment_type
 
     assert env_type.field_dict['solids'].is_optional is True
 
@@ -533,13 +553,56 @@ def test_optional_solid_with_optional_scalar_config():
     assert env_obj.solids['int_config_solid'].config is None
 
 
+def test_optional_solid_with_required_scalar_config():
+    def _assert_config_none(info, value):
+        assert info.config is value
+
+    pipeline_def = PipelineDefinition(
+        name='some_pipeline',
+        solids=[
+            SolidDefinition(
+                name='int_config_solid',
+                config_field=ConfigField(types.Int),
+                inputs=[],
+                outputs=[],
+                transform_fn=lambda info, _inputs: _assert_config_none(info, 234),
+            ),
+        ]
+    )
+
+    env_type = pipeline_def.environment_type
+
+    assert env_type.field_dict['solids'].is_optional is False
+
+    solids_type = env_type.field_dict['solids'].dagster_type
+
+    assert solids_type.field_dict['int_config_solid'].is_optional is False
+
+    int_config_solid_type = solids_type.field_dict['int_config_solid'].dagster_type
+
+    assert_has_fields(int_config_solid_type, 'config')
+
+    int_config_solid_config_field = int_config_solid_type.field_named('config')
+
+    assert int_config_solid_config_field.is_optional is False
+
+    execute_pipeline(
+        pipeline_def,
+        {'solids': {
+            'int_config_solid': {
+                'config': 234
+            }
+        }},
+    )
+
+
 def test_required_solid_with_required_subfield():
     pipeline_def = PipelineDefinition(
         name='some_pipeline',
         solids=[
             SolidDefinition(
                 name='int_config_solid',
-                config_def=ConfigDefinition(
+                config_field=ConfigField(
                     types.ConfigDictionary(
                         'TestRequiredSolidConfig',
                         {
@@ -596,12 +659,13 @@ def test_optional_solid_with_optional_subfield():
         solids=[
             SolidDefinition(
                 name='int_config_solid',
-                config_def=ConfigDefinition(
+                config_field=ConfigField(
                     types.ConfigDictionary(
                         'TestOptionalSolidConfig', {
                             'optional_field': types.Field(types.String, is_optional=True),
                         }
-                    )
+                    ),
+                    is_optional=True,
                 ),
                 inputs=[],
                 outputs=[],
@@ -625,8 +689,8 @@ def test_required_context_with_required_subfield():
             'some_context':
             PipelineContextDefinition(
                 context_fn=lambda *args: None,
-                config_def=ConfigDefinition(
-                    config_type=types.ConfigDictionary(
+                config_field=ConfigField(
+                    dagster_type=types.ConfigDictionary(
                         name='some_context_config',
                         fields={
                             'required_field': types.Field(types.String),
@@ -655,13 +719,11 @@ def test_all_optional_field_on_single_context_dict():
             'some_context':
             PipelineContextDefinition(
                 context_fn=lambda *args: None,
-                config_def=ConfigDefinition(
-                    config_type=types.ConfigDictionary(
-                        name='some_context_config',
-                        fields={
-                            'optional_field': types.Field(types.String, is_optional=True),
-                        },
-                    ),
+                config_field=ConfigField.config_dict_field(
+                    'some_context_config',
+                    {
+                        'optional_field': types.Field(types.String, is_optional=True),
+                    },
                 ),
             ),
         },
@@ -682,8 +744,8 @@ def test_optional_and_required_context():
             'optional_field_context':
             PipelineContextDefinition(
                 context_fn=lambda *args: None,
-                config_def=ConfigDefinition(
-                    config_type=types.ConfigDictionary(
+                config_field=ConfigField(
+                    dagster_type=types.ConfigDictionary(
                         name='some_optional_context_config',
                         fields={
                             'optional_field': types.Field(types.String, is_optional=True),
@@ -694,8 +756,8 @@ def test_optional_and_required_context():
             'required_field_context':
             PipelineContextDefinition(
                 context_fn=lambda *args: None,
-                config_def=ConfigDefinition(
-                    config_type=types.ConfigDictionary(
+                config_field=ConfigField(
+                    dagster_type=types.ConfigDictionary(
                         name='some_required_context_config',
                         fields={
                             'required_field': types.Field(types.String),
@@ -731,54 +793,4 @@ def test_optional_and_required_context():
     )
 
     assert env_obj.context.name == 'optional_field_context'
-    assert env_obj.context.config == {'optional_field': 'foobar'}
-
-
-def test_default_optional_with_default_value_and_required_context():
-    pipeline_def = PipelineDefinition(
-        name='some_pipeline',
-        solids=[],
-        context_definitions={
-            'default':
-            PipelineContextDefinition(
-                context_fn=lambda *args: None,
-                config_def=ConfigDefinition(
-                    config_type=types.ConfigDictionary(
-                        name='some_optional_context_config',
-                        fields={
-                            'optional_field':
-                            types.Field(
-                                types.String,
-                                is_optional=True,
-                                default_value='foobar',
-                            ),
-                        },
-                    ),
-                ),
-            ),
-            'required_field_context':
-            PipelineContextDefinition(
-                context_fn=lambda *args: None,
-                config_def=ConfigDefinition(
-                    config_type=types.ConfigDictionary(
-                        name='some_required_context_config',
-                        fields={
-                            'required_field': types.Field(types.String),
-                        },
-                    ),
-                ),
-            ),
-        },
-    )
-
-    env_type = EnvironmentConfigType(pipeline_def)
-    assert env_type.field_dict['context'].is_optional
-    context_type = env_type.field_dict['context'].dagster_type
-    default_field = context_type.field_dict['default']
-    assert default_field.dagster_type.field_dict['config'].is_optional
-
-    result = evaluate_config_value(env_type, {'context': {'default': {}}})
-    assert result.success
-    env_obj = result.value
-    assert env_obj.context.name == 'default'
     assert env_obj.context.config == {'optional_field': 'foobar'}

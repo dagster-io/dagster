@@ -4,7 +4,7 @@ from logging import DEBUG
 import pytest
 
 from dagster import (
-    ConfigDefinition,
+    ConfigField,
     DagsterExpectationFailedError,
     DependencyDefinition,
     ExpectationDefinition,
@@ -21,7 +21,7 @@ from dagster import (
 
 
 @solid(
-    config_def=ConfigDefinition(types.Int),
+    config_field=ConfigField(types.Int),
     outputs=[
         OutputDefinition(
             types.Int,
@@ -39,7 +39,7 @@ def injest_a(info):
 
 
 @solid(
-    config_def=ConfigDefinition(types.Int),
+    config_field=ConfigField(types.Int),
     outputs=[OutputDefinition(types.Int)],
 )
 def injest_b(info):
