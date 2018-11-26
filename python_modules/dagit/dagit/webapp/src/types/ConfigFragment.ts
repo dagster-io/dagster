@@ -67,6 +67,14 @@ export interface ConfigFragment {
 // START Enums and Input Objects
 //==============================================================
 
+/**
+ * 
+ */
+export interface PipelineExecutionParams {
+  pipelineName: string;
+  config?: any | null;
+}
+
 //==============================================================
 // END Enums and Input Objects
 //==============================================================

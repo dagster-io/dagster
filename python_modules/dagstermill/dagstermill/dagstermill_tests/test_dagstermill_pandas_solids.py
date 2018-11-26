@@ -6,7 +6,7 @@ import pytest
 import dagstermill as dm
 
 from dagster import (
-    ConfigDefinition,
+    ConfigField,
     DependencyDefinition,
     InputDefinition,
     OutputDefinition,
@@ -57,7 +57,7 @@ def define_pandas_source_test_solid():
         notebook_path=nb_test_path('pandas_source_test'),
         inputs=[],
         outputs=[OutputDefinition(DataFrame)],
-        config_def=ConfigDefinition(types.String),
+        config_field=ConfigField(types.String),
     )
 
 

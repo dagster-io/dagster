@@ -3,7 +3,7 @@ from collections import defaultdict
 import pytest
 
 from dagster import (
-    ConfigDefinition,
+    ConfigField,
     DagsterInvariantViolationError,
     DagsterTypeError,
     DependencyDefinition,
@@ -29,13 +29,13 @@ fields = {'word': Field(types.String)}
 WordConfig = types.ConfigDictionary(name=name, fields=fields)
 
 
-@solid(config_def=ConfigDefinition(WordConfig))
+@solid(config_field=ConfigField(WordConfig))
 def double_the_word_with_typed_config(info):
     return info.config['word'] * 2
 
 
 @solid(
-    config_def=ConfigDefinition(WordConfig),
+    config_field=ConfigField(WordConfig),
     outputs=[OutputDefinition(types.String)],
 )
 def typed_double_word(info):
@@ -43,7 +43,7 @@ def typed_double_word(info):
 
 
 @solid(
-    config_def=ConfigDefinition(WordConfig),
+    config_field=ConfigField(WordConfig),
     outputs=[OutputDefinition(types.Int)],
 )
 def typed_double_word_mismatch(info):

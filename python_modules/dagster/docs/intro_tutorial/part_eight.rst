@@ -25,7 +25,7 @@ documentation.
 .. code-block:: python
 
     @solid(
-        config_def=ConfigDefinition(
+        config_field=ConfigDefinition(
             types.ConfigDictionary({'word': Field(types.String)})
         )
     )
@@ -99,7 +99,7 @@ specified, it defaults to the Any type.
 .. code-block:: python
 
     @solid(
-        config_def=ConfigDefinition(
+        config_field=ConfigDefinition(
             types.ConfigDictionary({'word': Field(types.String)})
         ),
         outputs=[OutputDefinition(types.String)],
@@ -118,7 +118,7 @@ So imagine we made a coding error (mistyped the output) such as:
 .. code-block:: python
 
     @solid(
-        config_def=ConfigDefinition(
+        config_field=ConfigDefinition(
             types.ConfigDictionary({'word': Field(types.String)})
         ),
         outputs=[OutputDefinition(types.Int)],

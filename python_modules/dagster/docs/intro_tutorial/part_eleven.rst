@@ -138,7 +138,7 @@ and then execute that pipeline.
 .. code-block:: python
 
     @solid(
-        config_def=ConfigDefinition(types.String, description='Should be either out_one or out_two'),
+        config_field=ConfigDefinition(types.String, description='Should be either out_one or out_two'),
         outputs=[
             OutputDefinition(dagster_type=types.Int, name='out_one'),
             OutputDefinition(dagster_type=types.Int, name='out_two'),

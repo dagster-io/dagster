@@ -624,7 +624,7 @@ def create_config_value(execution_info, pipeline_solid):
     solid_configs = execution_info.environment.solids
     config_input = solid_configs[name].config if name in solid_configs else None
 
-    if solid_def.config_def is None:
+    if solid_def.config_field is None:
         if config_input is not None:
             raise DagsterInvariantViolationError(
                 (
@@ -637,7 +637,7 @@ def create_config_value(execution_info, pipeline_solid):
         return None
 
     try:
-        return throwing_evaluate_config_value(solid_def.config_def.config_type, config_input)
+        return throwing_evaluate_config_value(solid_def.config_field.dagster_type, config_input)
     except DagsterEvaluateConfigValueError as eval_error:
         raise_from(
             DagsterTypeError(

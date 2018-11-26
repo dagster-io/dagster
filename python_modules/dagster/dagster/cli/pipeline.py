@@ -210,7 +210,9 @@ def print_context_definition(printer, context_name, context_definition):
     print_description(printer, context_definition.description)
 
     printer.line(
-        'Type: {config_type}'.format(config_type=context_definition.config_def.config_type.name)
+        'Type: {dagster_type}'.format(
+            dagster_type=context_definition.config_field.dagster_type.name
+        )
     )
 
 

@@ -292,11 +292,11 @@ def create_config_value(config_type, config_input):
         return throwing_evaluate_config_value(config_type, config_input)
     except DagsterEvaluateConfigValueError as e:
         raise DagsterTypeError(
-            'Invalid config value on type {config_type}: {error_msg}. Value received {value}'.
+            'Invalid config value on type {dagster_type}: {error_msg}. Value received {value}'.
             format(
                 value=json.dumps(config_input, indent=2)
                 if isinstance(config_input, dict) else config_input,
-                config_type=config_type.name,
+                dagster_type=config_type.name,
                 error_msg=','.join(e.args),
             )
         )
@@ -311,7 +311,7 @@ def yield_context(pipeline, environment):
 
     context_name = environment.context.name
     context_definition = pipeline.context_definitions[context_name]
-    config_type = context_definition.config_def.config_type
+    config_type = context_definition.config_field.dagster_type
 
     config_value = create_config_value(config_type, environment.context.config)
 

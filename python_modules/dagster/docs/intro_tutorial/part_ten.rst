@@ -21,7 +21,7 @@ Let us return to a slightly simplified version of the data pipeline from part ni
 .. code-block:: python
 
     @solid(
-        config_def=ConfigDefinition(types.Int),
+        config_field=ConfigDefinition(types.Int),
         outputs=[OutputDefinition(types.Int)],
     )
     def ingest_a(info):
@@ -29,7 +29,7 @@ Let us return to a slightly simplified version of the data pipeline from part ni
 
 
     @solid(
-        config_def=ConfigDefinition(types.Int),
+        config_field=ConfigDefinition(types.Int),
         outputs=[OutputDefinition(types.Int)],
     )
     def ingest_b(info):
@@ -64,7 +64,7 @@ in clear terms. We'll add an expectation in order to do this.
 .. code-block:: python
 
     @solid(
-        config_def=ConfigDefinition(types.Int),
+        config_field=ConfigDefinition(types.Int),
         outputs=[
             OutputDefinition(
                 types.Int,
