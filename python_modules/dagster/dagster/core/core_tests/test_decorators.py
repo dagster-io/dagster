@@ -17,7 +17,7 @@ from dagster import (
     types,
 )
 
-from dagster.core.test_utils import execute_single_solid
+from dagster.core.test_utils import execute_single_solid_in_isolation
 from dagster.core.utility_solids import define_stub_solid
 
 # This file tests a lot of parameter name stuff
@@ -59,7 +59,7 @@ def test_no_parens_solid():
     def hello_world():
         called['yup'] = True
 
-    result = execute_single_solid(
+    result = execute_single_solid_in_isolation(
         create_test_context(),
         hello_world,
         environment=create_empty_test_env(),
@@ -75,7 +75,7 @@ def test_empty_solid():
     def hello_world():
         called['yup'] = True
 
-    result = execute_single_solid(
+    result = execute_single_solid_in_isolation(
         create_test_context(),
         hello_world,
         environment=create_empty_test_env(),
@@ -89,7 +89,7 @@ def test_solid():
     def hello_world(_info):
         return {'foo': 'bar'}
 
-    result = execute_single_solid(
+    result = execute_single_solid_in_isolation(
         create_test_context(),
         hello_world,
         environment=create_empty_test_env(),
@@ -105,7 +105,7 @@ def test_solid_one_output():
     def hello_world():
         return {'foo': 'bar'}
 
-    result = execute_single_solid(
+    result = execute_single_solid_in_isolation(
         create_test_context(),
         hello_world,
         environment=create_empty_test_env(),
@@ -121,7 +121,7 @@ def test_solid_yield():
     def hello_world(_info):
         yield Result(value={'foo': 'bar'})
 
-    result = execute_single_solid(
+    result = execute_single_solid_in_isolation(
         create_test_context(),
         hello_world,
         environment=create_empty_test_env(),
@@ -137,7 +137,7 @@ def test_solid_result_return():
     def hello_world(_info):
         return Result(value={'foo': 'bar'})
 
-    result = execute_single_solid(
+    result = execute_single_solid_in_isolation(
         create_test_context(),
         hello_world,
         environment=create_empty_test_env(),
@@ -156,7 +156,7 @@ def test_solid_multiple_outputs():
             Result(value={'foo': 'right'}, output_name='right')
         )
 
-    result = execute_single_solid(
+    result = execute_single_solid_in_isolation(
         create_test_context(),
         hello_world,
         environment=create_empty_test_env(),
@@ -181,7 +181,7 @@ def test_dict_multiple_outputs():
             },
         })
 
-    result = execute_single_solid(
+    result = execute_single_solid_in_isolation(
         create_test_context(),
         hello_world,
         environment=create_empty_test_env(),
@@ -199,7 +199,7 @@ def test_lambda_solid_with_name():
     def hello_world():
         return {'foo': 'bar'}
 
-    result = execute_single_solid(
+    result = execute_single_solid_in_isolation(
         create_test_context(),
         hello_world,
         environment=create_empty_test_env(),
@@ -215,7 +215,7 @@ def test_solid_with_name():
     def hello_world(_info):
         return {'foo': 'bar'}
 
-    result = execute_single_solid(
+    result = execute_single_solid_in_isolation(
         create_test_context(),
         hello_world,
         environment=create_empty_test_env(),
@@ -340,7 +340,7 @@ def test_any_config_field():
         assert info.config == conf_value
         called['yup'] = True
 
-    result = execute_single_solid(
+    result = execute_single_solid_in_isolation(
         create_test_context(),
         hello_world,
         environment=config.Environment(solids={'hello_world': config.Solid(conf_value)})

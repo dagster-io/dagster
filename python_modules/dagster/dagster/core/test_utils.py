@@ -11,7 +11,14 @@ from dagster import (
 )
 
 
-def execute_single_solid(context, solid_def, environment=None, throw_on_error=True):
+def execute_single_solid_in_isolation(context, solid_def, environment=None, throw_on_error=True):
+    '''
+    Deprecated.
+
+    Execute a solid outside the context of a pipeline, with an already-created context.
+
+    Prefer execute_solid in dagster.utils.test
+    '''
     check.inst_param(context, 'context', ExecutionContext)
     check.inst_param(solid_def, 'solid_def', SolidDefinition)
     environment = check.opt_inst_param(

@@ -5,7 +5,7 @@ from dagster import (
     PipelineDefinition,
     execute_pipeline,
 )
-from dagster.core.test_utils import execute_single_solid
+from dagster.core.test_utils import execute_single_solid_in_isolation
 from dagster.sqlalchemy.subquery_builder_experimental import (
     create_sql_statement_solid,
     sql_file_solid,
@@ -32,7 +32,7 @@ def test_basic_isolated_sql_solid():
 
     basic_isolated_sql_solid = create_sql_statement_solid('basic_isolated_sql_solid', sql_text)
 
-    result = execute_single_solid(context, basic_isolated_sql_solid)
+    result = execute_single_solid_in_isolation(context, basic_isolated_sql_solid)
 
     assert result.success
 
