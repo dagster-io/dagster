@@ -67,8 +67,17 @@ export interface SolidNodeFragment_outputs_definition {
   expectations: SolidNodeFragment_outputs_definition_expectations[];
 }
 
+export interface SolidNodeFragment_outputs_dependedBy_solid {
+  name: string;
+}
+
+export interface SolidNodeFragment_outputs_dependedBy {
+  solid: SolidNodeFragment_outputs_dependedBy_solid;
+}
+
 export interface SolidNodeFragment_outputs {
   definition: SolidNodeFragment_outputs_definition;
+  dependedBy: SolidNodeFragment_outputs_dependedBy[] | null;
 }
 
 export interface SolidNodeFragment {

@@ -188,8 +188,17 @@ export interface AppQuery_pipelinesOrErrors_Pipeline_solids_outputs_definition {
   description: string | null;
 }
 
+export interface AppQuery_pipelinesOrErrors_Pipeline_solids_outputs_dependedBy_solid {
+  name: string;
+}
+
+export interface AppQuery_pipelinesOrErrors_Pipeline_solids_outputs_dependedBy {
+  solid: AppQuery_pipelinesOrErrors_Pipeline_solids_outputs_dependedBy_solid;
+}
+
 export interface AppQuery_pipelinesOrErrors_Pipeline_solids_outputs {
   definition: AppQuery_pipelinesOrErrors_Pipeline_solids_outputs_definition;
+  dependedBy: AppQuery_pipelinesOrErrors_Pipeline_solids_outputs_dependedBy[] | null;
 }
 
 export interface AppQuery_pipelinesOrErrors_Pipeline_solids {
