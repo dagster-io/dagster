@@ -8,12 +8,12 @@ from .errors import DagsterError
 from .types import (
     Any,
     DagsterCompositeType,
-    _DagsterListType,
     DagsterScalarType,
     DagsterSelectorType,
     DagsterType,
     Field,
     PythonObjectType,
+    _DagsterListType,
 )
 
 
