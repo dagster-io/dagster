@@ -83,14 +83,31 @@ class EvaluationStack(namedtuple('_EvaluationStack', 'entries')):
         return self.entries[len(self.entries) - 1]
 
 
-class EvaluationStackEntry(namedtuple('_EvaluationStackEntry', 'field_name field_def list_index')):
-    def __new__(cls, field_name, field_def, list_index=None):
-        check.opt_int_param(list_index, 'list_index')
-        check.param_invariant(list_index is None or list_index >= 0, 'list_index')
-        return super(EvaluationStackEntry, cls).__new__(
+class EvaluationStackEntry:  # marker interface
+    pass
+
+
+class EvaluationStackPathEntry(
+    namedtuple('_EvaluationStackEntry', 'field_name field_def'),
+    EvaluationStackEntry,
+):
+    def __new__(cls, field_name, field_def):
+        return super(EvaluationStackPathEntry, cls).__new__(
             cls,
             check.str_param(field_name, 'field_name'),
             check.inst_param(field_def, 'field_def', Field),
+        )
+
+
+class EvaluationStackListItemEntry(
+    namedtuple('_EvaluationStackListItemEntry', 'list_index'),
+    EvaluationStackEntry,
+):
+    def __new__(cls, list_index):
+        check.opt_int_param(list_index, 'list_index')
+        check.param_invariant(list_index is None or list_index >= 0, 'list_index')
+        return super(EvaluationStackListItemEntry, cls).__new__(
+            cls,
             list_index,
         )
 
@@ -142,10 +159,14 @@ class ErrorCollector:
         self.errors.append(error)
 
 
-def stack_with_field(stack, field_name, field_def, list_index=None):
+def stack_with_field(stack, field_name, field_def):
     return EvaluationStack(
-        entries=stack.entries + [EvaluationStackEntry(field_name, field_def, list_index)]
+        entries=stack.entries + [EvaluationStackPathEntry(field_name, field_def)]
     )
+
+
+def stack_with_list_index(stack, list_index):
+    return EvaluationStack(entries=stack.entries + [EvaluationStackListItemEntry(list_index)])
 
 
 def throwing_evaluate_config_value(dagster_type, config_value):
@@ -331,7 +352,6 @@ def evaluate_list_value(dagster_list_type, config_value, collector, stack):
         return None
 
     output_list = []
-    print(f'About to enumerate list with stack: {stack.entries}')
     for index, item in enumerate(config_value):
         # TODO: how to represent list element in the stack
         # should be pushing something
@@ -341,7 +361,7 @@ def evaluate_list_value(dagster_list_type, config_value, collector, stack):
             _evaluate_config_value(
                 dagster_list_type.inner_type,
                 item,
-                stack_with_field(stack, stack.top.field_name, stack.top.field_def, index),
+                stack_with_list_index(stack, index),
                 collector,
             )
         )

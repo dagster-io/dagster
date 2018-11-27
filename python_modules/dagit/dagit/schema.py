@@ -691,15 +691,51 @@ class EvaluationErrorReason(graphene.Enum):
     SELECTOR_FIELD_ERROR = 'SELECTOR_FIELD_ERROR'
 
 
-class EvaluationStackEntry(graphene.ObjectType):
+class EvaluationStackListItemEntry(graphene.ObjectType):
+    def __init__(self, list_index):
+        super(EvaluationStackListItemEntry, self).__init__()
+        self._list_index = list_index
+
+    list_index = graphene.NonNull(graphene.Int)
+
+    def resolve_list_index(self, _info):
+        return self._list_index
+
+
+class EvaluationStackPathEntry(graphene.ObjectType):
+    def __init__(self, field_name, field_def):
+        super(EvaluationStackPathEntry, self).__init__()
+        self._field_name = field_name
+        self._field_def = field_def
+
     field = graphene.NonNull(TypeField)
 
     def resolve_field(self, _info):
-        return TypeField(name=self.field_name, field=self.field_def)  # pylint: disable=E1101
+        return TypeField(name=self._field_name, field=self._field_def)  # pylint: disable=E1101
+
+
+class EvaluationStackEntry(graphene.Union):
+    class Meta:
+        types = (EvaluationStackListItemEntry, EvaluationStackPathEntry)
+
+    @staticmethod
+    def from_native_entry(entry):
+        if isinstance(entry, dagster.core.evaluator.EvaluationStackPathEntry):
+            return EvaluationStackPathEntry(
+                field_name=entry.field_name,
+                field_def=entry.field_def,
+            )
+        elif isinstance(entry, dagster.core.evaluator.EvaluationStackListItemEntry):
+            return EvaluationStackListItemEntry(list_index=entry.list_index)
+        else:
+            check.failed('Unsupported stack entry type {entry}'.format(entry=entry))
 
 
 class EvaluationStack(graphene.ObjectType):
     entries = non_null_list(EvaluationStackEntry)
+
+    def resolve_entries(self, _info):
+        return map(EvaluationStackEntry.from_native_entry, self.entries)
 
 
 class PipelineConfigValidationValid(graphene.ObjectType):

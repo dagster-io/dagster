@@ -148,11 +148,17 @@ query PipelineQuery($executionParams: PipelineExecutionParams!)
                 reason
                 stack {
                     entries {
-                        field { 
-                            name
-                            type { 
+                        __typename
+                        ... on EvaluationStackPathEntry {
+                            field { 
                                 name
+                                type { 
+                                    name
+                                }
                             }
+                        }
+                        ... on EvaluationStackListItemEntry {
+                            listIndex 
                         }
                     }
                 }
@@ -237,7 +243,11 @@ def test_root_wrong_type():
     assert not error['stack']['entries']
 
 def field_stack(error_data):
-    return [entry['field']['name'] for entry in error_data['stack']['entries']]
+    return [
+        entry['field']['name']
+        for entry in error_data['stack']['entries']
+        if entry['__typename'] == 'EvaluationStackPathEntry'
+    ]
 
 
 def test_basic_invalid_config_type_mismatch():
@@ -622,7 +632,13 @@ def test_config_list_item_invalid():
     assert valid_data['__typename'] == 'PipelineConfigValidationInvalid'
     assert valid_data['pipeline']['name'] == 'pipeline_with_list'
     assert len(valid_data['errors']) == 1
+    entries = valid_data['errors'][0]['stack']['entries']
+    assert len(entries) == 4
     assert ['solids', 'solid_with_list', 'config'] == field_stack(valid_data['errors'][0])
+
+    last_entry = entries[3]
+    assert last_entry['__typename'] == 'EvaluationStackListItemEntry'
+    assert last_entry['listIndex'] == 1
 
 
 def find_error(result, field_stack_to_find, reason):

@@ -4,6 +4,8 @@ from dagster.core.definitions import build_config_dict_type
 
 from dagster.core.evaluator import (
     DagsterEvaluationErrorReason,
+    EvaluationStackListItemEntry,
+    EvaluationStackPathEntry,
     EvaluateValueResult,
     evaluate_config_value,
 )
@@ -469,11 +471,14 @@ def test_config_list_in_dict_error():
     assert len(result.errors) == 1
     error = result.errors[0]
     assert error.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
-    assert len(error.stack.entries) == 1
+    assert len(error.stack.entries) == 2
     stack_entry = error.stack.entries[0]
+    assert isinstance(stack_entry, EvaluationStackPathEntry)
     assert stack_entry.field_name == 'nested_list'
     assert stack_entry.field_def.dagster_type.name == 'List.Int'
-
+    list_entry = error.stack.entries[1]
+    assert isinstance(list_entry, EvaluationStackListItemEntry)
+    assert list_entry.list_index == 1
 
 def test_config_double_list():
     nested_lists = types.ConfigDictionary(
