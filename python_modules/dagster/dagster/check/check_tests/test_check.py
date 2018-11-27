@@ -297,26 +297,22 @@ def test_param_invariant():
     with pytest.raises(ParameterCheckError):
         check.param_invariant(0, 'some_param')
 
-    with pytest.raises(ParameterCheckError):
-        check.param_invariant(1, 'some_param')
+    check.param_invariant(1, 'some_param')
 
     with pytest.raises(ParameterCheckError):
         check.param_invariant('', 'some_param')
 
-    with pytest.raises(ParameterCheckError):
-        check.param_invariant('1kjkjsf', 'some_param')
+    check.param_invariant('1kjkjsf', 'some_param')
 
     with pytest.raises(ParameterCheckError):
         check.param_invariant({}, 'some_param')
 
-    with pytest.raises(ParameterCheckError):
-        check.param_invariant({234: '1kjkjsf'}, 'some_param')
+    check.param_invariant({234: '1kjkjsf'}, 'some_param')
 
     with pytest.raises(ParameterCheckError):
         check.param_invariant([], 'some_param')
 
-    with pytest.raises(ParameterCheckError):
-        check.param_invariant([234], 'some_param')
+    check.param_invariant([234], 'some_param')
 
 
 def test_string_elem():
@@ -357,7 +353,7 @@ def test_invariant():
 
     empty_list = []
 
-    with pytest.raises(CheckError, match='Invariant condition must be boolean'):
+    with pytest.raises(CheckError, match='Invariant failed'):
         check.invariant(empty_list)
 
 
