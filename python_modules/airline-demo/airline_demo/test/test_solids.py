@@ -8,14 +8,12 @@ from collections import namedtuple
 from dagster import (
     config,
     DependencyDefinition,
+    execute_pipeline,
     ExecutionContext,
     PipelineContextDefinition,
     PipelineDefinition,
 )
-from dagster.utils.test import (
-    define_stub_solid,
-    execute_solid
-) 
+from dagster.utils.test import (define_stub_solid, execute_solid)
 
 from airline_demo.solids import (
     _create_s3_session,
@@ -25,8 +23,7 @@ from airline_demo.solids import (
     unzip_file,
 )
 
-
-S3Resources = namedtuple('S3Resources', ('s3',))
+S3Resources = namedtuple('S3Resources', ('s3', ))
 
 
 def _s3_context():
@@ -43,11 +40,14 @@ def _s3_context():
         )
     }
 
+
 def test_thunk():
     result = execute_solid(
-        PipelineDefinition([thunk]),
-        'thunk',
-        environment={'solids': {'thunk': {'config': 'foo'}}}
+        PipelineDefinition([thunk]), 'thunk', environment={'solids': {
+            'thunk': {
+                'config': 'foo'
+            }
+        }}
     )
     assert result.success
     assert result.transformed_value() == 'foo'
@@ -56,13 +56,12 @@ def test_thunk():
 @pytest.mark.nettest
 def test_download_from_s3():
     result = execute_solid(
-        PipelineDefinition(
-            [download_from_s3],
-            context_definitions=_s3_context()
-        ),
+        PipelineDefinition([download_from_s3], context_definitions=_s3_context()),
         'download_from_s3',
         environment={
-            'context': {'test': {}},
+            'context': {
+                'test': {}
+            },
             'solids': {
                 'download_from_s3': {
                     'config': {
@@ -96,8 +95,13 @@ def test_unzip_file():
             # }
         ),
         'unzip_file',
-        inputs={'archive_path': 'test/test.zip', 'archive_member': 'test_file'},
-        environment={'solids': {'unzip_file': {}}}
+        inputs={
+            'archive_path': 'test/test.zip',
+            'archive_member': 'test_file'
+        },
+        environment={'solids': {
+            'unzip_file': {}
+        }}
     )
     raise NotImplementedError()
 
