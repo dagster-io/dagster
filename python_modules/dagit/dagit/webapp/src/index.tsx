@@ -1,17 +1,26 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import { injectGlobal } from "styled-components";
-import ApolloClient from "apollo-boost";
+import ApolloClient from "apollo-client";
 import { ApolloProvider } from "react-apollo";
+import { SubscriptionClient } from "subscriptions-transport-ws";
+import { WebSocketLink } from "apollo-link-ws";
 import App from "./App";
 import AppCache from "./AppCache";
 import "@blueprintjs/core/lib/css/blueprint.css";
 import "@blueprintjs/icons/lib/css/blueprint-icons.css";
 import "@blueprintjs/select/lib/css/blueprint-select.css";
 
+const websocketClient = new SubscriptionClient(
+  process.env.REACT_APP_GRAPHQL_URI || `ws://${document.location.host}/graphql`,
+  {
+    reconnect: true
+  }
+);
+
 const client = new ApolloClient({
   cache: AppCache,
-  uri: process.env.REACT_APP_GRAPHQL_URI || "/graphql"
+  link: new WebSocketLink(websocketClient)
 });
 
 ReactDOM.render(

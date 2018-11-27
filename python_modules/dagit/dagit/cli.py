@@ -2,7 +2,8 @@ import os
 import sys
 
 import click
-from waitress import serve
+from gevent import pywsgi
+from geventwebsocket.handler import WebSocketHandler
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
@@ -71,7 +72,9 @@ def ui(host, port, watch, **kwargs):
         observer.start()
     try:
         app = create_app(repository_container)
-        serve(app, host=host, port=port)
+        server = pywsgi.WSGIServer((host, port), app, handler_class=WebSocketHandler)
+        print('Serving on http://{host}:{port}'.format(host=host, port=port))
+        server.serve_forever()
     except KeyboardInterrupt:
         if watch:
             observer.stop()

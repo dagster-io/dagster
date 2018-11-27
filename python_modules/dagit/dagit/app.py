@@ -1,12 +1,10 @@
 import os
 import sys
-try:
-    from graphql.execution.executors.asyncio import AsyncioExecutor as Executor
-except ImportError:
-    from graphql.execution.executors.thread import ThreadExecutor as Executor
+from graphql.execution.executors.gevent import GeventExecutor as Executor
 from flask import Flask, send_file, send_from_directory
 from flask_graphql import GraphQLView
 from flask_cors import CORS
+from flask_sockets import Sockets
 
 from dagster import check
 
@@ -15,6 +13,7 @@ from dagster.cli.dynamic_loader import (
     DynamicObject,
 )
 
+from .subscription_server import DagsterSubscriptionServer
 from .schema import create_schema
 
 
@@ -69,6 +68,16 @@ class DagsterGraphQLView(GraphQLView):
         return {'repository_container': self.repository_container}
 
 
+def dagster_graphql_subscription_view(subscription_server, repository_container):
+    def view(ws):
+        subscription_server.handle(
+            ws, request_context={'repository_container': repository_container}
+        )
+        return []
+
+    return view
+
+
 def static_view(path, file):
     return send_from_directory(
         os.path.join(os.path.dirname(__file__), './webapp/build/static/', path), file
@@ -111,8 +120,12 @@ def notebook_view(_path):
 
 def create_app(repository_container):
     app = Flask('dagster-ui')
+    sockets = Sockets(app)
+    app.app_protocol = lambda environ_path_info: 'graphql-ws'
 
     schema = create_schema()
+    subscription_server = DagsterSubscriptionServer(schema)
+
     app.add_url_rule(
         '/graphql', 'graphql',
         DagsterGraphQLView.as_view(
@@ -122,6 +135,10 @@ def create_app(repository_container):
             executor=Executor(),
             repository_container=repository_container,
         )
+    )
+    sockets.add_url_rule(
+        '/graphql', 'graphql',
+        dagster_graphql_subscription_view(subscription_server, repository_container)
     )
     app.add_url_rule('/notebook/<path:_path>', 'notebook', notebook_view)
     app.add_url_rule('/static/<path:path>/<string:file>', 'static_view', static_view)
