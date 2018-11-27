@@ -77,13 +77,21 @@ class EvaluationStack(namedtuple('_EvaluationStack', 'entries')):
     def levels(self):
         return [entry.field_name for entry in self.entries]
 
+    @property
+    def top(self):
+        check.invariant(self.entries, 'entries must have at least one value')
+        return self.entries[len(self.entries) - 1]
 
-class EvaluationStackEntry(namedtuple('_EvaluationStackEntry', 'field_name field_def')):
-    def __new__(cls, field_name, field_def):
+
+class EvaluationStackEntry(namedtuple('_EvaluationStackEntry', 'field_name field_def list_index')):
+    def __new__(cls, field_name, field_def, list_index=None):
+        check.opt_int_param(list_index, 'list_index')
+        check.param_invariant(list_index is None or list_index >= 0, 'list_index')
         return super(EvaluationStackEntry, cls).__new__(
             cls,
             check.str_param(field_name, 'field_name'),
             check.inst_param(field_def, 'field_def', Field),
+            list_index,
         )
 
 
@@ -134,8 +142,10 @@ class ErrorCollector:
         self.errors.append(error)
 
 
-def stack_with_field(stack, field_name, field_def):
-    return EvaluationStack(entries=stack.entries + [EvaluationStackEntry(field_name, field_def)])
+def stack_with_field(stack, field_name, field_def, list_index=None):
+    return EvaluationStack(
+        entries=stack.entries + [EvaluationStackEntry(field_name, field_def, list_index)]
+    )
 
 
 def throwing_evaluate_config_value(dagster_type, config_value):
@@ -321,13 +331,19 @@ def evaluate_list_value(dagster_list_type, config_value, collector, stack):
         return None
 
     output_list = []
-    for item in config_value:
+    print(f'About to enumerate list with stack: {stack.entries}')
+    for index, item in enumerate(config_value):
         # TODO: how to represent list element in the stack
         # should be pushing something
         # Should consult with mikhail/ben to see about what info is best
         # to expose in dagit. Probably just a list index in the stack
         output_list.append(
-            _evaluate_config_value(dagster_list_type.inner_type, item, stack, collector)
+            _evaluate_config_value(
+                dagster_list_type.inner_type,
+                item,
+                stack_with_field(stack, stack.top.field_name, stack.top.field_def, index),
+                collector,
+            )
         )
 
     if collector.errors:
