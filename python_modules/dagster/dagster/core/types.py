@@ -384,7 +384,7 @@ class _DagsterListType(DagsterType):
         yield self
 
     def construct_from_config_value(self, config_value):
-        return config_value
+        check.failed('should never be called')
 
 
 class DagsterSelectorType(DagsterCompositeType):
