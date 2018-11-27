@@ -356,6 +356,37 @@ class DagsterCompositeType(DagsterType):
         return self.field_dict[name]
 
 
+_DAGSTER_LIST_TYPE_CACHE = {}
+
+
+def List(inner_type):
+    check.inst_param(inner_type, 'inner_type', DagsterType)
+    if not inner_type.name in _DAGSTER_LIST_TYPE_CACHE:
+        _DAGSTER_LIST_TYPE_CACHE[inner_type.name] = _DagsterListType(inner_type)
+
+    return _DAGSTER_LIST_TYPE_CACHE[inner_type.name]
+
+
+class _DagsterListType(DagsterType):
+    def __init__(self, inner_type):
+        self.inner_type = check.inst_param(inner_type, 'inner_type', DagsterType)
+        super(_DagsterListType, self).__init__(
+            name='List.{inner_type}'.format(inner_type=inner_type.name),
+            description='List of {inner_type}'.format(inner_type=inner_type.name),
+            type_attributes=DagsterTypeAttributes(is_builtin=True),
+        )
+
+    def coerce_runtime_value(self, _value):
+        check.failed('not implemented')
+
+    def iterate_types(self):
+        yield self.inner_type
+        yield self
+
+    def construct_from_config_value(self, config_value):
+        check.failed('should never be called')
+
+
 class DagsterSelectorType(DagsterCompositeType):
     '''This subclass "marks" a composite type as one where only
     one of its fields can be configured at a time. This was originally designed

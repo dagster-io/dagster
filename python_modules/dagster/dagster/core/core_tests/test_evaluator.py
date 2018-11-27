@@ -409,3 +409,103 @@ def test_selector_with_defaults():
     result = evaluate_config_value(SelectorWithDefaults, {})
     assert result.success
     assert result.value == {'default': 'foo'}
+
+
+def test_evaluate_list_string():
+    string_list = types.List(types.String)
+    result = evaluate_config_value(string_list, ["foo"])
+    assert result.success
+    assert result.value == ["foo"]
+
+
+def test_evaluate_list_error_item_mismatch():
+    string_list = types.List(types.String)
+    result = evaluate_config_value(string_list, [1])
+    assert not result.success
+    assert len(result.errors) == 1
+    assert result.errors[0].reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
+
+
+def test_evaluate_list_error_top_level_mismatch():
+    string_list = types.List(types.String)
+    result = evaluate_config_value(string_list, 1)
+    assert not result.success
+    assert len(result.errors) == 1
+    assert result.errors[0].reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
+
+
+def test_evaluate_double_list():
+    string_double_list = types.List(types.List(types.String))
+    result = evaluate_config_value(string_double_list, [['foo']])
+    assert result.success
+    assert result.value == [['foo']]
+
+
+def test_config_list_in_dict():
+    nested_list = types.ConfigDictionary(
+        name='NestedList',
+        fields={
+            'nested_list': types.Field(types.List(types.Int)),
+        },
+    )
+
+    value = {'nested_list': [1, 2, 3]}
+    result = evaluate_config_value(nested_list, value)
+    assert result.success
+    assert result.value == value
+
+
+def test_config_list_in_dict_error():
+    nested_list = types.ConfigDictionary(
+        name='NestedList',
+        fields={
+            'nested_list': types.Field(types.List(types.Int)),
+        },
+    )
+
+    value = {'nested_list': [1, 'bar', 3]}
+    result = evaluate_config_value(nested_list, value)
+    assert not result.success
+    assert len(result.errors) == 1
+    error = result.errors[0]
+    assert error.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
+    assert len(error.stack.entries) == 1
+    stack_entry = error.stack.entries[0]
+    assert stack_entry.field_name == 'nested_list'
+    assert stack_entry.field_def.dagster_type.name == 'List.Int'
+
+
+def test_config_double_list():
+    nested_lists = types.ConfigDictionary(
+        name='NestedLists',
+        fields={
+            'nested_list_one': types.Field(types.List(types.Int)),
+            'nested_list_two': types.Field(types.List(types.String)),
+        },
+    )
+
+    value = {'nested_list_one': [1, 2, 3], 'nested_list_two': ['foo', 'bar']}
+
+    result = evaluate_config_value(nested_lists, value)
+    assert result.success
+    assert result.value == value
+
+    error_value = {'nested_list_one': 'kjdfkdj', 'nested_list_two': ['bar']}
+
+    error_result = evaluate_config_value(nested_lists, error_value)
+    assert not error_result.success
+
+
+def test_config_double_list_double_error():
+    nested_lists = types.ConfigDictionary(
+        name='NestedLists',
+        fields={
+            'nested_list_one': types.Field(types.List(types.Int)),
+            'nested_list_two': types.Field(types.List(types.String)),
+        },
+    )
+
+    error_value = {'nested_list_one': 'kjdfkdj', 'nested_list_two': ['bar', 2]}
+    error_result = evaluate_config_value(nested_lists, error_value)
+    assert not error_result.success
+    assert len(error_result.errors) == 2
