@@ -27,19 +27,6 @@ from .types import (
 )
 
 
-class HasUserConfig:
-    def __init__(self):
-        check.inst(self, DagsterCompositeType, 'HasUserConfig must be mixined on Composite')
-        check.invariant(
-            'config' in self.field_dict,  # pylint: disable=E1101
-            'HasUserConfig must have "config" field',
-        )
-
-    @property
-    def user_config_field(self):
-        return self.field_dict['config']  # pylint: disable=E1101
-
-
 def define_possibly_optional_field(dagster_type, is_optional):
     check.inst_param(dagster_type, 'dagster_type', DagsterType)
     check.bool_param(is_optional, 'is_optional')
@@ -51,7 +38,7 @@ def define_possibly_optional_field(dagster_type, is_optional):
     ) if is_optional else Field(dagster_type)
 
 
-class SpecificContextConfig(DagsterCompositeType, HasUserConfig):
+class SpecificContextConfig(DagsterCompositeType):
     def __init__(self, name, config_field):
         check.str_param(name, 'name')
         check.inst_param(config_field, 'config_field', Field)
@@ -134,7 +121,7 @@ class ContextConfigType(DagsterSelectorType):
         return Context(name=context_name, config=context_value['config'])
 
 
-class SolidConfigType(DagsterCompositeType, HasUserConfig):
+class SolidConfigType(DagsterCompositeType):
     def __init__(self, name, config_field):
         check.str_param(name, 'name')
         check.inst_param(config_field, 'config_field', Field)
@@ -148,10 +135,6 @@ class SolidConfigType(DagsterCompositeType, HasUserConfig):
         # TODO we need better rules around optional and default evaluation
         # making this permissive for now
         return Solid(config=config_value.get('config'))
-
-    @property
-    def user_config_field(self):
-        return self.field_dict['config']
 
 
 def define_environment_field(field_type):
