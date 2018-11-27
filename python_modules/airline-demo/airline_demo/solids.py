@@ -1,5 +1,6 @@
 """A fully fleshed out demo dagster repository with many configurable options."""
 
+import errno
 import logging
 import os
 import zipfile
@@ -27,6 +28,17 @@ from dagster import (
     SolidInstance,
     types,
 )
+
+
+def mkdir_p(newdir, mode=0o777):
+    """The missing mkdir -p functionality in os."""
+    try:
+        os.makedirs(newdir, mode)
+    except OSError as err:
+        # Reraise the error unless it's about an already existing directory 
+        if err.errno != errno.EEXIST or not os.path.isdir(newdir): 
+            raise
+
 
 AirlineDemoResources = namedtuple(
     'AirlineDemoResources',
@@ -321,6 +333,9 @@ def download_from_s3(info):
 
     if info.config['skip_if_present'] and os.path.isfile(target_path):
         return target_path
+
+    if os.path.dirname(target_path):
+        mkdir_p(os.path.dirname(target_path))
 
     info.context.resources.s3.download_file(bucket, key, target_path)
     return target_path
