@@ -8,7 +8,7 @@ from .errors import DagsterError
 from .types import (
     Any,
     DagsterCompositeType,
-    DagsterListType,
+    _DagsterListType,
     DagsterScalarType,
     DagsterSelectorType,
     DagsterType,
@@ -285,7 +285,7 @@ def _evaluate_config_value(dagster_type, config_value, stack, collector):
         return evaluate_selector_config_value(dagster_type, config_value, collector, stack)
     elif isinstance(dagster_type, DagsterCompositeType):
         return evaluate_composite_config_value(dagster_type, config_value, collector, stack)
-    elif isinstance(dagster_type, DagsterListType):
+    elif isinstance(dagster_type, _DagsterListType):
         return evaluate_list_value(dagster_type, config_value, collector, stack)
     elif isinstance(dagster_type, PythonObjectType):
         check.failed('PythonObjectType should not be used in a config hierarchy')
@@ -296,7 +296,7 @@ def _evaluate_config_value(dagster_type, config_value, stack, collector):
 
 
 def evaluate_list_value(dagster_list_type, config_value, collector, stack):
-    check.inst_param(dagster_list_type, 'dagster_list_type', DagsterListType)
+    check.inst_param(dagster_list_type, 'dagster_list_type', _DagsterListType)
     check.inst_param(collector, 'collector', ErrorCollector)
     check.inst_param(stack, 'stack', EvaluationStack)
 
@@ -330,9 +330,6 @@ def evaluate_list_value(dagster_list_type, config_value, collector, stack):
             _evaluate_config_value(dagster_list_type.inner_type, item, stack, collector)
         )
 
-    # TODO: This is likely a bug that also exists in the composite type.
-    # *Any* previous error in a previous field will result in this short circuiting
-    # even if this didn't do the right error in context.
     if collector.errors:
         return None
 

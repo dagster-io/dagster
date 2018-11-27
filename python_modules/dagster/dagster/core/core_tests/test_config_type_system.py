@@ -762,7 +762,7 @@ def test_solid_list_config():
                 name='solid_list_config',
                 inputs=[],
                 outputs=[],
-                config_field=Field(types.DagsterListType(types.Int)),
+                config_field=Field(types.List(types.Int)),
                 transform_fn=_test_config
             ),
         ],
@@ -778,3 +778,24 @@ def test_solid_list_config():
 
     assert result.success
     assert called['yup']
+
+def test_two_list_types():
+    assert PipelineDefinition(
+        name='two_types',
+        solids=[
+            SolidDefinition(
+                name='two_list_type',
+                inputs=[],
+                outputs=[],
+                config_field=ConfigField.solid_config_dict(
+                    'two_types',
+                    'two_list_type',
+                    {
+                        'list_one': types.Field(types.List(types.Int)),
+                        'list_two': types.Field(types.List(types.Int)),
+                    }
+                ),
+                transform_fn=lambda *_args: None
+            ),
+        ],
+    )

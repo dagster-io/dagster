@@ -356,15 +356,21 @@ class DagsterCompositeType(DagsterType):
         return self.field_dict[name]
 
 
-## TODO: memoize construction of list to avoid duplicate type errors
-## will need to override __new__ in DagsterListType
-DAGSTER_LIST_TYPE_CACHE = {}
+_DAGSTER_LIST_TYPE_CACHE = {}
 
 
-class DagsterListType(DagsterType):
+def List(inner_type):
+    check.inst_param(inner_type, 'inner_type', DagsterType)
+    if not inner_type.name in _DAGSTER_LIST_TYPE_CACHE:
+        _DAGSTER_LIST_TYPE_CACHE[inner_type.name] = _DagsterListType(inner_type)
+
+    return _DAGSTER_LIST_TYPE_CACHE[inner_type.name]
+
+
+class _DagsterListType(DagsterType):
     def __init__(self, inner_type):
         self.inner_type = check.inst_param(inner_type, 'inner_type', DagsterType)
-        super(DagsterListType, self).__init__(
+        super(_DagsterListType, self).__init__(
             name='List.{inner_type}'.format(inner_type=inner_type.name),
             description='List of {inner_type}'.format(inner_type=inner_type.name),
             type_attributes=DagsterTypeAttributes(is_builtin=True),
