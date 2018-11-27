@@ -112,9 +112,6 @@ def not_none_param(obj, param_name):
 
 
 def invariant(condition, desc=None):
-    if not isinstance(condition, bool):
-        raise_with_traceback(CheckError('Invariant condition must be boolean'))
-
     if not condition:
         if desc:
             raise_with_traceback(
@@ -127,9 +124,6 @@ def invariant(condition, desc=None):
 
 
 def param_invariant(condition, param_name, desc=None):
-    if not isinstance(condition, bool):
-        raise_with_traceback(ParameterCheckError('Invariant condition must be boolean'))
-
     if not condition:
         raise_with_traceback(_param_invariant_exception(param_name, desc))
 

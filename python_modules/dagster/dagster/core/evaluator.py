@@ -409,7 +409,7 @@ def evaluate_composite_config_value(dagster_composite_type, config_value, collec
             processed_fields[expected_field] = field_def.default_value
         elif not field_def.is_optional:
             check.invariant(
-                bool(local_errors),
+                local_errors,
                 'Error should have been added for missing required field',
             )
 
