@@ -474,6 +474,7 @@ def test_config_list_in_dict_error():
     assert stack_entry.field_name == 'nested_list'
     assert stack_entry.field_def.dagster_type.name == 'List.Int'
 
+
 def test_config_double_list():
     nested_lists = types.ConfigDictionary(
         name='NestedLists',
@@ -483,9 +484,7 @@ def test_config_double_list():
         },
     )
 
-
     value = {'nested_list_one': [1, 2, 3], 'nested_list_two': ['foo', 'bar']}
-
 
     result = evaluate_config_value(nested_lists, value)
     assert result.success
@@ -495,6 +494,7 @@ def test_config_double_list():
 
     error_result = evaluate_config_value(nested_lists, error_value)
     assert not error_result.success
+
 
 def test_config_double_list_double_error():
     nested_lists = types.ConfigDictionary(

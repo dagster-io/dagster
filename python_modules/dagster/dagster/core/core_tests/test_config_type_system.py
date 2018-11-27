@@ -779,6 +779,7 @@ def test_solid_list_config():
     assert result.success
     assert called['yup']
 
+
 def test_two_list_types():
     assert PipelineDefinition(
         name='two_types',
@@ -793,9 +794,9 @@ def test_two_list_types():
                     {
                         'list_one': types.Field(types.List(types.Int)),
                         'list_two': types.Field(types.List(types.Int)),
-                    }
+                    },
                 ),
-                transform_fn=lambda *_args: None
+                transform_fn=lambda *_args: None,
             ),
         ],
     )
