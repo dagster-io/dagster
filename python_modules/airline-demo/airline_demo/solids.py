@@ -15,7 +15,6 @@ from pyspark.sql import (
 )
 
 from dagster import (
-    ConfigField,
     DependencyDefinition,
     ExecutionContext,
     Field,
@@ -197,7 +196,7 @@ test_context = PipelineContextDefinition(
             )
         )
     ),
-    config_field=ConfigField(
+    config_field=Field(
         dagster_type=types.ConfigDictionary(
             'TestContextConfig', {
                 'redshift_username': Field(types.String),
@@ -236,7 +235,7 @@ local_context = PipelineContextDefinition(
             )
         )
     ),
-    config_field=ConfigField(
+    config_field=Field(
         dagster_type=types.ConfigDictionary(
             'LocalContextConfig', {
                 'postgres_username': Field(types.String),
@@ -274,7 +273,7 @@ cloud_context = PipelineContextDefinition(
             )
         )
     ),
-    config_field=ConfigField(
+    config_field=Field(
         dagster_type=types.ConfigDictionary(
             'CloudContextConfig', {
                 'redshift_username': Field(types.String),
@@ -290,7 +289,7 @@ cloud_context = PipelineContextDefinition(
 
 @solid(
     name='thunk',
-    config_field=ConfigField(types.String),
+    config_field=Field(types.String),
 )
 def thunk(info):
     return info.config
@@ -298,7 +297,7 @@ def thunk(info):
 
 @solid(
     name='download_from_s3',
-    config_field=ConfigField(
+    config_field=Field(
         types.ConfigDictionary(
             name='DownloadFromS3ConfigType',
             fields={
@@ -329,7 +328,7 @@ def download_from_s3(info):
 
 @solid(
     name='unzip_file',
-    # config_field=ConfigField(
+    # config_field=Field(
     #     types.ConfigDictionary(name='UnzipFileConfigType', fields={
     #         ' archive_path': Field(types.String, description=''),
     #         'archive_member': Field(types.String, description=''),
@@ -368,18 +367,21 @@ def unzip_file(
         os.path.dirname(archive_path)
     )
 
-    zip_ref = zipfile.ZipFile(archive_path, 'r')
-
-    if archive_member is not None:
-        zip_ref.extract(archive_member, destination_dir)
-    else:
-        zip_ref.extractall(destination_dir)
-    zip_ref.close()
+    with zipfile.ZipFile(archive_path, 'r') as zip_ref:
+        if archive_member is not None:
+            target_path = os.path.join(destination_dir, archive_member)
+            if not (info.config['skip_if_present'] and (
+                    os.path.isfile(target_path) or os.path.isdir(target_path))):
+                zip_ref.extract(archive_member, destination_dir)
+        else:
+            if not (info.config['skip_if_present'] and os.path.isdir(target_path)):
+                zip_ref.extractall(destination_dir)
+        return target_path
 
 
 @solid(
     name='ingest_csv_to_spark',
-    config_field=ConfigField(
+    config_field=Field(
         types.ConfigDictionary(
             name='IngestCsvToSparkConfigType',
             fields={
@@ -420,7 +422,7 @@ def fix_na_spark(data_frame, na_value, columns=None):
     name='normalize_weather_na_values',
     description="Normalizes the given NA values by replacing them with None",
     # FIXME can this be optional
-    # config_field=ConfigField(
+    # config_field=Field(
     #     types.String,
     #     # description='The string NA value to normalize to None.'
     # ),
@@ -446,7 +448,7 @@ def normalize_weather_na_values(info, data_frame):
         )
     ],
     outputs=[OutputDefinition(SparkDataFrameType)],
-    config_field=ConfigField(
+    config_field=Field(
         types.ConfigDictionary(
             name='BatchLoadDataToRedshiftFromSparkConfigType',
             fields={
@@ -486,7 +488,7 @@ def load_data_to_database_from_spark(info, data_frame):
 @solid(
     name='subsample_spark_dataset',
     description='Subsample a spark dataset.',
-    config_field=ConfigField(
+    config_field=Field(
         types.ConfigDictionary(
             name='SubsampleSparkDataFrameConfigType',
             fields={
