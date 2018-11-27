@@ -77,11 +77,6 @@ class EvaluationStack(namedtuple('_EvaluationStack', 'entries')):
     def levels(self):
         return [entry.field_name for entry in self.entries]
 
-    @property
-    def top(self):
-        check.invariant(self.entries, 'entries must have at least one value')
-        return self.entries[len(self.entries) - 1]
-
 
 class EvaluationStackEntry:  # marker interface
     pass
