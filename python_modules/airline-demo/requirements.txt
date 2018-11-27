@@ -1,0 +1,5 @@
+boto3==1.9.47
+dagster
+pyspark==2.4.0
+sqlalchemy-redshift==0.7.1
+SQLAlchemy-Utils==0.33.8

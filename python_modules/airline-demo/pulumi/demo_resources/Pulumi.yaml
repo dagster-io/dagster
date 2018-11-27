@@ -1,0 +1,5 @@
+name: demo_resources
+runtime: nodejs
+description: Resources to run the airline demo
+template:
+  description: A minimal TypeScript Pulumi program
