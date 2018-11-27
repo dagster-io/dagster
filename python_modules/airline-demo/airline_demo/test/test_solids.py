@@ -10,8 +10,10 @@ from dagster import (
     DependencyDefinition,
     execute_pipeline,
     ExecutionContext,
+    lambda_solid,
     PipelineContextDefinition,
     PipelineDefinition,
+    SolidInstance,
 )
 from dagster.utils.test import (define_stub_solid, execute_solid)
 
@@ -19,6 +21,7 @@ from airline_demo.solids import (
     _create_s3_session,
     define_airline_demo_spark_ingest_pipeline,
     download_from_s3,
+    ingest_csv_to_spark,
     thunk,
     unzip_file,
 )
@@ -79,20 +82,21 @@ def test_download_from_s3():
         assert fd.read() == 'test\n'
 
 
+@pytest.mark.skip
 def test_unzip_file():
+    @lambda_solid
+    def nonce():
+        return None
+
     result = execute_solid(
         PipelineDefinition(
-            solids=[unzip_file],
-            #     define_stub_solid('archive_path', 'test/test.zip'),
-            #     define_stub_solid('archive_member', 'test_file'),
-            #     unzip_file,
-            # ],
-            # dependencies={
-            #     'unzip_file': {
-            #         'archive_path': DependencyDefinition('archive_path'),
-            #         'archive_member': DependencyDefinition('archive_member')
-            #     }
-            # }
+            solids=[nonce, unzip_file],
+            dependencies={
+                'unzip_file': {
+                    'archive_path': DependencyDefinition('nonce'),
+                    'archive_member': DependencyDefinition('nonce')
+                }
+            }
         ),
         'unzip_file',
         inputs={
@@ -100,14 +104,30 @@ def test_unzip_file():
             'archive_member': 'test_file'
         },
         environment={'solids': {
-            'unzip_file': {}
+            'unzip_file': {
+                'skip_if_present': False
+            }
         }}
     )
-    raise NotImplementedError()
+    assert result.success
+    assert result.transformed_value() == 'test/test_file'
+    assert os.path.isfile(result.transformed_value())
+    with open(result.transformed_value(), 'r') as fd:
+        assert fd.read() == 'test\n'
 
 
 @pytest.mark.spark
-def ingest_csv_to_spark():
+def test_ingest_csv_to_spark():
+    result = execute_solid(
+        PipelineDefinition([ingest_csv_to_spark]),
+        'ingest_csv_to_spark',
+        inputs={
+            'input_csv': os.path.join(os.path.dirname(__file__), 'data/test.csv'),
+        },
+        environment={'solids': {
+            'ingest_csv_to_spark': {}
+        }}
+    )
     raise NotImplementedError()
 
 
