@@ -1,10 +1,137 @@
-from dagster import execute_pipeline
+import logging
+import os
+
+import pytest
+
+from collections import namedtuple
+
+from dagster import (
+    config,
+    DependencyDefinition,
+    ExecutionContext,
+    PipelineContextDefinition,
+    PipelineDefinition,
+)
+from dagster.utils.test import (
+    define_stub_solid,
+    execute_solid
+) 
 
 from airline_demo.solids import (
+    _create_s3_session,
     define_airline_demo_spark_ingest_pipeline,
+    download_from_s3,
+    thunk,
+    unzip_file,
 )
 
 
+S3Resources = namedtuple('S3Resources', ('s3',))
+
+
+def _s3_context():
+    return {
+        'test': PipelineContextDefinition(
+            context_fn=(
+                lambda info: ExecutionContext.console_logging(
+                    log_level=logging.DEBUG,
+                    resources=S3Resources(
+                        _create_s3_session(),
+                    )
+                )
+            ),
+        )
+    }
+
+def test_thunk():
+    result = execute_solid(
+        PipelineDefinition([thunk]),
+        'thunk',
+        environment={'solids': {'thunk': {'config': 'foo'}}}
+    )
+    assert result.success
+    assert result.transformed_value() == 'foo'
+
+
+@pytest.mark.nettest
+def test_download_from_s3():
+    result = execute_solid(
+        PipelineDefinition(
+            [download_from_s3],
+            context_definitions=_s3_context()
+        ),
+        'download_from_s3',
+        environment={
+            'context': {'test': {}},
+            'solids': {
+                'download_from_s3': {
+                    'config': {
+                        'bucket': 'dagster-airline-demo-source-data',
+                        'key': 'test/test_file'
+                    }
+                }
+            }
+        }
+    )
+    assert result.success
+    assert result.transformed_value() == 'test/test_file'
+    assert os.path.isfile(result.transformed_value())
+    with open(result.transformed_value(), 'r') as fd:
+        assert fd.read() == 'test\n'
+
+
+def test_unzip_file():
+    result = execute_solid(
+        PipelineDefinition(
+            solids=[unzip_file],
+            #     define_stub_solid('archive_path', 'test/test.zip'),
+            #     define_stub_solid('archive_member', 'test_file'),
+            #     unzip_file,
+            # ],
+            # dependencies={
+            #     'unzip_file': {
+            #         'archive_path': DependencyDefinition('archive_path'),
+            #         'archive_member': DependencyDefinition('archive_member')
+            #     }
+            # }
+        ),
+        'unzip_file',
+        inputs={'archive_path': 'test/test.zip', 'archive_member': 'test_file'},
+        environment={'solids': {'unzip_file': {}}}
+    )
+    raise NotImplementedError()
+
+
+@pytest.mark.spark
+def ingest_csv_to_spark():
+    raise NotImplementedError()
+
+
+@pytest.mark.spark
+@pytest.mark.postgres
+def test_load_data_to_postgres_from_spark_postgres():
+    raise NotImplementedError()
+
+
+@pytest.mark.nettest
+@pytest.mark.spark
+@pytest.mark.redshift
+def test_load_data_to_redshift_from_spark():
+    raise NotImplementedError()
+
+
+@pytest.mark.spark
+def test_subsample_spark_dataset():
+    raise NotImplementedError()
+
+
+@pytest.mark.spark
+def test_join_spark_data_frame():
+    raise NotImplementedError()
+
+
+@pytest.mark.nettest
+@pytest.mark.slow
 def test_pipeline():
     result = execute_pipeline(
         define_airline_demo_spark_ingest_pipeline(),
