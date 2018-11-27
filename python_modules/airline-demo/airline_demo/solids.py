@@ -379,8 +379,10 @@ def unzip_file(
     with zipfile.ZipFile(archive_path, 'r') as zip_ref:
         if archive_member is not None:
             target_path = os.path.join(destination_dir, archive_member)
-            if not (info.config['skip_if_present'] and (
-                    os.path.isfile(target_path) or os.path.isdir(target_path))):
+            if not (
+                info.config['skip_if_present'] and
+                (os.path.isfile(target_path) or os.path.isdir(target_path))
+            ):
                 zip_ref.extract(archive_member, destination_dir)
         else:
             if not (info.config['skip_if_present'] and os.path.isdir(target_path)):
@@ -471,22 +473,22 @@ def load_data_to_database_from_spark(info, data_frame):
     if db_dialect == 'redshift':
         data_frame.write \
         .format('com.databricks.spark.redshift') \
+        .option('tempdir', info.context.resources.redshift_s3_temp_dir) \
+        .mode('overwrite') \
         .jdbc(
             info.context.resources.db_url,
             info.config['table_name'],
-        ) \
-        .option('tempdir', info.context.resources.redshift_s3_temp_dir) \
-        .mode('overwrite') \
-        .save()
+        ) #\
+        # .save()
     elif db_dialect == 'postgres':
         data_frame.write \
         .option('driver', 'org.postgresql.Driver') \
+        .mode('overwrite') \
         .jdbc(
             info.context.resources.db_url,
             info.config['table_name'],
-        ) \
-        .mode('overwrite') \
-        .save()
+        ) #\
+        # .save()
     else:
         raise NotImplementedError(
             'No implementation for db_dialect "{db_dialect}"'.format(db_dialect=db_dialect)
