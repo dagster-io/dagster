@@ -470,7 +470,7 @@ class ScopedConfigInfo(
         check.opt_str_param(context_def_name, 'context_def_name')
 
         check.invariant(
-            bool(solid_def_name or context_def_name),
+            solid_def_name or context_def_name,
             'One of solid or context must be specified',
         )
         check.invariant(
