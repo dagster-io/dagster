@@ -378,12 +378,7 @@ class DagsterListType(DagsterType):
         yield self
 
     def construct_from_config_value(self, config_value):
-        check.list_param(config_value, 'config_value')
-        output = []
-        for item in config_value:
-            output.append(self.inner_type.construct_from_config_value(item))
-
-        return output
+        return config_value
 
 
 class DagsterSelectorType(DagsterCompositeType):
