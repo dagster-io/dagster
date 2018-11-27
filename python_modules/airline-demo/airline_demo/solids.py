@@ -351,7 +351,16 @@ def download_from_s3(info):
         #     types.String,
         #     description='',
         # ),
-    ]
+    ],
+    config_field=Field(
+        types.ConfigDictionary(
+            name='UnzipFileConfigType',
+            fields={
+                'skip_if_present':
+                Field(types.Bool, description='', default_value=False, is_optional=True),
+            }
+        )
+    )
 )
 def unzip_file(
     info,

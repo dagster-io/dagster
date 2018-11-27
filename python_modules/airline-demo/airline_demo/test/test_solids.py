@@ -114,6 +114,36 @@ def test_pipeline():
                         'skip_if_present': True,
                     }
                 },
+                'unzip_april_on_time_data': {
+                    'config': {
+                        'skip_if_present': True,
+                    },
+                },
+                'unzip_may_on_time_data': {
+                    'config': {
+                        'skip_if_present': True,
+                    },
+                },
+                'unzip_june_on_time_data': {
+                    'config': {
+                        'skip_if_present': True,
+                    },
+                },
+                'unzip_q2_coupon_data': {
+                    'config': {
+                        'skip_if_present': True,
+                    },
+                },
+                'unzip_q2_market_data': {
+                    'config': {
+                        'skip_if_present': True,
+                    },
+                },
+                'unzip_q2_ticket_data': {
+                    'config': {
+                        'skip_if_present': True,
+                    },
+                },
                 'ingest_q2_coupon_data': {
                     'config': {
                         'input_csv': 'Origin_and_Destination_Survey_DB1BCoupon_2018_2.csv'
