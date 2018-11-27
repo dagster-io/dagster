@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from collections import namedtuple
 import copy
 import json
 import logging
@@ -45,14 +46,56 @@ class JsonFileHandler(logging.Handler):
 
     def emit(self, record):
         try:
-            logged_properties = copy.copy(record.__dict__)
+            log_dict = copy.copy(record.__dict__)
             with open(self.json_path, 'a') as ff:
-                text_line = json.dumps(logged_properties)
+                text_line = json.dumps(log_dict)
                 ff.write(text_line + '\n')
         # Need to catch Exception here, so disabling lint
         except Exception as e:  # pylint: disable=W0703
             logging.critical('Error during logging!')
             logging.exception(str(e))
+
+
+StructuredLoggerMessage = namedtuple('StructuredLoggerMessage', 'name message level meta record')
+
+class StructuredLogger(logging.Handler):
+    def __init__(self, callback):
+        super(StructuredLogger, self).__init__()
+        self.callback = check.is_callable(callback, 'callback')
+
+    def emit(self, record):
+        try:
+            self.callback(
+                StructuredLoggerMessage(
+                    name=record.name,
+                    message=record.msg,
+                    level=record.levelname,
+                    meta=record.dagster_meta,
+                    record=record,
+                )
+            )
+            # self.callback(log_dict)
+        # Need to catch Exception here, so disabling lint
+        except Exception as e:  # pylint: disable=W0703
+            logging.critical('Error during logging!')
+            logging.exception(str(e))
+
+
+def define_structured_logger(name, callback, level):
+    check.str_param(name, 'name')
+    check.callable_param(callback, 'callback')
+    check.param_invariant(
+        level in VALID_LEVELS,
+        'level',
+        'Must be valid python logging level. Got {level}'.format(level=level),
+    )
+
+    klass = logging.getLoggerClass()
+    logger = klass(name, level=level)
+    structured_handler = StructuredLogger(callback)
+    logger.addHandler(structured_handler)
+    return logger
+
 
 
 def define_json_file_logger(name, json_path, level):

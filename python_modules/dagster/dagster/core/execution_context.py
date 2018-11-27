@@ -15,6 +15,8 @@ from dagster.utils.logging import (
     define_colored_console_logger,
 )
 
+from .events import ExecutionEvents
+
 Metric = namedtuple('Metric', 'context_dict metric_name value')
 
 
@@ -67,6 +69,7 @@ class ExecutionContext(object):
             ReentrantContextInfo,
         )
         self._context_stack = reentrant_info.context_stack if reentrant_info else OrderedDict()
+        self.events = ExecutionEvents(self)
 
     @staticmethod
     def for_run(loggers=None, resources=None):
@@ -119,7 +122,12 @@ class ExecutionContext(object):
 
         message_with_structured_props = _kv_message(all_props.items())
 
-        getattr(self._logger, method)(message_with_structured_props, extra=all_props)
+        getattr(self._logger, method)(
+            message_with_structured_props,
+            extra={
+                'dagster_meta': all_props,
+            },
+        )
 
     def debug(self, msg, **kwargs):
         '''
@@ -164,6 +172,10 @@ class ExecutionContext(object):
 
         See debug()'''
         return self._log('critical', msg, kwargs)
+
+    def has_context_value(self, key):
+        check.str_param(key, 'key')
+        return key in self._context_stack
 
     def get_context_value(self, key):
         check.str_param(key, 'key')
