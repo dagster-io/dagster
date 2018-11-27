@@ -4,6 +4,7 @@ from dagster import types
 
 from dagster.core.types import (
     DagsterRuntimeCoercionError,
+    DagsterListType,
     DagsterType,
     PythonObjectType,
 )

@@ -8,6 +8,7 @@ from .errors import DagsterError
 from .types import (
     Any,
     DagsterCompositeType,
+    DagsterListType,
     DagsterScalarType,
     DagsterSelectorType,
     DagsterType,
@@ -284,12 +285,58 @@ def _evaluate_config_value(dagster_type, config_value, stack, collector):
         return evaluate_selector_config_value(dagster_type, config_value, collector, stack)
     elif isinstance(dagster_type, DagsterCompositeType):
         return evaluate_composite_config_value(dagster_type, config_value, collector, stack)
+    elif isinstance(dagster_type, DagsterListType):
+        return evaluate_list_value(dagster_type, config_value, collector, stack)
     elif isinstance(dagster_type, PythonObjectType):
         check.failed('PythonObjectType should not be used in a config hierarchy')
     elif dagster_type == Any:
         return config_value
     else:
         check.failed('Unknown type {name}'.format(name=dagster_type.name))
+
+
+def evaluate_list_value(dagster_list_type, config_value, collector, stack):
+    check.inst_param(dagster_list_type, 'dagster_list_type', DagsterListType)
+    check.inst_param(collector, 'collector', ErrorCollector)
+    check.inst_param(stack, 'stack', EvaluationStack)
+
+    if not config_value:
+        return []
+
+    if not isinstance(config_value, list):
+        collector.add_error(
+            EvaluationError(
+                stack=stack,
+                reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
+                message='Value for list type {type_name} must be a list got {value}'.format(
+                    type_name=dagster_list_type.name,
+                    value=config_value,
+                ),
+                error_data=RuntimeMismatchErrorData(
+                    dagster_type=dagster_list_type,
+                    value_rep=repr(config_value),
+                ),
+            )
+        )
+        return None
+
+    output_list = []
+    for item in config_value:
+        # TODO: how to represent list element in the stack
+        # should be pushing something
+        # Should consult with mikhail/ben to see about what info is best
+        # to expose in dagit. Probably just a list index in the stack
+        output_list.append(
+            _evaluate_config_value(dagster_list_type.inner_type, item, stack, collector)
+        )
+
+    # TODO: This is likely a bug that also exists in the composite type.
+    # *Any* previous error in a previous field will result in this short circuiting
+    # even if this didn't do the right error in context.
+    if collector.errors:
+        return None
+
+    return output_list
 
 
 def evaluate_composite_config_value(dagster_composite_type, config_value, collector, stack):

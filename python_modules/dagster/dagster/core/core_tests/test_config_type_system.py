@@ -745,3 +745,36 @@ def test_context_name_mismatch():
                 )
             }
         )
+
+
+def test_solid_list_config():
+    value = [1, 2]
+    called = {}
+
+    def _test_config(info, _inputs):
+        assert info.config == value
+        called['yup'] = True
+
+    pipeline_def = PipelineDefinition(
+        name='solid_list_config_pipeline',
+        solids=[
+            SolidDefinition(
+                name='solid_list_config',
+                inputs=[],
+                outputs=[],
+                config_field=Field(types.DagsterListType(types.Int)),
+                transform_fn=_test_config
+            ),
+        ],
+    )
+
+    result = execute_pipeline(
+        pipeline_def, environment={'solids': {
+            'solid_list_config': {
+                'config': value
+            }
+        }}
+    )
+
+    assert result.success
+    assert called['yup']
