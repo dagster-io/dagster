@@ -195,47 +195,74 @@ def test_pipeline():
                 },
                 'download_april_on_time_data': {
                     'config': {
-                        'bucket': 'dagster-airline-demo-source-data',
+                        'bucket':
+                        'dagster-airline-demo-source-data',
                         'key':
                         'On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_4.zip',
-                        'skip_if_present': True
+                        'skip_if_present':
+                        True,
+                        'target_path':
+                        'source_data/On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_4.zip',
                     }
                 },
                 'download_may_on_time_data': {
                     'config': {
-                        'bucket': 'dagster-airline-demo-source-data',
+                        'bucket':
+                        'dagster-airline-demo-source-data',
                         'key':
                         'On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_5.zip',
-                        'skip_if_present': True,
-                    }
+                        'skip_if_present':
+                        True,
+                        'target_path':
+                        'source_data/On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_5.zip',
+                    },
                 },
                 'download_june_on_time_data': {
                     'config': {
-                        'bucket': 'dagster-airline-demo-source-data',
+                        'bucket':
+                        'dagster-airline-demo-source-data',
                         'key':
                         'On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_6.zip',
-                        'skip_if_present': True,
+                        'skip_if_present':
+                        True,
+                        'target_path':
+                        'source_data/On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_6.zip',
                     }
                 },
                 'download_q2_coupon_data': {
                     'config': {
-                        'bucket': 'dagster-airline-demo-source-data',
-                        'key': 'Origin_and_Destination_Survey_DB1BCoupon_2018_2.zip',
-                        'skip_if_present': True,
+                        'bucket':
+                        'dagster-airline-demo-source-data',
+                        'key':
+                        'Origin_and_Destination_Survey_DB1BCoupon_2018_2.zip',
+                        'skip_if_present':
+                        True,
+                        'target_path':
+                        'source_data/Origin_and_Destination_Survey_DB1BCoupon_2018_2.zip',
                     }
                 },
                 'download_q2_market_data': {
                     'config': {
-                        'bucket': 'dagster-airline-demo-source-data',
-                        'key': 'Origin_and_Destination_Survey_DB1BMarket_2018_2.zip',
-                        'skip_if_present': True,
+                        'bucket':
+                        'dagster-airline-demo-source-data',
+                        'key':
+                        'Origin_and_Destination_Survey_DB1BMarket_2018_2.zip',
+                        'skip_if_present':
+                        True,
+                        'target_path':
+                        'source_data/Origin_and_Destination_Survey_DB1BMarket_2018_2.zip',
                     }
                 },
                 'download_q2_ticket_data': {
                     'config': {
-                        'bucket': 'dagster-airline-demo-source-data',
-                        'key': 'Origin_and_Destination_Survey_DB1BTicket_2018_2.zip',
-                        'skip_if_present': True,
+                        'bucket':
+                        'dagster-airline-demo-source-data',
+                        'key':
+                        'Origin_and_Destination_Survey_DB1BTicket_2018_2.zip',
+                        'skip_if_present':
+                        True,
+                        'target_path':
+                        'source_data/Origin_and_Destination_Survey_DB1BTicket_2018_2.zip',
                     }
                 },
                 'download_q2_sfo_weather': {
@@ -243,6 +270,7 @@ def test_pipeline():
                         'bucket': 'dagster-airline-demo-source-data',
                         'key': 'sfo_q2_weather.txt',
                         'skip_if_present': True,
+                        'target_path': 'source_data/sfo_q2_weather.txt',
                     }
                 },
                 'unzip_april_on_time_data': {
@@ -275,20 +303,23 @@ def test_pipeline():
                         'skip_if_present': True,
                     },
                 },
+                # FIXME should these be stubbed inputs instead?
                 'ingest_q2_coupon_data': {
                     'config': {
-                        'input_csv': 'Origin_and_Destination_Survey_DB1BCoupon_2018_2.csv'
+                        'input_csv':
+                        'source_data/Origin_and_Destination_Survey_DB1BCoupon_2018_2.csv'
                     }
                 },
                 'ingest_q2_market_data': {
                     'config': {
-                        'input_csv': 'Origin_and_Destination_Survey_DB1BMarket_2018_2.csv'
+                        'input_csv':
+                        'source_data/Origin_and_Destination_Survey_DB1BMarket_2018_2.csv'
                     }
                 },
                 'ingest_june_on_time_data': {
                     'config': {
                         'input_csv':
-                        'On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_6.csv'
+                        'source_data/On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_6.csv'
                     }
                 },
                 'subsample_april_on_time_data': {
@@ -303,13 +334,13 @@ def test_pipeline():
                 },
                 'ingest_q2_sfo_weather': {
                     'config': {
-                        'input_csv': 'q2_sfo_weather.txt'  # FIXME
+                        'input_csv': 'source_data/q2_sfo_weather.txt'  # FIXME
                     }
                 },
                 'ingest_april_on_time_data': {
                     'config': {
                         'input_csv':
-                        'On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_4.csv'
+                        'source_data/On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_4.csv'
                     }
                 },
                 'subsample_may_on_time_data': {
@@ -334,13 +365,14 @@ def test_pipeline():
                 },
                 'ingest_q2_ticket_data': {
                     'config': {
-                        'input_csv': 'Origin_and_Destination_Survey_DB1BTicket_2018_2.csv'
+                        'input_csv':
+                        'source_data/Origin_and_Destination_Survey_DB1BTicket_2018_2.csv'
                     }
                 },
                 'ingest_may_on_time_data': {
                     'config': {
                         'input_csv':
-                        'On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_5.csv'
+                        'source_data/On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_5.csv'
                     }
                 },
                 'load_april_weather_and_on_time_data': {
