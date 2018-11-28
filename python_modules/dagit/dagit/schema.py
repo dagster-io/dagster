@@ -268,10 +268,10 @@ class PythonError(graphene.ObjectType):
 
 
 class PipelineNotFoundError(graphene.ObjectType):
-    pipeline_name = graphene.NonNull(graphene.String)
-
     class Meta:
         interfaces = (Error, )
+
+    pipeline_name = graphene.NonNull(graphene.String)
 
     def __init__(self, pipeline_name):
         super(PipelineNotFoundError, self).__init__()
