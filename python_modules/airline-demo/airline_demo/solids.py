@@ -411,7 +411,7 @@ def unzip_file(
         types.ConfigDictionary(
             name='IngestCsvToSparkConfigType',
             fields={
-                'input_csv': Field(types.String, description=''),
+                'input_csv': Field(types.String, description='', default_value='',is_optional=True),
             }
         )
     ),
