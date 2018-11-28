@@ -8,7 +8,7 @@
 // ====================================================
 
 export interface AppQuery_pipelinesOrErrors_PythonError {
-  __typename: "PythonError";
+  __typename: "PythonError" | "PipelineNotFoundError";
   message: string;
   stack: string[];
 }

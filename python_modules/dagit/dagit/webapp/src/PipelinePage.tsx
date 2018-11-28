@@ -13,7 +13,7 @@ import PipelineExecution from "./PipelineExecution";
 import {
   PipelinePageFragment,
   PipelinePageFragment_Pipeline,
-  PipelinePageFragment_PythonError
+  PipelinePageFragment_PythonError,
 } from "./types/PipelinePageFragment";
 
 export type IPipelinePageMatch = match<{
@@ -92,7 +92,7 @@ export default class PipelinePage extends React.Component<IPipelinePageProps> {
     const pipelines: Array<PipelinePageFragment_Pipeline> = [];
 
     for (const pipelineOrError of pipelinesOrErrors) {
-      if (pipelineOrError.__typename === "PythonError") {
+      if (pipelineOrError.__typename === "PythonError" || pipelineOrError.__typename == "PipelineNotFoundError") {
         error = pipelineOrError;
       } else {
         pipelines.push(pipelineOrError);

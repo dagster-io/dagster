@@ -8,7 +8,7 @@
 // ====================================================
 
 export interface PipelinePageFragment_PythonError {
-  __typename: "PythonError";
+  __typename: "PythonError" | "PipelineNotFoundError";
   message: string;
   stack: string[];
 }
