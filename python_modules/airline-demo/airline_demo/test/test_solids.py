@@ -26,10 +26,12 @@ from dagster import (
 )
 from dagster.utils.test import (define_stub_solid, execute_solid)
 
-from airline_demo.solids import (
+from airline_demo.pipelines import (
     _create_s3_session,
     _create_spark_session_local,
-    define_airline_demo_spark_ingest_pipeline,
+    define_airline_demo_ingest_pipeline,
+)
+from airline_demo.solids import (
     download_from_s3,
     ingest_csv_to_spark,
     thunk,
@@ -207,7 +209,7 @@ def test_join_spark_data_frame():
 @pytest.mark.slow
 def test_pipeline():
     result = execute_pipeline(
-        define_airline_demo_spark_ingest_pipeline(),
+        define_airline_demo_ingest_pipeline(),
         {
             'context': {
                 # 'cloud': {
