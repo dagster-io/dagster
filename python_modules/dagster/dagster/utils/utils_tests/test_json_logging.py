@@ -1,5 +1,7 @@
 import json
 
+from dagster.core.execution_context import ExecutionContext
+
 from dagster.utils.test import get_temp_file_name
 from dagster.utils.logging import (
     define_json_file_logger,
@@ -59,3 +61,18 @@ def test_no_double_write_same_names():
         assert len(data) == 1
         assert data[0]['name'] == 'foo'
         assert data[0]['msg'] == 'logger one message'
+
+
+# This test ensures the behavior that the clarify project relies upon
+# See extended comment in JsonFileHandler::emit
+def test_write_dagster_meta():
+    with get_temp_file_name() as tf_name:
+        logger = define_json_file_logger('foo', tf_name, DEBUG)
+        execution_context = ExecutionContext(loggers=[logger])
+        execution_context.debug('some_debug_message', context_key='context_value')
+        data = list(parse_json_lines(tf_name))
+        assert len(data) == 1
+        print(data[0])
+        assert data[0]['name'] == 'foo'
+        assert data[0]['orig_message'] == 'some_debug_message'
+        assert data[0]['context_key'] == 'context_value'

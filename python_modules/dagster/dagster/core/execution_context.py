@@ -30,6 +30,9 @@ class ReentrantContextInfo(namedtuple('ReentrantContextInfo', 'context_stack')):
     pass
 
 
+DAGSTER_META_KEY = 'dagster_meta'
+
+
 class ExecutionContext(object):
     '''
     A context object flowed through the entire scope of single execution of a
@@ -122,10 +125,18 @@ class ExecutionContext(object):
 
         message_with_structured_props = _kv_message(all_props.items())
 
+        # So here we use the arbitrary key DAGSTER_META_KEY to store a dictionary of
+        # all the meta information that dagster injects into log message.
+        # The python logging module, in its infinite wisdom, actually takes all the
+        # keys in extra and unconditionally smashes them into the internal dictionary
+        # of the logging.LogRecord class. We used a reserved key here to avoid naming
+        # collisions with internal variables of the LogRecord class.
+        # See __init__.py:363 (makeLogRecord) in the python 3.6 logging module source
+        # for the gory details.
         getattr(self._logger, method)(
             message_with_structured_props,
             extra={
-                'dagster_meta': all_props,
+                DAGSTER_META_KEY: all_props,
             },
         )
 

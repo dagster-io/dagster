@@ -47,6 +47,22 @@ class JsonFileHandler(logging.Handler):
     def emit(self, record):
         try:
             log_dict = copy.copy(record.__dict__)
+
+            # This horrific monstrosity is to maintain backwards compatability
+            # with the old behavior of the JsonFileHandler, which the clarify
+            # project has a dependency on. It relied on the dagster-defined
+            # properties smashing all the properties of the LogRecord object
+            # and uploads all of those properties to a redshift table for
+            # in order to do analytics on the log
+
+            if 'dagster_meta' in log_dict:
+                dagster_meta_dict = log_dict['dagster_meta']
+                del log_dict['dagster_meta']
+            else:
+                dagster_meta_dict = {}
+
+            log_dict.update(dagster_meta_dict)
+
             with open(self.json_path, 'a') as ff:
                 text_line = json.dumps(log_dict)
                 ff.write(text_line + '\n')
