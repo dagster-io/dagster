@@ -584,11 +584,13 @@ def test_more_complicated_multiple_errors():
 def test_config_list():
     result = execute_config_graphql(
         pipeline_name='pipeline_with_list',
-        config={'solids': {
-            'solid_with_list': {
-                'config': [1, 2]
-            }
-        }}
+        config={
+            'solids': {
+                'solid_with_list': {
+                    'config': [1, 2],
+                },
+            },
+        },
     )
 
     assert not result.errors
@@ -601,11 +603,13 @@ def test_config_list():
 def test_config_list_invalid():
     result = execute_config_graphql(
         pipeline_name='pipeline_with_list',
-        config={'solids': {
-            'solid_with_list': {
-                'config': 'foo'
-            }
-        }}
+        config={
+            'solids': {
+                'solid_with_list': {
+                    'config': 'foo',
+                },
+            },
+        },
     )
 
     assert not result.errors
@@ -620,11 +624,13 @@ def test_config_list_invalid():
 def test_config_list_item_invalid():
     result = execute_config_graphql(
         pipeline_name='pipeline_with_list',
-        config={'solids': {
-            'solid_with_list': {
-                'config': [1, 'foo'],
-            }
-        }}
+        config={
+            'solids': {
+                'solid_with_list': {
+                    'config': [1, 'foo'],
+                },
+            },
+        },
     )
 
     assert not result.errors
