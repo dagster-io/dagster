@@ -56,11 +56,23 @@ class JsonFileHandler(logging.Handler):
             logging.exception(str(e))
 
 
-StructuredLoggerMessage = namedtuple('StructuredLoggerMessage', 'name message level meta record')
+class StructuredLoggerMessage(
+    namedtuple('StructuredLoggerMessage', 'name message level meta record')
+):
 
-class StructuredLogger(logging.Handler):
+    def __new__(cls, name, message, level, meta, record):
+        return super(StructuredLoggerMessage, cls).__new__(
+            cls,
+            check.str_param(name, 'name'),
+            check.str_param(message, 'message'),
+            check_valid_level_param(level),
+            check.dict_param(meta, 'meta'),
+            check.inst_param(record, 'record', logging.LogRecord),
+        )
+
+class StructuredLoggerHandler(logging.Handler):
     def __init__(self, callback):
-        super(StructuredLogger, self).__init__()
+        super(StructuredLoggerHandler, self).__init__()
         self.callback = check.is_callable(callback, 'callback')
 
     def emit(self, record):
@@ -69,50 +81,52 @@ class StructuredLogger(logging.Handler):
                 StructuredLoggerMessage(
                     name=record.name,
                     message=record.msg,
-                    level=record.levelname,
+                    level=record.levelno,
                     meta=record.dagster_meta,
                     record=record,
                 )
             )
-            # self.callback(log_dict)
         # Need to catch Exception here, so disabling lint
         except Exception as e:  # pylint: disable=W0703
             logging.critical('Error during logging!')
             logging.exception(str(e))
 
-
-def define_structured_logger(name, callback, level):
-    check.str_param(name, 'name')
-    check.callable_param(callback, 'callback')
+def check_valid_level_param(level):
     check.param_invariant(
         level in VALID_LEVELS,
         'level',
         'Must be valid python logging level. Got {level}'.format(level=level),
     )
+    return level
+
+def construct_logger(name, level, handler):
+    check.str_param(name, 'name')
+    check_valid_level_param(level)
+    check.inst_param(handler, 'handler', logging.Handler)
 
     klass = logging.getLoggerClass()
     logger = klass(name, level=level)
-    structured_handler = StructuredLogger(callback)
-    logger.addHandler(structured_handler)
+    logger.addHandler(handler)
     return logger
+
+
+def define_structured_logger(name, callback, level):
+    check.str_param(name, 'name')
+    check.callable_param(callback, 'callback')
+    check_valid_level_param(level)
+
+    return construct_logger(name, level, StructuredLoggerHandler(callback))
 
 
 
 def define_json_file_logger(name, json_path, level):
     check.str_param(name, 'name')
     check.str_param(json_path, 'json_path')
-    check.param_invariant(
-        level in VALID_LEVELS,
-        'level',
-        'Must be valid python logging level. Got {level}'.format(level=level),
-    )
+    check_valid_level_param(level)
 
-    klass = logging.getLoggerClass()
-    logger = klass(name, level=level)
     stream_handler = JsonFileHandler(json_path)
     stream_handler.setFormatter(define_default_formatter())
-    logger.addHandler(stream_handler)
-    return logger
+    return construct_logger(name, level, stream_handler)
 
 
 def define_colored_console_logger(name, level=INFO):
