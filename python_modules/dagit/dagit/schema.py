@@ -117,6 +117,44 @@ def create_graphql_error(error):
         )
 
 
+def do_pipeline_operation(info, execution_params_data, callback):
+    '''
+    Generic wrapper around any thing one needs to do to a single pipeline
+    with properly-specified execution params/config. This generically
+    returns PipelineNotFoundError if the pipeline name is invalid
+    and PipelineConfigValidationInvalid if the configuration does
+    not conform to the config schema. Otherwise it calls the user-specified
+    callback with signature (PipelineDefinition, ExecutionParams, EvaluateValueResult)
+
+    '''
+    check.dict_param(execution_params_data, 'execution_params_data')
+    check.callable_param(callback, 'callback')
+
+    execution_params = PipelineExecutionParams.validate(execution_params_data)
+
+    repository = info.context['repository_container'].repository
+    if not repository.has_pipeline(execution_params.pipeline_name):
+        return PipelineNotFoundError(execution_params.pipeline_name)
+
+    pipeline = pipeline_from_info(info, execution_params.pipeline_name)
+    pipeline_env_type = pipeline.environment_type
+    config_result = evaluate_config_value(pipeline_env_type, execution_params.config)
+
+    if not config_result.success:
+        return PipelineConfigValidationInvalid(
+            pipeline=Pipeline(pipeline),
+            errors=map(create_graphql_error, config_result.errors),
+        )
+
+    return callback(pipeline, execution_params, config_result)
+
+
+def pipeline_from_info(info, pipeline_name):
+    check.str_param(pipeline_name, 'pipeline_name')
+    repository = info.context['repository_container'].repository
+    return repository.get_pipeline(pipeline_name)
+
+
 class Query(graphene.ObjectType):
     pipeline = graphene.Field(lambda: Pipeline, name=graphene.NonNull(graphene.String))
     pipelineOrError = graphene.Field(
@@ -149,26 +187,17 @@ class Query(graphene.ObjectType):
     )
 
     def resolve_executionPlan(self, info, executionParams):
-        execution_params = PipelineExecutionParams.validate(executionParams)
-        repository = info.context['repository_container'].repository
-        if not repository.has_pipeline(execution_params.pipeline_name):
-            return PipelineNotFoundError(execution_params.pipeline_name)
-
-        pipeline = repository.get_pipeline(execution_params.pipeline_name)
-        result = evaluate_config_value(pipeline.environment_type, execution_params.config)
-
-        if result.success:
-            return ExecutionPlan(Pipeline(pipeline), create_execution_plan(pipeline, result.value))
-        else:
-            return PipelineConfigValidationInvalid(
-                pipeline=Pipeline(pipeline),
-                errors=map(create_graphql_error, result.errors),
+        def _do_execution_plan(pipeline, _ep, config_result):
+            return ExecutionPlan(
+                Pipeline(pipeline),
+                create_execution_plan(pipeline, config_result.value),
             )
+
+        return do_pipeline_operation(info, executionParams, _do_execution_plan)
 
     def resolve_pipeline(self, info, name):
         check.str_param(name, 'name')
-        repository = info.context['repository_container'].repository
-        return Pipeline(repository.get_pipeline(name))
+        return Pipeline(pipeline_from_info(info, name))
 
     def resolve_pipelineOrError(self, info, name):
         def _fn(_root_obj, info, name):
@@ -189,37 +218,22 @@ class Query(graphene.ObjectType):
     def resolve_type(self, info, pipelineName, typeName):
         check.str_param(pipelineName, 'pipelineName')
         check.str_param(typeName, 'typeName')
-        repository = info.context['repository_container'].repository
-        pipeline = repository.get_pipeline(pipelineName)
+        pipeline = pipeline_from_info(info, pipelineName)
         return Type.from_dagster_type(pipeline.type_named(typeName))
 
     def resolve_types(self, info, pipelineName):
         check.str_param(pipelineName, 'pipelineName')
-        repository = info.context['repository_container'].repository
-        pipeline = repository.get_pipeline(pipelineName)
+        pipeline = pipeline_from_info(info, pipelineName)
         return sorted(
             [Type.from_dagster_type(type_) for type_ in pipeline.all_types()],
             key=lambda type_: type_.name
         )
 
     def resolve_isPipelineConfigValid(self, info, executionParams):
-        execution_params = PipelineExecutionParams.validate(executionParams)
-
-        repository = info.context['repository_container'].repository
-
-        if not repository.has_pipeline(execution_params.pipeline_name):
-            return PipelineNotFoundError(execution_params.pipeline_name)
-
-        pipeline = repository.get_pipeline(execution_params.pipeline_name)
-        pipeline_env_type = pipeline.environment_type
-        result = evaluate_config_value(pipeline_env_type, execution_params.config)
-        if result.success:
+        def _do_is_valid(pipeline, _ep, _result):
             return PipelineConfigValidationValid(pipeline=Pipeline(pipeline))
-        else:
-            return PipelineConfigValidationInvalid(
-                pipeline=Pipeline(pipeline),
-                errors=map(create_graphql_error, result.errors),
-            )
+
+        return do_pipeline_operation(info, executionParams, _do_is_valid)
 
 
 class Pipeline(graphene.ObjectType):
@@ -865,9 +879,47 @@ class SelectorTypeConfigError(graphene.ObjectType):
     incoming_fields = non_null_list(graphene.String)
 
 
+class PipelineRun(graphene.ObjectType):
+    runId = graphene.NonNull(graphene.String)
+    pipeline = graphene.NonNull(Pipeline)
+
+
+class StartPipelineExecutionSuccess(graphene.ObjectType):
+    run = graphene.Field(graphene.NonNull(PipelineRun))
+
+
+class StartPipelineExecutionResult(graphene.Union):
+    class Meta:
+        types = (
+            StartPipelineExecutionSuccess,
+            PipelineConfigValidationInvalid,
+            PipelineNotFoundError,
+        )
+
+
+class StartPipelineExecutionMutation(graphene.Mutation):
+    class Arguments:
+        executionParams = graphene.NonNull(PipelineExecutionParams)
+
+    Output = graphene.NonNull(StartPipelineExecutionResult)
+
+    def mutate(self, info, executionParams):
+        def _start_execution(pipeline, _execution_params, _config_result):
+            return StartPipelineExecutionSuccess(
+                run=PipelineRun(runId='TODO', pipeline=Pipeline(pipeline))
+            )
+
+        return do_pipeline_operation(info, executionParams, _start_execution)
+
+
+class Mutation(graphene.ObjectType):
+    start_pipeline_execution = StartPipelineExecutionMutation.Field()
+
+
 def create_schema():
     return graphene.Schema(
         query=Query,
+        mutation=Mutation,
         types=[
             RegularType,
             CompositeType,

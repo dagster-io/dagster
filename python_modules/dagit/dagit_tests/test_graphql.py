@@ -899,3 +899,115 @@ def test_production_query():
 
     assert result.data
     assert not result.errors
+
+
+MUTATION_QUERY = '''
+mutation ($executionParams: PipelineExecutionParams!) {
+    startPipelineExecution(
+        executionParams: $executionParams
+    ) {
+        __typename
+        ... on StartPipelineExecutionSuccess {
+            run {
+                runId
+                pipeline { name }
+            }
+        }
+        ... on PipelineConfigValidationInvalid {
+            pipeline { name }
+            errors { message }
+        }
+        ... on PipelineNotFoundError {
+            pipelineName
+        }
+    }
+}
+'''
+
+
+def test_basic_start_pipeline_execution():
+    result = execute_dagster_graphql(
+        define_repo(),
+        MUTATION_QUERY,
+        variables={
+            'executionParams': {
+                'pipelineName': 'pandas_hello_world',
+                'config': {
+                    'solids': {
+                        'load_num_csv': {
+                            'config': {
+                                'path': 'test.csv'
+                            }
+                        },
+                    },
+                },
+            },
+        },
+    )
+
+    if result.errors:
+        raise Exception(result.errors)
+
+    assert result.data
+    assert not result.errors
+
+    # just test existence
+    assert result.data['startPipelineExecution']['__typename'] == 'StartPipelineExecutionSuccess'
+    assert result.data['startPipelineExecution']['run']['runId']
+    assert result.data['startPipelineExecution']['run']['pipeline']['name'] == 'pandas_hello_world'
+
+
+def test_basic_start_pipeline_execution_config_failure():
+    result = execute_dagster_graphql(
+        define_repo(),
+        MUTATION_QUERY,
+        variables={
+            'executionParams': {
+                'pipelineName': 'pandas_hello_world',
+                'config': {
+                    'solids': {
+                        'load_num_csv': {
+                            'config': {
+                                'path': 384938439
+                            }
+                        },
+                    },
+                },
+            },
+        },
+    )
+
+    assert result.data
+    assert not result.errors
+    assert result.data['startPipelineExecution']['__typename'] == 'PipelineConfigValidationInvalid'
+
+
+def test_basis_start_pipeline_not_found_error():
+    result = execute_dagster_graphql(
+        define_repo(),
+        MUTATION_QUERY,
+        variables={
+            'executionParams': {
+                'pipelineName': 'sjkdfkdjkf',
+                'config': {
+                    'solids': {
+                        'load_num_csv': {
+                            'config': {
+                                'path': 'test.csv'
+                            }
+                        },
+                    },
+                },
+            },
+        },
+    )
+
+    if result.errors:
+        raise Exception(result.errors)
+
+    assert result.data
+    assert not result.errors
+
+    # just test existence
+    assert result.data['startPipelineExecution']['__typename'] == 'PipelineNotFoundError'
+    assert result.data['startPipelineExecution']['pipelineName'] == 'sjkdfkdjkf'
