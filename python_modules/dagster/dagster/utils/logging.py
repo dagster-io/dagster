@@ -73,7 +73,7 @@ class JsonFileHandler(logging.Handler):
 
 
 class StructuredLoggerMessage(
-    namedtuple('StructuredLoggerMessage', 'name message level meta record')
+    namedtuple('_StructuredLoggerMessage', 'name message level meta record')
 ):
     def __new__(cls, name, message, level, meta, record):
         return super(StructuredLoggerMessage, cls).__new__(
