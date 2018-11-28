@@ -7,7 +7,7 @@ from dagster.core.execution_context import DAGSTER_META_KEY
 from dagster.utils.logging import (DEBUG, INFO, WARNING, ERROR, CRITICAL)
 
 
-class LogMessage(namedtuple('LogMessage', 'msg extra level')):
+class LogMessageForTest(namedtuple('LogMessageForTest', 'msg extra level')):
     @property
     def dagster_meta(self):
         return self.extra[DAGSTER_META_KEY]
@@ -25,30 +25,30 @@ class LoggerForTest(logging.Logger):
 
     def debug(self, msg, *args, **kwargs):
         extra = kwargs.pop('extra', None)
-        self.messages.append(LogMessage(msg=msg, level=DEBUG, extra=extra))
+        self.messages.append(LogMessageForTest(msg=msg, level=DEBUG, extra=extra))
 
     def info(self, msg, *args, **kwargs):
         extra = kwargs.pop('extra', None)
-        self.messages.append(LogMessage(msg=msg, level=INFO, extra=extra))
+        self.messages.append(LogMessageForTest(msg=msg, level=INFO, extra=extra))
 
     def warning(self, msg, *args, **kwargs):
         extra = kwargs.pop('extra', None)
-        self.messages.append(LogMessage(msg=msg, level=WARNING, extra=extra))
+        self.messages.append(LogMessageForTest(msg=msg, level=WARNING, extra=extra))
 
     def error(self, msg, *args, **kwargs):
         extra = kwargs.pop('extra', None)
-        self.messages.append(LogMessage(msg=msg, level=ERROR, extra=extra))
+        self.messages.append(LogMessageForTest(msg=msg, level=ERROR, extra=extra))
 
     def critical(self, msg, *args, **kwargs):
         extra = kwargs.pop('extra', None)
-        self.messages.append(LogMessage(msg=msg, level=CRITICAL, extra=extra))
+        self.messages.append(LogMessageForTest(msg=msg, level=CRITICAL, extra=extra))
 
 
 def test_test_logger():
     logger = LoggerForTest()
     logger.debug('fog')
     assert len(logger.messages) == 1
-    assert logger.messages[0] == LogMessage(msg='fog', level=DEBUG, extra=None)
+    assert logger.messages[0] == LogMessageForTest(msg='fog', level=DEBUG, extra=None)
 
 
 def orig_message(message):
