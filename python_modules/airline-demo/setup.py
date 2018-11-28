@@ -8,7 +8,6 @@ if sys.version_info[0] < 3:
 else:
     import builtins
 
-
 version = {}
 with open("airline_demo/version.py") as fp:
     exec(fp.read(), version)  # pylint: disable=W0122
@@ -28,9 +27,7 @@ setup(
         'Operating System :: OS Independent',
     ),
     packages=find_packages(exclude=['test']),
-    install_requires=[
-        'dagster'
-    ],
+    install_requires=['dagster'],
     dependency_links=[
         'git+ssh://git@github.com:dagster-io/dagster.git',
     ]

@@ -75,6 +75,7 @@ def define_pipeline_two():
         },
     )
 
+
 def define_pipeline_with_list():
     return PipelineDefinition(
         name='pipeline_with_list',
@@ -88,6 +89,7 @@ def define_pipeline_with_list():
             ),
         ],
     )
+
 
 def define_more_complicated_config():
     return PipelineDefinition(
@@ -201,6 +203,7 @@ def test_basic_valid_config():
     assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationValid'
     assert result.data['isPipelineConfigValid']['pipeline']['name'] == 'pandas_hello_world'
 
+
 def test_root_field_not_defined():
     result = execute_config_graphql(
         pipeline_name='pandas_hello_world',
@@ -212,7 +215,7 @@ def test_root_field_not_defined():
                     },
                 },
             },
-            'nope' : {},
+            'nope': {},
         },
     )
 
@@ -226,6 +229,7 @@ def test_root_field_not_defined():
     assert error['__typename'] == 'FieldNotDefinedConfigError'
     assert error['fieldName'] == 'nope'
     assert not error['stack']['entries']
+
 
 def test_root_wrong_type():
     result = execute_config_graphql(
@@ -242,10 +246,10 @@ def test_root_wrong_type():
     assert error['reason'] == 'RUNTIME_TYPE_MISMATCH'
     assert not error['stack']['entries']
 
+
 def field_stack(error_data):
     return [
-        entry['field']['name']
-        for entry in error_data['stack']['entries']
+        entry['field']['name'] for entry in error_data['stack']['entries']
         if entry['__typename'] == 'EvaluationStackPathEntry'
     ]
 
@@ -576,16 +580,15 @@ def test_more_complicated_multiple_errors():
 
     # TODO: two more errors
 
+
 def test_config_list():
     result = execute_config_graphql(
         pipeline_name='pipeline_with_list',
-        config={
-            'solids' : {
-                'solid_with_list' : {
-                    'config' : [1, 2]
-                }
+        config={'solids': {
+            'solid_with_list': {
+                'config': [1, 2]
             }
-        }
+        }}
     )
 
     assert not result.errors
@@ -594,16 +597,15 @@ def test_config_list():
     assert valid_data['__typename'] == 'PipelineConfigValidationValid'
     assert valid_data['pipeline']['name'] == 'pipeline_with_list'
 
+
 def test_config_list_invalid():
     result = execute_config_graphql(
         pipeline_name='pipeline_with_list',
-        config={
-            'solids' : {
-                'solid_with_list' : {
-                    'config' : 'foo'
-                }
+        config={'solids': {
+            'solid_with_list': {
+                'config': 'foo'
             }
-        }
+        }}
     )
 
     assert not result.errors
@@ -614,16 +616,15 @@ def test_config_list_invalid():
     assert len(valid_data['errors']) == 1
     assert ['solids', 'solid_with_list', 'config'] == field_stack(valid_data['errors'][0])
 
+
 def test_config_list_item_invalid():
     result = execute_config_graphql(
         pipeline_name='pipeline_with_list',
-        config={
-            'solids' : {
-                'solid_with_list' : {
-                    'config' : [1, 'foo'],
-                }
+        config={'solids': {
+            'solid_with_list': {
+                'config': [1, 'foo'],
             }
-        }
+        }}
     )
 
     assert not result.errors

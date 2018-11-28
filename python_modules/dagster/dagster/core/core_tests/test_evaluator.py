@@ -480,6 +480,7 @@ def test_config_list_in_dict_error():
     assert isinstance(list_entry, EvaluationStackListItemEntry)
     assert list_entry.list_index == 1
 
+
 def test_config_double_list():
     nested_lists = types.ConfigDictionary(
         name='NestedLists',
