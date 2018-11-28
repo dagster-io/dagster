@@ -1,6 +1,15 @@
+"""Unit and pipeline tests for the airline_demo.
+
+As is common in real-world pipelines, we want to test some fairly heavy-weight operations,
+requiring, e.g., a connection to S3, Spark, and a database. 
+
+We lever pytest marks to isolate subsets of tests with different requirements. E.g., to run only
+those tests that don't require Spark, `pytest -m "not spark"`.
+"""
 import logging
 import os
 
+import pyspark
 import pytest
 
 from collections import namedtuple
@@ -19,6 +28,7 @@ from dagster.utils.test import (define_stub_solid, execute_solid)
 
 from airline_demo.solids import (
     _create_s3_session,
+    _create_spark_session_local,
     define_airline_demo_spark_ingest_pipeline,
     download_from_s3,
     ingest_csv_to_spark,
@@ -27,6 +37,8 @@ from airline_demo.solids import (
 )
 
 S3Resources = namedtuple('S3Resources', ('s3', ))
+
+SparkResources = namedtuple('SparkResources', ('spark', ))
 
 
 def _s3_context():
@@ -37,6 +49,21 @@ def _s3_context():
                     log_level=logging.DEBUG,
                     resources=S3Resources(
                         _create_s3_session(),
+                    )
+                )
+            ),
+        )
+    }
+
+
+def _spark_context():
+    return {
+        'test': PipelineContextDefinition(
+            context_fn=(
+                lambda info: ExecutionContext.console_logging(
+                    log_level=logging.DEBUG,
+                    resources=SparkResources(
+                        _create_spark_session_local(),
                     )
                 )
             ),
@@ -82,7 +109,6 @@ def test_download_from_s3():
         assert fd.read() == 'test\n'
 
 
-@pytest.mark.skip
 def test_unzip_file():
     @lambda_solid
     def nonce():
@@ -100,17 +126,21 @@ def test_unzip_file():
         ),
         'unzip_file',
         inputs={
-            'archive_path': 'test/test.zip',
-            'archive_member': 'test_file'
+            'archive_path': os.path.join(os.path.dirname(__file__), 'data/test.zip'),
+            'archive_member': 'test/test_file'
         },
         environment={'solids': {
             'unzip_file': {
-                'skip_if_present': False
+                'config': {
+                    'skip_if_present': False
+                }
             }
         }}
     )
     assert result.success
-    assert result.transformed_value() == 'test/test_file'
+    assert result.transformed_value() == os.path.join(
+        os.path.dirname(__file__), 'data', 'test/test_file'
+    )
     assert os.path.isfile(result.transformed_value())
     with open(result.transformed_value(), 'r') as fd:
         assert fd.read() == 'test\n'
@@ -118,17 +148,36 @@ def test_unzip_file():
 
 @pytest.mark.spark
 def test_ingest_csv_to_spark():
+    @lambda_solid
+    def nonce():
+        return None
+
     result = execute_solid(
-        PipelineDefinition([ingest_csv_to_spark]),
+        PipelineDefinition(
+            [nonce, ingest_csv_to_spark],
+            dependencies={'ingest_csv_to_spark': {
+                'input_csv': DependencyDefinition('nonce'),
+            }},
+            context_definitions=_spark_context(),
+        ),
         'ingest_csv_to_spark',
         inputs={
             'input_csv': os.path.join(os.path.dirname(__file__), 'data/test.csv'),
         },
-        environment={'solids': {
-            'ingest_csv_to_spark': {}
-        }}
+        environment={
+            'context': {
+                'test': {}
+            },
+            'solids': {
+                'ingest_csv_to_spark': {
+                    'config': {}
+                }
+            }
+        }
     )
-    raise NotImplementedError()
+    assert result.success
+    assert isinstance(result.transformed_value(), pyspark.sql.dataframe.DataFrame)
+    assert result.transformed_value().head()[0] == '1'
 
 
 @pytest.mark.spark
