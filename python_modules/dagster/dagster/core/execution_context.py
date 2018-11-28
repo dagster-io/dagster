@@ -15,6 +15,8 @@ from dagster.utils.logging import (
     define_colored_console_logger,
 )
 
+from .events import ExecutionEvents
+
 Metric = namedtuple('Metric', 'context_dict metric_name value')
 
 
@@ -26,6 +28,9 @@ def _kv_message(all_items):
 
 class ReentrantContextInfo(namedtuple('ReentrantContextInfo', 'context_stack')):
     pass
+
+
+DAGSTER_META_KEY = 'dagster_meta'
 
 
 class ExecutionContext(object):
@@ -67,6 +72,7 @@ class ExecutionContext(object):
             ReentrantContextInfo,
         )
         self._context_stack = reentrant_info.context_stack if reentrant_info else OrderedDict()
+        self.events = ExecutionEvents(self)
 
     @staticmethod
     def for_run(loggers=None, resources=None):
@@ -119,7 +125,20 @@ class ExecutionContext(object):
 
         message_with_structured_props = _kv_message(all_props.items())
 
-        getattr(self._logger, method)(message_with_structured_props, extra=all_props)
+        # So here we use the arbitrary key DAGSTER_META_KEY to store a dictionary of
+        # all the meta information that dagster injects into log message.
+        # The python logging module, in its infinite wisdom, actually takes all the
+        # keys in extra and unconditionally smashes them into the internal dictionary
+        # of the logging.LogRecord class. We used a reserved key here to avoid naming
+        # collisions with internal variables of the LogRecord class.
+        # See __init__.py:363 (makeLogRecord) in the python 3.6 logging module source
+        # for the gory details.
+        getattr(self._logger, method)(
+            message_with_structured_props,
+            extra={
+                DAGSTER_META_KEY: all_props,
+            },
+        )
 
     def debug(self, msg, **kwargs):
         '''
@@ -164,6 +183,10 @@ class ExecutionContext(object):
 
         See debug()'''
         return self._log('critical', msg, kwargs)
+
+    def has_context_value(self, key):
+        check.str_param(key, 'key')
+        return key in self._context_stack
 
     def get_context_value(self, key):
         check.str_param(key, 'key')

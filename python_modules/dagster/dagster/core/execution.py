@@ -505,11 +505,10 @@ def _execute_graph(
     check.inst_param(environment, 'environment', config.Environment)
     check.bool_param(throw_on_error, 'throw_on_error')
 
-    display_name = execution_graph.pipeline.display_name
     results = []
     with yield_context(execution_graph.pipeline, environment) as context:
         with context.value('pipeline', execution_graph.pipeline.display_name):
-            context.info('Beginning execution of pipeline {pipeline}'.format(pipeline=display_name))
+            context.events.pipeline_start()
 
             for result in _execute_graph_iterator(context, execution_graph, environment):
                 if throw_on_error and not result.success:
@@ -519,16 +518,8 @@ def _execute_graph(
 
             pipeline_result = PipelineExecutionResult(execution_graph.pipeline, context, results)
             if pipeline_result.success:
-                context.info(
-                    'Completing successful execution of pipeline {pipeline}'.format(
-                        pipeline=display_name
-                    )
-                )
+                context.events.pipeline_success()
             else:
-                context.info(
-                    'Completing failing execution of pipeline {pipeline}'.format(
-                        pipeline=display_name
-                    )
-                )
+                context.events.pipeline_failure()
 
             return pipeline_result

@@ -3,9 +3,15 @@ import logging
 import uuid
 
 from dagster.core.execution import ExecutionContext
+from dagster.core.execution_context import DAGSTER_META_KEY
 from dagster.utils.logging import (DEBUG, INFO, WARNING, ERROR, CRITICAL)
 
-LogMessage = namedtuple('LogMessage', 'msg extra level')
+
+class LogMessageForTest(namedtuple('LogMessageForTest', 'msg extra level')):
+    @property
+    def dagster_meta(self):
+        return self.extra[DAGSTER_META_KEY]
+
 
 # eliminate complaint about overriding methods imprecisely
 # pylint: disable=W0221
@@ -19,34 +25,34 @@ class LoggerForTest(logging.Logger):
 
     def debug(self, msg, *args, **kwargs):
         extra = kwargs.pop('extra', None)
-        self.messages.append(LogMessage(msg=msg, level=DEBUG, extra=extra))
+        self.messages.append(LogMessageForTest(msg=msg, level=DEBUG, extra=extra))
 
     def info(self, msg, *args, **kwargs):
         extra = kwargs.pop('extra', None)
-        self.messages.append(LogMessage(msg=msg, level=INFO, extra=extra))
+        self.messages.append(LogMessageForTest(msg=msg, level=INFO, extra=extra))
 
     def warning(self, msg, *args, **kwargs):
         extra = kwargs.pop('extra', None)
-        self.messages.append(LogMessage(msg=msg, level=WARNING, extra=extra))
+        self.messages.append(LogMessageForTest(msg=msg, level=WARNING, extra=extra))
 
     def error(self, msg, *args, **kwargs):
         extra = kwargs.pop('extra', None)
-        self.messages.append(LogMessage(msg=msg, level=ERROR, extra=extra))
+        self.messages.append(LogMessageForTest(msg=msg, level=ERROR, extra=extra))
 
     def critical(self, msg, *args, **kwargs):
         extra = kwargs.pop('extra', None)
-        self.messages.append(LogMessage(msg=msg, level=CRITICAL, extra=extra))
+        self.messages.append(LogMessageForTest(msg=msg, level=CRITICAL, extra=extra))
 
 
 def test_test_logger():
     logger = LoggerForTest()
     logger.debug('fog')
     assert len(logger.messages) == 1
-    assert logger.messages[0] == LogMessage(msg='fog', level=DEBUG, extra=None)
+    assert logger.messages[0] == LogMessageForTest(msg='fog', level=DEBUG, extra=None)
 
 
 def orig_message(message):
-    return message.extra['orig_message']
+    return message.dagster_meta['orig_message']
 
 
 def test_context_logging():
@@ -79,7 +85,7 @@ def test_context_value():
     with context.value('some_key', 'some_value'):
         context.info('some message')
 
-    assert logger.messages[0].extra['some_key'] == 'some_value'
+    assert logger.messages[0].dagster_meta['some_key'] == 'some_value'
     assert 'some_key="some_value"' in logger.messages[0].msg
     assert 'message="some message"' in logger.messages[0].msg
 
@@ -96,7 +102,7 @@ def test_log_message_id():
     context = ExecutionContext(loggers=[logger])
     context.info('something')
 
-    assert isinstance(uuid.UUID(logger.messages[0].extra['log_message_id']), uuid.UUID)
+    assert isinstance(uuid.UUID(logger.messages[0].dagster_meta['log_message_id']), uuid.UUID)
 
 
 def test_interleaved_context_value():
@@ -109,14 +115,14 @@ def test_interleaved_context_value():
             context.info('message two')
 
     message_one = logger.messages[0]
-    assert message_one.extra['key_one'] == 'value_one'
+    assert message_one.dagster_meta['key_one'] == 'value_one'
     assert 'key_two' not in message_one.extra
     assert 'key_one="value_one"' in message_one.msg
     assert 'key_two' not in message_one.msg
 
     message_two = logger.messages[1]
-    assert message_two.extra['key_one'] == 'value_one'
-    assert message_two.extra['key_two'] == 'value_two'
+    assert message_two.dagster_meta['key_one'] == 'value_one'
+    assert message_two.dagster_meta['key_two'] == 'value_two'
     assert 'key_one="value_one"' in message_two.msg
     assert 'key_two="value_two"' in message_two.msg
 
@@ -128,10 +134,10 @@ def test_message_specific_logging():
         context.info('message one', key_two='value_two')
 
     message_one = logger.messages[0]
-    assert message_one.extra['key_one'] == 'value_one'
-    assert message_one.extra['key_two'] == 'value_two'
+    assert message_one.dagster_meta['key_one'] == 'value_one'
+    assert message_one.dagster_meta['key_two'] == 'value_two'
 
-    assert set(message_one.extra.keys()) == set(
+    assert set(message_one.dagster_meta.keys()) == set(
         ['key_one', 'key_two', 'log_message_id', 'orig_message']
     )
 
@@ -146,7 +152,7 @@ def test_multicontext_value():
         context.info('message one')
 
     message_two = logger.messages[0]
-    assert message_two.extra['key_one'] == 'value_one'
-    assert message_two.extra['key_two'] == 'value_two'
+    assert message_two.dagster_meta['key_one'] == 'value_one'
+    assert message_two.dagster_meta['key_two'] == 'value_two'
     assert 'key_one="value_one"' in message_two.msg
     assert 'key_two="value_two"' in message_two.msg
