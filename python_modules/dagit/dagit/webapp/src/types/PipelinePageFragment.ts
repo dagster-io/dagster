@@ -13,6 +13,12 @@ export interface PipelinePageFragment_PythonError {
   stack: string[];
 }
 
+export interface PipelinePageFragment_PipelineNotFoundError {
+  __typename: "PipelineNotFoundError";
+  message: string;
+  stack: string[];
+}
+
 export interface PipelinePageFragment_Pipeline_environmentType {
   name: string;
 }
@@ -221,7 +227,7 @@ export interface PipelinePageFragment_Pipeline {
   solids: PipelinePageFragment_Pipeline_solids[];
 }
 
-export type PipelinePageFragment = PipelinePageFragment_PythonError | PipelinePageFragment_Pipeline;
+export type PipelinePageFragment = PipelinePageFragment_PythonError | PipelinePageFragment_PipelineNotFoundError | PipelinePageFragment_Pipeline;
 
 /* tslint:disable */
 // This file was automatically generated and should not be edited.
