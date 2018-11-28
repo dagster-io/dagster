@@ -75,7 +75,6 @@ class JsonFileHandler(logging.Handler):
 class StructuredLoggerMessage(
     namedtuple('StructuredLoggerMessage', 'name message level meta record')
 ):
-
     def __new__(cls, name, message, level, meta, record):
         return super(StructuredLoggerMessage, cls).__new__(
             cls,
@@ -85,6 +84,7 @@ class StructuredLoggerMessage(
             check.dict_param(meta, 'meta'),
             check.inst_param(record, 'record', logging.LogRecord),
         )
+
 
 class StructuredLoggerHandler(logging.Handler):
     def __init__(self, callback):
@@ -107,6 +107,7 @@ class StructuredLoggerHandler(logging.Handler):
             logging.critical('Error during logging!')
             logging.exception(str(e))
 
+
 def check_valid_level_param(level):
     check.param_invariant(
         level in VALID_LEVELS,
@@ -115,7 +116,8 @@ def check_valid_level_param(level):
     )
     return level
 
-def construct_logger(name, level, handler):
+
+def construct_single_handler_logger(name, level, handler):
     check.str_param(name, 'name')
     check_valid_level_param(level)
     check.inst_param(handler, 'handler', logging.Handler)
@@ -131,8 +133,7 @@ def define_structured_logger(name, callback, level):
     check.callable_param(callback, 'callback')
     check_valid_level_param(level)
 
-    return construct_logger(name, level, StructuredLoggerHandler(callback))
-
+    return construct_single_handler_logger(name, level, StructuredLoggerHandler(callback))
 
 
 def define_json_file_logger(name, json_path, level):
@@ -142,7 +143,7 @@ def define_json_file_logger(name, json_path, level):
 
     stream_handler = JsonFileHandler(json_path)
     stream_handler.setFormatter(define_default_formatter())
-    return construct_logger(name, level, stream_handler)
+    return construct_single_handler_logger(name, level, stream_handler)
 
 
 def define_colored_console_logger(name, level=INFO):
