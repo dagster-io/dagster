@@ -1,4 +1,8 @@
-This repository uses [git-lfs](https://git-lfs.github.com/).
+### Running tests
+
+You won't want to suppress test output if you want to see loglines from dagster:
+
+    pytest -s 
 
 ### Running on AWS
 The pipelines defined in this repository can run against a local Spark cluster
@@ -51,17 +55,20 @@ manually delete the VPC from the console, which will force-delete dependencies.
 
 ### TODOs
 
-- Wire ingest pipeline up to Redshift
-- Add config option for local ingestion (Postgres)
-- Add config option for Spark running on EMR cluster
-- Add S3 bucket for data sources
-- Add solid to download from S3 (option to short-circuit)
-- Wire up unzip file solid
-- Wire up Spark join
-- Write sql_solid
+- Make requirements install from setup.py
+- Separate download and ingest pipelines
+- Flesh out unit tests for solids
+- Set up coverage for pytest
 - Set up tox
 - Set up builds for airline_demo on CircleCI
+- Wire Spark up to EMR cluster
+- Wire up Spark join (group by for weather etc.)
+- Add config option for local ingestion (Postgres)
+- Add config option for Spark running on EMR cluster
 - Update README with instructions for AWS creds
+- Document running the pipeline and tests (e.g., postgres requirements)
+- Write two versions of the parallel pipeline steps -- one using a List type, one with custom solids
+- Move the database loading logic to the context (on a branch) -- with a "database loader" resource
 
 ### Issues with general availability
 - Right now the pulumi spec, as well as the sample config, expect that you will
