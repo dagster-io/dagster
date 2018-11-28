@@ -27,7 +27,13 @@ setup(
         'Operating System :: OS Independent',
     ),
     packages=find_packages(exclude=['test']),
-    install_requires=['dagster'],
+    install_requires=[
+        'boto3',
+        'dagster',
+        'pyspark',
+        'sqlalchemy-redshift',
+        'SQLAlchemy-Utils',
+    ],
     dependency_links=[
         'git+ssh://git@github.com:dagster-io/dagster.git',
     ]
