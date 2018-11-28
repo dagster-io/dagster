@@ -99,8 +99,8 @@ class EvaluationStackListItemEntry(
     EvaluationStackEntry,
 ):
     def __new__(cls, list_index):
-        check.opt_int_param(list_index, 'list_index')
-        check.param_invariant(list_index is None or list_index >= 0, 'list_index')
+        check.int_param(list_index, 'list_index')
+        check.param_invariant(list_index >= 0, 'list_index')
         return super(EvaluationStackListItemEntry, cls).__new__(
             cls,
             list_index,
@@ -348,10 +348,6 @@ def evaluate_list_value(dagster_list_type, config_value, collector, stack):
 
     output_list = []
     for index, item in enumerate(config_value):
-        # TODO: how to represent list element in the stack
-        # should be pushing something
-        # Should consult with mikhail/ben to see about what info is best
-        # to expose in dagit. Probably just a list index in the stack
         output_list.append(
             _evaluate_config_value(
                 dagster_list_type.inner_type,
