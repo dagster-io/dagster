@@ -45,8 +45,9 @@ from .errors import (
 )
 
 from .evaluator import (
-    throwing_evaluate_config_value,
     DagsterEvaluateConfigValueError,
+    evaluate_config_value,
+    throwing_evaluate_config_value,
 )
 
 from .execution_plan import (
@@ -266,13 +267,14 @@ def _validate_environment(environment, pipeline):
             )
 
 
-def create_execution_plan(pipeline, config_dict=None):
+def create_execution_plan(pipeline, environment=None):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    config_dict = check.opt_dict_param(config_dict, 'config_dict')
+    check.opt_inst_param(environment, 'environment', config.Environment)
 
-    pipeline_env_type = EnvironmentConfigType(pipeline)
+    pipeline_env_type = pipeline.environment_type
 
-    environment = create_config_value(pipeline_env_type, config_dict)
+    if environment is None:
+        environment = evaluate_config_value(pipeline_env_type, None).value
 
     check.inst(environment, config.Environment)
 

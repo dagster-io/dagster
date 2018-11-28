@@ -8,7 +8,7 @@
 // ====================================================
 
 export interface ConfigCodeEditorContainerCheckConfigQuery_isPipelineConfigValid_PipelineConfigValidationValid {
-  __typename: "PipelineConfigValidationValid";
+  __typename: "PipelineConfigValidationValid" | "PipelineNotFoundError";
 }
 
 export interface ConfigCodeEditorContainerCheckConfigQuery_isPipelineConfigValid_PipelineConfigValidationInvalid_errors {

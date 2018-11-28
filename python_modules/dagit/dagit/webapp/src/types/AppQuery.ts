@@ -13,6 +13,12 @@ export interface AppQuery_pipelinesOrErrors_PythonError {
   stack: string[];
 }
 
+export interface AppQuery_pipelinesOrErrors_PipelineNotFoundError {
+  __typename: "PipelineNotFoundError";
+  message: string;
+  stack: string[];
+}
+
 export interface AppQuery_pipelinesOrErrors_Pipeline_environmentType {
   name: string;
 }
@@ -221,7 +227,7 @@ export interface AppQuery_pipelinesOrErrors_Pipeline {
   solids: AppQuery_pipelinesOrErrors_Pipeline_solids[];
 }
 
-export type AppQuery_pipelinesOrErrors = AppQuery_pipelinesOrErrors_PythonError | AppQuery_pipelinesOrErrors_Pipeline;
+export type AppQuery_pipelinesOrErrors = AppQuery_pipelinesOrErrors_PythonError | AppQuery_pipelinesOrErrors_PipelineNotFoundError | AppQuery_pipelinesOrErrors_Pipeline;
 
 export interface AppQuery {
   pipelinesOrErrors: AppQuery_pipelinesOrErrors[];

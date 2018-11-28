@@ -1601,6 +1601,10 @@ class RepositoryDefinition(object):
 
         self._pipeline_cache = {}
 
+    def has_pipeline(self, name):
+        check.str_param(name, 'name')
+        return name in self.pipeline_dict
+
     def get_pipeline(self, name):
         '''Get a pipeline by name. Only constructs that pipeline and caches it.
 
@@ -1610,6 +1614,8 @@ class RepositoryDefinition(object):
         Returns:
             PipelineDefinition: Instance of PipelineDefinition with that name.
 '''
+        check.str_param(name, 'name')
+
         if name in self._pipeline_cache:
             return self._pipeline_cache[name]
 

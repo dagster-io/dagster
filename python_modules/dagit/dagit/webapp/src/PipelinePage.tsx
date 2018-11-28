@@ -13,7 +13,8 @@ import PipelineExecution from "./PipelineExecution";
 import {
   PipelinePageFragment,
   PipelinePageFragment_Pipeline,
-  PipelinePageFragment_PythonError
+  PipelinePageFragment_PythonError,
+  PipelinePageFragment_PipelineNotFoundError
 } from "./types/PipelinePageFragment";
 
 export type IPipelinePageMatch = match<{
@@ -64,7 +65,11 @@ export default class PipelinePage extends React.Component<IPipelinePageProps> {
     PipelinePageFragment: gql`
       fragment PipelinePageFragment on PipelineOrError {
         __typename
-        ... on Error {
+        ... on PythonError {
+          message
+          stack
+        }
+        ... on PipelineNotFoundError {
           message
           stack
         }
@@ -88,11 +93,17 @@ export default class PipelinePage extends React.Component<IPipelinePageProps> {
   render() {
     const { history, match, pipelinesOrErrors } = this.props;
 
-    let error: PipelinePageFragment_PythonError | null = null;
+    let error:
+      | PipelinePageFragment_PipelineNotFoundError
+      | PipelinePageFragment_PythonError
+      | null = null;
     const pipelines: Array<PipelinePageFragment_Pipeline> = [];
 
     for (const pipelineOrError of pipelinesOrErrors) {
-      if (pipelineOrError.__typename === "PythonError") {
+      if (
+        pipelineOrError.__typename === "PythonError" ||
+        pipelineOrError.__typename == "PipelineNotFoundError"
+      ) {
         error = pipelineOrError;
       } else {
         pipelines.push(pipelineOrError);
