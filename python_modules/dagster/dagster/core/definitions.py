@@ -157,7 +157,7 @@ DefaultContextConfigDict = ConfigDictionary(
 def _default_pipeline_context_definitions():
     def _default_context_fn(info):
         log_level = level_from_string(info.config['log_level'])
-        context = ExecutionContext.for_run(
+        context = ExecutionContext(
             loggers=[define_colored_console_logger('dagster', level=log_level)]
         )
         return context

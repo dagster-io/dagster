@@ -26,10 +26,6 @@ def _kv_message(all_items):
     )
 
 
-class ReentrantContextInfo(namedtuple('ReentrantContextInfo', 'context_stack')):
-    pass
-
-
 DAGSTER_META_KEY = 'dagster_meta'
 
 
@@ -55,38 +51,20 @@ class ExecutionContext(object):
             then access during pipeline execution. This exists so that a user can
             inject their own objects into the context without having to subclass
             ExecutionContext.
-
-        reentrant_info(ReentractContextInfo):
-            This allows to one to, in effect, reconstruct a context that is already running.
     '''
 
-    def __init__(self, loggers=None, resources=None, reentrant_info=None):
+    def __init__(self, loggers=None, resources=None):
         if loggers is None:
             loggers = [define_colored_console_logger('dagster')]
 
         self._logger = CompositeLogger(loggers=loggers)
         self.resources = resources
-        self._reentrant_info = check.opt_inst_param(
-            reentrant_info,
-            'reentrant_info',
-            ReentrantContextInfo,
-        )
-        self._context_stack = reentrant_info.context_stack if reentrant_info else OrderedDict()
+        self._context_stack = OrderedDict({'run_id': str(uuid.uuid4())})
         self.events = ExecutionEvents(self)
 
     @staticmethod
-    def for_run(loggers=None, resources=None):
-        return ExecutionContext(
-            loggers,
-            resources,
-            ReentrantContextInfo(context_stack=OrderedDict({
-                'run_id': str(uuid.uuid4()),
-            }), ),
-        )
-
-    @staticmethod
     def console_logging(log_level=INFO, resources=None):
-        return ExecutionContext.for_run(
+        return ExecutionContext(
             loggers=[define_colored_console_logger('dagster', log_level)],
             resources=resources,
         )
