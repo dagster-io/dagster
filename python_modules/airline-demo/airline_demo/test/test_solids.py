@@ -211,8 +211,7 @@ def test_join_spark_data_frame():
 @pytest.mark.slow
 def test_pipeline_download():
     result = execute_pipeline(
-        define_airline_demo_download_pipeline(),
-        {
+        define_airline_demo_download_pipeline(), {
             'context': {
                 'local': {
                     'config': {
@@ -247,8 +246,7 @@ def test_pipeline_download():
                     'config': 'Origin_and_Destination_Survey_DB1BTicket_2018_2.csv'
                 },
                 'master_cord_filename': {
-                    'config':
-                    '954834304_T_MASTER_CORD.csv'
+                    'config': '954834304_T_MASTER_CORD.csv'
                 },
                 'download_april_on_time_data': {
                     'config': {
@@ -337,7 +335,7 @@ def test_pipeline_download():
                         'skip_if_present': True,
                         'target_path': 'source_data/954834304_T_MASTER_CORD.zip',
                     }
-                }
+                },
                 'unzip_april_on_time_data': {
                     'config': {
                         'skip_if_present': True,
@@ -372,6 +370,7 @@ def test_pipeline_download():
         }
     )
     assert result.success
+
 
 @pytest.mark.spark
 @pytest.mark.slow
@@ -433,8 +432,7 @@ def test_pipeline():
                     'config': 'Origin_and_Destination_Survey_DB1BTicket_2018_2.csv'
                 },
                 'master_cord_filename': {
-                    'config':
-                    '954834304_T_MASTER_CORD.csv'
+                    'config': '954834304_T_MASTER_CORD.csv'
                 },
                 # FIXME should these be stubbed inputs instead?
                 'ingest_q2_coupon_data': {
