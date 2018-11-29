@@ -81,7 +81,7 @@ class PipelineExecutionResult(object):
             'result_list',
             of_type=SolidExecutionResult,
         )
-        self.run_id = context.run_id if context.has_run_id() else None
+        self.run_id = context.run_id
 
     @property
     def success(self):

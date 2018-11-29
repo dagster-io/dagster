@@ -138,7 +138,7 @@ def test_message_specific_logging():
     assert message_one.dagster_meta['key_two'] == 'value_two'
 
     assert set(message_one.dagster_meta.keys()) == set(
-        ['key_one', 'key_two', 'log_message_id', 'orig_message']
+        ['key_one', 'key_two', 'log_message_id', 'orig_message', 'run_id']
     )
 
 
