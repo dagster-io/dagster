@@ -323,7 +323,26 @@ def subsample_spark_dataset(info, data_frame):
             # description='A pyspark DataFrame containing a subsample of the input rows.',
         )
     ],
+    config_field=Field(
+        types.ConfigDictionary(
+            name='JoinSparkDataFramesConfigType',
+            fields={
+                # Probably want to make the region configuable too
+                'on_left':
+                Field(types.String, description='', default_value='id', is_optional=True),
+                'on_right':
+                Field(types.String, description='', default_value='id', is_optional=True),
+                'how': Field(types.String, description='', default_value='inner', is_optional=True),
+            }
+        )
+    )
 )
 def join_spark_data_frames(info, left_data_frame, right_data_frame):
-    # FIXME
-    return left_data_frame
+    return left_data_frame.join(
+        right_data_frame,
+        on=(
+            getattr(left_data_frame,
+                    info.config.on_left) == getattr(right_data_frame, info.config.on_right)
+        ),
+        how=info.config.how
+    )
