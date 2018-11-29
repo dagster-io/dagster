@@ -215,7 +215,5 @@ class ExecutionContext(object):
 
     @property
     def run_id(self):
+        check.invariant('run_id' in self._context_stack, 'This should be set in __init__')
         return self._context_stack['run_id']
-
-    def has_run_id(self):
-        return 'run_id' in self._context_stack
