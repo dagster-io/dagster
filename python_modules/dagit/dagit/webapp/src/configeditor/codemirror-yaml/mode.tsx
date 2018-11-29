@@ -80,7 +80,7 @@ CodeMirror.defineMode("yaml", () => {
         state.inDictValue = true;
         return "meta";
       }
-      
+
       // doc start / end
       if (stream.sol()) {
         state.inDict = false;
@@ -182,7 +182,7 @@ CodeMirror.defineMode("yaml", () => {
           stream.match(/^\s*-?[0-9\.\,]+\s?(?=(,|]))/)
         ) {
           result = "number";
-          return result;  // remain inDictValue until we reach `]`
+          return result; // remain inDictValue until we reach `]`
         }
         /* keywords */
         if (stream.match(keywordRegex)) {
