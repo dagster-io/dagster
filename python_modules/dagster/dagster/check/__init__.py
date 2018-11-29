@@ -279,9 +279,12 @@ def _check_key_value_types(obj, key_type, value_type):
         if value_type and not isinstance(value, value_type):
             raise_with_traceback(
                 CheckError(
-                    'Value in dictionary mismatches type. Expected {vtype}. Got {obj_repr}'.format(
+                    'Value in dictionary mismatches expected type for key {key}. Expected value '
+                    'of type {vtype}. Got value {value} of type {obj_repr}.'.format(
                         vtype=repr(value_type),
                         obj_repr=repr(value),
+                        key=key,
+                        value=value,
                     )
                 )
             )
