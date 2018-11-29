@@ -220,29 +220,25 @@ cloud_context = PipelineContextDefinition(
     ),
 )
 
+context_definitions = {
+    'test': test_context,
+    'local': local_context,
+    'cloud': cloud_context,
+}
+
+solids = [
+    download_from_s3,
+    ingest_csv_to_spark,
+    join_spark_data_frames,
+    load_data_to_database_from_spark,
+    normalize_weather_na_values,
+    subsample_spark_dataset,
+    thunk,
+    unzip_file,
+]
+
 
 def define_airline_demo_download_pipeline():
-    pass
-
-
-def define_airline_demo_ingest_pipeline():
-    context_definitions = {
-        'test': test_context,
-        'local': local_context,
-        'cloud': cloud_context,
-    }
-
-    solids = [
-        download_from_s3,
-        ingest_csv_to_spark,
-        join_spark_data_frames,
-        load_data_to_database_from_spark,
-        normalize_weather_na_values,
-        subsample_spark_dataset,
-        thunk,
-        unzip_file,
-    ]
-
     dependencies = {
         SolidInstance('thunk', alias='april_on_time_data_filename'): {},
         SolidInstance('thunk', alias='may_on_time_data_filename'): {},
@@ -281,6 +277,17 @@ def define_airline_demo_ingest_pipeline():
             'archive_path': DependencyDefinition('download_q2_ticket_data'),
             'archive_member': DependencyDefinition('q2_ticket_data_filename'),
         },
+    }
+    return PipelineDefinition(
+        name='airline_demo_download_pipeline',
+        context_definitions=context_definitions,
+        solids=solids,
+        dependencies=dependencies,
+    )
+
+
+def define_airline_demo_ingest_pipeline():
+    dependencies = {
         SolidInstance('ingest_csv_to_spark', alias='ingest_april_on_time_data'): {
             'input_csv': DependencyDefinition('unzip_april_on_time_data'),
         },
@@ -362,7 +369,7 @@ def define_airline_demo_ingest_pipeline():
     }
 
     return PipelineDefinition(
-        name="airline_demo_spark_ingest_pipeline",
+        name="airline_demo_ingest_pipeline",
         solids=solids,
         dependencies=dependencies,
         context_definitions=context_definitions,
@@ -370,12 +377,6 @@ def define_airline_demo_ingest_pipeline():
 
 
 def define_airline_demo_warehouse_pipeline():
-    context_definitions = {
-        'test': test_context,
-        'local': local_context,
-        'cloud': cloud_context,
-    }
-
     return PipelineDefinition(
         name="airline_demo_warehouse_pipeline",
         solids=[],
@@ -388,7 +389,8 @@ def define_repo():
     return RepositoryDefinition(
         name='airline_demo_repo',
         pipeline_dict={
-            'airline_demo_spark_ingest_pipeline': define_airline_demo_ingest_pipeline,
+            'airline_demo_download_pipeline': define_airline_demo_download_pipeline,
+            'airline_demo_ingest_pipeline': define_airline_demo_ingest_pipeline,
             'airline_demo_warehouse_pipeline': define_airline_demo_warehouse_pipeline,
         }
     )
