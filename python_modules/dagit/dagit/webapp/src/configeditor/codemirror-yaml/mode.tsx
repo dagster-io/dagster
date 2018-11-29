@@ -10,7 +10,7 @@ interface IParseState {
   escaped: boolean;
   inDict: boolean;
   inDictValue: boolean;
-  inLiteral: boolean;
+  inBlockLiteral: boolean;
   lastIndent: number;
   parents: Array<{ key: string; indent: number }>;
   keysAtLevel: { [indent: number]: Array<string> };
@@ -29,7 +29,7 @@ CodeMirror.defineMode("yaml", () => {
         escaped: false,
         inDict: false,
         inDictValue: false,
-        inLiteral: false,
+        inBlockLiteral: false,
         inlineLists: 0,
         inlinePairs: 0,
         lastIndent: 0,
@@ -66,19 +66,21 @@ CodeMirror.defineMode("yaml", () => {
         stream.skipToEnd();
         return "comment";
       }
-      // list
-      if (stream.match(/-/)) {
-        return "meta";
-      }
 
-      if (state.inLiteral && stream.indentation() > lastIndent) {
+      if (state.inBlockLiteral && stream.indentation() > lastIndent) {
         // literal strings
         stream.skipToEnd();
         return "string";
-      } else if (state.inLiteral) {
-        state.inLiteral = false;
+      } else if (state.inBlockLiteral) {
+        state.inBlockLiteral = false;
       }
 
+      // array list item, value to follow
+      if (stream.match(/-/)) {
+        state.inDictValue = true;
+        return "meta";
+      }
+      
       // doc start / end
       if (stream.sol()) {
         state.inDict = false;
@@ -100,17 +102,20 @@ CodeMirror.defineMode("yaml", () => {
         } else if (ch == "[") {
           state.inlineLists++;
         } else {
+          state.inDictValue = false;
           state.inlineLists--;
         }
         state.trailingSpace = false;
         return "meta";
       }
 
+      // list seperator
       if (state.inlineLists > 0 && !wasEscaped && ch == ",") {
         stream.next();
         return "meta";
       }
 
+      // pairs seperator
       if (state.inlinePairs > 0 && !wasEscaped && ch == ",") {
         state.inDict = false;
         state.inDictValue = false;
@@ -149,13 +154,13 @@ CodeMirror.defineMode("yaml", () => {
       // dicts
       if (state.inDictValue) {
         let result = null;
-        // strings
+        /* strings */
         if (stream.match(/^('([^']|\\.)*'?|"([^"]|\\.)*"?)/)) {
           result = "string";
         }
 
         if (stream.match(/^\s*(\||\>)\s*/)) {
-          state.inLiteral = true;
+          state.inBlockLiteral = true;
           result = "meta";
         }
         /* references */
@@ -171,6 +176,13 @@ CodeMirror.defineMode("yaml", () => {
           stream.match(/^\s*-?[0-9\.\,]+\s?(?=(,|}))/)
         ) {
           result = "number";
+        }
+        if (
+          state.inlineLists > 0 &&
+          stream.match(/^\s*-?[0-9\.\,]+\s?(?=(,|]))/)
+        ) {
+          result = "number";
+          return result;  // remain inDictValue until we reach `]`
         }
         /* keywords */
         if (stream.match(keywordRegex)) {

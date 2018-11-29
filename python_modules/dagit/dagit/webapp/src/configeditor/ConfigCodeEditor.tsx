@@ -1,6 +1,6 @@
 import * as React from "react";
 import { injectGlobal } from "styled-components";
-import * as CodeMirror from "codemirror";
+import "codemirror";
 import "codemirror/lib/codemirror.css";
 import "codemirror/theme/material.css";
 import "codemirror/addon/hint/show-hint";
