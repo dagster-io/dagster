@@ -29,7 +29,9 @@ from dagster.utils.test import (define_stub_solid, execute_solid)
 from airline_demo.pipelines import (
     _create_s3_session,
     _create_spark_session_local,
+    define_airline_demo_download_pipeline,
     define_airline_demo_ingest_pipeline,
+    define_airline_demo_warehouse_pipeline,
 )
 from airline_demo.solids import (
     download_from_s3,
@@ -207,31 +209,11 @@ def test_join_spark_data_frame():
 
 @pytest.mark.nettest
 @pytest.mark.slow
-def test_pipeline():
+def test_pipeline_download():
     result = execute_pipeline(
-        define_airline_demo_ingest_pipeline(),
+        define_airline_demo_download_pipeline(),
         {
             'context': {
-                # 'cloud': {
-                #     'config': {
-                #         'redshift_username': 'airline_demo_username',
-                #         'redshift_password': 'A1rline_demo_password',
-                #         'redshift_hostname': 'db.airline-demo.dagster.io',
-                #         'redshift_db_name': 'airline_demo',
-                #         'redshift_s3_temp_dir': 's3n://airline-demo-redshift-spark/temp/',
-                #         'db_dialect': 'redshift',
-                #     }
-                # },
-                # 'test': {
-                #     'config': {
-                #         'redshift_username': 'airline_demo_username',
-                #         'redshift_password': 'A1rline_demo_password',
-                #         'redshift_hostname': 'db.airline-demo.dagster.io',
-                #         'redshift_db_name': 'airline_demo',
-                #         'redshift_s3_temp_dir': 's3n://airline-demo-redshift-spark/temp/',
-                #         'db_dialect': 'redshift',
-                #     }
-                # },
                 'local': {
                     'config': {
                         'postgres_username': 'test',
@@ -240,7 +222,7 @@ def test_pipeline():
                         'postgres_db_name': 'test',
                         'db_dialect': 'postgres',
                     }
-                },
+                }
             },
             'solids': {
                 'april_on_time_data_filename': {
@@ -263,6 +245,10 @@ def test_pipeline():
                 },
                 'q2_ticket_data_filename': {
                     'config': 'Origin_and_Destination_Survey_DB1BTicket_2018_2.csv'
+                },
+                'master_cord_filename': {
+                    'config':
+                    '954834304_T_MASTER_CORD.csv'
                 },
                 'download_april_on_time_data': {
                     'config': {
@@ -344,6 +330,14 @@ def test_pipeline():
                         'target_path': 'source_data/sfo_q2_weather.txt',
                     }
                 },
+                'download_master_cord_data': {
+                    'config': {
+                        'bucket': 'dagster-airline-demo-source-data',
+                        'key': '954834304_T_MASTER_CORD.zip',
+                        'skip_if_present': True,
+                        'target_path': 'source_data/954834304_T_MASTER_CORD.zip',
+                    }
+                }
                 'unzip_april_on_time_data': {
                     'config': {
                         'skip_if_present': True,
@@ -373,6 +367,74 @@ def test_pipeline():
                     'config': {
                         'skip_if_present': True,
                     },
+                },
+            }
+        }
+    )
+    assert result.success
+
+@pytest.mark.spark
+@pytest.mark.slow
+def test_pipeline():
+    result = execute_pipeline(
+        define_airline_demo_ingest_pipeline(),
+        {
+            'context': {
+                # 'cloud': {
+                #     'config': {
+                #         'redshift_username': 'airline_demo_username',
+                #         'redshift_password': 'A1rline_demo_password',
+                #         'redshift_hostname': 'db.airline-demo.dagster.io',
+                #         'redshift_db_name': 'airline_demo',
+                #         'redshift_s3_temp_dir': 's3n://airline-demo-redshift-spark/temp/',
+                #         'db_dialect': 'redshift',
+                #     }
+                # },
+                # 'test': {
+                #     'config': {
+                #         'redshift_username': 'airline_demo_username',
+                #         'redshift_password': 'A1rline_demo_password',
+                #         'redshift_hostname': 'db.airline-demo.dagster.io',
+                #         'redshift_db_name': 'airline_demo',
+                #         'redshift_s3_temp_dir': 's3n://airline-demo-redshift-spark/temp/',
+                #         'db_dialect': 'redshift',
+                #     }
+                # },
+                'local': {
+                    'config': {
+                        'postgres_username': 'test',
+                        'postgres_password': 'test',
+                        'postgres_hostname': '127.0.0.1',
+                        'postgres_db_name': 'test',
+                        'db_dialect': 'postgres',
+                    }
+                },
+            },
+            'solids': {
+                'april_on_time_data_filename': {
+                    'config':
+                    'On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_4.csv'
+                },
+                'may_on_time_data_filename': {
+                    'config':
+                    'On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_5.csv'
+                },
+                'june_on_time_data_filename': {
+                    'config':
+                    'On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_6.csv'
+                },
+                'q2_coupon_data_filename': {
+                    'config': 'Origin_and_Destination_Survey_DB1BCoupon_2018_2.csv'
+                },
+                'q2_market_data_filename': {
+                    'config': 'Origin_and_Destination_Survey_DB1BMarket_2018_2.csv'
+                },
+                'q2_ticket_data_filename': {
+                    'config': 'Origin_and_Destination_Survey_DB1BTicket_2018_2.csv'
+                },
+                'master_cord_filename': {
+                    'config':
+                    '954834304_T_MASTER_CORD.csv'
                 },
                 # FIXME should these be stubbed inputs instead?
                 'ingest_q2_coupon_data': {
