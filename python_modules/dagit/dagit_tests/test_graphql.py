@@ -173,6 +173,7 @@ query PipelineQuery($executionParams: PipelineExecutionParams!)
 }
 '''
 
+
 def execute_config_graphql(pipeline_name, config):
     return execute_dagster_graphql(
         define_repo(),
@@ -184,6 +185,7 @@ def execute_config_graphql(pipeline_name, config):
             },
         },
     )
+
 
 def test_pipeline_not_found():
     result = execute_config_graphql(
@@ -729,6 +731,7 @@ def test_pipeline_by_name():
     assert not result.errors
     assert result.data['pipeline']['name'] == 'pandas_hello_world_two'
 
+
 EXECUTION_PLAN_QUERY = '''
 query PipelineQuery($executionParams: PipelineExecutionParams!) {
   executionPlan(executionParams: $executionParams) {
@@ -765,16 +768,17 @@ query PipelineQuery($executionParams: PipelineExecutionParams!) {
 }
 '''
 
+
 def test_query_execution_plan_errors():
     result = execute_dagster_graphql(
         define_repo(),
         EXECUTION_PLAN_QUERY,
         {
-            'executionParams' : {
-                'pipelineName' : 'pandas_hello_world',
-                'config' : 2334893,
-            }
-        }
+            'executionParams': {
+                'pipelineName': 'pandas_hello_world',
+                'config': 2334893,
+            },
+        },
     )
 
     assert result.data
@@ -785,11 +789,11 @@ def test_query_execution_plan_errors():
         define_repo(),
         EXECUTION_PLAN_QUERY,
         {
-            'executionParams' : {
-                'pipelineName' : 'nope',
-                'config' : 2334893,
-            }
-        }
+            'executionParams': {
+                'pipelineName': 'nope',
+                'config': 2334893,
+            },
+        },
     )
 
     assert result.data
@@ -797,13 +801,14 @@ def test_query_execution_plan_errors():
     assert result.data['executionPlan']['__typename'] == 'PipelineNotFoundError'
     assert result.data['executionPlan']['pipelineName'] == 'nope'
 
+
 def test_query_execution_plan_snapshot(snapshot):
     result = execute_dagster_graphql(
         define_repo(),
         EXECUTION_PLAN_QUERY,
         {
-            'executionParams' : {
-                'pipelineName' : 'pandas_hello_world',
+            'executionParams': {
+                'pipelineName': 'pandas_hello_world',
                 'config': {
                     'solids': {
                         'load_num_csv': {
@@ -828,8 +833,8 @@ def test_query_execution_plan():
         define_repo(),
         EXECUTION_PLAN_QUERY,
         {
-            'executionParams' : {
-                'pipelineName' : 'pandas_hello_world',
+            'executionParams': {
+                'pipelineName': 'pandas_hello_world',
                 'config': {
                     'solids': {
                         'load_num_csv': {

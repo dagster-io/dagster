@@ -5,6 +5,11 @@ from dagster import (
     check,
 )
 
+from dagster.core.execution_context import (
+    ExecutionContextUserParams,
+    RuntimeExecutionContext,
+)
+
 
 class SqlAlchemyResource(object):
     def __init__(self, engine, mock_sql=False):
@@ -18,7 +23,7 @@ class DefaultSqlAlchemyResources(object):
 
 
 def check_supports_sql_alchemy_resource(context):
-    check.inst_param(context, 'context', ExecutionContext)
+    check.inst_param(context, 'context', RuntimeExecutionContext)
     check.invariant(context.resources is not None)
     check.invariant(
         hasattr(context.resources, 'sa'),
@@ -32,17 +37,9 @@ def check_supports_sql_alchemy_resource(context):
     return context
 
 
-def create_sql_alchemy_context_from_sa_resource(sa_resource, *args, **kwargs):
-    check.inst_param(sa_resource, 'sa_resource', SqlAlchemyResource)
-    resources = DefaultSqlAlchemyResources(sa_resource)
-    context = ExecutionContext(resources=resources, *args, **kwargs)
-    return check_supports_sql_alchemy_resource(context)
-
-
-def create_sql_alchemy_context_from_engine(engine, *args, **kwargs):
+def create_sql_alchemy_context_params_from_engine(engine, loggers=None):
     resources = DefaultSqlAlchemyResources(SqlAlchemyResource(engine))
-    context = ExecutionContext(resources=resources, *args, **kwargs)
-    return check_supports_sql_alchemy_resource(context)
+    return ExecutionContext.create(loggers=loggers, resources=resources)
 
 
 def _is_sqlite_context(context):

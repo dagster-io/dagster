@@ -1,5 +1,6 @@
 from dagster import (
     DependencyDefinition,
+    ExecutionContext,
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
@@ -19,8 +20,6 @@ from dagster.core.definitions import (
 )
 
 from dagster.core.execution import (
-    execute_pipeline_iterator,
-    ExecutionContext,
     SolidExecutionResult,
     PipelineExecutionResult,
 )
@@ -305,7 +304,7 @@ def _do_test(pipeline, do_execute_pipeline_iter):
     for result in do_execute_pipeline_iter():
         results.append(result)
 
-    result = PipelineExecutionResult(pipeline, ExecutionContext(), results)
+    result = PipelineExecutionResult(pipeline, ExecutionContext.create_for_test(), results)
 
     assert result.result_for_solid('A').transformed_value() == [
         input_set('A_input'), transform_called('A')

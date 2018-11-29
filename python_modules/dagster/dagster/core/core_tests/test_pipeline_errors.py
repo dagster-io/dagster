@@ -22,7 +22,9 @@ from dagster.core.errors import DagsterUserCodeExecutionError
 
 
 def silencing_default_context():
-    return {'default': PipelineContextDefinition(context_fn=lambda *_args: ExecutionContext())}
+    return {
+        'default': PipelineContextDefinition(context_fn=lambda *_args: ExecutionContext.create())
+    }
 
 
 def silencing_pipeline(solids, dependencies=None):
@@ -121,7 +123,7 @@ def test_do_not_yield_result():
         DagsterInvariantViolationError,
         message='Tranform for solid do_not_yield_result return a Result',
     ):
-        execute_single_solid_in_isolation(ExecutionContext(), solid_inst)
+        execute_single_solid_in_isolation(ExecutionContext.create(), solid_inst)
 
 
 def test_yield_non_result():
@@ -139,7 +141,7 @@ def test_yield_non_result():
         DagsterInvariantViolationError,
         message="Tranform for solid yield_wrong_thing yielded 'foo'",
     ):
-        execute_single_solid_in_isolation(ExecutionContext(), solid_inst)
+        execute_single_solid_in_isolation(ExecutionContext.create(), solid_inst)
 
 
 def test_single_transform_returning_result():
@@ -151,4 +153,4 @@ def test_single_transform_returning_result():
     )
 
     with pytest.raises(DagsterInvariantViolationError):
-        execute_single_solid_in_isolation(ExecutionContext(), solid_inst)
+        execute_single_solid_in_isolation(ExecutionContext.create(), solid_inst)

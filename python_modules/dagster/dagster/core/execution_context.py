@@ -1,11 +1,9 @@
 import itertools
 import json
+import logging
 import uuid
 
-from collections import (
-    OrderedDict,
-    namedtuple,
-)
+from collections import namedtuple
 from contextlib import contextmanager
 
 from dagster import check
@@ -29,7 +27,44 @@ def _kv_message(all_items):
 DAGSTER_META_KEY = 'dagster_meta'
 
 
+class ExecutionContextUserParams(
+    namedtuple(
+        'ExecutionContextUserParams',
+        'loggers resources context_stack',
+    )
+):
+    def __new__(cls, loggers=None, resources=None, context_stack=None):
+        return super(ExecutionContextUserParams, cls).__new__(
+            cls,
+            loggers=check.opt_list_param(loggers, 'loggers', logging.Logger),
+            resources=resources,
+            context_stack=check.opt_dict_param(context_stack, 'context_stack'),
+        )
+
+
 class ExecutionContext(object):
+    @staticmethod
+    def create_for_test(loggers=None, resources=None):
+        run_id = str(uuid.uuid4())
+        return RuntimeExecutionContext(run_id, loggers, resources)
+
+    @staticmethod
+    def create(loggers=None, resources=None, context_stack=None):
+        return ExecutionContextUserParams(
+            loggers=loggers,
+            resources=resources,
+            context_stack=context_stack,
+        )
+
+    @staticmethod
+    def console_logging(log_level=INFO, resources=None):
+        return ExecutionContext.create(
+            loggers=[define_colored_console_logger('dagster', log_level)],
+            resources=resources,
+        )
+
+
+class RuntimeExecutionContext:
     '''
     A context object flowed through the entire scope of single execution of a
     pipeline of solids. This is used by both framework and user code to log
@@ -53,21 +88,16 @@ class ExecutionContext(object):
             ExecutionContext.
     '''
 
-    def __init__(self, loggers=None, resources=None):
+    def __init__(self, run_id, loggers=None, resources=None, context_stack=None):
+
         if loggers is None:
             loggers = [define_colored_console_logger('dagster')]
 
         self._logger = CompositeLogger(loggers=loggers)
         self.resources = resources
-        self._context_stack = OrderedDict({'run_id': str(uuid.uuid4())})
+        self._run_id = check.str_param(run_id, 'run_id')
+        self._context_stack = check.opt_dict_param(context_stack, 'context_stack')
         self.events = ExecutionEvents(self)
-
-    @staticmethod
-    def console_logging(log_level=INFO, resources=None):
-        return ExecutionContext(
-            loggers=[define_colored_console_logger('dagster', log_level)],
-            resources=resources,
-        )
 
     def _log(self, method, orig_message, message_props):
         check.str_param(method, 'method')
@@ -89,7 +119,11 @@ class ExecutionContext(object):
 
         log_message_id = str(uuid.uuid4())
 
-        synth_props = {'orig_message': orig_message, 'log_message_id': log_message_id}
+        synth_props = {
+            'orig_message': orig_message,
+            'log_message_id': log_message_id,
+            'run_id': self._run_id,
+        }
 
         # We first generate all props for the purpose of producing the semi-structured
         # log message via _kv_messsage
@@ -215,5 +249,4 @@ class ExecutionContext(object):
 
     @property
     def run_id(self):
-        check.invariant('run_id' in self._context_stack, 'This should be set in __init__')
-        return self._context_stack['run_id']
+        return self._run_id

@@ -35,7 +35,7 @@ def test_empty_pipeline():
             'default':
             PipelineContextDefinition(
                 context_fn=
-                lambda info: ExecutionContext(loggers=[construct_event_logger(_event_callback)])
+                lambda info: ExecutionContext.create(loggers=[construct_event_logger(_event_callback)])
             )
         }
     )
