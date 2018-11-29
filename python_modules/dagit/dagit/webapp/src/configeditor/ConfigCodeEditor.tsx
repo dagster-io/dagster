@@ -110,13 +110,18 @@ export default class ConfigCodeEditor extends React.Component<
 }
 
 injectGlobal`
-  .react-codemirror2, .CodeMirror {
+  .react-codemirror2 {
+    && {
+      width: 100%;
+      flex: 1;
+    }
+  }
+  .CodeMirror {
     && {
       height: 100%;
       width: 100%;
     }
   }
-
   .CodeMirror-linenumber {
 
   }
