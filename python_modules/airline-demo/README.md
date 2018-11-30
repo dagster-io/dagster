@@ -55,20 +55,16 @@ manually delete the VPC from the console, which will force-delete dependencies.
 
 ### TODOs
 
-- Make requirements install from setup.py
-- Separate download and ingest pipelines
 - Flesh out unit tests for solids
-- Set up coverage for pytest
-- Set up tox
 - Set up builds for airline_demo on CircleCI
 - Wire Spark up to EMR cluster
-- Wire up Spark join (group by for weather etc.)
 - Add config option for local ingestion (Postgres)
 - Add config option for Spark running on EMR cluster
 - Update README with instructions for AWS creds
 - Document running the pipeline and tests (e.g., postgres requirements)
 - Write two versions of the parallel pipeline steps -- one using a List type, one with custom solids
 - Move the database loading logic to the context (on a branch) -- with a "database loader" resource
+- Add expectations
 
 ### Issues with general availability
 - Right now the pulumi spec, as well as the sample config, expect that you will
