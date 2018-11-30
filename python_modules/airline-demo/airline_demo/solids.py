@@ -1,4 +1,4 @@
-"""A fully fleshed out demo dagster repository with many configurable options."""
+'''A fully fleshed out demo dagster repository with many configurable options.'''
 
 import os
 import zipfile
@@ -20,8 +20,24 @@ from .utils import (
 
 
 # need a sql context w a sqlalchemy engine
-def sql_solid(name, select_statement, materialize, table_name=None):
-    materialization_strategy_output_types = {
+def create_sql_solid(name, select_statement, materialization_strategy, table_name=None):
+    '''Return a new solid that executes and materializes a SQL select statement.
+
+    Args:
+        name (str): The name of the new solid.
+        select_statement (str): The select statement to execute.
+        materialization_strategy (str): Must be 'table', the only currently supported
+            materialization strategy. If 'table', the kwarg `table_name` must also be passed.
+
+    Kwargs:
+        table_name (str): THe name of the new table to create, if the materialization strategy
+            is 'table'.
+
+    Returns:
+        function:
+            The new SQL solid.
+    '''
+    materialization_strategy_output_types = {  # pylint:disable=C0103
         'table': types.String,
         # 'view': types.String,
         # 'query': SqlAlchemyQueryType,
@@ -30,23 +46,40 @@ def sql_solid(name, select_statement, materialize, table_name=None):
         # could also materialize as a Pandas table, as a Spark table, as an intermediate file, etc.
     }
 
-    if materialize not in materialization_strategy_output_types:
+    if materialization_strategy not in materialization_strategy_output_types:
         raise Exception(
-            "Invalid materialization strategy {materialize}, must "
-            "be one of {materialization_strategies}".format(
-                materialize=materialize,
-                materialization_strategies=materialization_strategy_output_types.keys()
+            'Invalid materialization strategy {materialization_strategy}, must '
+            'be one of {materialization_strategies}'.format(
+                materialization_strategy=materialization_strategy,
+                materialization_strategies=str(list(materialization_strategy_output_types.keys()))
             )
         )
 
-    if materialize == 'table':
+    if materialization_strategy == 'table':
         if table_name is None:
-            raise Exception('Missing table_name: required for materialization strategy "table"')
+            raise Exception('Missing table_name: required for materialization strategy \'table\'')
 
     @solid(
-        name=name, outputs=[OutputDefinition(materialization_strategy_output_types[materialize])]
+        name=name,
+        outputs=[
+            OutputDefinition(
+                materialization_strategy_output_types[materialization_strategy],
+                description='The materialized SQL statement. If the materialization_strategy is '
+                '\'table\', this is the string name of the new table created by the solid.'
+            )
+        ]
     )
     def sql_solid_fn(info):
+        '''Inner function defining the new solid.
+
+        Args:
+            info (ExpectationExecutionInfo): Must expose a `db` resource with an `execute` method,
+                like a SQLAlchemy engine, that can execute raw SQL against a database.
+
+        Returns:
+            str:
+                The table name of the newly materialized SQL select statement.
+        '''
         # n.b., we will eventually want to make this resources key configurable
         info.context.resources.db.execute(
             'create table :tablename as :statement', {
@@ -61,9 +94,23 @@ def sql_solid(name, select_statement, materialize, table_name=None):
 
 @solid(
     name='thunk',
-    config_field=Field(types.String),
+    config_field=Field(types.String, description='The string value to output.'),
+    description='No-op solid that simply outputs its single string config value.',
+    outputs=[OutputDefinition(types.String, description='The string passed in as config.')]
 )
 def thunk(info):
+    '''Output the config vakue.
+
+    Especially useful when constructing DAGs with root nodes that take inputs which might in
+    other dags come from upstream solids.
+
+    Args:
+        info (ExpectationExecutionInfo)
+
+    Returns:
+        str;
+            The config value passed to the solid.
+    '''
     return info.config
 
 
@@ -75,18 +122,39 @@ def thunk(info):
             fields={
                 # Probably want to make the region configuable too
                 'bucket':
-                Field(types.String, description=''),
+                Field(types.String, description='The S3 bucket in which to look for the key.'),
                 'key':
-                Field(types.String, description=''),
+                Field(types.String, description='The key to download.'),
                 'skip_if_present':
-                Field(types.Bool, description='', default_value=False, is_optional=True),
+                Field(
+                    types.Bool,
+                    description='If True, and a file already exists at the path described by the '
+                    'target_path config value, if present, or the key, then the solid will no-op.',
+                    default_value=False,
+                    is_optional=True
+                ),
                 'target_path':
-                Field(types.String, description='', is_optional=True),
+                Field(
+                    types.String,
+                    description='If present, specifies the path at which to download the object.',
+                    is_optional=True
+                ),
             }
         )
-    )
+    ),
+    description='Downloads an object from S3.',
+    outputs=[OutputDefinition(types.String, description='The path to the downloaded object.')]
 )
 def download_from_s3(info):
+    '''Download an object from s3.
+        
+    Args:
+        info (ExpectationExecutionInfo): Must expose a boto3 S3 client as its `s3` resource.
+
+    Returns:
+        str:
+            The path to the downloaded object.
+    '''
     bucket = info.config['bucket']
     key = info.config['key']
     target_path = (info.config.get('target_path') or key)
@@ -110,7 +178,7 @@ def download_from_s3(info):
     name='unzip_file',
     # config_field=Field(
     #     types.ConfigDictionary(name='UnzipFileConfigType', fields={
-    #         ' archive_path': Field(types.String, description=''),
+    #         'archive_path': Field(types.String, description=''),
     #         'archive_member': Field(types.String, description=''),
     #         'destination_dir': Field(types.String, description=''),
     #     })
