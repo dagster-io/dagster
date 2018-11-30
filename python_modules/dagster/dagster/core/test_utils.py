@@ -9,7 +9,7 @@ from dagster import (
     execute_pipeline,
 )
 
-from dagster.core.execution_context import ExecutionContextUserParams
+from dagster.core.execution_context import ExecutionContext
 
 
 def execute_single_solid_in_isolation(
@@ -25,7 +25,7 @@ def execute_single_solid_in_isolation(
 
     Prefer execute_solid in dagster.utils.test
     '''
-    check.inst_param(context_params, 'context_params', ExecutionContextUserParams)
+    check.inst_param(context_params, 'context_params', ExecutionContext)
     check.inst_param(solid_def, 'solid_def', SolidDefinition)
     environment = check.opt_inst_param(
         environment,

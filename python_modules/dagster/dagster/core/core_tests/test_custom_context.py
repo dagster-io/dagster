@@ -78,7 +78,7 @@ def test_default_value():
                         ),
                     },
                 ),
-                context_fn=lambda info: ExecutionContext.create(resources=info.config),
+                context_fn=lambda info: ExecutionContext(resources=info.config),
             ),
         }
     )
@@ -102,7 +102,7 @@ def test_custom_contexts():
                     'CustomOneDict',
                     {'field_one': Field(dagster_type=types.String)},
                 ),
-                context_fn=lambda info: ExecutionContext.create(resources=info.config),
+                context_fn=lambda info: ExecutionContext(resources=info.config),
             ),
             'custom_two':
             PipelineContextDefinition(
@@ -110,7 +110,7 @@ def test_custom_contexts():
                     'CustomTwoDict',
                     {'field_one': Field(dagster_type=types.String)},
                 ),
-                context_fn=lambda info: ExecutionContext.create(resources=info.config),
+                context_fn=lambda info: ExecutionContext(resources=info.config),
             )
         },
     )
@@ -140,7 +140,7 @@ def test_yield_context():
     def _yield_context(info):
         events.append('before')
         context_stack = {'foo': 'bar'}
-        context = ExecutionContext.create(resources=info.config, context_stack=context_stack)
+        context = ExecutionContext(resources=info.config, context_stack=context_stack)
         yield context
         events.append('after')
 

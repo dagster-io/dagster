@@ -6,7 +6,7 @@ from dagster import (
 )
 
 from dagster.core.execution_context import (
-    ExecutionContextUserParams,
+    ExecutionContext,
     RuntimeExecutionContext,
 )
 
@@ -39,7 +39,7 @@ def check_supports_sql_alchemy_resource(context):
 
 def create_sql_alchemy_context_params_from_engine(engine, loggers=None):
     resources = DefaultSqlAlchemyResources(SqlAlchemyResource(engine))
-    return ExecutionContext.create(loggers=loggers, resources=resources)
+    return ExecutionContext(loggers=loggers, resources=resources)
 
 
 def _is_sqlite_context(context):

@@ -40,7 +40,7 @@ from .definitions import (
 from .config_types import EnvironmentConfigType
 
 from .execution_context import (
-    ExecutionContextUserParams,
+    ExecutionContext,
     RuntimeExecutionContext,
 )
 
@@ -241,11 +241,11 @@ class SolidExecutionResult(object):
 def _wrap_in_yield(context_params_or_gen):
     check.param_invariant(
         inspect.isgenerator(context_params_or_gen)
-        or isinstance(context_params_or_gen, ExecutionContextUserParams),
+        or isinstance(context_params_or_gen, ExecutionContext),
         'context_params_or_gen',
     )
 
-    if isinstance(context_params_or_gen, ExecutionContextUserParams):
+    if isinstance(context_params_or_gen, ExecutionContext):
 
         def _gen_for_context_params():
             yield context_params_or_gen
@@ -331,7 +331,7 @@ def merge_two_dicts(left, right):
 
 
 def get_context_stack(user_context_params, reentrant_info):
-    check.inst(user_context_params, ExecutionContextUserParams)
+    check.inst(user_context_params, ExecutionContext)
     check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
 
     if reentrant_info and reentrant_info.context_stack:
@@ -379,7 +379,7 @@ def yield_context(pipeline, environment, reentrant_info=None):
 
     for user_context_params in _wrap_in_yield(context_params_or_gen):
         check.invariant(not called, 'should only yield one thing')
-        check.inst(user_context_params, ExecutionContextUserParams)
+        check.inst(user_context_params, ExecutionContext)
 
         run_id = get_run_id(reentrant_info)
         context_stack = get_context_stack(user_context_params, reentrant_info)

@@ -27,38 +27,18 @@ def _kv_message(all_items):
 DAGSTER_META_KEY = 'dagster_meta'
 
 
-class ExecutionContextUserParams(
-    namedtuple(
-        'ExecutionContextUserParams',
-        'loggers resources context_stack',
-    )
-):
+class ExecutionContext(namedtuple('_ExecutionContext', 'loggers resources context_stack')):
     def __new__(cls, loggers=None, resources=None, context_stack=None):
-        return super(ExecutionContextUserParams, cls).__new__(
+        return super(ExecutionContext, cls).__new__(
             cls,
             loggers=check.opt_list_param(loggers, 'loggers', logging.Logger),
             resources=resources,
             context_stack=check.opt_dict_param(context_stack, 'context_stack'),
         )
 
-
-class ExecutionContext(object):
-    @staticmethod
-    def create_for_test(loggers=None, resources=None):
-        run_id = str(uuid.uuid4())
-        return RuntimeExecutionContext(run_id, loggers, resources)
-
-    @staticmethod
-    def create(loggers=None, resources=None, context_stack=None):
-        return ExecutionContextUserParams(
-            loggers=loggers,
-            resources=resources,
-            context_stack=context_stack,
-        )
-
     @staticmethod
     def console_logging(log_level=INFO, resources=None):
-        return ExecutionContext.create(
+        return ExecutionContext(
             loggers=[define_colored_console_logger('dagster', log_level)],
             resources=resources,
         )

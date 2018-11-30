@@ -34,7 +34,7 @@ def test_context_config_any():
         'test':
         PipelineContextDefinition(
             config_field=Field(types.Any),
-            context_fn=lambda *args: ExecutionContext.create(),
+            context_fn=lambda *args: ExecutionContext(),
         )
     }
 
@@ -57,7 +57,7 @@ def test_context_config():
                     'some_str': Field(types.String),
                 })
             ),
-            context_fn=lambda *args: ExecutionContext.create(),
+            context_fn=lambda *args: ExecutionContext(),
         )
     }
 
@@ -195,7 +195,7 @@ def test_errors():
                     },
                 )
             ),
-            context_fn=lambda *args: ExecutionContext.create(),
+            context_fn=lambda *args: ExecutionContext(),
         )
     }
 
@@ -216,12 +216,12 @@ def test_select_context():
         'int_context':
         PipelineContextDefinition(
             config_field=Field(types.Int),
-            context_fn=lambda *args: ExecutionContext.create(),
+            context_fn=lambda *args: ExecutionContext(),
         ),
         'string_context':
         PipelineContextDefinition(
             config_field=Field(types.String),
-            context_fn=lambda *args: ExecutionContext.create(),
+            context_fn=lambda *args: ExecutionContext(),
         ),
     }
 
@@ -406,7 +406,7 @@ def test_whole_environment():
             'test':
             PipelineContextDefinition(
                 config_field=Field(types.Any),
-                context_fn=lambda *args: ExecutionContext.create(),
+                context_fn=lambda *args: ExecutionContext(),
             )
         },
         solids=[
