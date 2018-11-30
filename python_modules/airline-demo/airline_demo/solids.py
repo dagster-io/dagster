@@ -92,6 +92,11 @@ def download_from_s3(info):
     target_path = (info.config.get('target_path') or key)
 
     if info.config['skip_if_present'] and os.path.isfile(target_path):
+        info.context.info(
+            'Skipping download, file already present at {target_path}'.format(
+                target_path=target_path
+            )
+        )
         return target_path
 
     if os.path.dirname(target_path):
@@ -154,14 +159,37 @@ def unzip_file(
     with zipfile.ZipFile(archive_path, 'r') as zip_ref:
         if archive_member is not None:
             target_path = os.path.join(destination_dir, archive_member)
-            if not (
-                info.config['skip_if_present'] and
-                (os.path.isfile(target_path) or os.path.isdir(target_path))
-            ):
+            is_file = os.path.isfile(target_path)
+            is_dir = os.path.isdir(target_path)
+            if not (info.config['skip_if_present'] and (is_file or is_dir)):
                 zip_ref.extract(archive_member, destination_dir)
+            else:
+                if is_file:
+                    info.context.info(
+                        'Skipping unarchive of {archive_member} from {archive_path}, '
+                        'file already present at {target_path}'.format(
+                            archive_member=archive_member,
+                            archive_path=archive_path,
+                            target_path=target_path
+                        )
+                    )
+                if is_dir:
+                    info.context.info(
+                        'Skipping unarchive of {archive_member} from {archive_path}, '
+                        'directory already present at {target_path}'.format(
+                            archive_member=archive_member,
+                            archive_path=archive_path,
+                            target_path=target_path
+                        )
+                    )
         else:
-            if not (info.config['skip_if_present'] and os.path.isdir(target_path)):
+            if not (info.config['skip_if_present'] and is_dir):
                 zip_ref.extractall(destination_dir)
+            else:
+                info.context.info(
+                    'Skipping unarchive of {archive_path}, directory already present '
+                    'at {target_path}'.format(archive_path=archive_path, target_path=target_path)
+                )
         return target_path
 
 
