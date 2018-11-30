@@ -2,9 +2,12 @@ from collections import defaultdict
 
 from dagster import (
     ExecutionContext,
+    ReentrantInfo,
     PipelineDefinition,
     PipelineContextDefinition,
     execute_pipeline,
+    lambda_solid,
+    solid,
 )
 
 from dagster.core.events import (
@@ -20,24 +23,32 @@ def single_event(events, event_type):
     return events[event_type][0]
 
 
+def define_event_logging_pipeline(name, solids, event_callback, deps=None):
+    return PipelineDefinition(
+        name=name,
+        solids=solids,
+        description=deps,
+        context_definitions={
+            'default':
+            PipelineContextDefinition(
+                context_fn=
+                lambda info: ExecutionContext(loggers=[construct_event_logger(event_callback)])
+            )
+        }
+    )
+
+
 def test_empty_pipeline():
     events = defaultdict(list)
 
     def _event_callback(record):
         assert isinstance(record, EventRecord)
-
         events[record.event_type].append(record)
 
-    pipeline_def = PipelineDefinition(
+    pipeline_def = define_event_logging_pipeline(
         name='empty_pipeline',
         solids=[],
-        context_definitions={
-            'default':
-            PipelineContextDefinition(
-                context_fn=
-                lambda info: ExecutionContext(loggers=[construct_event_logger(_event_callback)])
-            )
-        }
+        event_callback=_event_callback,
     )
 
     result = execute_pipeline(pipeline_def)
@@ -46,3 +57,28 @@ def test_empty_pipeline():
 
     assert single_event(events, EventType.PIPELINE_START).pipeline_name == 'empty_pipeline'
     assert single_event(events, EventType.PIPELINE_SUCCESS).pipeline_name == 'empty_pipeline'
+
+
+def test_single_solid_pipeline():
+    events = defaultdict(list)
+
+    @lambda_solid
+    def solid_one():
+        return 1
+
+    def _event_callback(record):
+        assert isinstance(record, EventRecord)
+        events[record.event_type].append(record)
+
+    pipeline_def = define_event_logging_pipeline(
+        name='single_solid_pipeline',
+        solids=[solid_one],
+        event_callback=_event_callback,
+    )
+
+    result = execute_pipeline(pipeline_def)
+    assert result.success
+    assert events
+
+    assert single_event(events, EventType.EXECUTION_PLAN_STEP_START)
+    assert single_event(events, EventType.EXECUTION_PLAN_STEP_SUCCESS)

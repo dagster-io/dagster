@@ -374,13 +374,20 @@ class ExecutionStep(object):
         )
 
         with _user_code_error_boundary(context, error_str):
+
+            context.events.execution_plan_step_start(self.friendly_name)
+
             gen = self.compute_fn(context, self, evaluated_inputs)
 
             if gen is None:
                 check.invariant(not self.step_outputs)
                 return
 
-            return list(gen)
+            results = list(gen)
+
+            context.events.execution_plan_step_success(self.friendly_name)
+
+            return results
 
     def _error_check_results(self, results):
         seen_outputs = set()
