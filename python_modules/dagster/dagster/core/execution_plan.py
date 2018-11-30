@@ -290,7 +290,6 @@ class StepOutput(object):
 
 class ExecutionStep(object):
     def __init__(self, key, step_inputs, step_outputs, compute_fn, tag, solid):
-        # self.guid = str(uuid.uuid4())
         self.key = check.str_param(key, 'key')
 
         self.step_inputs = check.list_param(step_inputs, 'step_inputs', of_type=StepInput)
@@ -736,10 +735,10 @@ def create_execution_plan_core(execution_info):
             output_handle = pipeline_solid.output_handle(output_def.name)
             state.step_output_map[output_handle] = subgraph.terminal_step_output_handle
 
-    return _create_execution_plan(state.steps)
+    return create_execution_plan_from_steps(state.steps)
 
 
-def _create_execution_plan(steps):
+def create_execution_plan_from_steps(steps):
     check.list_param(steps, 'steps', of_type=ExecutionStep)
 
     step_dict = {step.key: step for step in steps}
