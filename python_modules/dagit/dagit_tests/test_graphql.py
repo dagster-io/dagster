@@ -1,3 +1,5 @@
+import uuid
+
 from graphql import graphql
 
 from dagster import (
@@ -953,7 +955,7 @@ def test_basic_start_pipeline_execution():
 
     # just test existence
     assert result.data['startPipelineExecution']['__typename'] == 'StartPipelineExecutionSuccess'
-    assert result.data['startPipelineExecution']['run']['runId']
+    assert uuid.UUID(result.data['startPipelineExecution']['run']['runId'])
     assert result.data['startPipelineExecution']['run']['pipeline']['name'] == 'pandas_hello_world'
 
 

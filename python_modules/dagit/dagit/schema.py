@@ -1,9 +1,9 @@
 from collections import namedtuple
-import traceback
 import sys
+import traceback
+import uuid
 
 import graphene
-
 from graphene.types.generic import GenericScalar
 
 import dagster
@@ -897,6 +897,9 @@ class StartPipelineExecutionResult(graphene.Union):
         )
 
 
+ACTIVE_RUNS = {}
+
+
 class StartPipelineExecutionMutation(graphene.Mutation):
     class Arguments:
         executionParams = graphene.NonNull(PipelineExecutionParams)
@@ -905,8 +908,10 @@ class StartPipelineExecutionMutation(graphene.Mutation):
 
     def mutate(self, info, executionParams):
         def _start_execution(pipeline, _execution_params, _config_result):
+            new_run_id = str(uuid.uuid4())
+            ACTIVE_RUNS[new_run_id] = 'phantom_started'
             return StartPipelineExecutionSuccess(
-                run=PipelineRun(runId='TODO', pipeline=Pipeline(pipeline))
+                run=PipelineRun(runId=new_run_id, pipeline=Pipeline(pipeline))
             )
 
         return do_pipeline_operation(info, executionParams, _start_execution)
