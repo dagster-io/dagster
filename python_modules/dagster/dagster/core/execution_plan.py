@@ -247,7 +247,6 @@ def _execute_core_transform(context, step, conf, inputs):
 
     solid = step.solid
 
-    # with context.values({'solid': solid.name, 'solid_definition': solid.definition.name}):
     context.debug('Executing core transform for solid {solid}.'.format(solid=solid.name))
 
     with time_execution_scope() as timer_result, \
