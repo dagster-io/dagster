@@ -44,11 +44,6 @@ class ExecutionContextUserParams(
 
 class ExecutionContext(object):
     @staticmethod
-    def create_for_test(loggers=None, resources=None):
-        run_id = str(uuid.uuid4())
-        return RuntimeExecutionContext(run_id, loggers, resources)
-
-    @staticmethod
     def create(loggers=None, resources=None, context_stack=None):
         return ExecutionContextUserParams(
             loggers=loggers,

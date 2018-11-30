@@ -2,7 +2,7 @@ from collections import namedtuple
 import logging
 import uuid
 
-from dagster.core.execution_context import (ExecutionContext, DAGSTER_META_KEY)
+from dagster.core.execution_context import DAGSTER_META_KEY
 from dagster.utils.logging import (DEBUG, INFO, WARNING, ERROR, CRITICAL)
 from dagster.utils.test import create_test_runtime_execution_context
 
