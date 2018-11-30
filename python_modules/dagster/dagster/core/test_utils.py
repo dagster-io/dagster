@@ -1,6 +1,5 @@
 from dagster import (
     DagsterInvariantViolationError,
-    ExecutionContext,
     PipelineDefinition,
     PipelineContextDefinition,
     Result,
@@ -10,8 +9,15 @@ from dagster import (
     execute_pipeline,
 )
 
+from dagster.core.execution_context import ExecutionContextUserParams
 
-def execute_single_solid_in_isolation(context, solid_def, environment=None, throw_on_error=True):
+
+def execute_single_solid_in_isolation(
+    context_params,
+    solid_def,
+    environment=None,
+    throw_on_error=True,
+):
     '''
     Deprecated.
 
@@ -19,7 +25,7 @@ def execute_single_solid_in_isolation(context, solid_def, environment=None, thro
 
     Prefer execute_solid in dagster.utils.test
     '''
-    check.inst_param(context, 'context', ExecutionContext)
+    check.inst_param(context_params, 'context_params', ExecutionContextUserParams)
     check.inst_param(solid_def, 'solid_def', SolidDefinition)
     environment = check.opt_inst_param(
         environment,
@@ -39,7 +45,8 @@ def execute_single_solid_in_isolation(context, solid_def, environment=None, thro
     pipeline_result = execute_pipeline(
         PipelineDefinition(
             solids=[solid_def],
-            context_definitions=PipelineContextDefinition.passthrough_context_definition(context),
+            context_definitions=PipelineContextDefinition.
+            passthrough_context_definition(context_params),
         ),
         environment=single_solid_environment,
     )

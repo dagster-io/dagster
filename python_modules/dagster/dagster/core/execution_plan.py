@@ -39,6 +39,7 @@ from .evaluator import (
 
 from .execution_context import (
     ExecutionContext,
+    RuntimeExecutionContext,
 )
 
 from .errors import (
@@ -57,7 +58,7 @@ class ExecutionPlanInfo(namedtuple('_ExecutionPlanInfo', 'context execution_grap
     def __new__(cls, context, execution_graph, environment):
         return super(ExecutionPlanInfo, cls).__new__(
             cls,
-            check.inst_param(context, 'context', ExecutionContext),
+            check.inst_param(context, 'context', RuntimeExecutionContext),
             check.inst_param(execution_graph, 'execution_graph', ExecutionGraph),
             check.inst_param(environment, 'environment', config.Environment),
         )
@@ -158,7 +159,7 @@ def _user_code_error_boundary(context, msg, **kwargs):
     framework code in the stack trace, if a tool author wishes to do so. This has
     been especially help in a notebooking context.
     '''
-    check.inst_param(context, 'context', ExecutionContext)
+    check.inst_param(context, 'context', RuntimeExecutionContext)
     check.str_param(msg, 'msg')
 
     try:
@@ -238,7 +239,7 @@ def _execute_core_transform(context, step, conf, inputs):
     Execute the user-specified transform for the solid. Wrap in an error boundary and do
     all relevant logging and metrics tracking
     '''
-    check.inst_param(context, 'context', ExecutionContext)
+    check.inst_param(context, 'context', RuntimeExecutionContext)
     check.inst_param(step, 'step', ExecutionStep)
     check.dict_param(inputs, 'inputs', key_type=str)
 
@@ -416,7 +417,7 @@ class ExecutionStep(object):
         return [self._create_step_result(result) for result in results]
 
     def execute(self, context, inputs):
-        check.inst_param(context, 'context', ExecutionContext)
+        check.inst_param(context, 'context', RuntimeExecutionContext)
         check.dict_param(inputs, 'inputs', key_type=str)
 
         try:
@@ -450,7 +451,7 @@ def _all_inputs_covered(cn, results):
 
 
 def execute_steps(context, steps):
-    check.inst_param(context, 'context', ExecutionContext)
+    check.inst_param(context, 'context', RuntimeExecutionContext)
     check.list_param(steps, 'steps', of_type=ExecutionStep)
 
     intermediate_results = {}

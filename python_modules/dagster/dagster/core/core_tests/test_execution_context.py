@@ -9,7 +9,5 @@ from dagster.core.execution_context import (
 
 
 def test_noarg_ctor():
-    context = ExecutionContext()
-    assert set(context._context_stack.keys()) == set(['run_id'])
-    assert uuid.UUID(context.get_context_value('run_id'))
+    context = ExecutionContext.create_for_test()
     assert uuid.UUID(context.run_id)

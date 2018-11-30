@@ -130,7 +130,8 @@ def test_two_contexts():
     assert scaffold_pipeline_config(pipeline_def) == {'context': {}}
 
     assert scaffold_pipeline_config(
-        pipeline_def, skip_optional=False
+        pipeline_def,
+        skip_optional=False,
     ) == {
         'context': {
             'context_one': {

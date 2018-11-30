@@ -123,7 +123,7 @@ def test_single_solid_with_context_config():
             'test_context':
             PipelineContextDefinition(
                 config_field=Field(types.Int, is_optional=True, default_value=2),
-                context_fn=lambda info: ExecutionContext(resources=info.config),
+                context_fn=lambda info: ExecutionContext.create(resources=info.config),
             ),
         },
     )

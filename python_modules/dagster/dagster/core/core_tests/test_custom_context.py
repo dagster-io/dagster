@@ -78,7 +78,7 @@ def test_default_value():
                         ),
                     },
                 ),
-                context_fn=lambda info: ExecutionContext(resources=info.config),
+                context_fn=lambda info: ExecutionContext.create(resources=info.config),
             ),
         }
     )
@@ -102,7 +102,7 @@ def test_custom_contexts():
                     'CustomOneDict',
                     {'field_one': Field(dagster_type=types.String)},
                 ),
-                context_fn=lambda info: ExecutionContext(resources=info.config),
+                context_fn=lambda info: ExecutionContext.create(resources=info.config),
             ),
             'custom_two':
             PipelineContextDefinition(
@@ -110,7 +110,7 @@ def test_custom_contexts():
                     'CustomTwoDict',
                     {'field_one': Field(dagster_type=types.String)},
                 ),
-                context_fn=lambda info: ExecutionContext(resources=info.config),
+                context_fn=lambda info: ExecutionContext.create(resources=info.config),
             )
         },
     )
@@ -139,9 +139,9 @@ def test_yield_context():
 
     def _yield_context(info):
         events.append('before')
-        context = ExecutionContext(resources=info.config)
-        with context.value('foo', 'bar'):
-            yield context
+        context_stack = {'foo': 'bar'}
+        context = ExecutionContext.create(resources=info.config, context_stack=context_stack)
+        yield context
         events.append('after')
 
     pipeline = PipelineDefinition(
@@ -157,9 +157,15 @@ def test_yield_context():
         }
     )
 
-    environment_one = config.Environment(
-        context=config.Context('custom_one', {'field_one': 'value_two'})
-    )
+    environment_one = {
+        'context': {
+            'custom_one': {
+                'config': {
+                    'field_one': 'value_two',
+                },
+            },
+        },
+    }
 
     execute_pipeline(pipeline, environment=environment_one)
 
