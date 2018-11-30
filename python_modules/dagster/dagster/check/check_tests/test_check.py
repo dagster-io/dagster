@@ -28,6 +28,34 @@ def test_opt_int_param():
         check.opt_int_param('s', 'param_name')
 
 
+def test_float_param():
+    assert check.float_param(-1.0, 'param_name') == -1.0
+    assert check.float_param(0.0, 'param_name') == 0.0
+    assert check.float_param(1.1, 'param_name') == 1.1
+
+    with pytest.raises(ParameterCheckError):
+        check.float_param(None, 'param_name')
+
+    with pytest.raises(ParameterCheckError):
+        check.float_param('s', 'param_name')
+
+    with pytest.raises(ParameterCheckError):
+        check.float_param(1, 'param_name')
+
+    with pytest.raises(ParameterCheckError):
+        check.float_param(0, 'param_name')
+
+
+def test_opt_float_param():
+    assert check.opt_float_param(-1.0, 'param_name') == -1.0
+    assert check.opt_float_param(0.0, 'param_name') == 0.0
+    assert check.opt_float_param(1.1, 'param_name') == 1.1
+    assert check.opt_float_param(None, 'param_name') is None
+
+    with pytest.raises(ParameterCheckError):
+        check.opt_float_param('s', 'param_name')
+
+
 def test_list_param():
     assert check.list_param([], 'list_param') == []
 

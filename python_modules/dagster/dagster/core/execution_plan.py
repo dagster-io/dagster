@@ -150,7 +150,7 @@ class StepResult(namedtuple(
 
 
 @contextmanager
-def _user_code_error_boundary(context, msg, **kwargs):
+def _execution_step_error_boundary(context, step, msg, **kwargs):
     '''
     Wraps the execution of user-space code in an error boundary. This places a uniform
     policy around an user code invoked by the framework. This ensures that all user
@@ -162,23 +162,29 @@ def _user_code_error_boundary(context, msg, **kwargs):
     check.inst_param(context, 'context', RuntimeExecutionContext)
     check.str_param(msg, 'msg')
 
+    context.events.execution_plan_step_start(step.friendly_name)
     try:
-        yield
-    except DagsterError as de:
-        stack_trace = get_formatted_stack_trace(de)
-        context.error(str(de), stack_trace=stack_trace)
-        raise de
+        with time_execution_scope() as timer_result:
+            yield
+
+        context.events.execution_plan_step_success(step.friendly_name, timer_result.millis)
     except Exception as e:  # pylint: disable=W0703
+        context.events.execution_plan_step_failure(step.friendly_name)
+
         stack_trace = get_formatted_stack_trace(e)
         context.error(str(e), stack_trace=stack_trace)
-        raise_from(
-            DagsterUserCodeExecutionError(
-                msg.format(**kwargs),
-                user_exception=e,
-                original_exc_info=sys.exc_info(),
-            ),
-            e,
-        )
+
+        if isinstance(e, DagsterError):
+            raise e
+        else:
+            raise_from(
+                DagsterUserCodeExecutionError(
+                    msg.format(**kwargs),
+                    user_exception=e,
+                    original_exc_info=sys.exc_info(),
+                ),
+                e,
+            )
 
 
 class StepTag(Enum):
@@ -243,41 +249,26 @@ def _execute_core_transform(context, step, conf, inputs):
     check.inst_param(step, 'step', ExecutionStep)
     check.dict_param(inputs, 'inputs', key_type=str)
 
-    error_str = 'Error occured during core transform'
-
     solid = step.solid
 
-    with context.values({'solid': solid.name, 'solid_definition': solid.definition.name}):
-        context.debug('Executing core transform for solid {solid}.'.format(solid=solid.name))
+    context.debug('Executing core transform for solid {solid}.'.format(solid=solid.name))
 
-        with time_execution_scope() as timer_result, \
-            _user_code_error_boundary(context, error_str):
+    all_results = list(_yield_transform_results(context, step, conf, inputs))
 
-            all_results = list(_yield_transform_results(context, step, conf, inputs))
-
-        if len(all_results) != len(solid.definition.output_defs):
-            emitted_result_names = set([r.output_name for r in all_results])
-            solid_output_names = set(
-                [output_def.name for output_def in solid.definition.output_defs]
+    if len(all_results) != len(solid.definition.output_defs):
+        emitted_result_names = set([r.output_name for r in all_results])
+        solid_output_names = set(
+            [output_def.name for output_def in solid.definition.output_defs]
+        )
+        omitted_outputs = solid_output_names.difference(emitted_result_names)
+        context.info(
+            'Solid {solid} did not fire outputs {outputs}'.format(
+                solid=solid.name,
+                outputs=repr(omitted_outputs),
             )
-            omitted_outputs = solid_output_names.difference(emitted_result_names)
-            context.info(
-                'Solid {solid} did not fire outputs {outputs}'.format(
-                    solid=solid.name,
-                    outputs=repr(omitted_outputs),
-                )
-            )
-
-        context.debug(
-            'Finished executing transform for solid {solid}. Time elapsed: {millis:.3f} ms'.format(
-                solid=step.solid.name,
-                millis=timer_result.millis,
-            ),
-            execution_time_ms=timer_result.millis,
         )
 
-        for result in all_results:
-            yield result
+    return all_results
 
 
 class StepInput(object):
@@ -373,14 +364,20 @@ class ExecutionStep(object):
             friendly_name=self.friendly_name,
         )
 
-        with _user_code_error_boundary(context, error_str):
-            gen = self.compute_fn(context, self, evaluated_inputs)
+        def_name = self.solid.definition.name
 
-            if gen is None:
-                check.invariant(not self.step_outputs)
-                return
+        with context.values({'solid': self.solid.name, 'solid_definition': def_name}):
+            with _execution_step_error_boundary(context, self, error_str):
+                gen = self.compute_fn(context, self, evaluated_inputs)
 
-            return list(gen)
+                if gen is None:
+                    check.invariant(not self.step_outputs)
+                    return
+
+                results = list(gen)
+
+
+            return results
 
     def _error_check_results(self, results):
         seen_outputs = set()
@@ -918,7 +915,6 @@ def _create_expectation_lambda(solid, inout_def, expectation_def, internal_outpu
     def _do_expectation(context, step, inputs):
         with context.values(
             {
-                'solid': solid.name,
                 inout_def.descriptive_key: inout_def.name,
                 'expectation': expectation_def.name
             }
