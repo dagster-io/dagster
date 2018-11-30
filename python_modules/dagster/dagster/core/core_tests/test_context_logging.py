@@ -4,6 +4,7 @@ import uuid
 
 from dagster.core.execution_context import (ExecutionContext, DAGSTER_META_KEY)
 from dagster.utils.logging import (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+from dagster.utils.test import create_test_runtime_execution_context
 
 
 class LogMessageForTest(namedtuple('LogMessageForTest', 'msg extra level')):
@@ -56,7 +57,7 @@ def orig_message(message):
 
 def test_context_logging():
     logger = LoggerForTest()
-    context = ExecutionContext.create_for_test(loggers=[logger])
+    context = create_test_runtime_execution_context(loggers=[logger])
     context.debug('debug from context')
     context.info('info from context')
     context.warning('warning from context')
@@ -79,7 +80,7 @@ def test_context_logging():
 
 def test_context_value():
     logger = LoggerForTest()
-    context = ExecutionContext.create_for_test(loggers=[logger])
+    context = create_test_runtime_execution_context(loggers=[logger])
 
     with context.value('some_key', 'some_value'):
         context.info('some message')
@@ -90,7 +91,7 @@ def test_context_value():
 
 
 def test_get_context_value():
-    context = ExecutionContext.create_for_test()
+    context = create_test_runtime_execution_context()
 
     with context.value('some_key', 'some_value'):
         assert context.get_context_value('some_key') == 'some_value'
@@ -98,7 +99,7 @@ def test_get_context_value():
 
 def test_log_message_id():
     logger = LoggerForTest()
-    context = ExecutionContext.create_for_test(loggers=[logger])
+    context = create_test_runtime_execution_context(loggers=[logger])
     context.info('something')
 
     assert isinstance(uuid.UUID(logger.messages[0].dagster_meta['log_message_id']), uuid.UUID)
@@ -106,7 +107,7 @@ def test_log_message_id():
 
 def test_interleaved_context_value():
     logger = LoggerForTest()
-    context = ExecutionContext.create_for_test(loggers=[logger])
+    context = create_test_runtime_execution_context(loggers=[logger])
 
     with context.value('key_one', 'value_one'):
         context.info('message one')
@@ -128,7 +129,7 @@ def test_interleaved_context_value():
 
 def test_message_specific_logging():
     logger = LoggerForTest()
-    context = ExecutionContext.create_for_test(loggers=[logger])
+    context = create_test_runtime_execution_context(loggers=[logger])
     with context.value('key_one', 'value_one'):
         context.info('message one', key_two='value_two')
 
@@ -143,7 +144,7 @@ def test_message_specific_logging():
 
 def test_multicontext_value():
     logger = LoggerForTest()
-    context = ExecutionContext.create_for_test(loggers=[logger])
+    context = create_test_runtime_execution_context(loggers=[logger])
     with context.values({
         'key_one': 'value_one',
         'key_two': 'value_two',
