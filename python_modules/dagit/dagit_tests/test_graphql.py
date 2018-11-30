@@ -20,6 +20,7 @@ import dagster.pandas as dagster_pd
 
 from dagit.schema import create_schema
 from dagit.app import RepositoryContainer
+from dagit.pipeline_run_storage import PipelineRunStorage 
 
 from .production_query import PRODUCTION_QUERY
 
@@ -696,7 +697,10 @@ def execute_dagster_graphql(repo, query, variables=None):
     return graphql(
         create_schema(),
         query,
-        context={'repository_container': RepositoryContainer(repository=repo)},
+        context={
+            'repository_container': RepositoryContainer(repository=repo),
+            'pipeline_runs': PipelineRunStorage(),
+        },
         variables=variables,
     )
 

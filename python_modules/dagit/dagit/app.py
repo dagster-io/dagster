@@ -153,7 +153,8 @@ def create_app(repository_container, pipeline_runs):
     subscription_server = DagsterSubscriptionServer(schema)
 
     context = DagsterGraphQLContext(
-        repository_container=repository_container, pipeline_runs=pipeline_runs
+        repository_container=repository_container,
+        pipeline_runs=pipeline_runs,
     )
 
     app.add_url_rule(

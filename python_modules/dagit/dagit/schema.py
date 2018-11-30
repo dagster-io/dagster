@@ -8,7 +8,6 @@ import gevent
 import graphene
 from graphene.types.generic import GenericScalar
 
-
 import dagster
 import dagster.core.definitions
 import dagster.core.config_types
@@ -24,8 +23,11 @@ from dagster.core.execution import create_execution_plan
 
 from dagster.core.events import (
     EventRecord,
+    EventType,
     PipelineEventRecord,
 )
+
+from .pipeline_run_storage import PipelineRunState
 
 
 class PipelineConfig(GenericScalar):
@@ -928,15 +930,58 @@ class Mutation(graphene.ObjectType):
     start_pipeline_execution = StartPipelineExecutionMutation.Field()
 
 
-# Should be a union of all possible events
-class PipelineRunEvent(graphene.ObjectType):
+class LogMessageEvent(graphene.ObjectType):
     run_id = graphene.NonNull(graphene.ID)
     message = graphene.NonNull(graphene.String)
 
 
-def create_graphql_event(event):
+class PipelineEvent(graphene.ObjectType):
+    run_id = graphene.NonNull(graphene.ID)
+    message = graphene.NonNull(graphene.String)
+    pipeline = graphene.NonNull(Pipeline)
+
+
+class PipelineStartEvent(PipelineEvent):
+    pass
+
+class PipelineSuccessEvent(PipelineEvent):
+    pass
+
+class PipelineFailureEvent(PipelineEvent):
+    pass
+
+# Should be a union of all possible events
+class PipelineRunEvent(graphene.Union):
+    class Meta:
+        types = (LogMessageEvent, PipelineStartEvent, PipelineSuccessEvent, PipelineFailureEvent,)
+
+def create_graphql_event(event, pipeline):
     check.inst_param(event, 'event', EventRecord)
-    return PipelineRunEvent(run_id=event.run_id, message=event.message)
+    check.inst_param(pipeline, 'pipeline', dagster.core.definitions.PipelineDefinition)
+
+    if event.event_type == EventType.PIPELINE_START:
+        return PipelineStartEvent(
+            run_id=event.run_id,
+            message=event.message,
+            pipeline=Pipeline(pipeline),
+        )
+    elif event.event_type == EventType.PIPELINE_SUCCESS:
+        return PipelineSuccessEvent(
+            run_id=event.run_id,
+            message=event.message,
+            pipeline=Pipeline(pipeline),
+        )
+    elif event.event_type == EventType.PIPELINE_FAILURE:
+        return PipelineFailureEvent(
+            run_id=event.run_id,
+            message=event.message,
+            pipeline=Pipeline(pipeline),
+        )
+    elif event.event_type == EventType.UNCATEGORIZED:
+        return LogMessageEvent(run_id=event.run_id, message=event.message)
+    else:
+        check.failed('Unknown event type {event_type}'.format(event_type=event.event_type))
+
 
 
 from dagster import (
@@ -956,15 +1001,22 @@ class Subscription(graphene.ObjectType):
         pipeline_run_storage = info.context['pipeline_runs']
         run = pipeline_run_storage.get_run_by_id(runId)
         if run:
+            if run.status != PipelineRunState.NOT_STARTED:
+                check.failed('Run already started, state {state}'.format(state=run.status))
             repository = info.context['repository_container'].repository
             pipeline = repository.get_pipeline(run.execution_params.pipeline_name)
             gevent.spawn(
                 execute_pipeline,
                 pipeline,
                 run.execution_params.config,
-                reentrant_info=ReentrantInfo(runId),
+                reentrant_info=ReentrantInfo(
+                    runId,
+                    event_callback=run.handle_new_event,
+                ),
             )
-            return run.observable_after_cursor(after).map(create_graphql_event)
+            return run.observable_after_cursor(after).map(
+                lambda event: create_graphql_event(event, pipeline)
+            )
         else:
             raise Exception('No run with such id: {run_id}'.format(run_id=runId))
 

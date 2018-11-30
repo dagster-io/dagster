@@ -1,13 +1,14 @@
 import json
 from dagit import app
+from dagit.pipeline_run_storage import PipelineRunStorage
 from dagster.cli.dynamic_loader import DynamicObject
 from dagster.dagster_examples.repository import define_example_repository
 
 
 def test_smoke_app():
     repository_container = app.RepositoryContainer(repository=define_example_repository())
-
-    flask_app = app.create_app(repository_container)
+    pipeline_run_storage = PipelineRunStorage()
+    flask_app = app.create_app(repository_container, pipeline_run_storage)
     client = flask_app.test_client()
 
     result = client.post('/graphql', data={'query': 'query { pipelines { name }}'})

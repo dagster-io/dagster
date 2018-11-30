@@ -127,8 +127,9 @@ def construct_event_logger(event_record_callback):
     check.callable_param(event_record_callback, 'event_record_callback')
 
     return construct_single_handler_logger(
-        'event-logger', DEBUG,
+        'event-logger',
+        DEBUG,
         StructuredLoggerHandler(
             lambda logger_message: event_record_callback(construct_event_record(logger_message))
-        )
+        ),
     )
