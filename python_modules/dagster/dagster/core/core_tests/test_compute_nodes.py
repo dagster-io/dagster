@@ -20,9 +20,7 @@ from dagster.utils.test import create_test_runtime_execution_context
 
 
 def silencing_default_context():
-    return {
-        'default': PipelineContextDefinition(context_fn=lambda *_args: ExecutionContext.create(), )
-    }
+    return {'default': PipelineContextDefinition(context_fn=lambda *_args: ExecutionContext(), )}
 
 
 @lambda_solid

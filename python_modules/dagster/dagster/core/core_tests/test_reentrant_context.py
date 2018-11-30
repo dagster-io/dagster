@@ -51,7 +51,7 @@ def test_user_injected_context_stack():
         called['yup'] = True
 
     def _create_context(_info):
-        return ExecutionContext.create(context_stack={'quux': 'baaz'})
+        return ExecutionContext(context_stack={'quux': 'baaz'})
 
     pipeline_def = PipelineDefinition(
         name='injected_run_id',
@@ -78,7 +78,7 @@ def test_user_injected_context_stack_collision():
         called['yup'] = True
 
     def _create_context(_info):
-        return ExecutionContext.create(context_stack={'foo': 'baaz'})
+        return ExecutionContext(context_stack={'foo': 'baaz'})
 
     pipeline_def = PipelineDefinition(
         name='injected_run_id',

@@ -27,7 +27,7 @@ from dagster.core.utility_solids import define_stub_solid
 
 
 def create_test_context():
-    return ExecutionContext.create()
+    return ExecutionContext()
 
 
 def create_empty_test_env():
