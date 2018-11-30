@@ -370,7 +370,7 @@ def join_spark_data_frames(info, left_data_frame, right_data_frame):
         right_data_frame,
         on=(
             getattr(left_data_frame,
-                    info.config.on_left) == getattr(right_data_frame, info.config.on_right)
+                    info.config['on_left']) == getattr(right_data_frame, info.config['on_right'])
         ),
-        how=info.config.how
+        how=info.config['how']
     )

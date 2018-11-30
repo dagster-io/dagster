@@ -245,7 +245,7 @@ def test_pipeline_download():
                 'q2_ticket_data_filename': {
                     'config': 'Origin_and_Destination_Survey_DB1BTicket_2018_2.csv'
                 },
-                'master_cord_filename': {
+                'master_cord_data_filename': {
                     'config': '954834304_T_MASTER_CORD.csv'
                 },
                 'download_april_on_time_data': {
@@ -366,6 +366,11 @@ def test_pipeline_download():
                         'skip_if_present': True,
                     },
                 },
+                'unzip_master_cord_data': {
+                    'config': {
+                        'skip_if_present': True,
+                    }
+                }
             }
         }
     )
@@ -374,7 +379,7 @@ def test_pipeline_download():
 
 @pytest.mark.spark
 @pytest.mark.slow
-def test_pipeline():
+def test_pipeline_ingest():
     result = execute_pipeline(
         define_airline_demo_ingest_pipeline(),
         {
@@ -412,27 +417,30 @@ def test_pipeline():
             'solids': {
                 'april_on_time_data_filename': {
                     'config':
-                    'On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_4.csv'
+                    'source_data/On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_4.csv'
                 },
                 'may_on_time_data_filename': {
                     'config':
-                    'On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_5.csv'
+                    'source_data/On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_5.csv'
                 },
                 'june_on_time_data_filename': {
                     'config':
-                    'On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_6.csv'
+                    'source_data/On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_6.csv'
+                },
+                'q2_sfo_weather_filename': {
+                    'config': 'source_data/sfo_q2_weather.txt'
                 },
                 'q2_coupon_data_filename': {
-                    'config': 'Origin_and_Destination_Survey_DB1BCoupon_2018_2.csv'
+                    'config': 'source_data/Origin_and_Destination_Survey_DB1BCoupon_2018_2.csv'
                 },
                 'q2_market_data_filename': {
-                    'config': 'Origin_and_Destination_Survey_DB1BMarket_2018_2.csv'
+                    'config': 'source_data/Origin_and_Destination_Survey_DB1BMarket_2018_2.csv'
                 },
                 'q2_ticket_data_filename': {
-                    'config': 'Origin_and_Destination_Survey_DB1BTicket_2018_2.csv'
+                    'config': 'source_data/Origin_and_Destination_Survey_DB1BTicket_2018_2.csv'
                 },
-                'master_cord_filename': {
-                    'config': '954834304_T_MASTER_CORD.csv'
+                'master_cord_data_filename': {
+                    'config': 'source_data/954834304_T_MASTER_CORD.csv'
                 },
                 # FIXME should these be stubbed inputs instead?
                 'ingest_q2_coupon_data': {
@@ -465,7 +473,7 @@ def test_pipeline():
                 },
                 'ingest_q2_sfo_weather': {
                     'config': {
-                        'input_csv': 'source_data/q2_sfo_weather.txt'  # FIXME
+                        'input_csv': 'source_data/sfo_q2_weather.txt'  # FIXME
                     }
                 },
                 'ingest_april_on_time_data': {
@@ -506,19 +514,45 @@ def test_pipeline():
                         'source_data/On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_5.csv'
                     }
                 },
-                'load_april_weather_and_on_time_data': {
+                'ingest_master_cord_data': {
                     'config': {
-                        'table_name': 'april_weather_and_on_time_data',
+                        'input_csv': 'source_data/954834304_T_MASTER_CORD.csv'
                     }
                 },
-                'load_may_weather_and_on_time_data': {
+                'join_april_on_time_data_to_master_cord_data': {
                     'config': {
-                        'table_name': 'may_weather_and_on_time_data',
+                        'on_left': 'OriginAirportSeqID',
+                        'on_right': 'AIRPORT_SEQ_ID',
+                        'how': 'inner',
                     }
                 },
-                'load_june_weather_and_on_time_data': {
+                'join_may_on_time_data_to_master_cord_data': {
                     'config': {
-                        'table_name': 'june_weather_and_on_time_data',
+                        'on_left': 'OriginAirportSeqID',
+                        'on_right': 'AIRPORT_SEQ_ID',
+                        'how': 'inner',
+                    }
+                },
+                'join_june_on_time_data_to_master_cord_data': {
+                    'config': {
+                        'on_left': 'OriginAirportSeqID',
+                        'on_right': 'AIRPORT_SEQ_ID',
+                        'how': 'inner',
+                    }
+                },
+                'load_april_on_time_data': {
+                    'config': {
+                        'table_name': 'april_on_time_data',
+                    }
+                },
+                'load_may_on_time_data': {
+                    'config': {
+                        'table_name': 'may_on_time_data',
+                    }
+                },
+                'load_june_on_time_data': {
+                    'config': {
+                        'table_name': 'june_on_time_data',
                     }
                 },
                 'load_q2_coupon_data': {
@@ -534,6 +568,11 @@ def test_pipeline():
                 'load_q2_ticket_data': {
                     'config': {
                         'table_name': 'q2_ticket_data',
+                    }
+                },
+                'load_q2_sfo_weather': {
+                    'config': {
+                        'table_name': 'q2_sfo_weather',
                     }
                 }
             },
