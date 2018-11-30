@@ -13,10 +13,11 @@ from dagster.cli.dynamic_loader import (
     DynamicObject,
 )
 
+from dagit.templates.playground import TEMPLATE as PLAYGROUND_TEMPLATE
+
 from .subscription_server import DagsterSubscriptionServer
 from .schema import create_schema
 from .pipeline_run_storage import PipelineRunStorage
-from .templates.playground import TEMPLATE as PLAYGROUND_TEMPLATE
 
 
 class RepositoryContainer(object):
