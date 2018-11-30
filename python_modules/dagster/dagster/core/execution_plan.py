@@ -247,37 +247,37 @@ def _execute_core_transform(context, step, conf, inputs):
 
     solid = step.solid
 
-    with context.values({'solid': solid.name, 'solid_definition': solid.definition.name}):
-        context.debug('Executing core transform for solid {solid}.'.format(solid=solid.name))
+    # with context.values({'solid': solid.name, 'solid_definition': solid.definition.name}):
+    context.debug('Executing core transform for solid {solid}.'.format(solid=solid.name))
 
-        with time_execution_scope() as timer_result, \
-            _user_code_error_boundary(context, error_str):
+    with time_execution_scope() as timer_result, \
+        _user_code_error_boundary(context, error_str):
 
-            all_results = list(_yield_transform_results(context, step, conf, inputs))
+        all_results = list(_yield_transform_results(context, step, conf, inputs))
 
-        if len(all_results) != len(solid.definition.output_defs):
-            emitted_result_names = set([r.output_name for r in all_results])
-            solid_output_names = set(
-                [output_def.name for output_def in solid.definition.output_defs]
+    if len(all_results) != len(solid.definition.output_defs):
+        emitted_result_names = set([r.output_name for r in all_results])
+        solid_output_names = set(
+            [output_def.name for output_def in solid.definition.output_defs]
+        )
+        omitted_outputs = solid_output_names.difference(emitted_result_names)
+        context.info(
+            'Solid {solid} did not fire outputs {outputs}'.format(
+                solid=solid.name,
+                outputs=repr(omitted_outputs),
             )
-            omitted_outputs = solid_output_names.difference(emitted_result_names)
-            context.info(
-                'Solid {solid} did not fire outputs {outputs}'.format(
-                    solid=solid.name,
-                    outputs=repr(omitted_outputs),
-                )
-            )
-
-        context.debug(
-            'Finished executing transform for solid {solid}. Time elapsed: {millis:.3f} ms'.format(
-                solid=step.solid.name,
-                millis=timer_result.millis,
-            ),
-            execution_time_ms=timer_result.millis,
         )
 
-        for result in all_results:
-            yield result
+    context.debug(
+        'Finished executing transform for solid {solid}. Time elapsed: {millis:.3f} ms'.format(
+            solid=step.solid.name,
+            millis=timer_result.millis,
+        ),
+        execution_time_ms=timer_result.millis,
+    )
+
+    for result in all_results:
+        yield result
 
 
 class StepInput(object):
@@ -373,19 +373,22 @@ class ExecutionStep(object):
             friendly_name=self.friendly_name,
         )
 
-        with _user_code_error_boundary(context, error_str):
+        def_name = self.solid.definition.name
 
-            context.events.execution_plan_step_start(self.friendly_name)
+        with context.values({'solid': self.solid.name, 'solid_definition': def_name}):
+            with _user_code_error_boundary(context, error_str):
 
-            gen = self.compute_fn(context, self, evaluated_inputs)
+                context.events.execution_plan_step_start(self.friendly_name)
 
-            if gen is None:
-                check.invariant(not self.step_outputs)
-                return
+                gen = self.compute_fn(context, self, evaluated_inputs)
 
-            results = list(gen)
+                if gen is None:
+                    check.invariant(not self.step_outputs)
+                    return
 
-            context.events.execution_plan_step_success(self.friendly_name)
+                results = list(gen)
+
+                context.events.execution_plan_step_success(self.friendly_name)
 
             return results
 
@@ -925,7 +928,6 @@ def _create_expectation_lambda(solid, inout_def, expectation_def, internal_outpu
     def _do_expectation(context, step, inputs):
         with context.values(
             {
-                'solid': solid.name,
                 inout_def.descriptive_key: inout_def.name,
                 'expectation': expectation_def.name
             }

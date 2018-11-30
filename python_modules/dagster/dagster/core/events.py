@@ -124,6 +124,18 @@ class ExecutionStepEventRecord(EventRecord):
     def friendly_name(self):
         return self._logger_message.meta['friendly_name']
 
+    @property
+    def pipeline_name(self):
+        return self._logger_message.meta['pipeline']
+
+    @property
+    def solid_name(self):
+        return self._logger_message.meta['solid']
+
+    @property
+    def solid_definition_name(self):
+        return self._logger_message.meta['solid_definition']
+
 
 class LogMessageRecord(EventRecord):
     pass

@@ -67,7 +67,6 @@ def test_single_solid_pipeline():
         return 1
 
     def _event_callback(record):
-        assert isinstance(record, EventRecord)
         events[record.event_type].append(record)
 
     pipeline_def = define_event_logging_pipeline(
@@ -80,5 +79,14 @@ def test_single_solid_pipeline():
     assert result.success
     assert events
 
-    assert single_event(events, EventType.EXECUTION_PLAN_STEP_START)
-    assert single_event(events, EventType.EXECUTION_PLAN_STEP_SUCCESS)
+    start_event = single_event(events, EventType.EXECUTION_PLAN_STEP_START)
+    assert start_event.pipeline_name == 'single_solid_pipeline'
+    assert start_event.solid_name == 'solid_one'
+    assert start_event.solid_definition_name == 'solid_one'
+    success_event = single_event(events, EventType.EXECUTION_PLAN_STEP_SUCCESS)
+    assert success_event.pipeline_name == 'single_solid_pipeline'
+    assert success_event.solid_name == 'solid_one'
+    assert success_event.solid_definition_name == 'solid_one'
+
+    print('META')
+    print(start_event._logger_message.meta)
