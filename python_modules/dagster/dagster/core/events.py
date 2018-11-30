@@ -51,30 +51,30 @@ class ExecutionEvents:
             event_type=EventType.PIPELINE_FAILURE.value,
         )
 
-    def execution_plan_step_start(self, friendly_name):
-        check.str_param(friendly_name, 'friendly_name')
+    def execution_plan_step_start(self, key):
+        check.str_param(key, 'key')
         self.context.info(
-            'Beginning execution of {name}'.format(name=friendly_name),
+            'Beginning execution of {key}'.format(key=key),
             event_type=EventType.EXECUTION_PLAN_STEP_START.value,
         )
 
-    def execution_plan_step_success(self, friendly_name, millis):
-        check.str_param(friendly_name, 'friendly_name')
+    def execution_plan_step_success(self, key, millis):
+        check.str_param(key, 'key')
         check.float_param(millis, 'millis')
 
         self.context.info(
-            'Execution of {name} succeeded in {millis}'.format(
-                name=friendly_name,
+            'Execution of {key} succeeded in {millis}'.format(
+                key=key,
                 millis=millis,
             ),
             event_type=EventType.EXECUTION_PLAN_STEP_SUCCESS.value,
             millis=millis,
         )
 
-    def execution_plan_step_failure(self, friendly_name):
-        check.str_param(friendly_name, 'friendly_name')
+    def execution_plan_step_failure(self, key):
+        check.str_param(key, 'key')
         self.context.info(
-            'Execution of {name} failed'.format(name=friendly_name),
+            'Execution of {key} failed'.format(key=key),
             event_type=EventType.EXECUTION_PLAN_STEP_FAILURE.value,
         )
 
@@ -131,8 +131,8 @@ class PipelineEventRecord(EventRecord):
 
 class ExecutionStepEventRecord(EventRecord):
     @property
-    def friendly_name(self):
-        return self._logger_message.meta['friendly_name']
+    def key(self):
+        return self._logger_message.meta['key']
 
     @property
     def pipeline_name(self):

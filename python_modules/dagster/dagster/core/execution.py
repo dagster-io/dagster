@@ -446,7 +446,7 @@ def _execute_graph_iterator(context, execution_graph, environment):
 
     context.debug(
         'About to execute the compute node graph in the following order {order}'.format(
-            order=[cn.friendly_name for cn in steps]
+            order=[step.key for step in steps]
         )
     )
 
