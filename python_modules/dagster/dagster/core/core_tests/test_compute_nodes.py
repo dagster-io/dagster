@@ -1,7 +1,10 @@
+import pytest
+
 from dagster import (
     ExecutionContext,
     PipelineContextDefinition,
     PipelineDefinition,
+    check,
     config,
     lambda_solid,
 )
@@ -14,7 +17,12 @@ from dagster.core.execution import (
 
 from dagster.core.definitions import ExecutionGraph
 
-from dagster.core.execution_plan import create_execution_plan_core
+from dagster.core.execution_plan import (
+    ExecutionStep,
+    StepTag,
+    create_execution_plan_core,
+    create_execution_plan_from_steps,
+)
 
 from dagster.utils.test import create_test_runtime_execution_context
 
@@ -66,3 +74,31 @@ def test_compute_noop_node():
     outputs = list(plan.steps[0].execute(create_test_runtime_execution_context(), {}))
 
     assert outputs[0].success_data.value == 'foo'
+
+
+def test_duplicate_steps():
+    @lambda_solid
+    def foo():
+        pass
+
+    with pytest.raises(check.CheckError):
+        create_execution_plan_from_steps(
+            [
+                ExecutionStep(
+                    'same_name',
+                    [],
+                    [],
+                    lambda *args, **kwargs: None,
+                    StepTag.TRANSFORM,
+                    foo,
+                ),
+                ExecutionStep(
+                    'same_name',
+                    [],
+                    [],
+                    lambda *args, **kwargs: None,
+                    StepTag.TRANSFORM,
+                    foo,
+                ),
+            ]
+        )
