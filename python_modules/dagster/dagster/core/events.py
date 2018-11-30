@@ -58,15 +58,25 @@ class ExecutionEvents:
             event_type=EventType.EXECUTION_PLAN_STEP_START.value,
         )
 
-    def execution_plan_step_success(self, friendly_name):
+    def execution_plan_step_success(self, friendly_name, millis):
         check.str_param(friendly_name, 'friendly_name')
+        check.float_param(millis, 'millis')
+
         self.context.info(
-            'Beginning execution of {name}'.format(name=friendly_name),
+            'Execution of {name} succeeded in {millis}'.format(
+                name=friendly_name,
+                millis=millis,
+            ),
             event_type=EventType.EXECUTION_PLAN_STEP_SUCCESS.value,
+            millis=millis,
         )
 
-    def execution_plan_step_failure(self):
-        check.failed('TODO')
+    def execution_plan_step_failure(self, friendly_name):
+        check.str_param(friendly_name, 'friendly_name')
+        self.context.info(
+            'Execution of {name} failed'.format(name=friendly_name),
+            event_type=EventType.EXECUTION_PLAN_STEP_FAILURE.value,
+        )
 
     def pipeline_name(self):
         return self.context.get_context_value('pipeline')
@@ -137,6 +147,12 @@ class ExecutionStepEventRecord(EventRecord):
         return self._logger_message.meta['solid_definition']
 
 
+class ExecutionStepSuccessRecord(ExecutionStepEventRecord):
+    @property
+    def millis(self):
+        return self._logger_message.meta['millis']
+
+
 class LogMessageRecord(EventRecord):
     pass
 
@@ -144,7 +160,7 @@ class LogMessageRecord(EventRecord):
 EVENT_CLS_LOOKUP = {
     EventType.EXECUTION_PLAN_STEP_FAILURE: ExecutionStepEventRecord,
     EventType.EXECUTION_PLAN_STEP_START: ExecutionStepEventRecord,
-    EventType.EXECUTION_PLAN_STEP_SUCCESS: ExecutionStepEventRecord,
+    EventType.EXECUTION_PLAN_STEP_SUCCESS: ExecutionStepSuccessRecord,
     EventType.PIPELINE_FAILURE: PipelineEventRecord,
     EventType.PIPELINE_START: PipelineEventRecord,
     EventType.PIPELINE_SUCCESS: PipelineEventRecord,

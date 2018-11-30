@@ -59,7 +59,7 @@ def test_empty_pipeline():
     assert single_event(events, EventType.PIPELINE_SUCCESS).pipeline_name == 'empty_pipeline'
 
 
-def test_single_solid_pipeline():
+def test_single_solid_pipeline_success():
     events = defaultdict(list)
 
     @lambda_solid
@@ -82,11 +82,42 @@ def test_single_solid_pipeline():
     start_event = single_event(events, EventType.EXECUTION_PLAN_STEP_START)
     assert start_event.pipeline_name == 'single_solid_pipeline'
     assert start_event.solid_name == 'solid_one'
+
     assert start_event.solid_definition_name == 'solid_one'
     success_event = single_event(events, EventType.EXECUTION_PLAN_STEP_SUCCESS)
     assert success_event.pipeline_name == 'single_solid_pipeline'
     assert success_event.solid_name == 'solid_one'
     assert success_event.solid_definition_name == 'solid_one'
 
-    print('META')
-    print(start_event._logger_message.meta)
+    assert isinstance(success_event.millis, float)
+    assert success_event.millis > 0.0
+
+
+def test_single_solid_pipeline_failure():
+    events = defaultdict(list)
+
+    @lambda_solid
+    def solid_one():
+        raise Exception('nope')
+
+    def _event_callback(record):
+        events[record.event_type].append(record)
+
+    pipeline_def = define_event_logging_pipeline(
+        name='single_solid_pipeline',
+        solids=[solid_one],
+        event_callback=_event_callback,
+    )
+
+    result = execute_pipeline(pipeline_def, throw_on_error=False)
+    assert not result.success
+
+    start_event = single_event(events, EventType.EXECUTION_PLAN_STEP_START)
+    assert start_event.pipeline_name == 'single_solid_pipeline'
+    assert start_event.solid_name == 'solid_one'
+    assert start_event.solid_definition_name == 'solid_one'
+
+    failure_event = single_event(events, EventType.EXECUTION_PLAN_STEP_FAILURE)
+    assert failure_event.pipeline_name == 'single_solid_pipeline'
+    assert failure_event.solid_name == 'solid_one'
+    assert failure_event.solid_definition_name == 'solid_one'

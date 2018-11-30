@@ -164,6 +164,18 @@ def opt_int_param(obj, param_name):
     return obj
 
 
+def float_param(obj, param_name):
+    if not isinstance(obj, float):
+        raise_with_traceback(_param_type_mismatch_exception(obj, float, param_name))
+    return obj
+
+
+def opt_float_param(obj, param_name):
+    if obj is not None and not isinstance(obj, float):
+        raise_with_traceback(_param_type_mismatch_exception(obj, float, param_name))
+    return obj
+
+
 def _is_str(obj):
     return isinstance(obj, string_types)
 
