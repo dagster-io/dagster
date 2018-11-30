@@ -3,8 +3,11 @@ import sys
 import traceback
 import uuid
 
+import gevent
+
 import graphene
 from graphene.types.generic import GenericScalar
+
 
 import dagster
 import dagster.core.definitions
@@ -18,6 +21,11 @@ from dagster.core.types import DagsterCompositeType
 
 from dagster.core.evaluator import evaluate_config_value
 from dagster.core.execution import create_execution_plan
+
+from dagster.core.events import (
+    EventRecord,
+    PipelineEventRecord,
+)
 
 
 class PipelineConfig(GenericScalar):
@@ -897,9 +905,6 @@ class StartPipelineExecutionResult(graphene.Union):
         )
 
 
-ACTIVE_RUNS = {}
-
-
 class StartPipelineExecutionMutation(graphene.Mutation):
     class Arguments:
         executionParams = graphene.NonNull(PipelineExecutionParams)
@@ -907,9 +912,11 @@ class StartPipelineExecutionMutation(graphene.Mutation):
     Output = graphene.NonNull(StartPipelineExecutionResult)
 
     def mutate(self, info, executionParams):
-        def _start_execution(pipeline, _execution_params, _config_result):
+        pipeline_run_storage = info.context['pipeline_runs']
+
+        def _start_execution(pipeline, execution_params, _config_result):
             new_run_id = str(uuid.uuid4())
-            ACTIVE_RUNS[new_run_id] = 'phantom_started'
+            pipeline_run_storage.add_run(new_run_id, execution_params)
             return StartPipelineExecutionSuccess(
                 run=PipelineRun(runId=new_run_id, pipeline=Pipeline(pipeline))
             )
@@ -920,10 +927,23 @@ class StartPipelineExecutionMutation(graphene.Mutation):
 class Mutation(graphene.ObjectType):
     start_pipeline_execution = StartPipelineExecutionMutation.Field()
 
+
 # Should be a union of all possible events
 class PipelineRunEvent(graphene.ObjectType):
     run_id = graphene.NonNull(graphene.ID)
     message = graphene.NonNull(graphene.String)
+
+
+def create_graphql_event(event):
+    check.inst_param(event, 'event', EventRecord)
+    return PipelineRunEvent(run_id=event.run_id, message=event.message)
+
+
+from dagster import (
+    execute_pipeline,
+    ReentrantInfo,
+)
+
 
 class Subscription(graphene.ObjectType):
     pipelineRunLogs = graphene.Field(
@@ -933,13 +953,21 @@ class Subscription(graphene.ObjectType):
     )
 
     def resolve_pipelineRunLogs(self, info, runId, after=None):
-        run = info.context['pipeline_runs'].get_run_by_id(runId)
+        pipeline_run_storage = info.context['pipeline_runs']
+        run = pipeline_run_storage.get_run_by_id(runId)
         if run:
-            return run.observable_after_cursor(after).map(
-                lambda event: PipelineRunEvent(run_id=event.run_id, message=event.message)
+            repository = info.context['repository_container'].repository
+            pipeline = repository.get_pipeline(run.execution_params.pipeline_name)
+            gevent.spawn(
+                execute_pipeline,
+                pipeline,
+                run.execution_params.config,
+                reentrant_info=ReentrantInfo(runId),
             )
+            return run.observable_after_cursor(after).map(create_graphql_event)
         else:
-            raise Exception('No run with such id: ${run_id}'.format(run_id=runId))
+            raise Exception('No run with such id: {run_id}'.format(run_id=runId))
+
 
 def create_schema():
     return graphene.Schema(

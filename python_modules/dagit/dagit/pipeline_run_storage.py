@@ -1,20 +1,36 @@
+from enum import Enum
 import logging
 from rx import Observable
 from dagster import check
 from dagster.utils.logging import StructuredLoggerMessage
-from dagster.core.events import PipelineEventRecord
+from dagster.core.events import (
+    EventRecord,
+    PipelineEventRecord,
+)
+
+
+class PipelineRunState(Enum):
+    NOT_STARTED = 'NOT_STARTED'
+    STARTED = 'STARTED'
+    SUCCESS = 'SUCCESS'
+    FAILURE = 'FAILURE'
+
+
+import multiprocessing as mp
 
 
 class PipelineRunStorage(object):
     def __init__(self):
         self._runs = {}
-        self.add_run('foo')
+        self.add_run('foo', None)
 
     def _process_message(self, message):
         print(message, message.record_dagster_meta)
 
-    def add_run(self, run_id):
-        self._runs[run_id] = PipelineRun(run_id)
+    def add_run(self, run_id, execution_params):
+        check.invariant(run_id not in self._runs)
+
+        self._runs[run_id] = PipelineRun(run_id, execution_params)
         # Temp, should subscribe to logging here
         self._runs[run_id].handle_new_event(
             PipelineEventRecord(
@@ -66,16 +82,18 @@ class PipelineRunStorage(object):
 
 
 class PipelineRun(object):
-    def __init__(self, run_id):
+    def __init__(self, run_id, execution_params):
         self._logs = []
         self._run_id = run_id
-        self._status = None  # NOT_STARTED, RUNNING, FINISHED
+        self._status = PipelineRunState.NOT_STARTED
         self._subscribers = []
+        self.execution_params = execution_params
 
     def logs_from(self, cursor):
         return self._logs[cursor:]
 
     def handle_new_event(self, new_event):
+        check.inst_param(new_event, 'new_event', EventRecord)
         self._logs.append(new_event)
         for subscriber in self._subscribers:
             subscriber.handle_new_event(new_event)
@@ -84,7 +102,9 @@ class PipelineRun(object):
         self._subscribers.append(subscriber)
 
     def observable_after_cursor(self, cursor=None):
-        return Observable.create(PipelineRunObservableSubscribe(self, cursor))
+        return Observable.create( # pylint: disable=E1101
+            PipelineRunObservableSubscribe(self, cursor),
+        )
 
 
 #
@@ -109,4 +129,5 @@ class PipelineRunObservableSubscribe(object):
         self.pipeline_run.subscribe(self)
 
     def handle_new_event(self, event):
+        check.inst_param(event, 'event', EventRecord)
         self.observer.on_next(event)
