@@ -24,10 +24,10 @@ class PipelineRunStorage(object):
     def _process_message(self, message):
         print(message, message.record_dagster_meta)
 
-    def add_run(self, run_id, execution_params):
+    def add_run(self, run_id, pipeline_name, config):
         check.invariant(run_id not in self._runs)
 
-        self._runs[run_id] = PipelineRun(run_id, execution_params)
+        self._runs[run_id] = PipelineRun(run_id, pipeline_name, config)
 
     def all_runs(self):
         return self._runs.keys()
@@ -40,12 +40,13 @@ class PipelineRunStorage(object):
 
 
 class PipelineRun(object):
-    def __init__(self, run_id, execution_params):
+    def __init__(self, run_id, pipeline_name, config):
         self._logs = []
         self._run_id = run_id
         self._status = PipelineRunState.NOT_STARTED
         self._subscribers = []
-        self.execution_params = execution_params
+        self.pipeline_name = pipeline_name
+        self.config = config
 
     def logs_from(self, cursor):
         return self._logs[cursor:]

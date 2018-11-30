@@ -16,6 +16,7 @@ from dagster.cli.dynamic_loader import (
 from .pipeline_run_storage import PipelineRunStorage
 from .subscription_server import DagsterSubscriptionServer
 from .schema import create_schema
+from .schema.context import DagsterGraphQLContext
 from .templates.playground import TEMPLATE as PLAYGROUND_TEMPLATE
 
 
@@ -57,26 +58,6 @@ class RepositoryContainer(object):
         return self.repo_error
 
 
-class DagsterGraphQLContext(object):
-    def __init__(self, repository_container, pipeline_runs):
-        self.repository_container = check.inst_param(
-            repository_container,
-            'repository_container',
-            RepositoryContainer,
-        )
-        self.pipeline_runs = check.inst_param(
-            pipeline_runs,
-            'pipeline_runs',
-            PipelineRunStorage,
-        )
-
-    def as_dict(self):
-        return {
-            'repository_container': self.repository_container,
-            'pipeline_runs': self.pipeline_runs
-        }
-
-
 class DagsterGraphQLView(GraphQLView):
     def __init__(self, context, **kwargs):
         super(DagsterGraphQLView, self).__init__(**kwargs)
@@ -87,7 +68,7 @@ class DagsterGraphQLView(GraphQLView):
         )
 
     def get_context(self):
-        return self.context.as_dict()
+        return self.context
 
 
 def dagster_graphql_subscription_view(subscription_server, context):
@@ -98,7 +79,7 @@ def dagster_graphql_subscription_view(subscription_server, context):
     )
 
     def view(ws):
-        subscription_server.handle(ws, request_context=context.as_dict())
+        subscription_server.handle(ws, request_context=context)
         return []
 
     return view
