@@ -34,6 +34,7 @@ from airline_demo.pipelines import (
     define_airline_demo_warehouse_pipeline,
 )
 from airline_demo.solids import (
+    create_sql_solid,
     download_from_s3,
     ingest_csv_to_spark,
     thunk,
@@ -73,6 +74,23 @@ def _spark_context():
             ),
         )
     }
+
+
+def test_create_sql_solid_with_bad_materialization_strategy():
+    with pytest.raises() as e:
+        create_sql_solid('foo', 'select * from bar', 'view')
+        raise NotImplementedError()
+
+
+def test_create_sql_solid_without_table_name():
+    with pytest.raises() as e:
+        create_sql_solid('foo', 'select * from bar', 'table')
+        raise NotImplementedError()
+
+
+def test_create_sql_solid():
+    result = create_sql_solid('foo', 'select * from bar', 'table', 'quux')
+    raise NotImplementedError()
 
 
 def test_thunk():
