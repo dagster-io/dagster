@@ -920,11 +920,32 @@ class StartPipelineExecutionMutation(graphene.Mutation):
 class Mutation(graphene.ObjectType):
     start_pipeline_execution = StartPipelineExecutionMutation.Field()
 
+# Should be a union of all possible events
+class PipelineRunEvent(graphene.ObjectType):
+    run_id = graphene.NonNull(graphene.ID)
+    message = graphene.NonNull(graphene.String)
+
+class Subscription(graphene.ObjectType):
+    pipelineRunLogs = graphene.Field(
+        graphene.NonNull(lambda: PipelineRunEvent),
+        runId=graphene.Argument(graphene.NonNull(graphene.ID)),
+        after=graphene.Argument(graphene.String)
+    )
+
+    def resolve_pipelineRunLogs(self, info, runId, after=None):
+        run = info.context['pipeline_runs'].get_run_by_id(runId)
+        if run:
+            return run.observable_after_cursor(after).map(
+                lambda event: PipelineRunEvent(run_id=event.run_id, message=event.message)
+            )
+        else:
+            raise Exception('No run with such id: ${run_id}'.format(run_id=runId))
 
 def create_schema():
     return graphene.Schema(
         query=Query,
         mutation=Mutation,
+        subscription=Subscription,
         types=[
             RegularType,
             CompositeType,

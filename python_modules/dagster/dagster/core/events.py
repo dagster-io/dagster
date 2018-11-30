@@ -90,6 +90,10 @@ class EventRecord:
         event_type = self._logger_message.meta.get('event_type')
         return construct_event_type(event_type)
 
+    @property
+    def run_id(self):
+        return self._logger_message.meta['run_id']
+
 
 class PipelineEventRecord(EventRecord):
     @property

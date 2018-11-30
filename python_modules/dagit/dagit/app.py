@@ -15,6 +15,8 @@ from dagster.cli.dynamic_loader import (
 
 from .subscription_server import DagsterSubscriptionServer
 from .schema import create_schema
+from .pipeline_run_storage import PipelineRunStorage
+from .templates.playground import TEMPLATE as PLAYGROUND_TEMPLATE
 
 
 class RepositoryContainer(object):
@@ -55,24 +57,48 @@ class RepositoryContainer(object):
         return self.repo_error
 
 
-class DagsterGraphQLView(GraphQLView):
-    def __init__(self, repository_container, **kwargs):
-        super(DagsterGraphQLView, self).__init__(**kwargs)
+class DagsterGraphQLContext(object):
+    def __init__(self, repository_container, pipeline_runs):
         self.repository_container = check.inst_param(
             repository_container,
             'repository_container',
             RepositoryContainer,
         )
+        self.pipeline_runs = check.inst_param(
+            pipeline_runs,
+            'pipeline_runs',
+            PipelineRunStorage,
+        )
+
+    def as_dict(self):
+        return {
+            'repository_container': self.repository_container,
+            'pipeline_runs': self.pipeline_runs
+        }
+
+
+class DagsterGraphQLView(GraphQLView):
+    def __init__(self, context, **kwargs):
+        super(DagsterGraphQLView, self).__init__(**kwargs)
+        self.context = check.inst_param(
+            context,
+            'context',
+            DagsterGraphQLContext,
+        )
 
     def get_context(self):
-        return {'repository_container': self.repository_container}
+        return self.context.as_dict()
 
 
-def dagster_graphql_subscription_view(subscription_server, repository_container):
+def dagster_graphql_subscription_view(subscription_server, context):
+    context = check.inst_param(
+        context,
+        'context',
+        DagsterGraphQLContext,
+    )
+
     def view(ws):
-        subscription_server.handle(
-            ws, request_context={'repository_container': repository_container}
-        )
+        subscription_server.handle(ws, request_context=context.as_dict())
         return []
 
     return view
@@ -118,7 +144,7 @@ def notebook_view(_path):
         return "<style>" + resources['inlining']['css'][0] + "</style>" + body, 200
 
 
-def create_app(repository_container):
+def create_app(repository_container, pipeline_runs):
     app = Flask('dagster-ui')
     sockets = Sockets(app)
     app.app_protocol = lambda environ_path_info: 'graphql-ws'
@@ -126,19 +152,25 @@ def create_app(repository_container):
     schema = create_schema()
     subscription_server = DagsterSubscriptionServer(schema)
 
+    context = DagsterGraphQLContext(
+        repository_container=repository_container, pipeline_runs=pipeline_runs
+    )
+
     app.add_url_rule(
-        '/graphql', 'graphql',
+        '/graphql',
+        'graphql',
         DagsterGraphQLView.as_view(
             'graphql',
             schema=schema,
             graphiql=True,
+            # XXX(freiksenet): Pass proper ws url
+            graphiql_template=PLAYGROUND_TEMPLATE,
             executor=Executor(),
-            repository_container=repository_container,
+            context=context
         )
     )
     sockets.add_url_rule(
-        '/graphql', 'graphql',
-        dagster_graphql_subscription_view(subscription_server, repository_container)
+        '/graphql', 'graphql', dagster_graphql_subscription_view(subscription_server, context)
     )
     app.add_url_rule('/notebook/<path:_path>', 'notebook', notebook_view)
     app.add_url_rule('/static/<path:path>/<string:file>', 'static_view', static_view)
