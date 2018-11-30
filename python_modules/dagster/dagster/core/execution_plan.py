@@ -172,12 +172,11 @@ def _execution_step_error_boundary(context, step, msg, **kwargs):
         context.events.execution_plan_step_failure(step.friendly_name)
 
         stack_trace = get_formatted_stack_trace(e)
-
         context.error(str(e), stack_trace=stack_trace)
+
         if isinstance(e, DagsterError):
             raise e
         else:
-            context.error(str(e), stack_trace=stack_trace)
             raise_from(
                 DagsterUserCodeExecutionError(
                     msg.format(**kwargs),
