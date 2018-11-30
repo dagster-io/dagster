@@ -14,7 +14,11 @@ import dagster.core.config_types
 import dagster.core.evaluator
 import dagster.core.errors
 
-from dagster import check
+from dagster import (
+    check,
+    execute_pipeline,
+    ReentrantInfo,
+)
 
 from dagster.core.types import DagsterCompositeType
 
@@ -944,16 +948,25 @@ class PipelineEvent(graphene.ObjectType):
 class PipelineStartEvent(PipelineEvent):
     pass
 
+
 class PipelineSuccessEvent(PipelineEvent):
     pass
+
 
 class PipelineFailureEvent(PipelineEvent):
     pass
 
+
 # Should be a union of all possible events
 class PipelineRunEvent(graphene.Union):
     class Meta:
-        types = (LogMessageEvent, PipelineStartEvent, PipelineSuccessEvent, PipelineFailureEvent,)
+        types = (
+            LogMessageEvent,
+            PipelineStartEvent,
+            PipelineSuccessEvent,
+            PipelineFailureEvent,
+        )
+
 
 def create_graphql_event(event, pipeline):
     check.inst_param(event, 'event', EventRecord)
@@ -983,13 +996,6 @@ def create_graphql_event(event, pipeline):
         check.failed('Unknown event type {event_type}'.format(event_type=event.event_type))
 
 
-
-from dagster import (
-    execute_pipeline,
-    ReentrantInfo,
-)
-
-
 class Subscription(graphene.ObjectType):
     pipelineRunLogs = graphene.Field(
         graphene.NonNull(lambda: PipelineRunEvent),
@@ -1001,8 +1007,10 @@ class Subscription(graphene.ObjectType):
         pipeline_run_storage = info.context['pipeline_runs']
         run = pipeline_run_storage.get_run_by_id(runId)
         if run:
+
             if run.status != PipelineRunState.NOT_STARTED:
                 check.failed('Run already started, state {state}'.format(state=run.status))
+
             repository = info.context['repository_container'].repository
             pipeline = repository.get_pipeline(run.execution_params.pipeline_name)
             gevent.spawn(

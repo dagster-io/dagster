@@ -1,6 +1,9 @@
 import uuid
 
+import pytest
+
 from graphql import graphql
+from graphql.execution.executors.gevent import GeventExecutor
 
 from dagster import (
     ConfigField,
@@ -20,7 +23,8 @@ import dagster.pandas as dagster_pd
 
 from dagit.schema import create_schema
 from dagit.app import RepositoryContainer
-from dagit.pipeline_run_storage import PipelineRunStorage 
+from dagit.pipeline_run_storage import PipelineRunStorage
+from dagster.utils import script_relative_path
 
 from .production_query import PRODUCTION_QUERY
 
@@ -693,15 +697,22 @@ def define_repo():
     )
 
 
-def execute_dagster_graphql(repo, query, variables=None):
+def execute_dagster_graphql(
+    repo,
+    query,
+    variables=None,
+    pipeline_run_storage=None,
+):
     return graphql(
         create_schema(),
         query,
         context={
             'repository_container': RepositoryContainer(repository=repo),
-            'pipeline_runs': PipelineRunStorage(),
+            'pipeline_runs': pipeline_run_storage if pipeline_run_storage else PipelineRunStorage(),
         },
         variables=variables,
+        # allow_subscriptions=True,
+        # executor=GeventExecutor(),
     )
 
 
@@ -942,7 +953,7 @@ def test_basic_start_pipeline_execution():
                     'solids': {
                         'load_num_csv': {
                             'config': {
-                                'path': 'test.csv'
+                                'path': script_relative_path('num.csv'),
                             }
                         },
                     },
@@ -1017,3 +1028,66 @@ def test_basis_start_pipeline_not_found_error():
     # just test existence
     assert result.data['startPipelineExecution']['__typename'] == 'PipelineNotFoundError'
     assert result.data['startPipelineExecution']['pipelineName'] == 'sjkdfkdjkf'
+
+
+@pytest.mark.skip('Cannot get subscriptions to work in this context yet')
+def test_basic_start_pipeline_execution_and_subscribe():
+    pipeline_run_storage = PipelineRunStorage()
+
+    result = execute_dagster_graphql(
+        define_repo(),
+        MUTATION_QUERY,
+        variables={
+            'executionParams': {
+                'pipelineName': 'pandas_hello_world',
+                'config': {
+                    'solids': {
+                        'load_num_csv': {
+                            'config': {
+                                'path': script_relative_path('num.csv'),
+                            }
+                        },
+                    },
+                },
+            },
+        },
+        pipeline_run_storage=pipeline_run_storage,
+    )
+
+    if result.errors:
+        raise Exception(result.errors)
+
+    assert result.data
+    assert not result.errors
+
+    # just test existence
+    assert result.data['startPipelineExecution']['__typename'] == 'StartPipelineExecutionSuccess'
+    run_id = result.data['startPipelineExecution']['run']['runId']
+    assert uuid.UUID(run_id)
+
+    result = execute_dagster_graphql(
+        define_repo(),
+        SUBSCRIPTION_QUERY,
+        variables={'runId': run_id},
+        pipeline_run_storage=pipeline_run_storage,
+    )
+
+    import time
+
+    print('RESULT')
+    print(result)
+    print(result.data)
+    print(result.errors)
+
+    # result.subscribe(lambda value: print(f'subscribed {value}'))
+
+    # time.sleep(3)
+
+
+SUBSCRIPTION_QUERY = '''
+subscription subscribeTest($runId: ID!) {
+    pipelineRunLogs(runId: $runId) {
+        __typename
+    }
+}
+'''
