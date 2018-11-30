@@ -13,11 +13,10 @@ from dagster.cli.dynamic_loader import (
     DynamicObject,
 )
 
-from dagit.templates.playground import TEMPLATE as PLAYGROUND_TEMPLATE
-
+from .pipeline_run_storage import PipelineRunStorage
 from .subscription_server import DagsterSubscriptionServer
 from .schema import create_schema
-from .pipeline_run_storage import PipelineRunStorage
+from .templates.playground import TEMPLATE as PLAYGROUND_TEMPLATE
 
 
 class RepositoryContainer(object):
@@ -172,7 +171,9 @@ def create_app(repository_container, pipeline_runs):
         )
     )
     sockets.add_url_rule(
-        '/graphql', 'graphql', dagster_graphql_subscription_view(subscription_server, context)
+        '/graphql',
+        'graphql',
+        dagster_graphql_subscription_view(subscription_server, context),
     )
     app.add_url_rule('/notebook/<path:_path>', 'notebook', notebook_view)
     app.add_url_rule('/static/<path:path>/<string:file>', 'static_view', static_view)
