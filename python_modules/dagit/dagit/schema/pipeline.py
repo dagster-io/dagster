@@ -13,10 +13,7 @@ class Pipeline(graphene.ObjectType):
     solids = non_null_list(lambda: Solid)
     contexts = non_null_list(lambda: PipelineContext)
     environment_type = graphene.NonNull(lambda: Type)
-    types = graphene.NonNull(
-        graphene.List(graphene.NonNull(lambda: Type)),
-        pipelineName=graphene.NonNull(graphene.String),
-    )
+    types = graphene.NonNull(graphene.List(graphene.NonNull(lambda: Type)), )
 
     def __init__(self, pipeline):
         super(Pipeline, self).__init__(name=pipeline.name, description=pipeline.description)

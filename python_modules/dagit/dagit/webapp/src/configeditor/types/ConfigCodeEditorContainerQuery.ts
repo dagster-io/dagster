@@ -7,30 +7,41 @@
 // GraphQL query operation: ConfigCodeEditorContainerQuery
 // ====================================================
 
-export interface ConfigCodeEditorContainerQuery_types_RegularType {
+export interface ConfigCodeEditorContainerQuery_pipelineOrError_PythonError {
+  __typename: "PythonError" | "PipelineNotFoundError";
+}
+
+export interface ConfigCodeEditorContainerQuery_pipelineOrError_Pipeline_types_RegularType {
   __typename: "RegularType";
   name: string;
 }
 
-export interface ConfigCodeEditorContainerQuery_types_CompositeType_fields_type {
+export interface ConfigCodeEditorContainerQuery_pipelineOrError_Pipeline_types_CompositeType_fields_type {
   name: string;
 }
 
-export interface ConfigCodeEditorContainerQuery_types_CompositeType_fields {
+export interface ConfigCodeEditorContainerQuery_pipelineOrError_Pipeline_types_CompositeType_fields {
   name: string;
-  type: ConfigCodeEditorContainerQuery_types_CompositeType_fields_type;
+  type: ConfigCodeEditorContainerQuery_pipelineOrError_Pipeline_types_CompositeType_fields_type;
 }
 
-export interface ConfigCodeEditorContainerQuery_types_CompositeType {
+export interface ConfigCodeEditorContainerQuery_pipelineOrError_Pipeline_types_CompositeType {
   __typename: "CompositeType";
   name: string;
-  fields: ConfigCodeEditorContainerQuery_types_CompositeType_fields[];
+  fields: ConfigCodeEditorContainerQuery_pipelineOrError_Pipeline_types_CompositeType_fields[];
 }
 
-export type ConfigCodeEditorContainerQuery_types = ConfigCodeEditorContainerQuery_types_RegularType | ConfigCodeEditorContainerQuery_types_CompositeType;
+export type ConfigCodeEditorContainerQuery_pipelineOrError_Pipeline_types = ConfigCodeEditorContainerQuery_pipelineOrError_Pipeline_types_RegularType | ConfigCodeEditorContainerQuery_pipelineOrError_Pipeline_types_CompositeType;
+
+export interface ConfigCodeEditorContainerQuery_pipelineOrError_Pipeline {
+  __typename: "Pipeline";
+  types: ConfigCodeEditorContainerQuery_pipelineOrError_Pipeline_types[];
+}
+
+export type ConfigCodeEditorContainerQuery_pipelineOrError = ConfigCodeEditorContainerQuery_pipelineOrError_PythonError | ConfigCodeEditorContainerQuery_pipelineOrError_Pipeline;
 
 export interface ConfigCodeEditorContainerQuery {
-  types: ConfigCodeEditorContainerQuery_types[];
+  pipelineOrError: ConfigCodeEditorContainerQuery_pipelineOrError;
 }
 
 export interface ConfigCodeEditorContainerQueryVariables {

@@ -7,7 +7,11 @@
 // GraphQL query operation: TypeListContainerQuery
 // ====================================================
 
-export interface TypeListContainerQuery_types_typeAttributes {
+export interface TypeListContainerQuery_pipelineOrError_PythonError {
+  __typename: "PythonError" | "PipelineNotFoundError";
+}
+
+export interface TypeListContainerQuery_pipelineOrError_Pipeline_types_typeAttributes {
   /**
    * 
    * True if the system defines it and it is the same type across pipelines.
@@ -25,14 +29,21 @@ export interface TypeListContainerQuery_types_typeAttributes {
   isSystemConfig: boolean;
 }
 
-export interface TypeListContainerQuery_types {
+export interface TypeListContainerQuery_pipelineOrError_Pipeline_types {
   name: string;
-  typeAttributes: TypeListContainerQuery_types_typeAttributes;
+  typeAttributes: TypeListContainerQuery_pipelineOrError_Pipeline_types_typeAttributes;
   description: string | null;
 }
 
+export interface TypeListContainerQuery_pipelineOrError_Pipeline {
+  __typename: "Pipeline";
+  types: TypeListContainerQuery_pipelineOrError_Pipeline_types[];
+}
+
+export type TypeListContainerQuery_pipelineOrError = TypeListContainerQuery_pipelineOrError_PythonError | TypeListContainerQuery_pipelineOrError_Pipeline;
+
 export interface TypeListContainerQuery {
-  types: TypeListContainerQuery_types[];
+  pipelineOrError: TypeListContainerQuery_pipelineOrError;
 }
 
 export interface TypeListContainerQueryVariables {

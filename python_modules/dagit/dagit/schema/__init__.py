@@ -22,10 +22,10 @@ def create_schema():
 
 
 class Query(graphene.ObjectType):
-    pipeline = graphene.Field(
+    pipelineOrError = graphene.Field(
         lambda: graphene.NonNull(errors.PipelineOrError), name=graphene.NonNull(graphene.String)
     )
-    pipelines = graphene.NonNull(errors.PipelinesOrError)
+    pipelinesOrError = graphene.NonNull(errors.PipelinesOrError)
 
     type = graphene.Field(
         lambda: pipeline.Type,

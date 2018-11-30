@@ -12,9 +12,8 @@ import PipelineExplorer from "./PipelineExplorer";
 import PipelineExecution from "./PipelineExecution";
 import {
   PipelinePageFragment,
-  PipelinePageFragment_Pipeline,
   PipelinePageFragment_PythonError,
-  PipelinePageFragment_PipelineNotFoundError
+  PipelinePageFragment_PipelineConnection_nodes
 } from "./types/PipelinePageFragment";
 
 export type IPipelinePageMatch = match<{
@@ -25,11 +24,11 @@ export type IPipelinePageMatch = match<{
 interface IPipelinePageProps {
   history: History;
   match: IPipelinePageMatch;
-  pipelinesOrErrors: Array<PipelinePageFragment>;
+  pipelinesOrError: PipelinePageFragment;
 }
 
 interface IPipelinePageTabProps extends IPipelinePageProps {
-  pipeline: PipelinePageFragment_Pipeline;
+  pipeline: PipelinePageFragment_PipelineConnection_nodes;
 }
 
 const TABS = [
@@ -63,22 +62,20 @@ const TABS = [
 export default class PipelinePage extends React.Component<IPipelinePageProps> {
   static fragments = {
     PipelinePageFragment: gql`
-      fragment PipelinePageFragment on PipelineOrError {
+      fragment PipelinePageFragment on PipelinesOrError {
         __typename
         ... on PythonError {
           message
           stack
         }
-        ... on PipelineNotFoundError {
-          message
-          stack
-        }
-        ... on Pipeline {
-          ...PipelineExecutionFragment
-          ...PipelineExplorerFragment
-          ...PipelineJumpBarFragment
-          solids {
-            ...PipelineExplorerSolidFragment
+        ... on PipelineConnection {
+          nodes {
+            ...PipelineExecutionFragment
+            ...PipelineExplorerFragment
+            ...PipelineJumpBarFragment
+            solids {
+              ...PipelineExplorerSolidFragment
+            }
           }
         }
       }
@@ -91,23 +88,15 @@ export default class PipelinePage extends React.Component<IPipelinePageProps> {
   };
 
   render() {
-    const { history, match, pipelinesOrErrors } = this.props;
+    const { history, match, pipelinesOrError } = this.props;
 
-    let error:
-      | PipelinePageFragment_PipelineNotFoundError
-      | PipelinePageFragment_PythonError
-      | null = null;
-    const pipelines: Array<PipelinePageFragment_Pipeline> = [];
+    let error: PipelinePageFragment_PythonError | null = null;
+    let pipelines: Array<PipelinePageFragment_PipelineConnection_nodes> = [];
 
-    for (const pipelineOrError of pipelinesOrErrors) {
-      if (
-        pipelineOrError.__typename === "PythonError" ||
-        pipelineOrError.__typename == "PipelineNotFoundError"
-      ) {
-        error = pipelineOrError;
-      } else {
-        pipelines.push(pipelineOrError);
-      }
+    if (pipelinesOrError.__typename === "PythonError") {
+      error = pipelinesOrError;
+    } else {
+      pipelines = pipelinesOrError.nodes;
     }
 
     const selectedTab = TABS.find(t => t.slug === match.params.tab) || TABS[0];
