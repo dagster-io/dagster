@@ -1,7 +1,6 @@
 import * as CodeMirror from "codemirror";
 import "codemirror/addon/hint/show-hint";
 import * as yaml from "yaml";
-import { Ajv } from "ajv";
 
 interface IParseStateParent {
   key: string;
@@ -9,13 +8,16 @@ interface IParseStateParent {
   childKeys: string[];
 }
 
+enum ContainerType {
+  Dict = 'dict',
+  List = 'list',
+}
+
 interface IParseState {
   trailingSpace: boolean;
-  inlineLists: number;
-  inlinePairs: number;
+  inlineContainers: ContainerType[];
   escaped: boolean;
-  inDict: boolean;
-  inDictValue: boolean;
+  inValue: boolean;
   inBlockLiteral: boolean;
   lastIndent: number;
   parents: IParseStateParent[];
@@ -49,12 +51,10 @@ const Constants = ["true", "false", "on", "off", "yes", "no"];
 const RegExps = {
   KEYWORD: new RegExp("\\b((" + Constants.join(")|(") + "))$", "i"),
   DICT_COLON: /^:\s*/,
-  DICT_KEY: /^\s*(?:[,\[\]{}&*!|>'"%@`][^\s'":]|[^,\[\]{}#&*!|>'"%@`])[^#]*?(?=\s*:($|\s))/,
+  DICT_KEY: /^\s*(?:[,\[\]{}&*!|>'"%@`][^\s'":]|[^,\[\]{}#&*!|>'"%@`])[^# ,]*?(?=\s*:)/,
   QUOTED_STRING: /^('([^']|\\.)*'?|"([^"]|\\.)*"?)/,
   BLOCKSTART_PIPE_OR_ARROW: /^\s*(\||\>)\s*/,
-  NUMBER: /^\s*-?[0-9\.\,]+\s?$/,
-  NUMBER_WITH_DICT_LOOKAHEAD: /^\s*-?[0-9\.]+\s?(?=(,|}))/,
-  NUMBER_WITH_LIST_LOOKAHEAD: /^\s*-?[0-9\.]+\s?(?=(,|]))/,
+  NUMBER: /^\s*-?[0-9\.]+\s?/,
   VARIABLE: /^\s*(\&|\*)[a-z0-9\._-]+\b/i
 }
 
@@ -66,17 +66,16 @@ CodeMirror.defineMode("yaml", () => {
       return {
         trailingSpace: false,
         escaped: false,
-        inDict: false,
-        inDictValue: false,
+        inValue: false,
         inBlockLiteral: false,
-        inlineLists: 0,
-        inlinePairs: 0,
+        inlineContainers: [],
         lastIndent: 0,
         parents: [],
       };
     },
     token: (stream, state: IParseState) => {
       const ch = stream.peek();
+
       // reset escape, indent and trailing
       const wasEscaped = state.escaped;
       const wasTrailingSpace = state.trailingSpace;
@@ -97,6 +96,7 @@ CodeMirror.defineMode("yaml", () => {
         stream.next();
         return null;
       }
+
       // comments
       // either beginning of the line or had whitespace before
       if (ch === "#" && (stream.sol() || wasTrailingSpace)) {
@@ -115,111 +115,110 @@ CodeMirror.defineMode("yaml", () => {
 
       // array list item, value to follow
       if (stream.match(/-/)) {
-        state.inDictValue = true;
+        state.inValue = true;
         return "meta";
       }
 
       // doc start / end
       if (stream.sol()) {
-        state.inDict = false;
-        state.inDictValue = false;
+        state.inValue = false;
         state.parents = [];
 
         if (stream.match(/---/) || stream.match(/\.\.\./)) {
-          state.inDict = false;
           return "def";
         }
       }
 
-      // inline list / dict eg: `key: {a: 1, b: 2}`
+      // Handle inline objects and arrays. These can be nested arbitrarily but we
+      // don't currently support them spanning multiple lines.
       if (stream.match(/^(\{|\}|\[|\])/)) {
         if (ch == "{") {
-          state.inlinePairs++;
+          state.inlineContainers = [...state.inlineContainers, ContainerType.Dict];
+          state.inValue = false;
         } else if (ch == "}") {
-          state.inlinePairs--;
+          state.inlineContainers = state.inlineContainers.slice(0, state.inlineContainers.length - 1)
+          state.parents = state.parents.slice(0, state.parents.length - 1)
+          state.inValue = state.inlineContainers.length > 0;
         } else if (ch == "[") {
-          state.inlineLists++;
-        } else {
-          state.inDictValue = false;
-          state.inlineLists--;
+          state.inlineContainers = [...state.inlineContainers, ContainerType.List];
+        } else if (ch == "]") {
+          state.inlineContainers = state.inlineContainers.slice(0, state.inlineContainers.length - 1)
+          state.inValue = state.inlineContainers.length > 0;
         }
         state.trailingSpace = false;
         return "meta";
       }
 
-      // list seperator
-      if (state.inlineLists > 0 && !wasEscaped && ch == ",") {
+      // Handle inline separators. For dictionaries, we pop from value parsing state back to
+      // key parsing state after a comma and unwind the parent stack.
+      if (state.inlineContainers && !wasEscaped && ch == ",") {
+        const current = state.inlineContainers[state.inlineContainers.length - 1];
+        if (current === ContainerType.Dict) {
+          state.parents = state.parents.slice(0, state.parents.length - 1)
+          state.inValue = false;
+        }
         stream.next();
         return "meta";
       }
 
-      // pairs seperator
-      if (state.inlinePairs > 0 && !wasEscaped && ch == ",") {
-        state.inDict = false;
-        state.inDictValue = false;
-        stream.next();
+      // A `:` fragment starts value parsing mode if it is not the last character on the line
+      if (stream.match(RegExps.DICT_COLON)) {
+        state.inValue = !stream.eol();
         return "meta";
       }
 
-      if (!state.inDictValue) {
+      // Handle dict key fragments. May be the first element on a line or nested within an inline
+      // (eg: {a: 1, b: 2}). We add the new key to the current `parent` and push a new parent
+      // in case the dict key has subkeys.
+      if (!state.inValue) {
         const match = stream.match(RegExps.DICT_KEY)
         if (match) {
           const key = match[0];
-          state.inDict = true;
-          state.parents = parentsPoppingItemsDeeperThan(state.parents, stream.indentation())
+          const keyIndent = stream.pos - key.length
+          state.parents = parentsPoppingItemsDeeperThan(state.parents, keyIndent)
           state.parents = parentsAddingChildKeyToLast(state.parents, key)
           state.parents = [
             ...state.parents,
-            { key: key, indent: state.lastIndent, childKeys: [] }
+            { key, indent: keyIndent, childKeys: [] }
           ];
           return "atom";
         }
       }
 
-      if (state.inDict && stream.match(RegExps.DICT_COLON)) {
-        state.inDictValue = true;
-        return "meta";
-      }
-
-      // dicts
-      if (state.inDictValue) {
+      if (state.inValue) {
         let result = null;
-        /* strings */
+
         if (stream.match(RegExps.QUOTED_STRING)) {
           result = "string";
         }
-
         if (stream.match(RegExps.BLOCKSTART_PIPE_OR_ARROW)) {
           state.inBlockLiteral = true;
           result = "meta";
         }
-        /* references */
         if (stream.match(RegExps.VARIABLE)) {
           result = "variable-2";
         }
-        /* numbers */
-        if (state.inlinePairs == 0 && stream.match(RegExps.NUMBER)) {
+        if (stream.match(RegExps.NUMBER)) {
           result = "number";
         }
-        if (
-          state.inlinePairs > 0 &&
-          stream.match(RegExps.NUMBER_WITH_DICT_LOOKAHEAD)
-        ) {
-          result = "number";
-        }
-        if (
-          state.inlineLists > 0 &&
-          stream.match(RegExps.NUMBER_WITH_LIST_LOOKAHEAD)
-        ) {
-          result = "number";
-          return result; // remain inDictValue until we reach `]`
-        }
-        /* keywords */
         if (stream.match(RegExps.KEYWORD)) {
           result = "keyword";
         }
 
-        state.inDictValue = false;
+        stream.eatSpace()
+
+        // If after consuming the value and trailing spaces we're at the end of the
+        // line, terminate the value and look for another key on the following line.
+        if (stream.eol() && !state.inBlockLiteral) {
+          state.inValue = false;
+        }
+
+        // If we can't identify the value, bail out and abort parsing the line
+        if (!result) {
+          stream.skipToEnd();
+          state.inValue = false;
+        }
+
         return result;
       }
 
@@ -229,12 +228,6 @@ CodeMirror.defineMode("yaml", () => {
       }
 
       stream.skipToEnd();
-      while (
-        state.parents.length > 0 &&
-        state.parents[state.parents.length - 1].indent >= stream.indentation()
-      ) {
-        state.parents = state.parents.slice(0, state.parents.length - 1);
-      }
 
       return null;
     }

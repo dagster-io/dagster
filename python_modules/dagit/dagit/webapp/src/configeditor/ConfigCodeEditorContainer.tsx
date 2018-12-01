@@ -120,7 +120,19 @@ export const CONFIG_CODE_EDITOR_CONTAINER_CHECK_CONFIG_QUERY = gql`
       ... on PipelineConfigValidationInvalid {
         errors {
           message
-          path
+          stack {
+            entries {
+              __typename
+              ... on EvaluationStackPathEntry {
+                field {
+                  name
+                }
+              }
+              ... on EvaluationStackListItemEntry {
+                listIndex
+              }
+            }
+          }
         }
       }
     }
@@ -132,32 +144,38 @@ async function checkConfig(
   pipelineName: string,
   config: any
 ): Promise<ValidationResult> {
-  if (config !== null) {
-    const result = await client.query<
-      ConfigCodeEditorContainerCheckConfigQuery,
-      ConfigCodeEditorContainerCheckConfigQueryVariables
-    >({
-      query: CONFIG_CODE_EDITOR_CONTAINER_CHECK_CONFIG_QUERY,
-      variables: {
-        executionParams: {
-          pipelineName: pipelineName,
-          config: config
-        }
-      },
-      fetchPolicy: "no-cache"
-    });
-
-    if (
-      result.data.isPipelineConfigValid.__typename ===
-      "PipelineConfigValidationInvalid"
-    ) {
-      return {
-        isValid: false,
-        errors: result.data.isPipelineConfigValid.errors
-      };
-    }
+  if (config === null) {
+    return { isValid: true };
   }
-  return {
-    isValid: true
-  };
+  const {
+    data: { isPipelineConfigValid }
+  } = await client.query<
+    ConfigCodeEditorContainerCheckConfigQuery,
+    ConfigCodeEditorContainerCheckConfigQueryVariables
+  >({
+    query: CONFIG_CODE_EDITOR_CONTAINER_CHECK_CONFIG_QUERY,
+    variables: {
+      executionParams: {
+        pipelineName: pipelineName,
+        config: config
+      }
+    },
+    fetchPolicy: "no-cache"
+  });
+
+  if (isPipelineConfigValid.__typename !== "PipelineConfigValidationInvalid") {
+    return { isValid: true };
+  }
+
+  const errors = isPipelineConfigValid.errors.map(({ message, stack }) => ({
+    message: message,
+    path: stack.entries.map(
+      entry =>
+        entry.__typename === "EvaluationStackPathEntry"
+          ? entry.field.name
+          : `${entry.listIndex}`
+    )
+  }));
+
+  return { isValid: false, errors: errors };
 }
