@@ -3,6 +3,12 @@ import "codemirror/addon/hint/show-hint";
 import * as yaml from "yaml";
 import { Ajv } from "ajv";
 
+interface IParseStateParent {
+  key: string;
+  indent: number;
+  childKeys: string[];
+}
+
 interface IParseState {
   trailingSpace: boolean;
   inlineLists: number;
@@ -12,19 +18,52 @@ interface IParseState {
   inDictValue: boolean;
   inBlockLiteral: boolean;
   lastIndent: number;
-  parents: Array<{ key: string; indent: number }>;
-  keysAtLevel: { [indent: number]: Array<string> };
+  parents: IParseStateParent[];
+}
+
+// Helper methods that mutate parser state. These must return new JavaScript objects.
+//
+function parentsPoppingItemsDeeperThan(parents: IParseStateParent[], indent: number) {
+  while (parents.length > 0 && parents[parents.length - 1].indent >= indent) {
+    parents = parents.slice(0, parents.length - 1);
+  }
+  return parents
+}
+
+function parentsAddingChildKeyToLast(parents: IParseStateParent[], key: string) {
+  if (parents.length === 0) return [];
+
+  const immediateParent = parents[parents.length - 1];
+  return [
+    ...parents.slice(0, parents.length - 1),
+    {
+      key: immediateParent.key,
+      indent: immediateParent.indent,
+      childKeys: [...immediateParent.childKeys, key],
+    }
+  ]
+}
+
+const Constants = ["true", "false", "on", "off", "yes", "no"];
+
+const RegExps = {
+  KEYWORD: new RegExp("\\b((" + Constants.join(")|(") + "))$", "i"),
+  DICT_COLON: /^:\s*/,
+  DICT_KEY: /^\s*(?:[,\[\]{}&*!|>'"%@`][^\s'":]|[^,\[\]{}#&*!|>'"%@`])[^#]*?(?=\s*:($|\s))/,
+  QUOTED_STRING: /^('([^']|\\.)*'?|"([^"]|\\.)*"?)/,
+  BLOCKSTART_PIPE_OR_ARROW: /^\s*(\||\>)\s*/,
+  NUMBER: /^\s*-?[0-9\.\,]+\s?$/,
+  NUMBER_WITH_DICT_LOOKAHEAD: /^\s*-?[0-9\.]+\s?(?=(,|}))/,
+  NUMBER_WITH_LIST_LOOKAHEAD: /^\s*-?[0-9\.]+\s?(?=(,|]))/,
+  VARIABLE: /^\s*(\&|\*)[a-z0-9\._-]+\b/i
 }
 
 CodeMirror.defineMode("yaml", () => {
-  const constants = ["true", "false", "on", "off", "yes", "no"];
-  const keywordRegex = new RegExp("\\b((" + constants.join(")|(") + "))$", "i");
-
   return {
     lineComment: "#",
     fold: "indent",
-    startState: () => {
-      const state: IParseState = {
+    startState: (): IParseState => {
+      return {
         trailingSpace: false,
         escaped: false,
         inDict: false,
@@ -34,9 +73,7 @@ CodeMirror.defineMode("yaml", () => {
         inlinePairs: 0,
         lastIndent: 0,
         parents: [],
-        keysAtLevel: {}
       };
-      return state;
     },
     token: (stream, state: IParseState) => {
       const ch = stream.peek();
@@ -67,11 +104,12 @@ CodeMirror.defineMode("yaml", () => {
         return "comment";
       }
 
-      if (state.inBlockLiteral && stream.indentation() > lastIndent) {
-        // literal strings
-        stream.skipToEnd();
-        return "string";
-      } else if (state.inBlockLiteral) {
+      if (state.inBlockLiteral) {
+        // continuation of a literal string that was started on a previous line
+        if (stream.indentation() > lastIndent) {
+          stream.skipToEnd();
+          return "string";
+        }
         state.inBlockLiteral = false;
       }
 
@@ -93,7 +131,7 @@ CodeMirror.defineMode("yaml", () => {
         }
       }
 
-      // inline list / dict
+      // inline list / dict eg: `key: {a: 1, b: 2}`
       if (stream.match(/^(\{|\}|\[|\])/)) {
         if (ch == "{") {
           state.inlinePairs++;
@@ -123,30 +161,22 @@ CodeMirror.defineMode("yaml", () => {
         return "meta";
       }
 
-      /* pairs (associative arrays) -> key */
       if (!state.inDictValue) {
-        const values = stream.match(
-          /^\s*(?:[,\[\]{}&*!|>'"%@`][^\s'":]|[^,\[\]{}#&*!|>'"%@`])[^#]*?(?=\s*:($|\s))/
-        );
-        if (values) {
-          const value = values[0];
+        const match = stream.match(RegExps.DICT_KEY)
+        if (match) {
+          const key = match[0];
           state.inDict = true;
-          while (
-            state.parents.length > 0 &&
-            state.parents[state.parents.length - 1].indent >=
-              stream.indentation()
-          ) {
-            state.parents = state.parents.slice(0, state.parents.length - 1);
-          }
+          state.parents = parentsPoppingItemsDeeperThan(state.parents, stream.indentation())
+          state.parents = parentsAddingChildKeyToLast(state.parents, key)
           state.parents = [
             ...state.parents,
-            { key: value, indent: state.lastIndent }
+            { key: key, indent: state.lastIndent, childKeys: [] }
           ];
           return "atom";
         }
       }
 
-      if (state.inDict && stream.match(/^:\s*/)) {
+      if (state.inDict && stream.match(RegExps.DICT_COLON)) {
         state.inDictValue = true;
         return "meta";
       }
@@ -155,37 +185,37 @@ CodeMirror.defineMode("yaml", () => {
       if (state.inDictValue) {
         let result = null;
         /* strings */
-        if (stream.match(/^('([^']|\\.)*'?|"([^"]|\\.)*"?)/)) {
+        if (stream.match(RegExps.QUOTED_STRING)) {
           result = "string";
         }
 
-        if (stream.match(/^\s*(\||\>)\s*/)) {
+        if (stream.match(RegExps.BLOCKSTART_PIPE_OR_ARROW)) {
           state.inBlockLiteral = true;
           result = "meta";
         }
         /* references */
-        if (stream.match(/^\s*(\&|\*)[a-z0-9\._-]+\b/i)) {
+        if (stream.match(RegExps.VARIABLE)) {
           result = "variable-2";
         }
         /* numbers */
-        if (state.inlinePairs == 0 && stream.match(/^\s*-?[0-9\.\,]+\s?$/)) {
+        if (state.inlinePairs == 0 && stream.match(RegExps.NUMBER)) {
           result = "number";
         }
         if (
           state.inlinePairs > 0 &&
-          stream.match(/^\s*-?[0-9\.\,]+\s?(?=(,|}))/)
+          stream.match(RegExps.NUMBER_WITH_DICT_LOOKAHEAD)
         ) {
           result = "number";
         }
         if (
           state.inlineLists > 0 &&
-          stream.match(/^\s*-?[0-9\.\,]+\s?(?=(,|]))/)
+          stream.match(RegExps.NUMBER_WITH_LIST_LOOKAHEAD)
         ) {
           result = "number";
           return result; // remain inDictValue until we reach `]`
         }
         /* keywords */
-        if (stream.match(keywordRegex)) {
+        if (stream.match(RegExps.KEYWORD)) {
           result = "keyword";
         }
 
@@ -194,7 +224,7 @@ CodeMirror.defineMode("yaml", () => {
       }
 
       // general strings
-      if (stream.match(/^('([^']|\\.)*'?|"([^"]|\\.)*"?)/)) {
+      if (stream.match(RegExps.QUOTED_STRING)) {
         return "string";
       }
 
@@ -317,34 +347,39 @@ function processToHint(
 
 function findAutocomplete(
   typeConfig: TypeConfig,
-  parents: Array<{ key: string; indent: number }>,
+  parents: IParseStateParent[],
   currentIndent: number
-): Array<FoundHint> {
+): FoundHint[] {
   parents = parents.filter(({ indent }) => currentIndent > indent);
-  let currentType = typeConfig.environment;
-  if (currentType && parents.length > 0) {
+
+  let available = typeConfig.environment;
+
+  if (available && parents.length > 0) {
     for (const parent of parents) {
-      const currentTypeDef = currentType.find(
-        ({ name }: { name: string }) => parent.key === name
-      );
+      const parentTypeDef = available.find(({ name }) => parent.key === name);
       if (
-        currentTypeDef &&
-        currentTypeDef.typeName &&
-        typeConfig.types[currentTypeDef.typeName]
+        parentTypeDef &&
+        parentTypeDef.typeName &&
+        typeConfig.types[parentTypeDef.typeName]
       ) {
-        currentType = typeConfig.types[currentTypeDef.typeName];
+        available = typeConfig.types[parentTypeDef.typeName];
       } else {
         return [];
       }
     }
+
+    const immediateParent = parents[parents.length - 1]
+    if (immediateParent) {
+      available = available.filter(item => 
+        immediateParent.childKeys.indexOf(item.name) === -1
+      )
+    }
   }
 
-  return currentType.map(
-    ({ name, typeName }: { name: string; typeName: string }) => ({
-      text: name,
-      hasChildren: typeName in typeConfig.types
-    })
-  );
+  return available.map(item => ({
+    text: item.name,
+    hasChildren: item.typeName ? item.typeName in typeConfig.types : false
+  }))
 }
 
 type CodemirrorLintError = {
