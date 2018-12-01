@@ -9,8 +9,8 @@ interface IParseStateParent {
 }
 
 enum ContainerType {
-  Dict = 'dict',
-  List = 'list',
+  Dict = "dict",
+  List = "list"
 }
 
 interface IParseState {
@@ -25,14 +25,20 @@ interface IParseState {
 
 // Helper methods that mutate parser state. These must return new JavaScript objects.
 //
-function parentsPoppingItemsDeeperThan(parents: IParseStateParent[], indent: number) {
+function parentsPoppingItemsDeeperThan(
+  parents: IParseStateParent[],
+  indent: number
+) {
   while (parents.length > 0 && parents[parents.length - 1].indent >= indent) {
     parents = parents.slice(0, parents.length - 1);
   }
-  return parents
+  return parents;
 }
 
-function parentsAddingChildKeyToLast(parents: IParseStateParent[], key: string) {
+function parentsAddingChildKeyToLast(
+  parents: IParseStateParent[],
+  key: string
+) {
   if (parents.length === 0) return [];
 
   const immediateParent = parents[parents.length - 1];
@@ -41,9 +47,9 @@ function parentsAddingChildKeyToLast(parents: IParseStateParent[], key: string) 
     {
       key: immediateParent.key,
       indent: immediateParent.indent,
-      childKeys: [...immediateParent.childKeys, key],
+      childKeys: [...immediateParent.childKeys, key]
     }
-  ]
+  ];
 }
 
 const Constants = ["true", "false", "on", "off", "yes", "no"];
@@ -56,7 +62,7 @@ const RegExps = {
   BLOCKSTART_PIPE_OR_ARROW: /^\s*(\||\>)\s*/,
   NUMBER: /^\s*-?[0-9\.]+\s?/,
   VARIABLE: /^\s*(\&|\*)[a-z0-9\._-]+\b/i
-}
+};
 
 CodeMirror.defineMode("yaml", () => {
   return {
@@ -70,7 +76,7 @@ CodeMirror.defineMode("yaml", () => {
         inBlockLiteral: false,
         inlineContainers: [],
         lastIndent: 0,
-        parents: [],
+        parents: []
       };
     },
     token: (stream, state: IParseState) => {
@@ -133,16 +139,28 @@ CodeMirror.defineMode("yaml", () => {
       // don't currently support them spanning multiple lines.
       if (stream.match(/^(\{|\}|\[|\])/)) {
         if (ch == "{") {
-          state.inlineContainers = [...state.inlineContainers, ContainerType.Dict];
+          state.inlineContainers = [
+            ...state.inlineContainers,
+            ContainerType.Dict
+          ];
           state.inValue = false;
         } else if (ch == "}") {
-          state.inlineContainers = state.inlineContainers.slice(0, state.inlineContainers.length - 1)
-          state.parents = state.parents.slice(0, state.parents.length - 1)
+          state.inlineContainers = state.inlineContainers.slice(
+            0,
+            state.inlineContainers.length - 1
+          );
+          state.parents = state.parents.slice(0, state.parents.length - 1);
           state.inValue = state.inlineContainers.length > 0;
         } else if (ch == "[") {
-          state.inlineContainers = [...state.inlineContainers, ContainerType.List];
+          state.inlineContainers = [
+            ...state.inlineContainers,
+            ContainerType.List
+          ];
         } else if (ch == "]") {
-          state.inlineContainers = state.inlineContainers.slice(0, state.inlineContainers.length - 1)
+          state.inlineContainers = state.inlineContainers.slice(
+            0,
+            state.inlineContainers.length - 1
+          );
           state.inValue = state.inlineContainers.length > 0;
         }
         state.trailingSpace = false;
@@ -152,9 +170,10 @@ CodeMirror.defineMode("yaml", () => {
       // Handle inline separators. For dictionaries, we pop from value parsing state back to
       // key parsing state after a comma and unwind the parent stack.
       if (state.inlineContainers && !wasEscaped && ch == ",") {
-        const current = state.inlineContainers[state.inlineContainers.length - 1];
+        const current =
+          state.inlineContainers[state.inlineContainers.length - 1];
         if (current === ContainerType.Dict) {
-          state.parents = state.parents.slice(0, state.parents.length - 1)
+          state.parents = state.parents.slice(0, state.parents.length - 1);
           state.inValue = false;
         }
         stream.next();
@@ -171,12 +190,15 @@ CodeMirror.defineMode("yaml", () => {
       // (eg: {a: 1, b: 2}). We add the new key to the current `parent` and push a new parent
       // in case the dict key has subkeys.
       if (!state.inValue) {
-        const match = stream.match(RegExps.DICT_KEY)
+        const match = stream.match(RegExps.DICT_KEY);
         if (match) {
           const key = match[0];
-          const keyIndent = stream.pos - key.length
-          state.parents = parentsPoppingItemsDeeperThan(state.parents, keyIndent)
-          state.parents = parentsAddingChildKeyToLast(state.parents, key)
+          const keyIndent = stream.pos - key.length;
+          state.parents = parentsPoppingItemsDeeperThan(
+            state.parents,
+            keyIndent
+          );
+          state.parents = parentsAddingChildKeyToLast(state.parents, key);
           state.parents = [
             ...state.parents,
             { key, indent: keyIndent, childKeys: [] }
@@ -205,7 +227,7 @@ CodeMirror.defineMode("yaml", () => {
           result = "keyword";
         }
 
-        stream.eatSpace()
+        stream.eatSpace();
 
         // If after consuming the value and trailing spaces we're at the end of the
         // line, terminate the value and look for another key on the following line.
@@ -361,18 +383,18 @@ function findAutocomplete(
       }
     }
 
-    const immediateParent = parents[parents.length - 1]
+    const immediateParent = parents[parents.length - 1];
     if (immediateParent) {
-      available = available.filter(item => 
-        immediateParent.childKeys.indexOf(item.name) === -1
-      )
+      available = available.filter(
+        item => immediateParent.childKeys.indexOf(item.name) === -1
+      );
     }
   }
 
   return available.map(item => ({
     text: item.name,
     hasChildren: item.typeName ? item.typeName in typeConfig.types : false
-  }))
+  }));
 }
 
 type CodemirrorLintError = {

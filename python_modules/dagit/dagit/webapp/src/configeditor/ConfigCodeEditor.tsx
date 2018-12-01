@@ -89,7 +89,7 @@ export default class ConfigCodeEditor extends React.Component<
             gutters: [
               "CodeMirror-foldgutter",
               "CodeMirror-lint-markers",
-              "CodeMirror-linenumbers",
+              "CodeMirror-linenumbers"
             ],
             foldGutter: true
           } as any
