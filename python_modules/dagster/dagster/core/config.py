@@ -6,12 +6,13 @@ DEFAULT_CONTEXT_NAME = 'default'
 
 
 # lifted from https://bit.ly/2HcQAuv
-class Context(namedtuple('ContextData', 'name config')):
-    def __new__(cls, name=None, config=None):
+class Context(namedtuple('ContextData', 'name config resources')):
+    def __new__(cls, name=None, config=None, resources=None):
         return super(Context, cls).__new__(
             cls,
             check.opt_str_param(name, 'name', DEFAULT_CONTEXT_NAME),
             config,
+            check.opt_dict_param(resources, 'resources', key_type=str),
         )
 
 

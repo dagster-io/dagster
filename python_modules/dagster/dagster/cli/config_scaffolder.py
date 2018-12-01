@@ -24,7 +24,7 @@ def scaffold_pipeline_config(pipeline_def, skip_optional=True):
 
         # unfortunately we have to treat this special for now
         if env_field_name == 'context':
-            if skip_optional and is_environment_context_field_optional(pipeline_def):
+            if skip_optional and pipeline_def.environment_type.field_dict['context'].is_optional:
                 continue
 
         env_dict[env_field_name] = scaffold_type(env_field.dagster_type, skip_optional)

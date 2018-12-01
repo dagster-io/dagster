@@ -15,13 +15,15 @@ import pytest
 from collections import namedtuple
 
 from dagster import (
-    config,
     DependencyDefinition,
     ExecutionContext,
-    lambda_solid,
     PipelineContextDefinition,
     PipelineDefinition,
+    ResourceDefinition,
     SolidInstance,
+    config,
+    execute_pipeline,
+    lambda_solid,
 )
 from dagster.utils.test import (define_stub_solid, execute_solid)
 
@@ -39,8 +41,6 @@ from airline_demo.utils import (
 
 S3Resources = namedtuple('S3Resources', ('s3', ))
 
-SparkResources = namedtuple('SparkResources', ('spark', ))
-
 
 def _s3_context():
     return {
@@ -57,18 +57,21 @@ def _s3_context():
     }
 
 
+LocalSparkResourceDefinition = ResourceDefinition(
+    resource_fn=lambda _info: _create_spark_session_local(),
+    config_field=None,
+)
+
+
 def _spark_context():
     return {
-        'test': PipelineContextDefinition(
-            context_fn=(
-                lambda info: ExecutionContext.console_logging(
-                    log_level=logging.DEBUG,
-                    resources=SparkResources(
-                        create_spark_session_local(),
-                    )
-                )
-            ),
-        )
+        'test':
+        PipelineContextDefinition(
+            context_fn=(lambda info: ExecutionContext.console_logging(log_level=logging.DEBUG, )),
+            resources={
+                'spark': LocalSparkResourceDefinition,
+            },
+        ),
     }
 
 
@@ -205,6 +208,7 @@ def test_ingest_csv_to_spark():
 @pytest.mark.spark
 @pytest.mark.postgres
 @pytest.mark.slow
+@pytest.mark.skip
 def test_load_data_to_postgres_from_spark_postgres():
     raise NotImplementedError()
 
@@ -213,17 +217,20 @@ def test_load_data_to_postgres_from_spark_postgres():
 @pytest.mark.spark
 @pytest.mark.redshift
 @pytest.mark.slow
+@pytest.mark.skip
 def test_load_data_to_redshift_from_spark():
     raise NotImplementedError()
 
 
 @pytest.mark.spark
 @pytest.mark.slow
+@pytest.mark.skip
 def test_subsample_spark_dataset():
     raise NotImplementedError()
 
 
 @pytest.mark.spark
 @pytest.mark.slow
+@pytest.mark.skip
 def test_join_spark_data_frame():
     raise NotImplementedError()

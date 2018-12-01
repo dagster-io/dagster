@@ -62,7 +62,7 @@ def test_basic_solids_config():
 
     default_context_config_type = context_config_type.field_dict['default'].dagster_type
 
-    assert set(default_context_config_type.field_dict.keys()) == set(['config'])
+    assert set(default_context_config_type.field_dict.keys()) == set(['config', 'resources'])
 
     default_context_user_config_type = default_context_config_type.field_dict['config'].dagster_type
 
@@ -77,6 +77,7 @@ def test_basic_solids_config():
                 'config': {
                     'log_level': '',
                 },
+                'resources': {},
             },
         },
         'solids': {
@@ -138,11 +139,13 @@ def test_two_contexts():
                 'config': {
                     'context_one_field': '',
                 },
+                'resources': {},
             },
             'context_two': {
                 'config': {
                     'context_two_field': 0,
                 },
+                'resources': {},
             },
         },
         'solids': {},

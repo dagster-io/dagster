@@ -43,6 +43,8 @@ setup(
         'future>=0.16.0',
         'funcsigs>=1.0.2',
 
+        'contextlib2>=0.5.5',
+
         # cli
         'click>=6.7',
         'coloredlogs>=10.0',

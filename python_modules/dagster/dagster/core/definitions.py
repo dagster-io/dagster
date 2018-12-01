@@ -69,6 +69,12 @@ def check_valid_name(name):
     return name
 
 
+class ResourceDefinition(object):
+    def __init__(self, resource_fn, config_field=None):
+        self.resource_fn = check.callable_param(resource_fn, 'resource_fn')
+        self.config_field = check.opt_inst_param(config_field, 'config_field', Field)
+
+
 class PipelineContextDefinition(object):
     '''Pipelines declare the different context types they support, in the form
     of PipelineContextDefinitions. For example a pipeline could declare a context
@@ -109,7 +115,7 @@ context_fn (callable):
         context_definition = PipelineContextDefinition(context_fn=lambda *_args: context_params)
         return {DEFAULT_CONTEXT_NAME: context_definition}
 
-    def __init__(self, context_fn, config_field=None, description=None):
+    def __init__(self, context_fn=None, config_field=None, resources=None, description=None):
         '''
         Args:
             context_fn (callable):
@@ -141,8 +147,19 @@ context_fn (callable):
             # to having no config like a SolidDefinition
             Field(types.Any, is_optional=True, default_value=None),
         )
-        self.context_fn = check.callable_param(context_fn, 'context_fn')
+        self.context_fn = check.opt_callable_param(
+            context_fn,
+            'context_fn',
+            lambda *args, **kwargs: ExecutionContext(),
+        )
+        self.resources = check.opt_dict_param(
+            resources,
+            'resources',
+            key_type=str,
+            value_type=ResourceDefinition,
+        )
         self.description = description
+        self._resources_type = None
 
 
 DefaultContextConfigDict = ConfigDictionary(
@@ -1661,7 +1678,7 @@ class RepositoryDefinition(object):
 
 
 class ContextCreationExecutionInfo(
-    namedtuple('_ContextCreationExecutionInfo', 'config pipeline_def, run_id')
+    namedtuple('_ContextCreationExecutionInfo', 'config pipeline_def run_id')
 ):
     def __new__(cls, config, pipeline_def, run_id):
         return super(ContextCreationExecutionInfo, cls).__new__(
