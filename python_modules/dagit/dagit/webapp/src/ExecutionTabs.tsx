@@ -57,10 +57,12 @@ export class ExecutionTab extends React.Component<
         )}
         {!editing &&
           onRemove && (
-            <RemoveButton onClick={e => {
-              e.stopPropagation()
-              onRemove()}
-            }>
+            <RemoveButton
+              onClick={e => {
+                e.stopPropagation();
+                onRemove();
+              }}
+            >
               <Icon icon={IconNames.CROSS} />
             </RemoveButton>
           )}
