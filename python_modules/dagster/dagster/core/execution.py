@@ -368,10 +368,13 @@ def yield_context(pipeline, environment, reentrant_info=None):
 
     config_value = create_config_value(config_type, environment.context.config)
 
+    run_id = get_run_id(reentrant_info)
+
     context_params_or_gen = context_definition.context_fn(
         ContextCreationExecutionInfo(
             config=config_value,
             pipeline_def=pipeline,
+            run_id=run_id,
         )
     )
 
@@ -381,7 +384,6 @@ def yield_context(pipeline, environment, reentrant_info=None):
         check.invariant(not called, 'should only yield one thing')
         check.inst(user_context_params, ExecutionContext)
 
-        run_id = get_run_id(reentrant_info)
         context_stack = get_context_stack(user_context_params, reentrant_info)
 
         runtime_context = RuntimeExecutionContext(
