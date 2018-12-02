@@ -4,7 +4,6 @@ from dagster import (
     DependencyDefinition,
     InputDefinition,
     OutputDefinition,
-    config,
     execute_pipeline,
     lambda_solid,
     PipelineDefinition,
@@ -19,11 +18,15 @@ import dagster.pandas as dagster_pd
 
 
 def create_num_csv_environment():
-    return config.Environment(
-        solids={'load_csv': config.Solid({
-            'path': script_relative_path('num.csv')
-        })},
-    )
+    return {
+        'solids': {
+            'load_csv': {
+                'config': {
+                    'path': script_relative_path('num.csv'),
+                },
+            },
+        },
+    }
 
 
 def test_hello_world_with_dataframe_fns():
@@ -78,16 +81,21 @@ def run_hello_world(hello_world):
     )
 
     with get_temp_file_name() as temp_file_name:
-        environment = config.Environment(
-            solids={
-                'load_csv': config.Solid({
-                    'path': script_relative_path('num.csv'),
-                }),
-                'to_csv': config.Solid({
-                    'path': temp_file_name,
-                })
+        environment = {
+            'solids': {
+                'load_csv': {
+                    'config': {
+                        'path': script_relative_path('num.csv'),
+                    },
+                },
+                'to_csv': {
+                    'config': {
+                        'path': temp_file_name,
+                    },
+                },
             },
-        )
+        }
+
         pipeline_result = execute_pipeline(
             pipeline_two,
             environment,

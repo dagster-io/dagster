@@ -4,11 +4,11 @@ import pytest
 
 from dagster import (
     DagsterInvariantViolationError,
-    DagsterTypeError,
     DependencyDefinition,
     Field,
     InputDefinition,
     OutputDefinition,
+    PipelineConfigEvaluationError,
     PipelineDefinition,
     RepositoryDefinition,
     execute_pipeline,
@@ -120,14 +120,17 @@ def test_part_eight_repo_step_one():
 
 def test_part_eight_repo_step_one_wrong_env():
     environment = load_yaml_from_path(script_relative_path('env_step_one_type_error.yml'))
-    with pytest.raises(DagsterTypeError, match='is not valid for type String'):
+    with pytest.raises(
+        PipelineConfigEvaluationError,
+        match='Type failure at path "root:solids:double_the_word_with_typed_config:config:word"',
+    ):
         execute_pipeline(define_part_eight_step_one_pipeline(), environment)
 
 
 def test_part_eight_repo_step_one_wrong_field():
     environment = load_yaml_from_path(script_relative_path('env_step_one_field_error.yml'))
 
-    with pytest.raises(DagsterTypeError, match='Field "wrong_word" is not defined'):
+    with pytest.raises(PipelineConfigEvaluationError, match='Undefined field "wrong_word"'):
         execute_pipeline(define_part_eight_step_one_pipeline(), environment)
 
 

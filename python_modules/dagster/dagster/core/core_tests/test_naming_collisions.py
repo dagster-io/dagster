@@ -9,7 +9,6 @@ from dagster import (
     Result,
     SolidDefinition,
     check,
-    config,
     execute_pipeline,
     types,
 )
@@ -53,9 +52,15 @@ def test_execute_solid_with_input_same_name():
 
     result = execute_pipeline(
         pipeline,
-        config.Environment(solids={'pass_value': config.Solid({
-            'value': 'foo'
-        })}),
+        environment={
+            'solids': {
+                'pass_value': {
+                    'config': {
+                        'value': 'foo',
+                    },
+                },
+            },
+        },
     )
 
     assert result.result_for_solid('a_thing').transformed_value() == 'foofoo'
@@ -97,16 +102,20 @@ def test_execute_two_solids_with_same_input_name():
 
     result = execute_pipeline(
         pipeline,
-        environment=config.Environment(
-            solids={
-                'pass_to_one': config.Solid({
-                    'value': 'foo'
-                }),
-                'pass_to_two': config.Solid({
-                    'value': 'bar'
-                }),
-            }
-        )
+        environment={
+            'solids': {
+                'pass_to_one': {
+                    'config': {
+                        'value': 'foo',
+                    },
+                },
+                'pass_to_two': {
+                    'config': {
+                        'value': 'bar',
+                    },
+                },
+            },
+        },
     )
 
     assert result.success
@@ -148,9 +157,15 @@ def test_execute_dep_solid_different_input_name():
 
     result = dagster.execute_pipeline(
         pipeline,
-        environment=config.Environment(solids={'pass_to_first': config.Solid({
-            'value': 'bar'
-        })})
+        environment={
+            'solids': {
+                'pass_to_first': {
+                    'config': {
+                        'value': 'bar',
+                    },
+                },
+            },
+        },
     )
 
     assert result.success

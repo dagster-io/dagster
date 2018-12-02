@@ -45,6 +45,10 @@ class DagsterType(object):
         )
         self.__doc__ = description
 
+    @property
+    def is_system_config(self):
+        return self.type_attributes.is_system_config
+
     def __repr__(self):
         return 'DagsterType({name})'.format(name=self.name)
 
@@ -237,6 +241,14 @@ class __FieldValueSentinel:
 FIELD_NO_DEFAULT_PROVIDED = __FieldValueSentinel
 
 
+def all_optional_type(dagster_type):
+    check.inst_param(dagster_type, 'dagster_type', DagsterType)
+
+    if isinstance(dagster_type, DagsterCompositeType):
+        return dagster_type.all_fields_optional
+    return True
+
+
 class Field:
     '''
     A Field in a DagsterCompositeType.
@@ -268,6 +280,23 @@ class Field:
         self.description = check.opt_str_param(description, 'description')
         self.is_optional = check.bool_param(is_optional, 'is_optional')
         self._default_value = default_value
+
+    @staticmethod
+    def composite_field(dagster_type, description=None):
+        check.inst_param(dagster_type, 'dagster_type', DagsterCompositeType)
+        is_optional = all_optional_type(dagster_type)
+
+        from dagster.core.evaluator import throwing_evaluate_config_value
+
+        return Field(
+            dagster_type,
+            is_optional=is_optional,
+            default_value=lambda: throwing_evaluate_config_value(dagster_type, None),
+            description=description
+        ) if is_optional else Field(
+            dagster_type,
+            description=description,
+        )
 
     @property
     def default_provided(self):
@@ -312,7 +341,7 @@ class FieldDefinitionDictionary(dict):
         check.failed('This dictionary is readonly')
 
 
-class DagsterCompositeType(DagsterType):
+class DagsterCompositeTypeBase(DagsterType):
     '''Dagster type representing a type with a list of named :py:class:`Field` objects.
     '''
 
@@ -324,7 +353,7 @@ class DagsterCompositeType(DagsterType):
         type_attributes=DEFAULT_TYPE_ATTRIBUTES,
     ):
         self.field_dict = FieldDefinitionDictionary(fields)
-        super(DagsterCompositeType, self).__init__(
+        super(DagsterCompositeTypeBase, self).__init__(
             name=name,
             description=description,
             type_attributes=type_attributes,
@@ -356,6 +385,19 @@ class DagsterCompositeType(DagsterType):
         return self.field_dict[name]
 
 
+class DagsterCompositeType(DagsterCompositeTypeBase):
+    pass
+
+
+class DagsterSelectorType(DagsterCompositeTypeBase):
+    '''This subclass "marks" a composite type as one where only
+    one of its fields can be configured at a time. This was originally designed
+    for context definition selection (only one context can be used for a particular
+    pipeline invocation); this is generalization of that concept.
+    '''
+    pass
+
+
 _DAGSTER_LIST_TYPE_CACHE = {}
 
 
@@ -385,15 +427,6 @@ class _DagsterListType(DagsterType):
 
     def construct_from_config_value(self, config_value):
         check.failed('should never be called')
-
-
-class DagsterSelectorType(DagsterCompositeType):
-    '''This subclass "marks" a composite type as one where only
-    one of its fields can be configured at a time. This was originally designed
-    for context definition selection (only one context can be used for a particular
-    pipeline invocation); this is generalization of that concept.
-    '''
-    pass
 
 
 class IsScopedConfigType:

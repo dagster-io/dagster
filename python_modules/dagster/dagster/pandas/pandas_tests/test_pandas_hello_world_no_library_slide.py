@@ -9,7 +9,6 @@ from dagster import (
     PipelineDefinition,
     Result,
     SolidDefinition,
-    config,
     execute_pipeline,
     types,
 )
@@ -72,14 +71,15 @@ def test_hello_world_pipeline_no_api():
     )
 
     pipeline_result = execute_pipeline(
-        pipeline,
-        config.Environment(
-            solids={
-                'read_csv_solid': config.Solid({
-                    'path': script_relative_path('num.csv'),
-                }),
+        pipeline, {
+            'solids': {
+                'read_csv_solid': {
+                    'config': {
+                        'path': script_relative_path('num.csv'),
+                    },
+                },
             },
-        ),
+        }
     )
 
     assert pipeline_result.success
@@ -119,13 +119,15 @@ def test_hello_world_composed():
 
     pipeline_result = execute_pipeline(
         pipeline,
-        environment=config.Environment(
-            solids={
-                'read_hello_world': config.Solid({
-                    'path': script_relative_path('num.csv')
-                }),
+        environment={
+            'solids': {
+                'read_hello_world': {
+                    'config': {
+                        'path': script_relative_path('num.csv'),
+                    },
+                },
             },
-        ),
+        }
     )
 
     assert pipeline_result.success
@@ -178,13 +180,15 @@ def test_pandas_hello_no_library():
         }
     )
 
-    environment = config.Environment(
-        solids={
-            'read_one': config.Solid({
-                'path': script_relative_path('num.csv')
-            }),
-        }
-    )
+    environment = {
+        'solids': {
+            'read_one': {
+                'config': {
+                    'path': script_relative_path('num.csv')
+                },
+            },
+        },
+    }
 
     execute_pipeline_result = execute_pipeline(
         pipeline,
@@ -205,14 +209,19 @@ def test_pandas_hello_no_library():
         os.remove(sum_sq_out_path)
 
     sum_sq_path_args = {'path': '/tmp/sum_sq.csv'}
-    environment_two = config.Environment(
-        solids={
-            'read_one': config.Solid({
-                'path': script_relative_path('num.csv')
-            }),
-            'write_two': config.Solid(sum_sq_path_args),
+
+    environment_two = {
+        'solids': {
+            'read_one': {
+                'config': {
+                    'path': script_relative_path('num.csv'),
+                },
+            },
+            'write_two': {
+                'config': sum_sq_path_args
+            },
         },
-    )
+    }
 
     pipeline_two = PipelineDefinition(
         solids=[

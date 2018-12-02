@@ -5,7 +5,6 @@ from dagster import (
     Result,
     SolidDefinition,
     check,
-    config,
     execute_pipeline,
 )
 
@@ -27,20 +26,16 @@ def execute_single_solid_in_isolation(
     '''
     check.inst_param(context_params, 'context_params', ExecutionContext)
     check.inst_param(solid_def, 'solid_def', SolidDefinition)
-    environment = check.opt_inst_param(
-        environment,
-        'environment',
-        config.Environment,
-        config.Environment(),
-    )
+    environment = check.opt_dict_param(environment, 'environment')
     check.bool_param(throw_on_error, 'throw_on_error')
 
-    single_solid_environment = config.Environment(
-        expectations=environment.expectations,
-        context=environment.context,
-        solids={solid_def.name: environment.solids[solid_def.name]}
-        if solid_def.name in environment.solids else None
-    )
+    single_solid_environment = {
+        'expectations': environment.get('expectations'),
+        'context': environment.get('context'),
+        'solids': {
+            solid_def.name: environment['solids'][solid_def.name]
+        } if solid_def.name in environment.get('solids', {}) else None
+    }
 
     pipeline_result = execute_pipeline(
         PipelineDefinition(

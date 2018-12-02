@@ -37,8 +37,6 @@ from .definitions import (
     Solid,
 )
 
-from .config_types import EnvironmentConfigType
-
 from .execution_context import (
     ExecutionContext,
     RuntimeExecutionContext,
@@ -52,7 +50,9 @@ from .errors import (
 
 from .evaluator import (
     DagsterEvaluateConfigValueError,
+    EvaluationError,
     evaluate_config_value,
+    friendly_string_for_error,
     throwing_evaluate_config_value,
 )
 
@@ -257,30 +257,6 @@ def _wrap_in_yield(context_params_or_gen):
     return context_params_or_gen
 
 
-def _validate_environment(environment, pipeline):
-    context_name = environment.context.name
-
-    if context_name not in pipeline.context_definitions:
-        avaiable_context_keys = list(pipeline.context_definitions.keys())
-        raise DagsterInvariantViolationError(
-            'Context {context_name} not found in '.format(context_name=context_name) + \
-            'pipeline definiton. Available contexts {avaiable_context_keys}'.format(
-                avaiable_context_keys=repr(avaiable_context_keys),
-            )
-        )
-
-    for solid_name in environment.solids.keys():
-        if not pipeline.has_solid(solid_name):
-            available_solids = [s.name for s in pipeline.solids]
-            raise DagsterInvariantViolationError(
-                'Solid {solid_name} specified in config for pipeline {pipeline} not found.'.format(
-                    solid_name=solid_name,
-                    pipeline=pipeline.display_name,
-                ) + \
-                ' Available solids in pipeline are {solids}.'.format(solids=available_solids)
-            )
-
-
 def create_execution_plan(pipeline, environment=None):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.opt_inst_param(environment, 'environment', config.Environment)
@@ -384,22 +360,16 @@ def yield_context(pipeline, environment, reentrant_info=None):
     check.inst_param(environment, 'environment', config.Environment)
     check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
 
-    _validate_environment(environment, pipeline)
-
-    context_name = environment.context.name
-    context_definition = pipeline.context_definitions[context_name]
-    config_type = context_definition.config_field.dagster_type
-
-    config_value = create_config_value(config_type, environment.context.config)
+    context_definition = pipeline.context_definitions[environment.context.name]
 
     run_id = get_run_id(reentrant_info)
 
     ec_or_gen = context_definition.context_fn(
         ContextCreationExecutionInfo(
-            config=config_value,
+            config=environment.context.config,
             pipeline_def=pipeline,
             run_id=run_id,
-        )
+        ),
     )
 
     called = False
@@ -413,7 +383,7 @@ def yield_context(pipeline, environment, reentrant_info=None):
         called = True
 
 
-def execute_pipeline_iterator(pipeline, environment):
+def execute_pipeline_iterator(pipeline, environment=None):
     '''Returns iterator that yields :py:class:`SolidExecutionResult` for each
     solid executed in the pipeline.
 
@@ -426,16 +396,12 @@ def execute_pipeline_iterator(pipeline, environment):
     '''
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
 
-    pipeline_env_type = EnvironmentConfigType(pipeline)
-
-    environment = create_config_value(pipeline_env_type, environment)
-
-    check.inst_param(environment, 'environment', config.Environment)
+    typed_environment = get_typed_environment(pipeline, environment)
 
     execution_graph = ExecutionGraph.from_pipeline(pipeline)
-    with yield_context(pipeline, environment) as context:
+    with yield_context(pipeline, typed_environment) as context:
         with context.value('pipeline', execution_graph.pipeline.display_name):
-            for result in _execute_graph_iterator(context, execution_graph, environment):
+            for result in _execute_graph_iterator(context, execution_graph, typed_environment):
                 yield result
 
 
@@ -492,64 +458,6 @@ def _execute_graph_iterator(context, execution_graph, environment):
         yield SolidExecutionResult.from_results(context, solid_results)
 
 
-def get_key_or_prop(obj, key):
-    check.str_param(key, 'key')
-
-    if isinstance(obj, dict):
-        return obj.get(key)
-    else:
-        if not hasattr(obj, key):
-            return None
-        return getattr(obj, key, None)
-
-
-def check_environment(pipeline, environment):
-    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    check.opt_inst_param(environment, 'environment', (config.Environment, dict))
-
-    if not environment:
-        return
-
-    solids_in_config = get_key_or_prop(environment, 'solids')
-
-    if solids_in_config:
-        for solid_name in solids_in_config:
-            if not pipeline.has_solid(solid_name):
-                raise DagsterTypeError(
-                    (
-                        'Solid {solid_name} does not exist on pipeline {pipeline_name}. '
-                        'You passed in {solid_name} to the solids field of the environment.'
-                    ).format(
-                        solid_name=solid_name,
-                        pipeline_name=pipeline.name,
-                    )
-                )
-
-    context_in_config = get_key_or_prop(environment, 'context')
-
-    if context_in_config:
-        if isinstance(context_in_config, config.Context):
-            context_name = context_in_config.name
-        elif isinstance(context_in_config, dict):
-            if len(context_in_config) > 1:
-                raise DagsterTypeError('Cannot specify more than one context')
-
-            context_name = list(context_in_config.keys())[0]
-        else:
-            check.failed('invalid object')
-
-        if not pipeline.has_context(context_name):
-            raise DagsterTypeError(
-                (
-                    'Context {context_name} does not exist on pipeline {pipeline_name}. '
-                    'You passed in {context_name} to the context field of the Environment.'
-                ).format(
-                    context_name=context_name,
-                    pipeline_name=pipeline.name,
-                )
-            )
-
-
 class ReentrantInfo(namedtuple('_ReentrantInfo', 'run_id context_stack event_callback')):
     def __new__(cls, run_id=None, context_stack=None, event_callback=None):
         return super(ReentrantInfo, cls).__new__(
@@ -558,6 +466,30 @@ class ReentrantInfo(namedtuple('_ReentrantInfo', 'run_id context_stack event_cal
             context_stack=check.opt_dict_param(context_stack, 'context_stack'),
             event_callback=check.opt_callable_param(event_callback, 'event_callback'),
         )
+
+
+class PipelineConfigEvaluationError(Exception):
+    def __init__(self, pipeline, errors, config_value, *args, **kwargs):
+        self.pipeline = check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+        self.errors = check.list_param(errors, 'errors', of_type=EvaluationError)
+        self.config_value = config_value
+
+        error_msg = 'Pipeline "{pipeline}" config errors:'.format(pipeline=pipeline.name)
+
+        error_messages = []
+
+        for i_error, error in enumerate(self.errors):
+            error_message = friendly_string_for_error(error)
+            error_messages.append(error_message)
+            error_msg += '\n    Error {i_error}: {error_message}'.format(
+                i_error=i_error + 1,
+                error_message=error_message,
+            )
+
+        self.message = error_msg
+        self.error_messages = error_messages
+
+        super(PipelineConfigEvaluationError, self).__init__(error_msg, *args, **kwargs)
 
 
 def execute_pipeline(
@@ -584,17 +516,41 @@ def execute_pipeline(
     '''
 
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    check.opt_inst_param(environment, 'environment', (dict, config.Environment))
+    check.opt_dict_param(environment, 'environment')
     check.bool_param(throw_on_error, 'throw_on_error')
     check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
 
-    check_environment(pipeline, environment)
-
-    pipeline_env_type = pipeline.environment_type
-    environment = create_config_value(pipeline_env_type, environment)
+    typed_environment = get_typed_environment(pipeline, environment)
 
     execution_graph = ExecutionGraph.from_pipeline(pipeline)
-    return _execute_graph(execution_graph, environment, throw_on_error, reentrant_info)
+    return _execute_graph(execution_graph, typed_environment, throw_on_error, reentrant_info)
+
+
+def execute_reentrant_pipeline(pipeline, environment, reentrant_info):
+    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+    check.inst_param(environment, 'environment', config.Environment)
+    check.inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
+
+    execution_graph = ExecutionGraph.from_pipeline(pipeline)
+    return _execute_graph(
+        execution_graph,
+        environment,
+        throw_on_error=False,
+        reentrant_info=reentrant_info,
+    )
+
+
+def get_typed_environment(pipeline, environment):
+    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+    check.opt_dict_param(environment, 'environment')
+
+    pipeline_env_type = pipeline.environment_type
+    result = evaluate_config_value(pipeline_env_type, environment)
+
+    if not result.success:
+        raise PipelineConfigEvaluationError(pipeline, result.errors, environment)
+
+    return result.value
 
 
 def _execute_graph(

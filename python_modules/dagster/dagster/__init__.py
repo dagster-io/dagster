@@ -1,4 +1,5 @@
 from dagster.core.execution import (
+    PipelineConfigEvaluationError,
     PipelineExecutionResult,
     ReentrantInfo,
     SolidExecutionResult,

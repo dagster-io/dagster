@@ -103,7 +103,7 @@ def test_two_contexts():
             'context_one':
             PipelineContextDefinition(
                 context_fn=lambda *args: fail_me(),
-                config_field=Field(
+                config_field=Field.composite_field(
                     types.ConfigDictionary(
                         'ContextOneConfigDict',
                         {
@@ -115,7 +115,7 @@ def test_two_contexts():
             'context_two':
             PipelineContextDefinition(
                 context_fn=lambda *args: fail_me(),
-                config_field=Field(
+                config_field=Field.composite_field(
                     types.ConfigDictionary(
                         'ContextTwoConfigDict',
                         {

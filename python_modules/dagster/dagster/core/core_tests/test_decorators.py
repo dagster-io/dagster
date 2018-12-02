@@ -10,7 +10,6 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     Result,
-    config,
     execute_pipeline,
     lambda_solid,
     solid,
@@ -28,10 +27,6 @@ from dagster.core.utility_solids import define_stub_solid
 
 def create_test_context():
     return ExecutionContext()
-
-
-def create_empty_test_env():
-    return config.Environment()
 
 
 def test_multiple_single_result():
@@ -62,7 +57,6 @@ def test_no_parens_solid():
     result = execute_single_solid_in_isolation(
         create_test_context(),
         hello_world,
-        environment=create_empty_test_env(),
     )
 
     assert called['yup']
@@ -78,7 +72,6 @@ def test_empty_solid():
     result = execute_single_solid_in_isolation(
         create_test_context(),
         hello_world,
-        environment=create_empty_test_env(),
     )
 
     assert called['yup']
@@ -92,7 +85,6 @@ def test_solid():
     result = execute_single_solid_in_isolation(
         create_test_context(),
         hello_world,
-        environment=create_empty_test_env(),
     )
 
     assert result.success
@@ -108,7 +100,6 @@ def test_solid_one_output():
     result = execute_single_solid_in_isolation(
         create_test_context(),
         hello_world,
-        environment=create_empty_test_env(),
     )
 
     assert result.success
@@ -124,7 +115,6 @@ def test_solid_yield():
     result = execute_single_solid_in_isolation(
         create_test_context(),
         hello_world,
-        environment=create_empty_test_env(),
     )
 
     assert result.success
@@ -140,7 +130,6 @@ def test_solid_result_return():
     result = execute_single_solid_in_isolation(
         create_test_context(),
         hello_world,
-        environment=create_empty_test_env(),
     )
 
     assert result.success
@@ -159,7 +148,6 @@ def test_solid_multiple_outputs():
     result = execute_single_solid_in_isolation(
         create_test_context(),
         hello_world,
-        environment=create_empty_test_env(),
     )
 
     assert result.success
@@ -184,7 +172,6 @@ def test_dict_multiple_outputs():
     result = execute_single_solid_in_isolation(
         create_test_context(),
         hello_world,
-        environment=create_empty_test_env(),
     )
 
     assert result.success
@@ -202,7 +189,6 @@ def test_lambda_solid_with_name():
     result = execute_single_solid_in_isolation(
         create_test_context(),
         hello_world,
-        environment=create_empty_test_env(),
     )
 
     assert result.success
@@ -218,7 +204,6 @@ def test_solid_with_name():
     result = execute_single_solid_in_isolation(
         create_test_context(),
         hello_world,
-        environment=create_empty_test_env(),
     )
 
     assert result.success
@@ -343,7 +328,13 @@ def test_any_config_field():
     result = execute_single_solid_in_isolation(
         create_test_context(),
         hello_world,
-        environment=config.Environment(solids={'hello_world': config.Solid(conf_value)})
+        environment={
+            'solids': {
+                'hello_world': {
+                    'config': conf_value,
+                },
+            },
+        },
     )
 
     assert called['yup']

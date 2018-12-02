@@ -6,18 +6,21 @@ from dagster import (
     ConfigField,
     DagsterEvaluateConfigValueError,
     DagsterInvalidDefinitionError,
-    DagsterTypeError,
+    ExecutionContext,
     Field,
+    PipelineConfigEvaluationError,
     PipelineContextDefinition,
     PipelineDefinition,
     SolidDefinition,
     execute_pipeline,
+    solid,
     types,
 )
 
 from dagster.core.evaluator import (
     evaluate_config_value,
     throwing_evaluate_config_value,
+    DagsterEvaluationErrorReason,
 )
 
 from dagster.core.types import (
@@ -559,17 +562,14 @@ def test_wrong_solid_name():
             },
         },
     }
-    with pytest.raises(
-        DagsterTypeError,
-        match='Solid another_name does not exist on pipeline pipeline_wrong_solid_name',
-    ):
+
+    with pytest.raises(PipelineConfigEvaluationError) as pe_info:
         execute_pipeline(pipeline_def, env_config)
 
-    with pytest.raises(
-        DagsterTypeError,
-        match='You passed in another_name to the solids field of the environment.'
-    ):
-        execute_pipeline(pipeline_def, env_config)
+    pe = pe_info.value
+
+    assert 'Undefined field "another_name" at path root:solids' in str(pe)
+    assert 'Missing required field "some_solid" at path root:solids' in str(pe)
 
 
 def fail_me():
@@ -587,7 +587,7 @@ def test_multiple_context():
         solids=[],
     )
 
-    with pytest.raises(DagsterTypeError, match='Cannot specify more than one context'):
+    with pytest.raises(PipelineConfigEvaluationError):
         execute_pipeline(
             pipeline_def,
             {
@@ -610,21 +610,8 @@ def test_wrong_context():
     )
 
     with pytest.raises(
-        DagsterTypeError,
-        match='Context nope does not exist on pipeline pipeline_test_multiple_context',
-    ):
-        execute_pipeline(
-            pipeline_def,
-            {
-                'context': {
-                    'nope': {},
-                },
-            },
-        )
-
-    with pytest.raises(
-        DagsterTypeError,
-        match='You passed in nope to the context field of the Environment',
+        PipelineConfigEvaluationError,
+        match='Undefined field "nope" at path root:context',
     ):
         execute_pipeline(
             pipeline_def,
@@ -799,4 +786,383 @@ def test_two_list_types():
                 transform_fn=lambda *_args: None,
             ),
         ],
+    )
+
+
+def test_multilevel_default_handling():
+    @solid(config_field=Field(types.Int, is_optional=True, default_value=234))
+    def has_default_value(info):
+        assert info.config == 234
+
+    pipeline_def = PipelineDefinition(
+        name='multilevel_default_handling',
+        solids=[has_default_value],
+    )
+
+    assert execute_pipeline(pipeline_def).success
+    assert execute_pipeline(pipeline_def, environment=None).success
+    assert execute_pipeline(pipeline_def, environment={}).success
+    assert execute_pipeline(pipeline_def, environment={'solids': None}).success
+    assert execute_pipeline(pipeline_def, environment={'solids': {}}).success
+    assert execute_pipeline(
+        pipeline_def,
+        environment={
+            'solids': {
+                'has_default_value': None
+            }
+        },
+    ).success
+
+    assert execute_pipeline(
+        pipeline_def,
+        environment={
+            'solids': {
+                'has_default_value': {}
+            }
+        },
+    ).success
+
+    assert execute_pipeline(
+        pipeline_def,
+        environment={
+            'solids': {
+                'has_default_value': {
+                    'config': 234
+                }
+            }
+        },
+    ).success
+
+
+def test_no_env_missing_required_error_handling():
+    @solid(config_field=Field(types.Int))
+    def required_int_solid(_info):
+        pass
+
+    pipeline_def = PipelineDefinition(
+        name='no_env_missing_required_error',
+        solids=[required_int_solid],
+    )
+
+    with pytest.raises(PipelineConfigEvaluationError) as pe_info:
+        execute_pipeline(pipeline_def)
+
+    assert isinstance(pe_info.value, PipelineConfigEvaluationError)
+    pe = pe_info.value
+    assert len(pe.errors) == 1
+    mfe = pe.errors[0]
+    assert mfe.reason == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELD
+    assert len(pe.error_messages) == 1
+
+    assert 'Missing required field "solids"' in pe.message
+    assert 'at document config root' in pe.message
+    assert 'Missing required field "solids"' in pe.error_messages[0]
+
+
+def test_root_extra_field():
+    @solid(config_field=Field(types.Int))
+    def required_int_solid(_info):
+        pass
+
+    pipeline_def = PipelineDefinition(
+        name='root_extra_field',
+        solids=[required_int_solid],
+    )
+
+    with pytest.raises(PipelineConfigEvaluationError) as pe_info:
+        execute_pipeline(
+            pipeline_def,
+            environment={
+                'solids': {
+                    'required_int_solid': {
+                        'config': 948594
+                    }
+                },
+                'nope': None,
+            },
+        )
+
+    pe = pe_info.value
+    assert len(pe.errors) == 1
+    fnd = pe.errors[0]
+    assert fnd.reason == DagsterEvaluationErrorReason.FIELD_NOT_DEFINED
+    assert 'Undefined field "nope"' in pe.message
+
+
+def test_deeper_path():
+    @solid(config_field=Field(types.Int))
+    def required_int_solid(_info):
+        pass
+
+    pipeline_def = PipelineDefinition(
+        name='deeper_path',
+        solids=[required_int_solid],
+    )
+
+    with pytest.raises(PipelineConfigEvaluationError) as pe_info:
+        execute_pipeline(
+            pipeline_def,
+            environment={
+                'solids': {
+                    'required_int_solid': {
+                        'config': 'asdf',
+                    },
+                },
+            },
+        )
+
+    pe = pe_info.value
+    assert len(pe.errors) == 1
+    rtm = pe.errors[0]
+    assert rtm.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
+
+
+def test_working_list_path():
+    called = {}
+
+    @solid(config_field=Field(types.List(types.Int)))
+    def required_list_int_solid(info):
+        assert info.config == [1, 2]
+        called['yup'] = True
+
+    pipeline_def = PipelineDefinition(
+        name='list_path',
+        solids=[required_list_int_solid],
+    )
+
+    result = execute_pipeline(
+        pipeline_def,
+        environment={
+            'solids': {
+                'required_list_int_solid': {
+                    'config': [1, 2],
+                },
+            },
+        },
+    )
+
+    assert result.success
+    assert called['yup']
+
+
+def test_item_error_list_path():
+    called = {}
+
+    @solid(config_field=Field(types.List(types.Int)))
+    def required_list_int_solid(info):
+        assert info.config == [1, 2]
+        called['yup'] = True
+
+    pipeline_def = PipelineDefinition(
+        name='list_path',
+        solids=[required_list_int_solid],
+    )
+
+    with pytest.raises(PipelineConfigEvaluationError) as pe_info:
+        execute_pipeline(
+            pipeline_def,
+            environment={
+                'solids': {
+                    'required_list_int_solid': {
+                        'config': [1, 'nope'],
+                    },
+                },
+            },
+        )
+
+    pe = pe_info.value
+    assert len(pe.errors) == 1
+    rtm = pe.errors[0]
+    assert rtm.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
+
+    assert 'Type failure at path "root:solids:required_list_int_solid:config[1]"' in str(pe)
+
+
+def test_context_selector_working():
+    called = {}
+
+    @solid
+    def check_context(info):
+        assert info.context.resources == 32
+        called['yup'] = True
+
+    pipeline_def = PipelineDefinition(
+        name='context_selector_working',
+        solids=[check_context],
+        context_definitions={
+            'context_required_int':
+            PipelineContextDefinition(
+                context_fn=lambda info: ExecutionContext(resources=info.config),
+                config_field=types.Field(types.Int),
+            )
+        }
+    )
+
+    result = execute_pipeline(
+        pipeline_def,
+        environment={
+            'context': {
+                'context_required_int': {
+                    'config': 32,
+                },
+            },
+        },
+    )
+
+    assert result.success
+    assert called['yup']
+
+
+def test_context_selector_extra_context():
+    @solid
+    def check_context(_info):
+        assert False
+
+    pipeline_def = PipelineDefinition(
+        name='context_selector_extra_context',
+        solids=[check_context],
+        context_definitions={
+            'context_required_int':
+            PipelineContextDefinition(
+                context_fn=lambda info: ExecutionContext(resources=info.config),
+                config_field=types.Field(types.Int),
+            )
+        }
+    )
+
+    with pytest.raises(PipelineConfigEvaluationError) as pe_info:
+        execute_pipeline(
+            pipeline_def,
+            environment={
+                'context': {
+                    'context_required_int': {
+                        'config': 32,
+                    },
+                    'extra_context': {
+                        'config': None,
+                    },
+                },
+            },
+        )
+
+    pe = pe_info.value
+    cse = pe.errors[0]
+    assert cse.reason == DagsterEvaluationErrorReason.SELECTOR_FIELD_ERROR
+    assert 'Specified more than one field at path "root:context"' in str(pe)
+
+
+def test_context_selector_wrong_name():
+    @solid
+    def check_context(_info):
+        assert False
+
+    pipeline_def = PipelineDefinition(
+        name='context_selector_wrong_name',
+        solids=[check_context],
+        context_definitions={
+            'context_required_int':
+            PipelineContextDefinition(
+                context_fn=lambda info: ExecutionContext(resources=info.config),
+                config_field=types.Field(types.Int),
+            )
+        }
+    )
+
+    with pytest.raises(PipelineConfigEvaluationError) as pe_info:
+        execute_pipeline(
+            pipeline_def,
+            environment={
+                'context': {
+                    'wrong_name': {
+                        'config': None,
+                    },
+                },
+            },
+        )
+
+    pe = pe_info.value
+    cse = pe.errors[0]
+    assert cse.reason == DagsterEvaluationErrorReason.FIELD_NOT_DEFINED
+    assert 'Undefined field "wrong_name" at path root:context' in str(pe)
+
+
+def test_context_selector_none_given():
+    @solid
+    def check_context(_info):
+        assert False
+
+    pipeline_def = PipelineDefinition(
+        name='context_selector_none_given',
+        solids=[check_context],
+        context_definitions={
+            'context_required_int':
+            PipelineContextDefinition(
+                context_fn=lambda info: ExecutionContext(resources=info.config),
+                config_field=types.Field(types.Int),
+            )
+        }
+    )
+
+    with pytest.raises(PipelineConfigEvaluationError) as pe_info:
+        execute_pipeline(
+            pipeline_def,
+            environment={'context': None},
+        )
+
+    pe = pe_info.value
+    cse = pe.errors[0]
+    assert cse.reason == DagsterEvaluationErrorReason.SELECTOR_FIELD_ERROR
+    assert 'You specified no fields at path "root:context"' in str(pe)
+
+
+def test_multilevel_good_error_handling_solids():
+    @solid(config_field=Field(types.Int))
+    def good_error_handling(_info):
+        pass
+
+    pipeline_def = PipelineDefinition(
+        name='multilevel_good_error_handling',
+        solids=[good_error_handling],
+    )
+
+    with pytest.raises(PipelineConfigEvaluationError) as pe_info:
+        execute_pipeline(pipeline_def, environment={'solids': None})
+
+    pe = pe_info.value
+    assert 'Missing required field "good_error_handling" at path root:solids' in str(pe)
+
+
+def test_multilevel_good_error_handling_solid_name_solids():
+    @solid(config_field=Field(types.Int))
+    def good_error_handling(_info):
+        pass
+
+    pipeline_def = PipelineDefinition(
+        name='multilevel_good_error_handling',
+        solids=[good_error_handling],
+    )
+
+    with pytest.raises(PipelineConfigEvaluationError) as pe_info:
+        execute_pipeline(pipeline_def, environment={'solids': {'good_error_handling': {}}})
+
+    pe = pe_info.value
+    assert 'Missing required field "config" at path root:solids:good_error_handling' in str(pe)
+
+
+def test_multilevel_good_error_handling_config_solids_name_solids():
+    @solid(config_field=Field(types.Int))
+    def good_error_handling(_info):
+        pass
+
+    pipeline_def = PipelineDefinition(
+        name='multilevel_good_error_handling',
+        solids=[good_error_handling],
+    )
+
+    execute_pipeline(
+        pipeline_def, environment={'solids': {
+            'good_error_handling': {
+                'config': None
+            }
+        }}
     )

@@ -26,3 +26,5 @@ reinstall:
 rebuild_dagit:
 	cd dagit/dagit/webapp; yarn install && yarn build
 
+dagster_yapf:
+	find dagster -name "*.py" | grep -v ".tox" | grep -v ".vscode" | grep -v "snapshots" | xargs yapf -i

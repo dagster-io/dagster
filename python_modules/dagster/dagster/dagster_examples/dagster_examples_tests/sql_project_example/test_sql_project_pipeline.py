@@ -8,7 +8,6 @@ from dagster import (
     execute_pipeline,
 )
 
-import dagster.sqlalchemy as dagster_sa
 import dagster.sqlalchemy.common
 from dagster.utils import script_relative_path
 
@@ -144,14 +143,3 @@ def test_full_in_memory_pipeline():
     assert engine.execute('SELECT * FROM num_table').fetchall() == [(1, 2), (3, 4)]
     assert engine.execute('SELECT * FROM sum_table').fetchall() == [(1, 2, 3), (3, 4, 7)]
     assert engine.execute('SELECT * FROM sum_sq_table').fetchall() == [(1, 2, 3, 9), (3, 4, 7, 49)]
-
-
-# Commmenting out for now because it takes two seconds
-# def test_full_persisted_pipeline():
-#     pipeline = create_full_pipeline()
-#     pipeline_result = execute_pipeline(
-#         pipeline,
-#         environment=config.Environment(context=config.Context(name='persisted')),
-#     )
-
-#     assert pipeline_result.success

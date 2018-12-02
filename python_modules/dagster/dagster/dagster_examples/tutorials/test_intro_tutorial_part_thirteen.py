@@ -5,7 +5,6 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     SolidInstance,
-    config,
     execute_pipeline,
     lambda_solid,
     solid,
@@ -162,15 +161,22 @@ def define_part_thirteen_step_three_pipeline():
 def test_run_whole_pipeline():
     pipeline = define_part_thirteen_step_three_pipeline()
     pipeline_result = execute_pipeline(
-        pipeline,
-        config.Environment(
-            solids={
-                'a': config.Solid(2),
-                'b': config.Solid(6),
-                'c': config.Solid(4),
-                'd': config.Solid(8),
-            }
-        )
+        pipeline, {
+            'solids': {
+                'a': {
+                    'config': 2,
+                },
+                'b': {
+                    'config': 6,
+                },
+                'c': {
+                    'config': 4,
+                },
+                'd': {
+                    'config': 8,
+                },
+            },
+        }
     )
 
     assert pipeline_result.success
