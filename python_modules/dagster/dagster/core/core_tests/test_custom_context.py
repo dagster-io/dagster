@@ -1,3 +1,5 @@
+import uuid
+
 import pytest
 
 from dagster import (
@@ -30,6 +32,23 @@ def test_default_context():
             assert logger.level == INFO
 
     pipeline = PipelineDefinition(solids=[default_context_transform])
+    execute_pipeline(pipeline)
+
+    assert called['yes']
+
+
+def test_run_id():
+    called = {}
+
+    def construct_context(info):
+        called['yes'] = True
+        assert uuid.UUID(info.run_id)
+        return ExecutionContext()
+
+    pipeline = PipelineDefinition(
+        solids=[],
+        context_definitions={'default': PipelineContextDefinition(context_fn=construct_context, )}
+    )
     execute_pipeline(pipeline)
 
     assert called['yes']
