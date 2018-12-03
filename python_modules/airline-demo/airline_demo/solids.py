@@ -151,6 +151,29 @@ def thunk(info):
     return info.config
 
 
+# Maybe parametrize this to make_thunk(type)
+@solid(
+    name='thunk_list',
+    config_field=Field(types.List(types.Any), description='The list value to output.'),
+    description='No-op solid that simply outputs its single list config value.',
+    outputs=[OutputDefinition(types.List(types.Any), description='The list passed in as config.')]
+)
+def thunk_list(info):
+    '''Output the config vakue.
+
+    Especially useful when constructing DAGs with root nodes that take inputs which might in
+    other dags come from upstream solids.
+
+    Args:
+        info (ExpectationExecutionInfo)
+
+    Returns:
+        list:
+            The config value passed to the solid.
+    '''
+    return info.config
+
+
 @solid(
     name='thunk_database_engine',
     outputs=[OutputDefinition(SqlAlchemyEngineType, description='The db resource.')]
@@ -168,33 +191,40 @@ def thunk_database_engine(info):
 @solid(
     name='download_from_s3',
     config_field=Field(
-        types.ConfigDictionary(
-            name='DownloadFromS3ConfigType',
-            fields={
-                # Probably want to make the region configuable too
-                'bucket':
-                Field(types.String, description='The S3 bucket in which to look for the key.'),
-                'key':
-                Field(types.String, description='The key to download.'),
-                'skip_if_present':
-                Field(
-                    types.Bool,
-                    description='If True, and a file already exists at the path described by the '
-                    'target_path config value, if present, or the key, then the solid will no-op.',
-                    default_value=False,
-                    is_optional=True
-                ),
-                'target_path':
-                Field(
-                    types.String,
-                    description='If present, specifies the path at which to download the object.',
-                    is_optional=True
-                ),
-            }
+        types.List(
+            types.ConfigDictionary(
+                name='DownloadFromS3ConfigType',
+                fields={
+                    # Probably want to make the region configuable too
+                    'bucket':
+                    Field(types.String, description='The S3 bucket in which to look for the key.'),
+                    'key':
+                    Field(types.String, description='The key to download.'),
+                    'skip_if_present':
+                    Field(
+                        types.Bool,
+                        description='If True, and a file already exists at the path described by the '
+                        'target_path config value, if present, or the key, then the solid will no-op.',
+                        default_value=False,
+                        is_optional=True
+                    ),
+                    'target_path':
+                    Field(
+                        types.String,
+                        description=
+                        'If present, specifies the path at which to download the object.',
+                        is_optional=True
+                    ),
+                }
+            )
         )
     ),
     description='Downloads an object from S3.',
-    outputs=[OutputDefinition(types.String, description='The path to the downloaded object.')]
+    outputs=[
+        OutputDefinition(
+            types.List(types.String), description='The path to the downloaded object.'
+        )
+    ]
 )
 def download_from_s3(info):
     '''Download an object from s3.
@@ -206,23 +236,25 @@ def download_from_s3(info):
         str:
             The path to the downloaded object.
     '''
-    bucket = info.config['bucket']
-    key = info.config['key']
-    target_path = (info.config.get('target_path') or key)
+    results = []
+    for file_ in info.config:
+        bucket = file_['bucket']
+        key = file_['key']
+        target_path = (file_.get('target_path') or key)
 
-    if info.config['skip_if_present'] and os.path.isfile(target_path):
-        info.context.info(
-            'Skipping download, file already present at {target_path}'.format(
-                target_path=target_path
+        if file_['skip_if_present'] and os.path.isfile(target_path):
+            info.context.info(
+                'Skipping download, file already present at {target_path}'.format(
+                    target_path=target_path
+                )
             )
-        )
-        return target_path
+        else:
+            if os.path.dirname(target_path):
+                mkdir_p(os.path.dirname(target_path))
 
-    if os.path.dirname(target_path):
-        mkdir_p(os.path.dirname(target_path))
-
-    info.context.resources.s3.download_file(bucket, key, target_path)
-    return target_path
+            info.context.resources.s3.download_file(bucket, key, target_path)
+        results.append(target_path)
+    return results
 
 
 @solid(
@@ -298,13 +330,13 @@ def upload_to_s3(info, file_path):
     # ),
     inputs=[
         InputDefinition(
-            'archive_path',
-            types.String,
+            'archive_paths',
+            types.List(types.String),
             description='The path to the archive.',
         ),
         InputDefinition(
-            'archive_member',
-            types.String,
+            'archive_members',
+            types.List(types.String),
             description='The archive member to extract.',
         ),
         # InputDefinition(
@@ -330,58 +362,69 @@ def upload_to_s3(info, file_path):
     ),
     description='Extracts an archive member from a zip archive.',
     outputs=[
-        OutputDefinition(types.String, description='The path to the unzipped archive member.')
+        OutputDefinition(
+            types.List(types.String), description='The path to the unzipped archive member.'
+        )
     ],
 )
 def unzip_file(
     info,
-    archive_path,
-    archive_member,
+    archive_paths,
+    archive_members,
     # destination_dir=None
 ):
     # FIXME
     # archive_path = info.config['archive_path']
     # archive_member = info.config['archive_member']
-    destination_dir = (
-        # info.config['destination_dir'] or
-        os.path.dirname(archive_path)
-    )
-
-    with zipfile.ZipFile(archive_path, 'r') as zip_ref:
-        if archive_member is not None:
-            target_path = os.path.join(destination_dir, archive_member)
-            is_file = os.path.isfile(target_path)
-            is_dir = os.path.isdir(target_path)
-            if not (info.config['skip_if_present'] and (is_file or is_dir)):
-                zip_ref.extract(archive_member, destination_dir)
-            else:
-                if is_file:
-                    info.context.info(
-                        'Skipping unarchive of {archive_member} from {archive_path}, '
-                        'file already present at {target_path}'.format(
-                            archive_member=archive_member,
-                            archive_path=archive_path,
-                            target_path=target_path
-                        )
-                    )
-                if is_dir:
-                    info.context.info(
-                        'Skipping unarchive of {archive_member} from {archive_path}, '
-                        'directory already present at {target_path}'.format(
-                            archive_member=archive_member,
-                            archive_path=archive_path,
-                            target_path=target_path
-                        )
-                    )
+    results = []
+    for (i, archive_path) in enumerate(archive_paths):
+        destination_dir = (
+            # info.config['destination_dir'] or
+            os.path.dirname(archive_path)
+        )
+        if archive_members:
+            archive_member = archive_members[i]
         else:
-            if not (info.config['skip_if_present'] and is_dir):
-                zip_ref.extractall(destination_dir)
+            archive_member = None
+
+        with zipfile.ZipFile(archive_path, 'r') as zip_ref:
+            if archive_member is not None:
+                target_path = os.path.join(destination_dir, archive_member)
+                is_file = os.path.isfile(target_path)
+                is_dir = os.path.isdir(target_path)
+                if not (info.config['skip_if_present'] and (is_file or is_dir)):
+                    zip_ref.extract(archive_member, destination_dir)
+                else:
+                    if is_file:
+                        info.context.info(
+                            'Skipping unarchive of {archive_member} from {archive_path}, '
+                            'file already present at {target_path}'.format(
+                                archive_member=archive_member,
+                                archive_path=archive_path,
+                                target_path=target_path
+                            )
+                        )
+                    if is_dir:
+                        info.context.info(
+                            'Skipping unarchive of {archive_member} from {archive_path}, '
+                            'directory already present at {target_path}'.format(
+                                archive_member=archive_member,
+                                archive_path=archive_path,
+                                target_path=target_path
+                            )
+                        )
             else:
-                info.context.info(
-                    'Skipping unarchive of {archive_path}, directory already present '
-                    'at {target_path}'.format(archive_path=archive_path, target_path=target_path)
-                )
-        return target_path
+                if not (info.config['skip_if_present'] and is_dir):
+                    zip_ref.extractall(destination_dir)
+                else:
+                    info.context.info(
+                        'Skipping unarchive of {archive_path}, directory already present '
+                        'at {target_path}'.format(
+                            archive_path=archive_path, target_path=target_path
+                        )
+                    )
+        results.append(target_path)
+    return results
 
 
 @solid(

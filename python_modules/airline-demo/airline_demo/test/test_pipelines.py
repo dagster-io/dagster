@@ -28,153 +28,96 @@ def test_pipeline_download():
                 }
             },
             'solids': {
-                'april_on_time_data_filename': {
-                    'config':
-                    'On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_4.csv'
+                'archive_members': {
+                    'config': [
+                        'On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_4.csv',
+                        'On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_5.csv',
+                        'On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_6.csv',
+                        'Origin_and_Destination_Survey_DB1BCoupon_2018_2.csv',
+                        'Origin_and_Destination_Survey_DB1BMarket_2018_2.csv',
+                        'Origin_and_Destination_Survey_DB1BTicket_2018_2.csv',
+                        '954834304_T_MASTER_CORD.csv',
+                    ]
                 },
-                'may_on_time_data_filename': {
-                    'config':
-                    'On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_5.csv'
-                },
-                'june_on_time_data_filename': {
-                    'config':
-                    'On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_6.csv'
-                },
-                'q2_coupon_data_filename': {
-                    'config': 'Origin_and_Destination_Survey_DB1BCoupon_2018_2.csv'
-                },
-                'q2_market_data_filename': {
-                    'config': 'Origin_and_Destination_Survey_DB1BMarket_2018_2.csv'
-                },
-                'q2_ticket_data_filename': {
-                    'config': 'Origin_and_Destination_Survey_DB1BTicket_2018_2.csv'
-                },
-                'master_cord_data_filename': {
-                    'config': '954834304_T_MASTER_CORD.csv'
-                },
-                'download_april_on_time_data': {
-                    'config': {
-                        'bucket':
-                        'dagster-airline-demo-source-data',
-                        'key':
-                        'On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_4.zip',
-                        'skip_if_present':
-                        True,
-                        'target_path':
-                        'source_data/On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_4.zip',
-                    }
-                },
-                'download_may_on_time_data': {
-                    'config': {
-                        'bucket':
-                        'dagster-airline-demo-source-data',
-                        'key':
-                        'On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_5.zip',
-                        'skip_if_present':
-                        True,
-                        'target_path':
-                        'source_data/On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_5.zip',
-                    },
-                },
-                'download_june_on_time_data': {
-                    'config': {
-                        'bucket':
-                        'dagster-airline-demo-source-data',
-                        'key':
-                        'On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_6.zip',
-                        'skip_if_present':
-                        True,
-                        'target_path':
-                        'source_data/On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_6.zip',
-                    }
-                },
-                'download_q2_coupon_data': {
-                    'config': {
-                        'bucket':
-                        'dagster-airline-demo-source-data',
-                        'key':
-                        'Origin_and_Destination_Survey_DB1BCoupon_2018_2.zip',
-                        'skip_if_present':
-                        True,
-                        'target_path':
-                        'source_data/Origin_and_Destination_Survey_DB1BCoupon_2018_2.zip',
-                    }
-                },
-                'download_q2_market_data': {
-                    'config': {
-                        'bucket':
-                        'dagster-airline-demo-source-data',
-                        'key':
-                        'Origin_and_Destination_Survey_DB1BMarket_2018_2.zip',
-                        'skip_if_present':
-                        True,
-                        'target_path':
-                        'source_data/Origin_and_Destination_Survey_DB1BMarket_2018_2.zip',
-                    }
-                },
-                'download_q2_ticket_data': {
-                    'config': {
-                        'bucket':
-                        'dagster-airline-demo-source-data',
-                        'key':
-                        'Origin_and_Destination_Survey_DB1BTicket_2018_2.zip',
-                        'skip_if_present':
-                        True,
-                        'target_path':
-                        'source_data/Origin_and_Destination_Survey_DB1BTicket_2018_2.zip',
-                    }
+                'download_archives': {
+                    'config': [
+                        {
+                            'bucket':
+                            'dagster-airline-demo-source-data',
+                            'key':
+                            'On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_4.zip',
+                            'skip_if_present':
+                            True,
+                            'target_path':
+                            'source_data/On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_4.zip',
+                        }, {
+                            'bucket':
+                            'dagster-airline-demo-source-data',
+                            'key':
+                            'On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_5.zip',
+                            'skip_if_present':
+                            True,
+                            'target_path':
+                            'source_data/On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_5.zip',
+                        }, {
+                            'bucket':
+                            'dagster-airline-demo-source-data',
+                            'key':
+                            'On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_6.zip',
+                            'skip_if_present':
+                            True,
+                            'target_path':
+                            'source_data/On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_6.zip',
+                        }, {
+                            'bucket':
+                            'dagster-airline-demo-source-data',
+                            'key':
+                            'Origin_and_Destination_Survey_DB1BCoupon_2018_2.zip',
+                            'skip_if_present':
+                            True,
+                            'target_path':
+                            'source_data/Origin_and_Destination_Survey_DB1BCoupon_2018_2.zip',
+                        }, {
+                            'bucket':
+                            'dagster-airline-demo-source-data',
+                            'key':
+                            'Origin_and_Destination_Survey_DB1BMarket_2018_2.zip',
+                            'skip_if_present':
+                            True,
+                            'target_path':
+                            'source_data/Origin_and_Destination_Survey_DB1BMarket_2018_2.zip',
+                        }, {
+                            'bucket':
+                            'dagster-airline-demo-source-data',
+                            'key':
+                            'Origin_and_Destination_Survey_DB1BTicket_2018_2.zip',
+                            'skip_if_present':
+                            True,
+                            'target_path':
+                            'source_data/Origin_and_Destination_Survey_DB1BTicket_2018_2.zip',
+                        }, {
+                            'bucket': 'dagster-airline-demo-source-data',
+                            'key': '954834304_T_MASTER_CORD.zip',
+                            'skip_if_present': True,
+                            'target_path': 'source_data/954834304_T_MASTER_CORD.zip',
+                        }
+                    ]
                 },
                 'download_q2_sfo_weather': {
-                    'config': {
-                        'bucket': 'dagster-airline-demo-source-data',
-                        'key': 'sfo_q2_weather.txt',
-                        'skip_if_present': True,
-                        'target_path': 'source_data/sfo_q2_weather.txt',
-                    }
+                    'config': [
+                        {
+                            'bucket': 'dagster-airline-demo-source-data',
+                            'key': 'sfo_q2_weather.txt',
+                            'skip_if_present': True,
+                            'target_path': 'source_data/sfo_q2_weather.txt',
+                        }
+                    ]
                 },
-                'download_master_cord_data': {
-                    'config': {
-                        'bucket': 'dagster-airline-demo-source-data',
-                        'key': '954834304_T_MASTER_CORD.zip',
-                        'skip_if_present': True,
-                        'target_path': 'source_data/954834304_T_MASTER_CORD.zip',
-                    }
-                },
-                'unzip_april_on_time_data': {
+                'unzip_archives': {
                     'config': {
                         'skip_if_present': True,
                     },
                 },
-                'unzip_may_on_time_data': {
-                    'config': {
-                        'skip_if_present': True,
-                    },
-                },
-                'unzip_june_on_time_data': {
-                    'config': {
-                        'skip_if_present': True,
-                    },
-                },
-                'unzip_q2_coupon_data': {
-                    'config': {
-                        'skip_if_present': True,
-                    },
-                },
-                'unzip_q2_market_data': {
-                    'config': {
-                        'skip_if_present': True,
-                    },
-                },
-                'unzip_q2_ticket_data': {
-                    'config': {
-                        'skip_if_present': True,
-                    },
-                },
-                'unzip_master_cord_data': {
-                    'config': {
-                        'skip_if_present': True,
-                    }
-                }
             }
         }
     )
