@@ -337,13 +337,13 @@ def normalize_weather_na_values(_info, data_frame):
         InputDefinition(
             'data_frame',
             SparkDataFrameType,
-            description='The pyspark DataFrame to load into Redshift.',
+            description='The pyspark DataFrame to load into the database.',
         )
     ],
     outputs=[OutputDefinition(SparkDataFrameType)],
     config_field=Field(
         types.ConfigDictionary(
-            name='BatchLoadDataToRedshiftFromSparkConfigType',
+            name='BatchLoadDataToDatabaseFromSparkConfigType',
             fields={
                 'table_name': Field(types.String, description=''),
             }
@@ -352,30 +352,7 @@ def normalize_weather_na_values(_info, data_frame):
 )
 def load_data_to_database_from_spark(info, data_frame):
     # Move this to context, config at that level
-    db_dialect = info.context.resources.db_dialect
-    if db_dialect == 'redshift':
-        data_frame.write \
-        .format('com.databricks.spark.redshift') \
-        .option('tempdir', info.context.resources.redshift_s3_temp_dir) \
-        .mode('overwrite') \
-        .jdbc(
-            info.context.resources.db_url,
-            info.config['table_name'],
-        ) #\
-        # .save()
-    elif db_dialect == 'postgres':
-        data_frame.write \
-        .option('driver', 'org.postgresql.Driver') \
-        .mode('overwrite') \
-        .jdbc(
-            info.context.resources.db_url,
-            info.config['table_name'],
-        ) #\
-        # .save()
-    else:
-        raise NotImplementedError(
-            'No implementation for db_dialect "{db_dialect}"'.format(db_dialect=db_dialect)
-        )
+    info.context.resources.db_load(data_frame, info.config['table_name'], info.context.resources)
     return data_frame
 
 
