@@ -23,8 +23,8 @@ from .solids import (
     delays_by_geography,
     delays_vs_fares,
     delays_vs_fares_nb,
-    download_from_s3,
     eastbound_delays,
+    download_and_unzip_files_from_s3,
     ingest_csv_to_spark,
     join_spark_data_frames,
     load_data_to_database_from_spark,
@@ -36,7 +36,6 @@ from .solids import (
     thunk,
     tickets_with_destination,
     union_spark_data_frames,
-    unzip_file,
     upload_to_s3,
     westbound_delays,
 )
@@ -269,60 +268,12 @@ CONTEXT_DEFINITIONS = {
 
 def define_airline_demo_download_pipeline():
     solids = [
-        download_from_s3,
-        thunk,
-        unzip_file,
+        download_and_unzip_files_from_s3,
     ]
-    dependencies = {
-        SolidInstance('thunk', alias='april_on_time_data_filename'): {},
-        SolidInstance('thunk', alias='may_on_time_data_filename'): {},
-        SolidInstance('thunk', alias='june_on_time_data_filename'): {},
-        SolidInstance('thunk', alias='q2_coupon_data_filename'): {},
-        SolidInstance('thunk', alias='q2_market_data_filename'): {},
-        SolidInstance('thunk', alias='q2_ticket_data_filename'): {},
-        SolidInstance('thunk', alias='master_cord_data_filename'): {},
-        SolidInstance('download_from_s3', alias='download_april_on_time_data'): {},
-        SolidInstance('download_from_s3', alias='download_may_on_time_data'): {},
-        SolidInstance('download_from_s3', alias='download_june_on_time_data'): {},
-        SolidInstance('download_from_s3', alias='download_q2_coupon_data'): {},
-        SolidInstance('download_from_s3', alias='download_q2_market_data'): {},
-        SolidInstance('download_from_s3', alias='download_q2_ticket_data'): {},
-        SolidInstance('download_from_s3', alias='download_q2_sfo_weather'): {},
-        SolidInstance('download_from_s3', alias='download_master_cord_data'): {},
-        SolidInstance('unzip_file', alias='unzip_april_on_time_data'): {
-            'archive_path': DependencyDefinition('download_april_on_time_data'),
-            'archive_member': DependencyDefinition('april_on_time_data_filename'),
-        },
-        SolidInstance('unzip_file', alias='unzip_may_on_time_data'): {
-            'archive_path': DependencyDefinition('download_may_on_time_data'),
-            'archive_member': DependencyDefinition('may_on_time_data_filename'),
-        },
-        SolidInstance('unzip_file', alias='unzip_june_on_time_data'): {
-            'archive_path': DependencyDefinition('download_june_on_time_data'),
-            'archive_member': DependencyDefinition('june_on_time_data_filename'),
-        },
-        SolidInstance('unzip_file', alias='unzip_q2_coupon_data'): {
-            'archive_path': DependencyDefinition('download_q2_coupon_data'),
-            'archive_member': DependencyDefinition('q2_coupon_data_filename'),
-        },
-        SolidInstance('unzip_file', alias='unzip_q2_market_data'): {
-            'archive_path': DependencyDefinition('download_q2_market_data'),
-            'archive_member': DependencyDefinition('q2_market_data_filename'),
-        },
-        SolidInstance('unzip_file', alias='unzip_q2_ticket_data'): {
-            'archive_path': DependencyDefinition('download_q2_ticket_data'),
-            'archive_member': DependencyDefinition('q2_ticket_data_filename'),
-        },
-        SolidInstance('unzip_file', alias='unzip_master_cord_data'): {
-            'archive_path': DependencyDefinition('download_master_cord_data'),
-            'archive_member': DependencyDefinition('master_cord_data_filename'),
-        },
-    }
     return PipelineDefinition(
         name='airline_demo_download_pipeline',
         context_definitions=CONTEXT_DEFINITIONS,
         solids=solids,
-        dependencies=dependencies,
     )
 
 

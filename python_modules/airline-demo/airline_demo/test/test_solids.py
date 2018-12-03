@@ -27,11 +27,11 @@ from dagster import (
 from dagster.utils.test import (define_stub_solid, execute_solid)
 
 from airline_demo.solids import (
-    sql_solid,
-    download_from_s3,
+    # download_from_s3,
     ingest_csv_to_spark,
+    sql_solid,
     thunk,
-    unzip_file,
+    # unzip_file,
 )
 from airline_demo.pipelines import (
     define_lambda_resource,
@@ -108,91 +108,6 @@ def test_thunk():
     )
     assert result.success
     assert result.transformed_value() == 'foo'
-
-
-@pytest.mark.nettest
-def test_download_from_s3():
-    result = execute_solid(
-        PipelineDefinition([download_from_s3], context_definitions=_s3_context()),
-        'download_from_s3',
-        environment={
-            'context': {
-                'test': {}
-            },
-            'solids': {
-                'download_from_s3': {
-                    'config': {
-                        'bucket': 'dagster-airline-demo-source-data',
-                        'key': 'test/test_file',
-                        'target_path': 'test/test_file',
-                    }
-                }
-            }
-        }
-    )
-    assert result.success
-    assert result.transformed_value() == 'test/test_file'
-    assert os.path.isfile(result.transformed_value())
-    with open(result.transformed_value(), 'r') as fd:
-        assert fd.read() == 'test\n'
-
-
-@pytest.mark.nettest
-def test_download_from_s3_tempfile():
-    result = execute_solid(
-        PipelineDefinition([download_from_s3], context_definitions=_s3_context()),
-        'download_from_s3',
-        environment={
-            'context': {
-                'test': {}
-            },
-            'solids': {
-                'download_from_s3': {
-                    'config': {
-                        'bucket': 'dagster-airline-demo-source-data',
-                        'key': 'test/test_file',
-                    }
-                }
-            }
-        }
-    )
-    assert result.success
-    assert result.transformed_value()
-    assert not os.path.isfile(result.transformed_value())
-
-
-def test_unzip_file_tempfile():
-    @lambda_solid
-    def nonce():
-        return None
-
-    result = execute_solid(
-        PipelineDefinition(
-            solids=[nonce, unzip_file],
-            dependencies={
-                'unzip_file': {
-                    'archive_path': DependencyDefinition('nonce'),
-                    'archive_member': DependencyDefinition('nonce')
-                }
-            },
-            context_definitions=_tempfile_context(),
-        ),
-        'unzip_file',
-        inputs={
-            'archive_path': os.path.join(os.path.dirname(__file__), 'data/test.zip'),
-            'archive_member': 'test/test_file'
-        },
-        environment={'solids': {
-            'unzip_file': {
-                'config': {
-                    'skip_if_present': False
-                }
-            }
-        }}
-    )
-    assert result.success
-    assert result.transformed_value()
-    assert not os.path.isfile(result.transformed_value())
 
 
 @pytest.mark.spark
