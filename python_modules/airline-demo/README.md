@@ -1,10 +1,28 @@
-### Running tests
+# Airline demo
+This repository models realistic data download, ingest, and manipulation pipelines in Dagster,
+using real-world airline data. It is intended to exercise the features of the Dagster tooling,
+and as a model for users building their own first production pipelines in the system. 
 
+### Running tests
 You won't want to suppress test output if you want to see loglines from dagster:
 
-    pytest -s 
+    pytest -s
 
-### Running on AWS
+We use [pytest marks](https://docs.pytest.org/en/latest/example/markers.html#mark-examples) to
+identify useful subsets of tests. For instance, to run only those tests that do not require a
+running Spark cluster, you can run:
+
+    pytest -m "not spark"
+
+To run the full test suite, you will need:
+
+- An Internet connection
+- AWS credentials accessible in the normal credential chain
+- A local Spark install
+- A running Postgres at `postgresql://test:test@127.0.0.1:5432/test`. (A docker-compose file is
+  provided in this repo; run `docker-compose up`.)
+
+### Orchestrating AWS resources
 The pipelines defined in this repository can run against a local Spark cluster
 and Postgres instance, or they can run against a Redshift cluster and Spark
 running on Amazon EMR.
@@ -13,7 +31,6 @@ We manage AWS resources with [pulumi](https://github.com/pulumi/pulumi).
 First, install the pulumi CLI:
 
     brew install pulumi
-
 
 Pulumi resources are divided by "project". To spin resources up for a demo run,
 use the `demo_resources` project.
@@ -34,6 +51,7 @@ To destroy resources, run:
 
     pulumi destroy
 
+<small>
 *Warning*: Currently we are unable to cleanly tear down the VPC using pulumi
 because of dependency errors like the following:
 
@@ -52,6 +70,7 @@ https://forums.aws.amazon.com/thread.jspa?threadID=223412).
 
 Right now the workaround is to wait for a timeout (about 15 minutes), then
 manually delete the VPC from the console, which will force-delete dependencies.
+</small>
 
 ### TODOs
 
@@ -65,7 +84,9 @@ manually delete the VPC from the console, which will force-delete dependencies.
 - Write two versions of the parallel pipeline steps -- one using a List type, one with custom solids
 - Move the database loading logic to the context (on a branch) -- with a "database loader" resource
 - Add expectations
-
+- Running local Spark tests on Circle is going to require us to create a custom Docker image with
+  both Python and a Java runtime [(!)](https://discuss.circleci.com/t/recommended-way-to-use-multiple-languages-in-2-0/14174/11)
+ 
 ### Issues with general availability
 - Right now the pulumi spec, as well as the sample config, expect that you will
 be able to orchestrate a Redshift cluster at `db.dagster.io` and an EMR cluster
