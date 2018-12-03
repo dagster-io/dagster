@@ -317,10 +317,7 @@ def define_airline_demo_ingest_pipeline():
         },
         SolidInstance('ingest_csv_to_spark', alias='ingest_q2_coupon_data'): {
             'input_csv': DependencyDefinition('q2_coupon_data_filename'),
-        },        Args:
-            info (ExpectationExecutionInfo): Must expose a `db` resource with an `execute` method,
-                like a SQLAlchemy engine, that can execute raw SQL against a database.
-
+        },
         SolidInstance('ingest_csv_to_spark', alias='ingest_q2_market_data'): {
             'input_csv': DependencyDefinition('q2_market_data_filename'),
         },
