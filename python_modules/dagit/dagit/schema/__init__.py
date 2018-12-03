@@ -1,7 +1,7 @@
 import graphene
 from graphene.types.generic import GenericScalar
 
-from . import model, errors, pipeline, execution, run
+from . import model, errors, pipelines, execution, runs
 from .utils import non_null_list
 
 
@@ -11,8 +11,8 @@ def create_schema():
         mutation=Mutation,
         subscription=Subscription,
         types=[
-            pipeline.RegularType,
-            pipeline.CompositeType,
+            pipelines.RegularType,
+            pipelines.CompositeType,
             errors.RuntimeMismatchConfigError,
             errors.MissingFieldConfigError,
             errors.FieldNotDefinedConfigError,
@@ -25,10 +25,14 @@ class Query(graphene.ObjectType):
     pipelineOrError = graphene.Field(
         lambda: graphene.NonNull(errors.PipelineOrError), name=graphene.NonNull(graphene.String)
     )
+    pipeline = graphene.Field(
+        lambda: graphene.NonNull(pipelines.Pipeline), name=graphene.NonNull(graphene.String)
+    )
     pipelinesOrError = graphene.NonNull(errors.PipelinesOrError)
+    pipelines = graphene.Field(lambda: graphene.NonNull(pipelines.PipelineConnection))
 
     type = graphene.Field(
-        lambda: pipeline.Type,
+        lambda: pipelines.Type,
         pipelineName=graphene.NonNull(graphene.String),
         typeName=graphene.NonNull(graphene.String),
     )
@@ -47,11 +51,17 @@ class Query(graphene.ObjectType):
         },
     )
 
-    def resolve_pipeline(self, info, name):
+    def resolve_pipelineOrError(self, info, name):
         return model.get_pipeline(info.context, name)
 
-    def resolve_pipelines(self, info):
+    def resolve_pipeline(self, info, name):
+        return model.get_pipeline_or_raise(info.context, name)
+
+    def resolve_pipelinesOrError(self, info):
         return model.get_pipelines(info.context)
+
+    def resolve_pipelines(self, info):
+        return model.get_pipelines_or_raise(info.context)
 
     def resolve_type(self, info, pipelineName, typeName):
         return model.get_pipeline_type(info.context, pipelineName, typeName)
@@ -79,7 +89,7 @@ class Mutation(graphene.ObjectType):
 
 class Subscription(graphene.ObjectType):
     pipelineRunLogs = graphene.Field(
-        graphene.NonNull(lambda: run.PipelineRunEvent),
+        graphene.NonNull(lambda: runs.PipelineRunEvent),
         runId=graphene.Argument(graphene.NonNull(graphene.ID)),
         after=graphene.Argument(graphene.String)
     )

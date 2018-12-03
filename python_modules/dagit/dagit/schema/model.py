@@ -1,3 +1,6 @@
+import sys
+import uuid
+import gevent
 from dagster import (
     execute_pipeline,
     ReentrantInfo,
@@ -6,25 +9,41 @@ from dagster import (
 from dagster.core.evaluator import evaluate_config_value
 from dagster.core.execution import create_execution_plan
 
-from . import pipeline, execution, errors, run
-from .utils import non_null_list, SomethingOrError
+from . import pipelines, execution, errors, runs
+from .utils import non_null_list, EitherValue, EitherError
 from .context import DagsterGraphQLContext
 
 
 def get_pipelines(context):
+    return _get_pipelines(context).value()
+
+
+def get_pipelines_or_raise(context):
+    return _get_pipelines(context).value_or_raise()
+
+
+def _get_pipelines(context):
     check.inst_param(context, 'context', DagsterGraphQLContext)
 
     def process_pipelines(repository):
-        pipelines = []
+        pipeline_instances = []
         for pipeline_def in repository.get_all_pipelines():
-            pipelines.append(pipeline.Pipeline(pipeline_def))
-        return pipeline.PipelineConnection(nodes=pipelines)
+            pipeline_instances.append(pipelines.Pipeline(pipeline_def))
+        return pipelines.PipelineConnection(nodes=pipeline_instances)
 
     repository_or_error = _repository_or_error_from_container(context.repository_container)
-    return repository_or_error.chain(process_pipelines).get()
+    return repository_or_error.chain(process_pipelines)
 
 
 def get_pipeline(context, name):
+    return _get_pipeline(context, name).value()
+
+
+def get_pipeline_or_raise(context, name):
+    return _get_pipeline(context, name).value_or_raise()
+
+
+def _get_pipeline(context, name):
     check.inst_param(context, 'context', DagsterGraphQLContext)
     check.str_param(name, 'name')
     return _pipeline_or_error_from_container(context.repository_container, name)
@@ -37,100 +56,106 @@ def get_pipeline_type(context, pipelineName, typeName):
     pipeline_or_error = _pipeline_or_error_from_container(
         context.repository_container, pipelineName
     )
-    return pipeline_or_error.chain(lambda pipeline: pipeline.get_type(typeName)).get()
+    return pipeline_or_error.chain(lambda pip: pip.get_type(typeName)).value_or_raise()
 
 
 def validate_pipeline_config(context, pipelineName, config):
     check.inst_param(context, 'context', DagsterGraphQLContext)
     check.str_param(pipelineName, 'pipelineName')
-    check.dict_param(config, 'config')
 
     def do_validation(pipeline):
-        config_or_error = _repository_or_error_from_container(pipeline, config)
-        return config.chain(lambda config: PipelineConfigValidationValid(pipeline))
+        config_or_error = _config_or_error_from_pipeline(pipeline, config)
+        return config_or_error.chain(lambda config: errors.PipelineConfigValidationValid(pipeline))
 
     pipeline_or_error = _pipeline_or_error_from_container(
         context.repository_container, pipelineName
     )
-    return pipeline_or_error.chain(do_validation).get()
+    return pipeline_or_error.chain(do_validation).value()
 
 
 def get_execution_plan(context, pipelineName, config):
     check.inst_param(context, 'context', DagsterGraphQLContext)
     check.str_param(pipelineName, 'pipelineName')
-    check.dict_param(config, 'config')
 
     def create_plan(pipeline):
         config_or_error = _config_or_error_from_pipeline(pipeline, config)
-        return config.chain(lambda config: execution.ExecutionPlan(
+        return config_or_error.chain(lambda config: execution.ExecutionPlan(
             pipeline,
-            create_execution_plan(pipeline._pipeline, config.value),
+            create_execution_plan(pipeline.get_dagster_pipeline(), config.value),
         ))
 
     pipeline_or_error = _pipeline_or_error_from_container(
         context.repository_container, pipelineName
     )
-    return pipeline_or_error.chain(create_plan).get()
+    return pipeline_or_error.chain(create_plan).value()
 
 
 def start_pipeline_execution(context, pipelineName, config):
     check.inst_param(context, 'context', DagsterGraphQLContext)
     check.str_param(pipelineName, 'pipelineName')
-    check.dict_param(config, 'config')
-    pipeline_run_storage = context.context.pipeline_runs
+    pipeline_run_storage = context.pipeline_runs
 
-    def _start_execution(pipeline):
-        new_run_id = str(uuid.uuid4())
-        run = pipeline_run_storage.add_run(new_run_id, pipelineName, config)
-        gevent.spawn(
-            execute_pipeline,
-            pipeline._pipeline,
-            config,
-            reentrant_info=ReentrantInfo(
-                runId,
-                event_callback=run.handle_new_event,
-            ),
-        )
-        return StartPipelineExecutionSuccess(
-            run=run.PipelineRun(runId=new_run_id, pipeline=pipeline.Pipeline(pipeline))
-        )
+    def get_config_and_start_execution(pipeline):
+        def start_execution(config):
+            new_run_id = str(uuid.uuid4())
+            run = pipeline_run_storage.add_run(new_run_id, pipelineName, config)
+            gevent.spawn(
+                execute_pipeline,
+                pipeline.get_dagster_pipeline(),
+                config.value,
+                reentrant_info=ReentrantInfo(
+                    new_run_id,
+                    event_callback=run.handle_new_event,
+                ),
+            )
+            return errors.StartPipelineExecutionSuccess(
+                run=runs.PipelineRun(runId=new_run_id, pipeline=pipeline)
+            )
 
-    return _pipeline_or_error_from_container(context.repository_container,
-                                             pipelineName).chain(_start_execution).get()
+        config_or_error = _config_or_error_from_pipeline(pipeline, config)
+        return config_or_error.chain(start_execution)
+
+    pipeline_or_error = _pipeline_or_error_from_container(
+        context.repository_container, pipelineName
+    )
+    return pipeline_or_error.chain(get_config_and_start_execution).value()
 
 
 def get_pipeline_run_observable(context, runId, after=None):
     check.inst_param(context, 'context', DagsterGraphQLContext)
     check.str_param(runId, 'runId')
     check.opt_str_param(after, 'after')
-    pipeline_run_storage = context.context.pipeline_runs
+    pipeline_run_storage = context.pipeline_runs
     run = pipeline_run_storage.get_run_by_id(runId)
-    if run:
-        return run.observable_after_cursor(after).map(
-            lambda event: run.PipelineRunEvent.from_dagster_event(event, pipeline)
-        )
-    else:
+    if not run:
         raise Exception('No run with such id: {run_id}'.format(run_id=runId))
+
+    pipeline_name = run.pipeline_name
+
+    def get_observable(pipeline):
+        return run.observable_after_cursor(after).map(
+            lambda event: runs.PipelineRunEvent.from_dagster_event(event, pipeline)
+        )
+
+    return _pipeline_or_error_from_container(context.repository_container,
+                                             pipeline_name).chain(get_observable).value_or_raise()
 
 
 def _repository_or_error_from_container(container):
     error = container.error
     if error != None:
-        result = errors.PythonError(*error)
+        return EitherError(errors.PythonError(*error))
     try:
-        result = container.repository
+        return EitherValue(container.repository)
     except Exception:  # pylint: disable=broad-except
-        result = errors.PythonError(*sys.exc_info())
-
-    return SomethingOrError(result, lambda repo: isinstance(repo, errors.PythonError))
+        return EitherError(errors.PythonError(*sys.exc_info()))
 
 
 def _pipeline_or_error_from_repository(repository, pipeline_name):
     if not repository.has_pipeline(pipeline_name):
-        result = errors.PipelineNotFoundError(pipeline_name=pipeline_name)
+        return EitherError(errors.PipelineNotFoundError(pipeline_name=pipeline_name))
     else:
-        result = pipeline.Pipeline(repository.get_pipeline(pipeline_name))
-    return SomethingOrError(result, lambda pip: not isinstance(pip, pipeline.Pipeline))
+        return EitherValue(pipelines.Pipeline(repository.get_pipeline(pipeline_name)))
 
 
 def _pipeline_or_error_from_container(container, pipeline_name):
@@ -140,17 +165,17 @@ def _pipeline_or_error_from_container(container, pipeline_name):
 
 
 def _config_or_error_from_pipeline(pipeline, config):
-    pipeline_env_type = pipeline.environment_type
+    pipeline_env_type = pipeline.get_dagster_pipeline().environment_type
     config_result = evaluate_config_value(pipeline_env_type, config)
 
     if not config_result.success:
-        result = errors.PipelineConfigValidationInvalid(
-            pipeline=pipeline.Pipeline(pipeline),
-            errors=map(create_graphql_error, config_result.errors),
+        return EitherError(
+            errors.PipelineConfigValidationInvalid(
+                pipeline=pipeline,
+                errors=[
+                    errors.ConfigErrorData.from_dagster_error(err) for err in config_result.errors
+                ],
+            )
         )
     else:
-        result = config_result
-
-    return SomethingOrError(
-        result, lambda config: isinstance(config_result, PipelineConfigValidationInvalid)
-    )
+        return EitherValue(config_result)

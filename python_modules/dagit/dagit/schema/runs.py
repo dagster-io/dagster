@@ -1,11 +1,17 @@
 import graphene
 
-from . import pipeline
+from dagster import check
+from dagster.core.events import (
+    EventRecord,
+    EventType,
+    PipelineEventRecord,
+)
+from . import pipelines
 
 
 class PipelineRun(graphene.ObjectType):
     runId = graphene.NonNull(graphene.String)
-    pipeline = graphene.NonNull(lambda: pipeline.Pipeline)
+    pipeline = graphene.NonNull(lambda: pipelines.Pipeline)
 
 
 class LogMessageEvent(graphene.ObjectType):
@@ -16,7 +22,7 @@ class LogMessageEvent(graphene.ObjectType):
 class PipelineEvent(graphene.ObjectType):
     run_id = graphene.NonNull(graphene.ID)
     message = graphene.NonNull(graphene.String)
-    pipeline = graphene.NonNull(lambda: pipeline.Pipeline)
+    pipeline = graphene.NonNull(lambda: pipelines.Pipeline)
 
 
 class PipelineStartEvent(PipelineEvent):
@@ -44,25 +50,25 @@ class PipelineRunEvent(graphene.Union):
     @staticmethod
     def from_dagster_event(event, pipeline):
         check.inst_param(event, 'event', EventRecord)
-        check.inst_param(pipeline, 'pipeline', dagster.core.definitions.PipelineDefinition)
+        check.inst_param(pipeline, 'pipeline', pipelines.Pipeline)
 
         if event.event_type == EventType.PIPELINE_START:
             return PipelineStartEvent(
                 run_id=event.run_id,
                 message=event.message,
-                pipeline=Pipeline(pipeline),
+                pipeline=pipeline,
             )
         elif event.event_type == EventType.PIPELINE_SUCCESS:
             return PipelineSuccessEvent(
                 run_id=event.run_id,
                 message=event.message,
-                pipeline=Pipeline(pipeline),
+                pipeline=pipeline,
             )
         elif event.event_type == EventType.PIPELINE_FAILURE:
             return PipelineFailureEvent(
                 run_id=event.run_id,
                 message=event.message,
-                pipeline=Pipeline(pipeline),
+                pipeline=pipeline,
             )
         elif event.event_type == EventType.UNCATEGORIZED:
             return LogMessageEvent(run_id=event.run_id, message=event.message)

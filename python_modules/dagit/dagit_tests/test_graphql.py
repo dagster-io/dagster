@@ -1,9 +1,9 @@
 import uuid
+import gevent
 
 import pytest
 
-from graphql import graphql
-from graphql.execution.executors.gevent import GeventExecutor
+from graphql import graphql, subscribe, parse
 
 from dagster import (
     ConfigField,
@@ -23,10 +23,43 @@ import dagster.pandas as dagster_pd
 
 from dagit.schema import create_schema
 from dagit.app import RepositoryContainer
+# from dagit.gevent_observable_executor import GeventObservableExecutor
+from dagit.schema.context import DagsterGraphQLContext
 from dagit.pipeline_run_storage import PipelineRunStorage
 from dagster.utils import script_relative_path
 
 from .production_query import PRODUCTION_QUERY
+
+
+def define_context():
+    return DagsterGraphQLContext(
+        RepositoryContainer(
+            repository=RepositoryDefinition(
+                name='test',
+                pipeline_dict={
+                    'context_config_pipeline': define_context_config_pipeline,
+                    'more_complicated_config': define_more_complicated_config,
+                    'more_complicated_nested_config': define_more_complicated_nested_config,
+                    'pandas_hello_world': define_pipeline_one,
+                    'pandas_hello_world_two': define_pipeline_two,
+                    'pipeline_with_list': define_pipeline_with_list,
+                }
+            )
+        ),
+        PipelineRunStorage()
+    )
+
+
+def execute_dagster_graphql(context, query, variables=None):
+    return graphql(
+        create_schema(),
+        query,
+        context=context,
+        variables=variables,
+        # executor=GeventObservableExecutor(),
+        allow_subscriptions=True,
+        return_promise=False
+    )
 
 
 @lambda_solid(
@@ -159,15 +192,15 @@ query PipelineQuery($executionParams: PipelineExecutionParams!)
                     entries {
                         __typename
                         ... on EvaluationStackPathEntry {
-                            field { 
+                            field {
                                 name
-                                type { 
+                                type {
                                     name
                                 }
                             }
                         }
                         ... on EvaluationStackListItemEntry {
-                            listIndex 
+                            listIndex
                         }
                     }
                 }
@@ -183,7 +216,7 @@ query PipelineQuery($executionParams: PipelineExecutionParams!)
 
 def execute_config_graphql(pipeline_name, config):
     return execute_dagster_graphql(
-        define_repo(),
+        define_context(),
         CONFIG_VALIDATION_QUERY,
         {
             'executionParams': {
@@ -683,45 +716,31 @@ def find_errors(result, field_stack_to_find, reason):
             yield error_data
 
 
-def define_repo():
-    return RepositoryDefinition(
-        name='test',
-        pipeline_dict={
-            'context_config_pipeline': define_context_config_pipeline,
-            'more_complicated_config': define_more_complicated_config,
-            'more_complicated_nested_config': define_more_complicated_nested_config,
-            'pandas_hello_world': define_pipeline_one,
-            'pandas_hello_world_two': define_pipeline_two,
-            'pipeline_with_list': define_pipeline_with_list,
-        }
-    )
-
-
-def execute_dagster_graphql(
-    repo,
-    query,
-    variables=None,
-    pipeline_run_storage=None,
-):
-    return graphql(
-        create_schema(),
-        query,
-        context={
-            'repository_container': RepositoryContainer(repository=repo),
-            'pipeline_runs': pipeline_run_storage if pipeline_run_storage else PipelineRunStorage(),
-        },
-        variables=variables,
-        # allow_subscriptions=True,
-        # executor=GeventExecutor(),
-    )
-
-
 def test_pipelines():
-    result = execute_dagster_graphql(define_repo(), '{ pipelines { name } }')
-    assert result.data
+    result = execute_dagster_graphql(define_context(), '{ pipelines { nodes { name } } }')
     assert not result.errors
+    assert result.data
 
-    assert set([p['name'] for p in result.data['pipelines']]) == set(
+    assert set([p['name'] for p in result.data['pipelines']['nodes']]) == set(
+        [
+            'context_config_pipeline',
+            'more_complicated_config',
+            'more_complicated_nested_config',
+            'pandas_hello_world',
+            'pandas_hello_world_two',
+            'pipeline_with_list',
+        ]
+    )
+
+
+def test_pipelines_or_error():
+    result = execute_dagster_graphql(
+        define_context(), '{ pipelinesOrError { ... on PipelineConnection { nodes { name } } } } '
+    )
+    assert not result.errors
+    assert result.data
+
+    assert set([p['name'] for p in result.data['pipelinesOrError']['nodes']]) == set(
         [
             'context_config_pipeline',
             'more_complicated_config',
@@ -735,7 +754,7 @@ def test_pipelines():
 
 def test_pipeline_by_name():
     result = execute_dagster_graphql(
-        define_repo(),
+        define_context(),
         '''
     {
         pipeline(name: "pandas_hello_world_two") {
@@ -744,9 +763,27 @@ def test_pipeline_by_name():
     }''',
     )
 
-    assert result.data
     assert not result.errors
+    assert result.data
     assert result.data['pipeline']['name'] == 'pandas_hello_world_two'
+
+
+def test_pipeline_or_error_by_name():
+    result = execute_dagster_graphql(
+        define_context(),
+        '''
+    {
+        pipelineOrError(name: "pandas_hello_world_two") {
+          ... on Pipeline {
+             name
+           }
+        }
+    }''',
+    )
+
+    assert not result.errors
+    assert result.data
+    assert result.data['pipelineOrError']['name'] == 'pandas_hello_world_two'
 
 
 EXECUTION_PLAN_QUERY = '''
@@ -788,7 +825,7 @@ query PipelineQuery($executionParams: PipelineExecutionParams!) {
 
 def test_query_execution_plan_errors():
     result = execute_dagster_graphql(
-        define_repo(),
+        define_context(),
         EXECUTION_PLAN_QUERY,
         {
             'executionParams': {
@@ -798,12 +835,12 @@ def test_query_execution_plan_errors():
         },
     )
 
-    assert result.data
     assert not result.errors
+    assert result.data
     assert result.data['executionPlan']['__typename'] == 'PipelineConfigValidationInvalid'
 
     result = execute_dagster_graphql(
-        define_repo(),
+        define_context(),
         EXECUTION_PLAN_QUERY,
         {
             'executionParams': {
@@ -813,15 +850,15 @@ def test_query_execution_plan_errors():
         },
     )
 
-    assert result.data
     assert not result.errors
+    assert result.data
     assert result.data['executionPlan']['__typename'] == 'PipelineNotFoundError'
     assert result.data['executionPlan']['pipelineName'] == 'nope'
 
 
 def test_query_execution_plan_snapshot(snapshot):
     result = execute_dagster_graphql(
-        define_repo(),
+        define_context(),
         EXECUTION_PLAN_QUERY,
         {
             'executionParams': {
@@ -839,15 +876,15 @@ def test_query_execution_plan_snapshot(snapshot):
         },
     )
 
-    assert result.data
     assert not result.errors
+    assert result.data
 
     snapshot.assert_match(result.data)
 
 
 def test_query_execution_plan():
     result = execute_dagster_graphql(
-        define_repo(),
+        define_context(),
         EXECUTION_PLAN_QUERY,
         {
             'executionParams': {
@@ -868,8 +905,8 @@ def test_query_execution_plan():
     if result.errors:
         raise Exception(result.errors[0])
 
-    assert result.data
     assert not result.errors
+    assert result.data
 
     plan_data = result.data['executionPlan']
 
@@ -909,13 +946,13 @@ def get_named_thing(llist, name):
 
 
 def test_production_query():
-    result = execute_dagster_graphql(define_repo(), PRODUCTION_QUERY)
+    result = execute_dagster_graphql(define_context(), PRODUCTION_QUERY)
 
     if result.errors:
         raise Exception(result.errors)
 
-    assert result.data
     assert not result.errors
+    assert result.data
 
 
 MUTATION_QUERY = '''
@@ -944,7 +981,7 @@ mutation ($executionParams: PipelineExecutionParams!) {
 
 def test_basic_start_pipeline_execution():
     result = execute_dagster_graphql(
-        define_repo(),
+        define_context(),
         MUTATION_QUERY,
         variables={
             'executionParams': {
@@ -965,8 +1002,8 @@ def test_basic_start_pipeline_execution():
     if result.errors:
         raise Exception(result.errors)
 
-    assert result.data
     assert not result.errors
+    assert result.data
 
     # just test existence
     assert result.data['startPipelineExecution']['__typename'] == 'StartPipelineExecutionSuccess'
@@ -976,7 +1013,7 @@ def test_basic_start_pipeline_execution():
 
 def test_basic_start_pipeline_execution_config_failure():
     result = execute_dagster_graphql(
-        define_repo(),
+        define_context(),
         MUTATION_QUERY,
         variables={
             'executionParams': {
@@ -994,14 +1031,14 @@ def test_basic_start_pipeline_execution_config_failure():
         },
     )
 
-    assert result.data
     assert not result.errors
+    assert result.data
     assert result.data['startPipelineExecution']['__typename'] == 'PipelineConfigValidationInvalid'
 
 
 def test_basis_start_pipeline_not_found_error():
     result = execute_dagster_graphql(
-        define_repo(),
+        define_context(),
         MUTATION_QUERY,
         variables={
             'executionParams': {
@@ -1022,20 +1059,19 @@ def test_basis_start_pipeline_not_found_error():
     if result.errors:
         raise Exception(result.errors)
 
-    assert result.data
     assert not result.errors
+    assert result.data
 
     # just test existence
     assert result.data['startPipelineExecution']['__typename'] == 'PipelineNotFoundError'
     assert result.data['startPipelineExecution']['pipelineName'] == 'sjkdfkdjkf'
 
 
-@pytest.mark.skip('Cannot get subscriptions to work in this context yet')
 def test_basic_start_pipeline_execution_and_subscribe():
-    pipeline_run_storage = PipelineRunStorage()
+    context = define_context()
 
     result = execute_dagster_graphql(
-        define_repo(),
+        context,
         MUTATION_QUERY,
         variables={
             'executionParams': {
@@ -1051,37 +1087,29 @@ def test_basic_start_pipeline_execution_and_subscribe():
                 },
             },
         },
-        pipeline_run_storage=pipeline_run_storage,
     )
 
-    if result.errors:
-        raise Exception(result.errors)
-
-    assert result.data
     assert not result.errors
+    assert result.data
 
     # just test existence
     assert result.data['startPipelineExecution']['__typename'] == 'StartPipelineExecutionSuccess'
     run_id = result.data['startPipelineExecution']['run']['runId']
     assert uuid.UUID(run_id)
 
-    result = execute_dagster_graphql(
-        define_repo(),
-        SUBSCRIPTION_QUERY,
+    subscription = execute_dagster_graphql(
+        context,
+        parse(SUBSCRIPTION_QUERY),
         variables={'runId': run_id},
-        pipeline_run_storage=pipeline_run_storage,
     )
 
-    import time
+    messages = []
+    subscription.subscribe(lambda value: messages.append(value))
 
-    print('RESULT')
-    print(result)
-    print(result.data)
-    print(result.errors)
-
-    # result.subscribe(lambda value: print(f'subscribed {value}'))
-
-    # time.sleep(3)
+    for m in messages:
+        assert not m.errors
+        assert m.data
+        assert m.data['pipelineRunLogs']
 
 
 SUBSCRIPTION_QUERY = '''

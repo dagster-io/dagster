@@ -11,8 +11,8 @@ def test_smoke_app():
     flask_app = app.create_app(repository_container, pipeline_run_storage)
     client = flask_app.test_client()
 
-    result = client.post('/graphql', data={'query': 'query { pipelines { name }}'})
+    result = client.post('/graphql', data={'query': 'query { pipelines { nodes { name }}}'})
 
     data = json.loads(result.data.decode('utf-8'))
 
-    assert data == {"data": {"pipelines": [{"name": "pandas_hello_world"}]}}
+    assert data == {"data": {"pipelines": {"nodes": [{"name": "pandas_hello_world"}]}}}

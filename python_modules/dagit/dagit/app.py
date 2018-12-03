@@ -1,5 +1,6 @@
 import os
 import sys
+from promise import Promise
 from graphql.execution.executors.gevent import GeventExecutor as Executor
 from flask import Flask, send_file, send_from_directory
 from flask_graphql import GraphQLView
@@ -131,7 +132,7 @@ def create_app(repository_container, pipeline_runs):
     app.app_protocol = lambda environ_path_info: 'graphql-ws'
 
     schema = create_schema()
-    subscription_server = DagsterSubscriptionServer(schema)
+    subscription_server = DagsterSubscriptionServer(schema=schema)
 
     context = DagsterGraphQLContext(
         repository_container=repository_container,
@@ -148,7 +149,7 @@ def create_app(repository_container, pipeline_runs):
             # XXX(freiksenet): Pass proper ws url
             graphiql_template=PLAYGROUND_TEMPLATE,
             executor=Executor(),
-            context=context
+            context=context,
         )
     )
     sockets.add_url_rule(

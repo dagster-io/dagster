@@ -1,8 +1,9 @@
+import traceback
 import graphene
 
 from dagster import check
 import dagster.core.evaluator
-from . import pipeline, execution, run
+from . import pipelines, execution, runs
 from .utils import non_null_list
 
 
@@ -34,11 +35,11 @@ class PipelineNotFoundError(graphene.ObjectType):
 
 
 class PipelineConfigValidationValid(graphene.ObjectType):
-    pipeline = graphene.Field(graphene.NonNull(lambda: pipeline.Pipeline))
+    pipeline = graphene.Field(graphene.NonNull(lambda: pipelines.Pipeline))
 
 
 class PipelineConfigValidationInvalid(graphene.ObjectType):
-    pipeline = graphene.Field(graphene.NonNull(lambda: pipeline.Pipeline))
+    pipeline = graphene.Field(graphene.NonNull(lambda: pipelines.Pipeline))
     errors = non_null_list(lambda: PipelineConfigValidationError)
 
 
@@ -59,18 +60,18 @@ class PipelineConfigValidationError(graphene.Interface):
 
 
 class RuntimeMismatchConfigError(graphene.ObjectType):
-    type = graphene.NonNull(lambda: pipeline.Type)
+    type = graphene.NonNull(lambda: pipelines.Type)
     value_rep = graphene.Field(graphene.String)
 
     class Meta:
         interfaces = (PipelineConfigValidationError, )
 
     def resolve_type(self, _info):
-        return pipeline.Type.from_dagster_type(self.type)
+        return pipelines.Type.from_dagster_type(self.type)
 
 
 class MissingFieldConfigError(graphene.ObjectType):
-    field = graphene.NonNull(lambda: pipeline.TypeField)
+    field = graphene.NonNull(lambda: pipelines.TypeField)
 
     class Meta:
         interfaces = (PipelineConfigValidationError, )
@@ -91,15 +92,15 @@ class SelectorTypeConfigError(graphene.ObjectType):
 
 
 class RuntimeMismatchErrorData(graphene.ObjectType):
-    type = graphene.NonNull(lambda: pipeline.Type)
+    type = graphene.NonNull(lambda: pipelines.Type)
     value_rep = graphene.Field(graphene.String)
 
     def resolve_type(self, _info):
-        return pipeline.Type.from_dagster_type(self.type)
+        return pipelines.Type.from_dagster_type(self.type)
 
 
 class MissingFieldErrorData(graphene.ObjectType):
-    field = graphene.NonNull(lambda: pipeline.TypeField)
+    field = graphene.NonNull(lambda: pipelines.TypeField)
 
 
 class FieldNotDefinedErrorData(graphene.ObjectType):
@@ -135,10 +136,10 @@ class EvaluationStackPathEntry(graphene.ObjectType):
         self._field_name = field_name
         self._field_def = field_def
 
-    field = graphene.NonNull(lambda: pipeline.TypeField)
+    field = graphene.NonNull(lambda: pipelines.TypeField)
 
     def resolve_field(self, _info):
-        return TypeField(name=self._field_name, field=self._field_def)  # pylint: disable=E1101
+        return pipelines.TypeField(name=self._field_name, field=self._field_def)  # pylint: disable=E1101
 
 
 class EvaluationStackEntry(graphene.Union):
@@ -193,7 +194,9 @@ class ConfigErrorData(graphene.Union):
                 path=[],  # TODO: remove
                 stack=error.stack,
                 reason=error.reason,
-                field=TypeField(name=error.error_data.field_name, field=error.error_data.field_def),
+                field=pipelines.TypeField(
+                    name=error.error_data.field_name, field=error.error_data.field_def
+                ),
             )
         elif isinstance(error.error_data, dagster.core.evaluator.FieldNotDefinedErrorData):
             return FieldNotDefinedConfigError(
@@ -219,12 +222,12 @@ class ConfigErrorData(graphene.Union):
 
 class PipelineOrError(graphene.Union):
     class Meta:
-        types = (pipeline.Pipeline, PythonError, PipelineNotFoundError)
+        types = (pipelines.Pipeline, PythonError, PipelineNotFoundError)
 
 
 class PipelinesOrError(graphene.Union):
     class Meta:
-        types = (pipeline.PipelineConnection, PythonError)
+        types = (pipelines.PipelineConnection, PythonError)
 
 
 class ExecutionPlanResult(graphene.Union):
@@ -233,7 +236,7 @@ class ExecutionPlanResult(graphene.Union):
 
 
 class StartPipelineExecutionSuccess(graphene.ObjectType):
-    run = graphene.Field(graphene.NonNull(lambda: run.PipelineRun))
+    run = graphene.Field(graphene.NonNull(lambda: runs.PipelineRun))
 
 
 class StartPipelineExecutionResult(graphene.Union):

@@ -5,20 +5,36 @@ def non_null_list(ttype):
     return graphene.NonNull(graphene.List(graphene.NonNull(ttype)))
 
 
-class SomethingOrError(object):
-    def __init__(self, it, is_error=None):
-        self._it = it
-        self._is_error = is_error
+class Either(object):
+    def __init__(self, value):
+        self._value = value
+
+    def value(self):
+        return self._value
+
+    def value_or_raise(self):
+        if isinstance(self, EitherValue):
+            return self.value()
+        else:
+            error = self.value()
+            if hasattr(error, 'message'):
+                raise Exception(error.message)
+            else:
+                raise Exception(str(error))
 
     def chain(self, fn):
-        if self._is_error and self._is_error(self._it):
-            return self
-        else:
-            result = fn(self._it)
-            if isinstance(result, SomethingOrError):
-                return result
-            else:
-                return SomethingOrError(result)
+        raise NotImplementedError('Subclasses of Either must override chain.')
 
-    def get(self):
-        return self._it
+
+class EitherValue(Either):
+    def chain(self, fn):
+        result = fn(self.value())
+        if isinstance(result, Either):
+            return result
+        else:
+            return EitherValue(result)
+
+
+class EitherError(Either):
+    def chain(self, fn):
+        return self

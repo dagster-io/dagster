@@ -2,6 +2,7 @@ from functools import wraps
 import graphene
 
 import dagster
+from dagster.core.types import DagsterCompositeType
 from dagster import check
 
 from .utils import non_null_list
@@ -42,6 +43,9 @@ class Pipeline(graphene.ObjectType):
             [Type.from_dagster_type(type_) for type_ in self._pipeline.all_types()],
             key=lambda type_: type_.name
         )
+
+    def get_dagster_pipeline(self):
+        return self._pipeline
 
     def get_type(self, typeName):
         return Type.from_dagster_type(self._pipeline.type_named(typeName))
