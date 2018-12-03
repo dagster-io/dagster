@@ -299,6 +299,19 @@ def ingest_csv_to_spark(info, input_csv=None):
     return data_frame
 
 
+@solid(
+    name='canonicalize_column_names',
+    inputs=[InputDefinition(
+        'data_frame',
+        SparkDataFrameType,
+        description='The data frame to canonicalize'
+    )],
+    outputs=[OutputDefinition(SparkDataFrameType)]
+)
+def canonicalize_column_names(info, data_frame):
+    data_frame.toDF(*[c.lower() for c in data_frame.columns])
+    return data_frame
+
 def replace_values_spark(data_frame, old, new, columns=None):
     if columns is None:
         data_frame.na.replace(old, new)
