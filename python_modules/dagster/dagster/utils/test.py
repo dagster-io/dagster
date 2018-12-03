@@ -20,6 +20,7 @@ def create_test_runtime_execution_context(loggers=None, resources=None):
     run_id = str(uuid.uuid4())
     return RuntimeExecutionContext(run_id, loggers, resources)
 
+
 def _unlink_swallow_errors(path):
     check.str_param(path, 'path')
     try:
