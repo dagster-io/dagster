@@ -115,18 +115,19 @@ def test_download_from_s3():
             },
             'solids': {
                 'download_from_s3': {
-                    'config': {
+                    'config':
+                    [{
                         'bucket': 'dagster-airline-demo-source-data',
                         'key': 'test/test_file'
-                    }
+                    }]
                 }
             }
         }
     )
     assert result.success
-    assert result.transformed_value() == 'test/test_file'
-    assert os.path.isfile(result.transformed_value())
-    with open(result.transformed_value(), 'r') as fd:
+    assert result.transformed_value() == ['test/test_file']
+    assert os.path.isfile(result.transformed_value()[0])
+    with open(result.transformed_value()[0], 'r') as fd:
         assert fd.read() == 'test\n'
 
 
@@ -140,15 +141,15 @@ def test_unzip_file():
             solids=[nonce, unzip_file],
             dependencies={
                 'unzip_file': {
-                    'archive_path': DependencyDefinition('nonce'),
-                    'archive_member': DependencyDefinition('nonce')
+                    'archive_paths': DependencyDefinition('nonce'),
+                    'archive_members': DependencyDefinition('nonce')
                 }
             }
         ),
         'unzip_file',
         inputs={
-            'archive_path': os.path.join(os.path.dirname(__file__), 'data/test.zip'),
-            'archive_member': 'test/test_file'
+            'archive_paths': [os.path.join(os.path.dirname(__file__), 'data/test.zip')],
+            'archive_members': ['test/test_file']
         },
         environment={'solids': {
             'unzip_file': {
@@ -159,11 +160,11 @@ def test_unzip_file():
         }}
     )
     assert result.success
-    assert result.transformed_value() == os.path.join(
-        os.path.dirname(__file__), 'data', 'test/test_file'
-    )
-    assert os.path.isfile(result.transformed_value())
-    with open(result.transformed_value(), 'r') as fd:
+    assert result.transformed_value() == [
+        os.path.join(os.path.dirname(__file__), 'data', 'test/test_file')
+    ]
+    assert os.path.isfile(result.transformed_value()[0])
+    with open(result.transformed_value()[0], 'r') as fd:
         assert fd.read() == 'test\n'
 
 
