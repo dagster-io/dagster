@@ -187,12 +187,12 @@ def download_from_s3(info):
         InputDefinition(
             'archive_path',
             types.String,
-            description='',
+            description='The path to the archive.',
         ),
         InputDefinition(
             'archive_member',
             types.String,
-            description='',
+            description='The archive member to extract.',
         ),
         # InputDefinition(
         #     'destination_dir',
@@ -205,10 +205,20 @@ def download_from_s3(info):
             name='UnzipFileConfigType',
             fields={
                 'skip_if_present':
-                Field(types.Bool, description='', default_value=False, is_optional=True),
+                Field(
+                    types.Bool,
+                    description='If True, and a file already exists at the path to which the '
+                    'archive member would be unzipped, then the solid will no-op',
+                    default_value=False,
+                    is_optional=True
+                ),
             }
         )
-    )
+    ),
+    description='Extracts an archive member from a zip archive.',
+    outputs=[
+        OutputDefinition(types.String, description='The path to the unzipped archive member.')
+    ],
 )
 def unzip_file(
     info,
@@ -317,7 +327,7 @@ def fix_na_spark(data_frame, na_value, columns=None):
         )
     ],
 )
-def normalize_weather_na_values(info, data_frame):
+def normalize_weather_na_values(_info, data_frame):
     return fix_na_spark(data_frame, 'M')
 
 
