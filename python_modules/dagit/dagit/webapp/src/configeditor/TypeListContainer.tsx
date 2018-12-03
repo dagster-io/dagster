@@ -30,7 +30,11 @@ export default class TypeListContainer extends React.Component<
           return (
             <Loading queryResult={queryResult}>
               {data => {
-                return <TypeList types={data.types} />;
+                if (data.pipelineOrError.__typename === "Pipeline") {
+                  return <TypeList types={data.pipelineOrError.types} />;
+                } else {
+                  return null;
+                }
               }}
             </Loading>
           );
@@ -42,8 +46,13 @@ export default class TypeListContainer extends React.Component<
 
 export const TYPE_LIST_CONTAINER_QUERY = gql`
   query TypeListContainerQuery($pipelineName: String!) {
-    types(pipelineName: $pipelineName) {
-      ...TypeListFragment
+    pipelineOrError(name: $pipelineName) {
+      __typename
+      ... on Pipeline {
+        types {
+          ...TypeListFragment
+        }
+      }
     }
   }
 

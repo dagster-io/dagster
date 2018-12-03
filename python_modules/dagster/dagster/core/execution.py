@@ -56,6 +56,8 @@ from .evaluator import (
     throwing_evaluate_config_value,
 )
 
+from .events import construct_event_logger
+
 from .execution_plan import (
     ExecutionPlanInfo,
     StepResult,
@@ -354,6 +356,28 @@ def get_context_stack(user_context_params, reentrant_info):
         return user_context_params.context_stack
 
 
+def create_runtime_context(execution_context, reentrant_info):
+    check.inst_param(execution_context, 'execution_context', ExecutionContext)
+    check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
+
+    run_id = get_run_id(reentrant_info)
+    context_stack = get_context_stack(execution_context, reentrant_info)
+
+    if reentrant_info and reentrant_info.event_callback:
+        loggers = execution_context.loggers + [
+            construct_event_logger(reentrant_info.event_callback)
+        ]
+    else:
+        loggers = execution_context.loggers
+
+    return RuntimeExecutionContext(
+        run_id=run_id,
+        loggers=loggers,
+        resources=execution_context.resources,
+        context_stack=context_stack,
+    )
+
+
 @contextmanager
 def yield_context(pipeline, environment, reentrant_info=None):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
@@ -370,7 +394,7 @@ def yield_context(pipeline, environment, reentrant_info=None):
 
     run_id = get_run_id(reentrant_info)
 
-    context_params_or_gen = context_definition.context_fn(
+    ec_or_gen = context_definition.context_fn(
         ContextCreationExecutionInfo(
             config=config_value,
             pipeline_def=pipeline,
@@ -380,19 +404,11 @@ def yield_context(pipeline, environment, reentrant_info=None):
 
     called = False
 
-    for user_context_params in _wrap_in_yield(context_params_or_gen):
+    for execution_context in _wrap_in_yield(ec_or_gen):
         check.invariant(not called, 'should only yield one thing')
-        check.inst(user_context_params, ExecutionContext)
+        check.inst(execution_context, ExecutionContext)
 
-        context_stack = get_context_stack(user_context_params, reentrant_info)
-
-        runtime_context = RuntimeExecutionContext(
-            run_id=run_id,
-            loggers=user_context_params.loggers,
-            resources=user_context_params.resources,
-            context_stack=context_stack,
-        )
-        yield runtime_context
+        yield create_runtime_context(execution_context, reentrant_info)
 
         called = True
 
@@ -534,12 +550,13 @@ def check_environment(pipeline, environment):
             )
 
 
-class ReentrantInfo(namedtuple('_ReentrantInfo', 'run_id context_stack')):
-    def __new__(cls, run_id=None, context_stack=None):
+class ReentrantInfo(namedtuple('_ReentrantInfo', 'run_id context_stack event_callback')):
+    def __new__(cls, run_id=None, context_stack=None, event_callback=None):
         return super(ReentrantInfo, cls).__new__(
             cls,
             run_id=check.opt_str_param(run_id, 'run_id'),
             context_stack=check.opt_dict_param(context_stack, 'context_stack'),
+            event_callback=check.opt_callable_param(event_callback, 'event_callback'),
         )
 
 

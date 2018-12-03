@@ -1,14 +1,16 @@
 PRODUCTION_QUERY = '''
 query AppQuery {
-  pipelinesOrErrors {
+  pipelinesOrError {
     ... on Error {
       message
       stack
       __typename
     }
-    ... on Pipeline {
-      ...PipelineFragment
-      __typename
+    ... on PipelineConnection {
+      nodes {
+        ...PipelineFragment
+        __typename
+      }
     }
     __typename
   }

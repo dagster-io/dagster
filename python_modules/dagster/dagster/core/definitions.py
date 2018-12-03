@@ -23,7 +23,6 @@ from .evaluator import throwing_evaluate_config_value
 from .execution_context import (
     RuntimeExecutionContext,
     ExecutionContext,
-    ExecutionContext,
 )
 
 from .types import (
