@@ -11,7 +11,7 @@ from dagster import (
 
 AirlineDemoResources = namedtuple(
     'AirlineDemoResources',
-    ('spark', 's3', 'db_url', 'db_engine', 'db_dialect', 'redshift_s3_temp_dir'),
+    ('spark', 's3', 'db_url', 'db_engine', 'db_dialect', 'redshift_s3_temp_dir', 'db_load'),
 )
 
 SparkDataFrameType = types.PythonObjectType(
