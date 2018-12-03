@@ -109,6 +109,30 @@ def _create_postgres_engine(username, password, hostname, db_name):
     return sqlalchemy.create_engine(db_url)
 
 
+def _db_load(data_frame, table_name, resources):
+    db_dialect = resources.db_dialect
+    if db_dialect == 'redshift':
+        data_frame.write \
+        .format('com.databricks.spark.redshift') \
+        .option('tempdir', resources.redshift_s3_temp_dir) \
+        .mode('overwrite') \
+        .jdbc(
+            resources.db_url,
+            table_name,
+        )
+    elif db_dialect == 'postgres':
+        data_frame.write \
+        .option('driver', 'org.postgresql.Driver') \
+        .mode('overwrite') \
+        .jdbc(
+            resources.db_url,
+            table_name,
+        )
+    else:
+        raise NotImplementedError(
+            'No implementation for db_dialect "{db_dialect}"'.format(db_dialect=db_dialect)
+        )
+
 test_context = PipelineContextDefinition(
     context_fn=(
         lambda info: ExecutionContext.console_logging(
@@ -130,6 +154,7 @@ test_context = PipelineContextDefinition(
                 ),
                 info.config['db_dialect'],
                 info.config['redshift_s3_temp_dir'],
+                _db_load,
             )
         )
     ),
@@ -168,7 +193,8 @@ local_context = PipelineContextDefinition(
                     info.config['postgres_db_name'],
                 ),
                 info.config['db_dialect'],
-                ''
+                '',
+                _db_load,
             )
         )
     ),
@@ -206,7 +232,8 @@ cloud_context = PipelineContextDefinition(
                     info.config['redshift_db_name'],
                 ),
                 info.config['db_dialect'],
-                ''
+                '',
+                _db_load,
             )
         )
     ),
