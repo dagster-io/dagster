@@ -77,20 +77,23 @@ def _spark_context():
 
 
 def test_create_sql_solid_with_bad_materialization_strategy():
-    with pytest.raises() as e:
+    with pytest.raises(Exception) as excinfo:
         create_sql_solid('foo', 'select * from bar', 'view')
-        raise NotImplementedError()
+    assert str(excinfo.value) == \
+        'Invalid materialization strategy view, must be one of [\'table\']'
 
 
 def test_create_sql_solid_without_table_name():
-    with pytest.raises() as e:
+    with pytest.raises(Exception) as excinfo:
         create_sql_solid('foo', 'select * from bar', 'table')
-        raise NotImplementedError()
+    assert str(excinfo.value) == \
+        'Missing table_name: required for materialization strategy \'table\''
 
 
 def test_create_sql_solid():
     result = create_sql_solid('foo', 'select * from bar', 'table', 'quux')
-    raise NotImplementedError()
+    assert result
+    # TODO: test execution?
 
 
 def test_thunk():
@@ -169,6 +172,7 @@ def test_unzip_file():
 
 
 @pytest.mark.spark
+@pytest.mark.slow
 def test_ingest_csv_to_spark():
     @lambda_solid
     def nonce():
@@ -204,6 +208,7 @@ def test_ingest_csv_to_spark():
 
 @pytest.mark.spark
 @pytest.mark.postgres
+@pytest.mark.slow
 def test_load_data_to_postgres_from_spark_postgres():
     raise NotImplementedError()
 
@@ -211,16 +216,19 @@ def test_load_data_to_postgres_from_spark_postgres():
 @pytest.mark.nettest
 @pytest.mark.spark
 @pytest.mark.redshift
+@pytest.mark.slow
 def test_load_data_to_redshift_from_spark():
     raise NotImplementedError()
 
 
 @pytest.mark.spark
+@pytest.mark.slow
 def test_subsample_spark_dataset():
     raise NotImplementedError()
 
 
 @pytest.mark.spark
+@pytest.mark.slow
 def test_join_spark_data_frame():
     raise NotImplementedError()
 
