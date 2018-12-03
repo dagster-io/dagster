@@ -53,7 +53,7 @@ def _s3_context():
                 lambda info: ExecutionContext.console_logging(
                     log_level=logging.DEBUG,
                     resources=S3Resources(
-                        _create_s3_session(),
+                        _create_s3_session(signed=False),
                     )
                 )
             ),

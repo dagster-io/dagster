@@ -4,6 +4,7 @@ import logging
 import boto3
 import sqlalchemy
 
+from botocore.handlers import disable_signing
 from pyspark.sql import SparkSession
 
 from dagster import (
@@ -45,8 +46,10 @@ def _create_spark_session_local():
     return spark
 
 
-def _create_s3_session():
+def _create_s3_session(signed=True):
     s3 = boto3.resource('s3').meta.client  # pylint:disable=C0103
+    if not signed:
+        s3.meta.events.register('choose-signer.s3.*', disable_signing)
     return s3
 
 
@@ -314,7 +317,10 @@ def define_airline_demo_ingest_pipeline():
         },
         SolidInstance('ingest_csv_to_spark', alias='ingest_q2_coupon_data'): {
             'input_csv': DependencyDefinition('q2_coupon_data_filename'),
-        },
+        },        Args:
+            info (ExpectationExecutionInfo): Must expose a `db` resource with an `execute` method,
+                like a SQLAlchemy engine, that can execute raw SQL against a database.
+
         SolidInstance('ingest_csv_to_spark', alias='ingest_q2_market_data'): {
             'input_csv': DependencyDefinition('q2_market_data_filename'),
         },
