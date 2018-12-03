@@ -65,7 +65,7 @@ def get_num_csv_environment(solids_config):
 
 
 def create_test_context():
-    return ExecutionContext.create()
+    return ExecutionContext()
 
 
 def test_basic_pandas_solid():

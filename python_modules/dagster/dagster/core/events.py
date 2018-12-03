@@ -14,6 +14,11 @@ class EventType(Enum):
     PIPELINE_START = 'PIPELINE_START'
     PIPELINE_SUCCESS = 'PIPELINE_SUCCESS'
     PIPELINE_FAILURE = 'PIPELINE_FAILURE'
+
+    EXECUTION_PLAN_STEP_SUCCESS = 'EXECUTION_PLAN_STEP_SUCCESS'
+    EXECUTION_PLAN_STEP_START = 'EXECUTION_PLAN_STEP_START'
+    EXECUTION_PLAN_STEP_FAILURE = 'EXECUTION_PLAN_STEP_FAILURE'
+
     UNCATEGORIZED = 'UNCATEGORIZED'
 
 
@@ -44,6 +49,33 @@ class ExecutionEvents:
                 pipeline=self.pipeline_name()
             ),
             event_type=EventType.PIPELINE_FAILURE.value,
+        )
+
+    def execution_plan_step_start(self, key):
+        check.str_param(key, 'key')
+        self.context.info(
+            'Beginning execution of {key}'.format(key=key),
+            event_type=EventType.EXECUTION_PLAN_STEP_START.value,
+        )
+
+    def execution_plan_step_success(self, key, millis):
+        check.str_param(key, 'key')
+        check.float_param(millis, 'millis')
+
+        self.context.info(
+            'Execution of {key} succeeded in {millis}'.format(
+                key=key,
+                millis=millis,
+            ),
+            event_type=EventType.EXECUTION_PLAN_STEP_SUCCESS.value,
+            millis=millis,
+        )
+
+    def execution_plan_step_failure(self, key):
+        check.str_param(key, 'key')
+        self.context.info(
+            'Execution of {key} failed'.format(key=key),
+            event_type=EventType.EXECUTION_PLAN_STEP_FAILURE.value,
         )
 
     def pipeline_name(self):
@@ -101,15 +133,42 @@ class PipelineEventRecord(EventRecord):
         return self._logger_message.meta['pipeline']
 
 
+class ExecutionStepEventRecord(EventRecord):
+    @property
+    def key(self):
+        return self._logger_message.meta['key']
+
+    @property
+    def pipeline_name(self):
+        return self._logger_message.meta['pipeline']
+
+    @property
+    def solid_name(self):
+        return self._logger_message.meta['solid']
+
+    @property
+    def solid_definition_name(self):
+        return self._logger_message.meta['solid_definition']
+
+
+class ExecutionStepSuccessRecord(ExecutionStepEventRecord):
+    @property
+    def millis(self):
+        return self._logger_message.meta['millis']
+
+
 class LogMessageRecord(EventRecord):
     pass
 
 
 EVENT_CLS_LOOKUP = {
+    EventType.EXECUTION_PLAN_STEP_FAILURE: ExecutionStepEventRecord,
+    EventType.EXECUTION_PLAN_STEP_START: ExecutionStepEventRecord,
+    EventType.EXECUTION_PLAN_STEP_SUCCESS: ExecutionStepSuccessRecord,
+    EventType.PIPELINE_FAILURE: PipelineEventRecord,
     EventType.PIPELINE_START: PipelineEventRecord,
     EventType.PIPELINE_SUCCESS: PipelineEventRecord,
-    EventType.PIPELINE_FAILURE: PipelineEventRecord,
-    EventType.UNCATEGORIZED: LogMessageRecord
+    EventType.UNCATEGORIZED: LogMessageRecord,
 }
 
 

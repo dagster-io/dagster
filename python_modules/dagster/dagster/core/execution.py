@@ -40,7 +40,7 @@ from .definitions import (
 from .config_types import EnvironmentConfigType
 
 from .execution_context import (
-    ExecutionContextUserParams,
+    ExecutionContext,
     RuntimeExecutionContext,
 )
 
@@ -241,11 +241,11 @@ class SolidExecutionResult(object):
 def _wrap_in_yield(context_params_or_gen):
     check.param_invariant(
         inspect.isgenerator(context_params_or_gen)
-        or isinstance(context_params_or_gen, ExecutionContextUserParams),
+        or isinstance(context_params_or_gen, ExecutionContext),
         'context_params_or_gen',
     )
 
-    if isinstance(context_params_or_gen, ExecutionContextUserParams):
+    if isinstance(context_params_or_gen, ExecutionContext):
 
         def _gen_for_context_params():
             yield context_params_or_gen
@@ -331,7 +331,7 @@ def merge_two_dicts(left, right):
 
 
 def get_context_stack(user_context_params, reentrant_info):
-    check.inst(user_context_params, ExecutionContextUserParams)
+    check.inst(user_context_params, ExecutionContext)
     check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
 
     if reentrant_info and reentrant_info.context_stack:
@@ -358,7 +358,7 @@ from .events import construct_event_logger
 
 
 def create_runtime_context(user_context_params, reentrant_info):
-    check.inst_param(user_context_params, 'user_context_params', ExecutionContextUserParams)
+    check.inst_param(user_context_params, 'user_context_params', ExecutionContext)
     check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
 
     run_id = get_run_id(reentrant_info)
@@ -393,10 +393,13 @@ def yield_context(pipeline, environment, reentrant_info=None):
 
     config_value = create_config_value(config_type, environment.context.config)
 
+    run_id = get_run_id(reentrant_info)
+
     context_params_or_gen = context_definition.context_fn(
         ContextCreationExecutionInfo(
             config=config_value,
             pipeline_def=pipeline,
+            run_id=run_id,
         )
     )
 
@@ -404,9 +407,20 @@ def yield_context(pipeline, environment, reentrant_info=None):
 
     for user_context_params in _wrap_in_yield(context_params_or_gen):
         check.invariant(not called, 'should only yield one thing')
-        check.inst(user_context_params, ExecutionContextUserParams)
+        check.inst(user_context_params, ExecutionContext)
 
         yield create_runtime_context(user_context_params, reentrant_info)
+        # =======
+        #         context_stack = get_context_stack(user_context_params, reentrant_info)
+
+        #         runtime_context = RuntimeExecutionContext(
+        #             run_id=run_id,
+        #             loggers=user_context_params.loggers,
+        #             resources=user_context_params.resources,
+        #             context_stack=context_stack,
+        #         )
+        #         yield runtime_context
+        # >>>>>>> master
 
         called = True
 
@@ -462,7 +476,7 @@ def _execute_graph_iterator(context, execution_graph, environment):
 
     context.debug(
         'About to execute the compute node graph in the following order {order}'.format(
-            order=[cn.friendly_name for cn in steps]
+            order=[step.key for step in steps]
         )
     )
 

@@ -119,7 +119,7 @@ class ExecutionStep(graphene.ObjectType):
         return [ExecutionStepOutput(out) for out in self.execution_step.step_outputs]
 
     def resolve_name(self, _info):
-        return self.execution_step.friendly_name
+        return self.execution_step.key
 
     def resolve_solid(self, _info):
         return pipelines.Solid(self.execution_step.solid)

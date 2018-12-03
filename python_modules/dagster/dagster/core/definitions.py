@@ -23,7 +23,7 @@ from .evaluator import throwing_evaluate_config_value
 from .execution_context import (
     RuntimeExecutionContext,
     ExecutionContext,
-    ExecutionContextUserParams,
+    ExecutionContext,
 )
 
 from .types import (
@@ -106,7 +106,7 @@ context_fn (callable):
             PipelineContextDefinition: The passthrough context definition.
         '''
 
-        check.inst_param(context_params, 'context', ExecutionContextUserParams)
+        check.inst_param(context_params, 'context', ExecutionContext)
         context_definition = PipelineContextDefinition(context_fn=lambda *_args: context_params)
         return {DEFAULT_CONTEXT_NAME: context_definition}
 
@@ -161,7 +161,7 @@ DefaultContextConfigDict = ConfigDictionary(
 def _default_pipeline_context_definitions():
     def _default_context_fn(info):
         log_level = level_from_string(info.config['log_level'])
-        context = ExecutionContext.create(
+        context = ExecutionContext(
             loggers=[define_colored_console_logger('dagster', level=log_level)]
         )
         return context
@@ -1660,13 +1660,14 @@ class RepositoryDefinition(object):
 
 
 class ContextCreationExecutionInfo(
-    namedtuple('_ContextCreationExecutionInfo', 'config pipeline_def')
+    namedtuple('_ContextCreationExecutionInfo', 'config pipeline_def, run_id')
 ):
-    def __new__(cls, config, pipeline_def):
+    def __new__(cls, config, pipeline_def, run_id):
         return super(ContextCreationExecutionInfo, cls).__new__(
             cls,
             config,
             check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition),
+            check.str_param(run_id, 'run_id'),
         )
 
 
