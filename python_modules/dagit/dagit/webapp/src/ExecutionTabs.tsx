@@ -109,6 +109,7 @@ class ExecutionTab extends React.Component<
 export const ExecutionTabsContainer = styled.div`
   background: ${Colors.BLACK};
   display; flex;
+  z-index: 1;
   flex-direction: row;
 `;
 
