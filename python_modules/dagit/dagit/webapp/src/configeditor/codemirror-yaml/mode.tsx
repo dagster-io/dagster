@@ -1,45 +1,87 @@
 import * as CodeMirror from "codemirror";
 import "codemirror/addon/hint/show-hint";
 import * as yaml from "yaml";
-import { Ajv } from "ajv";
+
+interface IParseStateParent {
+  key: string;
+  indent: number;
+  childKeys: string[];
+}
+
+enum ContainerType {
+  Dict = "dict",
+  List = "list"
+}
 
 interface IParseState {
   trailingSpace: boolean;
-  inlineLists: number;
-  inlinePairs: number;
+  inlineContainers: ContainerType[];
   escaped: boolean;
-  inDict: boolean;
-  inDictValue: boolean;
+  inValue: boolean;
   inBlockLiteral: boolean;
   lastIndent: number;
-  parents: Array<{ key: string; indent: number }>;
-  keysAtLevel: { [indent: number]: Array<string> };
+  parents: IParseStateParent[];
 }
 
-CodeMirror.defineMode("yaml", () => {
-  const constants = ["true", "false", "on", "off", "yes", "no"];
-  const keywordRegex = new RegExp("\\b((" + constants.join(")|(") + "))$", "i");
+// Helper methods that mutate parser state. These must return new JavaScript objects.
+//
+function parentsPoppingItemsDeeperThan(
+  parents: IParseStateParent[],
+  indent: number
+) {
+  while (parents.length > 0 && parents[parents.length - 1].indent >= indent) {
+    parents = parents.slice(0, parents.length - 1);
+  }
+  return parents;
+}
 
+function parentsAddingChildKeyToLast(
+  parents: IParseStateParent[],
+  key: string
+) {
+  if (parents.length === 0) return [];
+
+  const immediateParent = parents[parents.length - 1];
+  return [
+    ...parents.slice(0, parents.length - 1),
+    {
+      key: immediateParent.key,
+      indent: immediateParent.indent,
+      childKeys: [...immediateParent.childKeys, key]
+    }
+  ];
+}
+
+const Constants = ["true", "false", "on", "off", "yes", "no"];
+
+const RegExps = {
+  KEYWORD: new RegExp("\\b((" + Constants.join(")|(") + "))$", "i"),
+  DICT_COLON: /^:\s*/,
+  DICT_KEY: /^\s*(?:[,\[\]{}&*!|>'"%@`][^\s'":]|[^,\[\]{}#&*!|>'"%@`])[^# ,]*?(?=\s*:)/,
+  QUOTED_STRING: /^('([^']|\\.)*'?|"([^"]|\\.)*"?)/,
+  BLOCKSTART_PIPE_OR_ARROW: /^\s*(\||\>)\s*/,
+  NUMBER: /^\s*-?[0-9\.]+\s?/,
+  VARIABLE: /^\s*(\&|\*)[a-z0-9\._-]+\b/i
+};
+
+CodeMirror.defineMode("yaml", () => {
   return {
     lineComment: "#",
     fold: "indent",
-    startState: () => {
-      const state: IParseState = {
+    startState: (): IParseState => {
+      return {
         trailingSpace: false,
         escaped: false,
-        inDict: false,
-        inDictValue: false,
+        inValue: false,
         inBlockLiteral: false,
-        inlineLists: 0,
-        inlinePairs: 0,
+        inlineContainers: [],
         lastIndent: 0,
-        parents: [],
-        keysAtLevel: {}
+        parents: []
       };
-      return state;
     },
     token: (stream, state: IParseState) => {
       const ch = stream.peek();
+
       // reset escape, indent and trailing
       const wasEscaped = state.escaped;
       const wasTrailingSpace = state.trailingSpace;
@@ -60,6 +102,7 @@ CodeMirror.defineMode("yaml", () => {
         stream.next();
         return null;
       }
+
       // comments
       // either beginning of the line or had whitespace before
       if (ch === "#" && (stream.sol() || wasTrailingSpace)) {
@@ -67,144 +110,146 @@ CodeMirror.defineMode("yaml", () => {
         return "comment";
       }
 
-      if (state.inBlockLiteral && stream.indentation() > lastIndent) {
-        // literal strings
-        stream.skipToEnd();
-        return "string";
-      } else if (state.inBlockLiteral) {
+      if (state.inBlockLiteral) {
+        // continuation of a literal string that was started on a previous line
+        if (stream.indentation() > lastIndent) {
+          stream.skipToEnd();
+          return "string";
+        }
         state.inBlockLiteral = false;
       }
 
       // array list item, value to follow
       if (stream.match(/-/)) {
-        state.inDictValue = true;
+        state.inValue = true;
         return "meta";
       }
 
       // doc start / end
       if (stream.sol()) {
-        state.inDict = false;
-        state.inDictValue = false;
+        state.inValue = false;
         state.parents = [];
 
         if (stream.match(/---/) || stream.match(/\.\.\./)) {
-          state.inDict = false;
           return "def";
         }
       }
 
-      // inline list / dict
+      // Handle inline objects and arrays. These can be nested arbitrarily but we
+      // don't currently support them spanning multiple lines.
       if (stream.match(/^(\{|\}|\[|\])/)) {
         if (ch == "{") {
-          state.inlinePairs++;
+          state.inlineContainers = [
+            ...state.inlineContainers,
+            ContainerType.Dict
+          ];
+          state.inValue = false;
         } else if (ch == "}") {
-          state.inlinePairs--;
+          state.inlineContainers = state.inlineContainers.slice(
+            0,
+            state.inlineContainers.length - 1
+          );
+          state.parents = state.parents.slice(0, state.parents.length - 1);
+          state.inValue = state.inlineContainers.length > 0;
         } else if (ch == "[") {
-          state.inlineLists++;
-        } else {
-          state.inDictValue = false;
-          state.inlineLists--;
+          state.inlineContainers = [
+            ...state.inlineContainers,
+            ContainerType.List
+          ];
+        } else if (ch == "]") {
+          state.inlineContainers = state.inlineContainers.slice(
+            0,
+            state.inlineContainers.length - 1
+          );
+          state.inValue = state.inlineContainers.length > 0;
         }
         state.trailingSpace = false;
         return "meta";
       }
 
-      // list seperator
-      if (state.inlineLists > 0 && !wasEscaped && ch == ",") {
+      // Handle inline separators. For dictionaries, we pop from value parsing state back to
+      // key parsing state after a comma and unwind the parent stack.
+      if (state.inlineContainers && !wasEscaped && ch == ",") {
+        const current =
+          state.inlineContainers[state.inlineContainers.length - 1];
+        if (current === ContainerType.Dict) {
+          state.parents = state.parents.slice(0, state.parents.length - 1);
+          state.inValue = false;
+        }
         stream.next();
         return "meta";
       }
 
-      // pairs seperator
-      if (state.inlinePairs > 0 && !wasEscaped && ch == ",") {
-        state.inDict = false;
-        state.inDictValue = false;
-        stream.next();
+      // A `:` fragment starts value parsing mode if it is not the last character on the line
+      if (stream.match(RegExps.DICT_COLON)) {
+        state.inValue = !stream.eol();
         return "meta";
       }
 
-      /* pairs (associative arrays) -> key */
-      if (!state.inDictValue) {
-        const values = stream.match(
-          /^\s*(?:[,\[\]{}&*!|>'"%@`][^\s'":]|[^,\[\]{}#&*!|>'"%@`])[^#]*?(?=\s*:($|\s))/
-        );
-        if (values) {
-          const value = values[0];
-          state.inDict = true;
-          while (
-            state.parents.length > 0 &&
-            state.parents[state.parents.length - 1].indent >=
-              stream.indentation()
-          ) {
-            state.parents = state.parents.slice(0, state.parents.length - 1);
-          }
+      // Handle dict key fragments. May be the first element on a line or nested within an inline
+      // (eg: {a: 1, b: 2}). We add the new key to the current `parent` and push a new parent
+      // in case the dict key has subkeys.
+      if (!state.inValue) {
+        const match = stream.match(RegExps.DICT_KEY);
+        if (match) {
+          const key = match[0];
+          const keyIndent = stream.pos - key.length;
+          state.parents = parentsPoppingItemsDeeperThan(
+            state.parents,
+            keyIndent
+          );
+          state.parents = parentsAddingChildKeyToLast(state.parents, key);
           state.parents = [
             ...state.parents,
-            { key: value, indent: state.lastIndent }
+            { key, indent: keyIndent, childKeys: [] }
           ];
           return "atom";
         }
       }
 
-      if (state.inDict && stream.match(/^:\s*/)) {
-        state.inDictValue = true;
-        return "meta";
-      }
-
-      // dicts
-      if (state.inDictValue) {
+      if (state.inValue) {
         let result = null;
-        /* strings */
-        if (stream.match(/^('([^']|\\.)*'?|"([^"]|\\.)*"?)/)) {
+
+        if (stream.match(RegExps.QUOTED_STRING)) {
           result = "string";
         }
-
-        if (stream.match(/^\s*(\||\>)\s*/)) {
+        if (stream.match(RegExps.BLOCKSTART_PIPE_OR_ARROW)) {
           state.inBlockLiteral = true;
           result = "meta";
         }
-        /* references */
-        if (stream.match(/^\s*(\&|\*)[a-z0-9\._-]+\b/i)) {
+        if (stream.match(RegExps.VARIABLE)) {
           result = "variable-2";
         }
-        /* numbers */
-        if (state.inlinePairs == 0 && stream.match(/^\s*-?[0-9\.\,]+\s?$/)) {
+        if (stream.match(RegExps.NUMBER)) {
           result = "number";
         }
-        if (
-          state.inlinePairs > 0 &&
-          stream.match(/^\s*-?[0-9\.\,]+\s?(?=(,|}))/)
-        ) {
-          result = "number";
-        }
-        if (
-          state.inlineLists > 0 &&
-          stream.match(/^\s*-?[0-9\.\,]+\s?(?=(,|]))/)
-        ) {
-          result = "number";
-          return result; // remain inDictValue until we reach `]`
-        }
-        /* keywords */
-        if (stream.match(keywordRegex)) {
+        if (stream.match(RegExps.KEYWORD)) {
           result = "keyword";
         }
 
-        state.inDictValue = false;
+        stream.eatSpace();
+
+        // If after consuming the value and trailing spaces we're at the end of the
+        // line, terminate the value and look for another key on the following line.
+        if (stream.eol() && !state.inBlockLiteral) {
+          state.inValue = false;
+        }
+
+        // If we can't identify the value, bail out and abort parsing the line
+        if (!result) {
+          stream.skipToEnd();
+          state.inValue = false;
+        }
+
         return result;
       }
 
       // general strings
-      if (stream.match(/^('([^']|\\.)*'?|"([^"]|\\.)*"?)/)) {
+      if (stream.match(RegExps.QUOTED_STRING)) {
         return "string";
       }
 
       stream.skipToEnd();
-      while (
-        state.parents.length > 0 &&
-        state.parents[state.parents.length - 1].indent >= stream.indentation()
-      ) {
-        state.parents = state.parents.slice(0, state.parents.length - 1);
-      }
 
       return null;
     }
@@ -317,34 +362,39 @@ function processToHint(
 
 function findAutocomplete(
   typeConfig: TypeConfig,
-  parents: Array<{ key: string; indent: number }>,
+  parents: IParseStateParent[],
   currentIndent: number
-): Array<FoundHint> {
+): FoundHint[] {
   parents = parents.filter(({ indent }) => currentIndent > indent);
-  let currentType = typeConfig.environment;
-  if (currentType && parents.length > 0) {
+
+  let available = typeConfig.environment;
+
+  if (available && parents.length > 0) {
     for (const parent of parents) {
-      const currentTypeDef = currentType.find(
-        ({ name }: { name: string }) => parent.key === name
-      );
+      const parentTypeDef = available.find(({ name }) => parent.key === name);
       if (
-        currentTypeDef &&
-        currentTypeDef.typeName &&
-        typeConfig.types[currentTypeDef.typeName]
+        parentTypeDef &&
+        parentTypeDef.typeName &&
+        typeConfig.types[parentTypeDef.typeName]
       ) {
-        currentType = typeConfig.types[currentTypeDef.typeName];
+        available = typeConfig.types[parentTypeDef.typeName];
       } else {
         return [];
       }
     }
+
+    const immediateParent = parents[parents.length - 1];
+    if (immediateParent) {
+      available = available.filter(
+        item => immediateParent.childKeys.indexOf(item.name) === -1
+      );
+    }
   }
 
-  return currentType.map(
-    ({ name, typeName }: { name: string; typeName: string }) => ({
-      text: name,
-      hasChildren: typeName in typeConfig.types
-    })
-  );
+  return available.map(item => ({
+    text: item.name,
+    hasChildren: item.typeName ? item.typeName in typeConfig.types : false
+  }));
 }
 
 type CodemirrorLintError = {
