@@ -1,34 +1,37 @@
 import * as React from "react";
 import gql from "graphql-tag";
+import * as yaml from "yaml";
 import styled from "styled-components";
 import { Icon, Colors } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
+import { ApolloClient } from "apollo-boost";
+import { ApolloConsumer } from "react-apollo";
 
-import { ExecutionTab, ExecutionTabs } from "./ExecutionTabs";
-import ConfigCodeEditorContainer from "./configeditor/ConfigCodeEditorContainer";
-import Config from "./Config";
-import PipelineRunsLogs from "./PipelineRunsLogs";
+import PipelineRun from "./PipelineRun";
+import { ExecutionTabs } from "./ExecutionTabs";
 import {
   StorageProvider,
-  applySelectSession,
-  applyNameToSession,
-  applyRemoveSession,
   applyConfigToSession,
-  applyCreateSession
+  IExecutionSessionRun
 } from "./LocalStorage";
 import { PipelineExecutionFragment } from "./types/PipelineExecutionFragment";
+import ConfigCodeEditorContainer from "./configeditor/ConfigCodeEditorContainer";
+import Config from "./Config";
+import {
+  GetExecutionPlan,
+  GetExecutionPlanVariables
+} from "./types/GetExecutionPlan";
+import {
+  StartExecution,
+  StartExecutionVariables
+} from "./types/StartExecution";
 
 interface IPipelineExecutionProps {
   pipeline: PipelineExecutionFragment;
 }
 
-interface IPipelineExecutionState {
-  selectedRun: string | null;
-}
-
 export default class PipelineExecution extends React.Component<
-  IPipelineExecutionProps,
-  IPipelineExecutionState
+  IPipelineExecutionProps
 > {
   static fragments = {
     PipelineExecutionFragment: gql`
@@ -42,101 +45,73 @@ export default class PipelineExecution extends React.Component<
             ...ConfigFragment
           }
         }
-        runs {
-          ...PipelineRunsLogsFragment
-        }
       }
       ${Config.fragments.ConfigFragment}
-      ${PipelineRunsLogs.fragments.PipelineRunsLogsFragment}
     `
   };
 
-  state = {
-    selectedRun: this.props.pipeline.runs.length
-      ? this.props.pipeline.runs[0].runId
-      : null
-  };
-
-  static getDerivedStateFromProps(
-    props: IPipelineExecutionProps,
-    state: IPipelineExecutionState
-  ) {
-    if (state.selectedRun === null && props.pipeline.runs.length > 0) {
-      return {
-        selectedRun: props.pipeline.runs[0].runId
-      };
-    }
-    return null;
-  }
-
-  handleSelectRun = (newRun: string) => {
-    this.setState({
-      selectedRun: newRun
-    });
-  };
-
-  renderConfigEditor() {
-    return (
-      <StorageProvider namespace={this.props.pipeline.name}>
-        {({ data, onSave }) => (
-          <>
-            <ExecutionTabs>
-              {Object.keys(data.sessions).map(key => (
-                <ExecutionTab
-                  key={key}
-                  active={key === data.current}
-                  title={data.sessions[key].name}
-                  onClick={() => onSave(applySelectSession(data, key))}
-                  onChange={title => onSave(applyNameToSession(data, title))}
-                  onRemove={
-                    Object.keys(data.sessions).length > 1
-                      ? () => onSave(applyRemoveSession(data, key))
-                      : undefined
-                  }
-                />
-              ))}
-              <ExecutionTab
-                title={"Add..."}
-                onClick={() => onSave(applyCreateSession(data))}
-              />
-            </ExecutionTabs>
-            <ConfigCodeEditorContainer
-              pipelineName={this.props.pipeline.name}
-              environmentTypeName={this.props.pipeline.environmentType.name}
-              configCode={data.sessions[data.current].config}
-              onConfigChange={config =>
-                onSave(applyConfigToSession(data, config))
-              }
-            />
-          </>
-        )}
-      </StorageProvider>
-    );
-  }
-
-  renderPipelineRunss() {
-    if (this.state.selectedRun) {
-      return (
-        <PipelineRunsLogs
-          runs={this.props.pipeline.runs}
-          selectedRun={this.state.selectedRun}
-          onSelectRun={this.handleSelectRun}
-        />
-      );
-    } else {
-      return <EmptyRunLogs />;
-    }
-  }
-
   public render() {
+    const { pipeline } = this.props;
+
     return (
-      <Container>
-        <Split>{this.renderConfigEditor()}</Split>
-        <Split>{this.renderPipelineRunss()}</Split>
-        <IconWrapper role="button">
-          <Icon icon={IconNames.PLAY} iconSize={40} />
-        </IconWrapper>
-      </Container>
+      <StorageProvider namespace={pipeline.name}>
+        {({ data, onSave }) => {
+          const session = data.sessions[data.current];
+          return (
+            <>
+              <ExecutionTabs data={data} onSave={onSave} />
+              <Container>
+                <Split>
+                  <ConfigCodeEditorContainer
+                    pipelineName={pipeline.name}
+                    environmentTypeName={pipeline.environmentType.name}
+                    configCode={session.config}
+                    onConfigChange={config =>
+                      onSave(applyConfigToSession(data, config))
+                    }
+                  />
+                </Split>
+                <Split>
+                  {session.lastRun ? (
+                    <PipelineRun run={session.lastRun} />
+                  ) : (
+                    <PipelineRun.Empty />
+                  )}
+                </Split>
+                <ApolloConsumer>
+                  {client => (
+                    <IconWrapper
+                      role="button"
+                      onClick={async () => {
+                        let config = {};
+                        try {
+                          config = yaml.parse(session.config);
+                        } catch (err) {
+                          alert(
+                            `Fix the errors in your config YAML and try again.`
+                          );
+                          return;
+                        }
+                        const executionParams = {
+                          pipelineName: pipeline.name,
+                          config: config
+                        };
+                        session.lastRun = await startRun(
+                          client,
+                          executionParams
+                        );
+                        onSave(data);
+                      }}
+                    >
+                      <Icon icon={IconNames.PLAY} iconSize={40} />
+                    </IconWrapper>
+                  )}
+                </ApolloConsumer>
+              </Container>
+            </>
+          );
+        }}
+      </StorageProvider>
     );
   }
 }
@@ -182,9 +157,127 @@ const Split = styled.div`
   display: flex;
 `;
 
-const EmptyRunLogs = styled.div`
-  flex: 1 1;
-  flex-direction: column;
-  display: flex;
-  background: ${Colors.BLACK};
+const GET_EXECUTION_PLAN = gql`
+  query GetExecutionPlan($executionParams: PipelineExecutionParams!) {
+    executionPlan(executionParams: $executionParams) {
+      __typename
+      ... on ExecutionPlan {
+        steps {
+          name
+          solid {
+            name
+          }
+          tag
+        }
+      }
+    }
+  }
 `;
+
+const START_PIPELINE_EXECUTION_MUTATION = gql`
+  mutation StartExecution($executionParams: PipelineExecutionParams!) {
+    startPipelineExecution(executionParams: $executionParams) {
+      __typename
+
+      ... on StartPipelineExecutionSuccess {
+        run {
+          runId
+        }
+      }
+      ... on PipelineNotFoundError {
+        message
+      }
+      ... on PipelineConfigValidationInvalid {
+        errors {
+          message
+        }
+      }
+    }
+  }
+`;
+
+async function startRun(
+  client: ApolloClient<any>,
+  executionParams: { config: object; pipelineName: string }
+): Promise<IExecutionSessionRun> {
+  // const {
+  //   data: { executionPlan }
+  // } = await client.query<GetExecutionPlan, GetExecutionPlanVariables>({
+  //   query: GET_EXECUTION_PLAN,
+  //   variables: { executionParams },
+  //   fetchPolicy: "no-cache"
+  // });
+
+  // const result = await client.mutate<StartExecution, StartExecutionVariables>({
+  //   mutation: START_PIPELINE_EXECUTION_MUTATION,
+  //   variables: { executionParams },
+  //   fetchPolicy: "no-cache"
+  // });
+  // if (
+  //   result.data &&
+  //   "startPipelineExecution" in result.data &&
+  //   result.data.__typename === "StartPipelineExecutionSuccess" &&
+  //   executionPlan.__typename === "ExecutionPlan"
+  // ) {
+  //   return {
+  //     executionPlan,
+  //     executionParams,
+  //     runId: result.data.run.runId
+  //   };
+  // }
+
+  return {
+    executionParams: executionParams,
+    executionPlan: {
+      steps: [
+        {
+          name: "load_num_csv.transform",
+          solid: {
+            name: "load_num_csv"
+          },
+          tag: "TRANSFORM"
+        },
+        {
+          name: "serialize.load_num_csv.result",
+          solid: {
+            name: "load_num_csv"
+          },
+          tag: "SERIALIZE"
+        },
+        {
+          name: "sum_solid.transform",
+          solid: {
+            name: "sum_solid"
+          },
+          tag: "TRANSFORM"
+        },
+        {
+          name: "serialize.sum_solid.result",
+          solid: {
+            name: "sum_solid"
+          },
+          tag: "SERIALIZE"
+        },
+        {
+          name: "sum_sq_solid.transform",
+          solid: {
+            name: "sum_sq_solid"
+          },
+          tag: "TRANSFORM"
+        },
+        {
+          name: "serialize.sum_sq_solid.result",
+          solid: {
+            name: "sum_sq_solid"
+          },
+          tag: "SERIALIZE"
+        }
+      ]
+    },
+    runId: "2fbbdb24-ae1e-43e7-8b32-c1ce3da0b419"
+  };
+
+  // todo handle errors - I assume this whole fn will be replaced soon
+
+  throw new Error();
+}

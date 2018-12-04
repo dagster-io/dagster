@@ -7,14 +7,32 @@ export interface IStorageData {
   current: string;
 }
 
+export interface IExecutionSessionRun {
+  executionParams: {
+    pipelineName: string;
+    config: object;
+  };
+  executionPlan: {
+    steps: Array<{
+      name: string;
+      tag: string;
+      solid: {
+        name: string;
+      };
+    }>;
+  };
+  runId: string;
+}
 export interface IExecutionSession {
   name: string;
   config: string;
+  lastRun?: IExecutionSessionRun;
 }
 
 const DEFAULT_SESSION: IExecutionSession = {
   name: "Default",
-  config: "# This is config editor. Enjoy!"
+  config: "# This is config editor. Enjoy!",
+  lastRun: undefined
 };
 
 export function applySelectSession(data: IStorageData, key: string) {
