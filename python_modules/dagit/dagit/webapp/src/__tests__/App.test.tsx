@@ -19,6 +19,7 @@ const mocks = [
               __typename: "Pipeline",
               name: "pandas_hello_world",
               description: null,
+              runs: [],
               contexts: [
                 {
                   name: "default",
