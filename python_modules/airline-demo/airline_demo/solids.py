@@ -3,6 +3,8 @@
 import os
 import zipfile
 
+from stringcase import snakecase
+
 from dagster import (
     Field,
     InputDefinition,
@@ -10,13 +12,28 @@ from dagster import (
     solid,
     types,
 )
+from dagstermill import define_dagstermill_solid
 
 from .types import (
     SparkDataFrameType,
+    SqlAlchemyEngineType,
 )
 from .utils import (
     mkdir_p,
 )
+
+
+def _notebook_path(name):
+    return os.path.join('notebooks', name)
+
+
+def notebook_solid(name, inputs, outputs):
+    return define_dagstermill_solid(
+        snakecase(name.split('.ipynb')[0]),
+        _notebook_path(name),
+        inputs,
+        outputs,
+    )
 
 
 # need a sql context w a sqlalchemy engine
@@ -112,6 +129,20 @@ def thunk(info):
             The config value passed to the solid.
     '''
     return info.config
+
+
+@solid(
+    name='thunk_database_engine',
+    outputs=[OutputDefinition(SqlAlchemyEngineType, description='The db resource.')]
+)
+def thunk_database_engine(info):
+    """Returns the db resource as its output.
+
+    Why? Because we don't currently have a good way to pass contexts around between execution
+    threads. So in order to get a database engine into a Jupyter notebook, we need to serialize
+    it and pass it along.
+    """
+    return info.context.resources.db
 
 
 @solid(
@@ -301,16 +332,17 @@ def ingest_csv_to_spark(info, input_csv=None):
 
 @solid(
     name='canonicalize_column_names',
-    inputs=[InputDefinition(
-        'data_frame',
-        SparkDataFrameType,
-        description='The data frame to canonicalize'
-    )],
+    inputs=[
+        InputDefinition(
+            'data_frame', SparkDataFrameType, description='The data frame to canonicalize'
+        )
+    ],
     outputs=[OutputDefinition(SparkDataFrameType)]
 )
-def canonicalize_column_names(info, data_frame):
-    data_frame.toDF(*[c.lower() for c in data_frame.columns])
+def canonicalize_column_names(_info, data_frame):
+    data_frame = data_frame.toDF(*[c.lower() for c in data_frame.columns])
     return data_frame
+
 
 def replace_values_spark(data_frame, old, new, columns=None):
     if columns is None:
@@ -442,3 +474,41 @@ def join_spark_data_frames(info, left_data_frame, right_data_frame):
         ),
         how=info.config['how']
     )
+
+
+@solid(
+    name='union_spark_data_frames',
+    inputs=[
+        InputDefinition(
+            'left_data_frame',
+            SparkDataFrameType,
+            description='The left DataFrame to union.',
+        ),
+        InputDefinition(
+            'right_data_frame',
+            SparkDataFrameType,
+            description='The right DataFrame to union.',
+        ),
+    ],
+    outputs=[
+        OutputDefinition(
+            SparkDataFrameType,
+            description='A pyspark DataFrame containing the union of the input data frames.',
+        )
+    ],
+)
+def union_spark_data_frames(_info, left_data_frame, right_data_frame):
+    return left_data_frame.union(right_data_frame)
+
+
+sfo_delays_by_destination = notebook_solid(
+    'SFO Delays by Destination.ipynb',
+    inputs=[
+        InputDefinition(
+            'engine',
+            SqlAlchemyEngineType,
+            description='The SQLAlchemy engine to use.',
+        )
+    ],
+    outputs=[],
+)

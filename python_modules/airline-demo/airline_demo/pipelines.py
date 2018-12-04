@@ -25,8 +25,11 @@ from .solids import (
     join_spark_data_frames,
     load_data_to_database_from_spark,
     normalize_weather_na_values,
+    sfo_delays_by_destination,
     subsample_spark_dataset,
     thunk,
+    thunk_database_engine,
+    union_spark_data_frames,
     unzip_file,
 )
 from .types import (
@@ -258,6 +261,7 @@ def define_airline_demo_ingest_pipeline():
         normalize_weather_na_values,
         subsample_spark_dataset,
         thunk,
+        union_spark_data_frames,
     ]
     dependencies = {
         SolidInstance('thunk', alias='april_on_time_data_filename'): {},
@@ -292,14 +296,16 @@ def define_airline_demo_ingest_pipeline():
         SolidInstance('ingest_csv_to_spark', alias='ingest_master_cord_data'): {
             'input_csv': DependencyDefinition('master_cord_data_filename'),
         },
-        SolidInstance('subsample_spark_dataset', alias='subsample_april_on_time_data'): {
-            'data_frame': DependencyDefinition('ingest_april_on_time_data'),
+        SolidInstance('union_spark_data_frames', alias='combine_april_may_on_time_data'): {
+            'left_data_frame': DependencyDefinition('ingest_april_on_time_data'),
+            'right_data_frame': DependencyDefinition('ingest_may_on_time_data'),
         },
-        SolidInstance('subsample_spark_dataset', alias='subsample_may_on_time_data'): {
-            'data_frame': DependencyDefinition('ingest_may_on_time_data'),
+        SolidInstance('union_spark_data_frames', alias='combine_q2_on_time_data'): {
+            'left_data_frame': DependencyDefinition('combine_april_may_on_time_data'),
+            'right_data_frame': DependencyDefinition('ingest_june_on_time_data'),
         },
-        SolidInstance('subsample_spark_dataset', alias='subsample_june_on_time_data'): {
-            'data_frame': DependencyDefinition('ingest_june_on_time_data'),
+        SolidInstance('subsample_spark_dataset', alias='subsample_q2_on_time_data'): {
+            'data_frame': DependencyDefinition('combine_q2_on_time_data'),
         },
         SolidInstance('subsample_spark_dataset', alias='subsample_q2_ticket_data'): {
             'data_frame': DependencyDefinition('ingest_q2_ticket_data'),
@@ -313,30 +319,12 @@ def define_airline_demo_ingest_pipeline():
         SolidInstance('normalize_weather_na_values', alias='normalize_q2_weather_na_values'): {
             'data_frame': DependencyDefinition('ingest_q2_sfo_weather'),
         },
-        SolidInstance(
-            'join_spark_data_frames', alias='join_april_on_time_data_to_master_cord_data'
-        ): {
-            'left_data_frame': DependencyDefinition('subsample_april_on_time_data'),
+        SolidInstance('join_spark_data_frames', alias='join_q2_on_time_data_to_master_cord_data'): {
+            'left_data_frame': DependencyDefinition('subsample_q2_on_time_data'),
             'right_data_frame': DependencyDefinition('ingest_master_cord_data'),
         },
-        SolidInstance('join_spark_data_frames', alias='join_may_on_time_data_to_master_cord_data'):
-        {
-            'left_data_frame': DependencyDefinition('subsample_may_on_time_data'),
-            'right_data_frame': DependencyDefinition('ingest_master_cord_data'),
-        },
-        SolidInstance('join_spark_data_frames', alias='join_june_on_time_data_to_master_cord_data'):
-        {
-            'left_data_frame': DependencyDefinition('subsample_june_on_time_data'),
-            'right_data_frame': DependencyDefinition('ingest_master_cord_data'),
-        },
-        SolidInstance('canonicalize_column_names', alias='canonicalize_april_on_time_data'): {
-            'data_frame': DependencyDefinition('join_april_on_time_data_to_master_cord_data'),
-        },
-        SolidInstance('canonicalize_column_names', alias='canonicalize_may_on_time_data'): {
-            'data_frame': DependencyDefinition('join_may_on_time_data_to_master_cord_data'),
-        },
-        SolidInstance('canonicalize_column_names', alias='canonicalize_june_on_time_data'): {
-            'data_frame': DependencyDefinition('join_june_on_time_data_to_master_cord_data'),
+        SolidInstance('canonicalize_column_names', alias='canonicalize_q2_on_time_data'): {
+            'data_frame': DependencyDefinition('join_q2_on_time_data_to_master_cord_data'),
         },
         SolidInstance('canonicalize_column_names', alias='canonicalize_q2_coupon_data'): {
             'data_frame': DependencyDefinition('subsample_q2_coupon_data'),
@@ -350,14 +338,8 @@ def define_airline_demo_ingest_pipeline():
         SolidInstance('canonicalize_column_names', alias='canonicalize_q2_sfo_weather'): {
             'data_frame': DependencyDefinition('normalize_q2_weather_na_values'),
         },
-        SolidInstance('load_data_to_database_from_spark', alias='load_april_on_time_data'): {
-            'data_frame': DependencyDefinition('canonicalize_april_on_time_data'),
-        },
-        SolidInstance('load_data_to_database_from_spark', alias='load_may_on_time_data'): {
-            'data_frame': DependencyDefinition('canonicalize_may_on_time_data'),
-        },
-        SolidInstance('load_data_to_database_from_spark', alias='load_june_on_time_data'): {
-            'data_frame': DependencyDefinition('canonicalize_june_on_time_data'),
+        SolidInstance('load_data_to_database_from_spark', alias='load_q2_on_time_data'): {
+            'data_frame': DependencyDefinition('canonicalize_q2_on_time_data'),
         },
         SolidInstance('load_data_to_database_from_spark', alias='load_q2_coupon_data'): {
             'data_frame': DependencyDefinition('canonicalize_q2_coupon_data'),
@@ -384,8 +366,12 @@ def define_airline_demo_ingest_pipeline():
 def define_airline_demo_warehouse_pipeline():
     return PipelineDefinition(
         name="airline_demo_warehouse_pipeline",
-        solids=[],
-        dependencies={},
+        solids=[sfo_delays_by_destination, thunk_database_engine],
+        dependencies={
+            's_f_o__delays_by__destination': {
+                'engine': DependencyDefinition('thunk_database_engine'),
+            }
+        },
         context_definitions=context_definitions,
     )
 

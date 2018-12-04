@@ -487,14 +487,9 @@ def test_pipeline_ingest():
                         'source_data/On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_6.csv'
                     }
                 },
-                'subsample_april_on_time_data': {
+                'subsample_q2_on_time_data': {
                     'config': {
-                        'subsample_pct': 10,
-                    }
-                },
-                'subsample_june_on_time_data': {
-                    'config': {
-                        'subsample_pct': 10,
+                        'subsample_pct': 100,
                     }
                 },
                 'ingest_q2_sfo_weather': {
@@ -506,11 +501,6 @@ def test_pipeline_ingest():
                     'config': {
                         'input_csv':
                         'source_data/On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_4.csv'
-                    }
-                },
-                'subsample_may_on_time_data': {
-                    'config': {
-                        'subsample_pct': 10,
                     }
                 },
                 'subsample_q2_ticket_data': {
@@ -545,40 +535,16 @@ def test_pipeline_ingest():
                         'input_csv': 'source_data/954834304_T_MASTER_CORD.csv'
                     }
                 },
-                'join_april_on_time_data_to_master_cord_data': {
+                'join_q2_on_time_data_to_master_cord_data': {
                     'config': {
                         'on_left': 'OriginAirportSeqID',
                         'on_right': 'AIRPORT_SEQ_ID',
                         'how': 'inner',
                     }
                 },
-                'join_may_on_time_data_to_master_cord_data': {
+                'load_q2_on_time_data': {
                     'config': {
-                        'on_left': 'OriginAirportSeqID',
-                        'on_right': 'AIRPORT_SEQ_ID',
-                        'how': 'inner',
-                    }
-                },
-                'join_june_on_time_data_to_master_cord_data': {
-                    'config': {
-                        'on_left': 'OriginAirportSeqID',
-                        'on_right': 'AIRPORT_SEQ_ID',
-                        'how': 'inner',
-                    }
-                },
-                'load_april_on_time_data': {
-                    'config': {
-                        'table_name': 'april_on_time_data',
-                    }
-                },
-                'load_may_on_time_data': {
-                    'config': {
-                        'table_name': 'may_on_time_data',
-                    }
-                },
-                'load_june_on_time_data': {
-                    'config': {
-                        'table_name': 'june_on_time_data',
+                        'table_name': 'q2_on_time_data',
                     }
                 },
                 'load_q2_coupon_data': {
