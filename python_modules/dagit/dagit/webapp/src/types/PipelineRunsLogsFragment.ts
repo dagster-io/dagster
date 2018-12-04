@@ -4,11 +4,27 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL fragment: PipelineJumpBarFragment
+// GraphQL fragment: PipelineRunsLogsFragment
 // ====================================================
 
-export interface PipelineJumpBarFragment {
-  name: string;
+export interface PipelineRunsLogsFragment_logs_pageInfo {
+  lastCursor: any | null;
+}
+
+export interface PipelineRunsLogsFragment_logs_nodes {
+  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent";
+  message: string;
+}
+
+export interface PipelineRunsLogsFragment_logs {
+  pageInfo: PipelineRunsLogsFragment_logs_pageInfo;
+  nodes: PipelineRunsLogsFragment_logs_nodes[];
+}
+
+export interface PipelineRunsLogsFragment {
+  runId: string;
+  status: PipelineRunStatus;
+  logs: PipelineRunsLogsFragment_logs;
 }
 
 /* tslint:disable */

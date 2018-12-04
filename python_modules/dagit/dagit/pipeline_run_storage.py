@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from enum import Enum
 import logging
 from rx import Observable
@@ -10,7 +11,7 @@ from dagster.core.events import (
 )
 
 
-class PipelineRunState(Enum):
+class PipelineRunStatus(Enum):
     NOT_STARTED = 'NOT_STARTED'
     STARTED = 'STARTED'
     SUCCESS = 'SUCCESS'
@@ -19,7 +20,7 @@ class PipelineRunState(Enum):
 
 class PipelineRunStorage(object):
     def __init__(self):
-        self._runs = {}
+        self._runs = OrderedDict()
 
     def add_run(self, run_id, pipeline_name, config):
         check.invariant(run_id not in self._runs)
@@ -29,6 +30,9 @@ class PipelineRunStorage(object):
 
     def all_runs(self):
         return self._runs.values()
+
+    def all_runs_for_pipeline(self, pipeline_name):
+        return [r for r in self.all_runs() if r.pipeline_name == pipeline_name]
 
     def get_run_by_id(self, id_):
         return self._runs.get(id_)
@@ -41,24 +45,27 @@ class PipelineRun(object):
     def __init__(self, run_id, pipeline_name, config):
         self._logs = []
         self._run_id = run_id
-        self._status = PipelineRunState.NOT_STARTED
+        self._status = PipelineRunStatus.NOT_STARTED
         self._subscribers = []
         self.pipeline_name = pipeline_name
         self.config = config
 
-    def logs_from(self, cursor):
+    def logs_after(self, cursor):
         cursor = int(cursor) + 1
         return self._logs[cursor:]
+
+    def all_logs(self):
+        return self._logs
 
     def handle_new_event(self, new_event):
         check.inst_param(new_event, 'new_event', EventRecord)
 
         if new_event.event_type == EventType.PIPELINE_START:
-            self._status = PipelineRunState.STARTED
+            self._status = PipelineRunStatus.STARTED
         elif new_event.event_type == EventType.PIPELINE_SUCCESS:
-            self._status = PipelineRunState.SUCCESS
+            self._status = PipelineRunStatus.SUCCESS
         elif new_event.event_type == EventType.PIPELINE_FAILURE:
-            self._status = PipelineRunState.FAILURE
+            self._status = PipelineRunStatus.FAILURE
 
         self._logs.append(new_event)
         for subscriber in self._subscribers:
@@ -89,7 +96,7 @@ class PipelineRunObservableSubscribe(object):
 
     def __call__(self, observer):
         self.observer = observer
-        for event in self.pipeline_run.logs_from(self.start_cursor):
+        for event in self.pipeline_run.logs_after(self.start_cursor):
             self.observer.on_next(event)
         self.pipeline_run.subscribe(self)
 

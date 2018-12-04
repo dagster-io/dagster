@@ -166,6 +166,16 @@ export interface PipelineExplorerFragment {
 //==============================================================
 
 /**
+ * An enumeration.
+ */
+export enum PipelineRunStatus {
+  FAILURE = "FAILURE",
+  NOT_STARTED = "NOT_STARTED",
+  STARTED = "STARTED",
+  SUCCESS = "SUCCESS",
+}
+
+/**
  * 
  */
 export interface PipelineExecutionParams {

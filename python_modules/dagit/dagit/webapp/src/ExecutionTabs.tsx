@@ -85,7 +85,7 @@ const ExecutionTabContainer = styled.div<{ active: boolean }>`
   user-select: none;
   background: ${({ active }) => (active ? "#263238" : Colors.BLACK)};
   &:hover {
-    background: ${Colors.DARK_GRAY4};
+    background: ${({ active }) => (!active ? Colors.DARK_GRAY4 : "#263238")};
   }
   input {
     line-height: 1.28581;
@@ -93,6 +93,7 @@ const ExecutionTabContainer = styled.div<{ active: boolean }>`
     border: 0;
     outline: none;
   }
+  cursor: ${({ active }) => (!active ? "pointer" : "inherit")};
 `;
 
 const RemoveButton = styled.div`
