@@ -522,19 +522,18 @@ def execute_pipeline(
 
     typed_environment = get_typed_environment(pipeline, environment)
 
-    execution_graph = ExecutionGraph.from_pipeline(pipeline)
-    return _execute_graph(execution_graph, typed_environment, throw_on_error, reentrant_info)
+    return execute_reentrant_pipeline(pipeline, typed_environment, reentrant_info)
 
 
-def execute_reentrant_pipeline(pipeline, environment, reentrant_info):
+def execute_reentrant_pipeline(pipeline, typed_environment, reentrant_info):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    check.inst_param(environment, 'environment', config.Environment)
-    check.inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
+    check.inst_param(typed_environment, 'typed_environment', config.Environment)
+    check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
 
     execution_graph = ExecutionGraph.from_pipeline(pipeline)
     return _execute_graph(
         execution_graph,
-        environment,
+        typed_environment,
         throw_on_error=False,
         reentrant_info=reentrant_info,
     )
