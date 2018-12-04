@@ -4,6 +4,7 @@ import os
 import boto3
 import sqlalchemy
 
+from botocore.handlers import disable_signing
 from pyspark.sql import SparkSession
 
 
