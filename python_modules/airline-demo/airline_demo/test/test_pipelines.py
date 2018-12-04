@@ -351,6 +351,7 @@ def test_pipeline_ingest():
 
 @pytest.mark.slow
 @pytest.mark.db
+@pytest.mark.spark
 def test_pipeline_warehouse():
     result = execute_pipeline(
         define_airline_demo_warehouse_pipeline(),

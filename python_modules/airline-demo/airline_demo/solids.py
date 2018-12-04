@@ -24,7 +24,7 @@ from .utils import (
 
 
 def _notebook_path(name):
-    return os.path.join('notebooks', name)
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'notebooks', name)
 
 
 def notebook_solid(name, inputs, outputs):
@@ -505,9 +505,9 @@ sfo_delays_by_destination = notebook_solid(
     'SFO Delays by Destination.ipynb',
     inputs=[
         InputDefinition(
-            'engine',
-            SqlAlchemyEngineType,
-            description='The SQLAlchemy engine to use.',
+            'db_url',
+            types.String,
+            description='The db_url to use to construct a SQLAlchemy engine.',
         )
     ],
     outputs=[],

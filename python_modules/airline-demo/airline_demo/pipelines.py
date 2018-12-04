@@ -372,7 +372,7 @@ def define_airline_demo_warehouse_pipeline():
         dependencies={
             SolidInstance('thunk', alias='db_url'): {},
             's_f_o__delays_by__destination': {
-                'engine': DependencyDefinition('db_url'),
+                'db_url': DependencyDefinition('db_url'),
             }
         },
         context_definitions=context_definitions,
