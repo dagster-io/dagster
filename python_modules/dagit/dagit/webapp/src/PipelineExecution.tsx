@@ -1,21 +1,26 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
+
+import { ExecutionTab, ExecutionTabs } from "./ExecutionTabs";
 import ConfigCodeEditorContainer from "./configeditor/ConfigCodeEditorContainer";
 import { PipelineExecutionFragment } from "./types/PipelineExecutionFragment";
 import Config from "./Config";
+import {
+  StorageProvider,
+  applySelectSession,
+  applyNameToSession,
+  applyRemoveSession,
+  applyConfigToSession,
+  applyCreateSession
+} from "./LocalStorage";
 
 interface IPipelineExecutionProps {
   pipeline: PipelineExecutionFragment;
 }
 
-interface IPipelineExecutionState {
-  configCode: string;
-}
-
 export default class PipelineExecution extends React.Component<
-  IPipelineExecutionProps,
-  IPipelineExecutionState
+  IPipelineExecutionProps
 > {
   static fragments = {
     PipelineExecutionFragment: gql`
@@ -34,43 +39,52 @@ export default class PipelineExecution extends React.Component<
     `
   };
 
-  constructor(props: IPipelineExecutionProps) {
-    super(props);
-    const configKey = getConfigStorageKey(props.pipeline);
-    let configCode = localStorage.getItem(configKey);
-    if (!configCode || typeof configCode !== "string") {
-      configCode = "# This is config editor. Enjoy!";
-    }
-    this.state = { configCode };
-  }
-
-  handleConfigChange = (newValue: string) => {
-    const configKey = getConfigStorageKey(this.props.pipeline);
-    localStorage.setItem(configKey, newValue);
-    this.setState({ configCode: newValue });
-  };
-
   public render() {
     return (
       <Container>
-        <ConfigCodeEditorContainer
-          pipelineName={this.props.pipeline.name}
-          environmentTypeName={this.props.pipeline.environmentType.name}
-          configCode={this.state.configCode}
-          onConfigChange={this.handleConfigChange}
-        />
+        <StorageProvider namespace={this.props.pipeline.name}>
+          {({ data, onSave }) => (
+            <>
+              <ExecutionTabs>
+                {Object.keys(data.sessions).map(key => (
+                  <ExecutionTab
+                    key={key}
+                    active={key === data.current}
+                    title={data.sessions[key].name}
+                    onClick={() => onSave(applySelectSession(data, key))}
+                    onChange={title => onSave(applyNameToSession(data, title))}
+                    onRemove={
+                      Object.keys(data.sessions).length > 1
+                        ? () => onSave(applyRemoveSession(data, key))
+                        : undefined
+                    }
+                  />
+                ))}
+                <ExecutionTab
+                  title={"Add..."}
+                  onClick={() => onSave(applyCreateSession(data))}
+                />
+              </ExecutionTabs>
+              <ConfigCodeEditorContainer
+                pipelineName={this.props.pipeline.name}
+                environmentTypeName={this.props.pipeline.environmentType.name}
+                configCode={data.sessions[data.current].config}
+                onConfigChange={config =>
+                  onSave(applyConfigToSession(data, config))
+                }
+              />
+            </>
+          )}
+        </StorageProvider>
       </Container>
     );
   }
 }
 
-function getConfigStorageKey(pipeline: PipelineExecutionFragment) {
-  return `dagit.pipelineConfigStorage.${pipeline.name}`;
-}
-
 const Container = styled.div`
   flex: 1 1;
   display: flex;
+  flex-direction: column;
   width: 100%;
   height: 100vh;
   top: 0;
