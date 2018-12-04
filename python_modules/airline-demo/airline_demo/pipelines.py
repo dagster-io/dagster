@@ -22,7 +22,6 @@ from .solids import (
     sfo_delays_by_destination,
     subsample_spark_dataset,
     thunk,
-    thunk_database_engine,
     union_spark_data_frames,
     unzip_file,
 )
@@ -77,10 +76,13 @@ test_context = PipelineContextDefinition(
                     info.config['redshift_db_name'],
                 ),
                 create_redshift_engine(
-                    info.config['redshift_username'],
-                    info.config['redshift_password'],
-                    info.config['redshift_hostname'],
-                    info.config['redshift_db_name'],
+                    create_redshift_db_url(
+                        info.config['redshift_username'],
+                        info.config['redshift_password'],
+                        info.config['redshift_hostname'],
+                        info.config['redshift_db_name'],
+                        jdbc=False,
+                    ),
                 ),
                 info.config['db_dialect'],
                 info.config['redshift_s3_temp_dir'],
@@ -117,10 +119,13 @@ local_context = PipelineContextDefinition(
                     info.config['postgres_db_name'],
                 ),
                 create_postgres_engine(
-                    info.config['postgres_username'],
-                    info.config['postgres_password'],
-                    info.config['postgres_hostname'],
-                    info.config['postgres_db_name'],
+                    create_postgres_db_url(
+                        info.config['redshift_username'],
+                        info.config['redshift_password'],
+                        info.config['redshift_hostname'],
+                        info.config['redshift_db_name'],
+                        jdbc=False,
+                    ),
                 ),
                 info.config['db_dialect'],
                 '',
@@ -156,10 +161,13 @@ cloud_context = PipelineContextDefinition(
                     info.config['redshift_db_name'],
                 ),
                 create_redshift_engine(
-                    info.config['redshift_username'],
-                    info.config['redshift_password'],
-                    info.config['redshift_hostname'],
-                    info.config['redshift_db_name'],
+                    create_redshift_db_url(
+                        info.config['redshift_username'],
+                        info.config['redshift_password'],
+                        info.config['redshift_hostname'],
+                        info.config['redshift_db_name'],
+                        jdbc=False,
+                    ),
                 ),
                 info.config['db_dialect'],
                 '',
@@ -360,10 +368,11 @@ def define_airline_demo_ingest_pipeline():
 def define_airline_demo_warehouse_pipeline():
     return PipelineDefinition(
         name="airline_demo_warehouse_pipeline",
-        solids=[sfo_delays_by_destination, thunk_database_engine],
+        solids=[sfo_delays_by_destination, thunk],
         dependencies={
+            SolidInstance('thunk', alias='db_url'): {},
             's_f_o__delays_by__destination': {
-                'engine': DependencyDefinition('thunk_database_engine'),
+                'engine': DependencyDefinition('db_url'),
             }
         },
         context_definitions=context_definitions,
