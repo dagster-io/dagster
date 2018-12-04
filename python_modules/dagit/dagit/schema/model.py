@@ -122,6 +122,7 @@ def start_pipeline_execution(context, pipelineName, config):
                 execute_reentrant_pipeline,
                 pipeline.get_dagster_pipeline(),
                 config.value,
+                throw_on_error=False,
                 reentrant_info=ReentrantInfo(
                     new_run_id,
                     event_callback=run.handle_new_event,
