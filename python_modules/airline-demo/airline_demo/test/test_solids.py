@@ -24,11 +24,12 @@ from dagster import (
     PipelineDefinition,
     SolidInstance,
 )
-from dagster.utils.test import (define_stub_solid, execute_solid)
+from dagster.utils.test import (
+    define_stub_solid,
+    execute_solid
+)
 
 from airline_demo.pipelines import (
-    _create_s3_session,
-    _create_spark_session_local,
     define_airline_demo_download_pipeline,
     define_airline_demo_ingest_pipeline,
     define_airline_demo_warehouse_pipeline,
@@ -39,6 +40,10 @@ from airline_demo.solids import (
     ingest_csv_to_spark,
     thunk,
     unzip_file,
+)
+from airline_demo.utils import (
+    create_s3_session,
+    create_spark_session_local,
 )
 
 S3Resources = namedtuple('S3Resources', ('s3', ))
@@ -53,7 +58,7 @@ def _s3_context():
                 lambda info: ExecutionContext.console_logging(
                     log_level=logging.DEBUG,
                     resources=S3Resources(
-                        _create_s3_session(signed=False),
+                        create_s3_session(signed=False),
                     )
                 )
             ),
@@ -68,7 +73,7 @@ def _spark_context():
                 lambda info: ExecutionContext.console_logging(
                     log_level=logging.DEBUG,
                     resources=SparkResources(
-                        _create_spark_session_local(),
+                        create_spark_session_local(),
                     )
                 )
             ),
