@@ -141,14 +141,12 @@ export interface SidebarSolidInfoFragment {
 // START Enums and Input Objects
 //==============================================================
 
-/**
- * An enumeration.
- */
-export enum PipelineRunStatus {
-  FAILURE = "FAILURE",
-  NOT_STARTED = "NOT_STARTED",
-  STARTED = "STARTED",
-  SUCCESS = "SUCCESS",
+export enum StepTag {
+  INPUT_EXPECTATION = "INPUT_EXPECTATION",
+  JOIN = "JOIN",
+  OUTPUT_EXPECTATION = "OUTPUT_EXPECTATION",
+  SERIALIZE = "SERIALIZE",
+  TRANSFORM = "TRANSFORM",
 }
 
 /**

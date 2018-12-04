@@ -76,26 +76,6 @@ export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_contexts {
   description: string | null;
 }
 
-export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_pageInfo {
-  lastCursor: any | null;
-}
-
-export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_nodes {
-  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent";
-  message: string;
-}
-
-export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs {
-  pageInfo: AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_pageInfo;
-  nodes: AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_nodes[];
-}
-
-export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_runs {
-  runId: string;
-  status: PipelineRunStatus;
-  logs: AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs;
-}
-
 export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_solids_definition_metadata {
   key: string;
   value: string;
@@ -236,7 +216,6 @@ export interface AppQuery_pipelinesOrError_PipelineConnection_nodes {
   name: string;
   environmentType: AppQuery_pipelinesOrError_PipelineConnection_nodes_environmentType;
   contexts: AppQuery_pipelinesOrError_PipelineConnection_nodes_contexts[];
-  runs: AppQuery_pipelinesOrError_PipelineConnection_nodes_runs[];
   description: string | null;
   solids: AppQuery_pipelinesOrError_PipelineConnection_nodes_solids[];
 }
@@ -259,14 +238,12 @@ export interface AppQuery {
 // START Enums and Input Objects
 //==============================================================
 
-/**
- * An enumeration.
- */
-export enum PipelineRunStatus {
-  FAILURE = "FAILURE",
-  NOT_STARTED = "NOT_STARTED",
-  STARTED = "STARTED",
-  SUCCESS = "SUCCESS",
+export enum StepTag {
+  INPUT_EXPECTATION = "INPUT_EXPECTATION",
+  JOIN = "JOIN",
+  OUTPUT_EXPECTATION = "OUTPUT_EXPECTATION",
+  SERIALIZE = "SERIALIZE",
+  TRANSFORM = "TRANSFORM",
 }
 
 /**

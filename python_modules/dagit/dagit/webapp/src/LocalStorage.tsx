@@ -7,20 +7,22 @@ export interface IStorageData {
   current: string;
 }
 
+export interface IExecutionSessionPlan {
+  steps: Array<{
+    name: string;
+    tag: string;
+    solid: {
+      name: string;
+    };
+  }>;
+}
+
 export interface IExecutionSessionRun {
   executionParams: {
     pipelineName: string;
     config: object;
   };
-  executionPlan: {
-    steps: Array<{
-      name: string;
-      tag: string;
-      solid: {
-        name: string;
-      };
-    }>;
-  };
+  executionPlan: IExecutionSessionPlan;
   runId: string;
 }
 export interface IExecutionSession {

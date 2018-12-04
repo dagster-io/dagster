@@ -7,7 +7,7 @@ import { IconNames } from "@blueprintjs/icons";
 import { ApolloClient } from "apollo-boost";
 import { ApolloConsumer } from "react-apollo";
 
-import PipelineRun from "./PipelineRun";
+import { PipelineRun, PipelineRunEmpty } from "./PipelineRun";
 import { ExecutionTabs } from "./ExecutionTabs";
 import {
   applyConfigToSession,
@@ -74,7 +74,7 @@ export default class PipelineExecution extends React.Component<
             {session.lastRun ? (
               <PipelineRun run={session.lastRun} />
             ) : (
-              <PipelineRun.Empty />
+              <PipelineRunEmpty />
             )}
           </Split>
           <ApolloConsumer>
@@ -112,6 +112,10 @@ const Container = styled.div`
   display: flex;
   flex-direction: row;
   width: 100%;
+
+  height: 100vh;
+  position: absolute;
+  padding-top: 93px;
 `;
 
 const IconWrapper = styled.div`
@@ -121,7 +125,7 @@ const IconWrapper = styled.div`
   border-radius: 30px;
   background-color: ${Colors.GRAY5};
   position: absolute;
-  left: calc(50% - 30px);
+  left: calc(50% - 80px);
   top: 120px;
   justify-content: center;
   align-items: center;

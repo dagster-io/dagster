@@ -4,40 +4,36 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL fragment: SolidTypeSignatureFragment
+// GraphQL query operation: GetExecutionPlan
 // ====================================================
 
-export interface SolidTypeSignatureFragment_outputs_definition_type {
+export interface GetExecutionPlan_executionPlan_PipelineConfigValidationInvalid {
+  __typename: "PipelineConfigValidationInvalid" | "PipelineNotFoundError";
+}
+
+export interface GetExecutionPlan_executionPlan_ExecutionPlan_steps_solid {
   name: string;
-  description: string | null;
 }
 
-export interface SolidTypeSignatureFragment_outputs_definition {
+export interface GetExecutionPlan_executionPlan_ExecutionPlan_steps {
   name: string;
-  type: SolidTypeSignatureFragment_outputs_definition_type;
+  solid: GetExecutionPlan_executionPlan_ExecutionPlan_steps_solid;
+  tag: StepTag;
 }
 
-export interface SolidTypeSignatureFragment_outputs {
-  definition: SolidTypeSignatureFragment_outputs_definition;
+export interface GetExecutionPlan_executionPlan_ExecutionPlan {
+  __typename: "ExecutionPlan";
+  steps: GetExecutionPlan_executionPlan_ExecutionPlan_steps[];
 }
 
-export interface SolidTypeSignatureFragment_inputs_definition_type {
-  name: string;
-  description: string | null;
+export type GetExecutionPlan_executionPlan = GetExecutionPlan_executionPlan_PipelineConfigValidationInvalid | GetExecutionPlan_executionPlan_ExecutionPlan;
+
+export interface GetExecutionPlan {
+  executionPlan: GetExecutionPlan_executionPlan;
 }
 
-export interface SolidTypeSignatureFragment_inputs_definition {
-  name: string;
-  type: SolidTypeSignatureFragment_inputs_definition_type;
-}
-
-export interface SolidTypeSignatureFragment_inputs {
-  definition: SolidTypeSignatureFragment_inputs_definition;
-}
-
-export interface SolidTypeSignatureFragment {
-  outputs: SolidTypeSignatureFragment_outputs[];
-  inputs: SolidTypeSignatureFragment_inputs[];
+export interface GetExecutionPlanVariables {
+  executionParams: PipelineExecutionParams;
 }
 
 /* tslint:disable */
