@@ -11,7 +11,6 @@ from dagster import (
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
-    config,
     define_stub_solid,
     execute_pipeline,
     types,
@@ -85,11 +84,13 @@ def test_pandas_source_test_pipeline():
     pipeline = define_pandas_source_test_pipeline()
     pipeline_result = execute_pipeline(
         pipeline,
-        config.Environment(
-            solids={
-                'pandas_source_test': config.Solid(script_relative_path('num.csv')),
+        {
+            'solids': {
+                'pandas_source_test': {
+                    'config': script_relative_path('num.csv'),
+                },
             },
-        ),
+        },
     )
     assert pipeline_result.success
     solid_result = pipeline_result.result_for_solid('pandas_source_test')

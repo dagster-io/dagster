@@ -6,12 +6,12 @@ import yaml
 import pytest
 
 from dagster import (
-    DagsterTypeError,
     DependencyDefinition,
     ExecutionContext,
     Field,
     InputDefinition,
     OutputDefinition,
+    PipelineConfigEvaluationError,
     PipelineContextDefinition,
     PipelineDefinition,
     RepositoryDefinition,
@@ -359,7 +359,7 @@ solids:
 
 
 def test_intro_tutorial_part_nine_final_error():
-    with pytest.raises(DagsterTypeError, match='Field "username" is not defined'):
+    with pytest.raises(PipelineConfigEvaluationError) as pe_info:
         execute_pipeline(
             define_part_nine_final_pipeline(),
             yaml.load(
@@ -379,3 +379,5 @@ solids:
 '''
             ),
         )
+
+    assert len(pe_info.value.errors) == 2

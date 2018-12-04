@@ -6,7 +6,6 @@ from dagster import (
     InputDefinition,
     PipelineDefinition,
     SolidInstance,
-    config,
     execute_pipeline,
     lambda_solid,
     solid,
@@ -87,10 +86,16 @@ def test_aliased_configs():
 
     result = execute_pipeline(
         pipeline,
-        config.Environment(solids={
-            'load_a': config.Solid(2),
-            'load_b': config.Solid(3),
-        })
+        {
+            'solids': {
+                'load_a': {
+                    'config': 2,
+                },
+                'load_b': {
+                    'config': 3,
+                },
+            },
+        },
     )
 
     assert result.success

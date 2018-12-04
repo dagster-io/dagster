@@ -9,7 +9,6 @@ import click
 from dagster import (
     PipelineDefinition,
     check,
-    config,
 )
 
 from dagster.core.definitions import ExecutionGraph, Solid

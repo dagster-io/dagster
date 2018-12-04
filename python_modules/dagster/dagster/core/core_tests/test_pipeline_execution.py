@@ -1,11 +1,9 @@
 from dagster import (
     DependencyDefinition,
-    ExecutionContext,
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
     check,
-    config,
     execute_pipeline,
     execute_pipeline_iterator,
     SolidInstance,
@@ -249,11 +247,7 @@ def assert_all_results_equivalent(expected_results, result_results):
 
 def test_pipeline_execution_graph_diamond():
     pipeline = PipelineDefinition(solids=create_diamond_solids(), dependencies=diamond_deps())
-    environment = config.Environment()
-    return _do_test(pipeline, lambda: execute_pipeline_iterator(
-        pipeline,
-        environment=environment,
-    ))
+    return _do_test(pipeline, lambda: execute_pipeline_iterator(pipeline))
 
 
 def test_create_single_solid_pipeline():

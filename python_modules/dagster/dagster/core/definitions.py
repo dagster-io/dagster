@@ -489,8 +489,10 @@ def _validate_dependencies(dependencies, solid_dict, alias_lookup):
                     )
                 else:
                     raise DagsterInvalidDefinitionError(
-                        'Solid {aliased_solid} (aliased by {from_solid} in dependency dictionary) not found in solid list'.
-                        format(
+                        (
+                            'Solid {aliased_solid} (aliased by {from_solid} in dependency '
+                            'dictionary) not found in solid list'
+                        ).format(
                             aliased_solid=aliased_solid,
                             from_solid=from_solid,
                         ),

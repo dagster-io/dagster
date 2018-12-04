@@ -354,7 +354,8 @@ def test_solid_configs_defaults():
     int_solid_field = solids_field.dagster_type.field_named('int_config_solid')
 
     assert int_solid_field.is_optional
-    assert int_solid_field.default_provided  # TODO: this is the test case the exposes the default dodginess
+    # TODO: this is the test case the exposes the default dodginess
+    assert int_solid_field.default_provided
 
     assert_has_fields(int_solid_field.dagster_type, 'config')
 
@@ -505,18 +506,16 @@ def test_optional_solid_with_no_config():
         ]
     )
 
-    env_type = EnvironmentConfigType(pipeline_def)
-    env_obj = throwing_evaluate_config_value(
-        env_type, {'solids': {
-            'int_config_solid': {
-                'config': 234
-            }
-        }}
-    )
-
-    assert env_obj.solids['int_config_solid'].config == 234
-
-    assert execute_pipeline(pipeline_def, env_obj).success
+    assert execute_pipeline(
+        pipeline_def,
+        {
+            'solids': {
+                'int_config_solid': {
+                    'config': 234,
+                },
+            },
+        },
+    ).success
 
 
 def test_optional_solid_with_optional_scalar_config():
@@ -744,7 +743,7 @@ def test_optional_and_required_context():
             'optional_field_context':
             PipelineContextDefinition(
                 context_fn=lambda *args: None,
-                config_field=Field(
+                config_field=Field.composite_field(
                     dagster_type=types.ConfigDictionary(
                         name='some_optional_context_config',
                         fields={
@@ -756,7 +755,7 @@ def test_optional_and_required_context():
             'required_field_context':
             PipelineContextDefinition(
                 context_fn=lambda *args: None,
-                config_field=Field(
+                config_field=Field.composite_field(
                     dagster_type=types.ConfigDictionary(
                         name='some_required_context_config',
                         fields={

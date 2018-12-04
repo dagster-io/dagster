@@ -7,7 +7,6 @@ from dagster import (
     InputDefinition,
     PipelineDefinition,
     RepositoryDefinition,
-    config,
     execute_pipeline,
     lambda_solid,
     solid,
@@ -51,11 +50,15 @@ def define_part_seven_repo():
 
 
 def test_part_seven_repo():
-    environment = config.Environment(
-        solids={
-            'double_the_word': config.Solid(config={'word': 'bar'}),
-        }
-    )
+    environment = {
+        'solids': {
+            'double_the_word': {
+                'config': {
+                    'word': 'bar',
+                },
+            },
+        },
+    }
 
     pipeline_result = execute_pipeline(define_part_seven_pipeline(), environment)
 

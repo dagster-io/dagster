@@ -8,14 +8,13 @@ from dagster import (
     Field,
     OutputDefinition,
     PipelineDefinition,
+    PipelineConfigEvaluationError,
     PipelineContextDefinition,
-    config,
     execute_pipeline,
     lambda_solid,
     solid,
     types,
 )
-from dagster.core.errors import (DagsterTypeError, DagsterInvariantViolationError)
 from dagster.utils.logging import INFO
 
 # protected variable. need to test loggers
@@ -63,13 +62,29 @@ def test_default_context_with_log_level():
     pipeline = PipelineDefinition(solids=[default_context_transform])
     execute_pipeline(
         pipeline,
-        environment=config.Environment(context=config.Context(config={'log_level': 'INFO'}))
+        environment={
+            'context': {
+                'default': {
+                    'config': {
+                        'log_level': 'INFO',
+                    },
+                },
+            },
+        },
     )
 
-    with pytest.raises(DagsterTypeError, message='Argument mismatch in context default'):
+    with pytest.raises(PipelineConfigEvaluationError):
         execute_pipeline(
             pipeline,
-            environment=config.Environment(context=config.Context(config={'log_level': 2}))
+            environment={
+                'context': {
+                    'default': {
+                        'config': {
+                            'log_level': 2,
+                        },
+                    },
+                },
+            },
         )
 
 
@@ -103,7 +118,21 @@ def test_default_value():
     )
 
     execute_pipeline(
-        pipeline, environment=config.Environment(context=config.Context('custom_one', {}))
+        pipeline,
+        environment={
+            'context': {
+                'custom_one': {},
+            },
+        },
+    )
+
+    execute_pipeline(
+        pipeline,
+        environment={
+            'context': {
+                'custom_one': None,
+            },
+        },
     )
 
 
@@ -133,16 +162,27 @@ def test_custom_contexts():
             )
         },
     )
-
-    environment_one = config.Environment(
-        context=config.Context('custom_one', {'field_one': 'value_two'})
-    )
+    environment_one = {
+        'context': {
+            'custom_one': {
+                'config': {
+                    'field_one': 'value_two',
+                },
+            },
+        },
+    }
 
     execute_pipeline(pipeline, environment=environment_one)
 
-    environment_two = config.Environment(
-        context=config.Context('custom_two', {'field_one': 'value_two'})
-    )
+    environment_two = {
+        'context': {
+            'custom_two': {
+                'config': {
+                    'field_one': 'value_two',
+                },
+            },
+        },
+    }
 
     execute_pipeline(pipeline, environment=environment_two)
 
@@ -191,29 +231,43 @@ def test_yield_context():
     assert events == ['before', 'during', 'after']
 
 
-# TODO: reenable pending the ability to specific optional arguments
-# https://github.com/dagster-io/dagster/issues/56
 def test_invalid_context():
     @lambda_solid
     def never_transform():
         raise Exception('should never execute')
 
-    default_context_pipeline = PipelineDefinition(solids=[never_transform])
+    default_context_pipeline = PipelineDefinition(
+        name='default_context_pipeline',
+        solids=[never_transform],
+    )
 
-    environment_context_not_found = config.Environment(context=config.Context('not_found', {}))
+    environment_context_not_found = {
+        'context': {
+            'not_found': {},
+        },
+    }
 
-    with pytest.raises(DagsterTypeError, message='Context not_found does not exist'):
+    with pytest.raises(
+        PipelineConfigEvaluationError,
+        match='Undefined field "not_found" at path root:context',
+    ):
         execute_pipeline(
             default_context_pipeline,
             environment=environment_context_not_found,
             throw_on_error=True
         )
 
-    environment_field_name_mismatch = config.Environment(
-        context=config.Context(config={'unexpected': 'value'})
-    )
+    environment_field_name_mismatch = {
+        'context': {
+            'default': {
+                'config': {
+                    'unexpected': 'value',
+                },
+            },
+        },
+    }
 
-    with pytest.raises(DagsterTypeError, message='Argument mismatch in context default'):
+    with pytest.raises(PipelineConfigEvaluationError, match='Undefined field "unexpected"'):
         execute_pipeline(
             default_context_pipeline,
             environment=environment_field_name_mismatch,
@@ -228,25 +282,43 @@ def test_invalid_context():
                 config_field=ConfigField.config_dict_field(
                     'SingleStringDict', {'string_field': Field(types.String)}
                 ),
-                context_fn=lambda info: info.config,
+                context_fn=lambda info: ExecutionContext(resources=info.config)
             )
         }
     )
 
-    environment_no_config_error = config.Environment(context=config.Context(config={}))
+    environment_no_config_error = {
+        'context': {
+            'default': {
+                'config': {},
+            },
+        },
+    }
 
-    with pytest.raises(DagsterTypeError, message='Argument mismatch in context default'):
+    with pytest.raises(
+        PipelineConfigEvaluationError,
+        match='Missing required field "string_field"',
+    ):
         execute_pipeline(
             with_argful_context_pipeline,
             environment=environment_no_config_error,
             throw_on_error=True
         )
 
-    environment_type_mismatch_error = config.Environment(
-        context=config.Context(config={'string_field': 1})
-    )
+    environment_type_mismatch_error = {
+        'context': {
+            'default': {
+                'config': {
+                    'string_field': 1,
+                },
+            },
+        },
+    }
 
-    with pytest.raises(DagsterTypeError, message='Argument mismatch in context default'):
+    with pytest.raises(
+        PipelineConfigEvaluationError,
+        match='Type failure at path "root:context:default:config:string_field"',
+    ):
         execute_pipeline(
             with_argful_context_pipeline,
             environment=environment_type_mismatch_error,
