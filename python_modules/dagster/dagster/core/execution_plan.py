@@ -257,9 +257,7 @@ def _execute_core_transform(context, step, conf, inputs):
 
     if len(all_results) != len(solid.definition.output_defs):
         emitted_result_names = set([r.output_name for r in all_results])
-        solid_output_names = set(
-            [output_def.name for output_def in solid.definition.output_defs]
-        )
+        solid_output_names = set([output_def.name for output_def in solid.definition.output_defs])
         omitted_outputs = solid_output_names.difference(emitted_result_names)
         context.info(
             'Solid {solid} did not fire outputs {outputs}'.format(
@@ -373,7 +371,6 @@ class ExecutionStep(object):
 
                 results = list(gen)
 
-
             return results
 
     def _error_check_results(self, results):
@@ -450,9 +447,7 @@ def execute_steps(context, steps):
 
     intermediate_results = {}
     context.debug(
-        'Entering execute_steps loop. Order: {order}'.format(
-            order=[step.key for step in steps]
-        )
+        'Entering execute_steps loop. Order: {order}'.format(order=[step.key for step in steps])
     )
 
     for step in steps:
@@ -461,8 +456,8 @@ def execute_steps(context, steps):
             expected_outputs = [ni.prev_output_handle for ni in step.step_inputs]
 
             context.debug(
-                'Not all inputs covered for {step}. Not executing.'.format(step=step.key)
-                + '\nKeys in result: {result_keys}.'.format(result_keys=result_keys) +
+                'Not all inputs covered for {step}. Not executing.'.format(step=step.key) +
+                '\nKeys in result: {result_keys}.'.format(result_keys=result_keys) +
                 '\nOutputs need for inputs {expected_outputs}'.
                 format(expected_outputs=expected_outputs, )
             )
@@ -751,7 +746,9 @@ def create_execution_plan_from_steps(steps):
 
         if step.key in seen_keys:
             keys = [s.key for s in steps]
-            check.failed('Duplicated key {key}. Full list: {key_list}.'.format(key=step.key, key_list=keys))
+            check.failed(
+                'Duplicated key {key}. Full list: {key_list}.'.format(key=step.key, key_list=keys)
+            )
 
         seen_keys.add(step.key)
 

@@ -122,6 +122,10 @@ class EventRecord:
         event_type = self._logger_message.meta.get('event_type')
         return construct_event_type(event_type)
 
+    @property
+    def run_id(self):
+        return self._logger_message.meta['run_id']
+
 
 class PipelineEventRecord(EventRecord):
     @property
@@ -182,8 +186,9 @@ def construct_event_logger(event_record_callback):
     check.callable_param(event_record_callback, 'event_record_callback')
 
     return construct_single_handler_logger(
-        'event-logger', DEBUG,
+        'event-logger',
+        DEBUG,
         StructuredLoggerHandler(
             lambda logger_message: event_record_callback(construct_event_record(logger_message))
-        )
+        ),
     )

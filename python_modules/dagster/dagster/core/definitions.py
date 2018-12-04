@@ -23,7 +23,6 @@ from .evaluator import throwing_evaluate_config_value
 from .execution_context import (
     RuntimeExecutionContext,
     ExecutionContext,
-    ExecutionContext,
 )
 
 from .types import (
@@ -1660,13 +1659,14 @@ class RepositoryDefinition(object):
 
 
 class ContextCreationExecutionInfo(
-    namedtuple('_ContextCreationExecutionInfo', 'config pipeline_def')
+    namedtuple('_ContextCreationExecutionInfo', 'config pipeline_def, run_id')
 ):
-    def __new__(cls, config, pipeline_def):
+    def __new__(cls, config, pipeline_def, run_id):
         return super(ContextCreationExecutionInfo, cls).__new__(
             cls,
             config,
             check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition),
+            check.str_param(run_id, 'run_id'),
         )
 
 

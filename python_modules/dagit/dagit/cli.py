@@ -17,6 +17,7 @@ from .app import (
     create_app,
     RepositoryContainer,
 )
+from .pipeline_run_storage import PipelineRunStorage
 
 
 def create_dagit_cli():
@@ -65,13 +66,14 @@ def ui(host, port, watch, **kwargs):
 
     sys.path.append(os.getcwd())
     repository_container = RepositoryContainer(repository_target_info)
+    pipeline_run_storage = PipelineRunStorage()
     if watch:
         observer = Observer()
         handler = ReloaderHandler(repository_container)
         observer.schedule(handler, os.path.dirname(os.path.abspath(os.getcwd())), recursive=True)
         observer.start()
     try:
-        app = create_app(repository_container)
+        app = create_app(repository_container, pipeline_run_storage)
         server = pywsgi.WSGIServer((host, port), app, handler_class=WebSocketHandler)
         print('Serving on http://{host}:{port}'.format(host=host, port=port))
         server.serve_forever()

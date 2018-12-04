@@ -22,3 +22,7 @@ reinstall:
 	pip uninstall dagster
 	pip install -e dagster
 	pip install -e dagit
+
+rebuild_dagit:
+	cd dagit/dagit/webapp; yarn install && yarn build
+

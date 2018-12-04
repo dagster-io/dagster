@@ -5,7 +5,10 @@ import { ApolloClient, ApolloQueryResult } from "apollo-boost";
 import { Query, QueryResult } from "react-apollo";
 import ConfigCodeEditor from "./ConfigCodeEditor";
 import { ValidationResult } from "./codemirror-yaml/mode";
-import { ConfigCodeEditorContainerQuery } from "./types/ConfigCodeEditorContainerQuery";
+import {
+  ConfigCodeEditorContainerQuery,
+  ConfigCodeEditorContainerQuery_pipelineOrError_Pipeline_types
+} from "./types/ConfigCodeEditorContainerQuery";
 import {
   ConfigCodeEditorContainerCheckConfigQuery,
   ConfigCodeEditorContainerCheckConfigQueryVariables
@@ -39,24 +42,28 @@ export default class ConfigCodeEditorContainer extends React.Component<
           return (
             <Loading queryResult={queryResult}>
               {data => {
-                const typeConfig = createTypeConfig(
-                  data,
-                  this.props.environmentTypeName
-                );
-                return (
-                  <ConfigCodeEditor
-                    typeConfig={typeConfig}
-                    checkConfig={json =>
-                      checkConfig(
-                        queryResult.client,
-                        this.props.pipelineName,
-                        json
-                      )
-                    }
-                    configCode={this.props.configCode}
-                    onConfigChange={this.props.onConfigChange}
-                  />
-                );
+                if (data.pipelineOrError.__typename === "Pipeline") {
+                  const typeConfig = createTypeConfig(
+                    data.pipelineOrError.types,
+                    this.props.environmentTypeName
+                  );
+                  return (
+                    <ConfigCodeEditor
+                      typeConfig={typeConfig}
+                      checkConfig={json =>
+                        checkConfig(
+                          queryResult.client,
+                          this.props.pipelineName,
+                          json
+                        )
+                      }
+                      configCode={this.props.configCode}
+                      onConfigChange={this.props.onConfigChange}
+                    />
+                  );
+                } else {
+                  return null;
+                }
               }}
             </Loading>
           );
@@ -68,14 +75,19 @@ export default class ConfigCodeEditorContainer extends React.Component<
 
 export const CONFIG_CODE_EDITOR_CONTAINER_QUERY = gql`
   query ConfigCodeEditorContainerQuery($pipelineName: String!) {
-    types(pipelineName: $pipelineName) {
+    pipelineOrError(name: $pipelineName) {
       __typename
-      name
-      ... on CompositeType {
-        fields {
+      ... on Pipeline {
+        types {
+          __typename
           name
-          type {
-            name
+          ... on CompositeType {
+            fields {
+              name
+              type {
+                name
+              }
+            }
           }
         }
       }
@@ -84,7 +96,7 @@ export const CONFIG_CODE_EDITOR_CONTAINER_QUERY = gql`
 `;
 
 function createTypeConfig(
-  types: ConfigCodeEditorContainerQuery,
+  types: Array<ConfigCodeEditorContainerQuery_pipelineOrError_Pipeline_types>,
   environmentTypeName: string
 ): {
   environment: Array<{ name: string; typeName: string }>;
@@ -96,7 +108,7 @@ function createTypeConfig(
   };
 } {
   const typeMap = {};
-  for (const type of types.types) {
+  for (const type of types) {
     if (type.__typename === "CompositeType") {
       typeMap[type.name] = type.fields.map(({ name, type }) => ({
         name,
