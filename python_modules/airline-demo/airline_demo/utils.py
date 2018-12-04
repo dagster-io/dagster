@@ -61,8 +61,7 @@ def create_redshift_db_url(username, password, hostname, db_name, jdbc=True):
     return db_url
 
 
-def create_redshift_engine(username, password, hostname, db_name):
-    db_url = create_redshift_db_url(username, password, hostname, db_name, jdbc=False)
+def create_redshift_engine(db_url):
     return sqlalchemy.create_engine(db_url)
 
 
@@ -89,6 +88,5 @@ def create_postgres_db_url(username, password, hostname, db_name, jdbc=True):
     return db_url
 
 
-def create_postgres_engine(username, password, hostname, db_name):
-    db_url = create_postgres_db_url(username, password, hostname, db_name, jdbc=False)
+def create_postgres_engine(db_url):
     return sqlalchemy.create_engine(db_url)

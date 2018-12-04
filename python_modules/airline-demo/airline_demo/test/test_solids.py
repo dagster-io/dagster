@@ -1,7 +1,7 @@
 """Unit and pipeline tests for the airline_demo.
 
 As is common in real-world pipelines, we want to test some fairly heavy-weight operations,
-requiring, e.g., a connection to S3, Spark, and a database. 
+requiring, e.g., a connection to S3, Spark, and a database.
 
 We lever pytest marks to isolate subsets of tests with different requirements. E.g., to run only
 those tests that don't require Spark, `pytest -m "not spark"`.
