@@ -108,8 +108,7 @@ def test_pandas_csv_to_csv():
     csv_input = InputDefinition('num_csv', dagster_pd.DataFrame)
 
     # just adding a second context arg to test that
-    def transform(context, inputs):
-        check.inst_param(context, 'context', ExecutionContext)
+    def transform(_context, inputs):
         num_csv = inputs['num_csv']
         num_csv['sum'] = num_csv['num1'] + num_csv['num2']
         return num_csv

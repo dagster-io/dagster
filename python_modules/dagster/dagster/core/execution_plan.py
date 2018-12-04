@@ -39,6 +39,7 @@ from .evaluator import (
 
 from .execution_context import (
     ExecutionContext,
+    RuntimeExecutionContext,
 )
 
 from .errors import (
@@ -57,7 +58,7 @@ class ExecutionPlanInfo(namedtuple('_ExecutionPlanInfo', 'context execution_grap
     def __new__(cls, context, execution_graph, environment):
         return super(ExecutionPlanInfo, cls).__new__(
             cls,
-            check.inst_param(context, 'context', ExecutionContext),
+            check.inst_param(context, 'context', RuntimeExecutionContext),
             check.inst_param(execution_graph, 'execution_graph', ExecutionGraph),
             check.inst_param(environment, 'environment', config.Environment),
         )
@@ -84,7 +85,7 @@ class StepOutputHandle(namedtuple('_StepOutputHandle', 'step output_name')):
     def __str__(self):
         return (
             'StepOutputHandle'
-            '(step="{step.friendly_name}", output_name="{output_name}")'.format(
+            '(step="{step.key}", output_name="{output_name}")'.format(
                 step=self.step,
                 output_name=self.output_name,
             )
@@ -93,17 +94,17 @@ class StepOutputHandle(namedtuple('_StepOutputHandle', 'step output_name')):
     def __repr__(self):
         return (
             'StepOutputHandle'
-            '(step="{step.friendly_name}", output_name="{output_name}")'.format(
+            '(step="{step.key}", output_name="{output_name}")'.format(
                 step=self.step,
                 output_name=self.output_name,
             )
         )
 
     def __hash__(self):
-        return hash(self.step.guid + self.output_name)
+        return hash(self.step.key + self.output_name)
 
     def __eq__(self, other):
-        return self.step.guid == other.step.guid and self.output_name == other.output_name
+        return self.step.key == other.step.key and self.output_name == other.output_name
 
 
 class StepSuccessData(namedtuple('_StepSuccessData', 'output_name value')):
@@ -149,7 +150,7 @@ class StepResult(namedtuple(
 
 
 @contextmanager
-def _user_code_error_boundary(context, msg, **kwargs):
+def _execution_step_error_boundary(context, step, msg, **kwargs):
     '''
     Wraps the execution of user-space code in an error boundary. This places a uniform
     policy around an user code invoked by the framework. This ensures that all user
@@ -158,26 +159,32 @@ def _user_code_error_boundary(context, msg, **kwargs):
     framework code in the stack trace, if a tool author wishes to do so. This has
     been especially help in a notebooking context.
     '''
-    check.inst_param(context, 'context', ExecutionContext)
+    check.inst_param(context, 'context', RuntimeExecutionContext)
     check.str_param(msg, 'msg')
 
+    context.events.execution_plan_step_start(step.key)
     try:
-        yield
-    except DagsterError as de:
-        stack_trace = get_formatted_stack_trace(de)
-        context.error(str(de), stack_trace=stack_trace)
-        raise de
+        with time_execution_scope() as timer_result:
+            yield
+
+        context.events.execution_plan_step_success(step.key, timer_result.millis)
     except Exception as e:  # pylint: disable=W0703
+        context.events.execution_plan_step_failure(step.key)
+
         stack_trace = get_formatted_stack_trace(e)
         context.error(str(e), stack_trace=stack_trace)
-        raise_from(
-            DagsterUserCodeExecutionError(
-                msg.format(**kwargs),
-                user_exception=e,
-                original_exc_info=sys.exc_info(),
-            ),
-            e,
-        )
+
+        if isinstance(e, DagsterError):
+            raise e
+        else:
+            raise_from(
+                DagsterUserCodeExecutionError(
+                    msg.format(**kwargs),
+                    user_exception=e,
+                    original_exc_info=sys.exc_info(),
+                ),
+                e,
+            )
 
 
 class StepTag(Enum):
@@ -238,45 +245,28 @@ def _execute_core_transform(context, step, conf, inputs):
     Execute the user-specified transform for the solid. Wrap in an error boundary and do
     all relevant logging and metrics tracking
     '''
-    check.inst_param(context, 'context', ExecutionContext)
+    check.inst_param(context, 'context', RuntimeExecutionContext)
     check.inst_param(step, 'step', ExecutionStep)
     check.dict_param(inputs, 'inputs', key_type=str)
 
-    error_str = 'Error occured during core transform'
-
     solid = step.solid
 
-    with context.values({'solid': solid.name, 'solid_definition': solid.definition.name}):
-        context.debug('Executing core transform for solid {solid}.'.format(solid=solid.name))
+    context.debug('Executing core transform for solid {solid}.'.format(solid=solid.name))
 
-        with time_execution_scope() as timer_result, \
-            _user_code_error_boundary(context, error_str):
+    all_results = list(_yield_transform_results(context, step, conf, inputs))
 
-            all_results = list(_yield_transform_results(context, step, conf, inputs))
-
-        if len(all_results) != len(solid.definition.output_defs):
-            emitted_result_names = set([r.output_name for r in all_results])
-            solid_output_names = set(
-                [output_def.name for output_def in solid.definition.output_defs]
+    if len(all_results) != len(solid.definition.output_defs):
+        emitted_result_names = set([r.output_name for r in all_results])
+        solid_output_names = set([output_def.name for output_def in solid.definition.output_defs])
+        omitted_outputs = solid_output_names.difference(emitted_result_names)
+        context.info(
+            'Solid {solid} did not fire outputs {outputs}'.format(
+                solid=solid.name,
+                outputs=repr(omitted_outputs),
             )
-            omitted_outputs = solid_output_names.difference(emitted_result_names)
-            context.info(
-                'Solid {solid} did not fire outputs {outputs}'.format(
-                    solid=solid.name,
-                    outputs=repr(omitted_outputs),
-                )
-            )
-
-        context.debug(
-            'Finished executing transform for solid {solid}. Time elapsed: {millis:.3f} ms'.format(
-                solid=step.solid.name,
-                millis=timer_result.millis,
-            ),
-            execution_time_ms=timer_result.millis,
         )
 
-        for result in all_results:
-            yield result
+    return all_results
 
 
 class StepInput(object):
@@ -297,9 +287,8 @@ class StepOutput(object):
 
 
 class ExecutionStep(object):
-    def __init__(self, friendly_name, step_inputs, step_outputs, compute_fn, tag, solid):
-        self.guid = str(uuid.uuid4())
-        self.friendly_name = check.str_param(friendly_name, 'friendly_name')
+    def __init__(self, key, step_inputs, step_outputs, compute_fn, tag, solid):
+        self.key = check.str_param(key, 'key')
 
         self.step_inputs = check.list_param(step_inputs, 'step_inputs', of_type=StepInput)
         self._step_input_dict = {si.name: si for si in step_inputs}
@@ -356,7 +345,7 @@ class ExecutionStep(object):
                     (
                         'Solid {step.solid.name} input {input_name} received value {input_value} ' +
                         'which does not pass the typecheck for Dagster type ' +
-                        '{step_input.dagster_type.name}. Step {step.friendly_name}'
+                        '{step_input.dagster_type.name}. Step {step.key}'
                     ).format(
                         step=self,
                         input_name=input_name,
@@ -368,18 +357,21 @@ class ExecutionStep(object):
             )
 
     def _compute_result_list(self, context, evaluated_inputs):
-        error_str = 'Error occured during step {friendly_name}'.format(
-            friendly_name=self.friendly_name,
-        )
+        error_str = 'Error occured during step {key}'.format(key=self.key)
 
-        with _user_code_error_boundary(context, error_str):
-            gen = self.compute_fn(context, self, evaluated_inputs)
+        def_name = self.solid.definition.name
 
-            if gen is None:
-                check.invariant(not self.step_outputs)
-                return
+        with context.values({'solid': self.solid.name, 'solid_definition': def_name}):
+            with _execution_step_error_boundary(context, self, error_str):
+                gen = self.compute_fn(context, self, evaluated_inputs)
 
-            return list(gen)
+                if gen is None:
+                    check.invariant(not self.step_outputs)
+                    return
+
+                results = list(gen)
+
+            return results
 
     def _error_check_results(self, results):
         seen_outputs = set()
@@ -416,7 +408,7 @@ class ExecutionStep(object):
         return [self._create_step_result(result) for result in results]
 
     def execute(self, context, inputs):
-        check.inst_param(context, 'context', ExecutionContext)
+        check.inst_param(context, 'context', RuntimeExecutionContext)
         check.dict_param(inputs, 'inputs', key_type=str)
 
         try:
@@ -450,14 +442,12 @@ def _all_inputs_covered(cn, results):
 
 
 def execute_steps(context, steps):
-    check.inst_param(context, 'context', ExecutionContext)
+    check.inst_param(context, 'context', RuntimeExecutionContext)
     check.list_param(steps, 'steps', of_type=ExecutionStep)
 
     intermediate_results = {}
     context.debug(
-        'Entering execute_steps loop. Order: {order}'.format(
-            order=[cn.friendly_name for cn in steps]
-        )
+        'Entering execute_steps loop. Order: {order}'.format(order=[step.key for step in steps])
     )
 
     for step in steps:
@@ -466,8 +456,8 @@ def execute_steps(context, steps):
             expected_outputs = [ni.prev_output_handle for ni in step.step_inputs]
 
             context.debug(
-                'Not all inputs covered for {step}. Not executing.'.format(step=step.friendly_name)
-                + '\nKeys in result: {result_keys}.'.format(result_keys=result_keys) +
+                'Not all inputs covered for {step}. Not executing.'.format(step=step.key) +
+                '\nKeys in result: {result_keys}.'.format(result_keys=result_keys) +
                 '\nOutputs need for inputs {expected_outputs}'.
                 format(expected_outputs=expected_outputs, )
             )
@@ -491,7 +481,7 @@ def print_graph(graph, printer=print):
     printer = IndentingPrinter(printer=printer)
 
     for step in graph.topological_steps():
-        with printer.with_indent('Step {step.friendly_name} Id: {step.guid}'.format(step=step)):
+        with printer.with_indent('Step {step.key}'.format(step=step)):
             for step_input in step.step_inputs:
                 with printer.with_indent('Input: {step_input.name}'.format(step_input=step_input)):
                     printer.line(
@@ -530,7 +520,7 @@ class ExecutionPlan(object):
 def create_expectation_step(
     solid,
     expectation_def,
-    friendly_name,
+    key,
     tag,
     prev_step_output_handle,
     inout_def,
@@ -544,7 +534,7 @@ def create_expectation_step(
     value_type = inout_def.dagster_type
 
     return ExecutionStep(
-        friendly_name=friendly_name,
+        key=key,
         step_inputs=[
             StepInput(
                 name=EXPECTATION_INPUT,
@@ -584,7 +574,7 @@ def create_expectations_subplan(solid, inout_def, prev_step_output_handle, tag):
         expect_step = create_expectation_step(
             solid=solid,
             expectation_def=expectation_def,
-            friendly_name='{solid.name}.{inout_def.name}.expectation.{expectation_def.name}'.format(
+            key='{solid.name}.{inout_def.name}.expectation.{expectation_def.name}'.format(
                 solid=solid, inout_def=inout_def, expectation_def=expectation_def
             ),
             tag=tag,
@@ -594,7 +584,16 @@ def create_expectations_subplan(solid, inout_def, prev_step_output_handle, tag):
         input_expect_steps.append(expect_step)
         steps.append(expect_step)
 
-    join_step = _create_join_step(solid, input_expect_steps, EXPECTATION_VALUE_OUTPUT)
+    join_step = _create_join_step(
+        solid,
+        '{solid}.{desc_key}.{name}.expectations.join'.format(
+            solid=solid.name,
+            desc_key=inout_def.descriptive_key,
+            name=inout_def.name,
+        ),
+        input_expect_steps,
+        EXPECTATION_VALUE_OUTPUT,
+    )
 
     output_name = join_step.step_outputs[0].name
     return ExecutionSubPlan(
@@ -731,20 +730,31 @@ def create_execution_plan_core(execution_info):
             output_handle = pipeline_solid.output_handle(output_def.name)
             state.step_output_map[output_handle] = subgraph.terminal_step_output_handle
 
-    return _create_execution_plan(state.steps)
+    return create_execution_plan_from_steps(state.steps)
 
 
-def _create_execution_plan(steps):
+def create_execution_plan_from_steps(steps):
     check.list_param(steps, 'steps', of_type=ExecutionStep)
 
-    step_dict = {step.guid: step for step in steps}
+    step_dict = {step.key: step for step in steps}
 
     deps = defaultdict()
 
+    seen_keys = set()
+
     for step in steps:
-        deps[step.guid] = set()
+
+        if step.key in seen_keys:
+            keys = [s.key for s in steps]
+            check.failed(
+                'Duplicated key {key}. Full list: {key_list}.'.format(key=step.key, key_list=keys)
+            )
+
+        seen_keys.add(step.key)
+
+        deps[step.key] = set()
         for step_input in step.step_inputs:
-            deps[step.guid].add(step_input.prev_output_handle.step.guid)
+            deps[step.key].add(step_input.prev_output_handle.step.key)
 
     return ExecutionPlan(step_dict, deps)
 
@@ -856,7 +866,7 @@ def _create_serialization_step(solid, output_def, prev_subgraph):
     check.inst_param(prev_subgraph, 'prev_subgraph', ExecutionSubPlan)
 
     return ExecutionStep(
-        friendly_name='serialize.' + solid.name + '.' + output_def.name,
+        key='serialize.' + solid.name + '.' + output_def.name,
         step_inputs=[
             StepInput(
                 name=SERIALIZE_INPUT,
@@ -874,8 +884,9 @@ def _create_serialization_step(solid, output_def, prev_subgraph):
     )
 
 
-def _create_join_step(solid, prev_steps, prev_output_name):
+def _create_join_step(solid, step_key, prev_steps, prev_output_name):
     check.inst_param(solid, 'solid', Solid)
+    check.str_param(step_key, 'step_key')
     check.list_param(prev_steps, 'prev_steps', of_type=ExecutionStep)
     check.invariant(len(prev_steps) > 0)
     check.str_param(prev_output_name, 'output_name')
@@ -892,10 +903,10 @@ def _create_join_step(solid, prev_steps, prev_output_name):
 
         output_handle = StepOutputHandle(prev_step, prev_output_name)
 
-        step_inputs.append(StepInput(prev_step.guid, prev_step_output.dagster_type, output_handle))
+        step_inputs.append(StepInput(prev_step.key, prev_step_output.dagster_type, output_handle))
 
     return ExecutionStep(
-        friendly_name='join',
+        key=step_key,
         step_inputs=step_inputs,
         step_outputs=[StepOutput(JOIN_OUTPUT, seen_dagster_type)],
         compute_fn=_create_join_lambda,
@@ -917,7 +928,6 @@ def _create_expectation_lambda(solid, inout_def, expectation_def, internal_outpu
     def _do_expectation(context, step, inputs):
         with context.values(
             {
-                'solid': solid.name,
                 inout_def.descriptive_key: inout_def.name,
                 'expectation': expectation_def.name
             }
@@ -927,18 +937,15 @@ def _create_expectation_lambda(solid, inout_def, expectation_def, internal_outpu
             expt_result = expectation_def.expectation_fn(info, value)
             if expt_result.success:
                 context.debug(
-                    'Expectation {friendly_name} succeeded on {value}.'.format(
-                        friendly_name=step.friendly_name,
+                    'Expectation {key} succeeded on {value}.'.format(
+                        key=step.key,
                         value=value,
                     )
                 )
                 yield Result(output_name=internal_output_name, value=inputs[EXPECTATION_INPUT])
             else:
                 context.debug(
-                    'Expectation {friendly_name} failed on {value}.'.format(
-                        friendly_name=step.friendly_name,
-                        value=value,
-                    )
+                    'Expectation {key} failed on {value}.'.format(key=step.key, value=value)
                 )
                 raise DagsterExpectationFailedError(info, value)
 
@@ -950,7 +957,7 @@ def create_transform_step(solid, step_inputs, conf):
     check.list_param(step_inputs, 'step_inputs', of_type=StepInput)
 
     return ExecutionStep(
-        friendly_name='{solid.name}.transform'.format(solid=solid),
+        key='{solid.name}.transform'.format(solid=solid),
         step_inputs=step_inputs,
         step_outputs=[
             StepOutput(name=output_def.name, dagster_type=output_def.dagster_type)

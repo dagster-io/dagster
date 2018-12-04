@@ -1,5 +1,6 @@
 import os
 import sys
+from promise import Promise
 from graphql.execution.executors.gevent import GeventExecutor as Executor
 from flask import Flask, send_file, send_from_directory
 from flask_graphql import GraphQLView
@@ -13,8 +14,11 @@ from dagster.cli.dynamic_loader import (
     DynamicObject,
 )
 
+from .pipeline_run_storage import PipelineRunStorage
 from .subscription_server import DagsterSubscriptionServer
 from .schema import create_schema
+from .schema.context import DagsterGraphQLContext
+from .templates.playground import TEMPLATE as PLAYGROUND_TEMPLATE
 
 
 class RepositoryContainer(object):
@@ -56,23 +60,27 @@ class RepositoryContainer(object):
 
 
 class DagsterGraphQLView(GraphQLView):
-    def __init__(self, repository_container, **kwargs):
+    def __init__(self, context, **kwargs):
         super(DagsterGraphQLView, self).__init__(**kwargs)
-        self.repository_container = check.inst_param(
-            repository_container,
-            'repository_container',
-            RepositoryContainer,
+        self.context = check.inst_param(
+            context,
+            'context',
+            DagsterGraphQLContext,
         )
 
     def get_context(self):
-        return {'repository_container': self.repository_container}
+        return self.context
 
 
-def dagster_graphql_subscription_view(subscription_server, repository_container):
+def dagster_graphql_subscription_view(subscription_server, context):
+    context = check.inst_param(
+        context,
+        'context',
+        DagsterGraphQLContext,
+    )
+
     def view(ws):
-        subscription_server.handle(
-            ws, request_context={'repository_container': repository_container}
-        )
+        subscription_server.handle(ws, request_context=context)
         return []
 
     return view
@@ -118,27 +126,36 @@ def notebook_view(_path):
         return "<style>" + resources['inlining']['css'][0] + "</style>" + body, 200
 
 
-def create_app(repository_container):
+def create_app(repository_container, pipeline_runs):
     app = Flask('dagster-ui')
     sockets = Sockets(app)
     app.app_protocol = lambda environ_path_info: 'graphql-ws'
 
     schema = create_schema()
-    subscription_server = DagsterSubscriptionServer(schema)
+    subscription_server = DagsterSubscriptionServer(schema=schema)
+
+    context = DagsterGraphQLContext(
+        repository_container=repository_container,
+        pipeline_runs=pipeline_runs,
+    )
 
     app.add_url_rule(
-        '/graphql', 'graphql',
+        '/graphql',
+        'graphql',
         DagsterGraphQLView.as_view(
             'graphql',
             schema=schema,
             graphiql=True,
+            # XXX(freiksenet): Pass proper ws url
+            graphiql_template=PLAYGROUND_TEMPLATE,
             executor=Executor(),
-            repository_container=repository_container,
+            context=context,
         )
     )
     sockets.add_url_rule(
-        '/graphql', 'graphql',
-        dagster_graphql_subscription_view(subscription_server, repository_container)
+        '/graphql',
+        'graphql',
+        dagster_graphql_subscription_view(subscription_server, context),
     )
     app.add_url_rule('/notebook/<path:_path>', 'notebook', notebook_view)
     app.add_url_rule('/static/<path:path>/<string:file>', 'static_view', static_view)

@@ -1,5 +1,6 @@
 from dagster import (
     DependencyDefinition,
+    ExecutionContext,
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
@@ -19,8 +20,6 @@ from dagster.core.definitions import (
 )
 
 from dagster.core.execution import (
-    execute_pipeline_iterator,
-    ExecutionContext,
     SolidExecutionResult,
     PipelineExecutionResult,
 )
@@ -28,6 +27,8 @@ from dagster.core.execution import (
 from dagster.core.test_utils import single_output_transform
 
 from dagster.core.utility_solids import define_stub_solid
+
+from dagster.utils.test import (create_test_runtime_execution_context)
 
 # protected members
 # pylint: disable=W0212
@@ -305,7 +306,7 @@ def _do_test(pipeline, do_execute_pipeline_iter):
     for result in do_execute_pipeline_iter():
         results.append(result)
 
-    result = PipelineExecutionResult(pipeline, ExecutionContext(), results)
+    result = PipelineExecutionResult(pipeline, create_test_runtime_execution_context(), results)
 
     assert result.result_for_solid('A').transformed_value() == [
         input_set('A_input'), transform_called('A')

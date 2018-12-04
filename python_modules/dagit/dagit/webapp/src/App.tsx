@@ -27,7 +27,7 @@ export default class App extends React.Component {
                       history: History;
                     }) => (
                       <PipelinePage
-                        pipelinesOrErrors={data.pipelinesOrErrors}
+                        pipelinesOrError={data.pipelinesOrError}
                         history={history}
                         match={match}
                       />
@@ -46,7 +46,7 @@ export default class App extends React.Component {
 
 export const APP_QUERY = gql`
   query AppQuery {
-    pipelinesOrErrors {
+    pipelinesOrError {
       ...PipelinePageFragment
     }
   }

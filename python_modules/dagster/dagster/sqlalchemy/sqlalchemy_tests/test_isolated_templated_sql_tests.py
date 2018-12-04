@@ -13,7 +13,7 @@ from dagster.sqlalchemy.templated import (
 
 from dagster.core.utility_solids import define_stub_solid
 
-from .math_test_db import in_mem_context
+from .math_test_db import in_mem_context_params
 
 
 def _load_table(context, table_name):
@@ -22,11 +22,11 @@ def _load_table(context, table_name):
     ).fetchall()
 
 
-def pipeline_test_def(solids, context, dependencies=None):
+def pipeline_test_def(solids, context_params, dependencies=None):
     return PipelineDefinition(
         solids=solids,
         context_definitions={
-            'default': PipelineContextDefinition(context_fn=lambda info: context),
+            'default': PipelineContextDefinition(context_fn=lambda info: context_params),
         },
         dependencies=dependencies,
     )
@@ -42,7 +42,9 @@ def define_sum_table_pipeline():
         table_arguments=['sum_table'],
     )
 
-    pipeline = pipeline_test_def(solids=[sum_table_transform], context=in_mem_context())
+    pipeline = pipeline_test_def(
+        solids=[sum_table_transform], context_params=in_mem_context_params()
+    )
     return pipeline
 
 
@@ -99,7 +101,9 @@ def test_single_templated_sql_solid_double_table_raw_api():
         table_arguments=['sum_table', 'num_table'],
     )
 
-    pipeline = pipeline_test_def(solids=[sum_solid], context=in_mem_context(num_table_arg))
+    pipeline = pipeline_test_def(
+        solids=[sum_solid], context_params=in_mem_context_params(num_table_arg)
+    )
 
     environment = config.Environment(
         solids={
@@ -129,7 +133,9 @@ def test_single_templated_sql_solid_double_table_with_api():
         table_arguments=['sum_table', 'num_table'],
     )
 
-    pipeline = pipeline_test_def(solids=[sum_solid], context=in_mem_context(num_table_arg))
+    pipeline = pipeline_test_def(
+        solids=[sum_solid], context_params=in_mem_context_params(num_table_arg)
+    )
 
     environment = config.Environment(
         solids={
@@ -171,11 +177,11 @@ def test_templated_sql_solid_pipeline():
         dependant_solids=[sum_solid],
     )
 
-    context = in_mem_context()
+    context = in_mem_context_params()
 
     pipeline = pipeline_test_def(
         solids=[sum_solid, sum_sq_solid],
-        context=context,
+        context_params=context,
         dependencies={
             sum_sq_solid.name: {
                 sum_solid.name: DependencyDefinition(sum_solid.name),
@@ -216,7 +222,7 @@ def test_templated_sql_solid_pipeline():
 
     pipeline_two = pipeline_test_def(
         solids=[define_stub_solid('pass_value', 'TODO'), sum_sq_solid],
-        context=context,
+        context_params=context,
         dependencies={
             sum_sq_solid.name: {
                 sum_solid.name: DependencyDefinition('pass_value'),
@@ -255,7 +261,7 @@ def test_templated_sql_solid_with_api():
         table_arguments=['sum_table'],
     )
 
-    pipeline = pipeline_test_def(solids=[sum_solid], context=in_mem_context())
+    pipeline = pipeline_test_def(solids=[sum_solid], context_params=in_mem_context_params())
 
     sum_table_arg = 'specific_sum_table'
     environment = config.Environment(
@@ -395,7 +401,7 @@ def create_multi_input_pipeline():
 
     pipeline = pipeline_test_def(
         solids=[sum_solid, mult_solid, sum_mult_solid],
-        context=in_mem_context(),
+        context_params=in_mem_context_params(),
         dependencies={
             sum_mult_solid.name: {
                 sum_solid.name: DependencyDefinition(sum_solid.name),

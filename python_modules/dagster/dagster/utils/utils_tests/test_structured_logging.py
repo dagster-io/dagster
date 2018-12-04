@@ -15,6 +15,8 @@ from dagster.core.events import (
     PipelineEventRecord,
 )
 
+from dagster.utils.test import create_test_runtime_execution_context
+
 
 def test_structured_logger_in_context():
     messages = []
@@ -23,7 +25,7 @@ def test_structured_logger_in_context():
         messages.append(logger_message)
 
     logger = define_structured_logger('some_name', _append_message, level=DEBUG)
-    context = ExecutionContext(loggers=[logger])
+    context = create_test_runtime_execution_context(loggers=[logger])
     context.debug('from_context', foo=2)
     assert len(messages) == 1
     message = messages[0]
@@ -40,7 +42,7 @@ def test_construct_event_record():
         messages.append(construct_event_record(logger_message))
 
     logger = define_structured_logger('some_name', _append_message, level=DEBUG)
-    context = ExecutionContext(loggers=[logger])
+    context = create_test_runtime_execution_context(loggers=[logger])
     context.info('random message')
 
     assert len(messages) == 1

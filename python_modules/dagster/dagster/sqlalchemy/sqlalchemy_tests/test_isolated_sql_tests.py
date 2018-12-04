@@ -12,7 +12,10 @@ from dagster.sqlalchemy.subquery_builder_experimental import (
 )
 from dagster.utils import script_relative_path
 
-from .math_test_db import in_mem_context
+from .math_test_db import (
+    in_mem_context_params,
+    in_mem_context,
+)
 
 
 def pipeline_test_def(solids, context, dependencies=None):
@@ -26,7 +29,7 @@ def pipeline_test_def(solids, context, dependencies=None):
 
 
 def test_basic_isolated_sql_solid():
-    context = in_mem_context()
+    context = in_mem_context_params()
 
     sql_text = '''CREATE TABLE sum_table AS SELECT num1, num2, num1 + num2 as sum FROM num_table'''
 
@@ -57,7 +60,7 @@ def test_basic_pipeline():
 
     pipeline = pipeline_test_def(
         solids=[sum_sql_solid, sum_sq_sql_solid],
-        context=in_mem_context(),
+        context=in_mem_context_params(),
         dependencies={
             'sum_sq_sql_solid': {
                 sum_sql_solid.name: DependencyDefinition(sum_sql_solid.name),
@@ -95,7 +98,7 @@ def test_pipeline_from_files():
 
     pipeline = pipeline_test_def(
         solids=[create_sum_table_solid, create_sum_sq_table_solid],
-        context=in_mem_context(),
+        context=in_mem_context_params(),
         dependencies={
             create_sum_sq_table_solid.name: {
                 create_sum_table_solid.name: DependencyDefinition(create_sum_table_solid.name),

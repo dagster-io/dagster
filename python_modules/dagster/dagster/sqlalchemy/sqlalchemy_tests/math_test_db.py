@@ -1,5 +1,13 @@
 import sqlalchemy as sa
-import dagster.sqlalchemy as dagster_sa
+
+from dagster.sqlalchemy.common import (
+    DefaultSqlAlchemyResources,
+    SqlAlchemyResource,
+    check_supports_sql_alchemy_resource,
+    create_sql_alchemy_context_params_from_engine,
+)
+
+from dagster.utils.test import create_test_runtime_execution_context
 
 
 def create_num_table(engine, num_table_name='num_table'):
@@ -30,5 +38,15 @@ def in_mem_engine(num_table_name='num_table'):
     return engine
 
 
+def create_sql_alchemy_context_from_engine(engine, *args, **kwargs):
+    resources = DefaultSqlAlchemyResources(SqlAlchemyResource(engine))
+    context = create_test_runtime_execution_context(resources=resources, *args, **kwargs)
+    return check_supports_sql_alchemy_resource(context)
+
+
 def in_mem_context(num_table_name='num_table'):
-    return dagster_sa.create_sql_alchemy_context_from_engine(engine=in_mem_engine(num_table_name))
+    return create_sql_alchemy_context_from_engine(engine=in_mem_engine(num_table_name))
+
+
+def in_mem_context_params(num_table_name='num_table'):
+    return create_sql_alchemy_context_params_from_engine(engine=in_mem_engine(num_table_name))

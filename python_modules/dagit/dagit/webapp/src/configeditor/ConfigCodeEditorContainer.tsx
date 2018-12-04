@@ -5,7 +5,10 @@ import { ApolloClient, ApolloQueryResult } from "apollo-boost";
 import { Query, QueryResult } from "react-apollo";
 import ConfigCodeEditor from "./ConfigCodeEditor";
 import { ValidationResult } from "./codemirror-yaml/mode";
-import { ConfigCodeEditorContainerQuery } from "./types/ConfigCodeEditorContainerQuery";
+import {
+  ConfigCodeEditorContainerQuery,
+  ConfigCodeEditorContainerQuery_pipelineOrError_Pipeline_types
+} from "./types/ConfigCodeEditorContainerQuery";
 import {
   ConfigCodeEditorContainerCheckConfigQuery,
   ConfigCodeEditorContainerCheckConfigQueryVariables
@@ -39,24 +42,28 @@ export default class ConfigCodeEditorContainer extends React.Component<
           return (
             <Loading queryResult={queryResult}>
               {data => {
-                const typeConfig = createTypeConfig(
-                  data,
-                  this.props.environmentTypeName
-                );
-                return (
-                  <ConfigCodeEditor
-                    typeConfig={typeConfig}
-                    checkConfig={json =>
-                      checkConfig(
-                        queryResult.client,
-                        this.props.pipelineName,
-                        json
-                      )
-                    }
-                    configCode={this.props.configCode}
-                    onConfigChange={this.props.onConfigChange}
-                  />
-                );
+                if (data.pipelineOrError.__typename === "Pipeline") {
+                  const typeConfig = createTypeConfig(
+                    data.pipelineOrError.types,
+                    this.props.environmentTypeName
+                  );
+                  return (
+                    <ConfigCodeEditor
+                      typeConfig={typeConfig}
+                      checkConfig={json =>
+                        checkConfig(
+                          queryResult.client,
+                          this.props.pipelineName,
+                          json
+                        )
+                      }
+                      configCode={this.props.configCode}
+                      onConfigChange={this.props.onConfigChange}
+                    />
+                  );
+                } else {
+                  return null;
+                }
               }}
             </Loading>
           );
@@ -68,14 +75,19 @@ export default class ConfigCodeEditorContainer extends React.Component<
 
 export const CONFIG_CODE_EDITOR_CONTAINER_QUERY = gql`
   query ConfigCodeEditorContainerQuery($pipelineName: String!) {
-    types(pipelineName: $pipelineName) {
+    pipelineOrError(name: $pipelineName) {
       __typename
-      name
-      ... on CompositeType {
-        fields {
+      ... on Pipeline {
+        types {
+          __typename
           name
-          type {
-            name
+          ... on CompositeType {
+            fields {
+              name
+              type {
+                name
+              }
+            }
           }
         }
       }
@@ -84,7 +96,7 @@ export const CONFIG_CODE_EDITOR_CONTAINER_QUERY = gql`
 `;
 
 function createTypeConfig(
-  types: ConfigCodeEditorContainerQuery,
+  types: Array<ConfigCodeEditorContainerQuery_pipelineOrError_Pipeline_types>,
   environmentTypeName: string
 ): {
   environment: Array<{ name: string; typeName: string }>;
@@ -96,7 +108,7 @@ function createTypeConfig(
   };
 } {
   const typeMap = {};
-  for (const type of types.types) {
+  for (const type of types) {
     if (type.__typename === "CompositeType") {
       typeMap[type.name] = type.fields.map(({ name, type }) => ({
         name,
@@ -120,7 +132,19 @@ export const CONFIG_CODE_EDITOR_CONTAINER_CHECK_CONFIG_QUERY = gql`
       ... on PipelineConfigValidationInvalid {
         errors {
           message
-          path
+          stack {
+            entries {
+              __typename
+              ... on EvaluationStackPathEntry {
+                field {
+                  name
+                }
+              }
+              ... on EvaluationStackListItemEntry {
+                listIndex
+              }
+            }
+          }
         }
       }
     }
@@ -132,32 +156,48 @@ async function checkConfig(
   pipelineName: string,
   config: any
 ): Promise<ValidationResult> {
-  if (config !== null) {
-    const result = await client.query<
-      ConfigCodeEditorContainerCheckConfigQuery,
-      ConfigCodeEditorContainerCheckConfigQueryVariables
-    >({
-      query: CONFIG_CODE_EDITOR_CONTAINER_CHECK_CONFIG_QUERY,
-      variables: {
-        executionParams: {
-          pipelineName: pipelineName,
-          config: config
-        }
-      },
-      fetchPolicy: "no-cache"
-    });
-
-    if (
-      result.data.isPipelineConfigValid.__typename ===
-      "PipelineConfigValidationInvalid"
-    ) {
-      return {
-        isValid: false,
-        errors: result.data.isPipelineConfigValid.errors
-      };
-    }
+  if (config === null) {
+    return { isValid: true };
   }
-  return {
-    isValid: true
-  };
+  const {
+    data: { isPipelineConfigValid }
+  } = await client.query<
+    ConfigCodeEditorContainerCheckConfigQuery,
+    ConfigCodeEditorContainerCheckConfigQueryVariables
+  >({
+    query: CONFIG_CODE_EDITOR_CONTAINER_CHECK_CONFIG_QUERY,
+    variables: {
+      executionParams: {
+        pipelineName: pipelineName,
+        config: config
+      }
+    },
+    fetchPolicy: "no-cache"
+  });
+
+  if (isPipelineConfigValid.__typename !== "PipelineConfigValidationInvalid") {
+    return { isValid: true };
+  }
+
+  const errors = isPipelineConfigValid.errors.map(({ message, stack }) => ({
+    message: message,
+    path: stack.entries.map(
+      entry =>
+        entry.__typename === "EvaluationStackPathEntry"
+          ? entry.field.name
+          : `${entry.listIndex}`
+    )
+  }));
+
+  // Errors at the top level have no stack path because they are not within any
+  // dicts. To avoid highlighting the entire editor, associate them with the first
+  // element of the top dict.
+  const topLevelKey = Object.keys(config);
+  errors.forEach(error => {
+    if (error.path.length === 0 && topLevelKey.length) {
+      error.path = [topLevelKey[0]];
+    }
+  });
+
+  return { isValid: false, errors: errors };
 }

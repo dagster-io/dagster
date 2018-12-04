@@ -86,7 +86,11 @@ export default class ConfigCodeEditor extends React.Component<
               "Cmd-F": "findPersistent",
               "Ctrl-F": "findPersistent"
             },
-            gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
+            gutters: [
+              "CodeMirror-foldgutter",
+              "CodeMirror-lint-markers",
+              "CodeMirror-linenumbers"
+            ],
             foldGutter: true
           } as any
         }

@@ -5,12 +5,14 @@ from graphql_ws.gevent import GeventSubscriptionServer, SubscriptionObserver
 class DagsterSubscriptionServer(GeventSubscriptionServer):
     '''Subscription server that is able to handle non-subscription commands'''
 
-    def __init__(self, *args, **kwargs):
-        super(GeventSubscriptionServer, self).__init__(*args, **kwargs)
+    def __init__(self, middleware=None, **kwargs):
+        self.middleware = middleware or []
+        super(GeventSubscriptionServer, self).__init__(**kwargs)
 
     def execute(self, request_context, params):
         # https://github.com/graphql-python/graphql-ws/issues/7
         params['context_value'] = request_context
+        params['middleware'] = self.middleware
         return super(GeventSubscriptionServer, self).execute(request_context, params)
 
     def on_start(self, connection_context, op_id, params):

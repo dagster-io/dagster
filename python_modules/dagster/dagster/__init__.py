@@ -1,5 +1,6 @@
 from dagster.core.execution import (
     PipelineExecutionResult,
+    ReentrantInfo,
     SolidExecutionResult,
     execute_pipeline,
     execute_pipeline_iterator,
@@ -85,6 +86,7 @@ __all__ = [
     'execute_pipeline',
     'ExecutionContext',
     'PipelineExecutionResult',
+    'ReentrantInfo',
     'SolidExecutionResult',
 
     # Errors

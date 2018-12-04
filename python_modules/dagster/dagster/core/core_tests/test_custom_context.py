@@ -1,3 +1,5 @@
+import uuid
+
 import pytest
 
 from dagster import (
@@ -30,6 +32,23 @@ def test_default_context():
             assert logger.level == INFO
 
     pipeline = PipelineDefinition(solids=[default_context_transform])
+    execute_pipeline(pipeline)
+
+    assert called['yes']
+
+
+def test_run_id():
+    called = {}
+
+    def construct_context(info):
+        called['yes'] = True
+        assert uuid.UUID(info.run_id)
+        return ExecutionContext()
+
+    pipeline = PipelineDefinition(
+        solids=[],
+        context_definitions={'default': PipelineContextDefinition(context_fn=construct_context, )}
+    )
     execute_pipeline(pipeline)
 
     assert called['yes']
@@ -139,9 +158,9 @@ def test_yield_context():
 
     def _yield_context(info):
         events.append('before')
-        context = ExecutionContext(resources=info.config)
-        with context.value('foo', 'bar'):
-            yield context
+        context_stack = {'foo': 'bar'}
+        context = ExecutionContext(resources=info.config, context_stack=context_stack)
+        yield context
         events.append('after')
 
     pipeline = PipelineDefinition(
@@ -157,9 +176,15 @@ def test_yield_context():
         }
     )
 
-    environment_one = config.Environment(
-        context=config.Context('custom_one', {'field_one': 'value_two'})
-    )
+    environment_one = {
+        'context': {
+            'custom_one': {
+                'config': {
+                    'field_one': 'value_two',
+                },
+            },
+        },
+    }
 
     execute_pipeline(pipeline, environment=environment_one)
 

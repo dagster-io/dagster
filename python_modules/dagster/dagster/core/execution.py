@@ -15,9 +15,12 @@ will not invoke *any* outputs (and their APIs don't allow the user to).
 # too many lines
 # pylint: disable=C0302
 
+from collections import namedtuple
 from contextlib import contextmanager
 import json
 import itertools
+import inspect
+import uuid
 
 import six
 
@@ -36,7 +39,10 @@ from .definitions import (
 
 from .config_types import EnvironmentConfigType
 
-from .execution_context import ExecutionContext
+from .execution_context import (
+    ExecutionContext,
+    RuntimeExecutionContext,
+)
 
 from .errors import (
     DagsterInvariantViolationError,
@@ -49,6 +55,8 @@ from .evaluator import (
     evaluate_config_value,
     throwing_evaluate_config_value,
 )
+
+from .events import construct_event_logger
 
 from .execution_plan import (
     ExecutionPlanInfo,
@@ -75,7 +83,7 @@ class PipelineExecutionResult(object):
         result_list,
     ):
         self.pipeline = check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-        self.context = check.inst_param(context, 'context', ExecutionContext)
+        self.context = check.inst_param(context, 'context', RuntimeExecutionContext)
         self.result_list = check.list_param(
             result_list,
             'result_list',
@@ -122,7 +130,7 @@ class SolidExecutionResult(object):
     '''
 
     def __init__(self, context, solid, input_expectations, transforms, output_expectations):
-        self.context = check.inst_param(context, 'context', ExecutionContext)
+        self.context = check.inst_param(context, 'context', RuntimeExecutionContext)
         self.solid = check.inst_param(solid, 'solid', Solid)
         self.input_expectations = check.list_param(
             input_expectations,
@@ -232,15 +240,21 @@ class SolidExecutionResult(object):
                 return result.failure_data.dagster_error
 
 
-def _wrap_in_yield(context_or_generator):
-    if isinstance(context_or_generator, ExecutionContext):
+def _wrap_in_yield(context_params_or_gen):
+    check.param_invariant(
+        inspect.isgenerator(context_params_or_gen)
+        or isinstance(context_params_or_gen, ExecutionContext),
+        'context_params_or_gen',
+    )
 
-        def _wrap():
-            yield context_or_generator
+    if isinstance(context_params_or_gen, ExecutionContext):
 
-        return _wrap()
+        def _gen_for_context_params():
+            yield context_params_or_gen
 
-    return context_or_generator
+        return _gen_for_context_params()
+
+    return context_params_or_gen
 
 
 def _validate_environment(environment, pipeline):
@@ -304,10 +318,71 @@ def create_config_value(config_type, config_input):
         )
 
 
+def get_run_id(reentrant_info):
+    check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
+    if reentrant_info and reentrant_info.run_id:
+        return reentrant_info.run_id
+    else:
+        return str(uuid.uuid4())
+
+
+def merge_two_dicts(left, right):
+    result = left.copy()
+    result.update(right)
+    return result
+
+
+def get_context_stack(user_context_params, reentrant_info):
+    check.inst(user_context_params, ExecutionContext)
+    check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
+
+    if reentrant_info and reentrant_info.context_stack:
+        user_keys = set(user_context_params.context_stack.keys())
+        reentrant_keys = set(reentrant_info.context_stack.keys())
+        if not user_keys.isdisjoint(reentrant_keys):
+            raise DagsterInvariantViolationError(
+                (
+                    'You have specified re-entrant keys and user-defined keys '
+                    'that overlap. User keys: {user_keys}. Reentrant keys: '
+                    '{reentrant_keys}.'
+                ).format(
+                    user_keys=user_keys,
+                    reentrant_keys=reentrant_keys,
+                )
+            )
+
+        return merge_two_dicts(user_context_params.context_stack, reentrant_info.context_stack)
+    else:
+        return user_context_params.context_stack
+
+
+def create_runtime_context(execution_context, reentrant_info):
+    check.inst_param(execution_context, 'execution_context', ExecutionContext)
+    check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
+
+    run_id = get_run_id(reentrant_info)
+    context_stack = get_context_stack(execution_context, reentrant_info)
+
+    if reentrant_info and reentrant_info.event_callback:
+        loggers = execution_context.loggers + [
+            construct_event_logger(reentrant_info.event_callback)
+        ]
+    else:
+        loggers = execution_context.loggers
+
+    return RuntimeExecutionContext(
+        run_id=run_id,
+        loggers=loggers,
+        resources=execution_context.resources,
+        context_stack=context_stack,
+    )
+
+
 @contextmanager
-def yield_context(pipeline, environment):
+def yield_context(pipeline, environment, reentrant_info=None):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.inst_param(environment, 'environment', config.Environment)
+    check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
 
     _validate_environment(environment, pipeline)
 
@@ -317,14 +392,25 @@ def yield_context(pipeline, environment):
 
     config_value = create_config_value(config_type, environment.context.config)
 
-    context_or_generator = context_definition.context_fn(
+    run_id = get_run_id(reentrant_info)
+
+    ec_or_gen = context_definition.context_fn(
         ContextCreationExecutionInfo(
             config=config_value,
             pipeline_def=pipeline,
+            run_id=run_id,
         )
     )
 
-    return _wrap_in_yield(context_or_generator)
+    called = False
+
+    for execution_context in _wrap_in_yield(ec_or_gen):
+        check.invariant(not called, 'should only yield one thing')
+        check.inst(execution_context, ExecutionContext)
+
+        yield create_runtime_context(execution_context, reentrant_info)
+
+        called = True
 
 
 def execute_pipeline_iterator(pipeline, environment):
@@ -354,7 +440,7 @@ def execute_pipeline_iterator(pipeline, environment):
 
 
 def _execute_graph_iterator(context, execution_graph, environment):
-    check.inst_param(context, 'context', ExecutionContext)
+    check.inst_param(context, 'context', RuntimeExecutionContext)
     check.inst_param(execution_graph, 'execution_graph', ExecutionGraph)
     check.inst_param(environment, 'environent', config.Environment)
 
@@ -378,7 +464,7 @@ def _execute_graph_iterator(context, execution_graph, environment):
 
     context.debug(
         'About to execute the compute node graph in the following order {order}'.format(
-            order=[cn.friendly_name for cn in steps]
+            order=[step.key for step in steps]
         )
     )
 
@@ -464,10 +550,21 @@ def check_environment(pipeline, environment):
             )
 
 
+class ReentrantInfo(namedtuple('_ReentrantInfo', 'run_id context_stack event_callback')):
+    def __new__(cls, run_id=None, context_stack=None, event_callback=None):
+        return super(ReentrantInfo, cls).__new__(
+            cls,
+            run_id=check.opt_str_param(run_id, 'run_id'),
+            context_stack=check.opt_dict_param(context_stack, 'context_stack'),
+            event_callback=check.opt_callable_param(event_callback, 'event_callback'),
+        )
+
+
 def execute_pipeline(
     pipeline,
     environment=None,
     throw_on_error=True,
+    reentrant_info=None,
 ):
     '''
     "Synchronous" version of :py:function:`execute_pipeline_iterator`.
@@ -488,6 +585,8 @@ def execute_pipeline(
 
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.opt_inst_param(environment, 'environment', (dict, config.Environment))
+    check.bool_param(throw_on_error, 'throw_on_error')
+    check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
 
     check_environment(pipeline, environment)
 
@@ -495,20 +594,23 @@ def execute_pipeline(
     environment = create_config_value(pipeline_env_type, environment)
 
     execution_graph = ExecutionGraph.from_pipeline(pipeline)
-    return _execute_graph(execution_graph, environment, throw_on_error)
+    return _execute_graph(execution_graph, environment, throw_on_error, reentrant_info)
 
 
 def _execute_graph(
     execution_graph,
     environment,
     throw_on_error=True,
+    reentrant_info=None,
 ):
     check.inst_param(execution_graph, 'execution_graph', ExecutionGraph)
     check.inst_param(environment, 'environment', config.Environment)
     check.bool_param(throw_on_error, 'throw_on_error')
+    check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
 
     results = []
-    with yield_context(execution_graph.pipeline, environment) as context:
+    with yield_context(execution_graph.pipeline, environment, reentrant_info) as context:
+        check.inst(context, RuntimeExecutionContext)
         with context.value('pipeline', execution_graph.pipeline.display_name):
             context.events.pipeline_start()
 

@@ -1,15 +1,10 @@
-from collections import OrderedDict
 import uuid
 
-from dagster.core.execution_context import (
-    ExecutionContext,
-)
+from dagster.utils.test import create_test_runtime_execution_context
 
 # pylint: disable=W0212
 
 
 def test_noarg_ctor():
-    context = ExecutionContext()
-    assert set(context._context_stack.keys()) == set(['run_id'])
-    assert uuid.UUID(context.get_context_value('run_id'))
+    context = create_test_runtime_execution_context()
     assert uuid.UUID(context.run_id)

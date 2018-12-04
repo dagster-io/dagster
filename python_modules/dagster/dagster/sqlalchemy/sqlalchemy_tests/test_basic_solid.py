@@ -17,7 +17,7 @@ from dagster.sqlalchemy.subquery_builder_experimental import (
     DagsterSqlTableExpression,
     define_create_table_solid,
 )
-from .math_test_db import in_mem_context
+from .math_test_db import in_mem_context_params
 
 
 def pipeline_test_def(solids, context, dependencies):
@@ -63,7 +63,7 @@ def test_sql_sum_solid():
 
     pipeline = pipeline_test_def(
         solids=[expr_solid, sum_table_solid, create_sum_table],
-        context=in_mem_context(),
+        context=in_mem_context_params(),
         dependencies={
             'sum_table': {
                 'num_table': DependencyDefinition('expr')
@@ -126,7 +126,9 @@ def create_sum_sq_pipeline(context, expr, extra_solids=None, extra_deps=None):
 
 
 def test_execute_sql_sum_sq_solid():
-    pipeline = create_sum_sq_pipeline(in_mem_context(), DagsterSqlTableExpression('num_table'))
+    pipeline = create_sum_sq_pipeline(
+        in_mem_context_params(), DagsterSqlTableExpression('num_table')
+    )
 
     pipeline_result = execute_pipeline(pipeline)
 
@@ -146,7 +148,7 @@ def test_output_sql_sum_sq_solid():
     create_sum_sq_table = define_create_table_solid('create_sum_sq_table')
 
     pipeline = create_sum_sq_pipeline(
-        in_mem_context(), DagsterSqlTableExpression('num_table'), [create_sum_sq_table],
+        in_mem_context_params(), DagsterSqlTableExpression('num_table'), [create_sum_sq_table],
         {create_sum_sq_table.name: {
             'expr': DependencyDefinition('sum_sq_table')
         }}

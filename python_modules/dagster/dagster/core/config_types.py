@@ -44,7 +44,9 @@ class SpecificContextConfig(DagsterCompositeType):
         check.inst_param(config_field, 'config_field', Field)
         super(SpecificContextConfig, self).__init__(
             name,
-            {'config': config_field},
+            {
+                'config': config_field,
+            },
             type_attributes=DagsterTypeAttributes(is_system_config=True),
         )
 

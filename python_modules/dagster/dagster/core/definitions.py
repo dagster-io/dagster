@@ -20,7 +20,10 @@ from .errors import DagsterInvalidDefinitionError
 
 from .evaluator import throwing_evaluate_config_value
 
-from .execution_context import ExecutionContext
+from .execution_context import (
+    RuntimeExecutionContext,
+    ExecutionContext,
+)
 
 from .types import (
     ConfigDictionary,
@@ -91,7 +94,7 @@ context_fn (callable):
     '''
 
     @staticmethod
-    def passthrough_context_definition(context):
+    def passthrough_context_definition(context_params):
         '''Create a context definition from a pre-existing context. This can be useful
         in testing contexts where you may want to create a context manually and then
         pass it into a one-off PipelineDefinition
@@ -102,8 +105,8 @@ context_fn (callable):
             PipelineContextDefinition: The passthrough context definition.
         '''
 
-        check.inst_param(context, 'context', ExecutionContext)
-        context_definition = PipelineContextDefinition(context_fn=lambda *_args: context)
+        check.inst_param(context_params, 'context', ExecutionContext)
+        context_definition = PipelineContextDefinition(context_fn=lambda *_args: context_params)
         return {DEFAULT_CONTEXT_NAME: context_definition}
 
     def __init__(self, context_fn, config_field=None, description=None):
@@ -1656,13 +1659,14 @@ class RepositoryDefinition(object):
 
 
 class ContextCreationExecutionInfo(
-    namedtuple('_ContextCreationExecutionInfo', 'config pipeline_def')
+    namedtuple('_ContextCreationExecutionInfo', 'config pipeline_def, run_id')
 ):
-    def __new__(cls, config, pipeline_def):
+    def __new__(cls, config, pipeline_def, run_id):
         return super(ContextCreationExecutionInfo, cls).__new__(
             cls,
             config,
             check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition),
+            check.str_param(run_id, 'run_id'),
         )
 
 
@@ -1675,7 +1679,7 @@ class ExpectationExecutionInfo(
     def __new__(cls, context, inout_def, solid, expectation_def):
         return super(ExpectationExecutionInfo, cls).__new__(
             cls,
-            check.inst_param(context, 'context', ExecutionContext),
+            check.inst_param(context, 'context', RuntimeExecutionContext),
             check.inst_param(inout_def, 'inout_def', (InputDefinition, OutputDefinition)),
             check.inst_param(solid, 'solid', Solid),
             check.inst_param(expectation_def, 'expectation_def', ExpectationDefinition),
@@ -1694,7 +1698,7 @@ class TransformExecutionInfo(namedtuple('_TransformExecutionInfo', 'context conf
     def __new__(cls, context, config, solid_def):
         return super(TransformExecutionInfo, cls).__new__(
             cls,
-            check.inst_param(context, 'context', ExecutionContext),
+            check.inst_param(context, 'context', RuntimeExecutionContext),
             config,
             check.inst_param(solid_def, 'solid_def', SolidDefinition),
         )
