@@ -10,6 +10,8 @@ import { PipelineJumpBar } from "./PipelineJumpComponents";
 import PythonErrorInfo from "./PythonErrorInfo";
 import PipelineExplorer from "./PipelineExplorer";
 import PipelineExecution from "./PipelineExecution";
+import { StorageProvider } from "./LocalStorage";
+
 import {
   PipelinePageFragment,
   PipelinePageFragment_PythonError,
@@ -54,7 +56,15 @@ const TABS = [
     slug: "execute",
     title: "Execute",
     render: (props: IPipelinePageTabProps) => (
-      <PipelineExecution pipeline={props.pipeline} />
+      <StorageProvider namespace={props.pipeline.name}>
+        {({ data, onSave }) => (
+          <PipelineExecution
+            pipeline={props.pipeline}
+            data={data}
+            onSave={onSave}
+          />
+        )}
+      </StorageProvider>
     )
   }
 ];

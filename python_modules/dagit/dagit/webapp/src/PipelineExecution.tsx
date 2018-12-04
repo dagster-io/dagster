@@ -10,9 +10,9 @@ import { ApolloConsumer } from "react-apollo";
 import PipelineRun from "./PipelineRun";
 import { ExecutionTabs } from "./ExecutionTabs";
 import {
-  StorageProvider,
   applyConfigToSession,
-  IExecutionSessionRun
+  IExecutionSessionRun,
+  IStorageData
 } from "./LocalStorage";
 import { PipelineExecutionFragment } from "./types/PipelineExecutionFragment";
 import ConfigCodeEditorContainer from "./configeditor/ConfigCodeEditorContainer";
@@ -28,6 +28,8 @@ import {
 
 interface IPipelineExecutionProps {
   pipeline: PipelineExecutionFragment;
+  data: IStorageData;
+  onSave: (data: IStorageData) => void;
 }
 
 export default class PipelineExecution extends React.Component<
@@ -51,67 +53,56 @@ export default class PipelineExecution extends React.Component<
   };
 
   public render() {
-    const { pipeline } = this.props;
+    const { pipeline, data, onSave } = this.props;
+    const session = data.sessions[data.current];
 
     return (
-      <StorageProvider namespace={pipeline.name}>
-        {({ data, onSave }) => {
-          const session = data.sessions[data.current];
-          return (
-            <>
-              <ExecutionTabs data={data} onSave={onSave} />
-              <Container>
-                <Split>
-                  <ConfigCodeEditorContainer
-                    pipelineName={pipeline.name}
-                    environmentTypeName={pipeline.environmentType.name}
-                    configCode={session.config}
-                    onConfigChange={config =>
-                      onSave(applyConfigToSession(data, config))
-                    }
-                  />
-                </Split>
-                <Split>
-                  {session.lastRun ? (
-                    <PipelineRun run={session.lastRun} />
-                  ) : (
-                    <PipelineRun.Empty />
-                  )}
-                </Split>
-                <ApolloConsumer>
-                  {client => (
-                    <IconWrapper
-                      role="button"
-                      onClick={async () => {
-                        let config = {};
-                        try {
-                          config = yaml.parse(session.config);
-                        } catch (err) {
-                          alert(
-                            `Fix the errors in your config YAML and try again.`
-                          );
-                          return;
-                        }
-                        const executionParams = {
-                          pipelineName: pipeline.name,
-                          config: config
-                        };
-                        session.lastRun = await startRun(
-                          client,
-                          executionParams
-                        );
-                        onSave(data);
-                      }}
-                    >
-                      <Icon icon={IconNames.PLAY} iconSize={40} />
-                    </IconWrapper>
-                  )}
-                </ApolloConsumer>
-              </Container>
-            </>
-          );
-        }}
-      </StorageProvider>
+      <>
+        <ExecutionTabs data={data} onSave={onSave} />
+        <Container>
+          <Split>
+            <ConfigCodeEditorContainer
+              pipelineName={pipeline.name}
+              environmentTypeName={pipeline.environmentType.name}
+              configCode={session.config}
+              onConfigChange={config =>
+                onSave(applyConfigToSession(data, config))
+              }
+            />
+          </Split>
+          <Split>
+            {session.lastRun ? (
+              <PipelineRun run={session.lastRun} />
+            ) : (
+              <PipelineRun.Empty />
+            )}
+          </Split>
+          <ApolloConsumer>
+            {client => (
+              <IconWrapper
+                role="button"
+                onClick={async () => {
+                  let config = {};
+                  try {
+                    config = yaml.parse(session.config);
+                  } catch (err) {
+                    alert(`Fix the errors in your config YAML and try again.`);
+                    return;
+                  }
+                  const executionParams = {
+                    pipelineName: pipeline.name,
+                    config: config
+                  };
+                  session.lastRun = await startRun(client, executionParams);
+                  onSave(data);
+                }}
+              >
+                <Icon icon={IconNames.PLAY} iconSize={40} />
+              </IconWrapper>
+            )}
+          </ApolloConsumer>
+        </Container>
+      </>
     );
   }
 }
