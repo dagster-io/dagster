@@ -1,4 +1,4 @@
-import * as React from 'react'
+import * as React from "react";
 
 // Internal LocalStorage data format and mutation helpers
 
