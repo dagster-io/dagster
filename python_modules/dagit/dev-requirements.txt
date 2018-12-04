@@ -7,6 +7,9 @@ rope==0.11.0
 snapshottest==0.5.0
 twine==1.11.0
 yapf==0.22.0
+# This is totally lame to have to put this here
+# but for some reason pip is refusing to install
+# these via setup.py in the local tox environment
 Flask-Sockets>=0.2.1
 graphql-ws>=0.3.0
 
