@@ -28,7 +28,7 @@ class PipelineRunStorage(object):
         return run
 
     def all_runs(self):
-        return self._runs.keys()
+        return self._runs.values()
 
     def get_run_by_id(self, id_):
         return self._runs.get(id_)
@@ -47,6 +47,7 @@ class PipelineRun(object):
         self.config = config
 
     def logs_from(self, cursor):
+        cursor = int(cursor) + 1
         return self._logs[cursor:]
 
     def handle_new_event(self, new_event):
@@ -64,6 +65,10 @@ class PipelineRun(object):
             subscriber.handle_new_event(new_event)
 
     @property
+    def run_id(self):
+        return self._run_id
+
+    @property
     def status(self):
         return self._status
 
@@ -74,15 +79,6 @@ class PipelineRun(object):
         return Observable.create( # pylint: disable=E1101
             PipelineRunObservableSubscribe(self, cursor),
         )
-
-
-#
-# TBD
-# class CursorList(object):
-#     def __init__(self, initial=None):
-#         self._list = initial or []
-#         self._start_cursor = 0
-#         self._end_cursor = len(self._list)
 
 
 class PipelineRunObservableSubscribe(object):

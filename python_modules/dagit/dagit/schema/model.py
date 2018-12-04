@@ -59,6 +59,20 @@ def get_pipeline_type(context, pipelineName, typeName):
     return pipeline_or_error.chain(lambda pip: pip.get_type(typeName)).value_or_raise()
 
 
+def get_run(context, runId):
+    pipeline_run_storage = context.pipeline_runs
+    run = pipeline_run_storage.get_run_by_id(runId)
+    if not run:
+        raise Exception('No run with such id: {run_id}'.format(run_id=runId))
+    else:
+        return runs.PipelineRun(run)
+
+
+def get_runs(context):
+    pipeline_run_storage = context.pipeline_runs
+    return [runs.PipelineRun(run) for run in pipeline_run_storage.all_runs()]
+
+
 def validate_pipeline_config(context, pipelineName, config):
     check.inst_param(context, 'context', DagsterGraphQLContext)
     check.str_param(pipelineName, 'pipelineName')
@@ -108,9 +122,7 @@ def start_pipeline_execution(context, pipelineName, config):
                     event_callback=run.handle_new_event,
                 ),
             )
-            return errors.StartPipelineExecutionSuccess(
-                run=runs.PipelineRun(runId=new_run_id, pipeline=pipeline)
-            )
+            return errors.StartPipelineExecutionSuccess(run=runs.PipelineRun(run))
 
         config_or_error = _config_or_error_from_pipeline(pipeline, config)
         return config_or_error.chain(start_execution)
