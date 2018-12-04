@@ -6,7 +6,8 @@ from dagster.core.events import (
     EventType,
 )
 from dagit import pipeline_run_storage
-from . import pipelines, generic
+import dagit.schema.pipelines
+from . import generic
 from .utils import non_null_list
 
 PipelineRunStatus = graphene.Enum.from_enum(pipeline_run_storage.PipelineRunStatus)
@@ -15,7 +16,7 @@ PipelineRunStatus = graphene.Enum.from_enum(pipeline_run_storage.PipelineRunStat
 class PipelineRun(graphene.ObjectType):
     runId = graphene.NonNull(graphene.String)
     status = graphene.NonNull(PipelineRunStatus)
-    pipeline = graphene.NonNull(lambda: pipelines.Pipeline)
+    pipeline = graphene.NonNull(lambda: dagit.schema.pipelines.Pipeline)
     logs = graphene.NonNull(lambda: LogMessageConnection)
 
     def __init__(self, pipeline_run):
@@ -72,7 +73,7 @@ class LogMessageEvent(graphene.ObjectType):
 
 
 class PipelineEvent(graphene.Interface):
-    pipeline = graphene.NonNull(lambda: pipelines.Pipeline)
+    pipeline = graphene.NonNull(lambda: dagit.schema.pipelines.Pipeline)
 
 
 class PipelineStartEvent(graphene.ObjectType):
@@ -103,7 +104,7 @@ class PipelineRunEvent(graphene.Union):
     @staticmethod
     def from_dagster_event(event, pipeline):
         check.inst_param(event, 'event', EventRecord)
-        check.inst_param(pipeline, 'pipeline', pipelines.Pipeline)
+        check.inst_param(pipeline, 'pipeline', dagit.schema.pipelines.Pipeline)
 
         if event.event_type == EventType.PIPELINE_START:
             return PipelineStartEvent(
