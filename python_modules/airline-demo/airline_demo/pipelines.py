@@ -32,82 +32,14 @@ from .solids import (
 from .types import (
     AirlineDemoResources,
 )
-
-
-def _create_spark_session_local():
-    # Need two versions of this, one for test/local and one with a
-    # configurable cluster
-    spark = (
-        SparkSession.builder.appName("AirlineDemo").config(
-            'spark.jars.packages',
-            'com.databricks:spark-avro_2.11:3.0.0,com.databricks:spark-redshift_2.11:2.0.1,'
-            'com.databricks:spark-csv_2.11:1.5.0,org.postgresql:postgresql:42.2.5',
-        ).getOrCreate()
-    )
-    return spark
-
-
-def _create_s3_session(signed=True):
-    s3 = boto3.resource('s3').meta.client  # pylint:disable=C0103
-    if not signed:
-        s3.meta.events.register('choose-signer.s3.*', disable_signing)
-    return s3
-
-
-def _create_redshift_db_url(username, password, hostname, db_name, jdbc=True):
-    if jdbc:
-        db_url = (
-            'jdbc:postgresql://{hostname}:5432/{db_name}?'
-            'user={username}&password={password}'.format(
-                username=username,
-                password=password,
-                hostname=hostname,
-                db_name=db_name,
-            )
-        )
-    else:
-        db_url = (
-            "redshift_psycopg2://{username}:{password}@{hostname}:5439/{db_name}".format(
-                username=username,
-                password=password,
-                hostname=hostname,
-                db_name=db_name,
-            )
-        )
-    return db_url
-
-
-def _create_redshift_engine(username, password, hostname, db_name):
-    db_url = _create_redshift_db_url(username, password, hostname, db_name, jdbc=False)
-    return sqlalchemy.create_engine(db_url)
-
-
-def _create_postgres_db_url(username, password, hostname, db_name, jdbc=True):
-    if jdbc:
-        db_url = (
-            'jdbc:postgresql://{hostname}:5432/{db_name}?'
-            'user={username}&password={password}'.format(
-                username=username,
-                password=password,
-                hostname=hostname,
-                db_name=db_name,
-            )
-        )
-    else:
-        db_url = (
-            'postgresql://{username}:{password}@{hostname}:5432/{db_name}'.format(
-                username=username,
-                password=password,
-                hostname=hostname,
-                db_name=db_name,
-            )
-        )
-    return db_url
-
-
-def _create_postgres_engine(username, password, hostname, db_name):
-    db_url = _create_postgres_db_url(username, password, hostname, db_name, jdbc=False)
-    return sqlalchemy.create_engine(db_url)
+from .utils import (
+    create_postgres_db_url,
+    create_postgres_engine,
+    create_redshift_db_url,
+    create_redshift_engine,
+    create_s3_session,
+    create_spark_session_local,
+)
 
 
 def _db_load(data_frame, table_name, resources):
@@ -139,15 +71,15 @@ test_context = PipelineContextDefinition(
         lambda info: ExecutionContext.console_logging(
             log_level=logging.DEBUG,
             resources=AirlineDemoResources(
-                _create_spark_session_local(), # FIXME
-                _create_s3_session(),
-                _create_redshift_db_url(
+                create_spark_session_local(), # FIXME
+                create_s3_session(),
+                create_redshift_db_url(
                     info.config['redshift_username'],
                     info.config['redshift_password'],
                     info.config['redshift_hostname'],
                     info.config['redshift_db_name'],
                 ),
-                _create_redshift_engine(
+                create_redshift_engine(
                     info.config['redshift_username'],
                     info.config['redshift_password'],
                     info.config['redshift_hostname'],
@@ -179,15 +111,15 @@ local_context = PipelineContextDefinition(
         lambda info: ExecutionContext.console_logging(
             log_level=logging.DEBUG,
             resources=AirlineDemoResources(
-                _create_spark_session_local(),
-                _create_s3_session(),
-                _create_postgres_db_url(
+                create_spark_session_local(),
+                create_s3_session(),
+                create_postgres_db_url(
                     info.config['postgres_username'],
                     info.config['postgres_password'],
                     info.config['postgres_hostname'],
                     info.config['postgres_db_name'],
                 ),
-                _create_postgres_engine(
+                create_postgres_engine(
                     info.config['postgres_username'],
                     info.config['postgres_password'],
                     info.config['postgres_hostname'],
@@ -218,15 +150,15 @@ cloud_context = PipelineContextDefinition(
         lambda info: ExecutionContext.console_logging(
             log_level=logging.DEBUG,
             resources=AirlineDemoResources(
-                _create_spark_session_local(), # FIXME
-                _create_s3_session(),
-                _create_redshift_db_url(
+                create_spark_session_local(), # FIXME
+                create_s3_session(),
+                create_redshift_db_url(
                     info.config['redshift_username'],
                     info.config['redshift_password'],
                     info.config['redshift_hostname'],
                     info.config['redshift_db_name'],
                 ),
-                _create_redshift_engine(
+                create_redshift_engine(
                     info.config['redshift_username'],
                     info.config['redshift_password'],
                     info.config['redshift_hostname'],
@@ -381,7 +313,6 @@ def define_airline_demo_ingest_pipeline():
         SolidInstance('normalize_weather_na_values', alias='normalize_q2_weather_na_values'): {
             'data_frame': DependencyDefinition('ingest_q2_sfo_weather'),
         },
-
         SolidInstance(
             'join_spark_data_frames', alias='join_april_on_time_data_to_master_cord_data'
         ): {
