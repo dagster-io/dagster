@@ -192,12 +192,12 @@ async function checkConfig(
   // Errors at the top level have no stack path because they are not within any
   // dicts. To avoid highlighting the entire editor, associate them with the first
   // element of the top dict.
-  const topLevelKey = Object.keys(config)
+  const topLevelKey = Object.keys(config);
   errors.forEach(error => {
     if (error.path.length === 0 && topLevelKey.length) {
-      error.path = [topLevelKey[0]]
+      error.path = [topLevelKey[0]];
     }
-  })
+  });
 
   return { isValid: false, errors: errors };
 }
