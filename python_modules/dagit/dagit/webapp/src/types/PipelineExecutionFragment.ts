@@ -68,10 +68,31 @@ export interface PipelineExecutionFragment_contexts {
   config: PipelineExecutionFragment_contexts_config | null;
 }
 
+export interface PipelineExecutionFragment_runs_logs_pageInfo {
+  lastCursor: any | null;
+}
+
+export interface PipelineExecutionFragment_runs_logs_nodes {
+  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent";
+  message: string;
+}
+
+export interface PipelineExecutionFragment_runs_logs {
+  pageInfo: PipelineExecutionFragment_runs_logs_pageInfo;
+  nodes: PipelineExecutionFragment_runs_logs_nodes[];
+}
+
+export interface PipelineExecutionFragment_runs {
+  runId: string;
+  status: PipelineRunStatus;
+  logs: PipelineExecutionFragment_runs_logs;
+}
+
 export interface PipelineExecutionFragment {
   name: string;
   environmentType: PipelineExecutionFragment_environmentType;
   contexts: PipelineExecutionFragment_contexts[];
+  runs: PipelineExecutionFragment_runs[];
 }
 
 /* tslint:disable */
@@ -80,6 +101,16 @@ export interface PipelineExecutionFragment {
 //==============================================================
 // START Enums and Input Objects
 //==============================================================
+
+/**
+ * An enumeration.
+ */
+export enum PipelineRunStatus {
+  FAILURE = "FAILURE",
+  NOT_STARTED = "NOT_STARTED",
+  STARTED = "STARTED",
+  SUCCESS = "SUCCESS",
+}
 
 /**
  * 

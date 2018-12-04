@@ -4,11 +4,12 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL fragment: PipelineJumpBarFragment
+// GraphQL fragment: PipelineRunLogMessageFragment
 // ====================================================
 
-export interface PipelineJumpBarFragment {
-  name: string;
+export interface PipelineRunLogMessageFragment {
+  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent";
+  message: string;
 }
 
 /* tslint:disable */

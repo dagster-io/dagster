@@ -15,6 +15,7 @@ class Pipeline(graphene.ObjectType):
     contexts = non_null_list(lambda: PipelineContext)
     environment_type = graphene.NonNull(lambda: Type)
     types = graphene.NonNull(graphene.List(graphene.NonNull(lambda: Type)), )
+    runs = non_null_list(lambda: runs.PipelineRun)
 
     def __init__(self, pipeline):
         super(Pipeline, self).__init__(name=pipeline.name, description=pipeline.description)
@@ -43,6 +44,12 @@ class Pipeline(graphene.ObjectType):
             [Type.from_dagster_type(type_) for type_ in self._pipeline.all_types()],
             key=lambda type_: type_.name
         )
+
+    def resolve_runs(self, info):
+        return [
+            runs.PipelineRun(r)
+            for r in info.context.pipeline_runs.all_runs_for_pipeline(self._pipeline.name)
+        ]
 
     def get_dagster_pipeline(self):
         return self._pipeline
@@ -369,3 +376,6 @@ class TypeField(graphene.ObjectType):
 
     def resolve_type(self, _info):
         return Type.from_dagster_type(dagster_type=self._field.dagster_type)
+
+
+from . import runs

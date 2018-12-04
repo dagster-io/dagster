@@ -37,6 +37,9 @@ class Query(graphene.ObjectType):
         typeName=graphene.NonNull(graphene.String),
     )
 
+    pipelineRuns = non_null_list(lambda: runs.PipelineRun)
+    pipelineRun = graphene.Field(lambda: runs.PipelineRun, runId=graphene.NonNull(graphene.ID))
+
     isPipelineConfigValid = graphene.Field(
         graphene.NonNull(lambda: errors.PipelineConfigValidationResult),
         args={
@@ -65,6 +68,12 @@ class Query(graphene.ObjectType):
 
     def resolve_type(self, info, pipelineName, typeName):
         return model.get_pipeline_type(info.context, pipelineName, typeName)
+
+    def resolve_pipelineRuns(self, info):
+        return model.get_runs(info.context)
+
+    def resolve_pipelineRun(self, info, runId):
+        return model.get_run(info.context, runId)
 
     def resolve_isPipelineConfigValid(self, info, executionParams):
         return model.validate_pipeline_config(info.context, **executionParams)
