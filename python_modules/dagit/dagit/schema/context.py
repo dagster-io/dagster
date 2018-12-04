@@ -1,10 +1,10 @@
 from dagster import check
-from ..pipeline_run_storage import PipelineRunStorage
+from dagit.pipeline_run_storage import PipelineRunStorage
 
 
 class DagsterGraphQLContext(object):
     def __init__(self, repository_container, pipeline_runs):
-        from ..app import RepositoryContainer
+        from dagit.app import RepositoryContainer
         self.repository_container = check.inst_param(
             repository_container,
             'repository_container',

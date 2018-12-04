@@ -4,9 +4,8 @@ from dagster import check
 from dagster.core.events import (
     EventRecord,
     EventType,
-    PipelineEventRecord,
 )
-from .. import pipeline_run_storage
+from dagit import pipeline_run_storage
 from . import pipelines, generic
 from .utils import non_null_list
 
