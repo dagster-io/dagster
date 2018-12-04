@@ -24,7 +24,7 @@ export default class PipelineRun extends React.Component<IPipelineRunProps> {
   render() {
     return (
       <PipelineRunLogsContainer>
-        <GraphQLSubscriptionReturningLogs>
+        <FakeSubscriptionReturningLogs>
           {(logs: PipelineRunLogMessageFragment[]) => (
             <>
               {logs.map((log, i) => (
@@ -32,7 +32,7 @@ export default class PipelineRun extends React.Component<IPipelineRunProps> {
               ))}
             </>
           )}
-        </GraphQLSubscriptionReturningLogs>
+        </FakeSubscriptionReturningLogs>
       </PipelineRunLogsContainer>
     );
   }
@@ -112,6 +112,6 @@ const FAKE_LOGS: PipelineRunLogMessageFragment[] = [
   }
 ];
 
-const GraphQLSubscriptionReturningLogs = (props: any) => {
+const FakeSubscriptionReturningLogs = (props: any) => {
   return props.children(FAKE_LOGS);
 };

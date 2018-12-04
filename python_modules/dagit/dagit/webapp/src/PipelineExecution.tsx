@@ -112,10 +112,6 @@ const Container = styled.div`
   display: flex;
   flex-direction: row;
   width: 100%;
-  height: 100vh;
-  top: 0;
-  position: absolute;
-  padding-top: 50px;
 `;
 
 const IconWrapper = styled.div`
