@@ -120,10 +120,10 @@ local_context = PipelineContextDefinition(
                 ),
                 create_postgres_engine(
                     create_postgres_db_url(
-                        info.config['redshift_username'],
-                        info.config['redshift_password'],
-                        info.config['redshift_hostname'],
-                        info.config['redshift_db_name'],
+                        info.config['postgres_username'],
+                        info.config['postgres_password'],
+                        info.config['postgres_hostname'],
+                        info.config['postgres_db_name'],
                         jdbc=False,
                     ),
                 ),
