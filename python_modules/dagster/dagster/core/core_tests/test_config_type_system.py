@@ -569,7 +569,6 @@ def test_wrong_solid_name():
     pe = pe_info.value
 
     assert 'Undefined field "another_name" at path root:solids' in str(pe)
-    assert 'Missing required field "some_solid" at path root:solids' in str(pe)
 
 
 def fail_me():

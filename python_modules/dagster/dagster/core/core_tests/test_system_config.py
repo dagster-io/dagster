@@ -743,7 +743,7 @@ def test_optional_and_required_context():
             'optional_field_context':
             PipelineContextDefinition(
                 context_fn=lambda *args: None,
-                config_field=Field.composite_field(
+                config_field=Field(
                     dagster_type=types.ConfigDictionary(
                         name='some_optional_context_config',
                         fields={
@@ -755,7 +755,7 @@ def test_optional_and_required_context():
             'required_field_context':
             PipelineContextDefinition(
                 context_fn=lambda *args: None,
-                config_field=Field.composite_field(
+                config_field=Field(
                     dagster_type=types.ConfigDictionary(
                         name='some_required_context_config',
                         fields={

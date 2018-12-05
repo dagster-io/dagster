@@ -238,7 +238,13 @@ class __FieldValueSentinel:
     pass
 
 
+class __InferOptionalCompositeFieldSentinel:
+    pass
+
+
 FIELD_NO_DEFAULT_PROVIDED = __FieldValueSentinel
+
+INFER_OPTIONAL_COMPOSITE_FIELD = __InferOptionalCompositeFieldSentinel
 
 
 def all_optional_type(dagster_type):
@@ -246,7 +252,7 @@ def all_optional_type(dagster_type):
 
     if isinstance(dagster_type, DagsterCompositeType):
         return dagster_type.all_fields_optional
-    return True
+    return False
 
 
 class Field:
@@ -266,37 +272,30 @@ class Field:
         self,
         dagster_type,
         default_value=FIELD_NO_DEFAULT_PROVIDED,
-        is_optional=False,
+        is_optional=INFER_OPTIONAL_COMPOSITE_FIELD,
         description=None,
     ):
-        if not is_optional:
+        self.dagster_type = check.inst_param(dagster_type, 'dagster_type', DagsterType)
+        self.description = check.opt_str_param(description, 'description')
+        if is_optional == INFER_OPTIONAL_COMPOSITE_FIELD:
+            is_optional = all_optional_type(dagster_type)
+            if is_optional is True:
+                from .evaluator import throwing_evaluate_config_value
+                self._default_value = lambda: throwing_evaluate_config_value(dagster_type, None)
+            else:
+                self._default_value = default_value
+        else:
+            is_optional = check.bool_param(is_optional, 'is_optional')
+            self._default_value = default_value
+
+        if is_optional is False:
             check.param_invariant(
                 default_value == FIELD_NO_DEFAULT_PROVIDED,
                 'default_value',
                 'required arguments should not specify default values',
             )
 
-        self.dagster_type = check.inst_param(dagster_type, 'dagster_type', DagsterType)
-        self.description = check.opt_str_param(description, 'description')
-        self.is_optional = check.bool_param(is_optional, 'is_optional')
-        self._default_value = default_value
-
-    @staticmethod
-    def composite_field(dagster_type, description=None):
-        check.inst_param(dagster_type, 'dagster_type', DagsterCompositeType)
-        is_optional = all_optional_type(dagster_type)
-
-        from dagster.core.evaluator import throwing_evaluate_config_value
-
-        return Field(
-            dagster_type,
-            is_optional=is_optional,
-            default_value=lambda: throwing_evaluate_config_value(dagster_type, None),
-            description=description
-        ) if is_optional else Field(
-            dagster_type,
-            description=description,
-        )
+        self.is_optional = is_optional
 
     @property
     def default_provided(self):

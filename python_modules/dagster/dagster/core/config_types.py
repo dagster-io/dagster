@@ -26,10 +26,6 @@ from .types import (
 )
 
 
-def define_maybe_optional_composite_field(dagster_type):
-    return Field.composite_field(dagster_type)
-
-
 def _is_selector_field_optional(dagster_type):
     if len(dagster_type.field_dict) > 1:
         return False
@@ -83,7 +79,7 @@ class ContextConfigType(DagsterSelectorType):
         field_dict = {}
         if len(context_definitions) == 1:
             context_name, context_definition = single_item(context_definitions)
-            field_dict[context_name] = define_maybe_optional_composite_field(
+            field_dict[context_name] = Field(
                 create_specific_context_type(
                     pipeline_name,
                     context_name,
@@ -150,20 +146,20 @@ class EnvironmentConfigType(DagsterCompositeType):
             ContextConfigType(pipeline_name, pipeline_def.context_definitions),
         )
 
-        solids_field = define_maybe_optional_composite_field(
+        solids_field = Field(
             SolidDictionaryType(
                 '{pipeline_name}.SolidsConfigDictionary'.format(pipeline_name=pipeline_name),
                 pipeline_def,
             )
         )
 
-        expectations_field = define_maybe_optional_composite_field(
+        expectations_field = Field(
             ExpectationsConfigType(
                 '{pipeline_name}.ExpectationsConfig'.format(pipeline_name=pipeline_name)
             )
         )
 
-        execution_field = define_maybe_optional_composite_field(
+        execution_field = Field(
             ExecutionConfigType(
                 '{pipeline_name}.ExecutionConfig'.format(pipeline_name=pipeline_name)
             )
@@ -212,7 +208,7 @@ class SolidDictionaryType(DagsterCompositeType):
                     ),
                     solid.definition.config_field,
                 )
-                field_dict[solid.name] = define_maybe_optional_composite_field(solid_config_type)
+                field_dict[solid.name] = Field(solid_config_type)
 
         super(SolidDictionaryType, self).__init__(
             name,
