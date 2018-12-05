@@ -150,6 +150,16 @@ export interface PipelineExplorerSolidFragment {
 // START Enums and Input Objects
 //==============================================================
 
+/**
+ * An enumeration.
+ */
+export enum PipelineRunStatus {
+  FAILURE = "FAILURE",
+  NOT_STARTED = "NOT_STARTED",
+  STARTED = "STARTED",
+  SUCCESS = "SUCCESS",
+}
+
 export enum StepTag {
   INPUT_EXPECTATION = "INPUT_EXPECTATION",
   JOIN = "JOIN",

@@ -1,4 +1,5 @@
 from rx import Observable
+from graphql_ws.constants import GQL_DATA, GQL_COMPLETE
 from graphql_ws.gevent import GeventSubscriptionServer, SubscriptionObserver
 
 
@@ -15,11 +16,18 @@ class DagsterSubscriptionServer(GeventSubscriptionServer):
         params['middleware'] = self.middleware
         return super(GeventSubscriptionServer, self).execute(request_context, params)
 
+    def send_execution_result(self, connection_context, op_id, execution_result):
+        if execution_result == GQL_COMPLETE:
+            return self.send_message(connection_context, op_id, GQL_COMPLETE, {})
+        else:
+            result = self.execution_result_to_dict(execution_result)
+            return self.send_message(connection_context, op_id, GQL_DATA, result)
+
     def on_start(self, connection_context, op_id, params):
         try:
             execution_result = self.execute(connection_context.request_context, params)
             if not isinstance(execution_result, Observable):
-                observable = Observable.of(execution_result)
+                observable = Observable.of(execution_result, GQL_COMPLETE)
             else:
                 observable = execution_result
             observable.subscribe(

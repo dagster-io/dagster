@@ -22,9 +22,9 @@ class PipelineRunStorage(object):
     def __init__(self):
         self._runs = OrderedDict()
 
-    def add_run(self, run_id, pipeline_name, config):
+    def add_run(self, run_id, pipeline_name, config, execution_plan):
         check.invariant(run_id not in self._runs)
-        run = PipelineRun(run_id, pipeline_name, config)
+        run = PipelineRun(run_id, pipeline_name, config, execution_plan)
         self._runs[run_id] = run
         return run
 
@@ -42,13 +42,14 @@ class PipelineRunStorage(object):
 
 
 class PipelineRun(object):
-    def __init__(self, run_id, pipeline_name, config):
+    def __init__(self, run_id, pipeline_name, config, execution_plan):
         self._logs = []
         self._run_id = run_id
         self._status = PipelineRunStatus.NOT_STARTED
         self._subscribers = []
         self.pipeline_name = pipeline_name
         self.config = config
+        self.execution_plan = execution_plan
 
     def logs_after(self, cursor):
         cursor = int(cursor) + 1

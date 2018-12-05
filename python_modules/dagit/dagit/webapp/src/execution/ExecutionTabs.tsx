@@ -2,41 +2,6 @@ import * as React from "react";
 import styled from "styled-components";
 import { Icon, Colors } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
-import {
-  applySelectSession,
-  applyNameToSession,
-  applyRemoveSession,
-  applyCreateSession,
-  IStorageData
-} from "./LocalStorage";
-
-interface IExecutionTabsProps {
-  data: IStorageData;
-  onSave: (data: IStorageData) => void;
-}
-
-export const ExecutionTabs = ({ data, onSave }: IExecutionTabsProps) => (
-  <ExecutionTabsContainer>
-    {Object.keys(data.sessions).map(key => (
-      <ExecutionTab
-        key={key}
-        active={key === data.current}
-        title={data.sessions[key].name}
-        onClick={() => onSave(applySelectSession(data, key))}
-        onChange={title => onSave(applyNameToSession(data, title))}
-        onRemove={
-          Object.keys(data.sessions).length > 1
-            ? () => onSave(applyRemoveSession(data, key))
-            : undefined
-        }
-      />
-    ))}
-    <ExecutionTab
-      title={"Add..."}
-      onClick={() => onSave(applyCreateSession(data))}
-    />
-  </ExecutionTabsContainer>
-);
 
 interface IExecutationTabProps {
   active?: boolean;
@@ -50,7 +15,7 @@ interface IExecutationTabState {
   editing: boolean;
 }
 
-class ExecutionTab extends React.Component<
+export class ExecutionTab extends React.Component<
   IExecutationTabProps,
   IExecutationTabState
 > {
@@ -106,7 +71,7 @@ class ExecutionTab extends React.Component<
   }
 }
 
-export const ExecutionTabsContainer = styled.div`
+export const ExecutionTabs = styled.div`
   background: ${Colors.BLACK};
   display; flex;
   z-index: 1;

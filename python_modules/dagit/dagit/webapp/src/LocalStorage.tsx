@@ -5,6 +5,8 @@ import * as React from "react";
 export interface IStorageData {
   sessions: { [name: string]: IExecutionSession };
   current: string;
+
+  currentSession: () => IExecutionSession;
 }
 
 export interface IExecutionSessionPlan {
@@ -26,15 +28,15 @@ export interface IExecutionSessionRun {
   runId: string;
 }
 export interface IExecutionSession {
+  key: string;
   name: string;
   config: string;
-  lastRun?: IExecutionSessionRun;
 }
 
 const DEFAULT_SESSION: IExecutionSession = {
+  key: "default",
   name: "Default",
-  config: "# This is config editor. Enjoy!",
-  lastRun: undefined
+  config: "# This is config editor. Enjoy!"
 };
 
 export function applySelectSession(data: IStorageData, key: string) {
@@ -52,19 +54,30 @@ export function applyRemoveSession(data: IStorageData, key: string) {
   return data;
 }
 
-export function applyNameToSession(data: IStorageData, newName: string) {
-  data.sessions[data.current].name = newName;
+export function applyNameToSession(
+  data: IStorageData,
+  key: string,
+  newName: string
+) {
+  data.sessions[key].name = newName;
   return data;
 }
 
-export function applyConfigToSession(data: IStorageData, config: string) {
-  data.sessions[data.current].config = config;
+export function applyConfigToSession(
+  data: IStorageData,
+  key: string,
+  config: string
+) {
+  data.sessions[key].config = config;
   return data;
 }
 
 export function applyCreateSession(data: IStorageData) {
   const key = `s${Date.now()}`;
-  data.sessions[key] = Object.assign({}, DEFAULT_SESSION, { name: "Untitled" });
+  data.sessions[key] = Object.assign({}, DEFAULT_SESSION, {
+    key,
+    name: "Untitled"
+  });
   data.current = key;
   return data;
 }
@@ -89,7 +102,11 @@ export class StorageProvider extends React.Component<
 > {
   public state: IStorageProviderState = {
     sessions: { default: Object.assign({}, DEFAULT_SESSION) },
-    current: "default"
+    current: "default",
+
+    currentSession() {
+      return this.sessions[this.current];
+    }
   };
 
   constructor(props: IStorageProviderProps) {

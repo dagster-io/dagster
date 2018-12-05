@@ -7,7 +7,7 @@ from dagster.core.events import (
 )
 from dagit import pipeline_run_storage
 import dagit.schema.pipelines
-from . import generic
+from . import generic, execution
 from .utils import non_null_list
 
 PipelineRunStatus = graphene.Enum.from_enum(pipeline_run_storage.PipelineRunStatus)
@@ -18,8 +18,10 @@ class PipelineRun(graphene.ObjectType):
     status = graphene.NonNull(PipelineRunStatus)
     pipeline = graphene.NonNull(lambda: dagit.schema.pipelines.Pipeline)
     logs = graphene.NonNull(lambda: LogMessageConnection)
+    executionPlan = graphene.NonNull(lambda: execution.ExecutionPlan)
 
     def __init__(self, pipeline_run):
+        from . import model
         super(PipelineRun, self).__init__(runId=pipeline_run.run_id, status=pipeline_run.status)
         self._pipeline_run = check.inst_param(
             pipeline_run, 'pipeline_run', pipeline_run_storage.PipelineRun
@@ -31,6 +33,10 @@ class PipelineRun(graphene.ObjectType):
 
     def resolve_logs(self, info):
         return LogMessageConnection(self._pipeline_run)
+
+    def resolve_executionPlan(self, info):
+        pipeline = self.resolve_pipeline(info)
+        return execution.ExecutionPlan(pipeline, self._pipeline_run.execution_plan)
 
 
 class MessageEvent(graphene.Interface):

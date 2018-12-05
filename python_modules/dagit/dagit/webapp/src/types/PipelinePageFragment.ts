@@ -13,6 +13,41 @@ export interface PipelinePageFragment_PythonError {
   stack: string[];
 }
 
+export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs_pageInfo {
+  lastCursor: any | null;
+}
+
+export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes {
+  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent";
+  message: string;
+}
+
+export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs {
+  pageInfo: PipelinePageFragment_PipelineConnection_nodes_runs_logs_pageInfo;
+  nodes: PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes[];
+}
+
+export interface PipelinePageFragment_PipelineConnection_nodes_runs_executionPlan_steps_solid {
+  name: string;
+}
+
+export interface PipelinePageFragment_PipelineConnection_nodes_runs_executionPlan_steps {
+  name: string;
+  solid: PipelinePageFragment_PipelineConnection_nodes_runs_executionPlan_steps_solid;
+  tag: StepTag;
+}
+
+export interface PipelinePageFragment_PipelineConnection_nodes_runs_executionPlan {
+  steps: PipelinePageFragment_PipelineConnection_nodes_runs_executionPlan_steps[];
+}
+
+export interface PipelinePageFragment_PipelineConnection_nodes_runs {
+  runId: string;
+  status: PipelineRunStatus;
+  logs: PipelinePageFragment_PipelineConnection_nodes_runs_logs;
+  executionPlan: PipelinePageFragment_PipelineConnection_nodes_runs_executionPlan;
+}
+
 export interface PipelinePageFragment_PipelineConnection_nodes_environmentType {
   name: string;
 }
@@ -71,9 +106,9 @@ export interface PipelinePageFragment_PipelineConnection_nodes_contexts_config {
 }
 
 export interface PipelinePageFragment_PipelineConnection_nodes_contexts {
-  config: PipelinePageFragment_PipelineConnection_nodes_contexts_config | null;
   name: string;
   description: string | null;
+  config: PipelinePageFragment_PipelineConnection_nodes_contexts_config | null;
 }
 
 export interface PipelinePageFragment_PipelineConnection_nodes_solids_definition_metadata {
@@ -214,9 +249,10 @@ export interface PipelinePageFragment_PipelineConnection_nodes_solids {
 
 export interface PipelinePageFragment_PipelineConnection_nodes {
   name: string;
+  runs: PipelinePageFragment_PipelineConnection_nodes_runs[];
   environmentType: PipelinePageFragment_PipelineConnection_nodes_environmentType;
-  contexts: PipelinePageFragment_PipelineConnection_nodes_contexts[];
   description: string | null;
+  contexts: PipelinePageFragment_PipelineConnection_nodes_contexts[];
   solids: PipelinePageFragment_PipelineConnection_nodes_solids[];
 }
 
@@ -233,6 +269,16 @@ export type PipelinePageFragment = PipelinePageFragment_PythonError | PipelinePa
 //==============================================================
 // START Enums and Input Objects
 //==============================================================
+
+/**
+ * An enumeration.
+ */
+export enum PipelineRunStatus {
+  FAILURE = "FAILURE",
+  NOT_STARTED = "NOT_STARTED",
+  STARTED = "STARTED",
+  SUCCESS = "SUCCESS",
+}
 
 export enum StepTag {
   INPUT_EXPECTATION = "INPUT_EXPECTATION",

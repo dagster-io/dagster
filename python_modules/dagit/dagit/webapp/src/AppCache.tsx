@@ -33,7 +33,10 @@ const AppCache = new InMemoryCache({
     }
   },
   dataIdFromObject: (object: any) => {
-    if (object.name && object.__typename === "Pipeline") {
+    if (
+      (object.name && object.__typename === "Pipeline") ||
+      (object.runId && object.__typename === "PipelineRun")
+    ) {
       return `${object.__typename}.${object.name}`;
     } else if (
       object.name &&

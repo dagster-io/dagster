@@ -4,14 +4,10 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL query operation: TypeListContainerQuery
+// GraphQL fragment: TypeListFragment
 // ====================================================
 
-export interface TypeListContainerQuery_pipelineOrError_PythonError {
-  __typename: "PythonError" | "PipelineNotFoundError";
-}
-
-export interface TypeListContainerQuery_pipelineOrError_Pipeline_types_typeAttributes {
+export interface TypeListFragment_typeAttributes {
   /**
    * 
    * True if the system defines it and it is the same type across pipelines.
@@ -29,25 +25,10 @@ export interface TypeListContainerQuery_pipelineOrError_Pipeline_types_typeAttri
   isSystemConfig: boolean;
 }
 
-export interface TypeListContainerQuery_pipelineOrError_Pipeline_types {
+export interface TypeListFragment {
   name: string;
-  typeAttributes: TypeListContainerQuery_pipelineOrError_Pipeline_types_typeAttributes;
+  typeAttributes: TypeListFragment_typeAttributes;
   description: string | null;
-}
-
-export interface TypeListContainerQuery_pipelineOrError_Pipeline {
-  __typename: "Pipeline";
-  types: TypeListContainerQuery_pipelineOrError_Pipeline_types[];
-}
-
-export type TypeListContainerQuery_pipelineOrError = TypeListContainerQuery_pipelineOrError_PythonError | TypeListContainerQuery_pipelineOrError_Pipeline;
-
-export interface TypeListContainerQuery {
-  pipelineOrError: TypeListContainerQuery_pipelineOrError;
-}
-
-export interface TypeListContainerQueryVariables {
-  pipelineName: string;
 }
 
 /* tslint:disable */
@@ -56,6 +37,16 @@ export interface TypeListContainerQueryVariables {
 //==============================================================
 // START Enums and Input Objects
 //==============================================================
+
+/**
+ * An enumeration.
+ */
+export enum PipelineRunStatus {
+  FAILURE = "FAILURE",
+  NOT_STARTED = "NOT_STARTED",
+  STARTED = "STARTED",
+  SUCCESS = "SUCCESS",
+}
 
 export enum StepTag {
   INPUT_EXPECTATION = "INPUT_EXPECTATION",

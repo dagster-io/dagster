@@ -13,6 +13,41 @@ export interface AppQuery_pipelinesOrError_PythonError {
   stack: string[];
 }
 
+export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_pageInfo {
+  lastCursor: any | null;
+}
+
+export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_nodes {
+  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent";
+  message: string;
+}
+
+export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs {
+  pageInfo: AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_pageInfo;
+  nodes: AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_nodes[];
+}
+
+export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_executionPlan_steps_solid {
+  name: string;
+}
+
+export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_executionPlan_steps {
+  name: string;
+  solid: AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_executionPlan_steps_solid;
+  tag: StepTag;
+}
+
+export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_executionPlan {
+  steps: AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_executionPlan_steps[];
+}
+
+export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_runs {
+  runId: string;
+  status: PipelineRunStatus;
+  logs: AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs;
+  executionPlan: AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_executionPlan;
+}
+
 export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_environmentType {
   name: string;
 }
@@ -71,9 +106,9 @@ export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_contexts_con
 }
 
 export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_contexts {
-  config: AppQuery_pipelinesOrError_PipelineConnection_nodes_contexts_config | null;
   name: string;
   description: string | null;
+  config: AppQuery_pipelinesOrError_PipelineConnection_nodes_contexts_config | null;
 }
 
 export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_solids_definition_metadata {
@@ -214,9 +249,10 @@ export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_solids {
 
 export interface AppQuery_pipelinesOrError_PipelineConnection_nodes {
   name: string;
+  runs: AppQuery_pipelinesOrError_PipelineConnection_nodes_runs[];
   environmentType: AppQuery_pipelinesOrError_PipelineConnection_nodes_environmentType;
-  contexts: AppQuery_pipelinesOrError_PipelineConnection_nodes_contexts[];
   description: string | null;
+  contexts: AppQuery_pipelinesOrError_PipelineConnection_nodes_contexts[];
   solids: AppQuery_pipelinesOrError_PipelineConnection_nodes_solids[];
 }
 
@@ -237,6 +273,16 @@ export interface AppQuery {
 //==============================================================
 // START Enums and Input Objects
 //==============================================================
+
+/**
+ * An enumeration.
+ */
+export enum PipelineRunStatus {
+  FAILURE = "FAILURE",
+  NOT_STARTED = "NOT_STARTED",
+  STARTED = "STARTED",
+  SUCCESS = "SUCCESS",
+}
 
 export enum StepTag {
   INPUT_EXPECTATION = "INPUT_EXPECTATION",

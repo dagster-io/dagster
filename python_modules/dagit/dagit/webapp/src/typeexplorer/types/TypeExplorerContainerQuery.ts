@@ -4,10 +4,10 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL fragment: TypeExplorerFragment
+// GraphQL query operation: TypeExplorerContainerQuery
 // ====================================================
 
-export interface TypeExplorerFragment_RegularType_typeAttributes {
+export interface TypeExplorerContainerQuery_type_RegularType_typeAttributes {
   /**
    * 
    * True if the system defines it and it is the same type across pipelines.
@@ -25,14 +25,14 @@ export interface TypeExplorerFragment_RegularType_typeAttributes {
   isSystemConfig: boolean;
 }
 
-export interface TypeExplorerFragment_RegularType {
+export interface TypeExplorerContainerQuery_type_RegularType {
   __typename: "RegularType";
   name: string;
   description: string | null;
-  typeAttributes: TypeExplorerFragment_RegularType_typeAttributes;
+  typeAttributes: TypeExplorerContainerQuery_type_RegularType_typeAttributes;
 }
 
-export interface TypeExplorerFragment_CompositeType_typeAttributes {
+export interface TypeExplorerContainerQuery_type_CompositeType_typeAttributes {
   /**
    * 
    * True if the system defines it and it is the same type across pipelines.
@@ -50,28 +50,37 @@ export interface TypeExplorerFragment_CompositeType_typeAttributes {
   isSystemConfig: boolean;
 }
 
-export interface TypeExplorerFragment_CompositeType_fields_type {
+export interface TypeExplorerContainerQuery_type_CompositeType_fields_type {
   name: string;
   description: string | null;
 }
 
-export interface TypeExplorerFragment_CompositeType_fields {
+export interface TypeExplorerContainerQuery_type_CompositeType_fields {
   name: string;
   description: string | null;
   isOptional: boolean;
   defaultValue: string | null;
-  type: TypeExplorerFragment_CompositeType_fields_type;
+  type: TypeExplorerContainerQuery_type_CompositeType_fields_type;
 }
 
-export interface TypeExplorerFragment_CompositeType {
+export interface TypeExplorerContainerQuery_type_CompositeType {
   __typename: "CompositeType";
   name: string;
   description: string | null;
-  typeAttributes: TypeExplorerFragment_CompositeType_typeAttributes;
-  fields: TypeExplorerFragment_CompositeType_fields[];
+  typeAttributes: TypeExplorerContainerQuery_type_CompositeType_typeAttributes;
+  fields: TypeExplorerContainerQuery_type_CompositeType_fields[];
 }
 
-export type TypeExplorerFragment = TypeExplorerFragment_RegularType | TypeExplorerFragment_CompositeType;
+export type TypeExplorerContainerQuery_type = TypeExplorerContainerQuery_type_RegularType | TypeExplorerContainerQuery_type_CompositeType;
+
+export interface TypeExplorerContainerQuery {
+  type: TypeExplorerContainerQuery_type | null;
+}
+
+export interface TypeExplorerContainerQueryVariables {
+  pipelineName: string;
+  typeName: string;
+}
 
 /* tslint:disable */
 // This file was automatically generated and should not be edited.
@@ -79,6 +88,16 @@ export type TypeExplorerFragment = TypeExplorerFragment_RegularType | TypeExplor
 //==============================================================
 // START Enums and Input Objects
 //==============================================================
+
+/**
+ * An enumeration.
+ */
+export enum PipelineRunStatus {
+  FAILURE = "FAILURE",
+  NOT_STARTED = "NOT_STARTED",
+  STARTED = "STARTED",
+  SUCCESS = "SUCCESS",
+}
 
 export enum StepTag {
   INPUT_EXPECTATION = "INPUT_EXPECTATION",

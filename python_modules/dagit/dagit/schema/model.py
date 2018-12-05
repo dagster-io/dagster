@@ -112,7 +112,8 @@ def start_pipeline_execution(context, pipelineName, config):
     def get_config_and_start_execution(pipeline):
         def start_execution(config):
             new_run_id = str(uuid.uuid4())
-            run = pipeline_run_storage.add_run(new_run_id, pipelineName, config)
+            execution_plan = create_execution_plan(pipeline.get_dagster_pipeline(), config.value)
+            run = pipeline_run_storage.add_run(new_run_id, pipelineName, config, execution_plan)
             gevent.spawn(
                 execute_pipeline,
                 pipeline.get_dagster_pipeline(),

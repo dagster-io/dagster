@@ -9,7 +9,7 @@ import Page from "./Page";
 import { PipelineJumpBar } from "./PipelineJumpComponents";
 import PythonErrorInfo from "./PythonErrorInfo";
 import PipelineExplorer from "./PipelineExplorer";
-import PipelineExecution from "./PipelineExecution";
+import PipelineExecutionContainer from "./execution/PipelineExecutionContainer";
 import { StorageProvider } from "./LocalStorage";
 
 import {
@@ -58,7 +58,7 @@ const TABS = [
     render: (props: IPipelinePageTabProps) => (
       <StorageProvider namespace={props.pipeline.name}>
         {({ data, onSave }) => (
-          <PipelineExecution
+          <PipelineExecutionContainer
             pipeline={props.pipeline}
             data={data}
             onSave={onSave}
@@ -80,7 +80,7 @@ export default class PipelinePage extends React.Component<IPipelinePageProps> {
         }
         ... on PipelineConnection {
           nodes {
-            ...PipelineExecutionFragment
+            ...PipelineExecutionContainerFragment
             ...PipelineExplorerFragment
             ...PipelineJumpBarFragment
             solids {
@@ -90,7 +90,7 @@ export default class PipelinePage extends React.Component<IPipelinePageProps> {
         }
       }
 
-      ${PipelineExecution.fragments.PipelineExecutionFragment}
+      ${PipelineExecutionContainer.fragments.PipelineExecutionContainerFragment}
       ${PipelineExplorer.fragments.PipelineExplorerFragment}
       ${PipelineExplorer.fragments.PipelineExplorerSolidFragment}
       ${PipelineJumpBar.fragments.PipelineJumpBarFragment}
