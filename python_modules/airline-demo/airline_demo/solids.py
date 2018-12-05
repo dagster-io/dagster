@@ -78,9 +78,9 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None)
 
     output_description = (
         'The string name of the new table created by the solid'
-        if materialization_strategy == 'table'
-        else 'The materialized SQL statement. If the materialization_strategy is '
-             '\'table\', this is the string name of the new table created by the solid.'
+        if materialization_strategy == 'table' else
+        'The materialized SQL statement. If the materialization_strategy is '
+        '\'table\', this is the string name of the new table created by the solid.'
     )
 
     solid_description = '''This solid executes the following SQL statement:
@@ -213,6 +213,58 @@ def download_from_s3(info):
 
     info.context.resources.s3.download_file(bucket, key, target_path)
     return target_path
+
+
+@solid(
+    name='upload_to_s3',
+    config_field=Field(
+        types.ConfigDictionary(
+            name='UploadToS3ConfigType',
+            fields={
+                # Probably want to make the region configuable too
+                'bucket':
+                Field(types.String, description='The S3 bucket to which to upload the file.'),
+                'key':
+                Field(types.String, description='The key to which to upload the file.'),
+                'file_path':
+                Field(
+                    types.String,
+                    description='The path of the file to upload.',
+                ),
+                'kwargs':
+                Field(
+                    types.Dict,
+                    description='Kwargs to pass through to the S3 client',
+                    is_optional=True,
+                )
+            }
+        )
+    ),
+    description='Uploads a file to S3.',
+    outputs=[
+        OutputDefinition(types.String, description='The bucket to which the file was uploaded.'),
+        OutputDefinition(types.String, description='The key to which the file was uploaded.'),
+    ],
+)
+def upload_to_s3(info):
+    '''Upload a file to s3.
+        
+    Args:
+        info (ExpectationExecutionInfo): Must expose a boto3 S3 client as its `s3` resource.
+
+    Returns:
+        (str, str):
+            The bucket and key to which the file was uploaded.
+    '''
+    bucket = info.config['bucket']
+    key = info.config['key']
+    file_path = info.config['file_path']
+
+    with open(file_path, 'rb') as fd:
+        info.context.resources.s3.put_object(
+            Bucket=bucket, Body=fd, Key=key, **(info.config.get('kwargs') or {})
+        )
+    return (bucket, key)
 
 
 @solid(
