@@ -9,7 +9,6 @@ from dagster import check
 from dagster.core.errors import (
     DagsterRuntimeCoercionError,
 )
-from dagster.core.evaluator import throwing_evaluate_config_value
 
 SerializedTypeValue = namedtuple('SerializedTypeValue', 'name value')
 
@@ -289,10 +288,13 @@ class Field:
             is_optional = all_optional_type(dagster_type)
             self.is_optional = is_optional
             if is_optional:
+                from .evaluator import throwing_evaluate_config_value
                 self._default_value = lambda: throwing_evaluate_config_value(dagster_type, None)
         else:
             is_optional = check.bool_param(is_optional, 'is_optional')
-            self._default_value = default_value
+            if is_optional:
+                self._default_value = default_value
+            self.is_optional = is_optional
 
     @property
     def default_provided(self):
