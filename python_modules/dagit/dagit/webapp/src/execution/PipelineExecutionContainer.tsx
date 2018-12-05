@@ -1,6 +1,7 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import { DataProxy } from "apollo-cache";
+import produce from "immer";
 import { Mutation, FetchResult } from "react-apollo";
 import {
   applyConfigToSession,
@@ -35,11 +36,13 @@ export default class PipelineExecutionContainer extends React.Component<
         name
         runs {
           runId
+          ...PipelineExecutionPipelineRunFragment
         }
-        ...PipelineExecutionFragment
+        ...PipelineExecutionCodeEditorFragment
       }
 
-      ${PipelineExecution.fragments.PipelineExecutionFragment}
+      ${PipelineExecution.fragments.PipelineExecutionCodeEditorFragment}
+      ${PipelineExecution.fragments.PipelineExecutionPipelineRunFragment}
     `
   };
 
@@ -72,6 +75,30 @@ export default class PipelineExecutionContainer extends React.Component<
       result.data.startPipelineExecution.__typename ===
         "StartPipelineExecutionSuccess"
     ) {
+      const run = result.data.startPipelineExecution.run;
+      const id = `Pipeline.${this.props.pipeline.name}`;
+      const existingData: PipelineExecutionContainerFragment | null = proxy.readFragment(
+        {
+          id,
+          fragmentName: "PipelineExecutionContainerFragment",
+          fragment:
+            PipelineExecutionContainer.fragments
+              .PipelineExecutionContainerFragment
+        }
+      );
+      if (existingData) {
+        const newData = produce(existingData, draftData => {
+          draftData.runs.push(run);
+        });
+        proxy.writeFragment({
+          id,
+          fragmentName: "PipelineExecutionContainerFragment",
+          fragment:
+            PipelineExecutionContainer.fragments
+              .PipelineExecutionContainerFragment,
+          data: newData
+        });
+      }
     } else {
       // XXX(freiksenet): STUB
       alert("Error in config!");
@@ -129,6 +156,7 @@ const START_PIPELINE_EXECUTION_MUTATION = gql`
         run {
           runId
           status
+          ...PipelineExecutionPipelineRunFragment
         }
       }
       ... on PipelineNotFoundError {
@@ -141,4 +169,12 @@ const START_PIPELINE_EXECUTION_MUTATION = gql`
       }
     }
   }
+
+  ${PipelineExecution.fragments.PipelineExecutionPipelineRunFragment}
 `;
+//
+// const PIPELINE_RUN_LOGS_SUBSCRIPTION = gql`
+//   subscription PipelineRunLogsSubscription($runId: ID!) {
+//
+//   }
+// `;

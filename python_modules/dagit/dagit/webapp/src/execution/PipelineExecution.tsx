@@ -10,15 +10,13 @@ import { IExecutionSession } from "../LocalStorage";
 import { PipelineRun, PipelineRunEmpty } from "./PipelineRun";
 import { ExecutionTabs, ExecutionTab } from "./ExecutionTabs";
 
-import {
-  PipelineExecutionFragment,
-  PipelineExecutionFragment_runs
-} from "./types/PipelineExecutionFragment";
 import ConfigCodeEditorContainer from "../configeditor/ConfigCodeEditorContainer";
+import { PipelineExecutionCodeEditorFragment } from "./types/PipelineExecutionCodeEditorFragment";
+import { PipelineExecutionPipelineRunFragment } from "./types/PipelineExecutionPipelineRunFragment";
 
 interface IPipelineExecutionProps {
-  pipeline: PipelineExecutionFragment;
-  activeRun: PipelineExecutionFragment_runs | null;
+  pipeline: PipelineExecutionCodeEditorFragment;
+  activeRun: PipelineExecutionPipelineRunFragment | null;
   sessions: { [name: string]: IExecutionSession };
   currentSession: IExecutionSession;
   isExecuting: boolean;
@@ -34,23 +32,26 @@ export default class PipelineExecution extends React.Component<
   IPipelineExecutionProps
 > {
   static fragments = {
-    PipelineExecutionFragment: gql`
-      fragment PipelineExecutionFragment on Pipeline {
+    PipelineExecutionCodeEditorFragment: gql`
+      fragment PipelineExecutionCodeEditorFragment on Pipeline {
         name
         environmentType {
           name
         }
-        runs {
-          runId
-          status
-          logs {
-            pageInfo {
-              lastCursor
-            }
-          }
-          ...PipelineRunFragment
-        }
       }
+    `,
+    PipelineExecutionPipelineRunFragment: gql`
+      fragment PipelineExecutionPipelineRunFragment on PipelineRun {
+        runId
+        status
+        logs {
+          pageInfo {
+            lastCursor
+          }
+        }
+        ...PipelineRunFragment
+      }
+
       ${PipelineRun.fragments.PipelineRunFragment}
     `
   };

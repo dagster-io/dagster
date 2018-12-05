@@ -7,9 +7,39 @@
 // GraphQL mutation operation: StartPipelineExecution
 // ====================================================
 
+export interface StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_logs_pageInfo {
+  lastCursor: any | null;
+}
+
+export interface StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_logs_nodes {
+  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent";
+  message: string;
+}
+
+export interface StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_logs {
+  pageInfo: StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_logs_pageInfo;
+  nodes: StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_logs_nodes[];
+}
+
+export interface StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_executionPlan_steps_solid {
+  name: string;
+}
+
+export interface StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_executionPlan_steps {
+  name: string;
+  solid: StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_executionPlan_steps_solid;
+  tag: StepTag;
+}
+
+export interface StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_executionPlan {
+  steps: StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_executionPlan_steps[];
+}
+
 export interface StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run {
   runId: string;
   status: PipelineRunStatus;
+  logs: StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_logs;
+  executionPlan: StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_executionPlan;
 }
 
 export interface StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess {

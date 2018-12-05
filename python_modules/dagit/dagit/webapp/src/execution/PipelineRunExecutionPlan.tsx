@@ -45,7 +45,9 @@ export default class PipelineRunExecutionPlan extends React.Component<
           <ExecutionTimeline />
           <ExecutionTimelineMessage>
             <ExecutionTimelineDot />{" "}
-            {this.props.pipelineRun.logs.nodes[0].message}
+            {this.props.pipelineRun.logs.nodes.length > 0
+              ? this.props.pipelineRun.logs.nodes[0].message
+              : null}
           </ExecutionTimelineMessage>
           {this.props.pipelineRun.executionPlan.steps.map(step => {
             const metadata = stepMetadataFromLogs(
