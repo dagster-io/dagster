@@ -517,7 +517,7 @@ def test_is_callable():
     with pytest.raises(CheckError):
         check.is_callable(1)
 
-    with pytest.raises(CheckError, message='some other desc'):
+    with pytest.raises(CheckError, match='some other desc'):
         check.is_callable(1, 'some other desc')
 
 

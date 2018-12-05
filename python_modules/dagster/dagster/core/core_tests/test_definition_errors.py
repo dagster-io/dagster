@@ -31,69 +31,85 @@ def solid_a_b_list():
 
 
 def test_no_dep_specified():
-    with pytest.raises(DagsterInvalidDefinitionError, message='Dependency must be specified'):
+    with pytest.raises(DagsterInvalidDefinitionError, match='Dependency must be specified'):
         PipelineDefinition(solids=solid_a_b_list(), dependencies={})
 
 
 def test_circular_dep():
-    with pytest.raises(DagsterInvalidDefinitionError, message='Circular reference'):
+    with pytest.raises(DagsterInvalidDefinitionError, match='Circular reference'):
         PipelineDefinition(
             solids=solid_a_b_list(),
-            dependencies={'B': {
-                'b_input': DependencyDefinition('B')
-            }},
+            dependencies={
+                'A': {},
+                'B': {
+                    'b_input': DependencyDefinition('B'),
+                },
+            },
         )
 
 
 def test_from_solid_not_there():
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        message='Solid NOTTHERE in dependency dictionary not found',
+        match='Solid NOTTHERE in dependency dictionary not found',
     ):
         PipelineDefinition(
             solids=solid_a_b_list(),
-            dependencies={'NOTTHERE': {
-                'b_input': DependencyDefinition('A')
-            }},
+            dependencies={
+                'A': {},
+                'B': {
+                    'b_input': DependencyDefinition('A'),
+                },
+                'NOTTHERE': {
+                    'b_input': DependencyDefinition('A'),
+                },
+            },
         )
 
 
 def test_from_non_existant_input():
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        message='Solid B does not have input not_an_input',
+        match='Solid B does not have input not_an_input',
     ):
         PipelineDefinition(
             solids=solid_a_b_list(),
-            dependencies={'B': {
-                'not_an_input': DependencyDefinition('A')
-            }},
+            dependencies={
+                'B': {
+                    'not_an_input': DependencyDefinition('A'),
+                },
+            },
         )
 
 
 def test_to_solid_not_there():
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        message='Solid NOTTHERE in DependencyDefinition not found in solid list',
+        match='Solid NOTTHERE in DependencyDefinition not found in solid list',
     ):
         PipelineDefinition(
             solids=solid_a_b_list(),
-            dependencies={'B': {
-                'b_input': DependencyDefinition('NOTTHERE')
-            }},
+            dependencies={
+                'A': {},
+                'B': {
+                    'b_input': DependencyDefinition('NOTTHERE'),
+                },
+            },
         )
 
 
 def test_to_solid_output_not_there():
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        message='Solid A does not have output NOTTHERE',
+        match='Solid A does not have output NOTTHERE',
     ):
         PipelineDefinition(
             solids=solid_a_b_list(),
-            dependencies={'B': {
-                'b_input': DependencyDefinition('A', output='NOTTHERE')
-            }},
+            dependencies={
+                'B': {
+                    'b_input': DependencyDefinition('A', output='NOTTHERE'),
+                },
+            },
         )
 
 
