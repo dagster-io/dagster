@@ -37,7 +37,7 @@ def notebook_solid(name, inputs, outputs):
 
 
 # need a sql context w a sqlalchemy engine
-def create_sql_solid(name, select_statement, materialization_strategy, table_name=None):
+def sql_solid(name, select_statement, materialization_strategy, table_name=None):
     '''Return a new solid that executes and materializes a SQL select statement.
 
     Args:
@@ -330,18 +330,39 @@ def ingest_csv_to_spark(info, input_csv=None):
     return data_frame
 
 
+def rename_spark_dataframe_columns(data_frame, fn):
+    return data_frame.toDF(*[fn(c) for c in data_frame.columns])
+
+
+@solid(
+    name='prefix_column_names',
+    inputs=[
+        InputDefinition(
+            'data_frame',
+            SparkDataFrameType,
+            description='The data frame whose columns should be prefixed'
+        ),
+    ],
+    config_field=Field(types.String),
+    outputs=[OutputDefinition(SparkDataFrameType)]
+)
+def prefix_column_names(info, data_frame):
+    return rename_spark_dataframe_columns(
+        data_frame, lambda c: '{prefix}{c}'.format(prefix=info.config, c=c)
+    )
+
+
 @solid(
     name='canonicalize_column_names',
     inputs=[
         InputDefinition(
             'data_frame', SparkDataFrameType, description='The data frame to canonicalize'
-        )
+        ),
     ],
     outputs=[OutputDefinition(SparkDataFrameType)]
 )
 def canonicalize_column_names(_info, data_frame):
-    data_frame = data_frame.toDF(*[c.lower() for c in data_frame.columns])
-    return data_frame
+    return rename_spark_dataframe_columns(data_frame, lambda c: c.lower())
 
 
 def replace_values_spark(data_frame, old, new, columns=None):
@@ -501,6 +522,20 @@ def union_spark_data_frames(_info, left_data_frame, right_data_frame):
     return left_data_frame.union(right_data_frame)
 
 
+average_sfo_outbound_avg_delays_by_destination = sql_solid(
+    'average_sfo_outbound_avg_delays_by_destination',
+    '''
+    select
+        cast(cast(arrdelay as float) as integer) as arrival_delay,
+        cast(cast(depdelay as float) as integer) as departure_delay,
+        origin,
+        dest as destination
+    from q2_on_time_data
+    where origin='SFO''',
+    'table',
+    table_name='average_sfo_outbound_avg_delays_by_destination',
+)
+
 sfo_delays_by_destination = notebook_solid(
     'SFO Delays by Destination.ipynb',
     inputs=[
@@ -508,7 +543,12 @@ sfo_delays_by_destination = notebook_solid(
             'db_url',
             types.String,
             description='The db_url to use to construct a SQLAlchemy engine.',
-        )
+        ),
+        InputDefinition(
+            'table_name',
+            types.String,
+            description='The SQL table to use for calcuations.',
+        ),
     ],
     outputs=[],
 )

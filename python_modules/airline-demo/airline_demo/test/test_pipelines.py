@@ -311,10 +311,23 @@ def test_pipeline_ingest():
                         'input_csv': 'source_data/954834304_T_MASTER_CORD.csv'
                     }
                 },
-                'join_q2_on_time_data_to_master_cord_data': {
+                'prefix_dest_cord_data': {
+                    'config': 'DEST_',
+                },
+                'prefix_origin_cord_data': {
+                    'config': 'ORIGIN_',
+                },
+                'join_q2_on_time_data_to_dest_cord_data': {
+                    'config': {
+                        'on_left': 'DestAirportSeqID',
+                        'on_right': 'DEST_AIRPORT_SEQ_ID',
+                        'how': 'inner',
+                    }
+                },
+                'join_q2_on_time_data_to_origin_cord_data': {
                     'config': {
                         'on_left': 'OriginAirportSeqID',
-                        'on_right': 'AIRPORT_SEQ_ID',
+                        'on_right': 'ORIGIN_AIRPORT_SEQ_ID',
                         'how': 'inner',
                     }
                 },

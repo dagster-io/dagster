@@ -13,12 +13,14 @@ from dagster import (
 )
 
 from .solids import (
+    average_sfo_outbound_avg_delays_by_destination,
     canonicalize_column_names,
     download_from_s3,
     ingest_csv_to_spark,
     join_spark_data_frames,
     load_data_to_database_from_spark,
     normalize_weather_na_values,
+    prefix_column_names,
     sfo_delays_by_destination,
     subsample_spark_dataset,
     thunk,
@@ -261,6 +263,7 @@ def define_airline_demo_ingest_pipeline():
         join_spark_data_frames,
         load_data_to_database_from_spark,
         normalize_weather_na_values,
+        prefix_column_names,
         subsample_spark_dataset,
         thunk,
         union_spark_data_frames,
@@ -321,12 +324,22 @@ def define_airline_demo_ingest_pipeline():
         SolidInstance('normalize_weather_na_values', alias='normalize_q2_weather_na_values'): {
             'data_frame': DependencyDefinition('ingest_q2_sfo_weather'),
         },
-        SolidInstance('join_spark_data_frames', alias='join_q2_on_time_data_to_master_cord_data'): {
+        SolidInstance('prefix_column_names', alias='prefix_dest_cord_data'): {
+            'data_frame': DependencyDefinition('ingest_master_cord_data')
+        },
+        SolidInstance('prefix_column_names', alias='prefix_origin_cord_data'): {
+            'data_frame': DependencyDefinition('ingest_master_cord_data')
+        },
+        SolidInstance('join_spark_data_frames', alias='join_q2_on_time_data_to_dest_cord_data'): {
             'left_data_frame': DependencyDefinition('subsample_q2_on_time_data'),
-            'right_data_frame': DependencyDefinition('ingest_master_cord_data'),
+            'right_data_frame': DependencyDefinition('prefix_dest_cord_data'),
+        },
+        SolidInstance('join_spark_data_frames', alias='join_q2_on_time_data_to_origin_cord_data'): {
+            'left_data_frame': DependencyDefinition('join_q2_on_time_data_to_dest_cord_data'),
+            'right_data_frame': DependencyDefinition('prefix_origin_cord_data'),
         },
         SolidInstance('canonicalize_column_names', alias='canonicalize_q2_on_time_data'): {
-            'data_frame': DependencyDefinition('join_q2_on_time_data_to_master_cord_data'),
+            'data_frame': DependencyDefinition('join_q2_on_time_data_to_origin_cord_data'),
         },
         SolidInstance('canonicalize_column_names', alias='canonicalize_q2_coupon_data'): {
             'data_frame': DependencyDefinition('subsample_q2_coupon_data'),
@@ -368,11 +381,14 @@ def define_airline_demo_ingest_pipeline():
 def define_airline_demo_warehouse_pipeline():
     return PipelineDefinition(
         name="airline_demo_warehouse_pipeline",
-        solids=[sfo_delays_by_destination, thunk],
+        solids=[average_sfo_outbound_avg_delays_by_destination, sfo_delays_by_destination, thunk],
         dependencies={
             SolidInstance('thunk', alias='db_url'): {},
+            'average_sfo_outbound_avg_delays_by_destination': {},
             's_f_o__delays_by__destination': {
                 'db_url': DependencyDefinition('db_url'),
+                'table_name':
+                DependencyDefinition('average_sfo_outbound_avg_delays_by_destination', ),
             }
         },
         context_definitions=context_definitions,

@@ -26,7 +26,7 @@ from dagster import (
 from dagster.utils.test import (define_stub_solid, execute_solid)
 
 from airline_demo.solids import (
-    create_sql_solid,
+    sql_solid,
     download_from_s3,
     ingest_csv_to_spark,
     thunk,
@@ -72,22 +72,22 @@ def _spark_context():
     }
 
 
-def test_create_sql_solid_with_bad_materialization_strategy():
+def test_sql_solid_with_bad_materialization_strategy():
     with pytest.raises(Exception) as excinfo:
-        create_sql_solid('foo', 'select * from bar', 'view')
+        sql_solid('foo', 'select * from bar', 'view')
     assert str(excinfo.value) == \
         'Invalid materialization strategy view, must be one of [\'table\']'
 
 
-def test_create_sql_solid_without_table_name():
+def test_sql_solid_without_table_name():
     with pytest.raises(Exception) as excinfo:
-        create_sql_solid('foo', 'select * from bar', 'table')
+        sql_solid('foo', 'select * from bar', 'table')
     assert str(excinfo.value) == \
         'Missing table_name: required for materialization strategy \'table\''
 
 
-def test_create_sql_solid():
-    result = create_sql_solid('foo', 'select * from bar', 'table', 'quux')
+def test_sql_solid():
+    result = sql_solid('foo', 'select * from bar', 'table', 'quux')
     assert result
     # TODO: test execution?
 
