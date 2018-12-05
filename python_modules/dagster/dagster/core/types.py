@@ -9,6 +9,7 @@ from dagster import check
 from dagster.core.errors import (
     DagsterRuntimeCoercionError,
 )
+from dagster.core.evaluator import throwing_evaluate_config_value
 
 SerializedTypeValue = namedtuple('SerializedTypeValue', 'name value')
 
@@ -238,7 +239,13 @@ class __FieldValueSentinel:
     pass
 
 
+class __InferOptionalCompositeFieldSentinel:
+    pass
+
+
 FIELD_NO_DEFAULT_PROVIDED = __FieldValueSentinel
+
+INFER_OPTIONAL_COMPOSITE_FIELD = __InferOptionalCompositeFieldSentinel
 
 
 def all_optional_type(dagster_type):
@@ -266,10 +273,10 @@ class Field:
         self,
         dagster_type,
         default_value=FIELD_NO_DEFAULT_PROVIDED,
-        is_optional=False,
+        is_optional=INFER_OPTIONAL_COMPOSITE_FIELD,
         description=None,
     ):
-        if not is_optional:
+        if is_optional is False:
             check.param_invariant(
                 default_value == FIELD_NO_DEFAULT_PROVIDED,
                 'default_value',
@@ -278,25 +285,14 @@ class Field:
 
         self.dagster_type = check.inst_param(dagster_type, 'dagster_type', DagsterType)
         self.description = check.opt_str_param(description, 'description')
-        self.is_optional = check.bool_param(is_optional, 'is_optional')
-        self._default_value = default_value
-
-    @staticmethod
-    def composite_field(dagster_type, description=None):
-        check.inst_param(dagster_type, 'dagster_type', DagsterCompositeType)
-        is_optional = all_optional_type(dagster_type)
-
-        from dagster.core.evaluator import throwing_evaluate_config_value
-
-        return Field(
-            dagster_type,
-            is_optional=is_optional,
-            default_value=lambda: throwing_evaluate_config_value(dagster_type, None),
-            description=description
-        ) if is_optional else Field(
-            dagster_type,
-            description=description,
-        )
+        if is_optional == INFER_OPTIONAL_COMPOSITE_FIELD:
+            is_optional = all_optional_type(dagster_type)
+            self.is_optional = is_optional
+            if is_optional:
+                self._default_value = lambda: throwing_evaluate_config_value(dagster_type, None)
+        else:
+            is_optional = check.bool_param(is_optional, 'is_optional')
+            self._default_value = default_value
 
     @property
     def default_provided(self):
