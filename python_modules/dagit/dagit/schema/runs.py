@@ -158,7 +158,7 @@ class PipelineRunEvent(graphene.Union):
             )
         elif event.event_type == EventType.EXECUTION_PLAN_STEP_START:
             return ExecutionStepStartEvent(
-                run_id=event.run_id,
+                run=run,
                 message=event.original_message,
                 step=dagit.schema.execution.ExecutionStep(
                     pipeline_run.execution_plan.get_step_by_key(event.step_key)
@@ -166,7 +166,7 @@ class PipelineRunEvent(graphene.Union):
             )
         elif event.event_type == EventType.EXECUTION_PLAN_STEP_SUCCESS:
             return ExecutionStepSuccessEvent(
-                run_id=event.run_id,
+                run=run,
                 message=event.original_message,
                 step=dagit.schema.execution.ExecutionStep(
                     pipeline_run.execution_plan.get_step_by_key(event.step_key)
@@ -174,7 +174,7 @@ class PipelineRunEvent(graphene.Union):
             )
         elif event.event_type == EventType.EXECUTION_PLAN_STEP_START:
             return ExecutionStepFailureEvent(
-                run_id=event.run_id,
+                run=run,
                 message=event.original_message,
                 step=dagit.schema.execution.ExecutionStep(
                     pipeline_run.execution_plan.get_step_by_key(event.step_key)

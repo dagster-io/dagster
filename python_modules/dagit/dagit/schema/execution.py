@@ -119,11 +119,9 @@ class ExecutionStep(graphene.ObjectType):
         return [ExecutionStepOutput(out) for out in self.execution_step.step_outputs]
 
     def resolve_name(self, _info):
-        print(self)
-        return self.key
+        return self.execution_step.key
 
     def resolve_solid(self, _info):
-        print(self)
         return pipelines.Solid(self.execution_step.solid)
 
     def resolve_tag(self, _info):
