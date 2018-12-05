@@ -252,7 +252,7 @@ def all_optional_type(dagster_type):
 
     if isinstance(dagster_type, DagsterCompositeType):
         return dagster_type.all_fields_optional
-    return True
+    return False
 
 
 class Field:
@@ -275,6 +275,19 @@ class Field:
         is_optional=INFER_OPTIONAL_COMPOSITE_FIELD,
         description=None,
     ):
+        self.dagster_type = check.inst_param(dagster_type, 'dagster_type', DagsterType)
+        self.description = check.opt_str_param(description, 'description')
+        if is_optional == INFER_OPTIONAL_COMPOSITE_FIELD:
+            is_optional = all_optional_type(dagster_type)
+            if is_optional is True:
+                from .evaluator import throwing_evaluate_config_value
+                self._default_value = lambda: throwing_evaluate_config_value(dagster_type, None)
+            else:
+                self._default_value = default_value
+        else:
+            is_optional = check.bool_param(is_optional, 'is_optional')
+            self._default_value = default_value
+
         if is_optional is False:
             check.param_invariant(
                 default_value == FIELD_NO_DEFAULT_PROVIDED,
@@ -282,19 +295,7 @@ class Field:
                 'required arguments should not specify default values',
             )
 
-        self.dagster_type = check.inst_param(dagster_type, 'dagster_type', DagsterType)
-        self.description = check.opt_str_param(description, 'description')
-        if is_optional == INFER_OPTIONAL_COMPOSITE_FIELD:
-            is_optional = all_optional_type(dagster_type)
-            self.is_optional = is_optional
-            if is_optional:
-                from .evaluator import throwing_evaluate_config_value
-                self._default_value = lambda: throwing_evaluate_config_value(dagster_type, None)
-        else:
-            is_optional = check.bool_param(is_optional, 'is_optional')
-            if is_optional:
-                self._default_value = default_value
-            self.is_optional = is_optional
+        self.is_optional = is_optional
 
     @property
     def default_provided(self):
