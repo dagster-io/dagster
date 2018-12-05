@@ -40,7 +40,7 @@ class PipelineRun(graphene.ObjectType):
 
 
 class MessageEvent(graphene.Interface):
-    run_id = graphene.NonNull(graphene.ID)
+    run = graphene.NonNull(lambda: PipelineRun)
     message = graphene.NonNull(graphene.String)
 
 
@@ -57,7 +57,9 @@ class LogMessageConnection(graphene.ObjectType):
     def resolve_nodes(self, info):
         from . import model
         pipeline = model.get_pipeline_or_raise(info.context, self._pipeline_run.pipeline_name)
-        return [PipelineRunEvent.from_dagster_event(log, pipeline) for log in self._logs]
+        return [
+            PipelineRunEvent.from_dagster_event(info.context, log, pipeline) for log in self._logs
+        ]
 
     def resolve_pageInfo(self, info):
         count = len(self._logs)
@@ -108,30 +110,31 @@ class PipelineRunEvent(graphene.Union):
         )
 
     @staticmethod
-    def from_dagster_event(event, pipeline):
+    def from_dagster_event(context, event, pipeline):
         check.inst_param(event, 'event', EventRecord)
         check.inst_param(pipeline, 'pipeline', dagit.schema.pipelines.Pipeline)
+        run = PipelineRun(context.pipeline_runs.get_run_by_id(event.run_id))
 
         if event.event_type == EventType.PIPELINE_START:
             return PipelineStartEvent(
-                run_id=event.run_id,
+                run=run,
                 message=event.original_message,
                 pipeline=pipeline,
             )
         elif event.event_type == EventType.PIPELINE_SUCCESS:
             return PipelineSuccessEvent(
-                run_id=event.run_id,
+                run=run,
                 message=event.original_message,
                 pipeline=pipeline,
             )
         elif event.event_type == EventType.PIPELINE_FAILURE:
             return PipelineFailureEvent(
-                run_id=event.run_id,
+                run=run,
                 message=event.original_message,
                 pipeline=pipeline,
             )
         elif event.event_type == EventType.UNCATEGORIZED:
-            return LogMessageEvent(run_id=event.run_id, message=event.original_message)
+            return LogMessageEvent(run=run, message=event.original_message)
         else:
-            return LogMessageEvent(run_id=event.run_id, message=event.original_message)
+            return LogMessageEvent(run=run, message=event.original_message)
             # check.failed('Unknown event type {event_type}'.format(event_type=event.event_type))

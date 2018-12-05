@@ -13,18 +13,18 @@ export interface AppQuery_pipelinesOrError_PythonError {
   stack: string[];
 }
 
-export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_pageInfo {
-  lastCursor: any | null;
-}
-
 export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_nodes {
   __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent";
   message: string;
 }
 
+export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_pageInfo {
+  lastCursor: any | null;
+}
+
 export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs {
-  pageInfo: AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_pageInfo;
   nodes: AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_nodes[];
+  pageInfo: AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_pageInfo;
 }
 
 export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_executionPlan_steps_solid {

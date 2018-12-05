@@ -44,15 +44,16 @@ export default class PipelineExecution extends React.Component<
       fragment PipelineExecutionPipelineRunFragment on PipelineRun {
         runId
         status
-        logs {
-          pageInfo {
-            lastCursor
-          }
-        }
         ...PipelineRunFragment
       }
 
       ${PipelineRun.fragments.PipelineRunFragment}
+    `,
+    PipelineExecutionPipelineRunEventFragment: gql`
+      fragment PipelineExecutionPipelineRunEventFragment on PipelineRunEvent {
+        ...PipelineRunPipelineRunEventFragment
+      }
+      ${PipelineRun.fragments.PipelineRunPipelineRunEventFragment}
     `
   };
 

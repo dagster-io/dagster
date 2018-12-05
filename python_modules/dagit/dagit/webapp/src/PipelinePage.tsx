@@ -1,6 +1,7 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
+import { ApolloConsumer } from "react-apollo";
 import { Link } from "react-router-dom";
 import { Route, match } from "react-router";
 import { History } from "history";
@@ -56,15 +57,20 @@ const TABS = [
     slug: "execute",
     title: "Execute",
     render: (props: IPipelinePageTabProps) => (
-      <StorageProvider namespace={props.pipeline.name}>
-        {({ data, onSave }) => (
-          <PipelineExecutionContainer
-            pipeline={props.pipeline}
-            data={data}
-            onSave={onSave}
-          />
+      <ApolloConsumer>
+        {client => (
+          <StorageProvider namespace={props.pipeline.name}>
+            {({ data, onSave }) => (
+              <PipelineExecutionContainer
+                client={client}
+                pipeline={props.pipeline}
+                data={data}
+                onSave={onSave}
+              />
+            )}
+          </StorageProvider>
         )}
-      </StorageProvider>
+      </ApolloConsumer>
     )
   }
 ];

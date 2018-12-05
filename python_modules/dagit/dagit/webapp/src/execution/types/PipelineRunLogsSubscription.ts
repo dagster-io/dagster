@@ -4,37 +4,26 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL fragment: PipelineExecutionPipelineRunFragment
+// GraphQL subscription operation: PipelineRunLogsSubscription
 // ====================================================
 
-export interface PipelineExecutionPipelineRunFragment_logs_nodes {
+export interface PipelineRunLogsSubscription_pipelineRunLogs_run {
+  runId: string;
+}
+
+export interface PipelineRunLogsSubscription_pipelineRunLogs {
+  run: PipelineRunLogsSubscription_pipelineRunLogs_run;
   __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent";
   message: string;
 }
 
-export interface PipelineExecutionPipelineRunFragment_logs {
-  nodes: PipelineExecutionPipelineRunFragment_logs_nodes[];
+export interface PipelineRunLogsSubscription {
+  pipelineRunLogs: PipelineRunLogsSubscription_pipelineRunLogs;
 }
 
-export interface PipelineExecutionPipelineRunFragment_executionPlan_steps_solid {
-  name: string;
-}
-
-export interface PipelineExecutionPipelineRunFragment_executionPlan_steps {
-  name: string;
-  solid: PipelineExecutionPipelineRunFragment_executionPlan_steps_solid;
-  tag: StepTag;
-}
-
-export interface PipelineExecutionPipelineRunFragment_executionPlan {
-  steps: PipelineExecutionPipelineRunFragment_executionPlan_steps[];
-}
-
-export interface PipelineExecutionPipelineRunFragment {
+export interface PipelineRunLogsSubscriptionVariables {
   runId: string;
-  status: PipelineRunStatus;
-  logs: PipelineExecutionPipelineRunFragment_logs;
-  executionPlan: PipelineExecutionPipelineRunFragment_executionPlan;
+  after?: any | null;
 }
 
 /* tslint:disable */

@@ -147,7 +147,7 @@ def get_pipeline_run_observable(context, runId, after=None):
 
     def get_observable(pipeline):
         return run.observable_after_cursor(after).map(
-            lambda event: runs.PipelineRunEvent.from_dagster_event(event, pipeline)
+            lambda event: runs.PipelineRunEvent.from_dagster_event(context, event, pipeline)
         )
 
     return _pipeline_or_error_from_container(context.repository_container,

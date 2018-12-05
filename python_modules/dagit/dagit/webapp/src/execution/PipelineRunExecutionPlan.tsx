@@ -35,6 +35,14 @@ export default class PipelineRunExecutionPlan extends React.Component<
           }
         }
       }
+    `,
+    PipelineRunExecutionPlanPipelineRunEventFragment: gql`
+      fragment PipelineRunExecutionPlanPipelineRunEventFragment on PipelineRunEvent {
+        __typename
+        ... on MessageEvent {
+          message
+        }
+      }
     `
   };
 

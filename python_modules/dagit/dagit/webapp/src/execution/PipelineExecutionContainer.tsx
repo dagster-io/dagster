@@ -1,5 +1,7 @@
 import * as React from "react";
 import gql from "graphql-tag";
+import ZenObservable from "zen-observable-ts";
+import { ApolloClient } from "apollo-client";
 import { DataProxy } from "apollo-cache";
 import produce from "immer";
 import { Mutation, FetchResult } from "react-apollo";
@@ -14,14 +16,21 @@ import {
 import PipelineExecution from "./PipelineExecution";
 import {
   PipelineExecutionContainerFragment,
-  PipelineExecutionContainerFragment_runs
+  PipelineExecutionContainerFragment_runs,
+  PipelineRunStatus
 } from "./types/PipelineExecutionContainerFragment";
 import {
   StartPipelineExecution,
   StartPipelineExecutionVariables
 } from "./types/StartPipelineExecution";
+import {
+  PipelineRunLogsSubscription,
+  PipelineRunLogsSubscriptionVariables
+} from "./types/PipelineRunLogsSubscription";
+import { PipelineRunLogsUpdateFragment } from "./types/PipelineRunLogsUpdateFragment";
 
 interface IPipelineExecutionContainerProps {
+  client: ApolloClient<any>;
   pipeline: PipelineExecutionContainerFragment;
   data: IStorageData;
   onSave: (data: IStorageData) => void;
@@ -36,7 +45,13 @@ export default class PipelineExecutionContainer extends React.Component<
         name
         runs {
           runId
+          status
           ...PipelineExecutionPipelineRunFragment
+          logs {
+            pageInfo {
+              lastCursor
+            }
+          }
         }
         ...PipelineExecutionCodeEditorFragment
       }
@@ -45,6 +60,58 @@ export default class PipelineExecutionContainer extends React.Component<
       ${PipelineExecution.fragments.PipelineExecutionPipelineRunFragment}
     `
   };
+
+  componentDidMount() {
+    this.subscribeToRuns();
+  }
+
+  componentDidUpdate() {
+    this.subscribeToRuns();
+  }
+
+  componentWillUnmount() {
+    this.unsubscribeFromRuns();
+  }
+
+  _subscriptions: {
+    [runId: string]: ZenObservable.Subscription;
+  } = {};
+
+  subscribeToRuns() {
+    const validRuns = this.props.pipeline.runs.filter(({ status }) => {
+      return (
+        status === PipelineRunStatus.NOT_STARTED ||
+        status === PipelineRunStatus.STARTED
+      );
+    });
+    // const validRunIds = new Set(validRuns.map(({ runId }) => runId));
+    // const subscribedRunIds = new Set(Object.keys(this._subscriptions));
+    // for (const staleRunId of []) {
+    //   this._subscriptions[staleRunId].unsubscribe();
+    // }
+
+    validRuns.forEach(run => {
+      if (this._subscriptions[run.runId]) {
+        return;
+      }
+      const observable = this.props.client.subscribe({
+        query: PIPELINE_RUN_LOGS_SUBSCRIPTION,
+        variables: {
+          runId: run.runId,
+          after: run.logs.pageInfo.lastCursor
+        }
+      });
+      this._subscriptions[run.runId] = observable.subscribe({
+        next: this.handleNewMessage
+      });
+    });
+  }
+
+  unsubscribeFromRuns() {
+    Object.keys(this._subscriptions).forEach(key => {
+      this._subscriptions[key].unsubscribe();
+    });
+  }
 
   handleSelectSession = (session: string) => {
     this.props.onSave(applySelectSession(this.props.data, session));
@@ -105,6 +172,36 @@ export default class PipelineExecutionContainer extends React.Component<
     }
   };
 
+  handleNewMessage = (
+    result: FetchResult<
+      PipelineRunLogsSubscription,
+      PipelineRunLogsSubscriptionVariables
+    >
+  ) => {
+    const data = result.data;
+    if (data) {
+      const id = `PipelineRun.${data.pipelineRunLogs.run.runId}`;
+      const existingData: PipelineRunLogsUpdateFragment | null = this.props.client.readFragment(
+        {
+          fragmentName: "PipelineRunLogsUpdateFragment",
+          fragment: PIPELINE_RUN_LOGS_UPDATE_FRAGMENT,
+          id
+        }
+      );
+      if (existingData) {
+        const newData = produce(existingData, draftData => {
+          draftData.logs.nodes.push(data.pipelineRunLogs);
+        });
+        this.props.client.writeFragment({
+          fragmentName: "PipelineRunLogsUpdateFragment",
+          fragment: PIPELINE_RUN_LOGS_UPDATE_FRAGMENT,
+          id,
+          data: newData
+        });
+      }
+    }
+  };
+
   render() {
     let activeRun: PipelineExecutionContainerFragment_runs | null = null;
     if (this.props.pipeline.runs.length > 0) {
@@ -157,6 +254,11 @@ const START_PIPELINE_EXECUTION_MUTATION = gql`
           runId
           status
           ...PipelineExecutionPipelineRunFragment
+          logs {
+            pageInfo {
+              lastCursor
+            }
+          }
         }
       }
       ... on PipelineNotFoundError {
@@ -172,9 +274,31 @@ const START_PIPELINE_EXECUTION_MUTATION = gql`
 
   ${PipelineExecution.fragments.PipelineExecutionPipelineRunFragment}
 `;
-//
-// const PIPELINE_RUN_LOGS_SUBSCRIPTION = gql`
-//   subscription PipelineRunLogsSubscription($runId: ID!) {
-//
-//   }
-// `;
+
+const PIPELINE_RUN_LOGS_SUBSCRIPTION = gql`
+  subscription PipelineRunLogsSubscription($runId: ID!, $after: Cursor) {
+    pipelineRunLogs(runId: $runId, after: $after) {
+      ... on MessageEvent {
+        run {
+          runId
+        }
+        ...PipelineExecutionPipelineRunEventFragment
+      }
+    }
+  }
+
+  ${PipelineExecution.fragments.PipelineExecutionPipelineRunEventFragment}
+`;
+
+const PIPELINE_RUN_LOGS_UPDATE_FRAGMENT = gql`
+  fragment PipelineRunLogsUpdateFragment on PipelineRun {
+    runId
+    logs {
+      nodes {
+        ...PipelineExecutionPipelineRunEventFragment
+      }
+    }
+  }
+
+  ${PipelineExecution.fragments.PipelineExecutionPipelineRunEventFragment}
+`;

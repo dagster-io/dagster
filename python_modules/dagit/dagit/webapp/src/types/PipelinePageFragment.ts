@@ -13,18 +13,18 @@ export interface PipelinePageFragment_PythonError {
   stack: string[];
 }
 
-export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs_pageInfo {
-  lastCursor: any | null;
-}
-
 export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes {
   __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent";
   message: string;
 }
 
+export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs_pageInfo {
+  lastCursor: any | null;
+}
+
 export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs {
-  pageInfo: PipelinePageFragment_PipelineConnection_nodes_runs_logs_pageInfo;
   nodes: PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes[];
+  pageInfo: PipelinePageFragment_PipelineConnection_nodes_runs_logs_pageInfo;
 }
 
 export interface PipelinePageFragment_PipelineConnection_nodes_runs_executionPlan_steps_solid {

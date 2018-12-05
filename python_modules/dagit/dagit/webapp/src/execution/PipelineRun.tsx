@@ -24,6 +24,16 @@ export class PipelineRun extends React.Component<IPipelineRunProps> {
 
       ${PipelineRunExecutionPlan.fragments.PipelineRunExecutionPlanFragment}
       ${PipelineRunLogMessage.fragments.PipelineRunLogMessageFragment}
+    `,
+    PipelineRunPipelineRunEventFragment: gql`
+      fragment PipelineRunPipelineRunEventFragment on PipelineRunEvent {
+        ...PipelineRunLogMessageFragment
+        ...PipelineRunExecutionPlanPipelineRunEventFragment
+      }
+
+      ${PipelineRunExecutionPlan.fragments
+        .PipelineRunExecutionPlanPipelineRunEventFragment}
+      ${PipelineRunLogMessage.fragments.PipelineRunLogMessageFragment}
     `
   };
 

@@ -4,37 +4,21 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL fragment: PipelineExecutionPipelineRunFragment
+// GraphQL fragment: PipelineRunLogsUpdateFragment
 // ====================================================
 
-export interface PipelineExecutionPipelineRunFragment_logs_nodes {
+export interface PipelineRunLogsUpdateFragment_logs_nodes {
   __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent";
   message: string;
 }
 
-export interface PipelineExecutionPipelineRunFragment_logs {
-  nodes: PipelineExecutionPipelineRunFragment_logs_nodes[];
+export interface PipelineRunLogsUpdateFragment_logs {
+  nodes: PipelineRunLogsUpdateFragment_logs_nodes[];
 }
 
-export interface PipelineExecutionPipelineRunFragment_executionPlan_steps_solid {
-  name: string;
-}
-
-export interface PipelineExecutionPipelineRunFragment_executionPlan_steps {
-  name: string;
-  solid: PipelineExecutionPipelineRunFragment_executionPlan_steps_solid;
-  tag: StepTag;
-}
-
-export interface PipelineExecutionPipelineRunFragment_executionPlan {
-  steps: PipelineExecutionPipelineRunFragment_executionPlan_steps[];
-}
-
-export interface PipelineExecutionPipelineRunFragment {
+export interface PipelineRunLogsUpdateFragment {
   runId: string;
-  status: PipelineRunStatus;
-  logs: PipelineExecutionPipelineRunFragment_logs;
-  executionPlan: PipelineExecutionPipelineRunFragment_executionPlan;
+  logs: PipelineRunLogsUpdateFragment_logs;
 }
 
 /* tslint:disable */
