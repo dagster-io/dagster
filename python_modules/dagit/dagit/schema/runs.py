@@ -99,6 +99,25 @@ class PipelineFailureEvent(graphene.ObjectType):
         interfaces = (MessageEvent, PipelineEvent)
 
 
+class ExecutionStepEvent(graphene.Interface):
+    step = graphene.NonNull(lambda: dagit.schema.execution.ExecutionStep)
+
+
+class ExecutionStepStartEvent(graphene.ObjectType):
+    class Meta:
+        interfaces = (MessageEvent, ExecutionStepEvent)
+
+
+class ExecutionStepSuccessEvent(graphene.ObjectType):
+    class Meta:
+        interfaces = (MessageEvent, ExecutionStepEvent)
+
+
+class ExecutionStepFailureEvent(graphene.ObjectType):
+    class Meta:
+        interfaces = (MessageEvent, ExecutionStepEvent)
+
+
 # Should be a union of all possible events
 class PipelineRunEvent(graphene.Union):
     class Meta:
@@ -107,13 +126,17 @@ class PipelineRunEvent(graphene.Union):
             PipelineStartEvent,
             PipelineSuccessEvent,
             PipelineFailureEvent,
+            ExecutionStepStartEvent,
+            ExecutionStepSuccessEvent,
+            ExecutionStepFailureEvent,
         )
 
     @staticmethod
     def from_dagster_event(context, event, pipeline):
         check.inst_param(event, 'event', EventRecord)
         check.inst_param(pipeline, 'pipeline', dagit.schema.pipelines.Pipeline)
-        run = PipelineRun(context.pipeline_runs.get_run_by_id(event.run_id))
+        pipeline_run = context.pipeline_runs.get_run_by_id(event.run_id)
+        run = PipelineRun(pipeline_run)
 
         if event.event_type == EventType.PIPELINE_START:
             return PipelineStartEvent(
@@ -133,8 +156,29 @@ class PipelineRunEvent(graphene.Union):
                 message=event.original_message,
                 pipeline=pipeline,
             )
-        elif event.event_type == EventType.UNCATEGORIZED:
-            return LogMessageEvent(run=run, message=event.original_message)
+        elif event.event_type == EventType.EXECUTION_PLAN_STEP_START:
+            return ExecutionStepStartEvent(
+                run_id=event.run_id,
+                message=event.original_message,
+                step=dagit.schema.execution.ExecutionStep(
+                    pipeline_run.execution_plan.get_step_by_key(event.step_key)
+                ),
+            )
+        elif event.event_type == EventType.EXECUTION_PLAN_STEP_SUCCESS:
+            return ExecutionStepSuccessEvent(
+                run_id=event.run_id,
+                message=event.original_message,
+                step=dagit.schema.execution.ExecutionStep(
+                    pipeline_run.execution_plan.get_step_by_key(event.step_key)
+                ),
+            )
+        elif event.event_type == EventType.EXECUTION_PLAN_STEP_START:
+            return ExecutionStepFailureEvent(
+                run_id=event.run_id,
+                message=event.original_message,
+                step=dagit.schema.execution.ExecutionStep(
+                    pipeline_run.execution_plan.get_step_by_key(event.step_key)
+                ),
+            )
         else:
             return LogMessageEvent(run=run, message=event.original_message)
-            # check.failed('Unknown event type {event_type}'.format(event_type=event.event_type))
