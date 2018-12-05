@@ -76,13 +76,23 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None)
         if table_name is None:
             raise Exception('Missing table_name: required for materialization strategy \'table\'')
 
+    output_description = (
+        'The string name of the new table created by the solid'
+        if materialization_strategy == 'table'
+        else 'The materialized SQL statement. If the materialization_strategy is '
+             '\'table\', this is the string name of the new table created by the solid.'
+    )
+
+    solid_description = '''This solid executes the following SQL statement:
+    {select_statement}'''.format(select_statement=select_statement)
+
     @solid(
         name=name,
+        description=solid_description,
         outputs=[
             OutputDefinition(
                 materialization_strategy_output_types[materialization_strategy],
-                description='The materialized SQL statement. If the materialization_strategy is '
-                '\'table\', this is the string name of the new table created by the solid.'
+                description=output_description
             )
         ]
     )
@@ -531,7 +541,8 @@ average_sfo_outbound_avg_delays_by_destination = sql_solid(
         origin,
         dest as destination
     from q2_on_time_data
-    where origin='SFO''',
+    where origin='SFO'
+    ''',
     'table',
     table_name='average_sfo_outbound_avg_delays_by_destination',
 )
