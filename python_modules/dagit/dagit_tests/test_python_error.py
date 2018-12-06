@@ -15,3 +15,5 @@ def test_python_error():
     assert python_error
     assert isinstance(python_error.message, str)
     assert isinstance(python_error.stack, list)
+    assert len(python_error.stack) == 2
+    assert 'bar' in python_error.stack[1]

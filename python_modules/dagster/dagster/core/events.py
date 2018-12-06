@@ -1,6 +1,12 @@
 from enum import Enum
+import json
 
 from dagster import check
+
+from dagster.utils.error import (
+    serializable_error_info_from_exc_info,
+    SerializableErrorInfo,
+)
 
 from dagster.utils.logging import (
     DEBUG,
@@ -73,12 +79,14 @@ class ExecutionEvents:
             step_key=step_key,
         )
 
-    def execution_plan_step_failure(self, step_key):
+    def execution_plan_step_failure(self, step_key, exc_info):
         check.str_param(step_key, 'step_key')
         self.context.info(
             'Execution of {step_key} failed'.format(step_key=step_key),
             event_type=EventType.EXECUTION_PLAN_STEP_FAILURE.value,
             step_key=step_key,
+            # We really need a better serialization story here
+            error_info=json.dumps(serializable_error_info_from_exc_info(exc_info)),
         )
 
     def pipeline_name(self):

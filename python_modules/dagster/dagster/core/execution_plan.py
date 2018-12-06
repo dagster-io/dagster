@@ -168,7 +168,7 @@ def _execution_step_error_boundary(context, step, msg, **kwargs):
 
         context.events.execution_plan_step_success(step.key, timer_result.millis)
     except Exception as e:  # pylint: disable=W0703
-        context.events.execution_plan_step_failure(step.key)
+        context.events.execution_plan_step_failure(step.key, sys.exc_info())
 
         stack_trace = get_formatted_stack_trace(e)
         context.error(str(e), stack_trace=stack_trace)
