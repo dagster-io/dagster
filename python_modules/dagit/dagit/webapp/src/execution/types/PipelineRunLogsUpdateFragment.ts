@@ -32,6 +32,7 @@ export interface PipelineRunLogsUpdateFragment_logs {
 
 export interface PipelineRunLogsUpdateFragment {
   runId: string;
+  status: PipelineRunStatus;
   logs: PipelineRunLogsUpdateFragment_logs;
 }
 

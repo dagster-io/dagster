@@ -84,11 +84,14 @@ export default class PipelineExecutionContainer extends React.Component<
         status === PipelineRunStatus.STARTED
       );
     });
-    // const validRunIds = new Set(validRuns.map(({ runId }) => runId));
-    // const subscribedRunIds = new Set(Object.keys(this._subscriptions));
-    // for (const staleRunId of []) {
-    //   this._subscriptions[staleRunId].unsubscribe();
-    // }
+    const validRunIds = new Set(validRuns.map(({ runId }) => runId));
+    const subscribedRunIds = new Set(Object.keys(this._subscriptions));
+    subscribedRunIds.forEach(runId => {
+      if (!validRunIds.has(runId)) {
+        this._subscriptions[runId].unsubscribe();
+        delete this._subscriptions[runId];
+      }
+    });
 
     validRuns.forEach(run => {
       if (this._subscriptions[run.runId]) {
@@ -108,8 +111,9 @@ export default class PipelineExecutionContainer extends React.Component<
   }
 
   unsubscribeFromRuns() {
-    Object.keys(this._subscriptions).forEach(key => {
-      this._subscriptions[key].unsubscribe();
+    Object.keys(this._subscriptions).forEach(runId => {
+      this._subscriptions[runId].unsubscribe();
+      delete this._subscriptions[runId];
     });
   }
 
@@ -191,6 +195,17 @@ export default class PipelineExecutionContainer extends React.Component<
       if (existingData) {
         const newData = produce(existingData, draftData => {
           draftData.logs.nodes.push(data.pipelineRunLogs);
+          if (data.pipelineRunLogs.__typename === "PipelineStartEvent") {
+            draftData.status = PipelineRunStatus.STARTED;
+          } else if (
+            data.pipelineRunLogs.__typename === "PipelineSuccessEvent"
+          ) {
+            draftData.status = PipelineRunStatus.SUCCESS;
+          } else if (
+            data.pipelineRunLogs.__typename === "PipelineFailureEvent"
+          ) {
+            draftData.status = PipelineRunStatus.FAILURE;
+          }
         });
         this.props.client.writeFragment({
           fragmentName: "PipelineRunLogsUpdateFragment",
@@ -293,6 +308,7 @@ const PIPELINE_RUN_LOGS_SUBSCRIPTION = gql`
 const PIPELINE_RUN_LOGS_UPDATE_FRAGMENT = gql`
   fragment PipelineRunLogsUpdateFragment on PipelineRun {
     runId
+    status
     logs {
       nodes {
         ...PipelineExecutionPipelineRunEventFragment
