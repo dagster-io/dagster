@@ -402,9 +402,6 @@ def _create_loggers(reentrant_info, execution_context):
         return execution_context.loggers
 
 
-RESOURCES_TYPE_CACHE = {}
-
-
 def get_resources_type(pipeline_def, context_name, context_def):
     if pipeline_def.anonymous:
         raise DagsterInvariantViolationError('If a pipeline has resources it must have a name')
@@ -413,11 +410,8 @@ def get_resources_type(pipeline_def, context_name, context_def):
         pipeline=camelcase(pipeline_def.name),
         context=camelcase(context_name),
     )
-    if resources_type_name not in RESOURCES_TYPE_CACHE:
-        resources_type = namedtuple(resources_type_name, list(context_def.resources.keys()))
-        RESOURCES_TYPE_CACHE[resources_type_name] = resources_type
 
-    return RESOURCES_TYPE_CACHE[resources_type_name]
+    return namedtuple(resources_type_name, list(context_def.resources.keys()))
 
 
 @contextmanager

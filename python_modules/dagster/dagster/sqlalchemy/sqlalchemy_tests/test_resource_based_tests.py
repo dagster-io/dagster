@@ -113,6 +113,7 @@ def test_resource_format():
     )
 
     pipeline = PipelineDefinition(
+        name='kdjfkd',
         solids=[sum_sql_solid, sum_sq_sql_solid],
         context_definitions={
             'in_mem':
@@ -161,6 +162,7 @@ def test_resource_format_with_config():
     )
 
     pipeline = PipelineDefinition(
+        name='kjdkfjd',
         solids=[sum_sql_solid, sum_sq_sql_solid],
         context_definitions={
             'in_mem':
