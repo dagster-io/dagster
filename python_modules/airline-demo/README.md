@@ -82,7 +82,10 @@ manually delete the VPC from the console, which will force-delete dependencies.
 - Add expectations
 - Running local Spark tests on Circle is going to require us to create a custom Docker image with
   both Python and a Java runtime [(!)](https://discuss.circleci.com/t/recommended-way-to-use-multiple-languages-in-2-0/14174/11)
- 
+- Maybe implement templated SQL handling
+- Replace unhelpful stringcase dependency
+- Add sub-DAG tests
+
 ### Issues with general availability
 - Right now the pulumi spec, as well as the sample config, expect that you will
 be able to orchestrate a Redshift cluster at `db.dagster.io` and an EMR cluster

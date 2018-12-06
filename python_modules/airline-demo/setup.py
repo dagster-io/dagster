@@ -31,6 +31,8 @@ setup(
         'boto3',
         'dagster',
         'dagstermill',
+        'descartes',
+        'geopandas',
         'matplotlib',
         'pyspark',
         'sqlalchemy-redshift',

@@ -1,6 +1,8 @@
 boto3==1.9.47
 dagster
 dagstermill
+descartes==1.1.0
+geopandas==0.4.0
 matplotlib==3.0.2
 pyspark==2.4.0
 sqlalchemy-redshift==0.7.1
