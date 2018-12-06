@@ -17,7 +17,7 @@ PipelineRunStatus = graphene.Enum.from_enum(pipeline_run_storage.PipelineRunStat
 class PipelineRun(graphene.ObjectType):
     runId = graphene.NonNull(graphene.String)
     status = graphene.NonNull(PipelineRunStatus)
-    pipeline = graphene.NonNull(lambda: dagit.schema.pipelines.GraphenePipeline)
+    pipeline = graphene.NonNull(lambda: dagit.schema.GraphenePipeline)
     logs = graphene.NonNull(lambda: LogMessageConnection)
     executionPlan = graphene.NonNull(lambda: execution.ExecutionPlan)
 
@@ -83,7 +83,7 @@ class LogMessageEvent(graphene.ObjectType):
 
 
 class PipelineEvent(graphene.Interface):
-    pipeline = graphene.NonNull(lambda: dagit.schema.pipelines.GraphenePipeline)
+    pipeline = graphene.NonNull(lambda: dagit.schema.GraphenePipeline)
 
 
 class PipelineStartEvent(graphene.ObjectType):
@@ -136,7 +136,7 @@ class PipelineRunEvent(graphene.Union):
     @staticmethod
     def from_dagster_event(context, event, pipeline):
         check.inst_param(event, 'event', EventRecord)
-        check.inst_param(pipeline, 'pipeline', dagit.schema.pipelines.GraphenePipeline)
+        check.inst_param(pipeline, 'pipeline', dagit.schema.GraphenePipeline)
         pipeline_run = context.pipeline_runs.get_run_by_id(event.run_id)
         run = PipelineRun(pipeline_run)
 
