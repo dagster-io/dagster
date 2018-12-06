@@ -33,7 +33,6 @@
     "react-router-dom": "^4.3.1",
     "styled-components": "^3.3.3",
     "subscriptions-transport-ws": "^0.9.15",
-    "ts-jest": "^23.1.4",
     "yaml": "^1.0.1",
     "yaml-language-server": "^0.0.19"
   },
@@ -61,6 +60,7 @@
     "prettier": "^1.14.0",
     "react-scripts-ts": "2.16.0",
     "react-test-renderer": "^16.4.2",
+    "ts-jest": "^23.1.4",
     "typescript": "^3.0.1",
     "typescript-babel-jest": "^1.0.5"
   },
