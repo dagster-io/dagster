@@ -25,11 +25,8 @@ from .solids import (
     subsample_spark_dataset,
     thunk,
     union_spark_data_frames,
-<<<<<<< HEAD
     unzip_file,
     upload_to_s3,
-=======
->>>>>>> f1cf34e... Example: use list type to config parallel pipeline operations
 )
 from .types import (
     AirlineDemoResources,
