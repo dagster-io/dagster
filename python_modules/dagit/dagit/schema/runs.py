@@ -176,7 +176,7 @@ class PipelineRunEvent(graphene.Union):
                     pipeline_run.execution_plan.get_step_by_key(event.step_key)
                 ),
                 error=dagit.schema.errors.PythonError(event.error_info),
-                **basic_params,
+                **basic_params
             )
             return failure_event
         else:
