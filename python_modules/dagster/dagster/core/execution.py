@@ -22,12 +22,15 @@ import itertools
 import inspect
 import uuid
 
+from contextlib2 import ExitStack
 import six
 
 from dagster import (
     check,
     config,
 )
+
+from dagster.utils import camelcase
 
 from .definitions import (
     DEFAULT_OUTPUT,
@@ -240,23 +243,6 @@ class SolidExecutionResult(object):
                 return result.failure_data.dagster_error
 
 
-def _wrap_in_yield(context_params_or_gen):
-    check.param_invariant(
-        inspect.isgenerator(context_params_or_gen)
-        or isinstance(context_params_or_gen, ExecutionContext),
-        'context_params_or_gen',
-    )
-
-    if isinstance(context_params_or_gen, ExecutionContext):
-
-        def _gen_for_context_params():
-            yield context_params_or_gen
-
-        return _gen_for_context_params()
-
-    return context_params_or_gen
-
-
 def create_execution_plan(pipeline, environment=None):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.opt_inst_param(environment, 'environment', config.Environment)
@@ -332,26 +318,39 @@ def get_context_stack(user_context_params, reentrant_info):
         return user_context_params.context_stack
 
 
-def create_runtime_context(execution_context, reentrant_info):
-    check.inst_param(execution_context, 'execution_context', ExecutionContext)
-    check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
+ResourceCreationInfo = namedtuple('ResourceCreationInfo', 'config run_id')
 
-    run_id = get_run_id(reentrant_info)
-    context_stack = get_context_stack(execution_context, reentrant_info)
 
-    if reentrant_info and reentrant_info.event_callback:
-        loggers = execution_context.loggers + [
-            construct_event_logger(reentrant_info.event_callback)
-        ]
-    else:
-        loggers = execution_context.loggers
+def _ensure_gen(thing_or_gen):
+    if not inspect.isgenerator(thing_or_gen):
 
-    return RuntimeExecutionContext(
-        run_id=run_id,
-        loggers=loggers,
-        resources=execution_context.resources,
-        context_stack=context_stack,
-    )
+        def _gen_thing():
+            yield thing_or_gen
+
+        return _gen_thing()
+
+    return thing_or_gen
+
+
+@contextmanager
+def with_maybe_gen(thing_or_gen):
+    gen = _ensure_gen(thing_or_gen)
+
+    try:
+        thing = next(gen)
+    except StopIteration:
+        check.failed('Must yield one item. You did not yield anything.')
+
+    yield thing
+
+    stopped = False
+
+    try:
+        next(gen)
+    except StopIteration:
+        stopped = True
+
+    check.invariant(stopped, 'Must yield one item. Yielded more than one item')
 
 
 @contextmanager
@@ -372,15 +371,76 @@ def yield_context(pipeline, environment, reentrant_info=None):
         ),
     )
 
-    called = False
-
-    for execution_context in _wrap_in_yield(ec_or_gen):
-        check.invariant(not called, 'should only yield one thing')
+    with with_maybe_gen(ec_or_gen) as execution_context:
         check.inst(execution_context, ExecutionContext)
 
-        yield create_runtime_context(execution_context, reentrant_info)
+        with _create_resources(
+            pipeline,
+            context_definition,
+            environment,
+            execution_context,
+            run_id,
+        ) as resources:
+            loggers = _create_loggers(reentrant_info, execution_context)
 
-        called = True
+            yield RuntimeExecutionContext(
+                run_id=get_run_id(reentrant_info),
+                loggers=loggers,
+                resources=resources,
+                context_stack=get_context_stack(execution_context, reentrant_info),
+            )
+
+
+def _create_loggers(reentrant_info, execution_context):
+    if reentrant_info and reentrant_info.event_callback:
+        return execution_context.loggers + [construct_event_logger(reentrant_info.event_callback)]
+    else:
+        return execution_context.loggers
+
+
+@contextmanager
+def _create_resources(pipeline_def, context_def, environment, execution_context, run_id):
+    if not context_def.resources:
+        yield execution_context.resources
+        return
+
+    resources = {}
+    check.invariant(
+        not execution_context.resources,
+        (
+            'If resources explicitly specified on context definition, the context '
+            'creation function should not return resources as a property of the '
+            'ExecutionContext.'
+        ),
+    )
+
+    # See https://bit.ly/2zIXyqw
+    # The "ExitStack" allows one to stack up N context managers and then yield
+    # something. We do this so that resources can cleanup after themselves. We
+    # can potentially have many resources so we need to use this abstraction.
+    with ExitStack() as stack:
+        for resource_name in context_def.resources.keys():
+            resource_obj_or_gen = get_resource_or_gen(
+                context_def,
+                resource_name,
+                environment,
+                run_id,
+            )
+
+            resource_obj = stack.enter_context(with_maybe_gen(resource_obj_or_gen))
+
+            resources[resource_name] = resource_obj
+
+        context_name = environment.context.name
+
+        resources_type = pipeline_def.context_definitions[context_name].resources_type
+        yield resources_type(**resources)
+
+
+def get_resource_or_gen(context_definition, resource_name, environment, run_id):
+    resource_def = context_definition.resources[resource_name]
+    resource_config = environment.context.resources[resource_name]['config']
+    return resource_def.resource_fn(ResourceCreationInfo(resource_config, run_id))
 
 
 def execute_pipeline_iterator(pipeline, environment=None):
