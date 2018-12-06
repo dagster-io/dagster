@@ -1,51 +1,73 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
-import { Colors } from "@blueprintjs/core";
+import { Colors, Button, InputGroup } from "@blueprintjs/core";
 import PipelineRunExecutionPlan from "./PipelineRunExecutionPlan";
-import PipelineRunLogMessage from "./PipelineRunLogMessage";
 import { PipelineRunFragment } from "./types/PipelineRunFragment";
+import { PanelDivider } from "../PanelDivider";
+import PipelineRunFilteredLogs from "./PipelineRunFilteredLogs";
 
 interface IPipelineRunProps {
   pipelineRun: PipelineRunFragment;
 }
 
-export class PipelineRun extends React.Component<IPipelineRunProps> {
+interface IPipelineRunState {
+  logsVH: number;
+  logsFilter: string;
+}
+
+export class PipelineRun extends React.Component<
+  IPipelineRunProps,
+  IPipelineRunState
+> {
   static fragments = {
     PipelineRunFragment: gql`
       fragment PipelineRunFragment on PipelineRun {
         logs {
           nodes {
-            ...PipelineRunLogMessageFragment
+            ...PipelineRunFilteredLogMessageFragment
           }
         }
         ...PipelineRunExecutionPlanFragment
       }
 
       ${PipelineRunExecutionPlan.fragments.PipelineRunExecutionPlanFragment}
-      ${PipelineRunLogMessage.fragments.PipelineRunLogMessageFragment}
+      ${PipelineRunFilteredLogs.fragments.PipelineRunFilteredLogMessageFragment}
     `,
     PipelineRunPipelineRunEventFragment: gql`
       fragment PipelineRunPipelineRunEventFragment on PipelineRunEvent {
-        ...PipelineRunLogMessageFragment
+        ...PipelineRunFilteredLogMessageFragment
         ...PipelineRunExecutionPlanPipelineRunEventFragment
       }
 
       ${PipelineRunExecutionPlan.fragments
         .PipelineRunExecutionPlanPipelineRunEventFragment}
-      ${PipelineRunLogMessage.fragments.PipelineRunLogMessageFragment}
+      ${PipelineRunFilteredLogs.fragments.PipelineRunFilteredLogMessageFragment}
     `
+  };
+
+  state = {
+    logsVH: 40,
+    logsFilter: ""
   };
 
   render() {
     return (
       <PipelineRunWrapper>
-        <PipelineRunExecutionPlan pipelineRun={this.props.pipelineRun} />
-        <HorizontalDivider />
-        <LogsContainer>
-          {this.props.pipelineRun.logs.nodes.map((log, i) => (
-            <PipelineRunLogMessage key={i} log={log} />
-          ))}
+        <PipelineRunExecutionPlan
+          onSetLogFilter={logsFilter => this.setState({ logsFilter })}
+          pipelineRun={this.props.pipelineRun}
+        />
+        <PanelDivider
+          onMove={(vh: number) => this.setState({ logsVH: 100 - vh })}
+          axis="vertical"
+        />
+        <LogsContainer style={{ height: `${this.state.logsVH}vh` }}>
+          <PipelineRunFilteredLogs
+            onSetFilter={logsFilter => this.setState({ logsFilter })}
+            filter={this.state.logsFilter}
+            nodes={this.props.pipelineRun.logs.nodes}
+          />
         </LogsContainer>
       </PipelineRunWrapper>
     );
@@ -71,20 +93,8 @@ const PipelineRunWrapper = styled.div`
   background: #232b2f;
 `;
 
-const HorizontalDivider = styled.div`
-  border-top: 1px solid ${Colors.GRAY4};
-  background: ${Colors.GRAY2};
-  border-bottom: 1px solid ${Colors.GRAY1};
-  display: block;
-  height: 3px;
-`;
-
 const LogsContainer = styled.div`
-  padding-left: 10px;
-  padding-top: 5px;
-  padding-bottom: 5px;
   display: flex;
-  flex: 1 1;
   flex-direction: column;
-  overflow-y: scroll;
+  background: ${Colors.LIGHT_GRAY5};
 `;

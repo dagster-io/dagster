@@ -10,6 +10,7 @@ import {
 
 interface IPipelineRunExecutionPlanProps {
   pipelineRun: PipelineRunExecutionPlanFragment;
+  onSetLogFilter: (filter: string) => void;
 }
 
 export default class PipelineRunExecutionPlan extends React.Component<
@@ -62,23 +63,29 @@ export default class PipelineRunExecutionPlan extends React.Component<
   };
 
   render() {
-    const stepMetadata = logsToStepMetadata(this.props.pipelineRun.logs.nodes);
+    const {
+      onSetLogFilter,
+      pipelineRun: { logs, executionPlan }
+    } = this.props;
+    const stepMetadata = logsToStepMetadata(logs.nodes);
+
     return (
       <ExecutionPlanContainer>
         <ExecutionPlanContainerInner>
           <ExecutionTimeline />
           <ExecutionTimelineMessage>
-            <ExecutionTimelineDot />{" "}
-            {this.props.pipelineRun.logs.nodes.length > 0
-              ? this.props.pipelineRun.logs.nodes[0].message
-              : null}
+            <ExecutionTimelineDot /> Started execution
           </ExecutionTimelineMessage>
-          {this.props.pipelineRun.executionPlan.steps.map(step => {
+          {executionPlan.steps.map(step => {
             const metadata = stepMetadata[step.name] || {
               state: "waiting"
             };
             return (
-              <ExecutionPlanBox key={step.name} state={metadata.state}>
+              <ExecutionPlanBox
+                key={step.name}
+                state={metadata.state}
+                onClick={() => onSetLogFilter(step.name)}
+              >
                 <ExecutionStateDot state={metadata.state} />
                 <ExecutionPlanBoxName>{step.name}</ExecutionPlanBoxName>
                 {metadata.elapsed && (
@@ -167,6 +174,11 @@ const ExecutionPlanBox = styled.div<{ state: IStepMetadataState }>`
   border-radius: 3px;
   position: relative;
   z-index: 2;
+  &:hover {
+    cursor: default;
+    background: ${({ state }) =>
+      state === "waiting" ? Colors.LIGHT_GRAY4 : Colors.WHITE}
+  }
 `;
 
 const ExecutionTimelineMessage = styled.div`
@@ -180,9 +192,9 @@ const ExecutionTimelineMessage = styled.div`
 const ExecutionTimeline = styled.div`
   border-left: 1px solid ${Colors.GRAY3};
   position: absolute;
-  top: 10px;
-  left: 22px;
-  bottom: 10px;
+  top: 12px;
+  left: 23px;
+  bottom: 12px;
 `;
 
 const ExecutionTimelineDot = styled.div`
@@ -194,6 +206,7 @@ const ExecutionTimelineDot = styled.div`
   background: #232b2f;
   border: 1px solid ${Colors.LIGHT_GRAY2};
   margin-left: 18px;
+  flex-shrink: 0;
 `;
 
 const ExecutionStateDot = styled.div<{ state: IStepMetadataState }>`

@@ -25,6 +25,7 @@ def sum_solid(num):
 )
 def sum_sq_solid(sum_df):
     sum_sq_df = sum_df.copy()
+    raise Exception("oops")
     sum_sq_df['sum_sq'] = sum_df['sum']**2
     return sum_sq_df
 

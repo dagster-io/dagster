@@ -4,7 +4,6 @@ import styled from "styled-components";
 import * as yaml from "yaml";
 import { Icon, Colors } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
-import { ApolloClient } from "apollo-boost";
 
 import { IExecutionSession } from "../LocalStorage";
 import { PipelineRun, PipelineRunEmpty } from "./PipelineRun";
@@ -59,68 +58,66 @@ export default class PipelineExecution extends React.Component<
 
   render() {
     return (
-      <>
-        <ExecutionTabs>
-          {Object.keys(this.props.sessions).map(key => (
-            <ExecutionTab
-              key={key}
-              active={key === this.props.currentSession.key}
-              title={this.props.sessions[key].name}
-              onClick={() => this.props.onSelectSession(key)}
-              onChange={title => this.props.onRenameSession(key, title)}
-              onRemove={
-                Object.keys(this.props.sessions).length > 1
-                  ? () => this.props.onRemoveSession(key)
-                  : undefined
-              }
-            />
-          ))}
-          <ExecutionTab
-            title={"Add..."}
-            onClick={() => this.props.onCreateSession()}
-          />
-        </ExecutionTabs>
-        <PipelineExecutionWrapper>
-          <Split>
-            <ConfigCodeEditorContainer
-              pipelineName={this.props.pipeline.name}
-              environmentTypeName={this.props.pipeline.environmentType.name}
-              configCode={this.props.currentSession.config}
-              onConfigChange={config =>
-                this.props.onSaveSession(this.props.currentSession.key, config)
-              }
-            />
-          </Split>
-          <Split>
-            {this.props.activeRun ? (
-              <PipelineRun pipelineRun={this.props.activeRun} />
-            ) : (
-              <PipelineRunEmpty />
-            )}
-          </Split>
-          <IconWrapper
-            role="button"
-            disabled={this.props.isExecuting}
-            onClick={async () => {
-              if (!this.props.isExecuting) {
-                let config = {};
-                try {
-                  config = yaml.parse(this.props.currentSession.config);
-                } catch (err) {
-                  alert(`Fix the errors in your config YAML and try again.`);
-                  return;
+      <PipelineExecutionWrapper>
+        <Split>
+          <ExecutionTabs>
+            {Object.keys(this.props.sessions).map(key => (
+              <ExecutionTab
+                key={key}
+                active={key === this.props.currentSession.key}
+                title={this.props.sessions[key].name}
+                onClick={() => this.props.onSelectSession(key)}
+                onChange={title => this.props.onRenameSession(key, title)}
+                onRemove={
+                  Object.keys(this.props.sessions).length > 1
+                    ? () => this.props.onRemoveSession(key)
+                    : undefined
                 }
-                this.props.onExecute(config);
-              }
-            }}
-          >
-            <Icon
-              icon={this.props.isExecuting ? IconNames.REFRESH : IconNames.PLAY}
-              iconSize={40}
+              />
+            ))}
+            <ExecutionTab
+              title={"Add..."}
+              onClick={() => this.props.onCreateSession()}
             />
-          </IconWrapper>
-        </PipelineExecutionWrapper>
-      </>
+          </ExecutionTabs>
+          <ConfigCodeEditorContainer
+            pipelineName={this.props.pipeline.name}
+            environmentTypeName={this.props.pipeline.environmentType.name}
+            configCode={this.props.currentSession.config}
+            onConfigChange={config =>
+              this.props.onSaveSession(this.props.currentSession.key, config)
+            }
+          />
+        </Split>
+        <Split>
+          {this.props.activeRun ? (
+            <PipelineRun pipelineRun={this.props.activeRun} />
+          ) : (
+            <PipelineRunEmpty />
+          )}
+        </Split>
+        <IconWrapper
+          role="button"
+          disabled={this.props.isExecuting}
+          onClick={async () => {
+            if (!this.props.isExecuting) {
+              let config = {};
+              try {
+                config = yaml.parse(this.props.currentSession.config);
+              } catch (err) {
+                alert(`Fix the errors in your config YAML and try again.`);
+                return;
+              }
+              this.props.onExecute(config);
+            }
+          }}
+        >
+          <Icon
+            icon={this.props.isExecuting ? IconNames.REFRESH : IconNames.PLAY}
+            iconSize={40}
+          />
+        </IconWrapper>
+      </PipelineExecutionWrapper>
     );
   }
 }
@@ -130,10 +127,9 @@ const PipelineExecutionWrapper = styled.div`
   display: flex;
   flex-direction: row;
   width: 100%;
-
   height: 100vh;
   position: absolute;
-  padding-top: 93px;
+  padding-top: 50px;
 `;
 
 const IconWrapper = styled.div<{ disabled: boolean }>`
