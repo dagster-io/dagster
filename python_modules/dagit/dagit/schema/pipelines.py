@@ -3,7 +3,7 @@ from functools import wraps
 import graphene
 
 import dagster
-from dagster.core.types import DagsterCompositeType
+from dagster.core.types import DagsterCompositeTypeBase
 from dagster import check
 
 from .utils import non_null_list
@@ -320,7 +320,7 @@ class Type(graphene.Interface):
 
     @classmethod
     def from_dagster_type(cls, dagster_type):
-        if isinstance(dagster_type, DagsterCompositeType):
+        if isinstance(dagster_type, DagsterCompositeTypeBase):
             return CompositeType(dagster_type)
         else:
             return RegularType(dagster_type)
