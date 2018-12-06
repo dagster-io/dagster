@@ -44,3 +44,7 @@ SqlAlchemyEngineType = types.PythonObjectType(
 #     python_type=sqlalchemy.engine.ResultProxy,
 #     description='A SQLAlchemy result proxy',
 # )
+
+SqlTableName = types.DagsterStringType(
+    name='SqlTableName', description='The name of a database table'
+)

@@ -20,6 +20,7 @@ from dagstermill import define_dagstermill_solid
 from .types import (
     SparkDataFrameType,
     SqlAlchemyEngineType,
+    SqlTableName,
 )
 from .utils import (
     mkdir_p,
@@ -61,7 +62,7 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
         inputs = []
 
     materialization_strategy_output_types = {  # pylint:disable=C0103
-        'table': types.String,
+        'table': SqlTableName,
         # 'view': types.String,
         # 'query': SqlAlchemyQueryType,
         # 'subquery': SqlAlchemySubqueryType,
@@ -192,7 +193,7 @@ def thunk_database_engine(info):
                 ),
                 'target_path':
                 Field(
-                    types.String,
+                    types.Path,
                     description='If present, specifies the path at which to download the object.',
                     is_optional=True
                 ),
@@ -200,7 +201,7 @@ def thunk_database_engine(info):
         )
     ),
     description='Downloads an object from S3.',
-    outputs=[OutputDefinition(types.String, description='The path to the downloaded object.')]
+    outputs=[OutputDefinition(types.Path, description='The path to the downloaded object.')]
 )
 def download_from_s3(info):
     '''Download an object from s3.
@@ -254,7 +255,7 @@ def download_from_s3(info):
     inputs=[
         InputDefinition(
             'file_path',
-            types.String,
+            types.Path,
             description='The path of the file to upload.',
         ),
     ],
@@ -305,7 +306,7 @@ def upload_to_s3(info, file_path):
     inputs=[
         InputDefinition(
             'archive_path',
-            types.String,
+            types.Path,
             description='The path to the archive.',
         ),
         InputDefinition(
@@ -335,9 +336,7 @@ def upload_to_s3(info, file_path):
         )
     ),
     description='Extracts an archive member from a zip archive.',
-    outputs=[
-        OutputDefinition(types.String, description='The path to the unzipped archive member.')
-    ],
+    outputs=[OutputDefinition(types.Path, description='The path to the unzipped archive member.')],
 )
 def unzip_file(
     info,
@@ -396,14 +395,13 @@ def unzip_file(
         types.ConfigDictionary(
             name='IngestCsvToSparkConfigType',
             fields={
-                'input_csv':
-                Field(types.String, description='', default_value='', is_optional=True),
+                'input_csv': Field(types.Path, description='', default_value='', is_optional=True),
             }
         )
     ),
     inputs=[InputDefinition(
         'input_csv',
-        types.String,
+        types.Path,
         description='',
     )],
     outputs=[OutputDefinition(SparkDataFrameType)]
@@ -632,7 +630,7 @@ average_sfo_outbound_avg_delays_by_destination = sql_solid(
     ''',
     'table',
     table_name='average_sfo_outbound_avg_delays_by_destination',
-    inputs=[InputDefinition('q2_sfo_outbound_flights', dagster_type=types.String)]
+    inputs=[InputDefinition('q2_sfo_outbound_flights', dagster_type=SqlTableName)]
 )
 
 ticket_prices_with_average_delays = sql_solid(
@@ -716,9 +714,93 @@ delays_vs_fares = sql_solid(
     'table',
     table_name='delays_vs_fares',
     inputs=[
-        InputDefinition('tickets_with_destination', types.String),
-        InputDefinition('average_sfo_outbound_avg_delays_by_destination', types.String)
+        InputDefinition('tickets_with_destination', SqlTableName),
+        InputDefinition('average_sfo_outbound_avg_delays_by_destination', SqlTableName)
     ]
+)
+
+eastbound_delays = sql_solid(
+    'eastbound_delays',
+    '''
+    select
+        avg(cast(cast(arrdelay as float) as integer)) as avg_arrival_delay,
+        avg(cast(cast(depdelay as float) as integer)) as avg_departure_delay,
+        origin,
+        dest as destination,
+        count(1) as num_flights,
+        avg(cast(dest_latitude as float)) as dest_latitude,
+        avg(cast(dest_longitude as float)) as dest_longitude,
+        avg(cast(origin_latitude as float)) as origin_latitude,
+        avg(cast(origin_longitude as float)) as origin_longitude
+    from q2_on_time_data
+    where 
+        cast(origin_longitude as float) < cast(dest_longitude as float) and
+        originstate != 'HI' and
+        deststate != 'HI' and
+        originstate != 'AK' and
+        deststate != 'AK'
+    group by (origin,destination)
+    order by num_flights desc
+    limit 100;
+    ''',
+    'table',
+    table_name='eastbound_delays'
+)
+
+westbound_delays = sql_solid(
+    'westbound_delays',
+    '''
+    select
+        avg(cast(cast(arrdelay as float) as integer)) as avg_arrival_delay,
+        avg(cast(cast(depdelay as float) as integer)) as avg_departure_delay,
+        origin,
+        dest as destination,
+        count(1) as num_flights,
+        avg(cast(dest_latitude as float)) as dest_latitude,
+        avg(cast(dest_longitude as float)) as dest_longitude,
+        avg(cast(origin_latitude as float)) as origin_latitude,
+        avg(cast(origin_longitude as float)) as origin_longitude
+    from q2_on_time_data
+    where
+        cast(origin_longitude as float) > cast(dest_longitude as float) and
+        originstate != 'HI' and
+        deststate != 'HI' and
+        originstate != 'AK' and
+        deststate != 'AK'
+    group by (origin,destination)
+    order by num_flights desc
+    limit 100;
+    ''',
+    'table',
+    table_name='westbound_delays'
+)
+
+delays_by_geography = notebook_solid(
+    'Delays by Geography.ipynb',
+    inputs=[
+        InputDefinition(
+            'db_url',
+            types.String,
+            description='The db_url to use to construct a SQLAlchemy engine.',
+        ),
+        InputDefinition(
+            'westbound_delays',
+            SqlTableName,
+            description='The SQL table containing westbound delays.',
+        ),
+        InputDefinition(
+            'eastbound_delays',
+            SqlTableName,
+            description='The SQL table containing eastbound delays.',
+        ),
+    ],
+    outputs=[
+        OutputDefinition(
+            dagster_type=types.Path,
+            # name='plots_pdf_path',
+            description='The path to the saved PDF plots.',
+        ),
+    ],
 )
 
 delays_vs_fares_nb = notebook_solid(
@@ -731,13 +813,13 @@ delays_vs_fares_nb = notebook_solid(
         ),
         InputDefinition(
             'table_name',
-            types.String,
+            SqlTableName,
             description='The SQL table to use for calcuations.',
         ),
     ],
     outputs=[
         OutputDefinition(
-            dagster_type=types.String,
+            dagster_type=types.Path,
             # name='plots_pdf_path',
             description='The path to the saved PDF plots.',
         ),
@@ -754,13 +836,13 @@ sfo_delays_by_destination = notebook_solid(
         ),
         InputDefinition(
             'table_name',
-            types.String,
+            SqlTableName,
             description='The SQL table to use for calcuations.',
         ),
     ],
     outputs=[
         OutputDefinition(
-            dagster_type=types.String,
+            dagster_type=types.Path,
             # name='plots_pdf_path',
             description='The path to the saved PDF plots.',
         ),
