@@ -75,8 +75,8 @@ Array [
           className="sc-caSCKo cRelah"
         >
           <a
-            active={false}
-            className="sc-gisBJw hvcwGI"
+            active={true}
+            className="sc-gisBJw cHYSsP"
             href="/pandas_hello_world/explore"
             onClick={[Function]}
           >
@@ -862,8 +862,8 @@ Array [
           className="sc-caSCKo cRelah"
         >
           <a
-            active={false}
-            className="sc-gisBJw hvcwGI"
+            active={true}
+            className="sc-gisBJw cHYSsP"
             href="/pandas_hello_world/explore"
             onClick={[Function]}
           >
@@ -1579,8 +1579,8 @@ Array [
           className="sc-caSCKo cRelah"
         >
           <a
-            active={false}
-            className="sc-gisBJw hvcwGI"
+            active={true}
+            className="sc-gisBJw cHYSsP"
             href="/pandas_hello_world/explore"
             onClick={[Function]}
           >
@@ -2296,8 +2296,8 @@ Array [
           className="sc-caSCKo cRelah"
         >
           <a
-            active={false}
-            className="sc-gisBJw hvcwGI"
+            active={true}
+            className="sc-gisBJw cHYSsP"
             href="/pandas_hello_world/explore"
             onClick={[Function]}
           >
