@@ -40,7 +40,7 @@ def notebook_solid(name, inputs, outputs):
 
 
 # need a sql context w a sqlalchemy engine
-def sql_solid(name, select_statement, materialization_strategy, table_name=None):
+def sql_solid(name, select_statement, materialization_strategy, table_name=None, inputs=None):
     '''Return a new solid that executes and materializes a SQL select statement.
 
     Args:
@@ -48,15 +48,18 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None)
         select_statement (str): The select statement to execute.
         materialization_strategy (str): Must be 'table', the only currently supported
             materialization strategy. If 'table', the kwarg `table_name` must also be passed.
-
     Kwargs:
         table_name (str): THe name of the new table to create, if the materialization strategy
-            is 'table'.
+            is 'table'. Default: None.
+        inputs (list[InputDefinition]): Inputs, if any, for the new solid. Default: None.
 
     Returns:
         function:
             The new SQL solid.
     '''
+    if inputs is None:
+        inputs = []
+
     materialization_strategy_output_types = {  # pylint:disable=C0103
         'table': types.String,
         # 'view': types.String,
@@ -101,20 +104,23 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None)
                 The table name of the newly materialized SQL select statement.
         '''
         # n.b., we will eventually want to make this resources key configurable
-        info.context.resources.db_engine.execute(
-            text(
-                'drop table if exists {table_name};'
-                'create table {table_name} as {select_statement};'.format(
-                    table_name=table_name,
-                    select_statement=select_statement,
-                )
-            )
+        sql_statement = (
+            'drop table if exists {table_name}; '
+            'create table {table_name} as {select_statement};'
+        ).format(
+            table_name=table_name,
+            select_statement=select_statement,
         )
+
+        info.context.info(
+            'Executing sql statement:\n{sql_statement}'.format(sql_statement=sql_statement)
+        )
+        info.context.resources.db_engine.execute(text(sql_statement))
         yield Result(value=table_name, output_name='result')
 
     return SolidDefinition(
         name=name,
-        inputs=[],
+        inputs=inputs,
         outputs=[
             OutputDefinition(
                 materialization_strategy_output_types[materialization_strategy],
@@ -604,6 +610,16 @@ def union_spark_data_frames(_info, left_data_frame, right_data_frame):
     return left_data_frame.union(right_data_frame)
 
 
+q2_sfo_outbound_flights = sql_solid(
+    'q2_sfo_outbound_flights',
+    '''
+    select * from q2_on_time_data
+    where origin = 'SFO'
+    ''',
+    'table',
+    table_name='q2_sfo_outbound_flights',
+)
+
 average_sfo_outbound_avg_delays_by_destination = sql_solid(
     'average_sfo_outbound_avg_delays_by_destination',
     '''
@@ -612,11 +628,120 @@ average_sfo_outbound_avg_delays_by_destination = sql_solid(
         cast(cast(depdelay as float) as integer) as departure_delay,
         origin,
         dest as destination
-    from q2_on_time_data
-    where origin='SFO'
+    from q2_sfo_outbound_flights
     ''',
     'table',
     table_name='average_sfo_outbound_avg_delays_by_destination',
+    inputs=[InputDefinition('q2_sfo_outbound_flights', dagster_type=types.String)]
+)
+
+ticket_prices_with_average_delays = sql_solid(
+    'tickets_with_destination',
+    '''
+    select
+        tickets.*,
+        coupons.dest,
+        coupons.destairportid,
+        coupons.destairportseqid, coupons.destcitymarketid,
+        coupons.destcountry, 
+        coupons.deststatefips,
+        coupons.deststate,
+        coupons.deststatename,
+        coupons.destwac
+    from
+        q2_ticket_data as tickets,
+        q2_coupon_data as coupons
+    where
+        tickets.itinid = coupons.itinid;
+    ''',
+    'table',
+    table_name='tickets_with_destination',
+)
+
+tickets_with_destination = sql_solid(
+    'tickets_with_destination',
+    '''
+    select
+        tickets.*,
+        coupons.dest,
+        coupons.destairportid,
+        coupons.destairportseqid, coupons.destcitymarketid,
+        coupons.destcountry, 
+        coupons.deststatefips,
+        coupons.deststate,
+        coupons.deststatename,
+        coupons.destwac
+    from
+        q2_ticket_data as tickets,
+        q2_coupon_data as coupons
+    where
+        tickets.itinid = coupons.itinid;
+    ''',
+    'table',
+    table_name='tickets_with_destination',
+)
+
+delays_vs_fares = sql_solid(
+    'delays_vs_fares',
+    '''
+    with avg_fares as (
+        select
+            tickets.origin,
+            tickets.dest,
+            avg(cast(tickets.itinfare as float)) as avg_fare,
+            avg(cast(tickets.farepermile as float)) as avg_fare_per_mile
+        from tickets_with_destination as tickets
+        where origin = 'SFO'
+        group by (tickets.origin, tickets.dest)
+    )
+    select
+        avg_fares.*,
+        avg(avg_delays.arrival_delay) as avg_arrival_delay,
+        avg(avg_delays.departure_delay) as avg_departure_delay
+    from
+        avg_fares,
+        average_sfo_outbound_avg_delays_by_destination as avg_delays
+    where
+        avg_fares.origin = avg_delays.origin and
+        avg_fares.dest = avg_delays.destination
+    group by (
+        avg_fares.avg_fare,
+        avg_fares.avg_fare_per_mile,
+        avg_fares.origin,
+        avg_delays.origin,
+        avg_fares.dest,
+        avg_delays.destination
+    )
+    ''',
+    'table',
+    table_name='delays_vs_fares',
+    inputs=[
+        InputDefinition('tickets_with_destination', types.String),
+        InputDefinition('average_sfo_outbound_avg_delays_by_destination', types.String)
+    ]
+)
+
+delays_vs_fares_nb = notebook_solid(
+    'Fares vs. Delays.ipynb',
+    inputs=[
+        InputDefinition(
+            'db_url',
+            types.String,
+            description='The db_url to use to construct a SQLAlchemy engine.',
+        ),
+        InputDefinition(
+            'table_name',
+            types.String,
+            description='The SQL table to use for calcuations.',
+        ),
+    ],
+    outputs=[
+        OutputDefinition(
+            dagster_type=types.String,
+            # name='plots_pdf_path',
+            description='The path to the saved PDF plots.',
+        ),
+    ],
 )
 
 sfo_delays_by_destination = notebook_solid(

@@ -16,15 +16,19 @@ from dagster import (
 from .solids import (
     average_sfo_outbound_avg_delays_by_destination,
     canonicalize_column_names,
+    delays_vs_fares,
+    delays_vs_fares_nb,
     download_from_s3,
     ingest_csv_to_spark,
     join_spark_data_frames,
     load_data_to_database_from_spark,
     normalize_weather_na_values,
     prefix_column_names,
+    q2_sfo_outbound_flights,
     sfo_delays_by_destination,
     subsample_spark_dataset,
     thunk,
+    tickets_with_destination,
     union_spark_data_frames,
     unzip_file,
     upload_to_s3,
@@ -398,21 +402,42 @@ def define_airline_demo_warehouse_pipeline():
         name="airline_demo_warehouse_pipeline",
         solids=[
             average_sfo_outbound_avg_delays_by_destination,
+            delays_vs_fares,
+            delays_vs_fares_nb,
+            q2_sfo_outbound_flights,
             sfo_delays_by_destination,
             thunk,
+            tickets_with_destination,
             upload_to_s3,
         ],
         dependencies={
             SolidInstance('thunk', alias='db_url'): {},
-            'average_sfo_outbound_avg_delays_by_destination': {},
+            'q2_sfo_outbound_flights': {},
+            'tickets_with_destination': {},
+            'average_sfo_outbound_avg_delays_by_destination': {
+                'q2_sfo_outbound_flights': DependencyDefinition('q2_sfo_outbound_flights'),
+            },
+            'delays_vs_fares': {
+                'tickets_with_destination':
+                DependencyDefinition('tickets_with_destination'),
+                'average_sfo_outbound_avg_delays_by_destination':
+                DependencyDefinition('average_sfo_outbound_avg_delays_by_destination')
+            },
+            'fares_vs___delays': {
+                'db_url': DependencyDefinition('db_url'),
+                'table_name': DependencyDefinition('delays_vs_fares'),
+            },
             's_f_o__delays_by__destination': {
                 'db_url': DependencyDefinition('db_url'),
                 'table_name':
-                DependencyDefinition('average_sfo_outbound_avg_delays_by_destination', ),
+                DependencyDefinition('average_sfo_outbound_avg_delays_by_destination'),
             },
             SolidInstance('upload_to_s3', alias='upload_outbound_avg_delay_pdf_plots'): {
                 'file_path': DependencyDefinition('s_f_o__delays_by__destination'),
-            }
+            },
+            SolidInstance('upload_to_s3', alias='upload_delays_vs_fares_pdf_plots'): {
+                'file_path': DependencyDefinition('fares_vs___delays'),
+            },
         },
         context_definitions=CONTEXT_DEFINITIONS,
     )
