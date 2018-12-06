@@ -129,6 +129,10 @@ class EventRecord:
     def run_id(self):
         return self._logger_message.meta['run_id']
 
+    @property
+    def timestamp(self):
+        return self._logger_message.record.created
+
 
 class PipelineEventRecord(EventRecord):
     @property

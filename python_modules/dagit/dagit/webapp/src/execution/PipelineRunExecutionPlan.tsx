@@ -1,5 +1,6 @@
 import * as React from "react";
 import gql from "graphql-tag";
+import produce from "immer";
 import styled from "styled-components";
 import { Colors } from "@blueprintjs/core";
 import {
@@ -31,6 +32,13 @@ export default class PipelineRunExecutionPlan extends React.Component<
             __typename
             ... on MessageEvent {
               message
+              timestamp
+            }
+
+            ... on ExecutionStepEvent {
+              step {
+                name
+              }
             }
           }
         }
@@ -41,12 +49,20 @@ export default class PipelineRunExecutionPlan extends React.Component<
         __typename
         ... on MessageEvent {
           message
+          timestamp
+        }
+
+        ... on ExecutionStepEvent {
+          step {
+            name
+          }
         }
       }
     `
   };
 
   render() {
+    const stepMetadata = logsToStepMetadata(this.props.pipelineRun.logs.nodes);
     return (
       <ExecutionPlanContainer>
         <ExecutionPlanContainerInner>
@@ -58,17 +74,16 @@ export default class PipelineRunExecutionPlan extends React.Component<
               : null}
           </ExecutionTimelineMessage>
           {this.props.pipelineRun.executionPlan.steps.map(step => {
-            const metadata = stepMetadataFromLogs(
-              step.name,
-              this.props.pipelineRun.logs.nodes
-            );
+            const metadata = stepMetadata[step.name] || {
+              state: "waiting"
+            };
             return (
               <ExecutionPlanBox key={step.name} state={metadata.state}>
                 <ExecutionStateDot state={metadata.state} />
                 <ExecutionPlanBoxName>{step.name}</ExecutionPlanBoxName>
-                {metadata.elapsed > 0 && (
+                {metadata.elapsed && (
                   <ExecutionStateLabel>
-                    {Math.ceil(metadata.elapsed)} sec
+                    {Math.ceil(metadata.elapsed / 1000)} sec
                   </ExecutionStateLabel>
                 )}
               </ExecutionPlanBox>
@@ -84,33 +99,37 @@ type IStepMetadataState = "waiting" | "running" | "succeeded" | "failed";
 
 interface IStepMetadata {
   state: IStepMetadataState;
-  elapsed: number;
+  start?: number;
+  elapsed?: number;
 }
 
-function stepMetadataFromLogs(
-  name: string,
+function logsToStepMetadata(
   logs: Array<PipelineRunExecutionPlanFragment_logs_nodes>
-) {
-  const START = new RegExp(`Beginning execution of ${name}`);
-  const COMPLETION = new RegExp(`Execution of ${name} ([\\w]+) in ([\\d.]+)`);
-
-  const metadata: IStepMetadata = {
-    state: "waiting",
-    elapsed: 0
-  };
-
+): { [stepName: string]: IStepMetadata } {
+  const steps = {};
   logs.forEach(log => {
-    if (START.exec(log.message)) {
-      metadata.state = "running";
-    }
-    let match = COMPLETION.exec(log.message);
-    if (match != null) {
-      metadata.state = match[1] === "succeeded" ? "succeeded" : "failed";
-      metadata.elapsed = Number.parseFloat(match[2]);
+    if (log.__typename === "ExecutionStepStartEvent") {
+      steps[log.step.name] = {
+        state: "running",
+        start: Number.parseInt(log.timestamp, 10)
+      };
+    } else if (log.__typename === "ExecutionStepSuccessEvent") {
+      steps[log.step.name] = produce(steps[log.step.name] || {}, step => {
+        step.state = "succeeded";
+        if (step.start) {
+          step.elapsed = Number.parseInt(log.timestamp, 10) - step.start;
+        }
+      });
+    } else if (log.__typename === "ExecutionStepFailureEvent") {
+      steps[log.step.name] = produce(steps[log.step.name] || {}, step => {
+        step.state = "failed";
+        if (step.start) {
+          step.elapsed = Number.parseInt(log.timestamp, 10) - step.start;
+        }
+      });
     }
   });
-
-  return metadata;
+  return steps;
 }
 
 const ExecutionPlanContainer = styled.div`

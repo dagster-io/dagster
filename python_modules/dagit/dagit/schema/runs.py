@@ -42,6 +42,7 @@ class PipelineRun(graphene.ObjectType):
 class MessageEvent(graphene.Interface):
     run = graphene.NonNull(lambda: PipelineRun)
     message = graphene.NonNull(graphene.String)
+    timestamp = graphene.NonNull(graphene.String)
 
 
 class LogMessageConnection(graphene.ObjectType):
@@ -138,47 +139,38 @@ class PipelineRunEvent(graphene.Union):
         pipeline_run = context.pipeline_runs.get_run_by_id(event.run_id)
         run = PipelineRun(pipeline_run)
 
+        basic_params = {
+            'run': run,
+            'message': event.original_message,
+            'timestamp': int(event.timestamp * 1000)
+        }
+
         if event.event_type == EventType.PIPELINE_START:
-            return PipelineStartEvent(
-                run=run,
-                message=event.original_message,
-                pipeline=pipeline,
-            )
+            return PipelineStartEvent(pipeline=pipeline, **basic_params)
         elif event.event_type == EventType.PIPELINE_SUCCESS:
-            return PipelineSuccessEvent(
-                run=run,
-                message=event.original_message,
-                pipeline=pipeline,
-            )
+            return PipelineSuccessEvent(pipeline=pipeline, **basic_params)
         elif event.event_type == EventType.PIPELINE_FAILURE:
-            return PipelineFailureEvent(
-                run=run,
-                message=event.original_message,
-                pipeline=pipeline,
-            )
+            return PipelineFailureEvent(pipeline=pipeline, **basic_params)
         elif event.event_type == EventType.EXECUTION_PLAN_STEP_START:
             return ExecutionStepStartEvent(
-                run=run,
-                message=event.original_message,
                 step=dagit.schema.execution.ExecutionStep(
                     pipeline_run.execution_plan.get_step_by_key(event.step_key)
                 ),
+                **basic_params
             )
         elif event.event_type == EventType.EXECUTION_PLAN_STEP_SUCCESS:
             return ExecutionStepSuccessEvent(
-                run=run,
-                message=event.original_message,
                 step=dagit.schema.execution.ExecutionStep(
                     pipeline_run.execution_plan.get_step_by_key(event.step_key)
                 ),
+                **basic_params
             )
         elif event.event_type == EventType.EXECUTION_PLAN_STEP_START:
             return ExecutionStepFailureEvent(
-                run=run,
-                message=event.original_message,
                 step=dagit.schema.execution.ExecutionStep(
                     pipeline_run.execution_plan.get_step_by_key(event.step_key)
                 ),
+                **basic_params
             )
         else:
-            return LogMessageEvent(run=run, message=event.original_message)
+            return LogMessageEvent(**basic_params)

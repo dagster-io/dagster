@@ -7,10 +7,24 @@
 // GraphQL fragment: PipelineRunExecutionPlanPipelineRunEventFragment
 // ====================================================
 
-export interface PipelineRunExecutionPlanPipelineRunEventFragment {
+export interface PipelineRunExecutionPlanPipelineRunEventFragment_LogMessageEvent {
   __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent";
   message: string;
+  timestamp: any;
 }
+
+export interface PipelineRunExecutionPlanPipelineRunEventFragment_ExecutionStepStartEvent_step {
+  name: string;
+}
+
+export interface PipelineRunExecutionPlanPipelineRunEventFragment_ExecutionStepStartEvent {
+  __typename: "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepFailureEvent";
+  message: string;
+  timestamp: any;
+  step: PipelineRunExecutionPlanPipelineRunEventFragment_ExecutionStepStartEvent_step;
+}
+
+export type PipelineRunExecutionPlanPipelineRunEventFragment = PipelineRunExecutionPlanPipelineRunEventFragment_LogMessageEvent | PipelineRunExecutionPlanPipelineRunEventFragment_ExecutionStepStartEvent;
 
 /* tslint:disable */
 // This file was automatically generated and should not be edited.

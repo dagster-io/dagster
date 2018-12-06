@@ -7,15 +7,34 @@
 // GraphQL subscription operation: PipelineRunLogsSubscription
 // ====================================================
 
-export interface PipelineRunLogsSubscription_pipelineRunLogs_run {
+export interface PipelineRunLogsSubscription_pipelineRunLogs_LogMessageEvent_run {
   runId: string;
 }
 
-export interface PipelineRunLogsSubscription_pipelineRunLogs {
-  run: PipelineRunLogsSubscription_pipelineRunLogs_run;
+export interface PipelineRunLogsSubscription_pipelineRunLogs_LogMessageEvent {
+  run: PipelineRunLogsSubscription_pipelineRunLogs_LogMessageEvent_run;
   __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent";
   message: string;
+  timestamp: any;
 }
+
+export interface PipelineRunLogsSubscription_pipelineRunLogs_ExecutionStepStartEvent_run {
+  runId: string;
+}
+
+export interface PipelineRunLogsSubscription_pipelineRunLogs_ExecutionStepStartEvent_step {
+  name: string;
+}
+
+export interface PipelineRunLogsSubscription_pipelineRunLogs_ExecutionStepStartEvent {
+  run: PipelineRunLogsSubscription_pipelineRunLogs_ExecutionStepStartEvent_run;
+  __typename: "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepFailureEvent";
+  message: string;
+  timestamp: any;
+  step: PipelineRunLogsSubscription_pipelineRunLogs_ExecutionStepStartEvent_step;
+}
+
+export type PipelineRunLogsSubscription_pipelineRunLogs = PipelineRunLogsSubscription_pipelineRunLogs_LogMessageEvent | PipelineRunLogsSubscription_pipelineRunLogs_ExecutionStepStartEvent;
 
 export interface PipelineRunLogsSubscription {
   pipelineRunLogs: PipelineRunLogsSubscription_pipelineRunLogs;

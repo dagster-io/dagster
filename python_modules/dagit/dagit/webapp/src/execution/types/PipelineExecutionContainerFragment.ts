@@ -7,10 +7,24 @@
 // GraphQL fragment: PipelineExecutionContainerFragment
 // ====================================================
 
-export interface PipelineExecutionContainerFragment_runs_logs_nodes {
+export interface PipelineExecutionContainerFragment_runs_logs_nodes_LogMessageEvent {
   __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent";
   message: string;
+  timestamp: any;
 }
+
+export interface PipelineExecutionContainerFragment_runs_logs_nodes_ExecutionStepStartEvent_step {
+  name: string;
+}
+
+export interface PipelineExecutionContainerFragment_runs_logs_nodes_ExecutionStepStartEvent {
+  __typename: "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepFailureEvent";
+  message: string;
+  timestamp: any;
+  step: PipelineExecutionContainerFragment_runs_logs_nodes_ExecutionStepStartEvent_step;
+}
+
+export type PipelineExecutionContainerFragment_runs_logs_nodes = PipelineExecutionContainerFragment_runs_logs_nodes_LogMessageEvent | PipelineExecutionContainerFragment_runs_logs_nodes_ExecutionStepStartEvent;
 
 export interface PipelineExecutionContainerFragment_runs_logs_pageInfo {
   lastCursor: any | null;

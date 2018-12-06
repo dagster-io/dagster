@@ -21,10 +21,24 @@ export interface PipelineRunExecutionPlanFragment_executionPlan {
   steps: PipelineRunExecutionPlanFragment_executionPlan_steps[];
 }
 
-export interface PipelineRunExecutionPlanFragment_logs_nodes {
+export interface PipelineRunExecutionPlanFragment_logs_nodes_LogMessageEvent {
   __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent";
   message: string;
+  timestamp: any;
 }
+
+export interface PipelineRunExecutionPlanFragment_logs_nodes_ExecutionStepStartEvent_step {
+  name: string;
+}
+
+export interface PipelineRunExecutionPlanFragment_logs_nodes_ExecutionStepStartEvent {
+  __typename: "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepFailureEvent";
+  message: string;
+  timestamp: any;
+  step: PipelineRunExecutionPlanFragment_logs_nodes_ExecutionStepStartEvent_step;
+}
+
+export type PipelineRunExecutionPlanFragment_logs_nodes = PipelineRunExecutionPlanFragment_logs_nodes_LogMessageEvent | PipelineRunExecutionPlanFragment_logs_nodes_ExecutionStepStartEvent;
 
 export interface PipelineRunExecutionPlanFragment_logs {
   nodes: PipelineRunExecutionPlanFragment_logs_nodes[];

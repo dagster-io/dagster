@@ -13,10 +13,24 @@ export interface AppQuery_pipelinesOrError_PythonError {
   stack: string[];
 }
 
-export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_nodes {
+export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_nodes_LogMessageEvent {
   __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent";
   message: string;
+  timestamp: any;
 }
+
+export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepStartEvent_step {
+  name: string;
+}
+
+export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepStartEvent {
+  __typename: "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepFailureEvent";
+  message: string;
+  timestamp: any;
+  step: AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepStartEvent_step;
+}
+
+export type AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_nodes = AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_nodes_LogMessageEvent | AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepStartEvent;
 
 export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_pageInfo {
   lastCursor: any | null;
