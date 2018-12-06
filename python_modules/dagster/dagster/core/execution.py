@@ -439,8 +439,7 @@ def _create_resources(pipeline_def, context_def, environment, execution_context,
 
 def get_resource_or_gen(context_definition, resource_name, environment, run_id):
     resource_def = context_definition.resources[resource_name]
-    # TODO make this stricter
-    resource_config = environment.context.resources.get(resource_name, {}).get('config', {})
+    resource_config = environment.context.resources[resource_name]['config']
     return resource_def.resource_fn(ResourceCreationInfo(resource_config, run_id))
 
 

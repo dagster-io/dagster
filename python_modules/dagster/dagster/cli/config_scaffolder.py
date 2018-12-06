@@ -5,11 +5,6 @@ from dagster import (
 )
 
 
-def is_environment_context_field_optional(pipeline_def):
-    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
-    return pipeline_def.environment_type.field_dict['context'].is_optional
-
-
 def scaffold_pipeline_config(pipeline_def, skip_optional=True):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     check.bool_param(skip_optional, 'skip_optional')
