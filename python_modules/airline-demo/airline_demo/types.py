@@ -1,5 +1,7 @@
 """Type definitions for the airline_demo."""
 
+import os
+
 import sqlalchemy
 
 from collections import namedtuple
@@ -48,3 +50,14 @@ SqlAlchemyEngineType = types.PythonObjectType(
 SqlTableName = types.DagsterStringType(
     name='SqlTableName', description='The name of a database table'
 )
+
+class FileExistsAtPath(types.DagsterStringType):
+    def __init__(self):
+        super(FileExistsAtPath, self).__init__(
+            name='FileExistsAtPath', description='A path at which a file actually exists'
+        )
+
+    def is_python_valid_value(self, value):
+        return (
+            super(FileExistsAtPath, self).is_python_valid_value(value) and os.path.isfile(value)
+        )

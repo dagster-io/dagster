@@ -20,6 +20,7 @@ from dagster import (
 from dagstermill import define_dagstermill_solid
 
 from .types import (
+    FileExistsAtPath,
     SparkDataFrameType,
     SqlAlchemyEngineType,
     SqlTableName,
@@ -229,7 +230,7 @@ def thunk_database_engine(info):
     description='Downloads an object from S3.',
     outputs=[
         OutputDefinition(
-            types.List(types.String), description='The path to the downloaded object.'
+            types.List(FileExistsAtPath), description='The path to the downloaded object.'
         )
     ]
 )
@@ -378,7 +379,7 @@ def upload_to_s3(info, file_path):
     description='Extracts an archive member from a zip archive.',
     outputs=[
         OutputDefinition(
-            types.List(types.String), description='The path to the unzipped archive member.'
+            types.List(FileExistsAtPath), description='The path to the unzipped archive member.'
         )
     ],
 )
