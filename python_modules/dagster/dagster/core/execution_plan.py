@@ -381,16 +381,16 @@ class ExecutionStep(object):
                     [output_def.name for output_def in self.solid.definition.output_defs]
                 )
                 raise DagsterInvariantViolationError(
-                    '''Core transform for {cn.solid.name} returned an output
+                    '''Core transform for {step.solid.name} returned an output
                     {result.output_name} that does not exist. The available
                     outputs are {output_names}'''
-                    .format(cn=self, result=result, output_names=output_names)
+                    .format(step=self, result=result, output_names=output_names)
                 )
 
             if result.output_name in seen_outputs:
                 raise DagsterInvariantViolationError(
-                    '''Core transform for {cn.solid.name} returned an output
-                    {result.output_name} multiple times'''.format(cn=self, result=result)
+                    '''Core transform for {step.solid.name} returned an output
+                    {result.output_name} multiple times'''.format(step=self, result=result)
                 )
 
             seen_outputs.add(result.output_name)
@@ -434,8 +434,8 @@ class ExecutionStep(object):
         check.failed('output {name} not found'.format(name=name))
 
 
-def _all_inputs_covered(cn, results):
-    for step_input in cn.step_inputs:
+def _all_inputs_covered(step, results):
+    for step_input in step.step_inputs:
         if step_input.prev_output_handle not in results:
             return False
     return True
@@ -681,19 +681,19 @@ def create_step_inputs(info, state, pipeline_solid):
         solid_output_handle = dependency_structure.get_dep(input_handle)
         prev_step_output_handle = state.step_output_map[solid_output_handle]
 
-        subgraph = create_subgraph_for_input(
+        subplan = create_subplan_for_input(
             info,
             pipeline_solid,
             prev_step_output_handle,
             input_def,
         )
 
-        state.steps.extend(subgraph.steps)
+        state.steps.extend(subplan.steps)
         step_inputs.append(
             StepInput(
                 input_def.name,
                 input_def.dagster_type,
-                subgraph.terminal_step_output_handle,
+                subplan.terminal_step_output_handle,
             )
         )
 
@@ -722,16 +722,16 @@ def create_execution_plan_core(execution_info):
         state.steps.append(solid_transform_step)
 
         for output_def in pipeline_solid.definition.output_defs:
-            subgraph = create_subplan_for_output(
+            subplan = create_subplan_for_output(
                 execution_info,
                 pipeline_solid,
                 solid_transform_step,
                 output_def,
             )
-            state.steps.extend(subgraph.steps)
+            state.steps.extend(subplan.steps)
 
             output_handle = pipeline_solid.output_handle(output_def.name)
-            state.step_output_map[output_handle] = subgraph.terminal_step_output_handle
+            state.step_output_map[output_handle] = subplan.terminal_step_output_handle
 
     return create_execution_plan_from_steps(state.steps)
 
@@ -762,7 +762,7 @@ def create_execution_plan_from_steps(steps):
     return ExecutionPlan(step_dict, deps)
 
 
-def create_subgraph_for_input(execution_info, solid, prev_step_output_handle, input_def):
+def create_subplan_for_input(execution_info, solid, prev_step_output_handle, input_def):
     check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(prev_step_output_handle, 'prev_step_output_handle', StepOutputHandle)
@@ -828,15 +828,15 @@ def _decorate_with_serialization(execution_info, solid, output_def, subplan):
         return subplan
 
 
-def create_subplan_for_output(execution_info, solid, solid_transform_cn, output_def):
+def create_subplan_for_output(execution_info, solid, solid_transform_step, output_def):
     check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
     check.inst_param(solid, 'solid', Solid)
-    check.inst_param(solid_transform_cn, 'solid_transform_cn', ExecutionStep)
+    check.inst_param(solid_transform_step, 'solid_transform_step', ExecutionStep)
     check.inst_param(output_def, 'output_def', OutputDefinition)
 
-    subgraph = _decorate_with_expectations(execution_info, solid, solid_transform_cn, output_def)
+    subplan = _decorate_with_expectations(execution_info, solid, solid_transform_step, output_def)
 
-    return _decorate_with_serialization(execution_info, solid, output_def, subgraph)
+    return _decorate_with_serialization(execution_info, solid, output_def, subplan)
 
 
 def _create_serialization_lambda(solid, output_def):
@@ -863,10 +863,10 @@ def _create_serialization_lambda(solid, output_def):
     return fn
 
 
-def _create_serialization_step(solid, output_def, prev_subgraph):
+def _create_serialization_step(solid, output_def, prev_subplan):
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(output_def, 'output_def', OutputDefinition)
-    check.inst_param(prev_subgraph, 'prev_subgraph', ExecutionSubPlan)
+    check.inst_param(prev_subplan, 'prev_subplan', ExecutionSubPlan)
 
     return ExecutionStep(
         key='serialize.' + solid.name + '.' + output_def.name,
@@ -874,7 +874,7 @@ def _create_serialization_step(solid, output_def, prev_subgraph):
             StepInput(
                 name=SERIALIZE_INPUT,
                 dagster_type=output_def.dagster_type,
-                prev_output_handle=prev_subgraph.terminal_step_output_handle,
+                prev_output_handle=prev_subplan.terminal_step_output_handle,
             )
         ],
         step_outputs=[StepOutput(
