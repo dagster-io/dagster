@@ -235,7 +235,7 @@ jobs:
             sudo pip install tox
 
       - run:
-          name: Run dagstermill Tests
+          name: Run airline-demo Tests
           command: |
             cd python_modules/airline-demo
             tox -e $TOXENV

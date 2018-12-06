@@ -3,24 +3,44 @@
 import os
 import zipfile
 
+from sqlalchemy import text
+from stringcase import snakecase
+
 from dagster import (
     Field,
     InputDefinition,
     OutputDefinition,
+    Result,
     solid,
+    SolidDefinition,
     types,
 )
+from dagstermill import define_dagstermill_solid
 
 from .types import (
     SparkDataFrameType,
+    SqlAlchemyEngineType,
 )
 from .utils import (
     mkdir_p,
 )
 
 
+def _notebook_path(name):
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'notebooks', name)
+
+
+def notebook_solid(name, inputs, outputs):
+    return define_dagstermill_solid(
+        snakecase(name.split('.ipynb')[0]),
+        _notebook_path(name),
+        inputs,
+        outputs,
+    )
+
+
 # need a sql context w a sqlalchemy engine
-def create_sql_solid(name, select_statement, materialization_strategy, table_name=None):
+def sql_solid(name, select_statement, materialization_strategy, table_name=None):
     '''Return a new solid that executes and materializes a SQL select statement.
 
     Args:
@@ -59,17 +79,17 @@ def create_sql_solid(name, select_statement, materialization_strategy, table_nam
         if table_name is None:
             raise Exception('Missing table_name: required for materialization strategy \'table\'')
 
-    @solid(
-        name=name,
-        outputs=[
-            OutputDefinition(
-                materialization_strategy_output_types[materialization_strategy],
-                description='The materialized SQL statement. If the materialization_strategy is '
-                '\'table\', this is the string name of the new table created by the solid.'
-            )
-        ]
+    output_description = (
+        'The string name of the new table created by the solid'
+        if materialization_strategy == 'table' else
+        'The materialized SQL statement. If the materialization_strategy is '
+        '\'table\', this is the string name of the new table created by the solid.'
     )
-    def sql_solid_fn(info):
+
+    description = '''This solid executes the following SQL statement:
+    {select_statement}'''.format(select_statement=select_statement)
+
+    def transform_fn(info, _inputs):
         '''Inner function defining the new solid.
 
         Args:
@@ -81,15 +101,32 @@ def create_sql_solid(name, select_statement, materialization_strategy, table_nam
                 The table name of the newly materialized SQL select statement.
         '''
         # n.b., we will eventually want to make this resources key configurable
-        info.context.resources.db.execute(
-            'create table :tablename as :statement', {
-                'tablename': table_name,
-                'statement': select_statement,
-            }
+        info.context.resources.db_engine.execute(
+            text(
+                'drop table if exists {table_name};'
+                'create table {table_name} as {select_statement};'.format(
+                    table_name=table_name,
+                    select_statement=select_statement,
+                )
+            )
         )
-        return table_name
+        yield Result(value=table_name, output_name='result')
 
-    return sql_solid_fn
+    return SolidDefinition(
+        name=name,
+        inputs=[],
+        outputs=[
+            OutputDefinition(
+                materialization_strategy_output_types[materialization_strategy],
+                description=output_description
+            )
+        ],
+        transform_fn=transform_fn,
+        description=description,
+        metadata={
+            'kind': 'sql',
+        },
+    )
 
 
 @solid(
@@ -112,6 +149,20 @@ def thunk(info):
             The config value passed to the solid.
     '''
     return info.config
+
+
+@solid(
+    name='thunk_database_engine',
+    outputs=[OutputDefinition(SqlAlchemyEngineType, description='The db resource.')]
+)
+def thunk_database_engine(info):
+    """Returns the db resource as its output.
+
+    Why? Because we don't currently have a good way to pass contexts around between execution
+    threads. So in order to get a database engine into a Jupyter notebook, we need to serialize
+    it and pass it along.
+    """
+    return info.context.resources.db
 
 
 @solid(
@@ -172,6 +223,68 @@ def download_from_s3(info):
 
     info.context.resources.s3.download_file(bucket, key, target_path)
     return target_path
+
+
+@solid(
+    name='upload_to_s3',
+    config_field=Field(
+        types.ConfigDictionary(
+            name='UploadToS3ConfigType',
+            fields={
+                # Probably want to make the region configuable too
+                'bucket':
+                Field(types.String, description='The S3 bucket to which to upload the file.'),
+                'key':
+                Field(types.String, description='The key to which to upload the file.'),
+                'kwargs':
+                Field(
+                    types.Dict,
+                    description='Kwargs to pass through to the S3 client',
+                    is_optional=True,
+                )
+            }
+        )
+    ),
+    inputs=[
+        InputDefinition(
+            'file_path',
+            types.String,
+            description='The path of the file to upload.',
+        ),
+    ],
+    description='Uploads a file to S3.',
+    outputs=[
+        OutputDefinition(
+            types.String,
+            description='The bucket to which the file was uploaded.',
+            name='bucket',
+        ),
+        OutputDefinition(
+            types.String,
+            description='The key to which the file was uploaded.',
+            name='key',
+        ),
+    ],
+)
+def upload_to_s3(info, file_path):
+    '''Upload a file to s3.
+        
+    Args:
+        info (ExpectationExecutionInfo): Must expose a boto3 S3 client as its `s3` resource.
+
+    Returns:
+        (str, str):
+            The bucket and key to which the file was uploaded.
+    '''
+    bucket = info.config['bucket']
+    key = info.config['key']
+
+    with open(file_path, 'rb') as fd:
+        info.context.resources.s3.put_object(
+            Bucket=bucket, Body=fd, Key=key, **(info.config.get('kwargs') or {})
+        )
+    yield Result(bucket, 'bucket')
+    yield Result(key, 'key')
 
 
 @solid(
@@ -297,6 +410,41 @@ def ingest_csv_to_spark(info, input_csv=None):
         ).load(input_csv or info.config['input_csv'])
     )
     return data_frame
+
+
+def rename_spark_dataframe_columns(data_frame, fn):
+    return data_frame.toDF(*[fn(c) for c in data_frame.columns])
+
+
+@solid(
+    name='prefix_column_names',
+    inputs=[
+        InputDefinition(
+            'data_frame',
+            SparkDataFrameType,
+            description='The data frame whose columns should be prefixed'
+        ),
+    ],
+    config_field=Field(types.String),
+    outputs=[OutputDefinition(SparkDataFrameType)]
+)
+def prefix_column_names(info, data_frame):
+    return rename_spark_dataframe_columns(
+        data_frame, lambda c: '{prefix}{c}'.format(prefix=info.config, c=c)
+    )
+
+
+@solid(
+    name='canonicalize_column_names',
+    inputs=[
+        InputDefinition(
+            'data_frame', SparkDataFrameType, description='The data frame to canonicalize'
+        ),
+    ],
+    outputs=[OutputDefinition(SparkDataFrameType)]
+)
+def canonicalize_column_names(_info, data_frame):
+    return rename_spark_dataframe_columns(data_frame, lambda c: c.lower())
 
 
 def replace_values_spark(data_frame, old, new, columns=None):
@@ -429,3 +577,67 @@ def join_spark_data_frames(info, left_data_frame, right_data_frame):
         ),
         how=info.config['how']
     )
+
+
+@solid(
+    name='union_spark_data_frames',
+    inputs=[
+        InputDefinition(
+            'left_data_frame',
+            SparkDataFrameType,
+            description='The left DataFrame to union.',
+        ),
+        InputDefinition(
+            'right_data_frame',
+            SparkDataFrameType,
+            description='The right DataFrame to union.',
+        ),
+    ],
+    outputs=[
+        OutputDefinition(
+            SparkDataFrameType,
+            description='A pyspark DataFrame containing the union of the input data frames.',
+        )
+    ],
+)
+def union_spark_data_frames(_info, left_data_frame, right_data_frame):
+    return left_data_frame.union(right_data_frame)
+
+
+average_sfo_outbound_avg_delays_by_destination = sql_solid(
+    'average_sfo_outbound_avg_delays_by_destination',
+    '''
+    select
+        cast(cast(arrdelay as float) as integer) as arrival_delay,
+        cast(cast(depdelay as float) as integer) as departure_delay,
+        origin,
+        dest as destination
+    from q2_on_time_data
+    where origin='SFO'
+    ''',
+    'table',
+    table_name='average_sfo_outbound_avg_delays_by_destination',
+)
+
+sfo_delays_by_destination = notebook_solid(
+    'SFO Delays by Destination.ipynb',
+    inputs=[
+        InputDefinition(
+            'db_url',
+            types.String,
+            description='The db_url to use to construct a SQLAlchemy engine.',
+        ),
+        InputDefinition(
+            'table_name',
+            types.String,
+            description='The SQL table to use for calcuations.',
+        ),
+    ],
+    outputs=[
+        OutputDefinition(
+            dagster_type=types.String,
+            # name='plots_pdf_path',
+            description='The path to the saved PDF plots.',
+        ),
+    ],
+)

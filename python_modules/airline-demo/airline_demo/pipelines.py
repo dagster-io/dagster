@@ -1,12 +1,6 @@
 """Pipeline definitions for the airline_demo."""
 import logging
 
-import boto3
-import sqlalchemy
-
-from botocore.handlers import disable_signing
-from pyspark.sql import SparkSession
-
 from dagster import (
     DependencyDefinition,
     ExecutionContext,
@@ -19,94 +13,32 @@ from dagster import (
 )
 
 from .solids import (
+    average_sfo_outbound_avg_delays_by_destination,
+    canonicalize_column_names,
     download_from_s3,
     ingest_csv_to_spark,
     join_spark_data_frames,
     load_data_to_database_from_spark,
     normalize_weather_na_values,
+    prefix_column_names,
+    sfo_delays_by_destination,
     subsample_spark_dataset,
     thunk,
+    union_spark_data_frames,
     unzip_file,
+    upload_to_s3,
 )
 from .types import (
     AirlineDemoResources,
 )
-
-
-def _create_spark_session_local():
-    # Need two versions of this, one for test/local and one with a
-    # configurable cluster
-    spark = (
-        SparkSession.builder.appName("AirlineDemo").config(
-            'spark.jars.packages',
-            'com.databricks:spark-avro_2.11:3.0.0,com.databricks:spark-redshift_2.11:2.0.1,'
-            'com.databricks:spark-csv_2.11:1.5.0,org.postgresql:postgresql:42.2.5',
-        ).getOrCreate()
-    )
-    return spark
-
-
-def _create_s3_session(signed=True):
-    s3 = boto3.resource('s3').meta.client  # pylint:disable=C0103
-    if not signed:
-        s3.meta.events.register('choose-signer.s3.*', disable_signing)
-    return s3
-
-
-def _create_redshift_db_url(username, password, hostname, db_name, jdbc=True):
-    if jdbc:
-        db_url = (
-            'jdbc:postgresql://{hostname}:5432/{db_name}?'
-            'user={username}&password={password}'.format(
-                username=username,
-                password=password,
-                hostname=hostname,
-                db_name=db_name,
-            )
-        )
-    else:
-        db_url = (
-            "redshift_psycopg2://{username}:{password}@{hostname}:5439/{db_name}".format(
-                username=username,
-                password=password,
-                hostname=hostname,
-                db_name=db_name,
-            )
-        )
-    return db_url
-
-
-def _create_redshift_engine(username, password, hostname, db_name):
-    db_url = _create_redshift_db_url(username, password, hostname, db_name, jdbc=False)
-    return sqlalchemy.create_engine(db_url)
-
-
-def _create_postgres_db_url(username, password, hostname, db_name, jdbc=True):
-    if jdbc:
-        db_url = (
-            'jdbc:postgresql://{hostname}:5432/{db_name}?'
-            'user={username}&password={password}'.format(
-                username=username,
-                password=password,
-                hostname=hostname,
-                db_name=db_name,
-            )
-        )
-    else:
-        db_url = (
-            'postgresql://{username}:{password}@{hostname}:5432/{db_name}'.format(
-                username=username,
-                password=password,
-                hostname=hostname,
-                db_name=db_name,
-            )
-        )
-    return db_url
-
-
-def _create_postgres_engine(username, password, hostname, db_name):
-    db_url = _create_postgres_db_url(username, password, hostname, db_name, jdbc=False)
-    return sqlalchemy.create_engine(db_url)
+from .utils import (
+    create_postgres_db_url,
+    create_postgres_engine,
+    create_redshift_db_url,
+    create_redshift_engine,
+    create_s3_session,
+    create_spark_session_local,
+)
 
 
 def _db_load(data_frame, table_name, resources):
@@ -138,19 +70,22 @@ test_context = PipelineContextDefinition(
         lambda info: ExecutionContext.console_logging(
             log_level=logging.DEBUG,
             resources=AirlineDemoResources(
-                _create_spark_session_local(), # FIXME
-                _create_s3_session(),
-                _create_redshift_db_url(
+                create_spark_session_local(), # FIXME
+                create_s3_session(),
+                create_redshift_db_url(
                     info.config['redshift_username'],
                     info.config['redshift_password'],
                     info.config['redshift_hostname'],
                     info.config['redshift_db_name'],
                 ),
-                _create_redshift_engine(
-                    info.config['redshift_username'],
-                    info.config['redshift_password'],
-                    info.config['redshift_hostname'],
-                    info.config['redshift_db_name'],
+                create_redshift_engine(
+                    create_redshift_db_url(
+                        info.config['redshift_username'],
+                        info.config['redshift_password'],
+                        info.config['redshift_hostname'],
+                        info.config['redshift_db_name'],
+                        jdbc=False,
+                    ),
                 ),
                 info.config['db_dialect'],
                 info.config['redshift_s3_temp_dir'],
@@ -178,19 +113,22 @@ local_context = PipelineContextDefinition(
         lambda info: ExecutionContext.console_logging(
             log_level=logging.DEBUG,
             resources=AirlineDemoResources(
-                _create_spark_session_local(),
-                _create_s3_session(),
-                _create_postgres_db_url(
+                create_spark_session_local(),
+                create_s3_session(),
+                create_postgres_db_url(
                     info.config['postgres_username'],
                     info.config['postgres_password'],
                     info.config['postgres_hostname'],
                     info.config['postgres_db_name'],
                 ),
-                _create_postgres_engine(
-                    info.config['postgres_username'],
-                    info.config['postgres_password'],
-                    info.config['postgres_hostname'],
-                    info.config['postgres_db_name'],
+                create_postgres_engine(
+                    create_postgres_db_url(
+                        info.config['postgres_username'],
+                        info.config['postgres_password'],
+                        info.config['postgres_hostname'],
+                        info.config['postgres_db_name'],
+                        jdbc=False,
+                    ),
                 ),
                 info.config['db_dialect'],
                 '',
@@ -217,19 +155,22 @@ cloud_context = PipelineContextDefinition(
         lambda info: ExecutionContext.console_logging(
             log_level=logging.DEBUG,
             resources=AirlineDemoResources(
-                _create_spark_session_local(), # FIXME
-                _create_s3_session(),
-                _create_redshift_db_url(
+                create_spark_session_local(), # FIXME
+                create_s3_session(),
+                create_redshift_db_url(
                     info.config['redshift_username'],
                     info.config['redshift_password'],
                     info.config['redshift_hostname'],
                     info.config['redshift_db_name'],
                 ),
-                _create_redshift_engine(
-                    info.config['redshift_username'],
-                    info.config['redshift_password'],
-                    info.config['redshift_hostname'],
-                    info.config['redshift_db_name'],
+                create_redshift_engine(
+                    create_redshift_db_url(
+                        info.config['redshift_username'],
+                        info.config['redshift_password'],
+                        info.config['redshift_hostname'],
+                        info.config['redshift_db_name'],
+                        jdbc=False,
+                    ),
                 ),
                 info.config['db_dialect'],
                 '',
@@ -318,8 +259,15 @@ def define_airline_demo_download_pipeline():
 
 def define_airline_demo_ingest_pipeline():
     solids = [
-        ingest_csv_to_spark, join_spark_data_frames, load_data_to_database_from_spark,
-        normalize_weather_na_values, subsample_spark_dataset, thunk
+        canonicalize_column_names,
+        ingest_csv_to_spark,
+        join_spark_data_frames,
+        load_data_to_database_from_spark,
+        normalize_weather_na_values,
+        prefix_column_names,
+        subsample_spark_dataset,
+        thunk,
+        union_spark_data_frames,
     ]
     dependencies = {
         SolidInstance('thunk', alias='april_on_time_data_filename'): {},
@@ -354,14 +302,16 @@ def define_airline_demo_ingest_pipeline():
         SolidInstance('ingest_csv_to_spark', alias='ingest_master_cord_data'): {
             'input_csv': DependencyDefinition('master_cord_data_filename'),
         },
-        SolidInstance('subsample_spark_dataset', alias='subsample_april_on_time_data'): {
-            'data_frame': DependencyDefinition('ingest_april_on_time_data'),
+        SolidInstance('union_spark_data_frames', alias='combine_april_may_on_time_data'): {
+            'left_data_frame': DependencyDefinition('ingest_april_on_time_data'),
+            'right_data_frame': DependencyDefinition('ingest_may_on_time_data'),
         },
-        SolidInstance('subsample_spark_dataset', alias='subsample_may_on_time_data'): {
-            'data_frame': DependencyDefinition('ingest_may_on_time_data'),
+        SolidInstance('union_spark_data_frames', alias='combine_q2_on_time_data'): {
+            'left_data_frame': DependencyDefinition('combine_april_may_on_time_data'),
+            'right_data_frame': DependencyDefinition('ingest_june_on_time_data'),
         },
-        SolidInstance('subsample_spark_dataset', alias='subsample_june_on_time_data'): {
-            'data_frame': DependencyDefinition('ingest_june_on_time_data'),
+        SolidInstance('subsample_spark_dataset', alias='subsample_q2_on_time_data'): {
+            'data_frame': DependencyDefinition('combine_q2_on_time_data'),
         },
         SolidInstance('subsample_spark_dataset', alias='subsample_q2_ticket_data'): {
             'data_frame': DependencyDefinition('ingest_q2_ticket_data'),
@@ -375,42 +325,49 @@ def define_airline_demo_ingest_pipeline():
         SolidInstance('normalize_weather_na_values', alias='normalize_q2_weather_na_values'): {
             'data_frame': DependencyDefinition('ingest_q2_sfo_weather'),
         },
-        SolidInstance(
-            'join_spark_data_frames', alias='join_april_on_time_data_to_master_cord_data'
-        ): {
-            'left_data_frame': DependencyDefinition('subsample_april_on_time_data'),
-            'right_data_frame': DependencyDefinition('ingest_master_cord_data'),
+        SolidInstance('prefix_column_names', alias='prefix_dest_cord_data'): {
+            'data_frame': DependencyDefinition('ingest_master_cord_data')
         },
-        SolidInstance('join_spark_data_frames', alias='join_may_on_time_data_to_master_cord_data'):
-        {
-            'left_data_frame': DependencyDefinition('subsample_may_on_time_data'),
-            'right_data_frame': DependencyDefinition('ingest_master_cord_data'),
+        SolidInstance('prefix_column_names', alias='prefix_origin_cord_data'): {
+            'data_frame': DependencyDefinition('ingest_master_cord_data')
         },
-        SolidInstance('join_spark_data_frames', alias='join_june_on_time_data_to_master_cord_data'):
-        {
-            'left_data_frame': DependencyDefinition('subsample_june_on_time_data'),
-            'right_data_frame': DependencyDefinition('ingest_master_cord_data'),
+        SolidInstance('join_spark_data_frames', alias='join_q2_on_time_data_to_dest_cord_data'): {
+            'left_data_frame': DependencyDefinition('subsample_q2_on_time_data'),
+            'right_data_frame': DependencyDefinition('prefix_dest_cord_data'),
         },
-        SolidInstance('load_data_to_database_from_spark', alias='load_april_on_time_data'): {
-            'data_frame': DependencyDefinition('join_april_on_time_data_to_master_cord_data'),
+        SolidInstance('join_spark_data_frames', alias='join_q2_on_time_data_to_origin_cord_data'): {
+            'left_data_frame': DependencyDefinition('join_q2_on_time_data_to_dest_cord_data'),
+            'right_data_frame': DependencyDefinition('prefix_origin_cord_data'),
         },
-        SolidInstance('load_data_to_database_from_spark', alias='load_may_on_time_data'): {
-            'data_frame': DependencyDefinition('join_may_on_time_data_to_master_cord_data'),
+        SolidInstance('canonicalize_column_names', alias='canonicalize_q2_on_time_data'): {
+            'data_frame': DependencyDefinition('join_q2_on_time_data_to_origin_cord_data'),
         },
-        SolidInstance('load_data_to_database_from_spark', alias='load_june_on_time_data'): {
-            'data_frame': DependencyDefinition('join_june_on_time_data_to_master_cord_data'),
-        },
-        SolidInstance('load_data_to_database_from_spark', alias='load_q2_coupon_data'): {
+        SolidInstance('canonicalize_column_names', alias='canonicalize_q2_coupon_data'): {
             'data_frame': DependencyDefinition('subsample_q2_coupon_data'),
         },
-        SolidInstance('load_data_to_database_from_spark', alias='load_q2_market_data'): {
+        SolidInstance('canonicalize_column_names', alias='canonicalize_q2_market_data'): {
             'data_frame': DependencyDefinition('subsample_q2_market_data'),
         },
-        SolidInstance('load_data_to_database_from_spark', alias='load_q2_ticket_data'): {
+        SolidInstance('canonicalize_column_names', alias='canonicalize_q2_ticket_data'): {
             'data_frame': DependencyDefinition('subsample_q2_ticket_data'),
         },
-        SolidInstance('load_data_to_database_from_spark', alias='load_q2_sfo_weather'): {
+        SolidInstance('canonicalize_column_names', alias='canonicalize_q2_sfo_weather'): {
             'data_frame': DependencyDefinition('normalize_q2_weather_na_values'),
+        },
+        SolidInstance('load_data_to_database_from_spark', alias='load_q2_on_time_data'): {
+            'data_frame': DependencyDefinition('canonicalize_q2_on_time_data'),
+        },
+        SolidInstance('load_data_to_database_from_spark', alias='load_q2_coupon_data'): {
+            'data_frame': DependencyDefinition('canonicalize_q2_coupon_data'),
+        },
+        SolidInstance('load_data_to_database_from_spark', alias='load_q2_market_data'): {
+            'data_frame': DependencyDefinition('canonicalize_q2_market_data'),
+        },
+        SolidInstance('load_data_to_database_from_spark', alias='load_q2_ticket_data'): {
+            'data_frame': DependencyDefinition('canonicalize_q2_ticket_data'),
+        },
+        SolidInstance('load_data_to_database_from_spark', alias='load_q2_sfo_weather'): {
+            'data_frame': DependencyDefinition('canonicalize_q2_sfo_weather'),
         },
     }
 
@@ -425,8 +382,24 @@ def define_airline_demo_ingest_pipeline():
 def define_airline_demo_warehouse_pipeline():
     return PipelineDefinition(
         name="airline_demo_warehouse_pipeline",
-        solids=[],
-        dependencies={},
+        solids=[
+            average_sfo_outbound_avg_delays_by_destination,
+            sfo_delays_by_destination,
+            thunk,
+            upload_to_s3,
+        ],
+        dependencies={
+            SolidInstance('thunk', alias='db_url'): {},
+            'average_sfo_outbound_avg_delays_by_destination': {},
+            's_f_o__delays_by__destination': {
+                'db_url': DependencyDefinition('db_url'),
+                'table_name':
+                DependencyDefinition('average_sfo_outbound_avg_delays_by_destination', ),
+            },
+            SolidInstance('upload_to_s3', alias='upload_outbound_avg_delay_pdf_plots'): {
+                'file_path': DependencyDefinition('s_f_o__delays_by__destination'),
+            }
+        },
         context_definitions=context_definitions,
     )
 
