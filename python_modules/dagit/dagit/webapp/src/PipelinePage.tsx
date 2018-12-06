@@ -146,7 +146,7 @@ export default class PipelinePage extends React.Component<IPipelinePageProps> {
               pipelines={pipelines}
               selectedPipeline={selectedPipeline}
               onItemSelect={pipeline => {
-                history.push(`/${pipeline.name}/${match.params.tab}`);
+                history.push(`/${pipeline.name}/${selectedTab.slug}`);
               }}
             />
             {selectedPipeline && <Navbar.Divider />}
@@ -156,7 +156,7 @@ export default class PipelinePage extends React.Component<IPipelinePageProps> {
                   <Tab
                     key={slug}
                     to={`/${selectedPipeline.name}/${slug}`}
-                    active={match.params.tab === slug}
+                    active={selectedTab.slug === slug}
                   >
                     {title}
                   </Tab>
