@@ -21,6 +21,7 @@ from dagster import (
     lambda_solid,
     PipelineContextDefinition,
     PipelineDefinition,
+    ResourceDefinition,
     SolidInstance,
 )
 from dagster.utils.test import (define_stub_solid, execute_solid)
@@ -32,42 +33,47 @@ from airline_demo.solids import (
     thunk,
     unzip_file,
 )
+from airline_demo.pipelines import (
+    define_lambda_resource,
+    define_tempfile_resource,
+)
 from airline_demo.utils import (
     create_s3_session,
     create_spark_session_local,
 )
 
-S3Resources = namedtuple('S3Resources', ('s3', ))
 
-SparkResources = namedtuple('SparkResources', ('spark', ))
+def _tempfile_context():
+    return {
+        'test':
+        PipelineContextDefinition(
+            context_fn=lambda info: ExecutionContext.console_logging(log_level=logging.DEBUG),
+            resources={
+                'tempfile': define_tempfile_resource(),
+            }
+        )
+    }
 
 
 def _s3_context():
     return {
-        'test': PipelineContextDefinition(
-            context_fn=(
-                lambda info: ExecutionContext.console_logging(
-                    log_level=logging.DEBUG,
-                    resources=S3Resources(
-                        create_s3_session(signed=False),
-                    )
-                )
-            ),
+        'test':
+        PipelineContextDefinition(
+            context_fn=lambda info: ExecutionContext.console_logging(log_level=logging.DEBUG),
+            resources={
+                's3': define_lambda_resource(create_s3_session, signed=False),
+                'tempfile': define_tempfile_resource(),
+            }
         )
     }
 
 
 def _spark_context():
     return {
-        'test': PipelineContextDefinition(
-            context_fn=(
-                lambda info: ExecutionContext.console_logging(
-                    log_level=logging.DEBUG,
-                    resources=SparkResources(
-                        create_spark_session_local(),
-                    )
-                )
-            ),
+        'test':
+        PipelineContextDefinition(
+            context_fn=lambda info: ExecutionContext.console_logging(log_level=logging.DEBUG),
+            resources={'spark': define_lambda_resource(create_spark_session_local)}
         )
     }
 
@@ -117,7 +123,8 @@ def test_download_from_s3():
                 'download_from_s3': {
                     'config': {
                         'bucket': 'dagster-airline-demo-source-data',
-                        'key': 'test/test_file'
+                        'key': 'test/test_file',
+                        'target_path': 'test/test_file',
                     }
                 }
             }
@@ -130,7 +137,31 @@ def test_download_from_s3():
         assert fd.read() == 'test\n'
 
 
-def test_unzip_file():
+@pytest.mark.nettest
+def test_download_from_s3_tempfile():
+    result = execute_solid(
+        PipelineDefinition([download_from_s3], context_definitions=_s3_context()),
+        'download_from_s3',
+        environment={
+            'context': {
+                'test': {}
+            },
+            'solids': {
+                'download_from_s3': {
+                    'config': {
+                        'bucket': 'dagster-airline-demo-source-data',
+                        'key': 'test/test_file',
+                    }
+                }
+            }
+        }
+    )
+    assert result.success
+    assert result.transformed_value()
+    assert not os.path.isfile(result.transformed_value())
+
+
+def test_unzip_file_tempfile():
     @lambda_solid
     def nonce():
         return None
@@ -143,7 +174,8 @@ def test_unzip_file():
                     'archive_path': DependencyDefinition('nonce'),
                     'archive_member': DependencyDefinition('nonce')
                 }
-            }
+            },
+            context_definitions=_tempfile_context(),
         ),
         'unzip_file',
         inputs={
@@ -159,12 +191,8 @@ def test_unzip_file():
         }}
     )
     assert result.success
-    assert result.transformed_value() == os.path.join(
-        os.path.dirname(__file__), 'data', 'test/test_file'
-    )
-    assert os.path.isfile(result.transformed_value())
-    with open(result.transformed_value(), 'r') as fd:
-        assert fd.read() == 'test\n'
+    assert result.transformed_value()
+    assert not os.path.isfile(result.transformed_value())
 
 
 @pytest.mark.spark

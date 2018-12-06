@@ -215,9 +215,9 @@ def download_from_s3(info):
     '''
     bucket = info.config['bucket']
     key = info.config['key']
-    target_path = (info.config.get('target_path') or key)
+    target_path = info.config.get('target_path')
 
-    if info.config['skip_if_present'] and os.path.isfile(target_path):
+    if target_path and info.config['skip_if_present'] and os.path.isfile(target_path):
         info.context.info(
             'Skipping download, file already present at {target_path}'.format(
                 target_path=target_path
@@ -225,8 +225,11 @@ def download_from_s3(info):
         )
         return target_path
 
-    if os.path.dirname(target_path):
+    if target_path and os.path.dirname(target_path):
         mkdir_p(os.path.dirname(target_path))
+
+    if target_path is None:
+        target_path = info.context.resources.tempfile.tempfile().name
 
     info.context.resources.s3.download_file(bucket, key, target_path)
     return target_path
@@ -332,6 +335,13 @@ def upload_to_s3(info, file_path):
                     default_value=False,
                     is_optional=True
                 ),
+                'destination_dir':
+                Field(
+                    types.String,
+                    description='If no destination_dir is specified, the archive will be unzipped '
+                    'to a temporary directory.',
+                    is_optional=True,
+                )
             }
         )
     ),
@@ -342,14 +352,9 @@ def unzip_file(
     info,
     archive_path,
     archive_member,
-    # destination_dir=None
 ):
-    # FIXME
-    # archive_path = info.config['archive_path']
-    # archive_member = info.config['archive_member']
     destination_dir = (
-        # info.config['destination_dir'] or
-        os.path.dirname(archive_path)
+        info.config.get('destination_dir') or info.context.resources.tempfile.tempdir()
     )
 
     with zipfile.ZipFile(archive_path, 'r') as zip_ref:
