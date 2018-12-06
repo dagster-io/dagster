@@ -13,6 +13,55 @@ export interface AppQuery_pipelinesOrError_PythonError {
   stack: string[];
 }
 
+export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_nodes_LogMessageEvent {
+  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent";
+  message: string;
+  timestamp: any;
+}
+
+export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepStartEvent_step {
+  name: string;
+}
+
+export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepStartEvent {
+  __typename: "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepFailureEvent";
+  message: string;
+  timestamp: any;
+  step: AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepStartEvent_step;
+}
+
+export type AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_nodes = AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_nodes_LogMessageEvent | AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepStartEvent;
+
+export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_pageInfo {
+  lastCursor: any | null;
+}
+
+export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs {
+  nodes: AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_nodes[];
+  pageInfo: AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_pageInfo;
+}
+
+export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_executionPlan_steps_solid {
+  name: string;
+}
+
+export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_executionPlan_steps {
+  name: string;
+  solid: AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_executionPlan_steps_solid;
+  tag: StepTag;
+}
+
+export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_executionPlan {
+  steps: AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_executionPlan_steps[];
+}
+
+export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_runs {
+  runId: string;
+  status: PipelineRunStatus;
+  logs: AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs;
+  executionPlan: AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_executionPlan;
+}
+
 export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_environmentType {
   name: string;
 }
@@ -71,29 +120,9 @@ export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_contexts_con
 }
 
 export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_contexts {
-  config: AppQuery_pipelinesOrError_PipelineConnection_nodes_contexts_config | null;
   name: string;
   description: string | null;
-}
-
-export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_pageInfo {
-  lastCursor: any | null;
-}
-
-export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_nodes {
-  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent";
-  message: string;
-}
-
-export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs {
-  pageInfo: AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_pageInfo;
-  nodes: AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_nodes[];
-}
-
-export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_runs {
-  runId: string;
-  status: PipelineRunStatus;
-  logs: AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs;
+  config: AppQuery_pipelinesOrError_PipelineConnection_nodes_contexts_config | null;
 }
 
 export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_solids_definition_metadata {
@@ -234,10 +263,10 @@ export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_solids {
 
 export interface AppQuery_pipelinesOrError_PipelineConnection_nodes {
   name: string;
-  environmentType: AppQuery_pipelinesOrError_PipelineConnection_nodes_environmentType;
-  contexts: AppQuery_pipelinesOrError_PipelineConnection_nodes_contexts[];
   runs: AppQuery_pipelinesOrError_PipelineConnection_nodes_runs[];
+  environmentType: AppQuery_pipelinesOrError_PipelineConnection_nodes_environmentType;
   description: string | null;
+  contexts: AppQuery_pipelinesOrError_PipelineConnection_nodes_contexts[];
   solids: AppQuery_pipelinesOrError_PipelineConnection_nodes_solids[];
 }
 
@@ -267,6 +296,14 @@ export enum PipelineRunStatus {
   NOT_STARTED = "NOT_STARTED",
   STARTED = "STARTED",
   SUCCESS = "SUCCESS",
+}
+
+export enum StepTag {
+  INPUT_EXPECTATION = "INPUT_EXPECTATION",
+  JOIN = "JOIN",
+  OUTPUT_EXPECTATION = "OUTPUT_EXPECTATION",
+  SERIALIZE = "SERIALIZE",
+  TRANSFORM = "TRANSFORM",
 }
 
 /**

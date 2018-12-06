@@ -4,15 +4,12 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL fragment: SolidJumpBarFragment
+// GraphQL fragment: PipelineRunLogMessageFragment
 // ====================================================
 
-export interface SolidJumpBarFragment_solids {
-  name: string;
-}
-
-export interface SolidJumpBarFragment {
-  solids: SolidJumpBarFragment_solids[];
+export interface PipelineRunLogMessageFragment {
+  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepFailureEvent";
+  message: string;
 }
 
 /* tslint:disable */

@@ -511,6 +511,9 @@ class ExecutionPlan(object):
         self.deps = check.dict_param(deps, 'deps', key_type=str, value_type=set)
         self.steps = list(step_dict.values())
 
+    def get_step_by_key(self, key):
+        return self.step_dict[key]
+
     def topological_steps(self):
         sorted_step_guids = toposort.toposort_flatten(self.deps)
         for step_guid in sorted_step_guids:

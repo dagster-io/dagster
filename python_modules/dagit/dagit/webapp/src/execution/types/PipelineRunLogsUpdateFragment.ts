@@ -4,40 +4,36 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL fragment: SolidTypeSignatureFragment
+// GraphQL fragment: PipelineRunLogsUpdateFragment
 // ====================================================
 
-export interface SolidTypeSignatureFragment_outputs_definition_type {
+export interface PipelineRunLogsUpdateFragment_logs_nodes_LogMessageEvent {
+  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent";
+  message: string;
+  timestamp: any;
+}
+
+export interface PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepStartEvent_step {
   name: string;
-  description: string | null;
 }
 
-export interface SolidTypeSignatureFragment_outputs_definition {
-  name: string;
-  type: SolidTypeSignatureFragment_outputs_definition_type;
+export interface PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepStartEvent {
+  __typename: "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepFailureEvent";
+  message: string;
+  timestamp: any;
+  step: PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepStartEvent_step;
 }
 
-export interface SolidTypeSignatureFragment_outputs {
-  definition: SolidTypeSignatureFragment_outputs_definition;
+export type PipelineRunLogsUpdateFragment_logs_nodes = PipelineRunLogsUpdateFragment_logs_nodes_LogMessageEvent | PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepStartEvent;
+
+export interface PipelineRunLogsUpdateFragment_logs {
+  nodes: PipelineRunLogsUpdateFragment_logs_nodes[];
 }
 
-export interface SolidTypeSignatureFragment_inputs_definition_type {
-  name: string;
-  description: string | null;
-}
-
-export interface SolidTypeSignatureFragment_inputs_definition {
-  name: string;
-  type: SolidTypeSignatureFragment_inputs_definition_type;
-}
-
-export interface SolidTypeSignatureFragment_inputs {
-  definition: SolidTypeSignatureFragment_inputs_definition;
-}
-
-export interface SolidTypeSignatureFragment {
-  outputs: SolidTypeSignatureFragment_outputs[];
-  inputs: SolidTypeSignatureFragment_inputs[];
+export interface PipelineRunLogsUpdateFragment {
+  runId: string;
+  status: PipelineRunStatus;
+  logs: PipelineRunLogsUpdateFragment_logs;
 }
 
 /* tslint:disable */

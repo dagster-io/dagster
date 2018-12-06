@@ -1,7 +1,8 @@
+from __future__ import absolute_import
 import graphene
 from graphene.types.generic import GenericScalar
 
-from . import model, errors, pipelines, execution, runs
+from dagit.schema import model, errors, pipelines, execution, runs, generic
 from .utils import non_null_list
 
 
@@ -100,7 +101,7 @@ class Subscription(graphene.ObjectType):
     pipelineRunLogs = graphene.Field(
         graphene.NonNull(lambda: runs.PipelineRunEvent),
         runId=graphene.Argument(graphene.NonNull(graphene.ID)),
-        after=graphene.Argument(graphene.String)
+        after=graphene.Argument(generic.Cursor)
     )
 
     def resolve_pipelineRunLogs(self, info, runId, after=None):

@@ -1,9 +1,10 @@
+from __future__ import absolute_import
 import graphene
 
 from dagster import check
 import dagster.core.execution_plan
 
-from . import pipelines
+from dagit.schema import pipelines
 from .utils import non_null_list
 
 

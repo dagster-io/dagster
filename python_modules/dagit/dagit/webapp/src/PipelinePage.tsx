@@ -1,6 +1,7 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
+import { ApolloConsumer } from "react-apollo";
 import { Link } from "react-router-dom";
 import { Route, match } from "react-router";
 import { History } from "history";
@@ -9,7 +10,9 @@ import Page from "./Page";
 import { PipelineJumpBar } from "./PipelineJumpComponents";
 import PythonErrorInfo from "./PythonErrorInfo";
 import PipelineExplorer from "./PipelineExplorer";
-import PipelineExecution from "./PipelineExecution";
+import PipelineExecutionContainer from "./execution/PipelineExecutionContainer";
+import { StorageProvider } from "./LocalStorage";
+
 import {
   PipelinePageFragment,
   PipelinePageFragment_PythonError,
@@ -54,7 +57,20 @@ const TABS = [
     slug: "execute",
     title: "Execute",
     render: (props: IPipelinePageTabProps) => (
-      <PipelineExecution pipeline={props.pipeline} />
+      <ApolloConsumer>
+        {client => (
+          <StorageProvider namespace={props.pipeline.name}>
+            {({ data, onSave }) => (
+              <PipelineExecutionContainer
+                client={client}
+                pipeline={props.pipeline}
+                data={data}
+                onSave={onSave}
+              />
+            )}
+          </StorageProvider>
+        )}
+      </ApolloConsumer>
     )
   }
 ];
@@ -70,7 +86,7 @@ export default class PipelinePage extends React.Component<IPipelinePageProps> {
         }
         ... on PipelineConnection {
           nodes {
-            ...PipelineExecutionFragment
+            ...PipelineExecutionContainerFragment
             ...PipelineExplorerFragment
             ...PipelineJumpBarFragment
             solids {
@@ -80,7 +96,7 @@ export default class PipelinePage extends React.Component<IPipelinePageProps> {
         }
       }
 
-      ${PipelineExecution.fragments.PipelineExecutionFragment}
+      ${PipelineExecutionContainer.fragments.PipelineExecutionContainerFragment}
       ${PipelineExplorer.fragments.PipelineExplorerFragment}
       ${PipelineExplorer.fragments.PipelineExplorerSolidFragment}
       ${PipelineJumpBar.fragments.PipelineJumpBarFragment}

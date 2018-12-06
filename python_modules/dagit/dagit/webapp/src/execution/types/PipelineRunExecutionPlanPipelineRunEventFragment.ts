@@ -4,28 +4,27 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL fragment: PipelineRunsLogsFragment
+// GraphQL fragment: PipelineRunExecutionPlanPipelineRunEventFragment
 // ====================================================
 
-export interface PipelineRunsLogsFragment_logs_pageInfo {
-  lastCursor: any | null;
-}
-
-export interface PipelineRunsLogsFragment_logs_nodes {
+export interface PipelineRunExecutionPlanPipelineRunEventFragment_LogMessageEvent {
   __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent";
   message: string;
+  timestamp: any;
 }
 
-export interface PipelineRunsLogsFragment_logs {
-  pageInfo: PipelineRunsLogsFragment_logs_pageInfo;
-  nodes: PipelineRunsLogsFragment_logs_nodes[];
+export interface PipelineRunExecutionPlanPipelineRunEventFragment_ExecutionStepStartEvent_step {
+  name: string;
 }
 
-export interface PipelineRunsLogsFragment {
-  runId: string;
-  status: PipelineRunStatus;
-  logs: PipelineRunsLogsFragment_logs;
+export interface PipelineRunExecutionPlanPipelineRunEventFragment_ExecutionStepStartEvent {
+  __typename: "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepFailureEvent";
+  message: string;
+  timestamp: any;
+  step: PipelineRunExecutionPlanPipelineRunEventFragment_ExecutionStepStartEvent_step;
 }
+
+export type PipelineRunExecutionPlanPipelineRunEventFragment = PipelineRunExecutionPlanPipelineRunEventFragment_LogMessageEvent | PipelineRunExecutionPlanPipelineRunEventFragment_ExecutionStepStartEvent;
 
 /* tslint:disable */
 // This file was automatically generated and should not be edited.
@@ -42,6 +41,14 @@ export enum PipelineRunStatus {
   NOT_STARTED = "NOT_STARTED",
   STARTED = "STARTED",
   SUCCESS = "SUCCESS",
+}
+
+export enum StepTag {
+  INPUT_EXPECTATION = "INPUT_EXPECTATION",
+  JOIN = "JOIN",
+  OUTPUT_EXPECTATION = "OUTPUT_EXPECTATION",
+  SERIALIZE = "SERIALIZE",
+  TRANSFORM = "TRANSFORM",
 }
 
 /**

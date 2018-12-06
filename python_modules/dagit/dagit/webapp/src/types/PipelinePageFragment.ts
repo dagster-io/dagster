@@ -13,6 +13,55 @@ export interface PipelinePageFragment_PythonError {
   stack: string[];
 }
 
+export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_LogMessageEvent {
+  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent";
+  message: string;
+  timestamp: any;
+}
+
+export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepStartEvent_step {
+  name: string;
+}
+
+export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepStartEvent {
+  __typename: "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepFailureEvent";
+  message: string;
+  timestamp: any;
+  step: PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepStartEvent_step;
+}
+
+export type PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes = PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_LogMessageEvent | PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepStartEvent;
+
+export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs_pageInfo {
+  lastCursor: any | null;
+}
+
+export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs {
+  nodes: PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes[];
+  pageInfo: PipelinePageFragment_PipelineConnection_nodes_runs_logs_pageInfo;
+}
+
+export interface PipelinePageFragment_PipelineConnection_nodes_runs_executionPlan_steps_solid {
+  name: string;
+}
+
+export interface PipelinePageFragment_PipelineConnection_nodes_runs_executionPlan_steps {
+  name: string;
+  solid: PipelinePageFragment_PipelineConnection_nodes_runs_executionPlan_steps_solid;
+  tag: StepTag;
+}
+
+export interface PipelinePageFragment_PipelineConnection_nodes_runs_executionPlan {
+  steps: PipelinePageFragment_PipelineConnection_nodes_runs_executionPlan_steps[];
+}
+
+export interface PipelinePageFragment_PipelineConnection_nodes_runs {
+  runId: string;
+  status: PipelineRunStatus;
+  logs: PipelinePageFragment_PipelineConnection_nodes_runs_logs;
+  executionPlan: PipelinePageFragment_PipelineConnection_nodes_runs_executionPlan;
+}
+
 export interface PipelinePageFragment_PipelineConnection_nodes_environmentType {
   name: string;
 }
@@ -71,29 +120,9 @@ export interface PipelinePageFragment_PipelineConnection_nodes_contexts_config {
 }
 
 export interface PipelinePageFragment_PipelineConnection_nodes_contexts {
-  config: PipelinePageFragment_PipelineConnection_nodes_contexts_config | null;
   name: string;
   description: string | null;
-}
-
-export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs_pageInfo {
-  lastCursor: any | null;
-}
-
-export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes {
-  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent";
-  message: string;
-}
-
-export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs {
-  pageInfo: PipelinePageFragment_PipelineConnection_nodes_runs_logs_pageInfo;
-  nodes: PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes[];
-}
-
-export interface PipelinePageFragment_PipelineConnection_nodes_runs {
-  runId: string;
-  status: PipelineRunStatus;
-  logs: PipelinePageFragment_PipelineConnection_nodes_runs_logs;
+  config: PipelinePageFragment_PipelineConnection_nodes_contexts_config | null;
 }
 
 export interface PipelinePageFragment_PipelineConnection_nodes_solids_definition_metadata {
@@ -234,10 +263,10 @@ export interface PipelinePageFragment_PipelineConnection_nodes_solids {
 
 export interface PipelinePageFragment_PipelineConnection_nodes {
   name: string;
-  environmentType: PipelinePageFragment_PipelineConnection_nodes_environmentType;
-  contexts: PipelinePageFragment_PipelineConnection_nodes_contexts[];
   runs: PipelinePageFragment_PipelineConnection_nodes_runs[];
+  environmentType: PipelinePageFragment_PipelineConnection_nodes_environmentType;
   description: string | null;
+  contexts: PipelinePageFragment_PipelineConnection_nodes_contexts[];
   solids: PipelinePageFragment_PipelineConnection_nodes_solids[];
 }
 
@@ -263,6 +292,14 @@ export enum PipelineRunStatus {
   NOT_STARTED = "NOT_STARTED",
   STARTED = "STARTED",
   SUCCESS = "SUCCESS",
+}
+
+export enum StepTag {
+  INPUT_EXPECTATION = "INPUT_EXPECTATION",
+  JOIN = "JOIN",
+  OUTPUT_EXPECTATION = "OUTPUT_EXPECTATION",
+  SERIALIZE = "SERIALIZE",
+  TRANSFORM = "TRANSFORM",
 }
 
 /**
