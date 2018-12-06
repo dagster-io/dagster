@@ -16,6 +16,8 @@ from dagster.core.events import (
     EventType,
 )
 
+from dagster.utils.logging import define_colored_console_logger
+
 
 def single_event(events, event_type):
     assert event_type in events
@@ -32,7 +34,10 @@ def define_event_logging_pipeline(name, solids, event_callback, deps=None):
             'default':
             PipelineContextDefinition(
                 context_fn=
-                lambda info: ExecutionContext(loggers=[construct_event_logger(event_callback)])
+                lambda info: ExecutionContext(loggers=[
+                    construct_event_logger(event_callback),
+                    define_colored_console_logger('yup'),
+                ])
             )
         }
     )

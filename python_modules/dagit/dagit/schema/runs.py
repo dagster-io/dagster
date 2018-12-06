@@ -8,9 +8,10 @@ from dagster.core.events import (
 )
 from dagit import pipeline_run_storage
 import dagit.schema.pipelines
+import dagit.schema.errors
 from dagit.schema import generic, execution
 from .utils import non_null_list
-
+from dagster.utils.error import SerializableErrorInfo
 PipelineRunStatus = graphene.Enum.from_enum(pipeline_run_storage.PipelineRunStatus)
 
 
@@ -119,6 +120,8 @@ class ExecutionStepFailureEvent(graphene.ObjectType):
     class Meta:
         interfaces = (MessageEvent, ExecutionStepEvent)
 
+    error = graphene.NonNull(lambda: dagit.schema.errors.PythonError)
+
 
 # Should be a union of all possible events
 class PipelineRunEvent(graphene.Union):
@@ -167,11 +170,14 @@ class PipelineRunEvent(graphene.Union):
                 **basic_params
             )
         elif event.event_type == EventType.EXECUTION_PLAN_STEP_FAILURE:
-            return ExecutionStepFailureEvent(
+            check.inst(event.error_info, SerializableErrorInfo)
+            failure_event = ExecutionStepFailureEvent(
                 step=dagit.schema.execution.ExecutionStep(
                     pipeline_run.execution_plan.get_step_by_key(event.step_key)
                 ),
+                error=dagit.schema.errors.PythonError(event.error_info),
                 **basic_params
             )
+            return failure_event
         else:
             return LogMessageEvent(**basic_params)

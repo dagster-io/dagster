@@ -7,6 +7,11 @@ import dagster.core.evaluator
 from dagit.schema import pipelines, execution, runs
 from .utils import non_null_list
 
+from dagster.utils.error import (
+    SerializableErrorInfo,
+    serializable_error_info_from_exc_info,
+)
+
 
 class Error(graphene.Interface):
     message = graphene.String(required=True)
@@ -14,10 +19,15 @@ class Error(graphene.Interface):
 
 
 class PythonError(graphene.ObjectType):
-    def __init__(self, exc_type, exc_value, exc_tb):
+    def __init__(self, error_info):
         super(PythonError, self).__init__()
-        self.message = traceback.format_exception_only(exc_type, exc_value)[0]
-        self.stack = traceback.format_tb(tb=exc_tb)
+        check.inst_param(error_info, 'error_info', SerializableErrorInfo)
+        self.message = error_info.message
+        self.stack = error_info.stack
+
+    @staticmethod
+    def from_sys_exc_info(sys_exc_info):
+        return PythonError(serializable_error_info_from_exc_info(sys_exc_info))
 
     class Meta:
         interfaces = (Error, )
