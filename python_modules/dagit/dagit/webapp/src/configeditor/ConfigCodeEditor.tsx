@@ -127,10 +127,13 @@ injectGlobal`
     }
   }
   .cm-whitespace {
+    /*
+      Note: background is a 16x16px PNG containing a semi-transparent gray dot. 8.4px
+      is the exact width of a character in Codemirror's monospace font. It's consistent
+      in Firefox and Chrome and doesn't change on zoom in / out, but may need to be
+      modified if we change the Codemirror font.
+    */
     background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAAFJJREFUOBFjYBgFAx8CjLiccPnyZXFmZmY9kPzfv38v6erqvsSmlgmbIEgMpJmRkZEDhGEGYVOL0wBsirGJ4TQA5Oz/////AGEQG5vmUbHBEgIA9y0YCFtvw70AAAAASUVORK5CYII=') center left repeat-x;
     background-size: 8.4px 8.4px;
-  }
-  .CodeMirror-linenumber {
-
   }
 `;
