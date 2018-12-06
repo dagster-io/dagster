@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import json
 from dagit import app
 from dagit.pipeline_run_storage import PipelineRunStorage

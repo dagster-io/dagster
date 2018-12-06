@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from functools import wraps
 import graphene
 
@@ -8,6 +9,11 @@ from dagster import check
 from .utils import non_null_list
 
 
+def _pipeline_run():
+    from dagit.schema import runs
+    return runs.PipelineRun
+
+
 class Pipeline(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
@@ -15,7 +21,7 @@ class Pipeline(graphene.ObjectType):
     contexts = non_null_list(lambda: PipelineContext)
     environment_type = graphene.NonNull(lambda: Type)
     types = graphene.NonNull(graphene.List(graphene.NonNull(lambda: Type)), )
-    runs = non_null_list(lambda: runs.PipelineRun)
+    runs = non_null_list(_pipeline_run)
 
     def __init__(self, pipeline):
         super(Pipeline, self).__init__(name=pipeline.name, description=pipeline.description)
@@ -46,6 +52,7 @@ class Pipeline(graphene.ObjectType):
         )
 
     def resolve_runs(self, info):
+        from dagit.schema import runs
         return [
             runs.PipelineRun(r)
             for r in info.context.pipeline_runs.all_runs_for_pipeline(self._pipeline.name)
@@ -376,6 +383,3 @@ class TypeField(graphene.ObjectType):
 
     def resolve_type(self, _info):
         return Type.from_dagster_type(dagster_type=self._field.dagster_type)
-
-
-from . import runs

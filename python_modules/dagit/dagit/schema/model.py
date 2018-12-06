@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import sys
 import uuid
 import gevent
@@ -13,7 +14,7 @@ from dagster.core.execution import (
     execute_reentrant_pipeline,
 )
 
-from . import pipelines, execution, errors, runs
+from dagit.schema import pipelines, execution, errors, runs
 from .utils import non_null_list, EitherValue, EitherError
 from .context import DagsterGraphQLContext
 
@@ -116,7 +117,8 @@ def start_pipeline_execution(context, pipelineName, config):
     def get_config_and_start_execution(pipeline):
         def start_execution(config):
             new_run_id = str(uuid.uuid4())
-            run = pipeline_run_storage.add_run(new_run_id, pipelineName, config)
+            execution_plan = create_execution_plan(pipeline.get_dagster_pipeline(), config.value)
+            run = pipeline_run_storage.add_run(new_run_id, pipelineName, config, execution_plan)
             # TODO: If this throws an error what do we do?
             gevent.spawn(
                 execute_reentrant_pipeline,
@@ -152,7 +154,7 @@ def get_pipeline_run_observable(context, runId, after=None):
 
     def get_observable(pipeline):
         return run.observable_after_cursor(after).map(
-            lambda event: runs.PipelineRunEvent.from_dagster_event(event, pipeline)
+            lambda event: runs.PipelineRunEvent.from_dagster_event(context, event, pipeline)
         )
 
     return _pipeline_or_error_from_container(context.repository_container,

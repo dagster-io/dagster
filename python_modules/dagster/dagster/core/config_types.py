@@ -13,6 +13,7 @@ from .config import (
 from .definitions import (
     PipelineContextDefinition,
     PipelineDefinition,
+    ResourceDefinition,
 )
 
 from .evaluator import throwing_evaluate_config_value
@@ -45,14 +46,62 @@ def define_maybe_optional_selector_field(dagster_type):
     ) if is_optional else Field(dagster_type)
 
 
-class SpecificContextConfig(DagsterCompositeType):
+class SpecificResourceConfig(DagsterCompositeType):
     def __init__(self, name, config_field):
+        super(SpecificResourceConfig, self).__init__(
+            name,
+            {
+                'config': config_field,
+            },
+        )
+
+
+class ResourceDictionaryType(DagsterCompositeType):
+    def __init__(self, name, resources):
+        check.str_param(name, 'name')
+        check.dict_param(
+            resources,
+            'resources',
+            key_type=str,
+            value_type=ResourceDefinition,
+        )
+
+        field_dict = {}
+
+        for resource_name, resource in resources.items():
+            if resource.config_field:
+                specific_resource_type = SpecificResourceConfig(
+                    name + '.' + resource_name,
+                    resource.config_field,
+                )
+                field_dict[resource_name] = Field(specific_resource_type)
+
+        super(ResourceDictionaryType, self).__init__(
+            name,
+            field_dict,
+            type_attributes=DagsterTypeAttributes(is_system_config=True),
+        )
+
+
+class SpecificContextConfig(DagsterCompositeType):
+    def __init__(self, name, config_field, resources):
         check.str_param(name, 'name')
         check.inst_param(config_field, 'config_field', Field)
+        check.dict_param(
+            resources,
+            'resources',
+            key_type=str,
+            value_type=ResourceDefinition,
+        )
+        resource_dict_type = ResourceDictionaryType(
+            '{name}.Resources'.format(name=name),
+            resources,
+        )
         super(SpecificContextConfig, self).__init__(
             name,
             {
                 'config': config_field,
+                'resources': Field(resource_dict_type),
             },
             type_attributes=DagsterTypeAttributes(is_system_config=True),
         )
@@ -106,7 +155,11 @@ class ContextConfigType(DagsterSelectorType):
 
     def construct_from_config_value(self, config_value):
         context_name, context_value = single_item(config_value)
-        return Context(name=context_name, config=context_value['config'])
+        return Context(
+            name=context_name,
+            config=context_value['config'],
+            resources=context_value['resources'],
+        )
 
 
 def create_specific_context_type(pipeline_name, context_name, context_definition):
@@ -116,6 +169,7 @@ def create_specific_context_type(pipeline_name, context_name, context_definition
             context_name=camelcase(context_name),
         ),
         context_definition.config_field,
+        context_definition.resources,
     )
     return specific_context_config_type
 

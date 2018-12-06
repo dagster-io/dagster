@@ -26,5 +26,11 @@ reinstall:
 rebuild_dagit:
 	cd dagit/dagit/webapp; yarn install && yarn build
 
+run_dagit:
+	cd dagit/dagit/webapp; make
+
 dagster_yapf:
 	find dagster -name "*.py" | grep -v ".tox" | grep -v ".vscode" | grep -v "snapshots" | xargs yapf -i
+
+test_airline:
+	cd airline-demo; pytest -vv -s -W ignore:::psycopg2 -m "not slow and not spark"

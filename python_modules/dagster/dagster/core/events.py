@@ -56,6 +56,7 @@ class ExecutionEvents:
         self.context.info(
             'Beginning execution of {key}'.format(key=key),
             event_type=EventType.EXECUTION_PLAN_STEP_START.value,
+            step_key=key,
         )
 
     def execution_plan_step_success(self, key, millis):
@@ -69,6 +70,7 @@ class ExecutionEvents:
             ),
             event_type=EventType.EXECUTION_PLAN_STEP_SUCCESS.value,
             millis=millis,
+            step_key=key,
         )
 
     def execution_plan_step_failure(self, key):
@@ -76,6 +78,7 @@ class ExecutionEvents:
         self.context.info(
             'Execution of {key} failed'.format(key=key),
             event_type=EventType.EXECUTION_PLAN_STEP_FAILURE.value,
+            step_key=key,
         )
 
     def pipeline_name(self):
@@ -126,6 +129,10 @@ class EventRecord:
     def run_id(self):
         return self._logger_message.meta['run_id']
 
+    @property
+    def timestamp(self):
+        return self._logger_message.record.created
+
 
 class PipelineEventRecord(EventRecord):
     @property
@@ -135,8 +142,8 @@ class PipelineEventRecord(EventRecord):
 
 class ExecutionStepEventRecord(EventRecord):
     @property
-    def key(self):
-        return self._logger_message.meta['key']
+    def step_key(self):
+        return self._logger_message.meta['step_key']
 
     @property
     def pipeline_name(self):

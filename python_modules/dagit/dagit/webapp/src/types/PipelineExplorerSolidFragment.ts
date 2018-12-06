@@ -160,6 +160,14 @@ export enum PipelineRunStatus {
   SUCCESS = "SUCCESS",
 }
 
+export enum StepTag {
+  INPUT_EXPECTATION = "INPUT_EXPECTATION",
+  JOIN = "JOIN",
+  OUTPUT_EXPECTATION = "OUTPUT_EXPECTATION",
+  SERIALIZE = "SERIALIZE",
+  TRANSFORM = "TRANSFORM",
+}
+
 /**
  * 
  */

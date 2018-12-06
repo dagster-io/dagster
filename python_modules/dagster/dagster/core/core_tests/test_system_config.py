@@ -155,7 +155,8 @@ def test_provided_default_config():
     assert some_context_field.default_value == {
         'config': {
             'with_default_int': 23434,
-        }
+        },
+        'resources': {},
     }
 
     result = evaluate_config_value(env_type, {})
