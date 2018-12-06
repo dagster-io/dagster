@@ -18,14 +18,27 @@ def test_pipeline_download():
         define_airline_demo_download_pipeline(), {
             'context': {
                 'local': {
-                    'config': {
-                        'postgres_username': 'test',
-                        'postgres_password': 'test',
-                        'postgres_hostname': '127.0.0.1',
-                        'postgres_db_name': 'test',
-                        'db_dialect': 'postgres',
-                    }
-                }
+                    'resources': {
+                        # duplication not the best
+                        'db_url': {
+                            'config': {
+                                'postgres_username': 'test',
+                                'postgres_password': 'test',
+                                'postgres_hostname': '127.0.0.1',
+                                'postgres_db_name': 'test',
+                            },
+                        },
+                        'db_engine': {
+                            'config': {
+                                'postgres_username': 'test',
+                                'postgres_password': 'test',
+                                'postgres_hostname': '127.0.0.1',
+                                'postgres_db_name': 'test',
+                            },
+                        },
+                        'db_dialect' : {'config': 'postgres'},
+                    },
+                },
             },
             'solids': {
                 'april_on_time_data_filename': {
