@@ -1,3 +1,5 @@
+import datetime
+
 import pytest
 
 from dagster import execute_pipeline
@@ -366,6 +368,8 @@ def test_pipeline_ingest():
 @pytest.mark.db
 @pytest.mark.spark
 def test_pipeline_warehouse():
+    now = datetime.datetime.utcnow()
+    timestamp = now.strftime('%Y_%m_%d_%H_%M_%S')
     result = execute_pipeline(
         define_airline_demo_warehouse_pipeline(),
         {
@@ -404,6 +408,14 @@ def test_pipeline_warehouse():
                 'db_url': {
                     'config': 'postgresql://test:test@127.0.0.1:5432/test'
                 },
+                'upload_outbound_avg_delay_pdf_plots': {
+                    'config': {
+                        'bucket':
+                        'dagster-airline-demo-sink',
+                        'key':
+                        'sfo_outbound_avg_delay_plots_{timestamp}.pdf'.format(timestamp=timestamp)
+                    }
+                }
             }
         }
     )

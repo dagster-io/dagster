@@ -26,6 +26,7 @@ from .solids import (
     thunk,
     union_spark_data_frames,
     unzip_file,
+    upload_to_s3,
 )
 from .types import (
     AirlineDemoResources,
@@ -381,7 +382,12 @@ def define_airline_demo_ingest_pipeline():
 def define_airline_demo_warehouse_pipeline():
     return PipelineDefinition(
         name="airline_demo_warehouse_pipeline",
-        solids=[average_sfo_outbound_avg_delays_by_destination, sfo_delays_by_destination, thunk],
+        solids=[
+            average_sfo_outbound_avg_delays_by_destination,
+            sfo_delays_by_destination,
+            thunk,
+            upload_to_s3,
+        ],
         dependencies={
             SolidInstance('thunk', alias='db_url'): {},
             'average_sfo_outbound_avg_delays_by_destination': {},
@@ -389,6 +395,9 @@ def define_airline_demo_warehouse_pipeline():
                 'db_url': DependencyDefinition('db_url'),
                 'table_name':
                 DependencyDefinition('average_sfo_outbound_avg_delays_by_destination', ),
+            },
+            SolidInstance('upload_to_s3', alias='upload_outbound_avg_delay_pdf_plots'): {
+                'file_path': DependencyDefinition('s_f_o__delays_by__destination'),
             }
         },
         context_definitions=context_definitions,

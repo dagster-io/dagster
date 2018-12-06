@@ -3,13 +3,16 @@
 import os
 import zipfile
 
+from sqlalchemy import text
 from stringcase import snakecase
 
 from dagster import (
     Field,
     InputDefinition,
     OutputDefinition,
+    Result,
     solid,
+    SolidDefinition,
     types,
 )
 from dagstermill import define_dagstermill_solid
@@ -83,20 +86,10 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None)
         '\'table\', this is the string name of the new table created by the solid.'
     )
 
-    solid_description = '''This solid executes the following SQL statement:
+    description = '''This solid executes the following SQL statement:
     {select_statement}'''.format(select_statement=select_statement)
 
-    @solid(
-        name=name,
-        description=solid_description,
-        outputs=[
-            OutputDefinition(
-                materialization_strategy_output_types[materialization_strategy],
-                description=output_description
-            )
-        ]
-    )
-    def sql_solid_fn(info):
+    def transform_fn(info, _inputs):
         '''Inner function defining the new solid.
 
         Args:
@@ -108,15 +101,32 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None)
                 The table name of the newly materialized SQL select statement.
         '''
         # n.b., we will eventually want to make this resources key configurable
-        info.context.resources.db.execute(
-            'create table :tablename as :statement', {
-                'tablename': table_name,
-                'statement': select_statement,
-            }
+        info.context.resources.db_engine.execute(
+            text(
+                'drop table if exists {table_name};'
+                'create table {table_name} as {select_statement};'.format(
+                    table_name=table_name,
+                    select_statement=select_statement,
+                )
+            )
         )
-        return table_name
+        yield Result(value=table_name, output_name='result')
 
-    return sql_solid_fn
+    return SolidDefinition(
+        name=name,
+        inputs=[],
+        outputs=[
+            OutputDefinition(
+                materialization_strategy_output_types[materialization_strategy],
+                description=output_description
+            )
+        ],
+        transform_fn=transform_fn,
+        description=description,
+        metadata={
+            'kind': 'sql',
+        },
+    )
 
 
 @solid(
@@ -226,11 +236,6 @@ def download_from_s3(info):
                 Field(types.String, description='The S3 bucket to which to upload the file.'),
                 'key':
                 Field(types.String, description='The key to which to upload the file.'),
-                'file_path':
-                Field(
-                    types.String,
-                    description='The path of the file to upload.',
-                ),
                 'kwargs':
                 Field(
                     types.Dict,
@@ -240,13 +245,28 @@ def download_from_s3(info):
             }
         )
     ),
+    inputs=[
+        InputDefinition(
+            'file_path',
+            types.String,
+            description='The path of the file to upload.',
+        ),
+    ],
     description='Uploads a file to S3.',
     outputs=[
-        OutputDefinition(types.String, description='The bucket to which the file was uploaded.'),
-        OutputDefinition(types.String, description='The key to which the file was uploaded.'),
+        OutputDefinition(
+            types.String,
+            description='The bucket to which the file was uploaded.',
+            name='bucket',
+        ),
+        OutputDefinition(
+            types.String,
+            description='The key to which the file was uploaded.',
+            name='key',
+        ),
     ],
 )
-def upload_to_s3(info):
+def upload_to_s3(info, file_path):
     '''Upload a file to s3.
         
     Args:
@@ -258,13 +278,13 @@ def upload_to_s3(info):
     '''
     bucket = info.config['bucket']
     key = info.config['key']
-    file_path = info.config['file_path']
 
     with open(file_path, 'rb') as fd:
         info.context.resources.s3.put_object(
             Bucket=bucket, Body=fd, Key=key, **(info.config.get('kwargs') or {})
         )
-    return (bucket, key)
+    yield Result(bucket, 'bucket')
+    yield Result(key, 'key')
 
 
 @solid(
@@ -613,5 +633,11 @@ sfo_delays_by_destination = notebook_solid(
             description='The SQL table to use for calcuations.',
         ),
     ],
-    outputs=[],
+    outputs=[
+        OutputDefinition(
+            dagster_type=types.String,
+            # name='plots_pdf_path',
+            description='The path to the saved PDF plots.',
+        ),
+    ],
 )
