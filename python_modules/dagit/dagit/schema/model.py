@@ -168,7 +168,7 @@ def _repository_or_error_from_container(container):
     try:
         return EitherValue(container.repository)
     except Exception:  # pylint: disable=broad-except
-        return EitherError(errors.PythonError(*sys.exc_info()))
+        return EitherError(errors.PythonError(sys.exc_info()))
 
 
 def _pipeline_or_error_from_repository(repository, pipeline_name):

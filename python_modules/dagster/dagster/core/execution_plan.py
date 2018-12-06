@@ -2,7 +2,6 @@ from __future__ import print_function
 from collections import (namedtuple, defaultdict)
 from contextlib import contextmanager
 from enum import Enum
-import uuid
 import os
 import sys
 

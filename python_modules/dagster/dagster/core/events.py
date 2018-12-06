@@ -51,34 +51,34 @@ class ExecutionEvents:
             event_type=EventType.PIPELINE_FAILURE.value,
         )
 
-    def execution_plan_step_start(self, key):
-        check.str_param(key, 'key')
+    def execution_plan_step_start(self, step_key):
+        check.str_param(step_key, 'step_key')
         self.context.info(
-            'Beginning execution of {key}'.format(key=key),
+            'Beginning execution of {step_key}'.format(step_key=step_key),
             event_type=EventType.EXECUTION_PLAN_STEP_START.value,
-            step_key=key,
+            step_key=step_key,
         )
 
-    def execution_plan_step_success(self, key, millis):
-        check.str_param(key, 'key')
+    def execution_plan_step_success(self, step_key, millis):
+        check.str_param(step_key, 'step_key')
         check.float_param(millis, 'millis')
 
         self.context.info(
-            'Execution of {key} succeeded in {millis}'.format(
-                key=key,
+            'Execution of {step_key} succeeded in {millis}'.format(
+                step_key=step_key,
                 millis=millis,
             ),
             event_type=EventType.EXECUTION_PLAN_STEP_SUCCESS.value,
             millis=millis,
-            step_key=key,
+            step_key=step_key,
         )
 
-    def execution_plan_step_failure(self, key):
-        check.str_param(key, 'key')
+    def execution_plan_step_failure(self, step_key):
+        check.str_param(step_key, 'step_key')
         self.context.info(
-            'Execution of {key} failed'.format(key=key),
+            'Execution of {step_key} failed'.format(step_key=step_key),
             event_type=EventType.EXECUTION_PLAN_STEP_FAILURE.value,
-            step_key=key,
+            step_key=step_key,
         )
 
     def pipeline_name(self):

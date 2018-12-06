@@ -14,10 +14,18 @@ class Error(graphene.Interface):
 
 
 class PythonError(graphene.ObjectType):
-    def __init__(self, exc_type, exc_value, exc_tb):
+    def __init__(self, message, stack):
         super(PythonError, self).__init__()
-        self.message = traceback.format_exception_only(exc_type, exc_value)[0]
-        self.stack = traceback.format_tb(tb=exc_tb)
+        self.message = message
+        self.stack = stack
+
+    @staticmethod
+    def from_sys_exc_info(sys_exc_info):
+        exc_type, exc_value, exc_tb = sys_exc_info
+        return PythonError(
+            traceback.format_exception_only(exc_type, exc_value)[0],
+            traceback.format_tb(tb=exc_tb),
+        )
 
     class Meta:
         interfaces = (Error, )
