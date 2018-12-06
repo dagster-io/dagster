@@ -591,6 +591,7 @@ def execute_reentrant_pipeline(
     throw_on_error,
     reentrant_info,
 ):
+    print('IN EXECUTE_REENTRANT_PIPELINE')
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.inst_param(typed_environment, 'typed_environment', config.Environment)
     check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)

@@ -14,8 +14,19 @@ from dagster.core.execution import (
     execute_reentrant_pipeline,
 )
 
-from dagit.schema import pipelines, execution, errors, runs
-from .utils import non_null_list, EitherValue, EitherError
+from dagit.schema import (
+    pipelines,
+    execution,
+    errors,
+    runs,
+)
+
+from .utils import (
+    non_null_list,
+    EitherValue,
+    EitherError,
+)
+
 from .context import DagsterGraphQLContext
 
 
@@ -157,8 +168,10 @@ def get_pipeline_run_observable(context, runId, after=None):
             lambda event: runs.PipelineRunEvent.from_dagster_event(context, event, pipeline)
         )
 
-    return _pipeline_or_error_from_container(context.repository_container,
-                                             pipeline_name).chain(get_observable).value_or_raise()
+    return _pipeline_or_error_from_container(
+        context.repository_container,
+        pipeline_name,
+    ).chain(get_observable).value_or_raise()
 
 
 def _repository_or_error_from_container(container):

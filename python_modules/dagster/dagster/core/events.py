@@ -80,6 +80,7 @@ class ExecutionEvents:
         )
 
     def execution_plan_step_failure(self, step_key, exc_info):
+        print('IN EXECUTION_PLAN_STEP_FAILURE')
         check.str_param(step_key, 'step_key')
         self.context.info(
             'Execution of {step_key} failed'.format(step_key=step_key),
@@ -113,8 +114,9 @@ def construct_event_type(event_type):
 
 
 class EventRecord:
-    def __init__(self, logger_message):
+    def __init__(self, logger_message, error_info):
         self._logger_message = logger_message
+        self.error_info = check.opt_inst_param(error_info, 'error_info', SerializableErrorInfo)
 
     @property
     def message(self):
@@ -187,11 +189,23 @@ EVENT_CLS_LOOKUP = {
 }
 
 
+def construct_error_info(logger_message):
+    if 'error_info' not in logger_message.meta:
+        return None
+
+    raw_error_info = logger_message.meta['error_info']
+
+    message, stack = json.loads(raw_error_info)
+
+    return SerializableErrorInfo(message, stack)
+
+
 def construct_event_record(logger_message):
     check.inst_param(logger_message, 'logger_message', StructuredLoggerMessage)
     event_type = construct_event_type(logger_message.meta.get('event_type'))
     log_record_cls = EVENT_CLS_LOOKUP[event_type]
-    return log_record_cls(logger_message)
+
+    return log_record_cls(logger_message, construct_error_info(logger_message))
 
 
 def construct_event_logger(event_record_callback):
