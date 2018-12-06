@@ -48,9 +48,12 @@ def define_maybe_optional_selector_field(dagster_type):
 
 class SpecificResourceConfig(DagsterCompositeType):
     def __init__(self, name, config_field):
-        super(SpecificResourceConfig, self).__init__(name, {
-            'config': config_field,
-        })
+        super(SpecificResourceConfig, self).__init__(
+            name,
+            {
+                'config': config_field,
+            },
+        )
 
 
 class ResourceDictionaryType(DagsterCompositeType):

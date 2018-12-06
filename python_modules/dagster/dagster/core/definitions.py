@@ -657,7 +657,6 @@ class PipelineDefinition(object):
             context_definitions (Dict[str, PipelineContextDefinition]): See class description.
             dependencies: (Dict[str, Dict[str, DependencyDefinition]]): See class description.
         '''
-        self.anonymous = not bool(name)
         self.name = check.opt_str_param(name, 'name', '<<unnamed>>')
         self.description = check.opt_str_param(description, 'description')
 

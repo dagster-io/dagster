@@ -751,8 +751,6 @@ def test_optional_and_required_context():
                             'optional_field': types.Field(types.String, is_optional=True),
                         },
                     ),
-                    # TODO: Not the best
-                    # is_optional=True,
                 ),
             ),
             'required_field_context':

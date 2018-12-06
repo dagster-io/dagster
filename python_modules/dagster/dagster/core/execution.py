@@ -391,27 +391,11 @@ def yield_context(pipeline, environment, reentrant_info=None):
             )
 
 
-def resources_type_from_context_def(context_definition):
-    return namedtuple('Resources', list(context_definition.resources.keys()))
-
-
 def _create_loggers(reentrant_info, execution_context):
     if reentrant_info and reentrant_info.event_callback:
         return execution_context.loggers + [construct_event_logger(reentrant_info.event_callback)]
     else:
         return execution_context.loggers
-
-
-def get_resources_type(pipeline_def, context_name, context_def):
-    if pipeline_def.anonymous:
-        raise DagsterInvariantViolationError('If a pipeline has resources it must have a name')
-
-    resources_type_name = '{pipeline}_{context}_Resources'.format(
-        pipeline=camelcase(pipeline_def.name),
-        context=camelcase(context_name),
-    )
-
-    return namedtuple(resources_type_name, list(context_def.resources.keys()))
 
 
 @contextmanager
@@ -431,6 +415,9 @@ def _create_resources(pipeline_def, context_def, environment, execution_context,
     )
 
     # See https://bit.ly/2zIXyqw
+    # The "ExitStack" allows one to stack up N context managers and then yield
+    # something. We do this so that resources can cleanup after themselves. We
+    # can potentially have many resources so we need to use this abstraction.
     with ExitStack() as stack:
         for resource_name in context_def.resources.keys():
             resource_obj_or_gen = get_resource_or_gen(
@@ -446,7 +433,7 @@ def _create_resources(pipeline_def, context_def, environment, execution_context,
 
         context_name = environment.context.name
 
-        resources_type = get_resources_type(pipeline_def, context_name, context_def)
+        resources_type = pipeline_def.context_definitions[context_name].resources_type
         yield resources_type(**resources)
 
 
