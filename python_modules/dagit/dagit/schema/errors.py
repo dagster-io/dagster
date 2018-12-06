@@ -5,6 +5,11 @@ import graphene
 from dagster import check
 import dagster.core.evaluator
 from dagit.schema import pipelines, execution, runs
+from dagit.schema.pipelines import (
+    GrapheneDagsterType,
+    GraphenePipeline,
+)
+
 from .utils import non_null_list
 
 
@@ -36,11 +41,11 @@ class PipelineNotFoundError(graphene.ObjectType):
 
 
 class PipelineConfigValidationValid(graphene.ObjectType):
-    pipeline = graphene.Field(graphene.NonNull(lambda: pipelines.GraphenePipeline))
+    pipeline = graphene.Field(graphene.NonNull(lambda: GraphenePipeline))
 
 
 class PipelineConfigValidationInvalid(graphene.ObjectType):
-    pipeline = graphene.Field(graphene.NonNull(lambda: pipelines.GraphenePipeline))
+    pipeline = graphene.Field(graphene.NonNull(lambda: GraphenePipeline))
     errors = non_null_list(lambda: PipelineConfigValidationError)
 
 
@@ -61,14 +66,14 @@ class PipelineConfigValidationError(graphene.Interface):
 
 
 class RuntimeMismatchConfigError(graphene.ObjectType):
-    type = graphene.NonNull(lambda: pipelines.GrapheneDagsterType)
+    type = graphene.NonNull(lambda: GrapheneDagsterType)
     value_rep = graphene.Field(graphene.String)
 
     class Meta:
         interfaces = (PipelineConfigValidationError, )
 
     def resolve_type(self, _info):
-        return pipelines.GrapheneDagsterType.from_dagster_type(self.type)
+        return GrapheneDagsterType.from_dagster_type(self.type)
 
 
 class MissingFieldConfigError(graphene.ObjectType):
@@ -93,11 +98,11 @@ class SelectorTypeConfigError(graphene.ObjectType):
 
 
 class RuntimeMismatchErrorData(graphene.ObjectType):
-    type = graphene.NonNull(lambda: pipelines.GrapheneDagsterType)
+    type = graphene.NonNull(lambda: GrapheneDagsterType)
     value_rep = graphene.Field(graphene.String)
 
     def resolve_type(self, _info):
-        return pipelines.GrapheneDagsterType.from_dagster_type(self.type)
+        return GrapheneDagsterType.from_dagster_type(self.type)
 
 
 class MissingFieldErrorData(graphene.ObjectType):
@@ -223,7 +228,7 @@ class ConfigErrorData(graphene.Union):
 
 class PipelineOrError(graphene.Union):
     class Meta:
-        types = (pipelines.GraphenePipeline, PythonError, PipelineNotFoundError)
+        types = (GraphenePipeline, PythonError, PipelineNotFoundError)
 
 
 class PipelinesOrError(graphene.Union):

@@ -5,12 +5,16 @@ from dagster import check
 import dagster.core.execution_plan
 
 from dagit.schema import pipelines
+from dagit.schema.pipelines import (
+    GrapheneDagsterType,
+    GraphenePipeline,
+)
 from .utils import non_null_list
 
 
 class ExecutionPlan(graphene.ObjectType):
     steps = non_null_list(lambda: ExecutionStep)
-    pipeline = graphene.NonNull(lambda: pipelines.GraphenePipeline)
+    pipeline = graphene.NonNull(lambda: GraphenePipeline)
 
     def __init__(self, pipeline, execution_plan):
         super(ExecutionPlan, self).__init__()
@@ -19,7 +23,7 @@ class ExecutionPlan(graphene.ObjectType):
             'execution_plan',
             dagster.core.execution_plan.ExecutionPlan,
         )
-        self.pipeline = check.inst_param(pipeline, 'pipeline', pipelines.GraphenePipeline)
+        self.pipeline = check.inst_param(pipeline, 'pipeline', GraphenePipeline)
 
     def resolve_steps(self, _info):
         return [ExecutionStep(cn) for cn in self.execution_plan.topological_steps()]
@@ -27,7 +31,7 @@ class ExecutionPlan(graphene.ObjectType):
 
 class ExecutionStepOutput(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
-    type = graphene.Field(graphene.NonNull(lambda: pipelines.GrapheneDagsterType))
+    type = graphene.Field(graphene.NonNull(lambda: GrapheneDagsterType))
 
     def __init__(self, execution_step_output):
         super(ExecutionStepOutput, self).__init__()
@@ -41,14 +45,14 @@ class ExecutionStepOutput(graphene.ObjectType):
         return self.execution_step_output.name
 
     def resolve_type(self, _info):
-        return pipelines.GrapheneDagsterType.from_dagster_type(
+        return GrapheneDagsterType.from_dagster_type(
             dagster_type=self.execution_step_output.dagster_type
         )
 
 
 class ExecutionStepInput(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
-    type = graphene.Field(graphene.NonNull(lambda: pipelines.GrapheneDagsterType))
+    type = graphene.Field(graphene.NonNull(lambda: GrapheneDagsterType))
     dependsOn = graphene.Field(graphene.NonNull(lambda: ExecutionStep))
 
     def __init__(self, execution_step_input):
@@ -63,7 +67,7 @@ class ExecutionStepInput(graphene.ObjectType):
         return self.execution_step_input.name
 
     def resolve_type(self, _info):
-        return pipelines.GrapheneDagsterType.from_dagster_type(
+        return GrapheneDagsterType.from_dagster_type(
             dagster_type=self.execution_step_input.dagster_type
         )
 
