@@ -406,7 +406,10 @@ RESOURCES_TYPE_CACHE = {}
 
 
 def get_resources_type(pipeline_def, context_name, context_def):
-    resources_type_name = '{pipeline}.{context}.Resources'.format(
+    if pipeline_def.anonymous:
+        raise DagsterInvariantViolationError('If a pipeline has resources it must have a name')
+
+    resources_type_name = '{pipeline}_{context}_Resources'.format(
         pipeline=camelcase(pipeline_def.name),
         context=camelcase(context_name),
     )
