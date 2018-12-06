@@ -7,7 +7,11 @@ from dagster import (
     check,
 )
 from dagster.core.evaluator import evaluate_config_value
-from dagster.core.execution import create_execution_plan
+
+from dagster.core.execution import (
+    create_execution_plan,
+    execute_reentrant_pipeline,
+)
 
 from . import pipelines, execution, errors, runs
 from .utils import non_null_list, EitherValue, EitherError
@@ -114,10 +118,12 @@ def start_pipeline_execution(context, pipelineName, config):
             new_run_id = str(uuid.uuid4())
             execution_plan = create_execution_plan(pipeline.get_dagster_pipeline(), config.value)
             run = pipeline_run_storage.add_run(new_run_id, pipelineName, config, execution_plan)
+            # TODO: If this throws an error what do we do?
             gevent.spawn(
-                execute_pipeline,
+                execute_reentrant_pipeline,
                 pipeline.get_dagster_pipeline(),
                 config.value,
+                throw_on_error=False,
                 reentrant_info=ReentrantInfo(
                     new_run_id,
                     event_callback=run.handle_new_event,

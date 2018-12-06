@@ -50,10 +50,11 @@ class RuntimeMismatchErrorData(namedtuple('_RuntimeMismatchErrorData', 'dagster_
         )
 
 
-class SelectorTypeErrorData(namedtuple('_SelectorTypeErrorData', 'incoming_fields')):
-    def __new__(cls, incoming_fields):
+class SelectorTypeErrorData(namedtuple('_SelectorTypeErrorData', 'dagster_type incoming_fields')):
+    def __new__(cls, dagster_type, incoming_fields):
         return super(SelectorTypeErrorData, cls).__new__(
             cls,
+            check.inst_param(dagster_type, 'dagster_type', DagsterSelectorType),
             check.list_param(incoming_fields, 'incoming_fields', of_type=str),
         )
 
@@ -66,16 +67,24 @@ ERROR_DATA_TYPES = (
 )
 
 
-class EvaluationStack(namedtuple('_EvaluationStack', 'entries')):
-    def __new__(cls, entries):
+class EvaluationStack(namedtuple('_EvaluationStack', 'root_type entries')):
+    def __new__(cls, root_type, entries):
         return super(EvaluationStack, cls).__new__(
             cls,
+            check.inst_param(root_type, 'root_type', DagsterType),
             check.list_param(entries, 'entries', of_type=EvaluationStackEntry),
         )
 
     @property
     def levels(self):
-        return [entry.field_name for entry in self.entries]
+        return [
+            entry.field_name for entry in self.entries
+            if isinstance(entry, EvaluationStackPathEntry)
+        ]
+
+    @property
+    def type_in_context(self):
+        return self.entries[-1].dagster_type if self.entries else self.root_type
 
 
 class EvaluationStackEntry:  # marker interface
@@ -93,16 +102,21 @@ class EvaluationStackPathEntry(
             check.inst_param(field_def, 'field_def', Field),
         )
 
+    @property
+    def dagster_type(self):
+        return self.field_def.dagster_type
+
 
 class EvaluationStackListItemEntry(
-    namedtuple('_EvaluationStackListItemEntry', 'list_index'),
+    namedtuple('_EvaluationStackListItemEntry', 'dagster_type list_index'),
     EvaluationStackEntry,
 ):
-    def __new__(cls, list_index):
+    def __new__(cls, dagster_type, list_index):
         check.int_param(list_index, 'list_index')
         check.param_invariant(list_index >= 0, 'list_index')
         return super(EvaluationStackListItemEntry, cls).__new__(
             cls,
+            check.inst_param(dagster_type, 'dagster_type', DagsterType),
             list_index,
         )
 
@@ -116,6 +130,73 @@ class EvaluationError(namedtuple('_EvaluationError', 'stack reason message error
             check.str_param(message, 'message'),
             check.inst_param(error_data, 'error_data', ERROR_DATA_TYPES),
         )
+
+
+def friendly_string_for_error(error):
+    type_in_context = error.stack.type_in_context
+
+    path_msg, path = _get_friendly_path_info(error)
+
+    type_msg = _get_type_msg(error, type_in_context)
+
+    if error.reason == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELD:
+        return 'Missing required field "{field_name}"{type_msg} {path_msg}'.format(
+            field_name=error.error_data.field_name,
+            path_msg=path_msg,
+            type_msg=type_msg,
+        )
+    elif error.reason == DagsterEvaluationErrorReason.FIELD_NOT_DEFINED:
+        return 'Undefined field "{field_name}"{type_msg} {path_msg}'.format(
+            field_name=error.error_data.field_name,
+            path_msg=path_msg,
+            type_msg=type_msg,
+        )
+    elif error.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH:
+        return 'Type failure at path "{path}"{type_msg}. Got "{value_rep}".'.format(
+            path=path,
+            type_msg=type_msg,
+            value_rep=error.error_data.value_rep,
+        )
+    elif error.reason == DagsterEvaluationErrorReason.SELECTOR_FIELD_ERROR:
+        if error.error_data.incoming_fields:
+            return (
+                'Specified more than one field at path "{path}". '
+                'You can only specify one field at this level.'
+            ).format(path=path)
+        else:
+            return (
+                'You specified no fields at path "{path}". '
+                'You must specify one and only one field at this level.'
+            ).format(path=path)
+    else:
+        check.failed('not supported')
+
+
+def _get_type_msg(error, type_in_context):
+    if error.stack.type_in_context.is_system_config:
+        return ''
+    else:
+        return ' on type "{type_name}"'.format(type_name=type_in_context.name)
+
+
+def _get_friendly_path_info(error):
+    if not error.stack.entries:
+        path = ''
+        path_msg = 'at document config root.'
+    else:
+        comps = ['root']
+        for entry in error.stack.entries:
+            if isinstance(entry, EvaluationStackPathEntry):
+                comp = ':' + entry.field_name
+                comps.append(comp)
+            elif isinstance(entry, EvaluationStackListItemEntry):
+                comps.append('[{i}]'.format(i=entry.list_index))
+            else:
+                check.failed('unsupported')
+
+        path = ''.join(comps)
+        path_msg = 'at path ' + path
+    return path_msg, path
 
 
 class DagsterEvaluateConfigValueError(DagsterError):
@@ -156,12 +237,18 @@ class ErrorCollector:
 
 def stack_with_field(stack, field_name, field_def):
     return EvaluationStack(
+        root_type=stack.root_type,
         entries=stack.entries + [EvaluationStackPathEntry(field_name, field_def)]
     )
 
 
 def stack_with_list_index(stack, list_index):
-    return EvaluationStack(entries=stack.entries + [EvaluationStackListItemEntry(list_index)])
+    list_type = stack.type_in_context
+    check.inst(list_type, _DagsterListType)
+    return EvaluationStack(
+        root_type=stack.root_type,
+        entries=stack.entries + [EvaluationStackListItemEntry(list_type.inner_type, list_index)],
+    )
 
 
 def throwing_evaluate_config_value(dagster_type, config_value):
@@ -181,7 +268,7 @@ def evaluate_config_value(dagster_type, config_value):
     value = _evaluate_config_value(
         dagster_type,
         config_value,
-        EvaluationStack(entries=[]),
+        EvaluationStack(root_type=dagster_type, entries=[]),
         collector,
     )
     if collector.errors:
@@ -232,7 +319,10 @@ def evaluate_selector_config_value(dagster_type, config_value, collector, stack)
                     incoming_fields=incoming_fields,
                     defined_fields=defined_fields,
                 ),
-                error_data=SelectorTypeErrorData(incoming_fields=incoming_fields),
+                error_data=SelectorTypeErrorData(
+                    dagster_type=dagster_type,
+                    incoming_fields=incoming_fields,
+                ),
             )
         )
         return None
@@ -244,15 +334,36 @@ def evaluate_selector_config_value(dagster_type, config_value, collector, stack)
                     stack=stack,
                     reason=DagsterEvaluationErrorReason.SELECTOR_FIELD_ERROR,
                     message=(
-                        'Must specify a field if more than one defined. Defined fields: '
+                        'Must specify a field if more one defined. Defined fields: '
                         '{defined_fields}'
                     ).format(defined_fields=defined_fields),
-                    error_data=SelectorTypeErrorData(incoming_fields=[]),
+                    error_data=SelectorTypeErrorData(
+                        dagster_type=dagster_type,
+                        incoming_fields=[],
+                    ),
                 )
             )
             return None
 
         field_name, field_def = single_item(dagster_type.field_dict)
+
+        if not field_def.is_optional:
+            collector.add_error(
+                EvaluationError(
+                    stack=stack,
+                    reason=DagsterEvaluationErrorReason.SELECTOR_FIELD_ERROR,
+                    message=(
+                        'Must specify the required field. Defined fields: '
+                        '{defined_fields}'
+                    ).format(defined_fields=defined_fields),
+                    error_data=SelectorTypeErrorData(
+                        dagster_type=dagster_type,
+                        incoming_fields=[],
+                    ),
+                )
+            )
+            return None
+
         incoming_field_value = field_def.default_value if field_def.default_provided else None
     else:
         check.invariant(config_value and len(config_value) == 1)
@@ -406,6 +517,7 @@ def evaluate_composite_config_value(dagster_composite_type, config_value, collec
             )
 
     for expected_field, field_def in field_dict.items():
+
         if field_def.is_optional:
             continue
 
@@ -442,6 +554,8 @@ def evaluate_composite_config_value(dagster_composite_type, config_value, collec
 
     if local_errors:
         collector.errors = collector.errors + local_errors
+
+    if collector.errors:
         return None
     else:
         return dagster_composite_type.construct_from_config_value(processed_fields)

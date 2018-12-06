@@ -1,7 +1,6 @@
 import json
 from dagit import app
 from dagit.pipeline_run_storage import PipelineRunStorage
-from dagster.cli.dynamic_loader import DynamicObject
 from dagster.dagster_examples.repository import define_example_repository
 
 

@@ -9,7 +9,6 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     check,
-    config,
     lambda_solid,
 )
 
@@ -57,11 +56,19 @@ def get_solid_transformed_value(_context, solid_inst, environment):
 
 
 def get_load_only_solids_config(load_csv_solid_name):
-    return {load_csv_solid_name: config.Solid({'path': script_relative_path('num.csv')})}
+    return {
+        load_csv_solid_name: {
+            'config': {
+                'path': script_relative_path('num.csv'),
+            },
+        },
+    }
 
 
 def get_num_csv_environment(solids_config):
-    return config.Environment(solids=solids_config)
+    return {
+        'solids': solids_config,
+    }
 
 
 def create_test_context():
@@ -147,13 +154,17 @@ def execute_transform_in_temp_csv_files(solid_inst):
             pipeline,
             get_num_csv_environment(
                 {
-                    load_csv_solid.name: config.Solid({
-                        'path': script_relative_path('num.csv')
-                    }),
-                    to_csv_solid.name: config.Solid({
-                        'path': temp_file_name
-                    }),
-                }
+                    load_csv_solid.name: {
+                        'config': {
+                            'path': script_relative_path('num.csv'),
+                        },
+                    },
+                    to_csv_solid.name: {
+                        'config': {
+                            'path': temp_file_name,
+                        },
+                    },
+                },
             ),
         )
 
@@ -251,16 +262,20 @@ def test_two_input_solid():
         transform_fn=transform,
     )
 
-    environment = config.Environment(
-        solids={
-            'load_csv1': config.Solid({
-                'path': script_relative_path('num.csv')
-            }),
-            'load_csv2': config.Solid({
-                'path': script_relative_path('num.csv')
-            }),
-        }
-    )
+    environment = {
+        'solids': {
+            'load_csv1': {
+                'config': {
+                    'path': script_relative_path('num.csv'),
+                },
+            },
+            'load_csv2': {
+                'config': {
+                    'path': script_relative_path('num.csv'),
+                },
+            },
+        },
+    }
 
     pipeline = PipelineDefinition(
         solids=[
@@ -406,13 +421,17 @@ def test_pandas_output_csv_pipeline():
         )
         environment = get_num_csv_environment(
             {
-                'load_csv': config.Solid({
-                    'path': script_relative_path('num.csv'),
-                }),
-                write_solid.name: config.Solid({
-                    'path': temp_file_name
-                }),
-            }
+                'load_csv': {
+                    'config': {
+                        'path': script_relative_path('num.csv'),
+                    },
+                },
+                write_solid.name: {
+                    'config': {
+                        'path': temp_file_name,
+                    },
+                },
+            },
         )
 
         for _result in execute_pipeline_iterator(pipeline=pipeline, environment=environment):
@@ -459,15 +478,21 @@ def test_pandas_output_intermediate_csv_files():
 
         environment = get_num_csv_environment(
             {
-                'load_csv': config.Solid({
-                    'path': script_relative_path('num.csv'),
-                }),
-                write_sum_table.name: config.Solid({
-                    'path': sum_file
-                }),
-                write_mult_table.name: config.Solid({
-                    'path': mult_file
-                }),
+                'load_csv': {
+                    'config': {
+                        'path': script_relative_path('num.csv'),
+                    },
+                },
+                write_sum_table.name: {
+                    'config': {
+                        'path': sum_file,
+                    },
+                },
+                write_mult_table.name: {
+                    'config': {
+                        'path': mult_file,
+                    },
+                },
             }
         )
 
@@ -508,16 +533,20 @@ def test_pandas_output_intermediate_csv_files():
                 ['sum_mult_table'],
                 injected_solids,
             ),
-            environment=config.Environment(
-                solids={
-                    'load_sum_table': config.Solid({
-                        'path': sum_file
-                    }, ),
-                    'load_mult_table': config.Solid({
-                        'path': mult_file
-                    }, ),
+            environment={
+                'solids': {
+                    'load_sum_table': {
+                        'config': {
+                            'path': sum_file,
+                        },
+                    },
+                    'load_mult_table': {
+                        'config': {
+                            'path': mult_file,
+                        },
+                    },
                 },
-            ),
+            },
         )
 
         assert pipeline_result.success
@@ -559,15 +588,21 @@ def test_pandas_output_intermediate_parquet_files():
 
         environment = get_num_csv_environment(
             {
-                'load_csv': config.Solid({
-                    'path': script_relative_path('num.csv'),
-                }),
-                write_sum_table.name: config.Solid({
-                    'path': sum_file
-                }),
-                write_mult_table.name: config.Solid({
-                    'path': mult_file
-                }),
+                'load_csv': {
+                    'config': {
+                        'path': script_relative_path('num.csv'),
+                    },
+                },
+                write_sum_table.name: {
+                    'config': {
+                        'path': sum_file,
+                    },
+                },
+                write_mult_table.name: {
+                    'config': {
+                        'path': mult_file,
+                    }
+                },
             }
         )
 
@@ -588,16 +623,20 @@ def test_pandas_output_intermediate_parquet_files():
 
 
 def test_pandas_multiple_inputs():
-    environment = config.Environment(
-        solids={
-            'load_one': config.Solid({
-                'path': script_relative_path('num.csv')
-            }),
-            'load_two': config.Solid({
-                'path': script_relative_path('num.csv')
-            }),
+    environment = {
+        'solids': {
+            'load_one': {
+                'config': {
+                    'path': script_relative_path('num.csv')
+                },
+            },
+            'load_two': {
+                'config': {
+                    'path': script_relative_path('num.csv')
+                },
+            },
         },
-    )
+    }
 
     def transform_fn(_context, inputs):
         return inputs['num_csv1'] + inputs['num_csv2']
@@ -660,16 +699,22 @@ def test_pandas_multiple_outputs():
 
         environment = get_num_csv_environment(
             {
-                'load_csv': config.Solid({
-                    'path': script_relative_path('num.csv'),
-                }),
-                write_sum_mult_csv.name: config.Solid({
-                    'path': csv_file,
-                }),
-                write_sum_mult_parquet.name: config.Solid({
-                    'path': parquet_file,
-                }),
-            }
+                'load_csv': {
+                    'config': {
+                        'path': script_relative_path('num.csv'),
+                    },
+                },
+                write_sum_mult_csv.name: {
+                    'config': {
+                        'path': csv_file,
+                    }
+                },
+                write_sum_mult_parquet.name: {
+                    'config': {
+                        'path': parquet_file,
+                    },
+                },
+            },
         )
 
         execute_pipeline(pipeline, environment)

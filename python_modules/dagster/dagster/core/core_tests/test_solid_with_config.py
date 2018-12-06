@@ -2,17 +2,13 @@ import pytest
 
 from dagster import (
     ConfigField,
-    DagsterInvariantViolationError,
-    DagsterTypeError,
     Field,
+    PipelineConfigEvaluationError,
     PipelineDefinition,
     SolidDefinition,
-    config,
     execute_pipeline,
     types,
 )
-
-from dagster.core.errors import DagsterTypeError
 
 
 def test_basic_solid_with_config():
@@ -26,7 +22,8 @@ def test_basic_solid_with_config():
         inputs=[],
         outputs=[],
         config_field=ConfigField.config_dict_field(
-            'SomeConfig', {'some_config': Field(types.String)}
+            'SomeConfig',
+            {'some_config': Field(types.String)},
         ),
         transform_fn=_t_fn,
     )
@@ -35,9 +32,15 @@ def test_basic_solid_with_config():
 
     execute_pipeline(
         pipeline,
-        config.Environment(solids={'solid_with_context': config.Solid({
-            'some_config': 'foo'
-        })}),
+        {
+            'solids': {
+                'solid_with_context': {
+                    'config': {
+                        'some_config': 'foo',
+                    },
+                },
+            },
+        },
     )
 
     assert 'yep' in did_get
@@ -53,19 +56,26 @@ def test_config_arg_mismatch():
         inputs=[],
         outputs=[],
         config_field=ConfigField.config_dict_field(
-            'SomeConfig', {'some_config': Field(types.String)}
+            'SomeConfig',
+            {'some_config': Field(types.String)},
         ),
         transform_fn=_t_fn,
     )
 
     pipeline = PipelineDefinition(solids=[solid])
 
-    with pytest.raises(DagsterTypeError):
+    with pytest.raises(PipelineConfigEvaluationError):
         execute_pipeline(
             pipeline,
-            config.Environment(solids={'solid_with_context': config.Solid({
-                'some_config': 1
-            })}),
+            {
+                'solids': {
+                    'solid_with_context': {
+                        'config': {
+                            'some_config': 1,
+                        },
+                    },
+                },
+            },
         )
 
 
@@ -82,14 +92,18 @@ def test_solid_not_found():
 
     pipeline = PipelineDefinition(solids=[solid])
 
-    with pytest.raises(DagsterTypeError):
+    with pytest.raises(PipelineConfigEvaluationError):
         execute_pipeline(
             pipeline,
-            config.Environment(solids={
-                'not_found': config.Solid({
-                    'some_config': 1,
-                }),
-            }),
+            {
+                'solids': {
+                    'not_found': {
+                        'config': {
+                            'some_config': 1,
+                        },
+                    },
+                },
+            },
         )
 
 
@@ -106,15 +120,16 @@ def test_config_for_no_config():
 
     pipeline = PipelineDefinition(solids=[solid_def])
 
-    with pytest.raises(
-        DagsterInvariantViolationError,
-        match="Solid no_config_solid was provided {'some_config': 1} but does not take config",
-    ):
+    with pytest.raises(PipelineConfigEvaluationError):
         execute_pipeline(
             pipeline,
-            config.Environment(solids={
-                'no_config_solid': config.Solid({
-                    'some_config': 1,
-                }),
-            }),
+            {
+                'solids': {
+                    'no_config_solid': {
+                        'config': {
+                            'some_config': 1,
+                        },
+                    },
+                },
+            },
         )

@@ -119,7 +119,7 @@ def test_do_not_yield_result():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        message='Tranform for solid do_not_yield_result return a Result',
+        match='Transform for solid do_not_yield_result returned a Result',
     ):
         execute_single_solid_in_isolation(ExecutionContext(), solid_inst)
 
@@ -137,7 +137,7 @@ def test_yield_non_result():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        message="Tranform for solid yield_wrong_thing yielded 'foo'",
+        match="Transform for solid yield_wrong_thing yielded 'foo'",
     ):
         execute_single_solid_in_isolation(ExecutionContext(), solid_inst)
 

@@ -45,6 +45,10 @@ class DagsterType(object):
         )
         self.__doc__ = description
 
+    @property
+    def is_system_config(self):
+        return self.type_attributes.is_system_config
+
     def __repr__(self):
         return 'DagsterType({name})'.format(name=self.name)
 
@@ -234,7 +238,21 @@ class __FieldValueSentinel:
     pass
 
 
+class __InferOptionalCompositeFieldSentinel:
+    pass
+
+
 FIELD_NO_DEFAULT_PROVIDED = __FieldValueSentinel
+
+INFER_OPTIONAL_COMPOSITE_FIELD = __InferOptionalCompositeFieldSentinel
+
+
+def all_optional_type(dagster_type):
+    check.inst_param(dagster_type, 'dagster_type', DagsterType)
+
+    if isinstance(dagster_type, DagsterCompositeType):
+        return dagster_type.all_fields_optional
+    return False
 
 
 class Field:
@@ -254,20 +272,30 @@ class Field:
         self,
         dagster_type,
         default_value=FIELD_NO_DEFAULT_PROVIDED,
-        is_optional=False,
+        is_optional=INFER_OPTIONAL_COMPOSITE_FIELD,
         description=None,
     ):
-        if not is_optional:
+        self.dagster_type = check.inst_param(dagster_type, 'dagster_type', DagsterType)
+        self.description = check.opt_str_param(description, 'description')
+        if is_optional == INFER_OPTIONAL_COMPOSITE_FIELD:
+            is_optional = all_optional_type(dagster_type)
+            if is_optional is True:
+                from .evaluator import throwing_evaluate_config_value
+                self._default_value = lambda: throwing_evaluate_config_value(dagster_type, None)
+            else:
+                self._default_value = default_value
+        else:
+            is_optional = check.bool_param(is_optional, 'is_optional')
+            self._default_value = default_value
+
+        if is_optional is False:
             check.param_invariant(
                 default_value == FIELD_NO_DEFAULT_PROVIDED,
                 'default_value',
                 'required arguments should not specify default values',
             )
 
-        self.dagster_type = check.inst_param(dagster_type, 'dagster_type', DagsterType)
-        self.description = check.opt_str_param(description, 'description')
-        self.is_optional = check.bool_param(is_optional, 'is_optional')
-        self._default_value = default_value
+        self.is_optional = is_optional
 
     @property
     def default_provided(self):
@@ -312,7 +340,7 @@ class FieldDefinitionDictionary(dict):
         check.failed('This dictionary is readonly')
 
 
-class DagsterCompositeType(DagsterType):
+class DagsterCompositeTypeBase(DagsterType):
     '''Dagster type representing a type with a list of named :py:class:`Field` objects.
     '''
 
@@ -324,7 +352,7 @@ class DagsterCompositeType(DagsterType):
         type_attributes=DEFAULT_TYPE_ATTRIBUTES,
     ):
         self.field_dict = FieldDefinitionDictionary(fields)
-        super(DagsterCompositeType, self).__init__(
+        super(DagsterCompositeTypeBase, self).__init__(
             name=name,
             description=description,
             type_attributes=type_attributes,
@@ -356,6 +384,19 @@ class DagsterCompositeType(DagsterType):
         return self.field_dict[name]
 
 
+class DagsterCompositeType(DagsterCompositeTypeBase):
+    pass
+
+
+class DagsterSelectorType(DagsterCompositeTypeBase):
+    '''This subclass "marks" a composite type as one where only
+    one of its fields can be configured at a time. This was originally designed
+    for context definition selection (only one context can be used for a particular
+    pipeline invocation); this is generalization of that concept.
+    '''
+    pass
+
+
 _DAGSTER_LIST_TYPE_CACHE = {}
 
 
@@ -385,15 +426,6 @@ class _DagsterListType(DagsterType):
 
     def construct_from_config_value(self, config_value):
         check.failed('should never be called')
-
-
-class DagsterSelectorType(DagsterCompositeType):
-    '''This subclass "marks" a composite type as one where only
-    one of its fields can be configured at a time. This was originally designed
-    for context definition selection (only one context can be used for a particular
-    pipeline invocation); this is generalization of that concept.
-    '''
-    pass
 
 
 class IsScopedConfigType:

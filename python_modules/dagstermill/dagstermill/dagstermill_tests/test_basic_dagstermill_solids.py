@@ -11,7 +11,6 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     SolidInstance,
-    config,
     execute_pipeline,
     lambda_solid,
     solid,
@@ -137,7 +136,13 @@ def test_hello_world_config():
     pipeline = define_hello_world_config_pipeline()
     pipeline_result = execute_pipeline(
         pipeline,
-        config.Environment(solids={'with_config': config.Solid(script_relative_path('num.csv'))}),
+        {
+            'solids': {
+                'with_config': {
+                    'config': script_relative_path('num.csv'),
+                },
+            },
+        },
     )
 
     assert pipeline_result.success
@@ -179,12 +184,16 @@ def define_test_notebook_dag_pipeline():
 def test_notebook_dag():
     pipeline_result = execute_pipeline(
         define_test_notebook_dag_pipeline(),
-        environment=config.Environment(
-            solids={
-                'load_a': config.Solid(1),
-                'load_b': config.Solid(2),
-            }
-        )
+        environment={
+            'solids': {
+                'load_a': {
+                    'config': 1,
+                },
+                'load_b': {
+                    'config': 2,
+                },
+            },
+        },
     )
     assert pipeline_result.success
     assert pipeline_result.result_for_solid('add_two').transformed_value() == 3

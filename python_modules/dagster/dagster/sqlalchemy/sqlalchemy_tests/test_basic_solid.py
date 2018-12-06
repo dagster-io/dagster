@@ -6,7 +6,6 @@ from dagster import (
     PipelineContextDefinition,
     PipelineDefinition,
     check,
-    config,
     execute_pipeline,
 )
 
@@ -55,11 +54,15 @@ def test_sql_sum_solid():
 
     create_sum_table = define_create_table_solid('create_sum_table_solid')
 
-    environment = config.Environment(
-        solids={create_sum_table.name: config.Solid({
-            'table_name': 'sum_table',
-        })}
-    )
+    environment = {
+        'solids': {
+            create_sum_table.name: {
+                'config': {
+                    'table_name': 'sum_table',
+                },
+            },
+        },
+    }
 
     pipeline = pipeline_test_def(
         solids=[expr_solid, sum_table_solid, create_sum_table],
@@ -154,11 +157,15 @@ def test_output_sql_sum_sq_solid():
         }}
     )
 
-    environment = config.Environment(
-        solids={'create_sum_sq_table': config.Solid({
-            'table_name': 'sum_sq_table'
-        })},
-    )
+    environment = {
+        'solids': {
+            create_sum_sq_table.name: {
+                'config': {
+                    'table_name': 'sum_sq_table',
+                },
+            },
+        },
+    }
 
     pipeline_result = execute_pipeline(pipeline=pipeline, environment=environment)
 

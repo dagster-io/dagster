@@ -2,7 +2,6 @@ import os
 
 import pytest
 
-from dagster import config
 from dagster.core.execution import execute_pipeline
 from dagster.utils import script_relative_path
 from dagster.cli.pipeline import (
@@ -22,11 +21,15 @@ def test_pipeline_include():
 
 def test_execute_pipeline():
     pipeline = define_success_pipeline()
-    environment = config.Environment(
-        solids={'load_num_csv': config.Solid({
-            'path': script_relative_path('num.csv')
-        })},
-    )
+    environment = {
+        'solids': {
+            'load_num_csv': {
+                'config': {
+                    'path': script_relative_path('num.csv'),
+                },
+            },
+        },
+    }
 
     result = execute_pipeline(pipeline, environment=environment)
 

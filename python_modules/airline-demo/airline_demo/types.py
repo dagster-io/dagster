@@ -1,5 +1,7 @@
 """Type definitions for the airline_demo."""
 
+import sqlalchemy
+
 from collections import namedtuple
 
 from pyspark.sql import (
@@ -20,6 +22,11 @@ SparkDataFrameType = types.PythonObjectType(
     description='A Pyspark data frame.',
 )
 
+SqlAlchemyEngineType = types.PythonObjectType(
+    'SqlAlchemyEngineType',
+    python_type=sqlalchemy.engine.Connectable,
+    description='A SqlAlchemy Connectable',
+)
 # SqlAlchemyQueryType = types.PythonObjectType(
 #     'SqlAlchemyQueryType',
 #     python_type=sqlalchemy.orm.query.Query,

@@ -2,7 +2,6 @@
 
 from dagster import (
     PipelineDefinition,
-    config,
     execute_pipeline,
     solid,
 )
@@ -47,7 +46,15 @@ def define_step_three_pipeline():
 def test_tutorial_part_five_sample_three():
     pipeline_result = execute_pipeline(
         define_step_two_pipeline(),
-        config.Environment(context=config.Context(config={'log_level': 'DEBUG'}))
+        {
+            'context': {
+                'default': {
+                    'config': {
+                        'log_level': 'DEBUG',
+                    },
+                },
+            },
+        },
     )
 
     assert pipeline_result.success

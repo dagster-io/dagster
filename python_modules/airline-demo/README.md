@@ -75,14 +75,10 @@ manually delete the VPC from the console, which will force-delete dependencies.
 ### TODOs
 
 - Flesh out unit tests for solids
-- Set up builds for airline_demo on CircleCI
 - Wire Spark up to EMR cluster
 - Add config option for local ingestion (Postgres)
 - Add config option for Spark running on EMR cluster
-- Update README with instructions for AWS creds
 - Document running the pipeline and tests (e.g., postgres requirements)
-- Write two versions of the parallel pipeline steps -- one using a List type, one with custom solids
-- Move the database loading logic to the context (on a branch) -- with a "database loader" resource
 - Add expectations
 - Running local Spark tests on Circle is going to require us to create a custom Docker image with
   both Python and a Java runtime [(!)](https://discuss.circleci.com/t/recommended-way-to-use-multiple-languages-in-2-0/14174/11)

@@ -4,17 +4,17 @@ from dagster import (
     types,
 )
 
-from dagster.core.config_types import (
-    EnvironmentConfigType,
-    is_environment_context_field_optional,
-)
+
+def is_environment_context_field_optional(pipeline_def):
+    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
+    return pipeline_def.environment_type.field_dict['context'].is_optional
 
 
 def scaffold_pipeline_config(pipeline_def, skip_optional=True):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     check.bool_param(skip_optional, 'skip_optional')
 
-    env_config_type = EnvironmentConfigType(pipeline_def)
+    env_config_type = pipeline_def.environment_type
 
     env_dict = {}
 
@@ -36,7 +36,9 @@ def scaffold_type(config_type, skip_optional=True):
     check.inst_param(config_type, 'config_type', types.DagsterType)
     check.bool_param(skip_optional, 'skip_optional')
 
-    if isinstance(config_type, types.DagsterCompositeType):
+    # Right now selectors and composites have the same
+    # scaffolding logic, which might not be wise.
+    if isinstance(config_type, types.DagsterCompositeTypeBase):
         default_dict = {}
         for field_name, field in config_type.field_dict.items():
             if skip_optional and field.is_optional:
