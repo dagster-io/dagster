@@ -166,7 +166,7 @@ class PipelineRunEvent(graphene.Union):
                 ),
                 **basic_params
             )
-        elif event.event_type == EventType.EXECUTION_PLAN_STEP_START:
+        elif event.event_type == EventType.EXECUTION_PLAN_STEP_FAILURE:
             return ExecutionStepFailureEvent(
                 step=dagit.schema.execution.ExecutionStep(
                     pipeline_run.execution_plan.get_step_by_key(event.step_key)
