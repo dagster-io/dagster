@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import sys
 import uuid
 import gevent
@@ -13,7 +14,7 @@ from dagster.core.execution import (
     execute_reentrant_pipeline,
 )
 
-from . import pipelines, execution, errors, runs
+from dagit.schema import pipelines, execution, errors, runs
 from .utils import non_null_list, EitherValue, EitherError
 from .context import DagsterGraphQLContext
 

@@ -1,7 +1,8 @@
+from __future__ import absolute_import
 import graphene
 from graphene.types.generic import GenericScalar
 
-from . import model, errors, pipelines, execution, runs, generic
+from dagit.schema import model, errors, pipelines, execution, runs, generic
 from .utils import non_null_list
 
 
