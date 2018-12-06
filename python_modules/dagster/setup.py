@@ -42,7 +42,6 @@ setup(
         'enum34>=1.1.6',
         'future>=0.16.0',
         'funcsigs>=1.0.2',
-
         'contextlib2>=0.5.5',
 
         # cli

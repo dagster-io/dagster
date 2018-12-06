@@ -159,7 +159,10 @@ context_fn (callable):
             value_type=ResourceDefinition,
         )
         self.description = description
-        self._resources_type = None
+        self.resources_type = namedtuple(
+            'Resources',
+            list(resources.keys()),
+        ) if resources else None
 
 
 DefaultContextConfigDict = ConfigDictionary(

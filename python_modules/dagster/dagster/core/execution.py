@@ -22,12 +22,15 @@ import itertools
 import inspect
 import uuid
 
+from contextlib2 import ExitStack
 import six
 
 from dagster import (
     check,
     config,
 )
+
+from dagster.utils import camelcase
 
 from .definitions import (
     DEFAULT_OUTPUT,
@@ -372,6 +375,7 @@ def yield_context(pipeline, environment, reentrant_info=None):
         check.inst(execution_context, ExecutionContext)
 
         with _create_resources(
+            pipeline,
             context_definition,
             environment,
             execution_context,
@@ -398,12 +402,24 @@ def _create_loggers(reentrant_info, execution_context):
         return execution_context.loggers
 
 
-from contextlib2 import ExitStack
+RESOURCES_TYPE_CACHE = {}
+
+
+def get_resources_type(pipeline_def, context_name, context_def):
+    resources_type_name = '{pipeline}.{context}.Resources'.format(
+        pipeline=camelcase(pipeline_def.name),
+        context=camelcase(context_name),
+    )
+    if resources_type_name not in RESOURCES_TYPE_CACHE:
+        resources_type = namedtuple(resources_type_name, list(context_def.resources.keys()))
+        RESOURCES_TYPE_CACHE[resources_type_name] = resources_type
+
+    return RESOURCES_TYPE_CACHE[resources_type_name]
 
 
 @contextmanager
-def _create_resources(context_definition, environment, execution_context, run_id):
-    if not context_definition.resources:
+def _create_resources(pipeline_def, context_def, environment, execution_context, run_id):
+    if not context_def.resources:
         yield execution_context.resources
         return
 
@@ -417,11 +433,11 @@ def _create_resources(context_definition, environment, execution_context, run_id
         ),
     )
 
-    # See https://stackoverflow.com/questions/3024925/python-create-a-with-block-on-several-context-managers
+    # See https://bit.ly/2zIXyqw
     with ExitStack() as stack:
-        for resource_name in context_definition.resources.keys():
+        for resource_name in context_def.resources.keys():
             resource_obj_or_gen = get_resource_or_gen(
-                context_definition,
+                context_def,
                 resource_name,
                 environment,
                 run_id,
@@ -431,7 +447,9 @@ def _create_resources(context_definition, environment, execution_context, run_id
 
             resources[resource_name] = resource_obj
 
-        resources_type = resources_type_from_context_def(context_definition)
+        context_name = environment.context.name
+
+        resources_type = get_resources_type(pipeline_def, context_name, context_def)
         yield resources_type(**resources)
 
 

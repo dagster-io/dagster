@@ -49,7 +49,6 @@ from .utils import (
     create_spark_session_local,
 )
 
-
 # def _db_load(data_frame, table_name, resources):
 #     print('IN _db_load')
 #     db_dialect = resources.db_dialect
@@ -75,6 +74,7 @@ from .utils import (
 #             'No implementation for db_dialect "{db_dialect}"'.format(db_dialect=db_dialect)
 #         )
 
+
 def postgres_table_loader(data_frame, table_name, resources):
     data_frame.write \
     .option('driver', 'org.postgresql.Driver') \
@@ -83,6 +83,7 @@ def postgres_table_loader(data_frame, table_name, resources):
         resources.db_info.url,
         table_name,
         )
+
 
 def redshift_table_loader(data_frame, table_name, resources):
     data_frame.write \
@@ -105,7 +106,6 @@ S3ResourceDefinition = ResourceDefinition(
     config_field=None,
 )
 
-
 RedshiftConfigDict = types.ConfigDictionary(
     'RedshiftConfigDict',
     {
@@ -121,7 +121,6 @@ RedshiftConfigDict = types.ConfigDictionary(
 #     resource_fn = lambda info: _create_redshift_db_url(**info.config),
 #     config_field=types.Field(RedshiftConfigDict),
 # )
-
 
 # RedshiftEngineResource = ResourceDefinition(
 #     resource_fn = lambda info: _create_redshift_engine(**info.config),
@@ -157,10 +156,12 @@ PostgresConfigDict = types.ConfigDictionary(
     },
 )
 
+
 class DbInfo:
     def __init__(self, engine, url):
         self.engine = check.inst_param(engine, 'engine', sqlalchemy.engine.Engine)
         self.url = check.str_param(url, 'url')
+
 
 class PostgresDbInfo(DbInfo):
     def write_table(self, data_frame, table_name):
@@ -168,6 +169,7 @@ class PostgresDbInfo(DbInfo):
         .option('driver', 'org.postgresql.Driver') \
         .mode('overwrite') \
         .jdbc(self.url, table_name)
+
 
 class RedshiftDbInfo(DbInfo):
     def __init__(self, engine, url, redshift_s3_temp_dir):
@@ -232,7 +234,6 @@ PostgresDbInfoResource = ResourceDefinition(
 #         config_field=None,
 #     )
 
-
 test_context = PipelineContextDefinition(
     # context_fn=(
     #     lambda info: ExecutionContext.console_logging(
@@ -276,10 +277,9 @@ test_context = PipelineContextDefinition(
     resources={
         'spark': LocalSparkResourceDefinition,
         's3': S3ResourceDefinition,
-        'db_info' : RedshiftDbInfoResource,
+        'db_info': RedshiftDbInfoResource,
     },
 )
-
 
 local_context = PipelineContextDefinition(
     context_fn=lambda info: ExecutionContext.console_logging(log_level=logging.DEBUG),
@@ -323,7 +323,7 @@ local_context = PipelineContextDefinition(
     resources={
         'spark': LocalSparkResourceDefinition,
         's3': S3ResourceDefinition,
-        'db_info' : PostgresDbInfoResource,
+        'db_info': PostgresDbInfoResource,
     },
 )
 
