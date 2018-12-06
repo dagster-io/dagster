@@ -80,7 +80,6 @@ class ExecutionEvents:
         )
 
     def execution_plan_step_failure(self, step_key, exc_info):
-        print('IN EXECUTION_PLAN_STEP_FAILURE')
         check.str_param(step_key, 'step_key')
         self.context.info(
             'Execution of {step_key} failed'.format(step_key=step_key),

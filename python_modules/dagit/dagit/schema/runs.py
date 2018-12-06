@@ -138,7 +138,6 @@ class PipelineRunEvent(graphene.Union):
 
     @staticmethod
     def from_dagster_event(context, event, pipeline):
-        print('FROM DAGSTER_EVENT')
         check.inst_param(event, 'event', EventRecord)
         check.inst_param(pipeline, 'pipeline', dagit.schema.pipelines.Pipeline)
         pipeline_run = context.pipeline_runs.get_run_by_id(event.run_id)
@@ -171,7 +170,6 @@ class PipelineRunEvent(graphene.Union):
                 **basic_params
             )
         elif event.event_type == EventType.EXECUTION_PLAN_STEP_FAILURE:
-            print('ENTERING')
             check.inst(event.error_info, SerializableErrorInfo)
             failure_event = ExecutionStepFailureEvent(
                 step=dagit.schema.execution.ExecutionStep(
@@ -181,6 +179,5 @@ class PipelineRunEvent(graphene.Union):
                 **basic_params,
             )
             return failure_event
-            print(f'FAILURE EVENT {failure_event}')
         else:
             return LogMessageEvent(**basic_params)

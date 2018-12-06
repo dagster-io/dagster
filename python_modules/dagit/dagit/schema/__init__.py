@@ -90,7 +90,6 @@ class StartPipelineExecutionMutation(graphene.Mutation):
     Output = graphene.NonNull(lambda: errors.StartPipelineExecutionResult)
 
     def mutate(self, info, executionParams):
-        print('STARTING PIPELINE EXECUTION')
         return model.start_pipeline_execution(info.context, **executionParams)
 
 
