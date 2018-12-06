@@ -26,3 +26,6 @@ reinstall:
 rebuild_dagit:
 	cd dagit/dagit/webapp; yarn install && yarn build
 
+run_dagit:
+	cd dagit/dagit/webapp; make
+
