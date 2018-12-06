@@ -2,7 +2,20 @@ from __future__ import absolute_import
 import graphene
 from graphene.types.generic import GenericScalar
 
-from dagit.schema import model, errors, pipelines, execution, runs, generic
+from dagit.schema import (
+    errors,
+    execution,
+    generic,
+    model,
+    pipelines,
+    runs,
+)
+
+from dagit.schema.pipelines import (
+    GrapheneDagsterType,
+    GraphenePipeline,
+)
+
 from .utils import non_null_list
 
 
@@ -27,13 +40,13 @@ class Query(graphene.ObjectType):
         lambda: graphene.NonNull(errors.PipelineOrError), name=graphene.NonNull(graphene.String)
     )
     pipeline = graphene.Field(
-        lambda: graphene.NonNull(pipelines.Pipeline), name=graphene.NonNull(graphene.String)
+        lambda: graphene.NonNull(GraphenePipeline), name=graphene.NonNull(graphene.String)
     )
     pipelinesOrError = graphene.NonNull(errors.PipelinesOrError)
     pipelines = graphene.Field(lambda: graphene.NonNull(pipelines.PipelineConnection))
 
     type = graphene.Field(
-        lambda: pipelines.Type,
+        GrapheneDagsterType,
         pipelineName=graphene.NonNull(graphene.String),
         typeName=graphene.NonNull(graphene.String),
     )

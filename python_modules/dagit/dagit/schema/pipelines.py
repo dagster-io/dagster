@@ -14,17 +14,20 @@ def _pipeline_run():
     return runs.PipelineRun
 
 
-class Pipeline(graphene.ObjectType):
+class GraphenePipeline(graphene.ObjectType):
+    class Meta:
+        name = 'Pipeline'
+
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
     solids = non_null_list(lambda: Solid)
     contexts = non_null_list(lambda: PipelineContext)
-    environment_type = graphene.NonNull(lambda: Type)
-    types = graphene.NonNull(graphene.List(graphene.NonNull(lambda: Type)), )
+    environment_type = graphene.NonNull(lambda: GrapheneDagsterType)
+    types = graphene.NonNull(graphene.List(graphene.NonNull(lambda: GrapheneDagsterType)), )
     runs = non_null_list(_pipeline_run)
 
     def __init__(self, pipeline):
-        super(Pipeline, self).__init__(name=pipeline.name, description=pipeline.description)
+        super(GraphenePipeline, self).__init__(name=pipeline.name, description=pipeline.description)
         self._pipeline = check.inst_param(pipeline, 'pipeline', dagster.PipelineDefinition)
 
     def resolve_solids(self, _info):
@@ -43,11 +46,11 @@ class Pipeline(graphene.ObjectType):
         ]
 
     def resolve_environment_type(self, _info):
-        return Type.from_dagster_type(self._pipeline.environment_type)
+        return GrapheneDagsterType.from_dagster_type(self._pipeline.environment_type)
 
     def resolve_types(self, _info):
         return sorted(
-            [Type.from_dagster_type(type_) for type_ in self._pipeline.all_types()],
+            [GrapheneDagsterType.from_dagster_type(type_) for type_ in self._pipeline.all_types()],
             key=lambda type_: type_.name
         )
 
@@ -62,11 +65,11 @@ class Pipeline(graphene.ObjectType):
         return self._pipeline
 
     def get_type(self, typeName):
-        return Type.from_dagster_type(self._pipeline.type_named(typeName))
+        return GrapheneDagsterType.from_dagster_type(self._pipeline.type_named(typeName))
 
 
 class PipelineConnection(graphene.ObjectType):
-    nodes = non_null_list(lambda: Pipeline)
+    nodes = non_null_list(lambda: GraphenePipeline)
 
 
 class PipelineContext(graphene.ObjectType):
@@ -217,7 +220,7 @@ class InputDefinition(graphene.ObjectType):
     solid_definition = graphene.NonNull(lambda: SolidDefinition)
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
-    type = graphene.NonNull(lambda: Type)
+    type = graphene.NonNull(lambda: GrapheneDagsterType)
     expectations = non_null_list(lambda: Expectation)
 
     # inputs - ?
@@ -233,7 +236,9 @@ class InputDefinition(graphene.ObjectType):
         )
 
     def resolve_type(self, _info):
-        return Type.from_dagster_type(dagster_type=self._input_definition.dagster_type)
+        return GrapheneDagsterType.from_dagster_type(
+            dagster_type=self._input_definition.dagster_type
+        )
 
     def resolve_expectations(self, _info):
         if self._input_definition.expectations:
@@ -246,7 +251,7 @@ class OutputDefinition(graphene.ObjectType):
     solid_definition = graphene.NonNull(lambda: SolidDefinition)
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
-    type = graphene.NonNull(lambda: Type)
+    type = graphene.NonNull(lambda: GrapheneDagsterType)
     expectations = non_null_list(lambda: Expectation)
 
     # outputs - ?
@@ -262,7 +267,9 @@ class OutputDefinition(graphene.ObjectType):
         )
 
     def resolve_type(self, _info):
-        return Type.from_dagster_type(dagster_type=self._output_definition.dagster_type)
+        return GrapheneDagsterType.from_dagster_type(
+            dagster_type=self._output_definition.dagster_type
+        )
 
     def resolve_expectations(self, _info):
         if self._output_definition.expectations:
@@ -285,14 +292,14 @@ class Expectation(graphene.ObjectType):
 
 
 class Config(graphene.ObjectType):
-    type = graphene.NonNull(lambda: Type)
+    type = graphene.NonNull(lambda: GrapheneDagsterType)
 
     def __init__(self, config_field):
         super(Config, self).__init__()
         self._config_field = check.opt_inst_param(config_field, 'config_field', dagster.Field)
 
     def resolve_type(self, _info):
-        return Type.from_dagster_type(dagster_type=self._config_field.dagster_type)
+        return GrapheneDagsterType.from_dagster_type(dagster_type=self._config_field.dagster_type)
 
 
 class TypeAttributes(graphene.ObjectType):
@@ -313,7 +320,10 @@ filter out those types by default.
     )
 
 
-class Type(graphene.Interface):
+class GrapheneDagsterType(graphene.Interface):
+    class Meta:
+        name = 'Type'
+
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
     type_attributes = graphene.NonNull(TypeAttributes)
@@ -329,7 +339,7 @@ class Type(graphene.Interface):
 class RegularType(graphene.ObjectType):
     class Meta:
         interfaces = [
-            Type,
+            GrapheneDagsterType,
         ]
 
     def __init__(self, dagster_type):
@@ -348,7 +358,7 @@ class CompositeType(graphene.ObjectType):
 
     class Meta:
         interfaces = [
-            Type,
+            GrapheneDagsterType,
         ]
 
     def __init__(self, dagster_type):
@@ -368,7 +378,7 @@ class CompositeType(graphene.ObjectType):
 class TypeField(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
-    type = graphene.NonNull(lambda: Type)
+    type = graphene.NonNull(lambda: GrapheneDagsterType)
     default_value = graphene.String()
     is_optional = graphene.NonNull(graphene.Boolean)
 
@@ -382,4 +392,4 @@ class TypeField(graphene.ObjectType):
         self._field = field
 
     def resolve_type(self, _info):
-        return Type.from_dagster_type(dagster_type=self._field.dagster_type)
+        return GrapheneDagsterType.from_dagster_type(dagster_type=self._field.dagster_type)

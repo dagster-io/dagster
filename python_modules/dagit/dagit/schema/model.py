@@ -33,7 +33,7 @@ def _get_pipelines(context):
     def process_pipelines(repository):
         pipeline_instances = []
         for pipeline_def in repository.get_all_pipelines():
-            pipeline_instances.append(pipelines.Pipeline(pipeline_def))
+            pipeline_instances.append(pipelines.GraphenePipeline(pipeline_def))
         return pipelines.PipelineConnection(nodes=pipeline_instances)
 
     repository_or_error = _repository_or_error_from_container(context.repository_container)
@@ -175,7 +175,7 @@ def _pipeline_or_error_from_repository(repository, pipeline_name):
     if not repository.has_pipeline(pipeline_name):
         return EitherError(errors.PipelineNotFoundError(pipeline_name=pipeline_name))
     else:
-        return EitherValue(pipelines.Pipeline(repository.get_pipeline(pipeline_name)))
+        return EitherValue(pipelines.GraphenePipeline(repository.get_pipeline(pipeline_name)))
 
 
 def _pipeline_or_error_from_container(container, pipeline_name):
