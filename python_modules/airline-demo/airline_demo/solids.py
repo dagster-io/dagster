@@ -451,16 +451,8 @@ def canonicalize_column_names(_info, data_frame):
     return rename_spark_dataframe_columns(data_frame, lambda c: c.lower())
 
 
-def replace_values_spark(data_frame, old, new, columns=None):
-    if columns is None:
-        data_frame.na.replace(old, new)
-        return data_frame
-    # FIXME handle selecting certain columns
-    return data_frame
-
-
-def fix_na_spark(data_frame, na_value, columns=None):
-    return replace_values_spark(data_frame, na_value, None, columns=columns)
+def replace_values_spark(data_frame, old, new):
+    return data_frame.na.replace(old, new)
 
 
 @solid(
@@ -480,7 +472,7 @@ def fix_na_spark(data_frame, na_value, columns=None):
     ],
 )
 def normalize_weather_na_values(_info, data_frame):
-    return fix_na_spark(data_frame, 'M')
+    return replace_values_spark(data_frame, 'M', None)
 
 
 @solid(
