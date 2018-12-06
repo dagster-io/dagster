@@ -126,6 +126,10 @@ injectGlobal`
       width: 100%;
     }
   }
+  .cm-whitespace {
+    background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAAFJJREFUOBFjYBgFAx8CjLiccPnyZXFmZmY9kPzfv38v6erqvsSmlgmbIEgMpJmRkZEDhGEGYVOL0wBsirGJ4TQA5Oz/////AGEQG5vmUbHBEgIA9y0YCFtvw70AAAAASUVORK5CYII=') center left repeat-x;
+    background-size: 8.4px 8.4px;
+  }
   .CodeMirror-linenumber {
 
   }
