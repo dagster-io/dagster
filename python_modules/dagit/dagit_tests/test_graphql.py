@@ -1119,3 +1119,70 @@ subscription subscribeTest($runId: ID!) {
     }
 }
 '''
+
+def test_basic_sync_execution():
+    context = define_context()
+    result = execute_dagster_graphql(
+        context,
+        SYNC_MUTATION_QUERY,
+        variables={
+            'executionParams': {
+                'pipelineName': 'pandas_hello_world',
+                'config': {
+                    'solids': {
+                        'load_num_csv': {
+                            'config': {
+                                'path': script_relative_path('num.csv'),
+                            }
+                        },
+                    },
+                },
+            },
+        },
+    )
+
+    assert not result.errors
+    assert result.data
+
+    logs = result.data['syncPipelineExecution']['run']['logs']['nodes']
+    assert isinstance(logs, list)
+    assert has_event_of_type(logs, 'PipelineStartEvent')
+    assert has_event_of_type(logs, 'PipelineSuccessEvent')
+    assert not has_event_of_type(logs, 'PipelineFailureEvent')
+
+def has_event_of_type(logs, message_type):
+    for log in logs:
+        if log['__typename'] == message_type:
+            return True
+    return False
+
+SYNC_MUTATION_QUERY = '''
+mutation ($executionParams: PipelineExecutionParams!) {
+    syncPipelineExecution(
+        executionParams: $executionParams
+    ) {
+        __typename
+        ... on StartPipelineExecutionSuccess {
+            run {
+                runId
+                pipeline { name }
+                logs {
+                    nodes {
+                        __typename
+                        ... on MessageEvent {
+                            message
+                        }
+                    }
+                }
+            }
+        }
+        ... on PipelineConfigValidationInvalid {
+            pipeline { name }
+            errors { message }
+        }
+        ... on PipelineNotFoundError {
+            pipelineName
+        }
+    }
+}
+'''

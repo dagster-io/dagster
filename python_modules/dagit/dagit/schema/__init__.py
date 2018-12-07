@@ -93,8 +93,19 @@ class StartPipelineExecutionMutation(graphene.Mutation):
         return model.start_pipeline_execution(info.context, **executionParams)
 
 
+class SyncPipelineExecutionMutation(graphene.Mutation):
+    class Arguments:
+        executionParams = graphene.NonNull(lambda: PipelineExecutionParams)
+
+    Output = graphene.NonNull(lambda: errors.StartPipelineExecutionResult)
+
+    def mutate(self, info, executionParams):
+        return model.sync_pipeline_execution(info.context, **executionParams)
+
+
 class Mutation(graphene.ObjectType):
     start_pipeline_execution = StartPipelineExecutionMutation.Field()
+    sync_pipeline_execution = SyncPipelineExecutionMutation.Field()
 
 
 class Subscription(graphene.ObjectType):

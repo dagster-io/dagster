@@ -120,6 +120,37 @@ def get_execution_plan(context, pipelineName, config):
     return pipeline_or_error.chain(create_plan).value()
 
 
+def sync_pipeline_execution(context, pipelineName, config):
+    check.inst_param(context, 'context', DagsterGraphQLContext)
+    check.str_param(pipelineName, 'pipelineName')
+    pipeline_run_storage = context.pipeline_runs
+
+    def get_config_and_start_execution(pipeline):
+        def start_execution(config):
+            new_run_id = str(uuid.uuid4())
+            execution_plan = create_execution_plan(pipeline.get_dagster_pipeline(), config.value)
+            run = pipeline_run_storage.add_run(new_run_id, pipelineName, config, execution_plan)
+            result = execute_reentrant_pipeline(
+                pipeline.get_dagster_pipeline(),
+                config.value,
+                throw_on_error=False,
+                reentrant_info=ReentrantInfo(
+                    new_run_id,
+                    event_callback=run.handle_new_event,
+                ),
+            )
+
+            return errors.StartPipelineExecutionSuccess(run=runs.PipelineRun(run))
+
+        config_or_error = _config_or_error_from_pipeline(pipeline, config)
+        return config_or_error.chain(start_execution)
+
+    pipeline_or_error = _pipeline_or_error_from_container(
+        context.repository_container, pipelineName
+    )
+    return pipeline_or_error.chain(get_config_and_start_execution).value()
+
+
 def start_pipeline_execution(context, pipelineName, config):
     check.inst_param(context, 'context', DagsterGraphQLContext)
     check.str_param(pipelineName, 'pipelineName')
