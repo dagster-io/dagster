@@ -3,6 +3,8 @@
 import os
 import zipfile
 
+import dagster.check as check
+
 from sqlalchemy import text
 from stringcase import snakecase
 
@@ -58,8 +60,7 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
         function:
             The new SQL solid.
     '''
-    if inputs is None:
-        inputs = []
+    inputs = check.opt_list_param(inputs, 'inputs', InputDefinition)
 
     materialization_strategy_output_types = {  # pylint:disable=C0103
         'table': SqlTableName,
