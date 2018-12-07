@@ -14,6 +14,15 @@ from .utils import non_null_list
 from dagster.utils.error import SerializableErrorInfo
 PipelineRunStatus = graphene.Enum.from_enum(pipeline_run_storage.PipelineRunStatus)
 
+from dagster.utils.logging import (
+    CRITICAL,
+    DEBUG,
+    ERROR,
+    INFO,
+    WARNING,
+    check_valid_level_param,
+)
+
 
 class PipelineRun(graphene.ObjectType):
     runId = graphene.NonNull(graphene.String)
@@ -41,10 +50,35 @@ class PipelineRun(graphene.ObjectType):
         return execution.ExecutionPlan(pipeline, self._pipeline_run.execution_plan)
 
 
+class LogLevel(graphene.Enum):
+    CRITICAL = 'CRITICAL'
+    ERROR = 'ERROR'
+    INFO = 'INFO'
+    WARNING = 'WARNING'
+    DEBUG = 'DEBUG'
+
+    @staticmethod
+    def from_level(level):
+        check_valid_level_param(level)
+        if level == CRITICAL:
+            return LogLevel.CRITICAL
+        elif level == ERROR:
+            return LogLevel.ERROR
+        elif level == INFO:
+            return LogLevel.INFO
+        elif level == WARNING:
+            return LogLevel.WARNING
+        elif level == DEBUG:
+            return LogLevel.DEBUG
+        else:
+            check.failed('unknown log level')
+
+
 class MessageEvent(graphene.Interface):
     run = graphene.NonNull(lambda: PipelineRun)
     message = graphene.NonNull(graphene.String)
     timestamp = graphene.NonNull(graphene.String)
+    level = graphene.NonNull(LogLevel)
 
 
 class LogMessageConnection(graphene.ObjectType):
@@ -146,7 +180,8 @@ class PipelineRunEvent(graphene.Union):
         basic_params = {
             'run': run,
             'message': event.original_message,
-            'timestamp': int(event.timestamp * 1000)
+            'timestamp': int(event.timestamp * 1000),
+            'level': LogLevel.from_level(event.level),
         }
 
         if event.event_type == EventType.PIPELINE_START:

@@ -1151,11 +1151,16 @@ def test_basic_sync_execution():
     assert has_event_of_type(logs, 'PipelineSuccessEvent')
     assert not has_event_of_type(logs, 'PipelineFailureEvent')
 
-def has_event_of_type(logs, message_type):
+    assert first_event_of_type(logs, 'PipelineStartEvent')['level'] == 'INFO'
+
+def first_event_of_type(logs, message_type):
     for log in logs:
         if log['__typename'] == message_type:
-            return True
-    return False
+            return log
+    return None
+
+def has_event_of_type(logs, message_type):
+    return first_event_of_type(logs, message_type) is not None
 
 SYNC_MUTATION_QUERY = '''
 mutation ($executionParams: PipelineExecutionParams!) {
@@ -1172,6 +1177,7 @@ mutation ($executionParams: PipelineExecutionParams!) {
                         __typename
                         ... on MessageEvent {
                             message
+                            level
                         }
                     }
                 }
