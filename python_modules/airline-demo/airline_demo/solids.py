@@ -117,7 +117,7 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
         info.context.info(
             'Executing sql statement:\n{sql_statement}'.format(sql_statement=sql_statement)
         )
-        info.context.resources.db_engine.execute(text(sql_statement))
+        info.context.resources.db_info.engine.execute(text(sql_statement))
         yield Result(value=table_name, output_name='result')
 
     return SolidDefinition(

@@ -21,25 +21,14 @@ def test_pipeline_download_fast():
                 'local': {
                     'resources': {
                         # duplication not the best
-                        'db_url': {
-                            'config': {
+                        'db_info' : {
+                            'config' : {
                                 'postgres_username': 'test',
                                 'postgres_password': 'test',
                                 'postgres_hostname': 'localhost',
                                 'postgres_db_name': 'test',
-                            },
-                        },
-                        'db_engine': {
-                            'config': {
-                                'postgres_username': 'test',
-                                'postgres_password': 'test',
-                                'postgres_hostname': 'localhost',
-                                'postgres_db_name': 'test',
-                            },
-                        },
-                        'db_dialect': {
-                            'config': 'postgres'
-                        },
+                            }
+                        }
                     },
                 },
             },
@@ -214,25 +203,13 @@ def test_pipeline_ingest_fast():
             'context': {
                 'local': {
                     'resources': {
-                        # duplication not the best
-                        'db_url': {
-                            'config': {
+                        'db_info' : {
+                            'config' : {
                                 'postgres_username': 'test',
                                 'postgres_password': 'test',
-                                'postgres_hostname': 'localhost',
+                                'postgres_hostname': '127.0.0.1',
                                 'postgres_db_name': 'test',
                             },
-                        },
-                        'db_engine': {
-                            'config': {
-                                'postgres_username': 'test',
-                                'postgres_password': 'test',
-                                'postgres_hostname': 'localhost',
-                                'postgres_db_name': 'test',
-                            },
-                        },
-                        'db_dialect': {
-                            'config': 'postgres'
                         },
                     },
                 },
@@ -396,25 +373,13 @@ def test_pipeline_warehouse_fast():
             'context': {
                 'local': {
                     'resources': {
-                        # duplication not the best
-                        'db_url': {
-                            'config': {
+                        'db_info' : {
+                            'config' : {
                                 'postgres_username': 'test',
                                 'postgres_password': 'test',
-                                'postgres_hostname': 'localhost',
+                                'postgres_hostname': '127.0.0.1',
                                 'postgres_db_name': 'test',
                             },
-                        },
-                        'db_engine': {
-                            'config': {
-                                'postgres_username': 'test',
-                                'postgres_password': 'test',
-                                'postgres_hostname': 'localhost',
-                                'postgres_db_name': 'test',
-                            },
-                        },
-                        'db_dialect': {
-                            'config': 'postgres'
                         },
                     },
                 },
