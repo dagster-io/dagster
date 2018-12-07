@@ -2,3 +2,4 @@
 based_on_style=pep8
 column_limit=100
 dedent_closing_brackets=true
+indent_dictionary_value=true

@@ -15,7 +15,8 @@ from airline_demo.pipelines import (
 @pytest.mark.slow
 def test_pipeline_download():
     result = execute_pipeline(
-        define_airline_demo_download_pipeline(), {
+        define_airline_demo_download_pipeline(),
+        {
             'context': {
                 'local': {
                     'resources': {
@@ -36,22 +37,24 @@ def test_pipeline_download():
                                 'postgres_db_name': 'test',
                             },
                         },
-                        'db_dialect' : {'config': 'postgres'},
+                        'db_dialect': {
+                            'config': 'postgres'
+                        },
                     },
                 },
             },
             'solids': {
                 'april_on_time_data_filename': {
                     'config':
-                    'On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_4.csv'
+                        'On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_4.csv'
                 },
                 'may_on_time_data_filename': {
                     'config':
-                    'On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_5.csv'
+                        'On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_5.csv'
                 },
                 'june_on_time_data_filename': {
                     'config':
-                    'On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_6.csv'
+                        'On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_6.csv'
                 },
                 'q2_coupon_data_filename': {
                     'config': 'Origin_and_Destination_Survey_DB1BCoupon_2018_2.csv'
