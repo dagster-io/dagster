@@ -13,6 +13,21 @@ interface IPipelineRunExecutionPlanProps {
   onSetLogFilter: (filter: string) => void;
 }
 
+function formatExecutionTime(msec: number) {
+  if (msec < 100 * 1000) {
+    // < 100 seconds, show msec
+    return `${Math.ceil(msec)} msec`;
+  } else if (msec < 5 * 60 * 1000) {
+    // < 5 min, show seconds
+    return `${Math.ceil(msec / 1000)} sec`;
+  } else if (msec < 120 * 60 * 1000) {
+    // < 2 hours, show minutes
+    return `${Math.ceil(msec / (60 * 1000))} min`;
+  } else {
+    return `${Math.ceil(msec / (60 * 60 * 1000))} hours`;
+  }
+}
+
 export default class PipelineRunExecutionPlan extends React.Component<
   IPipelineRunExecutionPlanProps
 > {
@@ -90,7 +105,7 @@ export default class PipelineRunExecutionPlan extends React.Component<
                 <ExecutionPlanBoxName>{step.name}</ExecutionPlanBoxName>
                 {metadata.elapsed && (
                   <ExecutionStateLabel>
-                    {Math.ceil(metadata.elapsed / 1000)} sec
+                    {formatExecutionTime(metadata.elapsed)}
                   </ExecutionStateLabel>
                 )}
               </ExecutionPlanBox>
