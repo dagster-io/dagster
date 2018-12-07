@@ -10,7 +10,7 @@ from dagster import (
 
 def nonce_solid(name, n_inputs, n_outputs):
     """Creates a solid with the given number of (meaningless) inputs and outputs.
-    
+
     Config controls the behavior of the nonce solid."""
 
     @solid(
@@ -35,22 +35,16 @@ def nonce_solid(name, n_inputs, n_outputs):
     return solid_fn
 
 
-no_in_two_out = nonce_solid('no_in_two_out', 0, 2)
-one_in_one_out = nonce_solid('one_in_one_out', 1, 1)
-one_in_two_out = nonce_solid('one_in_two_out', 1, 2)
-two_in_one_out = nonce_solid('two_in_one_out', 2, 1)
-one_in_none_out = nonce_solid('one_in_none_out', 1, 0)
-
 
 def define_spew_pipeline():
     return PipelineDefinition(
         name='log_spew',
         solids=[
-            no_in_two_out,
-            one_in_one_out,
-            one_in_two_out,
-            two_in_one_out,
-            one_in_none_out,
+            nonce_solid('no_in_two_out', 0, 2),
+            nonce_solid('one_in_one_out', 1, 1),
+            nonce_solid('one_in_two_out', 1, 2),
+            nonce_solid('two_in_one_out', 2, 1),
+            nonce_solid('one_in_none_out', 1, 0),
         ],
         dependencies={
             SolidInstance('no_in_two_out', alias='solid_a'): {},
