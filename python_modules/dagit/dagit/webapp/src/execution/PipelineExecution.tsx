@@ -110,14 +110,7 @@ export default class PipelineExecution extends React.Component<
                   alert(`Fix the errors in your config YAML and try again.`);
                   return;
                 }
-                if (event.altKey && navigator.clipboard) {
-                  await navigator.clipboard.writeText(
-                    JSON.stringify(config, null, 2)
-                  );
-                  alert("Config YAML copied to the clipboard.");
-                } else {
-                  this.props.onExecute(config);
-                }
+                this.props.onExecute(config);
               }
             }}
           >
