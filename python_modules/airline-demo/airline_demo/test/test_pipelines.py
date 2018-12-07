@@ -428,6 +428,18 @@ def test_pipeline_warehouse():
                         'key':
                         'sfo_outbound_avg_delay_plots_{timestamp}.pdf'.format(timestamp=timestamp)
                     }
+                },
+                'upload_delays_vs_fares_pdf_plots': {
+                    'config': {
+                        'bucket': 'dagster-airline-demo-sink',
+                        'key': 'delays_vs_fares_{timestamp}.pdf'.format(timestamp=timestamp)
+                    }
+                },
+                'upload_delays_by_geography_pdf_plots': {
+                    'config': {
+                        'bucket': 'dagster-airline-demo-sink',
+                        'key': 'delays_by_geography_{timestamp}.pdf'.format(timestamp=timestamp)
+                    }
                 }
             }
         }

@@ -1,5 +1,9 @@
 """Pipeline definitions for the airline_demo."""
+import contextlib
 import logging
+import os
+import shutil
+import tempfile
 
 from dagster import (
     DependencyDefinition,
@@ -16,18 +20,25 @@ from dagster import (
 from .solids import (
     average_sfo_outbound_avg_delays_by_destination,
     canonicalize_column_names,
+    delays_by_geography,
+    delays_vs_fares,
+    delays_vs_fares_nb,
     download_from_s3,
+    eastbound_delays,
     ingest_csv_to_spark,
     join_spark_data_frames,
     load_data_to_database_from_spark,
     normalize_weather_na_values,
     prefix_column_names,
+    q2_sfo_outbound_flights,
     sfo_delays_by_destination,
     subsample_spark_dataset,
     thunk,
+    tickets_with_destination,
     union_spark_data_frames,
     unzip_file,
     upload_to_s3,
+    westbound_delays,
 )
 from .types import (
     AirlineDemoResources,
@@ -66,20 +77,70 @@ def _db_load(data_frame, table_name, resources):
             'No implementation for db_dialect "{db_dialect}"'.format(db_dialect=db_dialect)
         )
 
-def define_lambda_resource(func):
-    return ResourceDefinition(lambda _info: func())
+
+def define_lambda_resource(func, *args, **kwargs):
+    return ResourceDefinition(lambda _info: func(*args, **kwargs))
+
 
 def define_value_resource(value):
     return ResourceDefinition(lambda _info: value)
 
+
 def define_null_resource():
     return define_value_resource(None)
+
 
 def define_string_resource():
     return ResourceDefinition(
         resource_fn=lambda info: info.config,
         config_field=types.Field(types.String),
     )
+
+
+class TempfileManager(object):
+    def __init__(self):
+        self.paths = []
+        self.files = []
+        self.dirs = []
+
+    def tempfile(self):
+        temporary_file = tempfile.NamedTemporaryFile('w+b', delete=False)
+        self.files.append(temporary_file)
+        self.paths.append(temporary_file.name)
+        return temporary_file
+
+    def tempdir(self):
+        temporary_directory = tempfile.mkdtemp()
+        self.dirs.append(temporary_directory)
+        return temporary_directory
+
+    def close(self):
+        for fobj in self.files:
+            fobj.close()
+        for path in self.paths:
+            if os.path.exists(path):
+                os.remove(path)
+        for dir_ in self.dirs:
+            shutil.rmtree(dir_)
+
+
+@contextlib.contextmanager
+def make_tempfile_manager():
+    manager = TempfileManager()
+    try:
+        yield manager
+    finally:
+        manager.close()
+
+
+def _tempfile_resource_fn(info):
+    with make_tempfile_manager() as manager:
+        yield manager
+
+
+def define_tempfile_resource():
+    return ResourceDefinition(resource_fn=_tempfile_resource_fn)
+
 
 RedshiftConfigData = types.ConfigDictionary(
     'RedshiftConfigData',
@@ -119,6 +180,7 @@ test_context = PipelineContextDefinition(
         'db_dialect' : define_string_resource(),
         'redshift_s3_temp_dir' : define_string_resource(),
         'db_load': define_value_resource(_db_load),
+        'tempfile': define_tempfile_resource(),
     },
 )
 
@@ -160,49 +222,42 @@ local_context = PipelineContextDefinition(
         'db_dialect' : define_string_resource(),
         'redshift_s3_temp_dir' : define_value_resource(''),
         'db_load': define_value_resource(_db_load),
+        'tempfile': define_tempfile_resource(),
     },
 )
 
 
 cloud_context = PipelineContextDefinition(
-    context_fn=(
-        lambda info: ExecutionContext.console_logging(
-            log_level=logging.DEBUG,
-            resources=AirlineDemoResources(
-                create_spark_session_local(), # FIXME
-                create_s3_session(),
+    context_fn=lambda info: ExecutionContext.console_logging(log_level=logging.DEBUG),
+    resources={
+        'spark': define_lambda_resource(create_spark_session_local), # FIXME
+        's3': define_lambda_resource(create_s3_session()),
+        'db_url': ResourceDefinition(
+            resource_fn=lambda info: create_redshift_db_url(
+                info.config['redshift_username'],
+                info.config['redshift_password'],
+                info.config['redshift_hostname'],
+                info.config['redshift_db_name'],
+            ),
+            config_field=types.Field(RedshiftConfigData),
+        ),
+        'db_engine': ResourceDefinition(
+            resource_fn=lambda info: create_redshift_engine(
                 create_redshift_db_url(
                     info.config['redshift_username'],
                     info.config['redshift_password'],
                     info.config['redshift_hostname'],
                     info.config['redshift_db_name'],
+                    jdbc=False,
                 ),
-                create_redshift_engine(
-                    create_redshift_db_url(
-                        info.config['redshift_username'],
-                        info.config['redshift_password'],
-                        info.config['redshift_hostname'],
-                        info.config['redshift_db_name'],
-                        jdbc=False,
-                    ),
-                ),
-                info.config['db_dialect'],
-                '',
-                _db_load,
-            )
-        )
-    ),
-    config_field=Field(
-        dagster_type=types.ConfigDictionary(
-            'CloudContextConfig', {
-                'redshift_username': Field(types.String),
-                'redshift_password': Field(types.String),
-                'redshift_hostname': Field(types.String),
-                'db_dialect': Field(types.String),
-                'redshift_s3_temp_dir': Field(types.String),
-            }
-        )
-    ),
+            ),
+            config_field=types.Field(RedshiftConfigData),
+        ),
+        'db_dialect' : define_string_resource(),
+        'redshift_s3_temp_dir' : define_string_resource(),
+        'db_load': define_value_resource(_db_load),
+        'tempfile': define_tempfile_resource(),
+    },
 )
 
 CONTEXT_DEFINITIONS = {
@@ -398,21 +453,55 @@ def define_airline_demo_warehouse_pipeline():
         name="airline_demo_warehouse_pipeline",
         solids=[
             average_sfo_outbound_avg_delays_by_destination,
+            delays_by_geography,
+            delays_vs_fares,
+            delays_vs_fares_nb,
+            eastbound_delays,
+            q2_sfo_outbound_flights,
             sfo_delays_by_destination,
             thunk,
+            tickets_with_destination,
             upload_to_s3,
+            westbound_delays,
         ],
         dependencies={
             SolidInstance('thunk', alias='db_url'): {},
-            'average_sfo_outbound_avg_delays_by_destination': {},
+            'q2_sfo_outbound_flights': {},
+            'tickets_with_destination': {},
+            'westbound_delays': {},
+            'eastbound_delays': {},
+            'average_sfo_outbound_avg_delays_by_destination': {
+                'q2_sfo_outbound_flights': DependencyDefinition('q2_sfo_outbound_flights'),
+            },
+            'delays_vs_fares': {
+                'tickets_with_destination':
+                DependencyDefinition('tickets_with_destination'),
+                'average_sfo_outbound_avg_delays_by_destination':
+                DependencyDefinition('average_sfo_outbound_avg_delays_by_destination')
+            },
+            'fares_vs___delays': {
+                'db_url': DependencyDefinition('db_url'),
+                'table_name': DependencyDefinition('delays_vs_fares'),
+            },
             's_f_o__delays_by__destination': {
                 'db_url': DependencyDefinition('db_url'),
                 'table_name':
-                DependencyDefinition('average_sfo_outbound_avg_delays_by_destination', ),
+                DependencyDefinition('average_sfo_outbound_avg_delays_by_destination'),
+            },
+            'delays_by__geography': {
+                'db_url': DependencyDefinition('db_url'),
+                'eastbound_delays': DependencyDefinition('eastbound_delays'),
+                'westbound_delays': DependencyDefinition('westbound_delays'),
             },
             SolidInstance('upload_to_s3', alias='upload_outbound_avg_delay_pdf_plots'): {
                 'file_path': DependencyDefinition('s_f_o__delays_by__destination'),
-            }
+            },
+            SolidInstance('upload_to_s3', alias='upload_delays_vs_fares_pdf_plots'): {
+                'file_path': DependencyDefinition('fares_vs___delays'),
+            },
+            SolidInstance('upload_to_s3', alias='upload_delays_by_geography_pdf_plots'): {
+                'file_path': DependencyDefinition('delays_by__geography'),
+            },
         },
         context_definitions=CONTEXT_DEFINITIONS,
     )
