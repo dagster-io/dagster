@@ -31,7 +31,7 @@ from dagster.utils import script_relative_path
 from .production_query import PRODUCTION_QUERY
 
 
-def define_context():
+def define_context(synchronous_mode=False):
     return DagsterGraphQLContext(
         RepositoryContainer(
             repository=RepositoryDefinition(
@@ -46,7 +46,8 @@ def define_context():
                 }
             )
         ),
-        PipelineRunStorage()
+        PipelineRunStorage(),
+        synchronous_mode=synchronous_mode,
     )
 
 
@@ -1121,7 +1122,7 @@ subscription subscribeTest($runId: ID!) {
 '''
 
 def test_basic_sync_execution():
-    context = define_context()
+    context = define_context(synchronous_mode=True)
     result = execute_dagster_graphql(
         context,
         SYNC_MUTATION_QUERY,
@@ -1144,7 +1145,7 @@ def test_basic_sync_execution():
     assert not result.errors
     assert result.data
 
-    logs = result.data['syncPipelineExecution']['run']['logs']['nodes']
+    logs = result.data['startPipelineExecution']['run']['logs']['nodes']
     assert isinstance(logs, list)
     assert has_event_of_type(logs, 'PipelineStartEvent')
     assert has_event_of_type(logs, 'PipelineSuccessEvent')
@@ -1158,7 +1159,7 @@ def has_event_of_type(logs, message_type):
 
 SYNC_MUTATION_QUERY = '''
 mutation ($executionParams: PipelineExecutionParams!) {
-    syncPipelineExecution(
+    startPipelineExecution(
         executionParams: $executionParams
     ) {
         __typename
