@@ -227,7 +227,7 @@ jobs:
   airline-demo-python-3.6: &airline-demo-template
     <<: *dagster-template
     docker:
-      - image: dagster/ccitest:3.6
+      - image: dagster/cci-test:3.6
         auth:
           username: $DOCKERHUB_USERNAME
           password: $DOCKERHUB_PASSWORD
@@ -263,7 +263,7 @@ jobs:
   airline-demo-python-3.5:
     <<: *airline-demo-template
     docker:
-      - image: dagster/ccitest:3.5
+      - image: dagster/cci-test:3.5
         auth:
           username: $DOCKERHUB_USERNAME
           password: $DOCKERHUB_PASSWORD
@@ -273,7 +273,7 @@ jobs:
   airline-demo-python-2.7:
     <<: *airline-demo-template
     docker:
-      - image: dagster/ccitest:2.7
+      - image: dagster/cci-test:2.7
         auth:
           username: $DOCKERHUB_USERNAME
           password: $DOCKERHUB_PASSWORD
