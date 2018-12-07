@@ -11,6 +11,7 @@ import {
 interface IPipelineRunExecutionPlanProps {
   pipelineRun: PipelineRunExecutionPlanFragment;
   onSetLogFilter: (filter: string) => void;
+  onShowStateDetails: (step: string) => void;
 }
 
 function formatExecutionTime(msec: number) {
@@ -80,6 +81,7 @@ export default class PipelineRunExecutionPlan extends React.Component<
   render() {
     const {
       onSetLogFilter,
+      onShowStateDetails,
       pipelineRun: { logs, executionPlan }
     } = this.props;
     const stepMetadata = logsToStepMetadata(logs.nodes);
@@ -101,7 +103,10 @@ export default class PipelineRunExecutionPlan extends React.Component<
                 state={metadata.state}
                 onClick={() => onSetLogFilter(step.name)}
               >
-                <ExecutionStateDot state={metadata.state} />
+                <ExecutionStateDot
+                  state={metadata.state}
+                  onClick={() => onShowStateDetails(step.name)}
+                />
                 <ExecutionPlanBoxName>{step.name}</ExecutionPlanBoxName>
                 {metadata.elapsed && (
                   <ExecutionStateLabel>
@@ -216,9 +221,9 @@ const ExecutionTimeline = styled.div`
 
 const ExecutionTimelineDot = styled.div`
   display: inline-block;
-  width: 9px;
-  height: 9px;
-  border-radius: 4px;
+  width: 11px;
+  height: 11px;
+  border-radius: 5.5px;
   margin-right: 8px;
   background: #232b2f;
   border: 1px solid ${Colors.LIGHT_GRAY2};
@@ -228,9 +233,9 @@ const ExecutionTimelineDot = styled.div`
 
 const ExecutionStateDot = styled.div<{ state: IStepMetadataState }>`
   display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 4px;
+  width: 11px;
+  height: 11px;
+  border-radius: 5.5px;
   margin-right: 9px;
   background: ${({ state }) =>
     ({
@@ -239,6 +244,15 @@ const ExecutionStateDot = styled.div<{ state: IStepMetadataState }>`
       succeeded: Colors.GREEN2,
       failed: Colors.RED3
     }[state])};
+  &:hover {
+    background: ${({ state }) =>
+      ({
+        waiting: Colors.GRAY1,
+        running: Colors.GRAY3,
+        succeeded: Colors.GREEN2,
+        failed: Colors.RED5
+      }[state])};
+  }
 `;
 
 const ExecutionStateLabel = styled.div`

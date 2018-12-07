@@ -20,6 +20,8 @@ type LogLevel = "info" | "normal" | "error";
 
 const LogLevels: LogLevel[] = ["info", "normal", "error"];
 
+// replace with server-provided log levels...
+//
 function logLevelForMessage(message: string): LogLevel {
   if (message.includes("About to execute")) {
     return "info";
