@@ -31,7 +31,7 @@ from dagster.utils import script_relative_path
 from .production_query import PRODUCTION_QUERY
 
 
-def define_context():
+def define_context(synchronous_mode=False):
     return DagsterGraphQLContext(
         RepositoryContainer(
             repository=RepositoryDefinition(
@@ -46,7 +46,8 @@ def define_context():
                 }
             )
         ),
-        PipelineRunStorage()
+        PipelineRunStorage(),
+        synchronous_mode=synchronous_mode,
     )
 
 
@@ -1116,6 +1117,73 @@ SUBSCRIPTION_QUERY = '''
 subscription subscribeTest($runId: ID!) {
     pipelineRunLogs(runId: $runId) {
         __typename
+    }
+}
+'''
+
+def test_basic_sync_execution():
+    context = define_context(synchronous_mode=True)
+    result = execute_dagster_graphql(
+        context,
+        SYNC_MUTATION_QUERY,
+        variables={
+            'executionParams': {
+                'pipelineName': 'pandas_hello_world',
+                'config': {
+                    'solids': {
+                        'load_num_csv': {
+                            'config': {
+                                'path': script_relative_path('num.csv'),
+                            }
+                        },
+                    },
+                },
+            },
+        },
+    )
+
+    assert not result.errors
+    assert result.data
+
+    logs = result.data['startPipelineExecution']['run']['logs']['nodes']
+    assert isinstance(logs, list)
+    assert has_event_of_type(logs, 'PipelineStartEvent')
+    assert has_event_of_type(logs, 'PipelineSuccessEvent')
+    assert not has_event_of_type(logs, 'PipelineFailureEvent')
+
+def has_event_of_type(logs, message_type):
+    for log in logs:
+        if log['__typename'] == message_type:
+            return True
+    return False
+
+SYNC_MUTATION_QUERY = '''
+mutation ($executionParams: PipelineExecutionParams!) {
+    startPipelineExecution(
+        executionParams: $executionParams
+    ) {
+        __typename
+        ... on StartPipelineExecutionSuccess {
+            run {
+                runId
+                pipeline { name }
+                logs {
+                    nodes {
+                        __typename
+                        ... on MessageEvent {
+                            message
+                        }
+                    }
+                }
+            }
+        }
+        ... on PipelineConfigValidationInvalid {
+            pipeline { name }
+            errors { message }
+        }
+        ... on PipelineNotFoundError {
+            pipelineName
+        }
     }
 }
 '''
