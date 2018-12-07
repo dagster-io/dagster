@@ -74,7 +74,7 @@ export default class PipelineRunExecutionPlan extends React.Component<
         <ExecutionPlanContainerInner>
           <ExecutionTimeline />
           <ExecutionTimelineMessage>
-            <ExecutionTimelineDot /> Started execution
+            <ExecutionTimelineDot /> Execution started
           </ExecutionTimelineMessage>
           {executionPlan.steps.map(step => {
             const metadata = stepMetadata[step.name] || {
@@ -140,8 +140,10 @@ function logsToStepMetadata(
 }
 
 const ExecutionPlanContainer = styled.div`
-  flex: 2;
+  flex: 1;
   overflow-y: scroll;
+  color: ${Colors.WHITE};
+  background: #232b2f;
 `;
 
 const ExecutionPlanContainerInner = styled.div`

@@ -10,7 +10,24 @@
 export interface PipelineExecutionPipelineRunFragment_logs_nodes_LogMessageEvent {
   __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent";
   message: string;
-  timestamp: any;
+  timestamp: string;
+}
+
+export interface PipelineExecutionPipelineRunFragment_logs_nodes_ExecutionStepFailureEvent_step {
+  name: string;
+}
+
+export interface PipelineExecutionPipelineRunFragment_logs_nodes_ExecutionStepFailureEvent_error {
+  stack: string[];
+  message: string;
+}
+
+export interface PipelineExecutionPipelineRunFragment_logs_nodes_ExecutionStepFailureEvent {
+  __typename: "ExecutionStepFailureEvent";
+  message: string;
+  timestamp: string;
+  step: PipelineExecutionPipelineRunFragment_logs_nodes_ExecutionStepFailureEvent_step;
+  error: PipelineExecutionPipelineRunFragment_logs_nodes_ExecutionStepFailureEvent_error;
 }
 
 export interface PipelineExecutionPipelineRunFragment_logs_nodes_ExecutionStepStartEvent_step {
@@ -18,13 +35,13 @@ export interface PipelineExecutionPipelineRunFragment_logs_nodes_ExecutionStepSt
 }
 
 export interface PipelineExecutionPipelineRunFragment_logs_nodes_ExecutionStepStartEvent {
-  __typename: "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepFailureEvent";
+  __typename: "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent";
   message: string;
-  timestamp: any;
+  timestamp: string;
   step: PipelineExecutionPipelineRunFragment_logs_nodes_ExecutionStepStartEvent_step;
 }
 
-export type PipelineExecutionPipelineRunFragment_logs_nodes = PipelineExecutionPipelineRunFragment_logs_nodes_LogMessageEvent | PipelineExecutionPipelineRunFragment_logs_nodes_ExecutionStepStartEvent;
+export type PipelineExecutionPipelineRunFragment_logs_nodes = PipelineExecutionPipelineRunFragment_logs_nodes_LogMessageEvent | PipelineExecutionPipelineRunFragment_logs_nodes_ExecutionStepFailureEvent | PipelineExecutionPipelineRunFragment_logs_nodes_ExecutionStepStartEvent;
 
 export interface PipelineExecutionPipelineRunFragment_logs {
   nodes: PipelineExecutionPipelineRunFragment_logs_nodes[];

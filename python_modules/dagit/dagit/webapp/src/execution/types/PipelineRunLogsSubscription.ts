@@ -15,7 +15,29 @@ export interface PipelineRunLogsSubscription_pipelineRunLogs_LogMessageEvent {
   run: PipelineRunLogsSubscription_pipelineRunLogs_LogMessageEvent_run;
   __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent";
   message: string;
-  timestamp: any;
+  timestamp: string;
+}
+
+export interface PipelineRunLogsSubscription_pipelineRunLogs_ExecutionStepFailureEvent_run {
+  runId: string;
+}
+
+export interface PipelineRunLogsSubscription_pipelineRunLogs_ExecutionStepFailureEvent_step {
+  name: string;
+}
+
+export interface PipelineRunLogsSubscription_pipelineRunLogs_ExecutionStepFailureEvent_error {
+  stack: string[];
+  message: string;
+}
+
+export interface PipelineRunLogsSubscription_pipelineRunLogs_ExecutionStepFailureEvent {
+  run: PipelineRunLogsSubscription_pipelineRunLogs_ExecutionStepFailureEvent_run;
+  __typename: "ExecutionStepFailureEvent";
+  message: string;
+  timestamp: string;
+  step: PipelineRunLogsSubscription_pipelineRunLogs_ExecutionStepFailureEvent_step;
+  error: PipelineRunLogsSubscription_pipelineRunLogs_ExecutionStepFailureEvent_error;
 }
 
 export interface PipelineRunLogsSubscription_pipelineRunLogs_ExecutionStepStartEvent_run {
@@ -28,13 +50,13 @@ export interface PipelineRunLogsSubscription_pipelineRunLogs_ExecutionStepStartE
 
 export interface PipelineRunLogsSubscription_pipelineRunLogs_ExecutionStepStartEvent {
   run: PipelineRunLogsSubscription_pipelineRunLogs_ExecutionStepStartEvent_run;
-  __typename: "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepFailureEvent";
+  __typename: "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent";
   message: string;
-  timestamp: any;
+  timestamp: string;
   step: PipelineRunLogsSubscription_pipelineRunLogs_ExecutionStepStartEvent_step;
 }
 
-export type PipelineRunLogsSubscription_pipelineRunLogs = PipelineRunLogsSubscription_pipelineRunLogs_LogMessageEvent | PipelineRunLogsSubscription_pipelineRunLogs_ExecutionStepStartEvent;
+export type PipelineRunLogsSubscription_pipelineRunLogs = PipelineRunLogsSubscription_pipelineRunLogs_LogMessageEvent | PipelineRunLogsSubscription_pipelineRunLogs_ExecutionStepFailureEvent | PipelineRunLogsSubscription_pipelineRunLogs_ExecutionStepStartEvent;
 
 export interface PipelineRunLogsSubscription {
   pipelineRunLogs: PipelineRunLogsSubscription_pipelineRunLogs;

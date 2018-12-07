@@ -16,7 +16,24 @@ export interface PipelinePageFragment_PythonError {
 export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_LogMessageEvent {
   __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent";
   message: string;
-  timestamp: any;
+  timestamp: string;
+}
+
+export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepFailureEvent_step {
+  name: string;
+}
+
+export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepFailureEvent_error {
+  stack: string[];
+  message: string;
+}
+
+export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepFailureEvent {
+  __typename: "ExecutionStepFailureEvent";
+  message: string;
+  timestamp: string;
+  step: PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepFailureEvent_step;
+  error: PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepFailureEvent_error;
 }
 
 export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepStartEvent_step {
@@ -24,13 +41,13 @@ export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_E
 }
 
 export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepStartEvent {
-  __typename: "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepFailureEvent";
+  __typename: "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent";
   message: string;
-  timestamp: any;
+  timestamp: string;
   step: PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepStartEvent_step;
 }
 
-export type PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes = PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_LogMessageEvent | PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepStartEvent;
+export type PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes = PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_LogMessageEvent | PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepFailureEvent | PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepStartEvent;
 
 export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs_pageInfo {
   lastCursor: any | null;

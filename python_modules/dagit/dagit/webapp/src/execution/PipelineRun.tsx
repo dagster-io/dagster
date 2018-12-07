@@ -88,9 +88,6 @@ const PipelineRunWrapper = styled.div`
   display: flex;
   flex-direction: column;
   flex: 1 1;
-  color: ${Colors.WHITE};
-  border-left: 1px solid ${Colors.DARK_GRAY5};
-  background: #232b2f;
 `;
 
 const LogsContainer = styled.div`

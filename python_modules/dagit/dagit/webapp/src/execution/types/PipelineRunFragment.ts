@@ -10,7 +10,24 @@
 export interface PipelineRunFragment_logs_nodes_LogMessageEvent {
   __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent";
   message: string;
-  timestamp: any;
+  timestamp: string;
+}
+
+export interface PipelineRunFragment_logs_nodes_ExecutionStepFailureEvent_step {
+  name: string;
+}
+
+export interface PipelineRunFragment_logs_nodes_ExecutionStepFailureEvent_error {
+  stack: string[];
+  message: string;
+}
+
+export interface PipelineRunFragment_logs_nodes_ExecutionStepFailureEvent {
+  __typename: "ExecutionStepFailureEvent";
+  message: string;
+  timestamp: string;
+  step: PipelineRunFragment_logs_nodes_ExecutionStepFailureEvent_step;
+  error: PipelineRunFragment_logs_nodes_ExecutionStepFailureEvent_error;
 }
 
 export interface PipelineRunFragment_logs_nodes_ExecutionStepStartEvent_step {
@@ -18,13 +35,13 @@ export interface PipelineRunFragment_logs_nodes_ExecutionStepStartEvent_step {
 }
 
 export interface PipelineRunFragment_logs_nodes_ExecutionStepStartEvent {
-  __typename: "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepFailureEvent";
+  __typename: "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent";
   message: string;
-  timestamp: any;
+  timestamp: string;
   step: PipelineRunFragment_logs_nodes_ExecutionStepStartEvent_step;
 }
 
-export type PipelineRunFragment_logs_nodes = PipelineRunFragment_logs_nodes_LogMessageEvent | PipelineRunFragment_logs_nodes_ExecutionStepStartEvent;
+export type PipelineRunFragment_logs_nodes = PipelineRunFragment_logs_nodes_LogMessageEvent | PipelineRunFragment_logs_nodes_ExecutionStepFailureEvent | PipelineRunFragment_logs_nodes_ExecutionStepStartEvent;
 
 export interface PipelineRunFragment_logs {
   nodes: PipelineRunFragment_logs_nodes[];

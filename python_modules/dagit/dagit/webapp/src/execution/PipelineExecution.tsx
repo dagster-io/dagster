@@ -8,6 +8,7 @@ import { IconNames } from "@blueprintjs/icons";
 import { IExecutionSession } from "../LocalStorage";
 import { PipelineRun, PipelineRunEmpty } from "./PipelineRun";
 import { ExecutionTabs, ExecutionTab } from "./ExecutionTabs";
+import { PanelDivider } from "../PanelDivider";
 
 import ConfigCodeEditorContainer from "../configeditor/ConfigCodeEditorContainer";
 import { PipelineExecutionCodeEditorFragment } from "./types/PipelineExecutionCodeEditorFragment";
@@ -27,8 +28,13 @@ interface IPipelineExecutionProps {
   onExecute: (config: any) => void;
 }
 
+interface IPipelineExecutionState {
+  editorVW: number;
+}
+
 export default class PipelineExecution extends React.Component<
-  IPipelineExecutionProps
+  IPipelineExecutionProps,
+  IPipelineExecutionState
 > {
   static fragments = {
     PipelineExecutionCodeEditorFragment: gql`
@@ -56,10 +62,14 @@ export default class PipelineExecution extends React.Component<
     `
   };
 
+  state = {
+    editorVW: 50
+  };
+
   render() {
     return (
       <PipelineExecutionWrapper>
-        <Split>
+        <Split width={this.state.editorVW}>
           <ExecutionTabs>
             {Object.keys(this.props.sessions).map(key => (
               <ExecutionTab
@@ -88,7 +98,39 @@ export default class PipelineExecution extends React.Component<
               this.props.onSaveSession(this.props.currentSession.key, config)
             }
           />
+          <IconWrapper
+            role="button"
+            disabled={this.props.isExecuting}
+            onClick={async event => {
+              if (!this.props.isExecuting) {
+                let config = {};
+                try {
+                  config = yaml.parse(this.props.currentSession.config);
+                } catch (err) {
+                  alert(`Fix the errors in your config YAML and try again.`);
+                  return;
+                }
+                if (event.altKey && navigator.clipboard) {
+                  await navigator.clipboard.writeText(
+                    JSON.stringify(config, null, 2)
+                  );
+                  alert("Config YAML copied to the clipboard.");
+                } else {
+                  this.props.onExecute(config);
+                }
+              }
+            }}
+          >
+            <Icon
+              icon={this.props.isExecuting ? IconNames.REFRESH : IconNames.PLAY}
+              iconSize={40}
+            />
+          </IconWrapper>
         </Split>
+        <PanelDivider
+          axis="horizontal"
+          onMove={(vw: number) => this.setState({ editorVW: vw })}
+        />
         <Split>
           {this.props.activeRun ? (
             <PipelineRun pipelineRun={this.props.activeRun} />
@@ -96,27 +138,6 @@ export default class PipelineExecution extends React.Component<
             <PipelineRunEmpty />
           )}
         </Split>
-        <IconWrapper
-          role="button"
-          disabled={this.props.isExecuting}
-          onClick={async () => {
-            if (!this.props.isExecuting) {
-              let config = {};
-              try {
-                config = yaml.parse(this.props.currentSession.config);
-              } catch (err) {
-                alert(`Fix the errors in your config YAML and try again.`);
-                return;
-              }
-              this.props.onExecute(config);
-            }
-          }}
-        >
-          <Icon
-            icon={this.props.isExecuting ? IconNames.REFRESH : IconNames.PLAY}
-            iconSize={40}
-          />
-        </IconWrapper>
       </PipelineExecutionWrapper>
     );
   }
@@ -139,8 +160,8 @@ const IconWrapper = styled.div<{ disabled: boolean }>`
   border-radius: 30px;
   background-color: ${Colors.GRAY5};
   position: absolute;
-  left: calc(50% - 80px);
-  top: 120px;
+  top: 20px;
+  right: 20px;
   justify-content: center;
   align-items: center;
   display: flex;
@@ -157,8 +178,9 @@ const IconWrapper = styled.div<{ disabled: boolean }>`
   }
 `;
 
-const Split = styled.div`
-  flex: 1 1;
+const Split = styled.div<{ width?: number }>`
+  ${props => (props.width ? `width: ${props.width}vw` : `flex: 1`)};
+  position: relative;
   flex-direction: column;
   display: flex;
 `;
