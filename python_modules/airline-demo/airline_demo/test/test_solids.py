@@ -148,10 +148,11 @@ def test_download_from_s3_tempfile():
             },
             'solids': {
                 'download_from_s3': {
-                    'config': {
+                    'config':
+                    [{
                         'bucket': 'dagster-airline-demo-source-data',
                         'key': 'test/test_file',
-                    }
+                    }]
                 }
             }
         }
@@ -192,7 +193,8 @@ def test_unzip_file_tempfile():
     )
     assert result.success
     assert result.transformed_value()
-    assert not os.path.isfile(result.transformed_value())
+    assert all([v for v in result.transformed_value()])
+    assert [not os.path.isfile(v) for v in result.transformed_value()]
 
 
 @pytest.mark.spark
