@@ -228,7 +228,9 @@ jobs:
     <<: *dagster-template
     docker:
       - image: dagster/ccitest:3.6
-    environment:
+        auth:
+          username: $DOCKERHUB_USERNAME
+          password: $DOCKERHUB_PASSWORD
       TOXENV: py36
 
       steps:
@@ -261,6 +263,9 @@ jobs:
     <<: *airline-demo-template
     docker:
       - image: dagster/ccitest:3.5
+        auth:
+          username: $DOCKERHUB_USERNAME
+          password: $DOCKERHUB_PASSWORD
     environment:
       TOXENV: py35
 
@@ -268,6 +273,9 @@ jobs:
     <<: *airline-demo-template
     docker:
       - image: dagster/ccitest:2.7
+        auth:
+          username: $DOCKERHUB_USERNAME
+          password: $DOCKERHUB_PASSWORD
     environment:
       TOXENV: py27
 
