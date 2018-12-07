@@ -1,4 +1,5 @@
 """Pipeline definitions for the airline_demo."""
+import contextlib
 import logging
 import os
 import shutil
@@ -113,7 +114,7 @@ class TempfileManager(object):
         self.dirs.append(temporary_directory)
         return temporary_directory
 
-    def __close__(self):
+    def close(self):
         for fobj in self.files:
             fobj.close()
         for path in self.paths:
@@ -123,10 +124,18 @@ class TempfileManager(object):
             shutil.rmtree(dir_)
 
 
-def _tempfile_resource_fn(info):
+@contextlib.contextmanager
+def make_tempfile_manager():
     manager = TempfileManager()
-    yield manager
-    manager.__close__()
+    try:
+        yield manager
+    finally:
+        manager.close()
+
+
+def _tempfile_resource_fn(info):
+    with make_tempfile_manager() as manager:
+        yield manager
 
 
 def define_tempfile_resource():
