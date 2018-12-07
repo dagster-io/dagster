@@ -231,6 +231,7 @@ jobs:
         auth:
           username: $DOCKERHUB_USERNAME
           password: $DOCKERHUB_PASSWORD
+    environment:
       TOXENV: py36
 
       steps:
