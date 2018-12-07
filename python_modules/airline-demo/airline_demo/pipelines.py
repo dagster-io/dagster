@@ -1,5 +1,9 @@
 """Pipeline definitions for the airline_demo."""
+import contextlib
 import logging
+import os
+import shutil
+import tempfile
 
 from dagster import (
     DependencyDefinition,
@@ -73,20 +77,70 @@ def _db_load(data_frame, table_name, resources):
             'No implementation for db_dialect "{db_dialect}"'.format(db_dialect=db_dialect)
         )
 
-def define_lambda_resource(func):
-    return ResourceDefinition(lambda _info: func())
+
+def define_lambda_resource(func, *args, **kwargs):
+    return ResourceDefinition(lambda _info: func(*args, **kwargs))
+
 
 def define_value_resource(value):
     return ResourceDefinition(lambda _info: value)
 
+
 def define_null_resource():
     return define_value_resource(None)
+
 
 def define_string_resource():
     return ResourceDefinition(
         resource_fn=lambda info: info.config,
         config_field=types.Field(types.String),
     )
+
+
+class TempfileManager(object):
+    def __init__(self):
+        self.paths = []
+        self.files = []
+        self.dirs = []
+
+    def tempfile(self):
+        temporary_file = tempfile.NamedTemporaryFile('w+b', delete=False)
+        self.files.append(temporary_file)
+        self.paths.append(temporary_file.name)
+        return temporary_file
+
+    def tempdir(self):
+        temporary_directory = tempfile.mkdtemp()
+        self.dirs.append(temporary_directory)
+        return temporary_directory
+
+    def close(self):
+        for fobj in self.files:
+            fobj.close()
+        for path in self.paths:
+            if os.path.exists(path):
+                os.remove(path)
+        for dir_ in self.dirs:
+            shutil.rmtree(dir_)
+
+
+@contextlib.contextmanager
+def make_tempfile_manager():
+    manager = TempfileManager()
+    try:
+        yield manager
+    finally:
+        manager.close()
+
+
+def _tempfile_resource_fn(info):
+    with make_tempfile_manager() as manager:
+        yield manager
+
+
+def define_tempfile_resource():
+    return ResourceDefinition(resource_fn=_tempfile_resource_fn)
+
 
 RedshiftConfigData = types.ConfigDictionary(
     'RedshiftConfigData',
@@ -126,6 +180,7 @@ test_context = PipelineContextDefinition(
         'db_dialect' : define_string_resource(),
         'redshift_s3_temp_dir' : define_string_resource(),
         'db_load': define_value_resource(_db_load),
+        'tempfile': define_tempfile_resource(),
     },
 )
 
@@ -167,49 +222,42 @@ local_context = PipelineContextDefinition(
         'db_dialect' : define_string_resource(),
         'redshift_s3_temp_dir' : define_value_resource(''),
         'db_load': define_value_resource(_db_load),
+        'tempfile': define_tempfile_resource(),
     },
 )
 
 
 cloud_context = PipelineContextDefinition(
-    context_fn=(
-        lambda info: ExecutionContext.console_logging(
-            log_level=logging.DEBUG,
-            resources=AirlineDemoResources(
-                create_spark_session_local(), # FIXME
-                create_s3_session(),
+    context_fn=lambda info: ExecutionContext.console_logging(log_level=logging.DEBUG),
+    resources={
+        'spark': define_lambda_resource(create_spark_session_local), # FIXME
+        's3': define_lambda_resource(create_s3_session()),
+        'db_url': ResourceDefinition(
+            resource_fn=lambda info: create_redshift_db_url(
+                info.config['redshift_username'],
+                info.config['redshift_password'],
+                info.config['redshift_hostname'],
+                info.config['redshift_db_name'],
+            ),
+            config_field=types.Field(RedshiftConfigData),
+        ),
+        'db_engine': ResourceDefinition(
+            resource_fn=lambda info: create_redshift_engine(
                 create_redshift_db_url(
                     info.config['redshift_username'],
                     info.config['redshift_password'],
                     info.config['redshift_hostname'],
                     info.config['redshift_db_name'],
+                    jdbc=False,
                 ),
-                create_redshift_engine(
-                    create_redshift_db_url(
-                        info.config['redshift_username'],
-                        info.config['redshift_password'],
-                        info.config['redshift_hostname'],
-                        info.config['redshift_db_name'],
-                        jdbc=False,
-                    ),
-                ),
-                info.config['db_dialect'],
-                '',
-                _db_load,
-            )
-        )
-    ),
-    config_field=Field(
-        dagster_type=types.ConfigDictionary(
-            'CloudContextConfig', {
-                'redshift_username': Field(types.String),
-                'redshift_password': Field(types.String),
-                'redshift_hostname': Field(types.String),
-                'db_dialect': Field(types.String),
-                'redshift_s3_temp_dir': Field(types.String),
-            }
-        )
-    ),
+            ),
+            config_field=types.Field(RedshiftConfigData),
+        ),
+        'db_dialect' : define_string_resource(),
+        'redshift_s3_temp_dir' : define_string_resource(),
+        'db_load': define_value_resource(_db_load),
+        'tempfile': define_tempfile_resource(),
+    },
 )
 
 CONTEXT_DEFINITIONS = {
