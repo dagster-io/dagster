@@ -550,7 +550,8 @@ def deserialize_composite_config_value(dagster_composite_type, config_value):
     for expected_field, field_def in field_dict.items():
         if expected_field in incoming_fields:
             processed_fields[expected_field] = deserialize_config(
-                field_def.dagster_type, config_value[expected_field]
+                field_def.dagster_type,
+                config_value[expected_field],
             )
 
         elif field_def.default_provided:
