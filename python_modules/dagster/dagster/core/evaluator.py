@@ -267,14 +267,13 @@ def evaluate_config_value(dagster_type, config_value):
 
 def validate_config(dagster_type, config_value):
     check.inst_param(dagster_type, 'dagster_type', DagsterType)
-    errors = list(
+    return list(
         _validate_config(
             dagster_type,
             config_value,
             EvaluationStack(root_type=dagster_type, entries=[]),
         )
     )
-    return errors
 
 
 def _validate_config(dagster_type, config_value, stack):
