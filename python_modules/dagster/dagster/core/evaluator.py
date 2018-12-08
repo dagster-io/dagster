@@ -499,16 +499,12 @@ def validate_composite_config_value(dagster_composite_type, config_value, stack)
 
     for received_field in incoming_fields:
         if received_field not in defined_fields:
-            errors = [
-                create_field_not_defined_error(
-                    dagster_composite_type,
-                    stack,
-                    defined_fields,
-                    received_field,
-                )
-            ]
-            for error in errors:
-                yield error
+            yield create_field_not_defined_error(
+                dagster_composite_type,
+                stack,
+                defined_fields,
+                received_field,
+            )
 
     for expected_field, field_def in field_dict.items():
         if expected_field in incoming_fields:
@@ -524,16 +520,12 @@ def validate_composite_config_value(dagster_composite_type, config_value, stack)
 
         else:
             check.invariant(not field_def.default_provided)
-            errors = [
-                create_missing_required_field_error(
-                    dagster_composite_type,
-                    stack,
-                    defined_fields,
-                    expected_field,
-                )
-            ]
-            for error in errors:
-                yield error
+            yield create_missing_required_field_error(
+                dagster_composite_type,
+                stack,
+                defined_fields,
+                expected_field,
+            )
 
 
 def deserialize_composite_config_value(dagster_composite_type, config_value):
