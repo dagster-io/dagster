@@ -16,7 +16,7 @@ export interface PipelinePageFragment_PythonError {
 export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_LogMessageEvent {
   __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent";
   message: string;
-  timestamp: any;
+  timestamp: string;
 }
 
 export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepStartEvent_step {
@@ -26,7 +26,7 @@ export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_E
 export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepStartEvent {
   __typename: "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepFailureEvent";
   message: string;
-  timestamp: any;
+  timestamp: string;
   step: PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepStartEvent_step;
 }
 
@@ -66,20 +66,39 @@ export interface PipelinePageFragment_PipelineConnection_nodes_environmentType {
   name: string;
 }
 
+export interface PipelinePageFragment_PipelineConnection_nodes_contexts_config_type_RegularType_typeAttributes {
+  isNamed: boolean;
+}
+
 export interface PipelinePageFragment_PipelineConnection_nodes_contexts_config_type_RegularType {
   __typename: "RegularType";
   name: string;
   description: string | null;
+  typeAttributes: PipelinePageFragment_PipelineConnection_nodes_contexts_config_type_RegularType_typeAttributes;
+}
+
+export interface PipelinePageFragment_PipelineConnection_nodes_contexts_config_type_CompositeType_fields_type_RegularType_typeAttributes {
+  isNamed: boolean;
 }
 
 export interface PipelinePageFragment_PipelineConnection_nodes_contexts_config_type_CompositeType_fields_type_RegularType {
   name: string;
   description: string | null;
+  typeAttributes: PipelinePageFragment_PipelineConnection_nodes_contexts_config_type_CompositeType_fields_type_RegularType_typeAttributes;
+}
+
+export interface PipelinePageFragment_PipelineConnection_nodes_contexts_config_type_CompositeType_fields_type_CompositeType_typeAttributes {
+  isNamed: boolean;
+}
+
+export interface PipelinePageFragment_PipelineConnection_nodes_contexts_config_type_CompositeType_fields_type_CompositeType_fields_type_typeAttributes {
+  isNamed: boolean;
 }
 
 export interface PipelinePageFragment_PipelineConnection_nodes_contexts_config_type_CompositeType_fields_type_CompositeType_fields_type {
   name: string;
   description: string | null;
+  typeAttributes: PipelinePageFragment_PipelineConnection_nodes_contexts_config_type_CompositeType_fields_type_CompositeType_fields_type_typeAttributes;
 }
 
 export interface PipelinePageFragment_PipelineConnection_nodes_contexts_config_type_CompositeType_fields_type_CompositeType_fields {
@@ -93,6 +112,7 @@ export interface PipelinePageFragment_PipelineConnection_nodes_contexts_config_t
 export interface PipelinePageFragment_PipelineConnection_nodes_contexts_config_type_CompositeType_fields_type_CompositeType {
   name: string;
   description: string | null;
+  typeAttributes: PipelinePageFragment_PipelineConnection_nodes_contexts_config_type_CompositeType_fields_type_CompositeType_typeAttributes;
   fields: PipelinePageFragment_PipelineConnection_nodes_contexts_config_type_CompositeType_fields_type_CompositeType_fields[];
 }
 
@@ -106,11 +126,16 @@ export interface PipelinePageFragment_PipelineConnection_nodes_contexts_config_t
   type: PipelinePageFragment_PipelineConnection_nodes_contexts_config_type_CompositeType_fields_type;
 }
 
+export interface PipelinePageFragment_PipelineConnection_nodes_contexts_config_type_CompositeType_typeAttributes {
+  isNamed: boolean;
+}
+
 export interface PipelinePageFragment_PipelineConnection_nodes_contexts_config_type_CompositeType {
   __typename: "CompositeType";
   name: string;
   description: string | null;
   fields: PipelinePageFragment_PipelineConnection_nodes_contexts_config_type_CompositeType_fields[];
+  typeAttributes: PipelinePageFragment_PipelineConnection_nodes_contexts_config_type_CompositeType_typeAttributes;
 }
 
 export type PipelinePageFragment_PipelineConnection_nodes_contexts_config_type = PipelinePageFragment_PipelineConnection_nodes_contexts_config_type_RegularType | PipelinePageFragment_PipelineConnection_nodes_contexts_config_type_CompositeType;
@@ -130,20 +155,39 @@ export interface PipelinePageFragment_PipelineConnection_nodes_solids_definition
   value: string;
 }
 
+export interface PipelinePageFragment_PipelineConnection_nodes_solids_definition_configDefinition_type_RegularType_typeAttributes {
+  isNamed: boolean;
+}
+
 export interface PipelinePageFragment_PipelineConnection_nodes_solids_definition_configDefinition_type_RegularType {
   description: string | null;
   __typename: "RegularType";
   name: string;
+  typeAttributes: PipelinePageFragment_PipelineConnection_nodes_solids_definition_configDefinition_type_RegularType_typeAttributes;
+}
+
+export interface PipelinePageFragment_PipelineConnection_nodes_solids_definition_configDefinition_type_CompositeType_fields_type_RegularType_typeAttributes {
+  isNamed: boolean;
 }
 
 export interface PipelinePageFragment_PipelineConnection_nodes_solids_definition_configDefinition_type_CompositeType_fields_type_RegularType {
   name: string;
   description: string | null;
+  typeAttributes: PipelinePageFragment_PipelineConnection_nodes_solids_definition_configDefinition_type_CompositeType_fields_type_RegularType_typeAttributes;
+}
+
+export interface PipelinePageFragment_PipelineConnection_nodes_solids_definition_configDefinition_type_CompositeType_fields_type_CompositeType_typeAttributes {
+  isNamed: boolean;
+}
+
+export interface PipelinePageFragment_PipelineConnection_nodes_solids_definition_configDefinition_type_CompositeType_fields_type_CompositeType_fields_type_typeAttributes {
+  isNamed: boolean;
 }
 
 export interface PipelinePageFragment_PipelineConnection_nodes_solids_definition_configDefinition_type_CompositeType_fields_type_CompositeType_fields_type {
   name: string;
   description: string | null;
+  typeAttributes: PipelinePageFragment_PipelineConnection_nodes_solids_definition_configDefinition_type_CompositeType_fields_type_CompositeType_fields_type_typeAttributes;
 }
 
 export interface PipelinePageFragment_PipelineConnection_nodes_solids_definition_configDefinition_type_CompositeType_fields_type_CompositeType_fields {
@@ -157,6 +201,7 @@ export interface PipelinePageFragment_PipelineConnection_nodes_solids_definition
 export interface PipelinePageFragment_PipelineConnection_nodes_solids_definition_configDefinition_type_CompositeType_fields_type_CompositeType {
   name: string;
   description: string | null;
+  typeAttributes: PipelinePageFragment_PipelineConnection_nodes_solids_definition_configDefinition_type_CompositeType_fields_type_CompositeType_typeAttributes;
   fields: PipelinePageFragment_PipelineConnection_nodes_solids_definition_configDefinition_type_CompositeType_fields_type_CompositeType_fields[];
 }
 
@@ -170,11 +215,16 @@ export interface PipelinePageFragment_PipelineConnection_nodes_solids_definition
   type: PipelinePageFragment_PipelineConnection_nodes_solids_definition_configDefinition_type_CompositeType_fields_type;
 }
 
+export interface PipelinePageFragment_PipelineConnection_nodes_solids_definition_configDefinition_type_CompositeType_typeAttributes {
+  isNamed: boolean;
+}
+
 export interface PipelinePageFragment_PipelineConnection_nodes_solids_definition_configDefinition_type_CompositeType {
   description: string | null;
   __typename: "CompositeType";
   name: string;
   fields: PipelinePageFragment_PipelineConnection_nodes_solids_definition_configDefinition_type_CompositeType_fields[];
+  typeAttributes: PipelinePageFragment_PipelineConnection_nodes_solids_definition_configDefinition_type_CompositeType_typeAttributes;
 }
 
 export type PipelinePageFragment_PipelineConnection_nodes_solids_definition_configDefinition_type = PipelinePageFragment_PipelineConnection_nodes_solids_definition_configDefinition_type_RegularType | PipelinePageFragment_PipelineConnection_nodes_solids_definition_configDefinition_type_CompositeType;
@@ -189,9 +239,14 @@ export interface PipelinePageFragment_PipelineConnection_nodes_solids_definition
   description: string | null;
 }
 
+export interface PipelinePageFragment_PipelineConnection_nodes_solids_inputs_definition_type_typeAttributes {
+  isNamed: boolean;
+}
+
 export interface PipelinePageFragment_PipelineConnection_nodes_solids_inputs_definition_type {
   name: string;
   description: string | null;
+  typeAttributes: PipelinePageFragment_PipelineConnection_nodes_solids_inputs_definition_type_typeAttributes;
 }
 
 export interface PipelinePageFragment_PipelineConnection_nodes_solids_inputs_definition_expectations {
@@ -224,9 +279,14 @@ export interface PipelinePageFragment_PipelineConnection_nodes_solids_inputs {
   dependsOn: PipelinePageFragment_PipelineConnection_nodes_solids_inputs_dependsOn | null;
 }
 
+export interface PipelinePageFragment_PipelineConnection_nodes_solids_outputs_definition_type_typeAttributes {
+  isNamed: boolean;
+}
+
 export interface PipelinePageFragment_PipelineConnection_nodes_solids_outputs_definition_type {
   name: string;
   description: string | null;
+  typeAttributes: PipelinePageFragment_PipelineConnection_nodes_solids_outputs_definition_type_typeAttributes;
 }
 
 export interface PipelinePageFragment_PipelineConnection_nodes_solids_outputs_definition_expectations {

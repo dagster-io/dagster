@@ -19,20 +19,27 @@ export default class TypeWithTooltip extends React.Component<
       fragment TypeWithTooltipFragment on Type {
         name
         description
+        typeAttributes {
+          isNamed
+        }
       }
     `
   };
 
   render() {
-    return (
-      <Link
-        to={{
-          search: `?typeExplorer=${this.props.type.name}`
-        }}
-      >
-        <TypeName>{this.props.type.name}</TypeName>
-      </Link>
-    );
+    if (this.props.type.typeAttributes.isNamed) {
+      return (
+        <Link
+          to={{
+            search: `?typeExplorer=${this.props.type.name}`
+          }}
+        >
+          <TypeName>{this.props.type.name}</TypeName>
+        </Link>
+      );
+    } else {
+      return <TypeName>{this.props.type.name}</TypeName>;
+    }
   }
 }
 

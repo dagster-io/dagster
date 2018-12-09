@@ -7,9 +7,14 @@
 // GraphQL fragment: SidebarTabbedContainerSolidFragment
 // ====================================================
 
+export interface SidebarTabbedContainerSolidFragment_outputs_definition_type_typeAttributes {
+  isNamed: boolean;
+}
+
 export interface SidebarTabbedContainerSolidFragment_outputs_definition_type {
   name: string;
   description: string | null;
+  typeAttributes: SidebarTabbedContainerSolidFragment_outputs_definition_type_typeAttributes;
 }
 
 export interface SidebarTabbedContainerSolidFragment_outputs_definition_expectations {
@@ -28,9 +33,14 @@ export interface SidebarTabbedContainerSolidFragment_outputs {
   definition: SidebarTabbedContainerSolidFragment_outputs_definition;
 }
 
+export interface SidebarTabbedContainerSolidFragment_inputs_definition_type_typeAttributes {
+  isNamed: boolean;
+}
+
 export interface SidebarTabbedContainerSolidFragment_inputs_definition_type {
   name: string;
   description: string | null;
+  typeAttributes: SidebarTabbedContainerSolidFragment_inputs_definition_type_typeAttributes;
 }
 
 export interface SidebarTabbedContainerSolidFragment_inputs_definition_expectations {
@@ -68,20 +78,39 @@ export interface SidebarTabbedContainerSolidFragment_definition_metadata {
   value: string;
 }
 
+export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_type_RegularType_typeAttributes {
+  isNamed: boolean;
+}
+
 export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_type_RegularType {
   __typename: "RegularType";
   name: string;
   description: string | null;
+  typeAttributes: SidebarTabbedContainerSolidFragment_definition_configDefinition_type_RegularType_typeAttributes;
+}
+
+export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_type_CompositeType_fields_type_RegularType_typeAttributes {
+  isNamed: boolean;
 }
 
 export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_type_CompositeType_fields_type_RegularType {
   name: string;
   description: string | null;
+  typeAttributes: SidebarTabbedContainerSolidFragment_definition_configDefinition_type_CompositeType_fields_type_RegularType_typeAttributes;
+}
+
+export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_type_CompositeType_fields_type_CompositeType_typeAttributes {
+  isNamed: boolean;
+}
+
+export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_type_CompositeType_fields_type_CompositeType_fields_type_typeAttributes {
+  isNamed: boolean;
 }
 
 export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_type_CompositeType_fields_type_CompositeType_fields_type {
   name: string;
   description: string | null;
+  typeAttributes: SidebarTabbedContainerSolidFragment_definition_configDefinition_type_CompositeType_fields_type_CompositeType_fields_type_typeAttributes;
 }
 
 export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_type_CompositeType_fields_type_CompositeType_fields {
@@ -95,6 +124,7 @@ export interface SidebarTabbedContainerSolidFragment_definition_configDefinition
 export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_type_CompositeType_fields_type_CompositeType {
   name: string;
   description: string | null;
+  typeAttributes: SidebarTabbedContainerSolidFragment_definition_configDefinition_type_CompositeType_fields_type_CompositeType_typeAttributes;
   fields: SidebarTabbedContainerSolidFragment_definition_configDefinition_type_CompositeType_fields_type_CompositeType_fields[];
 }
 
@@ -108,11 +138,16 @@ export interface SidebarTabbedContainerSolidFragment_definition_configDefinition
   type: SidebarTabbedContainerSolidFragment_definition_configDefinition_type_CompositeType_fields_type;
 }
 
+export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_type_CompositeType_typeAttributes {
+  isNamed: boolean;
+}
+
 export interface SidebarTabbedContainerSolidFragment_definition_configDefinition_type_CompositeType {
   __typename: "CompositeType";
   name: string;
   description: string | null;
   fields: SidebarTabbedContainerSolidFragment_definition_configDefinition_type_CompositeType_fields[];
+  typeAttributes: SidebarTabbedContainerSolidFragment_definition_configDefinition_type_CompositeType_typeAttributes;
 }
 
 export type SidebarTabbedContainerSolidFragment_definition_configDefinition_type = SidebarTabbedContainerSolidFragment_definition_configDefinition_type_RegularType | SidebarTabbedContainerSolidFragment_definition_configDefinition_type_CompositeType;

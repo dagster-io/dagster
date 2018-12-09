@@ -10,7 +10,7 @@
 export interface PipelineRunLogsUpdateFragment_logs_nodes_LogMessageEvent {
   __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent";
   message: string;
-  timestamp: any;
+  timestamp: string;
 }
 
 export interface PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepStartEvent_step {
@@ -20,7 +20,7 @@ export interface PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepStartEven
 export interface PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepStartEvent {
   __typename: "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepFailureEvent";
   message: string;
-  timestamp: any;
+  timestamp: string;
   step: PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepStartEvent_step;
 }
 

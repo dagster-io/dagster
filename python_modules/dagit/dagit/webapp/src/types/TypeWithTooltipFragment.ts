@@ -7,9 +7,14 @@
 // GraphQL fragment: TypeWithTooltipFragment
 // ====================================================
 
+export interface TypeWithTooltipFragment_typeAttributes {
+  isNamed: boolean;
+}
+
 export interface TypeWithTooltipFragment {
   name: string;
   description: string | null;
+  typeAttributes: TypeWithTooltipFragment_typeAttributes;
 }
 
 /* tslint:disable */

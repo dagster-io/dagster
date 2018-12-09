@@ -24,7 +24,7 @@ export interface PipelineRunExecutionPlanFragment_executionPlan {
 export interface PipelineRunExecutionPlanFragment_logs_nodes_LogMessageEvent {
   __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent";
   message: string;
-  timestamp: any;
+  timestamp: string;
 }
 
 export interface PipelineRunExecutionPlanFragment_logs_nodes_ExecutionStepStartEvent_step {
@@ -34,7 +34,7 @@ export interface PipelineRunExecutionPlanFragment_logs_nodes_ExecutionStepStartE
 export interface PipelineRunExecutionPlanFragment_logs_nodes_ExecutionStepStartEvent {
   __typename: "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepFailureEvent";
   message: string;
-  timestamp: any;
+  timestamp: string;
   step: PipelineRunExecutionPlanFragment_logs_nodes_ExecutionStepStartEvent_step;
 }
 
