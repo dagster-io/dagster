@@ -15,7 +15,8 @@ from airline_demo.pipelines import (
 @pytest.mark.slow
 def test_pipeline_download():
     result = execute_pipeline(
-        define_airline_demo_download_pipeline(), {
+        define_airline_demo_download_pipeline(),
+        {
             'context': {
                 'local': {
                     'resources': {
@@ -36,7 +37,9 @@ def test_pipeline_download():
                                 'postgres_db_name': 'test',
                             },
                         },
-                        'db_dialect' : {'config': 'postgres'},
+                        'db_dialect': {
+                            'config': 'postgres'
+                        },
                     },
                 },
             },
