@@ -176,8 +176,7 @@ def thunk_database_engine(info):
 @solid(
     name='download_from_s3',
     config_field=Field(
-        types.ConfigDictionary(
-            name='DownloadFromS3ConfigType',
+        types.Dict(
             fields={
                 # Probably want to make the region configuable too
                 'bucket':
@@ -239,8 +238,7 @@ def download_from_s3(info):
 @solid(
     name='upload_to_s3',
     config_field=Field(
-        types.ConfigDictionary(
-            name='UploadToS3ConfigType',
+        types.Dict(
             fields={
                 # Probably want to make the region configuable too
                 'bucket':
@@ -325,8 +323,7 @@ def upload_to_s3(info, file_path):
         # ),
     ],
     config_field=Field(
-        types.ConfigDictionary(
-            name='UnzipFileConfigType',
+        types.Dict(
             fields={
                 'skip_if_present':
                 Field(
@@ -398,8 +395,7 @@ def unzip_file(
 @solid(
     name='ingest_csv_to_spark',
     config_field=Field(
-        types.ConfigDictionary(
-            name='IngestCsvToSparkConfigType',
+        types.Dict(
             fields={
                 'input_csv': Field(types.Path, description='', default_value='', is_optional=True),
             }
@@ -492,8 +488,7 @@ def normalize_weather_na_values(_info, data_frame):
     ],
     outputs=[OutputDefinition(SparkDataFrameType)],
     config_field=Field(
-        types.ConfigDictionary(
-            name='BatchLoadDataToDatabaseFromSparkConfigType',
+        types.Dict(
             fields={
                 'table_name': Field(types.String, description=''),
             }
@@ -510,8 +505,7 @@ def load_data_to_database_from_spark(info, data_frame):
     name='subsample_spark_dataset',
     description='Subsample a spark dataset.',
     config_field=Field(
-        types.ConfigDictionary(
-            name='SubsampleSparkDataFrameConfigType',
+        types.Dict(
             fields={
                 'subsample_pct': Field(types.Int, description=''),
             }
@@ -557,8 +551,7 @@ def subsample_spark_dataset(info, data_frame):
         )
     ],
     config_field=Field(
-        types.ConfigDictionary(
-            name='JoinSparkDataFramesConfigType',
+        types.Dict(
             fields={
                 # Probably want to make the region configuable too
                 'on_left':

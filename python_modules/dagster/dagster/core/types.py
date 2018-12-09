@@ -452,10 +452,10 @@ class _DagsterListType(DagsterType):
 
 
 def Dict(fields):
-    return ConfigDictionary('Dict', fields)
+    return _Dict('Dict', fields)
 
 
-class ConfigDictionary(DagsterCompositeType):
+class _Dict(DagsterCompositeType):
     '''Configuration dictionary.
 
     Typed-checked but then passed to implementations as a python dict
@@ -464,7 +464,7 @@ class ConfigDictionary(DagsterCompositeType):
       fields (dict): dictonary of :py:class:`Field` objects keyed by name'''
 
     def __init__(self, name, fields):
-        super(ConfigDictionary, self).__init__(
+        super(_Dict, self).__init__(
             name,
             fields,
             'A configuration dictionary with typed fields',

@@ -8,7 +8,6 @@ from toposort import toposort_flatten
 
 from dagster import check
 from dagster.core import types
-from dagster.utils import camelcase
 from dagster.utils.logging import (
     level_from_string,
     define_colored_console_logger,
@@ -18,16 +17,12 @@ from .config import DEFAULT_CONTEXT_NAME
 
 from .errors import DagsterInvalidDefinitionError
 
-from .evaluator import throwing_evaluate_config_value
-
 from .execution_context import (
     RuntimeExecutionContext,
     ExecutionContext,
 )
 
 from .types import (
-    ConfigDictionary,
-    Dict,
     Field,
 )
 
@@ -1081,7 +1076,7 @@ class SolidDefinition(object):
             SolidDefinition(
                 name='read_csv',
                 inputs=[],
-                config_field=Field(types.ConfigDictionary({'path' => types.Path})),
+                config_field=Field(types.Dict({'path' => types.Path})),
                 outputs=[OutputDefinition()] # default name ('result') and any typed
                 transform_fn
             )
