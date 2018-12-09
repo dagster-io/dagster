@@ -87,6 +87,7 @@ class EvaluationStack(namedtuple('_EvaluationStack', 'root_type entries')):
     def type_in_context(self):
         ttype = self.entries[-1].dagster_type if self.entries else self.root_type
         # TODO: This is the wrong place for this
+        # Should have general facility for unwrapping named types
         if isinstance(ttype, _DagsterNullableType):
             return ttype.inner_type
         else:

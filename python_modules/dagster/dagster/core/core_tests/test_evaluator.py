@@ -555,3 +555,57 @@ def test_nullable_list():
     assert evaluate_config_value(nullable_list_of_nullable_ints, []).success
     assert evaluate_config_value(nullable_list_of_nullable_ints, [None]).success
     assert evaluate_config_value(nullable_list_of_nullable_ints, [1]).success
+
+
+def test_nullable_dict():
+    dict_with_int = types.ConfigDictionary(
+        'HasInt',
+        {
+            'int_field': types.Field(types.Int),
+        }
+    )
+
+    assert not evaluate_config_value(dict_with_int, None).success
+    assert not evaluate_config_value(dict_with_int, {}).success
+    assert not evaluate_config_value(dict_with_int, {'int_field': None}).success
+    assert evaluate_config_value(dict_with_int, {'int_field': 1}).success
+
+    nullable_dict_with_int = types.Nullable(
+        types.ConfigDictionary(
+            'HasInt',
+            {
+                'int_field': types.Field(types.Int),
+            }
+        )
+    )
+
+    assert evaluate_config_value(nullable_dict_with_int, None).success
+    assert not evaluate_config_value(nullable_dict_with_int, {}).success
+    assert not evaluate_config_value(nullable_dict_with_int, {'int_field': None}).success
+    assert evaluate_config_value(nullable_dict_with_int, {'int_field': 1}).success
+
+    dict_with_nullable_int = types.ConfigDictionary(
+        'HasInt',
+        {
+            'int_field': types.Field(types.Nullable(types.Int)),
+        }
+    )
+
+    assert not evaluate_config_value(dict_with_nullable_int, None).success
+    assert not evaluate_config_value(dict_with_nullable_int, {}).success
+    assert evaluate_config_value(dict_with_nullable_int, {'int_field': None}).success
+    assert evaluate_config_value(dict_with_nullable_int, {'int_field': 1}).success
+
+    nullable_dict_with_nullable_int = types.Nullable(
+        types.ConfigDictionary(
+            'kdjfkdj',
+            {
+                'int_field': types.Field(types.Nullable(types.Int)),
+            }
+        )
+    )
+
+    assert evaluate_config_value(nullable_dict_with_nullable_int, None).success
+    assert not evaluate_config_value(nullable_dict_with_nullable_int, {}).success
+    assert evaluate_config_value(nullable_dict_with_nullable_int, {'int_field': None}).success
+    assert evaluate_config_value(nullable_dict_with_nullable_int, {'int_field': 1}).success

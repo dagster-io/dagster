@@ -394,6 +394,7 @@ class DagsterSelectorType(DagsterCompositeTypeBase):
     pass
 
 
+# These caches have to go
 _DAGSTER_LIST_TYPE_CACHE = {}
 
 
@@ -421,6 +422,7 @@ class _DagsterNullableType(DagsterType):
         yield self
 
 
+# These caches have to go
 _DAGSTER_NULLABLE_TYPE_CACHE = {}
 
 
