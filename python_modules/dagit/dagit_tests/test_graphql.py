@@ -1121,6 +1121,7 @@ subscription subscribeTest($runId: ID!) {
 }
 '''
 
+
 def test_basic_sync_execution():
     context = define_context(synchronous_mode=True)
     result = execute_dagster_graphql(
@@ -1153,14 +1154,17 @@ def test_basic_sync_execution():
 
     assert first_event_of_type(logs, 'PipelineStartEvent')['level'] == 'INFO'
 
+
 def first_event_of_type(logs, message_type):
     for log in logs:
         if log['__typename'] == message_type:
             return log
     return None
 
+
 def has_event_of_type(logs, message_type):
     return first_event_of_type(logs, message_type) is not None
+
 
 SYNC_MUTATION_QUERY = '''
 mutation ($executionParams: PipelineExecutionParams!) {
