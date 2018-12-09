@@ -598,7 +598,7 @@ def test_nullable_dict():
 
     nullable_dict_with_nullable_int = types.Nullable(
         types.ConfigDictionary(
-            'kdjfkdj',
+            'HasInt',
             {
                 'int_field': types.Field(types.Nullable(types.Int)),
             }

@@ -13,12 +13,18 @@ from dagster.core.errors import (
 SerializedTypeValue = namedtuple('SerializedTypeValue', 'name value')
 
 
-class DagsterTypeAttributes(namedtuple('_DagsterTypeAttributes', 'is_builtin is_system_config')):
-    def __new__(cls, is_builtin=False, is_system_config=False):
+class DagsterTypeAttributes(
+    namedtuple(
+        '_DagsterTypeAttributes',
+        'is_builtin is_system_config is_named',
+    )
+):
+    def __new__(cls, is_builtin=False, is_system_config=False, is_named=True):
         return super(DagsterTypeAttributes, cls).__new__(
             cls,
             is_builtin=check.bool_param(is_builtin, 'is_builtin'),
             is_system_config=check.bool_param(is_system_config, 'is_system_config'),
+            is_named=check.bool_param(is_named, 'is_named')
         )
 
 
@@ -48,6 +54,10 @@ class DagsterType(object):
     @property
     def is_system_config(self):
         return self.type_attributes.is_system_config
+
+    @property
+    def is_named(self):
+        return self.type_attributes.is_named
 
     def __repr__(self):
         return 'DagsterType({name})'.format(name=self.name)
@@ -394,16 +404,8 @@ class DagsterSelectorType(DagsterCompositeTypeBase):
     pass
 
 
-# These caches have to go
-_DAGSTER_LIST_TYPE_CACHE = {}
-
-
-def List(inner_type):
-    check.inst_param(inner_type, 'inner_type', DagsterType)
-    if not inner_type.name in _DAGSTER_LIST_TYPE_CACHE:
-        _DAGSTER_LIST_TYPE_CACHE[inner_type.name] = _DagsterListType(inner_type)
-
-    return _DAGSTER_LIST_TYPE_CACHE[inner_type.name]
+def Nullable(inner_type):
+    return _DagsterNullableType(inner_type)
 
 
 class _DagsterNullableType(DagsterType):
@@ -411,7 +413,7 @@ class _DagsterNullableType(DagsterType):
         self.inner_type = check.inst_param(inner_type, 'inner_type', DagsterType)
         super(_DagsterNullableType, self).__init__(
             name='Nullable.{inner_type}'.format(inner_type=inner_type.name),
-            type_attributes=DagsterTypeAttributes(is_builtin=True),
+            type_attributes=DagsterTypeAttributes(is_builtin=True, is_named=False),
         )
 
     def coerce_runtime_value(self, value):
@@ -419,20 +421,10 @@ class _DagsterNullableType(DagsterType):
 
     def iterate_types(self):
         yield self.inner_type
-        yield self
 
 
-# These caches have to go
-_DAGSTER_NULLABLE_TYPE_CACHE = {}
-
-
-def Nullable(inner_type):
-    check.inst_param(inner_type, 'inner_type', DagsterType)
-
-    if not inner_type.name in _DAGSTER_NULLABLE_TYPE_CACHE:
-        _DAGSTER_NULLABLE_TYPE_CACHE[inner_type.name] = _DagsterNullableType(inner_type)
-
-    return _DAGSTER_NULLABLE_TYPE_CACHE[inner_type.name]
+def List(inner_type):
+    return _DagsterListType(inner_type)
 
 
 class _DagsterListType(DagsterType):
@@ -441,7 +433,7 @@ class _DagsterListType(DagsterType):
         super(_DagsterListType, self).__init__(
             name='List.{inner_type}'.format(inner_type=inner_type.name),
             description='List of {inner_type}'.format(inner_type=inner_type.name),
-            type_attributes=DagsterTypeAttributes(is_builtin=True),
+            type_attributes=DagsterTypeAttributes(is_builtin=True, is_named=False),
         )
 
     def coerce_runtime_value(self, _value):
@@ -449,7 +441,6 @@ class _DagsterListType(DagsterType):
 
     def iterate_types(self):
         yield self.inner_type
-        yield self
 
     def construct_from_config_value(self, config_value):
         check.failed('should never be called')
