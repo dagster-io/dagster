@@ -85,7 +85,12 @@ class EvaluationStack(namedtuple('_EvaluationStack', 'root_type entries')):
 
     @property
     def type_in_context(self):
-        return self.entries[-1].dagster_type if self.entries else self.root_type
+        ttype = self.entries[-1].dagster_type if self.entries else self.root_type
+        # TODO: This is the wrong place for this
+        if isinstance(ttype, _DagsterNullableType):
+            return ttype.inner_type
+        else:
+            return ttype
 
 
 class EvaluationStackEntry:  # marker interface
@@ -572,9 +577,6 @@ def deserialize_composite_config_value(dagster_composite_type, config_value):
 def validate_list_value(dagster_list_type, config_value, stack):
     check.inst_param(dagster_list_type, 'dagster_type', _DagsterListType)
     check.inst_param(stack, 'stack', EvaluationStack)
-
-    if not config_value:
-        return
 
     if not isinstance(config_value, list):
         yield EvaluationError(
