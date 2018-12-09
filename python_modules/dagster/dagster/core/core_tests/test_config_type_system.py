@@ -135,9 +135,6 @@ def test_single_required_string_field_config_type():
     assert _validate(_single_required_string_config_dict(), {'string_field': 'value'}) == {
         'string_field': 'value'
     }
-    # assert _validate(_single_required_string_config_dict(), {'string_field': None}) == {
-    #     'string_field': None
-    # }
 
     with pytest.raises(DagsterEvaluateConfigValueError):
         _validate(_single_required_string_config_dict(), {})
@@ -163,17 +160,6 @@ def test_multiple_required_fields_passing():
         'field_one': 'value_one',
         'field_two': 'value_two',
     }
-
-    # assert _validate(
-    #     _multiple_required_fields_config_dict(),
-    #     {
-    #         'field_one': 'value_one',
-    #         'field_two': None,
-    #     },
-    # ) == {
-    #     'field_one': 'value_one',
-    #     'field_two': None,
-    # }
 
 
 def test_multiple_required_fields_failing():
