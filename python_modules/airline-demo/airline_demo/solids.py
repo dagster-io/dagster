@@ -487,13 +487,9 @@ def normalize_weather_na_values(_info, data_frame):
         )
     ],
     outputs=[OutputDefinition(SparkDataFrameType)],
-    config_field=Field(
-        types.Dict(
-            fields={
-                'table_name': Field(types.String, description=''),
-            }
-        )
-    )
+    config_field=Field(types.Dict(fields={
+        'table_name': Field(types.String, description=''),
+    }))
 )
 def load_data_to_database_from_spark(info, data_frame):
     # Move this to context, config at that level
@@ -505,11 +501,9 @@ def load_data_to_database_from_spark(info, data_frame):
     name='subsample_spark_dataset',
     description='Subsample a spark dataset.',
     config_field=Field(
-        types.Dict(
-            fields={
-                'subsample_pct': Field(types.Int, description=''),
-            }
-        )
+        types.Dict(fields={
+            'subsample_pct': Field(types.Int, description=''),
+        })
         # description='The integer percentage of rows to sample from the input dataset.'
     ),
     inputs=[

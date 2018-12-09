@@ -1118,7 +1118,6 @@ class SolidDefinition(object):
         self._input_dict = {inp.name: inp for inp in inputs}
         self._output_dict = {output.name: output for output in outputs}
 
-
     def has_input(self, name):
         check.str_param(name, 'name')
         return name in self._input_dict

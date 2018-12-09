@@ -364,16 +364,20 @@ def single_elem(ddict):
 
 
 def test_build_optionality():
-    optional_test_type = types.Field(types.Dict(
-        {
-            'required': types.Field(types.Dict({
-                'value': types.Field(types.String),
-            })),
-            'optional': types.Field(types.Dict({
-                'value': types.Field(types.String, is_optional=True),
-            })),
-        },
-    )).dagster_type
+    optional_test_type = types.Field(
+        types.Dict(
+            {
+                'required':
+                types.Field(types.Dict({
+                    'value': types.Field(types.String),
+                })),
+                'optional':
+                types.Field(types.Dict({
+                    'value': types.Field(types.String, is_optional=True),
+                })),
+            },
+        )
+    ).dagster_type
 
     assert optional_test_type.field_dict['required'].is_optional is False
     assert optional_test_type.field_dict['optional'].is_optional is True
@@ -460,7 +464,6 @@ def test_wrong_context():
         )
 
 
-
 def test_solid_list_config():
     value = [1, 2]
     called = {}
@@ -502,12 +505,14 @@ def test_two_list_types():
                 name='two_list_type',
                 inputs=[],
                 outputs=[],
-                config_field=types.Field(types.Dict(
-                    {
-                        'list_one': types.Field(types.List(types.Int)),
-                        'list_two': types.Field(types.List(types.Int)),
-                    },
-                )),
+                config_field=types.Field(
+                    types.Dict(
+                        {
+                            'list_one': types.Field(types.List(types.Int)),
+                            'list_two': types.Field(types.List(types.Int)),
+                        },
+                    )
+                ),
                 transform_fn=lambda *_args: None,
             ),
         ],

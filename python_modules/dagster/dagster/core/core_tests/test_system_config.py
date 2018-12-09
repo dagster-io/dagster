@@ -117,15 +117,18 @@ def test_provided_default_config():
         context_definitions={
             'some_context':
             PipelineContextDefinition(
-                config_field=types.Field(types.Dict(
-                    {
-                        'with_default_int': Field(
-                            types.Int,
-                            is_optional=True,
-                            default_value=23434,
-                        ),
-                    },
-                )),
+                config_field=types.Field(
+                    types.Dict(
+                        {
+                            'with_default_int':
+                            Field(
+                                types.Int,
+                                is_optional=True,
+                                default_value=23434,
+                            ),
+                        },
+                    )
+                ),
                 context_fn=lambda *args: None
             )
         },
@@ -697,11 +700,11 @@ def test_all_optional_field_on_single_context_dict():
             'some_context':
             PipelineContextDefinition(
                 context_fn=lambda *args: None,
-                config_field=types.Field(types.Dict(
-                    {
+                config_field=types.Field(
+                    types.Dict({
                         'optional_field': types.Field(types.String, is_optional=True),
-                    },
-                )),
+                    }, )
+                ),
             ),
         },
     )
