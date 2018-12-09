@@ -24,7 +24,7 @@ def test_scalars():
     assert scaffold_type(types.String) == ''
     assert scaffold_type(types.Path) == 'path/to/something'
     assert scaffold_type(types.Bool) is True
-    assert scaffold_type(types.Dict) == {}
+    # assert scaffold_type(types.Dict) == {}
     assert scaffold_type(types.Any) == 'AnyType'
 
 
@@ -36,12 +36,7 @@ def test_basic_solids_config():
                 name='required_field_solid',
                 inputs=[],
                 outputs=[],
-                config_field=Field(
-                    types.ConfigDictionary(
-                        'RequiredFieldSolidConfigDict',
-                        {'required_int': types.Field(types.Int)},
-                    )
-                ),
+                config_field=Field(types.Dict(fields={'required_int': types.Field(types.Int)})),
                 transform_fn=lambda *_args: fail_me(),
             )
         ]
@@ -104,26 +99,16 @@ def test_two_contexts():
             'context_one':
             PipelineContextDefinition(
                 context_fn=lambda *args: fail_me(),
-                config_field=Field(
-                    types.ConfigDictionary(
-                        'ContextOneConfigDict',
-                        {
-                            'context_one_field': types.Field(types.String),
-                        },
-                    ),
-                ),
+                config_field=Field(types.Dict({
+                    'context_one_field': types.Field(types.String)
+                })),
             ),
             'context_two':
             PipelineContextDefinition(
                 context_fn=lambda *args: fail_me(),
-                config_field=Field(
-                    types.ConfigDictionary(
-                        'ContextTwoConfigDict',
-                        {
-                            'context_two_field': types.Field(types.Int),
-                        },
-                    ),
-                ),
+                config_field=Field(types.Dict({
+                    'context_two_field': types.Field(types.Int)
+                })),
             ),
         },
     )

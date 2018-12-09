@@ -373,7 +373,9 @@ class DagsterCompositeTypeBase(DagsterType):
         for field_type in self.field_dict.values():
             for inner_type in field_type.dagster_type.iterate_types():
                 yield inner_type
-        yield self
+
+        if self.is_named:
+            yield self
 
     @property
     def all_fields_optional(self):
@@ -467,6 +469,10 @@ class IsScopedConfigType:
         return self._scoped_config_info  # pylint: disable=E1101
 
 
+def Dict(fields):
+    return ConfigDictionary('Dict', fields)
+
+
 class ConfigDictionary(DagsterCompositeType, IsScopedConfigType):
     '''Configuration dictionary.
 
@@ -485,6 +491,7 @@ class ConfigDictionary(DagsterCompositeType, IsScopedConfigType):
             name,
             fields,
             'A configuration dictionary with typed fields',
+            type_attributes=DagsterTypeAttributes(is_named=False),
         )
 
     def coerce_runtime_value(self, value):
@@ -508,7 +515,8 @@ for a particular execution environment.
 Int = _DagsterIntType()
 Bool = _DagsterBoolType()
 Any = _DagsterAnyType()
-Dict = PythonObjectType('Dict', dict, type_attributes=DagsterTypeAttributes(is_builtin=True))
+
+# Dict = PythonObjectType('Dict', dict, type_attributes=DagsterTypeAttributes(is_builtin=True))
 
 
 class ScopedConfigInfo(

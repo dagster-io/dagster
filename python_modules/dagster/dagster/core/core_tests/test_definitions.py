@@ -24,15 +24,9 @@ def test_deps_equal():
 
 
 def test_pipeline_types():
-    ContextOneConfigDict = types.ConfigDictionary(
-        'ContextOneConfigDict',
-        {'field_one': Field(types.String)},
-    )
+    ContextOneConfigDict = types.Dict({'field_one': Field(types.String)})
 
-    SolidOneConfigDict = types.ConfigDictionary(
-        'SolidOneConfigDict',
-        {'another_field': Field(types.Int)},
-    )
+    SolidOneConfigDict = types.Dict({'another_field': Field(types.Int)})
 
     @lambda_solid
     def produce_string():
@@ -61,8 +55,9 @@ def test_pipeline_types():
     )
 
     present_types = [
-        SolidOneConfigDict,
-        ContextOneConfigDict,
+        # for now
+        # SolidOneConfigDict,
+        # ContextOneConfigDict,
         types.String,
         types.Any,
         types.Int,

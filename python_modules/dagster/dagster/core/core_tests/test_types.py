@@ -37,7 +37,7 @@ def test_python_object_type():
 
 
 def test_builtin_scalars():
-    for builtin_scalar in [types.String, types.Int, types.Dict, types.Any, types.Bool, types.Path]:
+    for builtin_scalar in [types.String, types.Int, types.Any, types.Bool, types.Path]:
         assert builtin_scalar.type_attributes.is_builtin is True
         assert builtin_scalar.type_attributes.is_system_config is False
 

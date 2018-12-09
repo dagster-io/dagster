@@ -34,8 +34,7 @@ def test_evaluate_scalar_failure():
     assert error.error_data.value_rep == '2343'
 
 
-SingleLevelDict = types.ConfigDictionary(
-    'SingleLevelDict',
+SingleLevelDict = types.Dict(
     {
         'level_one': types.Field(types.String),
     },
@@ -82,13 +81,11 @@ def test_root_missing_field():
     assert error.error_data.field_name == 'level_one'
 
 
-DoubleLevelDict = types.ConfigDictionary(
-    'DoubleLevelDict',
+DoubleLevelDict = types.Dict(
     {
         'level_one':
         types.Field(
-            types.ConfigDictionary(
-                'NestedDict',
+            types.Dict(
                 {
                     'string_field': types.Field(types.String),
                     'int_field': types.Field(types.Int, is_optional=True, default_value=989),
@@ -147,7 +144,7 @@ def test_nested_error_one_field_not_defined():
     assert len(error.stack.entries) == 1
     stack_entry = error.stack.entries[0]
     assert stack_entry.field_name == 'level_one'
-    assert stack_entry.field_def.dagster_type.name == 'NestedDict'
+    assert stack_entry.field_def.dagster_type.name == 'Dict'
 
 
 def get_field_name_error(result, field_name):
@@ -444,9 +441,8 @@ def test_evaluate_double_list():
 
 
 def test_config_list_in_dict():
-    nested_list = types.ConfigDictionary(
-        name='NestedList',
-        fields={
+    nested_list = types.Dict(
+        {
             'nested_list': types.Field(types.List(types.Int)),
         },
     )
@@ -458,9 +454,8 @@ def test_config_list_in_dict():
 
 
 def test_config_list_in_dict_error():
-    nested_list = types.ConfigDictionary(
-        name='NestedList',
-        fields={
+    nested_list = types.Dict(
+        {
             'nested_list': types.Field(types.List(types.Int)),
         },
     )
@@ -482,9 +477,8 @@ def test_config_list_in_dict_error():
 
 
 def test_config_double_list():
-    nested_lists = types.ConfigDictionary(
-        name='NestedLists',
-        fields={
+    nested_lists = types.Dict(
+        {
             'nested_list_one': types.Field(types.List(types.Int)),
             'nested_list_two': types.Field(types.List(types.String)),
         },
@@ -503,8 +497,7 @@ def test_config_double_list():
 
 
 def test_config_double_list_double_error():
-    nested_lists = types.ConfigDictionary(
-        name='NestedLists',
+    nested_lists = types.Dict(
         fields={
             'nested_list_one': types.Field(types.List(types.Int)),
             'nested_list_two': types.Field(types.List(types.String)),
@@ -558,31 +551,23 @@ def test_nullable_list():
 
 
 def test_nullable_dict():
-    dict_with_int = types.ConfigDictionary('HasInt', {
-        'int_field': types.Field(types.Int),
-    })
+    dict_with_int = types.Dict({'int_field': types.Field(types.Int)})
 
     assert not evaluate_config_value(dict_with_int, None).success
     assert not evaluate_config_value(dict_with_int, {}).success
     assert not evaluate_config_value(dict_with_int, {'int_field': None}).success
     assert evaluate_config_value(dict_with_int, {'int_field': 1}).success
 
-    nullable_dict_with_int = types.Nullable(
-        types.ConfigDictionary('HasInt', {
-            'int_field': types.Field(types.Int),
-        })
-    )
+    nullable_dict_with_int = types.Nullable(types.Dict({'int_field': types.Field(types.Int)}))
 
     assert evaluate_config_value(nullable_dict_with_int, None).success
     assert not evaluate_config_value(nullable_dict_with_int, {}).success
     assert not evaluate_config_value(nullable_dict_with_int, {'int_field': None}).success
     assert evaluate_config_value(nullable_dict_with_int, {'int_field': 1}).success
 
-    dict_with_nullable_int = types.ConfigDictionary(
-        'HasInt', {
-            'int_field': types.Field(types.Nullable(types.Int)),
-        }
-    )
+    dict_with_nullable_int = types.Dict({
+        'int_field': types.Field(types.Nullable(types.Int)),
+    })
 
     assert not evaluate_config_value(dict_with_nullable_int, None).success
     assert not evaluate_config_value(dict_with_nullable_int, {}).success
@@ -590,9 +575,11 @@ def test_nullable_dict():
     assert evaluate_config_value(dict_with_nullable_int, {'int_field': 1}).success
 
     nullable_dict_with_nullable_int = types.Nullable(
-        types.ConfigDictionary('HasInt', {
-            'int_field': types.Field(types.Nullable(types.Int)),
-        })
+        types.Dict(
+            {
+                'int_field': types.Field(types.Nullable(types.Int)),
+            }
+        )
     )
 
     assert evaluate_config_value(nullable_dict_with_nullable_int, None).success

@@ -51,19 +51,9 @@ class _DataFrameType(types.PythonObjectType):
 
 DataFrame = _DataFrameType()
 
-LoadDataFrameConfigDict = types.ConfigDictionary(
-    'LoadDataFrameConfigDict',
-    {
-        'path': Field(types.Path),
-    },
-)
+LoadDataFrameConfigDict = types.Dict({'path': Field(types.Path)})
 
-WriteDataFrameConfigDict = types.ConfigDictionary(
-    'WriteDataFrameConfigDict',
-    {
-        'path': Field(types.Path),
-    },
-)
+WriteDataFrameConfigDict = types.Dict({'path': Field(types.Path)})
 
 
 def load_csv_solid(name):

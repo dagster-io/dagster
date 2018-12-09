@@ -52,8 +52,7 @@ def test_context_config():
         'test':
         PipelineContextDefinition(
             config_field=Field(
-                dagster_type=types.
-                ConfigDictionary('TestConfigDict', {
+                dagster_type=types.Dict( {
                     'some_str': Field(types.String),
                 })
             ),
@@ -189,8 +188,7 @@ def test_errors():
         'test':
         PipelineContextDefinition(
             config_field=Field(
-                types.ConfigDictionary(
-                    'something',
+                types.Dict(
                     {
                         'required_int': types.Field(types.Int),
                     },
@@ -603,8 +601,7 @@ def test_required_solid_with_required_subfield():
             SolidDefinition(
                 name='int_config_solid',
                 config_field=Field(
-                    types.ConfigDictionary(
-                        'TestRequiredSolidConfig',
+                    types.Dict(
                         {
                             'required_field': types.Field(types.String),
                         },
@@ -660,8 +657,8 @@ def test_optional_solid_with_optional_subfield():
             SolidDefinition(
                 name='int_config_solid',
                 config_field=Field(
-                    types.ConfigDictionary(
-                        'TestOptionalSolidConfig', {
+                    types.Dict(
+                        {
                             'optional_field': types.Field(types.String, is_optional=True),
                         }
                     ),
@@ -690,9 +687,8 @@ def test_required_context_with_required_subfield():
             PipelineContextDefinition(
                 context_fn=lambda *args: None,
                 config_field=Field(
-                    dagster_type=types.ConfigDictionary(
-                        name='some_context_config',
-                        fields={
+                    types.Dict(
+                        {
                             'required_field': types.Field(types.String),
                         },
                     ),
@@ -745,8 +741,7 @@ def test_optional_and_required_context():
             PipelineContextDefinition(
                 context_fn=lambda *args: None,
                 config_field=Field(
-                    dagster_type=types.ConfigDictionary(
-                        name='some_optional_context_config',
+                    dagster_type=types.Dict(
                         fields={
                             'optional_field': types.Field(types.String, is_optional=True),
                         },
@@ -757,8 +752,7 @@ def test_optional_and_required_context():
             PipelineContextDefinition(
                 context_fn=lambda *args: None,
                 config_field=Field(
-                    dagster_type=types.ConfigDictionary(
-                        name='some_required_context_config',
+                    dagster_type=types.Dict(
                         fields={
                             'required_field': types.Field(types.String),
                         },
