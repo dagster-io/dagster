@@ -14,6 +14,7 @@ from .types import (
     Field,
     PythonObjectType,
     _DagsterListType,
+    _DagsterNullableType,
 )
 
 
@@ -307,9 +308,13 @@ def _validate_config(dagster_type, config_value, stack):
 
         elif isinstance(dagster_type, DagsterCompositeType):
             errors = validate_composite_config_value(dagster_type, config_value, stack)
-
         elif isinstance(dagster_type, _DagsterListType):
             errors = validate_list_value(dagster_type, config_value, stack)
+        elif isinstance(dagster_type, _DagsterNullableType):
+            if config_value is not None:
+                errors = _validate_config(dagster_type.inner_type, config_value, stack)
+            else:
+                errors = []
         else:
             check.failed('Unknown type {name}'.format(name=dagster_type.name))
 
@@ -331,6 +336,11 @@ def deserialize_config(dagster_type, config_value):
 
     elif isinstance(dagster_type, _DagsterListType):
         return deserialize_list_value(dagster_type, config_value)
+    
+    elif isinstance(dagster_type, _DagsterNullableType):
+        if config_value is None:
+            return None
+        return deserialize_config(dagster_type.inner_type, config_value) 
 
     elif isinstance(dagster_type, PythonObjectType):
         check.failed(
