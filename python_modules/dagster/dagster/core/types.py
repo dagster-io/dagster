@@ -436,8 +436,11 @@ class _DagsterListType(DagsterType):
             type_attributes=DagsterTypeAttributes(is_builtin=True, is_named=False),
         )
 
-    def coerce_runtime_value(self, _value):
-        check.failed('not implemented')
+    def coerce_runtime_value(self, value):
+        if not isinstance(value, list):
+            raise DagsterRuntimeCoercionError('Must be a list')
+
+        return list(map(self.inner_type.coerce_runtime_value, value))
 
     def iterate_types(self):
         yield self.inner_type

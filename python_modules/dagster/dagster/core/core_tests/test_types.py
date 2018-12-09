@@ -53,3 +53,51 @@ def test_nullable_python_object_type():
 
     with pytest.raises(DagsterRuntimeCoercionError):
         nullable_type_bar.coerce_runtime_value('not_a_bar')
+
+
+def test_nullable_int_coercion():
+    assert types.Int.coerce_runtime_value(1) == 1
+
+    with pytest.raises(DagsterRuntimeCoercionError):
+        assert types.Int.coerce_runtime_value(None)
+
+    assert types.Nullable(types.Int).coerce_runtime_value(1) == 1
+    assert types.Nullable(types.Int).coerce_runtime_value(None) is None
+
+
+def assert_success(fn, value):
+    assert fn(value) == value
+
+
+def assert_failure(fn, value):
+    with pytest.raises(DagsterRuntimeCoercionError):
+        fn(value)
+
+
+def test_nullable_list_combos_coerciion():
+
+    list_of_int = types.List(types.Int)
+
+    assert_failure(list_of_int.coerce_runtime_value, None)
+    assert_success(list_of_int.coerce_runtime_value, [])
+    assert_success(list_of_int.coerce_runtime_value, [1])
+    assert_failure(list_of_int.coerce_runtime_value, [None])
+
+    nullable_int_of_list = types.Nullable(types.List(types.Int))
+
+    assert_success(nullable_int_of_list.coerce_runtime_value, None)
+    assert_success(nullable_int_of_list.coerce_runtime_value, [])
+    assert_success(nullable_int_of_list.coerce_runtime_value, [1])
+    assert_failure(nullable_int_of_list.coerce_runtime_value, [None])
+
+    list_of_nullable_int = types.List(types.Nullable(types.Int))
+    assert_failure(list_of_nullable_int.coerce_runtime_value, None)
+    assert_success(list_of_nullable_int.coerce_runtime_value, [])
+    assert_success(list_of_nullable_int.coerce_runtime_value, [1])
+    assert_success(list_of_nullable_int.coerce_runtime_value, [None])
+
+    nullable_list_of_nullable_int = types.Nullable(types.List(types.Nullable(types.Int)))
+    assert_success(nullable_list_of_nullable_int.coerce_runtime_value, None)
+    assert_success(nullable_list_of_nullable_int.coerce_runtime_value, [])
+    assert_success(nullable_list_of_nullable_int.coerce_runtime_value, [1])
+    assert_success(nullable_list_of_nullable_int.coerce_runtime_value, [None])
