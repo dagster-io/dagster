@@ -1,7 +1,5 @@
 from dagster import types
 
-from dagster.core.definitions import build_config_dict_type
-
 from dagster.core.evaluator import (
     DagsterEvaluationErrorReason,
     EvaluationStackListItemEntry,
@@ -232,16 +230,15 @@ def test_nested_missing_and_not_defined():
     ).reason == DagsterEvaluationErrorReason.FIELD_NOT_DEFINED
 
 
-MultiLevelDictType = build_config_dict_type(
-    ['TestMultiLevel'],
+MultiLevelDictType = types.Dict(
     {
         'level_one_string_field': types.Field(types.String),
-        'level_two_dict': {
+        'level_two_dict': types.Field(types.Dict({
             'level_two_int_field': types.Field(types.Int),
-            'level_three_dict': {
+            'level_three_dict': types.Field(types.Dict({
                 'level_three_string': types.Field(types.String),
-            },
-        },
+            })),
+        })),
     },
 )
 

@@ -28,8 +28,6 @@ from .execution_context import (
 from .types import (
     ConfigDictionary,
     Dict,
-    IsScopedConfigType,
-    ScopedConfigInfo,
     Field,
 )
 
@@ -691,46 +689,6 @@ class PipelineDefinition(object):
             self.environment_type,
         )
 
-        for type_ in self.all_types():
-            if isinstance(type_, IsScopedConfigType) and type_.scoped_config_info:
-                if type_.scoped_config_info.pipeline_def_name != name:
-                    raise DagsterInvalidDefinitionError(
-                        (
-                            'The type {type_name} must be used within the pipeline named '
-                            '{pipeline_name}. You have likely used '
-                            'ConfigField.solid_config_dict or '
-                            'ConfigField.context_config_dict and used the wrong pipeline name'
-                        ).format(type_name=type_.name, pipeline_name=name)
-                    )
-
-        for context_name, context_def in self.context_definitions.items():
-            if not context_def.config_field:
-                continue
-
-            for in_def_type in context_def.config_field.dagster_type.iterate_types():
-                if not isinstance(in_def_type, IsScopedConfigType):
-                    continue
-                if not in_def_type.scoped_config_info:
-                    continue
-
-                if in_def_type.scoped_config_info.context_def_name is None:
-                    raise DagsterInvalidDefinitionError(
-                        (
-                            'The type {type_name} is not scoped to a context. You have '
-                            'likely used ConfigField.solid_config_dict to create '
-                            'a config for a context within context {context_name}'
-                        ).format(type_name=in_def_type.name, context_name=context_name)
-                    )
-
-                if in_def_type.scoped_config_info.context_def_name != context_name:
-                    raise DagsterInvalidDefinitionError(
-                        (
-                            'The type {type_name} must be used within the context named '
-                            '{context_name}. You have likely used '
-                            'ConfigField.context_config_dict and used the wrong context name'
-                        ).format(type_name=in_def_type.name, context_name=context_name)
-                    )
-
     @staticmethod
     def create_single_solid_pipeline(pipeline, solid_name, injected_solids=None):
         '''
@@ -1087,142 +1045,6 @@ class Result(namedtuple('_Result', 'value output_name')):
         )
 
 
-def build_config_dict_type(name_stack, fields, scoped_config_info=None):
-    check.list_param(name_stack, 'name_stack', of_type=str)
-    check.dict_param(fields, 'fields', key_type=str, value_type=(Field, dict))
-    check.opt_inst_param(scoped_config_info, 'scoped_config_info', ScopedConfigInfo)
-
-    field_dict = {}
-    for field_name, field in fields.items():
-        if isinstance(field, Field):
-            field_dict[field_name] = field
-        elif isinstance(field, dict):
-            field_config_dict_type = build_config_dict_type(
-                name_stack + [camelcase(field_name)],
-                field,
-                scoped_config_info,
-            )
-            field_dict[field_name] = Field(
-                dagster_type=field_config_dict_type,
-                is_optional=field_config_dict_type.all_fields_optional,
-            )
-        else:
-            check.failed('fields in not right format')
-
-    return ConfigDictionary('.'.join(name_stack + ['ConfigDict']), field_dict, scoped_config_info)
-
-
-class ConfigField:
-    @staticmethod
-    def context_config_dict(pipeline_name, context_name, fields):
-        '''
-        Method to create a ConfigField for a PipelineContextDefinition
-
-        e.g.
-
-        PipelineContextDefinition(
-            context_fn=_some_fn,
-            config_field=ConfigField.context_config_dict(
-                'pipeline_name',
-                'context_name',
-                { # creates type PipelineName.Context.ContextName.ConfigDict
-                    'dict_field_one' : { # creates type named
-                                         # PipelineName.Context.ContextName.DictFieldOne.ConfigDict
-                        'sub_field' : types.Field(types.String),
-                    },
-                    'field_two' : types.Field(types.Int),
-                },
-            ),
-        )
-
-        Args:
-            pipeline_name (str): The name of the pipeline this resides within
-            contexts_name (str): The name of the context this resides within
-            fields (FieldsDict = Dict[str, Field | FieldsDict]): Dictionary that represents
-                the structure of the config. The key name at every level is the field name.
-                If the value is a field then it is just a field. If the value is a dictionary
-                then another config dictionary is constructed (recursively) and set to that
-                types. Essentially a new type is created at every non-leaf node of this tree.
-
-        '''
-        check.str_param(pipeline_name, 'pipeline_name')
-        check.str_param(context_name, 'context_name')
-        check.dict_param(fields, 'fields', key_type=str)
-
-        return Field(
-            build_config_dict_type(
-                [
-                    camelcase(pipeline_name),
-                    'Context',
-                    camelcase(context_name),
-                ],
-                fields,
-                ScopedConfigInfo(
-                    pipeline_def_name=pipeline_name,
-                    context_def_name=context_name,
-                ),
-            )
-        )
-
-    @staticmethod
-    def solid_config_dict(pipeline_name, solid_name, fields):
-        '''
-            See description of context_config_dict.
-
-            The only difference between these two is that this method constructs
-            types starting with the name '<<PipelineName>>.Solid.<<SolidName>>'
-        '''
-        check.str_param(pipeline_name, 'pipeline_name')
-        check.str_param(solid_name, 'solid_name')
-        check.dict_param(fields, 'fields', key_type=str)
-
-        return Field(
-            build_config_dict_type(
-                [
-                    camelcase(pipeline_name),
-                    'Solid',
-                    camelcase(solid_name),
-                ],
-                fields,
-                ScopedConfigInfo(
-                    pipeline_def_name=pipeline_name,
-                    solid_def_name=solid_name,
-                ),
-            ),
-        )
-
-    @staticmethod
-    def config_dict_field(name, field_dict):
-        '''Shortcut to create a dictionary based config definition.
-
-
-        Args:
-            name (str): The name of the type that will be created.
-            field_dict (dict): dictionary of `Field` objects keyed by their names.
-
-        Example:
-
-        .. code-block:: python
-
-            ConfigField.config_dict_field({
-                'int_field': Field(types.Int),
-                'string_field': Field(types.String),
-             })
-
-        '''
-
-        config_dict_type = types.ConfigDictionary(name, field_dict)
-        is_optional = all_fields_optional(field_dict)
-        if not is_optional:
-            return Field(config_dict_type)
-        else:
-            return Field(
-                config_dict_type,
-                is_optional=True,
-                default_value=lambda: throwing_evaluate_config_value(config_dict_type, None),
-            )
-
-
 def all_fields_optional(field_dict):
     for field in field_dict.values():
         if not field.is_optional:
@@ -1301,25 +1123,6 @@ class SolidDefinition(object):
         self._input_dict = {inp.name: inp for inp in inputs}
         self._output_dict = {output.name: output for output in outputs}
 
-        for type_ in self.iterate_types():
-            if isinstance(type_, IsScopedConfigType) and type_.scoped_config_info:
-                if type_.scoped_config_info.solid_def_name is None:
-                    raise DagsterInvalidDefinitionError(
-                        (
-                            'The type {type_name} is not scoped to a solid. You have '
-                            'likely used ConfigField.context_config_dict to create '
-                            'a config for a solid within solid {solid_name}'
-                        ).format(type_name=type_.name, solid_name=name)
-                    )
-
-                if type_.scoped_config_info.solid_def_name != name:
-                    raise DagsterInvalidDefinitionError(
-                        (
-                            'The type {type_name} must be used within the solid named '
-                            '{solid_name}. You have likely used '
-                            'ConfigField.solid_config_dict and used the wrong solid name'
-                        ).format(type_name=type_.name, solid_name=name)
-                    )
 
     def has_input(self, name):
         check.str_param(name, 'name')

@@ -1,7 +1,6 @@
 import pytest
 
 from dagster import (
-    ConfigField,
     DagsterEvaluateConfigValueError,
     ExecutionContext,
     Field,
@@ -118,8 +117,7 @@ def test_provided_default_config():
         context_definitions={
             'some_context':
             PipelineContextDefinition(
-                config_field=ConfigField.config_dict_field(
-                    'ksjdkfjd',
+                config_field=types.Field(types.Dict(
                     {
                         'with_default_int': Field(
                             types.Int,
@@ -127,7 +125,7 @@ def test_provided_default_config():
                             default_value=23434,
                         ),
                     },
-                ),
+                )),
                 context_fn=lambda *args: None
             )
         },
@@ -699,12 +697,11 @@ def test_all_optional_field_on_single_context_dict():
             'some_context':
             PipelineContextDefinition(
                 context_fn=lambda *args: None,
-                config_field=ConfigField.config_dict_field(
-                    'some_context_config',
+                config_field=types.Field(types.Dict(
                     {
                         'optional_field': types.Field(types.String, is_optional=True),
                     },
-                ),
+                )),
             ),
         },
     )
