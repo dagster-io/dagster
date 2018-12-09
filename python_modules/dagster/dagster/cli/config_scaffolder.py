@@ -41,8 +41,8 @@ def scaffold_type(config_type, skip_optional=True):
 
             default_dict[field_name] = scaffold_type(field.dagster_type, skip_optional)
         return default_dict
-    # elif config_type is types.Dict:
-    #     return {}
+    elif config_type is types.PythonDict:
+        return {}
     elif config_type is types.Any:
         return 'AnyType'
     elif isinstance(config_type, types.DagsterScalarType):
