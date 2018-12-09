@@ -24,10 +24,6 @@ def test_deps_equal():
 
 
 def test_pipeline_types():
-    ContextOneConfigDict = types.Dict({'field_one': Field(types.String)})
-
-    SolidOneConfigDict = types.Dict({'another_field': Field(types.Int)})
-
     @lambda_solid
     def produce_string():
         return 'foo'
@@ -35,7 +31,9 @@ def test_pipeline_types():
     @solid(
         inputs=[InputDefinition('input_one', types.String)],
         outputs=[OutputDefinition(types.Any)],
-        config_field=Field(SolidOneConfigDict),
+        config_field=Field(types.Dict({
+            'another_field': Field(types.Int)
+        })),
     )
     def solid_one(_info, input_one):
         raise Exception('should not execute')
@@ -49,15 +47,14 @@ def test_pipeline_types():
             'context_one':
             PipelineContextDefinition(
                 context_fn=lambda: None,
-                config_field=Field(ContextOneConfigDict),
+                config_field=Field(types.Dict({
+                    'field_one': Field(types.String)
+                })),
             )
         }
     )
 
     present_types = [
-        # for now
-        # SolidOneConfigDict,
-        # ContextOneConfigDict,
         types.String,
         types.Any,
         types.Int,

@@ -516,7 +516,8 @@ Int = _DagsterIntType()
 Bool = _DagsterBoolType()
 Any = _DagsterAnyType()
 
-# Dict = PythonObjectType('Dict', dict, type_attributes=DagsterTypeAttributes(is_builtin=True))
+# TO DISCUSS: Consolidate with Dict?
+PythonDict = PythonObjectType('Dict', dict, type_attributes=DagsterTypeAttributes(is_builtin=True))
 
 
 class ScopedConfigInfo(

@@ -51,11 +51,9 @@ def test_context_config():
     context_defs = {
         'test':
         PipelineContextDefinition(
-            config_field=Field(
-                dagster_type=types.Dict( {
-                    'some_str': Field(types.String),
-                })
-            ),
+            config_field=Field(dagster_type=types.Dict({
+                'some_str': Field(types.String),
+            })),
             context_fn=lambda *args: ExecutionContext(),
         )
     }
@@ -187,13 +185,9 @@ def test_errors():
     context_defs = {
         'test':
         PipelineContextDefinition(
-            config_field=Field(
-                types.Dict(
-                    {
-                        'required_int': types.Field(types.Int),
-                    },
-                )
-            ),
+            config_field=Field(types.Dict({
+                'required_int': types.Field(types.Int),
+            }, )),
             context_fn=lambda *args: ExecutionContext(),
         )
     }
@@ -600,13 +594,9 @@ def test_required_solid_with_required_subfield():
         solids=[
             SolidDefinition(
                 name='int_config_solid',
-                config_field=Field(
-                    types.Dict(
-                        {
-                            'required_field': types.Field(types.String),
-                        },
-                    )
-                ),
+                config_field=Field(types.Dict({
+                    'required_field': types.Field(types.String),
+                }, )),
                 inputs=[],
                 outputs=[],
                 transform_fn=lambda *_args: None,
@@ -657,11 +647,9 @@ def test_optional_solid_with_optional_subfield():
             SolidDefinition(
                 name='int_config_solid',
                 config_field=Field(
-                    types.Dict(
-                        {
-                            'optional_field': types.Field(types.String, is_optional=True),
-                        }
-                    ),
+                    types.Dict({
+                        'optional_field': types.Field(types.String, is_optional=True),
+                    }),
                     is_optional=True,
                 ),
                 inputs=[],
@@ -686,13 +674,9 @@ def test_required_context_with_required_subfield():
             'some_context':
             PipelineContextDefinition(
                 context_fn=lambda *args: None,
-                config_field=Field(
-                    types.Dict(
-                        {
-                            'required_field': types.Field(types.String),
-                        },
-                    ),
-                ),
+                config_field=Field(types.Dict({
+                    'required_field': types.Field(types.String),
+                }, ), ),
             ),
         },
     )

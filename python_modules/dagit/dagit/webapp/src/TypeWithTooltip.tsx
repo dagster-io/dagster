@@ -27,6 +27,19 @@ export default class TypeWithTooltip extends React.Component<
   };
 
   render() {
+    // This is a temporary degradation that prevents
+    // the user from instigating crashes. What we are
+    // going to want to end up having rendering such as
+    // [[Int]] for double nested lists
+    // or
+    // {
+    //    foo: Int?
+    //    bar: [String]
+    //    nested_dict: {
+    //      nested_field: Bool
+    //    }
+    // }
+    // for anonymous dicts
     if (this.props.type.typeAttributes.isNamed) {
       return (
         <Link

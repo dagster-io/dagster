@@ -34,11 +34,9 @@ def test_evaluate_scalar_failure():
     assert error.error_data.value_rep == '2343'
 
 
-SingleLevelDict = types.Dict(
-    {
-        'level_one': types.Field(types.String),
-    },
-)
+SingleLevelDict = types.Dict({
+    'level_one': types.Field(types.String),
+}, )
 
 
 def test_single_error():
@@ -441,11 +439,9 @@ def test_evaluate_double_list():
 
 
 def test_config_list_in_dict():
-    nested_list = types.Dict(
-        {
-            'nested_list': types.Field(types.List(types.Int)),
-        },
-    )
+    nested_list = types.Dict({
+        'nested_list': types.Field(types.List(types.Int)),
+    }, )
 
     value = {'nested_list': [1, 2, 3]}
     result = evaluate_config_value(nested_list, value)
@@ -454,11 +450,9 @@ def test_config_list_in_dict():
 
 
 def test_config_list_in_dict_error():
-    nested_list = types.Dict(
-        {
-            'nested_list': types.Field(types.List(types.Int)),
-        },
-    )
+    nested_list = types.Dict({
+        'nested_list': types.Field(types.List(types.Int)),
+    }, )
 
     value = {'nested_list': [1, 'bar', 3]}
     result = evaluate_config_value(nested_list, value)
@@ -575,11 +569,9 @@ def test_nullable_dict():
     assert evaluate_config_value(dict_with_nullable_int, {'int_field': 1}).success
 
     nullable_dict_with_nullable_int = types.Nullable(
-        types.Dict(
-            {
-                'int_field': types.Field(types.Nullable(types.Int)),
-            }
-        )
+        types.Dict({
+            'int_field': types.Field(types.Nullable(types.Int)),
+        })
     )
 
     assert evaluate_config_value(nullable_dict_with_nullable_int, None).success

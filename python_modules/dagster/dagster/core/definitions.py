@@ -165,6 +165,7 @@ context_fn (callable):
             list(resources.keys()),
         ) if resources else None
 
+
 def _default_pipeline_context_definitions():
     def _default_context_fn(info):
         log_level = level_from_string(info.config['log_level'])
@@ -175,13 +176,16 @@ def _default_pipeline_context_definitions():
 
     default_context_def = PipelineContextDefinition(
         config_field=Field(
-            types.Dict({
-                'log_level': Field(
-                    dagster_type=types.String,
-                    is_optional=True,
-                    default_value='INFO',
-                ),
-            }),
+            types.Dict(
+                {
+                    'log_level':
+                    Field(
+                        dagster_type=types.String,
+                        is_optional=True,
+                        default_value='INFO',
+                    ),
+                }
+            ),
         ),
         context_fn=_default_context_fn,
     )

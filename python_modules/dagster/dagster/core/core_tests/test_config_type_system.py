@@ -247,15 +247,7 @@ def test_mixed_args_passing():
 
 
 def _single_nested_config():
-    return Field(
-        types.Dict({
-            'nested': Field(
-                types.Dict({
-                    'int_field': Field(types.Int)
-                })
-            )
-        })
-    )
+    return Field(types.Dict({'nested': Field(types.Dict({'int_field': Field(types.Int)}))}))
 
 
 def _nested_optional_config_with_default():
@@ -265,11 +257,13 @@ def _nested_optional_config_with_default():
                 'nested':
                 Field(
                     types.Dict(
-                        {'int_field': Field(
-                            types.Int,
-                            is_optional=True,
-                            default_value=3,
-                        )}
+                        {
+                            'int_field': Field(
+                                types.Int,
+                                is_optional=True,
+                                default_value=3,
+                            )
+                        }
                     )
                 ),
             }
@@ -278,19 +272,13 @@ def _nested_optional_config_with_default():
 
 
 def _nested_optional_config_with_no_default():
-    nested_type = types.Dict(
-        {
-            'int_field': Field(
-                types.Int,
-                is_optional=True,
-            ),
-        },
-    )
-    return Field(
-        types.Dict(
-            {'nested': Field(dagster_type=nested_type)},
-        )
-    )
+    nested_type = types.Dict({
+        'int_field': Field(
+            types.Int,
+            is_optional=True,
+        ),
+    }, )
+    return Field(types.Dict({'nested': Field(dagster_type=nested_type)}, ))
 
 
 def test_single_nested_config():
