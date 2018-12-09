@@ -135,9 +135,6 @@ def test_single_required_string_field_config_type():
     assert _validate(_single_required_string_config_dict(), {'string_field': 'value'}) == {
         'string_field': 'value'
     }
-    assert _validate(_single_required_string_config_dict(), {'string_field': None}) == {
-        'string_field': None
-    }
 
     with pytest.raises(DagsterEvaluateConfigValueError):
         _validate(_single_required_string_config_dict(), {})
@@ -162,17 +159,6 @@ def test_multiple_required_fields_passing():
     ) == {
         'field_one': 'value_one',
         'field_two': 'value_two',
-    }
-
-    assert _validate(
-        _multiple_required_fields_config_dict(),
-        {
-            'field_one': 'value_one',
-            'field_two': None,
-        },
-    ) == {
-        'field_one': 'value_one',
-        'field_two': None,
     }
 
 
@@ -201,9 +187,10 @@ def test_single_optional_field_passing():
     }
     assert _validate(_single_optional_string_config_dict(), {}) == {}
 
-    assert _validate(_single_optional_string_config_dict(), {'optional_field': None}) == {
-        'optional_field': None
-    }
+    with pytest.raises(DagsterEvaluateConfigValueError):
+        assert _validate(_single_optional_string_config_dict(), {'optional_field': None}) == {
+            'optional_field': None
+        }
 
 
 def test_single_optional_field_failing():
@@ -1149,7 +1136,7 @@ def test_multilevel_good_error_handling_solid_name_solids():
 
 
 def test_multilevel_good_error_handling_config_solids_name_solids():
-    @solid(config_field=Field(types.Int))
+    @solid(config_field=Field(types.Nullable(types.Int)))
     def good_error_handling(_info):
         pass
 
