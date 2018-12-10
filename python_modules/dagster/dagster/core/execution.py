@@ -16,6 +16,7 @@ will not invoke *any* outputs (and their APIs don't allow the user to).
 # pylint: disable=C0302
 
 from collections import namedtuple
+from queue import Queue
 from contextlib import contextmanager
 import json
 import itertools
@@ -603,6 +604,29 @@ def execute_reentrant_pipeline(
         throw_on_error=throw_on_error,
         reentrant_info=reentrant_info,
     )
+
+
+def execute_pipeline_through_queue(
+    pipeline, typed_environment, throw_on_error, run_id, message_queue, done
+):
+    """
+    Execute pipeline using message queue as a transport
+    """
+    reentrant_info = ReentrantInfo(
+        run_id,
+        event_callback=lambda event: message_queue.put(event),
+    )
+
+    try:
+        result = execute_reentrant_pipeline(
+            pipeline,
+            typed_environment,
+            throw_on_error=throw_on_error,
+            reentrant_info=reentrant_info
+        )
+        return result
+    finally:
+        message_queue.put(done)
 
 
 def get_typed_environment(pipeline, environment):
