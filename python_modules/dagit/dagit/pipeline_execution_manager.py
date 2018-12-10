@@ -124,7 +124,7 @@ class MultiprocessingExecutionManager(PipelineExecutionManager):
         for process in processes:
             self._consume_process_queue(process)
             if not process.process.is_alive():
-                self._consumer_process_queue(process)
+                self._consume_process_queue(process)
                 try:
                     raise Exception(
                         'Pipeline execution process for {run_id} unexpectedly exited'.format(
