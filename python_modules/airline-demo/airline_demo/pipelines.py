@@ -155,7 +155,7 @@ test_context = PipelineContextDefinition(
     context_fn= lambda info: ExecutionContext.console_logging(log_level=logging.DEBUG),
     resources={
         'spark': define_lambda_resource(create_spark_session_local),
-        's3': define_lambda_resource(create_s3_session),
+        's3': define_lambda_resource(create_s3_session, signed=False),
         'db_url': ResourceDefinition(
             resource_fn=lambda info: create_redshift_db_url(
                 info.config['redshift_username'],
@@ -197,7 +197,7 @@ local_context = PipelineContextDefinition(
     context_fn=lambda info: ExecutionContext.console_logging(log_level=logging.DEBUG),
     resources={
         'spark': define_lambda_resource(create_spark_session_local),
-        's3': define_lambda_resource(create_s3_session),
+        's3': define_lambda_resource(create_s3_session, signed=False),
         'db_url': ResourceDefinition(
             resource_fn=lambda info: create_postgres_db_url(
                 info.config['postgres_username'],
@@ -231,7 +231,7 @@ cloud_context = PipelineContextDefinition(
     context_fn=lambda info: ExecutionContext.console_logging(log_level=logging.DEBUG),
     resources={
         'spark': define_lambda_resource(create_spark_session_local), # FIXME
-        's3': define_lambda_resource(create_s3_session()),
+        's3': define_lambda_resource(create_s3_session, signed=False),
         'db_url': ResourceDefinition(
             resource_fn=lambda info: create_redshift_db_url(
                 info.config['redshift_username'],
