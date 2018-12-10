@@ -3,7 +3,6 @@ import uuid
 import pytest
 
 from dagster import (
-    ConfigField,
     ExecutionContext,
     Field,
     OutputDefinition,
@@ -101,16 +100,17 @@ def test_default_value():
         context_definitions={
             'custom_one':
             PipelineContextDefinition(
-                config_field=ConfigField.config_dict_field(
-                    'CustomOneDict',
-                    {
-                        'field_one':
-                        Field(
-                            dagster_type=types.String,
-                            is_optional=True,
-                            default_value='heyo',
-                        ),
-                    },
+                config_field=types.Field(
+                    types.Dict(
+                        {
+                            'field_one':
+                            Field(
+                                dagster_type=types.String,
+                                is_optional=True,
+                                default_value='heyo',
+                            ),
+                        },
+                    )
                 ),
                 context_fn=lambda info: ExecutionContext(resources=info.config),
             ),
@@ -146,17 +146,19 @@ def test_custom_contexts():
         context_definitions={
             'custom_one':
             PipelineContextDefinition(
-                config_field=ConfigField.config_dict_field(
-                    'CustomOneDict',
-                    {'field_one': Field(dagster_type=types.String)},
+                config_field=types.Field(
+                    types.Dict({
+                        'field_one': Field(dagster_type=types.String)
+                    })
                 ),
                 context_fn=lambda info: ExecutionContext(resources=info.config),
             ),
             'custom_two':
             PipelineContextDefinition(
-                config_field=ConfigField.config_dict_field(
-                    'CustomTwoDict',
-                    {'field_one': Field(dagster_type=types.String)},
+                config_field=types.Field(
+                    types.Dict({
+                        'field_one': Field(dagster_type=types.String)
+                    }, )
                 ),
                 context_fn=lambda info: ExecutionContext(resources=info.config),
             )
@@ -208,8 +210,10 @@ def test_yield_context():
         context_definitions={
             'custom_one':
             PipelineContextDefinition(
-                config_field=ConfigField.config_dict_field(
-                    'CustomOneDict', {'field_one': Field(dagster_type=types.String)}
+                config_field=types.Field(
+                    types.Dict({
+                        'field_one': Field(dagster_type=types.String)
+                    })
                 ),
                 context_fn=_yield_context,
             ),
@@ -279,9 +283,9 @@ def test_invalid_context():
         context_definitions={
             'default':
             PipelineContextDefinition(
-                config_field=ConfigField.config_dict_field(
-                    'SingleStringDict', {'string_field': Field(types.String)}
-                ),
+                config_field=types.Field(types.Dict({
+                    'string_field': Field(types.String)
+                })),
                 context_fn=lambda info: ExecutionContext(resources=info.config)
             )
         }

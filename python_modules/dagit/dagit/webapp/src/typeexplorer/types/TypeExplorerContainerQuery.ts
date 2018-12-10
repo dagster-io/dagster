@@ -23,6 +23,7 @@ export interface TypeExplorerContainerQuery_type_RegularType_typeAttributes {
    * 
    */
   isSystemConfig: boolean;
+  isNamed: boolean;
 }
 
 export interface TypeExplorerContainerQuery_type_RegularType {
@@ -48,11 +49,17 @@ export interface TypeExplorerContainerQuery_type_CompositeType_typeAttributes {
    * 
    */
   isSystemConfig: boolean;
+  isNamed: boolean;
+}
+
+export interface TypeExplorerContainerQuery_type_CompositeType_fields_type_typeAttributes {
+  isNamed: boolean;
 }
 
 export interface TypeExplorerContainerQuery_type_CompositeType_fields_type {
   name: string;
   description: string | null;
+  typeAttributes: TypeExplorerContainerQuery_type_CompositeType_fields_type_typeAttributes;
 }
 
 export interface TypeExplorerContainerQuery_type_CompositeType_fields {

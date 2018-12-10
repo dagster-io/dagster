@@ -27,6 +27,7 @@ export interface TypeListContainerQuery_pipelineOrError_Pipeline_types_typeAttri
    * 
    */
   isSystemConfig: boolean;
+  isNamed: boolean;
 }
 
 export interface TypeListContainerQuery_pipelineOrError_Pipeline_types {

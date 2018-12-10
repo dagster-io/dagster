@@ -16,7 +16,7 @@ Type definitions
 
 .. autoclass:: DagsterCompositeType
 
-.. autoclass:: ConfigDictionary
+.. autoclass:: Dict
 
 .. autoclass:: PythonObjectType
 

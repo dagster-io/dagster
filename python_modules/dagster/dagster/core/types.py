@@ -373,7 +373,9 @@ class DagsterCompositeTypeBase(DagsterType):
         for field_type in self.field_dict.values():
             for inner_type in field_type.dagster_type.iterate_types():
                 yield inner_type
-        yield self
+
+        if self.is_named:
+            yield self
 
     @property
     def all_fields_optional(self):
@@ -449,25 +451,11 @@ class _DagsterListType(DagsterType):
         check.failed('should never be called')
 
 
-class IsScopedConfigType:
-    def __init__(self):
-        check.invariant(
-            hasattr(
-                self,
-                '_scoped_config_info',
-                (
-                    'If you use IsScopedConfigType mixin the target class must '
-                    'have _scoped_config_info property'
-                ),
-            ),
-        )
-
-    @property
-    def scoped_config_info(self):
-        return self._scoped_config_info  # pylint: disable=E1101
+def Dict(fields):
+    return _Dict('Dict', fields)
 
 
-class ConfigDictionary(DagsterCompositeType, IsScopedConfigType):
+class _Dict(DagsterCompositeType):
     '''Configuration dictionary.
 
     Typed-checked but then passed to implementations as a python dict
@@ -475,16 +463,12 @@ class ConfigDictionary(DagsterCompositeType, IsScopedConfigType):
     Arguments:
       fields (dict): dictonary of :py:class:`Field` objects keyed by name'''
 
-    def __init__(self, name, fields, scoped_config_info=None):
-        self._scoped_config_info = check.opt_inst_param(
-            scoped_config_info,
-            'scoped_config_info',
-            ScopedConfigInfo,
-        )
-        super(ConfigDictionary, self).__init__(
+    def __init__(self, name, fields):
+        super(_Dict, self).__init__(
             name,
             fields,
             'A configuration dictionary with typed fields',
+            type_attributes=DagsterTypeAttributes(is_named=False),
         )
 
     def coerce_runtime_value(self, value):
@@ -508,32 +492,6 @@ for a particular execution environment.
 Int = _DagsterIntType()
 Bool = _DagsterBoolType()
 Any = _DagsterAnyType()
-Dict = PythonObjectType('Dict', dict, type_attributes=DagsterTypeAttributes(is_builtin=True))
 
-
-class ScopedConfigInfo(
-    namedtuple(
-        '_ConfigScopeInfo',
-        'pipeline_def_name solid_def_name context_def_name',
-    ),
-):
-    def __new__(cls, pipeline_def_name, solid_def_name=None, context_def_name=None):
-        check.str_param(pipeline_def_name, 'pipeline_def_name')
-        check.opt_str_param(solid_def_name, 'solid_def_name')
-        check.opt_str_param(context_def_name, 'context_def_name')
-
-        check.invariant(
-            solid_def_name or context_def_name,
-            'One of solid or context must be specified',
-        )
-        check.invariant(
-            not (solid_def_name and context_def_name),
-            'Both solid and context cannot be specified',
-        )
-
-        return super(ScopedConfigInfo, cls).__new__(
-            cls,
-            pipeline_def_name,
-            solid_def_name,
-            context_def_name,
-        )
+# TO DISCUSS: Consolidate with Dict?
+PythonDict = PythonObjectType('Dict', dict, type_attributes=DagsterTypeAttributes(is_builtin=True))

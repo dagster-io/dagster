@@ -32,7 +32,7 @@ def test_basic_serialization_string():
 def test_basic_serialization():
     assert roundtrip_typed_value(1, types.Int) == 1
     assert roundtrip_typed_value(True, types.Bool) is True
-    assert roundtrip_typed_value({'bar': 'foo'}, types.Dict) == {'bar': 'foo'}
+    assert roundtrip_typed_value({'bar': 'foo'}, types.PythonDict) == {'bar': 'foo'}
 
 
 def test_basic_pandas():

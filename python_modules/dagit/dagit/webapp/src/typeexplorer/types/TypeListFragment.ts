@@ -23,6 +23,7 @@ export interface TypeListFragment_typeAttributes {
    * 
    */
   isSystemConfig: boolean;
+  isNamed: boolean;
 }
 
 export interface TypeListFragment {

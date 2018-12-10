@@ -15,7 +15,7 @@ export interface PipelineRunLogsSubscription_pipelineRunLogs_LogMessageEvent {
   run: PipelineRunLogsSubscription_pipelineRunLogs_LogMessageEvent_run;
   __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent";
   message: string;
-  timestamp: any;
+  timestamp: string;
 }
 
 export interface PipelineRunLogsSubscription_pipelineRunLogs_ExecutionStepStartEvent_run {
@@ -30,7 +30,7 @@ export interface PipelineRunLogsSubscription_pipelineRunLogs_ExecutionStepStartE
   run: PipelineRunLogsSubscription_pipelineRunLogs_ExecutionStepStartEvent_run;
   __typename: "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepFailureEvent";
   message: string;
-  timestamp: any;
+  timestamp: string;
   step: PipelineRunLogsSubscription_pipelineRunLogs_ExecutionStepStartEvent_step;
 }
 

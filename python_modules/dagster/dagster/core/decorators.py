@@ -262,7 +262,7 @@ def solid(
         @solid(
             inputs=[InputDefinition(name="foo")],
             outputs=[OutputDefinition()],
-            config_field=Field(types.ConfigDictionary({'str_value' : Field(types.String)})),
+            config_field=Field(types.Dict({'str_value' : Field(types.String)})),
         )
         def hello_world(info, foo):
             # info.config is a dictionary with 'str_value' key

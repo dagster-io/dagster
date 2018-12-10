@@ -6,7 +6,6 @@ import pytest
 from graphql import graphql, subscribe, parse
 
 from dagster import (
-    ConfigField,
     DependencyDefinition,
     Field,
     PipelineContextDefinition,
@@ -141,22 +140,22 @@ def define_more_complicated_config():
                 inputs=[],
                 outputs=[],
                 transform_fn=lambda *_args: None,
-                config_field=ConfigField.solid_config_dict(
-                    'more_complicated_config',
-                    'a_solid_with_config',
-                    {
-                        'field_one':
-                        types.Field(types.String),
-                        'field_two':
-                        types.Field(types.String, is_optional=True),
-                        'field_three':
-                        types.Field(
-                            types.String,
-                            is_optional=True,
-                            default_value='some_value',
-                        )
-                    },
-                ),
+                config_field=types.Field(
+                    types.Dict(
+                        {
+                            'field_one':
+                            types.Field(types.String),
+                            'field_two':
+                            types.Field(types.String, is_optional=True),
+                            'field_three':
+                            types.Field(
+                                types.String,
+                                is_optional=True,
+                                default_value='some_value',
+                            )
+                        },
+                    ),
+                )
             ),
         ],
     )
@@ -404,26 +403,31 @@ def define_more_complicated_nested_config():
                 inputs=[],
                 outputs=[],
                 transform_fn=lambda *_args: None,
-                config_field=ConfigField.solid_config_dict(
-                    'more_complicated_nested_config',
-                    'a_solid_with_config',
-                    {
-                        'field_one':
-                        types.Field(types.String),
-                        'field_two':
-                        types.Field(types.String, is_optional=True),
-                        'field_three':
-                        types.Field(
-                            types.String,
-                            is_optional=True,
-                            default_value='some_value',
-                        ),
-                        'nested_field': {
-                            'field_four_str': types.Field(types.String),
-                            'field_five_int': types.Field(types.Int),
-                        }
-                    },
-                ),
+                config_field=types.Field(
+                    types.Dict(
+                        {
+                            'field_one':
+                            types.Field(types.String),
+                            'field_two':
+                            types.Field(types.String, is_optional=True),
+                            'field_three':
+                            types.Field(
+                                types.String,
+                                is_optional=True,
+                                default_value='some_value',
+                            ),
+                            'nested_field':
+                            types.Field(
+                                types.Dict(
+                                    {
+                                        'field_four_str': types.Field(types.String),
+                                        'field_five_int': types.Field(types.Int),
+                                    }
+                                )
+                            ),
+                        },
+                    ),
+                )
             ),
         ],
     )
