@@ -313,7 +313,7 @@ jobs:
       - run: |
           ls /tmp/workspace
 
-          - run: |
+      - run: |
           cp /tmp/workspace/.coverage* .
           coverage combine
           coveralls
