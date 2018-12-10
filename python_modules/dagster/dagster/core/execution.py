@@ -628,7 +628,6 @@ def _execute_graph(
     check.inst_param(environment, 'environment', config.Environment)
     check.bool_param(throw_on_error, 'throw_on_error')
     check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
-
     results = []
     with yield_context(execution_graph.pipeline, environment, reentrant_info) as context:
         check.inst(context, RuntimeExecutionContext)

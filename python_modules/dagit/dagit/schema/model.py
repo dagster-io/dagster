@@ -1,9 +1,9 @@
 from __future__ import absolute_import
+
 import sys
 import uuid
 import gevent
 from dagster import (
-    execute_pipeline,
     ReentrantInfo,
     check,
 )
@@ -130,28 +130,9 @@ def start_pipeline_execution(context, pipelineName, config):
             new_run_id = str(uuid.uuid4())
             execution_plan = create_execution_plan(pipeline.get_dagster_pipeline(), config.value)
             run = pipeline_run_storage.add_run(new_run_id, pipelineName, config, execution_plan)
-            # TODO: If this throws an error what do we do?
-            if context.synchronous_mode:
-                execute_reentrant_pipeline(
-                    pipeline.get_dagster_pipeline(),
-                    config.value,
-                    throw_on_error=False,
-                    reentrant_info=ReentrantInfo(
-                        new_run_id,
-                        event_callback=run.handle_new_event,
-                    ),
-                )
-            else:
-                gevent.spawn(
-                    execute_reentrant_pipeline,
-                    pipeline.get_dagster_pipeline(),
-                    config.value,
-                    throw_on_error=False,
-                    reentrant_info=ReentrantInfo(
-                        new_run_id,
-                        event_callback=run.handle_new_event,
-                    ),
-                )
+            context.execution_manager.execute_pipeline(
+                pipeline.get_dagster_pipeline(), config.value, run
+            )
             return errors.StartPipelineExecutionSuccess(run=runs.PipelineRun(run))
 
         config_or_error = _config_or_error_from_pipeline(pipeline, config)
