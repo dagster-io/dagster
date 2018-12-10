@@ -122,21 +122,9 @@ class MultiprocessingExecutionManager(PipelineExecutionManager):
             self._processes = []
 
         for process in processes:
-            while not process.message_queue.empty():
-                message = process.message_queue.get(False)
-
-                if isinstance(message, MultiprocessingDone):
-                    continue
-                elif isinstance(message, MultiprocessingError):
-                    process.pipeline_run.handle_new_event(
-                        SyntheticPipelineEventRecord.error_record(
-                            process.pipeline_run.run_id, message.error_info
-                        )
-                    )
-                else:
-                    process.pipeline_run.handle_new_event(process.message_queue.get())
-
+            self._consume_process_queue(process)
             if not process.process.is_alive():
+                self._consumer_process_queue(process)
                 try:
                     raise Exception(
                         'Pipeline execution process for {run_id} unexpectedly exited'.format(
@@ -153,6 +141,21 @@ class MultiprocessingExecutionManager(PipelineExecutionManager):
 
             with self._processes_lock:
                 self._processes.append(process)
+
+    def _consume_process_queue(self, process):
+        while not process.message_queue.empty():
+            message = process.message_queue.get(False)
+
+            if isinstance(message, MultiprocessingDone):
+                continue
+            elif isinstance(message, MultiprocessingError):
+                process.pipeline_run.handle_new_event(
+                    SyntheticPipelineEventRecord.error_record(
+                        process.pipeline_run.run_id, message.error_info
+                    )
+                )
+            else:
+                process.pipeline_run.handle_new_event(process.message_queue.get())
 
     def execute_pipeline(self, pipeline, typed_environment, pipeline_run):
         message_queue = multiprocessing.Queue()
