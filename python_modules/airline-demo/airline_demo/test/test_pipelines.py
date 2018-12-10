@@ -120,7 +120,7 @@ def test_pipeline_download_fast():
                         'bucket':
                         'dagster-airline-demo-source-data',
                         'key':
-                        'test.Origin_and_Destination_Survey_DB1BMarket_2018_2.zip',
+                        'test/Origin_and_Destination_Survey_DB1BMarket_2018_2.zip',
                         'skip_if_present':
                         True,
                         'target_path':
