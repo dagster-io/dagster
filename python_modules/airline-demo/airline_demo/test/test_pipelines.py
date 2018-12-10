@@ -200,7 +200,7 @@ def test_pipeline_download_fast():
 @pytest.mark.dependency(depends=['test_pipeline_download_fast'])
 @pytest.mark.spark
 @pytest.mark.db
-def test_pipeline_ingest():
+def test_pipeline_ingest_fast():
     result = execute_pipeline(
         define_airline_demo_ingest_pipeline(),
         {
@@ -383,8 +383,8 @@ def test_pipeline_ingest():
 
 @pytest.mark.db
 @pytest.mark.spark
-@pytest.mark.dependency(depends=['test_pipeline_ingest'])
-def test_pipeline_warehouse():
+@pytest.mark.dependency(depends=['test_pipeline_ingest_fast'])
+def test_pipeline_warehouse_fast():
     now = datetime.datetime.utcnow()
     timestamp = now.strftime('%Y_%m_%d_%H_%M_%S')
     result = execute_pipeline(
