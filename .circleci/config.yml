@@ -311,7 +311,7 @@ jobs:
           at: /tmp/workspace
 
       - run: |
-          ls /tmp/workspace
+          ls -al /tmp/workspace/
 
       - run: |
           cp /tmp/workspace/.coverage* .
