@@ -115,7 +115,7 @@ export default class PipelineRunFilteredLogs extends React.Component<
               />
             ))}
           </ButtonGroup>
-          <div style={{ flex: 1 }} />
+          <div style={{ minWidth: 15, flex: 1 }} />
           <Button
             text={"Clear"}
             small={true}
