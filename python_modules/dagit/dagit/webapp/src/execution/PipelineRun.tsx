@@ -36,7 +36,6 @@ export class PipelineRun extends React.Component<IPipelineRunProps> {
       ${PipelineRunLogMessage.fragments.PipelineRunLogMessageFragment}
     `
   };
-
   render() {
     return (
       <PipelineRunWrapper>

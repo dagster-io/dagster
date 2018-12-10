@@ -19,6 +19,7 @@ from .subscription_server import DagsterSubscriptionServer
 from .schema import create_schema
 from .schema.context import DagsterGraphQLContext
 from .templates.playground import TEMPLATE as PLAYGROUND_TEMPLATE
+from .pipeline_execution_manager import MultiprocessingExecutionManager
 
 
 class RepositoryContainer(object):
@@ -137,6 +138,7 @@ def create_app(repository_container, pipeline_runs):
     context = DagsterGraphQLContext(
         repository_container=repository_container,
         pipeline_runs=pipeline_runs,
+        execution_manager=MultiprocessingExecutionManager()
     )
 
     app.add_url_rule(

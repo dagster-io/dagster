@@ -606,29 +606,6 @@ def execute_reentrant_pipeline(
     )
 
 
-def execute_pipeline_through_queue(
-    pipeline, typed_environment, throw_on_error, run_id, message_queue, done
-):
-    """
-    Execute pipeline using message queue as a transport
-    """
-    reentrant_info = ReentrantInfo(
-        run_id,
-        event_callback=lambda event: message_queue.put(event),
-    )
-
-    try:
-        result = execute_reentrant_pipeline(
-            pipeline,
-            typed_environment,
-            throw_on_error=throw_on_error,
-            reentrant_info=reentrant_info
-        )
-        return result
-    finally:
-        message_queue.put(done)
-
-
 def get_typed_environment(pipeline, environment):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.opt_dict_param(environment, 'environment')
@@ -652,7 +629,6 @@ def _execute_graph(
     check.inst_param(environment, 'environment', config.Environment)
     check.bool_param(throw_on_error, 'throw_on_error')
     check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
-
     results = []
     with yield_context(execution_graph.pipeline, environment, reentrant_info) as context:
         check.inst(context, RuntimeExecutionContext)

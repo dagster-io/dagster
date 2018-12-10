@@ -1,9 +1,10 @@
 from dagster import check
 from dagit.pipeline_run_storage import PipelineRunStorage
+from dagit.pipeline_execution_manager import PipelineExecutionManager
 
 
 class DagsterGraphQLContext(object):
-    def __init__(self, repository_container, pipeline_runs, synchronous_mode=False):
+    def __init__(self, repository_container, pipeline_runs, execution_manager):
         from dagit.app import RepositoryContainer
         self.repository_container = check.inst_param(
             repository_container,
@@ -15,5 +16,6 @@ class DagsterGraphQLContext(object):
             'pipeline_runs',
             PipelineRunStorage,
         )
-
-        self.synchronous_mode = check.bool_param(synchronous_mode, 'synchronous_mode')
+        self.execution_manager = check.inst_param(
+            execution_manager, 'pipeline_execution_manager', PipelineExecutionManager
+        )

@@ -112,10 +112,10 @@ def construct_event_type(event_type):
     return EventType(event_type) if valid_event_type(event_type) else EventType.UNCATEGORIZED
 
 
-class EventRecord:
+class EventRecord(object):
     def __init__(self, logger_message, error_info):
         self._logger_message = logger_message
-        self.error_info = check.opt_inst_param(error_info, 'error_info', SerializableErrorInfo)
+        self._error_info = check.opt_inst_param(error_info, 'error_info', SerializableErrorInfo)
 
     @property
     def message(self):
@@ -141,6 +141,10 @@ class EventRecord:
     @property
     def timestamp(self):
         return self._logger_message.record.created
+
+    @property
+    def error_info(self):
+        return self._error_info
 
 
 class PipelineEventRecord(EventRecord):

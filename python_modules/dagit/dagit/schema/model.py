@@ -1,11 +1,9 @@
 from __future__ import absolute_import
-import multiprocessing
-import queue
+
 import sys
 import uuid
 import gevent
 from dagster import (
-    execute_pipeline,
     ReentrantInfo,
     check,
 )
@@ -13,7 +11,6 @@ from dagster.core.evaluator import evaluate_config_value
 
 from dagster.core.execution import (
     create_execution_plan,
-    execute_pipeline_through_queue,
     execute_reentrant_pipeline,
 )
 
@@ -133,47 +130,9 @@ def start_pipeline_execution(context, pipelineName, config):
             new_run_id = str(uuid.uuid4())
             execution_plan = create_execution_plan(pipeline.get_dagster_pipeline(), config.value)
             run = pipeline_run_storage.add_run(new_run_id, pipelineName, config, execution_plan)
-            # TODO: If this throws an error what do we do?
-            if context.synchronous_mode:
-                execute_reentrant_pipeline(
-                    pipeline.get_dagster_pipeline(),
-                    config.value,
-                    throw_on_error=False,
-                    reentrant_info=ReentrantInfo(
-                        new_run_id,
-                        event_callback=run.handle_new_event,
-                    ),
-                )
-            else:
-                done = str(uuid.uuid4())
-                q = multiprocessing.Queue()
-                p = multiprocessing.Process(
-                    target=execute_pipeline_through_queue,
-                    args=(
-                        pipeline.get_dagster_pipeline(),
-                        config.value,
-                    ),
-                    kwargs={
-                        'throw_on_error': False,
-                        'run_id': new_run_id,
-                        'message_queue': q,
-                        'done': done,
-                    }
-                )
-
-                def empty_queue():
-                    while True:
-                        try:
-                            event = q.get(False)
-                            if event == done:
-                                break
-                            gevent.sleep(0.01)
-                            run.handle_new_event(event)
-                        except queue.Empty:
-                            pass
-
-                gevent.spawn(empty_queue)
-                p.start()
+            context.execution_manager.execute_pipeline(
+                pipeline.get_dagster_pipeline(), config.value, run
+            )
             return errors.StartPipelineExecutionSuccess(run=runs.PipelineRun(run))
 
         config_or_error = _config_or_error_from_pipeline(pipeline, config)
