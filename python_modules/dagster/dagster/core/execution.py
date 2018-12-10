@@ -16,7 +16,6 @@ will not invoke *any* outputs (and their APIs don't allow the user to).
 # pylint: disable=C0302
 
 from collections import namedtuple
-from queue import Queue
 from contextlib import contextmanager
 import json
 import itertools

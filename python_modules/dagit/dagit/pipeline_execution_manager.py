@@ -122,32 +122,35 @@ class MultiprocessingExecutionManager(PipelineExecutionManager):
             self._processes = []
 
         for process in processes:
-            self._consume_process_queue(process)
-            if not process.process.is_alive():
-                self._consume_process_queue(process)
-                try:
-                    raise Exception(
-                        'Pipeline execution process for {run_id} unexpectedly exited'.format(
-                            run_id=process.pipeline_run.run_id
+            done = self._consume_process_queue(process)
+            if not done and not process.process.is_alive():
+                done = self._consume_process_queue(process)
+                if not done:
+                    try:
+                        done = True
+                        raise Exception(
+                            'Pipeline execution process for {run_id} unexpectedly exited'.format(
+                                run_id=process.pipeline_run.run_id
+                            )
                         )
-                    )
-                except:
-                    process.pipeline_run.handle_new_event(
-                        SyntheticPipelineEventRecord.error_record(
-                            process.pipeline_run.run_id,
-                            serializable_error_info_from_exc_info(sys.exc_info())
+                    except:
+                        process.pipeline_run.handle_new_event(
+                            SyntheticPipelineEventRecord.error_record(
+                                process.pipeline_run.run_id,
+                                serializable_error_info_from_exc_info(sys.exc_info())
+                            )
                         )
-                    )
 
-            with self._processes_lock:
-                self._processes.append(process)
+            if not done:
+                with self._processes_lock:
+                    self._processes.append(process)
 
     def _consume_process_queue(self, process):
         while not process.message_queue.empty():
             message = process.message_queue.get(False)
 
             if isinstance(message, MultiprocessingDone):
-                continue
+                return True
             elif isinstance(message, MultiprocessingError):
                 process.pipeline_run.handle_new_event(
                     SyntheticPipelineEventRecord.error_record(
@@ -155,11 +158,11 @@ class MultiprocessingExecutionManager(PipelineExecutionManager):
                     )
                 )
             else:
-                process.pipeline_run.handle_new_event(process.message_queue.get())
+                process.pipeline_run.handle_new_event(message)
+        return False
 
     def execute_pipeline(self, pipeline, typed_environment, pipeline_run):
         message_queue = multiprocessing.Queue()
-        signal_queue = multiprocessing.Queue()
         p = multiprocessing.Process(
             target=execute_pipeline_through_queue,
             args=(
