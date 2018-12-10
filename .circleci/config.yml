@@ -258,9 +258,6 @@ jobs:
           destination: test-reports
 
       - run:
-          command: ls -al python_modules/airline-demo/
-
-      - run:
           command: mv python_modules/airline-demo/.coverage python_modules/airline-demo/.coverage.airline-demo.${CIRCLE_BUILD_NUM}
 
       - persist_to_workspace:
@@ -312,9 +309,6 @@ jobs:
 
       - attach_workspace:
           at: /tmp/workspace
-
-      - run: |
-          ls -al /tmp/workspace/
 
       - run: |
           cp /tmp/workspace/.coverage* .
