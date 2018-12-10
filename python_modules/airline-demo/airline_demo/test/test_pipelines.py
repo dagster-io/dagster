@@ -159,36 +159,43 @@ def test_pipeline_download_fast():
                 'unzip_april_on_time_data': {
                     'config': {
                         'skip_if_present': True,
+                        'destination_dir': 'source_data',
                     },
                 },
                 'unzip_may_on_time_data': {
                     'config': {
                         'skip_if_present': True,
+                        'destination_dir': 'source_data',
                     },
                 },
                 'unzip_june_on_time_data': {
                     'config': {
                         'skip_if_present': True,
+                        'destination_dir': 'source_data',
                     },
                 },
                 'unzip_q2_coupon_data': {
                     'config': {
                         'skip_if_present': True,
+                        'destination_dir': 'source_data',
                     },
                 },
                 'unzip_q2_market_data': {
                     'config': {
                         'skip_if_present': True,
+                        'destination_dir': 'source_data',
                     },
                 },
                 'unzip_q2_ticket_data': {
                     'config': {
                         'skip_if_present': True,
+                        'destination_dir': 'source_data',
                     },
                 },
                 'unzip_master_cord_data': {
                     'config': {
                         'skip_if_present': True,
+                        'destination_dir': 'source_data',
                     }
                 }
             }
@@ -205,34 +212,29 @@ def test_pipeline_ingest_fast():
         define_airline_demo_ingest_pipeline(),
         {
             'context': {
-                # 'cloud': {
-                #     'config': {
-                #         'redshift_username': 'airline_demo_username',
-                #         'redshift_password': 'A1rline_demo_password',
-                #         'redshift_hostname': 'db.airline-demo.dagster.io',
-                #         'redshift_db_name': 'airline_demo',
-                #         'redshift_s3_temp_dir': 's3n://airline-demo-redshift-spark/temp/',
-                #         'db_dialect': 'redshift',
-                #     }
-                # },
-                # 'test': {
-                #     'config': {
-                #         'redshift_username': 'airline_demo_username',
-                #         'redshift_password': 'A1rline_demo_password',
-                #         'redshift_hostname': 'db.airline-demo.dagster.io',
-                #         'redshift_db_name': 'airline_demo',
-                #         'redshift_s3_temp_dir': 's3n://airline-demo-redshift-spark/temp/',
-                #         'db_dialect': 'redshift',
-                #     }
-                # },
                 'local': {
-                    'config': {
-                        'postgres_username': 'test',
-                        'postgres_password': 'test',
-                        'postgres_hostname': '127.0.0.1',
-                        'postgres_db_name': 'test',
-                        'db_dialect': 'postgres',
-                    }
+                    'resources': {
+                        # duplication not the best
+                        'db_url': {
+                            'config': {
+                                'postgres_username': 'test',
+                                'postgres_password': 'test',
+                                'postgres_hostname': '127.0.0.1',
+                                'postgres_db_name': 'test',
+                            },
+                        },
+                        'db_engine': {
+                            'config': {
+                                'postgres_username': 'test',
+                                'postgres_password': 'test',
+                                'postgres_hostname': '127.0.0.1',
+                                'postgres_db_name': 'test',
+                            },
+                        },
+                        'db_dialect': {
+                            'config': 'postgres'
+                        },
+                    },
                 },
             },
             'solids': {
