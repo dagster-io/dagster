@@ -6,6 +6,7 @@ import { ApolloProvider } from "react-apollo";
 import { SubscriptionClient } from "subscriptions-transport-ws";
 import { WebSocketLink } from "apollo-link-ws";
 import App from "./App";
+import ApiResultRenderer from "./ApiResultRenderer";
 import AppCache from "./AppCache";
 import "@blueprintjs/core/lib/css/blueprint.css";
 import "@blueprintjs/icons/lib/css/blueprint-icons.css";
@@ -23,12 +24,21 @@ const client = new ApolloClient({
   link: new WebSocketLink(websocketClient)
 });
 
-ReactDOM.render(
-  <ApolloProvider client={client}>
-    <App />
-  </ApolloProvider>,
-  document.getElementById("root") as HTMLElement
-);
+if (process.env.REACT_APP_RENDER_API_RESULTS) {
+  ReactDOM.render(
+    <ApolloProvider client={client}>
+      <ApiResultRenderer />
+    </ApolloProvider>,
+    document.getElementById("root") as HTMLElement
+  );
+} else {
+  ReactDOM.render(
+    <ApolloProvider client={client}>
+      <App />
+    </ApolloProvider>,
+    document.getElementById("root") as HTMLElement
+  );
+}
 
 injectGlobal`
   * {
