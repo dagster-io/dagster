@@ -63,9 +63,4 @@ injectGlobal`
     padding: 0;
     font-family: sans-serif;
   }
-
-  /* Prevent Blueprint's Select dropdowns from having duplicate icons */
-  .bp3-popover-content {
-    svg[data-icon] { display: none; }
-  }
 `;
