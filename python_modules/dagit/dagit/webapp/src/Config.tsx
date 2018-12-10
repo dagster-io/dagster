@@ -43,8 +43,8 @@ export default class Config extends React.Component<ConfigProps, {}> {
                 }
               }
             }
-            ...TypeWithTooltipFragment
           }
+          ...TypeWithTooltipFragment
         }
       }
 

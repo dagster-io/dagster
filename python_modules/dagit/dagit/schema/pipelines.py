@@ -312,6 +312,8 @@ filter out those types by default.
 ''',
     )
 
+    is_named = graphene.NonNull(graphene.Boolean)
+
 
 class Type(graphene.Interface):
     name = graphene.NonNull(graphene.String)

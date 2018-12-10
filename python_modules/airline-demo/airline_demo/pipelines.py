@@ -142,8 +142,7 @@ def define_tempfile_resource():
     return ResourceDefinition(resource_fn=_tempfile_resource_fn)
 
 
-RedshiftConfigData = types.ConfigDictionary(
-    'RedshiftConfigData',
+RedshiftConfigData = types.Dict(
     {
         'redshift_username': types.Field(types.String),
         'redshift_password': types.Field(types.String),
@@ -184,8 +183,7 @@ test_context = PipelineContextDefinition(
     },
 )
 
-PostgresConfigData = types.ConfigDictionary(
-    'PostgresConfigData',
+PostgresConfigData = types.Dict(
     {
         'postgres_username': types.Field(types.String),
         'postgres_password': types.Field(types.String),

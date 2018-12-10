@@ -25,9 +25,7 @@ documentation.
 .. code-block:: python
 
     @solid(
-        config_field=ConfigDefinition(
-            types.ConfigDictionary({'word': Field(types.String)})
-        )
+        config_field=types.Field(types.Dict{'word': Field(types.String)}))
     )
     def double_the_word_with_typed_config(info):
         return info.config['word'] * 2
@@ -99,8 +97,8 @@ specified, it defaults to the Any type.
 .. code-block:: python
 
     @solid(
-        config_field=ConfigDefinition(
-            types.ConfigDictionary({'word': Field(types.String)})
+        config_field=types.Field(
+            types.Dict({'word': Field(types.String)})
         ),
         outputs=[OutputDefinition(types.String)],
     )
@@ -118,8 +116,8 @@ So imagine we made a coding error (mistyped the output) such as:
 .. code-block:: python
 
     @solid(
-        config_field=ConfigDefinition(
-            types.ConfigDictionary({'word': Field(types.String)})
+        config_field=types.Field(
+            types.Dict({'word': Field(types.String)})
         ),
         outputs=[OutputDefinition(types.Int)],
     )

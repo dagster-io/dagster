@@ -19,20 +19,40 @@ export default class TypeWithTooltip extends React.Component<
       fragment TypeWithTooltipFragment on Type {
         name
         description
+        typeAttributes {
+          isNamed
+        }
       }
     `
   };
 
   render() {
-    return (
-      <Link
-        to={{
-          search: `?typeExplorer=${this.props.type.name}`
-        }}
-      >
-        <TypeName>{this.props.type.name}</TypeName>
-      </Link>
-    );
+    // This is a temporary degradation that prevents
+    // the user from instigating crashes. What we are
+    // going to want to end up having rendering such as
+    // [[Int]] for double nested lists
+    // or
+    // {
+    //    foo: Int?
+    //    bar: [String]
+    //    nested_dict: {
+    //      nested_field: Bool
+    //    }
+    // }
+    // for anonymous dicts
+    if (this.props.type.typeAttributes.isNamed) {
+      return (
+        <Link
+          to={{
+            search: `?typeExplorer=${this.props.type.name}`
+          }}
+        >
+          <TypeName>{this.props.type.name}</TypeName>
+        </Link>
+      );
+    } else {
+      return <TypeName>{this.props.type.name}</TypeName>;
+    }
   }
 }
 

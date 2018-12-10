@@ -7,9 +7,14 @@
 // GraphQL fragment: SidebarSolidInfoFragment
 // ====================================================
 
+export interface SidebarSolidInfoFragment_outputs_definition_type_typeAttributes {
+  isNamed: boolean;
+}
+
 export interface SidebarSolidInfoFragment_outputs_definition_type {
   name: string;
   description: string | null;
+  typeAttributes: SidebarSolidInfoFragment_outputs_definition_type_typeAttributes;
 }
 
 export interface SidebarSolidInfoFragment_outputs_definition_expectations {
@@ -28,9 +33,14 @@ export interface SidebarSolidInfoFragment_outputs {
   definition: SidebarSolidInfoFragment_outputs_definition;
 }
 
+export interface SidebarSolidInfoFragment_inputs_definition_type_typeAttributes {
+  isNamed: boolean;
+}
+
 export interface SidebarSolidInfoFragment_inputs_definition_type {
   name: string;
   description: string | null;
+  typeAttributes: SidebarSolidInfoFragment_inputs_definition_type_typeAttributes;
 }
 
 export interface SidebarSolidInfoFragment_inputs_definition_expectations {
@@ -68,20 +78,39 @@ export interface SidebarSolidInfoFragment_definition_metadata {
   value: string;
 }
 
+export interface SidebarSolidInfoFragment_definition_configDefinition_type_RegularType_typeAttributes {
+  isNamed: boolean;
+}
+
 export interface SidebarSolidInfoFragment_definition_configDefinition_type_RegularType {
   __typename: "RegularType";
   name: string;
   description: string | null;
+  typeAttributes: SidebarSolidInfoFragment_definition_configDefinition_type_RegularType_typeAttributes;
+}
+
+export interface SidebarSolidInfoFragment_definition_configDefinition_type_CompositeType_fields_type_RegularType_typeAttributes {
+  isNamed: boolean;
 }
 
 export interface SidebarSolidInfoFragment_definition_configDefinition_type_CompositeType_fields_type_RegularType {
   name: string;
   description: string | null;
+  typeAttributes: SidebarSolidInfoFragment_definition_configDefinition_type_CompositeType_fields_type_RegularType_typeAttributes;
+}
+
+export interface SidebarSolidInfoFragment_definition_configDefinition_type_CompositeType_fields_type_CompositeType_typeAttributes {
+  isNamed: boolean;
+}
+
+export interface SidebarSolidInfoFragment_definition_configDefinition_type_CompositeType_fields_type_CompositeType_fields_type_typeAttributes {
+  isNamed: boolean;
 }
 
 export interface SidebarSolidInfoFragment_definition_configDefinition_type_CompositeType_fields_type_CompositeType_fields_type {
   name: string;
   description: string | null;
+  typeAttributes: SidebarSolidInfoFragment_definition_configDefinition_type_CompositeType_fields_type_CompositeType_fields_type_typeAttributes;
 }
 
 export interface SidebarSolidInfoFragment_definition_configDefinition_type_CompositeType_fields_type_CompositeType_fields {
@@ -95,6 +124,7 @@ export interface SidebarSolidInfoFragment_definition_configDefinition_type_Compo
 export interface SidebarSolidInfoFragment_definition_configDefinition_type_CompositeType_fields_type_CompositeType {
   name: string;
   description: string | null;
+  typeAttributes: SidebarSolidInfoFragment_definition_configDefinition_type_CompositeType_fields_type_CompositeType_typeAttributes;
   fields: SidebarSolidInfoFragment_definition_configDefinition_type_CompositeType_fields_type_CompositeType_fields[];
 }
 
@@ -108,11 +138,16 @@ export interface SidebarSolidInfoFragment_definition_configDefinition_type_Compo
   type: SidebarSolidInfoFragment_definition_configDefinition_type_CompositeType_fields_type;
 }
 
+export interface SidebarSolidInfoFragment_definition_configDefinition_type_CompositeType_typeAttributes {
+  isNamed: boolean;
+}
+
 export interface SidebarSolidInfoFragment_definition_configDefinition_type_CompositeType {
   __typename: "CompositeType";
   name: string;
   description: string | null;
   fields: SidebarSolidInfoFragment_definition_configDefinition_type_CompositeType_fields[];
+  typeAttributes: SidebarSolidInfoFragment_definition_configDefinition_type_CompositeType_typeAttributes;
 }
 
 export type SidebarSolidInfoFragment_definition_configDefinition_type = SidebarSolidInfoFragment_definition_configDefinition_type_RegularType | SidebarSolidInfoFragment_definition_configDefinition_type_CompositeType;
