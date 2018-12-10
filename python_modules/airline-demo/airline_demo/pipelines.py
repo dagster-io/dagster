@@ -172,6 +172,7 @@ test_context = PipelineContextDefinition(
                     info.config['redshift_password'],
                     info.config['redshift_hostname'],
                     info.config['redshift_db_name'],
+                    jdbc=False
                 )
             ),
             config_field=types.Field(RedshiftConfigData),
@@ -213,6 +214,7 @@ local_context = PipelineContextDefinition(
                     info.config['postgres_password'],
                     info.config['postgres_hostname'],
                     info.config['postgres_db_name'],
+                    jdbc=False
                 )
             ),
             config_field=types.Field(PostgresConfigData),
