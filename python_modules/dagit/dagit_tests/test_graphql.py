@@ -26,6 +26,7 @@ from dagit.app import RepositoryContainer
 from dagit.schema.context import DagsterGraphQLContext
 from dagit.pipeline_run_storage import PipelineRunStorage
 from dagster.utils import script_relative_path
+from dagit.pipeline_execution_manager import SynchronousExecutionManager
 
 from .production_query import PRODUCTION_QUERY
 
@@ -46,7 +47,7 @@ def define_context(synchronous_mode=False):
             )
         ),
         PipelineRunStorage(),
-        synchronous_mode=synchronous_mode,
+        execution_manager=SynchronousExecutionManager(),
     )
 
 

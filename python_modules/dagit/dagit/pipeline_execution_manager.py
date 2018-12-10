@@ -74,7 +74,7 @@ class SyntheticPipelineEventRecord(PipelineEventRecord):
         )
 
 
-class SyncronousExecutionManager(PipelineExecutionManager):
+class SynchronousExecutionManager(PipelineExecutionManager):
     def execute_pipeline(self, pipeline, typed_environment, pipeline_run):
         check.inst_param(pipeline, 'pipeline', PipelineDefinition)
         try:
