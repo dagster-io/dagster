@@ -7,20 +7,39 @@
 // GraphQL fragment: ConfigExplorerFragment
 // ====================================================
 
+export interface ConfigExplorerFragment_contexts_config_type_RegularType_typeAttributes {
+  isNamed: boolean;
+}
+
 export interface ConfigExplorerFragment_contexts_config_type_RegularType {
   __typename: "RegularType";
   name: string;
   description: string | null;
+  typeAttributes: ConfigExplorerFragment_contexts_config_type_RegularType_typeAttributes;
+}
+
+export interface ConfigExplorerFragment_contexts_config_type_CompositeType_fields_type_RegularType_typeAttributes {
+  isNamed: boolean;
 }
 
 export interface ConfigExplorerFragment_contexts_config_type_CompositeType_fields_type_RegularType {
   name: string;
   description: string | null;
+  typeAttributes: ConfigExplorerFragment_contexts_config_type_CompositeType_fields_type_RegularType_typeAttributes;
+}
+
+export interface ConfigExplorerFragment_contexts_config_type_CompositeType_fields_type_CompositeType_typeAttributes {
+  isNamed: boolean;
+}
+
+export interface ConfigExplorerFragment_contexts_config_type_CompositeType_fields_type_CompositeType_fields_type_typeAttributes {
+  isNamed: boolean;
 }
 
 export interface ConfigExplorerFragment_contexts_config_type_CompositeType_fields_type_CompositeType_fields_type {
   name: string;
   description: string | null;
+  typeAttributes: ConfigExplorerFragment_contexts_config_type_CompositeType_fields_type_CompositeType_fields_type_typeAttributes;
 }
 
 export interface ConfigExplorerFragment_contexts_config_type_CompositeType_fields_type_CompositeType_fields {
@@ -34,6 +53,7 @@ export interface ConfigExplorerFragment_contexts_config_type_CompositeType_field
 export interface ConfigExplorerFragment_contexts_config_type_CompositeType_fields_type_CompositeType {
   name: string;
   description: string | null;
+  typeAttributes: ConfigExplorerFragment_contexts_config_type_CompositeType_fields_type_CompositeType_typeAttributes;
   fields: ConfigExplorerFragment_contexts_config_type_CompositeType_fields_type_CompositeType_fields[];
 }
 
@@ -47,11 +67,16 @@ export interface ConfigExplorerFragment_contexts_config_type_CompositeType_field
   type: ConfigExplorerFragment_contexts_config_type_CompositeType_fields_type;
 }
 
+export interface ConfigExplorerFragment_contexts_config_type_CompositeType_typeAttributes {
+  isNamed: boolean;
+}
+
 export interface ConfigExplorerFragment_contexts_config_type_CompositeType {
   __typename: "CompositeType";
   name: string;
   description: string | null;
   fields: ConfigExplorerFragment_contexts_config_type_CompositeType_fields[];
+  typeAttributes: ConfigExplorerFragment_contexts_config_type_CompositeType_typeAttributes;
 }
 
 export type ConfigExplorerFragment_contexts_config_type = ConfigExplorerFragment_contexts_config_type_RegularType | ConfigExplorerFragment_contexts_config_type_CompositeType;
@@ -66,20 +91,39 @@ export interface ConfigExplorerFragment_contexts {
   config: ConfigExplorerFragment_contexts_config | null;
 }
 
+export interface ConfigExplorerFragment_solids_definition_configDefinition_type_RegularType_typeAttributes {
+  isNamed: boolean;
+}
+
 export interface ConfigExplorerFragment_solids_definition_configDefinition_type_RegularType {
   __typename: "RegularType";
   name: string;
   description: string | null;
+  typeAttributes: ConfigExplorerFragment_solids_definition_configDefinition_type_RegularType_typeAttributes;
+}
+
+export interface ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_fields_type_RegularType_typeAttributes {
+  isNamed: boolean;
 }
 
 export interface ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_fields_type_RegularType {
   name: string;
   description: string | null;
+  typeAttributes: ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_fields_type_RegularType_typeAttributes;
+}
+
+export interface ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_fields_type_CompositeType_typeAttributes {
+  isNamed: boolean;
+}
+
+export interface ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_fields_type_CompositeType_fields_type_typeAttributes {
+  isNamed: boolean;
 }
 
 export interface ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_fields_type_CompositeType_fields_type {
   name: string;
   description: string | null;
+  typeAttributes: ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_fields_type_CompositeType_fields_type_typeAttributes;
 }
 
 export interface ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_fields_type_CompositeType_fields {
@@ -93,6 +137,7 @@ export interface ConfigExplorerFragment_solids_definition_configDefinition_type_
 export interface ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_fields_type_CompositeType {
   name: string;
   description: string | null;
+  typeAttributes: ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_fields_type_CompositeType_typeAttributes;
   fields: ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_fields_type_CompositeType_fields[];
 }
 
@@ -106,11 +151,16 @@ export interface ConfigExplorerFragment_solids_definition_configDefinition_type_
   type: ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_fields_type;
 }
 
+export interface ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_typeAttributes {
+  isNamed: boolean;
+}
+
 export interface ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType {
   __typename: "CompositeType";
   name: string;
   description: string | null;
   fields: ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_fields[];
+  typeAttributes: ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_typeAttributes;
 }
 
 export type ConfigExplorerFragment_solids_definition_configDefinition_type = ConfigExplorerFragment_solids_definition_configDefinition_type_RegularType | ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType;

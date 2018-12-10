@@ -83,8 +83,7 @@ from .math_test_db import in_mem_engine
 InMemSqlLiteEngineResource = ResourceDefinition(
     resource_fn=lambda info: in_mem_engine(info.config['num_table']),
     config_field=types.Field(
-        types.ConfigDictionary(
-            'InMemSqlLiteEngineResourceConfig',
+        types.Dict(
             {
                 'num_table': types.Field(
                     types.String,

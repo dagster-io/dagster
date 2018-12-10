@@ -226,7 +226,15 @@ jobs:
 
   airline-demo-python-3.6: &airline-demo-template
     <<: *dagster-template
-    steps:
+    docker:
+      - image: dagster/cci-test:3.6
+        auth:
+          username: $DOCKERHUB_USERNAME
+          password: $DOCKERHUB_PASSWORD
+    environment:
+      TOXENV: py36
+
+      steps:
       - checkout
 
       - run:
@@ -255,14 +263,20 @@ jobs:
   airline-demo-python-3.5:
     <<: *airline-demo-template
     docker:
-      - image: circleci/python:3.5.6
+      - image: dagster/cci-test:3.5
+        auth:
+          username: $DOCKERHUB_USERNAME
+          password: $DOCKERHUB_PASSWORD
     environment:
       TOXENV: py35
 
   airline-demo-python-2.7:
     <<: *airline-demo-template
     docker:
-      - image: circleci/python:2.7.15
+      - image: dagster/cci-test:2.7
+        auth:
+          username: $DOCKERHUB_USERNAME
+          password: $DOCKERHUB_PASSWORD
     environment:
       TOXENV: py27
 

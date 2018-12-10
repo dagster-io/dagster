@@ -22,9 +22,7 @@ from dagster.utils import (
     script_relative_path,
 )
 
-name = 'WordConfig'
-fields = {'word': Field(types.String)}
-WordConfig = types.ConfigDictionary(name=name, fields=fields)
+WordConfig = types.Dict({'word': Field(types.String)})
 
 
 @solid(config_field=Field(WordConfig))

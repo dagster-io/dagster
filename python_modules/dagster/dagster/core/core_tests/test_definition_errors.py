@@ -124,7 +124,7 @@ def test_invalid_item_in_solid_list():
 def test_double_type():
     @solid(
         config_field=Field(
-            types.ConfigDictionary(
+            types.DagsterCompositeType(
                 'SomeTypeName',
                 {'some_field': Field(types.String)},
             ),
@@ -135,7 +135,7 @@ def test_double_type():
 
     @solid(
         config_field=Field(
-            types.ConfigDictionary(
+            types.DagsterCompositeType(
                 'SomeTypeName',
                 {'some_field': Field(types.String)},
             ),

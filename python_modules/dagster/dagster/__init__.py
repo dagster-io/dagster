@@ -12,7 +12,6 @@ from dagster.core.execution_context import (
 )
 
 from dagster.core.definitions import (
-    ConfigField,
     ContextCreationExecutionInfo,
     DependencyDefinition,
     ExpectationDefinition,
@@ -59,7 +58,6 @@ from .version import __version__
 
 __all__ = [
     # Definition
-    'ConfigField',
     'DependencyDefinition',
     'ExpectationDefinition',
     'ExpectationResult',

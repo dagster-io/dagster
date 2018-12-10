@@ -439,7 +439,8 @@ def _create_resources(pipeline_def, context_def, environment, execution_context,
 
 def get_resource_or_gen(context_definition, resource_name, environment, run_id):
     resource_def = context_definition.resources[resource_name]
-    resource_config = environment.context.resources[resource_name]['config']
+    # Need to do default values
+    resource_config = environment.context.resources.get(resource_name, {}).get('config')
     return resource_def.resource_fn(ResourceCreationInfo(resource_config, run_id))
 
 
@@ -627,7 +628,6 @@ def _execute_graph(
     check.inst_param(environment, 'environment', config.Environment)
     check.bool_param(throw_on_error, 'throw_on_error')
     check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
-
     results = []
     with yield_context(execution_graph.pipeline, environment, reentrant_info) as context:
         check.inst(context, RuntimeExecutionContext)

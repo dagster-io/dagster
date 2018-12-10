@@ -6,7 +6,6 @@ import pytest
 from graphql import graphql, subscribe, parse
 
 from dagster import (
-    ConfigField,
     DependencyDefinition,
     Field,
     PipelineContextDefinition,
@@ -27,11 +26,12 @@ from dagit.app import RepositoryContainer
 from dagit.schema.context import DagsterGraphQLContext
 from dagit.pipeline_run_storage import PipelineRunStorage
 from dagster.utils import script_relative_path
+from dagit.pipeline_execution_manager import SynchronousExecutionManager
 
 from .production_query import PRODUCTION_QUERY
 
 
-def define_context():
+def define_context(synchronous_mode=False):
     return DagsterGraphQLContext(
         RepositoryContainer(
             repository=RepositoryDefinition(
@@ -46,7 +46,8 @@ def define_context():
                 }
             )
         ),
-        PipelineRunStorage()
+        PipelineRunStorage(),
+        execution_manager=SynchronousExecutionManager(),
     )
 
 
@@ -140,22 +141,22 @@ def define_more_complicated_config():
                 inputs=[],
                 outputs=[],
                 transform_fn=lambda *_args: None,
-                config_field=ConfigField.solid_config_dict(
-                    'more_complicated_config',
-                    'a_solid_with_config',
-                    {
-                        'field_one':
-                        types.Field(types.String),
-                        'field_two':
-                        types.Field(types.String, is_optional=True),
-                        'field_three':
-                        types.Field(
-                            types.String,
-                            is_optional=True,
-                            default_value='some_value',
-                        )
-                    },
-                ),
+                config_field=types.Field(
+                    types.Dict(
+                        {
+                            'field_one':
+                            types.Field(types.String),
+                            'field_two':
+                            types.Field(types.String, is_optional=True),
+                            'field_three':
+                            types.Field(
+                                types.String,
+                                is_optional=True,
+                                default_value='some_value',
+                            )
+                        },
+                    ),
+                )
             ),
         ],
     )
@@ -403,26 +404,31 @@ def define_more_complicated_nested_config():
                 inputs=[],
                 outputs=[],
                 transform_fn=lambda *_args: None,
-                config_field=ConfigField.solid_config_dict(
-                    'more_complicated_nested_config',
-                    'a_solid_with_config',
-                    {
-                        'field_one':
-                        types.Field(types.String),
-                        'field_two':
-                        types.Field(types.String, is_optional=True),
-                        'field_three':
-                        types.Field(
-                            types.String,
-                            is_optional=True,
-                            default_value='some_value',
-                        ),
-                        'nested_field': {
-                            'field_four_str': types.Field(types.String),
-                            'field_five_int': types.Field(types.Int),
-                        }
-                    },
-                ),
+                config_field=types.Field(
+                    types.Dict(
+                        {
+                            'field_one':
+                            types.Field(types.String),
+                            'field_two':
+                            types.Field(types.String, is_optional=True),
+                            'field_three':
+                            types.Field(
+                                types.String,
+                                is_optional=True,
+                                default_value='some_value',
+                            ),
+                            'nested_field':
+                            types.Field(
+                                types.Dict(
+                                    {
+                                        'field_four_str': types.Field(types.String),
+                                        'field_five_int': types.Field(types.Int),
+                                    }
+                                )
+                            ),
+                        },
+                    ),
+                )
             ),
         ],
     )
@@ -1116,6 +1122,83 @@ SUBSCRIPTION_QUERY = '''
 subscription subscribeTest($runId: ID!) {
     pipelineRunLogs(runId: $runId) {
         __typename
+    }
+}
+'''
+
+
+def test_basic_sync_execution():
+    context = define_context(synchronous_mode=True)
+    result = execute_dagster_graphql(
+        context,
+        SYNC_MUTATION_QUERY,
+        variables={
+            'executionParams': {
+                'pipelineName': 'pandas_hello_world',
+                'config': {
+                    'solids': {
+                        'load_num_csv': {
+                            'config': {
+                                'path': script_relative_path('num.csv'),
+                            }
+                        },
+                    },
+                },
+            },
+        },
+    )
+
+    assert not result.errors
+    assert result.data
+
+    logs = result.data['startPipelineExecution']['run']['logs']['nodes']
+    assert isinstance(logs, list)
+    assert has_event_of_type(logs, 'PipelineStartEvent')
+    assert has_event_of_type(logs, 'PipelineSuccessEvent')
+    assert not has_event_of_type(logs, 'PipelineFailureEvent')
+
+    assert first_event_of_type(logs, 'PipelineStartEvent')['level'] == 'INFO'
+
+
+def first_event_of_type(logs, message_type):
+    for log in logs:
+        if log['__typename'] == message_type:
+            return log
+    return None
+
+
+def has_event_of_type(logs, message_type):
+    return first_event_of_type(logs, message_type) is not None
+
+
+SYNC_MUTATION_QUERY = '''
+mutation ($executionParams: PipelineExecutionParams!) {
+    startPipelineExecution(
+        executionParams: $executionParams
+    ) {
+        __typename
+        ... on StartPipelineExecutionSuccess {
+            run {
+                runId
+                pipeline { name }
+                logs {
+                    nodes {
+                        __typename
+                        ... on MessageEvent {
+                            message
+                            level
+                        }
+                    }
+                }
+            }
+        }
+        ... on PipelineConfigValidationInvalid {
+            pipeline { name }
+            errors { message }
+        }
+        ... on PipelineNotFoundError {
+            pipelineName
+        }
     }
 }
 '''

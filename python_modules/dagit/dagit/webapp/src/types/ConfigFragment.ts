@@ -7,20 +7,39 @@
 // GraphQL fragment: ConfigFragment
 // ====================================================
 
+export interface ConfigFragment_type_RegularType_typeAttributes {
+  isNamed: boolean;
+}
+
 export interface ConfigFragment_type_RegularType {
   __typename: "RegularType";
   name: string;
   description: string | null;
+  typeAttributes: ConfigFragment_type_RegularType_typeAttributes;
+}
+
+export interface ConfigFragment_type_CompositeType_fields_type_RegularType_typeAttributes {
+  isNamed: boolean;
 }
 
 export interface ConfigFragment_type_CompositeType_fields_type_RegularType {
   name: string;
   description: string | null;
+  typeAttributes: ConfigFragment_type_CompositeType_fields_type_RegularType_typeAttributes;
+}
+
+export interface ConfigFragment_type_CompositeType_fields_type_CompositeType_typeAttributes {
+  isNamed: boolean;
+}
+
+export interface ConfigFragment_type_CompositeType_fields_type_CompositeType_fields_type_typeAttributes {
+  isNamed: boolean;
 }
 
 export interface ConfigFragment_type_CompositeType_fields_type_CompositeType_fields_type {
   name: string;
   description: string | null;
+  typeAttributes: ConfigFragment_type_CompositeType_fields_type_CompositeType_fields_type_typeAttributes;
 }
 
 export interface ConfigFragment_type_CompositeType_fields_type_CompositeType_fields {
@@ -34,6 +53,7 @@ export interface ConfigFragment_type_CompositeType_fields_type_CompositeType_fie
 export interface ConfigFragment_type_CompositeType_fields_type_CompositeType {
   name: string;
   description: string | null;
+  typeAttributes: ConfigFragment_type_CompositeType_fields_type_CompositeType_typeAttributes;
   fields: ConfigFragment_type_CompositeType_fields_type_CompositeType_fields[];
 }
 
@@ -47,11 +67,16 @@ export interface ConfigFragment_type_CompositeType_fields {
   type: ConfigFragment_type_CompositeType_fields_type;
 }
 
+export interface ConfigFragment_type_CompositeType_typeAttributes {
+  isNamed: boolean;
+}
+
 export interface ConfigFragment_type_CompositeType {
   __typename: "CompositeType";
   name: string;
   description: string | null;
   fields: ConfigFragment_type_CompositeType_fields[];
+  typeAttributes: ConfigFragment_type_CompositeType_typeAttributes;
 }
 
 export type ConfigFragment_type = ConfigFragment_type_RegularType | ConfigFragment_type_CompositeType;

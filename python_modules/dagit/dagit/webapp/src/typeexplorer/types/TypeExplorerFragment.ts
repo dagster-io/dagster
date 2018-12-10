@@ -23,6 +23,7 @@ export interface TypeExplorerFragment_RegularType_typeAttributes {
    * 
    */
   isSystemConfig: boolean;
+  isNamed: boolean;
 }
 
 export interface TypeExplorerFragment_RegularType {
@@ -48,11 +49,17 @@ export interface TypeExplorerFragment_CompositeType_typeAttributes {
    * 
    */
   isSystemConfig: boolean;
+  isNamed: boolean;
+}
+
+export interface TypeExplorerFragment_CompositeType_fields_type_typeAttributes {
+  isNamed: boolean;
 }
 
 export interface TypeExplorerFragment_CompositeType_fields_type {
   name: string;
   description: string | null;
+  typeAttributes: TypeExplorerFragment_CompositeType_fields_type_typeAttributes;
 }
 
 export interface TypeExplorerFragment_CompositeType_fields {

@@ -3,6 +3,8 @@
 import os
 import zipfile
 
+import dagster.check as check
+
 from sqlalchemy import text
 from stringcase import snakecase
 
@@ -20,6 +22,7 @@ from dagstermill import define_dagstermill_solid
 from .types import (
     SparkDataFrameType,
     SqlAlchemyEngineType,
+    SqlTableName,
 )
 from .utils import (
     mkdir_p,
@@ -40,7 +43,7 @@ def notebook_solid(name, inputs, outputs):
 
 
 # need a sql context w a sqlalchemy engine
-def sql_solid(name, select_statement, materialization_strategy, table_name=None):
+def sql_solid(name, select_statement, materialization_strategy, table_name=None, inputs=None):
     '''Return a new solid that executes and materializes a SQL select statement.
 
     Args:
@@ -48,17 +51,19 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None)
         select_statement (str): The select statement to execute.
         materialization_strategy (str): Must be 'table', the only currently supported
             materialization strategy. If 'table', the kwarg `table_name` must also be passed.
-
     Kwargs:
         table_name (str): THe name of the new table to create, if the materialization strategy
-            is 'table'.
+            is 'table'. Default: None.
+        inputs (list[InputDefinition]): Inputs, if any, for the new solid. Default: None.
 
     Returns:
         function:
             The new SQL solid.
     '''
+    inputs = check.opt_list_param(inputs, 'inputs', InputDefinition)
+
     materialization_strategy_output_types = {  # pylint:disable=C0103
-        'table': types.String,
+        'table': SqlTableName,
         # 'view': types.String,
         # 'query': SqlAlchemyQueryType,
         # 'subquery': SqlAlchemySubqueryType,
@@ -101,20 +106,23 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None)
                 The table name of the newly materialized SQL select statement.
         '''
         # n.b., we will eventually want to make this resources key configurable
-        info.context.resources.db_engine.execute(
-            text(
-                'drop table if exists {table_name};'
-                'create table {table_name} as {select_statement};'.format(
-                    table_name=table_name,
-                    select_statement=select_statement,
-                )
-            )
+        sql_statement = (
+            'drop table if exists {table_name}; '
+            'create table {table_name} as {select_statement};'
+        ).format(
+            table_name=table_name,
+            select_statement=select_statement,
         )
+
+        info.context.info(
+            'Executing sql statement:\n{sql_statement}'.format(sql_statement=sql_statement)
+        )
+        info.context.resources.db_engine.execute(text(sql_statement))
         yield Result(value=table_name, output_name='result')
 
     return SolidDefinition(
         name=name,
-        inputs=[],
+        inputs=inputs,
         outputs=[
             OutputDefinition(
                 materialization_strategy_output_types[materialization_strategy],
@@ -168,8 +176,7 @@ def thunk_database_engine(info):
 @solid(
     name='download_from_s3',
     config_field=Field(
-        types.ConfigDictionary(
-            name='DownloadFromS3ConfigType',
+        types.Dict(
             fields={
                 # Probably want to make the region configuable too
                 'bucket':
@@ -186,7 +193,7 @@ def thunk_database_engine(info):
                 ),
                 'target_path':
                 Field(
-                    types.String,
+                    types.Path,
                     description='If present, specifies the path at which to download the object.',
                     is_optional=True
                 ),
@@ -194,7 +201,7 @@ def thunk_database_engine(info):
         )
     ),
     description='Downloads an object from S3.',
-    outputs=[OutputDefinition(types.String, description='The path to the downloaded object.')]
+    outputs=[OutputDefinition(types.Path, description='The path to the downloaded object.')]
 )
 def download_from_s3(info):
     '''Download an object from s3.
@@ -208,9 +215,9 @@ def download_from_s3(info):
     '''
     bucket = info.config['bucket']
     key = info.config['key']
-    target_path = (info.config.get('target_path') or key)
+    target_path = info.config.get('target_path')
 
-    if info.config['skip_if_present'] and os.path.isfile(target_path):
+    if target_path and info.config['skip_if_present'] and os.path.isfile(target_path):
         info.context.info(
             'Skipping download, file already present at {target_path}'.format(
                 target_path=target_path
@@ -218,8 +225,11 @@ def download_from_s3(info):
         )
         return target_path
 
-    if os.path.dirname(target_path):
+    if target_path and os.path.dirname(target_path):
         mkdir_p(os.path.dirname(target_path))
+
+    if target_path is None:
+        target_path = info.context.resources.tempfile.tempfile().name
 
     info.context.resources.s3.download_file(bucket, key, target_path)
     return target_path
@@ -228,8 +238,7 @@ def download_from_s3(info):
 @solid(
     name='upload_to_s3',
     config_field=Field(
-        types.ConfigDictionary(
-            name='UploadToS3ConfigType',
+        types.Dict(
             fields={
                 # Probably want to make the region configuable too
                 'bucket':
@@ -238,7 +247,7 @@ def download_from_s3(info):
                 Field(types.String, description='The key to which to upload the file.'),
                 'kwargs':
                 Field(
-                    types.Dict,
+                    types.PythonDict,
                     description='Kwargs to pass through to the S3 client',
                     is_optional=True,
                 )
@@ -248,7 +257,7 @@ def download_from_s3(info):
     inputs=[
         InputDefinition(
             'file_path',
-            types.String,
+            types.Path,
             description='The path of the file to upload.',
         ),
     ],
@@ -299,7 +308,7 @@ def upload_to_s3(info, file_path):
     inputs=[
         InputDefinition(
             'archive_path',
-            types.String,
+            types.Path,
             description='The path to the archive.',
         ),
         InputDefinition(
@@ -314,8 +323,7 @@ def upload_to_s3(info, file_path):
         # ),
     ],
     config_field=Field(
-        types.ConfigDictionary(
-            name='UnzipFileConfigType',
+        types.Dict(
             fields={
                 'skip_if_present':
                 Field(
@@ -325,26 +333,26 @@ def upload_to_s3(info, file_path):
                     default_value=False,
                     is_optional=True
                 ),
+                'destination_dir':
+                Field(
+                    types.String,
+                    description='If no destination_dir is specified, the archive will be unzipped '
+                    'to a temporary directory.',
+                    is_optional=True,
+                )
             }
         )
     ),
     description='Extracts an archive member from a zip archive.',
-    outputs=[
-        OutputDefinition(types.String, description='The path to the unzipped archive member.')
-    ],
+    outputs=[OutputDefinition(types.Path, description='The path to the unzipped archive member.')],
 )
 def unzip_file(
     info,
     archive_path,
     archive_member,
-    # destination_dir=None
 ):
-    # FIXME
-    # archive_path = info.config['archive_path']
-    # archive_member = info.config['archive_member']
     destination_dir = (
-        # info.config['destination_dir'] or
-        os.path.dirname(archive_path)
+        info.config.get('destination_dir') or info.context.resources.tempfile.tempdir()
     )
 
     with zipfile.ZipFile(archive_path, 'r') as zip_ref:
@@ -387,17 +395,15 @@ def unzip_file(
 @solid(
     name='ingest_csv_to_spark',
     config_field=Field(
-        types.ConfigDictionary(
-            name='IngestCsvToSparkConfigType',
+        types.Dict(
             fields={
-                'input_csv':
-                Field(types.String, description='', default_value='', is_optional=True),
+                'input_csv': Field(types.Path, description='', default_value='', is_optional=True),
             }
         )
     ),
     inputs=[InputDefinition(
         'input_csv',
-        types.String,
+        types.Path,
         description='',
     )],
     outputs=[OutputDefinition(SparkDataFrameType)]
@@ -447,16 +453,8 @@ def canonicalize_column_names(_info, data_frame):
     return rename_spark_dataframe_columns(data_frame, lambda c: c.lower())
 
 
-def replace_values_spark(data_frame, old, new, columns=None):
-    if columns is None:
-        data_frame.na.replace(old, new)
-        return data_frame
-    # FIXME handle selecting certain columns
-    return data_frame
-
-
-def fix_na_spark(data_frame, na_value, columns=None):
-    return replace_values_spark(data_frame, na_value, None, columns=columns)
+def replace_values_spark(data_frame, old, new):
+    return data_frame.na.replace(old, new)
 
 
 @solid(
@@ -476,7 +474,7 @@ def fix_na_spark(data_frame, na_value, columns=None):
     ],
 )
 def normalize_weather_na_values(_info, data_frame):
-    return fix_na_spark(data_frame, 'M')
+    return replace_values_spark(data_frame, 'M', None)
 
 
 @solid(
@@ -489,14 +487,9 @@ def normalize_weather_na_values(_info, data_frame):
         )
     ],
     outputs=[OutputDefinition(SparkDataFrameType)],
-    config_field=Field(
-        types.ConfigDictionary(
-            name='BatchLoadDataToDatabaseFromSparkConfigType',
-            fields={
-                'table_name': Field(types.String, description=''),
-            }
-        )
-    )
+    config_field=Field(types.Dict(fields={
+        'table_name': Field(types.String, description=''),
+    }))
 )
 def load_data_to_database_from_spark(info, data_frame):
     # Move this to context, config at that level
@@ -508,12 +501,9 @@ def load_data_to_database_from_spark(info, data_frame):
     name='subsample_spark_dataset',
     description='Subsample a spark dataset.',
     config_field=Field(
-        types.ConfigDictionary(
-            name='SubsampleSparkDataFrameConfigType',
-            fields={
-                'subsample_pct': Field(types.Int, description=''),
-            }
-        )
+        types.Dict(fields={
+            'subsample_pct': Field(types.Int, description=''),
+        })
         # description='The integer percentage of rows to sample from the input dataset.'
     ),
     inputs=[
@@ -555,8 +545,7 @@ def subsample_spark_dataset(info, data_frame):
         )
     ],
     config_field=Field(
-        types.ConfigDictionary(
-            name='JoinSparkDataFramesConfigType',
+        types.Dict(
             fields={
                 # Probably want to make the region configuable too
                 'on_left':
@@ -604,6 +593,16 @@ def union_spark_data_frames(_info, left_data_frame, right_data_frame):
     return left_data_frame.union(right_data_frame)
 
 
+q2_sfo_outbound_flights = sql_solid(
+    'q2_sfo_outbound_flights',
+    '''
+    select * from q2_on_time_data
+    where origin = 'SFO'
+    ''',
+    'table',
+    table_name='q2_sfo_outbound_flights',
+)
+
 average_sfo_outbound_avg_delays_by_destination = sql_solid(
     'average_sfo_outbound_avg_delays_by_destination',
     '''
@@ -612,11 +611,204 @@ average_sfo_outbound_avg_delays_by_destination = sql_solid(
         cast(cast(depdelay as float) as integer) as departure_delay,
         origin,
         dest as destination
-    from q2_on_time_data
-    where origin='SFO'
+    from q2_sfo_outbound_flights
     ''',
     'table',
     table_name='average_sfo_outbound_avg_delays_by_destination',
+    inputs=[InputDefinition('q2_sfo_outbound_flights', dagster_type=SqlTableName)]
+)
+
+ticket_prices_with_average_delays = sql_solid(
+    'tickets_with_destination',
+    '''
+    select
+        tickets.*,
+        coupons.dest,
+        coupons.destairportid,
+        coupons.destairportseqid, coupons.destcitymarketid,
+        coupons.destcountry, 
+        coupons.deststatefips,
+        coupons.deststate,
+        coupons.deststatename,
+        coupons.destwac
+    from
+        q2_ticket_data as tickets,
+        q2_coupon_data as coupons
+    where
+        tickets.itinid = coupons.itinid;
+    ''',
+    'table',
+    table_name='tickets_with_destination',
+)
+
+tickets_with_destination = sql_solid(
+    'tickets_with_destination',
+    '''
+    select
+        tickets.*,
+        coupons.dest,
+        coupons.destairportid,
+        coupons.destairportseqid, coupons.destcitymarketid,
+        coupons.destcountry, 
+        coupons.deststatefips,
+        coupons.deststate,
+        coupons.deststatename,
+        coupons.destwac
+    from
+        q2_ticket_data as tickets,
+        q2_coupon_data as coupons
+    where
+        tickets.itinid = coupons.itinid;
+    ''',
+    'table',
+    table_name='tickets_with_destination',
+)
+
+delays_vs_fares = sql_solid(
+    'delays_vs_fares',
+    '''
+    with avg_fares as (
+        select
+            tickets.origin,
+            tickets.dest,
+            avg(cast(tickets.itinfare as float)) as avg_fare,
+            avg(cast(tickets.farepermile as float)) as avg_fare_per_mile
+        from tickets_with_destination as tickets
+        where origin = 'SFO'
+        group by (tickets.origin, tickets.dest)
+    )
+    select
+        avg_fares.*,
+        avg(avg_delays.arrival_delay) as avg_arrival_delay,
+        avg(avg_delays.departure_delay) as avg_departure_delay
+    from
+        avg_fares,
+        average_sfo_outbound_avg_delays_by_destination as avg_delays
+    where
+        avg_fares.origin = avg_delays.origin and
+        avg_fares.dest = avg_delays.destination
+    group by (
+        avg_fares.avg_fare,
+        avg_fares.avg_fare_per_mile,
+        avg_fares.origin,
+        avg_delays.origin,
+        avg_fares.dest,
+        avg_delays.destination
+    )
+    ''',
+    'table',
+    table_name='delays_vs_fares',
+    inputs=[
+        InputDefinition('tickets_with_destination', SqlTableName),
+        InputDefinition('average_sfo_outbound_avg_delays_by_destination', SqlTableName)
+    ]
+)
+
+eastbound_delays = sql_solid(
+    'eastbound_delays',
+    '''
+    select
+        avg(cast(cast(arrdelay as float) as integer)) as avg_arrival_delay,
+        avg(cast(cast(depdelay as float) as integer)) as avg_departure_delay,
+        origin,
+        dest as destination,
+        count(1) as num_flights,
+        avg(cast(dest_latitude as float)) as dest_latitude,
+        avg(cast(dest_longitude as float)) as dest_longitude,
+        avg(cast(origin_latitude as float)) as origin_latitude,
+        avg(cast(origin_longitude as float)) as origin_longitude
+    from q2_on_time_data
+    where 
+        cast(origin_longitude as float) < cast(dest_longitude as float) and
+        originstate != 'HI' and
+        deststate != 'HI' and
+        originstate != 'AK' and
+        deststate != 'AK'
+    group by (origin,destination)
+    order by num_flights desc
+    limit 100;
+    ''',
+    'table',
+    table_name='eastbound_delays'
+)
+
+westbound_delays = sql_solid(
+    'westbound_delays',
+    '''
+    select
+        avg(cast(cast(arrdelay as float) as integer)) as avg_arrival_delay,
+        avg(cast(cast(depdelay as float) as integer)) as avg_departure_delay,
+        origin,
+        dest as destination,
+        count(1) as num_flights,
+        avg(cast(dest_latitude as float)) as dest_latitude,
+        avg(cast(dest_longitude as float)) as dest_longitude,
+        avg(cast(origin_latitude as float)) as origin_latitude,
+        avg(cast(origin_longitude as float)) as origin_longitude
+    from q2_on_time_data
+    where
+        cast(origin_longitude as float) > cast(dest_longitude as float) and
+        originstate != 'HI' and
+        deststate != 'HI' and
+        originstate != 'AK' and
+        deststate != 'AK'
+    group by (origin,destination)
+    order by num_flights desc
+    limit 100;
+    ''',
+    'table',
+    table_name='westbound_delays'
+)
+
+delays_by_geography = notebook_solid(
+    'Delays by Geography.ipynb',
+    inputs=[
+        InputDefinition(
+            'db_url',
+            types.String,
+            description='The db_url to use to construct a SQLAlchemy engine.',
+        ),
+        InputDefinition(
+            'westbound_delays',
+            SqlTableName,
+            description='The SQL table containing westbound delays.',
+        ),
+        InputDefinition(
+            'eastbound_delays',
+            SqlTableName,
+            description='The SQL table containing eastbound delays.',
+        ),
+    ],
+    outputs=[
+        OutputDefinition(
+            dagster_type=types.Path,
+            # name='plots_pdf_path',
+            description='The path to the saved PDF plots.',
+        ),
+    ],
+)
+
+delays_vs_fares_nb = notebook_solid(
+    'Fares vs. Delays.ipynb',
+    inputs=[
+        InputDefinition(
+            'db_url',
+            types.String,
+            description='The db_url to use to construct a SQLAlchemy engine.',
+        ),
+        InputDefinition(
+            'table_name',
+            SqlTableName,
+            description='The SQL table to use for calcuations.',
+        ),
+    ],
+    outputs=[
+        OutputDefinition(
+            dagster_type=types.Path,
+            # name='plots_pdf_path',
+            description='The path to the saved PDF plots.',
+        ),
+    ],
 )
 
 sfo_delays_by_destination = notebook_solid(
@@ -629,13 +821,13 @@ sfo_delays_by_destination = notebook_solid(
         ),
         InputDefinition(
             'table_name',
-            types.String,
+            SqlTableName,
             description='The SQL table to use for calcuations.',
         ),
     ],
     outputs=[
         OutputDefinition(
-            dagster_type=types.String,
+            dagster_type=types.Path,
             # name='plots_pdf_path',
             description='The path to the saved PDF plots.',
         ),

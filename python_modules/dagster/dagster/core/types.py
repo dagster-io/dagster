@@ -13,12 +13,18 @@ from dagster.core.errors import (
 SerializedTypeValue = namedtuple('SerializedTypeValue', 'name value')
 
 
-class DagsterTypeAttributes(namedtuple('_DagsterTypeAttributes', 'is_builtin is_system_config')):
-    def __new__(cls, is_builtin=False, is_system_config=False):
+class DagsterTypeAttributes(
+    namedtuple(
+        '_DagsterTypeAttributes',
+        'is_builtin is_system_config is_named',
+    )
+):
+    def __new__(cls, is_builtin=False, is_system_config=False, is_named=True):
         return super(DagsterTypeAttributes, cls).__new__(
             cls,
             is_builtin=check.bool_param(is_builtin, 'is_builtin'),
             is_system_config=check.bool_param(is_system_config, 'is_system_config'),
+            is_named=check.bool_param(is_named, 'is_named')
         )
 
 
@@ -48,6 +54,10 @@ class DagsterType(object):
     @property
     def is_system_config(self):
         return self.type_attributes.is_system_config
+
+    @property
+    def is_named(self):
+        return self.type_attributes.is_named
 
     def __repr__(self):
         return 'DagsterType({name})'.format(name=self.name)
@@ -156,10 +166,6 @@ class _DagsterAnyType(UncoercedTypeMixin, DagsterType):
         return True
 
 
-def nullable_isinstance(value, typez):
-    return value is None or isinstance(value, typez)
-
-
 class PythonObjectType(UncoercedTypeMixin, DagsterType):
     '''Dagster Type that checks if the value is an instance of some `python_type`'''
 
@@ -178,7 +184,7 @@ class PythonObjectType(UncoercedTypeMixin, DagsterType):
         self.python_type = check.type_param(python_type, 'python_type')
 
     def is_python_valid_value(self, value):
-        return nullable_isinstance(value, self.python_type)
+        return isinstance(value, self.python_type)
 
     def serialize_value(self, output_dir, value):
         type_value = self.create_serializable_type_value(
@@ -213,7 +219,7 @@ class PythonObjectType(UncoercedTypeMixin, DagsterType):
 
 class DagsterStringType(DagsterBuiltinScalarType):
     def is_python_valid_value(self, value):
-        return nullable_isinstance(value, string_types)
+        return isinstance(value, string_types)
 
 
 class _DagsterIntType(DagsterBuiltinScalarType):
@@ -223,7 +229,8 @@ class _DagsterIntType(DagsterBuiltinScalarType):
     def is_python_valid_value(self, value):
         if isinstance(value, bool):
             return False
-        return nullable_isinstance(value, integer_types)
+
+        return isinstance(value, integer_types)
 
 
 class _DagsterBoolType(DagsterBuiltinScalarType):
@@ -231,7 +238,7 @@ class _DagsterBoolType(DagsterBuiltinScalarType):
         super(_DagsterBoolType, self).__init__('Bool', description='A boolean.')
 
     def is_python_valid_value(self, value):
-        return nullable_isinstance(value, bool)
+        return isinstance(value, bool)
 
 
 class __FieldValueSentinel:
@@ -366,7 +373,9 @@ class DagsterCompositeTypeBase(DagsterType):
         for field_type in self.field_dict.values():
             for inner_type in field_type.dagster_type.iterate_types():
                 yield inner_type
-        yield self
+
+        if self.is_named:
+            yield self
 
     @property
     def all_fields_optional(self):
@@ -397,15 +406,27 @@ class DagsterSelectorType(DagsterCompositeTypeBase):
     pass
 
 
-_DAGSTER_LIST_TYPE_CACHE = {}
+def Nullable(inner_type):
+    return _DagsterNullableType(inner_type)
+
+
+class _DagsterNullableType(DagsterType):
+    def __init__(self, inner_type):
+        self.inner_type = check.inst_param(inner_type, 'inner_type', DagsterType)
+        super(_DagsterNullableType, self).__init__(
+            name='Nullable.{inner_type}'.format(inner_type=inner_type.name),
+            type_attributes=DagsterTypeAttributes(is_builtin=True, is_named=False),
+        )
+
+    def coerce_runtime_value(self, value):
+        return None if value is None else self.inner_type.coerce_runtime_value(value)
+
+    def iterate_types(self):
+        yield self.inner_type
 
 
 def List(inner_type):
-    check.inst_param(inner_type, 'inner_type', DagsterType)
-    if not inner_type.name in _DAGSTER_LIST_TYPE_CACHE:
-        _DAGSTER_LIST_TYPE_CACHE[inner_type.name] = _DagsterListType(inner_type)
-
-    return _DAGSTER_LIST_TYPE_CACHE[inner_type.name]
+    return _DagsterListType(inner_type)
 
 
 class _DagsterListType(DagsterType):
@@ -414,39 +435,27 @@ class _DagsterListType(DagsterType):
         super(_DagsterListType, self).__init__(
             name='List.{inner_type}'.format(inner_type=inner_type.name),
             description='List of {inner_type}'.format(inner_type=inner_type.name),
-            type_attributes=DagsterTypeAttributes(is_builtin=True),
+            type_attributes=DagsterTypeAttributes(is_builtin=True, is_named=False),
         )
 
-    def coerce_runtime_value(self, _value):
-        check.failed('not implemented')
+    def coerce_runtime_value(self, value):
+        if not isinstance(value, list):
+            raise DagsterRuntimeCoercionError('Must be a list')
+
+        return list(map(self.inner_type.coerce_runtime_value, value))
 
     def iterate_types(self):
         yield self.inner_type
-        yield self
 
     def construct_from_config_value(self, config_value):
         check.failed('should never be called')
 
 
-class IsScopedConfigType:
-    def __init__(self):
-        check.invariant(
-            hasattr(
-                self,
-                '_scoped_config_info',
-                (
-                    'If you use IsScopedConfigType mixin the target class must '
-                    'have _scoped_config_info property'
-                ),
-            ),
-        )
-
-    @property
-    def scoped_config_info(self):
-        return self._scoped_config_info  # pylint: disable=E1101
+def Dict(fields):
+    return _Dict('Dict', fields)
 
 
-class ConfigDictionary(DagsterCompositeType, IsScopedConfigType):
+class _Dict(DagsterCompositeType):
     '''Configuration dictionary.
 
     Typed-checked but then passed to implementations as a python dict
@@ -454,16 +463,12 @@ class ConfigDictionary(DagsterCompositeType, IsScopedConfigType):
     Arguments:
       fields (dict): dictonary of :py:class:`Field` objects keyed by name'''
 
-    def __init__(self, name, fields, scoped_config_info=None):
-        self._scoped_config_info = check.opt_inst_param(
-            scoped_config_info,
-            'scoped_config_info',
-            ScopedConfigInfo,
-        )
-        super(ConfigDictionary, self).__init__(
+    def __init__(self, name, fields):
+        super(_Dict, self).__init__(
             name,
             fields,
             'A configuration dictionary with typed fields',
+            type_attributes=DagsterTypeAttributes(is_named=False),
         )
 
     def coerce_runtime_value(self, value):
@@ -487,32 +492,6 @@ for a particular execution environment.
 Int = _DagsterIntType()
 Bool = _DagsterBoolType()
 Any = _DagsterAnyType()
-Dict = PythonObjectType('Dict', dict, type_attributes=DagsterTypeAttributes(is_builtin=True))
 
-
-class ScopedConfigInfo(
-    namedtuple(
-        '_ConfigScopeInfo',
-        'pipeline_def_name solid_def_name context_def_name',
-    ),
-):
-    def __new__(cls, pipeline_def_name, solid_def_name=None, context_def_name=None):
-        check.str_param(pipeline_def_name, 'pipeline_def_name')
-        check.opt_str_param(solid_def_name, 'solid_def_name')
-        check.opt_str_param(context_def_name, 'context_def_name')
-
-        check.invariant(
-            solid_def_name or context_def_name,
-            'One of solid or context must be specified',
-        )
-        check.invariant(
-            not (solid_def_name and context_def_name),
-            'Both solid and context cannot be specified',
-        )
-
-        return super(ScopedConfigInfo, cls).__new__(
-            cls,
-            pipeline_def_name,
-            solid_def_name,
-            context_def_name,
-        )
+# TO DISCUSS: Consolidate with Dict?
+PythonDict = PythonObjectType('Dict', dict, type_attributes=DagsterTypeAttributes(is_builtin=True))

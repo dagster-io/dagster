@@ -15,17 +15,33 @@ from airline_demo.pipelines import (
 @pytest.mark.slow
 def test_pipeline_download():
     result = execute_pipeline(
-        define_airline_demo_download_pipeline(), {
+        define_airline_demo_download_pipeline(),
+        {
             'context': {
                 'local': {
-                    'config': {
-                        'postgres_username': 'test',
-                        'postgres_password': 'test',
-                        'postgres_hostname': '127.0.0.1',
-                        'postgres_db_name': 'test',
-                        'db_dialect': 'postgres',
-                    }
-                }
+                    'resources': {
+                        # duplication not the best
+                        'db_url': {
+                            'config': {
+                                'postgres_username': 'test',
+                                'postgres_password': 'test',
+                                'postgres_hostname': '127.0.0.1',
+                                'postgres_db_name': 'test',
+                            },
+                        },
+                        'db_engine': {
+                            'config': {
+                                'postgres_username': 'test',
+                                'postgres_password': 'test',
+                                'postgres_hostname': '127.0.0.1',
+                                'postgres_db_name': 'test',
+                            },
+                        },
+                        'db_dialect': {
+                            'config': 'postgres'
+                        },
+                    },
+                },
             },
             'solids': {
                 'april_on_time_data_filename': {
@@ -414,6 +430,18 @@ def test_pipeline_warehouse():
                         'dagster-airline-demo-sink',
                         'key':
                         'sfo_outbound_avg_delay_plots_{timestamp}.pdf'.format(timestamp=timestamp)
+                    }
+                },
+                'upload_delays_vs_fares_pdf_plots': {
+                    'config': {
+                        'bucket': 'dagster-airline-demo-sink',
+                        'key': 'delays_vs_fares_{timestamp}.pdf'.format(timestamp=timestamp)
+                    }
+                },
+                'upload_delays_by_geography_pdf_plots': {
+                    'config': {
+                        'bucket': 'dagster-airline-demo-sink',
+                        'key': 'delays_by_geography_{timestamp}.pdf'.format(timestamp=timestamp)
                     }
                 }
             }

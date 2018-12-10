@@ -51,19 +51,9 @@ class _DataFrameType(types.PythonObjectType):
 
 DataFrame = _DataFrameType()
 
-LoadDataFrameConfigDict = types.ConfigDictionary(
-    'LoadDataFrameConfigDict',
-    {
-        'path': Field(types.Path),
-    },
-)
 
-WriteDataFrameConfigDict = types.ConfigDictionary(
-    'WriteDataFrameConfigDict',
-    {
-        'path': Field(types.Path),
-    },
-)
+def path_dict_field():
+    return Field(types.Dict({'path': Field(types.Path)}))
 
 
 def load_csv_solid(name):
@@ -77,7 +67,7 @@ def load_csv_solid(name):
         inputs=[],
         outputs=[OutputDefinition(DataFrame)],
         transform_fn=_t_fn,
-        config_field=Field(LoadDataFrameConfigDict),
+        config_field=path_dict_field(),
     )
 
 
@@ -89,7 +79,7 @@ def to_csv_solid(name):
         name=name,
         inputs=[InputDefinition('df', DataFrame)],
         outputs=[],
-        config_field=Field(WriteDataFrameConfigDict),
+        config_field=path_dict_field(),
         transform_fn=_t_fn,
     )
 
@@ -102,6 +92,6 @@ def to_parquet_solid(name):
         name=name,
         inputs=[InputDefinition('df', DataFrame)],
         outputs=[],
-        config_field=Field(WriteDataFrameConfigDict),
+        config_field=path_dict_field(),
         transform_fn=_t_fn,
     )
