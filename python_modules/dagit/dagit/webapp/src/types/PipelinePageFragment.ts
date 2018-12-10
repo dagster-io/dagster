@@ -17,6 +17,7 @@ export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_L
   __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent";
   message: string;
   timestamp: string;
+  level: LogLevel;
 }
 
 export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepFailureEvent_step {
@@ -32,6 +33,7 @@ export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_E
   __typename: "ExecutionStepFailureEvent";
   message: string;
   timestamp: string;
+  level: LogLevel;
   step: PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepFailureEvent_step;
   error: PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepFailureEvent_error;
 }
@@ -44,6 +46,7 @@ export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_E
   __typename: "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent";
   message: string;
   timestamp: string;
+  level: LogLevel;
   step: PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepStartEvent_step;
 }
 
@@ -377,6 +380,14 @@ export enum StepTag {
   OUTPUT_EXPECTATION = "OUTPUT_EXPECTATION",
   SERIALIZE = "SERIALIZE",
   TRANSFORM = "TRANSFORM",
+}
+
+export enum LogLevel {
+  CRITICAL = "CRITICAL",
+  DEBUG = "DEBUG",
+  ERROR = "ERROR",
+  INFO = "INFO",
+  WARNING = "WARNING",
 }
 
 /**

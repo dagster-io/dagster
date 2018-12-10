@@ -2,8 +2,8 @@ import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
 import { Colors, Button, ButtonGroup, InputGroup } from "@blueprintjs/core";
-import { PipelineRunFilteredLogMessageFragment } from "./types/PipelineRunFilteredLogMessageFragment";
 import { IconNames } from "@blueprintjs/icons";
+import { PipelineRunFilteredLogMessageFragment } from "./types/PipelineRunFilteredLogMessageFragment";
 
 interface IPipelineRunFilteredLogsProps {
   filter: string;
@@ -16,23 +16,12 @@ interface IPipelineRunFilteredLogsState {
   enabledLevels: { [key: string]: boolean };
 }
 
-type LogLevel = "info" | "normal" | "error";
-
-const LogLevels: LogLevel[] = ["info", "normal", "error"];
-
-// replace with server-provided log levels...
-//
-function logLevelForMessage(message: string): LogLevel {
-  if (message.includes("About to execute")) {
-    return "info";
-  }
-  if (message.includes("oops")) {
-    return "info";
-  }
-  if (message.includes("failed") || message.includes("Error ")) {
-    return "error";
-  }
-  return "normal";
+enum LogLevel {
+  DEBUG = "DEBUG",
+  INFO = "INFO",
+  WARNING = "WARNING",
+  ERROR = "ERROR",
+  CRITICAL = "CRITICAL"
 }
 
 function textForLog(log: PipelineRunFilteredLogMessageFragment) {
@@ -53,9 +42,11 @@ export default class PipelineRunFilteredLogs extends React.Component<
         ... on MessageEvent {
           message
           timestamp
+          level
         }
         ... on ExecutionStepFailureEvent {
           message
+          level
           step {
             name
           }
@@ -70,20 +61,17 @@ export default class PipelineRunFilteredLogs extends React.Component<
 
   state = {
     clearedAtTimestamp: 0,
-    enabledLevels: {
-      info: true,
-      normal: true,
-      error: true
-    }
+    enabledLevels: Object.keys(LogLevel).reduce(
+      (dict, key) => ({ ...dict, [key]: true }),
+      {}
+    )
   };
 
   render() {
     const { filter, nodes } = this.props;
     const { clearedAtTimestamp, enabledLevels } = this.state;
 
-    let displayed = nodes.filter(
-      node => enabledLevels[logLevelForMessage(node.message)]
-    );
+    let displayed = nodes.filter(node => enabledLevels[node.level]);
 
     if (clearedAtTimestamp > 0) {
       const indexAfter = displayed.findIndex(
@@ -110,10 +98,11 @@ export default class PipelineRunFilteredLogs extends React.Component<
           />
           <LogsToolbarDivider />
           <ButtonGroup>
-            {LogLevels.map(level => (
+            {Object.keys(LogLevel).map(level => (
               <Button
-                text={level}
+                text={level.toLowerCase()}
                 small={true}
+                style={{ textTransform: "capitalize" }}
                 active={enabledLevels[level]}
                 onClick={() =>
                   this.setState({
@@ -130,13 +119,13 @@ export default class PipelineRunFilteredLogs extends React.Component<
           <Button
             text={"Clear"}
             small={true}
-            icon={IconNames.CLEAN}
+            icon={IconNames.ERASER}
             onClick={() => this.setState({ clearedAtTimestamp: Date.now() })}
           />
         </LogsToolbar>
         <div style={{ overflowY: "scroll", flex: 1 }}>
           {displayed.map((log, i) => (
-            <LogMessage level={logLevelForMessage(log.message)} key={i}>
+            <LogMessage level={log.level} key={i}>
               {textForLog(log)}
             </LogMessage>
           ))}
@@ -174,9 +163,11 @@ const FilterInputGroup = styled(InputGroup)`
 const LogMessage = styled.div<{ level: LogLevel }>`
   color: ${props =>
     ({
-      info: Colors.GRAY3,
-      normal: Colors.DARK_GRAY2,
-      error: Colors.RED3
+      [LogLevel.DEBUG]: Colors.GRAY3,
+      [LogLevel.INFO]: Colors.DARK_GRAY2,
+      [LogLevel.WARNING]: Colors.DARK_GRAY2,
+      [LogLevel.ERROR]: Colors.RED3,
+      [LogLevel.CRITICAL]: Colors.RED3
     }[props.level])};
   padding: 4px;
   padding-left: 15px;
