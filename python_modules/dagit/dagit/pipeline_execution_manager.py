@@ -161,6 +161,13 @@ class MultiprocessingExecutionManager(PipelineExecutionManager):
                 process.pipeline_run.handle_new_event(message)
         return False
 
+    def join(self):
+        '''Joins on all processes synchronously.'''
+        for process in self._processes:
+            while process.process.is_alive():
+                process.process.join(0.1)
+                gevent.sleep(0.1)
+
     def execute_pipeline(self, pipeline, typed_environment, pipeline_run):
         message_queue = multiprocessing.Queue()
         p = multiprocessing.Process(
