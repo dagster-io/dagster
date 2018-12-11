@@ -128,17 +128,24 @@ RedshiftConfigData = types.Dict(
     },
 )
 
-
-DbInfo = namedtuple('DbInfo', 'engine url dialect load_table')
+DbInfo = namedtuple('DbInfo', 'engine url jdbc_url dialect load_table')
 
 
 def define_redshift_db_info_resource():
     def _create_redshift_db_info(info):
+        db_url_jdbc = create_redshift_db_url(
+            info.config['redshift_username'],
+            info.config['redshift_password'],
+            info.config['redshift_hostname'],
+            info.config['redshift_db_name'],
+        )
+
         db_url = create_redshift_db_url(
             info.config['redshift_username'],
             info.config['redshift_password'],
             info.config['redshift_hostname'],
             info.config['redshift_db_name'],
+            jdbc=False,
         )
 
         s3_temp_dir = info.config['s3_temp_dir']
@@ -148,10 +155,11 @@ def define_redshift_db_info_resource():
             .format('com.databricks.spark.redshift') \
             .option('tempdir', s3_temp_dir) \
             .mode('overwrite') \
-            .jdbc(db_url, table_name)
+            .jdbc(db_url_jdbc, table_name)
 
         return DbInfo(
             url=db_url,
+            jdbc_url=db_url_jdbc,
             engine=create_redshift_engine(db_url),
             dialect='redshift',
             load_table=_do_load,
@@ -162,8 +170,16 @@ def define_redshift_db_info_resource():
         config_field=types.Field(RedshiftConfigData),
     )
 
+
 def define_postgres_db_info_resource():
     def _create_postgres_db_info(info):
+        db_url_jdbc = create_postgres_db_url(
+            info.config['postgres_username'],
+            info.config['postgres_password'],
+            info.config['postgres_hostname'],
+            info.config['postgres_db_name'],
+        )
+
         db_url = create_postgres_db_url(
             info.config['postgres_username'],
             info.config['postgres_password'],
@@ -176,10 +192,11 @@ def define_postgres_db_info_resource():
             data_frame.write \
             .option('driver', 'org.postgresql.Driver') \
             .mode('overwrite') \
-            .jdbc(db_url, table_name)
+            .jdbc(db_url_jdbc, table_name)
 
         return DbInfo(
             url=db_url,
+            jdbc_url=db_url_jdbc,
             engine=create_postgres_engine(db_url),
             dialect='postgres',
             load_table=_do_load,
@@ -192,33 +209,9 @@ def define_postgres_db_info_resource():
 
 
 test_context = PipelineContextDefinition(
-    context_fn= lambda info: ExecutionContext.console_logging(log_level=logging.DEBUG),
+    context_fn=lambda info: ExecutionContext.console_logging(log_level=logging.DEBUG),
     resources={
         'spark': define_lambda_resource(create_spark_session_local),
-        # 'db_url': ResourceDefinition(
-        #     resource_fn=lambda info: create_redshift_db_url(
-        #         info.config['redshift_username'],
-        #         info.config['redshift_password'],
-        #         info.config['redshift_hostname'],
-        #         info.config['redshift_db_name'],
-        #     ),
-        #     config_field=types.Field(RedshiftConfigData),
-        # ),
-        # 'db_engine': ResourceDefinition(
-        #     resource_fn=lambda info: create_redshift_engine(
-        #         create_redshift_db_url(
-        #             info.config['redshift_username'],
-        #             info.config['redshift_password'],
-        #             info.config['redshift_hostname'],
-        #             info.config['redshift_db_name'],
-        #             jdbc=False
-        #         )
-        #     ),
-        #     config_field=types.Field(RedshiftConfigData),
-        # ),
-        # 'db_dialect' : define_string_resource(),
-        # 'redshift_s3_temp_dir' : define_string_resource(),
-        # 'db_load': define_value_resource(_db_load),
         's3': define_lambda_resource(create_s3_session, signed=False),
         'db_info': define_redshift_db_info_resource(),
         'tempfile': define_tempfile_resource(),
@@ -238,65 +231,16 @@ local_context = PipelineContextDefinition(
     context_fn=lambda info: ExecutionContext.console_logging(log_level=logging.DEBUG),
     resources={
         'spark': define_lambda_resource(create_spark_session_local),
-        # 'db_url': ResourceDefinition(
-        #     resource_fn=lambda info: create_postgres_db_url(
-        #         info.config['postgres_username'],
-        #         info.config['postgres_password'],
-        #         info.config['postgres_hostname'],
-        #         info.config['postgres_db_name'],
-        #     ),
-        #     config_field=types.Field(PostgresConfigData),
-        # ),
-        # 'db_engine': ResourceDefinition(
-        #     resource_fn=lambda info: create_postgres_engine(
-        #         create_postgres_db_url(
-        #             info.config['postgres_username'],
-        #             info.config['postgres_password'],
-        #             info.config['postgres_hostname'],
-        #             info.config['postgres_db_name'],
-        #             jdbc=False
-        #         )
-        #     ),
-        #     config_field=types.Field(PostgresConfigData),
-        # ),
-        # 'db_dialect' : define_string_resource(),
-        # 'redshift_s3_temp_dir' : define_value_resource(''),
-        # 'db_load': define_value_resource(_db_load),
         's3': define_lambda_resource(create_s3_session, signed=False),
         'db_info': define_postgres_db_info_resource(),
         'tempfile': define_tempfile_resource(),
     },
 )
 
-
 cloud_context = PipelineContextDefinition(
     context_fn=lambda info: ExecutionContext.console_logging(log_level=logging.DEBUG),
     resources={
-        'spark': define_lambda_resource(create_spark_session_local), # FIXME
-        # 'db_url': ResourceDefinition(
-        #     resource_fn=lambda info: create_redshift_db_url(
-        #         info.config['redshift_username'],
-        #         info.config['redshift_password'],
-        #         info.config['redshift_hostname'],
-        #         info.config['redshift_db_name'],
-        #     ),
-        #     config_field=types.Field(RedshiftConfigData),
-        # ),
-        # 'db_engine': ResourceDefinition(
-        #     resource_fn=lambda info: create_redshift_engine(
-        #         create_redshift_db_url(
-        #             info.config['redshift_username'],
-        #             info.config['redshift_password'],
-        #             info.config['redshift_hostname'],
-        #             info.config['redshift_db_name'],
-        #             jdbc=False,
-        #         ),
-        #     ),
-        #     config_field=types.Field(RedshiftConfigData),
-        # ),
-        # 'db_dialect' : define_string_resource(),
-        # 'redshift_s3_temp_dir' : define_string_resource(),
-        # 'db_load': define_value_resource(_db_load),
+        'spark': define_lambda_resource(create_spark_session_local),  # FIXME
         's3': define_lambda_resource(create_s3_session(), signed=False),
         'db_info': define_redshift_db_info_resource(),
         'tempfile': define_tempfile_resource(),

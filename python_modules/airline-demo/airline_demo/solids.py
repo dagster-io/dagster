@@ -492,8 +492,7 @@ def normalize_weather_na_values(_info, data_frame):
     }))
 )
 def load_data_to_database_from_spark(info, data_frame):
-    # Move this to context, config at that level
-    info.context.resources.db_load(data_frame, info.config['table_name'], info.context.resources)
+    info.context.resources.db_info.load_table(data_frame, info.config['table_name'])
     return data_frame
 
 
