@@ -6,6 +6,7 @@ from dagster import (
     solid,
     SolidInstance,
 )
+import time
 
 
 def nonce_solid(name, n_inputs, n_outputs):
@@ -19,8 +20,9 @@ def nonce_solid(name, n_inputs, n_outputs):
         outputs=[OutputDefinition(name='output_{}'.format(i)) for i in range(n_outputs)]
     )
     def solid_fn(info, **kwargs):
-        for i in range(100000):
-            if i % 1000 == 0:
+        for i in range(200):
+            time.sleep(0.02)
+            if i % 1000 == 420:
                 info.context.error('Error message seq={i} from solid {name}'.format(i=i, name=name))
             elif i % 100 == 0:
                 info.context.warning(
