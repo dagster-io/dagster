@@ -5,7 +5,7 @@ import yaml
 
 from dagster import check
 
-from .yaml import (
+from .yaml_utils import (
     load_yaml_from_path,
     load_yaml_from_glob_list,
 )
