@@ -2,7 +2,11 @@ import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
 import { Colors, Button, Classes, Dialog } from "@blueprintjs/core";
-import PipelineRunFilteredLogs from "./PipelineRunFilteredLogs";
+import LogsFilterProvider, {
+  ILogFilter,
+  DefaultLogFilter
+} from "./LogsFilterProvider";
+import LogsScrollingTable from "./LogsScrollingTable";
 import PipelineRunExecutionPlan from "./PipelineRunExecutionPlan";
 import {
   PipelineRunFragment,
@@ -10,6 +14,7 @@ import {
 } from "./types/PipelineRunFragment";
 import { PanelDivider } from "../PanelDivider";
 import PythonErrorInfo from "../PythonErrorInfo";
+import LogsToolbar from "./LogsToolbar";
 
 interface IPipelineRunProps {
   pipelineRun: PipelineRunFragment;
@@ -17,7 +22,7 @@ interface IPipelineRunProps {
 
 interface IPipelineRunState {
   logsVH: number;
-  logsFilter: string;
+  logsFilter: ILogFilter;
   highlightedError?: { message: string; stack: string[] };
 }
 
@@ -30,7 +35,8 @@ export class PipelineRun extends React.Component<
       fragment PipelineRunFragment on PipelineRun {
         logs {
           nodes {
-            ...PipelineRunFilteredLogMessageFragment
+            ...LogsFilterProviderMessageFragment
+            ...LogsScrollingTableMessageFragment
             ... on ExecutionStepFailureEvent {
               step {
                 name
@@ -46,28 +52,27 @@ export class PipelineRun extends React.Component<
       }
 
       ${PipelineRunExecutionPlan.fragments.PipelineRunExecutionPlanFragment}
-      ${PipelineRunFilteredLogs.fragments.PipelineRunFilteredLogMessageFragment}
+      ${LogsFilterProvider.fragments.LogsFilterProviderMessageFragment}
+      ${LogsScrollingTable.fragments.LogsScrollingTableMessageFragment}
     `,
     PipelineRunPipelineRunEventFragment: gql`
       fragment PipelineRunPipelineRunEventFragment on PipelineRunEvent {
-        ...PipelineRunFilteredLogMessageFragment
+        ...LogsScrollingTableMessageFragment
+        ...LogsFilterProviderMessageFragment
         ...PipelineRunExecutionPlanPipelineRunEventFragment
       }
 
       ${PipelineRunExecutionPlan.fragments
         .PipelineRunExecutionPlanPipelineRunEventFragment}
-      ${PipelineRunFilteredLogs.fragments.PipelineRunFilteredLogMessageFragment}
+      ${LogsFilterProvider.fragments.LogsFilterProviderMessageFragment}
+      ${LogsScrollingTable.fragments.LogsScrollingTableMessageFragment}
     `
   };
 
   state = {
+    highlightedError: undefined,
     logsVH: 40,
-    logsFilter: "",
-    highlightedError: undefined
-  };
-
-  onSetLogFilter = (filter: string) => {
-    this.setState({ logsFilter: filter });
+    logsFilter: DefaultLogFilter
   };
 
   onShowStateDetails = (step: string) => {
@@ -88,20 +93,27 @@ export class PipelineRun extends React.Component<
     return (
       <PipelineRunWrapper>
         <PipelineRunExecutionPlan
-          onSetLogFilter={this.onSetLogFilter}
-          onShowStateDetails={this.onShowStateDetails}
           pipelineRun={this.props.pipelineRun}
+          onShowStateDetails={this.onShowStateDetails}
+          onApplyStepFilter={stepName =>
+            this.setState({ logsFilter: { ...logsFilter, text: stepName } })
+          }
         />
         <PanelDivider
           onMove={(vh: number) => this.setState({ logsVH: 100 - vh })}
           axis="vertical"
         />
         <LogsContainer style={{ height: `${logsVH}vh` }}>
-          <PipelineRunFilteredLogs
-            onSetFilter={this.onSetLogFilter}
+          <LogsToolbar
+            filter={logsFilter}
+            onSetFilter={filter => this.setState({ logsFilter: filter })}
+          />
+          <LogsFilterProvider
             filter={logsFilter}
             nodes={this.props.pipelineRun.logs.nodes}
-          />
+          >
+            {nodes => <LogsScrollingTable nodes={nodes} />}
+          </LogsFilterProvider>
         </LogsContainer>
         <Dialog
           icon="info-sign"

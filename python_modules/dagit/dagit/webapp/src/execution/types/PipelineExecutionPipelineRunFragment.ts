@@ -8,10 +8,10 @@
 // ====================================================
 
 export interface PipelineExecutionPipelineRunFragment_logs_nodes_LogMessageEvent {
-  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent";
   message: string;
   timestamp: string;
   level: LogLevel;
+  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent";
 }
 
 export interface PipelineExecutionPipelineRunFragment_logs_nodes_ExecutionStepFailureEvent_step {
@@ -24,10 +24,10 @@ export interface PipelineExecutionPipelineRunFragment_logs_nodes_ExecutionStepFa
 }
 
 export interface PipelineExecutionPipelineRunFragment_logs_nodes_ExecutionStepFailureEvent {
-  __typename: "ExecutionStepFailureEvent";
   message: string;
   timestamp: string;
   level: LogLevel;
+  __typename: "ExecutionStepFailureEvent";
   step: PipelineExecutionPipelineRunFragment_logs_nodes_ExecutionStepFailureEvent_step;
   error: PipelineExecutionPipelineRunFragment_logs_nodes_ExecutionStepFailureEvent_error;
 }
@@ -37,10 +37,10 @@ export interface PipelineExecutionPipelineRunFragment_logs_nodes_ExecutionStepSt
 }
 
 export interface PipelineExecutionPipelineRunFragment_logs_nodes_ExecutionStepStartEvent {
-  __typename: "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent";
   message: string;
   timestamp: string;
   level: LogLevel;
+  __typename: "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent";
   step: PipelineExecutionPipelineRunFragment_logs_nodes_ExecutionStepStartEvent_step;
 }
 
@@ -78,6 +78,14 @@ export interface PipelineExecutionPipelineRunFragment {
 // START Enums and Input Objects
 //==============================================================
 
+export enum LogLevel {
+  CRITICAL = "CRITICAL",
+  DEBUG = "DEBUG",
+  ERROR = "ERROR",
+  INFO = "INFO",
+  WARNING = "WARNING",
+}
+
 /**
  * An enumeration.
  */
@@ -94,14 +102,6 @@ export enum StepTag {
   OUTPUT_EXPECTATION = "OUTPUT_EXPECTATION",
   SERIALIZE = "SERIALIZE",
   TRANSFORM = "TRANSFORM",
-}
-
-export enum LogLevel {
-  CRITICAL = "CRITICAL",
-  DEBUG = "DEBUG",
-  ERROR = "ERROR",
-  INFO = "INFO",
-  WARNING = "WARNING",
 }
 
 /**

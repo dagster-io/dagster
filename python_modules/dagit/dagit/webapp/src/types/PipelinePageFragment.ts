@@ -14,10 +14,10 @@ export interface PipelinePageFragment_PythonError {
 }
 
 export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_LogMessageEvent {
-  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent";
   message: string;
   timestamp: string;
   level: LogLevel;
+  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent";
 }
 
 export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepFailureEvent_step {
@@ -30,10 +30,10 @@ export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_E
 }
 
 export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepFailureEvent {
-  __typename: "ExecutionStepFailureEvent";
   message: string;
   timestamp: string;
   level: LogLevel;
+  __typename: "ExecutionStepFailureEvent";
   step: PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepFailureEvent_step;
   error: PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepFailureEvent_error;
 }
@@ -43,10 +43,10 @@ export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_E
 }
 
 export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepStartEvent {
-  __typename: "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent";
   message: string;
   timestamp: string;
   level: LogLevel;
+  __typename: "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent";
   step: PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepStartEvent_step;
 }
 
@@ -364,6 +364,14 @@ export type PipelinePageFragment = PipelinePageFragment_PythonError | PipelinePa
 // START Enums and Input Objects
 //==============================================================
 
+export enum LogLevel {
+  CRITICAL = "CRITICAL",
+  DEBUG = "DEBUG",
+  ERROR = "ERROR",
+  INFO = "INFO",
+  WARNING = "WARNING",
+}
+
 /**
  * An enumeration.
  */
@@ -380,14 +388,6 @@ export enum StepTag {
   OUTPUT_EXPECTATION = "OUTPUT_EXPECTATION",
   SERIALIZE = "SERIALIZE",
   TRANSFORM = "TRANSFORM",
-}
-
-export enum LogLevel {
-  CRITICAL = "CRITICAL",
-  DEBUG = "DEBUG",
-  ERROR = "ERROR",
-  INFO = "INFO",
-  WARNING = "WARNING",
 }
 
 /**

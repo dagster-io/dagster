@@ -176,6 +176,14 @@ export interface SidebarTabbedContainerSolidFragment {
 // START Enums and Input Objects
 //==============================================================
 
+export enum LogLevel {
+  CRITICAL = "CRITICAL",
+  DEBUG = "DEBUG",
+  ERROR = "ERROR",
+  INFO = "INFO",
+  WARNING = "WARNING",
+}
+
 /**
  * An enumeration.
  */
@@ -192,14 +200,6 @@ export enum StepTag {
   OUTPUT_EXPECTATION = "OUTPUT_EXPECTATION",
   SERIALIZE = "SERIALIZE",
   TRANSFORM = "TRANSFORM",
-}
-
-export enum LogLevel {
-  CRITICAL = "CRITICAL",
-  DEBUG = "DEBUG",
-  ERROR = "ERROR",
-  INFO = "INFO",
-  WARNING = "WARNING",
 }
 
 /**

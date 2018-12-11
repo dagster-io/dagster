@@ -10,7 +10,7 @@ import {
 
 interface IPipelineRunExecutionPlanProps {
   pipelineRun: PipelineRunExecutionPlanFragment;
-  onSetLogFilter: (filter: string) => void;
+  onApplyStepFilter: (step: string) => void;
   onShowStateDetails: (step: string) => void;
 }
 
@@ -80,7 +80,7 @@ export default class PipelineRunExecutionPlan extends React.Component<
 
   render() {
     const {
-      onSetLogFilter,
+      onApplyStepFilter,
       onShowStateDetails,
       pipelineRun: { logs, executionPlan }
     } = this.props;
@@ -101,7 +101,7 @@ export default class PipelineRunExecutionPlan extends React.Component<
               <ExecutionPlanBox
                 key={step.name}
                 state={metadata.state}
-                onClick={() => onSetLogFilter(step.name)}
+                onClick={() => onApplyStepFilter(step.name)}
               >
                 <ExecutionStateDot
                   state={metadata.state}
