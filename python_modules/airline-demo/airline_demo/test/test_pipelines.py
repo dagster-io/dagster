@@ -342,14 +342,14 @@ def test_pipeline_ingest_fast():
                     'config': {
                         'on_left': 'DestAirportSeqID',
                         'on_right': 'DEST_AIRPORT_SEQ_ID',
-                        'how': 'inner',
+                        'how': 'left_outer',
                     }
                 },
                 'join_q2_on_time_data_to_origin_cord_data': {
                     'config': {
                         'on_left': 'OriginAirportSeqID',
                         'on_right': 'ORIGIN_AIRPORT_SEQ_ID',
-                        'how': 'inner',
+                        'how': 'left_outer',
                     }
                 },
                 'load_q2_on_time_data': {
