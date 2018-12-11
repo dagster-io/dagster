@@ -385,6 +385,7 @@ def test_pipeline_ingest_fast():
 
 @pytest.mark.db
 @pytest.mark.spark
+@pytest.mark.py3
 @pytest.mark.dependency(depends=['test_pipeline_ingest_fast'])
 def test_pipeline_warehouse_fast():
     now = datetime.datetime.utcnow()
