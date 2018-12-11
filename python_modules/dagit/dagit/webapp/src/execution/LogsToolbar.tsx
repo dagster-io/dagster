@@ -21,6 +21,10 @@ interface ILogsToolbarProps {
 const FilterSpinner = <Spinner intent={Intent.NONE} size={16} />;
 
 export default class LogsToolbar extends React.Component<ILogsToolbarProps> {
+  shouldComponentUpdate(nextProps: ILogsToolbarProps) {
+    return nextProps.filter !== this.props.filter;
+  }
+
   render() {
     const { filter, onSetFilter, showSpinner } = this.props;
     return (

@@ -2,31 +2,17 @@ import * as React from "react";
 import gql from "graphql-tag";
 import produce from "immer";
 import styled from "styled-components";
-import { Colors, Spinner, Intent } from "@blueprintjs/core";
+import { Colors } from "@blueprintjs/core";
 import {
   PipelineRunExecutionPlanFragment,
   PipelineRunExecutionPlanFragment_logs_nodes
 } from "./types/PipelineRunExecutionPlanFragment";
+import { ExecutionPlanBox } from "./PipelineRunExecutionPlanBox";
 
 interface IPipelineRunExecutionPlanProps {
   pipelineRun: PipelineRunExecutionPlanFragment;
   onApplyStepFilter: (step: string) => void;
   onShowStateDetails: (step: string) => void;
-}
-
-function formatExecutionTime(msec: number) {
-  if (msec < 100 * 1000) {
-    // < 100 seconds, show msec
-    return `${Math.ceil(msec)} msec`;
-  } else if (msec < 5 * 60 * 1000) {
-    // < 5 min, show seconds
-    return `${Math.ceil(msec / 1000)} sec`;
-  } else if (msec < 120 * 60 * 1000) {
-    // < 2 hours, show minutes
-    return `${Math.ceil(msec / (60 * 1000))} min`;
-  } else {
-    return `${Math.ceil(msec / (60 * 60 * 1000))} hours`;
-  }
 }
 
 export default class PipelineRunExecutionPlan extends React.Component<
@@ -85,6 +71,9 @@ export default class PipelineRunExecutionPlan extends React.Component<
       pipelineRun: { logs, executionPlan }
     } = this.props;
     const stepMetadata = logsToStepMetadata(logs.nodes);
+    const stepsOrderedByTransitionTime = Object.keys(stepMetadata).sort(
+      (a, b) => stepMetadata[b].transitionedAt - stepMetadata[a].transitionedAt
+    );
 
     return (
       <ExecutionPlanContainer>
@@ -94,6 +83,7 @@ export default class PipelineRunExecutionPlan extends React.Component<
             <ExecutionTimelineDot /> Execution started
           </ExecutionTimelineMessage>
           {executionPlan.steps.map(step => {
+            const delay = stepsOrderedByTransitionTime.indexOf(step.name) * 100;
             const metadata = stepMetadata[step.name] || {
               state: IStepState.WAITING
             };
@@ -101,24 +91,12 @@ export default class PipelineRunExecutionPlan extends React.Component<
               <ExecutionPlanBox
                 key={step.name}
                 state={metadata.state}
-                onClick={() => onApplyStepFilter(step.name)}
-              >
-                <ExeuctionStateWrap
-                  onClick={() => onShowStateDetails(step.name)}
-                >
-                  {metadata.state === IStepState.RUNNING ? (
-                    <Spinner intent={Intent.NONE} size={11} />
-                  ) : (
-                    <ExecutionStateDot state={metadata.state} />
-                  )}
-                </ExeuctionStateWrap>
-                <ExecutionPlanBoxName>{step.name}</ExecutionPlanBoxName>
-                {metadata.elapsed && (
-                  <ExecutionStateLabel>
-                    {formatExecutionTime(metadata.elapsed)}
-                  </ExecutionStateLabel>
-                )}
-              </ExecutionPlanBox>
+                elapsed={metadata.elapsed}
+                name={step.name}
+                onShowStateDetails={onShowStateDetails}
+                onApplyStepFilter={onApplyStepFilter}
+                delay={delay}
+              />
             );
           })}
         </ExecutionPlanContainerInner>
@@ -127,17 +105,18 @@ export default class PipelineRunExecutionPlan extends React.Component<
   }
 }
 
-enum IStepState {
+export enum IStepState {
   WAITING = "waiting",
   RUNNING = "running",
   SUCCEEDED = "succeeded",
   FAILED = "failed"
 }
 
-interface IStepMetadata {
+export interface IStepMetadata {
   state: IStepState;
   start?: number;
   elapsed?: number;
+  transitionedAt: number;
 }
 
 function logsToStepMetadata(
@@ -148,12 +127,14 @@ function logsToStepMetadata(
     if (log.__typename === "ExecutionStepStartEvent") {
       steps[log.step.name] = {
         state: IStepState.RUNNING,
-        start: Number.parseInt(log.timestamp, 10)
+        start: Number.parseInt(log.timestamp, 10),
+        transitionedAt: log.timestamp
       };
     } else if (log.__typename === "ExecutionStepSuccessEvent") {
       steps[log.step.name] = produce(steps[log.step.name] || {}, step => {
         step.state = IStepState.SUCCEEDED;
         if (step.start) {
+          step.transitionedAt = log.timestamp;
           step.elapsed = Number.parseInt(log.timestamp, 10) - step.start;
         }
       });
@@ -161,6 +142,7 @@ function logsToStepMetadata(
       steps[log.step.name] = produce(steps[log.step.name] || {}, step => {
         step.state = IStepState.FAILED;
         if (step.start) {
+          step.transitionedAt = log.timestamp;
           step.elapsed = Number.parseInt(log.timestamp, 10) - step.start;
         }
       });
@@ -184,33 +166,6 @@ const ExecutionPlanContainerInner = styled.div`
   flex-direction: column;
   align-items: flex-start;
   font-size: 0.9em;
-`;
-
-const ExecutionPlanBoxName = styled.div`
-  font-weight: 500;
-`;
-
-const ExecutionPlanBox = styled.div<{ state: IStepState }>`
-  background: ${({ state }) =>
-    state === IStepState.WAITING ? Colors.GRAY3 : Colors.LIGHT_GRAY2}
-  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.3);
-  color: ${Colors.DARK_GRAY3};
-  padding: 4px;
-  padding-right: 10px;
-  margin: 6px;
-  margin-left: 15px;
-  margin-bottom: 0;
-  display: inline-flex;
-  min-width: 150px;
-  align-items: center;
-  border-radius: 3px;
-  position: relative;
-  z-index: 2;
-  &:hover {
-    cursor: default;
-    background: ${({ state }) =>
-      state === IStepState.WAITING ? Colors.LIGHT_GRAY4 : Colors.WHITE}
-  }
 `;
 
 const ExecutionTimelineMessage = styled.div`
@@ -239,38 +194,4 @@ const ExecutionTimelineDot = styled.div`
   border: 1px solid ${Colors.LIGHT_GRAY2};
   margin-left: 18px;
   flex-shrink: 0;
-`;
-
-const ExeuctionStateWrap = styled.div`
-  display: inherit;
-  margin-right: 9px;
-`;
-
-const ExecutionStateDot = styled.div<{ state: IStepState }>`
-  display: inline-block;
-  width: 11px;
-  height: 11px;
-  border-radius: 5.5px;
-  background: ${({ state }) =>
-    ({
-      [IStepState.WAITING]: Colors.GRAY1,
-      [IStepState.RUNNING]: Colors.GRAY3,
-      [IStepState.SUCCEEDED]: Colors.GREEN2,
-      [IStepState.FAILED]: Colors.RED3
-    }[state])};
-  &:hover {
-    background: ${({ state }) =>
-      ({
-        [IStepState.WAITING]: Colors.GRAY1,
-        [IStepState.RUNNING]: Colors.GRAY3,
-        [IStepState.SUCCEEDED]: Colors.GREEN2,
-        [IStepState.FAILED]: Colors.RED5
-      }[state])};
-  }
-`;
-
-const ExecutionStateLabel = styled.div`
-  opacity: 0.7;
-  font-size: 0.9em;
-  margin-left: 10px;
 `;

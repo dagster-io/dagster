@@ -14,11 +14,6 @@ import {
 } from "react-virtualized";
 import { IconNames } from "@blueprintjs/icons";
 
-const cache = new CellMeasurerCache({
-  defaultHeight: 30,
-  fixedWidth: true
-});
-
 interface ILogsScrollingTableProps {
   nodes: LogsScrollingTableMessageFragment[];
 }
@@ -101,10 +96,19 @@ class LogsScrollingTableSized extends React.Component<
 > {
   grid = React.createRef<Grid>();
 
+  cache = new CellMeasurerCache({
+    defaultHeight: 30,
+    fixedWidth: true,
+    keyMapper: (rowIndex: number, columnIndex: number) =>
+      `${this.props.nodes[rowIndex].message}:${columnIndex}`
+  });
+
   isAtBottomOrZero: boolean = true;
 
-  componentDidUpdate() {
-    cache.clearAll();
+  componentDidUpdate(prevProps: ILogsScrollingTableSizedProps) {
+    if (this.props.width !== prevProps.width) {
+      this.cache.clearAll();
+    }
 
     if (this.isAtBottomOrZero) {
       this.scrollToBottom();
@@ -173,7 +177,7 @@ class LogsScrollingTableSized extends React.Component<
 
     return (
       <CellMeasurer
-        cache={cache}
+        cache={this.cache}
         rowIndex={rowIndex}
         columnIndex={columnIndex}
         parent={parent}
@@ -215,12 +219,12 @@ class LogsScrollingTableSized extends React.Component<
           columnCount={3}
           width={this.props.width}
           height={this.props.height}
-          deferredMeasurementCache={cache}
-          rowHeight={cache.rowHeight}
+          deferredMeasurementCache={this.cache}
+          rowHeight={this.cache.rowHeight}
           rowCount={this.props.nodes.length}
           noContentRenderer={this.noContentRenderer}
           overscanColumnCount={0}
-          overscanRowCount={10}
+          overscanRowCount={20}
         />
       </div>
     );
