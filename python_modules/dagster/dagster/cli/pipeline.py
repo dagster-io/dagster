@@ -284,10 +284,17 @@ LOGGING_DICT = {
     type=click.STRING,
     multiple=True,
     help=(
-        'Specify one more environment files. These can also be file patterns. '
-        'If more than one enviroment file is captured then those files are merged. '
+        'Specify one or more environment files. These can also be file patterns. '
+        'If more than one environment file is captured then those files are merged. '
         'Files listed first take precendence. They will smash the values of subsequent '
-        'files at the key-level granularity.'
+        'files at the key-level granularity. If the file is a pattern then you must '
+        'enclose it in double quotes'
+        '\n\nExample: '
+        'dagster pipeline execute pandas_hello_world -e "pandas_hello_world/*.yml"'
+        '\n\nYou can also specifiy multiple files:'
+        '\n\nExample: '
+        'dagster pipeline execute pandas_hello_world -e pandas_hello_world/solids.yml '
+        '-e pandas_hello_world/env.yml'
     ),
 )
 def execute_command(env, **kwargs):
