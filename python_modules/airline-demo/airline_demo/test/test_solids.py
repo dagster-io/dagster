@@ -159,7 +159,7 @@ def test_download_from_s3_tempfile():
     )
     assert result.success
     assert result.transformed_value()
-    assert not os.path.isfile(result.transformed_value())
+    assert [not os.path.isfile(v) for v in result.transformed_value()]
 
 
 def test_unzip_file_tempfile():
