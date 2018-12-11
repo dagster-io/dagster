@@ -1,13 +1,30 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
-import { Colors } from "@blueprintjs/core";
+import { Colors, NonIdealState } from "@blueprintjs/core";
 import { LogsScrollingTableMessageFragment } from "./types/LogsScrollingTableMessageFragment";
 import { LogLevel } from "./LogsFilterProvider";
-import { AutoSizer, Grid, GridCellProps } from "react-virtualized";
+import {
+  CellMeasurer,
+  CellMeasurerCache,
+  AutoSizer,
+  Grid,
+  GridCellProps
+} from "react-virtualized";
+import { IconNames } from "@blueprintjs/icons";
+
+const cache = new CellMeasurerCache({
+  defaultHeight: 30,
+  fixedWidth: true
+});
 
 interface ILogsScrollingTableProps {
   nodes: LogsScrollingTableMessageFragment[];
+}
+
+interface ILogsScrollingTableSizedProps extends ILogsScrollingTableProps {
+  width: number;
+  height: number;
 }
 
 function textForLog(log: LogsScrollingTableMessageFragment) {
@@ -45,74 +62,125 @@ export default class LogsScrollingTable extends React.Component<
     `
   };
 
-  _cellRenderer = ({ columnIndex, key, rowIndex, style }: GridCellProps) => {
-    const node = this.props.nodes[rowIndex];
-    switch (columnIndex) {
-      case 0:
-        return (
-          <Cell key={key} style={style}>
-            {node.level}
-          </Cell>
-        );
-      case 1:
-        return (
-          <Cell key={key} style={style}>
-            {textForLog(node)}
-          </Cell>
-        );
-      case 2:
-        return (
-          <Cell key={key} style={style}>
-            {new Date(Number(node.timestamp)).toLocaleString()}
-          </Cell>
-        );
-    }
-    return false;
-  };
-
-  _noContentRenderer = () => {
-    return <div>No cells</div>;
-  };
-
   render() {
     return (
-      <AutoSizer>
-        {({ width, height }) => (
-          <BodyGrid
-            cellRenderer={this._cellRenderer}
-            columnWidth={({ index }: { index: number }) => {
-              switch (index) {
-                case 0:
-                  return 50;
-                case 1:
-                  return width - 50 - 150;
-                case 2:
-                  return 150;
-                default:
-                  return 80;
-              }
-            }}
-            columnCount={3}
-            width={width}
-            height={height}
-            noContentRenderer={this._noContentRenderer}
-            overscanColumnCount={0}
-            overscanRowCount={10}
-            rowHeight={40}
-            rowCount={this.props.nodes.length}
-          />
-        )}
-      </AutoSizer>
+      <div style={{ flex: 1 }}>
+        <AutoSizer>
+          {({ width, height }) => (
+            <LogsScrollingTableSized
+              {...this.props}
+              width={width}
+              height={height}
+            />
+          )}
+        </AutoSizer>
+      </div>
     );
   }
 }
 
-const BodyGrid = styled(Grid)`
+class LogsScrollingTableSized extends React.Component<
+  ILogsScrollingTableSizedProps
+> {
+  componentDidUpdate() {
+    cache.clearAll();
+  }
+
+  cellRenderer = ({
+    parent,
+    rowIndex,
+    columnIndex,
+    key,
+    style
+  }: GridCellProps) => {
+    const node = this.props.nodes[rowIndex];
+    const width = this.columnWidth({ index: columnIndex });
+
+    let content = null;
+    switch (columnIndex) {
+      case 0:
+        content = node.level;
+        break;
+      case 1:
+        content = textForLog(node);
+        break;
+      case 2:
+        content = new Date(Number(node.timestamp)).toLocaleString();
+        break;
+    }
+
+    return (
+      <CellMeasurer
+        cache={cache}
+        rowIndex={rowIndex}
+        columnIndex={columnIndex}
+        parent={parent}
+        key={key}
+      >
+        <Cell style={{ ...style, width }} level={node.level}>
+          {content}
+        </Cell>
+      </CellMeasurer>
+    );
+  };
+
+  noContentRenderer = () => {
+    return (
+      <NonIdealState icon={IconNames.CONSOLE} title="No logs to display" />
+    );
+  };
+
+  columnWidth = ({ index }: { index: number }) => {
+    switch (index) {
+      case 0:
+        return 80;
+      case 1:
+        return this.props.width - 170 - 80;
+      case 2:
+        return 170;
+      default:
+        return 80;
+    }
+  };
+
+  render() {
+    return (
+      <LogsGrid
+        key={`${this.props.width}-${this.props.height}`}
+        cellRenderer={this.cellRenderer}
+        columnWidth={this.columnWidth}
+        columnCount={3}
+        width={this.props.width}
+        height={this.props.height}
+        deferredMeasurementCache={cache}
+        rowHeight={cache.rowHeight}
+        noContentRenderer={this.noContentRenderer}
+        overscanColumnCount={0}
+        overscanRowCount={10}
+        rowCount={this.props.nodes.length}
+      />
+    );
+  }
+}
+
+const LogsGrid = styled(Grid)`
   width: 100%;
   border: 1px solid #e0e0e0;
 `;
 
-const LogMessage = styled.div<{ level: LogLevel }>`
+const Cell = styled.div<{ level: LogLevel }>`
+  font-size: 0.85em;
+  width: 100%;
+  height: 100%;
+  padding: 4px;
+  padding-left: 15px;
+  word-break: break-all;
+  white-space: pre-wrap;
+  border-bottom: 1px solid ${Colors.LIGHT_GRAY3};
+  background: ${props =>
+    LogLevel.ERROR === props.level || LogLevel.CRITICAL === props.level
+      ? `rgba(206, 17, 38, 0.05)`
+      : `transparent`};
   color: ${props =>
     ({
       [LogLevel.DEBUG]: Colors.GRAY3,
@@ -121,22 +189,4 @@ const LogMessage = styled.div<{ level: LogLevel }>`
       [LogLevel.ERROR]: Colors.RED3,
       [LogLevel.CRITICAL]: Colors.RED3
     }[props.level])};
-  padding: 4px;
-  padding-left: 15px;
-  font-size: 0.85em;
-  border-bottom: 1px solid ${Colors.LIGHT_GRAY3};
-  word-break: break-all;
-  white-space: pre-wrap;
-`;
-
-const Cell = styled.div`
-  font-size: 0.85em;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  padding: 4px;
-  padding-left: 15px;
-  word-break: break-all;
-  white-space: pre-wrap;
-  border-bottom: 1px solid ${Colors.LIGHT_GRAY3};
 `;

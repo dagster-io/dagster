@@ -6,7 +6,8 @@ import {
   Colors,
   Button,
   ButtonGroup,
-  InputGroup
+  InputGroup,
+  Icon
 } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
 import { ILogFilter, LogLevel } from "./LogsFilterProvider";
@@ -26,18 +27,32 @@ export default class LogsToolbar extends React.Component<ILogsToolbarProps> {
       <LogsToolbarContainer>
         <FilterInputGroup
           leftIcon="filter"
+          placeholder="Filter logs..."
+          small={true}
+          value={filter.text}
+          rightElement={
+            showSpinner ? (
+              FilterSpinner
+            ) : filter.text.length ? (
+              <Icon
+                color={Colors.GRAY1}
+                icon={IconNames.SMALL_CROSS}
+                style={{ padding: 4 }}
+                onClick={() => onSetFilter({ ...filter, text: "" })}
+              />
+            ) : (
+              undefined
+            )
+          }
           onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
             onSetFilter({ ...filter, text: e.target.value })
           }
-          placeholder="Filter logs..."
-          rightElement={showSpinner ? FilterSpinner : undefined}
-          small={true}
-          value={filter.text}
         />
         <LogsToolbarDivider />
         <ButtonGroup>
           {Object.keys(LogLevel).map(level => (
             <Button
+              key={level}
               text={level.toLowerCase()}
               small={true}
               style={{ textTransform: "capitalize" }}
@@ -59,7 +74,7 @@ export default class LogsToolbar extends React.Component<ILogsToolbarProps> {
           text={"Clear"}
           small={true}
           icon={IconNames.ERASER}
-          onClick={() => this.setState({ clearedAtTimestamp: Date.now() })}
+          onClick={() => onSetFilter({ ...filter, since: Date.now() })}
         />
       </LogsToolbarContainer>
     );
