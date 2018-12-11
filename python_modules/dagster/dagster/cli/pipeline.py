@@ -1,4 +1,5 @@
 from __future__ import print_function
+import glob
 import logging
 import re
 import textwrap
@@ -16,6 +17,7 @@ from dagster.core.execution import execute_pipeline_iterator
 from dagster.graphviz import build_graphviz_graph
 from dagster.utils import load_yaml_from_path
 from dagster.utils.indenting_printer import IndentingPrinter
+from dagster.utils.merger import dict_merge
 
 from .config_scaffolder import scaffold_pipeline_config
 
@@ -279,15 +281,18 @@ LOGGING_DICT = {
 @click.option(
     '-e',
     '--env',
-    type=click.Path(
-        exists=True,
-        file_okay=True,
-        dir_okay=False,
-        readable=True,
-        resolve_path=True,
+    type=click.STRING,
+    multiple=True,
+    help=(
+        'Specify one more environment files. These can also be file patterns. '
+        'If more than one enviroment file is captured then those files are merged. '
+        'Files listed first take precendence. They will smash the values of subsequent '
+        'files at the key-level granularity.'
     ),
 )
 def execute_command(env, **kwargs):
+    check.invariant(isinstance(env, tuple))
+    env = list(env)
     execute_execute_command(env, kwargs, click.echo)
 
 
@@ -296,12 +301,25 @@ def execute_execute_command(env, cli_args, print_fn):
     do_execute_command(pipeline, env, print_fn)
 
 
-def do_execute_command(pipeline, env, printer):
+def merge_yamls(file_list):
+    check.list_param(file_list, 'file_list', of_type=str)
+    merged = {}
+    for yaml_file in file_list:
+        merged = dict_merge(load_yaml_from_path(yaml_file) or {}, merged)
+    return merged
+
+
+def do_execute_command(pipeline, env_file_list, printer):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    check.opt_str_param(env, 'env')
+    env_file_list = check.opt_list_param(env_file_list, 'env_file_list', of_type=str)
     check.callable_param(printer, 'printer')
 
-    env_config = load_yaml_from_path(env) if env else {}
+    all_files_list = []
+
+    for env_file_pattern in env_file_list:
+        all_files_list.extend(glob.glob(env_file_pattern))
+
+    env_config = merge_yamls(all_files_list) if all_files_list else {}
 
     pipeline_iter = execute_pipeline_iterator(pipeline, env_config)
 

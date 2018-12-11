@@ -155,7 +155,7 @@ def test_execute_command():
 
     for cli_args in valid_cli_args():
         execute_execute_command(
-            env=script_relative_path('env.yml'),
+            env=[script_relative_path('env.yml')],
             cli_args=cli_args,
             print_fn=no_print,
         )

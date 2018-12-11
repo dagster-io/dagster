@@ -1,0 +1,5 @@
+solids:
+  load_num_csv:
+    config:
+      path: "pandas_hello_world/num.csv"
+

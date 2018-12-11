@@ -615,6 +615,7 @@ def get_solid_user_config(execution_info, pipeline_solid):
     solid_configs = execution_info.environment.solids
     return solid_configs[name].config if name in solid_configs else None
 
+
 # This is the state that is built up during the execution plan build process.
 # steps is just a list of the steps that have been created
 # step_output_map maps logical solid outputs (solid_name, output_name) to particular

@@ -60,7 +60,7 @@ def test_cli_execute():
 
         do_execute_command(
             define_success_pipeline(),
-            script_relative_path('../../pandas_hello_world/env.yml'),
+            [script_relative_path('../../pandas_hello_world/*.yml')],
             lambda *_args, **_kwargs: None,
         )
     finally:
@@ -80,7 +80,7 @@ def test_cli_execute_failure():
 
             do_execute_command(
                 define_failure_pipeline(),
-                script_relative_path('../../pandas_hello_world/env.yml'),
+                [script_relative_path('../../pandas_hello_world/*.yml')],
                 lambda *_args, **_kwargs: None,
             )
         finally:
