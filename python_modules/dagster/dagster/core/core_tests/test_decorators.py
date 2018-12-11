@@ -17,6 +17,7 @@ from dagster import (
     types,
 )
 
+from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.test_utils import execute_single_solid_in_isolation
 from dagster.core.utility_solids import define_stub_solid
 
@@ -182,23 +183,26 @@ def test_dict_multiple_outputs():
     assert solid_result.transformed_value('right')['foo'] == 'right'
 
 
-def test_solid_with_implicit_single_output_injected():
+def test_solid_with_explicit_empty_outputs():
     @solid(outputs=[])
     def hello_world(_info):
         return 'foo'
 
-    result = execute_single_solid_in_isolation(
-        create_test_context(),
-        hello_world,
+    with pytest.raises(DagsterInvariantViolationError) as exc_info:
+        result = execute_single_solid_in_isolation(
+            create_test_context(),
+            hello_world,
+        )
+
+    assert (
+        'Solid unexpectedly returned output foo of type <class \'str\'>. Solid is explicitly '
+        'defined to return no results.' in str(exc_info.value)
+        or 'Solid unexpectedly returned output foo of type <type \'str\'>. Solid is explicitly '
+        'defined to return no results.' in str(exc_info.value)  # py2
     )
 
-    assert result.success
-    assert len(result.result_list) == 1
-    solid_result = result.result_list[0]
-    assert solid_result.transformed_value() == 'foo'
 
-
-def test_solid_with_implicit_single_output_default():
+def test_solid_with_implicit_single_output():
     @solid()
     def hello_world(_info):
         return 'foo'
@@ -219,7 +223,7 @@ def test_solid_return_list_instead_of_multiple_results():
     def hello_world(_info):
         return ['foo', 'bar']
 
-    with pytest.raises(Exception) as exc_info:
+    with pytest.raises(DagsterInvariantViolationError) as exc_info:
         result = execute_single_solid_in_isolation(
             create_test_context(),
             hello_world,
