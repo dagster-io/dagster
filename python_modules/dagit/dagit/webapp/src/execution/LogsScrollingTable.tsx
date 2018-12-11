@@ -1,4 +1,5 @@
 import * as React from "react";
+import * as ReactDOM from "react-dom";
 import gql from "graphql-tag";
 import styled from "styled-components";
 import { Colors, NonIdealState } from "@blueprintjs/core";
@@ -25,6 +26,21 @@ interface ILogsScrollingTableProps {
 interface ILogsScrollingTableSizedProps extends ILogsScrollingTableProps {
   width: number;
   height: number;
+}
+
+interface ILogsScrollingTableSizedState {
+  scrollTop: number;
+}
+
+function settle(fn: () => boolean): void {
+  let count = 0;
+  const step = () => {
+    count += 1;
+    if (fn() && count < 5) {
+      window.requestAnimationFrame(step);
+    }
+  };
+  step();
 }
 
 function textForLog(log: LogsScrollingTableMessageFragment) {
@@ -80,11 +96,52 @@ export default class LogsScrollingTable extends React.Component<
 }
 
 class LogsScrollingTableSized extends React.Component<
-  ILogsScrollingTableSizedProps
+  ILogsScrollingTableSizedProps,
+  ILogsScrollingTableSizedState
 > {
+  grid = React.createRef<Grid>();
+
+  isAtBottomOrZero: boolean = true;
+
   componentDidUpdate() {
     cache.clearAll();
+
+    if (this.isAtBottomOrZero) {
+      this.scrollToBottom();
+    }
   }
+
+  scrollToBottom = () => {
+    if (!this.grid.current) return;
+    const el = ReactDOM.findDOMNode(this.grid.current);
+    if (!(el instanceof Element)) return;
+
+    /*
+    Note BG: Not happy about this. If you change the width of the grid, the
+    component renders and /then/ computes the heights of cells. We need to
+    push the scroll offset to the bottom repeatedly as the grid's scrollHeight
+    is finalized.
+    */
+    settle(() => {
+      const target = el.scrollHeight - el.clientHeight;
+      if (!this.isAtBottomOrZero) return false;
+      if (Math.abs(el.scrollTop - target) < 2) return false;
+      el.scrollTop = target;
+      return true;
+    });
+  };
+
+  onScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    if (!this.grid.current) return;
+
+    const target = e.target as Element;
+    this.isAtBottomOrZero =
+      target.scrollTop === 0 ||
+      Math.abs(target.scrollTop - (target.scrollHeight - target.clientHeight)) <
+        5;
+
+    this.grid.current.handleScrollEvent(target);
+  };
 
   cellRenderer = ({
     parent,
@@ -105,6 +162,7 @@ class LogsScrollingTableSized extends React.Component<
         content = textForLog(node);
         break;
       case 2:
+        style.textAlign = "right";
         content = new Date(Number(node.timestamp))
           .toISOString()
           .replace("Z", "")
@@ -149,28 +207,25 @@ class LogsScrollingTableSized extends React.Component<
 
   render() {
     return (
-      <LogsGrid
-        key={`${this.props.width}-${this.props.height}`}
-        cellRenderer={this.cellRenderer}
-        columnWidth={this.columnWidth}
-        columnCount={3}
-        width={this.props.width}
-        height={this.props.height}
-        deferredMeasurementCache={cache}
-        rowHeight={cache.rowHeight}
-        noContentRenderer={this.noContentRenderer}
-        overscanColumnCount={0}
-        overscanRowCount={10}
-        rowCount={this.props.nodes.length}
-      />
+      <div onScroll={this.onScroll}>
+        <Grid
+          ref={this.grid}
+          cellRenderer={this.cellRenderer}
+          columnWidth={this.columnWidth}
+          columnCount={3}
+          width={this.props.width}
+          height={this.props.height}
+          deferredMeasurementCache={cache}
+          rowHeight={cache.rowHeight}
+          rowCount={this.props.nodes.length}
+          noContentRenderer={this.noContentRenderer}
+          overscanColumnCount={0}
+          overscanRowCount={10}
+        />
+      </div>
     );
   }
 }
-
-const LogsGrid = styled(Grid)`
-  width: 100%;
-  border: 1px solid #e0e0e0;
-`;
 
 const Cell = styled.div<{ level: LogLevel }>`
   font-size: 0.85em;
