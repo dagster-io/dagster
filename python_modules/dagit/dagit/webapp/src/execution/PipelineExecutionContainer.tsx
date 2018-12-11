@@ -107,7 +107,7 @@ export default class PipelineExecutionContainer extends React.Component<
           this.handleNewMessages(queued);
           queued = [];
         }
-      }, 500);
+      }, 200);
 
       this._subscriptions[run.runId] = observable.subscribe({
         next: msg => msg.data && queued.push(msg.data),

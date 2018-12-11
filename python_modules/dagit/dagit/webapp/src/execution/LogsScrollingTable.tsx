@@ -105,7 +105,11 @@ class LogsScrollingTableSized extends React.Component<
         content = textForLog(node);
         break;
       case 2:
-        content = new Date(Number(node.timestamp)).toLocaleString();
+        content = new Date(Number(node.timestamp))
+          .toISOString()
+          .replace("Z", "")
+          .split("T")
+          .pop();
         break;
     }
 
@@ -135,11 +139,11 @@ class LogsScrollingTableSized extends React.Component<
       case 0:
         return 80;
       case 1:
-        return this.props.width - 170 - 80;
+        return this.props.width - 110 - 80;
       case 2:
-        return 170;
+        return 110;
       default:
-        return 80;
+        return 0;
     }
   };
 
@@ -176,6 +180,7 @@ const Cell = styled.div<{ level: LogLevel }>`
   padding-left: 15px;
   word-break: break-all;
   white-space: pre-wrap;
+  font-family: monospace;
   border-bottom: 1px solid ${Colors.LIGHT_GRAY3};
   background: ${props =>
     LogLevel.ERROR === props.level || LogLevel.CRITICAL === props.level

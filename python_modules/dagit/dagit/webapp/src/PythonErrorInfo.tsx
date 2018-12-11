@@ -12,8 +12,7 @@ interface IPythonErrorInfoProps {
 }
 
 export default class PythonErrorInfo extends React.Component<
-  IPythonErrorInfoProps,
-  {}
+  IPythonErrorInfoProps
 > {
   render() {
     const { message, stack } = this.props.error;
