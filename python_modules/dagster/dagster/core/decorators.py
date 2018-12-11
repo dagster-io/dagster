@@ -112,7 +112,7 @@ class _Solid(object):
     ):
         self.name = check.opt_str_param(name, 'name')
         self.input_defs = check.opt_list_param(inputs, 'inputs', InputDefinition)
-        outputs = outputs or [OutputDefinition()]
+        outputs = outputs or ([OutputDefinition()] if outputs is None else [])
         self.outputs = check.list_param(outputs, 'outputs', OutputDefinition)
         self.description = check.opt_str_param(description, 'description')
         self.config_field = check.opt_inst_param(config_field, 'config_field', Field)
@@ -332,23 +332,31 @@ def _create_solid_transform_wrapper(fn, input_defs, output_defs):
             elif len(output_defs) == 1:
                 yield Result(value=result, output_name=output_defs[0].name)
             elif result is not None:
-                raise DagsterInvariantViolationError(
-                    'Solid unexpectedly returned output {result} of type {type_}. Should be a '
-                    'MultipleResults object, or a generator, containing or yielding {n_results} '
-                    'results: {{{expected_results}}}.'.format(
-                        result=result,
-                        type_=type(result),
-                        n_results=len(output_defs),
-                        expected_results=', '.join(
-                            [
-                                '\'{result_name}\': {dagster_type}'.format(
-                                    result_name=output_def.name,
-                                    dagster_type=output_def.dagster_type
-                                ) for output_def in output_defs
-                            ]
+                if len(output_defs) == 0:
+                    raise DagsterInvariantViolationError(
+                        'Solid unexpectedly returned output {result} of type {type_}. Solid is '
+                        'explicitly defined to return no results.'.format(
+                            result=result, type_=type(result)
                         )
                     )
-                )
+                else:
+                    raise DagsterInvariantViolationError(
+                        'Solid unexpectedly returned output {result} of type {type_}. Should be a '
+                        'MultipleResults object, or a generator, containing or yielding {n_results} '
+                        'results: {{{expected_results}}}.'.format(
+                            result=result,
+                            type_=type(result),
+                            n_results=len(output_defs),
+                            expected_results=', '.join(
+                                [
+                                    '\'{result_name}\': {dagster_type}'.format(
+                                        result_name=output_def.name,
+                                        dagster_type=output_def.dagster_type
+                                    ) for output_def in output_defs
+                                ]
+                            )
+                        )
+                    )
 
     return transform
 
