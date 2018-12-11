@@ -238,14 +238,18 @@ const Cell = styled.div<{ level: LogLevel }>`
   font-family: monospace;
   border-bottom: 1px solid ${Colors.LIGHT_GRAY3};
   background: ${props =>
-    LogLevel.ERROR === props.level || LogLevel.CRITICAL === props.level
-      ? `rgba(206, 17, 38, 0.05)`
-      : `transparent`};
+    ({
+      [LogLevel.DEBUG]: `transparent`,
+      [LogLevel.INFO]: `transparent`,
+      [LogLevel.WARNING]: `rgba(166, 121, 8, 0.05)`,
+      [LogLevel.ERROR]: `rgba(206, 17, 38, 0.05)`,
+      [LogLevel.CRITICAL]: `rgba(206, 17, 38, 0.05)`
+    }[props.level])};
   color: ${props =>
     ({
       [LogLevel.DEBUG]: Colors.GRAY3,
       [LogLevel.INFO]: Colors.DARK_GRAY2,
-      [LogLevel.WARNING]: Colors.DARK_GRAY2,
+      [LogLevel.WARNING]: Colors.GOLD2,
       [LogLevel.ERROR]: Colors.RED3,
       [LogLevel.CRITICAL]: Colors.RED3
     }[props.level])};
