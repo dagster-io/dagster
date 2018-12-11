@@ -1,5 +1,4 @@
 from __future__ import print_function
-import glob
 import logging
 import re
 import textwrap
@@ -15,12 +14,8 @@ from dagster import (
 from dagster.core.definitions import ExecutionGraph, Solid
 from dagster.core.execution import execute_pipeline_iterator
 from dagster.graphviz import build_graphviz_graph
-from dagster.utils import (
-    load_yaml_from_path,
-    load_yaml_from_glob_list,
-)
+from dagster.utils import load_yaml_from_glob_list
 from dagster.utils.indenting_printer import IndentingPrinter
-from dagster.utils.merger import dict_merge
 
 from .config_scaffolder import scaffold_pipeline_config
 
