@@ -140,7 +140,7 @@ def test_nested_error_one_field_not_defined():
     assert len(error.stack.entries) == 1
     stack_entry = error.stack.entries[0]
     assert stack_entry.field_name == 'level_one'
-    assert stack_entry.field_def.dagster_type.name == 'Dict'
+    assert 'Dict' in stack_entry.field_def.dagster_type.name
 
 
 def get_field_name_error(result, field_name):

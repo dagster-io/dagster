@@ -451,8 +451,28 @@ class _DagsterListType(DagsterType):
         check.failed('should never be called')
 
 
+# HACK HACK HACK
+#
+# This is not good and a better solution needs to be found. In order
+# for the client-side typeahead in dagit to work as currently structured,
+# dictionaries need names. While we deal with that we're going to automatically
+# name dictionaries. This will cause odd behavior and bugs is you restart
+# the server-side process, the type names changes, and you do not refresh the client.
+#
+# A possible short term mitigation would to name the dictionary based on the hash
+# of its member fields to provide stability in between process restarts.
+#
+class DictCounter:
+    _count = 0
+
+    @staticmethod
+    def get_next_count():
+        DictCounter._count += 1
+        return DictCounter._count
+
+
 def Dict(fields):
-    return _Dict('Dict', fields)
+    return _Dict('Dict_' + str(DictCounter.get_next_count()), fields)
 
 
 class _Dict(DagsterCompositeType):
@@ -468,7 +488,7 @@ class _Dict(DagsterCompositeType):
             name,
             fields,
             'A configuration dictionary with typed fields',
-            type_attributes=DagsterTypeAttributes(is_named=False),
+            type_attributes=DagsterTypeAttributes(is_named=True, is_builtin=True),
         )
 
     def coerce_runtime_value(self, value):
