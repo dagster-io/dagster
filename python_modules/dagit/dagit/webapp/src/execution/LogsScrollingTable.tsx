@@ -4,6 +4,7 @@ import styled from "styled-components";
 import { Colors } from "@blueprintjs/core";
 import { LogsScrollingTableMessageFragment } from "./types/LogsScrollingTableMessageFragment";
 import { LogLevel } from "./LogsFilterProvider";
+import { AutoSizer, Grid, GridCellProps } from "react-virtualized";
 
 interface ILogsScrollingTableProps {
   nodes: LogsScrollingTableMessageFragment[];
@@ -44,18 +45,72 @@ export default class LogsScrollingTable extends React.Component<
     `
   };
 
+  _cellRenderer = ({ columnIndex, key, rowIndex, style }: GridCellProps) => {
+    const node = this.props.nodes[rowIndex];
+    switch (columnIndex) {
+      case 0:
+        return (
+          <Cell key={key} style={style}>
+            {node.level}
+          </Cell>
+        );
+      case 1:
+        return (
+          <Cell key={key} style={style}>
+            {textForLog(node)}
+          </Cell>
+        );
+      case 2:
+        return (
+          <Cell key={key} style={style}>
+            {new Date(Number(node.timestamp)).toLocaleString()}
+          </Cell>
+        );
+    }
+    return false;
+  };
+
+  _noContentRenderer = () => {
+    return <div>No cells</div>;
+  };
+
   render() {
     return (
-      <div style={{ overflowY: "scroll", flex: 1 }}>
-        {this.props.nodes.map((log, i) => (
-          <LogMessage level={log.level} key={i}>
-            {textForLog(log)}
-          </LogMessage>
-        ))}
-      </div>
+      <AutoSizer>
+        {({ width, height }) => (
+          <BodyGrid
+            cellRenderer={this._cellRenderer}
+            columnWidth={({ index }: { index: number }) => {
+              switch (index) {
+                case 0:
+                  return 50;
+                case 1:
+                  return width - 50 - 150;
+                case 2:
+                  return 150;
+                default:
+                  return 80;
+              }
+            }}
+            columnCount={3}
+            width={width}
+            height={height}
+            noContentRenderer={this._noContentRenderer}
+            overscanColumnCount={0}
+            overscanRowCount={10}
+            rowHeight={40}
+            rowCount={this.props.nodes.length}
+          />
+        )}
+      </AutoSizer>
     );
   }
 }
+
+const BodyGrid = styled(Grid)`
+  width: 100%;
+  border: 1px solid #e0e0e0;
+`;
 
 const LogMessage = styled.div<{ level: LogLevel }>`
   color: ${props =>
@@ -72,4 +127,16 @@ const LogMessage = styled.div<{ level: LogLevel }>`
   border-bottom: 1px solid ${Colors.LIGHT_GRAY3};
   word-break: break-all;
   white-space: pre-wrap;
+`;
+
+const Cell = styled.div`
+  font-size: 0.85em;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  padding: 4px;
+  padding-left: 15px;
+  word-break: break-all;
+  white-space: pre-wrap;
+  border-bottom: 1px solid ${Colors.LIGHT_GRAY3};
 `;

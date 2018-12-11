@@ -1,17 +1,27 @@
 import * as React from "react";
 import styled from "styled-components";
-import { Colors, Button, ButtonGroup, InputGroup } from "@blueprintjs/core";
+import {
+  Spinner,
+  Intent,
+  Colors,
+  Button,
+  ButtonGroup,
+  InputGroup
+} from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
 import { ILogFilter, LogLevel } from "./LogsFilterProvider";
 
 interface ILogsToolbarProps {
   filter: ILogFilter;
   onSetFilter: (filter: ILogFilter) => void;
+  showSpinner: boolean;
 }
+
+const FilterSpinner = <Spinner intent={Intent.NONE} size={16} />;
 
 export default class LogsToolbar extends React.Component<ILogsToolbarProps> {
   render() {
-    const { filter, onSetFilter } = this.props;
+    const { filter, onSetFilter, showSpinner } = this.props;
     return (
       <LogsToolbarContainer>
         <FilterInputGroup
@@ -20,7 +30,7 @@ export default class LogsToolbar extends React.Component<ILogsToolbarProps> {
             onSetFilter({ ...filter, text: e.target.value })
           }
           placeholder="Filter logs..."
-          // rightElement={maybeSpinner}
+          rightElement={showSpinner ? FilterSpinner : undefined}
           small={true}
           value={filter.text}
         />

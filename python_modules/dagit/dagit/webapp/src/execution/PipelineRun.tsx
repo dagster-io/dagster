@@ -104,15 +104,20 @@ export class PipelineRun extends React.Component<
           axis="vertical"
         />
         <LogsContainer style={{ height: `${logsVH}vh` }}>
-          <LogsToolbar
-            filter={logsFilter}
-            onSetFilter={filter => this.setState({ logsFilter: filter })}
-          />
           <LogsFilterProvider
             filter={logsFilter}
             nodes={this.props.pipelineRun.logs.nodes}
           >
-            {nodes => <LogsScrollingTable nodes={nodes} />}
+            {({ filteredNodes, busy }) => (
+              <>
+                <LogsToolbar
+                  showSpinner={busy}
+                  filter={logsFilter}
+                  onSetFilter={filter => this.setState({ logsFilter: filter })}
+                />
+                <LogsScrollingTable nodes={filteredNodes} />
+              </>
+            )}
           </LogsFilterProvider>
         </LogsContainer>
         <Dialog
