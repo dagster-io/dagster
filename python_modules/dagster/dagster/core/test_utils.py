@@ -1,4 +1,5 @@
 from dagster import (
+    DagsterEvaluateConfigValueError,
     DagsterInvariantViolationError,
     PipelineDefinition,
     PipelineContextDefinition,
@@ -8,7 +9,11 @@ from dagster import (
     execute_pipeline,
 )
 
+from dagster.core.evaluator import evaluate_config_value
+
 from dagster.core.execution_context import ExecutionContext
+
+from dagster.core.types import DagsterType
 
 
 def execute_single_solid_in_isolation(
@@ -95,3 +100,17 @@ def single_output_transform(name, inputs, transform_fn, output, description=None
         outputs=[output],
         description=description,
     )
+
+
+# This is a legacy API from when the config parsing only returned a single
+# error. Existing test logic was written assuming structure to this is still
+# around to avoid having to port all the unit tests.
+def throwing_evaluate_config_value(dagster_type, config_value):
+    check.inst_param(dagster_type, 'dagster_type', DagsterType)
+    result = evaluate_config_value(dagster_type, config_value)
+    if not result.success:
+        raise DagsterEvaluateConfigValueError(
+            result.errors[0].stack,
+            result.errors[0].message,
+        )
+    return result.value

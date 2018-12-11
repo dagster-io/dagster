@@ -11,6 +11,7 @@ from .definitions import (
     SolidDefinition,
     check,
 )
+from .errors import DagsterInvariantViolationError
 
 if hasattr(inspect, 'signature'):
     funcsigs = inspect
@@ -330,16 +331,22 @@ def _create_solid_transform_wrapper(fn, input_defs, output_defs):
                     yield item
             elif len(output_defs) == 1:
                 yield Result(value=result, output_name=output_defs[0].name)
-            elif len(output_defs) == 0:
-                raise Exception(
-                    'Solid unexpectedly returned output {result}, but no outputs were '
-                    'defined on solid.'.format(result=result)
-                )
             elif result is not None:
-                raise Exception(
+                raise DagsterInvariantViolationError(
                     'Solid unexpectedly returned output {result} of type {type_}. Should be a '
-                    'Result or MultipleResults object, or a generator.'.format(
-                        result=result, type_=type(result)
+                    'MultipleResults object, or a generator, containing or yielding {n_results} '
+                    'results: {{{expected_results}}}.'.format(
+                        result=result,
+                        type_=type(result),
+                        n_results=len(output_defs),
+                        expected_results=', '.join(
+                            [
+                                '\'{result_name}\': {dagster_type}'.format(
+                                    result_name=output_def.name,
+                                    dagster_type=output_def.dagster_type
+                                ) for output_def in output_defs
+                            ]
+                        )
                     )
                 )
 

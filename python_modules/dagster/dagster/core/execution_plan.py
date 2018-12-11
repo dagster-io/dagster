@@ -31,15 +31,7 @@ from .definitions import (
     TransformExecutionInfo,
 )
 
-from .evaluator import (
-    throwing_evaluate_config_value,
-    DagsterEvaluateConfigValueError,
-)
-
-from .execution_context import (
-    ExecutionContext,
-    RuntimeExecutionContext,
-)
+from .execution_context import RuntimeExecutionContext
 
 from .errors import (
     DagsterError,
@@ -615,41 +607,13 @@ class StepOutputMap(dict):
         return dict.__setitem__(self, key, val)
 
 
-def create_config_value(execution_info, pipeline_solid):
+def get_solid_user_config(execution_info, pipeline_solid):
     check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
     check.inst_param(pipeline_solid, 'pipeline_solid', Solid)
 
-    solid_def = pipeline_solid.definition
-
     name = pipeline_solid.name
     solid_configs = execution_info.environment.solids
-    config_input = solid_configs[name].config if name in solid_configs else None
-
-    if solid_def.config_field is None:
-        if config_input is not None:
-            raise DagsterInvariantViolationError(
-                (
-                    'Solid {solid} was provided {config_input} but does not take config'.format(
-                        solid=solid_def.name,
-                        config_input=repr(config_input),
-                    )
-                )
-            )
-        return None
-
-    try:
-        return throwing_evaluate_config_value(solid_def.config_field.dagster_type, config_input)
-    except DagsterEvaluateConfigValueError as eval_error:
-        raise_from(
-            DagsterTypeError(
-                'Error evaluating config for {solid_name}: {error_msg}'.format(
-                    solid_name=solid_def.name,
-                    error_msg=','.join(eval_error.args),
-                )
-            ),
-            eval_error,
-        )
-
+    return solid_configs[name].config if name in solid_configs else None
 
 # This is the state that is built up during the execution plan build process.
 # steps is just a list of the steps that have been created
@@ -715,7 +679,7 @@ def create_execution_plan_core(execution_info):
         solid_transform_step = create_transform_step(
             pipeline_solid,
             step_inputs,
-            create_config_value(execution_info, pipeline_solid),
+            get_solid_user_config(execution_info, pipeline_solid),
         )
 
         state.steps.append(solid_transform_step)

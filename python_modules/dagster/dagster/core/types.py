@@ -287,8 +287,8 @@ class Field:
         if is_optional == INFER_OPTIONAL_COMPOSITE_FIELD:
             is_optional = all_optional_type(dagster_type)
             if is_optional is True:
-                from .evaluator import throwing_evaluate_config_value
-                self._default_value = lambda: throwing_evaluate_config_value(dagster_type, None)
+                from .evaluator import hard_create_config_value
+                self._default_value = lambda: hard_create_config_value(dagster_type, None)
             else:
                 self._default_value = default_value
         else:
@@ -366,8 +366,7 @@ class DagsterCompositeTypeBase(DagsterType):
         )
 
     def coerce_runtime_value(self, value):
-        from .evaluator import throwing_evaluate_config_value
-        return throwing_evaluate_config_value(self, value)
+        return value
 
     def iterate_types(self):
         for field_type in self.field_dict.values():
@@ -451,8 +450,28 @@ class _DagsterListType(DagsterType):
         check.failed('should never be called')
 
 
+# HACK HACK HACK
+#
+# This is not good and a better solution needs to be found. In order
+# for the client-side typeahead in dagit to work as currently structured,
+# dictionaries need names. While we deal with that we're going to automatically
+# name dictionaries. This will cause odd behavior and bugs is you restart
+# the server-side process, the type names changes, and you do not refresh the client.
+#
+# A possible short term mitigation would to name the dictionary based on the hash
+# of its member fields to provide stability in between process restarts.
+#
+class DictCounter:
+    _count = 0
+
+    @staticmethod
+    def get_next_count():
+        DictCounter._count += 1
+        return DictCounter._count
+
+
 def Dict(fields):
-    return _Dict('Dict', fields)
+    return _Dict('Dict_' + str(DictCounter.get_next_count()), fields)
 
 
 class _Dict(DagsterCompositeType):
@@ -468,15 +487,11 @@ class _Dict(DagsterCompositeType):
             name,
             fields,
             'A configuration dictionary with typed fields',
-            type_attributes=DagsterTypeAttributes(is_named=False),
+            type_attributes=DagsterTypeAttributes(is_named=True, is_builtin=True),
         )
 
     def coerce_runtime_value(self, value):
-        if value is not None and not isinstance(value, dict):
-            raise DagsterRuntimeCoercionError('Incoming value for composite must be dict')
-        ## TODO make this return value
-        from .evaluator import throwing_evaluate_config_value
-        return throwing_evaluate_config_value(self, value)
+        return value
 
 
 String = DagsterStringType(name='String', description='A string.')

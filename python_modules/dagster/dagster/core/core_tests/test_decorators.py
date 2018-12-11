@@ -1,3 +1,4 @@
+# encoding: utf-8
 import pytest
 
 from dagster import (
@@ -179,6 +180,59 @@ def test_dict_multiple_outputs():
     solid_result = result.result_list[0]
     assert solid_result.transformed_value('left')['foo'] == 'left'
     assert solid_result.transformed_value('right')['foo'] == 'right'
+
+
+def test_solid_with_implicit_single_output_injected():
+    @solid(outputs=[])
+    def hello_world(_info):
+        return 'foo'
+
+    result = execute_single_solid_in_isolation(
+        create_test_context(),
+        hello_world,
+    )
+
+    assert result.success
+    assert len(result.result_list) == 1
+    solid_result = result.result_list[0]
+    assert solid_result.transformed_value() == 'foo'
+
+
+def test_solid_with_implicit_single_output_default():
+    @solid()
+    def hello_world(_info):
+        return 'foo'
+
+    result = execute_single_solid_in_isolation(
+        create_test_context(),
+        hello_world,
+    )
+
+    assert result.success
+    assert len(result.result_list) == 1
+    solid_result = result.result_list[0]
+    assert solid_result.transformed_value() == 'foo'
+
+
+def test_solid_return_list_instead_of_multiple_results():
+    @solid(outputs=[OutputDefinition(name='foo'), OutputDefinition(name='bar')])
+    def hello_world(_info):
+        return ['foo', 'bar']
+
+    with pytest.raises(Exception) as exc_info:
+        result = execute_single_solid_in_isolation(
+            create_test_context(),
+            hello_world,
+        )
+
+    assert (
+        'Solid unexpectedly returned output [\'foo\', \'bar\'] of type <class \'list\'>. '
+        'Should be a MultipleResults object, or a generator, containing or yielding 2 results: '
+        '{\'foo\': DagsterType(Any), \'bar\': DagsterType(Any)}.' in str(exc_info.value)
+        or 'Solid unexpectedly returned output [\'foo\', \'bar\'] of type <type \'list\'>. '
+        'Should be a MultipleResults object, or a generator, containing or yielding 2 results: '
+        '{\'foo\': DagsterType(Any), \'bar\': DagsterType(Any)}.' in str(exc_info.value)  # py2 
+    )
 
 
 def test_lambda_solid_with_name():
