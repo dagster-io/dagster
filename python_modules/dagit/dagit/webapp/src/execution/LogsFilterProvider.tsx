@@ -34,7 +34,6 @@ interface ILogsFilterProviderProps<T> {
 
 interface ILogsFilterProviderState<T> {
   results: T[];
-  workCursor: number;
 }
 
 export default class LogsFilterProvider<
@@ -56,12 +55,11 @@ export default class LogsFilterProvider<
   };
 
   state: ILogsFilterProviderState<T> = {
-    results: [],
-    workCursor: 0
+    results: []
   };
 
   componentDidMount() {
-    this.schedule();
+    this.runFilter();
   }
 
   componentDidUpdate(prevProps: ILogsFilterProviderProps<T>) {
@@ -69,53 +67,38 @@ export default class LogsFilterProvider<
       prevProps.filter !== this.props.filter ||
       prevProps.nodes !== this.props.nodes
     ) {
-      this.setState({ results: [], workCursor: 0 }, () => {
-        this.schedule();
-      });
+      this.runFilter();
     }
   }
 
-  schedule = () => {
-    if (isEqual(this.props.filter, DefaultLogFilter)) {
-      this.setState({
-        results: this.props.nodes,
-        workCursor: this.props.nodes.length
-      });
+  runFilter = () => {
+    const { nodes, filter } = this.props;
+
+    if (isEqual(filter, DefaultLogFilter)) {
+      this.setState({ results: nodes });
       return;
     }
 
-    (window as any).requestIdleCallback(
-      (deadline: any) => {
-        const { nodes, filter } = this.props;
-        const { results, workCursor } = this.state;
+    let nextResults = [];
 
-        let nextCursor;
-        let nextResults = [...results];
+    const textLower = filter.text.toLowerCase();
 
-        const textLower = filter.text.toLowerCase();
+    for (let nextCursor = 0; nextCursor < nodes.length; nextCursor++) {
+      const node = nodes[nextCursor];
+      if (!filter.levels[node.level]) continue;
+      if (filter.since && Number(node.timestamp) < filter.since) continue;
+      if (filter.text && !node.message.toLowerCase().includes(textLower))
+        continue;
+      nextResults.push(node);
+    }
 
-        for (nextCursor = workCursor; nextCursor < nodes.length; nextCursor++) {
-          const node = nodes[nextCursor];
-          if (deadline.didTimeout) break;
-          if (!filter.levels[node.level]) continue;
-          if (filter.since && Number(node.timestamp) < filter.since) continue;
-          if (filter.text && !node.message.toLowerCase().includes(textLower))
-            continue;
-          nextResults.push(node);
-        }
-
-        this.setState({ results: nextResults, workCursor: nextCursor });
-
-        if (workCursor < nodes.length) {
-          this.schedule();
-        }
-      },
-      { timeout: 200 }
-    );
+    this.setState({ results: nextResults });
   };
 
   render() {
-    const busy = this.state.workCursor !== this.props.nodes.length;
-    return this.props.children({ filteredNodes: this.state.results, busy });
+    return this.props.children({
+      filteredNodes: this.state.results,
+      busy: false
+    });
   }
 }
