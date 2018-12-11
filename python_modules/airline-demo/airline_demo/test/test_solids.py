@@ -121,19 +121,19 @@ def test_download_from_s3():
             },
             'solids': {
                 'download_from_s3': {
-                    'config': {
+                    'config':
+                    [{
                         'bucket': 'dagster-airline-demo-source-data',
-                        'key': 'test/test_file',
-                        'target_path': 'test/test_file',
-                    }
+                        'key': 'test/test_file'
+                    }]
                 }
             }
         }
     )
     assert result.success
-    assert result.transformed_value() == 'test/test_file'
-    assert os.path.isfile(result.transformed_value())
-    with open(result.transformed_value(), 'r') as fd:
+    assert result.transformed_value() == ['test/test_file']
+    assert os.path.isfile(result.transformed_value()[0])
+    with open(result.transformed_value()[0], 'r') as fd:
         assert fd.read() == 'test\n'
 
 
@@ -148,17 +148,18 @@ def test_download_from_s3_tempfile():
             },
             'solids': {
                 'download_from_s3': {
-                    'config': {
+                    'config':
+                    [{
                         'bucket': 'dagster-airline-demo-source-data',
                         'key': 'test/test_file',
-                    }
+                    }]
                 }
             }
         }
     )
     assert result.success
     assert result.transformed_value()
-    assert not os.path.isfile(result.transformed_value())
+    assert [not os.path.isfile(v) for v in result.transformed_value()]
 
 
 def test_unzip_file_tempfile():
@@ -171,16 +172,16 @@ def test_unzip_file_tempfile():
             solids=[nonce, unzip_file],
             dependencies={
                 'unzip_file': {
-                    'archive_path': DependencyDefinition('nonce'),
-                    'archive_member': DependencyDefinition('nonce')
+                    'archive_paths': DependencyDefinition('nonce'),
+                    'archive_members': DependencyDefinition('nonce')
                 }
             },
             context_definitions=_tempfile_context(),
         ),
         'unzip_file',
         inputs={
-            'archive_path': os.path.join(os.path.dirname(__file__), 'data/test.zip'),
-            'archive_member': 'test/test_file'
+            'archive_paths': [os.path.join(os.path.dirname(__file__), 'data/test.zip')],
+            'archive_members': ['test/test_file']
         },
         environment={'solids': {
             'unzip_file': {
@@ -192,7 +193,8 @@ def test_unzip_file_tempfile():
     )
     assert result.success
     assert result.transformed_value()
-    assert not os.path.isfile(result.transformed_value())
+    assert all([v for v in result.transformed_value()])
+    assert [not os.path.isfile(v) for v in result.transformed_value()]
 
 
 @pytest.mark.spark
