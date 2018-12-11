@@ -330,9 +330,18 @@ def _create_solid_transform_wrapper(fn, input_defs, output_defs):
                     yield item
             elif len(output_defs) == 1:
                 yield Result(value=result, output_name=output_defs[0].name)
+            elif len(output_defs) == 0:
+                raise Exception(
+                    'Solid unexpectedly returned output {result}, but no outputs were '
+                    'defined on solid.'.format(result=result)
+                )
             elif result is not None:
-                # XXX(freiksenet)
-                raise Exception('Output for a solid without an output.')
+                raise Exception(
+                    'Solid unexpectedly returned output {result} of type {type_}. Should be a '
+                    'Result or MultipleResults object, or a generator.'.format(
+                        result=result, type_=type(result)
+                    )
+                )
 
     return transform
 
