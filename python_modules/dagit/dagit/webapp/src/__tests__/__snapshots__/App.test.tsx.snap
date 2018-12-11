@@ -24,7 +24,7 @@ Array [
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-cHGsZl hGuQbs"
+        className="sc-kgAjT dTZgov"
       >
         <span
           className="bp3-popover-wrapper"
@@ -75,11 +75,11 @@ Array [
           className="bp3-navbar-divider"
         />
         <div
-          className="sc-TOsTZ jBjHQV"
+          className="sc-cJSrbW fYeVqB"
         >
           <a
             active={true}
-            className="sc-kgAjT Oqyad"
+            className="sc-ksYbfQ iSPLnI"
             href="/pandas_hello_world/explore"
             onClick={[Function]}
           >
@@ -87,7 +87,7 @@ Array [
           </a>
           <a
             active={false}
-            className="sc-kgAjT dQooyP"
+            className="sc-ksYbfQ hyvFcW"
             href="/pandas_hello_world/execute"
             onClick={[Function]}
           >
@@ -209,10 +209,10 @@ Array [
                 >
                   <path
                     className="vx-link-vertical sc-htoDjs jbckmQ"
-                    d="M115,178C115,221,115,221,115,264"
+                    d="M115,360C115,403,115,403,115,446"
                   >
                     <title>
-                      load_num_csv - sum_solid
+                      sum_solid - sum_sq_solid
                     </title>
                   </path>
                 </g>
@@ -222,10 +222,10 @@ Array [
                 >
                   <path
                     className="vx-link-vertical sc-htoDjs jbckmQ"
-                    d="M115,360C115,403,115,403,115,446"
+                    d="M115,178C115,221,115,221,115,264"
                   >
                     <title>
-                      sum_solid - sum_sq_solid
+                      load_num_csv - sum_solid
                     </title>
                   </path>
                 </g>
@@ -249,7 +249,7 @@ Array [
                   strokeWidth={1}
                   width={350}
                   x={100}
-                  y={276}
+                  y={100}
                 />
                 <text
                   dominantBaseline="hanging"
@@ -260,38 +260,12 @@ Array [
                       "pointerEvents": "none",
                     }
                   }
-                  width={167.4}
+                  width={223.2}
                   x={112}
-                  y={297}
+                  y={121}
                 >
-                  sum_solid
+                  load_num_csv
                 </text>
-                <g
-                  onMouseEnter={[Function]}
-                  onMouseLeave={[Function]}
-                >
-                  <title>
-                    num: PandasDataFrame
-                  </title>
-                  <rect
-                    fill="#00B3A4"
-                    height={36}
-                    stroke="#979797"
-                    strokeWidth={1}
-                    width={30}
-                    x={100}
-                    y={246}
-                  />
-                  <ellipse
-                    cx={115}
-                    cy={264}
-                    fill="rgba(0, 0, 0, 0.3)"
-                    rx={7}
-                    ry={7}
-                    stroke="white"
-                    strokeWidth={1.5}
-                  />
-                </g>
                 <g
                   onMouseEnter={[Function]}
                   onMouseLeave={[Function]}
@@ -306,11 +280,11 @@ Array [
                     strokeWidth={1}
                     width={30}
                     x={100}
-                    y={342}
+                    y={160}
                   />
                   <ellipse
                     cx={115}
-                    cy={360}
+                    cy={178}
                     fill="rgba(0, 0, 0, 0.3)"
                     rx={7}
                     ry={7}
@@ -318,6 +292,27 @@ Array [
                     strokeWidth={1.5}
                   />
                 </g>
+                <ellipse
+                  cx={430}
+                  cy={100}
+                  fill="#DBE6EE"
+                  pathLength={100}
+                  rx={13}
+                  ry={13}
+                  stroke="#8A9BA8"
+                  strokeDasharray="0 50 0"
+                  strokeWidth={1}
+                />
+                <ellipse
+                  cx={430}
+                  cy={100}
+                  fill="#7D8C97"
+                  pathLength={100}
+                  rx={10}
+                  ry={10}
+                  stroke="#FFFFFF"
+                  strokeWidth={2}
+                />
               </g>
               <g
                 onClick={[Function]}
@@ -413,7 +408,7 @@ Array [
                   strokeWidth={1}
                   width={350}
                   x={100}
-                  y={100}
+                  y={276}
                 />
                 <text
                   dominantBaseline="hanging"
@@ -424,12 +419,38 @@ Array [
                       "pointerEvents": "none",
                     }
                   }
-                  width={223.2}
+                  width={167.4}
                   x={112}
-                  y={121}
+                  y={297}
                 >
-                  load_num_csv
+                  sum_solid
                 </text>
+                <g
+                  onMouseEnter={[Function]}
+                  onMouseLeave={[Function]}
+                >
+                  <title>
+                    num: PandasDataFrame
+                  </title>
+                  <rect
+                    fill="#00B3A4"
+                    height={36}
+                    stroke="#979797"
+                    strokeWidth={1}
+                    width={30}
+                    x={100}
+                    y={246}
+                  />
+                  <ellipse
+                    cx={115}
+                    cy={264}
+                    fill="rgba(0, 0, 0, 0.3)"
+                    rx={7}
+                    ry={7}
+                    stroke="white"
+                    strokeWidth={1.5}
+                  />
+                </g>
                 <g
                   onMouseEnter={[Function]}
                   onMouseLeave={[Function]}
@@ -444,11 +465,11 @@ Array [
                     strokeWidth={1}
                     width={30}
                     x={100}
-                    y={160}
+                    y={342}
                   />
                   <ellipse
                     cx={115}
-                    cy={178}
+                    cy={360}
                     fill="rgba(0, 0, 0, 0.3)"
                     rx={7}
                     ry={7}
@@ -456,27 +477,6 @@ Array [
                     strokeWidth={1.5}
                   />
                 </g>
-                <ellipse
-                  cx={430}
-                  cy={100}
-                  fill="#DBE6EE"
-                  pathLength={100}
-                  rx={13}
-                  ry={13}
-                  stroke="#8A9BA8"
-                  strokeDasharray="0 50 0"
-                  strokeWidth={1}
-                />
-                <ellipse
-                  cx={430}
-                  cy={100}
-                  fill="#7D8C97"
-                  pathLength={100}
-                  rx={10}
-                  ry={10}
-                  stroke="#FFFFFF"
-                  strokeWidth={2}
-                />
               </g>
             </g>
           </svg>
@@ -745,7 +745,7 @@ Array [
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-cHGsZl hGuQbs"
+        className="sc-kgAjT dTZgov"
       >
         <span
           className="bp3-popover-wrapper"
@@ -834,7 +834,7 @@ Array [
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-cHGsZl hGuQbs"
+        className="sc-kgAjT dTZgov"
       >
         <span
           className="bp3-popover-wrapper"
@@ -885,11 +885,11 @@ Array [
           className="bp3-navbar-divider"
         />
         <div
-          className="sc-TOsTZ jBjHQV"
+          className="sc-cJSrbW fYeVqB"
         >
           <a
             active={true}
-            className="sc-kgAjT Oqyad"
+            className="sc-ksYbfQ iSPLnI"
             href="/pandas_hello_world/explore"
             onClick={[Function]}
           >
@@ -897,7 +897,7 @@ Array [
           </a>
           <a
             active={false}
-            className="sc-kgAjT dQooyP"
+            className="sc-ksYbfQ hyvFcW"
             href="/pandas_hello_world/execute"
             onClick={[Function]}
           >
@@ -1019,10 +1019,10 @@ Array [
                 >
                   <path
                     className="vx-link-vertical sc-htoDjs jbckmQ"
-                    d="M115,178C115,221,115,221,115,264"
+                    d="M115,360C115,403,115,403,115,446"
                   >
                     <title>
-                      load_num_csv - sum_solid
+                      sum_solid - sum_sq_solid
                     </title>
                   </path>
                 </g>
@@ -1032,10 +1032,10 @@ Array [
                 >
                   <path
                     className="vx-link-vertical sc-htoDjs jbckmQ"
-                    d="M115,360C115,403,115,403,115,446"
+                    d="M115,178C115,221,115,221,115,264"
                   >
                     <title>
-                      sum_solid - sum_sq_solid
+                      load_num_csv - sum_solid
                     </title>
                   </path>
                 </g>
@@ -1059,7 +1059,7 @@ Array [
                   strokeWidth={1}
                   width={350}
                   x={100}
-                  y={276}
+                  y={100}
                 />
                 <text
                   dominantBaseline="hanging"
@@ -1070,38 +1070,12 @@ Array [
                       "pointerEvents": "none",
                     }
                   }
-                  width={167.4}
+                  width={223.2}
                   x={112}
-                  y={297}
+                  y={121}
                 >
-                  sum_solid
+                  load_num_csv
                 </text>
-                <g
-                  onMouseEnter={[Function]}
-                  onMouseLeave={[Function]}
-                >
-                  <title>
-                    num: PandasDataFrame
-                  </title>
-                  <rect
-                    fill="#00B3A4"
-                    height={36}
-                    stroke="#979797"
-                    strokeWidth={1}
-                    width={30}
-                    x={100}
-                    y={246}
-                  />
-                  <ellipse
-                    cx={115}
-                    cy={264}
-                    fill="rgba(0, 0, 0, 0.3)"
-                    rx={7}
-                    ry={7}
-                    stroke="white"
-                    strokeWidth={1.5}
-                  />
-                </g>
                 <g
                   onMouseEnter={[Function]}
                   onMouseLeave={[Function]}
@@ -1116,11 +1090,11 @@ Array [
                     strokeWidth={1}
                     width={30}
                     x={100}
-                    y={342}
+                    y={160}
                   />
                   <ellipse
                     cx={115}
-                    cy={360}
+                    cy={178}
                     fill="rgba(0, 0, 0, 0.3)"
                     rx={7}
                     ry={7}
@@ -1128,6 +1102,27 @@ Array [
                     strokeWidth={1.5}
                   />
                 </g>
+                <ellipse
+                  cx={430}
+                  cy={100}
+                  fill="#DBE6EE"
+                  pathLength={100}
+                  rx={13}
+                  ry={13}
+                  stroke="#8A9BA8"
+                  strokeDasharray="0 50 0"
+                  strokeWidth={1}
+                />
+                <ellipse
+                  cx={430}
+                  cy={100}
+                  fill="#7D8C97"
+                  pathLength={100}
+                  rx={10}
+                  ry={10}
+                  stroke="#FFFFFF"
+                  strokeWidth={2}
+                />
               </g>
               <g
                 onClick={[Function]}
@@ -1223,7 +1218,7 @@ Array [
                   strokeWidth={1}
                   width={350}
                   x={100}
-                  y={100}
+                  y={276}
                 />
                 <text
                   dominantBaseline="hanging"
@@ -1234,12 +1229,38 @@ Array [
                       "pointerEvents": "none",
                     }
                   }
-                  width={223.2}
+                  width={167.4}
                   x={112}
-                  y={121}
+                  y={297}
                 >
-                  load_num_csv
+                  sum_solid
                 </text>
+                <g
+                  onMouseEnter={[Function]}
+                  onMouseLeave={[Function]}
+                >
+                  <title>
+                    num: PandasDataFrame
+                  </title>
+                  <rect
+                    fill="#00B3A4"
+                    height={36}
+                    stroke="#979797"
+                    strokeWidth={1}
+                    width={30}
+                    x={100}
+                    y={246}
+                  />
+                  <ellipse
+                    cx={115}
+                    cy={264}
+                    fill="rgba(0, 0, 0, 0.3)"
+                    rx={7}
+                    ry={7}
+                    stroke="white"
+                    strokeWidth={1.5}
+                  />
+                </g>
                 <g
                   onMouseEnter={[Function]}
                   onMouseLeave={[Function]}
@@ -1254,11 +1275,11 @@ Array [
                     strokeWidth={1}
                     width={30}
                     x={100}
-                    y={160}
+                    y={342}
                   />
                   <ellipse
                     cx={115}
-                    cy={178}
+                    cy={360}
                     fill="rgba(0, 0, 0, 0.3)"
                     rx={7}
                     ry={7}
@@ -1266,27 +1287,6 @@ Array [
                     strokeWidth={1.5}
                   />
                 </g>
-                <ellipse
-                  cx={430}
-                  cy={100}
-                  fill="#DBE6EE"
-                  pathLength={100}
-                  rx={13}
-                  ry={13}
-                  stroke="#8A9BA8"
-                  strokeDasharray="0 50 0"
-                  strokeWidth={1}
-                />
-                <ellipse
-                  cx={430}
-                  cy={100}
-                  fill="#7D8C97"
-                  pathLength={100}
-                  rx={10}
-                  ry={10}
-                  stroke="#FFFFFF"
-                  strokeWidth={2}
-                />
               </g>
             </g>
           </svg>
@@ -1502,16 +1502,11 @@ Array [
                     default
                   </h4>
                   <div>
-                    <a
-                      href="/?typeExplorer=DefaultContextConfigDict"
-                      onClick={[Function]}
+                    <code
+                      className="sc-VigVT iLoJBN"
                     >
-                      <code
-                        className="sc-VigVT iLoJBN"
-                      >
-                        DefaultContextConfigDict
-                      </code>
-                    </a>
+                      Dict
+                    </code>
                     <ul
                       className="bp3-list"
                     >
@@ -1571,7 +1566,7 @@ Array [
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-cHGsZl hGuQbs"
+        className="sc-kgAjT dTZgov"
       >
         <span
           className="bp3-popover-wrapper"
@@ -1622,11 +1617,11 @@ Array [
           className="bp3-navbar-divider"
         />
         <div
-          className="sc-TOsTZ jBjHQV"
+          className="sc-cJSrbW fYeVqB"
         >
           <a
             active={true}
-            className="sc-kgAjT Oqyad"
+            className="sc-ksYbfQ iSPLnI"
             href="/pandas_hello_world/explore"
             onClick={[Function]}
           >
@@ -1634,7 +1629,7 @@ Array [
           </a>
           <a
             active={false}
-            className="sc-kgAjT dQooyP"
+            className="sc-ksYbfQ hyvFcW"
             href="/pandas_hello_world/execute"
             onClick={[Function]}
           >
@@ -1756,10 +1751,10 @@ Array [
                 >
                   <path
                     className="vx-link-vertical sc-htoDjs jbckmQ"
-                    d="M115,178C115,221,115,221,115,264"
+                    d="M115,360C115,403,115,403,115,446"
                   >
                     <title>
-                      load_num_csv - sum_solid
+                      sum_solid - sum_sq_solid
                     </title>
                   </path>
                 </g>
@@ -1769,10 +1764,10 @@ Array [
                 >
                   <path
                     className="vx-link-vertical sc-htoDjs jbckmQ"
-                    d="M115,360C115,403,115,403,115,446"
+                    d="M115,178C115,221,115,221,115,264"
                   >
                     <title>
-                      sum_solid - sum_sq_solid
+                      load_num_csv - sum_solid
                     </title>
                   </path>
                 </g>
@@ -1796,7 +1791,7 @@ Array [
                   strokeWidth={1}
                   width={350}
                   x={100}
-                  y={276}
+                  y={100}
                 />
                 <text
                   dominantBaseline="hanging"
@@ -1807,38 +1802,12 @@ Array [
                       "pointerEvents": "none",
                     }
                   }
-                  width={167.4}
+                  width={223.2}
                   x={112}
-                  y={297}
+                  y={121}
                 >
-                  sum_solid
+                  load_num_csv
                 </text>
-                <g
-                  onMouseEnter={[Function]}
-                  onMouseLeave={[Function]}
-                >
-                  <title>
-                    num: PandasDataFrame
-                  </title>
-                  <rect
-                    fill="#00B3A4"
-                    height={36}
-                    stroke="#979797"
-                    strokeWidth={1}
-                    width={30}
-                    x={100}
-                    y={246}
-                  />
-                  <ellipse
-                    cx={115}
-                    cy={264}
-                    fill="rgba(0, 0, 0, 0.3)"
-                    rx={7}
-                    ry={7}
-                    stroke="white"
-                    strokeWidth={1.5}
-                  />
-                </g>
                 <g
                   onMouseEnter={[Function]}
                   onMouseLeave={[Function]}
@@ -1853,11 +1822,11 @@ Array [
                     strokeWidth={1}
                     width={30}
                     x={100}
-                    y={342}
+                    y={160}
                   />
                   <ellipse
                     cx={115}
-                    cy={360}
+                    cy={178}
                     fill="rgba(0, 0, 0, 0.3)"
                     rx={7}
                     ry={7}
@@ -1865,6 +1834,27 @@ Array [
                     strokeWidth={1.5}
                   />
                 </g>
+                <ellipse
+                  cx={430}
+                  cy={100}
+                  fill="#DBE6EE"
+                  pathLength={100}
+                  rx={13}
+                  ry={13}
+                  stroke="#8A9BA8"
+                  strokeDasharray="0 50 0"
+                  strokeWidth={1}
+                />
+                <ellipse
+                  cx={430}
+                  cy={100}
+                  fill="#7D8C97"
+                  pathLength={100}
+                  rx={10}
+                  ry={10}
+                  stroke="#FFFFFF"
+                  strokeWidth={2}
+                />
               </g>
               <g
                 onClick={[Function]}
@@ -1960,7 +1950,7 @@ Array [
                   strokeWidth={1}
                   width={350}
                   x={100}
-                  y={100}
+                  y={276}
                 />
                 <text
                   dominantBaseline="hanging"
@@ -1971,12 +1961,38 @@ Array [
                       "pointerEvents": "none",
                     }
                   }
-                  width={223.2}
+                  width={167.4}
                   x={112}
-                  y={121}
+                  y={297}
                 >
-                  load_num_csv
+                  sum_solid
                 </text>
+                <g
+                  onMouseEnter={[Function]}
+                  onMouseLeave={[Function]}
+                >
+                  <title>
+                    num: PandasDataFrame
+                  </title>
+                  <rect
+                    fill="#00B3A4"
+                    height={36}
+                    stroke="#979797"
+                    strokeWidth={1}
+                    width={30}
+                    x={100}
+                    y={246}
+                  />
+                  <ellipse
+                    cx={115}
+                    cy={264}
+                    fill="rgba(0, 0, 0, 0.3)"
+                    rx={7}
+                    ry={7}
+                    stroke="white"
+                    strokeWidth={1.5}
+                  />
+                </g>
                 <g
                   onMouseEnter={[Function]}
                   onMouseLeave={[Function]}
@@ -1991,11 +2007,11 @@ Array [
                     strokeWidth={1}
                     width={30}
                     x={100}
-                    y={160}
+                    y={342}
                   />
                   <ellipse
                     cx={115}
-                    cy={178}
+                    cy={360}
                     fill="rgba(0, 0, 0, 0.3)"
                     rx={7}
                     ry={7}
@@ -2003,27 +2019,6 @@ Array [
                     strokeWidth={1.5}
                   />
                 </g>
-                <ellipse
-                  cx={430}
-                  cy={100}
-                  fill="#DBE6EE"
-                  pathLength={100}
-                  rx={13}
-                  ry={13}
-                  stroke="#8A9BA8"
-                  strokeDasharray="0 50 0"
-                  strokeWidth={1}
-                />
-                <ellipse
-                  cx={430}
-                  cy={100}
-                  fill="#7D8C97"
-                  pathLength={100}
-                  rx={10}
-                  ry={10}
-                  stroke="#FFFFFF"
-                  strokeWidth={2}
-                />
               </g>
             </g>
           </svg>
@@ -2239,16 +2234,11 @@ Array [
                     default
                   </h4>
                   <div>
-                    <a
-                      href="/?typeExplorer=DefaultContextConfigDict"
-                      onClick={[Function]}
+                    <code
+                      className="sc-VigVT iLoJBN"
                     >
-                      <code
-                        className="sc-VigVT iLoJBN"
-                      >
-                        DefaultContextConfigDict
-                      </code>
-                    </a>
+                      Dict
+                    </code>
                     <ul
                       className="bp3-list"
                     >
@@ -2308,7 +2298,7 @@ Array [
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-cHGsZl hGuQbs"
+        className="sc-kgAjT dTZgov"
       >
         <span
           className="bp3-popover-wrapper"
@@ -2359,11 +2349,11 @@ Array [
           className="bp3-navbar-divider"
         />
         <div
-          className="sc-TOsTZ jBjHQV"
+          className="sc-cJSrbW fYeVqB"
         >
           <a
             active={true}
-            className="sc-kgAjT Oqyad"
+            className="sc-ksYbfQ iSPLnI"
             href="/pandas_hello_world/explore"
             onClick={[Function]}
           >
@@ -2371,7 +2361,7 @@ Array [
           </a>
           <a
             active={false}
-            className="sc-kgAjT dQooyP"
+            className="sc-ksYbfQ hyvFcW"
             href="/pandas_hello_world/execute"
             onClick={[Function]}
           >
@@ -2493,10 +2483,10 @@ Array [
                 >
                   <path
                     className="vx-link-vertical sc-htoDjs jbckmQ"
-                    d="M115,178C115,221,115,221,115,264"
+                    d="M115,360C115,403,115,403,115,446"
                   >
                     <title>
-                      load_num_csv - sum_solid
+                      sum_solid - sum_sq_solid
                     </title>
                   </path>
                 </g>
@@ -2506,10 +2496,10 @@ Array [
                 >
                   <path
                     className="vx-link-vertical sc-htoDjs jbckmQ"
-                    d="M115,360C115,403,115,403,115,446"
+                    d="M115,178C115,221,115,221,115,264"
                   >
                     <title>
-                      sum_solid - sum_sq_solid
+                      load_num_csv - sum_solid
                     </title>
                   </path>
                 </g>
@@ -2533,7 +2523,7 @@ Array [
                   strokeWidth={1}
                   width={350}
                   x={100}
-                  y={276}
+                  y={100}
                 />
                 <text
                   dominantBaseline="hanging"
@@ -2544,38 +2534,12 @@ Array [
                       "pointerEvents": "none",
                     }
                   }
-                  width={167.4}
+                  width={223.2}
                   x={112}
-                  y={297}
+                  y={121}
                 >
-                  sum_solid
+                  load_num_csv
                 </text>
-                <g
-                  onMouseEnter={[Function]}
-                  onMouseLeave={[Function]}
-                >
-                  <title>
-                    num: PandasDataFrame
-                  </title>
-                  <rect
-                    fill="#00B3A4"
-                    height={36}
-                    stroke="#979797"
-                    strokeWidth={1}
-                    width={30}
-                    x={100}
-                    y={246}
-                  />
-                  <ellipse
-                    cx={115}
-                    cy={264}
-                    fill="rgba(0, 0, 0, 0.3)"
-                    rx={7}
-                    ry={7}
-                    stroke="white"
-                    strokeWidth={1.5}
-                  />
-                </g>
                 <g
                   onMouseEnter={[Function]}
                   onMouseLeave={[Function]}
@@ -2590,11 +2554,11 @@ Array [
                     strokeWidth={1}
                     width={30}
                     x={100}
-                    y={342}
+                    y={160}
                   />
                   <ellipse
                     cx={115}
-                    cy={360}
+                    cy={178}
                     fill="rgba(0, 0, 0, 0.3)"
                     rx={7}
                     ry={7}
@@ -2602,6 +2566,27 @@ Array [
                     strokeWidth={1.5}
                   />
                 </g>
+                <ellipse
+                  cx={430}
+                  cy={100}
+                  fill="#DBE6EE"
+                  pathLength={100}
+                  rx={13}
+                  ry={13}
+                  stroke="#8A9BA8"
+                  strokeDasharray="0 50 0"
+                  strokeWidth={1}
+                />
+                <ellipse
+                  cx={430}
+                  cy={100}
+                  fill="#7D8C97"
+                  pathLength={100}
+                  rx={10}
+                  ry={10}
+                  stroke="#FFFFFF"
+                  strokeWidth={2}
+                />
               </g>
               <g
                 onClick={[Function]}
@@ -2697,7 +2682,7 @@ Array [
                   strokeWidth={1}
                   width={350}
                   x={100}
-                  y={100}
+                  y={276}
                 />
                 <text
                   dominantBaseline="hanging"
@@ -2708,12 +2693,38 @@ Array [
                       "pointerEvents": "none",
                     }
                   }
-                  width={223.2}
+                  width={167.4}
                   x={112}
-                  y={121}
+                  y={297}
                 >
-                  load_num_csv
+                  sum_solid
                 </text>
+                <g
+                  onMouseEnter={[Function]}
+                  onMouseLeave={[Function]}
+                >
+                  <title>
+                    num: PandasDataFrame
+                  </title>
+                  <rect
+                    fill="#00B3A4"
+                    height={36}
+                    stroke="#979797"
+                    strokeWidth={1}
+                    width={30}
+                    x={100}
+                    y={246}
+                  />
+                  <ellipse
+                    cx={115}
+                    cy={264}
+                    fill="rgba(0, 0, 0, 0.3)"
+                    rx={7}
+                    ry={7}
+                    stroke="white"
+                    strokeWidth={1.5}
+                  />
+                </g>
                 <g
                   onMouseEnter={[Function]}
                   onMouseLeave={[Function]}
@@ -2728,11 +2739,11 @@ Array [
                     strokeWidth={1}
                     width={30}
                     x={100}
-                    y={160}
+                    y={342}
                   />
                   <ellipse
                     cx={115}
-                    cy={178}
+                    cy={360}
                     fill="rgba(0, 0, 0, 0.3)"
                     rx={7}
                     ry={7}
@@ -2740,27 +2751,6 @@ Array [
                     strokeWidth={1.5}
                   />
                 </g>
-                <ellipse
-                  cx={430}
-                  cy={100}
-                  fill="#DBE6EE"
-                  pathLength={100}
-                  rx={13}
-                  ry={13}
-                  stroke="#8A9BA8"
-                  strokeDasharray="0 50 0"
-                  strokeWidth={1}
-                />
-                <ellipse
-                  cx={430}
-                  cy={100}
-                  fill="#7D8C97"
-                  pathLength={100}
-                  rx={10}
-                  ry={10}
-                  stroke="#FFFFFF"
-                  strokeWidth={2}
-                />
               </g>
             </g>
           </svg>
@@ -2919,34 +2909,6 @@ Array [
                   className="sc-ckVGcZ emzRpM"
                 >
                   <a
-                    href="/?typeExplorer=DefaultContextConfigDict"
-                    onClick={[Function]}
-                  >
-                    <code
-                      className="sc-VigVT iLoJBN"
-                    >
-                      DefaultContextConfigDict
-                    </code>
-                  </a>
-                </li>
-                <li
-                  className="sc-ckVGcZ emzRpM"
-                >
-                  <a
-                    href="/?typeExplorer=LoadDataFrameConfigDict"
-                    onClick={[Function]}
-                  >
-                    <code
-                      className="sc-VigVT iLoJBN"
-                    >
-                      LoadDataFrameConfigDict
-                    </code>
-                  </a>
-                </li>
-                <li
-                  className="sc-ckVGcZ emzRpM"
-                >
-                  <a
                     href="/?typeExplorer=PandasDataFrame"
                     onClick={[Function]}
                   >
@@ -3090,7 +3052,7 @@ Array [
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-cHGsZl hGuQbs"
+        className="sc-kgAjT dTZgov"
       >
         <span
           className="bp3-popover-wrapper"
