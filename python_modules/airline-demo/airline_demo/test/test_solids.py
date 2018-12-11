@@ -196,7 +196,6 @@ def test_unzip_file_tempfile():
 
 
 @pytest.mark.spark
-@pytest.mark.slow
 def test_ingest_csv_to_spark():
     @lambda_solid
     def nonce():
@@ -232,7 +231,7 @@ def test_ingest_csv_to_spark():
 
 @pytest.mark.spark
 @pytest.mark.postgres
-@pytest.mark.slow
+@pytest.mark.skip
 def test_load_data_to_postgres_from_spark_postgres():
     raise NotImplementedError()
 
@@ -240,18 +239,18 @@ def test_load_data_to_postgres_from_spark_postgres():
 @pytest.mark.nettest
 @pytest.mark.spark
 @pytest.mark.redshift
-@pytest.mark.slow
+@pytest.mark.skip
 def test_load_data_to_redshift_from_spark():
     raise NotImplementedError()
 
 
 @pytest.mark.spark
-@pytest.mark.slow
+@pytest.mark.skip
 def test_subsample_spark_dataset():
     raise NotImplementedError()
 
 
 @pytest.mark.spark
-@pytest.mark.slow
+@pytest.mark.skip
 def test_join_spark_data_frame():
     raise NotImplementedError()
