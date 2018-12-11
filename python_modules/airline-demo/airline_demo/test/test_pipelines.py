@@ -302,17 +302,17 @@ def test_pipeline_ingest_fast():
                 },
                 'subsample_q2_ticket_data': {
                     'config': {
-                        'subsample_pct': 10,
+                        'subsample_pct': 100,
                     }
                 },
                 'subsample_q2_market_data': {
                     'config': {
-                        'subsample_pct': 10,
+                        'subsample_pct': 100,
                     }
                 },
                 'subsample_q2_coupon_data': {
                     'config': {
-                        'subsample_pct': 10,
+                        'subsample_pct': 100,
                     }
                 },
                 'ingest_q2_ticket_data': {
