@@ -56,7 +56,6 @@ const Trace = styled.div`
 `;
 
 const ErrorWrapper = styled.div`
-  margin-bottom: 100px;
   background-color: rgba(206, 17, 38, 0.05);
   border: 1px solid #d17257;
   border-radius: 3px;

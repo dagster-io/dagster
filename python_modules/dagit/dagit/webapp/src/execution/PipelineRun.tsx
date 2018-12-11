@@ -1,7 +1,8 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
-import { Colors, Button, Classes, Dialog } from "@blueprintjs/core";
+import { Colors, NonIdealState, Classes, Dialog } from "@blueprintjs/core";
+import { IconNames } from "@blueprintjs/icons";
 import LogsFilterProvider, {
   ILogFilter,
   DefaultLogFilter
@@ -123,7 +124,7 @@ export class PipelineRun extends React.Component<
         <Dialog
           icon="info-sign"
           onClose={() => this.setState({ highlightedError: undefined })}
-          style={{ width: "80vw", maxWidth: 900, height: 415 }}
+          style={{ width: "80vw", maxWidth: 900 }}
           title={"Error"}
           usePortal={true}
           isOpen={!!highlightedError}
@@ -141,7 +142,13 @@ export class PipelineRunEmpty extends React.Component {
   render() {
     return (
       <PipelineRunWrapper>
-        Provide configuration and click the Play icon to execute the pipeline.
+        <NonIdealState
+          icon={IconNames.SEND_TO_GRAPH}
+          title="No Run Data"
+          description={
+            "Provide configuration and click Play to execute the pipeline."
+          }
+        />
       </PipelineRunWrapper>
     );
   }
