@@ -117,7 +117,7 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
         info.context.info(
             'Executing sql statement:\n{sql_statement}'.format(sql_statement=sql_statement)
         )
-        info.context.resources.db_engine.execute(text(sql_statement))
+        info.context.resources.db_info.engine.execute(text(sql_statement))
         yield Result(value=table_name, output_name='result')
 
     return SolidDefinition(
@@ -492,8 +492,7 @@ def normalize_weather_na_values(_info, data_frame):
     }))
 )
 def load_data_to_database_from_spark(info, data_frame):
-    # Move this to context, config at that level
-    info.context.resources.db_load(data_frame, info.config['table_name'], info.context.resources)
+    info.context.resources.db_info.load_table(data_frame, info.config['table_name'])
     return data_frame
 
 
