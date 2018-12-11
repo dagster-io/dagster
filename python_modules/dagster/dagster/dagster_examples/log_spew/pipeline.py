@@ -1,6 +1,7 @@
 from dagster import (
     DependencyDefinition,
     InputDefinition,
+    MultipleResults,
     OutputDefinition,
     PipelineDefinition,
     solid,
@@ -30,7 +31,7 @@ def nonce_solid(name, n_inputs, n_outputs):
                 info.context.info('Info message seq={i} from solid {name}'.format(i=i, name=name))
             else:
                 info.context.debug('Debug message seq={i} from solid {name}'.format(i=i, name=name))
-        return ['foo' for i in range(n_outputs)]
+        return MultipleResults.from_dict({'output_{}'.format(i): 'foo' for i in range(n_outputs)})
 
     return solid_fn
 
