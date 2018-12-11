@@ -21,6 +21,8 @@ export default class SidebarPipelineInfo extends React.Component<
   static fragments = {
     SidebarPipelineInfoFragment: gql`
       fragment SidebarPipelineInfoFragment on Pipeline {
+        ...ConfigPipelineTypesFragment
+
         name
         description
         contexts {
@@ -33,6 +35,7 @@ export default class SidebarPipelineInfo extends React.Component<
       }
 
       ${Config.fragments.ConfigFragment}
+      ${Config.fragments.ConfigPipelineTypesFragment}
     `
   };
 
@@ -51,7 +54,9 @@ export default class SidebarPipelineInfo extends React.Component<
             <SectionItemContainer key={context.name}>
               <SectionItemHeader>{context.name}</SectionItemHeader>
               <Description description={context.description} />
-              {context.config && <Config config={context.config} />}
+              {context.config && (
+                <Config config={context.config} pipeline={pipeline} />
+              )}
             </SectionItemContainer>
           ))}
         </SidebarSection>

@@ -7,79 +7,54 @@
 // GraphQL fragment: SidebarPipelineInfoFragment
 // ====================================================
 
-export interface SidebarPipelineInfoFragment_contexts_config_type_RegularType_typeAttributes {
+export interface SidebarPipelineInfoFragment_types_RegularType_typeAttributes {
   isNamed: boolean;
 }
 
-export interface SidebarPipelineInfoFragment_contexts_config_type_RegularType {
+export interface SidebarPipelineInfoFragment_types_RegularType {
   __typename: "RegularType";
   name: string;
   description: string | null;
-  typeAttributes: SidebarPipelineInfoFragment_contexts_config_type_RegularType_typeAttributes;
+  typeAttributes: SidebarPipelineInfoFragment_types_RegularType_typeAttributes;
 }
 
-export interface SidebarPipelineInfoFragment_contexts_config_type_CompositeType_fields_type_RegularType_typeAttributes {
-  isNamed: boolean;
-}
-
-export interface SidebarPipelineInfoFragment_contexts_config_type_CompositeType_fields_type_RegularType {
+export interface SidebarPipelineInfoFragment_types_CompositeType_fields_type {
+  __typename: "RegularType" | "CompositeType";
   name: string;
-  description: string | null;
-  typeAttributes: SidebarPipelineInfoFragment_contexts_config_type_CompositeType_fields_type_RegularType_typeAttributes;
 }
 
-export interface SidebarPipelineInfoFragment_contexts_config_type_CompositeType_fields_type_CompositeType_typeAttributes {
-  isNamed: boolean;
-}
-
-export interface SidebarPipelineInfoFragment_contexts_config_type_CompositeType_fields_type_CompositeType_fields_type_typeAttributes {
-  isNamed: boolean;
-}
-
-export interface SidebarPipelineInfoFragment_contexts_config_type_CompositeType_fields_type_CompositeType_fields_type {
-  name: string;
-  description: string | null;
-  typeAttributes: SidebarPipelineInfoFragment_contexts_config_type_CompositeType_fields_type_CompositeType_fields_type_typeAttributes;
-}
-
-export interface SidebarPipelineInfoFragment_contexts_config_type_CompositeType_fields_type_CompositeType_fields {
+export interface SidebarPipelineInfoFragment_types_CompositeType_fields {
   name: string;
   description: string | null;
   isOptional: boolean;
   defaultValue: string | null;
-  type: SidebarPipelineInfoFragment_contexts_config_type_CompositeType_fields_type_CompositeType_fields_type;
+  type: SidebarPipelineInfoFragment_types_CompositeType_fields_type;
 }
 
-export interface SidebarPipelineInfoFragment_contexts_config_type_CompositeType_fields_type_CompositeType {
-  name: string;
-  description: string | null;
-  typeAttributes: SidebarPipelineInfoFragment_contexts_config_type_CompositeType_fields_type_CompositeType_typeAttributes;
-  fields: SidebarPipelineInfoFragment_contexts_config_type_CompositeType_fields_type_CompositeType_fields[];
-}
-
-export type SidebarPipelineInfoFragment_contexts_config_type_CompositeType_fields_type = SidebarPipelineInfoFragment_contexts_config_type_CompositeType_fields_type_RegularType | SidebarPipelineInfoFragment_contexts_config_type_CompositeType_fields_type_CompositeType;
-
-export interface SidebarPipelineInfoFragment_contexts_config_type_CompositeType_fields {
-  name: string;
-  description: string | null;
-  isOptional: boolean;
-  defaultValue: string | null;
-  type: SidebarPipelineInfoFragment_contexts_config_type_CompositeType_fields_type;
-}
-
-export interface SidebarPipelineInfoFragment_contexts_config_type_CompositeType_typeAttributes {
+export interface SidebarPipelineInfoFragment_types_CompositeType_typeAttributes {
   isNamed: boolean;
 }
 
-export interface SidebarPipelineInfoFragment_contexts_config_type_CompositeType {
+export interface SidebarPipelineInfoFragment_types_CompositeType {
   __typename: "CompositeType";
+  fields: SidebarPipelineInfoFragment_types_CompositeType_fields[];
   name: string;
   description: string | null;
-  fields: SidebarPipelineInfoFragment_contexts_config_type_CompositeType_fields[];
-  typeAttributes: SidebarPipelineInfoFragment_contexts_config_type_CompositeType_typeAttributes;
+  typeAttributes: SidebarPipelineInfoFragment_types_CompositeType_typeAttributes;
 }
 
-export type SidebarPipelineInfoFragment_contexts_config_type = SidebarPipelineInfoFragment_contexts_config_type_RegularType | SidebarPipelineInfoFragment_contexts_config_type_CompositeType;
+export type SidebarPipelineInfoFragment_types = SidebarPipelineInfoFragment_types_RegularType | SidebarPipelineInfoFragment_types_CompositeType;
+
+export interface SidebarPipelineInfoFragment_contexts_config_type_typeAttributes {
+  isNamed: boolean;
+}
+
+export interface SidebarPipelineInfoFragment_contexts_config_type {
+  name: string;
+  description: string | null;
+  typeAttributes: SidebarPipelineInfoFragment_contexts_config_type_typeAttributes;
+  __typename: "RegularType" | "CompositeType";
+}
 
 export interface SidebarPipelineInfoFragment_contexts_config {
   type: SidebarPipelineInfoFragment_contexts_config_type;
@@ -92,6 +67,7 @@ export interface SidebarPipelineInfoFragment_contexts {
 }
 
 export interface SidebarPipelineInfoFragment {
+  types: SidebarPipelineInfoFragment_types[];
   name: string;
   description: string | null;
   contexts: SidebarPipelineInfoFragment_contexts[];

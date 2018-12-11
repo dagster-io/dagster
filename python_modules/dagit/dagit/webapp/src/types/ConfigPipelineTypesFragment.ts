@@ -4,22 +4,49 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL fragment: ConfigFragment
+// GraphQL fragment: ConfigPipelineTypesFragment
 // ====================================================
 
-export interface ConfigFragment_type_typeAttributes {
+export interface ConfigPipelineTypesFragment_types_RegularType_typeAttributes {
   isNamed: boolean;
 }
 
-export interface ConfigFragment_type {
+export interface ConfigPipelineTypesFragment_types_RegularType {
+  __typename: "RegularType";
   name: string;
   description: string | null;
-  typeAttributes: ConfigFragment_type_typeAttributes;
-  __typename: "RegularType" | "CompositeType";
+  typeAttributes: ConfigPipelineTypesFragment_types_RegularType_typeAttributes;
 }
 
-export interface ConfigFragment {
-  type: ConfigFragment_type;
+export interface ConfigPipelineTypesFragment_types_CompositeType_fields_type {
+  __typename: "RegularType" | "CompositeType";
+  name: string;
+}
+
+export interface ConfigPipelineTypesFragment_types_CompositeType_fields {
+  name: string;
+  description: string | null;
+  isOptional: boolean;
+  defaultValue: string | null;
+  type: ConfigPipelineTypesFragment_types_CompositeType_fields_type;
+}
+
+export interface ConfigPipelineTypesFragment_types_CompositeType_typeAttributes {
+  isNamed: boolean;
+}
+
+export interface ConfigPipelineTypesFragment_types_CompositeType {
+  __typename: "CompositeType";
+  fields: ConfigPipelineTypesFragment_types_CompositeType_fields[];
+  name: string;
+  description: string | null;
+  typeAttributes: ConfigPipelineTypesFragment_types_CompositeType_typeAttributes;
+}
+
+export type ConfigPipelineTypesFragment_types = ConfigPipelineTypesFragment_types_RegularType | ConfigPipelineTypesFragment_types_CompositeType;
+
+export interface ConfigPipelineTypesFragment {
+  types: ConfigPipelineTypesFragment_types[];
 }
 
 /* tslint:disable */
