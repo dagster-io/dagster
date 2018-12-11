@@ -451,6 +451,16 @@ class _DagsterListType(DagsterType):
         check.failed('should never be called')
 
 
+#
+# This is not good and a better solution needs to be found. In order
+# for the client-side typeahead in dagit to work as currently structured,
+# dictionaries need names. While we deal with that we're going to automatically
+# name dictionaries. This will cause odd behavior and bugs is you restart
+# the server-side process, the type names changes, and you do not refresh the client.
+#
+# A possible short term mitigation would to name the dictionary based on the hash
+# of its member fields to provide stability in between process restarts.
+#
 class DictCounter:
     _count = 0
 
