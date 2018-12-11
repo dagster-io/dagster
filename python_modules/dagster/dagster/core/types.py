@@ -451,8 +451,17 @@ class _DagsterListType(DagsterType):
         check.failed('should never be called')
 
 
+class DictCounter:
+    _count = 0
+
+    @staticmethod
+    def get_next_count():
+        DictCounter._count += 1
+        return DictCounter._count
+
+
 def Dict(fields):
-    return _Dict('Dict', fields)
+    return _Dict('Dict_' + str(DictCounter.get_next_count()), fields)
 
 
 class _Dict(DagsterCompositeType):
@@ -468,7 +477,7 @@ class _Dict(DagsterCompositeType):
             name,
             fields,
             'A configuration dictionary with typed fields',
-            type_attributes=DagsterTypeAttributes(is_named=False),
+            type_attributes=DagsterTypeAttributes(is_named=True, is_builtin=True),
         )
 
     def coerce_runtime_value(self, value):
