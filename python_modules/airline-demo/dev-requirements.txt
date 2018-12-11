@@ -2,5 +2,4 @@ docker-compose==1.23.1
 pylint==1.9.2
 pytest>=3.5.1
 pytest-cov==2.6.0
-pytest-dependency==0.4.0
 yapf==0.22.0

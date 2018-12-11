@@ -12,9 +12,14 @@ from airline_demo.pipelines import (
 
 
 @pytest.mark.nettest
-@pytest.mark.dependency()
-def test_pipeline_download_fast():
-    result = execute_pipeline(
+@pytest.mark.spark
+@pytest.mark.db
+@pytest.mark.py3
+def test_pipelines():
+    now = datetime.datetime.utcnow()
+    timestamp = now.strftime('%Y_%m_%d_%H_%M_%S')
+
+    result_download = execute_pipeline(
         define_airline_demo_download_pipeline(),
         {
             'context': {
@@ -201,14 +206,9 @@ def test_pipeline_download_fast():
             }
         }
     )
-    assert result.success
+    assert result_download.success
 
-
-@pytest.mark.dependency(depends=['test_pipeline_download_fast'])
-@pytest.mark.spark
-@pytest.mark.db
-def test_pipeline_ingest_fast():
-    result = execute_pipeline(
+    result_ingest = execute_pipeline(
         define_airline_demo_ingest_pipeline(),
         {
             'context': {
@@ -380,17 +380,9 @@ def test_pipeline_ingest_fast():
             },
         },
     )
-    assert result.success
+    assert result_ingest.success
 
-
-@pytest.mark.db
-@pytest.mark.spark
-@pytest.mark.py3
-@pytest.mark.dependency(depends=['test_pipeline_ingest_fast'])
-def test_pipeline_warehouse_fast():
-    now = datetime.datetime.utcnow()
-    timestamp = now.strftime('%Y_%m_%d_%H_%M_%S')
-    result = execute_pipeline(
+    result_warehouse = execute_pipeline(
         define_airline_demo_warehouse_pipeline(),
         {
             'context': {
@@ -446,3 +438,4 @@ def test_pipeline_warehouse_fast():
             }
         }
     )
+    assert result_warehouse.success
