@@ -15,7 +15,10 @@ from dagster import (
 from dagster.core.definitions import ExecutionGraph, Solid
 from dagster.core.execution import execute_pipeline_iterator
 from dagster.graphviz import build_graphviz_graph
-from dagster.utils import load_yaml_from_path
+from dagster.utils import (
+    load_yaml_from_path,
+    load_yaml_from_glob_list,
+)
 from dagster.utils.indenting_printer import IndentingPrinter
 from dagster.utils.merger import dict_merge
 
@@ -308,25 +311,12 @@ def execute_execute_command(env, cli_args, print_fn):
     do_execute_command(pipeline, env, print_fn)
 
 
-def merge_yamls(file_list):
-    check.list_param(file_list, 'file_list', of_type=str)
-    merged = {}
-    for yaml_file in file_list:
-        merged = dict_merge(load_yaml_from_path(yaml_file) or {}, merged)
-    return merged
-
-
 def do_execute_command(pipeline, env_file_list, printer):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     env_file_list = check.opt_list_param(env_file_list, 'env_file_list', of_type=str)
     check.callable_param(printer, 'printer')
 
-    all_files_list = []
-
-    for env_file_pattern in env_file_list:
-        all_files_list.extend(glob.glob(env_file_pattern))
-
-    env_config = merge_yamls(all_files_list) if all_files_list else {}
+    env_config = load_yaml_from_glob_list(env_file_list) if env_file_list else {}
 
     pipeline_iter = execute_pipeline_iterator(pipeline, env_config)
 

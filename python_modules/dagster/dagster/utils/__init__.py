@@ -5,6 +5,11 @@ import yaml
 
 from dagster import check
 
+from .yaml import (
+    load_yaml_from_path,
+    load_yaml_from_glob_list,
+)
+
 
 def script_relative_path(file_path):
     '''
@@ -20,14 +25,10 @@ def script_relative_path(file_path):
     return os.path.join(os.path.dirname(os.path.abspath(scriptdir)), file_path)
 
 
-def load_yaml_from_path(path):
-    check.str_param(path, 'path')
-    with open(path, 'r') as ff:
-        return yaml.load(ff)
-
-
 # Adapted from https://github.com/okunishinishi/python-stringcase/blob/master/stringcase.py
 def camelcase(string):
+    check.str_param(string, 'string')
+
     string = re.sub(r'^[\-_\.]', '', str(string))
     if not string:
         return string
