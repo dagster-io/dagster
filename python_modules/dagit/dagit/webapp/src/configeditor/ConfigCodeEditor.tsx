@@ -63,6 +63,7 @@ export default class ConfigCodeEditor extends React.Component<
               closeOnUnfocus: false,
               typeConfig: this.props.typeConfig
             },
+            keyMap: "sublime",
             extraKeys: {
               "Cmd-Space": (editor: any) =>
                 editor.showHint({
