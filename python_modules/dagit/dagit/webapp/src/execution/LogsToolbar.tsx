@@ -30,6 +30,7 @@ export default class LogsToolbar extends React.Component<ILogsToolbarProps> {
           placeholder="Filter logs..."
           small={true}
           value={filter.text}
+          spellCheck={false}
           rightElement={
             showSpinner ? (
               FilterSpinner
