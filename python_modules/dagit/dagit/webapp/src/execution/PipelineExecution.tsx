@@ -4,11 +4,11 @@ import styled from "styled-components";
 import * as yaml from "yaml";
 import { Icon, Colors } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
-import { ApolloClient } from "apollo-boost";
 
 import { IExecutionSession } from "../LocalStorage";
 import { PipelineRun, PipelineRunEmpty } from "./PipelineRun";
 import { ExecutionTabs, ExecutionTab } from "./ExecutionTabs";
+import { PanelDivider } from "../PanelDivider";
 
 import ConfigCodeEditorContainer from "../configeditor/ConfigCodeEditorContainer";
 import { PipelineExecutionCodeEditorFragment } from "./types/PipelineExecutionCodeEditorFragment";
@@ -28,8 +28,13 @@ interface IPipelineExecutionProps {
   onExecute: (config: any) => void;
 }
 
+interface IPipelineExecutionState {
+  editorVW: number;
+}
+
 export default class PipelineExecution extends React.Component<
-  IPipelineExecutionProps
+  IPipelineExecutionProps,
+  IPipelineExecutionState
 > {
   static fragments = {
     PipelineExecutionCodeEditorFragment: gql`
@@ -57,51 +62,46 @@ export default class PipelineExecution extends React.Component<
     `
   };
 
+  state = {
+    editorVW: 50
+  };
+
   render() {
     return (
-      <>
-        <ExecutionTabs>
-          {Object.keys(this.props.sessions).map(key => (
+      <PipelineExecutionWrapper>
+        <Split width={this.state.editorVW}>
+          <ExecutionTabs>
+            {Object.keys(this.props.sessions).map(key => (
+              <ExecutionTab
+                key={key}
+                active={key === this.props.currentSession.key}
+                title={this.props.sessions[key].name}
+                onClick={() => this.props.onSelectSession(key)}
+                onChange={title => this.props.onRenameSession(key, title)}
+                onRemove={
+                  Object.keys(this.props.sessions).length > 1
+                    ? () => this.props.onRemoveSession(key)
+                    : undefined
+                }
+              />
+            ))}
             <ExecutionTab
-              key={key}
-              active={key === this.props.currentSession.key}
-              title={this.props.sessions[key].name}
-              onClick={() => this.props.onSelectSession(key)}
-              onChange={title => this.props.onRenameSession(key, title)}
-              onRemove={
-                Object.keys(this.props.sessions).length > 1
-                  ? () => this.props.onRemoveSession(key)
-                  : undefined
-              }
+              title={"Add..."}
+              onClick={() => this.props.onCreateSession()}
             />
-          ))}
-          <ExecutionTab
-            title={"Add..."}
-            onClick={() => this.props.onCreateSession()}
+          </ExecutionTabs>
+          <ConfigCodeEditorContainer
+            pipelineName={this.props.pipeline.name}
+            environmentTypeName={this.props.pipeline.environmentType.name}
+            configCode={this.props.currentSession.config}
+            onConfigChange={config =>
+              this.props.onSaveSession(this.props.currentSession.key, config)
+            }
           />
-        </ExecutionTabs>
-        <PipelineExecutionWrapper>
-          <Split>
-            <ConfigCodeEditorContainer
-              pipelineName={this.props.pipeline.name}
-              environmentTypeName={this.props.pipeline.environmentType.name}
-              configCode={this.props.currentSession.config}
-              onConfigChange={config =>
-                this.props.onSaveSession(this.props.currentSession.key, config)
-              }
-            />
-          </Split>
-          <Split>
-            {this.props.activeRun ? (
-              <PipelineRun pipelineRun={this.props.activeRun} />
-            ) : (
-              <PipelineRunEmpty />
-            )}
-          </Split>
           <IconWrapper
             role="button"
             disabled={this.props.isExecuting}
-            onClick={async () => {
+            onClick={async event => {
               if (!this.props.isExecuting) {
                 let config = {};
                 try {
@@ -119,8 +119,19 @@ export default class PipelineExecution extends React.Component<
               iconSize={40}
             />
           </IconWrapper>
-        </PipelineExecutionWrapper>
-      </>
+        </Split>
+        <PanelDivider
+          axis="horizontal"
+          onMove={(vw: number) => this.setState({ editorVW: vw })}
+        />
+        <Split>
+          {this.props.activeRun ? (
+            <PipelineRun pipelineRun={this.props.activeRun} />
+          ) : (
+            <PipelineRunEmpty />
+          )}
+        </Split>
+      </PipelineExecutionWrapper>
     );
   }
 }
@@ -130,10 +141,9 @@ const PipelineExecutionWrapper = styled.div`
   display: flex;
   flex-direction: row;
   width: 100%;
-
   height: 100vh;
   position: absolute;
-  padding-top: 93px;
+  padding-top: 50px;
 `;
 
 const IconWrapper = styled.div<{ disabled: boolean }>`
@@ -143,8 +153,8 @@ const IconWrapper = styled.div<{ disabled: boolean }>`
   border-radius: 30px;
   background-color: ${Colors.GRAY5};
   position: absolute;
-  left: calc(50% - 80px);
-  top: 120px;
+  top: 20px;
+  right: 20px;
   justify-content: center;
   align-items: center;
   display: flex;
@@ -161,8 +171,9 @@ const IconWrapper = styled.div<{ disabled: boolean }>`
   }
 `;
 
-const Split = styled.div`
-  flex: 1 1;
+const Split = styled.div<{ width?: number }>`
+  ${props => (props.width ? `width: ${props.width}vw` : `flex: 1`)};
+  position: relative;
   flex-direction: column;
   display: flex;
 `;

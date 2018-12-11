@@ -176,6 +176,14 @@ export interface SidebarSolidInfoFragment {
 // START Enums and Input Objects
 //==============================================================
 
+export enum LogLevel {
+  CRITICAL = "CRITICAL",
+  DEBUG = "DEBUG",
+  ERROR = "ERROR",
+  INFO = "INFO",
+  WARNING = "WARNING",
+}
+
 /**
  * An enumeration.
  */

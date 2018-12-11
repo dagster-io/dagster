@@ -10,7 +10,6 @@ import { PipelineExplorerSolidFragment } from "./types/PipelineExplorerSolidFrag
 import PipelineGraph from "./graph/PipelineGraph";
 import { getDagrePipelineLayout } from "./graph/getFullSolidLayout";
 import { PanelDivider } from "./PanelDivider";
-import Config from "./Config";
 import SidebarTabbedContainer from "./SidebarTabbedContainer";
 import { SolidJumpBar } from "./PipelineJumpComponents";
 
@@ -106,6 +105,7 @@ export default class PipelineExplorer extends React.Component<
           />
         </PipelinePanel>
         <PanelDivider
+          axis="horizontal"
           onMove={(vw: number) =>
             this.setState({
               graphVW: vw

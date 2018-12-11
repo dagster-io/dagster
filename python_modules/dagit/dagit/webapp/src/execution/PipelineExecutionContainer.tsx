@@ -1,6 +1,5 @@
 import * as React from "react";
 import gql from "graphql-tag";
-import ZenObservable from "zen-observable-ts";
 import { ApolloClient } from "apollo-client";
 import { DataProxy } from "apollo-cache";
 import produce from "immer";
@@ -23,10 +22,7 @@ import {
   StartPipelineExecution,
   StartPipelineExecutionVariables
 } from "./types/StartPipelineExecution";
-import {
-  PipelineRunLogsSubscription,
-  PipelineRunLogsSubscriptionVariables
-} from "./types/PipelineRunLogsSubscription";
+import { PipelineRunLogsSubscription } from "./types/PipelineRunLogsSubscription";
 import { PipelineRunLogsUpdateFragment } from "./types/PipelineRunLogsUpdateFragment";
 
 interface IPipelineExecutionContainerProps {
@@ -104,8 +100,24 @@ export default class PipelineExecutionContainer extends React.Component<
           after: run.logs.pageInfo.lastCursor
         }
       });
+
+      let queued: PipelineRunLogsSubscription[] = [];
+      let timer = setInterval(() => {
+        if (queued.length) {
+          this.handleNewMessages(queued);
+          queued = [];
+        }
+      }, 200);
+
       this._subscriptions[run.runId] = observable.subscribe({
-        next: this.handleNewMessage
+        next: msg => msg.data && queued.push(msg.data),
+        complete: () => {
+          console.log("sub complete");
+          clearInterval(timer);
+          if (queued.length) {
+            this.handleNewMessages(queued);
+          }
+        }
       });
     });
   }
@@ -176,24 +188,24 @@ export default class PipelineExecutionContainer extends React.Component<
     }
   };
 
-  handleNewMessage = (
-    result: FetchResult<
-      PipelineRunLogsSubscription,
-      PipelineRunLogsSubscriptionVariables
-    >
-  ) => {
-    const data = result.data;
-    if (data) {
-      const id = `PipelineRun.${data.pipelineRunLogs.run.runId}`;
-      const existingData: PipelineRunLogsUpdateFragment | null = this.props.client.readFragment(
-        {
-          fragmentName: "PipelineRunLogsUpdateFragment",
-          fragment: PIPELINE_RUN_LOGS_UPDATE_FRAGMENT,
-          id
-        }
-      );
-      if (existingData) {
-        const newData = produce(existingData, draftData => {
+  handleNewMessages = (results: PipelineRunLogsSubscription[]) => {
+    const runId = results[0].pipelineRunLogs.run.runId;
+    const id = `PipelineRun.${runId}`;
+
+    let localData: PipelineRunLogsUpdateFragment | null = this.props.client.readFragment(
+      {
+        fragmentName: "PipelineRunLogsUpdateFragment",
+        fragment: PIPELINE_RUN_LOGS_UPDATE_FRAGMENT,
+        id
+      }
+    );
+    if (localData === null) {
+      return;
+    }
+    localData = produce(
+      localData as PipelineRunLogsUpdateFragment,
+      draftData => {
+        results.forEach(data => {
           draftData.logs.nodes.push(data.pipelineRunLogs);
           if (data.pipelineRunLogs.__typename === "PipelineStartEvent") {
             draftData.status = PipelineRunStatus.STARTED;
@@ -207,14 +219,15 @@ export default class PipelineExecutionContainer extends React.Component<
             draftData.status = PipelineRunStatus.FAILURE;
           }
         });
-        this.props.client.writeFragment({
-          fragmentName: "PipelineRunLogsUpdateFragment",
-          fragment: PIPELINE_RUN_LOGS_UPDATE_FRAGMENT,
-          id,
-          data: newData
-        });
       }
-    }
+    );
+
+    this.props.client.writeFragment({
+      fragmentName: "PipelineRunLogsUpdateFragment",
+      fragment: PIPELINE_RUN_LOGS_UPDATE_FRAGMENT,
+      id,
+      data: localData
+    });
   };
 
   render() {

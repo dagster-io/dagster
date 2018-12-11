@@ -8,9 +8,28 @@
 // ====================================================
 
 export interface PipelineExecutionPipelineRunFragment_logs_nodes_LogMessageEvent {
-  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent";
   message: string;
   timestamp: string;
+  level: LogLevel;
+  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent";
+}
+
+export interface PipelineExecutionPipelineRunFragment_logs_nodes_ExecutionStepFailureEvent_step {
+  name: string;
+}
+
+export interface PipelineExecutionPipelineRunFragment_logs_nodes_ExecutionStepFailureEvent_error {
+  stack: string[];
+  message: string;
+}
+
+export interface PipelineExecutionPipelineRunFragment_logs_nodes_ExecutionStepFailureEvent {
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  __typename: "ExecutionStepFailureEvent";
+  step: PipelineExecutionPipelineRunFragment_logs_nodes_ExecutionStepFailureEvent_step;
+  error: PipelineExecutionPipelineRunFragment_logs_nodes_ExecutionStepFailureEvent_error;
 }
 
 export interface PipelineExecutionPipelineRunFragment_logs_nodes_ExecutionStepStartEvent_step {
@@ -18,13 +37,14 @@ export interface PipelineExecutionPipelineRunFragment_logs_nodes_ExecutionStepSt
 }
 
 export interface PipelineExecutionPipelineRunFragment_logs_nodes_ExecutionStepStartEvent {
-  __typename: "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepFailureEvent";
   message: string;
   timestamp: string;
+  level: LogLevel;
+  __typename: "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent";
   step: PipelineExecutionPipelineRunFragment_logs_nodes_ExecutionStepStartEvent_step;
 }
 
-export type PipelineExecutionPipelineRunFragment_logs_nodes = PipelineExecutionPipelineRunFragment_logs_nodes_LogMessageEvent | PipelineExecutionPipelineRunFragment_logs_nodes_ExecutionStepStartEvent;
+export type PipelineExecutionPipelineRunFragment_logs_nodes = PipelineExecutionPipelineRunFragment_logs_nodes_LogMessageEvent | PipelineExecutionPipelineRunFragment_logs_nodes_ExecutionStepFailureEvent | PipelineExecutionPipelineRunFragment_logs_nodes_ExecutionStepStartEvent;
 
 export interface PipelineExecutionPipelineRunFragment_logs {
   nodes: PipelineExecutionPipelineRunFragment_logs_nodes[];
@@ -57,6 +77,14 @@ export interface PipelineExecutionPipelineRunFragment {
 //==============================================================
 // START Enums and Input Objects
 //==============================================================
+
+export enum LogLevel {
+  CRITICAL = "CRITICAL",
+  DEBUG = "DEBUG",
+  ERROR = "ERROR",
+  INFO = "INFO",
+  WARNING = "WARNING",
+}
 
 /**
  * An enumeration.

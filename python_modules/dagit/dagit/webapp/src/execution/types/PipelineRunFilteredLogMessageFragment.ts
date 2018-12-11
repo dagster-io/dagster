@@ -4,27 +4,35 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL fragment: PipelineRunExecutionPlanPipelineRunEventFragment
+// GraphQL fragment: PipelineRunFilteredLogMessageFragment
 // ====================================================
 
-export interface PipelineRunExecutionPlanPipelineRunEventFragment_LogMessageEvent {
-  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent";
+export interface PipelineRunFilteredLogMessageFragment_LogMessageEvent {
+  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent";
   message: string;
   timestamp: string;
+  level: LogLevel;
 }
 
-export interface PipelineRunExecutionPlanPipelineRunEventFragment_ExecutionStepStartEvent_step {
+export interface PipelineRunFilteredLogMessageFragment_ExecutionStepFailureEvent_step {
   name: string;
 }
 
-export interface PipelineRunExecutionPlanPipelineRunEventFragment_ExecutionStepStartEvent {
-  __typename: "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepFailureEvent";
+export interface PipelineRunFilteredLogMessageFragment_ExecutionStepFailureEvent_error {
+  stack: string[];
   message: string;
-  timestamp: string;
-  step: PipelineRunExecutionPlanPipelineRunEventFragment_ExecutionStepStartEvent_step;
 }
 
-export type PipelineRunExecutionPlanPipelineRunEventFragment = PipelineRunExecutionPlanPipelineRunEventFragment_LogMessageEvent | PipelineRunExecutionPlanPipelineRunEventFragment_ExecutionStepStartEvent;
+export interface PipelineRunFilteredLogMessageFragment_ExecutionStepFailureEvent {
+  __typename: "ExecutionStepFailureEvent";
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  step: PipelineRunFilteredLogMessageFragment_ExecutionStepFailureEvent_step;
+  error: PipelineRunFilteredLogMessageFragment_ExecutionStepFailureEvent_error;
+}
+
+export type PipelineRunFilteredLogMessageFragment = PipelineRunFilteredLogMessageFragment_LogMessageEvent | PipelineRunFilteredLogMessageFragment_ExecutionStepFailureEvent;
 
 /* tslint:disable */
 // This file was automatically generated and should not be edited.
@@ -32,14 +40,6 @@ export type PipelineRunExecutionPlanPipelineRunEventFragment = PipelineRunExecut
 //==============================================================
 // START Enums and Input Objects
 //==============================================================
-
-export enum LogLevel {
-  CRITICAL = "CRITICAL",
-  DEBUG = "DEBUG",
-  ERROR = "ERROR",
-  INFO = "INFO",
-  WARNING = "WARNING",
-}
 
 /**
  * An enumeration.
@@ -57,6 +57,14 @@ export enum StepTag {
   OUTPUT_EXPECTATION = "OUTPUT_EXPECTATION",
   SERIALIZE = "SERIALIZE",
   TRANSFORM = "TRANSFORM",
+}
+
+export enum LogLevel {
+  CRITICAL = "CRITICAL",
+  DEBUG = "DEBUG",
+  ERROR = "ERROR",
+  INFO = "INFO",
+  WARNING = "WARNING",
 }
 
 /**

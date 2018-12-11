@@ -1,51 +1,138 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
-import { Colors } from "@blueprintjs/core";
+import { Colors, NonIdealState, Classes, Dialog } from "@blueprintjs/core";
+import { IconNames } from "@blueprintjs/icons";
+import LogsFilterProvider, {
+  ILogFilter,
+  DefaultLogFilter
+} from "./LogsFilterProvider";
+import LogsScrollingTable from "./LogsScrollingTable";
 import PipelineRunExecutionPlan from "./PipelineRunExecutionPlan";
-import PipelineRunLogMessage from "./PipelineRunLogMessage";
-import { PipelineRunFragment } from "./types/PipelineRunFragment";
+import {
+  PipelineRunFragment,
+  PipelineRunFragment_logs_nodes_ExecutionStepFailureEvent
+} from "./types/PipelineRunFragment";
+import { PanelDivider } from "../PanelDivider";
+import PythonErrorInfo from "../PythonErrorInfo";
+import LogsToolbar from "./LogsToolbar";
 
 interface IPipelineRunProps {
   pipelineRun: PipelineRunFragment;
 }
 
-export class PipelineRun extends React.Component<IPipelineRunProps> {
+interface IPipelineRunState {
+  logsVH: number;
+  logsFilter: ILogFilter;
+  highlightedError?: { message: string; stack: string[] };
+}
+
+export class PipelineRun extends React.Component<
+  IPipelineRunProps,
+  IPipelineRunState
+> {
   static fragments = {
     PipelineRunFragment: gql`
       fragment PipelineRunFragment on PipelineRun {
         logs {
           nodes {
-            ...PipelineRunLogMessageFragment
+            ...LogsFilterProviderMessageFragment
+            ...LogsScrollingTableMessageFragment
+            ... on ExecutionStepFailureEvent {
+              step {
+                name
+              }
+              error {
+                stack
+                message
+              }
+            }
           }
         }
         ...PipelineRunExecutionPlanFragment
       }
 
       ${PipelineRunExecutionPlan.fragments.PipelineRunExecutionPlanFragment}
-      ${PipelineRunLogMessage.fragments.PipelineRunLogMessageFragment}
+      ${LogsFilterProvider.fragments.LogsFilterProviderMessageFragment}
+      ${LogsScrollingTable.fragments.LogsScrollingTableMessageFragment}
     `,
     PipelineRunPipelineRunEventFragment: gql`
       fragment PipelineRunPipelineRunEventFragment on PipelineRunEvent {
-        ...PipelineRunLogMessageFragment
+        ...LogsScrollingTableMessageFragment
+        ...LogsFilterProviderMessageFragment
         ...PipelineRunExecutionPlanPipelineRunEventFragment
       }
 
       ${PipelineRunExecutionPlan.fragments
         .PipelineRunExecutionPlanPipelineRunEventFragment}
-      ${PipelineRunLogMessage.fragments.PipelineRunLogMessageFragment}
+      ${LogsFilterProvider.fragments.LogsFilterProviderMessageFragment}
+      ${LogsScrollingTable.fragments.LogsScrollingTableMessageFragment}
     `
   };
+
+  state = {
+    highlightedError: undefined,
+    logsVH: 40,
+    logsFilter: DefaultLogFilter
+  };
+
+  onShowStateDetails = (step: string) => {
+    const errorNode = this.props.pipelineRun.logs.nodes.find(
+      node =>
+        node.__typename === "ExecutionStepFailureEvent" &&
+        node.step.name === step
+    ) as PipelineRunFragment_logs_nodes_ExecutionStepFailureEvent;
+
+    if (errorNode) {
+      this.setState({ highlightedError: errorNode.error });
+    }
+  };
+
   render() {
+    const { logsFilter, logsVH, highlightedError } = this.state;
+
     return (
       <PipelineRunWrapper>
-        <PipelineRunExecutionPlan pipelineRun={this.props.pipelineRun} />
-        <HorizontalDivider />
-        <LogsContainer>
-          {this.props.pipelineRun.logs.nodes.map((log, i) => (
-            <PipelineRunLogMessage key={i} log={log} />
-          ))}
+        <PipelineRunExecutionPlan
+          pipelineRun={this.props.pipelineRun}
+          onShowStateDetails={this.onShowStateDetails}
+          onApplyStepFilter={stepName =>
+            this.setState({ logsFilter: { ...logsFilter, text: stepName } })
+          }
+        />
+        <PanelDivider
+          onMove={(vh: number) => this.setState({ logsVH: 100 - vh })}
+          axis="vertical"
+        />
+        <LogsContainer style={{ height: `${logsVH}vh` }}>
+          <LogsFilterProvider
+            filter={logsFilter}
+            nodes={this.props.pipelineRun.logs.nodes}
+          >
+            {({ filteredNodes, busy }) => (
+              <>
+                <LogsToolbar
+                  showSpinner={busy}
+                  filter={logsFilter}
+                  onSetFilter={filter => this.setState({ logsFilter: filter })}
+                />
+                <LogsScrollingTable nodes={filteredNodes} />
+              </>
+            )}
+          </LogsFilterProvider>
         </LogsContainer>
+        <Dialog
+          icon="info-sign"
+          onClose={() => this.setState({ highlightedError: undefined })}
+          style={{ width: "80vw", maxWidth: 900 }}
+          title={"Error"}
+          usePortal={true}
+          isOpen={!!highlightedError}
+        >
+          <div className={Classes.DIALOG_BODY}>
+            {highlightedError && <PythonErrorInfo error={highlightedError} />}
+          </div>
+        </Dialog>
       </PipelineRunWrapper>
     );
   }
@@ -55,7 +142,13 @@ export class PipelineRunEmpty extends React.Component {
   render() {
     return (
       <PipelineRunWrapper>
-        Provide configuration and click the Play icon to execute the pipeline.
+        <NonIdealState
+          icon={IconNames.SEND_TO_GRAPH}
+          title="No Run Data"
+          description={
+            "Provide configuration and click Play to execute the pipeline."
+          }
+        />
       </PipelineRunWrapper>
     );
   }
@@ -65,25 +158,10 @@ const PipelineRunWrapper = styled.div`
   display: flex;
   flex-direction: column;
   flex: 1 1;
-  color: ${Colors.WHITE};
-  border-left: 1px solid ${Colors.DARK_GRAY5};
-  background: #232b2f;
-`;
-
-const HorizontalDivider = styled.div`
-  border-top: 1px solid ${Colors.GRAY4};
-  background: ${Colors.GRAY2};
-  border-bottom: 1px solid ${Colors.GRAY1};
-  display: block;
-  height: 3px;
 `;
 
 const LogsContainer = styled.div`
-  padding-left: 10px;
-  padding-top: 5px;
-  padding-bottom: 5px;
   display: flex;
-  flex: 1 1;
   flex-direction: column;
-  overflow-y: scroll;
+  background: ${Colors.LIGHT_GRAY5};
 `;

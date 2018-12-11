@@ -11,6 +11,25 @@ export interface PipelineRunPipelineRunEventFragment_LogMessageEvent {
   __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent";
   message: string;
   timestamp: string;
+  level: LogLevel;
+}
+
+export interface PipelineRunPipelineRunEventFragment_ExecutionStepFailureEvent_step {
+  name: string;
+}
+
+export interface PipelineRunPipelineRunEventFragment_ExecutionStepFailureEvent_error {
+  stack: string[];
+  message: string;
+}
+
+export interface PipelineRunPipelineRunEventFragment_ExecutionStepFailureEvent {
+  __typename: "ExecutionStepFailureEvent";
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  step: PipelineRunPipelineRunEventFragment_ExecutionStepFailureEvent_step;
+  error: PipelineRunPipelineRunEventFragment_ExecutionStepFailureEvent_error;
 }
 
 export interface PipelineRunPipelineRunEventFragment_ExecutionStepStartEvent_step {
@@ -18,13 +37,14 @@ export interface PipelineRunPipelineRunEventFragment_ExecutionStepStartEvent_ste
 }
 
 export interface PipelineRunPipelineRunEventFragment_ExecutionStepStartEvent {
-  __typename: "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepFailureEvent";
+  __typename: "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent";
   message: string;
   timestamp: string;
+  level: LogLevel;
   step: PipelineRunPipelineRunEventFragment_ExecutionStepStartEvent_step;
 }
 
-export type PipelineRunPipelineRunEventFragment = PipelineRunPipelineRunEventFragment_LogMessageEvent | PipelineRunPipelineRunEventFragment_ExecutionStepStartEvent;
+export type PipelineRunPipelineRunEventFragment = PipelineRunPipelineRunEventFragment_LogMessageEvent | PipelineRunPipelineRunEventFragment_ExecutionStepFailureEvent | PipelineRunPipelineRunEventFragment_ExecutionStepStartEvent;
 
 /* tslint:disable */
 // This file was automatically generated and should not be edited.
@@ -32,6 +52,14 @@ export type PipelineRunPipelineRunEventFragment = PipelineRunPipelineRunEventFra
 //==============================================================
 // START Enums and Input Objects
 //==============================================================
+
+export enum LogLevel {
+  CRITICAL = "CRITICAL",
+  DEBUG = "DEBUG",
+  ERROR = "ERROR",
+  INFO = "INFO",
+  WARNING = "WARNING",
+}
 
 /**
  * An enumeration.
