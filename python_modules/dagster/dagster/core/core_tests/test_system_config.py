@@ -22,11 +22,9 @@ from dagster.core.config_types import (
     SpecificContextConfig,
 )
 
-from dagster.core.evaluator import (
-    evaluate_config_value,
-    throwing_evaluate_config_value,
-)
+from dagster.core.evaluator import evaluate_config_value
 
+from dagster.core.test_utils import throwing_evaluate_config_value
 
 def test_context_config_any():
     context_defs = {

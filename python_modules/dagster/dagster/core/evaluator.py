@@ -249,14 +249,9 @@ def stack_with_list_index(stack, list_index):
     )
 
 
-def throwing_evaluate_config_value(dagster_type, config_value):
-    check.inst_param(dagster_type, 'dagster_type', DagsterType)
+def hard_create_config_value(dagster_type, config_value):
     result = evaluate_config_value(dagster_type, config_value)
-    if not result.success:
-        raise DagsterEvaluateConfigValueError(
-            result.errors[0].stack,
-            result.errors[0].message,
-        )
+    check.invariant(result.success)
     return result.value
 
 
