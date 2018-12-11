@@ -56,7 +56,6 @@ from .evaluator import (
     EvaluationError,
     evaluate_config_value,
     friendly_string_for_error,
-    throwing_evaluate_config_value,
 )
 
 from .events import construct_event_logger
@@ -258,25 +257,6 @@ def create_execution_plan(pipeline, environment=None):
     with yield_context(pipeline, environment) as context:
         return create_execution_plan_core(
             ExecutionPlanInfo(context, execution_graph, environment),
-        )
-
-
-def create_config_value(config_type, config_input):
-    if isinstance(config_input, config.Environment):
-        return config_input
-
-    try:
-        # TODO: we should bubble up multiple errors from here
-        return throwing_evaluate_config_value(config_type, config_input)
-    except DagsterEvaluateConfigValueError as e:
-        raise DagsterTypeError(
-            'Invalid config value on type {dagster_type}: {error_msg}. Value received {value}'.
-            format(
-                value=json.dumps(config_input, indent=2)
-                if isinstance(config_input, dict) else config_input,
-                dagster_type=config_type.name,
-                error_msg=','.join(e.args),
-            )
         )
 
 

@@ -18,10 +18,10 @@ from dagster import (
 
 from dagster.core.evaluator import (
     evaluate_config_value,
-    throwing_evaluate_config_value,
     DagsterEvaluationErrorReason,
 )
 
+from dagster.core.test_utils import throwing_evaluate_config_value
 
 def test_noop_config():
     assert Field(types.Any)

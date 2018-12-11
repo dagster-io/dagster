@@ -16,7 +16,7 @@ from .definitions import (
     ResourceDefinition,
 )
 
-from .evaluator import throwing_evaluate_config_value
+from .evaluator import hard_create_config_value
 
 from .types import (
     Bool,
@@ -42,7 +42,7 @@ def define_maybe_optional_selector_field(dagster_type):
     return Field(
         dagster_type,
         is_optional=is_optional,
-        default_value=lambda: throwing_evaluate_config_value(dagster_type, None),
+        default_value=lambda: hard_create_config_value(dagster_type, None),
     ) if is_optional else Field(dagster_type)
 
 

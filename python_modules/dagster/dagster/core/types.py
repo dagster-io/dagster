@@ -287,8 +287,8 @@ class Field:
         if is_optional == INFER_OPTIONAL_COMPOSITE_FIELD:
             is_optional = all_optional_type(dagster_type)
             if is_optional is True:
-                from .evaluator import throwing_evaluate_config_value
-                self._default_value = lambda: throwing_evaluate_config_value(dagster_type, None)
+                from .evaluator import hard_create_config_value
+                self._default_value = lambda: hard_create_config_value(dagster_type, None)
             else:
                 self._default_value = default_value
         else:
@@ -366,8 +366,7 @@ class DagsterCompositeTypeBase(DagsterType):
         )
 
     def coerce_runtime_value(self, value):
-        from .evaluator import throwing_evaluate_config_value
-        return throwing_evaluate_config_value(self, value)
+        return value
 
     def iterate_types(self):
         for field_type in self.field_dict.values():
@@ -492,11 +491,7 @@ class _Dict(DagsterCompositeType):
         )
 
     def coerce_runtime_value(self, value):
-        if value is not None and not isinstance(value, dict):
-            raise DagsterRuntimeCoercionError('Incoming value for composite must be dict')
-        ## TODO make this return value
-        from .evaluator import throwing_evaluate_config_value
-        return throwing_evaluate_config_value(self, value)
+        return value
 
 
 String = DagsterStringType(name='String', description='A string.')
