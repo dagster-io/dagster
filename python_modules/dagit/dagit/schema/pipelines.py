@@ -407,14 +407,15 @@ class DauphinType(dauphin.Interface):
             return info.schema.RegularType(dagster_type)
 
 
-class RegularType(dauphin.ObjectType):
+class DauphinRegularType(dauphin.ObjectType):
     class Meta:
+        name = 'RegularType'
         interfaces = [
             DauphinType,
         ]
 
     def __init__(self, dagster_type):
-        super(RegularType, self).__init__(
+        super(DauphinRegularType, self).__init__(
             name=dagster_type.name,
             description=dagster_type.description,
         )
@@ -424,16 +425,17 @@ class RegularType(dauphin.ObjectType):
         return self._dagster_type.type_attributes
 
 
-class CompositeType(dauphin.ObjectType):
-    fields = dauphin.non_null_list('TypeField')
-
+class DauphinCompositeType(dauphin.ObjectType):
     class Meta:
+        name = 'CompositeType'
         interfaces = [
             DauphinType,
         ]
 
+    fields = dauphin.non_null_list('TypeField')
+
     def __init__(self, dagster_type):
-        super(CompositeType, self).__init__(
+        super(DauphinCompositeType, self).__init__(
             name=dagster_type.name,
             description=dagster_type.description,
         )
@@ -448,7 +450,10 @@ class CompositeType(dauphin.ObjectType):
         ]
 
 
-class TypeField(dauphin.ObjectType):
+class DauphinTypeField(dauphin.ObjectType):
+    class Meta:
+        name = 'TypeField'
+
     name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
     type = dauphin.NonNull('Type')
@@ -456,7 +461,7 @@ class TypeField(dauphin.ObjectType):
     is_optional = dauphin.NonNull(dauphin.Boolean)
 
     def __init__(self, name, field):
-        super(TypeField, self).__init__(
+        super(DauphinTypeField, self).__init__(
             name=name,
             description=field.description,
             default_value=field.default_value_as_str if field.default_provided else None,
