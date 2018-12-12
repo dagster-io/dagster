@@ -1,12 +1,14 @@
 from __future__ import absolute_import
-from functools import wraps
 
 import dagster
 from dagster.core.types import DagsterCompositeTypeBase
 from dagster import (
-    check,
+    PipelineContextDefinition,
     PipelineDefinition,
+    SolidDefinition,
+    check,
 )
+from dagster.core.definitions import Solid
 
 from dagit.schema import dauphin
 
@@ -74,14 +76,17 @@ class DauphinPipelineConnection(dauphin.ObjectType):
     nodes = dauphin.non_null_list('Pipeline')
 
 
-class PipelineContext(dauphin.ObjectType):
+class DauphinPipelineContext(dauphin.ObjectType):
+    class Meta:
+        name = 'PipelineContext'
+
     name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
     config = dauphin.Field('Config')
 
     def __init__(self, name, context):
-        super(PipelineContext, self).__init__(name=name, description=context.description)
-        self._context = check.inst_param(context, 'context', dagster.PipelineContextDefinition)
+        super(DauphinPipelineContext, self).__init__(name=name, description=context.description)
+        self._context = check.inst_param(context, 'context', PipelineContextDefinition)
 
     def resolve_config(self, info):
         return info.schema.Config(
@@ -89,16 +94,19 @@ class PipelineContext(dauphin.ObjectType):
         ) if self._context.config_field else None
 
 
-class Solid(dauphin.ObjectType):
+class DauphinSolid(dauphin.ObjectType):
+    class Meta:
+        name = 'Solid'
+
     name = dauphin.NonNull(dauphin.String)
     definition = dauphin.NonNull('SolidDefinition')
     inputs = dauphin.non_null_list('Input')
     outputs = dauphin.non_null_list('Output')
 
     def __init__(self, solid, depends_on=None, depended_by=None):
-        super(Solid, self).__init__(name=solid.name)
+        super(DauphinSolid, self).__init__(name=solid.name)
 
-        self._solid = check.inst_param(solid, 'solid', dagster.core.definitions.Solid)
+        self._solid = check.inst_param(solid, 'solid', Solid)
 
         if depends_on:
             self.depends_on = {
@@ -131,14 +139,17 @@ class Solid(dauphin.ObjectType):
         ]
 
 
-class Input(dauphin.ObjectType):
+class DauphinInput(dauphin.ObjectType):
+    class Meta:
+        name = 'Input'
+
     solid = dauphin.NonNull('Solid')
     definition = dauphin.NonNull('InputDefinition')
     depends_on = dauphin.Field('Output')
 
     def __init__(self, input_handle, solid):
-        super(Input, self).__init__(solid=solid)
-        self._solid = check.inst_param(solid, 'solid', Solid)
+        super(DauphinInput, self).__init__(solid=solid)
+        self._solid = check.inst_param(solid, 'solid', DauphinSolid)
         self._input_handle = check.inst_param(
             input_handle, 'input_handle', dagster.core.definitions.SolidInputHandle
         )
@@ -165,7 +176,7 @@ class Output(dauphin.ObjectType):
 
     def __init__(self, output_handle, solid):
         super(Output, self).__init__(solid=solid)
-        self._solid = check.inst_param(solid, 'solid', Solid)
+        self._solid = check.inst_param(solid, 'solid', DauphinSolid)
         self._output_handle = check.inst_param(
             output_handle, 'output_handle', dagster.core.definitions.SolidOutputHandle
         )
@@ -179,7 +190,7 @@ class Output(dauphin.ObjectType):
         return [
             info.schema.Input(
                 input_handle,
-                Solid(input_handle.solid),
+                DauphinSolid(input_handle.solid),
             ) for input_handle in self._solid.depended_by.get(self._output_handle, [])
         ]
 
