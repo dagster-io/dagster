@@ -1,18 +1,16 @@
-import sys
 from functools import partial
-from six import with_metaclass
-import graphene
 from graphql.type.introspection import IntrospectionSchema
-from graphene.types.generic import GenericScalar
-from graphene.types.typemap import TypeMap as GrapheneTypeMap, resolve_type
-from graphene.types.enum import EnumMeta
-from graphene.utils.subclass_with_meta import SubclassWithMeta_Meta
+
+import graphene
 from graphene.types.definitions import (
     GrapheneGraphQLType,
     GrapheneObjectType,
-    GrapheneScalarType,
     GrapheneUnionType,
 )
+from graphene.types.enum import EnumMeta
+from graphene.types.generic import GenericScalar
+from graphene.types.typemap import TypeMap as GrapheneTypeMap, resolve_type
+from graphene.utils.subclass_with_meta import SubclassWithMeta_Meta
 
 GRAPHENE_TYPES = [
     graphene.ObjectType,
