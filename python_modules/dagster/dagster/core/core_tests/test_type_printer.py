@@ -79,16 +79,16 @@ def test_single_level_dict_lists_and_nullable():
     output = print_type_to_string(
         types.Dict(
             {
-                'optional_int_field': types.Field(types.Int, is_optional=True),
                 'nullable_int_field': types.Field(types.Nullable(types.Int)),
+                'optional_int_field': types.Field(types.Int, is_optional=True),
                 'string_list_field': types.Field(types.List(types.String)),
             }
         )
     )
 
     expected = '''{
-  optional_int_field?: Int
   nullable_int_field: Int?
+  optional_int_field?: Int
   string_list_field: [String]
 }'''
 

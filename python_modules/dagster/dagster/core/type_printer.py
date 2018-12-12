@@ -26,7 +26,7 @@ def _do_print(dagster_type, printer):
     elif dagster_type.is_dict:
         printer.line('{')
         with printer.with_indent():
-            for name, field in dagster_type.fields.items():
+            for name, field in sorted(dagster_type.fields.items()):
                 if field.is_optional:
                     printer.append(name + '?: ')
                 else:
