@@ -47,9 +47,9 @@ class DauphinRegistry(object):
                 graphene_type.__name__,
                 create_registering_class(graphene_type, registering_metaclass),
             )
-        for type in GRAPHENE_BUILT_IN:
-            setattr(self, type.__name__, type)
-            self.addType(type)
+        for graphene_type in GRAPHENE_BUILT_IN:
+            setattr(self, graphene_type.__name__, graphene_type)
+            self.addType(graphene_type)
 
     def create_schema(self):
         return DauphinSchema(
