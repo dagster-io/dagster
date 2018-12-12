@@ -1,13 +1,13 @@
-import graphene
+from dagit.schema import dauphene
 
 
-class Cursor(graphene.ID):
+class Cursor(dauphene.ID, dauphene.Scalar):
     pass
 
 
-class PageInfo(graphene.ObjectType):
-    lastCursor = graphene.Field(lambda: Cursor)
-    hasNextPage = graphene.Field(graphene.Boolean)
-    hasPreviousPage = graphene.Field(graphene.Boolean)
-    count = graphene.NonNull(graphene.Int)
-    totalCount = graphene.NonNull(graphene.Int)
+class PageInfo(dauphene.ObjectType):
+    lastCursor = dauphene.Field('Cursor')
+    hasNextPage = dauphene.Field(dauphene.Boolean)
+    hasPreviousPage = dauphene.Field(dauphene.Boolean)
+    count = dauphene.NonNull(dauphene.Int)
+    totalCount = dauphene.NonNull(dauphene.Int)
