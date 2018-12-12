@@ -3,6 +3,7 @@ from __future__ import absolute_import
 import dagster
 from dagster.core.types import DagsterCompositeTypeBase
 from dagster import (
+    InputDefinition,
     PipelineContextDefinition,
     PipelineDefinition,
     SolidDefinition,
@@ -198,12 +199,18 @@ class DauphinOutput(dauphin.ObjectType):
         ]
 
 
-class SolidMetadataItemDefinition(dauphin.ObjectType):
+class DauphinSolidMetadataItemDefinition(dauphin.ObjectType):
+    class Meta:
+        name = 'SolidMetadataItemDefinition'
+
     key = dauphin.NonNull(dauphin.String)
     value = dauphin.NonNull(dauphin.String)
 
 
-class SolidDefinition(dauphin.ObjectType):
+class DauphinSolidDefinition(dauphin.ObjectType):
+    class Meta:
+        name = 'SolidDefinition'
+
     name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
     metadata = dauphin.non_null_list('SolidMetadataItemDefinition')
@@ -214,12 +221,12 @@ class SolidDefinition(dauphin.ObjectType):
     # solids - ?
 
     def __init__(self, solid_def):
-        super(SolidDefinition, self).__init__(
+        super(DauphinSolidDefinition, self).__init__(
             name=solid_def.name,
             description=solid_def.description,
         )
 
-        self._solid_def = check.inst_param(solid_def, 'solid_def', dagster.SolidDefinition)
+        self._solid_def = check.inst_param(solid_def, 'solid_def', SolidDefinition)
 
     def resolve_metadata(self, info):
         return [
@@ -245,7 +252,10 @@ class SolidDefinition(dauphin.ObjectType):
         ) if self._solid_def.config_field else None
 
 
-class InputDefinition(dauphin.ObjectType):
+class DauphinInputDefinition(dauphin.ObjectType):
+    class Meta:
+        name = 'InputDefinition'
+
     solid_definition = dauphin.NonNull('SolidDefinition')
     name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
@@ -255,18 +265,21 @@ class InputDefinition(dauphin.ObjectType):
     # inputs - ?
 
     def __init__(self, input_definition, solid_def):
-        super(InputDefinition, self).__init__(
+        super(DauphinInputDefinition, self).__init__(
             name=input_definition.name,
             description=input_definition.description,
             solid_definition=solid_def,
         )
         self._input_definition = check.inst_param(
-            input_definition, 'input_definition', dagster.InputDefinition
+            input_definition,
+            'input_definition',
+            InputDefinition,
         )
 
     def resolve_type(self, info):
         return info.schema.Type.from_dagster_type(
-            info, dagster_type=self._input_definition.dagster_type
+            info,
+            dagster_type=self._input_definition.dagster_type,
         )
 
     def resolve_expectations(self, info):
