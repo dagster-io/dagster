@@ -151,7 +151,7 @@ class DauphinTypeMap(GrapheneTypeMap):
 
         def interfaces():
             interfaces = []
-            for interface in graphene_type._meta.interfaces:
+            for interface in type_meta.interfaces:
                 if isinstance(interface, str):
                     interface = self._typeRegistry.getType(interface)
                 self.graphene_reducer(map_, interface)
@@ -160,17 +160,17 @@ class DauphinTypeMap(GrapheneTypeMap):
                 interfaces.append(internal_type)
             return interfaces
 
-        if graphene_type._meta.possible_types:
+        if type_meta.possible_types:
             # FIXME: is_type_of_from_possible_types does not exist
-            is_type_of = partial(is_type_of_from_possible_types, type._meta.possible_types)
+            is_type_of = partial(is_type_of_from_possible_types, type_meta.possible_types)
         else:
             is_type_of = type.is_type_of
 
         return GrapheneObjectType(
             graphene_type=type,
-            name=type._meta.name,
-            description=type._meta.description,
-            fields=partial(self.construct_fields_for_type, map, type),
+            name=type_meta.name,
+            description=type_meta.description,
+            fields=partial(self.construct_fields_for_type, map_, type),
             is_type_of=is_type_of,
             interfaces=interfaces,
         )
