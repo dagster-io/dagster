@@ -352,6 +352,9 @@ class DauphinExpectation(dauphin.ObjectType):
 
 
 class DauphinConfig(dauphin.ObjectType):
+    class Meta:
+        name = 'Config'
+
     type = dauphin.NonNull('Type')
 
     def __init__(self, config_field):
@@ -365,7 +368,10 @@ class DauphinConfig(dauphin.ObjectType):
         )
 
 
-class TypeAttributes(dauphin.ObjectType):
+class DauphinTypeAttributes(dauphin.ObjectType):
+    class Meta:
+        name = 'TypeAttributes'
+
     is_builtin = dauphin.NonNull(
         dauphin.Boolean,
         description='''
