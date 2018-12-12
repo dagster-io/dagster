@@ -138,7 +138,8 @@ class DauphinTypeMap(GrapheneTypeMap):
         super(DauphinTypeMap, self).__init__(types, **kwargs)
 
     def construct_object_type(self, map_, graphene_type):
-        if get_meta(graphene_type).name in map_:
+        type_meta = get_meta(graphene_type)
+        if type_meta.name in map_:
             _type = map_[get_meta(graphene_type).name]
             if isinstance(_type, GrapheneGraphQLType):
                 assert _type.graphene_type == graphene_type, (
@@ -146,18 +147,21 @@ class DauphinTypeMap(GrapheneTypeMap):
                 ).format(_type.graphene_type, graphene_type)
             return _type
 
+        # TODO the codepath below appears to be untested
+
         def interfaces():
             interfaces = []
-            for interface in type._meta.interfaces:
+            for interface in graphene_type._meta.interfaces:
                 if isinstance(interface, str):
                     interface = self._typeRegistry.getType(interface)
-                self.graphene_reducer(map, interface)
-                internal_type = map[interface._meta.name]
+                self.graphene_reducer(map_, interface)
+                internal_type = map_[get_meta(interface).name]
                 assert internal_type.graphene_type == interface
                 interfaces.append(internal_type)
             return interfaces
 
-        if type._meta.possible_types:
+        if graphene_type._meta.possible_types:
+            # FIXME: is_type_of_from_possible_types does not exist
             is_type_of = partial(is_type_of_from_possible_types, type._meta.possible_types)
         else:
             is_type_of = type.is_type_of
