@@ -177,26 +177,25 @@ class DauphinTypeMap(GrapheneTypeMap):
 
     def construct_union(self, map_, graphene_type):
         _resolve_type = None
+        type_meta = get_meta(graphene_type)
         if graphene_type.resolve_type:
-            _resolve_type = partial(
-                resolve_type, graphene_type.resolve_type, map_, graphene_type._meta.name
-            )
+            _resolve_type = partial(resolve_type, graphene_type.resolve_type, map_, type_meta.name)
 
         def types():
             union_types = []
-            for objecttype in graphene_type._meta.types:
+            for objecttype in type_meta.types:
                 if isinstance(objecttype, str):
                     objecttype = self._typeRegistry.getType(objecttype)
                 self.graphene_reducer(map_, objecttype)
-                internal_type = map_[objecttype._meta.name]
+                internal_type = map_[get_meta(objecttype).name]
                 assert internal_type.graphene_type == objecttype
                 union_types.append(internal_type)
             return union_types
 
         return GrapheneUnionType(
             graphene_type=graphene_type,
-            name=graphene_type._meta.name,
-            description=graphene_type._meta.description,
+            name=type_meta.name,
+            description=type_meta.description,
             types=types,
             resolve_type=_resolve_type,
         )
@@ -218,7 +217,7 @@ def create_registering_class(cls, metaclass):
     return new_cls
 
 
-def create_union(metaclass, registry):
+def create_union(metaclass, _registry):
     meta_class = type('Meta', (object, ), {'types': ('__', '__')})
     Union = metaclass('Union', (graphene.Union, ), {'Meta': meta_class})
     setattr(Union, '__dauphinCoreType', True)
