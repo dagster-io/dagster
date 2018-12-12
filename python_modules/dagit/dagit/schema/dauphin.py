@@ -175,15 +175,16 @@ class DauphinTypeMap(GrapheneTypeMap):
             interfaces=interfaces,
         )
 
-    def construct_union(self, map_, type_):
-        # pylint: disable=W0212
+    def construct_union(self, map_, graphene_type):
         _resolve_type = None
-        if type_.resolve_type:
-            _resolve_type = partial(resolve_type, type_.resolve_type, map_, type_._meta.name)
+        if graphene_type.resolve_type:
+            _resolve_type = partial(
+                resolve_type, graphene_type.resolve_type, map_, graphene_type._meta.name
+            )
 
         def types():
             union_types = []
-            for objecttype in type_._meta.types:
+            for objecttype in graphene_type._meta.types:
                 if isinstance(objecttype, str):
                     objecttype = self._typeRegistry.getType(objecttype)
                 self.graphene_reducer(map_, objecttype)
@@ -193,9 +194,9 @@ class DauphinTypeMap(GrapheneTypeMap):
             return union_types
 
         return GrapheneUnionType(
-            graphene_type=type_,
-            name=type_._meta.name,
-            description=type_._meta.description,
+            graphene_type=graphene_type,
+            name=graphene_type._meta.name,
+            description=graphene_type._meta.description,
             types=types,
             resolve_type=_resolve_type,
         )
