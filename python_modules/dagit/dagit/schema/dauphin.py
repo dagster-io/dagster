@@ -1,17 +1,16 @@
-import sys
 from functools import partial
-from six import with_metaclass
-import graphene
 from graphql.type.introspection import IntrospectionSchema
-from graphene.types.generic import GenericScalar
-from graphene.types.typemap import TypeMap as GrapheneTypeMap, resolve_type
-from graphene.types.enum import EnumMeta
-from graphene.utils.subclass_with_meta import SubclassWithMeta_Meta
+
+import graphene
 from graphene.types.definitions import (
-    GrapheneScalarType,
+    GrapheneGraphQLType,
     GrapheneObjectType,
     GrapheneUnionType,
 )
+from graphene.types.enum import EnumMeta
+from graphene.types.generic import GenericScalar
+from graphene.types.typemap import TypeMap as GrapheneTypeMap, resolve_type
+from graphene.utils.subclass_with_meta import SubclassWithMeta_Meta
 
 GRAPHENE_TYPES = [
     graphene.ObjectType,
@@ -30,6 +29,10 @@ GRAPHENE_BUILT_IN = [
 ]
 
 
+def get_meta(graphene_type):
+    return graphene_type._meta  #pylint: disable=W0212
+
+
 class DauphinRegistry(object):
     def __init__(self):
         self._typeMap = {}
@@ -41,11 +44,28 @@ class DauphinRegistry(object):
         self.Union = create_union(registering_metaclass, self)
         self.Enum = create_enum(registering_metaclass)
         self.Mutation = graphene.Mutation
-        for type in GRAPHENE_TYPES:
-            setattr(self, type.__name__, create_registering_class(type, registering_metaclass))
-        for type in GRAPHENE_BUILT_IN:
-            setattr(self, type.__name__, type)
-            self.addType(type)
+
+        # Not looping over GRAPHENE_TYPES in order to not fool lint
+        self.ObjectType = create_registering_class(graphene.ObjectType, registering_metaclass)
+        self.InputObjectType = create_registering_class(
+            graphene.InputObjectType, registering_metaclass
+        )
+        self.Interface = create_registering_class(graphene.Interface, registering_metaclass)
+        self.Scalar = create_registering_class(graphene.Scalar, registering_metaclass)
+
+        # Not looping over GRAPHENE_BUILTINS in order to not fool lint
+        self.String = graphene.String
+        self.addType(graphene.String)
+        self.Int = graphene.Int
+        self.addType(graphene.Int)
+        self.Float = graphene.Float
+        self.addType(graphene.Float)
+        self.Boolean = graphene.Boolean
+        self.addType(graphene.Boolean)
+        self.ID = graphene.ID
+        self.addType(graphene.ID)
+        self.GenericScalar = GenericScalar
+        self.addType(GenericScalar)
 
     def create_schema(self):
         return DauphinSchema(
@@ -60,11 +80,11 @@ class DauphinRegistry(object):
         return self._typeMap.get(typeName)
 
     def getType(self, typeName):
-        type = self.getTypeOrNull(typeName)
-        if not type:
+        graphene_type = self.getTypeOrNull(typeName)
+        if not graphene_type:
             raise Exception('No such type {typeName}.'.format(typeName=typeName))
         else:
-            return type
+            return graphene_type
 
     def getAllTypes(self):
         return self._typeMap.values()
@@ -72,15 +92,14 @@ class DauphinRegistry(object):
     def getAllImplementationTypes(self):
         return [t for t in self._typeMap.values() if issubclass(t, self.ObjectType)]
 
-    def addType(self, type):
-        if type._meta:
-            if not type in self._typeMap:
-                self._typeMap[type._meta.name] = type
+    def addType(self, graphene_type):
+        meta = get_meta(graphene_type)
+        if meta:
+            if not graphene_type in self._typeMap:
+                self._typeMap[meta.name] = graphene_type
             else:
                 raise Exception(
-                    'Type {typeName} already exists in the registry.'.format(
-                        typeName=type._meta.name
-                    )
+                    'Type {typeName} already exists in the registry.'.format(typeName=meta.name)
                 )
         else:
             raise Exception('Cannot add unnamed type or a non-type to registry.')
@@ -116,62 +135,72 @@ class DauphinTypeMap(GrapheneTypeMap):
         self._typeRegistry = typeRegistry
         super(DauphinTypeMap, self).__init__(types, **kwargs)
 
-    def construct_object_type(self, map, type):
-        if type._meta.name in map:
-            _type = map[type._meta.name]
-            if isinstance(_type, GrapheneGraphQLType):
-                assert _type.graphene_type == type, (
+    def construct_object_type(self, map_, graphene_type):
+        type_meta = get_meta(graphene_type)
+        if type_meta.name in map_:
+            mapped_type = map_[get_meta(graphene_type).name]
+            if isinstance(mapped_type, GrapheneGraphQLType):
+                assert mapped_type.graphene_type == graphene_type, (
                     "Found different types with the same name in the schema: {}, {}."
-                ).format(_type.graphene_type, type)
-            return _type
+                ).format(mapped_type.graphene_type, graphene_type)
+            return mapped_type
+
+        # TODO the codepath below appears to be untested
 
         def interfaces():
             interfaces = []
-            for interface in type._meta.interfaces:
+            for interface in type_meta.interfaces:
                 if isinstance(interface, str):
                     interface = self._typeRegistry.getType(interface)
-                self.graphene_reducer(map, interface)
-                internal_type = map[interface._meta.name]
+                self.graphene_reducer(map_, interface)
+                internal_type = map_[get_meta(interface).name]
                 assert internal_type.graphene_type == interface
                 interfaces.append(internal_type)
             return interfaces
 
-        if type._meta.possible_types:
-            is_type_of = partial(is_type_of_from_possible_types, type._meta.possible_types)
+        if type_meta.possible_types:
+            # FIXME: is_type_of_from_possible_types does not exist
+            is_type_of = partial(is_type_of_from_possible_types, type_meta.possible_types)
         else:
             is_type_of = type.is_type_of
 
         return GrapheneObjectType(
             graphene_type=type,
-            name=type._meta.name,
-            description=type._meta.description,
-            fields=partial(self.construct_fields_for_type, map, type),
+            name=type_meta.name,
+            description=type_meta.description,
+            fields=partial(self.construct_fields_for_type, map_, type),
             is_type_of=is_type_of,
             interfaces=interfaces,
         )
 
-    def construct_union(self, map, type):
-        _resolve_type = None
-        if type.resolve_type:
-            _resolve_type = partial(resolve_type, type.resolve_type, map, type._meta.name)
+    def construct_union(self, map_, graphene_type):
+        union_resolve_type = None
+        type_meta = get_meta(graphene_type)
+        if graphene_type.resolve_type:
+            union_resolve_type = partial(
+                resolve_type,
+                graphene_type.resolve_type,
+                map_,
+                type_meta.name,
+            )
 
         def types():
             union_types = []
-            for objecttype in type._meta.types:
+            for objecttype in type_meta.types:
                 if isinstance(objecttype, str):
                     objecttype = self._typeRegistry.getType(objecttype)
-                self.graphene_reducer(map, objecttype)
-                internal_type = map[objecttype._meta.name]
+                self.graphene_reducer(map_, objecttype)
+                internal_type = map_[get_meta(objecttype).name]
                 assert internal_type.graphene_type == objecttype
                 union_types.append(internal_type)
             return union_types
 
         return GrapheneUnionType(
-            graphene_type=type,
-            name=type._meta.name,
-            description=type._meta.description,
+            graphene_type=graphene_type,
+            name=type_meta.name,
+            description=type_meta.description,
             types=types,
-            resolve_type=_resolve_type,
+            resolve_type=union_resolve_type,
         )
 
 
@@ -191,7 +220,7 @@ def create_registering_class(cls, metaclass):
     return new_cls
 
 
-def create_union(metaclass, registry):
+def create_union(metaclass, _registry):
     meta_class = type('Meta', (object, ), {'types': ('__', '__')})
     Union = metaclass('Union', (graphene.Union, ), {'Meta': meta_class})
     setattr(Union, '__dauphinCoreType', True)
@@ -219,26 +248,25 @@ def create_enum(metaclass):
     return Enum
 
 
+def get_type_fn(registry, dauphin_type):
+    if isinstance(dauphin_type, str):
+        return lambda: registry.getType(dauphin_type)
+    else:
+        return dauphin_type
+
+
 def create_registry_field(registry):
     class Field(graphene.Field):
-        def __init__(self, type, *args, **kwargs):
-            if isinstance(type, str):
-                typeFn = lambda: registry.getType(type)
-            else:
-                typeFn = type
-            super(Field, self).__init__(typeFn, *args, **kwargs)
+        def __init__(self, dauphin_type, *args, **kwargs):
+            super(Field, self).__init__(get_type_fn(registry, dauphin_type), *args, **kwargs)
 
     return Field
 
 
 def create_registry_argument(registry):
     class Argument(graphene.Argument):
-        def __init__(self, type, *args, **kwargs):
-            if isinstance(type, str):
-                typeFn = lambda: registry.getType(type)
-            else:
-                typeFn = type
-            super(Argument, self).__init__(typeFn, *args, **kwargs)
+        def __init__(self, dauphin_type, *args, **kwargs):
+            super(Argument, self).__init__(get_type_fn(registry, dauphin_type), *args, **kwargs)
 
     return Argument
 
@@ -246,11 +274,7 @@ def create_registry_argument(registry):
 def create_registry_list(registry):
     class List(graphene.List):
         def __init__(self, of_type, *args, **kwargs):
-            if isinstance(of_type, str):
-                typeFn = lambda: registry.getType(of_type)
-            else:
-                typeFn = of_type
-            super(List, self).__init__(typeFn, *args, **kwargs)
+            super(List, self).__init__(get_type_fn(registry, of_type), *args, **kwargs)
 
     return List
 
@@ -258,10 +282,6 @@ def create_registry_list(registry):
 def create_registry_nonnull(registry):
     class NonNull(graphene.NonNull):
         def __init__(self, of_type, *args, **kwargs):
-            if isinstance(of_type, str):
-                typeFn = lambda: registry.getType(of_type)
-            else:
-                typeFn = of_type
-            super(NonNull, self).__init__(typeFn, *args, **kwargs)
+            super(NonNull, self).__init__(get_type_fn(registry, of_type), *args, **kwargs)
 
     return NonNull
