@@ -3,12 +3,18 @@ from functools import wraps
 
 import dagster
 from dagster.core.types import DagsterCompositeTypeBase
-from dagster import check
+from dagster import (
+    check,
+    PipelineDefinition,
+)
 
 from dagit.schema import dauphin
 
 
-class Pipeline(dauphin.ObjectType):
+class DauphinPipeline(dauphin.ObjectType):
+    class Meta:
+        name = 'Pipeline'
+
     name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
     solids = dauphin.non_null_list('Solid')
@@ -18,8 +24,8 @@ class Pipeline(dauphin.ObjectType):
     runs = dauphin.non_null_list('PipelineRun')
 
     def __init__(self, pipeline):
-        super(Pipeline, self).__init__(name=pipeline.name, description=pipeline.description)
-        self._pipeline = check.inst_param(pipeline, 'pipeline', dagster.PipelineDefinition)
+        super(DauphinPipeline, self).__init__(name=pipeline.name, description=pipeline.description)
+        self._pipeline = check.inst_param(pipeline, 'pipeline', PipelineDefinition)
 
     def resolve_solids(self, info):
         return [
@@ -57,11 +63,14 @@ class Pipeline(dauphin.ObjectType):
     def get_dagster_pipeline(self):
         return self._pipeline
 
-    def get_type(self, typeName):
+    def get_type(self, info, typeName):
         return info.schema.Type.from_dagster_type(info, self._pipeline.type_named(typeName))
 
 
-class PipelineConnection(dauphin.ObjectType):
+class DauphinPipelineConnection(dauphin.ObjectType):
+    class Meta:
+        name = 'PipelineConnection'
+
     nodes = dauphin.non_null_list('Pipeline')
 
 
