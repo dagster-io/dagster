@@ -122,11 +122,8 @@ class DauphinPipelineContext(dauphin.ObjectType):
             self._context.config_field
         ) if self._context.config_field else None
 
-    def resolve_resources(self, info):
-        resources = []
-        for resource_name, resource in self._context.resources.items():
-            resources.append(DauphinResource(resource_name, resource))
-        return resources
+    def resolve_resources(self, _info):
+        return [DauphinResource(*item) for item in self._context.resources.items()]
 
 
 class DauphinSolid(dauphin.ObjectType):
