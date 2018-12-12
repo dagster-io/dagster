@@ -71,7 +71,7 @@ def get_pipeline_type(info, pipelineName, typeName):
     pipeline_or_error = _pipeline_or_error_from_container(
         info, info.context.repository_container, pipelineName
     )
-    return pipeline_or_error.chain(lambda pip: pip.get_type(typeName)).value_or_raise()
+    return pipeline_or_error.chain(lambda pip: pip.get_type(info, typeName)).value_or_raise()
 
 
 def get_run(info, runId):
