@@ -262,12 +262,8 @@ def create_registry_field(registry):
 
 def create_registry_argument(registry):
     class Argument(graphene.Argument):
-        def __init__(self, type, *args, **kwargs):
-            if isinstance(type, str):
-                typeFn = lambda: registry.getType(type)
-            else:
-                typeFn = type
-            super(Argument, self).__init__(typeFn, *args, **kwargs)
+        def __init__(self, dauphin_type, *args, **kwargs):
+            super(Argument, self).__init__(get_type_fn(registry, dauphin_type), *args, **kwargs)
 
     return Argument
 
@@ -275,11 +271,7 @@ def create_registry_argument(registry):
 def create_registry_list(registry):
     class List(graphene.List):
         def __init__(self, of_type, *args, **kwargs):
-            if isinstance(of_type, str):
-                typeFn = lambda: registry.getType(of_type)
-            else:
-                typeFn = of_type
-            super(List, self).__init__(typeFn, *args, **kwargs)
+            super(List, self).__init__(get_type_fn(registry, of_type), *args, **kwargs)
 
     return List
 
@@ -287,10 +279,6 @@ def create_registry_list(registry):
 def create_registry_nonnull(registry):
     class NonNull(graphene.NonNull):
         def __init__(self, of_type, *args, **kwargs):
-            if isinstance(of_type, str):
-                typeFn = lambda: registry.getType(of_type)
-            else:
-                typeFn = of_type
-            super(NonNull, self).__init__(typeFn, *args, **kwargs)
+            super(NonNull, self).__init__(get_type_fn(registry, of_type), *args, **kwargs)
 
     return NonNull
