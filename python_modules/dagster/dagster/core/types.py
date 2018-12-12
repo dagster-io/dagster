@@ -59,6 +59,18 @@ class DagsterType(object):
     def is_named(self):
         return self.type_attributes.is_named
 
+    @property
+    def is_list(self):
+        return isinstance(self, _DagsterListType)
+
+    @property
+    def is_nullable(self):
+        return isinstance(self, _DagsterNullableType)
+
+    @property
+    def is_dict(self):
+        return isinstance(self, _Dict)
+
     def __repr__(self):
         return 'DagsterType({name})'.format(name=self.name)
 
@@ -364,6 +376,10 @@ class DagsterCompositeTypeBase(DagsterType):
             description=description,
             type_attributes=type_attributes,
         )
+
+    @property
+    def fields(self):
+        return self.field_dict
 
     def coerce_runtime_value(self, value):
         return value

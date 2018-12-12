@@ -6,14 +6,20 @@ from dagster import check
 
 class IndentingPrinter(object):
     def __init__(self, indent_level=2, printer=print):
-        self.lines = []
         self.current_indent = 0
         self.indent_level = check.int_param(indent_level, 'indent_level')
         self.printer = check.callable_param(printer, 'printer')
 
+        self.building_line = ''
+
+    def append(self, text):
+        check.str_param(text, 'text')
+        self.building_line += text
+
     def line(self, text):
         check.str_param(text, 'text')
-        self.printer(self.current_indent_str + text)
+        self.printer(self.current_indent_str + self.building_line + text)
+        self.building_line = ''
 
     @property
     def current_indent_str(self):
