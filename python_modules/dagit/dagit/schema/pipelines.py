@@ -9,6 +9,7 @@ from dagster import (
     OutputDefinition,
     PipelineContextDefinition,
     PipelineDefinition,
+    ResourceDefinition,
     SolidDefinition,
     check,
 )
@@ -84,6 +85,25 @@ class DauphinPipelineConnection(dauphin.ObjectType):
     nodes = dauphin.non_null_list('Pipeline')
 
 
+class DauphinResource(dauphin.ObjectType):
+    class Meta:
+        name = 'Resource'
+
+    def __init__(self, resource_name, resource):
+        self.name = check.str_param(resource_name, 'resource_name')
+        self._resource = check.inst_param(resource, 'resource', ResourceDefinition)
+        self.description = resource.description
+
+    name = dauphin.NonNull(dauphin.String)
+    description = dauphin.String()
+    config = dauphin.Field('Config')
+
+    def resolve_config(self, info):
+        return info.schema.Config(
+            self._resource.config_field
+        ) if self._resource.config_field else None
+
+
 class DauphinPipelineContext(dauphin.ObjectType):
     class Meta:
         name = 'PipelineContext'
@@ -91,6 +111,7 @@ class DauphinPipelineContext(dauphin.ObjectType):
     name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
     config = dauphin.Field('Config')
+    resources = dauphin.non_null_list('Resource')
 
     def __init__(self, name, context):
         super(DauphinPipelineContext, self).__init__(name=name, description=context.description)
@@ -100,6 +121,12 @@ class DauphinPipelineContext(dauphin.ObjectType):
         return info.schema.Config(
             self._context.config_field
         ) if self._context.config_field else None
+
+    def resolve_resources(self, info):
+        resources = []
+        for resource_name, resource in self._context.resources.items():
+            resources.append(DauphinResource(resource_name, resource))
+        return resources
 
 
 class DauphinSolid(dauphin.ObjectType):

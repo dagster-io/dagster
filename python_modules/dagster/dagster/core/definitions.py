@@ -64,10 +64,10 @@ def check_valid_name(name):
 
 
 class ResourceDefinition(object):
-    def __init__(self, resource_fn, config_field=None):
+    def __init__(self, resource_fn, config_field=None, description=None):
         self.resource_fn = check.callable_param(resource_fn, 'resource_fn')
         self.config_field = check.opt_inst_param(config_field, 'config_field', Field)
-
+        self.description = check.opt_str_param(description, 'description')
 
 class PipelineContextDefinition(object):
     '''Pipelines declare the different context types they support, in the form
