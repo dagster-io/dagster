@@ -138,8 +138,8 @@ class DauphinTypeMap(GrapheneTypeMap):
         super(DauphinTypeMap, self).__init__(types, **kwargs)
 
     def construct_object_type(self, map_, graphene_type):
-        if graphene_type._meta.name in map_:
-            _type = map_[graphene_type._meta.name]
+        if get_meta(graphene_type).name in map_:
+            _type = map_[get_meta(graphene_type).name]
             if isinstance(_type, GrapheneGraphQLType):
                 assert _type.graphene_type == graphene_type, (
                     "Found different types with the same name in the schema: {}, {}."
