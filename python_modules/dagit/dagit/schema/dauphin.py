@@ -138,12 +138,12 @@ class DauphinTypeMap(GrapheneTypeMap):
     def construct_object_type(self, map_, graphene_type):
         type_meta = get_meta(graphene_type)
         if type_meta.name in map_:
-            _type = map_[get_meta(graphene_type).name]
-            if isinstance(_type, GrapheneGraphQLType):
-                assert _type.graphene_type == graphene_type, (
+            mapped_type = map_[get_meta(graphene_type).name]
+            if isinstance(mapped_type, GrapheneGraphQLType):
+                assert mapped_type.graphene_type == graphene_type, (
                     "Found different types with the same name in the schema: {}, {}."
-                ).format(_type.graphene_type, graphene_type)
-            return _type
+                ).format(mapped_type.graphene_type, graphene_type)
+            return mapped_type
 
         # TODO the codepath below appears to be untested
 
@@ -174,10 +174,15 @@ class DauphinTypeMap(GrapheneTypeMap):
         )
 
     def construct_union(self, map_, graphene_type):
-        _resolve_type = None
+        union_resolve_type = None
         type_meta = get_meta(graphene_type)
         if graphene_type.resolve_type:
-            _resolve_type = partial(resolve_type, graphene_type.resolve_type, map_, type_meta.name)
+            union_resolve_type = partial(
+                resolve_type,
+                graphene_type.resolve_type,
+                map_,
+                type_meta.name,
+            )
 
         def types():
             union_types = []
@@ -195,7 +200,7 @@ class DauphinTypeMap(GrapheneTypeMap):
             name=type_meta.name,
             description=type_meta.description,
             types=types,
-            resolve_type=_resolve_type,
+            resolve_type=union_resolve_type,
         )
 
 
