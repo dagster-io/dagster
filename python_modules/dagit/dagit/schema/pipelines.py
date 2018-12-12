@@ -391,7 +391,10 @@ filter out those types by default.
     is_named = dauphin.NonNull(dauphin.Boolean)
 
 
-class Type(dauphin.Interface):
+class DauphinType(dauphin.Interface):
+    class Meta:
+        name = 'Type'
+
     name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
     type_attributes = dauphin.NonNull('TypeAttributes')
@@ -407,7 +410,7 @@ class Type(dauphin.Interface):
 class RegularType(dauphin.ObjectType):
     class Meta:
         interfaces = [
-            Type,
+            DauphinType,
         ]
 
     def __init__(self, dagster_type):
@@ -426,7 +429,7 @@ class CompositeType(dauphin.ObjectType):
 
     class Meta:
         interfaces = [
-            Type,
+            DauphinType,
         ]
 
     def __init__(self, dagster_type):
