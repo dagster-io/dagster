@@ -12,30 +12,35 @@ from dagster.utils.error import (
 from dagit.schema import dauphin
 
 
-class Error(dauphin.Interface):
+class DauphinError(dauphin.Interface):
+    class Meta:
+        name = 'Error'
+
     message = dauphin.String(required=True)
     stack = dauphin.non_null_list(dauphin.String)
 
 
-class PythonError(dauphin.ObjectType):
+class DauphinPythonError(dauphin.ObjectType):
+    class Meta:
+        name = 'PythonError'
+        interfaces = (DauphinError, )
+
     def __init__(self, error_info):
-        super(PythonError, self).__init__()
+        super(DauphinPythonError, self).__init__()
         check.inst_param(error_info, 'error_info', SerializableErrorInfo)
         self.message = error_info.message
         self.stack = error_info.stack
 
+
+class DauphinPipelineNotFoundError(dauphin.ObjectType):
     class Meta:
-        interfaces = (Error, )
+        name = 'PipelineNotFoundError'
+        interfaces = (DauphinError, )
 
-
-class PipelineNotFoundError(dauphin.ObjectType):
     pipeline_name = dauphin.NonNull(dauphin.String)
 
-    class Meta:
-        interfaces = (Error, )
-
     def __init__(self, pipeline_name):
-        super(PipelineNotFoundError, self).__init__()
+        super(DauphinPipelineNotFoundError, self).__init__()
         self.pipeline_name = check.str_param(pipeline_name, 'pipeline_name')
         self.message = 'Pipeline {pipeline_name} does not exist'.format(pipeline_name=pipeline_name)
 
@@ -54,7 +59,7 @@ class PipelineConfigValidationResult(dauphin.Union):
         types = (
             PipelineConfigValidationValid,
             PipelineConfigValidationInvalid,
-            PipelineNotFoundError,
+            DauphinPipelineNotFoundError,
         )
 
 
@@ -198,17 +203,17 @@ class EvaluationStack(dauphin.ObjectType):
 
 class PipelineOrError(dauphin.Union):
     class Meta:
-        types = ('Pipeline', PythonError, PipelineNotFoundError)
+        types = ('Pipeline', DauphinPythonError, DauphinPipelineNotFoundError)
 
 
 class PipelinesOrError(dauphin.Union):
     class Meta:
-        types = ('PipelineConnection', PythonError)
+        types = ('PipelineConnection', DauphinPythonError)
 
 
 class ExecutionPlanResult(dauphin.Union):
     class Meta:
-        types = ('ExecutionPlan', PipelineConfigValidationInvalid, PipelineNotFoundError)
+        types = ('ExecutionPlan', PipelineConfigValidationInvalid, DauphinPipelineNotFoundError)
 
 
 class StartPipelineExecutionSuccess(dauphin.ObjectType):
@@ -220,5 +225,5 @@ class StartPipelineExecutionResult(dauphin.Union):
         types = (
             StartPipelineExecutionSuccess,
             PipelineConfigValidationInvalid,
-            PipelineNotFoundError,
+            DauphinPipelineNotFoundError,
         )
