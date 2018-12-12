@@ -30,6 +30,10 @@ GRAPHENE_BUILT_IN = [
 ]
 
 
+def get_meta(graphene_type):
+    return graphene_type._meta  #pylint: disable=W0212
+
+
 class DauphinRegistry(object):
     def __init__(self):
         self._typeMap = {}
@@ -41,15 +45,28 @@ class DauphinRegistry(object):
         self.Union = create_union(registering_metaclass, self)
         self.Enum = create_enum(registering_metaclass)
         self.Mutation = graphene.Mutation
-        for graphene_type in GRAPHENE_TYPES:
-            setattr(
-                self,
-                graphene_type.__name__,
-                create_registering_class(graphene_type, registering_metaclass),
-            )
-        for graphene_type in GRAPHENE_BUILT_IN:
-            setattr(self, graphene_type.__name__, graphene_type)
-            self.addType(graphene_type)
+
+        # Not looping over GRAPHENE_TYPES in order to not fool lint
+        self.ObjectType = create_registering_class(graphene.ObjectType, registering_metaclass)
+        self.InputObjectType = create_registering_class(
+            graphene.InputObjectType, registering_metaclass
+        )
+        self.Interface = create_registering_class(graphene.Interface, registering_metaclass)
+        self.Scalar = create_registering_class(graphene.Scalar, registering_metaclass)
+
+        # Not looping over GRAPHENE_BUILTINS in order to not fool lint
+        self.String = graphene.String
+        self.addType(graphene.String)
+        self.Int = graphene.Int
+        self.addType(graphene.Int)
+        self.Float = graphene.Float
+        self.addType(graphene.Float)
+        self.Boolean = graphene.Boolean
+        self.addType(graphene.Boolean)
+        self.ID = graphene.ID
+        self.addType(graphene.ID)
+        self.GenericScalar = GenericScalar
+        self.addType(GenericScalar)
 
     def create_schema(self):
         return DauphinSchema(
@@ -64,11 +81,11 @@ class DauphinRegistry(object):
         return self._typeMap.get(typeName)
 
     def getType(self, typeName):
-        type_ = self.getTypeOrNull(typeName)
-        if not type_:
+        graphene_type = self.getTypeOrNull(typeName)
+        if not graphene_type:
             raise Exception('No such type {typeName}.'.format(typeName=typeName))
         else:
-            return type_
+            return graphene_type
 
     def getAllTypes(self):
         return self._typeMap.values()
@@ -76,15 +93,14 @@ class DauphinRegistry(object):
     def getAllImplementationTypes(self):
         return [t for t in self._typeMap.values() if issubclass(t, self.ObjectType)]
 
-    def addType(self, type_):
-        if type_._meta:
-            if not type_ in self._typeMap:
-                self._typeMap[type_._meta.name] = type_
+    def addType(self, graphene_type):
+        meta = get_meta(graphene_type)
+        if meta:
+            if not graphene_type in self._typeMap:
+                self._typeMap[meta.name] = graphene_type
             else:
                 raise Exception(
-                    'Type {typeName} already exists in the registry.'.format(
-                        typeName=type_._meta.name
-                    )
+                    'Type {typeName} already exists in the registry.'.format(typeName=meta.name)
                 )
         else:
             raise Exception('Cannot add unnamed type or a non-type to registry.')
