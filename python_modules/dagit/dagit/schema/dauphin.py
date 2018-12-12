@@ -30,7 +30,7 @@ GRAPHENE_BUILT_IN = [
 ]
 
 
-class DaupheneRegistry(object):
+class DauphinRegistry(object):
     def __init__(self):
         self._typeMap = {}
         self.Field = create_registry_field(self)
@@ -48,7 +48,7 @@ class DaupheneRegistry(object):
             self.addType(type)
 
     def create_schema(self):
-        return DaupheneSchema(
+        return DauphinSchema(
             query=self.getType('Query'),
             mutation=self.getTypeOrNull('Mutation'),
             subscription=self.getTypeOrNull('Subscription'),
@@ -89,10 +89,10 @@ class DaupheneRegistry(object):
         return self.NonNull(self.List(self.NonNull(of_type)))
 
 
-class DaupheneSchema(graphene.Schema):
+class DauphinSchema(graphene.Schema):
     def __init__(self, registry, **kwargs):
         self._typeRegistry = registry
-        super(DaupheneSchema, self).__init__(**kwargs)
+        super(DauphinSchema, self).__init__(**kwargs)
 
     def build_typemap(self):
         initial_types = [
@@ -103,7 +103,7 @@ class DaupheneSchema(graphene.Schema):
         ]
         if self.types:
             initial_types += self.types
-        self._type_map = DaupheneTypeMap(
+        self._type_map = DauphinTypeMap(
             initial_types,
             auto_camelcase=self.auto_camelcase,
             schema=self,
@@ -111,10 +111,10 @@ class DaupheneSchema(graphene.Schema):
         )
 
 
-class DaupheneTypeMap(GrapheneTypeMap):
+class DauphinTypeMap(GrapheneTypeMap):
     def __init__(self, types, typeRegistry=None, **kwargs):
         self._typeRegistry = typeRegistry
-        super(DaupheneTypeMap, self).__init__(types, **kwargs)
+        super(DauphinTypeMap, self).__init__(types, **kwargs)
 
     def construct_object_type(self, map, type):
         if type._meta.name in map:
@@ -179,7 +179,7 @@ def create_registering_metaclass(registry):
     class RegisteringMetaclass(SubclassWithMeta_Meta):
         def __init__(cls, name, bases, namespaces):
             super(RegisteringMetaclass, cls).__init__(name, bases, namespaces)
-            if any(base for base in bases if getattr(base, '__daupheneCoreType', False)):
+            if any(base for base in bases if getattr(base, '__dauphinCoreType', False)):
                 registry.addType(cls)
 
     return RegisteringMetaclass
@@ -187,14 +187,14 @@ def create_registering_metaclass(registry):
 
 def create_registering_class(cls, metaclass):
     new_cls = metaclass(cls.__name__, (cls, ), {})
-    setattr(new_cls, '__daupheneCoreType', True)
+    setattr(new_cls, '__dauphinCoreType', True)
     return new_cls
 
 
 def create_union(metaclass, registry):
     meta_class = type('Meta', (object, ), {'types': ('__', '__')})
     Union = metaclass('Union', (graphene.Union, ), {'Meta': meta_class})
-    setattr(Union, '__daupheneCoreType', True)
+    setattr(Union, '__dauphinCoreType', True)
     return Union
 
 
@@ -215,7 +215,7 @@ def create_enum(metaclass):
     Enum = EnumRegisteringMetaclass(
         'Enum', (graphene.Enum, ), {'from_enum': classmethod(from_enum)}
     )
-    setattr(Enum, '__daupheneCoreType', True)
+    setattr(Enum, '__dauphinCoreType', True)
     return Enum
 
 

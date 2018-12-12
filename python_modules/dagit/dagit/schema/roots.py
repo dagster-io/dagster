@@ -1,32 +1,32 @@
-from dagit.schema import dauphene
+from dagit.schema import dauphin
 from dagit.schema import model
 
 
-class Query(dauphene.ObjectType):
-    pipelineOrError = dauphene.Field(
-        dauphene.NonNull('PipelineOrError'), name=dauphene.NonNull(dauphene.String)
+class Query(dauphin.ObjectType):
+    pipelineOrError = dauphin.Field(
+        dauphin.NonNull('PipelineOrError'), name=dauphin.NonNull(dauphin.String)
     )
-    pipeline = dauphene.Field(dauphene.NonNull('Pipeline'), name=dauphene.NonNull(dauphene.String))
-    pipelinesOrError = dauphene.NonNull('PipelinesOrError')
-    pipelines = dauphene.Field(dauphene.NonNull('PipelineConnection'))
+    pipeline = dauphin.Field(dauphin.NonNull('Pipeline'), name=dauphin.NonNull(dauphin.String))
+    pipelinesOrError = dauphin.NonNull('PipelinesOrError')
+    pipelines = dauphin.Field(dauphin.NonNull('PipelineConnection'))
 
-    type = dauphene.Field(
+    type = dauphin.Field(
         'Type',
-        pipelineName=dauphene.NonNull(dauphene.String),
-        typeName=dauphene.NonNull(dauphene.String),
+        pipelineName=dauphin.NonNull(dauphin.String),
+        typeName=dauphin.NonNull(dauphin.String),
     )
 
-    pipelineRuns = dauphene.non_null_list('PipelineRun')
-    pipelineRun = dauphene.Field('PipelineRun', runId=dauphene.NonNull(dauphene.ID))
+    pipelineRuns = dauphin.non_null_list('PipelineRun')
+    pipelineRun = dauphin.Field('PipelineRun', runId=dauphin.NonNull(dauphin.ID))
 
-    isPipelineConfigValid = dauphene.Field(
-        dauphene.NonNull('PipelineConfigValidationResult'),
-        args={'executionParams': dauphene.Argument(dauphene.NonNull('PipelineExecutionParams'))},
+    isPipelineConfigValid = dauphin.Field(
+        dauphin.NonNull('PipelineConfigValidationResult'),
+        args={'executionParams': dauphin.Argument(dauphin.NonNull('PipelineExecutionParams'))},
     )
 
-    executionPlan = dauphene.Field(
-        dauphene.NonNull('ExecutionPlanResult'),
-        args={'executionParams': dauphene.Argument(dauphene.NonNull('PipelineExecutionParams'))},
+    executionPlan = dauphin.Field(
+        dauphin.NonNull('ExecutionPlanResult'),
+        args={'executionParams': dauphin.Argument(dauphin.NonNull('PipelineExecutionParams'))},
     )
 
     def resolve_pipelineOrError(self, info, name):
@@ -57,37 +57,37 @@ class Query(dauphene.ObjectType):
         return model.get_execution_plan(info, **executionParams)
 
 
-class StartPipelineExecutionMutation(dauphene.Mutation):
+class StartPipelineExecutionMutation(dauphin.Mutation):
     class Arguments:
-        executionParams = dauphene.NonNull('PipelineExecutionParams')
+        executionParams = dauphin.NonNull('PipelineExecutionParams')
 
-    Output = dauphene.NonNull('StartPipelineExecutionResult')
+    Output = dauphin.NonNull('StartPipelineExecutionResult')
 
     def mutate(self, info, executionParams):
         return model.start_pipeline_execution(info, **executionParams)
 
 
-class Mutation(dauphene.ObjectType):
+class Mutation(dauphin.ObjectType):
     start_pipeline_execution = StartPipelineExecutionMutation.Field()
 
 
-class Subscription(dauphene.ObjectType):
-    pipelineRunLogs = dauphene.Field(
-        dauphene.NonNull('PipelineRunEvent'),
-        runId=dauphene.Argument(dauphene.NonNull(dauphene.ID)),
-        after=dauphene.Argument('Cursor')
+class Subscription(dauphin.ObjectType):
+    pipelineRunLogs = dauphin.Field(
+        dauphin.NonNull('PipelineRunEvent'),
+        runId=dauphin.Argument(dauphin.NonNull(dauphin.ID)),
+        after=dauphin.Argument('Cursor')
     )
 
     def resolve_pipelineRunLogs(self, info, runId, after=None):
         return model.get_pipeline_run_observable(info, runId, after)
 
 
-class PipelineExecutionParams(dauphene.InputObjectType):
-    pipelineName = dauphene.NonNull(dauphene.String)
-    config = dauphene.Field('PipelineConfig')
+class PipelineExecutionParams(dauphin.InputObjectType):
+    pipelineName = dauphin.NonNull(dauphin.String)
+    config = dauphin.Field('PipelineConfig')
 
 
-class PipelineConfig(dauphene.GenericScalar, dauphene.Scalar):
+class PipelineConfig(dauphin.GenericScalar, dauphin.Scalar):
     class Meta:
         description = '''This type is used when passing in a configuration object
         for pipeline configuration. This is any-typed in the GraphQL type system,

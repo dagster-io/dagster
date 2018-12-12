@@ -5,17 +5,17 @@ import dagster
 from dagster.core.types import DagsterCompositeTypeBase
 from dagster import check
 
-from dagit.schema import dauphene
+from dagit.schema import dauphin
 
 
-class Pipeline(dauphene.ObjectType):
-    name = dauphene.NonNull(dauphene.String)
-    description = dauphene.String()
-    solids = dauphene.non_null_list('Solid')
-    contexts = dauphene.non_null_list('PipelineContext')
-    environment_type = dauphene.NonNull('Type')
-    types = dauphene.non_null_list('Type')
-    runs = dauphene.non_null_list('PipelineRun')
+class Pipeline(dauphin.ObjectType):
+    name = dauphin.NonNull(dauphin.String)
+    description = dauphin.String()
+    solids = dauphin.non_null_list('Solid')
+    contexts = dauphin.non_null_list('PipelineContext')
+    environment_type = dauphin.NonNull('Type')
+    types = dauphin.non_null_list('Type')
+    runs = dauphin.non_null_list('PipelineRun')
 
     def __init__(self, pipeline):
         super(Pipeline, self).__init__(name=pipeline.name, description=pipeline.description)
@@ -61,14 +61,14 @@ class Pipeline(dauphene.ObjectType):
         return info.schema.Type.from_dagster_type(info, self._pipeline.type_named(typeName))
 
 
-class PipelineConnection(dauphene.ObjectType):
-    nodes = dauphene.non_null_list('Pipeline')
+class PipelineConnection(dauphin.ObjectType):
+    nodes = dauphin.non_null_list('Pipeline')
 
 
-class PipelineContext(dauphene.ObjectType):
-    name = dauphene.NonNull(dauphene.String)
-    description = dauphene.String()
-    config = dauphene.Field('Config')
+class PipelineContext(dauphin.ObjectType):
+    name = dauphin.NonNull(dauphin.String)
+    description = dauphin.String()
+    config = dauphin.Field('Config')
 
     def __init__(self, name, context):
         super(PipelineContext, self).__init__(name=name, description=context.description)
@@ -80,11 +80,11 @@ class PipelineContext(dauphene.ObjectType):
         ) if self._context.config_field else None
 
 
-class Solid(dauphene.ObjectType):
-    name = dauphene.NonNull(dauphene.String)
-    definition = dauphene.NonNull('SolidDefinition')
-    inputs = dauphene.non_null_list('Input')
-    outputs = dauphene.non_null_list('Output')
+class Solid(dauphin.ObjectType):
+    name = dauphin.NonNull(dauphin.String)
+    definition = dauphin.NonNull('SolidDefinition')
+    inputs = dauphin.non_null_list('Input')
+    outputs = dauphin.non_null_list('Output')
 
     def __init__(self, solid, depends_on=None, depended_by=None):
         super(Solid, self).__init__(name=solid.name)
@@ -122,10 +122,10 @@ class Solid(dauphene.ObjectType):
         ]
 
 
-class Input(dauphene.ObjectType):
-    solid = dauphene.NonNull('Solid')
-    definition = dauphene.NonNull('InputDefinition')
-    depends_on = dauphene.Field('Output')
+class Input(dauphin.ObjectType):
+    solid = dauphin.NonNull('Solid')
+    definition = dauphin.NonNull('InputDefinition')
+    depends_on = dauphin.Field('Output')
 
     def __init__(self, input_handle, solid):
         super(Input, self).__init__(solid=solid)
@@ -149,10 +149,10 @@ class Input(dauphene.ObjectType):
             return None
 
 
-class Output(dauphene.ObjectType):
-    solid = dauphene.NonNull('Solid')
-    definition = dauphene.NonNull('OutputDefinition')
-    depended_by = dauphene.non_null_list('Input')
+class Output(dauphin.ObjectType):
+    solid = dauphin.NonNull('Solid')
+    definition = dauphin.NonNull('OutputDefinition')
+    depended_by = dauphin.non_null_list('Input')
 
     def __init__(self, output_handle, solid):
         super(Output, self).__init__(solid=solid)
@@ -175,18 +175,18 @@ class Output(dauphene.ObjectType):
         ]
 
 
-class SolidMetadataItemDefinition(dauphene.ObjectType):
-    key = dauphene.NonNull(dauphene.String)
-    value = dauphene.NonNull(dauphene.String)
+class SolidMetadataItemDefinition(dauphin.ObjectType):
+    key = dauphin.NonNull(dauphin.String)
+    value = dauphin.NonNull(dauphin.String)
 
 
-class SolidDefinition(dauphene.ObjectType):
-    name = dauphene.NonNull(dauphene.String)
-    description = dauphene.String()
-    metadata = dauphene.non_null_list('SolidMetadataItemDefinition')
-    input_definitions = dauphene.non_null_list('InputDefinition')
-    output_definitions = dauphene.non_null_list('OutputDefinition')
-    config_definition = dauphene.Field('Config')
+class SolidDefinition(dauphin.ObjectType):
+    name = dauphin.NonNull(dauphin.String)
+    description = dauphin.String()
+    metadata = dauphin.non_null_list('SolidMetadataItemDefinition')
+    input_definitions = dauphin.non_null_list('InputDefinition')
+    output_definitions = dauphin.non_null_list('OutputDefinition')
+    config_definition = dauphin.Field('Config')
 
     # solids - ?
 
@@ -222,12 +222,12 @@ class SolidDefinition(dauphene.ObjectType):
         ) if self._solid_def.config_field else None
 
 
-class InputDefinition(dauphene.ObjectType):
-    solid_definition = dauphene.NonNull('SolidDefinition')
-    name = dauphene.NonNull(dauphene.String)
-    description = dauphene.String()
-    type = dauphene.NonNull('Type')
-    expectations = dauphene.non_null_list('Expectation')
+class InputDefinition(dauphin.ObjectType):
+    solid_definition = dauphin.NonNull('SolidDefinition')
+    name = dauphin.NonNull(dauphin.String)
+    description = dauphin.String()
+    type = dauphin.NonNull('Type')
+    expectations = dauphin.non_null_list('Expectation')
 
     # inputs - ?
 
@@ -257,12 +257,12 @@ class InputDefinition(dauphene.ObjectType):
             return []
 
 
-class OutputDefinition(dauphene.ObjectType):
-    solid_definition = dauphene.NonNull('SolidDefinition')
-    name = dauphene.NonNull(dauphene.String)
-    description = dauphene.String()
-    type = dauphene.NonNull('Type')
-    expectations = dauphene.non_null_list('Expectation')
+class OutputDefinition(dauphin.ObjectType):
+    solid_definition = dauphin.NonNull('SolidDefinition')
+    name = dauphin.NonNull(dauphin.String)
+    description = dauphin.String()
+    type = dauphin.NonNull('Type')
+    expectations = dauphin.non_null_list('Expectation')
 
     # outputs - ?
 
@@ -291,9 +291,9 @@ class OutputDefinition(dauphene.ObjectType):
             return []
 
 
-class Expectation(dauphene.ObjectType):
-    name = dauphene.NonNull(dauphene.String)
-    description = dauphene.String()
+class Expectation(dauphin.ObjectType):
+    name = dauphin.NonNull(dauphin.String)
+    description = dauphin.String()
 
     def __init__(self, expectation):
         check.inst_param(expectation, 'expectation', dagster.ExpectationDefinition)
@@ -302,8 +302,8 @@ class Expectation(dauphene.ObjectType):
         )
 
 
-class Config(dauphene.ObjectType):
-    type = dauphene.NonNull('Type')
+class Config(dauphin.ObjectType):
+    type = dauphin.NonNull('Type')
 
     def __init__(self, config_field):
         super(Config, self).__init__()
@@ -315,15 +315,15 @@ class Config(dauphene.ObjectType):
         )
 
 
-class TypeAttributes(dauphene.ObjectType):
-    is_builtin = dauphene.NonNull(
-        dauphene.Boolean,
+class TypeAttributes(dauphin.ObjectType):
+    is_builtin = dauphin.NonNull(
+        dauphin.Boolean,
         description='''
 True if the system defines it and it is the same type across pipelines.
 Examples include "Int" and "String."''',
     )
-    is_system_config = dauphene.NonNull(
-        dauphene.Boolean,
+    is_system_config = dauphin.NonNull(
+        dauphin.Boolean,
         description='''
 Dagster generates types for base elements of the config system (e.g. the solids and
 context field of the base environment). These types are always present
@@ -332,13 +332,13 @@ filter out those types by default.
 ''',
     )
 
-    is_named = dauphene.NonNull(dauphene.Boolean)
+    is_named = dauphin.NonNull(dauphin.Boolean)
 
 
-class Type(dauphene.Interface):
-    name = dauphene.NonNull(dauphene.String)
-    description = dauphene.String()
-    type_attributes = dauphene.NonNull('TypeAttributes')
+class Type(dauphin.Interface):
+    name = dauphin.NonNull(dauphin.String)
+    description = dauphin.String()
+    type_attributes = dauphin.NonNull('TypeAttributes')
 
     @classmethod
     def from_dagster_type(cls, info, dagster_type):
@@ -348,7 +348,7 @@ class Type(dauphene.Interface):
             return info.schema.RegularType(dagster_type)
 
 
-class RegularType(dauphene.ObjectType):
+class RegularType(dauphin.ObjectType):
     class Meta:
         interfaces = [
             Type,
@@ -365,8 +365,8 @@ class RegularType(dauphene.ObjectType):
         return self._dagster_type.type_attributes
 
 
-class CompositeType(dauphene.ObjectType):
-    fields = dauphene.non_null_list('TypeField')
+class CompositeType(dauphin.ObjectType):
+    fields = dauphin.non_null_list('TypeField')
 
     class Meta:
         interfaces = [
@@ -389,12 +389,12 @@ class CompositeType(dauphene.ObjectType):
         ]
 
 
-class TypeField(dauphene.ObjectType):
-    name = dauphene.NonNull(dauphene.String)
-    description = dauphene.String()
-    type = dauphene.NonNull('Type')
-    default_value = dauphene.String()
-    is_optional = dauphene.NonNull(dauphene.Boolean)
+class TypeField(dauphin.ObjectType):
+    name = dauphin.NonNull(dauphin.String)
+    description = dauphin.String()
+    type = dauphin.NonNull('Type')
+    default_value = dauphin.String()
+    is_optional = dauphin.NonNull(dauphin.Boolean)
 
     def __init__(self, name, field):
         super(TypeField, self).__init__(

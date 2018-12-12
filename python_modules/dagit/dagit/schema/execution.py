@@ -3,12 +3,12 @@ from __future__ import absolute_import
 from dagster import check
 import dagster.core.execution_plan
 
-from dagit.schema import dauphene
+from dagit.schema import dauphin
 
 
-class ExecutionPlan(dauphene.ObjectType):
-    steps = dauphene.non_null_list('ExecutionStep')
-    pipeline = dauphene.NonNull('Pipeline')
+class ExecutionPlan(dauphin.ObjectType):
+    steps = dauphin.non_null_list('ExecutionStep')
+    pipeline = dauphin.NonNull('Pipeline')
 
     def __init__(self, pipeline, execution_plan):
         super(ExecutionPlan, self).__init__(pipeline=pipeline)
@@ -22,9 +22,9 @@ class ExecutionPlan(dauphene.ObjectType):
         return [ExecutionStep(cn) for cn in self.execution_plan.topological_steps()]
 
 
-class ExecutionStepOutput(dauphene.ObjectType):
-    name = dauphene.NonNull(dauphene.String)
-    type = dauphene.Field(dauphene.NonNull('Type'))
+class ExecutionStepOutput(dauphin.ObjectType):
+    name = dauphin.NonNull(dauphin.String)
+    type = dauphin.Field(dauphin.NonNull('Type'))
 
     def __init__(self, execution_step_output):
         super(ExecutionStepOutput, self).__init__()
@@ -43,10 +43,10 @@ class ExecutionStepOutput(dauphene.ObjectType):
         )
 
 
-class ExecutionStepInput(dauphene.ObjectType):
-    name = dauphene.NonNull(dauphene.String)
-    type = dauphene.Field(dauphene.NonNull('Type'))
-    dependsOn = dauphene.Field(dauphene.NonNull('ExecutionStep'))
+class ExecutionStepInput(dauphin.ObjectType):
+    name = dauphin.NonNull(dauphin.String)
+    type = dauphin.Field(dauphin.NonNull('Type'))
+    dependsOn = dauphin.Field(dauphin.NonNull('ExecutionStep'))
 
     def __init__(self, execution_step_input):
         super(ExecutionStepInput, self).__init__()
@@ -68,7 +68,7 @@ class ExecutionStepInput(dauphene.ObjectType):
         return info.schema.ExecutionStep(self.execution_step_input.prev_output_handle.step)
 
 
-class StepTag(dauphene.Enum):
+class StepTag(dauphin.Enum):
     TRANSFORM = 'TRANSFORM'
     INPUT_EXPECTATION = 'INPUT_EXPECTATION'
     OUTPUT_EXPECTATION = 'OUTPUT_EXPECTATION'
@@ -77,7 +77,7 @@ class StepTag(dauphene.Enum):
 
     @property
     def description(self):
-        # self ends up being the internal class "EnumMeta" in dauphene
+        # self ends up being the internal class "EnumMeta" in dauphin
         # so we can't do a dictionary lookup which is awesome
         if self == StepTag.TRANSFORM:
             return 'This is the user-defined transform step'
@@ -97,12 +97,12 @@ an intermediate value if the pipeline is configured to do that.'''
             return 'Unknown enum {value}'.format(value=self)
 
 
-class ExecutionStep(dauphene.ObjectType):
-    name = dauphene.NonNull(dauphene.String)
-    inputs = dauphene.non_null_list('ExecutionStepInput')
-    outputs = dauphene.non_null_list('ExecutionStepOutput')
-    solid = dauphene.NonNull('Solid')
-    tag = dauphene.NonNull('StepTag')
+class ExecutionStep(dauphin.ObjectType):
+    name = dauphin.NonNull(dauphin.String)
+    inputs = dauphin.non_null_list('ExecutionStepInput')
+    outputs = dauphin.non_null_list('ExecutionStepOutput')
+    solid = dauphin.NonNull('Solid')
+    tag = dauphin.NonNull('StepTag')
 
     def __init__(self, execution_step):
         super(ExecutionStep, self).__init__()
