@@ -41,8 +41,12 @@ class DauphinRegistry(object):
         self.Union = create_union(registering_metaclass, self)
         self.Enum = create_enum(registering_metaclass)
         self.Mutation = graphene.Mutation
-        for type in GRAPHENE_TYPES:
-            setattr(self, type.__name__, create_registering_class(type, registering_metaclass))
+        for graphene_type in GRAPHENE_TYPES:
+            setattr(
+                self,
+                graphene_type.__name__,
+                create_registering_class(graphene_type, registering_metaclass),
+            )
         for type in GRAPHENE_BUILT_IN:
             setattr(self, type.__name__, type)
             self.addType(type)
