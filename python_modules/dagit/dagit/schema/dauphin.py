@@ -60,11 +60,11 @@ class DauphinRegistry(object):
         return self._typeMap.get(typeName)
 
     def getType(self, typeName):
-        type = self.getTypeOrNull(typeName)
-        if not type:
+        type_ = self.getTypeOrNull(typeName)
+        if not type_:
             raise Exception('No such type {typeName}.'.format(typeName=typeName))
         else:
-            return type
+            return type_
 
     def getAllTypes(self):
         return self._typeMap.values()
@@ -72,14 +72,14 @@ class DauphinRegistry(object):
     def getAllImplementationTypes(self):
         return [t for t in self._typeMap.values() if issubclass(t, self.ObjectType)]
 
-    def addType(self, type):
-        if type._meta:
-            if not type in self._typeMap:
-                self._typeMap[type._meta.name] = type
+    def addType(self, type_):
+        if type_._meta:
+            if not type_ in self._typeMap:
+                self._typeMap[type_._meta.name] = type_
             else:
                 raise Exception(
                     'Type {typeName} already exists in the registry.'.format(
-                        typeName=type._meta.name
+                        typeName=type_._meta.name
                     )
                 )
         else:
@@ -150,26 +150,27 @@ class DauphinTypeMap(GrapheneTypeMap):
             interfaces=interfaces,
         )
 
-    def construct_union(self, map, type):
+    def construct_union(self, map_, type_):
+        # pylint: disable=W0212
         _resolve_type = None
-        if type.resolve_type:
-            _resolve_type = partial(resolve_type, type.resolve_type, map, type._meta.name)
+        if type_.resolve_type:
+            _resolve_type = partial(resolve_type, type_.resolve_type, map_, type_._meta.name)
 
         def types():
             union_types = []
-            for objecttype in type._meta.types:
+            for objecttype in type_._meta.types:
                 if isinstance(objecttype, str):
                     objecttype = self._typeRegistry.getType(objecttype)
-                self.graphene_reducer(map, objecttype)
-                internal_type = map[objecttype._meta.name]
+                self.graphene_reducer(map_, objecttype)
+                internal_type = map_[objecttype._meta.name]
                 assert internal_type.graphene_type == objecttype
                 union_types.append(internal_type)
             return union_types
 
         return GrapheneUnionType(
-            graphene_type=type,
-            name=type._meta.name,
-            description=type._meta.description,
+            graphene_type=type_,
+            name=type_._meta.name,
+            description=type_._meta.description,
             types=types,
             resolve_type=_resolve_type,
         )
