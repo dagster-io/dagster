@@ -3,6 +3,8 @@ from __future__ import absolute_import
 import dagster
 from dagster.core.types import DagsterCompositeTypeBase
 from dagster import (
+    ExpectationDefinition,
+    Field,
     InputDefinition,
     OutputDefinition,
     PipelineContextDefinition,
@@ -334,27 +336,32 @@ class DauphinOutputDefinition(dauphin.ObjectType):
             return []
 
 
-class Expectation(dauphin.ObjectType):
+class DauphinExpectation(dauphin.ObjectType):
+    class Meta:
+        name = 'Expectation'
+
     name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
 
     def __init__(self, expectation):
-        check.inst_param(expectation, 'expectation', dagster.ExpectationDefinition)
-        super(Expectation, self).__init__(
-            name=expectation.name, description=expectation.description
+        check.inst_param(expectation, 'expectation', ExpectationDefinition)
+        super(DauphinExpectation, self).__init__(
+            name=expectation.name,
+            description=expectation.description,
         )
 
 
-class Config(dauphin.ObjectType):
+class DauphinConfig(dauphin.ObjectType):
     type = dauphin.NonNull('Type')
 
     def __init__(self, config_field):
-        super(Config, self).__init__()
-        self._config_field = check.opt_inst_param(config_field, 'config_field', dagster.Field)
+        super(DauphinConfig, self).__init__()
+        self._config_field = check.opt_inst_param(config_field, 'config_field', Field)
 
     def resolve_type(self, info):
         return info.schema.Type.from_dagster_type(
-            info, dagster_type=self._config_field.dagster_type
+            info,
+            dagster_type=self._config_field.dagster_type,
         )
 
 
