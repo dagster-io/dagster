@@ -1,8 +1,9 @@
+from __future__ import print_function
 from dagster import check
 
-from .types import DagsterType
-
 from dagster.utils.indenting_printer import IndentingPrinter
+
+from .types import DagsterType
 
 
 def print_type(dagster_type, print_fn=print):
