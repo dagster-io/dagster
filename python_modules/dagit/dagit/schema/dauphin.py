@@ -245,14 +245,17 @@ def create_enum(metaclass):
     return Enum
 
 
+def get_type_fn(registry, dauphin_type):
+    if isinstance(dauphin_type, str):
+        return lambda: registry.getType(dauphin_type)
+    else:
+        return dauphin_type
+
+
 def create_registry_field(registry):
     class Field(graphene.Field):
-        def __init__(self, type, *args, **kwargs):
-            if isinstance(type, str):
-                typeFn = lambda: registry.getType(type)
-            else:
-                typeFn = type
-            super(Field, self).__init__(typeFn, *args, **kwargs)
+        def __init__(self, dauphin_type, *args, **kwargs):
+            super(Field, self).__init__(get_type_fn(registry, dauphin_type), *args, **kwargs)
 
     return Field
 
