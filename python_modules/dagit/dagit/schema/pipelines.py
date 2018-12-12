@@ -8,7 +8,11 @@ from dagster import (
     SolidDefinition,
     check,
 )
-from dagster.core.definitions import Solid
+from dagster.core.definitions import (
+    Solid,
+    SolidInputHandle,
+    SolidOutputHandle,
+)
 
 from dagit.schema import dauphin
 
@@ -150,9 +154,7 @@ class DauphinInput(dauphin.ObjectType):
     def __init__(self, input_handle, solid):
         super(DauphinInput, self).__init__(solid=solid)
         self._solid = check.inst_param(solid, 'solid', DauphinSolid)
-        self._input_handle = check.inst_param(
-            input_handle, 'input_handle', dagster.core.definitions.SolidInputHandle
-        )
+        self._input_handle = check.inst_param(input_handle, 'input_handle', SolidInputHandle)
 
     def resolve_definition(self, info):
         return info.schema.InputDefinition(
@@ -169,17 +171,18 @@ class DauphinInput(dauphin.ObjectType):
             return None
 
 
-class Output(dauphin.ObjectType):
+class DauphinOutput(dauphin.ObjectType):
+    class Meta:
+        name = 'Output'
+
     solid = dauphin.NonNull('Solid')
     definition = dauphin.NonNull('OutputDefinition')
     depended_by = dauphin.non_null_list('Input')
 
     def __init__(self, output_handle, solid):
-        super(Output, self).__init__(solid=solid)
+        super(DauphinOutput, self).__init__(solid=solid)
         self._solid = check.inst_param(solid, 'solid', DauphinSolid)
-        self._output_handle = check.inst_param(
-            output_handle, 'output_handle', dagster.core.definitions.SolidOutputHandle
-        )
+        self._output_handle = check.inst_param(output_handle, 'output_handle', SolidOutputHandle)
 
     def resolve_definition(self, info):
         return info.schema.OutputDefinition(
