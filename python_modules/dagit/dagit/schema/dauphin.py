@@ -8,8 +8,9 @@ from graphene.types.typemap import TypeMap as GrapheneTypeMap, resolve_type
 from graphene.types.enum import EnumMeta
 from graphene.utils.subclass_with_meta import SubclassWithMeta_Meta
 from graphene.types.definitions import (
-    GrapheneScalarType,
+    GrapheneGraphQLType,
     GrapheneObjectType,
+    GrapheneScalarType,
     GrapheneUnionType,
 )
 
