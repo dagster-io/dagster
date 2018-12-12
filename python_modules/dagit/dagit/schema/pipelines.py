@@ -4,6 +4,7 @@ import dagster
 from dagster.core.types import DagsterCompositeTypeBase
 from dagster import (
     InputDefinition,
+    OutputDefinition,
     PipelineContextDefinition,
     PipelineDefinition,
     SolidDefinition,
@@ -293,7 +294,10 @@ class DauphinInputDefinition(dauphin.ObjectType):
             return []
 
 
-class OutputDefinition(dauphin.ObjectType):
+class DauphinOutputDefinition(dauphin.ObjectType):
+    class Meta:
+        name = 'OutputDefinition'
+
     solid_definition = dauphin.NonNull('SolidDefinition')
     name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
@@ -303,18 +307,21 @@ class OutputDefinition(dauphin.ObjectType):
     # outputs - ?
 
     def __init__(self, output_definition, solid_def):
-        super(OutputDefinition, self).__init__(
+        super(DauphinOutputDefinition, self).__init__(
             name=output_definition.name,
             description=output_definition.description,
             solid_definition=solid_def,
         )
         self._output_definition = check.inst_param(
-            output_definition, 'output_definition', dagster.OutputDefinition
+            output_definition,
+            'output_definition',
+            OutputDefinition,
         )
 
     def resolve_type(self, info):
         return info.schema.Type.from_dagster_type(
-            info, dagster_type=self._output_definition.dagster_type
+            info,
+            dagster_type=self._output_definition.dagster_type,
         )
 
     def resolve_expectations(self, info):
