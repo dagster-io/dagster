@@ -13,6 +13,7 @@ from dagster import (
     InputDefinition,
     OutputDefinition,
     RepositoryDefinition,
+    ResourceDefinition,
     SolidDefinition,
     check,
     lambda_solid,
@@ -449,9 +450,57 @@ def define_context_config_pipeline():
                 context_fn=lambda *args, **kwargs: None,
                 config_field=Field(types.Int),
             ),
+            'context_with_resources': PipelineContextDefinition(
+                resources={
+                    'resource_one': ResourceDefinition(
+                        resource_fn=lambda *args, **kwargs: None,
+                        config_field=Field(types.Int),
+                    ),
+                    'resource_two': ResourceDefinition(
+                        resource_fn=lambda *args, **kwargs: None,
+                    ),
+                }
+            )
         }
     )
 
+RESOURCE_QUERY = '''
+{
+  pipeline(name: "context_config_pipeline") {
+    contexts {
+      name
+      resources {
+        name
+        description
+        config {
+          type {
+            name
+            ... on CompositeType {
+              fields {
+                name
+                type {
+                  name
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+'''
+def test_context_fetch_resources():
+    result = execute_dagster_graphql(
+        define_context(),
+        RESOURCE_QUERY,
+    )
+
+
+    assert not result.errors
+    assert result.data
+    assert result.data['pipeline']
+    assert result.data['pipeline']['contexts']
 
 def test_context_config_works():
     result = execute_config_graphql(
