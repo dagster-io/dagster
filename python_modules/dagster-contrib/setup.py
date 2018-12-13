@@ -45,8 +45,8 @@ setup(
         ]
     ),
     install_requires=[
-        'dagster==0.2.8.post0',
-        'dagstermill==0.2.8.post0',
+        'dagster',
+        'dagstermill',
     ],
     extras_require={
         'pandas': [
