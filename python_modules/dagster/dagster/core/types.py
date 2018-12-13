@@ -64,12 +64,28 @@ class DagsterType(object):
         return isinstance(self, _DagsterListType)
 
     @property
+    def is_selector(self):
+        return isinstance(self, DagsterSelectorType)
+
+    @property
     def is_nullable(self):
         return isinstance(self, _DagsterNullableType)
 
     @property
     def is_dict(self):
         return isinstance(self, _Dict)
+
+    @property
+    def is_scalar(self):
+        return isinstance(self, DagsterScalarType)
+
+    @property
+    def is_composite(self):
+        return isinstance(self, DagsterCompositeType)
+
+    @property
+    def is_any(self):
+        return isinstance(self, _DagsterAnyType)
 
     def __repr__(self):
         return 'DagsterType({name})'.format(name=self.name)
