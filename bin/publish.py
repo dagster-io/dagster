@@ -9,7 +9,7 @@ import packaging.version
 from itertools import groupby
 
 PUBLISH_COMMAND = '''rm -rf dist/ && {additional_steps}\\
-python3 setup.py sdist bdist-wheel && \\
+python setup.py sdist bdist_wheel && \\
 twine upload dist/*
 '''
 
@@ -46,27 +46,38 @@ def pushd_module(module_name):
 
 def publish_dagster():
     with pushd_module('dagster') as cwd:
-        subprocess.run(
-            PUBLISH_COMMAND.format(additional_steps=''), cwd=cwd, shell=True)
+        subprocess.check_output(
+            PUBLISH_COMMAND.format(additional_steps=''),
+            stderr=subprocess.STDOUT,
+            cwd=cwd,
+            shell=True)
 
 
 def publish_dagit():
     with pushd_module('dagit') as cwd:
-        subprocess.run(
+        subprocess.check_output(
             PUBLISH_COMMAND.format(additional_steps=DAGIT_ADDITIONAL_STEPS),
+            stderr=subprocess.STDOUT,
             cwd=cwd,
             shell=True)
 
 
 def publish_dagstermill():
     with pushd_module('dagstermill') as cwd:
-        subprocess.run(PUBLISH_COMMAND.format(additional_steps=''), cwd=cwd)
+        subprocess.check_output(
+            PUBLISH_COMMAND.format(additional_steps=''),
+            stderr=subprocess.STDOUT,
+            cwd=cwd,
+            shell=True)
 
 
 def publish_all():
-    publish_dagster()
-    publish_dagit()
-    publish_dagstermill()
+    try:
+        publish_dagster()
+        publish_dagit()
+        publish_dagstermill()
+    except subprocess.CalledProcessError as exc_info:
+        raise Exception(str(exc_info.output))
 
 
 def get_git_tag():
@@ -197,11 +208,11 @@ def check_new_version(version):
                 versions=format_module_versions(module_versions)))
     errors = {}
     for module_name, module_version in module_versions.items():
-        if packaging.version.parse(module_version) > parsed_version:
+        if packaging.version.parse(module_version) >= parsed_version:
             errors[module_name] = module_version
     if errors:
         raise Exception(
-            'Found modules with existing versions greater than the new version '
+            'Found modules with existing versions greater than or equal to the new version '
             '{version}:\n{versions}'.format(
                 version=version,
                 versions=format_module_versions(module_versions)))
