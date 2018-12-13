@@ -2,6 +2,7 @@ import contextlib
 import os
 import re
 import subprocess
+import sys
 
 import click
 import packaging.version
@@ -46,38 +47,44 @@ def pushd_module(module_name):
 
 def publish_dagster():
     with pushd_module('dagster') as cwd:
-        subprocess.check_output(
+        process = subprocess.Popen(
             PUBLISH_COMMAND.format(additional_steps=''),
-            stderr=subprocess.STDOUT,
+            stderr=subprocess.PIPE,
             cwd=cwd,
-            shell=True)
+            shell=True,
+            stdout=subprocess.PIPE)
+        for line in iter(process.stdout.readline, b''):
+            sys.stdout.write(line)
 
 
 def publish_dagit():
     with pushd_module('dagit') as cwd:
-        subprocess.check_output(
+        process = subprocess.Popen(
             PUBLISH_COMMAND.format(additional_steps=DAGIT_ADDITIONAL_STEPS),
-            stderr=subprocess.STDOUT,
+            stderr=subprocess.PIPE,
             cwd=cwd,
-            shell=True)
+            shell=True,
+            stdout=subprocess.PIPE)
+        for line in iter(process.stdout.readline, b''):
+            sys.stdout.write(line)
 
 
 def publish_dagstermill():
     with pushd_module('dagstermill') as cwd:
-        subprocess.check_output(
+        process = subprocess.Popen(
             PUBLISH_COMMAND.format(additional_steps=''),
-            stderr=subprocess.STDOUT,
+            stderr=subprocess.PIPE,
             cwd=cwd,
-            shell=True)
+            shell=True,
+            stdout=subprocess.PIPE)
+        for line in iter(process.stdout.readline, b''):
+            sys.stdout.write(line)
 
 
 def publish_all():
-    try:
-        publish_dagster()
-        publish_dagit()
-        publish_dagstermill()
-    except subprocess.CalledProcessError as exc_info:
-        raise Exception(str(exc_info.output))
+    publish_dagster()
+    publish_dagit()
+    publish_dagstermill()
 
 
 def get_most_recent_git_tag():
