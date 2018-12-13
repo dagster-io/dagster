@@ -8,10 +8,10 @@ from dagster import (
     execute_pipeline,
 )
 
-import dagster.sqlalchemy.common
+import dagster_contrib.sqlalchemy.common
 from dagster.utils import script_relative_path
 
-from dagster.sqlalchemy.subquery_builder_experimental import sql_file_solid
+from dagster_contrib.sqlalchemy.subquery_builder_experimental import sql_file_solid
 
 
 def in_mem_engine():
@@ -20,7 +20,7 @@ def in_mem_engine():
 
 
 def in_mem_context_params():
-    return dagster.sqlalchemy.common.create_sql_alchemy_context_params_from_engine(
+    return dagster_contrib.sqlalchemy.common.create_sql_alchemy_context_params_from_engine(
         engine=in_mem_engine(),
     )
 
@@ -32,7 +32,7 @@ def pipeline_engine(pipeline_result):
 def create_persisted_context():
     full_path = script_relative_path('testdb.db')
     engine = sa.create_engine('sqlite:///{full_path}'.format(full_path=full_path), echo=False)
-    return dagster.sqlalchemy.common.create_sql_alchemy_context_params_from_engine(engine=engine)
+    return dagster_contrib.sqlalchemy.common.create_sql_alchemy_context_params_from_engine(engine=engine)
 
 
 def create_mem_sql_pipeline_context_tuple(solids, dependencies=None):

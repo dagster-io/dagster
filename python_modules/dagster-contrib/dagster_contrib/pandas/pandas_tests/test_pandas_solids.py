@@ -17,7 +17,7 @@ from dagster.core.execution import (
     execute_pipeline,
 )
 
-import dagster.pandas as dagster_pd
+import dagster_contrib.pandas as dagster_pd
 
 from dagster.core.test_utils import single_output_transform
 

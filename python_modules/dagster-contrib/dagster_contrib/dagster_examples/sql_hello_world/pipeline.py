@@ -5,7 +5,7 @@ from dagster import (
     PipelineDefinition,
 )
 
-from dagster.sqlalchemy.subquery_builder_experimental import (
+from dagster_contrib.sqlalchemy.subquery_builder_experimental import (
     create_sql_solid,
     create_table_expression_input,
 )

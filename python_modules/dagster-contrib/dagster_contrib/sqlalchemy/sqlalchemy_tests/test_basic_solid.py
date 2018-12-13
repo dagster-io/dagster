@@ -11,7 +11,7 @@ from dagster import (
 
 from dagster.core.utility_solids import define_stub_solid
 
-from dagster.sqlalchemy.subquery_builder_experimental import (
+from dagster_contrib.sqlalchemy.subquery_builder_experimental import (
     create_sql_solid,
     DagsterSqlTableExpression,
     define_create_table_solid,

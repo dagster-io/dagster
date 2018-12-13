@@ -19,7 +19,7 @@ from dagster import (
     lambda_solid,
     types,
 )
-import dagster.pandas as dagster_pd
+import dagster_contrib.pandas as dagster_pd
 
 from dagit.schema import create_schema
 from dagit.app import RepositoryContainer

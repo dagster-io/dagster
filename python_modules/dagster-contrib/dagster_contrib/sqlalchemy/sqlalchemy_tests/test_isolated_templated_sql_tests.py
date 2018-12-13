@@ -5,7 +5,7 @@ from dagster import (
     execute_pipeline,
 )
 
-from dagster.sqlalchemy.templated import (
+from dagster_contrib.sqlalchemy.templated import (
     _render_template_string,
     create_templated_sql_transform_solid,
 )
