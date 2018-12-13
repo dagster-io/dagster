@@ -173,11 +173,13 @@ def define_test_type_pipeline():
             ),
             define_solid_for_test_type(
                 'nested_dict',
-                types.Dict({
-                    'nested': types.Field(types.Dict({
-                        'int_field': types.Field(types.Int),
-                    }))
-                }),
+                types.Dict(
+                    {
+                        'nested': types.Field(types.Dict({
+                            'int_field': types.Field(types.Int),
+                        }))
+                    }
+                ),
             ),
         ],
     )
