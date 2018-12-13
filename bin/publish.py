@@ -46,7 +46,8 @@ def pushd_module(module_name):
 
 def publish_dagster():
     with pushd_module('dagster') as cwd:
-        subprocess.run(PUBLISH_COMMAND.format(additional_steps=''), cwd=cwd, shell=True)
+        subprocess.run(
+            PUBLISH_COMMAND.format(additional_steps=''), cwd=cwd, shell=True)
 
 
 def publish_dagit():
@@ -103,6 +104,13 @@ def set_git_tag(tag, signed=False):
                 'Bailing: cannot sign tag. You may find '
                 'https://stackoverflow.com/q/39494631/324449 helpful. Original error '
                 'output:\n{output}'.format(output=str(exc_info.output)))
+
+        match = re.search('fatal: tag \'(?P<tag>[\.a-z0-9]+)\' already exists',
+                          str(exc_info.output))
+        if match:
+            raise Exception(
+                'Bailing: cannot release version tag {tag}: already exists'.
+                format(tag=match.group('tag')))
         raise Exception(str(exc_info.output))
 
 
@@ -162,7 +170,8 @@ def commit_new_version(version):
             subprocess.check_output(
                 [
                     'git', 'add',
-                    os.path.join(path_to_module(module_name), module_name, 'version.py')
+                    os.path.join(
+                        path_to_module(module_name), module_name, 'version.py')
                 ],
                 stderr=subprocess.STDOUT)
         subprocess.check_output(
@@ -173,8 +182,7 @@ def commit_new_version(version):
                 '-m',
                 '\'{version}\''.format(version=version),
             ],
-            stderr=subprocess.STDOUT
-        )
+            stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as exc_info:
         raise Exception(exc_info.output)
 
