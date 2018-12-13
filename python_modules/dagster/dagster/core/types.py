@@ -406,6 +406,7 @@ class DagsterCompositeTypeBase(DagsterType):
 
     @property
     def inner_types(self):
+        yield self
         for field_type in self.field_dict.values():
             for inner_type in field_type.dagster_type.inner_types:
                 yield inner_type
@@ -467,7 +468,7 @@ class _DagsterNullableType(DagsterType):
 
     @property
     def inner_types(self):
-        return self.inner_type.inner_types
+        return [self] + list(self.inner_type.inner_types)
 
 
 def List(inner_type):
@@ -491,7 +492,7 @@ class _DagsterListType(DagsterType):
 
     @property
     def inner_types(self):
-        return self.inner_type.inner_types
+        return [self] + list(self.inner_type.inner_types)
 
     def iterate_types(self):
         yield self.inner_type
@@ -537,7 +538,7 @@ class _Dict(DagsterCompositeType):
             name,
             fields,
             'A configuration dictionary with typed fields',
-            type_attributes=DagsterTypeAttributes(is_named=True, is_builtin=True),
+            type_attributes=DagsterTypeAttributes(is_named=False, is_builtin=True),
         )
 
     def coerce_runtime_value(self, value):
