@@ -328,6 +328,8 @@ jobs:
 
   dagster-contrib-py36: &dagster-contrib-template
     <<: *dagster-template
+    docker:
+      - image: dagster/cci-test:3.6
     environment:
       TOXENV: py36
 
@@ -360,13 +362,13 @@ jobs:
   dagster-contrib-py35:
     <<: *dagster-contrib-template
     docker:
-      - image: circleci/python:3.5.6
+      - image: dagster/cci-test:3.5
     environment:
       TOXENV: py27
 
   dagster-contrib-py27:
     <<: *dagster-contrib-template
     docker:
-      - image: circleci/python:2.7.15
+      - image: dagster/cci-test:2.7
     environment:
       TOXENV: py27
