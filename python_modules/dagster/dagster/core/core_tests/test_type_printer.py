@@ -9,18 +9,22 @@ from dagster.core.type_printer import print_type_to_string
 
 def test_basic_type_print():
     assert print_type_to_string(types.Int) == 'Int'
+    assert types.Int.inner_types == [types.Int]
 
 
 def test_basic_list_type_print():
     assert print_type_to_string(types.List(types.Int)) == '[Int]'
+    assert types.List(types.Int).inner_types == [types.Int]
 
 
 def test_double_list_type_print():
     assert print_type_to_string(types.List(types.List(types.Int))) == '[[Int]]'
+    assert types.List(types.List(types.Int)).inner_types == [types.Int]
 
 
 def test_basic_nullable_type_print():
     assert print_type_to_string(types.Nullable(types.Int)) == 'Int?'
+    assert types.Nullable(types.Int).inner_types == [types.Int]
 
 
 def test_nullable_list_combos():
@@ -45,14 +49,17 @@ def test_basic_dict():
 
 
 def test_two_field_dicts():
-    output = print_type_to_string(
-        types.Dict(
-            {
-                'int_field': types.Field(types.Int),
-                'string_field': types.Field(types.String),
-            }
-        )
+    two_field_dict = types.Dict(
+        {
+            'int_field': types.Field(types.Int),
+            'string_field': types.Field(types.String),
+        }
     )
+    inners = two_field_dict.inner_types
+    assert types.Int in inners
+    assert types.String in inners
+
+    output = print_type_to_string(two_field_dict)
 
     expected = '''{
   int_field: Int
@@ -101,13 +108,14 @@ def test_single_level_dict_lists_and_nullable():
 
 
 def test_nested_dict():
-    output = print_type_to_string(
-        types.Dict({
-            'nested': types.Field(types.Dict({
-                'int_field': types.Field(types.Int),
-            }))
-        })
-    )
+    nested_type = types.Dict({
+        'nested': types.Field(types.Dict({
+            'int_field': types.Field(types.Int),
+        }))
+    })
+    output = print_type_to_string(nested_type)
+
+    assert list(nested_type.inner_types) == [types.Int]
 
     expected = '''{
   nested: {

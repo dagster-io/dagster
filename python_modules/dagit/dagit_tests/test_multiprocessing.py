@@ -1,4 +1,5 @@
 import os
+import pytest
 import time
 import gevent
 from dagster import (
@@ -25,6 +26,7 @@ from dagit.pipeline_execution_manager import MultiprocessingExecutionManager
 from dagit.pipeline_run_storage import PipelineRun, PipelineRunStatus
 
 
+@pytest.mark.skip
 def test_running():
     run_id = 'run-1'
     pipeline = define_passing_pipeline()
@@ -49,6 +51,7 @@ def test_running():
     assert len(pipeline_run.all_logs()) > 0
 
 
+@pytest.mark.skip
 def test_failing():
     run_id = 'run-1'
     pipeline = define_failing_pipeline()
@@ -73,6 +76,7 @@ def test_failing():
     assert len(pipeline_run.all_logs()) > 0
 
 
+@pytest.mark.skip
 def test_execution_crash():
     run_id = 'run-1'
     pipeline = define_crashy_pipeline()
