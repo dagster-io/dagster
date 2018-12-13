@@ -30,13 +30,13 @@ setup(
     long_description=long_description(),
     long_description_content_type='text/markdown',
     url='https://github.com/dagster-io/dagster',
-    classifiers=(
+    classifiers=[
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'License :: OSI Approved :: Apache Software License',
         'Operating System :: OS Independent',
-    ),
+    ],
     packages=find_packages(
         exclude=[
             'dagster_examples/dagster_examples_tests',

@@ -15,11 +15,11 @@ setup(
     license='Apache-2.0',
     description='Great Expectations plugin for Dagster',
     url='https://github.com/dagster-io/dagster',
-    classifiers=(
+    classifiers=[
         'Programming Language :: Python :: 3.7',
         'License :: OSI Approved :: Apache Software License',
         'Operating System :: OS Independent',
-    ),
+    ],
     packages=find_packages(exclude=['dagster_tests']),
     install_requires=[
         # standard python 2/3 compatability things
