@@ -132,6 +132,8 @@ def define_solid_for_test_type(name, dagster_type):
     )
 
 
+# launch in dagit with this command:
+# dagit -f test_type_printer.py -n define_test_type_pipeline
 def define_test_type_pipeline():
     return PipelineDefinition(
         name='test_type_pipeline',
