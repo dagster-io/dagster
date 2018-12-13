@@ -1,6 +1,6 @@
 import sqlalchemy as sa
 
-from dagster.sqlalchemy.common import (
+from dagster_contrib.sqlalchemy.common import (
     DefaultSqlAlchemyResources,
     SqlAlchemyResource,
     check_supports_sql_alchemy_resource,

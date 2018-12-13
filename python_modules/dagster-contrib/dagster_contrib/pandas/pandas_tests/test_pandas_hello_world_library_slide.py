@@ -14,7 +14,7 @@ from dagster.core.test_utils import single_output_transform
 from dagster.utils import script_relative_path
 from dagster.utils.test import get_temp_file_name
 
-import dagster.pandas as dagster_pd
+import dagster_contrib.pandas as dagster_pd
 
 
 def create_num_csv_environment():

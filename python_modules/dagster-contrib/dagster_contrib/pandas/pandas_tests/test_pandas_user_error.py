@@ -15,7 +15,7 @@ from dagster import (
     lambda_solid,
 )
 
-import dagster.pandas as dagster_pd
+import dagster_contrib.pandas as dagster_pd
 
 from dagster.core.utility_solids import define_stub_solid
 

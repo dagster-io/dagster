@@ -9,7 +9,7 @@ from dagster.cli.pipeline import (
     print_pipeline,
 )
 
-from dagster.dagster_examples.pandas_hello_world.pipeline import (
+from dagster_contrib.dagster_examples.pandas_hello_world.pipeline import (
     define_success_pipeline,
     define_failure_pipeline,
 )

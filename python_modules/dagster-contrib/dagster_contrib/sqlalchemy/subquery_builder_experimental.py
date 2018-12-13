@@ -11,7 +11,7 @@ from dagster import (
 
 from dagster.core.test_utils import single_output_transform
 
-from dagster.sqlalchemy import execute_sql_text_on_context
+from dagster_contrib.sqlalchemy import execute_sql_text_on_context
 
 
 class DagsterSqlExpression(object):
