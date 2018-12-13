@@ -10,7 +10,7 @@ from itertools import groupby
 
 PUBLISH_COMMAND = '''rm -rf dist/ && {additional_steps}\\
 python setup.py sdist bdist_wheel && \\
-twine upload dist/*
+twine upload -u {pypi_username} -p {pypi_password} dist/*
 '''
 
 DAGIT_ADDITIONAL_STEPS = '''pushd ./dagit/webapp; \\
@@ -44,40 +44,62 @@ def pushd_module(module_name):
         os.chdir(old_cwd)
 
 
-def publish_dagster():
+def publish_dagster(pypi_username, pypi_password):
     with pushd_module('dagster') as cwd:
         subprocess.check_output(
-            PUBLISH_COMMAND.format(additional_steps=''),
+            PUBLISH_COMMAND.format(
+                additional_steps='',
+                pypi_username=pypi_username,
+                pypi_password=pypi_password,
+            ),
             stderr=subprocess.STDOUT,
             cwd=cwd,
             shell=True)
 
 
-def publish_dagit():
+def publish_dagit(pypi_username, pypi_password):
     with pushd_module('dagit') as cwd:
         subprocess.check_output(
-            PUBLISH_COMMAND.format(additional_steps=DAGIT_ADDITIONAL_STEPS),
+            PUBLISH_COMMAND.format(
+                additional_steps=DAGIT_ADDITIONAL_STEPS,
+                pypi_username=pypi_username,
+                pypi_password=pypi_password,
+            ),
             stderr=subprocess.STDOUT,
             cwd=cwd,
             shell=True)
 
 
-def publish_dagstermill():
+def publish_dagstermill(pypi_username, pypi_password):
     with pushd_module('dagstermill') as cwd:
         subprocess.check_output(
-            PUBLISH_COMMAND.format(additional_steps=''),
+            PUBLISH_COMMAND.format(
+                additional_steps='',
+                pypi_username=pypi_username,
+                pypi_password=pypi_password),
             stderr=subprocess.STDOUT,
             cwd=cwd,
             shell=True)
 
 
-def publish_all():
+def publish_all(pypi_username, pypi_password):
     try:
-        publish_dagster()
-        publish_dagit()
-        publish_dagstermill()
+        publish_dagster(pypi_username, pypi_password)
+        publish_dagit(pypi_username, pypi_password)
+        publish_dagstermill(pypi_username, pypi_password)
     except subprocess.CalledProcessError as exc_info:
         raise Exception(str(exc_info.output))
+
+
+def get_most_recent_git_tag():
+    try:
+        git_tag = str(
+            subprocess.check_output(
+                ['git', 'describe', '--abbrev=0'],
+                stderr=subprocess.STDOUT)).strip('\'b\\n')
+    except subprocess.CalledProcessError as exc_info:
+        raise Exception(str(exc_info.output))
+    return git_tag
 
 
 def get_git_tag():
@@ -225,13 +247,15 @@ def cli():
 
 
 @cli.command()
-def publish():
+@click.argument('pypi_username')
+@click.argument('pypi_password')
+def publish(pypi_username, pypi_password):
     print(
         'Checking that module versions are in lockstep and match git tag on most recent commit...'
     )
     check_versions()
     print('Publishing packages to PyPI...')
-    publish_all()
+    publish_all(pypi_username, pypi_password)
 
 
 @cli.command()
@@ -241,6 +265,11 @@ def release(version):
     set_new_version(version)
     commit_new_version(version)
     set_git_tag(version)
+
+
+@cli.command()
+def version():
+    print(get_most_recent_git_tag())
 
 
 cli = click.CommandCollection(sources=[cli])
