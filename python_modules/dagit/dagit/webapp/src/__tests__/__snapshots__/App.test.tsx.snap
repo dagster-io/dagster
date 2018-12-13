@@ -1501,23 +1501,6 @@ Array [
                   >
                     context_one
                   </h4>
-                  <div
-                    className="sc-jTzLTM FbleH"
-                    onClick={[Function]}
-                    style={
-                      Object {
-                        "maxHeight": 320,
-                      }
-                    }
-                  >
-                    <div>
-                      <div>
-                        <p>
-                          No description provided.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
                   <div>
                     <a
                       href="/?typeExplorer=String"
@@ -1539,23 +1522,6 @@ Array [
                   >
                     context_two
                   </h4>
-                  <div
-                    className="sc-jTzLTM FbleH"
-                    onClick={[Function]}
-                    style={
-                      Object {
-                        "maxHeight": 320,
-                      }
-                    }
-                  >
-                    <div>
-                      <div>
-                        <p>
-                          No description provided.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
                   <div>
                     <a
                       href="/?typeExplorer=Int"
@@ -1577,23 +1543,6 @@ Array [
                   >
                     context_with_resources
                   </h4>
-                  <div
-                    className="sc-jTzLTM FbleH"
-                    onClick={[Function]}
-                    style={
-                      Object {
-                        "maxHeight": 320,
-                      }
-                    }
-                  >
-                    <div>
-                      <div>
-                        <p>
-                          No description provided.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
                   <div>
                     <a
                       href="/?typeExplorer=Any"
@@ -1635,23 +1584,6 @@ Array [
                       >
                         resource_one
                       </h4>
-                      <div
-                        className="sc-jTzLTM FbleH"
-                        onClick={[Function]}
-                        style={
-                          Object {
-                            "maxHeight": 320,
-                          }
-                        }
-                      >
-                        <div>
-                          <div>
-                            <p>
-                              No description provided.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
                       <div>
                         <a
                           href="/?typeExplorer=Int"
@@ -1695,23 +1627,6 @@ Array [
                       >
                         resource_two
                       </h4>
-                      <div
-                        className="sc-jTzLTM FbleH"
-                        onClick={[Function]}
-                        style={
-                          Object {
-                            "maxHeight": 320,
-                          }
-                        }
-                      >
-                        <div>
-                          <div>
-                            <p>
-                              No description provided.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -2416,23 +2331,6 @@ Array [
                   >
                     context_one
                   </h4>
-                  <div
-                    className="sc-jTzLTM FbleH"
-                    onClick={[Function]}
-                    style={
-                      Object {
-                        "maxHeight": 320,
-                      }
-                    }
-                  >
-                    <div>
-                      <div>
-                        <p>
-                          No description provided.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
                   <div>
                     <a
                       href="/?typeExplorer=String"
@@ -2454,23 +2352,6 @@ Array [
                   >
                     context_two
                   </h4>
-                  <div
-                    className="sc-jTzLTM FbleH"
-                    onClick={[Function]}
-                    style={
-                      Object {
-                        "maxHeight": 320,
-                      }
-                    }
-                  >
-                    <div>
-                      <div>
-                        <p>
-                          No description provided.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
                   <div>
                     <a
                       href="/?typeExplorer=Int"
@@ -2492,23 +2373,6 @@ Array [
                   >
                     context_with_resources
                   </h4>
-                  <div
-                    className="sc-jTzLTM FbleH"
-                    onClick={[Function]}
-                    style={
-                      Object {
-                        "maxHeight": 320,
-                      }
-                    }
-                  >
-                    <div>
-                      <div>
-                        <p>
-                          No description provided.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
                   <div>
                     <a
                       href="/?typeExplorer=Any"
@@ -2550,23 +2414,6 @@ Array [
                       >
                         resource_one
                       </h4>
-                      <div
-                        className="sc-jTzLTM FbleH"
-                        onClick={[Function]}
-                        style={
-                          Object {
-                            "maxHeight": 320,
-                          }
-                        }
-                      >
-                        <div>
-                          <div>
-                            <p>
-                              No description provided.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
                       <div>
                         <a
                           href="/?typeExplorer=Int"
@@ -2610,23 +2457,6 @@ Array [
                       >
                         resource_two
                       </h4>
-                      <div
-                        className="sc-jTzLTM FbleH"
-                        onClick={[Function]}
-                        style={
-                          Object {
-                            "maxHeight": 320,
-                          }
-                        }
-                      >
-                        <div>
-                          <div>
-                            <p>
-                              No description provided.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
                     </div>
                   </div>
                 </div>
