@@ -10,22 +10,26 @@ class IndentingPrinter(object):
         self.indent_level = check.int_param(indent_level, 'indent_level')
         self.printer = check.callable_param(printer, 'printer')
 
-        self.building_line = ''
+        self._line_so_far = ''
 
     def append(self, text):
         check.str_param(text, 'text')
-        self.building_line += text
+        self._line_so_far += text
 
     def line(self, text):
         check.str_param(text, 'text')
-        self.printer(self.current_indent_str + self.building_line + text)
-        self.building_line = ''
+        self.printer(self.current_indent_str + self._line_so_far + text)
+        self._line_so_far = ''
 
     @property
     def current_indent_str(self):
         return ' ' * self.current_indent
 
     def blank_line(self):
+        check.invariant(
+            not self._line_so_far,
+            'Cannot throw away appended strings by calling blank_line',
+        )
         self.printer('')
 
     def increase_indent(self):

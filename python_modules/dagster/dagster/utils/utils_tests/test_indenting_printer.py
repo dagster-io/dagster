@@ -1,5 +1,6 @@
 import pytest
 
+from dagster.check import CheckError
 from dagster.utils.indenting_printer import IndentingPrinter
 
 
@@ -77,3 +78,35 @@ def test_double_indent():
     assert printer.result() == '''test
   test indent
     test double indent'''
+
+
+def test_append():
+    printer = create_printer()
+    printer.append('a')
+    printer.line('')
+
+    assert printer.result() == 'a'
+
+
+def test_double_append():
+    printer = create_printer()
+    printer.append('a')
+    printer.append('a')
+    printer.line('')
+
+    assert printer.result() == 'aa'
+
+
+def test_append_plus_line():
+    printer = create_printer()
+    printer.append('a')
+    printer.line('b')
+
+    assert printer.result() == 'ab'
+
+
+def test_blank_line_error():
+    with pytest.raises(CheckError):
+        printer = create_printer()
+        printer.append('a')
+        printer.blank_line()
