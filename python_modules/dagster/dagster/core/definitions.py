@@ -69,6 +69,7 @@ class ResourceDefinition(object):
         self.config_field = check.opt_inst_param(config_field, 'config_field', Field)
         self.description = check.opt_str_param(description, 'description')
 
+
 class PipelineContextDefinition(object):
     '''Pipelines declare the different context types they support, in the form
     of PipelineContextDefinitions. For example a pipeline could declare a context

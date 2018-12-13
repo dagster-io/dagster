@@ -26,8 +26,8 @@ def test_pipelines():
                 'local': {
                     'resources': {
                         # duplication not the best
-                        'db_info' : {
-                            'config' : {
+                        'db_info': {
+                            'config': {
                                 'postgres_username': 'test',
                                 'postgres_password': 'test',
                                 'postgres_hostname': 'localhost',
@@ -140,8 +140,8 @@ def test_pipelines():
             'context': {
                 'local': {
                     'resources': {
-                        'db_info' : {
-                            'config' : {
+                        'db_info': {
+                            'config': {
                                 'postgres_username': 'test',
                                 'postgres_password': 'test',
                                 'postgres_hostname': '127.0.0.1',
@@ -297,13 +297,12 @@ def test_pipelines():
     assert result_ingest.success
 
     result_warehouse = execute_pipeline(
-        define_airline_demo_warehouse_pipeline(),
-        {
+        define_airline_demo_warehouse_pipeline(), {
             'context': {
                 'local': {
                     'resources': {
-                        'db_info' : {
-                            'config' : {
+                        'db_info': {
+                            'config': {
                                 'postgres_username': 'test',
                                 'postgres_password': 'test',
                                 'postgres_hostname': '127.0.0.1',
