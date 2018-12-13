@@ -21,9 +21,8 @@ interface IConfigCodeEditorContainerProps {
   onConfigChange: (newValue: string) => void;
 }
 
-export default class ConfigCodeEditorContainer extends React.Component<
-  IConfigCodeEditorContainerProps,
-  {}
+export default class ConfigCodeEditorContainer extends React.PureComponent<
+  IConfigCodeEditorContainerProps
 > {
   render() {
     return (

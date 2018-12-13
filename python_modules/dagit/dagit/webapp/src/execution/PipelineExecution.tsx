@@ -66,6 +66,10 @@ export default class PipelineExecution extends React.Component<
     editorVW: 50
   };
 
+  onConfigChange = (config: any) => {
+    this.props.onSaveSession(this.props.currentSession.key, config);
+  };
+
   render() {
     return (
       <PipelineExecutionWrapper>
@@ -94,9 +98,7 @@ export default class PipelineExecution extends React.Component<
             pipelineName={this.props.pipeline.name}
             environmentTypeName={this.props.pipeline.environmentType.name}
             configCode={this.props.currentSession.config}
-            onConfigChange={config =>
-              this.props.onSaveSession(this.props.currentSession.key, config)
-            }
+            onConfigChange={this.onConfigChange}
           />
           <IconWrapper
             role="button"

@@ -124,7 +124,7 @@ export class PipelineRun extends React.Component<
         <Dialog
           icon="info-sign"
           onClose={() => this.setState({ highlightedError: undefined })}
-          style={{ width: "80vw", maxWidth: 900 }}
+          style={{ width: "80vw", maxWidth: 1400 }}
           title={"Error"}
           usePortal={true}
           isOpen={!!highlightedError}
