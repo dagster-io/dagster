@@ -40,7 +40,14 @@ export default class TypeWithTooltip extends React.Component<
     //    }
     // }
     // for anonymous dicts
-    if (this.props.type.typeAttributes.isNamed) {
+
+    // HACK HACK HACK
+    // Until the types are printed out using a nice definition
+    // language (like the one above) we are going to hide
+    // anonymous dict names from the UI
+    if (this.props.type.name.startsWith("Dict_")) {
+      return <TypeName>dict</TypeName>;
+    } else if (this.props.type.typeAttributes.isNamed) {
       return (
         <Link
           to={{
