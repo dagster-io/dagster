@@ -2,7 +2,7 @@ from __future__ import absolute_import
 import json
 from dagit import app
 from dagit.pipeline_run_storage import PipelineRunStorage
-from dagster.dagster_examples.repository import define_example_repository
+from dagster_contrib.dagster_examples.repository import define_example_repository
 
 
 def test_smoke_app():

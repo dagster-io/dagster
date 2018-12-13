@@ -1,6 +1,6 @@
 from dagster import RepositoryDefinition
 
-from dagster.dagster_examples.tutorials import (
+from dagster_contrib.dagster_examples.tutorials import (
     test_intro_tutorial_part_one,
     test_intro_tutorial_part_two,
     test_intro_tutorial_part_three,
@@ -13,19 +13,19 @@ from dagster.dagster_examples.tutorials import (
     test_intro_tutorial_part_fourteen,
 )
 
-from dagster.dagster_examples.tutorials.test_intro_tutorial_part_six import (
+from dagster_contrib.dagster_examples.tutorials.test_intro_tutorial_part_six import (
     test_intro_tutorial_part_six
 )
 
-from dagster.dagster_examples.tutorials.test_intro_tutorial_part_seven import (
+from dagster_contrib.dagster_examples.tutorials.test_intro_tutorial_part_seven import (
     test_intro_tutorial_part_seven
 )
 
-from dagster.dagster_examples.tutorials.test_intro_tutorial_part_eight import (
+from dagster_contrib.dagster_examples.tutorials.test_intro_tutorial_part_eight import (
     test_intro_tutorial_part_eight
 )
 
-from dagster.dagster_examples.tutorials.test_intro_tutorial_part_nine import (
+from dagster_contrib.dagster_examples.tutorials.test_intro_tutorial_part_nine import (
     test_intro_tutorial_part_nine
 )
 
