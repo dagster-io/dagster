@@ -80,14 +80,6 @@ jobs:
             cd python_modules/dagster
             tox -e $TOXENV
 
-      - store_artifacts:
-          path: test-reports
-          destination: test-reports
-
-      - store_artifacts:
-          path: python_modules/dagster/.coverage
-          destination: .coverage
-
       - run:
           command: mv python_modules/dagster/.coverage python_modules/dagster/.coverage.dagster.${CIRCLE_BUILD_NUM}
 
@@ -111,14 +103,6 @@ jobs:
           command: |
             cd python_modules/dagit
             tox -e $TOXENV
-
-      - store_artifacts:
-          path: test-reports
-          destination: test-reports
-
-      - store_artifacts:
-          path: python_modules/dagit/.coverage
-          destination: .coverage
 
       - run:
           command: mv python_modules/dagit/.coverage python_modules/dagit/.coverage.dagit.${CIRCLE_BUILD_NUM}
@@ -188,10 +172,6 @@ jobs:
             cd python_modules/dagit/dagit/webapp
             yarn run check-prettier
 
-      - store_artifacts:
-          path: test-reports
-          destination: test-reports
-
   dagstermill-py36: &dagstermill-template
     <<: *dagster-template
     steps:
@@ -207,10 +187,6 @@ jobs:
           command: |
             cd python_modules/dagstermill
             tox -e $TOXENV
-
-      - store_artifacts:
-          path: test-reports
-          destination: test-reports
 
       - run:
           command: mv python_modules/dagstermill/.coverage python_modules/dagstermill/.coverage.dagstermill.${CIRCLE_BUILD_NUM}
@@ -262,10 +238,6 @@ jobs:
           command: |
             cd python_modules/airline-demo
             tox -e $TOXENV
-
-      - store_artifacts:
-          path: test-reports
-          destination: test-reports
 
       - run:
           command: mv python_modules/airline-demo/.coverage python_modules/airline-demo/.coverage.airline-demo.${CIRCLE_BUILD_NUM}
@@ -346,10 +318,6 @@ jobs:
           command: |
             cd python_modules/dagster-contrib
             tox -e $TOXENV
-
-      - store_artifacts:
-          path: test-reports
-          destination: test-reports
 
       - run:
           command: mv python_modules/dagster-contrib/.coverage python_modules/dagster-contrib/.coverage.airline-demo.${CIRCLE_BUILD_NUM}
