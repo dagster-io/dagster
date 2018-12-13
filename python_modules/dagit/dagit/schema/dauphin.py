@@ -129,6 +129,9 @@ class DauphinSchema(graphene.Schema):
             typeRegistry=self._typeRegistry
         )
 
+    def type_named(self, name):
+        return getattr(self, name)
+
 
 class DauphinTypeMap(GrapheneTypeMap):
     def __init__(self, types, typeRegistry=None, **kwargs):

@@ -40,7 +40,7 @@ class DauphinPipeline(dauphin.ObjectType):
 
     def resolve_solids(self, info):
         return [
-            info.schema.Solid(
+            info.schema.type_named('Solid')(
                 solid,
                 self._pipeline.dependency_structure.deps_of_solid_with_input(solid.name),
                 self._pipeline.dependency_structure.depended_by_of_solid(solid.name),
@@ -49,17 +49,19 @@ class DauphinPipeline(dauphin.ObjectType):
 
     def resolve_contexts(self, info):
         return [
-            info.schema.PipelineContext(name=name, context=context)
+            info.schema.type_named('PipelineContext')(name=name, context=context)
             for name, context in self._pipeline.context_definitions.items()
         ]
 
     def resolve_environment_type(self, info):
-        return info.schema.Type.from_dagster_type(info, self._pipeline.environment_type)
+        return info.schema.type_named('Type').from_dagster_type(
+            info, self._pipeline.environment_type
+        )
 
     def resolve_types(self, info):
         return sorted(
             [
-                info.schema.Type.from_dagster_type(info, type_)
+                info.schema.type_named('Type').from_dagster_type(info, type_)
                 for type_ in self._pipeline.all_types()
             ],
             key=lambda type_: type_.name
@@ -67,7 +69,7 @@ class DauphinPipeline(dauphin.ObjectType):
 
     def resolve_runs(self, info):
         return [
-            info.schema.PipelineRun(r)
+            info.schema.type_named('PipelineRun')(r)
             for r in info.context.pipeline_runs.all_runs_for_pipeline(self._pipeline.name)
         ]
 
@@ -75,7 +77,9 @@ class DauphinPipeline(dauphin.ObjectType):
         return self._pipeline
 
     def get_type(self, info, typeName):
-        return info.schema.Type.from_dagster_type(info, self._pipeline.type_named(typeName))
+        return info.schema.type_named('Type').from_dagster_type(
+            info, self._pipeline.type_named(typeName)
+        )
 
 
 class DauphinPipelineConnection(dauphin.ObjectType):
@@ -99,7 +103,7 @@ class DauphinResource(dauphin.ObjectType):
     config = dauphin.Field('Config')
 
     def resolve_config(self, info):
-        return info.schema.Config(
+        return info.schema.type_named('Config')(
             self._resource.config_field
         ) if self._resource.config_field else None
 
@@ -118,7 +122,7 @@ class DauphinPipelineContext(dauphin.ObjectType):
         self._context = check.inst_param(context, 'context', PipelineContextDefinition)
 
     def resolve_config(self, info):
-        return info.schema.Config(
+        return info.schema.type_named('Config')(
             self._context.config_field
         ) if self._context.config_field else None
 
@@ -157,16 +161,17 @@ class DauphinSolid(dauphin.ObjectType):
             self.depended_by = {}
 
     def resolve_definition(self, info):
-        return info.schema.SolidDefinition(self._solid.definition)
+        return info.schema.type_named('SolidDefinition')(self._solid.definition)
 
     def resolve_inputs(self, info):
         return [
-            info.schema.Input(input_handle, self) for input_handle in self._solid.input_handles()
+            info.schema.type_named('Input')(input_handle, self)
+            for input_handle in self._solid.input_handles()
         ]
 
     def resolve_outputs(self, info):
         return [
-            info.schema.Output(output_handle, self)
+            info.schema.type_named('Output')(output_handle, self)
             for output_handle in self._solid.output_handles()
         ]
 
@@ -185,15 +190,15 @@ class DauphinInput(dauphin.ObjectType):
         self._input_handle = check.inst_param(input_handle, 'input_handle', SolidInputHandle)
 
     def resolve_definition(self, info):
-        return info.schema.InputDefinition(
+        return info.schema.type_named('InputDefinition')(
             self._input_handle.input_def, self._solid.resolve_definition(info)
         )
 
     def resolve_depends_on(self, info):
         if self._input_handle in self._solid.depends_on:
-            return info.schema.Output(
+            return info.schema.type_named('Output')(
                 self._solid.depends_on[self._input_handle],
-                info.schema.Solid(self._solid.depends_on[self._input_handle].solid),
+                info.schema.type_named('Solid')(self._solid.depends_on[self._input_handle].solid),
             )
         else:
             return None
@@ -213,13 +218,13 @@ class DauphinOutput(dauphin.ObjectType):
         self._output_handle = check.inst_param(output_handle, 'output_handle', SolidOutputHandle)
 
     def resolve_definition(self, info):
-        return info.schema.OutputDefinition(
+        return info.schema.type_named('OutputDefinition')(
             self._output_handle.output_def, self._solid.resolve_definition(info)
         )
 
     def resolve_depended_by(self, info):
         return [
-            info.schema.Input(
+            info.schema.type_named('Input')(
                 input_handle,
                 DauphinSolid(input_handle.solid),
             ) for input_handle in self._solid.depended_by.get(self._output_handle, [])
@@ -257,24 +262,24 @@ class DauphinSolidDefinition(dauphin.ObjectType):
 
     def resolve_metadata(self, info):
         return [
-            info.schema.SolidMetadataItemDefinition(key=item[0], value=item[1])
+            info.schema.type_named('SolidMetadataItemDefinition')(key=item[0], value=item[1])
             for item in self._solid_def.metadata.items()
         ]
 
     def resolve_input_definitions(self, info):
         return [
-            info.schema.InputDefinition(input_definition, self)
+            info.schema.type_named('InputDefinition')(input_definition, self)
             for input_definition in self._solid_def.input_defs
         ]
 
     def resolve_output_definitions(self, info):
         return [
-            info.schema.OutputDefinition(output_definition, self)
+            info.schema.type_named('OutputDefinition')(output_definition, self)
             for output_definition in self._solid_def.output_defs
         ]
 
     def resolve_config_definition(self, info):
-        return info.schema.Config(
+        return info.schema.type_named('Config')(
             self._solid_def.config_field
         ) if self._solid_def.config_field else None
 
@@ -304,7 +309,7 @@ class DauphinInputDefinition(dauphin.ObjectType):
         )
 
     def resolve_type(self, info):
-        return info.schema.Type.from_dagster_type(
+        return info.schema.type_named('Type').from_dagster_type(
             info,
             dagster_type=self._input_definition.dagster_type,
         )
@@ -312,7 +317,7 @@ class DauphinInputDefinition(dauphin.ObjectType):
     def resolve_expectations(self, info):
         if self._input_definition.expectations:
             return [
-                info.schema.Expectation(
+                info.schema.type_named('Expectation')(
                     expectation for expectation in self._input_definition.expectations
                 )
             ]
@@ -345,7 +350,7 @@ class DauphinOutputDefinition(dauphin.ObjectType):
         )
 
     def resolve_type(self, info):
-        return info.schema.Type.from_dagster_type(
+        return info.schema.type_named('Type').from_dagster_type(
             info,
             dagster_type=self._output_definition.dagster_type,
         )
@@ -353,7 +358,7 @@ class DauphinOutputDefinition(dauphin.ObjectType):
     def resolve_expectations(self, info):
         if self._output_definition.expectations:
             return [
-                info.schema.Expectation(expectation)
+                info.schema.type_named('Expectation')(expectation)
                 for expectation in self._output_definition.expectations
             ]
         else:
@@ -386,7 +391,7 @@ class DauphinConfig(dauphin.ObjectType):
         self._config_field = check.opt_inst_param(config_field, 'config_field', Field)
 
     def resolve_type(self, info):
-        return info.schema.Type.from_dagster_type(
+        return info.schema.type_named('Type').from_dagster_type(
             info,
             dagster_type=self._config_field.dagster_type,
         )
@@ -426,9 +431,9 @@ class DauphinType(dauphin.Interface):
     @classmethod
     def from_dagster_type(cls, info, dagster_type):
         if isinstance(dagster_type, DagsterCompositeTypeBase):
-            return info.schema.CompositeType(dagster_type)
+            return info.schema.type_named('CompositeType')(dagster_type)
         else:
-            return info.schema.RegularType(dagster_type)
+            return info.schema.type_named('RegularType')(dagster_type)
 
 
 class DauphinRegularType(dauphin.ObjectType):
@@ -466,11 +471,12 @@ class DauphinCompositeType(dauphin.ObjectType):
         self._dagster_type = dagster_type
 
     def resolve_type_attributes(self, info):
-        return info.schema.TypeAttributes(*self._dagster_type.type_attributes)
+        return info.schema.type_named('TypeAttributes')(*self._dagster_type.type_attributes)
 
     def resolve_fields(self, info):
         return [
-            info.schema.TypeField(name=k, field=v) for k, v in self._dagster_type.field_dict.items()
+            info.schema.type_named('TypeField')(name=k, field=v)
+            for k, v in self._dagster_type.field_dict.items()
         ]
 
 
@@ -494,4 +500,6 @@ class DauphinTypeField(dauphin.ObjectType):
         self._field = field
 
     def resolve_type(self, info):
-        return info.schema.Type.from_dagster_type(info, dagster_type=self._field.dagster_type)
+        return info.schema.type_named('Type').from_dagster_type(
+            info, dagster_type=self._field.dagster_type
+        )

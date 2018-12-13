@@ -38,7 +38,7 @@ class ExecutionStepOutput(dauphin.ObjectType):
         return self.execution_step_output.name
 
     def resolve_type(self, info):
-        return info.schema.Type.from_dagster_type(
+        return info.schema.type_named('Type').from_dagster_type(
             info, dagster_type=self.execution_step_output.dagster_type
         )
 
@@ -60,12 +60,14 @@ class ExecutionStepInput(dauphin.ObjectType):
         return self.execution_step_input.name
 
     def resolve_type(self, info):
-        return info.schema.Type.from_dagster_type(
+        return info.schema.type_named('Type').from_dagster_type(
             info, dagster_type=self.execution_step_input.dagster_type
         )
 
     def resolve_dependsOn(self, info):
-        return info.schema.ExecutionStep(self.execution_step_input.prev_output_handle.step)
+        return info.schema.type_named('ExecutionStep')(
+            self.execution_step_input.prev_output_handle.step
+        )
 
 
 class StepTag(dauphin.Enum):
@@ -113,16 +115,22 @@ class ExecutionStep(dauphin.ObjectType):
         )
 
     def resolve_inputs(self, info):
-        return [info.schema.ExecutionStepInput(inp) for inp in self.execution_step.step_inputs]
+        return [
+            info.schema.type_named('ExecutionStepInput')(inp)
+            for inp in self.execution_step.step_inputs
+        ]
 
     def resolve_outputs(self, info):
-        return [info.schema.ExecutionStepOutput(out) for out in self.execution_step.step_outputs]
+        return [
+            info.schema.type_named('ExecutionStepOutput')(out)
+            for out in self.execution_step.step_outputs
+        ]
 
     def resolve_name(self, _info):
         return self.execution_step.key
 
     def resolve_solid(self, info):
-        return info.schema.Solid(self.execution_step.solid)
+        return info.schema.type_named('Solid')(self.execution_step.solid)
 
     def resolve_tag(self, _info):
         return self.execution_step.tag
