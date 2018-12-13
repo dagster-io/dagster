@@ -80,6 +80,17 @@ def publish_all():
         raise Exception(str(exc_info.output))
 
 
+def get_most_recent_git_tag():
+    try:
+        git_tag = str(
+            subprocess.check_output(
+                ['git', 'describe', '--abbrev=0'],
+                stderr=subprocess.STDOUT)).strip('\'b\\n')
+    except subprocess.CalledProcessError as exc_info:
+        raise Exception(str(exc_info.output))
+    return git_tag
+
+
 def get_git_tag():
     try:
         git_tag = str(
@@ -241,6 +252,11 @@ def release(version):
     set_new_version(version)
     commit_new_version(version)
     set_git_tag(version)
+
+
+@cli.command()
+def version():
+    print(get_most_recent_git_tag())
 
 
 cli = click.CommandCollection(sources=[cli])
