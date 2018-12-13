@@ -425,10 +425,6 @@ class SolidAliasMapper:
         self.alias_lookup = alias_lookup
 
     def get_uses_of_solid(self, solid_def_name):
-        # For the case when solids are passed, but no dependency structure.
-        if not self.aliased_dependencies_dict:
-            return set([solid_def_name])
-
         return self.solid_uses.get(solid_def_name)
 
 
@@ -439,13 +435,17 @@ def _create_execution_structure(name, solids, dependencies_dict):
     for solid_def in solids:
         if isinstance(solid_def, SolidDefinition):
             uses_of_solid = mapper.get_uses_of_solid(solid_def.name)
-
             if uses_of_solid is None:
-                raise DagsterInvalidDefinitionError(
-                    'Solid {name} is passed to list of pipeline solids, but is not used'.format(
-                        name=solid_def.name
+                if not solid_def.input_defs:
+                    uses_of_solid = set([solid_def.name])
+                else:
+                    raise DagsterInvalidDefinitionError(
+                        'Solid {name} is passed to list of pipeline solids, but is not used in '
+                        'pipeline. You must define its dependencies: [{inputs}]'.format(
+                            name=solid_def.name,
+                            inputs=', '.join([input.name for input in solid_def.input_defs])
+                        )
                     )
-                )
 
             check.inst(uses_of_solid, set, 'must be a set')
 
@@ -537,9 +537,10 @@ def _validate_dependency_structure(name, pipeline_solid_dict, dependency_structu
         solid = pipeline_solid.definition
         for input_def in solid.input_defs:
             if not dependency_structure.has_dep(pipeline_solid.input_handle(input_def.name)):
+
                 error_msg = (
                     'Dependency must be specified for solid ' +
-                    '{pipeline_name} input {input_name}'.format(
+                    '{pipeline_name} input {input_name}.'.format(
                         pipeline_name=pipeline_solid.name,
                         input_name=input_def.name,
                     )
@@ -649,6 +650,8 @@ class PipelineDefinition(object):
         '''
         self.name = check.opt_str_param(name, 'name', '<<unnamed>>')
         self.description = check.opt_str_param(description, 'description')
+
+        check.list_param(solids, 'solids')
 
         if context_definitions is None:
             context_definitions = _default_pipeline_context_definitions()
@@ -1084,14 +1087,14 @@ class SolidDefinition(object):
 
     Attributes:
         name (str): Name of the solid.
-        inputs (List[InputDefiniton]): Inputs of the solid.
+        input_defs (List[InputDefinition]): Inputs of the solid.
         transform_fn (callable):
             Callable with the signature
             (
                 info: TransformExecutionInfo,
                 inputs: Dict[str, Any],
             ) : Iterable<Result>
-        outputs (List[OutputDefinition]): Outputs of the solid.
+        outputs_defs (List[OutputDefinition]): Outputs of the solid.
         config_field (Field): How the solid configured.
         description (str): Description of the solid.
         metadata (dict):
