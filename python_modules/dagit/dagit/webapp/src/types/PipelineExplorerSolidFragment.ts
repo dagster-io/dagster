@@ -168,7 +168,7 @@ export interface PipelineExplorerSolidFragment_outputs_dependedBy {
 
 export interface PipelineExplorerSolidFragment_outputs {
   definition: PipelineExplorerSolidFragment_outputs_definition;
-  dependedBy: PipelineExplorerSolidFragment_outputs_dependedBy[] | null;
+  dependedBy: PipelineExplorerSolidFragment_outputs_dependedBy[];
 }
 
 export interface PipelineExplorerSolidFragment {

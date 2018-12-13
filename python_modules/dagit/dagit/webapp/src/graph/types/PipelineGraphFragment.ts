@@ -77,7 +77,7 @@ export interface PipelineGraphFragment_solids_outputs_dependedBy {
 
 export interface PipelineGraphFragment_solids_outputs {
   definition: PipelineGraphFragment_solids_outputs_definition;
-  dependedBy: PipelineGraphFragment_solids_outputs_dependedBy[] | null;
+  dependedBy: PipelineGraphFragment_solids_outputs_dependedBy[];
 }
 
 export interface PipelineGraphFragment_solids {

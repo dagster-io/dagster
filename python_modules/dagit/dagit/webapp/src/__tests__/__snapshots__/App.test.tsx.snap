@@ -24,7 +24,7 @@ Array [
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-kgAjT dTZgov"
+        className="sc-ksYbfQ kaNxdA"
       >
         <span
           className="bp3-popover-wrapper"
@@ -75,11 +75,11 @@ Array [
           className="bp3-navbar-divider"
         />
         <div
-          className="sc-cJSrbW fYeVqB"
+          className="sc-hmzhuo dzQqPE"
         >
           <a
             active={true}
-            className="sc-ksYbfQ iSPLnI"
+            className="sc-frDJqD dkbWAJ"
             href="/pandas_hello_world/explore"
             onClick={[Function]}
           >
@@ -87,7 +87,7 @@ Array [
           </a>
           <a
             active={false}
-            className="sc-ksYbfQ hyvFcW"
+            className="sc-frDJqD bvtyYR"
             href="/pandas_hello_world/execute"
             onClick={[Function]}
           >
@@ -98,10 +98,10 @@ Array [
     </div>
   </div>,
   <div
-    className="sc-iAyFgw lhwbnK"
+    className="sc-eHgmQL dLRdVG"
   >
     <div
-      className="sc-hSdWYo dwmAyQ"
+      className="sc-cvbbAY dkSgrE"
       style={
         Object {
           "width": "70vw",
@@ -109,7 +109,7 @@ Array [
       }
     >
       <div
-        className="sc-cvbbAY bYGLnY"
+        className="sc-brqgnP iVNXMb"
       >
         <span
           className="bp3-popover-wrapper"
@@ -157,7 +157,7 @@ Array [
           </span>
         </span>
         <input
-          className="sc-jWBwVP jSfFIj"
+          className="sc-cMljjf iIbiTQ"
           onChange={[Function]}
           placeholder="Filter..."
           type="text"
@@ -492,7 +492,7 @@ Array [
       />
     </div>
     <div
-      className="sc-eHgmQL eWMuka"
+      className="sc-jWBwVP cLtmFh"
       style={
         Object {
           "width": "30vw",
@@ -500,14 +500,14 @@ Array [
       }
     >
       <div
-        className="sc-kEYyzF irhYSA"
+        className="sc-iAyFgw dFsoKZ"
       >
         <a
           href="/pandas_hello_world/load_num_csv"
           onClick={[Function]}
         >
           <div
-            className="sc-kkGfuU drbMDC"
+            className="sc-hSdWYo gssGwv"
           >
             <span
               className="bp3-icon bp3-icon-diagram-tree"
@@ -541,7 +541,7 @@ Array [
           onClick={[Function]}
         >
           <div
-            className="sc-kkGfuU bAlMGR"
+            className="sc-hSdWYo bnvNcy"
           >
             <span
               className="bp3-icon bp3-icon-manual"
@@ -745,7 +745,7 @@ Array [
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-kgAjT dTZgov"
+        className="sc-ksYbfQ kaNxdA"
       >
         <span
           className="bp3-popover-wrapper"
@@ -834,7 +834,7 @@ Array [
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-kgAjT dTZgov"
+        className="sc-ksYbfQ kaNxdA"
       >
         <span
           className="bp3-popover-wrapper"
@@ -885,11 +885,11 @@ Array [
           className="bp3-navbar-divider"
         />
         <div
-          className="sc-cJSrbW fYeVqB"
+          className="sc-hmzhuo dzQqPE"
         >
           <a
             active={true}
-            className="sc-ksYbfQ iSPLnI"
+            className="sc-frDJqD dkbWAJ"
             href="/pandas_hello_world/explore"
             onClick={[Function]}
           >
@@ -897,7 +897,7 @@ Array [
           </a>
           <a
             active={false}
-            className="sc-ksYbfQ hyvFcW"
+            className="sc-frDJqD bvtyYR"
             href="/pandas_hello_world/execute"
             onClick={[Function]}
           >
@@ -908,10 +908,10 @@ Array [
     </div>
   </div>,
   <div
-    className="sc-iAyFgw lhwbnK"
+    className="sc-eHgmQL dLRdVG"
   >
     <div
-      className="sc-hSdWYo dwmAyQ"
+      className="sc-cvbbAY dkSgrE"
       style={
         Object {
           "width": "70vw",
@@ -919,7 +919,7 @@ Array [
       }
     >
       <div
-        className="sc-cvbbAY bYGLnY"
+        className="sc-brqgnP iVNXMb"
       >
         <span
           className="bp3-popover-wrapper"
@@ -967,7 +967,7 @@ Array [
           </span>
         </span>
         <input
-          className="sc-jWBwVP jSfFIj"
+          className="sc-cMljjf iIbiTQ"
           onChange={[Function]}
           placeholder="Filter..."
           type="text"
@@ -1302,7 +1302,7 @@ Array [
       />
     </div>
     <div
-      className="sc-eHgmQL eWMuka"
+      className="sc-jWBwVP cLtmFh"
       style={
         Object {
           "width": "30vw",
@@ -1310,14 +1310,14 @@ Array [
       }
     >
       <div
-        className="sc-kEYyzF irhYSA"
+        className="sc-iAyFgw dFsoKZ"
       >
         <a
           href="/pandas_hello_world"
           onClick={[Function]}
         >
           <div
-            className="sc-kkGfuU bAlMGR"
+            className="sc-hSdWYo bnvNcy"
           >
             <span
               className="bp3-icon bp3-icon-diagram-tree"
@@ -1351,7 +1351,7 @@ Array [
           onClick={[Function]}
         >
           <div
-            className="sc-kkGfuU drbMDC"
+            className="sc-hSdWYo gssGwv"
           >
             <span
               className="bp3-icon bp3-icon-manual"
@@ -1494,42 +1494,225 @@ Array [
                 className="sc-dxgOiQ dPbrCh"
               >
                 <div
-                  className="sc-kGXeez fDgYil"
+                  className="sc-eNQAEJ hDxftZ sc-kGXeez fDgYil"
                 >
                   <h4
                     className="sc-chPdSV jUtMzA"
                   >
-                    default
+                    context_one
                   </h4>
+                  <div
+                    className="sc-jTzLTM FbleH"
+                    onClick={[Function]}
+                    style={
+                      Object {
+                        "maxHeight": 320,
+                      }
+                    }
+                  >
+                    <div>
+                      <div>
+                        <p>
+                          No description provided.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                   <div>
-                    <code
-                      className="sc-VigVT iLoJBN"
+                    <a
+                      href="/?typeExplorer=String"
+                      onClick={[Function]}
                     >
-                      Dict
-                    </code>
-                    <ul
-                      className="bp3-list"
+                      <code
+                        className="sc-VigVT iLoJBN"
+                      >
+                        String
+                      </code>
+                    </a>
+                  </div>
+                </div>
+                <div
+                  className="sc-eNQAEJ hDxftZ sc-kGXeez fDgYil"
+                >
+                  <h4
+                    className="sc-chPdSV jUtMzA"
+                  >
+                    context_two
+                  </h4>
+                  <div
+                    className="sc-jTzLTM FbleH"
+                    onClick={[Function]}
+                    style={
+                      Object {
+                        "maxHeight": 320,
+                      }
+                    }
+                  >
+                    <div>
+                      <div>
+                        <p>
+                          No description provided.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <a
+                      href="/?typeExplorer=Int"
+                      onClick={[Function]}
                     >
-                      <li>
-                        log_level
-                         
-                        (optional)
-                         
+                      <code
+                        className="sc-VigVT iLoJBN"
+                      >
+                        Int
+                      </code>
+                    </a>
+                  </div>
+                </div>
+                <div
+                  className="sc-eNQAEJ hDxftZ sc-kGXeez fDgYil"
+                >
+                  <h4
+                    className="sc-chPdSV jUtMzA"
+                  >
+                    context_with_resources
+                  </h4>
+                  <div
+                    className="sc-jTzLTM FbleH"
+                    onClick={[Function]}
+                    style={
+                      Object {
+                        "maxHeight": 320,
+                      }
+                    }
+                  >
+                    <div>
+                      <div>
+                        <p>
+                          No description provided.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <a
+                      href="/?typeExplorer=Any"
+                      onClick={[Function]}
+                    >
+                      <code
+                        className="sc-VigVT iLoJBN"
+                      >
+                        Any
+                      </code>
+                    </a>
+                  </div>
+                  <div
+                    className="sc-hMqMXs gFDGMi"
+                  >
+                    <span
+                      className="bp3-icon bp3-icon-layers"
+                      icon="layers"
+                    >
+                      <svg
+                        data-icon="layers"
+                        fill="#202B33"
+                        height={16}
+                        viewBox="0 0 16 16"
+                        width={16}
+                      >
+                        <desc>
+                          layers
+                        </desc>
+                        <path
+                          d="M.55 4.89l7 3.5c.14.07.29.11.45.11s.31-.04.45-.11l7-3.5a.998.998 0 0 0-.06-1.81L8.4.08a1.006 1.006 0 0 0-.79 0l-6.99 3a.992.992 0 0 0-.07 1.81zM15 10c-.16 0-.31.04-.45.11L8 13.38 1.45 10.1c-.14-.06-.29-.1-.45-.1-.55 0-1 .45-1 1 0 .39.23.73.55.89l7 3.5c.14.07.29.11.45.11s.31-.04.45-.11l7-3.5c.32-.16.55-.5.55-.89 0-.55-.45-1-1-1zm0-3.5c-.16 0-.31.04-.45.11L8 9.88 1.45 6.61A.997.997 0 0 0 1 6.5c-.55 0-1 .45-1 1 0 .39.23.73.55.89l7 3.5c.14.07.29.11.45.11s.31-.04.45-.11l7-3.5c.32-.16.55-.5.55-.89 0-.55-.45-1-1-1z"
+                          fillRule="evenodd"
+                        />
+                      </svg>
+                    </span>
+                    <div>
+                      <h4
+                        className="sc-chPdSV jUtMzA"
+                      >
+                        resource_one
+                      </h4>
+                      <div
+                        className="sc-jTzLTM FbleH"
+                        onClick={[Function]}
+                        style={
+                          Object {
+                            "maxHeight": 320,
+                          }
+                        }
+                      >
+                        <div>
+                          <div>
+                            <p>
+                              No description provided.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      <div>
                         <a
-                          href="/?typeExplorer=String"
+                          href="/?typeExplorer=Int"
                           onClick={[Function]}
                         >
                           <code
                             className="sc-VigVT iLoJBN"
                           >
-                            String
+                            Int
                           </code>
                         </a>
-                        <div
-                          className="sc-jKJlTe iiDqBu"
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    className="sc-hMqMXs gFDGMi"
+                  >
+                    <span
+                      className="bp3-icon bp3-icon-layers"
+                      icon="layers"
+                    >
+                      <svg
+                        data-icon="layers"
+                        fill="#202B33"
+                        height={16}
+                        viewBox="0 0 16 16"
+                        width={16}
+                      >
+                        <desc>
+                          layers
+                        </desc>
+                        <path
+                          d="M.55 4.89l7 3.5c.14.07.29.11.45.11s.31-.04.45-.11l7-3.5a.998.998 0 0 0-.06-1.81L8.4.08a1.006 1.006 0 0 0-.79 0l-6.99 3a.992.992 0 0 0-.07 1.81zM15 10c-.16 0-.31.04-.45.11L8 13.38 1.45 10.1c-.14-.06-.29-.1-.45-.1-.55 0-1 .45-1 1 0 .39.23.73.55.89l7 3.5c.14.07.29.11.45.11s.31-.04.45-.11l7-3.5c.32-.16.55-.5.55-.89 0-.55-.45-1-1-1zm0-3.5c-.16 0-.31.04-.45.11L8 9.88 1.45 6.61A.997.997 0 0 0 1 6.5c-.55 0-1 .45-1 1 0 .39.23.73.55.89l7 3.5c.14.07.29.11.45.11s.31-.04.45-.11l7-3.5c.32-.16.55-.5.55-.89 0-.55-.45-1-1-1z"
+                          fillRule="evenodd"
                         />
-                      </li>
-                    </ul>
+                      </svg>
+                    </span>
+                    <div>
+                      <h4
+                        className="sc-chPdSV jUtMzA"
+                      >
+                        resource_two
+                      </h4>
+                      <div
+                        className="sc-jTzLTM FbleH"
+                        onClick={[Function]}
+                        style={
+                          Object {
+                            "maxHeight": 320,
+                          }
+                        }
+                      >
+                        <div>
+                          <div>
+                            <p>
+                              No description provided.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1566,7 +1749,7 @@ Array [
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-kgAjT dTZgov"
+        className="sc-ksYbfQ kaNxdA"
       >
         <span
           className="bp3-popover-wrapper"
@@ -1617,11 +1800,11 @@ Array [
           className="bp3-navbar-divider"
         />
         <div
-          className="sc-cJSrbW fYeVqB"
+          className="sc-hmzhuo dzQqPE"
         >
           <a
             active={true}
-            className="sc-ksYbfQ iSPLnI"
+            className="sc-frDJqD dkbWAJ"
             href="/pandas_hello_world/explore"
             onClick={[Function]}
           >
@@ -1629,7 +1812,7 @@ Array [
           </a>
           <a
             active={false}
-            className="sc-ksYbfQ hyvFcW"
+            className="sc-frDJqD bvtyYR"
             href="/pandas_hello_world/execute"
             onClick={[Function]}
           >
@@ -1640,10 +1823,10 @@ Array [
     </div>
   </div>,
   <div
-    className="sc-iAyFgw lhwbnK"
+    className="sc-eHgmQL dLRdVG"
   >
     <div
-      className="sc-hSdWYo dwmAyQ"
+      className="sc-cvbbAY dkSgrE"
       style={
         Object {
           "width": "70vw",
@@ -1651,7 +1834,7 @@ Array [
       }
     >
       <div
-        className="sc-cvbbAY bYGLnY"
+        className="sc-brqgnP iVNXMb"
       >
         <span
           className="bp3-popover-wrapper"
@@ -1699,7 +1882,7 @@ Array [
           </span>
         </span>
         <input
-          className="sc-jWBwVP jSfFIj"
+          className="sc-cMljjf iIbiTQ"
           onChange={[Function]}
           placeholder="Filter..."
           type="text"
@@ -2034,7 +2217,7 @@ Array [
       />
     </div>
     <div
-      className="sc-eHgmQL eWMuka"
+      className="sc-jWBwVP cLtmFh"
       style={
         Object {
           "width": "30vw",
@@ -2042,14 +2225,14 @@ Array [
       }
     >
       <div
-        className="sc-kEYyzF irhYSA"
+        className="sc-iAyFgw dFsoKZ"
       >
         <a
           href="/pandas_hello_world/load_num_csv"
           onClick={[Function]}
         >
           <div
-            className="sc-kkGfuU bAlMGR"
+            className="sc-hSdWYo bnvNcy"
           >
             <span
               className="bp3-icon bp3-icon-diagram-tree"
@@ -2083,7 +2266,7 @@ Array [
           onClick={[Function]}
         >
           <div
-            className="sc-kkGfuU drbMDC"
+            className="sc-hSdWYo gssGwv"
           >
             <span
               className="bp3-icon bp3-icon-manual"
@@ -2226,42 +2409,225 @@ Array [
                 className="sc-dxgOiQ dPbrCh"
               >
                 <div
-                  className="sc-kGXeez fDgYil"
+                  className="sc-eNQAEJ hDxftZ sc-kGXeez fDgYil"
                 >
                   <h4
                     className="sc-chPdSV jUtMzA"
                   >
-                    default
+                    context_one
                   </h4>
+                  <div
+                    className="sc-jTzLTM FbleH"
+                    onClick={[Function]}
+                    style={
+                      Object {
+                        "maxHeight": 320,
+                      }
+                    }
+                  >
+                    <div>
+                      <div>
+                        <p>
+                          No description provided.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                   <div>
-                    <code
-                      className="sc-VigVT iLoJBN"
+                    <a
+                      href="/?typeExplorer=String"
+                      onClick={[Function]}
                     >
-                      Dict
-                    </code>
-                    <ul
-                      className="bp3-list"
+                      <code
+                        className="sc-VigVT iLoJBN"
+                      >
+                        String
+                      </code>
+                    </a>
+                  </div>
+                </div>
+                <div
+                  className="sc-eNQAEJ hDxftZ sc-kGXeez fDgYil"
+                >
+                  <h4
+                    className="sc-chPdSV jUtMzA"
+                  >
+                    context_two
+                  </h4>
+                  <div
+                    className="sc-jTzLTM FbleH"
+                    onClick={[Function]}
+                    style={
+                      Object {
+                        "maxHeight": 320,
+                      }
+                    }
+                  >
+                    <div>
+                      <div>
+                        <p>
+                          No description provided.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <a
+                      href="/?typeExplorer=Int"
+                      onClick={[Function]}
                     >
-                      <li>
-                        log_level
-                         
-                        (optional)
-                         
+                      <code
+                        className="sc-VigVT iLoJBN"
+                      >
+                        Int
+                      </code>
+                    </a>
+                  </div>
+                </div>
+                <div
+                  className="sc-eNQAEJ hDxftZ sc-kGXeez fDgYil"
+                >
+                  <h4
+                    className="sc-chPdSV jUtMzA"
+                  >
+                    context_with_resources
+                  </h4>
+                  <div
+                    className="sc-jTzLTM FbleH"
+                    onClick={[Function]}
+                    style={
+                      Object {
+                        "maxHeight": 320,
+                      }
+                    }
+                  >
+                    <div>
+                      <div>
+                        <p>
+                          No description provided.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <a
+                      href="/?typeExplorer=Any"
+                      onClick={[Function]}
+                    >
+                      <code
+                        className="sc-VigVT iLoJBN"
+                      >
+                        Any
+                      </code>
+                    </a>
+                  </div>
+                  <div
+                    className="sc-hMqMXs gFDGMi"
+                  >
+                    <span
+                      className="bp3-icon bp3-icon-layers"
+                      icon="layers"
+                    >
+                      <svg
+                        data-icon="layers"
+                        fill="#202B33"
+                        height={16}
+                        viewBox="0 0 16 16"
+                        width={16}
+                      >
+                        <desc>
+                          layers
+                        </desc>
+                        <path
+                          d="M.55 4.89l7 3.5c.14.07.29.11.45.11s.31-.04.45-.11l7-3.5a.998.998 0 0 0-.06-1.81L8.4.08a1.006 1.006 0 0 0-.79 0l-6.99 3a.992.992 0 0 0-.07 1.81zM15 10c-.16 0-.31.04-.45.11L8 13.38 1.45 10.1c-.14-.06-.29-.1-.45-.1-.55 0-1 .45-1 1 0 .39.23.73.55.89l7 3.5c.14.07.29.11.45.11s.31-.04.45-.11l7-3.5c.32-.16.55-.5.55-.89 0-.55-.45-1-1-1zm0-3.5c-.16 0-.31.04-.45.11L8 9.88 1.45 6.61A.997.997 0 0 0 1 6.5c-.55 0-1 .45-1 1 0 .39.23.73.55.89l7 3.5c.14.07.29.11.45.11s.31-.04.45-.11l7-3.5c.32-.16.55-.5.55-.89 0-.55-.45-1-1-1z"
+                          fillRule="evenodd"
+                        />
+                      </svg>
+                    </span>
+                    <div>
+                      <h4
+                        className="sc-chPdSV jUtMzA"
+                      >
+                        resource_one
+                      </h4>
+                      <div
+                        className="sc-jTzLTM FbleH"
+                        onClick={[Function]}
+                        style={
+                          Object {
+                            "maxHeight": 320,
+                          }
+                        }
+                      >
+                        <div>
+                          <div>
+                            <p>
+                              No description provided.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      <div>
                         <a
-                          href="/?typeExplorer=String"
+                          href="/?typeExplorer=Int"
                           onClick={[Function]}
                         >
                           <code
                             className="sc-VigVT iLoJBN"
                           >
-                            String
+                            Int
                           </code>
                         </a>
-                        <div
-                          className="sc-jKJlTe iiDqBu"
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    className="sc-hMqMXs gFDGMi"
+                  >
+                    <span
+                      className="bp3-icon bp3-icon-layers"
+                      icon="layers"
+                    >
+                      <svg
+                        data-icon="layers"
+                        fill="#202B33"
+                        height={16}
+                        viewBox="0 0 16 16"
+                        width={16}
+                      >
+                        <desc>
+                          layers
+                        </desc>
+                        <path
+                          d="M.55 4.89l7 3.5c.14.07.29.11.45.11s.31-.04.45-.11l7-3.5a.998.998 0 0 0-.06-1.81L8.4.08a1.006 1.006 0 0 0-.79 0l-6.99 3a.992.992 0 0 0-.07 1.81zM15 10c-.16 0-.31.04-.45.11L8 13.38 1.45 10.1c-.14-.06-.29-.1-.45-.1-.55 0-1 .45-1 1 0 .39.23.73.55.89l7 3.5c.14.07.29.11.45.11s.31-.04.45-.11l7-3.5c.32-.16.55-.5.55-.89 0-.55-.45-1-1-1zm0-3.5c-.16 0-.31.04-.45.11L8 9.88 1.45 6.61A.997.997 0 0 0 1 6.5c-.55 0-1 .45-1 1 0 .39.23.73.55.89l7 3.5c.14.07.29.11.45.11s.31-.04.45-.11l7-3.5c.32-.16.55-.5.55-.89 0-.55-.45-1-1-1z"
+                          fillRule="evenodd"
                         />
-                      </li>
-                    </ul>
+                      </svg>
+                    </span>
+                    <div>
+                      <h4
+                        className="sc-chPdSV jUtMzA"
+                      >
+                        resource_two
+                      </h4>
+                      <div
+                        className="sc-jTzLTM FbleH"
+                        onClick={[Function]}
+                        style={
+                          Object {
+                            "maxHeight": 320,
+                          }
+                        }
+                      >
+                        <div>
+                          <div>
+                            <p>
+                              No description provided.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -2298,7 +2664,7 @@ Array [
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-kgAjT dTZgov"
+        className="sc-ksYbfQ kaNxdA"
       >
         <span
           className="bp3-popover-wrapper"
@@ -2349,11 +2715,11 @@ Array [
           className="bp3-navbar-divider"
         />
         <div
-          className="sc-cJSrbW fYeVqB"
+          className="sc-hmzhuo dzQqPE"
         >
           <a
             active={true}
-            className="sc-ksYbfQ iSPLnI"
+            className="sc-frDJqD dkbWAJ"
             href="/pandas_hello_world/explore"
             onClick={[Function]}
           >
@@ -2361,7 +2727,7 @@ Array [
           </a>
           <a
             active={false}
-            className="sc-ksYbfQ hyvFcW"
+            className="sc-frDJqD bvtyYR"
             href="/pandas_hello_world/execute"
             onClick={[Function]}
           >
@@ -2372,10 +2738,10 @@ Array [
     </div>
   </div>,
   <div
-    className="sc-iAyFgw lhwbnK"
+    className="sc-eHgmQL dLRdVG"
   >
     <div
-      className="sc-hSdWYo dwmAyQ"
+      className="sc-cvbbAY dkSgrE"
       style={
         Object {
           "width": "70vw",
@@ -2383,7 +2749,7 @@ Array [
       }
     >
       <div
-        className="sc-cvbbAY bYGLnY"
+        className="sc-brqgnP iVNXMb"
       >
         <span
           className="bp3-popover-wrapper"
@@ -2431,7 +2797,7 @@ Array [
           </span>
         </span>
         <input
-          className="sc-jWBwVP jSfFIj"
+          className="sc-cMljjf iIbiTQ"
           onChange={[Function]}
           placeholder="Filter..."
           type="text"
@@ -2766,7 +3132,7 @@ Array [
       />
     </div>
     <div
-      className="sc-eHgmQL eWMuka"
+      className="sc-jWBwVP cLtmFh"
       style={
         Object {
           "width": "30vw",
@@ -2774,14 +3140,14 @@ Array [
       }
     >
       <div
-        className="sc-kEYyzF irhYSA"
+        className="sc-iAyFgw dFsoKZ"
       >
         <a
           href="/pandas_hello_world/load_num_csv"
           onClick={[Function]}
         >
           <div
-            className="sc-kkGfuU drbMDC"
+            className="sc-hSdWYo gssGwv"
           >
             <span
               className="bp3-icon bp3-icon-diagram-tree"
@@ -2815,7 +3181,7 @@ Array [
           onClick={[Function]}
         >
           <div
-            className="sc-kkGfuU bAlMGR"
+            className="sc-hSdWYo bnvNcy"
           >
             <span
               className="bp3-icon bp3-icon-manual"
@@ -2916,6 +3282,20 @@ Array [
                       className="sc-VigVT iLoJBN"
                     >
                       PandasDataFrame
+                    </code>
+                  </a>
+                </li>
+                <li
+                  className="sc-ckVGcZ emzRpM"
+                >
+                  <a
+                    href="/?typeExplorer=PandasHelloWorld.ContextDefinitionConfig.ContextWithResources.Resources.resource_one"
+                    onClick={[Function]}
+                  >
+                    <code
+                      className="sc-VigVT iLoJBN"
+                    >
+                      PandasHelloWorld.ContextDefinitionConfig.ContextWithResources.Resources.resource_one
                     </code>
                   </a>
                 </li>
@@ -3052,7 +3432,7 @@ Array [
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-kgAjT dTZgov"
+        className="sc-ksYbfQ kaNxdA"
       >
         <span
           className="bp3-popover-wrapper"

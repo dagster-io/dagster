@@ -164,10 +164,95 @@ export interface PipelinePageFragment_PipelineConnection_nodes_contexts_config {
   type: PipelinePageFragment_PipelineConnection_nodes_contexts_config_type;
 }
 
+export interface PipelinePageFragment_PipelineConnection_nodes_contexts_resources_config_type_RegularType_typeAttributes {
+  isNamed: boolean;
+}
+
+export interface PipelinePageFragment_PipelineConnection_nodes_contexts_resources_config_type_RegularType {
+  __typename: "RegularType";
+  name: string;
+  description: string | null;
+  typeAttributes: PipelinePageFragment_PipelineConnection_nodes_contexts_resources_config_type_RegularType_typeAttributes;
+}
+
+export interface PipelinePageFragment_PipelineConnection_nodes_contexts_resources_config_type_CompositeType_fields_type_RegularType_typeAttributes {
+  isNamed: boolean;
+}
+
+export interface PipelinePageFragment_PipelineConnection_nodes_contexts_resources_config_type_CompositeType_fields_type_RegularType {
+  name: string;
+  description: string | null;
+  typeAttributes: PipelinePageFragment_PipelineConnection_nodes_contexts_resources_config_type_CompositeType_fields_type_RegularType_typeAttributes;
+}
+
+export interface PipelinePageFragment_PipelineConnection_nodes_contexts_resources_config_type_CompositeType_fields_type_CompositeType_typeAttributes {
+  isNamed: boolean;
+}
+
+export interface PipelinePageFragment_PipelineConnection_nodes_contexts_resources_config_type_CompositeType_fields_type_CompositeType_fields_type_typeAttributes {
+  isNamed: boolean;
+}
+
+export interface PipelinePageFragment_PipelineConnection_nodes_contexts_resources_config_type_CompositeType_fields_type_CompositeType_fields_type {
+  name: string;
+  description: string | null;
+  typeAttributes: PipelinePageFragment_PipelineConnection_nodes_contexts_resources_config_type_CompositeType_fields_type_CompositeType_fields_type_typeAttributes;
+}
+
+export interface PipelinePageFragment_PipelineConnection_nodes_contexts_resources_config_type_CompositeType_fields_type_CompositeType_fields {
+  name: string;
+  description: string | null;
+  isOptional: boolean;
+  defaultValue: string | null;
+  type: PipelinePageFragment_PipelineConnection_nodes_contexts_resources_config_type_CompositeType_fields_type_CompositeType_fields_type;
+}
+
+export interface PipelinePageFragment_PipelineConnection_nodes_contexts_resources_config_type_CompositeType_fields_type_CompositeType {
+  name: string;
+  description: string | null;
+  typeAttributes: PipelinePageFragment_PipelineConnection_nodes_contexts_resources_config_type_CompositeType_fields_type_CompositeType_typeAttributes;
+  fields: PipelinePageFragment_PipelineConnection_nodes_contexts_resources_config_type_CompositeType_fields_type_CompositeType_fields[];
+}
+
+export type PipelinePageFragment_PipelineConnection_nodes_contexts_resources_config_type_CompositeType_fields_type = PipelinePageFragment_PipelineConnection_nodes_contexts_resources_config_type_CompositeType_fields_type_RegularType | PipelinePageFragment_PipelineConnection_nodes_contexts_resources_config_type_CompositeType_fields_type_CompositeType;
+
+export interface PipelinePageFragment_PipelineConnection_nodes_contexts_resources_config_type_CompositeType_fields {
+  name: string;
+  description: string | null;
+  isOptional: boolean;
+  defaultValue: string | null;
+  type: PipelinePageFragment_PipelineConnection_nodes_contexts_resources_config_type_CompositeType_fields_type;
+}
+
+export interface PipelinePageFragment_PipelineConnection_nodes_contexts_resources_config_type_CompositeType_typeAttributes {
+  isNamed: boolean;
+}
+
+export interface PipelinePageFragment_PipelineConnection_nodes_contexts_resources_config_type_CompositeType {
+  __typename: "CompositeType";
+  name: string;
+  description: string | null;
+  fields: PipelinePageFragment_PipelineConnection_nodes_contexts_resources_config_type_CompositeType_fields[];
+  typeAttributes: PipelinePageFragment_PipelineConnection_nodes_contexts_resources_config_type_CompositeType_typeAttributes;
+}
+
+export type PipelinePageFragment_PipelineConnection_nodes_contexts_resources_config_type = PipelinePageFragment_PipelineConnection_nodes_contexts_resources_config_type_RegularType | PipelinePageFragment_PipelineConnection_nodes_contexts_resources_config_type_CompositeType;
+
+export interface PipelinePageFragment_PipelineConnection_nodes_contexts_resources_config {
+  type: PipelinePageFragment_PipelineConnection_nodes_contexts_resources_config_type;
+}
+
+export interface PipelinePageFragment_PipelineConnection_nodes_contexts_resources {
+  name: string;
+  description: string | null;
+  config: PipelinePageFragment_PipelineConnection_nodes_contexts_resources_config | null;
+}
+
 export interface PipelinePageFragment_PipelineConnection_nodes_contexts {
   name: string;
   description: string | null;
   config: PipelinePageFragment_PipelineConnection_nodes_contexts_config | null;
+  resources: PipelinePageFragment_PipelineConnection_nodes_contexts_resources[];
 }
 
 export interface PipelinePageFragment_PipelineConnection_nodes_solids_definition_metadata {
@@ -331,7 +416,7 @@ export interface PipelinePageFragment_PipelineConnection_nodes_solids_outputs_de
 
 export interface PipelinePageFragment_PipelineConnection_nodes_solids_outputs {
   definition: PipelinePageFragment_PipelineConnection_nodes_solids_outputs_definition;
-  dependedBy: PipelinePageFragment_PipelineConnection_nodes_solids_outputs_dependedBy[] | null;
+  dependedBy: PipelinePageFragment_PipelineConnection_nodes_solids_outputs_dependedBy[];
 }
 
 export interface PipelinePageFragment_PipelineConnection_nodes_solids {
