@@ -2,7 +2,6 @@ import contextlib
 import os
 import re
 import subprocess
-import sys
 
 import click
 import packaging.version
@@ -54,7 +53,7 @@ def publish_dagster():
             shell=True,
             stdout=subprocess.PIPE)
         for line in iter(process.stdout.readline, b''):
-            sys.stdout.write(str(line))
+            print(str(line))
 
 
 def publish_dagit():
@@ -66,7 +65,7 @@ def publish_dagit():
             shell=True,
             stdout=subprocess.PIPE)
         for line in iter(process.stdout.readline, b''):
-            sys.stdout.write(str(line))
+            print(str(line))
 
 
 def publish_dagstermill():
@@ -78,7 +77,7 @@ def publish_dagstermill():
             shell=True,
             stdout=subprocess.PIPE)
         for line in iter(process.stdout.readline, b''):
-            sys.stdout.write(str(line))
+            print(str(line))
 
 
 def publish_all():
