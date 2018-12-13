@@ -72,7 +72,7 @@ export default class PipelineRunExecutionPlan extends React.Component<
     } = this.props;
     const stepMetadata = logsToStepMetadata(logs.nodes);
     const stepsOrderedByTransitionTime = Object.keys(stepMetadata).sort(
-      (a, b) => stepMetadata[b].transitionedAt - stepMetadata[a].transitionedAt
+      (a, b) => stepMetadata[a].transitionedAt - stepMetadata[b].transitionedAt
     );
 
     return (

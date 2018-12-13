@@ -125,12 +125,13 @@ const ExecutionFinishedFlash = styled.div<{ success: boolean }>`
   background: linear-gradient(
     111deg,
     transparent 40%,
-    rgba(255, 255, 255, 0.4) 65%,
+    rgba(255, 255, 255, 0.7) 65%,
     transparent 68%
   );
   background-size: 200px;
   background-position-x: ${({ success }) => (success ? 180 : -180)}px;
   background-repeat-x: no-repeat;
+  pointer-events: none;
   transition: ${({ success }) =>
     success ? "300ms background-position-x linear" : ""};
 `;
