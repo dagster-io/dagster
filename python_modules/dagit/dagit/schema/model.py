@@ -30,8 +30,8 @@ def _get_pipelines(info):
     def process_pipelines(repository):
         pipeline_instances = []
         for pipeline_def in repository.get_all_pipelines():
-            pipeline_instances.append(info.schema.Pipeline(pipeline_def))
-        return info.schema.PipelineConnection(nodes=pipeline_instances)
+            pipeline_instances.append(info.schema.type_named('Pipeline')(pipeline_def))
+        return info.schema.type_named('PipelineConnection')(nodes=pipeline_instances)
 
     repository_or_error = _repository_or_error_from_container(
         info, info.context.repository_container
@@ -86,7 +86,7 @@ def validate_pipeline_config(info, pipelineName, config):
     def do_validation(pipeline):
         config_or_error = _config_or_error_from_pipeline(info, pipeline, config)
         return config_or_error.chain(
-            lambda config: info.schema.PipelineConfigValidationValid(pipeline)
+            lambda config: info.schema.type_named('PipelineConfigValidationValid')(pipeline)
         )
 
     pipeline_or_error = _pipeline_or_error_from_container(
@@ -101,7 +101,7 @@ def get_execution_plan(info, pipelineName, config):
 
     def create_plan(pipeline):
         config_or_error = _config_or_error_from_pipeline(info, pipeline, config)
-        return config_or_error.chain(lambda config: info.schema.ExecutionPlan(
+        return config_or_error.chain(lambda config: info.schema.type_named('ExecutionPlan')(
             pipeline,
             create_execution_plan(pipeline.get_dagster_pipeline(), config.value),
         ))
@@ -125,7 +125,9 @@ def start_pipeline_execution(info, pipelineName, config):
             info.context.execution_manager.execute_pipeline(
                 pipeline.get_dagster_pipeline(), config.value, run
             )
-            return info.schema.StartPipelineExecutionSuccess(run=info.schema.PipelineRun(run))
+            return info.schema.type_named('StartPipelineExecutionSuccess')(
+                run=info.schema.type_named('PipelineRun')(run)
+            )
 
         config_or_error = _config_or_error_from_pipeline(info, pipeline, config)
         return config_or_error.chain(start_execution)
@@ -149,7 +151,7 @@ def get_pipeline_run_observable(info, runId, after=None):
 
     def get_observable(pipeline):
         return run.observable_after_cursor(after).map(
-            lambda event: info.schema.PipelineRunEvent.from_dagster_event(info, event, pipeline)
+            lambda event: info.schema.type_named('PipelineRunEvent').from_dagster_event(info, event, pipeline)
         )
 
     return _pipeline_or_error_from_container(
@@ -162,18 +164,22 @@ def get_pipeline_run_observable(info, runId, after=None):
 def _repository_or_error_from_container(info, container):
     error = container.error
     if error != None:
-        return EitherError(info.schema.PythonError(*error))
+        return EitherError(info.schema.type_named('PythonError')(*error))
     try:
         return EitherValue(container.repository)
     except Exception:  # pylint: disable=broad-except
-        return EitherError(info.schema.PythonError(sys.exc_info()))
+        return EitherError(info.schema.type_named('PythonError')(sys.exc_info()))
 
 
 def _pipeline_or_error_from_repository(info, repository, pipeline_name):
     if not repository.has_pipeline(pipeline_name):
-        return EitherError(info.schema.PipelineNotFoundError(pipeline_name=pipeline_name))
+        return EitherError(
+            info.schema.type_named('PipelineNotFoundError')(pipeline_name=pipeline_name)
+        )
     else:
-        return EitherValue(info.schema.Pipeline(repository.get_pipeline(pipeline_name)))
+        return EitherValue(
+            info.schema.type_named('Pipeline')(repository.get_pipeline(pipeline_name))
+        )
 
 
 def _pipeline_or_error_from_container(info, container, pipeline_name):
@@ -188,11 +194,12 @@ def _config_or_error_from_pipeline(info, pipeline, config):
 
     if not config_result.success:
         return EitherError(
-            info.schema.PipelineConfigValidationInvalid(
+            info.schema.type_named('PipelineConfigValidationInvalid')(
                 pipeline=pipeline,
                 errors=[
-                    info.schema.PipelineConfigValidationError.from_dagster_error(info, err)
-                    for err in config_result.errors
+                    info.schema.type_named('PipelineConfigValidationError').from_dagster_error(
+                        info, err
+                    ) for err in config_result.errors
                 ],
             )
         )

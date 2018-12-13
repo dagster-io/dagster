@@ -45,11 +45,11 @@ class DauphinPipelineRun(dauphin.ObjectType):
         return model.get_pipeline_or_raise(info, self._pipeline_run.pipeline_name)
 
     def resolve_logs(self, info):
-        return info.schema.LogMessageConnection(self._pipeline_run)
+        return info.schema.type_named('LogMessageConnection')(self._pipeline_run)
 
     def resolve_executionPlan(self, info):
         pipeline = self.resolve_pipeline(info)
-        return info.schema.ExecutionPlan(pipeline, self._pipeline_run.execution_plan)
+        return info.schema.type_named('ExecutionPlan')(pipeline, self._pipeline_run.execution_plan)
 
 
 class DauphinLogLevel(dauphin.Enum):
@@ -105,7 +105,7 @@ class DauphinLogMessageConnection(dauphin.ObjectType):
     def resolve_nodes(self, info):
         pipeline = model.get_pipeline_or_raise(info, self._pipeline_run.pipeline_name)
         return [
-            info.schema.PipelineRunEvent.from_dagster_event(info, log, pipeline)
+            info.schema.type_named('PipelineRunEvent').from_dagster_event(info, log, pipeline)
             for log in self._logs
         ]
 
@@ -114,7 +114,7 @@ class DauphinLogMessageConnection(dauphin.ObjectType):
         lastCursor = None
         if count > 0:
             lastCursor = str(count - 1)
-        return info.schema.PageInfo(
+        return info.schema.type_named('PageInfo')(
             lastCursor=lastCursor,
             hasNextPage=None,
             hasPreviousPage=None,
@@ -198,7 +198,7 @@ class DauphinPipelineRunEvent(dauphin.Union):
     @staticmethod
     def from_dagster_event(info, event, pipeline):
         check.inst_param(event, 'event', EventRecord)
-        check.inst_param(pipeline, 'pipeline', info.schema.Pipeline)
+        check.inst_param(pipeline, 'pipeline', info.schema.type_named('Pipeline'))
         pipeline_run = info.context.pipeline_runs.get_run_by_id(event.run_id)
         run = DauphinPipelineRun(pipeline_run)
 
@@ -210,34 +210,34 @@ class DauphinPipelineRunEvent(dauphin.Union):
         }
 
         if event.event_type == EventType.PIPELINE_START:
-            return info.schema.PipelineStartEvent(pipeline=pipeline, **basic_params)
+            return info.schema.type_named('PipelineStartEvent')(pipeline=pipeline, **basic_params)
         elif event.event_type == EventType.PIPELINE_SUCCESS:
-            return info.schema.PipelineSuccessEvent(pipeline=pipeline, **basic_params)
+            return info.schema.type_named('PipelineSuccessEvent')(pipeline=pipeline, **basic_params)
         elif event.event_type == EventType.PIPELINE_FAILURE:
-            return info.schema.PipelineFailureEvent(pipeline=pipeline, **basic_params)
+            return info.schema.type_named('PipelineFailureEvent')(pipeline=pipeline, **basic_params)
         elif event.event_type == EventType.EXECUTION_PLAN_STEP_START:
-            return info.schema.ExecutionStepStartEvent(
-                step=info.schema.ExecutionStep(
+            return info.schema.type_named('ExecutionStepStartEvent')(
+                step=info.schema.type_named('ExecutionStep')(
                     pipeline_run.execution_plan.get_step_by_key(event.step_key)
                 ),
                 **basic_params
             )
         elif event.event_type == EventType.EXECUTION_PLAN_STEP_SUCCESS:
-            return info.schema.ExecutionStepSuccessEvent(
-                step=info.schema.ExecutionStep(
+            return info.schema.type_named('ExecutionStepSuccessEvent')(
+                step=info.schema.type_named('ExecutionStep')(
                     pipeline_run.execution_plan.get_step_by_key(event.step_key)
                 ),
                 **basic_params
             )
         elif event.event_type == EventType.EXECUTION_PLAN_STEP_FAILURE:
             check.inst(event.error_info, SerializableErrorInfo)
-            failure_event = info.schema.ExecutionStepFailureEvent(
-                step=info.schema.ExecutionStep(
+            failure_event = info.schema.type_named('ExecutionStepFailureEvent')(
+                step=info.schema.type_named('ExecutionStep')(
                     pipeline_run.execution_plan.get_step_by_key(event.step_key)
                 ),
-                error=info.schema.PythonError(event.error_info),
+                error=info.schema.type_named('PythonError')(event.error_info),
                 **basic_params
             )
             return failure_event
         else:
-            return info.schema.LogMessageEvent(**basic_params)
+            return info.schema.type_named('LogMessageEvent')(**basic_params)
