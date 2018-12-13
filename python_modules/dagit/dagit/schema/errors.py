@@ -89,7 +89,7 @@ class DauphinPipelineConfigValidationError(dauphin.Interface):
         check.inst_param(error, 'error', EvaluationError)
 
         if isinstance(error.error_data, RuntimeMismatchErrorData):
-            return info.schema.RuntimeMismatchConfigError(
+            return info.schema.type_named('RuntimeMismatchConfigError')(
                 message=error.message,
                 path=[],  # TODO: remove
                 stack=error.stack,
@@ -98,17 +98,17 @@ class DauphinPipelineConfigValidationError(dauphin.Interface):
                 value_rep=error.error_data.value_rep,
             )
         elif isinstance(error.error_data, MissingFieldErrorData):
-            return info.schema.MissingFieldConfigError(
+            return info.schema.type_named('MissingFieldConfigError')(
                 message=error.message,
                 path=[],  # TODO: remove
                 stack=error.stack,
                 reason=error.reason,
-                field=info.schema.TypeField(
+                field=info.schema.type_named('TypeField')(
                     name=error.error_data.field_name, field=error.error_data.field_def
                 ),
             )
         elif isinstance(error.error_data, FieldNotDefinedErrorData):
-            return info.schema.FieldNotDefinedConfigError(
+            return info.schema.type_named('FieldNotDefinedConfigError')(
                 message=error.message,
                 path=[],  # TODO: remove
                 stack=error.stack,
@@ -116,7 +116,7 @@ class DauphinPipelineConfigValidationError(dauphin.Interface):
                 field_name=error.error_data.field_name,
             )
         elif isinstance(error.error_data, SelectorTypeErrorData):
-            return info.schema.SelectorTypeConfigError(
+            return info.schema.type_named('SelectorTypeConfigError')(
                 message=error.message,
                 path=[],  # TODO: remove
                 stack=error.stack,
@@ -138,7 +138,7 @@ class DauphinRuntimeMismatchConfigError(dauphin.ObjectType):
     value_rep = dauphin.Field(dauphin.String)
 
     def resolve_type(self, info):
-        return info.schema.Type.from_dagster_type(info, self.type)
+        return info.schema.type_named('Type').from_dagster_type(info, self.type)
 
 
 class DauphinMissingFieldConfigError(dauphin.ObjectType):
@@ -201,7 +201,7 @@ class DauphinEvaluationStackPathEntry(dauphin.ObjectType):
     field = dauphin.NonNull('TypeField')
 
     def resolve_field(self, info):
-        return info.schema.TypeField(name=self._field_name, field=self._field_def)  # pylint: disable=E1101
+        return info.schema.type_named('TypeField')(name=self._field_name, field=self._field_def)  # pylint: disable=E1101
 
 
 class DauphinEvaluationStackEntry(dauphin.Union):
@@ -229,7 +229,7 @@ class DauphinEvaluationStack(dauphin.ObjectType):
     entries = dauphin.non_null_list('EvaluationStackEntry')
 
     def resolve_entries(self, info):
-        return map(info.schema.EvaluationStackEntry.from_native_entry, self.entries)
+        return map(info.schema.type_named('EvaluationStackEntry').from_native_entry, self.entries)
 
 
 class DauphinPipelineOrError(dauphin.Union):
