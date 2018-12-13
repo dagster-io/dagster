@@ -53,7 +53,7 @@ def publish_dagster():
             shell=True,
             stdout=subprocess.PIPE)
         for line in iter(process.stdout.readline, b''):
-            print(str(line))
+            print(line.decode('utf-8'))
 
 
 def publish_dagit():
@@ -65,7 +65,7 @@ def publish_dagit():
             shell=True,
             stdout=subprocess.PIPE)
         for line in iter(process.stdout.readline, b''):
-            print(str(line))
+            print(line.decode('utf-8'))
 
 
 def publish_dagstermill():
@@ -77,7 +77,7 @@ def publish_dagstermill():
             shell=True,
             stdout=subprocess.PIPE)
         for line in iter(process.stdout.readline, b''):
-            print(str(line))
+            print(line.decode('utf-8'))
 
 
 def publish_all():
