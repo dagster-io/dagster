@@ -5,9 +5,6 @@ from dagster.core.events import (
     EventRecord,
     EventType,
 )
-from dagit import pipeline_run_storage
-from dagster.utils.error import SerializableErrorInfo
-from dagit.schema import dauphin, model
 from dagster.utils.logging import (
     CRITICAL,
     DEBUG,
@@ -17,7 +14,12 @@ from dagster.utils.logging import (
     check_valid_level_param,
 )
 
-PipelineRunStatus = dauphin.Enum.from_enum(pipeline_run_storage.PipelineRunStatus)
+from dagster.utils.error import SerializableErrorInfo
+from dagit import pipeline_run_storage
+from dagit.pipeline_run_storage import PipelineRunStatus
+from dagit.schema import dauphin, model
+
+DauphinPipelineRunStatus = dauphin.Enum.from_enum(PipelineRunStatus)
 
 
 class PipelineRun(dauphin.ObjectType):
