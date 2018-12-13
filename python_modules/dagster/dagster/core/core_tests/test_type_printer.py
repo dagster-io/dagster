@@ -1,4 +1,9 @@
-from dagster import types
+from dagster import (
+    PipelineDefinition,
+    SolidDefinition,
+    types,
+)
+
 from dagster.core.type_printer import print_type_to_string
 
 
@@ -111,3 +116,66 @@ def test_nested_dict():
 }'''
 
     assert output == expected
+
+
+def test_test_type_pipeline_construction():
+    assert define_test_type_pipeline()
+
+
+def define_solid_for_test_type(name, dagster_type):
+    return SolidDefinition(
+        name=name,
+        inputs=[],
+        outputs=[],
+        config_field=types.Field(dagster_type),
+        transform_fn=lambda _info, _inputs: None,
+    )
+
+
+def define_test_type_pipeline():
+    return PipelineDefinition(
+        name='test_type_pipeline',
+        solids=[
+            define_solid_for_test_type('int_config', types.Int),
+            define_solid_for_test_type('list_of_int_config', types.List(types.Int)),
+            define_solid_for_test_type(
+                'nullable_list_of_int_config',
+                types.Nullable(types.List(types.Int)),
+            ),
+            define_solid_for_test_type(
+                'list_of_nullable_int_config',
+                types.List(types.Nullable(types.Int)),
+            ),
+            define_solid_for_test_type(
+                'nullable_list_of_nullable_int_config',
+                types.Nullable(types.List(types.Nullable(types.Int))),
+            ),
+            define_solid_for_test_type(
+                'simple_dict',
+                types.Dict(
+                    {
+                        'int_field': types.Field(types.Int),
+                        'string_field': types.Field(types.String),
+                    }
+                )
+            ),
+            define_solid_for_test_type(
+                'dict_with_optional_field',
+                types.Dict(
+                    {
+                        'nullable_int_field': types.Field(types.Nullable(types.Int)),
+                        'optional_int_field': types.Field(types.Int, is_optional=True),
+                        'string_list_field': types.Field(types.List(types.String)),
+                    }
+                ),
+            ),
+            define_solid_for_test_type(
+                'nested_dict',
+                types.Dict({
+                    'nested': types.Field(types.Dict({
+                        'int_field': types.Field(types.Int),
+                    }))
+                }),
+            ),
+        ],
+    )

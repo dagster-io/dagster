@@ -8,6 +8,8 @@ from dagster import check
 from dagster.core.evaluator import evaluate_config_value
 from dagster.core.execution import create_execution_plan
 
+from dagster.utils.error import serializable_error_info_from_exc_info
+
 from .utils import (
     EitherValue,
     EitherError,
@@ -164,11 +166,17 @@ def get_pipeline_run_observable(info, runId, after=None):
 def _repository_or_error_from_container(info, container):
     error = container.error
     if error != None:
-        return EitherError(info.schema.type_named('PythonError')(*error))
+        return EitherError(
+            info.schema.type_named('PythonError')(serializable_error_info_from_exc_info(error))
+        )
     try:
         return EitherValue(container.repository)
     except Exception:  # pylint: disable=broad-except
-        return EitherError(info.schema.type_named('PythonError')(sys.exc_info()))
+        return EitherError(
+            info.schema.type_named('PythonError')(
+                serializable_error_info_from_exc_info(sys.exc_info())
+            )
+        )
 
 
 def _pipeline_or_error_from_repository(info, repository, pipeline_name):
