@@ -299,26 +299,17 @@ def test_create_single_solid_pipeline_with_alias():
     assert result.result_for_solid('aliased').transformed_value() == expected
 
 
-def test_create_pipeline_with_bad_solids_list():
-    stub_solid = define_stub_solid('stub', [{'a key': 'a value'}])
-    with pytest.raises(check.ParameterCheckError) as exc_info:
-        single_solid_pipeline = PipelineDefinition(
-            solids=stub_solid,
-            dependencies={},
-        )
-
-    assert 'Param "solids" is not a list.' in str(exc_info.value)
-
-
 def test_create_pipeline_with_empty_solids_list():
-    stub_solid = define_stub_solid('stub', [{'a key': 'a value'}])
     single_solid_pipeline = PipelineDefinition(
         solids=[],
         dependencies={},
     )
 
+    result = execute_pipeline(single_solid_pipeline)
+    assert result.success
 
-def test_create_singleton_pipeline():
+
+def test_singleton_pipeline():
     stub_solid = define_stub_solid('stub', [{'a key': 'a value'}])
     single_solid_pipeline = PipelineDefinition(
         solids=[stub_solid],
@@ -329,17 +320,28 @@ def test_create_singleton_pipeline():
     assert result.success
 
 
-def test_unused_solid_pipeline():
+def test_two_root_solid_pipeline_with_empty_dependency_definition():
     stub_solid_a = define_stub_solid('stub_a', [{'a key': 'a value'}])
     stub_solid_b = define_stub_solid('stub_b', [{'a key': 'a value'}])
-    with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
-        single_solid_pipeline = PipelineDefinition(
-            solids=[stub_solid_a, stub_solid_b],
-            dependencies={'stub_a': {}},
-        )
+    single_solid_pipeline = PipelineDefinition(
+        solids=[stub_solid_a, stub_solid_b],
+        dependencies={},
+    )
 
-    assert 'Solid stub_b is passed to list of pipeline solids, but is not used in pipeline.' in \
-        str(exc_info.value)
+    result = execute_pipeline(single_solid_pipeline)
+    assert result.success
+
+
+def test_two_root_solid_pipeline_with_partial_dependency_definition():
+    stub_solid_a = define_stub_solid('stub_a', [{'a key': 'a value'}])
+    stub_solid_b = define_stub_solid('stub_b', [{'a key': 'a value'}])
+    single_solid_pipeline = PipelineDefinition(
+        solids=[stub_solid_a, stub_solid_b],
+        dependencies={'stub_a': {}},
+    )
+
+    result = execute_pipeline(single_solid_pipeline)
+    assert result.success
 
 
 def _do_test(pipeline, do_execute_pipeline_iter):

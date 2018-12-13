@@ -425,10 +425,6 @@ class SolidAliasMapper:
         self.alias_lookup = alias_lookup
 
     def get_uses_of_solid(self, solid_def_name):
-        # For the case when solids are passed, but no dependency structure.
-        if not self.aliased_dependencies_dict:
-            return set([solid_def_name])
-
         return self.solid_uses.get(solid_def_name)
 
 
@@ -440,15 +436,16 @@ def _create_execution_structure(name, solids, dependencies_dict):
         if isinstance(solid_def, SolidDefinition):
             uses_of_solid = mapper.get_uses_of_solid(solid_def.name)
             if uses_of_solid is None:
-                raise DagsterInvalidDefinitionError(
-                    'Solid {name} is passed to list of pipeline solids, but is not used in '
-                    'pipeline.{singleton_solid_instructions}'.format(
-                        name=solid_def.name,
-                        singleton_solid_instructions=' You must explicitly specify empty '
-                        'dependencies for singleton solids with no inputs.'
-                        if len(solid_def.input_defs) == 0 else ''
+                if not solid_def.input_defs:
+                    uses_of_solid = set([solid_def.name])
+                else:
+                    raise DagsterInvalidDefinitionError(
+                        'Solid {name} is passed to list of pipeline solids, but is not used in '
+                        'pipeline. You must define its dependencies: [{inputs}]'.format(
+                            name=solid_def.name,
+                            inputs=', '.join([input.name for input in solid_def.input_defs])
+                        )
                     )
-                )
 
             check.inst(uses_of_solid, set, 'must be a set')
 
@@ -543,7 +540,7 @@ def _validate_dependency_structure(name, pipeline_solid_dict, dependency_structu
 
                 error_msg = (
                     'Dependency must be specified for solid ' +
-                    '{pipeline_name} input {input_name}'.format(
+                    '{pipeline_name} input {input_name}.'.format(
                         pipeline_name=pipeline_solid.name,
                         input_name=input_def.name,
                     )
