@@ -1,6 +1,6 @@
 import sys
 
-from dagit.schema.errors import PythonError
+from dagit.schema.errors import DauphinPythonError
 from dagster.utils.error import (
     serializable_error_info_from_exc_info,
 )
@@ -13,7 +13,7 @@ def test_python_error():
     try:
         func()
     except:  # pylint: disable=W0702
-        python_error = PythonError(serializable_error_info_from_exc_info(sys.exc_info()))
+        python_error = DauphinPythonError(serializable_error_info_from_exc_info(sys.exc_info()))
 
     assert python_error
     assert isinstance(python_error.message, str)

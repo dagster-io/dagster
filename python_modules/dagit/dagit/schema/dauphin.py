@@ -48,7 +48,8 @@ class DauphinRegistry(object):
         # Not looping over GRAPHENE_TYPES in order to not fool lint
         self.ObjectType = create_registering_class(graphene.ObjectType, registering_metaclass)
         self.InputObjectType = create_registering_class(
-            graphene.InputObjectType, registering_metaclass
+            graphene.InputObjectType,
+            registering_metaclass,
         )
         self.Interface = create_registering_class(graphene.Interface, registering_metaclass)
         self.Scalar = create_registering_class(graphene.Scalar, registering_metaclass)

@@ -1,26 +1,17 @@
 from __future__ import absolute_import
-
-from graphql.execution.base import ResolveInfo
 import sys
 import uuid
-import gevent
-from dagster import (
-    ReentrantInfo,
-    check,
-)
-from dagster.core.evaluator import evaluate_config_value
 
-from dagster.core.execution import (
-    create_execution_plan,
-    execute_reentrant_pipeline,
-)
+from graphql.execution.base import ResolveInfo
+
+from dagster import check
+from dagster.core.evaluator import evaluate_config_value
+from dagster.core.execution import create_execution_plan
 
 from .utils import (
     EitherValue,
     EitherError,
 )
-
-from .context import DagsterGraphQLContext
 
 
 def get_pipelines(info):

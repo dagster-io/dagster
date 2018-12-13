@@ -1,74 +1,75 @@
 from __future__ import absolute_import
 
 from dagster import check
-import dagster.core.execution_plan
+from dagster.core.execution_plan import (
+    ExecutionStep,
+    ExecutionPlan,
+    StepInput,
+    StepOutput,
+)
 
 from dagit.schema import dauphin
 
 
-class ExecutionPlan(dauphin.ObjectType):
+class DauphinExecutionPlan(dauphin.ObjectType):
+    class Meta:
+        name = 'ExecutionPlan'
+
     steps = dauphin.non_null_list('ExecutionStep')
     pipeline = dauphin.NonNull('Pipeline')
 
     def __init__(self, pipeline, execution_plan):
-        super(ExecutionPlan, self).__init__(pipeline=pipeline)
-        self.execution_plan = check.inst_param(
-            execution_plan,
-            'execution_plan',
-            dagster.core.execution_plan.ExecutionPlan,
-        )
+        super(DauphinExecutionPlan, self).__init__(pipeline=pipeline)
+        self.execution_plan = check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
 
     def resolve_steps(self, _info):
-        return [ExecutionStep(cn) for cn in self.execution_plan.topological_steps()]
+        return [DauphinExecutionStep(cn) for cn in self.execution_plan.topological_steps()]
 
 
-class ExecutionStepOutput(dauphin.ObjectType):
+class DauphinExecutionStepOutput(dauphin.ObjectType):
+    class Meta:
+        name = 'ExecutionStepOutput'
+
     name = dauphin.NonNull(dauphin.String)
     type = dauphin.Field(dauphin.NonNull('Type'))
 
-    def __init__(self, execution_step_output):
-        super(ExecutionStepOutput, self).__init__()
-        self.execution_step_output = check.inst_param(
-            execution_step_output,
-            'execution_step_output',
-            dagster.core.execution_plan.StepOutput,
-        )
+    def __init__(self, step_output):
+        super(DauphinExecutionStepOutput, self).__init__()
+        self._step_output = check.inst_param(step_output, 'step_output', StepOutput)
 
     def resolve_name(self, _info):
-        return self.execution_step_output.name
+        return self._step_output.name
 
     def resolve_type(self, info):
-        return info.schema.Type.from_dagster_type(
-            info, dagster_type=self.execution_step_output.dagster_type
-        )
+        return info.schema.Type.from_dagster_type(info, dagster_type=self._step_output.dagster_type)
 
 
-class ExecutionStepInput(dauphin.ObjectType):
+class DauphinExecutionStepInput(dauphin.ObjectType):
+    class Meta:
+        name = 'ExecutionStepInput'
+
     name = dauphin.NonNull(dauphin.String)
     type = dauphin.Field(dauphin.NonNull('Type'))
     dependsOn = dauphin.Field(dauphin.NonNull('ExecutionStep'))
 
-    def __init__(self, execution_step_input):
-        super(ExecutionStepInput, self).__init__()
-        self.execution_step_input = check.inst_param(
-            execution_step_input,
-            'execution_step_input',
-            dagster.core.execution_plan.StepInput,
-        )
+    def __init__(self, step_input):
+        super(DauphinExecutionStepInput, self).__init__()
+        self._step_input = check.inst_param(step_input, 'step_input', StepInput)
 
     def resolve_name(self, _info):
-        return self.execution_step_input.name
+        return self._step_input.name
 
     def resolve_type(self, info):
-        return info.schema.Type.from_dagster_type(
-            info, dagster_type=self.execution_step_input.dagster_type
-        )
+        return info.schema.Type.from_dagster_type(info, dagster_type=self._step_input.dagster_type)
 
     def resolve_dependsOn(self, info):
-        return info.schema.ExecutionStep(self.execution_step_input.prev_output_handle.step)
+        return info.schema.ExecutionStep(self._step_input.prev_output_handle.step)
 
 
-class StepTag(dauphin.Enum):
+class DauphinStepTag(dauphin.Enum):
+    class Meta:
+        name = 'StepTag'
+
     TRANSFORM = 'TRANSFORM'
     INPUT_EXPECTATION = 'INPUT_EXPECTATION'
     OUTPUT_EXPECTATION = 'OUTPUT_EXPECTATION'
@@ -79,25 +80,28 @@ class StepTag(dauphin.Enum):
     def description(self):
         # self ends up being the internal class "EnumMeta" in dauphin
         # so we can't do a dictionary lookup which is awesome
-        if self == StepTag.TRANSFORM:
+        if self == DauphinStepTag.TRANSFORM:
             return 'This is the user-defined transform step'
-        elif self == StepTag.INPUT_EXPECTATION:
+        elif self == DauphinStepTag.INPUT_EXPECTATION:
             return 'Expectation defined on an input'
-        elif self == StepTag.OUTPUT_EXPECTATION:
+        elif self == DauphinStepTag.OUTPUT_EXPECTATION:
             return 'Expectation defined on an output'
-        elif self == StepTag.JOIN:
+        elif self == DauphinStepTag.JOIN:
             return '''Sometimes we fan out compute on identical values
 (e.g. multiple expectations in parallel). We synthesizie these in a join step to consolidate to
 a single output that the next computation can depend on.
 '''
-        elif self == StepTag.SERIALIZE:
+        elif self == DauphinStepTag.SERIALIZE:
             return '''This is a special system-defined step to serialize
 an intermediate value if the pipeline is configured to do that.'''
         else:
             return 'Unknown enum {value}'.format(value=self)
 
 
-class ExecutionStep(dauphin.ObjectType):
+class DauphinExecutionStep(dauphin.ObjectType):
+    class Meta:
+        name = 'ExecutionStep'
+
     name = dauphin.NonNull(dauphin.String)
     inputs = dauphin.non_null_list('ExecutionStepInput')
     outputs = dauphin.non_null_list('ExecutionStepOutput')
@@ -105,12 +109,8 @@ class ExecutionStep(dauphin.ObjectType):
     tag = dauphin.NonNull('StepTag')
 
     def __init__(self, execution_step):
-        super(ExecutionStep, self).__init__()
-        self.execution_step = check.inst_param(
-            execution_step,
-            'execution_step',
-            dagster.core.execution_plan.ExecutionStep,
-        )
+        super(DauphinExecutionStep, self).__init__()
+        self.execution_step = check.inst_param(execution_step, 'execution_step', ExecutionStep)
 
     def resolve_inputs(self, info):
         return [info.schema.ExecutionStepInput(inp) for inp in self.execution_step.step_inputs]

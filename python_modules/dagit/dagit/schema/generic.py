@@ -1,11 +1,15 @@
 from dagit.schema import dauphin
 
 
-class Cursor(dauphin.ID, dauphin.Scalar):
-    pass
+class DauphinCursor(dauphin.ID, dauphin.Scalar):
+    class Meta:
+        name = 'Cursor'
 
 
-class PageInfo(dauphin.ObjectType):
+class DauphinPageInfo(dauphin.ObjectType):
+    class Meta:
+        name = 'PageInfo'
+
     lastCursor = dauphin.Field('Cursor')
     hasNextPage = dauphin.Field(dauphin.Boolean)
     hasPreviousPage = dauphin.Field(dauphin.Boolean)

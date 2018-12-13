@@ -2,7 +2,10 @@ from dagit.schema import dauphin
 from dagit.schema import model
 
 
-class Query(dauphin.ObjectType):
+class DauphinQuery(dauphin.ObjectType):
+    class Meta:
+        name = 'Query'
+
     pipelineOrError = dauphin.Field(
         dauphin.NonNull('PipelineOrError'), name=dauphin.NonNull(dauphin.String)
     )
@@ -58,6 +61,9 @@ class Query(dauphin.ObjectType):
 
 
 class StartPipelineExecutionMutation(dauphin.Mutation):
+    class Meta:
+        name = 'StartPipelineExecutionMutation'
+
     class Arguments:
         executionParams = dauphin.NonNull('PipelineExecutionParams')
 
@@ -67,11 +73,17 @@ class StartPipelineExecutionMutation(dauphin.Mutation):
         return model.start_pipeline_execution(info, **executionParams)
 
 
-class Mutation(dauphin.ObjectType):
+class DauphinMutation(dauphin.ObjectType):
+    class Meta:
+        name = 'Mutation'
+
     start_pipeline_execution = StartPipelineExecutionMutation.Field()
 
 
-class Subscription(dauphin.ObjectType):
+class DauphinSubscription(dauphin.ObjectType):
+    class Meta:
+        name = 'Subscription'
+
     pipelineRunLogs = dauphin.Field(
         dauphin.NonNull('PipelineRunEvent'),
         runId=dauphin.Argument(dauphin.NonNull(dauphin.ID)),
@@ -82,13 +94,17 @@ class Subscription(dauphin.ObjectType):
         return model.get_pipeline_run_observable(info, runId, after)
 
 
-class PipelineExecutionParams(dauphin.InputObjectType):
+class DauphinPipelineExecutionParams(dauphin.InputObjectType):
+    class Meta:
+        name = 'PipelineExecutionParams'
+
     pipelineName = dauphin.NonNull(dauphin.String)
     config = dauphin.Field('PipelineConfig')
 
 
-class PipelineConfig(dauphin.GenericScalar, dauphin.Scalar):
+class DauphinPipelineConfig(dauphin.GenericScalar, dauphin.Scalar):
     class Meta:
+        name = 'PipelineConfig'
         description = '''This type is used when passing in a configuration object
         for pipeline configuration. This is any-typed in the GraphQL type system,
         but must conform to the constraints of the dagster config type system'''
