@@ -14,7 +14,11 @@ import Config from "./Config";
 import { SidebarPipelineInfoFragment } from "./types/SidebarPipelineInfoFragment";
 import { IconNames } from "@blueprintjs/icons";
 
-const NO_DESCRIPTION = "No description provided.";
+// TODO (schrockn/bengotow)
+// For pipelines with multiple resources this was a tad aggressive,
+// so commenting it out for now.
+// const NO_DESCRIPTION = "No description provided.";
+const NO_DESCRIPTION = "";
 
 interface ISidebarPipelineInfoProps {
   pipeline: SidebarPipelineInfoFragment;
