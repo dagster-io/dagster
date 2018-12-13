@@ -1,14 +1,16 @@
 Installation
 =======================
 
-Dagster is tested on Python 3.6.6, 3.5.6, and 2.7.15. Python 3 is strongly encouraged -- if you
-can, you won't regret making the switch!
+Dagster is tested on Python 3.6.6, 3.5.6, and 2.7.15. Python 3 is strongly
+encouraged -- if you can, you won't regret making the switch!
+  * You can't use Python 3.7+ yet because of
+    https://github.com/apache/arrow/issues/1125
 
 Installing Python, pip, and virtualenv
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To check that Python, the pip package manager, and virtualenv (highly recommended) are already
-installed, you can run:
+To check that Python, the pip package manager, and virtualenv (highly
+recommended) are already installed, you can run:
 ::
     python --version
     pip --version
@@ -29,17 +31,36 @@ On OSX, using `Homebrew <https://brew.sh/>`_:
     sudo pip3 install -U virtualenv  # system-wide install
 
 On Windows (Python 3):
-- Install the *Microsoft Visual C++ 2015 Redistributable Update 3*. This comes with
-  *Visual Studio 2015* but can be installed separately as follows:
+- Install the *Microsoft Visual C++ 2015 Redistributable Update 3*. This
+  comes with *Visual Studio 2015* but can be installed separately as follows:
     1. Go to the Visual Studio downloads,
     2. Select *Redistributables and Build Tools*,
-    3. Download and install the *Microsoft Visual C++ 2015 Redistributable Update 3*.
-- Install the 64-bit Python 3 release for Windows (select ``pip`` as an optional feature).
+    3. Download and install the *Microsoft Visual C++ 2015 Redistributable
+       Update 3*.
+- Install the 64-bit Python 3 release for Windows (select ``pip`` as an
+  optional feature).
 - Then run ``pip3 install -U pip virtualenv``
 
 
 Installing the stable version from PyPI
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+We strongly recommend installing dagster inside a Python virtualenv. On
+Python 3, you can just run:
+::
+    python3 -m venv /path/to/new/virtual/environment
+
+This will create a new Python environment whose interpreter and libraries
+are isolated from those installed in other virtual environments, and
+(by default) any libraries installed in a “system” Python installed as part
+of your operating system
+
+
+
+To install dagster and dagit, run:
+
+::
+    pip install dagster
+    pip install dagit
 
 
 Installing the latest version from Github
