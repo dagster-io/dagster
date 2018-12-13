@@ -1,4 +1,5 @@
 import os
+import sys
 
 import pandas as pd
 import pytest
@@ -19,10 +20,19 @@ from dagster import (
 from dagster_contrib.pandas import DataFrame
 from dagster.utils import script_relative_path
 
-from .test_basic_dagstermill_solids import (
-    nb_test_path,
-    notebook_test,
-)
+
+def nb_test_path(name):
+    return script_relative_path('notebooks/{name}.ipynb'.format(name=name))
+
+
+def notebook_test(f):
+    return pytest.mark.skipif(
+        sys.version_info < (3, 5),
+        reason='''Notebooks execute in their own process and hardcode what "kernel" they use.
+        All of the development notebooks currently use the python3 "kernel" so they will
+        not be executable in a container that only have python2.7 (e.g. in CircleCI)
+        ''',
+    )(f)
 
 
 def define_pandas_input_transform_test_solid():
