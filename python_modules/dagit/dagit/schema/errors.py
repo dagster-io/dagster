@@ -4,6 +4,16 @@ import traceback
 from dagster import check
 import dagster.core.evaluator
 
+from dagster.core.evaluator import (
+    EvaluationError,
+    EvaluationStackPathEntry,
+    EvaluationStackListItemEntry,
+    RuntimeMismatchErrorData,
+    MissingFieldErrorData,
+    FieldNotDefinedErrorData,
+    SelectorTypeErrorData,
+)
+
 from dagster.utils.error import (
     SerializableErrorInfo,
     serializable_error_info_from_exc_info,
@@ -45,25 +55,35 @@ class DauphinPipelineNotFoundError(dauphin.ObjectType):
         self.message = 'Pipeline {pipeline_name} does not exist'.format(pipeline_name=pipeline_name)
 
 
-class PipelineConfigValidationValid(dauphin.ObjectType):
+class DauphinPipelineConfigValidationValid(dauphin.ObjectType):
+    class Meta:
+        name = 'PipelineConfigValidationValid'
+
     pipeline = dauphin.Field(dauphin.NonNull('Pipeline'))
 
 
-class PipelineConfigValidationInvalid(dauphin.ObjectType):
+class DauphinPipelineConfigValidationInvalid(dauphin.ObjectType):
+    class Meta:
+        name = 'PipelineConfigValidationInvalid'
+
     pipeline = dauphin.Field(dauphin.NonNull('Pipeline'))
     errors = dauphin.non_null_list('PipelineConfigValidationError')
 
 
-class PipelineConfigValidationResult(dauphin.Union):
+class DauphinPipelineConfigValidationResult(dauphin.Union):
     class Meta:
+        name = 'PipelineConfigValidationResult'
         types = (
-            PipelineConfigValidationValid,
-            PipelineConfigValidationInvalid,
+            DauphinPipelineConfigValidationValid,
+            DauphinPipelineConfigValidationInvalid,
             DauphinPipelineNotFoundError,
         )
 
 
-class PipelineConfigValidationError(dauphin.Interface):
+class DauphinPipelineConfigValidationError(dauphin.Interface):
+    class Meta:
+        name = 'PipelineConfigValidationError'
+
     message = dauphin.NonNull(dauphin.String)
     path = dauphin.non_null_list(dauphin.String)
     stack = dauphin.NonNull('EvaluationStack')
@@ -71,9 +91,9 @@ class PipelineConfigValidationError(dauphin.Interface):
 
     @staticmethod
     def from_dagster_error(info, error):
-        check.inst_param(error, 'error', dagster.core.evaluator.EvaluationError)
+        check.inst_param(error, 'error', EvaluationError)
 
-        if isinstance(error.error_data, dagster.core.evaluator.RuntimeMismatchErrorData):
+        if isinstance(error.error_data, RuntimeMismatchErrorData):
             return info.schema.RuntimeMismatchConfigError(
                 message=error.message,
                 path=[],  # TODO: remove
@@ -82,7 +102,7 @@ class PipelineConfigValidationError(dauphin.Interface):
                 type=error.error_data.dagster_type,
                 value_rep=error.error_data.value_rep,
             )
-        elif isinstance(error.error_data, dagster.core.evaluator.MissingFieldErrorData):
+        elif isinstance(error.error_data, MissingFieldErrorData):
             return info.schema.MissingFieldConfigError(
                 message=error.message,
                 path=[],  # TODO: remove
@@ -92,7 +112,7 @@ class PipelineConfigValidationError(dauphin.Interface):
                     name=error.error_data.field_name, field=error.error_data.field_def
                 ),
             )
-        elif isinstance(error.error_data, dagster.core.evaluator.FieldNotDefinedErrorData):
+        elif isinstance(error.error_data, FieldNotDefinedErrorData):
             return info.schema.FieldNotDefinedConfigError(
                 message=error.message,
                 path=[],  # TODO: remove
@@ -100,7 +120,7 @@ class PipelineConfigValidationError(dauphin.Interface):
                 reason=error.reason,
                 field_name=error.error_data.field_name,
             )
-        elif isinstance(error.error_data, dagster.core.evaluator.SelectorTypeErrorData):
+        elif isinstance(error.error_data, SelectorTypeErrorData):
             return info.schema.SelectorTypeConfigError(
                 message=error.message,
                 path=[],  # TODO: remove
@@ -114,39 +134,45 @@ class PipelineConfigValidationError(dauphin.Interface):
             )
 
 
-class RuntimeMismatchConfigError(dauphin.ObjectType):
+class DauphinRuntimeMismatchConfigError(dauphin.ObjectType):
+    class Meta:
+        name = 'RuntimeMismatchConfigError'
+        interfaces = (DauphinPipelineConfigValidationError, )
+
     type = dauphin.NonNull('Type')
     value_rep = dauphin.Field(dauphin.String)
-
-    class Meta:
-        interfaces = (PipelineConfigValidationError, )
 
     def resolve_type(self, info):
         return info.schema.Type.from_dagster_type(info, self.type)
 
 
-class MissingFieldConfigError(dauphin.ObjectType):
+class DauphinMissingFieldConfigError(dauphin.ObjectType):
+    class Meta:
+        name = 'MissingFieldConfigError'
+        interfaces = (DauphinPipelineConfigValidationError, )
+
     field = dauphin.NonNull('TypeField')
 
+
+class DauphinFieldNotDefinedConfigError(dauphin.ObjectType):
     class Meta:
-        interfaces = (PipelineConfigValidationError, )
+        name = 'FieldNotDefinedConfigError'
+        interfaces = (DauphinPipelineConfigValidationError, )
 
-
-class FieldNotDefinedConfigError(dauphin.ObjectType):
     field_name = dauphin.NonNull(dauphin.String)
 
+
+class DauphinSelectorTypeConfigError(dauphin.ObjectType):
     class Meta:
-        interfaces = (PipelineConfigValidationError, )
+        name = 'SelectorTypeConfigError'
+        interfaces = (DauphinPipelineConfigValidationError, )
 
-
-class SelectorTypeConfigError(dauphin.ObjectType):
     incoming_fields = dauphin.non_null_list(dauphin.String)
 
+
+class DauphinEvaluationErrorReason(dauphin.Enum):
     class Meta:
-        interfaces = (PipelineConfigValidationError, )
-
-
-class EvaluationErrorReason(dauphin.Enum):
+        name = 'EvaluationErrorReason'
 
     RUNTIME_TYPE_MISMATCH = 'RUNTIME_TYPE_MISMATCH'
     MISSING_REQUIRED_FIELD = 'MISSING_REQUIRED_FIELD'
@@ -154,9 +180,12 @@ class EvaluationErrorReason(dauphin.Enum):
     SELECTOR_FIELD_ERROR = 'SELECTOR_FIELD_ERROR'
 
 
-class EvaluationStackListItemEntry(dauphin.ObjectType):
+class DauphinEvaluationStackListItemEntry(dauphin.ObjectType):
+    class Meta:
+        name = 'EvaluationStackListItemEntry'
+
     def __init__(self, list_index):
-        super(EvaluationStackListItemEntry, self).__init__()
+        super(DauphinEvaluationStackListItemEntry, self).__init__()
         self._list_index = list_index
 
     list_index = dauphin.NonNull(dauphin.Int)
@@ -165,9 +194,12 @@ class EvaluationStackListItemEntry(dauphin.ObjectType):
         return self._list_index
 
 
-class EvaluationStackPathEntry(dauphin.ObjectType):
+class DauphinEvaluationStackPathEntry(dauphin.ObjectType):
+    class Meta:
+        name = 'EvaluationStackPathEntry'
+
     def __init__(self, field_name, field_def):
-        super(EvaluationStackPathEntry, self).__init__()
+        super(DauphinEvaluationStackPathEntry, self).__init__()
         self._field_name = field_name
         self._field_def = field_def
 
@@ -177,53 +209,66 @@ class EvaluationStackPathEntry(dauphin.ObjectType):
         return info.schema.TypeField(name=self._field_name, field=self._field_def)  # pylint: disable=E1101
 
 
-class EvaluationStackEntry(dauphin.Union):
+class DauphinEvaluationStackEntry(dauphin.Union):
     class Meta:
-        types = (EvaluationStackListItemEntry, EvaluationStackPathEntry)
+        name = 'EvaluationStackEntry'
+        types = (DauphinEvaluationStackListItemEntry, DauphinEvaluationStackPathEntry)
 
     @staticmethod
     def from_native_entry(entry):
-        if isinstance(entry, dagster.core.evaluator.EvaluationStackPathEntry):
-            return EvaluationStackPathEntry(
+        if isinstance(entry, EvaluationStackPathEntry):
+            return DauphinEvaluationStackPathEntry(
                 field_name=entry.field_name,
                 field_def=entry.field_def,
             )
-        elif isinstance(entry, dagster.core.evaluator.EvaluationStackListItemEntry):
-            return EvaluationStackListItemEntry(list_index=entry.list_index)
+        elif isinstance(entry, EvaluationStackListItemEntry):
+            return DauphinEvaluationStackListItemEntry(list_index=entry.list_index)
         else:
             check.failed('Unsupported stack entry type {entry}'.format(entry=entry))
 
 
-class EvaluationStack(dauphin.ObjectType):
+class DauphinEvaluationStack(dauphin.ObjectType):
+    class Meta:
+        name = 'EvaluationStack'
+
     entries = dauphin.non_null_list('EvaluationStackEntry')
 
     def resolve_entries(self, info):
         return map(info.schema.EvaluationStackEntry.from_native_entry, self.entries)
 
 
-class PipelineOrError(dauphin.Union):
+class DauphinPipelineOrError(dauphin.Union):
     class Meta:
+        name = 'PipelineOrError'
         types = ('Pipeline', DauphinPythonError, DauphinPipelineNotFoundError)
 
 
-class PipelinesOrError(dauphin.Union):
+class DauphinPipelinesOrError(dauphin.Union):
     class Meta:
+        name = 'PipelinesOrError'
         types = ('PipelineConnection', DauphinPythonError)
 
 
-class ExecutionPlanResult(dauphin.Union):
+class DauphinExecutionPlanResult(dauphin.Union):
     class Meta:
-        types = ('ExecutionPlan', PipelineConfigValidationInvalid, DauphinPipelineNotFoundError)
+        name = 'ExecutionPlanResult'
+        types = (
+            'ExecutionPlan', DauphinPipelineConfigValidationInvalid, DauphinPipelineNotFoundError
+        )
 
 
-class StartPipelineExecutionSuccess(dauphin.ObjectType):
+class DauphinStartPipelineExecutionSuccess(dauphin.ObjectType):
+    class Meta:
+        name = 'StartPipelineExecutionSuccess'
+
     run = dauphin.Field(dauphin.NonNull('PipelineRun'))
 
 
-class StartPipelineExecutionResult(dauphin.Union):
+class DauphinStartPipelineExecutionResult(dauphin.Union):
     class Meta:
+        name = 'StartPipelineExecutionResult'
         types = (
-            StartPipelineExecutionSuccess,
-            PipelineConfigValidationInvalid,
+            DauphinStartPipelineExecutionSuccess,
+            DauphinPipelineConfigValidationInvalid,
             DauphinPipelineNotFoundError,
         )
