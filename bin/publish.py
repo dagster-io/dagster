@@ -238,6 +238,19 @@ def cli():
 @cli.command()
 def publish():
     print(
+        '''WARNING: This will fail (or hang forever) unless you have credentials available to
+PyPI, preferably in the form of a ~/.pypirc file as follows:
+
+    [distutils]
+    index-servers =
+    pypi
+
+    [pypi]
+    repository: https://upload.pypi.org/legacy/
+    username: <username>
+    password: <password>
+''')
+    print(
         'Checking that module versions are in lockstep and match git tag on most recent commit...'
     )
     check_versions()
