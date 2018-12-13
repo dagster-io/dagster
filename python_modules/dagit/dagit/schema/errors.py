@@ -253,7 +253,9 @@ class DauphinExecutionPlanResult(dauphin.Union):
     class Meta:
         name = 'ExecutionPlanResult'
         types = (
-            'ExecutionPlan', DauphinPipelineConfigValidationInvalid, DauphinPipelineNotFoundError
+            'ExecutionPlan',
+            DauphinPipelineConfigValidationInvalid,
+            DauphinPipelineNotFoundError,
         )
 
 
