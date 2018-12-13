@@ -77,7 +77,7 @@ export interface PipelineGraphSolidFragment_outputs_dependedBy {
 
 export interface PipelineGraphSolidFragment_outputs {
   definition: PipelineGraphSolidFragment_outputs_definition;
-  dependedBy: PipelineGraphSolidFragment_outputs_dependedBy[] | null;
+  dependedBy: PipelineGraphSolidFragment_outputs_dependedBy[];
 }
 
 export interface PipelineGraphSolidFragment {
