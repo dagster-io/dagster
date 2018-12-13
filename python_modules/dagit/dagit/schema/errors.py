@@ -1,8 +1,6 @@
 from __future__ import absolute_import
-import traceback
 
 from dagster import check
-import dagster.core.evaluator
 
 from dagster.core.evaluator import (
     EvaluationError,
@@ -14,10 +12,7 @@ from dagster.core.evaluator import (
     SelectorTypeErrorData,
 )
 
-from dagster.utils.error import (
-    SerializableErrorInfo,
-    serializable_error_info_from_exc_info,
-)
+from dagster.utils.error import SerializableErrorInfo
 
 from dagit.schema import dauphin
 
