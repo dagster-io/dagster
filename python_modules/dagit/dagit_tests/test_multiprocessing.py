@@ -1,3 +1,4 @@
+import os
 import time
 import gevent
 from dagster import (
@@ -74,7 +75,7 @@ def test_failing():
 
 def test_execution_crash():
     run_id = 'run-1'
-    pipeline = define_sleepy_pipeline()
+    pipeline = define_crashy_pipeline()
     config = evaluate_config_value(
         pipeline.environment_type, {
             'solids': {
@@ -91,10 +92,7 @@ def test_execution_crash():
     )
     execution_manager = MultiprocessingExecutionManager()
     execution_manager.execute_pipeline(pipeline, config.value, pipeline_run)
-    gevent.sleep(0.5)
-    with execution_manager._processes_lock:
-        execution_manager._processes[0].process.terminate()
-    gevent.sleep(0.5)
+    execution_manager.join()
     assert pipeline_run.status == PipelineRunStatus.FAILURE
     last_log = pipeline_run.all_logs()[-1]
     assert last_log.message == 'Exception: Pipeline execution process for {run_id} unexpectedly exited\n'.format(
@@ -124,9 +122,8 @@ def error_solid(sum_df):
     inputs=[InputDefinition('sum_df', dagster_pd.DataFrame)],
     output=OutputDefinition(dagster_pd.DataFrame),
 )
-def sleepy_solid(sum_df):
-    time.sleep(100)
-    return sum_df
+def crashy_solid(sum_df):
+    os._exit(1)
 
 
 def define_passing_pipeline():
@@ -163,19 +160,19 @@ def define_failing_pipeline():
     )
 
 
-def define_sleepy_pipeline():
+def define_crashy_pipeline():
     return PipelineDefinition(
         name='pandas_hello_world',
         solids=[
             dagster_pd.load_csv_solid('load_num_csv'),
             sum_solid,
-            sleepy_solid,
+            crashy_solid,
         ],
         dependencies={
             'sum_solid': {
                 'num': DependencyDefinition('load_num_csv')
             },
-            'sleepy_solid': {
+            'crashy_solid': {
                 'sum_df': DependencyDefinition('sum_solid')
             }
         },
