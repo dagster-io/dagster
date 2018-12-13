@@ -16,13 +16,19 @@ from dagster.utils.logging import (
 
 from dagster.utils.error import SerializableErrorInfo
 from dagit import pipeline_run_storage
-from dagit.pipeline_run_storage import PipelineRunStatus
+from dagit.pipeline_run_storage import (
+    PipelineRunStatus,
+    PipelineRun,
+)
 from dagit.schema import dauphin, model
 
 DauphinPipelineRunStatus = dauphin.Enum.from_enum(PipelineRunStatus)
 
 
-class PipelineRun(dauphin.ObjectType):
+class DauphinPipelineRun(dauphin.ObjectType):
+    class Meta:
+        name = 'PipelineRun'
+
     runId = dauphin.NonNull(dauphin.String)
     status = dauphin.NonNull('PipelineRunStatus')
     pipeline = dauphin.NonNull('Pipeline')
@@ -30,10 +36,10 @@ class PipelineRun(dauphin.ObjectType):
     executionPlan = dauphin.NonNull('ExecutionPlan')
 
     def __init__(self, pipeline_run):
-        super(PipelineRun, self).__init__(runId=pipeline_run.run_id, status=pipeline_run.status)
-        self._pipeline_run = check.inst_param(
-            pipeline_run, 'pipeline_run', pipeline_run_storage.PipelineRun
+        super(DauphinPipelineRun, self).__init__(
+            runId=pipeline_run.run_id, status=pipeline_run.status
         )
+        self._pipeline_run = check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
 
     def resolve_pipeline(self, info):
         return model.get_pipeline_or_raise(info, self._pipeline_run.pipeline_name)
@@ -46,7 +52,10 @@ class PipelineRun(dauphin.ObjectType):
         return info.schema.ExecutionPlan(pipeline, self._pipeline_run.execution_plan)
 
 
-class LogLevel(dauphin.Enum):
+class DauphinLogLevel(dauphin.Enum):
+    class Meta:
+        name = 'LogLevel'
+
     CRITICAL = 'CRITICAL'
     ERROR = 'ERROR'
     INFO = 'INFO'
@@ -57,27 +66,33 @@ class LogLevel(dauphin.Enum):
     def from_level(level):
         check_valid_level_param(level)
         if level == CRITICAL:
-            return LogLevel.CRITICAL
+            return DauphinLogLevel.CRITICAL
         elif level == ERROR:
-            return LogLevel.ERROR
+            return DauphinLogLevel.ERROR
         elif level == INFO:
-            return LogLevel.INFO
+            return DauphinLogLevel.INFO
         elif level == WARNING:
-            return LogLevel.WARNING
+            return DauphinLogLevel.WARNING
         elif level == DEBUG:
-            return LogLevel.DEBUG
+            return DauphinLogLevel.DEBUG
         else:
             check.failed('unknown log level')
 
 
-class MessageEvent(dauphin.Interface):
+class DauphinMessageEvent(dauphin.Interface):
+    class Meta:
+        name = 'MessageEvent'
+
     run = dauphin.NonNull('PipelineRun')
     message = dauphin.NonNull(dauphin.String)
     timestamp = dauphin.NonNull(dauphin.String)
     level = dauphin.NonNull('LogLevel')
 
 
-class LogMessageConnection(dauphin.ObjectType):
+class DauphinLogMessageConnection(dauphin.ObjectType):
+    class Meta:
+        name = 'LogMessageConnection'
+
     nodes = dauphin.non_null_list('PipelineRunEvent')
     pageInfo = dauphin.NonNull('PageInfo')
 
@@ -108,62 +123,76 @@ class LogMessageConnection(dauphin.ObjectType):
         )
 
 
-class LogMessageEvent(dauphin.ObjectType):
+class DauphinLogMessageEvent(dauphin.ObjectType):
     class Meta:
-        interfaces = (MessageEvent, )
+        name = 'LogMessageEvent'
+        interfaces = (DauphinMessageEvent, )
 
 
-class PipelineEvent(dauphin.Interface):
+class DauphinPipelineEvent(dauphin.Interface):
+    class Meta:
+        name = 'PipelineEvent'
+
     pipeline = dauphin.NonNull('Pipeline')
 
 
-class PipelineStartEvent(dauphin.ObjectType):
+class DauphinPipelineStartEvent(dauphin.ObjectType):
     class Meta:
-        interfaces = (MessageEvent, PipelineEvent)
+        name = 'PipelineStartEvent'
+        interfaces = (DauphinMessageEvent, DauphinPipelineEvent)
 
 
-class PipelineSuccessEvent(dauphin.ObjectType):
+class DauphinPipelineSuccessEvent(dauphin.ObjectType):
     class Meta:
-        interfaces = (MessageEvent, PipelineEvent)
+        name = 'PipelineSuccessEvent'
+        interfaces = (DauphinMessageEvent, DauphinPipelineEvent)
 
 
-class PipelineFailureEvent(dauphin.ObjectType):
+class DauphinPipelineFailureEvent(dauphin.ObjectType):
     class Meta:
-        interfaces = (MessageEvent, PipelineEvent)
+        name = 'PipelineFailureEvent'
+        interfaces = (DauphinMessageEvent, DauphinPipelineEvent)
 
 
-class ExecutionStepEvent(dauphin.Interface):
+class DauphinExecutionStepEvent(dauphin.Interface):
+    class Meta:
+        name = 'ExecutionStepEvent'
+
     step = dauphin.NonNull('ExecutionStep')
 
 
-class ExecutionStepStartEvent(dauphin.ObjectType):
+class DauphinExecutionStepStartEvent(dauphin.ObjectType):
     class Meta:
-        interfaces = (MessageEvent, ExecutionStepEvent)
+        name = 'ExecutionStepStartEvent'
+        interfaces = (DauphinMessageEvent, DauphinExecutionStepEvent)
 
 
-class ExecutionStepSuccessEvent(dauphin.ObjectType):
+class DauphinExecutionStepSuccessEvent(dauphin.ObjectType):
     class Meta:
-        interfaces = (MessageEvent, ExecutionStepEvent)
+        name = 'ExecutionStepSuccessEvent'
+        interfaces = (DauphinMessageEvent, DauphinExecutionStepEvent)
 
 
-class ExecutionStepFailureEvent(dauphin.ObjectType):
+class DauphinExecutionStepFailureEvent(dauphin.ObjectType):
     class Meta:
-        interfaces = (MessageEvent, ExecutionStepEvent)
+        name = 'ExecutionStepFailureEvent'
+        interfaces = (DauphinMessageEvent, DauphinExecutionStepEvent)
 
     error = dauphin.NonNull('PythonError')
 
 
 # Should be a union of all possible events
-class PipelineRunEvent(dauphin.Union):
+class DauphinPipelineRunEvent(dauphin.Union):
     class Meta:
+        name = 'PipelineRunEvent'
         types = (
-            LogMessageEvent,
-            PipelineStartEvent,
-            PipelineSuccessEvent,
-            PipelineFailureEvent,
-            ExecutionStepStartEvent,
-            ExecutionStepSuccessEvent,
-            ExecutionStepFailureEvent,
+            DauphinLogMessageEvent,
+            DauphinPipelineStartEvent,
+            DauphinPipelineSuccessEvent,
+            DauphinPipelineFailureEvent,
+            DauphinExecutionStepStartEvent,
+            DauphinExecutionStepSuccessEvent,
+            DauphinExecutionStepFailureEvent,
         )
 
     @staticmethod
@@ -171,13 +200,13 @@ class PipelineRunEvent(dauphin.Union):
         check.inst_param(event, 'event', EventRecord)
         check.inst_param(pipeline, 'pipeline', info.schema.Pipeline)
         pipeline_run = info.context.pipeline_runs.get_run_by_id(event.run_id)
-        run = PipelineRun(pipeline_run)
+        run = DauphinPipelineRun(pipeline_run)
 
         basic_params = {
             'run': run,
             'message': event.original_message,
             'timestamp': int(event.timestamp * 1000),
-            'level': LogLevel.from_level(event.level),
+            'level': DauphinLogLevel.from_level(event.level),
         }
 
         if event.event_type == EventType.PIPELINE_START:

@@ -1,7 +1,12 @@
 from __future__ import absolute_import
 
 from dagster import check
-import dagster.core.execution_plan
+from dagster.core.execution_plan import (
+    ExecutionStep,
+    ExecutionPlan,
+    StepInput,
+    StepOutput,
+)
 
 from dagit.schema import dauphin
 
@@ -15,11 +20,7 @@ class DauphinExecutionPlan(dauphin.ObjectType):
 
     def __init__(self, pipeline, execution_plan):
         super(DauphinExecutionPlan, self).__init__(pipeline=pipeline)
-        self.execution_plan = check.inst_param(
-            execution_plan,
-            'execution_plan',
-            dagster.core.execution_plan.ExecutionPlan,
-        )
+        self.execution_plan = check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
 
     def resolve_steps(self, _info):
         return [DauphinExecutionStep(cn) for cn in self.execution_plan.topological_steps()]
@@ -32,21 +33,15 @@ class DauphinExecutionStepOutput(dauphin.ObjectType):
     name = dauphin.NonNull(dauphin.String)
     type = dauphin.Field(dauphin.NonNull('Type'))
 
-    def __init__(self, execution_step_output):
+    def __init__(self, step_output):
         super(DauphinExecutionStepOutput, self).__init__()
-        self.execution_step_output = check.inst_param(
-            execution_step_output,
-            'execution_step_output',
-            dagster.core.execution_plan.StepOutput,
-        )
+        self._step_output = check.inst_param(step_output, 'step_output', StepOutput)
 
     def resolve_name(self, _info):
         return self.execution_step_output.name
 
     def resolve_type(self, info):
-        return info.schema.Type.from_dagster_type(
-            info, dagster_type=self.execution_step_output.dagster_type
-        )
+        return info.schema.Type.from_dagster_type(info, dagster_type=self._step_output.dagster_type)
 
 
 class DauphinExecutionStepInput(dauphin.ObjectType):
@@ -57,21 +52,15 @@ class DauphinExecutionStepInput(dauphin.ObjectType):
     type = dauphin.Field(dauphin.NonNull('Type'))
     dependsOn = dauphin.Field(dauphin.NonNull('ExecutionStep'))
 
-    def __init__(self, execution_step_input):
+    def __init__(self, step_input):
         super(DauphinExecutionStepInput, self).__init__()
-        self.execution_step_input = check.inst_param(
-            execution_step_input,
-            'execution_step_input',
-            dagster.core.execution_plan.StepInput,
-        )
+        self._step_input = check.inst_param(step_input, 'step_input', StepInput)
 
     def resolve_name(self, _info):
-        return self.execution_step_input.name
+        return self._step_input.name
 
     def resolve_type(self, info):
-        return info.schema.Type.from_dagster_type(
-            info, dagster_type=self.execution_step_input.dagster_type
-        )
+        return info.schema.Type.from_dagster_type(info, dagster_type=self._step_input.dagster_type)
 
     def resolve_dependsOn(self, info):
         return info.schema.ExecutionStep(self.execution_step_input.prev_output_handle.step)
@@ -121,11 +110,7 @@ class DauphinExecutionStep(dauphin.ObjectType):
 
     def __init__(self, execution_step):
         super(DauphinExecutionStep, self).__init__()
-        self.execution_step = check.inst_param(
-            execution_step,
-            'execution_step',
-            dagster.core.execution_plan.ExecutionStep,
-        )
+        self.execution_step = check.inst_param(execution_step, 'execution_step', ExecutionStep)
 
     def resolve_inputs(self, info):
         return [info.schema.ExecutionStepInput(inp) for inp in self.execution_step.step_inputs]
