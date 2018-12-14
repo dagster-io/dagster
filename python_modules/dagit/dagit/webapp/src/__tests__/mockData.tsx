@@ -116,7 +116,7 @@ const MOCKS = [
                         description:
                           "A configuration dictionary with typed fields",
                         __typename: "CompositeType",
-                        name: "Dict_1",
+                        name: "Dict.1",
                         fields: [
                           {
                             name: "path",
@@ -354,7 +354,7 @@ const MOCKS = [
             { __typename: "RegularType", name: "Bool" },
             {
               __typename: "CompositeType",
-              name: "Dict_1",
+              name: "Dict.1",
               fields: [
                 {
                   name: "path",
@@ -563,7 +563,7 @@ const MOCKS = [
               fields: [
                 {
                   name: "config",
-                  type: { name: "Dict_1", __typename: "CompositeType" },
+                  type: { name: "Dict.1", __typename: "CompositeType" },
                   __typename: "TypeField"
                 }
               ]
@@ -626,7 +626,7 @@ const MOCKS = [
               __typename: "RegularType"
             },
             {
-              name: "Dict_1",
+              name: "Dict.1",
               typeAttributes: {
                 isBuiltin: true,
                 isSystemConfig: false,

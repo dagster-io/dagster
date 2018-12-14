@@ -87,6 +87,10 @@ class DagsterType(object):
     def is_any(self):
         return isinstance(self, _DagsterAnyType)
 
+    @property
+    def inner_types(self):
+        return []
+
     def __repr__(self):
         return 'DagsterType({name})'.format(name=self.name)
 
@@ -400,6 +404,23 @@ class DagsterCompositeTypeBase(DagsterType):
     def coerce_runtime_value(self, value):
         return value
 
+    @property
+    def inner_types(self):
+        return list(self._uniqueify(self._inner_types()))
+
+    def _uniqueify(self, types):
+        seen = set()
+        for type_ in types:
+            if type_.name not in seen:
+                yield type_
+                seen.add(type_.name)
+
+    def _inner_types(self):
+        for field in self.field_dict.values():
+            yield field.dagster_type
+            for inner_type in field.dagster_type.inner_types:
+                yield inner_type
+
     def iterate_types(self):
         for field_type in self.field_dict.values():
             for inner_type in field_type.dagster_type.iterate_types():
@@ -455,6 +476,10 @@ class _DagsterNullableType(DagsterType):
     def iterate_types(self):
         yield self.inner_type
 
+    @property
+    def inner_types(self):
+        return [self.inner_type] + list(self.inner_type.inner_types)
+
 
 def List(inner_type):
     return _DagsterListType(inner_type)
@@ -474,6 +499,10 @@ class _DagsterListType(DagsterType):
             raise DagsterRuntimeCoercionError('Must be a list')
 
         return list(map(self.inner_type.coerce_runtime_value, value))
+
+    @property
+    def inner_types(self):
+        return [self.inner_type] + list(self.inner_type.inner_types)
 
     def iterate_types(self):
         yield self.inner_type
@@ -503,7 +532,7 @@ class DictCounter:
 
 
 def Dict(fields):
-    return _Dict('Dict_' + str(DictCounter.get_next_count()), fields)
+    return _Dict('Dict.' + str(DictCounter.get_next_count()), fields)
 
 
 class _Dict(DagsterCompositeType):

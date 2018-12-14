@@ -428,6 +428,12 @@ class DauphinType(dauphin.Interface):
     description = dauphin.String()
     type_attributes = dauphin.NonNull('TypeAttributes')
 
+    is_dict = dauphin.NonNull(dauphin.Boolean)
+    is_nullable = dauphin.NonNull(dauphin.Boolean)
+    is_list = dauphin.NonNull(dauphin.Boolean)
+
+    inner_types = dauphin.non_null_list('Type')
+
     @classmethod
     def from_dagster_type(cls, info, dagster_type):
         if isinstance(dagster_type, DagsterCompositeTypeBase):
@@ -447,11 +453,20 @@ class DauphinRegularType(dauphin.ObjectType):
         super(DauphinRegularType, self).__init__(
             name=dagster_type.name,
             description=dagster_type.description,
+            is_dict=dagster_type.is_dict,
+            is_nullable=dagster_type.is_nullable,
+            is_list=dagster_type.is_list,
         )
         self._dagster_type = dagster_type
 
     def resolve_type_attributes(self, _info):
         return self._dagster_type.type_attributes
+
+    def resolve_inner_types(self, info):
+        return [
+            DauphinType.from_dagster_type(info, inner_type)
+            for inner_type in self._dagster_type.inner_types
+        ]
 
 
 class DauphinCompositeType(dauphin.ObjectType):
@@ -467,8 +482,17 @@ class DauphinCompositeType(dauphin.ObjectType):
         super(DauphinCompositeType, self).__init__(
             name=dagster_type.name,
             description=dagster_type.description,
+            is_dict=dagster_type.is_dict,
+            is_nullable=dagster_type.is_nullable,
+            is_list=dagster_type.is_list,
         )
         self._dagster_type = dagster_type
+
+    def resolve_inner_types(self, info):
+        return [
+            DauphinType.from_dagster_type(info, inner_type)
+            for inner_type in self._dagster_type.inner_types
+        ]
 
     def resolve_type_attributes(self, info):
         return info.schema.type_named('TypeAttributes')(*self._dagster_type.type_attributes)
