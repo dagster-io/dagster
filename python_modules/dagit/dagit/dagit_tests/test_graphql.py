@@ -675,7 +675,6 @@ def test_more_complicated_works():
     assert not result.errors
     assert result.data
     valid_data = result.data['isPipelineConfigValid']
-    print(result.data)
     assert valid_data['__typename'] == 'PipelineConfigValidationValid'
     assert valid_data['pipeline']['name'] == 'more_complicated_nested_config'
 
