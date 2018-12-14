@@ -20,8 +20,9 @@ from dagster import (
     lambda_solid,
     types,
 )
-import dagster_contrib.pandas as dagster_pd
 from dagster.utils import script_relative_path
+
+import dagster_contrib.pandas as dagster_pd
 
 from dagit.app import RepositoryContainer
 from dagit.pipeline_execution_manager import SynchronousExecutionManager
@@ -425,6 +426,10 @@ def define_more_complicated_nested_config():
                                     {
                                         'field_four_str': types.Field(types.String),
                                         'field_five_int': types.Field(types.Int),
+                                        'field_six_nullable_int_list' : types.Field(
+                                            types.List(types.Nullable(types.Int)),
+                                            is_optional=True,
+                                        ),
                                     }
                                 )
                             ),
@@ -436,18 +441,48 @@ def define_more_complicated_nested_config():
     )
 
 TYPE_RENDER_QUERY = '''
-{
-    pipeline(name: "more_complicated_nested_config") { 
-        name
+fragment innerInfo on Type {
+  name
+  isDict
+  isList
+  isNullable
+  innerTypes {
+    name
+  }
+  ... on CompositeType {
+    fields {
+      name
+      type {
+       name
+      }
     }
+  }  
+}
+
+{
+  pipeline(name: "more_complicated_nested_config") { 
+    name
+    solids {
+      name
+      definition {
+        configDefinition {
+          type {
+            ...innerInfo
+            innerTypes {
+              ...innerInfo
+            }
+          }
+        }
+      }
+    }
+  }
 }
 '''
 
 def test_type_rendering():
     result = execute_dagster_graphql(define_context(), TYPE_RENDER_QUERY)
     assert not result.errors
-    assert result.data 
-    print(result.data)
+    assert result.data
 
 def define_context_config_pipeline():
     return PipelineDefinition(
@@ -633,6 +668,7 @@ def test_more_complicated_works():
     assert not result.errors
     assert result.data
     valid_data = result.data['isPipelineConfigValid']
+    print(result.data)
     assert valid_data['__typename'] == 'PipelineConfigValidationValid'
     assert valid_data['pipeline']['name'] == 'more_complicated_nested_config'
 

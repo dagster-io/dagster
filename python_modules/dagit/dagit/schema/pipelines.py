@@ -456,12 +456,17 @@ class DauphinRegularType(dauphin.ObjectType):
             is_dict=dagster_type.is_dict,
             is_nullable=dagster_type.is_nullable,
             is_list=dagster_type.is_list,
-            inner_types=dagster_type.inner_types,
         )
         self._dagster_type = dagster_type
 
     def resolve_type_attributes(self, _info):
         return self._dagster_type.type_attributes
+
+    def resolve_inner_types(self, info):
+        return [
+            DauphinType.from_dagster_type(info, inner_type)
+            for inner_type in self._dagster_type.inner_types
+        ]
 
 
 class DauphinCompositeType(dauphin.ObjectType):
@@ -480,9 +485,14 @@ class DauphinCompositeType(dauphin.ObjectType):
             is_dict=dagster_type.is_dict,
             is_nullable=dagster_type.is_nullable,
             is_list=dagster_type.is_list,
-            inner_types=dagster_type.inner_types,
         )
         self._dagster_type = dagster_type
+
+    def resolve_inner_types(self, info):
+        return [
+            DauphinType.from_dagster_type(info, inner_type)
+            for inner_type in self._dagster_type.inner_types
+        ]
 
     def resolve_type_attributes(self, info):
         return info.schema.type_named('TypeAttributes')(*self._dagster_type.type_attributes)
