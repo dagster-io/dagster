@@ -3,7 +3,8 @@
 
 .. docs-include
 
-[![Coverage Status](https://coveralls.io/repos/github/dagster-io/dagster/badge.svg?branch=master)](https://coveralls.io/github/dagster-io/dagster?branch=master)
+.. image:: https://coveralls.io/repos/github/dagster-io/dagster/badge.svg?branch=master
+   :target: https://coveralls.io/github/dagster-io/dagster?branch=master
 
 ============
 Introduction
