@@ -73,6 +73,7 @@ def test_two_field_dicts():
 
     assert output == expected
 
+
 def test_two_field_dicts_same_type():
     two_field_dict = types.Dict(
         {

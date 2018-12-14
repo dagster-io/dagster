@@ -1,6 +1,5 @@
 import uuid
 
-
 from graphql import (
     graphql,
     parse,
@@ -31,6 +30,7 @@ from dagit.schema import create_schema
 from dagit.schema.context import DagsterGraphQLContext
 
 from dagit.dagit_tests.production_query import PRODUCTION_QUERY
+
 
 def define_repository():
     return RepositoryDefinition(
@@ -424,9 +424,12 @@ def define_more_complicated_nested_config():
                             types.Field(
                                 types.Dict(
                                     {
-                                        'field_four_str': types.Field(types.String),
-                                        'field_five_int': types.Field(types.Int),
-                                        'field_six_nullable_int_list' : types.Field(
+                                        'field_four_str':
+                                        types.Field(types.String),
+                                        'field_five_int':
+                                        types.Field(types.Int),
+                                        'field_six_nullable_int_list':
+                                        types.Field(
                                             types.List(types.Nullable(types.Int)),
                                             is_optional=True,
                                         ),
@@ -439,6 +442,7 @@ def define_more_complicated_nested_config():
             ),
         ],
     )
+
 
 TYPE_RENDER_QUERY = '''
 fragment innerInfo on Type {
@@ -479,10 +483,12 @@ fragment innerInfo on Type {
 }
 '''
 
+
 def test_type_rendering():
     result = execute_dagster_graphql(define_context(), TYPE_RENDER_QUERY)
     assert not result.errors
     assert result.data
+
 
 def define_context_config_pipeline():
     return PipelineDefinition(
