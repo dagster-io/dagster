@@ -5,6 +5,8 @@
 
 .. image:: https://coveralls.io/repos/github/dagster-io/dagster/badge.svg?branch=master
    :target: https://coveralls.io/github/dagster-io/dagster?branch=master
+.. image:: https://circleci.com/gh/dagster-io/dagster.svg?style=svg
+    :target: https://circleci.com/gh/dagster-io/dagster
 
 ============
 Introduction
