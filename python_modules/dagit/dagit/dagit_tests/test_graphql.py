@@ -459,6 +459,7 @@ fragment innerInfo on Type {
       type {
        name
       }
+      isOptional
     }
   }  
 }
