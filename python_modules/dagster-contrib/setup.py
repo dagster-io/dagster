@@ -17,15 +17,16 @@ def long_description():
 
 
 version = {}
-with open("dagster/version.py") as fp:
+with open("dagster_contrib/version.py") as fp:
     exec(fp.read(), version)  # pylint: disable=W0122
 
 setup(
-    name='dagster',
+    name='dagster_contrib',
     version=version['__version__'],
     author='Elementl',
     license='Apache-2.0',
-    description='Dagster is an opinionated programming model for data pipelines.',
+    description=
+    'Utilities and examples for working with dagster, an opinionated framework for expressing data pipelines.',
     long_description=long_description(),
     long_description_content_type='text/markdown',
     url='https://github.com/dagster-io/dagster',
@@ -36,37 +37,25 @@ setup(
         'License :: OSI Approved :: Apache Software License',
         'Operating System :: OS Independent',
     ),
-    packages=find_packages(exclude=['dagster_tests']),
+    packages=find_packages(
+        exclude=[
+            'dagster_examples/dagster_examples_tests',
+            'pandas/pandas_tests',
+            'sqlalchemy_sqlalchemy_tests',
+        ]
+    ),
     install_requires=[
-        # standard python 2/3 compatability things
-        'enum34>=1.1.6',
-        'future>=0.16.0',
-        'funcsigs>=1.0.2',
-        'contextlib2>=0.5.5',
-
-        # cli
-        'click>=6.7',
-        'coloredlogs>=10.0',
-        'graphviz>=0.8.3',
-        'pyyaml>=3.12',
-
-        # core (not explicitly expressed atm)
-        'six>=1.11.0',
-        'toposort>=1.5',
-
-        # dev/test - Installed via dev-requirements.txt
-        # 'pylint>=1.8.4',
-        # 'pytest>=3.5.1',
-        # 'recommonmark>=0.4.0',
-        # 'rope>=0.10.7',
-        # 'Sphinx>=1.7.5',
-        # 'sphinx-autobuild>=0.7.1',
-        # 'yapf>=0.22.0',
-        # 'twine>=1.11.0',
-        # 'pre-commit'>=1.10.1',
+        'dagster',
+        'dagstermill',
     ],
     extras_require={
-        ":python_version>'3'": ["reloader>=0.6"],
-    },
-    scripts=['bin/dagster']
+        'pandas': [
+            'pandas>=0.22.0',
+            'pyarrow>=0.8.0',
+        ],
+        'sqlalchemy': [
+            'sqlalchemy>=1.2.7',
+            'jinja2>=2.8',
+        ]
+    }
 )

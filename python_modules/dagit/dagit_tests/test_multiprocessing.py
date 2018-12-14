@@ -19,7 +19,7 @@ from dagster.core.execution import (
 )
 from dagster.core.evaluator import evaluate_config_value
 from dagster.utils import script_relative_path
-import dagster.pandas as dagster_pd
+import dagster_contrib.pandas as dagster_pd
 
 from dagit.pipeline_execution_manager import MultiprocessingExecutionManager
 from dagit.pipeline_run_storage import PipelineRun, PipelineRunStatus
