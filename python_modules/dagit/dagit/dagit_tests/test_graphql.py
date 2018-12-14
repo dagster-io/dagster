@@ -1,9 +1,10 @@
 import uuid
-import gevent
 
-import pytest
 
-from graphql import graphql, subscribe, parse
+from graphql import (
+    graphql,
+    parse,
+)
 
 from dagster import (
     DependencyDefinition,
@@ -20,33 +21,33 @@ from dagster import (
     types,
 )
 import dagster_contrib.pandas as dagster_pd
-
-from dagit.schema import create_schema
-from dagit.app import RepositoryContainer
-# from dagit.gevent_observable_executor import GeventObservableExecutor
-from dagit.schema.context import DagsterGraphQLContext
-from dagit.pipeline_run_storage import PipelineRunStorage
 from dagster.utils import script_relative_path
+
+from dagit.app import RepositoryContainer
 from dagit.pipeline_execution_manager import SynchronousExecutionManager
+from dagit.pipeline_run_storage import PipelineRunStorage
+from dagit.schema import create_schema
+from dagit.schema.context import DagsterGraphQLContext
 
-from .production_query import PRODUCTION_QUERY
+from dagit.dagit_tests.production_query import PRODUCTION_QUERY
+
+def define_repository():
+    return RepositoryDefinition(
+        name='test',
+        pipeline_dict={
+            'context_config_pipeline': define_context_config_pipeline,
+            'more_complicated_config': define_more_complicated_config,
+            'more_complicated_nested_config': define_more_complicated_nested_config,
+            'pandas_hello_world': define_pipeline_one,
+            'pandas_hello_world_two': define_pipeline_two,
+            'pipeline_with_list': define_pipeline_with_list,
+        },
+    )
 
 
-def define_context(synchronous_mode=False):
+def define_context():
     return DagsterGraphQLContext(
-        RepositoryContainer(
-            repository=RepositoryDefinition(
-                name='test',
-                pipeline_dict={
-                    'context_config_pipeline': define_context_config_pipeline,
-                    'more_complicated_config': define_more_complicated_config,
-                    'more_complicated_nested_config': define_more_complicated_nested_config,
-                    'pandas_hello_world': define_pipeline_one,
-                    'pandas_hello_world_two': define_pipeline_two,
-                    'pipeline_with_list': define_pipeline_with_list,
-                }
-            )
-        ),
+        RepositoryContainer(repository=define_repository()),
         PipelineRunStorage(),
         execution_manager=SynchronousExecutionManager(),
     )
@@ -434,6 +435,19 @@ def define_more_complicated_nested_config():
         ],
     )
 
+TYPE_RENDER_QUERY = '''
+{
+    pipeline(name: "more_complicated_nested_config") { 
+        name
+    }
+}
+'''
+
+def test_type_rendering():
+    result = execute_dagster_graphql(define_context(), TYPE_RENDER_QUERY)
+    assert not result.errors
+    assert result.data 
+    print(result.data)
 
 def define_context_config_pipeline():
     return PipelineDefinition(
@@ -1164,7 +1178,7 @@ def test_basic_start_pipeline_execution_and_subscribe():
     )
 
     messages = []
-    subscription.subscribe(lambda value: messages.append(value))
+    subscription.subscribe(messages.append)
 
     for m in messages:
         assert not m.errors
@@ -1182,7 +1196,7 @@ subscription subscribeTest($runId: ID!) {
 
 
 def test_basic_sync_execution():
-    context = define_context(synchronous_mode=True)
+    context = define_context()
     result = execute_dagster_graphql(
         context,
         SYNC_MUTATION_QUERY,
