@@ -3,6 +3,8 @@
 
 .. docs-include
 
+[![Coverage Status](https://coveralls.io/repos/github/dagster-io/dagster/badge.svg?branch=master)](https://coveralls.io/github/dagster-io/dagster?branch=master)
+
 ============
 Introduction
 ============
@@ -13,7 +15,6 @@ integration, and so on -- but in essence they all describe the same activity: Pe
 computations structured as a DAG (directed, acyclic graph) that end up producing data assets,
 whether those assets be tables, files, machine-learning models, etc.
 
-[![Coverage Status](https://coveralls.io/repos/github/dagster-io/dagster/badge.svg)](https://coveralls.io/github/dagster-io/dagster)
 
 There are a few tools in this repo:
 
