@@ -532,7 +532,7 @@ class DictCounter:
 
 
 def Dict(fields):
-    return _Dict('Dict_' + str(DictCounter.get_next_count()), fields)
+    return _Dict('Dict.' + str(DictCounter.get_next_count()), fields)
 
 
 class _Dict(DagsterCompositeType):

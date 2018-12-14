@@ -35,7 +35,7 @@ it("print dict", () => {
 // See TYPE_RENDER_QUERY in test_graphql.py
 let testData = {
   type: {
-    name: "Dict_4",
+    name: "Dict.4",
     isDict: true,
     isList: false,
     isNullable: false,
@@ -64,7 +64,7 @@ let testData = {
       {
         name: "nested_field",
         type: {
-          name: "Dict_3"
+          name: "Dict.3"
         },
         isOptional: false
       }
@@ -78,7 +78,7 @@ let testData = {
         innerTypes: []
       },
       {
-        name: "Dict_3",
+        name: "Dict.3",
         isDict: true,
         isList: false,
         isNullable: false,
