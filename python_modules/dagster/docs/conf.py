@@ -158,3 +158,11 @@ texinfo_documents = [
 extensions = ['sphinx.ext.napoleon']
 
 html_sidebars = {'**': ['globaltoc.html', 'relations.html', 'sourcelink.html', 'searchbox.html']}
+
+html_context = {
+    "display_github": True,  # Integrate GitHub
+    "github_user": "dagster-io",  # Username
+    "github_repo": "dagster",  # Repo name
+    "github_version": "master",  # Version
+    "conf_py_path": "/python_modules/dagster/docs/",  # Path in the checkout to the docs root
+}
