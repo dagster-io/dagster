@@ -548,7 +548,7 @@ class _Dict(DagsterCompositeType):
             name,
             fields,
             'A configuration dictionary with typed fields',
-            type_attributes=DagsterTypeAttributes(is_named=False, is_builtin=True),
+            type_attributes=DagsterTypeAttributes(is_named=True, is_builtin=True),
         )
 
     def coerce_runtime_value(self, value):
