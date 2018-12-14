@@ -69,6 +69,19 @@ class ResourceDefinition(object):
         self.config_field = check.opt_inst_param(config_field, 'config_field', Field)
         self.description = check.opt_str_param(description, 'description')
 
+    @staticmethod
+    def null_resource():
+        return ResourceDefinition(
+            resource_fn=lambda _info: None,
+        )
+
+    @staticmethod
+    def string_resource(description=None):
+        return ResourceDefinition(
+            resource_fn=lambda info: info.config,
+            config_field=Field(types.String),
+            description=description,
+        )
 
 class PipelineContextDefinition(object):
     '''Pipelines declare the different context types they support, in the form

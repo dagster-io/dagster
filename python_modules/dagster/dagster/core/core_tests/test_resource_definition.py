@@ -225,3 +225,70 @@ def test_mixed_multiple_resources():
     assert 'before yield bar' in saw[0] or 'before return foo' in saw[0]
     assert 'before yield bar' in saw[1] or 'before return foo' in saw[1]
     assert 'after yield bar' in saw[2]
+
+
+def test_null_resource():
+    called = {}
+
+    @solid
+    def solid_test_null(info):
+        assert info.context.resources.test_null is None
+        called['yup'] = True
+
+    pipeline = PipelineDefinition(
+        name='test_null_resource',
+        solids=[solid_test_null],
+        context_definitions={
+            'default':
+            PipelineContextDefinition(
+                resources={
+                    'test_null': ResourceDefinition.null_resource(),
+                },
+            ),
+        },
+    )
+
+    result = execute_pipeline(pipeline)
+
+    assert result.success
+    assert called['yup']
+
+
+def test_string_resource():
+    called = {}
+
+    @solid
+    def solid_test_string(info):
+        assert info.context.resources.test_string == 'foo'
+        called['yup'] = True
+
+    pipeline = PipelineDefinition(
+        name='test_string_resource',
+        solids=[solid_test_string],
+        context_definitions={
+            'default':
+            PipelineContextDefinition(
+                resources={
+                    'test_string': ResourceDefinition.string_resource(),
+                },
+            ),
+        },
+    )
+
+    result = execute_pipeline(
+        pipeline,
+        {
+            'context': {
+                'default': {
+                    'resources': {
+                        'test_string': {
+                            'config': 'foo'
+                        },
+                    },
+                },
+            },
+        },
+    )
+
+    assert result.success
+    assert called['yup']
