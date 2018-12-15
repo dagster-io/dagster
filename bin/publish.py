@@ -234,11 +234,19 @@ def check_new_version(version):
             errors[module_name] = module_version
     if errors:
         raise Exception(
-            'Found modules with existing versions greater than or equal to the new version '
+            'Bailing: Found modules with existing versions greater than or equal to the new version '
             '{version}:\n{versions}'.format(
                 version=version,
                 versions=format_module_versions(module_versions)))
     return True
+
+
+def check_git_status():
+    changes = subprocess.check_output(['git', 'status', '--porcelain'])
+    if changes != '':
+        raise Exception(
+            'Bailing: Cannot publish with changes present in git repo:\n{changes}'.
+            format(changes=changes))
 
 
 CLI_HELP = """Tools to help tag and publish releases of the Dagster projects.
@@ -283,13 +291,20 @@ PyPI, preferably in the form of a ~/.pypirc file as follows:
         'Checking that module versions are in lockstep and match git tag on most recent commit...'
     )
     check_versions()
+    check_git_status()
     print('Publishing packages to PyPI...')
     publish_all()
 
 
 @cli.command()
-@click.argument('version')
+@click.argument('version', help='The new PEP 440 version to tag')
 def release(version):
+    """Tags all submodules for a new release.
+
+    Ensures that git tags, as well as the version.py files in each submodule, agree and that the
+    new version is strictly greater than the current version. Will fail if the new version is
+    not an increment. Creates a new git tag and commit.
+    """
     check_new_version(version)
     set_new_version(version)
     commit_new_version(version)
@@ -298,6 +313,7 @@ def release(version):
 
 @cli.command()
 def version():
+    """Gets the most recent tagged version."""
     print(get_most_recent_git_tag())
 
 
