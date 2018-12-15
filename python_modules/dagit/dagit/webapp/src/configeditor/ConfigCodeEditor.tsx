@@ -95,6 +95,9 @@ export default class ConfigCodeEditor extends React.Component<
             foldGutter: true
           } as any
         }
+        editorDidMount={editor => {
+          performLint(editor);
+        }}
         onBeforeChange={(editor, data, value) => {
           this.props.onConfigChange(value);
         }}
