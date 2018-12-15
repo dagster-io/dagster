@@ -74,13 +74,13 @@ export default class SidebarTabbedContainer extends React.Component<
       activeTab = "types";
       content = (
         <TypeExplorerContainer
-          pipelineName={this.props.pipeline.name}
+          pipelineName={pipeline.name}
           typeName={typeExplorer}
         />
       );
     } else if (types) {
       activeTab = "types";
-      content = <TypeListContainer pipelineName={this.props.pipeline.name} />;
+      content = <TypeListContainer pipelineName={pipeline.name} />;
     } else if (solid) {
       content = <SidebarSolidInfo solid={solid} key={solid.name} />;
     } else {

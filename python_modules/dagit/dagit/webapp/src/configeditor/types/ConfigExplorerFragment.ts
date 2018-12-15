@@ -7,76 +7,141 @@
 // GraphQL fragment: ConfigExplorerFragment
 // ====================================================
 
+export interface ConfigExplorerFragment_contexts_config_type_RegularType_innerTypes_RegularType_innerTypes {
+  name: string;
+}
+
+export interface ConfigExplorerFragment_contexts_config_type_RegularType_innerTypes_RegularType_typeAttributes {
+  isNamed: boolean;
+}
+
+export interface ConfigExplorerFragment_contexts_config_type_RegularType_innerTypes_RegularType {
+  name: string;
+  isDict: boolean;
+  isList: boolean;
+  isNullable: boolean;
+  innerTypes: ConfigExplorerFragment_contexts_config_type_RegularType_innerTypes_RegularType_innerTypes[];
+  description: string | null;
+  typeAttributes: ConfigExplorerFragment_contexts_config_type_RegularType_innerTypes_RegularType_typeAttributes;
+}
+
+export interface ConfigExplorerFragment_contexts_config_type_RegularType_innerTypes_CompositeType_innerTypes {
+  name: string;
+}
+
+export interface ConfigExplorerFragment_contexts_config_type_RegularType_innerTypes_CompositeType_typeAttributes {
+  isNamed: boolean;
+}
+
+export interface ConfigExplorerFragment_contexts_config_type_RegularType_innerTypes_CompositeType_fields_type {
+  name: string;
+}
+
+export interface ConfigExplorerFragment_contexts_config_type_RegularType_innerTypes_CompositeType_fields {
+  name: string;
+  type: ConfigExplorerFragment_contexts_config_type_RegularType_innerTypes_CompositeType_fields_type;
+  isOptional: boolean;
+}
+
+export interface ConfigExplorerFragment_contexts_config_type_RegularType_innerTypes_CompositeType {
+  name: string;
+  isDict: boolean;
+  isList: boolean;
+  isNullable: boolean;
+  innerTypes: ConfigExplorerFragment_contexts_config_type_RegularType_innerTypes_CompositeType_innerTypes[];
+  description: string | null;
+  typeAttributes: ConfigExplorerFragment_contexts_config_type_RegularType_innerTypes_CompositeType_typeAttributes;
+  fields: ConfigExplorerFragment_contexts_config_type_RegularType_innerTypes_CompositeType_fields[];
+}
+
+export type ConfigExplorerFragment_contexts_config_type_RegularType_innerTypes = ConfigExplorerFragment_contexts_config_type_RegularType_innerTypes_RegularType | ConfigExplorerFragment_contexts_config_type_RegularType_innerTypes_CompositeType;
+
 export interface ConfigExplorerFragment_contexts_config_type_RegularType_typeAttributes {
   isNamed: boolean;
 }
 
 export interface ConfigExplorerFragment_contexts_config_type_RegularType {
-  __typename: "RegularType";
   name: string;
+  isDict: boolean;
+  isList: boolean;
+  isNullable: boolean;
+  innerTypes: ConfigExplorerFragment_contexts_config_type_RegularType_innerTypes[];
   description: string | null;
   typeAttributes: ConfigExplorerFragment_contexts_config_type_RegularType_typeAttributes;
 }
 
-export interface ConfigExplorerFragment_contexts_config_type_CompositeType_fields_type_RegularType_typeAttributes {
+export interface ConfigExplorerFragment_contexts_config_type_CompositeType_innerTypes_RegularType_innerTypes {
+  name: string;
+}
+
+export interface ConfigExplorerFragment_contexts_config_type_CompositeType_innerTypes_RegularType_typeAttributes {
   isNamed: boolean;
 }
 
-export interface ConfigExplorerFragment_contexts_config_type_CompositeType_fields_type_RegularType {
+export interface ConfigExplorerFragment_contexts_config_type_CompositeType_innerTypes_RegularType {
   name: string;
+  isDict: boolean;
+  isList: boolean;
+  isNullable: boolean;
+  innerTypes: ConfigExplorerFragment_contexts_config_type_CompositeType_innerTypes_RegularType_innerTypes[];
   description: string | null;
-  typeAttributes: ConfigExplorerFragment_contexts_config_type_CompositeType_fields_type_RegularType_typeAttributes;
+  typeAttributes: ConfigExplorerFragment_contexts_config_type_CompositeType_innerTypes_RegularType_typeAttributes;
 }
 
-export interface ConfigExplorerFragment_contexts_config_type_CompositeType_fields_type_CompositeType_typeAttributes {
+export interface ConfigExplorerFragment_contexts_config_type_CompositeType_innerTypes_CompositeType_innerTypes {
+  name: string;
+}
+
+export interface ConfigExplorerFragment_contexts_config_type_CompositeType_innerTypes_CompositeType_typeAttributes {
   isNamed: boolean;
 }
 
-export interface ConfigExplorerFragment_contexts_config_type_CompositeType_fields_type_CompositeType_fields_type_typeAttributes {
-  isNamed: boolean;
+export interface ConfigExplorerFragment_contexts_config_type_CompositeType_innerTypes_CompositeType_fields_type {
+  name: string;
 }
 
-export interface ConfigExplorerFragment_contexts_config_type_CompositeType_fields_type_CompositeType_fields_type {
+export interface ConfigExplorerFragment_contexts_config_type_CompositeType_innerTypes_CompositeType_fields {
   name: string;
-  description: string | null;
-  typeAttributes: ConfigExplorerFragment_contexts_config_type_CompositeType_fields_type_CompositeType_fields_type_typeAttributes;
-}
-
-export interface ConfigExplorerFragment_contexts_config_type_CompositeType_fields_type_CompositeType_fields {
-  name: string;
-  description: string | null;
+  type: ConfigExplorerFragment_contexts_config_type_CompositeType_innerTypes_CompositeType_fields_type;
   isOptional: boolean;
-  defaultValue: string | null;
-  type: ConfigExplorerFragment_contexts_config_type_CompositeType_fields_type_CompositeType_fields_type;
 }
 
-export interface ConfigExplorerFragment_contexts_config_type_CompositeType_fields_type_CompositeType {
+export interface ConfigExplorerFragment_contexts_config_type_CompositeType_innerTypes_CompositeType {
   name: string;
+  isDict: boolean;
+  isList: boolean;
+  isNullable: boolean;
+  innerTypes: ConfigExplorerFragment_contexts_config_type_CompositeType_innerTypes_CompositeType_innerTypes[];
   description: string | null;
-  typeAttributes: ConfigExplorerFragment_contexts_config_type_CompositeType_fields_type_CompositeType_typeAttributes;
-  fields: ConfigExplorerFragment_contexts_config_type_CompositeType_fields_type_CompositeType_fields[];
+  typeAttributes: ConfigExplorerFragment_contexts_config_type_CompositeType_innerTypes_CompositeType_typeAttributes;
+  fields: ConfigExplorerFragment_contexts_config_type_CompositeType_innerTypes_CompositeType_fields[];
 }
 
-export type ConfigExplorerFragment_contexts_config_type_CompositeType_fields_type = ConfigExplorerFragment_contexts_config_type_CompositeType_fields_type_RegularType | ConfigExplorerFragment_contexts_config_type_CompositeType_fields_type_CompositeType;
-
-export interface ConfigExplorerFragment_contexts_config_type_CompositeType_fields {
-  name: string;
-  description: string | null;
-  isOptional: boolean;
-  defaultValue: string | null;
-  type: ConfigExplorerFragment_contexts_config_type_CompositeType_fields_type;
-}
+export type ConfigExplorerFragment_contexts_config_type_CompositeType_innerTypes = ConfigExplorerFragment_contexts_config_type_CompositeType_innerTypes_RegularType | ConfigExplorerFragment_contexts_config_type_CompositeType_innerTypes_CompositeType;
 
 export interface ConfigExplorerFragment_contexts_config_type_CompositeType_typeAttributes {
   isNamed: boolean;
 }
 
-export interface ConfigExplorerFragment_contexts_config_type_CompositeType {
-  __typename: "CompositeType";
+export interface ConfigExplorerFragment_contexts_config_type_CompositeType_fields_type {
   name: string;
+}
+
+export interface ConfigExplorerFragment_contexts_config_type_CompositeType_fields {
+  name: string;
+  type: ConfigExplorerFragment_contexts_config_type_CompositeType_fields_type;
+  isOptional: boolean;
+}
+
+export interface ConfigExplorerFragment_contexts_config_type_CompositeType {
+  name: string;
+  isDict: boolean;
+  isList: boolean;
+  isNullable: boolean;
+  innerTypes: ConfigExplorerFragment_contexts_config_type_CompositeType_innerTypes[];
   description: string | null;
-  fields: ConfigExplorerFragment_contexts_config_type_CompositeType_fields[];
   typeAttributes: ConfigExplorerFragment_contexts_config_type_CompositeType_typeAttributes;
+  fields: ConfigExplorerFragment_contexts_config_type_CompositeType_fields[];
 }
 
 export type ConfigExplorerFragment_contexts_config_type = ConfigExplorerFragment_contexts_config_type_RegularType | ConfigExplorerFragment_contexts_config_type_CompositeType;
@@ -91,76 +156,141 @@ export interface ConfigExplorerFragment_contexts {
   config: ConfigExplorerFragment_contexts_config | null;
 }
 
+export interface ConfigExplorerFragment_solids_definition_configDefinition_type_RegularType_innerTypes_RegularType_innerTypes {
+  name: string;
+}
+
+export interface ConfigExplorerFragment_solids_definition_configDefinition_type_RegularType_innerTypes_RegularType_typeAttributes {
+  isNamed: boolean;
+}
+
+export interface ConfigExplorerFragment_solids_definition_configDefinition_type_RegularType_innerTypes_RegularType {
+  name: string;
+  isDict: boolean;
+  isList: boolean;
+  isNullable: boolean;
+  innerTypes: ConfigExplorerFragment_solids_definition_configDefinition_type_RegularType_innerTypes_RegularType_innerTypes[];
+  description: string | null;
+  typeAttributes: ConfigExplorerFragment_solids_definition_configDefinition_type_RegularType_innerTypes_RegularType_typeAttributes;
+}
+
+export interface ConfigExplorerFragment_solids_definition_configDefinition_type_RegularType_innerTypes_CompositeType_innerTypes {
+  name: string;
+}
+
+export interface ConfigExplorerFragment_solids_definition_configDefinition_type_RegularType_innerTypes_CompositeType_typeAttributes {
+  isNamed: boolean;
+}
+
+export interface ConfigExplorerFragment_solids_definition_configDefinition_type_RegularType_innerTypes_CompositeType_fields_type {
+  name: string;
+}
+
+export interface ConfigExplorerFragment_solids_definition_configDefinition_type_RegularType_innerTypes_CompositeType_fields {
+  name: string;
+  type: ConfigExplorerFragment_solids_definition_configDefinition_type_RegularType_innerTypes_CompositeType_fields_type;
+  isOptional: boolean;
+}
+
+export interface ConfigExplorerFragment_solids_definition_configDefinition_type_RegularType_innerTypes_CompositeType {
+  name: string;
+  isDict: boolean;
+  isList: boolean;
+  isNullable: boolean;
+  innerTypes: ConfigExplorerFragment_solids_definition_configDefinition_type_RegularType_innerTypes_CompositeType_innerTypes[];
+  description: string | null;
+  typeAttributes: ConfigExplorerFragment_solids_definition_configDefinition_type_RegularType_innerTypes_CompositeType_typeAttributes;
+  fields: ConfigExplorerFragment_solids_definition_configDefinition_type_RegularType_innerTypes_CompositeType_fields[];
+}
+
+export type ConfigExplorerFragment_solids_definition_configDefinition_type_RegularType_innerTypes = ConfigExplorerFragment_solids_definition_configDefinition_type_RegularType_innerTypes_RegularType | ConfigExplorerFragment_solids_definition_configDefinition_type_RegularType_innerTypes_CompositeType;
+
 export interface ConfigExplorerFragment_solids_definition_configDefinition_type_RegularType_typeAttributes {
   isNamed: boolean;
 }
 
 export interface ConfigExplorerFragment_solids_definition_configDefinition_type_RegularType {
-  __typename: "RegularType";
   name: string;
+  isDict: boolean;
+  isList: boolean;
+  isNullable: boolean;
+  innerTypes: ConfigExplorerFragment_solids_definition_configDefinition_type_RegularType_innerTypes[];
   description: string | null;
   typeAttributes: ConfigExplorerFragment_solids_definition_configDefinition_type_RegularType_typeAttributes;
 }
 
-export interface ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_fields_type_RegularType_typeAttributes {
+export interface ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_innerTypes_RegularType_innerTypes {
+  name: string;
+}
+
+export interface ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_innerTypes_RegularType_typeAttributes {
   isNamed: boolean;
 }
 
-export interface ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_fields_type_RegularType {
+export interface ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_innerTypes_RegularType {
   name: string;
+  isDict: boolean;
+  isList: boolean;
+  isNullable: boolean;
+  innerTypes: ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_innerTypes_RegularType_innerTypes[];
   description: string | null;
-  typeAttributes: ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_fields_type_RegularType_typeAttributes;
+  typeAttributes: ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_innerTypes_RegularType_typeAttributes;
 }
 
-export interface ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_fields_type_CompositeType_typeAttributes {
+export interface ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_innerTypes_CompositeType_innerTypes {
+  name: string;
+}
+
+export interface ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_innerTypes_CompositeType_typeAttributes {
   isNamed: boolean;
 }
 
-export interface ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_fields_type_CompositeType_fields_type_typeAttributes {
-  isNamed: boolean;
+export interface ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_innerTypes_CompositeType_fields_type {
+  name: string;
 }
 
-export interface ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_fields_type_CompositeType_fields_type {
+export interface ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_innerTypes_CompositeType_fields {
   name: string;
-  description: string | null;
-  typeAttributes: ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_fields_type_CompositeType_fields_type_typeAttributes;
-}
-
-export interface ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_fields_type_CompositeType_fields {
-  name: string;
-  description: string | null;
+  type: ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_innerTypes_CompositeType_fields_type;
   isOptional: boolean;
-  defaultValue: string | null;
-  type: ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_fields_type_CompositeType_fields_type;
 }
 
-export interface ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_fields_type_CompositeType {
+export interface ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_innerTypes_CompositeType {
   name: string;
+  isDict: boolean;
+  isList: boolean;
+  isNullable: boolean;
+  innerTypes: ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_innerTypes_CompositeType_innerTypes[];
   description: string | null;
-  typeAttributes: ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_fields_type_CompositeType_typeAttributes;
-  fields: ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_fields_type_CompositeType_fields[];
+  typeAttributes: ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_innerTypes_CompositeType_typeAttributes;
+  fields: ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_innerTypes_CompositeType_fields[];
 }
 
-export type ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_fields_type = ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_fields_type_RegularType | ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_fields_type_CompositeType;
-
-export interface ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_fields {
-  name: string;
-  description: string | null;
-  isOptional: boolean;
-  defaultValue: string | null;
-  type: ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_fields_type;
-}
+export type ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_innerTypes = ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_innerTypes_RegularType | ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_innerTypes_CompositeType;
 
 export interface ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_typeAttributes {
   isNamed: boolean;
 }
 
-export interface ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType {
-  __typename: "CompositeType";
+export interface ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_fields_type {
   name: string;
+}
+
+export interface ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_fields {
+  name: string;
+  type: ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_fields_type;
+  isOptional: boolean;
+}
+
+export interface ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType {
+  name: string;
+  isDict: boolean;
+  isList: boolean;
+  isNullable: boolean;
+  innerTypes: ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_innerTypes[];
   description: string | null;
-  fields: ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_fields[];
   typeAttributes: ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_typeAttributes;
+  fields: ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType_fields[];
 }
 
 export type ConfigExplorerFragment_solids_definition_configDefinition_type = ConfigExplorerFragment_solids_definition_configDefinition_type_RegularType | ConfigExplorerFragment_solids_definition_configDefinition_type_CompositeType;
