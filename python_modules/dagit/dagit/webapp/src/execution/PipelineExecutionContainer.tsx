@@ -153,12 +153,15 @@ export default class PipelineExecutionContainer extends React.Component<
     proxy: DataProxy,
     result: FetchResult<StartPipelineExecution, StartPipelineExecutionVariables>
   ) => {
-    if (
-      result.data &&
-      result.data.startPipelineExecution.__typename ===
-        "StartPipelineExecutionSuccess"
-    ) {
-      const run = result.data.startPipelineExecution.run;
+    if (!result.data) {
+      alert("No data was returned.");
+      return;
+    }
+
+    const execution = result.data.startPipelineExecution;
+
+    if (execution.__typename === "StartPipelineExecutionSuccess") {
+      const run = execution.run;
       const id = `Pipeline.${this.props.pipeline.name}`;
       const existingData: PipelineExecutionContainerFragment | null = proxy.readFragment(
         {
@@ -183,8 +186,17 @@ export default class PipelineExecutionContainer extends React.Component<
         });
       }
     } else {
-      // XXX(freiksenet): STUB
-      alert("Error in config!");
+      let message = `${
+        this.props.pipeline.name
+      } cannot not be executed with the provided config.`;
+
+      if ("errors" in execution) {
+        message += ` Please fix the following errors:\n\n${execution.errors
+          .map(error => error.message)
+          .join("\n\n")}`;
+      }
+
+      alert(message);
     }
   };
 
