@@ -302,8 +302,8 @@ def release(version):
     """Tags all submodules for a new release.
 
     Ensures that git tags, as well as the version.py files in each submodule, agree and that the
-    new version is strictly greater than the current version. Will fail if the new version is
-    not an increment. Creates a new git tag and commit.
+    new version is strictly greater than the current version. Will fail if the new version
+    is not an increment (following PEP 440). Creates a new git tag and commit.
     """
     check_new_version(version)
     set_new_version(version)
