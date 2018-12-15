@@ -86,7 +86,7 @@ class ResourceDictionaryType(DagsterCompositeType):
 class SpecificContextConfig(DagsterCompositeType):
     def __init__(self, name, config_field, resources):
         check.str_param(name, 'name')
-        check.inst_param(config_field, 'config_field', Field)
+        check.opt_inst_param(config_field, 'config_field', Field)
         check.dict_param(
             resources,
             'resources',
@@ -101,6 +101,8 @@ class SpecificContextConfig(DagsterCompositeType):
             name,
             {
                 'config': config_field,
+                'resources': Field(resource_dict_type),
+            } if config_field else {
                 'resources': Field(resource_dict_type),
             },
             type_attributes=DagsterTypeAttributes(is_system_config=True),
@@ -157,7 +159,7 @@ class ContextConfigType(DagsterSelectorType):
         context_name, context_value = single_item(config_value)
         return Context(
             name=context_name,
-            config=context_value['config'],
+            config=context_value.get('config'),
             resources=context_value['resources'],
         )
 

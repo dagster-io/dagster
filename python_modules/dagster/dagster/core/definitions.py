@@ -146,15 +146,7 @@ context_fn (callable):
 
             description (str): Description of the context definition.
         '''
-        self.config_field = check.opt_inst_param(
-            config_field,
-            'config_field',
-            Field,
-            # For now we are defaulting to allowing any config for a
-            # pipeline context definition. This should instead default
-            # to having no config like a SolidDefinition
-            Field(types.Any, is_optional=True, default_value=None),
-        )
+        self.config_field = check.opt_inst_param(config_field, 'config_field', Field)
         self.context_fn = check.opt_callable_param(
             context_fn,
             'context_fn',
