@@ -29,11 +29,11 @@ setup(
     long_description=long_description(),
     long_description_content_type='text/markdown',
     url='https://github.com/dagster-io/dagster',
-    classifiers=(
+    classifiers=[
         'Programming Language :: Python :: 3.7',
         'License :: OSI Approved :: Apache Software License',
         'Operating System :: OS Independent',
-    ),
+    ],
     packages=find_packages(exclude=['dagit_tests']),
     include_package_data=True,
     install_requires=[
