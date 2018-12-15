@@ -1,3 +1,8 @@
+"""Tools to manage tagging and publishing releases of the Dagster projects.
+
+For detailed usage instructions, please consult the command line help,
+available by running `python publish.py --help`.
+"""
 import contextlib
 import os
 import re
@@ -236,13 +241,31 @@ def check_new_version(version):
     return True
 
 
-@click.group()
+CLI_HELP = """Tools to help tag and publish releases of the Dagster projects.
+
+By convention, these projects live in a single monorepo, and the submodules are versioned in
+lockstep to avoid confusion, i.e., if dagster is at 0.3.0, dagit is also expected to be at
+0.3.0.
+
+Versions are tracked in the version.py files present in each submodule and in the git tags
+applied to the repository as a whole. These tools help ensure that these versions do not drift.
+"""
+
+
+@click.group(help=CLI_HELP)
 def cli():
     pass
 
 
 @cli.command()
 def publish():
+    """Publishes (uploads) all submodules to PyPI.
+    
+    Appropriate credentials must be available to twin, e.g. in a ~/.pypirc file, and users must
+    be permissioned as maintainers on the PyPI projects. Publishing will fail if versions (git
+    tags and Python versions) are not in lockstep, if the current commit is not tagged, or if
+    there are untracked changes.
+    """
     print(
         '''WARNING: This will fail (or hang forever) unless you have credentials available to
 PyPI, preferably in the form of a ~/.pypirc file as follows:
@@ -278,7 +301,7 @@ def version():
     print(get_most_recent_git_tag())
 
 
-cli = click.CommandCollection(sources=[cli])
+cli = click.CommandCollection(sources=[cli], help=CLI_HELP)
 
 if __name__ == '__main__':
     cli()
