@@ -55,7 +55,8 @@ export const SidebarTitle = styled.h3`
 
 export const SectionItemHeader = styled.h4`
   font-family: "Source Code Pro", monospace;
-  margin: 8px 0;
+  font-size: 15px;
+  margin: 6px 0;
 `;
 
 export const SidebarSubhead = styled.div`
@@ -65,7 +66,14 @@ export const SidebarSubhead = styled.div`
   margin-top: 14px;
 `;
 export const SectionItemContainer = styled.div`
-  margin-bottom: 10px;
+  border-bottom: 1px solid ${Colors.LIGHT_GRAY2};
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  &:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 5px;
+  }
 `;
 
 // Internal

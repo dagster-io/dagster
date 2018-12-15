@@ -17,11 +17,11 @@ export interface TypeInfoFragment_RegularType_typeAttributes {
 
 export interface TypeInfoFragment_RegularType {
   name: string;
+  description: string | null;
   isDict: boolean;
   isList: boolean;
   isNullable: boolean;
   innerTypes: TypeInfoFragment_RegularType_innerTypes[];
-  description: string | null;
   typeAttributes: TypeInfoFragment_RegularType_typeAttributes;
 }
 
@@ -35,6 +35,7 @@ export interface TypeInfoFragment_CompositeType_fields_type {
 
 export interface TypeInfoFragment_CompositeType_fields {
   name: string;
+  description: string | null;
   type: TypeInfoFragment_CompositeType_fields_type;
   isOptional: boolean;
 }
@@ -45,12 +46,12 @@ export interface TypeInfoFragment_CompositeType_typeAttributes {
 
 export interface TypeInfoFragment_CompositeType {
   name: string;
+  description: string | null;
   isDict: boolean;
   isList: boolean;
   isNullable: boolean;
   innerTypes: TypeInfoFragment_CompositeType_innerTypes[];
   fields: TypeInfoFragment_CompositeType_fields[];
-  description: string | null;
   typeAttributes: TypeInfoFragment_CompositeType_typeAttributes;
 }
 

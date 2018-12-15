@@ -2,7 +2,7 @@
 
 exports[`renders given a basic type 1`] = `
 <code
-  className="sc-bwzfXH jdjHtP"
+  className="sc-bwzfXH kJdBIT"
 >
   <a
     href="/?typeExplorer=Int"
@@ -19,7 +19,7 @@ exports[`renders given a basic type 1`] = `
 
 exports[`renders given a complex type 1`] = `
 <code
-  className="sc-bwzfXH jdjHtP"
+  className="sc-bwzfXH kJdBIT"
 >
   {
   <div

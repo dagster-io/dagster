@@ -106,14 +106,16 @@ export default class SidebarSolidInfo extends React.Component<
             </Text>
           )}
           {definition.expectations.length > 0 ? <H6>Expectations</H6> : null}
-          <UL>
-            {definition.expectations.map((expectation, i) => (
-              <li key={i}>
-                {expectation.name}
-                <Description description={expectation.description} />
-              </li>
-            ))}
-          </UL>
+          {definition.expectations.length > 0 ? (
+            <UL>
+              {definition.expectations.map((expectation, i) => (
+                <li key={i}>
+                  {expectation.name}
+                  <Description description={expectation.description} />
+                </li>
+              ))}
+            </UL>
+          ) : null}
         </SectionItemContainer>
       )
     );

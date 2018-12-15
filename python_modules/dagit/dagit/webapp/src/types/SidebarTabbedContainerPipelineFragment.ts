@@ -21,11 +21,11 @@ export interface SidebarTabbedContainerPipelineFragment_contexts_config_type_Reg
 
 export interface SidebarTabbedContainerPipelineFragment_contexts_config_type_RegularType_innerTypes_RegularType {
   name: string;
+  description: string | null;
   isDict: boolean;
   isList: boolean;
   isNullable: boolean;
   innerTypes: SidebarTabbedContainerPipelineFragment_contexts_config_type_RegularType_innerTypes_RegularType_innerTypes[];
-  description: string | null;
   typeAttributes: SidebarTabbedContainerPipelineFragment_contexts_config_type_RegularType_innerTypes_RegularType_typeAttributes;
 }
 
@@ -43,17 +43,18 @@ export interface SidebarTabbedContainerPipelineFragment_contexts_config_type_Reg
 
 export interface SidebarTabbedContainerPipelineFragment_contexts_config_type_RegularType_innerTypes_CompositeType_fields {
   name: string;
+  description: string | null;
   type: SidebarTabbedContainerPipelineFragment_contexts_config_type_RegularType_innerTypes_CompositeType_fields_type;
   isOptional: boolean;
 }
 
 export interface SidebarTabbedContainerPipelineFragment_contexts_config_type_RegularType_innerTypes_CompositeType {
   name: string;
+  description: string | null;
   isDict: boolean;
   isList: boolean;
   isNullable: boolean;
   innerTypes: SidebarTabbedContainerPipelineFragment_contexts_config_type_RegularType_innerTypes_CompositeType_innerTypes[];
-  description: string | null;
   typeAttributes: SidebarTabbedContainerPipelineFragment_contexts_config_type_RegularType_innerTypes_CompositeType_typeAttributes;
   fields: SidebarTabbedContainerPipelineFragment_contexts_config_type_RegularType_innerTypes_CompositeType_fields[];
 }
@@ -66,11 +67,11 @@ export interface SidebarTabbedContainerPipelineFragment_contexts_config_type_Reg
 
 export interface SidebarTabbedContainerPipelineFragment_contexts_config_type_RegularType {
   name: string;
+  description: string | null;
   isDict: boolean;
   isList: boolean;
   isNullable: boolean;
   innerTypes: SidebarTabbedContainerPipelineFragment_contexts_config_type_RegularType_innerTypes[];
-  description: string | null;
   typeAttributes: SidebarTabbedContainerPipelineFragment_contexts_config_type_RegularType_typeAttributes;
 }
 
@@ -84,11 +85,11 @@ export interface SidebarTabbedContainerPipelineFragment_contexts_config_type_Com
 
 export interface SidebarTabbedContainerPipelineFragment_contexts_config_type_CompositeType_innerTypes_RegularType {
   name: string;
+  description: string | null;
   isDict: boolean;
   isList: boolean;
   isNullable: boolean;
   innerTypes: SidebarTabbedContainerPipelineFragment_contexts_config_type_CompositeType_innerTypes_RegularType_innerTypes[];
-  description: string | null;
   typeAttributes: SidebarTabbedContainerPipelineFragment_contexts_config_type_CompositeType_innerTypes_RegularType_typeAttributes;
 }
 
@@ -106,17 +107,18 @@ export interface SidebarTabbedContainerPipelineFragment_contexts_config_type_Com
 
 export interface SidebarTabbedContainerPipelineFragment_contexts_config_type_CompositeType_innerTypes_CompositeType_fields {
   name: string;
+  description: string | null;
   type: SidebarTabbedContainerPipelineFragment_contexts_config_type_CompositeType_innerTypes_CompositeType_fields_type;
   isOptional: boolean;
 }
 
 export interface SidebarTabbedContainerPipelineFragment_contexts_config_type_CompositeType_innerTypes_CompositeType {
   name: string;
+  description: string | null;
   isDict: boolean;
   isList: boolean;
   isNullable: boolean;
   innerTypes: SidebarTabbedContainerPipelineFragment_contexts_config_type_CompositeType_innerTypes_CompositeType_innerTypes[];
-  description: string | null;
   typeAttributes: SidebarTabbedContainerPipelineFragment_contexts_config_type_CompositeType_innerTypes_CompositeType_typeAttributes;
   fields: SidebarTabbedContainerPipelineFragment_contexts_config_type_CompositeType_innerTypes_CompositeType_fields[];
 }
@@ -133,17 +135,18 @@ export interface SidebarTabbedContainerPipelineFragment_contexts_config_type_Com
 
 export interface SidebarTabbedContainerPipelineFragment_contexts_config_type_CompositeType_fields {
   name: string;
+  description: string | null;
   type: SidebarTabbedContainerPipelineFragment_contexts_config_type_CompositeType_fields_type;
   isOptional: boolean;
 }
 
 export interface SidebarTabbedContainerPipelineFragment_contexts_config_type_CompositeType {
   name: string;
+  description: string | null;
   isDict: boolean;
   isList: boolean;
   isNullable: boolean;
   innerTypes: SidebarTabbedContainerPipelineFragment_contexts_config_type_CompositeType_innerTypes[];
-  description: string | null;
   typeAttributes: SidebarTabbedContainerPipelineFragment_contexts_config_type_CompositeType_typeAttributes;
   fields: SidebarTabbedContainerPipelineFragment_contexts_config_type_CompositeType_fields[];
 }
@@ -164,11 +167,11 @@ export interface SidebarTabbedContainerPipelineFragment_contexts_resources_confi
 
 export interface SidebarTabbedContainerPipelineFragment_contexts_resources_config_type_RegularType_innerTypes_RegularType {
   name: string;
+  description: string | null;
   isDict: boolean;
   isList: boolean;
   isNullable: boolean;
   innerTypes: SidebarTabbedContainerPipelineFragment_contexts_resources_config_type_RegularType_innerTypes_RegularType_innerTypes[];
-  description: string | null;
   typeAttributes: SidebarTabbedContainerPipelineFragment_contexts_resources_config_type_RegularType_innerTypes_RegularType_typeAttributes;
 }
 
@@ -186,17 +189,18 @@ export interface SidebarTabbedContainerPipelineFragment_contexts_resources_confi
 
 export interface SidebarTabbedContainerPipelineFragment_contexts_resources_config_type_RegularType_innerTypes_CompositeType_fields {
   name: string;
+  description: string | null;
   type: SidebarTabbedContainerPipelineFragment_contexts_resources_config_type_RegularType_innerTypes_CompositeType_fields_type;
   isOptional: boolean;
 }
 
 export interface SidebarTabbedContainerPipelineFragment_contexts_resources_config_type_RegularType_innerTypes_CompositeType {
   name: string;
+  description: string | null;
   isDict: boolean;
   isList: boolean;
   isNullable: boolean;
   innerTypes: SidebarTabbedContainerPipelineFragment_contexts_resources_config_type_RegularType_innerTypes_CompositeType_innerTypes[];
-  description: string | null;
   typeAttributes: SidebarTabbedContainerPipelineFragment_contexts_resources_config_type_RegularType_innerTypes_CompositeType_typeAttributes;
   fields: SidebarTabbedContainerPipelineFragment_contexts_resources_config_type_RegularType_innerTypes_CompositeType_fields[];
 }
@@ -209,11 +213,11 @@ export interface SidebarTabbedContainerPipelineFragment_contexts_resources_confi
 
 export interface SidebarTabbedContainerPipelineFragment_contexts_resources_config_type_RegularType {
   name: string;
+  description: string | null;
   isDict: boolean;
   isList: boolean;
   isNullable: boolean;
   innerTypes: SidebarTabbedContainerPipelineFragment_contexts_resources_config_type_RegularType_innerTypes[];
-  description: string | null;
   typeAttributes: SidebarTabbedContainerPipelineFragment_contexts_resources_config_type_RegularType_typeAttributes;
 }
 
@@ -227,11 +231,11 @@ export interface SidebarTabbedContainerPipelineFragment_contexts_resources_confi
 
 export interface SidebarTabbedContainerPipelineFragment_contexts_resources_config_type_CompositeType_innerTypes_RegularType {
   name: string;
+  description: string | null;
   isDict: boolean;
   isList: boolean;
   isNullable: boolean;
   innerTypes: SidebarTabbedContainerPipelineFragment_contexts_resources_config_type_CompositeType_innerTypes_RegularType_innerTypes[];
-  description: string | null;
   typeAttributes: SidebarTabbedContainerPipelineFragment_contexts_resources_config_type_CompositeType_innerTypes_RegularType_typeAttributes;
 }
 
@@ -249,17 +253,18 @@ export interface SidebarTabbedContainerPipelineFragment_contexts_resources_confi
 
 export interface SidebarTabbedContainerPipelineFragment_contexts_resources_config_type_CompositeType_innerTypes_CompositeType_fields {
   name: string;
+  description: string | null;
   type: SidebarTabbedContainerPipelineFragment_contexts_resources_config_type_CompositeType_innerTypes_CompositeType_fields_type;
   isOptional: boolean;
 }
 
 export interface SidebarTabbedContainerPipelineFragment_contexts_resources_config_type_CompositeType_innerTypes_CompositeType {
   name: string;
+  description: string | null;
   isDict: boolean;
   isList: boolean;
   isNullable: boolean;
   innerTypes: SidebarTabbedContainerPipelineFragment_contexts_resources_config_type_CompositeType_innerTypes_CompositeType_innerTypes[];
-  description: string | null;
   typeAttributes: SidebarTabbedContainerPipelineFragment_contexts_resources_config_type_CompositeType_innerTypes_CompositeType_typeAttributes;
   fields: SidebarTabbedContainerPipelineFragment_contexts_resources_config_type_CompositeType_innerTypes_CompositeType_fields[];
 }
@@ -276,17 +281,18 @@ export interface SidebarTabbedContainerPipelineFragment_contexts_resources_confi
 
 export interface SidebarTabbedContainerPipelineFragment_contexts_resources_config_type_CompositeType_fields {
   name: string;
+  description: string | null;
   type: SidebarTabbedContainerPipelineFragment_contexts_resources_config_type_CompositeType_fields_type;
   isOptional: boolean;
 }
 
 export interface SidebarTabbedContainerPipelineFragment_contexts_resources_config_type_CompositeType {
   name: string;
+  description: string | null;
   isDict: boolean;
   isList: boolean;
   isNullable: boolean;
   innerTypes: SidebarTabbedContainerPipelineFragment_contexts_resources_config_type_CompositeType_innerTypes[];
-  description: string | null;
   typeAttributes: SidebarTabbedContainerPipelineFragment_contexts_resources_config_type_CompositeType_typeAttributes;
   fields: SidebarTabbedContainerPipelineFragment_contexts_resources_config_type_CompositeType_fields[];
 }

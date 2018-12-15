@@ -92,6 +92,9 @@ const Container = styled.div`
   overflow: hidden;
   font-size: 0.8rem;
   position: relative;
+  p:last-child {
+    margin-bottom: 5px;
+  }
 `;
 
 const Mask = styled.div`
