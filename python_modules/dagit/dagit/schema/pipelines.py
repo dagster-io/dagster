@@ -1,97 +1,148 @@
 from __future__ import absolute_import
-from functools import wraps
-import graphene
 
 import dagster
 from dagster.core.types import DagsterCompositeTypeBase
-from dagster import check
+from dagster import (
+    ExpectationDefinition,
+    Field,
+    InputDefinition,
+    OutputDefinition,
+    PipelineContextDefinition,
+    PipelineDefinition,
+    ResourceDefinition,
+    SolidDefinition,
+    check,
+)
+from dagster.core.definitions import (
+    Solid,
+    SolidInputHandle,
+    SolidOutputHandle,
+)
 
-from .utils import non_null_list
+from dagit.schema import dauphin
 
 
-def _pipeline_run():
-    from dagit.schema import runs
-    return runs.PipelineRun
+class DauphinPipeline(dauphin.ObjectType):
+    class Meta:
+        name = 'Pipeline'
 
-
-class Pipeline(graphene.ObjectType):
-    name = graphene.NonNull(graphene.String)
-    description = graphene.String()
-    solids = non_null_list(lambda: Solid)
-    contexts = non_null_list(lambda: PipelineContext)
-    environment_type = graphene.NonNull(lambda: Type)
-    types = graphene.NonNull(graphene.List(graphene.NonNull(lambda: Type)), )
-    runs = non_null_list(_pipeline_run)
+    name = dauphin.NonNull(dauphin.String)
+    description = dauphin.String()
+    solids = dauphin.non_null_list('Solid')
+    contexts = dauphin.non_null_list('PipelineContext')
+    environment_type = dauphin.NonNull('Type')
+    types = dauphin.non_null_list('Type')
+    runs = dauphin.non_null_list('PipelineRun')
 
     def __init__(self, pipeline):
-        super(Pipeline, self).__init__(name=pipeline.name, description=pipeline.description)
-        self._pipeline = check.inst_param(pipeline, 'pipeline', dagster.PipelineDefinition)
+        super(DauphinPipeline, self).__init__(name=pipeline.name, description=pipeline.description)
+        self._pipeline = check.inst_param(pipeline, 'pipeline', PipelineDefinition)
 
-    def resolve_solids(self, _info):
+    def resolve_solids(self, info):
         return [
-            Solid(
+            info.schema.type_named('Solid')(
                 solid,
                 self._pipeline.dependency_structure.deps_of_solid_with_input(solid.name),
                 self._pipeline.dependency_structure.depended_by_of_solid(solid.name),
             ) for solid in self._pipeline.solids
         ]
 
-    def resolve_contexts(self, _info):
+    def resolve_contexts(self, info):
         return [
-            PipelineContext(name=name, context=context)
+            info.schema.type_named('PipelineContext')(name=name, context=context)
             for name, context in self._pipeline.context_definitions.items()
         ]
 
-    def resolve_environment_type(self, _info):
-        return Type.from_dagster_type(self._pipeline.environment_type)
+    def resolve_environment_type(self, info):
+        return info.schema.type_named('Type').from_dagster_type(
+            info, self._pipeline.environment_type
+        )
 
-    def resolve_types(self, _info):
+    def resolve_types(self, info):
         return sorted(
-            [Type.from_dagster_type(type_) for type_ in self._pipeline.all_types()],
+            [
+                info.schema.type_named('Type').from_dagster_type(info, type_)
+                for type_ in self._pipeline.all_types()
+            ],
             key=lambda type_: type_.name
         )
 
     def resolve_runs(self, info):
-        from dagit.schema import runs
         return [
-            runs.PipelineRun(r)
+            info.schema.type_named('PipelineRun')(r)
             for r in info.context.pipeline_runs.all_runs_for_pipeline(self._pipeline.name)
         ]
 
     def get_dagster_pipeline(self):
         return self._pipeline
 
-    def get_type(self, typeName):
-        return Type.from_dagster_type(self._pipeline.type_named(typeName))
+    def get_type(self, info, typeName):
+        return info.schema.type_named('Type').from_dagster_type(
+            info, self._pipeline.type_named(typeName)
+        )
 
 
-class PipelineConnection(graphene.ObjectType):
-    nodes = non_null_list(lambda: Pipeline)
+class DauphinPipelineConnection(dauphin.ObjectType):
+    class Meta:
+        name = 'PipelineConnection'
+
+    nodes = dauphin.non_null_list('Pipeline')
 
 
-class PipelineContext(graphene.ObjectType):
-    name = graphene.NonNull(graphene.String)
-    description = graphene.String()
-    config = graphene.Field(lambda: Config)
+class DauphinResource(dauphin.ObjectType):
+    class Meta:
+        name = 'Resource'
+
+    def __init__(self, resource_name, resource):
+        self.name = check.str_param(resource_name, 'resource_name')
+        self._resource = check.inst_param(resource, 'resource', ResourceDefinition)
+        self.description = resource.description
+
+    name = dauphin.NonNull(dauphin.String)
+    description = dauphin.String()
+    config = dauphin.Field('Config')
+
+    def resolve_config(self, info):
+        return info.schema.type_named('Config')(
+            self._resource.config_field
+        ) if self._resource.config_field else None
+
+
+class DauphinPipelineContext(dauphin.ObjectType):
+    class Meta:
+        name = 'PipelineContext'
+
+    name = dauphin.NonNull(dauphin.String)
+    description = dauphin.String()
+    config = dauphin.Field('Config')
+    resources = dauphin.non_null_list('Resource')
 
     def __init__(self, name, context):
-        super(PipelineContext, self).__init__(name=name, description=context.description)
-        self._context = check.inst_param(context, 'context', dagster.PipelineContextDefinition)
+        super(DauphinPipelineContext, self).__init__(name=name, description=context.description)
+        self._context = check.inst_param(context, 'context', PipelineContextDefinition)
 
-    def resolve_config(self, _info):
-        return Config(self._context.config_field) if self._context.config_field else None
+    def resolve_config(self, info):
+        return info.schema.type_named('Config')(
+            self._context.config_field
+        ) if self._context.config_field else None
+
+    def resolve_resources(self, _info):
+        return [DauphinResource(*item) for item in self._context.resources.items()]
 
 
-class Solid(graphene.ObjectType):
-    name = graphene.NonNull(graphene.String)
-    definition = graphene.NonNull(lambda: SolidDefinition)
-    inputs = non_null_list(lambda: Input)
-    outputs = non_null_list(lambda: Output)
+class DauphinSolid(dauphin.ObjectType):
+    class Meta:
+        name = 'Solid'
+
+    name = dauphin.NonNull(dauphin.String)
+    definition = dauphin.NonNull('SolidDefinition')
+    inputs = dauphin.non_null_list('Input')
+    outputs = dauphin.non_null_list('Output')
 
     def __init__(self, solid, depends_on=None, depended_by=None):
-        super(Solid, self).__init__(name=solid.name)
+        super(DauphinSolid, self).__init__(name=solid.name)
 
-        self._solid = check.inst_param(solid, 'solid', dagster.core.definitions.Solid)
+        self._solid = check.inst_param(solid, 'solid', Solid)
 
         if depends_on:
             self.depends_on = {
@@ -109,201 +160,255 @@ class Solid(graphene.ObjectType):
         else:
             self.depended_by = {}
 
-    def resolve_definition(self, _info):
-        return SolidDefinition(self._solid.definition)
+    def resolve_definition(self, info):
+        return info.schema.type_named('SolidDefinition')(self._solid.definition)
 
-    def resolve_inputs(self, _info):
-        return [Input(input_handle, self) for input_handle in self._solid.input_handles()]
+    def resolve_inputs(self, info):
+        return [
+            info.schema.type_named('Input')(input_handle, self)
+            for input_handle in self._solid.input_handles()
+        ]
 
-    def resolve_outputs(self, _info):
-        return [Output(output_handle, self) for output_handle in self._solid.output_handles()]
+    def resolve_outputs(self, info):
+        return [
+            info.schema.type_named('Output')(output_handle, self)
+            for output_handle in self._solid.output_handles()
+        ]
 
 
-class Input(graphene.ObjectType):
-    solid = graphene.NonNull(lambda: Solid)
-    definition = graphene.NonNull(lambda: InputDefinition)
-    depends_on = graphene.Field(lambda: Output)
+class DauphinInput(dauphin.ObjectType):
+    class Meta:
+        name = 'Input'
+
+    solid = dauphin.NonNull('Solid')
+    definition = dauphin.NonNull('InputDefinition')
+    depends_on = dauphin.Field('Output')
 
     def __init__(self, input_handle, solid):
-        super(Input, self).__init__(solid=solid)
-        self._solid = check.inst_param(solid, 'solid', Solid)
-        self._input_handle = check.inst_param(
-            input_handle, 'input_handle', dagster.core.definitions.SolidInputHandle
+        super(DauphinInput, self).__init__(solid=solid)
+        self._solid = check.inst_param(solid, 'solid', DauphinSolid)
+        self._input_handle = check.inst_param(input_handle, 'input_handle', SolidInputHandle)
+
+    def resolve_definition(self, info):
+        return info.schema.type_named('InputDefinition')(
+            self._input_handle.input_def, self._solid.resolve_definition(info)
         )
 
-    def resolve_definition(self, _info):
-        return InputDefinition(self._input_handle.input_def, self._solid.resolve_definition({}))
-
-    def resolve_depends_on(self, _info):
+    def resolve_depends_on(self, info):
         if self._input_handle in self._solid.depends_on:
-            return Output(
+            return info.schema.type_named('Output')(
                 self._solid.depends_on[self._input_handle],
-                Solid(self._solid.depends_on[self._input_handle].solid),
+                info.schema.type_named('Solid')(self._solid.depends_on[self._input_handle].solid),
             )
         else:
             return None
 
 
-class Output(graphene.ObjectType):
-    solid = graphene.NonNull(lambda: Solid)
-    definition = graphene.NonNull(lambda: OutputDefinition)
-    depended_by = graphene.List(lambda: graphene.NonNull(Input))
+class DauphinOutput(dauphin.ObjectType):
+    class Meta:
+        name = 'Output'
+
+    solid = dauphin.NonNull('Solid')
+    definition = dauphin.NonNull('OutputDefinition')
+    depended_by = dauphin.non_null_list('Input')
 
     def __init__(self, output_handle, solid):
-        super(Output, self).__init__(solid=solid)
-        self._solid = check.inst_param(solid, 'solid', Solid)
-        self._output_handle = check.inst_param(
-            output_handle, 'output_handle', dagster.core.definitions.SolidOutputHandle
+        super(DauphinOutput, self).__init__(solid=solid)
+        self._solid = check.inst_param(solid, 'solid', DauphinSolid)
+        self._output_handle = check.inst_param(output_handle, 'output_handle', SolidOutputHandle)
+
+    def resolve_definition(self, info):
+        return info.schema.type_named('OutputDefinition')(
+            self._output_handle.output_def, self._solid.resolve_definition(info)
         )
 
-    def resolve_definition(self, _info):
-        return OutputDefinition(self._output_handle.output_def, self._solid.resolve_definition({}))
-
-    def resolve_depended_by(self, _info):
+    def resolve_depended_by(self, info):
         return [
-            Input(
+            info.schema.type_named('Input')(
                 input_handle,
-                Solid(input_handle.solid),
+                DauphinSolid(input_handle.solid),
             ) for input_handle in self._solid.depended_by.get(self._output_handle, [])
         ]
 
 
-class SolidMetadataItemDefinition(graphene.ObjectType):
-    key = graphene.NonNull(graphene.String)
-    value = graphene.NonNull(graphene.String)
+class DauphinSolidMetadataItemDefinition(dauphin.ObjectType):
+    class Meta:
+        name = 'SolidMetadataItemDefinition'
+
+    key = dauphin.NonNull(dauphin.String)
+    value = dauphin.NonNull(dauphin.String)
 
 
-class SolidDefinition(graphene.ObjectType):
-    name = graphene.NonNull(graphene.String)
-    description = graphene.String()
-    metadata = non_null_list(lambda: SolidMetadataItemDefinition)
-    input_definitions = non_null_list(lambda: InputDefinition)
-    output_definitions = non_null_list(lambda: OutputDefinition)
-    config_definition = graphene.Field(lambda: Config)
+class DauphinSolidDefinition(dauphin.ObjectType):
+    class Meta:
+        name = 'SolidDefinition'
+
+    name = dauphin.NonNull(dauphin.String)
+    description = dauphin.String()
+    metadata = dauphin.non_null_list('SolidMetadataItemDefinition')
+    input_definitions = dauphin.non_null_list('InputDefinition')
+    output_definitions = dauphin.non_null_list('OutputDefinition')
+    config_definition = dauphin.Field('Config')
 
     # solids - ?
 
     def __init__(self, solid_def):
-        super(SolidDefinition, self).__init__(
+        super(DauphinSolidDefinition, self).__init__(
             name=solid_def.name,
             description=solid_def.description,
         )
 
-        self._solid_def = check.inst_param(solid_def, 'solid_def', dagster.SolidDefinition)
+        self._solid_def = check.inst_param(solid_def, 'solid_def', SolidDefinition)
 
-    def resolve_metadata(self, _info):
+    def resolve_metadata(self, info):
         return [
-            SolidMetadataItemDefinition(key=item[0], value=item[1])
+            info.schema.type_named('SolidMetadataItemDefinition')(key=item[0], value=item[1])
             for item in self._solid_def.metadata.items()
         ]
 
-    def resolve_input_definitions(self, _info):
+    def resolve_input_definitions(self, info):
         return [
-            InputDefinition(input_definition, self)
+            info.schema.type_named('InputDefinition')(input_definition, self)
             for input_definition in self._solid_def.input_defs
         ]
 
-    def resolve_output_definitions(self, _info):
+    def resolve_output_definitions(self, info):
         return [
-            OutputDefinition(output_definition, self)
+            info.schema.type_named('OutputDefinition')(output_definition, self)
             for output_definition in self._solid_def.output_defs
         ]
 
-    def resolve_config_definition(self, _info):
-        return Config(self._solid_def.config_field) if self._solid_def.config_field else None
+    def resolve_config_definition(self, info):
+        return info.schema.type_named('Config')(
+            self._solid_def.config_field
+        ) if self._solid_def.config_field else None
 
 
-class InputDefinition(graphene.ObjectType):
-    solid_definition = graphene.NonNull(lambda: SolidDefinition)
-    name = graphene.NonNull(graphene.String)
-    description = graphene.String()
-    type = graphene.NonNull(lambda: Type)
-    expectations = non_null_list(lambda: Expectation)
+class DauphinInputDefinition(dauphin.ObjectType):
+    class Meta:
+        name = 'InputDefinition'
+
+    solid_definition = dauphin.NonNull('SolidDefinition')
+    name = dauphin.NonNull(dauphin.String)
+    description = dauphin.String()
+    type = dauphin.NonNull('Type')
+    expectations = dauphin.non_null_list('Expectation')
 
     # inputs - ?
 
     def __init__(self, input_definition, solid_def):
-        super(InputDefinition, self).__init__(
+        super(DauphinInputDefinition, self).__init__(
             name=input_definition.name,
             description=input_definition.description,
             solid_definition=solid_def,
         )
         self._input_definition = check.inst_param(
-            input_definition, 'input_definition', dagster.InputDefinition
+            input_definition,
+            'input_definition',
+            InputDefinition,
         )
 
-    def resolve_type(self, _info):
-        return Type.from_dagster_type(dagster_type=self._input_definition.dagster_type)
+    def resolve_type(self, info):
+        return info.schema.type_named('Type').from_dagster_type(
+            info,
+            dagster_type=self._input_definition.dagster_type,
+        )
 
-    def resolve_expectations(self, _info):
+    def resolve_expectations(self, info):
         if self._input_definition.expectations:
-            return [Expectation(expectation for expectation in self._input_definition.expectations)]
-        else:
-            return []
-
-
-class OutputDefinition(graphene.ObjectType):
-    solid_definition = graphene.NonNull(lambda: SolidDefinition)
-    name = graphene.NonNull(graphene.String)
-    description = graphene.String()
-    type = graphene.NonNull(lambda: Type)
-    expectations = non_null_list(lambda: Expectation)
-
-    # outputs - ?
-
-    def __init__(self, output_definition, solid_def):
-        super(OutputDefinition, self).__init__(
-            name=output_definition.name,
-            description=output_definition.description,
-            solid_definition=solid_def,
-        )
-        self._output_definition = check.inst_param(
-            output_definition, 'output_definition', dagster.OutputDefinition
-        )
-
-    def resolve_type(self, _info):
-        return Type.from_dagster_type(dagster_type=self._output_definition.dagster_type)
-
-    def resolve_expectations(self, _info):
-        if self._output_definition.expectations:
             return [
-                Expectation(expectation) for expectation in self._output_definition.expectations
+                info.schema.type_named('Expectation')(
+                    expectation for expectation in self._input_definition.expectations
+                )
             ]
         else:
             return []
 
 
-class Expectation(graphene.ObjectType):
-    name = graphene.NonNull(graphene.String)
-    description = graphene.String()
+class DauphinOutputDefinition(dauphin.ObjectType):
+    class Meta:
+        name = 'OutputDefinition'
+
+    solid_definition = dauphin.NonNull('SolidDefinition')
+    name = dauphin.NonNull(dauphin.String)
+    description = dauphin.String()
+    type = dauphin.NonNull('Type')
+    expectations = dauphin.non_null_list('Expectation')
+
+    # outputs - ?
+
+    def __init__(self, output_definition, solid_def):
+        super(DauphinOutputDefinition, self).__init__(
+            name=output_definition.name,
+            description=output_definition.description,
+            solid_definition=solid_def,
+        )
+        self._output_definition = check.inst_param(
+            output_definition,
+            'output_definition',
+            OutputDefinition,
+        )
+
+    def resolve_type(self, info):
+        return info.schema.type_named('Type').from_dagster_type(
+            info,
+            dagster_type=self._output_definition.dagster_type,
+        )
+
+    def resolve_expectations(self, info):
+        if self._output_definition.expectations:
+            return [
+                info.schema.type_named('Expectation')(expectation)
+                for expectation in self._output_definition.expectations
+            ]
+        else:
+            return []
+
+
+class DauphinExpectation(dauphin.ObjectType):
+    class Meta:
+        name = 'Expectation'
+
+    name = dauphin.NonNull(dauphin.String)
+    description = dauphin.String()
 
     def __init__(self, expectation):
-        check.inst_param(expectation, 'expectation', dagster.ExpectationDefinition)
-        super(Expectation, self).__init__(
-            name=expectation.name, description=expectation.description
+        check.inst_param(expectation, 'expectation', ExpectationDefinition)
+        super(DauphinExpectation, self).__init__(
+            name=expectation.name,
+            description=expectation.description,
         )
 
 
-class Config(graphene.ObjectType):
-    type = graphene.NonNull(lambda: Type)
+class DauphinConfig(dauphin.ObjectType):
+    class Meta:
+        name = 'Config'
+
+    type = dauphin.NonNull('Type')
 
     def __init__(self, config_field):
-        super(Config, self).__init__()
-        self._config_field = check.opt_inst_param(config_field, 'config_field', dagster.Field)
+        super(DauphinConfig, self).__init__()
+        self._config_field = check.opt_inst_param(config_field, 'config_field', Field)
 
-    def resolve_type(self, _info):
-        return Type.from_dagster_type(dagster_type=self._config_field.dagster_type)
+    def resolve_type(self, info):
+        return info.schema.type_named('Type').from_dagster_type(
+            info,
+            dagster_type=self._config_field.dagster_type,
+        )
 
 
-class TypeAttributes(graphene.ObjectType):
-    is_builtin = graphene.NonNull(
-        graphene.Boolean,
+class DauphinTypeAttributes(dauphin.ObjectType):
+    class Meta:
+        name = 'TypeAttributes'
+
+    is_builtin = dauphin.NonNull(
+        dauphin.Boolean,
         description='''
 True if the system defines it and it is the same type across pipelines.
 Examples include "Int" and "String."''',
     )
-    is_system_config = graphene.NonNull(
-        graphene.Boolean,
+    is_system_config = dauphin.NonNull(
+        dauphin.Boolean,
         description='''
 Dagster generates types for base elements of the config system (e.g. the solids and
 context field of the base environment). These types are always present
@@ -312,70 +417,105 @@ filter out those types by default.
 ''',
     )
 
-    is_named = graphene.NonNull(graphene.Boolean)
+    is_named = dauphin.NonNull(dauphin.Boolean)
 
 
-class Type(graphene.Interface):
-    name = graphene.NonNull(graphene.String)
-    description = graphene.String()
-    type_attributes = graphene.NonNull(TypeAttributes)
+class DauphinType(dauphin.Interface):
+    class Meta:
+        name = 'Type'
+
+    name = dauphin.NonNull(dauphin.String)
+    description = dauphin.String()
+    type_attributes = dauphin.NonNull('TypeAttributes')
+
+    is_dict = dauphin.NonNull(dauphin.Boolean)
+    is_nullable = dauphin.NonNull(dauphin.Boolean)
+    is_list = dauphin.NonNull(dauphin.Boolean)
+
+    inner_types = dauphin.non_null_list('Type')
 
     @classmethod
-    def from_dagster_type(cls, dagster_type):
+    def from_dagster_type(cls, info, dagster_type):
         if isinstance(dagster_type, DagsterCompositeTypeBase):
-            return CompositeType(dagster_type)
+            return info.schema.type_named('CompositeType')(dagster_type)
         else:
-            return RegularType(dagster_type)
+            return info.schema.type_named('RegularType')(dagster_type)
 
 
-class RegularType(graphene.ObjectType):
+class DauphinRegularType(dauphin.ObjectType):
     class Meta:
+        name = 'RegularType'
         interfaces = [
-            Type,
+            DauphinType,
         ]
 
     def __init__(self, dagster_type):
-        super(RegularType, self).__init__(
+        super(DauphinRegularType, self).__init__(
             name=dagster_type.name,
             description=dagster_type.description,
+            is_dict=dagster_type.is_dict,
+            is_nullable=dagster_type.is_nullable,
+            is_list=dagster_type.is_list,
         )
         self._dagster_type = dagster_type
 
     def resolve_type_attributes(self, _info):
         return self._dagster_type.type_attributes
 
-
-class CompositeType(graphene.ObjectType):
-    fields = non_null_list(lambda: TypeField)
-
-    class Meta:
-        interfaces = [
-            Type,
+    def resolve_inner_types(self, info):
+        return [
+            DauphinType.from_dagster_type(info, inner_type)
+            for inner_type in self._dagster_type.inner_types
         ]
 
+
+class DauphinCompositeType(dauphin.ObjectType):
+    class Meta:
+        name = 'CompositeType'
+        interfaces = [
+            DauphinType,
+        ]
+
+    fields = dauphin.non_null_list('TypeField')
+
     def __init__(self, dagster_type):
-        super(CompositeType, self).__init__(
+        super(DauphinCompositeType, self).__init__(
             name=dagster_type.name,
             description=dagster_type.description,
+            is_dict=dagster_type.is_dict,
+            is_nullable=dagster_type.is_nullable,
+            is_list=dagster_type.is_list,
         )
         self._dagster_type = dagster_type
 
-    def resolve_type_attributes(self, _info):
-        return self._dagster_type.type_attributes
+    def resolve_inner_types(self, info):
+        return [
+            DauphinType.from_dagster_type(info, inner_type)
+            for inner_type in self._dagster_type.inner_types
+        ]
 
-    def resolve_fields(self, _info):
-        return [TypeField(name=k, field=v) for k, v in self._dagster_type.field_dict.items()]
+    def resolve_type_attributes(self, info):
+        return info.schema.type_named('TypeAttributes')(*self._dagster_type.type_attributes)
+
+    def resolve_fields(self, info):
+        return [
+            info.schema.type_named('TypeField')(name=k, field=v)
+            for k, v in self._dagster_type.field_dict.items()
+        ]
 
 
-class TypeField(graphene.ObjectType):
-    name = graphene.NonNull(graphene.String)
-    description = graphene.String()
-    type = graphene.NonNull(lambda: Type)
-    default_value = graphene.String()
-    is_optional = graphene.NonNull(graphene.Boolean)
+class DauphinTypeField(dauphin.ObjectType):
+    class Meta:
+        name = 'TypeField'
+
+    name = dauphin.NonNull(dauphin.String)
+    description = dauphin.String()
+    type = dauphin.NonNull('Type')
+    default_value = dauphin.String()
+    is_optional = dauphin.NonNull(dauphin.Boolean)
 
     def __init__(self, name, field):
-        super(TypeField, self).__init__(
+        super(DauphinTypeField, self).__init__(
             name=name,
             description=field.description,
             default_value=field.default_value_as_str if field.default_provided else None,
@@ -383,5 +523,7 @@ class TypeField(graphene.ObjectType):
         )
         self._field = field
 
-    def resolve_type(self, _info):
-        return Type.from_dagster_type(dagster_type=self._field.dagster_type)
+    def resolve_type(self, info):
+        return info.schema.type_named('Type').from_dagster_type(
+            info, dagster_type=self._field.dagster_type
+        )

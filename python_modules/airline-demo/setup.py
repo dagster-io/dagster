@@ -19,13 +19,13 @@ setup(
     license='Apache-2.0',
     description='A complete demo exercising the functionality of Dagster.',
     url='https://github.com/dagster-io/airline-demo',
-    classifiers=(
+    classifiers=[
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'License :: OSI Approved :: Apache Software License',
         'Operating System :: OS Independent',
-    ),
+    ],
     packages=find_packages(exclude=['test']),
     install_requires=[
         'boto3',

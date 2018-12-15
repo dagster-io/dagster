@@ -3,10 +3,7 @@ import pickle
 import os
 import uuid
 
-import pandas as pd
-
 from dagster import types
-from dagster.pandas import DataFrame
 
 SomeTuple = namedtuple('SomeTuple', 'foo')
 
@@ -33,9 +30,3 @@ def test_basic_serialization():
     assert roundtrip_typed_value(1, types.Int) == 1
     assert roundtrip_typed_value(True, types.Bool) is True
     assert roundtrip_typed_value({'bar': 'foo'}, types.PythonDict) == {'bar': 'foo'}
-
-
-def test_basic_pandas():
-    df = pd.DataFrame({'a': [1, 2], 'b': [3, 4]})
-    out_df = roundtrip_typed_value(df, DataFrame)
-    assert out_df.equals(df)

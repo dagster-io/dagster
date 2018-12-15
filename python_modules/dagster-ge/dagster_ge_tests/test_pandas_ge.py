@@ -12,7 +12,7 @@ from dagster import (
 )
 from dagster.core.errors import DagsterExpectationFailedError
 from dagster.core.utility_solids import define_stub_solid
-import dagster.pandas as dagster_pd
+import dagster_contrib.pandas as dagster_pd
 from dagster.utils import script_relative_path
 
 import dagster_ge

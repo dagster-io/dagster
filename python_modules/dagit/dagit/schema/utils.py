@@ -1,10 +1,3 @@
-import graphene
-
-
-def non_null_list(ttype):
-    return graphene.NonNull(graphene.List(graphene.NonNull(ttype)))
-
-
 class Either(object):
     def __init__(self, value):
         self._value = value

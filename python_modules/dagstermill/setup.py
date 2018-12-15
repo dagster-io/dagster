@@ -8,8 +8,13 @@ if sys.version_info[0] < 3:
 else:
     import builtins
 
+version = {}
+with open("dagstermill/version.py") as fp:
+    exec(fp.read(), version)  # pylint: disable=W0122
+
 setup(
     name='dagstermill',
+    version=version['__version__'],
     author='Elementl',
     license='Apache-2.0',
     packages=find_packages(exclude=['dagstermill_tests']),

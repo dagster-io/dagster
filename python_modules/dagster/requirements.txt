@@ -1,0 +1,10 @@
+click>=6.7
+coloredlogs>=10.0
+contextlib2>=0.5.5
+enum34>=1.1.6
+funcsigs>=1.0.2
+future>=0.16.0
+graphviz>=0.8.3
+pyyaml>=3.12
+six>=1.11.0
+toposort>=1.5

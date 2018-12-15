@@ -14,7 +14,7 @@ from dagster import (
 from dagster.core.definitions import ExecutionGraph, Solid
 from dagster.core.execution import execute_pipeline_iterator
 from dagster.graphviz import build_graphviz_graph
-from dagster.utils import load_yaml_from_path
+from dagster.utils import load_yaml_from_glob_list
 from dagster.utils.indenting_printer import IndentingPrinter
 
 from .config_scaffolder import scaffold_pipeline_config
@@ -279,15 +279,25 @@ LOGGING_DICT = {
 @click.option(
     '-e',
     '--env',
-    type=click.Path(
-        exists=True,
-        file_okay=True,
-        dir_okay=False,
-        readable=True,
-        resolve_path=True,
+    type=click.STRING,
+    multiple=True,
+    help=(
+        'Specify one or more environment files. These can also be file patterns. '
+        'If more than one environment file is captured then those files are merged. '
+        'Files listed first take precendence. They will smash the values of subsequent '
+        'files at the key-level granularity. If the file is a pattern then you must '
+        'enclose it in double quotes'
+        '\n\nExample: '
+        'dagster pipeline execute pandas_hello_world -e "pandas_hello_world/*.yml"'
+        '\n\nYou can also specifiy multiple files:'
+        '\n\nExample: '
+        'dagster pipeline execute pandas_hello_world -e pandas_hello_world/solids.yml '
+        '-e pandas_hello_world/env.yml'
     ),
 )
 def execute_command(env, **kwargs):
+    check.invariant(isinstance(env, tuple))
+    env = list(env)
     execute_execute_command(env, kwargs, click.echo)
 
 
@@ -296,12 +306,12 @@ def execute_execute_command(env, cli_args, print_fn):
     do_execute_command(pipeline, env, print_fn)
 
 
-def do_execute_command(pipeline, env, printer):
+def do_execute_command(pipeline, env_file_list, printer):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    check.opt_str_param(env, 'env')
+    env_file_list = check.opt_list_param(env_file_list, 'env_file_list', of_type=str)
     check.callable_param(printer, 'printer')
 
-    env_config = load_yaml_from_path(env) if env else {}
+    env_config = load_yaml_from_glob_list(env_file_list) if env_file_list else {}
 
     pipeline_iter = execute_pipeline_iterator(pipeline, env_config)
 

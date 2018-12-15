@@ -15,32 +15,34 @@ interface ConfigProps {
 export default class Config extends React.Component<ConfigProps, {}> {
   static fragments = {
     ConfigFragment: gql`
-      fragment ConfigFragment on Config {
-        type {
-          ...TypeWithTooltipFragment
-          __typename
+      fragment TypeInfoFragment on Type {
+        name
+        isDict
+        isList
+        isNullable
+        innerTypes {
           name
         }
-      }
-      ${TypeWithTooltip.fragments.TypeWithTooltipFragment}
-    `,
-    ConfigPipelineTypesFragment: gql`
-      fragment ConfigPipelineTypesFragment on Pipeline {
-        types {
-          __typename
-          ... on CompositeType {
-            fields {
+        ... on CompositeType {
+          fields {
+            name
+            type {
               name
-              description
-              isOptional
-              defaultValue
-              type {
-                __typename
-                name
-              }
             }
+            isOptional
           }
+        }
+      }
+
+      fragment ConfigFragment on Config {
+        type {
+          __typename
+
           ...TypeWithTooltipFragment
+          ...TypeInfoFragment
+          innerTypes {
+            ...TypeInfoFragment
+          }
         }
       }
       ${TypeWithTooltip.fragments.TypeWithTooltipFragment}

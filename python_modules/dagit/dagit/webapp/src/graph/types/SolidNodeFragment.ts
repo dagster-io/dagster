@@ -77,7 +77,7 @@ export interface SolidNodeFragment_outputs_dependedBy {
 
 export interface SolidNodeFragment_outputs {
   definition: SolidNodeFragment_outputs_definition;
-  dependedBy: SolidNodeFragment_outputs_dependedBy[] | null;
+  dependedBy: SolidNodeFragment_outputs_dependedBy[];
 }
 
 export interface SolidNodeFragment {

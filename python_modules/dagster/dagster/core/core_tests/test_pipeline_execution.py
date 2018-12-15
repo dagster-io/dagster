@@ -1,3 +1,7 @@
+import pytest
+
+import dagster.check as check
+
 from dagster import (
     DependencyDefinition,
     InputDefinition,
@@ -16,6 +20,8 @@ from dagster.core.definitions import (
     _create_adjacency_lists,
     Solid,
 )
+
+from dagster.core.errors import DagsterInvalidDefinitionError
 
 from dagster.core.execution import (
     SolidExecutionResult,
@@ -291,6 +297,51 @@ def test_create_single_solid_pipeline_with_alias():
 
     expected = [{'a_key': 'stubbed_thing'}, {'A': 'transform_called'}]
     assert result.result_for_solid('aliased').transformed_value() == expected
+
+
+def test_create_pipeline_with_empty_solids_list():
+    single_solid_pipeline = PipelineDefinition(
+        solids=[],
+        dependencies={},
+    )
+
+    result = execute_pipeline(single_solid_pipeline)
+    assert result.success
+
+
+def test_singleton_pipeline():
+    stub_solid = define_stub_solid('stub', [{'a key': 'a value'}])
+    single_solid_pipeline = PipelineDefinition(
+        solids=[stub_solid],
+        dependencies={},
+    )
+
+    result = execute_pipeline(single_solid_pipeline)
+    assert result.success
+
+
+def test_two_root_solid_pipeline_with_empty_dependency_definition():
+    stub_solid_a = define_stub_solid('stub_a', [{'a key': 'a value'}])
+    stub_solid_b = define_stub_solid('stub_b', [{'a key': 'a value'}])
+    single_solid_pipeline = PipelineDefinition(
+        solids=[stub_solid_a, stub_solid_b],
+        dependencies={},
+    )
+
+    result = execute_pipeline(single_solid_pipeline)
+    assert result.success
+
+
+def test_two_root_solid_pipeline_with_partial_dependency_definition():
+    stub_solid_a = define_stub_solid('stub_a', [{'a key': 'a value'}])
+    stub_solid_b = define_stub_solid('stub_b', [{'a key': 'a value'}])
+    single_solid_pipeline = PipelineDefinition(
+        solids=[stub_solid_a, stub_solid_b],
+        dependencies={'stub_a': {}},
+    )
+
+    result = execute_pipeline(single_solid_pipeline)
+    assert result.success
 
 
 def _do_test(pipeline, do_execute_pipeline_iter):

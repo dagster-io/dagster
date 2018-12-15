@@ -23,6 +23,7 @@ from dagster.core.evaluator import (
 
 from dagster.core.test_utils import throwing_evaluate_config_value
 
+
 def test_noop_config():
     assert Field(types.Any)
 

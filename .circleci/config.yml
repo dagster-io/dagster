@@ -4,52 +4,62 @@ workflows:
   version: 2
   test:
     jobs:
-      - dagster-python-3.6:
+      - dagster-py36:
           context: coveralls
-      - dagster-python-3.5:
+      - dagster-py35:
           context: coveralls
-      - dagster-python-2.7:
+      - dagster-py27:
           context: coveralls
-      - dagit-python-3.6:
+      - dagit-py36:
           context: coveralls
-      - dagit-python-3.5:
+      - dagit-py35:
           context: coveralls
-      - dagit-python-2.7:
+      - dagit-py27:
           context: coveralls
       - dagit-webapp:
           context: coveralls
-      - dagstermill-python-3.6:
+      - dagstermill-py36:
           context: coveralls
-      - dagstermill-python-3.5:
+      - dagstermill-py35:
           context: coveralls
-      - dagstermill-python-2.7:
+      - dagstermill-py27:
           context: coveralls
-      - airline-demo-python-3.6:
+      - airline-demo-py36:
           context: coveralls
-      - airline-demo-python-3.5:
+      - airline-demo-py35:
           context: coveralls
-      - airline-demo-python-2.7:
+      - airline-demo-py27:
           context: coveralls
+      - dagster-contrib-py36:
+          context: coveralls
+      - dagster-contrib-py35:
+          context: coveralls
+      - dagster-contrib-py27:
+          context: coveralls
+
       - coverage:
           requires:
-            - dagster-python-3.6
-            - dagster-python-3.5
-            - dagster-python-2.7
-            - dagit-python-3.6
-            - dagit-python-3.5
-            - dagit-python-2.7
-            - dagstermill-python-3.6
-            - dagstermill-python-3.5
-            - dagstermill-python-2.7
-            - airline-demo-python-3.6
-            - airline-demo-python-3.5
-            - airline-demo-python-2.7
+            - dagster-py36
+            - dagster-py35
+            - dagster-py27
+            - dagit-py36
+            - dagit-py35
+            - dagit-py27
+            - dagstermill-py36
+            - dagstermill-py35
+            - dagstermill-py27
+            - airline-demo-py36
+            - airline-demo-py35
+            - airline-demo-py27
+            - dagster-contrib-py36
+            - dagster-contrib-py35
+            - dagster-contrib-py27
           context: coveralls
 
         
 
 jobs:
-  dagster-python-3.6: &dagster-template
+  dagster-py36: &dagster-template
     docker:
       - image: circleci/python:3.6.6
     environment:
@@ -70,14 +80,6 @@ jobs:
             cd python_modules/dagster
             tox -e $TOXENV
 
-      - store_artifacts:
-          path: test-reports
-          destination: test-reports
-
-      - store_artifacts:
-          path: python_modules/dagster/.coverage
-          destination: .coverage
-
       - run:
           command: mv python_modules/dagster/.coverage python_modules/dagster/.coverage.dagster.${CIRCLE_BUILD_NUM}
 
@@ -86,7 +88,7 @@ jobs:
           paths:
             - .coverage*
 
-  dagit-python-3.6: &dagit-template
+  dagit-py36: &dagit-template
     <<: *dagster-template
     steps:
       - checkout
@@ -102,14 +104,6 @@ jobs:
             cd python_modules/dagit
             tox -e $TOXENV
 
-      - store_artifacts:
-          path: test-reports
-          destination: test-reports
-
-      - store_artifacts:
-          path: python_modules/dagit/.coverage
-          destination: .coverage
-
       - run:
           command: mv python_modules/dagit/.coverage python_modules/dagit/.coverage.dagit.${CIRCLE_BUILD_NUM}
 
@@ -118,14 +112,14 @@ jobs:
           paths:
             - .coverage*
 
-  dagster-python-3.5:
+  dagster-py35:
     <<: *dagster-template
     docker:
       - image: circleci/python:3.5.6
     environment:
       TOXENV: py35
 
-  dagit-python-3.5:
+  dagit-py35:
     <<: *dagit-template
     docker:
       - image: circleci/python:3.5.6
@@ -133,14 +127,14 @@ jobs:
       TOXENV: py35
 
 
-  dagster-python-2.7:
+  dagster-py27:
     <<: *dagster-template
     docker:
       - image: circleci/python:2.7.15
     environment:
       TOXENV: py27
 
-  dagit-python-2.7:
+  dagit-py27:
     <<: *dagit-template
     docker:
       - image: circleci/python:2.7.15
@@ -178,11 +172,7 @@ jobs:
             cd python_modules/dagit/dagit/webapp
             yarn run check-prettier
 
-      - store_artifacts:
-          path: test-reports
-          destination: test-reports
-
-  dagstermill-python-3.6: &dagstermill-template
+  dagstermill-py36: &dagstermill-template
     <<: *dagster-template
     steps:
       - checkout
@@ -198,10 +188,6 @@ jobs:
             cd python_modules/dagstermill
             tox -e $TOXENV
 
-      - store_artifacts:
-          path: test-reports
-          destination: test-reports
-
       - run:
           command: mv python_modules/dagstermill/.coverage python_modules/dagstermill/.coverage.dagstermill.${CIRCLE_BUILD_NUM}
 
@@ -210,31 +196,36 @@ jobs:
           paths:
             - .coverage*
 
-  dagstermill-python-3.5:
+  dagstermill-py35:
     <<: *dagstermill-template
     docker:
       - image: circleci/python:3.5.6
     environment:
       TOXENV: py35
 
-  dagstermill-python-2.7:
+  dagstermill-py27:
     <<: *dagstermill-template
     docker:
       - image: circleci/python:2.7.15
     environment:
       TOXENV: py27
 
-  airline-demo-python-3.6: &airline-demo-template
+  airline-demo-py36: &airline-demo-template
     <<: *dagster-template
     docker:
       - image: dagster/cci-test:3.6
         auth:
           username: $DOCKERHUB_USERNAME
           password: $DOCKERHUB_PASSWORD
+      - image: circleci/postgres:9.6.2-alpine
+        environment:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test
     environment:
       TOXENV: py36
 
-      steps:
+    steps:
       - checkout
 
       - run:
@@ -248,10 +239,6 @@ jobs:
             cd python_modules/airline-demo
             tox -e $TOXENV
 
-      - store_artifacts:
-          path: test-reports
-          destination: test-reports
-
       - run:
           command: mv python_modules/airline-demo/.coverage python_modules/airline-demo/.coverage.airline-demo.${CIRCLE_BUILD_NUM}
 
@@ -260,23 +247,33 @@ jobs:
           paths:
             - .coverage*
 
-  airline-demo-python-3.5:
+  airline-demo-py35:
     <<: *airline-demo-template
     docker:
       - image: dagster/cci-test:3.5
         auth:
           username: $DOCKERHUB_USERNAME
           password: $DOCKERHUB_PASSWORD
+      - image: circleci/postgres:9.6.2-alpine
+        environment:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test
     environment:
       TOXENV: py35
 
-  airline-demo-python-2.7:
+  airline-demo-py27:
     <<: *airline-demo-template
     docker:
       - image: dagster/cci-test:2.7
         auth:
           username: $DOCKERHUB_USERNAME
           password: $DOCKERHUB_PASSWORD
+      - image: circleci/postgres:9.6.2-alpine
+        environment:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test
     environment:
       TOXENV: py27
 
@@ -299,3 +296,47 @@ jobs:
           cp /tmp/workspace/.coverage* .
           coverage combine
           coveralls
+
+
+  dagster-contrib-py36: &dagster-contrib-template
+    <<: *dagster-template
+    docker:
+      - image: dagster/cci-test:3.6
+    environment:
+      TOXENV: py36
+
+    steps:
+      - checkout
+
+      - run:
+          name: Install Dependencies
+          command: |
+            sudo pip install tox
+
+      - run:
+          name: Run dagster-contrib Tests
+          command: |
+            cd python_modules/dagster-contrib
+            tox -e $TOXENV
+
+      - run:
+          command: mv python_modules/dagster-contrib/.coverage python_modules/dagster-contrib/.coverage.airline-demo.${CIRCLE_BUILD_NUM}
+
+      - persist_to_workspace:
+          root: python_modules/dagster-contrib/
+          paths:
+            - .coverage*
+
+  dagster-contrib-py35:
+    <<: *dagster-contrib-template
+    docker:
+      - image: dagster/cci-test:3.5
+    environment:
+      TOXENV: py27
+
+  dagster-contrib-py27:
+    <<: *dagster-contrib-template
+    docker:
+      - image: dagster/cci-test:2.7
+    environment:
+      TOXENV: py27

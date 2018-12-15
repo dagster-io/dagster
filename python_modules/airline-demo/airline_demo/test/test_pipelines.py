@@ -12,226 +12,143 @@ from airline_demo.pipelines import (
 
 
 @pytest.mark.nettest
-@pytest.mark.slow
-def test_pipeline_download():
-    result = execute_pipeline(
+@pytest.mark.spark
+@pytest.mark.db
+@pytest.mark.py3
+def test_pipelines():
+    now = datetime.datetime.utcnow()
+    timestamp = now.strftime('%Y_%m_%d_%H_%M_%S')
+
+    result_download = execute_pipeline(
         define_airline_demo_download_pipeline(),
         {
             'context': {
                 'local': {
                     'resources': {
                         # duplication not the best
-                        'db_url': {
+                        'db_info': {
                             'config': {
                                 'postgres_username': 'test',
                                 'postgres_password': 'test',
-                                'postgres_hostname': '127.0.0.1',
+                                'postgres_hostname': 'localhost',
                                 'postgres_db_name': 'test',
-                            },
-                        },
-                        'db_engine': {
-                            'config': {
-                                'postgres_username': 'test',
-                                'postgres_password': 'test',
-                                'postgres_hostname': '127.0.0.1',
-                                'postgres_db_name': 'test',
-                            },
-                        },
-                        'db_dialect': {
-                            'config': 'postgres'
-                        },
+                            }
+                        }
                     },
                 },
             },
             'solids': {
-                'april_on_time_data_filename': {
-                    'config':
-                    'On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_4.csv'
+                'archive_members': {
+                    'config': [
+                        'On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_4.csv',
+                        'On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_5.csv',
+                        'On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_6.csv',
+                        'Origin_and_Destination_Survey_DB1BCoupon_2018_2.csv',
+                        'Origin_and_Destination_Survey_DB1BMarket_2018_2.csv',
+                        'Origin_and_Destination_Survey_DB1BTicket_2018_2.csv',
+                        '954834304_T_MASTER_CORD.csv',
+                    ]
                 },
-                'may_on_time_data_filename': {
-                    'config':
-                    'On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_5.csv'
-                },
-                'june_on_time_data_filename': {
-                    'config':
-                    'On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_6.csv'
-                },
-                'q2_coupon_data_filename': {
-                    'config': 'Origin_and_Destination_Survey_DB1BCoupon_2018_2.csv'
-                },
-                'q2_market_data_filename': {
-                    'config': 'Origin_and_Destination_Survey_DB1BMarket_2018_2.csv'
-                },
-                'q2_ticket_data_filename': {
-                    'config': 'Origin_and_Destination_Survey_DB1BTicket_2018_2.csv'
-                },
-                'master_cord_data_filename': {
-                    'config': '954834304_T_MASTER_CORD.csv'
-                },
-                'download_april_on_time_data': {
-                    'config': {
-                        'bucket':
-                        'dagster-airline-demo-source-data',
-                        'key':
-                        'On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_4.zip',
-                        'skip_if_present':
-                        True,
-                        'target_path':
-                        'source_data/On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_4.zip',
-                    }
-                },
-                'download_may_on_time_data': {
-                    'config': {
-                        'bucket':
-                        'dagster-airline-demo-source-data',
-                        'key':
-                        'On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_5.zip',
-                        'skip_if_present':
-                        True,
-                        'target_path':
-                        'source_data/On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_5.zip',
-                    },
-                },
-                'download_june_on_time_data': {
-                    'config': {
-                        'bucket':
-                        'dagster-airline-demo-source-data',
-                        'key':
-                        'On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_6.zip',
-                        'skip_if_present':
-                        True,
-                        'target_path':
-                        'source_data/On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_6.zip',
-                    }
-                },
-                'download_q2_coupon_data': {
-                    'config': {
-                        'bucket':
-                        'dagster-airline-demo-source-data',
-                        'key':
-                        'Origin_and_Destination_Survey_DB1BCoupon_2018_2.zip',
-                        'skip_if_present':
-                        True,
-                        'target_path':
-                        'source_data/Origin_and_Destination_Survey_DB1BCoupon_2018_2.zip',
-                    }
-                },
-                'download_q2_market_data': {
-                    'config': {
-                        'bucket':
-                        'dagster-airline-demo-source-data',
-                        'key':
-                        'Origin_and_Destination_Survey_DB1BMarket_2018_2.zip',
-                        'skip_if_present':
-                        True,
-                        'target_path':
-                        'source_data/Origin_and_Destination_Survey_DB1BMarket_2018_2.zip',
-                    }
-                },
-                'download_q2_ticket_data': {
-                    'config': {
-                        'bucket':
-                        'dagster-airline-demo-source-data',
-                        'key':
-                        'Origin_and_Destination_Survey_DB1BTicket_2018_2.zip',
-                        'skip_if_present':
-                        True,
-                        'target_path':
-                        'source_data/Origin_and_Destination_Survey_DB1BTicket_2018_2.zip',
-                    }
+                'download_archives': {
+                    'config': [
+                        {
+                            'bucket':
+                            'dagster-airline-demo-source-data',
+                            'key':
+                            'test/On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_4.zip',
+                            'skip_if_present':
+                            True,
+                            'target_path':
+                            'source_data/On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_4.zip',
+                        }, {
+                            'bucket':
+                            'dagster-airline-demo-source-data',
+                            'key':
+                            'test/On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_5.zip',
+                            'skip_if_present':
+                            True,
+                            'target_path':
+                            'source_data/On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_5.zip',
+                        }, {
+                            'bucket':
+                            'dagster-airline-demo-source-data',
+                            'key':
+                            'test/On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_6.zip',
+                            'skip_if_present':
+                            True,
+                            'target_path':
+                            'source_data/On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_6.zip',
+                        }, {
+                            'bucket':
+                            'dagster-airline-demo-source-data',
+                            'key':
+                            'test/Origin_and_Destination_Survey_DB1BCoupon_2018_2.zip',
+                            'skip_if_present':
+                            True,
+                            'target_path':
+                            'source_data/Origin_and_Destination_Survey_DB1BCoupon_2018_2.zip',
+                        }, {
+                            'bucket':
+                            'dagster-airline-demo-source-data',
+                            'key':
+                            'test/Origin_and_Destination_Survey_DB1BMarket_2018_2.zip',
+                            'skip_if_present':
+                            True,
+                            'target_path':
+                            'source_data/Origin_and_Destination_Survey_DB1BMarket_2018_2.zip',
+                        }, {
+                            'bucket':
+                            'dagster-airline-demo-source-data',
+                            'key':
+                            'test/Origin_and_Destination_Survey_DB1BTicket_2018_2.zip',
+                            'skip_if_present':
+                            True,
+                            'target_path':
+                            'source_data/Origin_and_Destination_Survey_DB1BTicket_2018_2.zip',
+                        }, {
+                            'bucket': 'dagster-airline-demo-source-data',
+                            'key': 'test/954834304_T_MASTER_CORD.zip',
+                            'skip_if_present': True,
+                            'target_path': 'source_data/954834304_T_MASTER_CORD.zip',
+                        }
+                    ]
                 },
                 'download_q2_sfo_weather': {
-                    'config': {
-                        'bucket': 'dagster-airline-demo-source-data',
-                        'key': 'sfo_q2_weather.txt',
-                        'skip_if_present': True,
-                        'target_path': 'source_data/sfo_q2_weather.txt',
-                    }
+                    'config': [
+                        {
+                            'bucket': 'dagster-airline-demo-source-data',
+                            'key': 'test/sfo_q2_weather.txt',
+                            'skip_if_present': True,
+                            'target_path': 'source_data/sfo_q2_weather.txt',
+                        }
+                    ]
                 },
-                'download_master_cord_data': {
-                    'config': {
-                        'bucket': 'dagster-airline-demo-source-data',
-                        'key': '954834304_T_MASTER_CORD.zip',
-                        'skip_if_present': True,
-                        'target_path': 'source_data/954834304_T_MASTER_CORD.zip',
-                    }
-                },
-                'unzip_april_on_time_data': {
+                'unzip_archives': {
                     'config': {
                         'skip_if_present': True,
+                        'destination_dir': 'source_data',
                     },
                 },
-                'unzip_may_on_time_data': {
-                    'config': {
-                        'skip_if_present': True,
-                    },
-                },
-                'unzip_june_on_time_data': {
-                    'config': {
-                        'skip_if_present': True,
-                    },
-                },
-                'unzip_q2_coupon_data': {
-                    'config': {
-                        'skip_if_present': True,
-                    },
-                },
-                'unzip_q2_market_data': {
-                    'config': {
-                        'skip_if_present': True,
-                    },
-                },
-                'unzip_q2_ticket_data': {
-                    'config': {
-                        'skip_if_present': True,
-                    },
-                },
-                'unzip_master_cord_data': {
-                    'config': {
-                        'skip_if_present': True,
-                    }
-                }
             }
         }
     )
-    assert result.success
+    assert result_download.success
 
-
-@pytest.mark.spark
-@pytest.mark.slow
-def test_pipeline_ingest():
-    result = execute_pipeline(
+    result_ingest = execute_pipeline(
         define_airline_demo_ingest_pipeline(),
         {
             'context': {
-                # 'cloud': {
-                #     'config': {
-                #         'redshift_username': 'airline_demo_username',
-                #         'redshift_password': 'A1rline_demo_password',
-                #         'redshift_hostname': 'db.airline-demo.dagster.io',
-                #         'redshift_db_name': 'airline_demo',
-                #         'redshift_s3_temp_dir': 's3n://airline-demo-redshift-spark/temp/',
-                #         'db_dialect': 'redshift',
-                #     }
-                # },
-                # 'test': {
-                #     'config': {
-                #         'redshift_username': 'airline_demo_username',
-                #         'redshift_password': 'A1rline_demo_password',
-                #         'redshift_hostname': 'db.airline-demo.dagster.io',
-                #         'redshift_db_name': 'airline_demo',
-                #         'redshift_s3_temp_dir': 's3n://airline-demo-redshift-spark/temp/',
-                #         'db_dialect': 'redshift',
-                #     }
-                # },
                 'local': {
-                    'config': {
-                        'postgres_username': 'test',
-                        'postgres_password': 'test',
-                        'postgres_hostname': '127.0.0.1',
-                        'postgres_db_name': 'test',
-                        'db_dialect': 'postgres',
-                    }
+                    'resources': {
+                        'db_info': {
+                            'config': {
+                                'postgres_username': 'test',
+                                'postgres_password': 'test',
+                                'postgres_hostname': '127.0.0.1',
+                                'postgres_db_name': 'test',
+                            },
+                        },
+                    },
                 },
             },
             'solids': {
@@ -299,17 +216,17 @@ def test_pipeline_ingest():
                 },
                 'subsample_q2_ticket_data': {
                     'config': {
-                        'subsample_pct': 10,
+                        'subsample_pct': 100,
                     }
                 },
                 'subsample_q2_market_data': {
                     'config': {
-                        'subsample_pct': 10,
+                        'subsample_pct': 100,
                     }
                 },
                 'subsample_q2_coupon_data': {
                     'config': {
-                        'subsample_pct': 10,
+                        'subsample_pct': 100,
                     }
                 },
                 'ingest_q2_ticket_data': {
@@ -339,14 +256,14 @@ def test_pipeline_ingest():
                     'config': {
                         'on_left': 'DestAirportSeqID',
                         'on_right': 'DEST_AIRPORT_SEQ_ID',
-                        'how': 'inner',
+                        'how': 'left_outer',
                     }
                 },
                 'join_q2_on_time_data_to_origin_cord_data': {
                     'config': {
                         'on_left': 'OriginAirportSeqID',
                         'on_right': 'ORIGIN_AIRPORT_SEQ_ID',
-                        'how': 'inner',
+                        'how': 'left_outer',
                     }
                 },
                 'load_q2_on_time_data': {
@@ -377,52 +294,27 @@ def test_pipeline_ingest():
             },
         },
     )
-    assert result.success
+    assert result_ingest.success
 
-
-@pytest.mark.slow
-@pytest.mark.db
-@pytest.mark.spark
-def test_pipeline_warehouse():
-    now = datetime.datetime.utcnow()
-    timestamp = now.strftime('%Y_%m_%d_%H_%M_%S')
-    result = execute_pipeline(
-        define_airline_demo_warehouse_pipeline(),
-        {
+    result_warehouse = execute_pipeline(
+        define_airline_demo_warehouse_pipeline(), {
             'context': {
-                # 'cloud': {
-                #     'config': {
-                #         'redshift_username': 'airline_demo_username',
-                #         'redshift_password': 'A1rline_demo_password',
-                #         'redshift_hostname': 'db.airline-demo.dagster.io',
-                #         'redshift_db_name': 'airline_demo',
-                #         'redshift_s3_temp_dir': 's3n://airline-demo-redshift-spark/temp/',
-                #         'db_dialect': 'redshift',
-                #     }
-                # },
-                # 'test': {
-                #     'config': {
-                #         'redshift_username': 'airline_demo_username',
-                #         'redshift_password': 'A1rline_demo_password',
-                #         'redshift_hostname': 'db.airline-demo.dagster.io',
-                #         'redshift_db_name': 'airline_demo',
-                #         'redshift_s3_temp_dir': 's3n://airline-demo-redshift-spark/temp/',
-                #         'db_dialect': 'redshift',
-                #     }
-                # },
                 'local': {
-                    'config': {
-                        'postgres_username': 'test',
-                        'postgres_password': 'test',
-                        'postgres_hostname': '127.0.0.1',
-                        'postgres_db_name': 'test',
-                        'db_dialect': 'postgres',
-                    }
+                    'resources': {
+                        'db_info': {
+                            'config': {
+                                'postgres_username': 'test',
+                                'postgres_password': 'test',
+                                'postgres_hostname': '127.0.0.1',
+                                'postgres_db_name': 'test',
+                            },
+                        },
+                    },
                 },
             },
             'solids': {
                 'db_url': {
-                    'config': 'postgresql://test:test@127.0.0.1:5432/test'
+                    'config': 'postgresql://test:test@localhost:5432/test'
                 },
                 'upload_outbound_avg_delay_pdf_plots': {
                     'config': {
@@ -447,3 +339,4 @@ def test_pipeline_warehouse():
             }
         }
     )
+    assert result_warehouse.success

@@ -29,13 +29,13 @@ setup(
     long_description=long_description(),
     long_description_content_type='text/markdown',
     url='https://github.com/dagster-io/dagster',
-    classifiers=(
+    classifiers=[
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'License :: OSI Approved :: Apache Software License',
         'Operating System :: OS Independent',
-    ),
+    ],
     packages=find_packages(exclude=['dagster_tests']),
     install_requires=[
         # standard python 2/3 compatability things
@@ -53,14 +53,6 @@ setup(
         # core (not explicitly expressed atm)
         'six>=1.11.0',
         'toposort>=1.5',
-
-        # pandas kernel
-        'pandas>=0.22.0',
-        'pyarrow>=0.8.0',
-
-        # sqlalchemy kernel
-        'sqlalchemy>=1.2.7',
-        'jinja2>=2.8',
 
         # dev/test - Installed via dev-requirements.txt
         # 'pylint>=1.8.4',

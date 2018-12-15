@@ -9,7 +9,7 @@ Welcome to Dagster, an opinionated programming model for data pipelines.
   :name: Documentation
 
   principles
-  topic_guides
+  installation
   contributing
 
 Intro Tutorial

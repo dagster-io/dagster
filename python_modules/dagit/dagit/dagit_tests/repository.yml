@@ -1,0 +1,3 @@
+repository:
+  module: dagit.dagit_tests.test_graphql
+  fn: define_repository

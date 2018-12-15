@@ -1,75 +1,79 @@
 from __future__ import absolute_import
-import graphene
 
 from dagster import check
-import dagster.core.execution_plan
+from dagster.core.execution_plan import (
+    ExecutionStep,
+    ExecutionPlan,
+    StepInput,
+    StepOutput,
+)
 
-from dagit.schema import pipelines
-from .utils import non_null_list
+from dagit.schema import dauphin
 
 
-class ExecutionPlan(graphene.ObjectType):
-    steps = non_null_list(lambda: ExecutionStep)
-    pipeline = graphene.NonNull(lambda: pipelines.Pipeline)
+class DauphinExecutionPlan(dauphin.ObjectType):
+    class Meta:
+        name = 'ExecutionPlan'
+
+    steps = dauphin.non_null_list('ExecutionStep')
+    pipeline = dauphin.NonNull('Pipeline')
 
     def __init__(self, pipeline, execution_plan):
-        super(ExecutionPlan, self).__init__()
-        self.execution_plan = check.inst_param(
-            execution_plan,
-            'execution_plan',
-            dagster.core.execution_plan.ExecutionPlan,
-        )
-        self.pipeline = check.inst_param(pipeline, 'pipeline', pipelines.Pipeline)
+        super(DauphinExecutionPlan, self).__init__(pipeline=pipeline)
+        self.execution_plan = check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
 
     def resolve_steps(self, _info):
-        return [ExecutionStep(cn) for cn in self.execution_plan.topological_steps()]
+        return [DauphinExecutionStep(cn) for cn in self.execution_plan.topological_steps()]
 
 
-class ExecutionStepOutput(graphene.ObjectType):
-    name = graphene.NonNull(graphene.String)
-    type = graphene.Field(graphene.NonNull(lambda: pipelines.Type))
+class DauphinExecutionStepOutput(dauphin.ObjectType):
+    class Meta:
+        name = 'ExecutionStepOutput'
 
-    def __init__(self, execution_step_output):
-        super(ExecutionStepOutput, self).__init__()
-        self.execution_step_output = check.inst_param(
-            execution_step_output,
-            'execution_step_output',
-            dagster.core.execution_plan.StepOutput,
-        )
+    name = dauphin.NonNull(dauphin.String)
+    type = dauphin.Field(dauphin.NonNull('Type'))
 
-    def resolve_name(self, _info):
-        return self.execution_step_output.name
-
-    def resolve_type(self, _info):
-        return pipelines.Type.from_dagster_type(
-            dagster_type=self.execution_step_output.dagster_type
-        )
-
-
-class ExecutionStepInput(graphene.ObjectType):
-    name = graphene.NonNull(graphene.String)
-    type = graphene.Field(graphene.NonNull(lambda: pipelines.Type))
-    dependsOn = graphene.Field(graphene.NonNull(lambda: ExecutionStep))
-
-    def __init__(self, execution_step_input):
-        super(ExecutionStepInput, self).__init__()
-        self.execution_step_input = check.inst_param(
-            execution_step_input,
-            'execution_step_input',
-            dagster.core.execution_plan.StepInput,
-        )
+    def __init__(self, step_output):
+        super(DauphinExecutionStepOutput, self).__init__()
+        self._step_output = check.inst_param(step_output, 'step_output', StepOutput)
 
     def resolve_name(self, _info):
-        return self.execution_step_input.name
+        return self._step_output.name
 
-    def resolve_type(self, _info):
-        return pipelines.Type.from_dagster_type(dagster_type=self.execution_step_input.dagster_type)
+    def resolve_type(self, info):
+        return info.schema.type_named('Type').from_dagster_type(
+            info, dagster_type=self._step_output.dagster_type
+        )
 
-    def resolve_dependsOn(self, _info):
-        return ExecutionStep(self.execution_step_input.prev_output_handle.step)
+
+class DauphinExecutionStepInput(dauphin.ObjectType):
+    class Meta:
+        name = 'ExecutionStepInput'
+
+    name = dauphin.NonNull(dauphin.String)
+    type = dauphin.Field(dauphin.NonNull('Type'))
+    dependsOn = dauphin.Field(dauphin.NonNull('ExecutionStep'))
+
+    def __init__(self, step_input):
+        super(DauphinExecutionStepInput, self).__init__()
+        self._step_input = check.inst_param(step_input, 'step_input', StepInput)
+
+    def resolve_name(self, _info):
+        return self._step_input.name
+
+    def resolve_type(self, info):
+        return info.schema.type_named('Type').from_dagster_type(
+            info, dagster_type=self._step_input.dagster_type
+        )
+
+    def resolve_dependsOn(self, info):
+        return info.schema.type_named('ExecutionStep')(self._step_input.prev_output_handle.step)
 
 
-class StepTag(graphene.Enum):
+class DauphinStepTag(dauphin.Enum):
+    class Meta:
+        name = 'StepTag'
+
     TRANSFORM = 'TRANSFORM'
     INPUT_EXPECTATION = 'INPUT_EXPECTATION'
     OUTPUT_EXPECTATION = 'OUTPUT_EXPECTATION'
@@ -78,52 +82,57 @@ class StepTag(graphene.Enum):
 
     @property
     def description(self):
-        # self ends up being the internal class "EnumMeta" in graphene
+        # self ends up being the internal class "EnumMeta" in dauphin
         # so we can't do a dictionary lookup which is awesome
-        if self == StepTag.TRANSFORM:
+        if self == DauphinStepTag.TRANSFORM:
             return 'This is the user-defined transform step'
-        elif self == StepTag.INPUT_EXPECTATION:
+        elif self == DauphinStepTag.INPUT_EXPECTATION:
             return 'Expectation defined on an input'
-        elif self == StepTag.OUTPUT_EXPECTATION:
+        elif self == DauphinStepTag.OUTPUT_EXPECTATION:
             return 'Expectation defined on an output'
-        elif self == StepTag.JOIN:
+        elif self == DauphinStepTag.JOIN:
             return '''Sometimes we fan out compute on identical values
 (e.g. multiple expectations in parallel). We synthesizie these in a join step to consolidate to
 a single output that the next computation can depend on.
 '''
-        elif self == StepTag.SERIALIZE:
+        elif self == DauphinStepTag.SERIALIZE:
             return '''This is a special system-defined step to serialize
 an intermediate value if the pipeline is configured to do that.'''
         else:
             return 'Unknown enum {value}'.format(value=self)
 
 
-class ExecutionStep(graphene.ObjectType):
-    name = graphene.NonNull(graphene.String)
-    inputs = non_null_list(lambda: ExecutionStepInput)
-    outputs = non_null_list(lambda: ExecutionStepOutput)
-    solid = graphene.NonNull(lambda: pipelines.Solid)
-    tag = graphene.NonNull(lambda: StepTag)
+class DauphinExecutionStep(dauphin.ObjectType):
+    class Meta:
+        name = 'ExecutionStep'
+
+    name = dauphin.NonNull(dauphin.String)
+    inputs = dauphin.non_null_list('ExecutionStepInput')
+    outputs = dauphin.non_null_list('ExecutionStepOutput')
+    solid = dauphin.NonNull('Solid')
+    tag = dauphin.NonNull('StepTag')
 
     def __init__(self, execution_step):
-        super(ExecutionStep, self).__init__()
-        self.execution_step = check.inst_param(
-            execution_step,
-            'execution_step',
-            dagster.core.execution_plan.ExecutionStep,
-        )
+        super(DauphinExecutionStep, self).__init__()
+        self.execution_step = check.inst_param(execution_step, 'execution_step', ExecutionStep)
 
-    def resolve_inputs(self, _info):
-        return [ExecutionStepInput(inp) for inp in self.execution_step.step_inputs]
+    def resolve_inputs(self, info):
+        return [
+            info.schema.type_named('ExecutionStepInput')(inp)
+            for inp in self.execution_step.step_inputs
+        ]
 
-    def resolve_outputs(self, _info):
-        return [ExecutionStepOutput(out) for out in self.execution_step.step_outputs]
+    def resolve_outputs(self, info):
+        return [
+            info.schema.type_named('ExecutionStepOutput')(out)
+            for out in self.execution_step.step_outputs
+        ]
 
     def resolve_name(self, _info):
         return self.execution_step.key
 
-    def resolve_solid(self, _info):
-        return pipelines.Solid(self.execution_step.solid)
+    def resolve_solid(self, info):
+        return info.schema.type_named('Solid')(self.execution_step.solid)
 
     def resolve_tag(self, _info):
         return self.execution_step.tag

@@ -27,25 +27,154 @@ const MOCKS = [
               description: null,
               contexts: [
                 {
-                  name: "default",
+                  name: "context_one",
                   description: null,
                   __typename: "PipelineContext",
                   config: {
                     type: {
-                      name: "Dict_2",
-                      description:
-                        "A configuration dictionary with typed fields",
+                      __typename: "RegularType",
+                      name: "String",
+                      description: null,
                       typeAttributes: {
                         isNamed: true,
                         __typename: "TypeAttributes"
-                      },
-                      __typename: "CompositeType"
+                      }
                     },
                     __typename: "Config"
-                  }
+                  },
+                  resources: []
+                },
+                {
+                  name: "context_two",
+                  description: null,
+                  __typename: "PipelineContext",
+                  config: {
+                    type: {
+                      __typename: "RegularType",
+                      name: "Int",
+                      description: null,
+                      typeAttributes: {
+                        isNamed: true,
+                        __typename: "TypeAttributes"
+                      }
+                    },
+                    __typename: "Config"
+                  },
+                  resources: []
+                },
+                {
+                  name: "context_with_resources",
+                  description: null,
+                  __typename: "PipelineContext",
+                  config: {
+                    type: {
+                      __typename: "RegularType",
+                      name: "Any",
+                      description:
+                        "The type that allows any value, including no value.",
+                      typeAttributes: {
+                        isNamed: true,
+                        __typename: "TypeAttributes"
+                      }
+                    },
+                    __typename: "Config"
+                  },
+                  resources: [
+                    {
+                      name: "resource_one",
+                      description: null,
+                      config: {
+                        type: {
+                          __typename: "RegularType",
+                          name: "Int",
+                          description: null,
+                          typeAttributes: {
+                            isNamed: true,
+                            __typename: "TypeAttributes"
+                          }
+                        },
+                        __typename: "Config"
+                      },
+                      __typename: "Resource"
+                    },
+                    {
+                      name: "resource_two",
+                      description: null,
+                      config: null,
+                      __typename: "Resource"
+                    }
+                  ]
                 }
               ],
               solids: [
+                {
+                  name: "load_num_csv",
+                  definition: {
+                    metadata: [],
+                    configDefinition: {
+                      type: {
+                        description:
+                          "A configuration dictionary with typed fields",
+                        __typename: "CompositeType",
+                        name: "Dict.1",
+                        fields: [
+                          {
+                            name: "path",
+                            description: null,
+                            isOptional: false,
+                            defaultValue: null,
+                            type: {
+                              name: "Path",
+                              description: null,
+                              typeAttributes: {
+                                isNamed: true,
+                                __typename: "TypeAttributes"
+                              },
+                              __typename: "RegularType"
+                            },
+                            __typename: "TypeField"
+                          }
+                        ],
+                        typeAttributes: {
+                          isNamed: true,
+                          __typename: "TypeAttributes"
+                        }
+                      },
+                      __typename: "Config"
+                    },
+                    __typename: "SolidDefinition",
+                    description: null
+                  },
+                  inputs: [],
+                  outputs: [
+                    {
+                      definition: {
+                        name: "result",
+                        type: {
+                          name: "PandasDataFrame",
+                          __typename: "RegularType",
+                          description:
+                            "Two-dimensional size-mutable, potentially heterogeneous\n    tabular data structure with labeled axes (rows and columns). See http://pandas.pydata.org/",
+                          typeAttributes: {
+                            isNamed: true,
+                            __typename: "TypeAttributes"
+                          }
+                        },
+                        expectations: [],
+                        __typename: "OutputDefinition",
+                        description: null
+                      },
+                      dependedBy: [
+                        {
+                          solid: { name: "sum_solid", __typename: "Solid" },
+                          __typename: "Input"
+                        }
+                      ],
+                      __typename: "Output"
+                    }
+                  ],
+                  __typename: "Solid"
+                },
                 {
                   name: "sum_sq_solid",
                   definition: {
@@ -102,56 +231,6 @@ const MOCKS = [
                         description: null
                       },
                       dependedBy: [],
-                      __typename: "Output"
-                    }
-                  ],
-                  __typename: "Solid"
-                },
-                {
-                  name: "load_num_csv",
-                  definition: {
-                    metadata: [],
-                    configDefinition: {
-                      type: {
-                        description:
-                          "A configuration dictionary with typed fields",
-                        __typename: "CompositeType",
-                        name: "Dict_1",
-                        typeAttributes: {
-                          isNamed: true,
-                          __typename: "TypeAttributes"
-                        }
-                      },
-                      __typename: "Config"
-                    },
-                    __typename: "SolidDefinition",
-                    description: null
-                  },
-                  inputs: [],
-                  outputs: [
-                    {
-                      definition: {
-                        name: "result",
-                        type: {
-                          name: "PandasDataFrame",
-                          __typename: "RegularType",
-                          description:
-                            "Two-dimensional size-mutable, potentially heterogeneous\n    tabular data structure with labeled axes (rows and columns). See http://pandas.pydata.org/",
-                          typeAttributes: {
-                            isNamed: true,
-                            __typename: "TypeAttributes"
-                          }
-                        },
-                        expectations: [],
-                        __typename: "OutputDefinition",
-                        description: null
-                      },
-                      dependedBy: [
-                        {
-                          solid: { name: "sum_solid", __typename: "Solid" },
-                          __typename: "Input"
-                        }
-                      ],
                       __typename: "Output"
                     }
                   ],
@@ -223,287 +302,6 @@ const MOCKS = [
                   ],
                   __typename: "Solid"
                 }
-              ],
-              types: [
-                {
-                  __typename: "RegularType",
-                  name: "Bool",
-                  description: null,
-                  typeAttributes: {
-                    isNamed: true,
-                    __typename: "TypeAttributes"
-                  }
-                },
-                {
-                  __typename: "CompositeType",
-                  fields: [
-                    {
-                      name: "path",
-                      description: null,
-                      isOptional: false,
-                      defaultValue: null,
-                      type: { __typename: "RegularType", name: "Path" },
-                      __typename: "TypeField"
-                    }
-                  ],
-                  name: "Dict_1",
-                  description: "A configuration dictionary with typed fields",
-                  typeAttributes: {
-                    isNamed: true,
-                    __typename: "TypeAttributes"
-                  }
-                },
-                {
-                  __typename: "CompositeType",
-                  fields: [
-                    {
-                      name: "log_level",
-                      description: null,
-                      isOptional: true,
-                      defaultValue: "INFO",
-                      type: { __typename: "RegularType", name: "String" },
-                      __typename: "TypeField"
-                    }
-                  ],
-                  name: "Dict_2",
-                  description: "A configuration dictionary with typed fields",
-                  typeAttributes: {
-                    isNamed: true,
-                    __typename: "TypeAttributes"
-                  }
-                },
-                {
-                  __typename: "RegularType",
-                  name: "PandasDataFrame",
-                  description:
-                    "Two-dimensional size-mutable, potentially heterogeneous\n    tabular data structure with labeled axes (rows and columns). See http://pandas.pydata.org/",
-                  typeAttributes: {
-                    isNamed: true,
-                    __typename: "TypeAttributes"
-                  }
-                },
-                {
-                  __typename: "CompositeType",
-                  fields: [
-                    {
-                      name: "default",
-                      description: null,
-                      isOptional: true,
-                      defaultValue:
-                        "<function Field.__init__.<locals>.<lambda> at 0x11d43f510>",
-                      type: {
-                        __typename: "CompositeType",
-                        name: "PandasHelloWorld.ContextDefinitionConfig.Default"
-                      },
-                      __typename: "TypeField"
-                    }
-                  ],
-                  name: "PandasHelloWorld.ContextConfig",
-                  description: "A configuration dictionary with typed fields",
-                  typeAttributes: {
-                    isNamed: true,
-                    __typename: "TypeAttributes"
-                  }
-                },
-                {
-                  __typename: "CompositeType",
-                  fields: [
-                    {
-                      name: "config",
-                      description: null,
-                      isOptional: true,
-                      defaultValue:
-                        "<function Field.__init__.<locals>.<lambda> at 0x11d43fae8>",
-                      type: { __typename: "CompositeType", name: "Dict_2" },
-                      __typename: "TypeField"
-                    },
-                    {
-                      name: "resources",
-                      description: null,
-                      isOptional: true,
-                      defaultValue:
-                        "<function Field.__init__.<locals>.<lambda> at 0x11d43fa60>",
-                      type: {
-                        __typename: "CompositeType",
-                        name:
-                          "PandasHelloWorld.ContextDefinitionConfig.Default.Resources"
-                      },
-                      __typename: "TypeField"
-                    }
-                  ],
-                  name: "PandasHelloWorld.ContextDefinitionConfig.Default",
-                  description: null,
-                  typeAttributes: {
-                    isNamed: true,
-                    __typename: "TypeAttributes"
-                  }
-                },
-                {
-                  __typename: "CompositeType",
-                  fields: [],
-                  name:
-                    "PandasHelloWorld.ContextDefinitionConfig.Default.Resources",
-                  description: null,
-                  typeAttributes: {
-                    isNamed: true,
-                    __typename: "TypeAttributes"
-                  }
-                },
-                {
-                  __typename: "CompositeType",
-                  fields: [
-                    {
-                      name: "context",
-                      description: null,
-                      isOptional: true,
-                      defaultValue:
-                        "<function define_maybe_optional_selector_field.<locals>.<lambda> at 0x11c2e8158>",
-                      type: {
-                        __typename: "CompositeType",
-                        name: "PandasHelloWorld.ContextConfig"
-                      },
-                      __typename: "TypeField"
-                    },
-                    {
-                      name: "solids",
-                      description: null,
-                      isOptional: false,
-                      defaultValue: null,
-                      type: {
-                        __typename: "CompositeType",
-                        name: "PandasHelloWorld.SolidsConfigDictionary"
-                      },
-                      __typename: "TypeField"
-                    },
-                    {
-                      name: "expectations",
-                      description: null,
-                      isOptional: true,
-                      defaultValue:
-                        "<function Field.__init__.<locals>.<lambda> at 0x11c2e81e0>",
-                      type: {
-                        __typename: "CompositeType",
-                        name: "PandasHelloWorld.ExpectationsConfig"
-                      },
-                      __typename: "TypeField"
-                    },
-                    {
-                      name: "execution",
-                      description: null,
-                      isOptional: true,
-                      defaultValue:
-                        "<function Field.__init__.<locals>.<lambda> at 0x11c2e8268>",
-                      type: {
-                        __typename: "CompositeType",
-                        name: "PandasHelloWorld.ExecutionConfig"
-                      },
-                      __typename: "TypeField"
-                    }
-                  ],
-                  name: "PandasHelloWorld.Environment",
-                  description: null,
-                  typeAttributes: {
-                    isNamed: true,
-                    __typename: "TypeAttributes"
-                  }
-                },
-                {
-                  __typename: "CompositeType",
-                  fields: [
-                    {
-                      name: "serialize_intermediates",
-                      description: null,
-                      isOptional: true,
-                      defaultValue: "False",
-                      type: { __typename: "RegularType", name: "Bool" },
-                      __typename: "TypeField"
-                    }
-                  ],
-                  name: "PandasHelloWorld.ExecutionConfig",
-                  description: null,
-                  typeAttributes: {
-                    isNamed: true,
-                    __typename: "TypeAttributes"
-                  }
-                },
-                {
-                  __typename: "CompositeType",
-                  fields: [
-                    {
-                      name: "evaluate",
-                      description: null,
-                      isOptional: true,
-                      defaultValue: "True",
-                      type: { __typename: "RegularType", name: "Bool" },
-                      __typename: "TypeField"
-                    }
-                  ],
-                  name: "PandasHelloWorld.ExpectationsConfig",
-                  description: null,
-                  typeAttributes: {
-                    isNamed: true,
-                    __typename: "TypeAttributes"
-                  }
-                },
-                {
-                  __typename: "CompositeType",
-                  fields: [
-                    {
-                      name: "config",
-                      description: null,
-                      isOptional: false,
-                      defaultValue: null,
-                      type: { __typename: "CompositeType", name: "Dict_1" },
-                      __typename: "TypeField"
-                    }
-                  ],
-                  name: "PandasHelloWorld.SolidConfig.LoadNumCsv",
-                  description: null,
-                  typeAttributes: {
-                    isNamed: true,
-                    __typename: "TypeAttributes"
-                  }
-                },
-                {
-                  __typename: "CompositeType",
-                  fields: [
-                    {
-                      name: "load_num_csv",
-                      description: null,
-                      isOptional: false,
-                      defaultValue: null,
-                      type: {
-                        __typename: "CompositeType",
-                        name: "PandasHelloWorld.SolidConfig.LoadNumCsv"
-                      },
-                      __typename: "TypeField"
-                    }
-                  ],
-                  name: "PandasHelloWorld.SolidsConfigDictionary",
-                  description: null,
-                  typeAttributes: {
-                    isNamed: true,
-                    __typename: "TypeAttributes"
-                  }
-                },
-                {
-                  __typename: "RegularType",
-                  name: "Path",
-                  description: null,
-                  typeAttributes: {
-                    isNamed: true,
-                    __typename: "TypeAttributes"
-                  }
-                },
-                {
-                  __typename: "RegularType",
-                  name: "String",
-                  description: null,
-                  typeAttributes: {
-                    isNamed: true,
-                    __typename: "TypeAttributes"
-                  }
-                }
               ]
             }
           ]
@@ -552,10 +350,11 @@ const MOCKS = [
         pipelineOrError: {
           __typename: "Pipeline",
           types: [
+            { __typename: "RegularType", name: "Any" },
             { __typename: "RegularType", name: "Bool" },
             {
               __typename: "CompositeType",
-              name: "Dict_1",
+              name: "Dict.1",
               fields: [
                 {
                   name: "path",
@@ -564,26 +363,33 @@ const MOCKS = [
                 }
               ]
             },
-            {
-              __typename: "CompositeType",
-              name: "Dict_2",
-              fields: [
-                {
-                  name: "log_level",
-                  type: { name: "String", __typename: "RegularType" },
-                  __typename: "TypeField"
-                }
-              ]
-            },
+            { __typename: "RegularType", name: "Int" },
             { __typename: "RegularType", name: "PandasDataFrame" },
             {
               __typename: "CompositeType",
               name: "PandasHelloWorld.ContextConfig",
               fields: [
                 {
-                  name: "default",
+                  name: "context_one",
                   type: {
-                    name: "PandasHelloWorld.ContextDefinitionConfig.Default",
+                    name: "PandasHelloWorld.ContextDefinitionConfig.ContextOne",
+                    __typename: "CompositeType"
+                  },
+                  __typename: "TypeField"
+                },
+                {
+                  name: "context_two",
+                  type: {
+                    name: "PandasHelloWorld.ContextDefinitionConfig.ContextTwo",
+                    __typename: "CompositeType"
+                  },
+                  __typename: "TypeField"
+                },
+                {
+                  name: "context_with_resources",
+                  type: {
+                    name:
+                      "PandasHelloWorld.ContextDefinitionConfig.ContextWithResources",
                     __typename: "CompositeType"
                   },
                   __typename: "TypeField"
@@ -592,18 +398,18 @@ const MOCKS = [
             },
             {
               __typename: "CompositeType",
-              name: "PandasHelloWorld.ContextDefinitionConfig.Default",
+              name: "PandasHelloWorld.ContextDefinitionConfig.ContextOne",
               fields: [
                 {
                   name: "config",
-                  type: { name: "Dict_2", __typename: "CompositeType" },
+                  type: { name: "String", __typename: "RegularType" },
                   __typename: "TypeField"
                 },
                 {
                   name: "resources",
                   type: {
                     name:
-                      "PandasHelloWorld.ContextDefinitionConfig.Default.Resources",
+                      "PandasHelloWorld.ContextDefinitionConfig.ContextOne.Resources",
                     __typename: "CompositeType"
                   },
                   __typename: "TypeField"
@@ -613,8 +419,83 @@ const MOCKS = [
             {
               __typename: "CompositeType",
               name:
-                "PandasHelloWorld.ContextDefinitionConfig.Default.Resources",
+                "PandasHelloWorld.ContextDefinitionConfig.ContextOne.Resources",
               fields: []
+            },
+            {
+              __typename: "CompositeType",
+              name: "PandasHelloWorld.ContextDefinitionConfig.ContextTwo",
+              fields: [
+                {
+                  name: "config",
+                  type: { name: "Int", __typename: "RegularType" },
+                  __typename: "TypeField"
+                },
+                {
+                  name: "resources",
+                  type: {
+                    name:
+                      "PandasHelloWorld.ContextDefinitionConfig.ContextTwo.Resources",
+                    __typename: "CompositeType"
+                  },
+                  __typename: "TypeField"
+                }
+              ]
+            },
+            {
+              __typename: "CompositeType",
+              name:
+                "PandasHelloWorld.ContextDefinitionConfig.ContextTwo.Resources",
+              fields: []
+            },
+            {
+              __typename: "CompositeType",
+              name:
+                "PandasHelloWorld.ContextDefinitionConfig.ContextWithResources",
+              fields: [
+                {
+                  name: "config",
+                  type: { name: "Any", __typename: "RegularType" },
+                  __typename: "TypeField"
+                },
+                {
+                  name: "resources",
+                  type: {
+                    name:
+                      "PandasHelloWorld.ContextDefinitionConfig.ContextWithResources.Resources",
+                    __typename: "CompositeType"
+                  },
+                  __typename: "TypeField"
+                }
+              ]
+            },
+            {
+              __typename: "CompositeType",
+              name:
+                "PandasHelloWorld.ContextDefinitionConfig.ContextWithResources.Resources",
+              fields: [
+                {
+                  name: "resource_one",
+                  type: {
+                    name:
+                      "PandasHelloWorld.ContextDefinitionConfig.ContextWithResources.Resources.resource_one",
+                    __typename: "CompositeType"
+                  },
+                  __typename: "TypeField"
+                }
+              ]
+            },
+            {
+              __typename: "CompositeType",
+              name:
+                "PandasHelloWorld.ContextDefinitionConfig.ContextWithResources.Resources.resource_one",
+              fields: [
+                {
+                  name: "config",
+                  type: { name: "Int", __typename: "RegularType" },
+                  __typename: "TypeField"
+                }
+              ]
             },
             {
               __typename: "CompositeType",
@@ -682,7 +563,7 @@ const MOCKS = [
               fields: [
                 {
                   name: "config",
-                  type: { name: "Dict_1", __typename: "CompositeType" },
+                  type: { name: "Dict.1", __typename: "CompositeType" },
                   __typename: "TypeField"
                 }
               ]
@@ -722,6 +603,18 @@ const MOCKS = [
           __typename: "Pipeline",
           types: [
             {
+              name: "Any",
+              typeAttributes: {
+                isBuiltin: true,
+                isSystemConfig: false,
+                __typename: "TypeAttributes",
+                isNamed: true
+              },
+              description:
+                "The type that allows any value, including no value.",
+              __typename: "RegularType"
+            },
+            {
               name: "Bool",
               typeAttributes: {
                 isBuiltin: true,
@@ -733,7 +626,7 @@ const MOCKS = [
               __typename: "RegularType"
             },
             {
-              name: "Dict_1",
+              name: "Dict.1",
               typeAttributes: {
                 isBuiltin: true,
                 isSystemConfig: false,
@@ -744,15 +637,15 @@ const MOCKS = [
               __typename: "CompositeType"
             },
             {
-              name: "Dict_2",
+              name: "Int",
               typeAttributes: {
                 isBuiltin: true,
                 isSystemConfig: false,
                 __typename: "TypeAttributes",
                 isNamed: true
               },
-              description: "A configuration dictionary with typed fields",
-              __typename: "CompositeType"
+              description: null,
+              __typename: "RegularType"
             },
             {
               name: "PandasDataFrame",
@@ -778,7 +671,7 @@ const MOCKS = [
               __typename: "CompositeType"
             },
             {
-              name: "PandasHelloWorld.ContextDefinitionConfig.Default",
+              name: "PandasHelloWorld.ContextDefinitionConfig.ContextOne",
               typeAttributes: {
                 isBuiltin: false,
                 isSystemConfig: true,
@@ -790,10 +683,69 @@ const MOCKS = [
             },
             {
               name:
-                "PandasHelloWorld.ContextDefinitionConfig.Default.Resources",
+                "PandasHelloWorld.ContextDefinitionConfig.ContextOne.Resources",
               typeAttributes: {
                 isBuiltin: false,
                 isSystemConfig: true,
+                __typename: "TypeAttributes",
+                isNamed: true
+              },
+              description: null,
+              __typename: "CompositeType"
+            },
+            {
+              name: "PandasHelloWorld.ContextDefinitionConfig.ContextTwo",
+              typeAttributes: {
+                isBuiltin: false,
+                isSystemConfig: true,
+                __typename: "TypeAttributes",
+                isNamed: true
+              },
+              description: null,
+              __typename: "CompositeType"
+            },
+            {
+              name:
+                "PandasHelloWorld.ContextDefinitionConfig.ContextTwo.Resources",
+              typeAttributes: {
+                isBuiltin: false,
+                isSystemConfig: true,
+                __typename: "TypeAttributes",
+                isNamed: true
+              },
+              description: null,
+              __typename: "CompositeType"
+            },
+            {
+              name:
+                "PandasHelloWorld.ContextDefinitionConfig.ContextWithResources",
+              typeAttributes: {
+                isBuiltin: false,
+                isSystemConfig: true,
+                __typename: "TypeAttributes",
+                isNamed: true
+              },
+              description: null,
+              __typename: "CompositeType"
+            },
+            {
+              name:
+                "PandasHelloWorld.ContextDefinitionConfig.ContextWithResources.Resources",
+              typeAttributes: {
+                isBuiltin: false,
+                isSystemConfig: true,
+                __typename: "TypeAttributes",
+                isNamed: true
+              },
+              description: null,
+              __typename: "CompositeType"
+            },
+            {
+              name:
+                "PandasHelloWorld.ContextDefinitionConfig.ContextWithResources.Resources.resource_one",
+              typeAttributes: {
+                isBuiltin: false,
+                isSystemConfig: false,
                 __typename: "TypeAttributes",
                 isNamed: true
               },

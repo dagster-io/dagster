@@ -1,19 +1,10 @@
 from __future__ import absolute_import
-import graphene
 
 from dagster import check
 from dagster.core.events import (
     EventRecord,
     EventType,
 )
-from dagit import pipeline_run_storage
-import dagit.schema.pipelines
-import dagit.schema.errors
-from dagit.schema import generic, execution
-from .utils import non_null_list
-from dagster.utils.error import SerializableErrorInfo
-PipelineRunStatus = graphene.Enum.from_enum(pipeline_run_storage.PipelineRunStatus)
-
 from dagster.utils.logging import (
     CRITICAL,
     DEBUG,
@@ -23,34 +14,48 @@ from dagster.utils.logging import (
     check_valid_level_param,
 )
 
+from dagster.utils.error import SerializableErrorInfo
+from dagit import pipeline_run_storage
+from dagit.pipeline_run_storage import (
+    PipelineRunStatus,
+    PipelineRun,
+)
+from dagit.schema import dauphin, model
 
-class PipelineRun(graphene.ObjectType):
-    runId = graphene.NonNull(graphene.String)
-    status = graphene.NonNull(PipelineRunStatus)
-    pipeline = graphene.NonNull(lambda: dagit.schema.pipelines.Pipeline)
-    logs = graphene.NonNull(lambda: LogMessageConnection)
-    executionPlan = graphene.NonNull(lambda: execution.ExecutionPlan)
+DauphinPipelineRunStatus = dauphin.Enum.from_enum(PipelineRunStatus)
+
+
+class DauphinPipelineRun(dauphin.ObjectType):
+    class Meta:
+        name = 'PipelineRun'
+
+    runId = dauphin.NonNull(dauphin.String)
+    status = dauphin.NonNull('PipelineRunStatus')
+    pipeline = dauphin.NonNull('Pipeline')
+    logs = dauphin.NonNull('LogMessageConnection')
+    executionPlan = dauphin.NonNull('ExecutionPlan')
 
     def __init__(self, pipeline_run):
-        from dagit.schema import model
-        super(PipelineRun, self).__init__(runId=pipeline_run.run_id, status=pipeline_run.status)
-        self._pipeline_run = check.inst_param(
-            pipeline_run, 'pipeline_run', pipeline_run_storage.PipelineRun
+        super(DauphinPipelineRun, self).__init__(
+            runId=pipeline_run.run_id, status=pipeline_run.status
         )
+        self._pipeline_run = check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
 
     def resolve_pipeline(self, info):
-        from dagit.schema import model
-        return model.get_pipeline_or_raise(info.context, self._pipeline_run.pipeline_name)
+        return model.get_pipeline_or_raise(info, self._pipeline_run.pipeline_name)
 
     def resolve_logs(self, info):
-        return LogMessageConnection(self._pipeline_run)
+        return info.schema.type_named('LogMessageConnection')(self._pipeline_run)
 
     def resolve_executionPlan(self, info):
         pipeline = self.resolve_pipeline(info)
-        return execution.ExecutionPlan(pipeline, self._pipeline_run.execution_plan)
+        return info.schema.type_named('ExecutionPlan')(pipeline, self._pipeline_run.execution_plan)
 
 
-class LogLevel(graphene.Enum):
+class DauphinLogLevel(dauphin.Enum):
+    class Meta:
+        name = 'LogLevel'
+
     CRITICAL = 'CRITICAL'
     ERROR = 'ERROR'
     INFO = 'INFO'
@@ -61,29 +66,35 @@ class LogLevel(graphene.Enum):
     def from_level(level):
         check_valid_level_param(level)
         if level == CRITICAL:
-            return LogLevel.CRITICAL
+            return DauphinLogLevel.CRITICAL
         elif level == ERROR:
-            return LogLevel.ERROR
+            return DauphinLogLevel.ERROR
         elif level == INFO:
-            return LogLevel.INFO
+            return DauphinLogLevel.INFO
         elif level == WARNING:
-            return LogLevel.WARNING
+            return DauphinLogLevel.WARNING
         elif level == DEBUG:
-            return LogLevel.DEBUG
+            return DauphinLogLevel.DEBUG
         else:
             check.failed('unknown log level')
 
 
-class MessageEvent(graphene.Interface):
-    run = graphene.NonNull(lambda: PipelineRun)
-    message = graphene.NonNull(graphene.String)
-    timestamp = graphene.NonNull(graphene.String)
-    level = graphene.NonNull(LogLevel)
+class DauphinMessageEvent(dauphin.Interface):
+    class Meta:
+        name = 'MessageEvent'
+
+    run = dauphin.NonNull('PipelineRun')
+    message = dauphin.NonNull(dauphin.String)
+    timestamp = dauphin.NonNull(dauphin.String)
+    level = dauphin.NonNull('LogLevel')
 
 
-class LogMessageConnection(graphene.ObjectType):
-    nodes = non_null_list(lambda: PipelineRunEvent)
-    pageInfo = graphene.NonNull(lambda: generic.PageInfo)
+class DauphinLogMessageConnection(dauphin.ObjectType):
+    class Meta:
+        name = 'LogMessageConnection'
+
+    nodes = dauphin.non_null_list('PipelineRunEvent')
+    pageInfo = dauphin.NonNull('PageInfo')
 
     def __init__(self, pipeline_run):
         self._pipeline_run = check.inst_param(
@@ -92,10 +103,10 @@ class LogMessageConnection(graphene.ObjectType):
         self._logs = self._pipeline_run.all_logs()
 
     def resolve_nodes(self, info):
-        from dagit.schema import model
-        pipeline = model.get_pipeline_or_raise(info.context, self._pipeline_run.pipeline_name)
+        pipeline = model.get_pipeline_or_raise(info, self._pipeline_run.pipeline_name)
         return [
-            PipelineRunEvent.from_dagster_event(info.context, log, pipeline) for log in self._logs
+            info.schema.type_named('PipelineRunEvent').from_dagster_event(info, log, pipeline)
+            for log in self._logs
         ]
 
     def resolve_pageInfo(self, info):
@@ -103,7 +114,7 @@ class LogMessageConnection(graphene.ObjectType):
         lastCursor = None
         if count > 0:
             lastCursor = str(count - 1)
-        return generic.PageInfo(
+        return info.schema.type_named('PageInfo')(
             lastCursor=lastCursor,
             hasNextPage=None,
             hasPreviousPage=None,
@@ -112,107 +123,121 @@ class LogMessageConnection(graphene.ObjectType):
         )
 
 
-class LogMessageEvent(graphene.ObjectType):
+class DauphinLogMessageEvent(dauphin.ObjectType):
     class Meta:
-        interfaces = (MessageEvent, )
+        name = 'LogMessageEvent'
+        interfaces = (DauphinMessageEvent, )
 
 
-class PipelineEvent(graphene.Interface):
-    pipeline = graphene.NonNull(lambda: dagit.schema.pipelines.Pipeline)
-
-
-class PipelineStartEvent(graphene.ObjectType):
+class DauphinPipelineEvent(dauphin.Interface):
     class Meta:
-        interfaces = (MessageEvent, PipelineEvent)
+        name = 'PipelineEvent'
+
+    pipeline = dauphin.NonNull('Pipeline')
 
 
-class PipelineSuccessEvent(graphene.ObjectType):
+class DauphinPipelineStartEvent(dauphin.ObjectType):
     class Meta:
-        interfaces = (MessageEvent, PipelineEvent)
+        name = 'PipelineStartEvent'
+        interfaces = (DauphinMessageEvent, DauphinPipelineEvent)
 
 
-class PipelineFailureEvent(graphene.ObjectType):
+class DauphinPipelineSuccessEvent(dauphin.ObjectType):
     class Meta:
-        interfaces = (MessageEvent, PipelineEvent)
+        name = 'PipelineSuccessEvent'
+        interfaces = (DauphinMessageEvent, DauphinPipelineEvent)
 
 
-class ExecutionStepEvent(graphene.Interface):
-    step = graphene.NonNull(lambda: dagit.schema.execution.ExecutionStep)
-
-
-class ExecutionStepStartEvent(graphene.ObjectType):
+class DauphinPipelineFailureEvent(dauphin.ObjectType):
     class Meta:
-        interfaces = (MessageEvent, ExecutionStepEvent)
+        name = 'PipelineFailureEvent'
+        interfaces = (DauphinMessageEvent, DauphinPipelineEvent)
 
 
-class ExecutionStepSuccessEvent(graphene.ObjectType):
+class DauphinExecutionStepEvent(dauphin.Interface):
     class Meta:
-        interfaces = (MessageEvent, ExecutionStepEvent)
+        name = 'ExecutionStepEvent'
+
+    step = dauphin.NonNull('ExecutionStep')
 
 
-class ExecutionStepFailureEvent(graphene.ObjectType):
+class DauphinExecutionStepStartEvent(dauphin.ObjectType):
     class Meta:
-        interfaces = (MessageEvent, ExecutionStepEvent)
+        name = 'ExecutionStepStartEvent'
+        interfaces = (DauphinMessageEvent, DauphinExecutionStepEvent)
 
-    error = graphene.NonNull(lambda: dagit.schema.errors.PythonError)
+
+class DauphinExecutionStepSuccessEvent(dauphin.ObjectType):
+    class Meta:
+        name = 'ExecutionStepSuccessEvent'
+        interfaces = (DauphinMessageEvent, DauphinExecutionStepEvent)
+
+
+class DauphinExecutionStepFailureEvent(dauphin.ObjectType):
+    class Meta:
+        name = 'ExecutionStepFailureEvent'
+        interfaces = (DauphinMessageEvent, DauphinExecutionStepEvent)
+
+    error = dauphin.NonNull('PythonError')
 
 
 # Should be a union of all possible events
-class PipelineRunEvent(graphene.Union):
+class DauphinPipelineRunEvent(dauphin.Union):
     class Meta:
+        name = 'PipelineRunEvent'
         types = (
-            LogMessageEvent,
-            PipelineStartEvent,
-            PipelineSuccessEvent,
-            PipelineFailureEvent,
-            ExecutionStepStartEvent,
-            ExecutionStepSuccessEvent,
-            ExecutionStepFailureEvent,
+            DauphinLogMessageEvent,
+            DauphinPipelineStartEvent,
+            DauphinPipelineSuccessEvent,
+            DauphinPipelineFailureEvent,
+            DauphinExecutionStepStartEvent,
+            DauphinExecutionStepSuccessEvent,
+            DauphinExecutionStepFailureEvent,
         )
 
     @staticmethod
-    def from_dagster_event(context, event, pipeline):
+    def from_dagster_event(info, event, pipeline):
         check.inst_param(event, 'event', EventRecord)
-        check.inst_param(pipeline, 'pipeline', dagit.schema.pipelines.Pipeline)
-        pipeline_run = context.pipeline_runs.get_run_by_id(event.run_id)
-        run = PipelineRun(pipeline_run)
+        check.inst_param(pipeline, 'pipeline', info.schema.type_named('Pipeline'))
+        pipeline_run = info.context.pipeline_runs.get_run_by_id(event.run_id)
+        run = DauphinPipelineRun(pipeline_run)
 
         basic_params = {
             'run': run,
             'message': event.original_message,
             'timestamp': int(event.timestamp * 1000),
-            'level': LogLevel.from_level(event.level),
+            'level': DauphinLogLevel.from_level(event.level),
         }
 
         if event.event_type == EventType.PIPELINE_START:
-            return PipelineStartEvent(pipeline=pipeline, **basic_params)
+            return info.schema.type_named('PipelineStartEvent')(pipeline=pipeline, **basic_params)
         elif event.event_type == EventType.PIPELINE_SUCCESS:
-            return PipelineSuccessEvent(pipeline=pipeline, **basic_params)
+            return info.schema.type_named('PipelineSuccessEvent')(pipeline=pipeline, **basic_params)
         elif event.event_type == EventType.PIPELINE_FAILURE:
-            return PipelineFailureEvent(pipeline=pipeline, **basic_params)
+            return info.schema.type_named('PipelineFailureEvent')(pipeline=pipeline, **basic_params)
         elif event.event_type == EventType.EXECUTION_PLAN_STEP_START:
-            return ExecutionStepStartEvent(
-                step=dagit.schema.execution.ExecutionStep(
+            return info.schema.type_named('ExecutionStepStartEvent')(
+                step=info.schema.type_named('ExecutionStep')(
                     pipeline_run.execution_plan.get_step_by_key(event.step_key)
                 ),
                 **basic_params
             )
         elif event.event_type == EventType.EXECUTION_PLAN_STEP_SUCCESS:
-            return ExecutionStepSuccessEvent(
-                step=dagit.schema.execution.ExecutionStep(
+            return info.schema.type_named('ExecutionStepSuccessEvent')(
+                step=info.schema.type_named('ExecutionStep')(
                     pipeline_run.execution_plan.get_step_by_key(event.step_key)
                 ),
                 **basic_params
             )
         elif event.event_type == EventType.EXECUTION_PLAN_STEP_FAILURE:
             check.inst(event.error_info, SerializableErrorInfo)
-            failure_event = ExecutionStepFailureEvent(
-                step=dagit.schema.execution.ExecutionStep(
+            failure_event = info.schema.type_named('ExecutionStepFailureEvent')(
+                step=info.schema.type_named('ExecutionStep')(
                     pipeline_run.execution_plan.get_step_by_key(event.step_key)
                 ),
-                error=dagit.schema.errors.PythonError(event.error_info),
+                error=info.schema.type_named('PythonError')(event.error_info),
                 **basic_params
             )
             return failure_event
         else:
-            return LogMessageEvent(**basic_params)
+            return info.schema.type_named('LogMessageEvent')(**basic_params)
