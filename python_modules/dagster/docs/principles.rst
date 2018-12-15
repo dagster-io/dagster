@@ -1,18 +1,19 @@
 Principles
 -----------
-
-As noted above Dagster has a point of view and values regarding how data pipelines should be built
-and structured. We list them in no particular order:
+Dagster is opinionated about how data pipelines should be built and structured. What do we think
+is important?
 
 Functional
 ^^^^^^^^^^
-We believe that data pipelines should be organized as DAGs of functional, idempotent computations.
-These computations injest input, do computation, and produce output, either with no side effects
-or well-known, un-externalized side effects. Given the same inputs and configuration, the
-computation should always produce the same output. These computations should also be
-parameterizable, so that they can execute in different environments.
+Data pipelines should be expressed as DAGs (directed acyclic graphs) of functional, idempotent
+computations. Individual nodes in the graph consume their inputs, perform some computation, and
+yield outputs, either with no side effects or with clealy advertised side effects. Given the
+same inputs and configuration, the computation should always produce the same output. If these 
+computations have external dependencies, these should be parametrizable, so that the computations
+may execute in different environments.
 
-   * See https://bit.ly/2LxDgnr for an excellent overview of functional programing in batch computations.
+   * See Maxime Beauchemin's Medium article on `Functional Data Engineering <https://bit.ly/2LxDgnr>`_
+     for an excellent overview of functional programing in batch computations.
 
 Self-describing
 ^^^^^^^^^^^^^^^
