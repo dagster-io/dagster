@@ -7,16 +7,144 @@
 // GraphQL fragment: ConfigFragment
 // ====================================================
 
-export interface ConfigFragment_type_typeAttributes {
+export interface ConfigFragment_type_RegularType_innerTypes_RegularType_innerTypes {
+  name: string;
+}
+
+export interface ConfigFragment_type_RegularType_innerTypes_RegularType_typeAttributes {
   isNamed: boolean;
 }
 
-export interface ConfigFragment_type {
+export interface ConfigFragment_type_RegularType_innerTypes_RegularType {
   name: string;
+  isDict: boolean;
+  isList: boolean;
+  isNullable: boolean;
+  innerTypes: ConfigFragment_type_RegularType_innerTypes_RegularType_innerTypes[];
   description: string | null;
-  typeAttributes: ConfigFragment_type_typeAttributes;
-  __typename: "RegularType" | "CompositeType";
+  typeAttributes: ConfigFragment_type_RegularType_innerTypes_RegularType_typeAttributes;
 }
+
+export interface ConfigFragment_type_RegularType_innerTypes_CompositeType_innerTypes {
+  name: string;
+}
+
+export interface ConfigFragment_type_RegularType_innerTypes_CompositeType_typeAttributes {
+  isNamed: boolean;
+}
+
+export interface ConfigFragment_type_RegularType_innerTypes_CompositeType_fields_type {
+  name: string;
+}
+
+export interface ConfigFragment_type_RegularType_innerTypes_CompositeType_fields {
+  name: string;
+  type: ConfigFragment_type_RegularType_innerTypes_CompositeType_fields_type;
+  isOptional: boolean;
+}
+
+export interface ConfigFragment_type_RegularType_innerTypes_CompositeType {
+  name: string;
+  isDict: boolean;
+  isList: boolean;
+  isNullable: boolean;
+  innerTypes: ConfigFragment_type_RegularType_innerTypes_CompositeType_innerTypes[];
+  description: string | null;
+  typeAttributes: ConfigFragment_type_RegularType_innerTypes_CompositeType_typeAttributes;
+  fields: ConfigFragment_type_RegularType_innerTypes_CompositeType_fields[];
+}
+
+export type ConfigFragment_type_RegularType_innerTypes = ConfigFragment_type_RegularType_innerTypes_RegularType | ConfigFragment_type_RegularType_innerTypes_CompositeType;
+
+export interface ConfigFragment_type_RegularType_typeAttributes {
+  isNamed: boolean;
+}
+
+export interface ConfigFragment_type_RegularType {
+  name: string;
+  isDict: boolean;
+  isList: boolean;
+  isNullable: boolean;
+  innerTypes: ConfigFragment_type_RegularType_innerTypes[];
+  description: string | null;
+  typeAttributes: ConfigFragment_type_RegularType_typeAttributes;
+}
+
+export interface ConfigFragment_type_CompositeType_innerTypes_RegularType_innerTypes {
+  name: string;
+}
+
+export interface ConfigFragment_type_CompositeType_innerTypes_RegularType_typeAttributes {
+  isNamed: boolean;
+}
+
+export interface ConfigFragment_type_CompositeType_innerTypes_RegularType {
+  name: string;
+  isDict: boolean;
+  isList: boolean;
+  isNullable: boolean;
+  innerTypes: ConfigFragment_type_CompositeType_innerTypes_RegularType_innerTypes[];
+  description: string | null;
+  typeAttributes: ConfigFragment_type_CompositeType_innerTypes_RegularType_typeAttributes;
+}
+
+export interface ConfigFragment_type_CompositeType_innerTypes_CompositeType_innerTypes {
+  name: string;
+}
+
+export interface ConfigFragment_type_CompositeType_innerTypes_CompositeType_typeAttributes {
+  isNamed: boolean;
+}
+
+export interface ConfigFragment_type_CompositeType_innerTypes_CompositeType_fields_type {
+  name: string;
+}
+
+export interface ConfigFragment_type_CompositeType_innerTypes_CompositeType_fields {
+  name: string;
+  type: ConfigFragment_type_CompositeType_innerTypes_CompositeType_fields_type;
+  isOptional: boolean;
+}
+
+export interface ConfigFragment_type_CompositeType_innerTypes_CompositeType {
+  name: string;
+  isDict: boolean;
+  isList: boolean;
+  isNullable: boolean;
+  innerTypes: ConfigFragment_type_CompositeType_innerTypes_CompositeType_innerTypes[];
+  description: string | null;
+  typeAttributes: ConfigFragment_type_CompositeType_innerTypes_CompositeType_typeAttributes;
+  fields: ConfigFragment_type_CompositeType_innerTypes_CompositeType_fields[];
+}
+
+export type ConfigFragment_type_CompositeType_innerTypes = ConfigFragment_type_CompositeType_innerTypes_RegularType | ConfigFragment_type_CompositeType_innerTypes_CompositeType;
+
+export interface ConfigFragment_type_CompositeType_typeAttributes {
+  isNamed: boolean;
+}
+
+export interface ConfigFragment_type_CompositeType_fields_type {
+  name: string;
+}
+
+export interface ConfigFragment_type_CompositeType_fields {
+  name: string;
+  type: ConfigFragment_type_CompositeType_fields_type;
+  isOptional: boolean;
+}
+
+export interface ConfigFragment_type_CompositeType {
+  name: string;
+  isDict: boolean;
+  isList: boolean;
+  isNullable: boolean;
+  innerTypes: ConfigFragment_type_CompositeType_innerTypes[];
+  description: string | null;
+  typeAttributes: ConfigFragment_type_CompositeType_typeAttributes;
+  fields: ConfigFragment_type_CompositeType_fields[];
+}
+
+export type ConfigFragment_type = ConfigFragment_type_RegularType | ConfigFragment_type_CompositeType;
 
 export interface ConfigFragment {
   type: ConfigFragment_type;

@@ -52,10 +52,8 @@ export default class SidebarTabbedContainer extends React.Component<
           name
         }
         ...SidebarPipelineInfoFragment
-        ...SidebarSolidInfoPipelineFragment
       }
 
-      ${SidebarSolidInfo.fragments.SidebarSolidInfoPipelineFragment}
       ${SidebarPipelineInfo.fragments.SidebarPipelineInfoFragment}
     `,
     SidebarTabbedContainerSolidFragment: gql`
@@ -84,9 +82,7 @@ export default class SidebarTabbedContainer extends React.Component<
       activeTab = "types";
       content = <TypeListContainer pipelineName={pipeline.name} />;
     } else if (solid) {
-      content = (
-        <SidebarSolidInfo pipeline={pipeline} solid={solid} key={solid.name} />
-      );
+      content = <SidebarSolidInfo solid={solid} key={solid.name} />;
     } else {
       content = <SidebarPipelineInfo pipeline={pipeline} key={pipeline.name} />;
     }

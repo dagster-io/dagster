@@ -17,8 +17,6 @@ export default class ConfigExplorer extends React.Component<
   static fragments = {
     ConfigExplorerFragment: gql`
       fragment ConfigExplorerFragment on Pipeline {
-        ...ConfigPipelineTypesFragment
-
         contexts {
           name
           description
@@ -38,7 +36,6 @@ export default class ConfigExplorer extends React.Component<
       }
 
       ${Config.fragments.ConfigFragment}
-      ${Config.fragments.ConfigPipelineTypesFragment}
     `
   };
 
@@ -51,9 +48,7 @@ export default class ConfigExplorer extends React.Component<
         <DescriptionWrapper>
           <Description description={context.description} />
         </DescriptionWrapper>
-        {context.config && (
-          <Config config={context.config} pipeline={this.props.pipeline} />
-        )}
+        {context.config && <Config config={context.config} />}
       </div>
     ));
   }
@@ -68,10 +63,7 @@ export default class ConfigExplorer extends React.Component<
           <Description description={solid.definition.description} />
         </DescriptionWrapper>
         {solid.definition.configDefinition && (
-          <Config
-            config={solid.definition.configDefinition}
-            pipeline={this.props.pipeline}
-          />
+          <Config config={solid.definition.configDefinition} />
         )}
       </div>
     ));

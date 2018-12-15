@@ -18,11 +18,9 @@ import {
 import Description from "./Description";
 import Config from "./Config";
 import { SidebarSolidInfoFragment } from "./types/SidebarSolidInfoFragment";
-import { SidebarSolidInfoPipelineFragment } from "./types/SidebarSolidInfoPipelineFragment";
 
 interface ISidebarSolidInfoProps {
   solid: SidebarSolidInfoFragment;
-  pipeline: SidebarSolidInfoPipelineFragment;
 }
 
 export default class SidebarSolidInfo extends React.Component<
@@ -83,13 +81,6 @@ export default class SidebarSolidInfo extends React.Component<
       ${TypeWithTooltip.fragments.TypeWithTooltipFragment}
       ${SolidTypeSignature.fragments.SolidTypeSignatureFragment}
       ${Config.fragments.ConfigFragment}
-    `,
-
-    SidebarSolidInfoPipelineFragment: gql`
-      fragment SidebarSolidInfoPipelineFragment on Pipeline {
-        ...ConfigPipelineTypesFragment
-      }
-      ${Config.fragments.ConfigPipelineTypesFragment}
     `
   };
 
@@ -152,7 +143,7 @@ export default class SidebarSolidInfo extends React.Component<
   }
 
   public render() {
-    const { solid, pipeline } = this.props;
+    const { solid } = this.props;
     const Plugin = pluginForMetadata(solid.definition.metadata);
 
     return (
@@ -171,10 +162,7 @@ export default class SidebarSolidInfo extends React.Component<
         </SidebarSection>
         {solid.definition.configDefinition && (
           <SidebarSection title={"Config"}>
-            <Config
-              config={solid.definition.configDefinition}
-              pipeline={pipeline}
-            />
+            <Config config={solid.definition.configDefinition} />
           </SidebarSection>
         )}
         <SidebarSection title={"Inputs"}>{this.renderInputs()}</SidebarSection>

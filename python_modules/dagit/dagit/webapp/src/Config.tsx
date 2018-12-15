@@ -1,15 +1,58 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
-import { UL, Colors } from "@blueprintjs/core";
+import { Colors } from "@blueprintjs/core";
 import TypeWithTooltip from "./TypeWithTooltip";
-import Description from "./Description";
 import { ConfigFragment } from "./types/ConfigFragment";
-import { ConfigPipelineTypesFragment } from "./types/ConfigPipelineTypesFragment";
+import { TypeInfoFragment } from "./types/TypeInfoFragment";
 
 interface ConfigProps {
   config: ConfigFragment;
-  pipeline: ConfigPipelineTypesFragment;
+}
+
+function renderTypeRecursive(
+  type: TypeInfoFragment,
+  typeLookup: { [typeName: string]: TypeInfoFragment },
+  indent: string = ""
+): React.ReactElement<HTMLElement> {
+  if (type.isDict && "fields" in type) {
+    const innerIndent = indent + "  ";
+    return (
+      <>
+        {`{`}
+        {type.fields.map((fieldData: any) => (
+          <DictEntry key={fieldData.name}>
+            {innerIndent}
+            <DictKey>{fieldData.name}</DictKey>
+            {fieldData.isOptional && Optional}
+            {`: `}
+            {renderTypeRecursive(
+              typeLookup[fieldData.type.name],
+              typeLookup,
+              innerIndent
+            )}
+          </DictEntry>
+        ))}
+        {`${indent}}`}
+      </>
+    );
+  }
+  if (type.isList) {
+    const innerType = type.innerTypes[0].name;
+    return (
+      <>[{renderTypeRecursive(typeLookup[innerType], typeLookup, indent)}]</>
+    );
+  }
+  if (type.isNullable) {
+    const innerType = type.innerTypes[0].name;
+    return (
+      <>
+        {renderTypeRecursive(typeLookup[innerType], typeLookup, indent)}
+        {Optional}
+      </>
+    );
+  }
+  return <TypeWithTooltip type={type} />;
 }
 
 export default class Config extends React.Component<ConfigProps, {}> {
@@ -32,13 +75,11 @@ export default class Config extends React.Component<ConfigProps, {}> {
             isOptional
           }
         }
+        ...TypeWithTooltipFragment
       }
 
       fragment ConfigFragment on Config {
         type {
-          __typename
-
-          ...TypeWithTooltipFragment
           ...TypeInfoFragment
           innerTypes {
             ...TypeInfoFragment
@@ -50,48 +91,37 @@ export default class Config extends React.Component<ConfigProps, {}> {
   };
 
   public render() {
-    const {
-      pipeline: { types },
-      config
-    } = this.props;
+    const { type } = this.props.config;
 
-    let result = "{";
-
-    const appendDict = (indent: string, typename: string) => {
-      const type = types.find(t => t.name === typename);
-      if (!type || type.__typename !== "CompositeType") {
-        return;
-      }
-      type.fields.forEach(field => {
-        if (field.type.__typename === "CompositeType") {
-          result += `\n${indent}{`;
-          appendDict(indent + "  ", field.type.name);
-          result += `\n${indent}}`;
-        } else {
-          result += `\n${indent}${field.name}: ${field.type.name}${
-            field.isOptional ? "?" : ""
-          }`;
-        }
-      });
-    };
-
-    appendDict("  ", config.type.name);
-
-    if (result == "{") {
-      return <span />;
+    const innerTypeLookup = {};
+    for (const innerTypeData of type.innerTypes) {
+      innerTypeLookup[innerTypeData.name] = innerTypeData;
     }
 
-    result += "\n}";
-
-    return <ConfigWrapper>{result}</ConfigWrapper>;
+    return (
+      <ConfigWrapper>
+        {renderTypeRecursive(type, innerTypeLookup)}
+      </ConfigWrapper>
+    );
   }
 }
 
 const ConfigWrapper = styled.code`
   margin-top: 10px;
   margin-bottom: 10px;
-  color: ${Colors.BLACK};
+  color: ${Colors.GRAY3};
   display: block;
   white-space: pre-wrap;
-  font-size: 12px;
+  font-size: smaller;
+  line-height: 20px;
 `;
+
+const DictEntry = styled.div``;
+
+const DictKey = styled.span`
+  color: ${Colors.BLACK};
+`;
+
+const Optional = (
+  <span style={{ fontWeight: 500, color: Colors.ORANGE2 }}>?</span>
+);
