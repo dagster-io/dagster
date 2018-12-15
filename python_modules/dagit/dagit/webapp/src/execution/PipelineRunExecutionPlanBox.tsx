@@ -66,7 +66,11 @@ export class ExecutionPlanBox extends React.Component<IExecutionPlanBoxProps> {
             />
           )}
         </ExeuctionStateWrap>
-        <ExecutionPlanBoxName>{name}</ExecutionPlanBoxName>
+        <ExecutionPlanBoxName>
+          {name}
+          {name}
+          {name}
+        </ExecutionPlanBoxName>
         {elapsed && (
           <ExecutionStateLabel>
             {formatExecutionTime(elapsed)}
@@ -124,16 +128,17 @@ const ExecutionFinishedFlash = styled.div<{ success: boolean }>`
   bottom: 0;
   background: linear-gradient(
     111deg,
-    transparent 40%,
+    transparent 30%,
     rgba(255, 255, 255, 0.7) 65%,
     transparent 68%
   );
-  background-size: 200px;
-  background-position-x: ${({ success }) => (success ? 180 : -180)}px;
+  background-size: 150px;
+  background-position-x: ${({ success }) =>
+    success ? `calc(100% + 150px)` : `-150px`};
   background-repeat-x: no-repeat;
   pointer-events: none;
   transition: ${({ success }) =>
-    success ? "300ms background-position-x linear" : ""};
+    success ? "400ms background-position-x linear" : ""};
 `;
 
 const ExecutionPlanBoxContainer = styled.div<{ state: IStepState }>`
