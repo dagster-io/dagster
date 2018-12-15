@@ -68,6 +68,9 @@ export default class SidebarPipelineInfo extends React.Component<
           {pipeline.contexts.map(context => (
             <ContextContainer key={context.name}>
               <SectionItemHeader>{context.name}</SectionItemHeader>
+              <Description
+                description={context.description || NO_DESCRIPTION}
+              />
               {context.config && <Config config={context.config} />}
               {context.resources.map(resource => (
                 <ContextResourceContainer key={resource.name}>
