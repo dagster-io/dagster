@@ -243,7 +243,7 @@ def check_new_version(version):
 
 def check_git_status():
     changes = subprocess.check_output(['git', 'status', '--porcelain'])
-    if changes != '':
+    if changes != b'':
         raise Exception(
             'Bailing: Cannot publish with changes present in git repo:\n{changes}'.
             format(changes=changes))
