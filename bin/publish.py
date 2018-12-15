@@ -297,7 +297,7 @@ PyPI, preferably in the form of a ~/.pypirc file as follows:
 
 
 @cli.command()
-@click.argument('version', help='The new PEP 440 version to tag')
+@click.argument('version')
 def release(version):
     """Tags all submodules for a new release.
 
