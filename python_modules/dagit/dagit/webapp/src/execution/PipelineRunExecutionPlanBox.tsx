@@ -66,11 +66,7 @@ export class ExecutionPlanBox extends React.Component<IExecutionPlanBoxProps> {
             />
           )}
         </ExeuctionStateWrap>
-        <ExecutionPlanBoxName>
-          {name}
-          {name}
-          {name}
-        </ExecutionPlanBoxName>
+        <ExecutionPlanBoxName>{name}</ExecutionPlanBoxName>
         {elapsed && (
           <ExecutionStateLabel>
             {formatExecutionTime(elapsed)}
