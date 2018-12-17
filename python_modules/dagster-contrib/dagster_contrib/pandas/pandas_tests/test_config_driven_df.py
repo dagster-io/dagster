@@ -1,5 +1,3 @@
-import pandas as pd
-
 from dagster import (
     PipelineDefinition,
     execute_pipeline,
