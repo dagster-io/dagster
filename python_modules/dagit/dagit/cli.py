@@ -43,8 +43,9 @@ REPO_TARGET_WARNING = (
 @click.command(
     name='ui',
     help=(
-        'Run dagit. Loads a repository or pipeline.\n\n{warning}'.
-        format(warning=REPO_TARGET_WARNING) + '\n\n Examples:'
+        'Run dagit. Loads a repository or pipeline.\n\n{warning}'.format(
+            warning=REPO_TARGET_WARNING
+        ) + '\n\n Examples:'
         '\n\n1. dagit'
         '\n\n2. dagit -y path/to/repository.yml'
         '\n\n3. dagit -f path/to/file.py -n define_repo'
@@ -61,7 +62,12 @@ REPO_TARGET_WARNING = (
     default=True,
     help='Watch for changes in the current working directory and all recursive subfolders',
 )
-def ui(host, port, watch, **kwargs):
+@click.option(
+    '--sync',
+    is_flag=True,
+    help='Use the synchronous execution manager',
+)
+def ui(host, port, watch, sync, **kwargs):
     repository_target_info = load_target_info_from_cli_args(kwargs)
 
     sys.path.append(os.getcwd())
@@ -73,7 +79,9 @@ def ui(host, port, watch, **kwargs):
         observer.schedule(handler, os.path.dirname(os.path.abspath(os.getcwd())), recursive=True)
         observer.start()
     try:
-        app = create_app(repository_container, pipeline_run_storage)
+        app = create_app(
+            repository_container, pipeline_run_storage, use_synchronous_execution_manager=sync
+        )
         server = pywsgi.WSGIServer((host, port), app, handler_class=WebSocketHandler)
         print('Serving on http://{host}:{port}'.format(host=host, port=port))
         server.serve_forever()
