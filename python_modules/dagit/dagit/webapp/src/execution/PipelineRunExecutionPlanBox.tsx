@@ -1,49 +1,113 @@
 import * as React from "react";
 import styled from "styled-components";
 import { Colors, Spinner, Intent } from "@blueprintjs/core";
-import { IStepState } from "./PipelineRunExecutionPlan";
+import { IStepState } from "./StepMetadataProvider";
 
 interface IExecutionPlanBoxProps {
   state: IStepState;
   name: string;
+  start: number | undefined;
   elapsed: number | undefined;
   delay: number;
   onShowStateDetails: (stepName: string) => void;
   onApplyStepFilter: (stepName: string) => void;
 }
 
+interface IExecutionPlanBoxState {
+  v: number;
+}
+
 function formatExecutionTime(msec: number) {
-  if (msec < 100 * 1000) {
-    // < 100 seconds, show msec
+  if (msec < 1000) {
+    // < 1 second, show msec
     return `${Math.ceil(msec)} msec`;
-  } else if (msec < 5 * 60 * 1000) {
-    // < 5 min, show seconds
+  } else if (msec < 10 * 1000) {
+    // < 10 seconds, show seconds with one decimal point
+    return `${Math.ceil(msec / 100) / 10} sec`;
+  } else if (msec < 60 * 1000) {
+    // < 1 min, show seconds
     return `${Math.ceil(msec / 1000)} sec`;
-  } else if (msec < 120 * 60 * 1000) {
-    // < 2 hours, show minutes
+  } else if (msec < 60 * 60 * 1000) {
+    // < 1 hour, show minutes
     return `${Math.ceil(msec / (60 * 1000))} min`;
   } else {
     return `${Math.ceil(msec / (60 * 60 * 1000))} hours`;
   }
 }
 
-export class ExecutionPlanBox extends React.Component<IExecutionPlanBoxProps> {
-  shouldComponentUpdate(nextProps: IExecutionPlanBoxProps) {
+export class ExecutionPlanBox extends React.Component<
+  IExecutionPlanBoxProps,
+  IExecutionPlanBoxState
+> {
+  state = {
+    v: 0
+  };
+
+  timer?: NodeJS.Timer;
+
+  shouldComponentUpdate(
+    nextProps: IExecutionPlanBoxProps,
+    nextState: IExecutionPlanBoxState
+  ) {
     return (
       nextProps.state !== this.props.state ||
       nextProps.name !== this.props.name ||
-      nextProps.elapsed !== this.props.elapsed
+      nextProps.elapsed !== this.props.elapsed ||
+      nextState.v !== this.state.v
     );
   }
+
+  componentDidMount() {
+    this.ensureTimer();
+  }
+
+  componentDidUpdate() {
+    this.ensureTimer();
+  }
+
+  componentWillUnmount() {
+    if (this.timer) {
+      clearTimeout(this.timer);
+      this.timer = undefined;
+    }
+  }
+
+  ensureTimer = () => {
+    if (this.timer) {
+      clearTimeout(this.timer);
+      this.timer = undefined;
+    }
+
+    const { state, start } = this.props;
+
+    // Schedule another update of the component when the elapsed time
+    // since the `start` timestamp crosses another 1s boundary.
+    if (state === IStepState.RUNNING && start) {
+      const nextMs = 1000 - ((Date.now() - start) % 1000);
+      this.timer = setTimeout(this.onTick, nextMs);
+    }
+  };
+
+  onTick = () => {
+    // bogus state change to trigger a re-render
+    this.setState({ v: this.state.v + 1 });
+  };
+
   render() {
     const {
       state,
+      start,
       name,
-      elapsed,
       delay,
       onApplyStepFilter,
       onShowStateDetails
     } = this.props;
+
+    let elapsed = this.props.elapsed;
+    if (state === IStepState.RUNNING && start) {
+      elapsed = Math.floor((Date.now() - start) / 1000) * 1000;
+      if (elapsed === 0) elapsed = undefined;
+    }
 
     return (
       <ExecutionPlanBoxContainer
@@ -131,7 +195,7 @@ const ExecutionFinishedFlash = styled.div<{ success: boolean }>`
   background-size: 150px;
   background-position-x: ${({ success }) =>
     success ? `calc(100% + 150px)` : `-150px`};
-  background-repeat-x: no-repeat;
+  background-repeat: no-repeat;
   pointer-events: none;
   transition: ${({ success }) =>
     success ? "400ms background-position-x linear" : ""};

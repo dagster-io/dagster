@@ -1,16 +1,14 @@
 import * as React from "react";
 import gql from "graphql-tag";
-import produce from "immer";
 import styled from "styled-components";
 import { Colors } from "@blueprintjs/core";
-import {
-  PipelineRunExecutionPlanFragment,
-  PipelineRunExecutionPlanFragment_logs_nodes
-} from "./types/PipelineRunExecutionPlanFragment";
+import { PipelineRunExecutionPlanFragment } from "./types/PipelineRunExecutionPlanFragment";
 import { ExecutionPlanBox } from "./PipelineRunExecutionPlanBox";
+import { IStepMetadataDict, IStepState } from "./StepMetadataProvider";
 
 interface IPipelineRunExecutionPlanProps {
   pipelineRun: PipelineRunExecutionPlanFragment;
+  stepMetadata: IStepMetadataDict;
   onApplyStepFilter: (step: string) => void;
   onShowStateDetails: (step: string) => void;
 }
@@ -30,36 +28,6 @@ export default class PipelineRunExecutionPlan extends React.Component<
             tag
           }
         }
-        logs {
-          nodes {
-            __typename
-            ... on MessageEvent {
-              message
-              timestamp
-            }
-
-            ... on ExecutionStepEvent {
-              step {
-                name
-              }
-            }
-          }
-        }
-      }
-    `,
-    PipelineRunExecutionPlanPipelineRunEventFragment: gql`
-      fragment PipelineRunExecutionPlanPipelineRunEventFragment on PipelineRunEvent {
-        __typename
-        ... on MessageEvent {
-          message
-          timestamp
-        }
-
-        ... on ExecutionStepEvent {
-          step {
-            name
-          }
-        }
       }
     `
   };
@@ -68,9 +36,10 @@ export default class PipelineRunExecutionPlan extends React.Component<
     const {
       onApplyStepFilter,
       onShowStateDetails,
-      pipelineRun: { logs, executionPlan }
+      stepMetadata,
+      pipelineRun: { executionPlan }
     } = this.props;
-    const stepMetadata = logsToStepMetadata(logs.nodes);
+
     const stepsOrderedByTransitionTime = Object.keys(stepMetadata).sort(
       (a, b) => stepMetadata[a].transitionedAt - stepMetadata[b].transitionedAt
     );
@@ -87,10 +56,12 @@ export default class PipelineRunExecutionPlan extends React.Component<
             const metadata = stepMetadata[step.name] || {
               state: IStepState.WAITING
             };
+
             return (
               <ExecutionPlanBox
                 key={step.name}
                 state={metadata.state}
+                start={metadata.start}
                 elapsed={metadata.elapsed}
                 name={step.name}
                 onShowStateDetails={onShowStateDetails}
@@ -103,52 +74,6 @@ export default class PipelineRunExecutionPlan extends React.Component<
       </ExecutionPlanContainer>
     );
   }
-}
-
-export enum IStepState {
-  WAITING = "waiting",
-  RUNNING = "running",
-  SUCCEEDED = "succeeded",
-  FAILED = "failed"
-}
-
-export interface IStepMetadata {
-  state: IStepState;
-  start?: number;
-  elapsed?: number;
-  transitionedAt: number;
-}
-
-function logsToStepMetadata(
-  logs: Array<PipelineRunExecutionPlanFragment_logs_nodes>
-): { [stepName: string]: IStepMetadata } {
-  const steps = {};
-  logs.forEach(log => {
-    if (log.__typename === "ExecutionStepStartEvent") {
-      steps[log.step.name] = {
-        state: IStepState.RUNNING,
-        start: Number.parseInt(log.timestamp, 10),
-        transitionedAt: log.timestamp
-      };
-    } else if (log.__typename === "ExecutionStepSuccessEvent") {
-      steps[log.step.name] = produce(steps[log.step.name] || {}, step => {
-        step.state = IStepState.SUCCEEDED;
-        if (step.start) {
-          step.transitionedAt = log.timestamp;
-          step.elapsed = Number.parseInt(log.timestamp, 10) - step.start;
-        }
-      });
-    } else if (log.__typename === "ExecutionStepFailureEvent") {
-      steps[log.step.name] = produce(steps[log.step.name] || {}, step => {
-        step.state = IStepState.FAILED;
-        if (step.start) {
-          step.transitionedAt = log.timestamp;
-          step.elapsed = Number.parseInt(log.timestamp, 10) - step.start;
-        }
-      });
-    }
-  });
-  return steps;
 }
 
 const ExecutionPlanContainer = styled.div`
