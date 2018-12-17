@@ -1,48 +1,28 @@
 Hello, World
 ------------
+See :doc:`../installation` for instructions getting dagster -- the core library -- and dagit -- the 
+the web UI tool used to visualize your data pipelines -- installed on your platform of choice.
 
-The first step is to get dagster up and running quickly. Let's first install dagster -- the core
-library -- and dagit -- the web UI tool used to visualize your data pipelines.
+Let's write our first pipeline:
 
-.. code-block:: sh
-
-    $ pip install dagster
-    $ pip install dagit
-
-Now let's write our first pipeline:
-
-    .. code-block:: python
-
-        from dagster import (
-            PipelineDefinition,
-            execute_pipeline,
-            lambda_solid,
-        )
-
-        @lambda_solid
-        def hello_world():
-            print('hello')
-
-        def define_pipeline():
-            return PipelineDefinition(
-                name='hello_world_pipeline',
-                solids=[hello_world],
-            )
+.. literalinclude:: ../../tutorials/intro_tutorial/part_one.py
+   :linenos:
+   :caption: part_one.py
 
 This example introduces three concepts:
 
-1) A **solid**. ``@lambda_solid`` marks the the function ``hello_world`` as solid. A solid represents
-a functional unit of computation in a data pipeline. A lambda is a minimal form of a solid. We
-will explore more aspects of solids as this tutorial continues.
+1) A **solid** is a functional unit of computation in a data pipeline. In this example, we use the
+decorator ``@lambda_solid`` to mark the function ``hello_world`` as a solid: a functional unit
+which takes no inputs and returns the output ``'hello'`` every time it's run.
 
-2) A **pipeline**. The call to ``PipelineDefinition`` which a set of solids arranged to do a
-computation that produces data assets. In this case we are creating a pipeline with a single
-solid and nothing else.
+2) A **pipeline** is a set of solids arranged into a DAG of computation that produces data assets.
+In this example, the call to ``PipelineDefinition`` defines a pipeline with a single solid.
 
-3) ``execute_pipeline``. This will execute the pipeline. Dagster will execute the pipeline and
-eventually call back into ``hello_world`` and print to the screen.
+3) We **execute** the pipeline by running ``execute_pipeline``. Dagster will call into each solid
+in the pipeline, functionally transforming its inputs, if any, and threading its outputs to solids
+further on in thre DAG.
 
-Save this to a file called ``step_one.py`` and can visualize it and execute it.
+Save this to a file called ``part_one.py``, and let's use dagit to visualize and execute it.
 
 .. code-block:: sh
 
