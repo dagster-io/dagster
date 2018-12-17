@@ -3,12 +3,12 @@ from enum import Enum
 
 from dagster import check
 
-from .errors import DagsterError
-
-from .types import (
-    DagsterType,
+from .configurable import (
+    Configurable,
     Field,
 )
+
+from .errors import DagsterError
 
 
 class DagsterEvaluationErrorReason(Enum):
@@ -39,7 +39,7 @@ class RuntimeMismatchErrorData(namedtuple('_RuntimeMismatchErrorData', 'dagster_
     def __new__(cls, dagster_type, value_rep):
         return super(RuntimeMismatchErrorData, cls).__new__(
             cls,
-            check.inst_param(dagster_type, 'dagster_type', DagsterType),
+            check.inst_param(dagster_type, 'dagster_type', Configurable),
             check.str_param(value_rep, 'value_rep'),
         )
 
@@ -66,7 +66,7 @@ class EvaluationStack(namedtuple('_EvaluationStack', 'root_type entries')):
     def __new__(cls, root_type, entries):
         return super(EvaluationStack, cls).__new__(
             cls,
-            check.inst_param(root_type, 'root_type', DagsterType),
+            check.inst_param(root_type, 'root_type', Configurable),
             check.list_param(entries, 'entries', of_type=EvaluationStackEntry),
         )
 
@@ -117,7 +117,7 @@ class EvaluationStackListItemEntry(
         check.param_invariant(list_index >= 0, 'list_index')
         return super(EvaluationStackListItemEntry, cls).__new__(
             cls,
-            check.inst_param(dagster_type, 'dagster_type', DagsterType),
+            check.inst_param(dagster_type, 'dagster_type', Configurable),
             list_index,
         )
 
@@ -250,7 +250,7 @@ def hard_create_config_value(dagster_type, config_value):
 
 
 def evaluate_config_value(dagster_type, config_value):
-    check.inst_param(dagster_type, 'dagster_type', DagsterType)
+    check.inst_param(dagster_type, 'dagster_type', Configurable)
     errors = validate_config(dagster_type, config_value)
     if errors:
         return EvaluateValueResult(success=False, value=None, errors=errors)
@@ -262,7 +262,7 @@ def evaluate_config_value(dagster_type, config_value):
 
 
 def validate_config(dagster_type, config_value):
-    check.inst_param(dagster_type, 'dagster_type', DagsterType)
+    check.inst_param(dagster_type, 'dagster_type', Configurable)
     return list(
         _validate_config(
             dagster_type,
@@ -273,7 +273,7 @@ def validate_config(dagster_type, config_value):
 
 
 def _validate_config(dagster_type, config_value, stack):
-    check.inst_param(dagster_type, 'dagster_type', DagsterType)
+    check.inst_param(dagster_type, 'dagster_type', Configurable)
     check.inst_param(stack, 'stack', EvaluationStack)
 
     if dagster_type.is_scalar:
@@ -317,7 +317,7 @@ def _validate_config(dagster_type, config_value, stack):
 
 
 def deserialize_config(dagster_type, config_value):
-    check.inst_param(dagster_type, 'dagster_type', DagsterType)
+    check.inst_param(dagster_type, 'dagster_type', Configurable)
 
     if dagster_type.is_scalar:
         return config_value

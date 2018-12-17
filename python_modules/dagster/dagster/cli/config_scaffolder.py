@@ -33,7 +33,7 @@ def scaffold_type(config_type, skip_optional=True):
 
     # Right now selectors and composites have the same
     # scaffolding logic, which might not be wise.
-    if isinstance(config_type, types.DagsterCompositeTypeBase):
+    if config_type.is_composite or config_type.is_selector:
         default_dict = {}
         for field_name, field in config_type.field_dict.items():
             if skip_optional and field.is_optional:
@@ -41,11 +41,9 @@ def scaffold_type(config_type, skip_optional=True):
 
             default_dict[field_name] = scaffold_type(field.dagster_type, skip_optional)
         return default_dict
-    elif config_type is types.PythonDict:
-        return {}
-    elif config_type is types.Any:
+    elif config_type.is_any:
         return 'AnyType'
-    elif isinstance(config_type, types.DagsterScalarType):
+    elif config_type.is_scalar:
         defaults = {
             types.String: '',
             types.Path: 'path/to/something',

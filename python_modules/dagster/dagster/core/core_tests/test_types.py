@@ -42,17 +42,17 @@ def test_builtin_scalars():
         assert builtin_scalar.type_attributes.is_system_config is False
 
 
-def test_nullable_python_object_type():
-    class Bar(object):
-        pass
+# def test_nullable_python_object_type():
+#     class Bar(object):
+#         pass
 
-    nullable_type_bar = Nullable(PythonObjectType('Bar', Bar, description='A bar.'))
+#     nullable_type_bar = Nullable(PythonObjectType('Bar', Bar, description='A bar.'))
 
-    assert nullable_type_bar.coerce_runtime_value(Bar())
-    assert nullable_type_bar.coerce_runtime_value(None) is None
+#     assert nullable_type_bar.coerce_runtime_value(Bar())
+#     assert nullable_type_bar.coerce_runtime_value(None) is None
 
-    with pytest.raises(DagsterRuntimeCoercionError):
-        nullable_type_bar.coerce_runtime_value('not_a_bar')
+#     with pytest.raises(DagsterRuntimeCoercionError):
+#         nullable_type_bar.coerce_runtime_value('not_a_bar')
 
 
 def test_nullable_int_coercion():

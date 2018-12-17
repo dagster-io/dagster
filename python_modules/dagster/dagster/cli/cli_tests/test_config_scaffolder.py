@@ -24,7 +24,6 @@ def test_scalars():
     assert scaffold_type(types.String) == ''
     assert scaffold_type(types.Path) == 'path/to/something'
     assert scaffold_type(types.Bool) is True
-    assert scaffold_type(types.PythonDict) == {}
     assert scaffold_type(types.Any) == 'AnyType'
 
 
