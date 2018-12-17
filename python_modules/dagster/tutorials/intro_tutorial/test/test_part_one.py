@@ -1,3 +1,6 @@
+import os
+import subprocess
+
 from dagster import execute_pipeline
 
 from ..part_one import define_hello_world_pipeline
@@ -14,5 +17,12 @@ def test_tutorial_part_one():
     return result
 
 
-if __name__ == '__main__':
-    test_tutorial_part_one()
+def test_tutorial_part_one_script():
+    subprocess.check_output(
+        [
+            'python',
+            os.path.normpath(
+                os.path.join(os.path.dirname(os.path.abspath(__file__)), '../part_one.py')
+            )
+        ]
+    )
