@@ -10,6 +10,12 @@ from .config import (
     Solid,
 )
 
+from .configurable import (
+    ConfigurableObjectFromDict,
+    ConfigurableSelectorFromDict,
+    Field,
+)
+
 from .definitions import (
     PipelineContextDefinition,
     PipelineDefinition,
@@ -20,11 +26,17 @@ from .evaluator import hard_create_config_value
 
 from .types import (
     Bool,
-    DagsterCompositeType,
-    DagsterSelectorType,
     DagsterTypeAttributes,
-    Field,
+    DagsterType,
 )
+
+
+class SystemConfigObject(ConfigurableObjectFromDict, DagsterType):
+    pass
+
+
+class SystemConfigSelector(ConfigurableSelectorFromDict, DagsterType):
+    pass
 
 
 def _is_selector_field_optional(dagster_type):
@@ -36,7 +48,7 @@ def _is_selector_field_optional(dagster_type):
 
 
 def define_maybe_optional_selector_field(dagster_type):
-    check.inst_param(dagster_type, 'dagster_type', DagsterSelectorType)
+    check.inst_param(dagster_type, 'dagster_type', SystemConfigSelector)
     is_optional = _is_selector_field_optional(dagster_type)
 
     return Field(
@@ -46,17 +58,17 @@ def define_maybe_optional_selector_field(dagster_type):
     ) if is_optional else Field(dagster_type)
 
 
-class SpecificResourceConfig(DagsterCompositeType):
+class SpecificResourceConfig(SystemConfigObject):
     def __init__(self, name, config_field):
         super(SpecificResourceConfig, self).__init__(
-            name,
-            {
+            name=name,
+            fields={
                 'config': config_field,
             },
         )
 
 
-class ResourceDictionaryType(DagsterCompositeType):
+class ResourceDictionaryType(SystemConfigObject):
     def __init__(self, name, resources):
         check.str_param(name, 'name')
         check.dict_param(
@@ -77,13 +89,13 @@ class ResourceDictionaryType(DagsterCompositeType):
                 field_dict[resource_name] = Field(specific_resource_type)
 
         super(ResourceDictionaryType, self).__init__(
-            name,
-            field_dict,
+            name=name,
+            fields=field_dict,
             type_attributes=DagsterTypeAttributes(is_system_config=True),
         )
 
 
-class SpecificContextConfig(DagsterCompositeType):
+class SpecificContextConfig(SystemConfigObject):
     def __init__(self, name, config_field, resources):
         check.str_param(name, 'name')
         check.opt_inst_param(config_field, 'config_field', Field)
@@ -98,8 +110,8 @@ class SpecificContextConfig(DagsterCompositeType):
             resources,
         )
         super(SpecificContextConfig, self).__init__(
-            name,
-            {
+            name=name,
+            fields={
                 'config': config_field,
                 'resources': Field(resource_dict_type),
             } if config_field else {
@@ -115,7 +127,7 @@ def single_item(ddict):
     return list(ddict.items())[0]
 
 
-class ContextConfigType(DagsterSelectorType):
+class ContextConfigType(SystemConfigSelector):
     def __init__(self, pipeline_name, context_definitions):
         check.str_param(pipeline_name, 'pipeline_name')
         check.dict_param(
@@ -149,9 +161,9 @@ class ContextConfigType(DagsterSelectorType):
                 )
 
         super(ContextConfigType, self).__init__(
-            full_type_name,
-            field_dict,
-            'A configuration dictionary with typed fields',
+            name=full_type_name,
+            fields=field_dict,
+            description='A configuration dictionary with typed fields',
             type_attributes=DagsterTypeAttributes(is_system_config=True),
         )
 
@@ -176,13 +188,13 @@ def create_specific_context_type(pipeline_name, context_name, context_definition
     return specific_context_config_type
 
 
-class SolidConfigType(DagsterCompositeType):
+class SolidConfigType(SystemConfigObject):
     def __init__(self, name, config_field):
         check.str_param(name, 'name')
         check.inst_param(config_field, 'config_field', Field)
         super(SolidConfigType, self).__init__(
-            name,
-            {'config': config_field},
+            name=name,
+            fields={'config': config_field},
             type_attributes=DagsterTypeAttributes(is_system_config=True),
         )
 
@@ -192,7 +204,7 @@ class SolidConfigType(DagsterCompositeType):
         return Solid(config=config_value.get('config'))
 
 
-class EnvironmentConfigType(DagsterCompositeType):
+class EnvironmentConfigType(SystemConfigObject):
     def __init__(self, pipeline_def):
         check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
 
@@ -222,7 +234,7 @@ class EnvironmentConfigType(DagsterCompositeType):
         )
 
         super(EnvironmentConfigType, self).__init__(
-            '{pipeline_name}.Environment'.format(pipeline_name=pipeline_name),
+            name='{pipeline_name}.Environment'.format(pipeline_name=pipeline_name),
             fields={
                 'context': context_field,
                 'solids': solids_field,
@@ -236,11 +248,11 @@ class EnvironmentConfigType(DagsterCompositeType):
         return Environment(**config_value)
 
 
-class ExpectationsConfigType(DagsterCompositeType):
+class ExpectationsConfigType(SystemConfigObject):
     def __init__(self, name):
         super(ExpectationsConfigType, self).__init__(
-            name,
-            {'evaluate': Field(Bool, is_optional=True, default_value=True)},
+            name=name,
+            fields={'evaluate': Field(Bool, is_optional=True, default_value=True)},
             type_attributes=DagsterTypeAttributes(is_system_config=True),
         )
 
@@ -248,7 +260,7 @@ class ExpectationsConfigType(DagsterCompositeType):
         return Expectations(**config_value)
 
 
-class SolidDictionaryType(DagsterCompositeType):
+class SolidDictionaryType(SystemConfigObject):
     def __init__(self, name, pipeline_def):
         check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
 
@@ -267,18 +279,18 @@ class SolidDictionaryType(DagsterCompositeType):
                 field_dict[solid.name] = Field(solid_config_type)
 
         super(SolidDictionaryType, self).__init__(
-            name,
-            field_dict,
+            name=name,
+            fields=field_dict,
             type_attributes=DagsterTypeAttributes(is_system_config=True),
         )
 
 
-class ExecutionConfigType(DagsterCompositeType):
+class ExecutionConfigType(SystemConfigObject):
     def __init__(self, name):
         check.str_param(name, 'name')
         super(ExecutionConfigType, self).__init__(
-            name,
-            {
+            name=name,
+            fields={
                 'serialize_intermediates': Field(Bool, is_optional=True, default_value=False),
             },
             type_attributes=DagsterTypeAttributes(is_system_config=True),

@@ -16,16 +16,23 @@ from dagster import (
     types,
 )
 
+from dagster.core.configurable import ConfigurableSelectorFromDict
+
 DataFrameMeta = namedtuple('DataFrameMeta', 'format path')
 
 
-class _DataFrameType(types.PythonObjectType):
+class _DataFrameType(ConfigurableSelectorFromDict, types.PythonObjectType):
     def __init__(self):
         super(_DataFrameType, self).__init__(
             name='PandasDataFrame',
             python_type=pd.DataFrame,
             description='''Two-dimensional size-mutable, potentially heterogeneous
     tabular data structure with labeled axes (rows and columns). See http://pandas.pydata.org/''',
+            fields={
+                'csv': types.Field(types.Dict({
+                    'path': types.Field(types.String)
+                })),
+            },
         )
 
     def create_serializable_type_value(self, value, output_dir):
@@ -47,6 +54,13 @@ class _DataFrameType(types.PythonObjectType):
             return pd.read_csv(csv_path)
         else:
             raise Exception('unsupported')
+
+    def construct_from_config_value(self, config_value):
+        file_type, file_options = list(config_value.items())[0]
+        if file_type == 'csv':
+            return pd.read_csv(file_options['path'])
+        else:
+            check.failed('Unsupported file_type {file_type}'.format(file_type=file_type))
 
 
 DataFrame = _DataFrameType()
