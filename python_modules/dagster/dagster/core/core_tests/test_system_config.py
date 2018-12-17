@@ -111,6 +111,40 @@ def test_default_context_config():
     assert 'default' in context_dict
 
 
+def test_all_types_provided():
+    pipeline_def = PipelineDefinition(
+        name='pipeline',
+        solids=[],
+        context_definitions={
+            'some_context':
+            PipelineContextDefinition(
+                config_field=types.Field(
+                    types.NamedDict(
+                        'SomeContextNamedDict',
+                        {
+                            'with_default_int':
+                            Field(
+                                types.Int,
+                                is_optional=True,
+                                default_value=23434,
+                            ),
+                        },
+                    )
+                ),
+                context_fn=lambda *args: None
+            )
+        },
+    )
+
+
+    all_types = list(pipeline_def.all_types())
+    type_names = set(t.name for t in all_types)
+    assert 'SomeContextNamedDict' in type_names
+    assert 'Pipeline.ContextDefinitionConfig.SomeContext' in type_names
+    assert 'Pipeline.ContextDefinitionConfig.SomeContext.Resources' in type_names
+
+
+
 def test_provided_default_config():
     pipeline_def = PipelineDefinition(
         context_definitions={
