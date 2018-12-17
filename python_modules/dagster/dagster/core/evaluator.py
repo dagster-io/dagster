@@ -46,7 +46,7 @@ class RuntimeMismatchErrorData(namedtuple('_RuntimeMismatchErrorData', 'dagster_
 
 class SelectorTypeErrorData(namedtuple('_SelectorTypeErrorData', 'dagster_type incoming_fields')):
     def __new__(cls, dagster_type, incoming_fields):
-        check.param_invariant(dagster_type.is_selector, 'dagster_type')
+        check.param_invariant(dagster_type.configurable_selector_from_dict, 'dagster_type')
         return super(SelectorTypeErrorData, cls).__new__(
             cls,
             dagster_type,
@@ -297,9 +297,9 @@ def _validate_config(dagster_type, config_value, stack):
     if dagster_type.configurable_from_any:
         # no-op: we're safe
         return
-    elif dagster_type.is_selector:
+    elif dagster_type.configurable_selector_from_dict:
         errors = validate_selector_config_value(dagster_type, config_value, stack)
-    elif dagster_type.is_composite:
+    elif dagster_type.configurable_object_from_dict:
         errors = validate_composite_config_value(dagster_type, config_value, stack)
     elif dagster_type.configurable_from_list:
         errors = validate_list_value(dagster_type, config_value, stack)
@@ -321,9 +321,9 @@ def deserialize_config(dagster_type, config_value):
 
     if dagster_type.configurable_from_scalar:
         return config_value
-    elif dagster_type.is_selector:
+    elif dagster_type.configurable_selector_from_dict:
         return deserialize_selector_config(dagster_type, config_value)
-    elif dagster_type.is_composite:
+    elif dagster_type.configurable_object_from_dict:
         return deserialize_composite_config_value(dagster_type, config_value)
     elif dagster_type.configurable_from_list:
         return deserialize_list_value(dagster_type, config_value)
@@ -347,7 +347,7 @@ def single_item(ddict):
 
 
 def validate_selector_config_value(dagster_type, config_value, stack):
-    check.param_invariant(dagster_type.is_selector, 'dagster_type')
+    check.param_invariant(dagster_type.configurable_selector_from_dict, 'dagster_type')
     check.inst_param(stack, 'stack', EvaluationStack)
 
     if config_value and not isinstance(config_value, dict):
@@ -442,7 +442,7 @@ def validate_selector_config_value(dagster_type, config_value, stack):
 
 
 def deserialize_selector_config(dagster_type, config_value):
-    check.param_invariant(dagster_type.is_selector, 'dagster_type')
+    check.param_invariant(dagster_type.configurable_selector_from_dict, 'dagster_type')
 
     if config_value:
         check.invariant(config_value and len(config_value) == 1)
@@ -461,7 +461,10 @@ def deserialize_selector_config(dagster_type, config_value):
 
 
 def validate_composite_config_value(dagster_composite_type, config_value, stack):
-    check.param_invariant(dagster_composite_type.is_composite, 'dagster_composite_type')
+    check.param_invariant(
+        dagster_composite_type.configurable_object_from_dict,
+        'dagster_composite_type',
+    )
     check.inst_param(stack, 'stack', EvaluationStack)
 
     if config_value and not isinstance(config_value, dict):
@@ -519,7 +522,10 @@ def validate_composite_config_value(dagster_composite_type, config_value, stack)
 
 
 def deserialize_composite_config_value(dagster_composite_type, config_value):
-    check.param_invariant(dagster_composite_type.is_composite, 'dagster_composite_type')
+    check.param_invariant(
+        dagster_composite_type.configurable_object_from_dict,
+        'dagster_composite_type',
+    )
 
     # ASK: this can crash on user error
     config_value = check.opt_dict_param(config_value, 'incoming_value', key_type=str)

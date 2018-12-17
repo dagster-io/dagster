@@ -16,7 +16,7 @@ class Configurable(object):
         return isinstance(self, ConfigurableFromList)
 
     @property
-    def is_selector(self):
+    def configurable_selector_from_dict(self):
         return isinstance(self, ConfigurableSelector)
 
     @property
@@ -32,7 +32,7 @@ class Configurable(object):
         return isinstance(self, ConfigurableScalar)
 
     @property
-    def is_composite(self):
+    def configurable_object_from_dict(self):
         return isinstance(self, ConfigurableComposite)
 
     @property

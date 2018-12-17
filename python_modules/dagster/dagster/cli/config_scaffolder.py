@@ -33,7 +33,7 @@ def scaffold_type(config_type, skip_optional=True):
 
     # Right now selectors and composites have the same
     # scaffolding logic, which might not be wise.
-    if config_type.is_composite or config_type.is_selector:
+    if config_type.configurable_from_dict:
         default_dict = {}
         for field_name, field in config_type.field_dict.items():
             if skip_optional and field.is_optional:
