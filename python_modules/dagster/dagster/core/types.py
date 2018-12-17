@@ -414,8 +414,7 @@ def Dict(fields):
     return _Dict('Dict.' + str(DictCounter.get_next_count()), fields)
 
 
-class _Dict(DagsterCompositeType):
-    # class _Dict(ConfigurableComposite, DagsterType):
+class _Dict(ConfigurableComposite, DagsterType):
     '''Configuration dictionary.
 
     Typed-checked but then passed to implementations as a python dict
