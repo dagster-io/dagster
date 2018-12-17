@@ -24,7 +24,7 @@ Array [
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-frDJqD fufUhH"
+        className="sc-kvZOFW YGnhO"
       >
         <span
           className="bp3-popover-wrapper"
@@ -75,11 +75,11 @@ Array [
           className="bp3-navbar-divider"
         />
         <div
-          className="sc-kvZOFW gchTTx"
+          className="sc-hqyNC cNpWOq"
         >
           <a
             active={true}
-            className="sc-hqyNC juXOEG"
+            className="sc-jbKcbu fWwXBu"
             href="/pandas_hello_world/explore"
             onClick={[Function]}
           >
@@ -87,7 +87,7 @@ Array [
           </a>
           <a
             active={false}
-            className="sc-hqyNC kZJHpv"
+            className="sc-jbKcbu eIUbjt"
             href="/pandas_hello_world/execute"
             onClick={[Function]}
           >
@@ -98,10 +98,10 @@ Array [
     </div>
   </div>,
   <div
-    className="sc-jWBwVP jXDqsr"
+    className="sc-brqgnP kbTxLu"
   >
     <div
-      className="sc-brqgnP ccjrfS"
+      className="sc-cMljjf bkQPOZ"
       style={
         Object {
           "width": "70vw",
@@ -109,7 +109,7 @@ Array [
       }
     >
       <div
-        className="sc-jAaTju gauvsM"
+        className="sc-jDwBTQ bSCVyv"
       >
         <span
           className="bp3-popover-wrapper"
@@ -157,7 +157,7 @@ Array [
           </span>
         </span>
         <input
-          className="sc-jDwBTQ iSYPrz"
+          className="sc-gPEVay ldPQtW"
           onChange={[Function]}
           placeholder="Filter..."
           type="text"
@@ -492,7 +492,7 @@ Array [
       />
     </div>
     <div
-      className="sc-cMljjf ergilj"
+      className="sc-jAaTju cVRbSZ"
       style={
         Object {
           "width": "30vw",
@@ -500,14 +500,14 @@ Array [
       }
     >
       <div
-        className="sc-eHgmQL cExWIO"
+        className="sc-cvbbAY eJUIRn"
       >
         <a
           href="/pandas_hello_world/load_num_csv"
           onClick={[Function]}
         >
           <div
-            className="sc-cvbbAY khgIJN"
+            className="sc-jWBwVP jjMzhC"
           >
             <span
               className="bp3-icon bp3-icon-diagram-tree"
@@ -541,7 +541,7 @@ Array [
           onClick={[Function]}
         >
           <div
-            className="sc-cvbbAY jFgLi"
+            className="sc-jWBwVP hPUXXS"
           >
             <span
               className="bp3-icon bp3-icon-manual"
@@ -637,7 +637,7 @@ Array [
                 className="sc-dxgOiQ dPbrCh"
               >
                 <div
-                  className="sc-jTzLTM FbleH"
+                  className="sc-jTzLTM hukIzI"
                   onClick={[Function]}
                   style={
                     Object {
@@ -745,7 +745,7 @@ Array [
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-frDJqD fufUhH"
+        className="sc-kvZOFW YGnhO"
       >
         <span
           className="bp3-popover-wrapper"
@@ -834,7 +834,7 @@ Array [
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-frDJqD fufUhH"
+        className="sc-kvZOFW YGnhO"
       >
         <span
           className="bp3-popover-wrapper"
@@ -885,11 +885,11 @@ Array [
           className="bp3-navbar-divider"
         />
         <div
-          className="sc-kvZOFW gchTTx"
+          className="sc-hqyNC cNpWOq"
         >
           <a
             active={true}
-            className="sc-hqyNC juXOEG"
+            className="sc-jbKcbu fWwXBu"
             href="/pandas_hello_world/explore"
             onClick={[Function]}
           >
@@ -897,7 +897,7 @@ Array [
           </a>
           <a
             active={false}
-            className="sc-hqyNC kZJHpv"
+            className="sc-jbKcbu eIUbjt"
             href="/pandas_hello_world/execute"
             onClick={[Function]}
           >
@@ -908,10 +908,10 @@ Array [
     </div>
   </div>,
   <div
-    className="sc-jWBwVP jXDqsr"
+    className="sc-brqgnP kbTxLu"
   >
     <div
-      className="sc-brqgnP ccjrfS"
+      className="sc-cMljjf bkQPOZ"
       style={
         Object {
           "width": "70vw",
@@ -919,7 +919,7 @@ Array [
       }
     >
       <div
-        className="sc-jAaTju gauvsM"
+        className="sc-jDwBTQ bSCVyv"
       >
         <span
           className="bp3-popover-wrapper"
@@ -967,7 +967,7 @@ Array [
           </span>
         </span>
         <input
-          className="sc-jDwBTQ iSYPrz"
+          className="sc-gPEVay ldPQtW"
           onChange={[Function]}
           placeholder="Filter..."
           type="text"
@@ -1302,7 +1302,7 @@ Array [
       />
     </div>
     <div
-      className="sc-cMljjf ergilj"
+      className="sc-jAaTju cVRbSZ"
       style={
         Object {
           "width": "30vw",
@@ -1310,14 +1310,14 @@ Array [
       }
     >
       <div
-        className="sc-eHgmQL cExWIO"
+        className="sc-cvbbAY eJUIRn"
       >
         <a
           href="/pandas_hello_world"
           onClick={[Function]}
         >
           <div
-            className="sc-cvbbAY jFgLi"
+            className="sc-jWBwVP hPUXXS"
           >
             <span
               className="bp3-icon bp3-icon-diagram-tree"
@@ -1351,7 +1351,7 @@ Array [
           onClick={[Function]}
         >
           <div
-            className="sc-cvbbAY khgIJN"
+            className="sc-jWBwVP jjMzhC"
           >
             <span
               className="bp3-icon bp3-icon-manual"
@@ -1494,15 +1494,15 @@ Array [
                 className="sc-dxgOiQ dPbrCh"
               >
                 <div
-                  className="sc-kEYyzF lnALwk sc-kGXeez fDgYil"
+                  className="sc-kGXeez eAvgrC"
                 >
                   <h4
-                    className="sc-chPdSV jUtMzA"
+                    className="sc-chPdSV bzfSHL"
                   >
                     default
                   </h4>
                   <code
-                    className="sc-jKJlTe iEmlwG"
+                    className="sc-jKJlTe rcQGl"
                   >
                     {
                     <div
@@ -1573,7 +1573,7 @@ Array [
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-frDJqD fufUhH"
+        className="sc-kvZOFW YGnhO"
       >
         <span
           className="bp3-popover-wrapper"
@@ -1624,11 +1624,11 @@ Array [
           className="bp3-navbar-divider"
         />
         <div
-          className="sc-kvZOFW gchTTx"
+          className="sc-hqyNC cNpWOq"
         >
           <a
             active={true}
-            className="sc-hqyNC juXOEG"
+            className="sc-jbKcbu fWwXBu"
             href="/pandas_hello_world/explore"
             onClick={[Function]}
           >
@@ -1636,7 +1636,7 @@ Array [
           </a>
           <a
             active={false}
-            className="sc-hqyNC kZJHpv"
+            className="sc-jbKcbu eIUbjt"
             href="/pandas_hello_world/execute"
             onClick={[Function]}
           >
@@ -1647,10 +1647,10 @@ Array [
     </div>
   </div>,
   <div
-    className="sc-jWBwVP jXDqsr"
+    className="sc-brqgnP kbTxLu"
   >
     <div
-      className="sc-brqgnP ccjrfS"
+      className="sc-cMljjf bkQPOZ"
       style={
         Object {
           "width": "70vw",
@@ -1658,7 +1658,7 @@ Array [
       }
     >
       <div
-        className="sc-jAaTju gauvsM"
+        className="sc-jDwBTQ bSCVyv"
       >
         <span
           className="bp3-popover-wrapper"
@@ -1706,7 +1706,7 @@ Array [
           </span>
         </span>
         <input
-          className="sc-jDwBTQ iSYPrz"
+          className="sc-gPEVay ldPQtW"
           onChange={[Function]}
           placeholder="Filter..."
           type="text"
@@ -2041,7 +2041,7 @@ Array [
       />
     </div>
     <div
-      className="sc-cMljjf ergilj"
+      className="sc-jAaTju cVRbSZ"
       style={
         Object {
           "width": "30vw",
@@ -2049,14 +2049,14 @@ Array [
       }
     >
       <div
-        className="sc-eHgmQL cExWIO"
+        className="sc-cvbbAY eJUIRn"
       >
         <a
           href="/pandas_hello_world/load_num_csv"
           onClick={[Function]}
         >
           <div
-            className="sc-cvbbAY jFgLi"
+            className="sc-jWBwVP hPUXXS"
           >
             <span
               className="bp3-icon bp3-icon-diagram-tree"
@@ -2090,7 +2090,7 @@ Array [
           onClick={[Function]}
         >
           <div
-            className="sc-cvbbAY khgIJN"
+            className="sc-jWBwVP jjMzhC"
           >
             <span
               className="bp3-icon bp3-icon-manual"
@@ -2233,15 +2233,15 @@ Array [
                 className="sc-dxgOiQ dPbrCh"
               >
                 <div
-                  className="sc-kEYyzF lnALwk sc-kGXeez fDgYil"
+                  className="sc-kGXeez eAvgrC"
                 >
                   <h4
-                    className="sc-chPdSV jUtMzA"
+                    className="sc-chPdSV bzfSHL"
                   >
                     default
                   </h4>
                   <code
-                    className="sc-jKJlTe iEmlwG"
+                    className="sc-jKJlTe rcQGl"
                   >
                     {
                     <div
@@ -2312,7 +2312,7 @@ Array [
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-frDJqD fufUhH"
+        className="sc-kvZOFW YGnhO"
       >
         <span
           className="bp3-popover-wrapper"
@@ -2363,11 +2363,11 @@ Array [
           className="bp3-navbar-divider"
         />
         <div
-          className="sc-kvZOFW gchTTx"
+          className="sc-hqyNC cNpWOq"
         >
           <a
             active={true}
-            className="sc-hqyNC juXOEG"
+            className="sc-jbKcbu fWwXBu"
             href="/pandas_hello_world/explore"
             onClick={[Function]}
           >
@@ -2375,7 +2375,7 @@ Array [
           </a>
           <a
             active={false}
-            className="sc-hqyNC kZJHpv"
+            className="sc-jbKcbu eIUbjt"
             href="/pandas_hello_world/execute"
             onClick={[Function]}
           >
@@ -2386,10 +2386,10 @@ Array [
     </div>
   </div>,
   <div
-    className="sc-jWBwVP jXDqsr"
+    className="sc-brqgnP kbTxLu"
   >
     <div
-      className="sc-brqgnP ccjrfS"
+      className="sc-cMljjf bkQPOZ"
       style={
         Object {
           "width": "70vw",
@@ -2397,7 +2397,7 @@ Array [
       }
     >
       <div
-        className="sc-jAaTju gauvsM"
+        className="sc-jDwBTQ bSCVyv"
       >
         <span
           className="bp3-popover-wrapper"
@@ -2445,7 +2445,7 @@ Array [
           </span>
         </span>
         <input
-          className="sc-jDwBTQ iSYPrz"
+          className="sc-gPEVay ldPQtW"
           onChange={[Function]}
           placeholder="Filter..."
           type="text"
@@ -2780,7 +2780,7 @@ Array [
       />
     </div>
     <div
-      className="sc-cMljjf ergilj"
+      className="sc-jAaTju cVRbSZ"
       style={
         Object {
           "width": "30vw",
@@ -2788,14 +2788,14 @@ Array [
       }
     >
       <div
-        className="sc-eHgmQL cExWIO"
+        className="sc-cvbbAY eJUIRn"
       >
         <a
           href="/pandas_hello_world/load_num_csv"
           onClick={[Function]}
         >
           <div
-            className="sc-cvbbAY khgIJN"
+            className="sc-jWBwVP jjMzhC"
           >
             <span
               className="bp3-icon bp3-icon-diagram-tree"
@@ -2829,7 +2829,7 @@ Array [
           onClick={[Function]}
         >
           <div
-            className="sc-cvbbAY jFgLi"
+            className="sc-jWBwVP hPUXXS"
           >
             <span
               className="bp3-icon bp3-icon-manual"
@@ -3066,7 +3066,7 @@ Array [
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-frDJqD fufUhH"
+        className="sc-kvZOFW YGnhO"
       >
         <span
           className="bp3-popover-wrapper"

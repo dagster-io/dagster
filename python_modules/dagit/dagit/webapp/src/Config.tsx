@@ -20,8 +20,13 @@ function renderTypeRecursive(
     return (
       <>
         {`{`}
-        {type.fields.map((fieldData: any) => (
+        {type.fields.map(fieldData => (
           <DictEntry key={fieldData.name}>
+            {fieldData.description && (
+              <DictComment>{`${innerIndent}/* ${
+                fieldData.description
+              } */`}</DictComment>
+            )}
             {innerIndent}
             <DictKey>{fieldData.name}</DictKey>
             {fieldData.isOptional && Optional}
@@ -60,6 +65,7 @@ export default class Config extends React.Component<ConfigProps, {}> {
     ConfigFragment: gql`
       fragment TypeInfoFragment on Type {
         name
+        description
         isDict
         isList
         isNullable
@@ -69,6 +75,7 @@ export default class Config extends React.Component<ConfigProps, {}> {
         ... on CompositeType {
           fields {
             name
+            description
             type {
               name
             }
@@ -107,19 +114,24 @@ export default class Config extends React.Component<ConfigProps, {}> {
 }
 
 const ConfigWrapper = styled.code`
-  margin-top: 10px;
-  margin-bottom: 10px;
   color: ${Colors.GRAY3};
   display: block;
   white-space: pre-wrap;
   font-size: smaller;
-  line-height: 20px;
+  line-height: 18px;
 `;
 
 const DictEntry = styled.div``;
 
 const DictKey = styled.span`
   color: ${Colors.BLACK};
+`;
+
+const DictComment = styled.div`
+  /* This allows long comments to wrap as nice indented blocks, while
+     copy/pasting as a single line with space-based indentation. */
+  text-indent: -3em;
+  padding-left: 3em;
 `;
 
 const Optional = (

@@ -22,11 +22,11 @@ export interface PipelineExplorerSolidFragment_definition_configDefinition_type_
 
 export interface PipelineExplorerSolidFragment_definition_configDefinition_type_RegularType_innerTypes_RegularType {
   name: string;
+  description: string | null;
   isDict: boolean;
   isList: boolean;
   isNullable: boolean;
   innerTypes: PipelineExplorerSolidFragment_definition_configDefinition_type_RegularType_innerTypes_RegularType_innerTypes[];
-  description: string | null;
   typeAttributes: PipelineExplorerSolidFragment_definition_configDefinition_type_RegularType_innerTypes_RegularType_typeAttributes;
 }
 
@@ -44,17 +44,18 @@ export interface PipelineExplorerSolidFragment_definition_configDefinition_type_
 
 export interface PipelineExplorerSolidFragment_definition_configDefinition_type_RegularType_innerTypes_CompositeType_fields {
   name: string;
+  description: string | null;
   type: PipelineExplorerSolidFragment_definition_configDefinition_type_RegularType_innerTypes_CompositeType_fields_type;
   isOptional: boolean;
 }
 
 export interface PipelineExplorerSolidFragment_definition_configDefinition_type_RegularType_innerTypes_CompositeType {
   name: string;
+  description: string | null;
   isDict: boolean;
   isList: boolean;
   isNullable: boolean;
   innerTypes: PipelineExplorerSolidFragment_definition_configDefinition_type_RegularType_innerTypes_CompositeType_innerTypes[];
-  description: string | null;
   typeAttributes: PipelineExplorerSolidFragment_definition_configDefinition_type_RegularType_innerTypes_CompositeType_typeAttributes;
   fields: PipelineExplorerSolidFragment_definition_configDefinition_type_RegularType_innerTypes_CompositeType_fields[];
 }
@@ -85,11 +86,11 @@ export interface PipelineExplorerSolidFragment_definition_configDefinition_type_
 
 export interface PipelineExplorerSolidFragment_definition_configDefinition_type_CompositeType_innerTypes_RegularType {
   name: string;
+  description: string | null;
   isDict: boolean;
   isList: boolean;
   isNullable: boolean;
   innerTypes: PipelineExplorerSolidFragment_definition_configDefinition_type_CompositeType_innerTypes_RegularType_innerTypes[];
-  description: string | null;
   typeAttributes: PipelineExplorerSolidFragment_definition_configDefinition_type_CompositeType_innerTypes_RegularType_typeAttributes;
 }
 
@@ -107,17 +108,18 @@ export interface PipelineExplorerSolidFragment_definition_configDefinition_type_
 
 export interface PipelineExplorerSolidFragment_definition_configDefinition_type_CompositeType_innerTypes_CompositeType_fields {
   name: string;
+  description: string | null;
   type: PipelineExplorerSolidFragment_definition_configDefinition_type_CompositeType_innerTypes_CompositeType_fields_type;
   isOptional: boolean;
 }
 
 export interface PipelineExplorerSolidFragment_definition_configDefinition_type_CompositeType_innerTypes_CompositeType {
   name: string;
+  description: string | null;
   isDict: boolean;
   isList: boolean;
   isNullable: boolean;
   innerTypes: PipelineExplorerSolidFragment_definition_configDefinition_type_CompositeType_innerTypes_CompositeType_innerTypes[];
-  description: string | null;
   typeAttributes: PipelineExplorerSolidFragment_definition_configDefinition_type_CompositeType_innerTypes_CompositeType_typeAttributes;
   fields: PipelineExplorerSolidFragment_definition_configDefinition_type_CompositeType_innerTypes_CompositeType_fields[];
 }
@@ -134,6 +136,7 @@ export interface PipelineExplorerSolidFragment_definition_configDefinition_type_
 
 export interface PipelineExplorerSolidFragment_definition_configDefinition_type_CompositeType_fields {
   name: string;
+  description: string | null;
   type: PipelineExplorerSolidFragment_definition_configDefinition_type_CompositeType_fields_type;
   isOptional: boolean;
 }

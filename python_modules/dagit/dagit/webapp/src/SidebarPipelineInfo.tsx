@@ -14,10 +14,6 @@ import Config from "./Config";
 import { SidebarPipelineInfoFragment } from "./types/SidebarPipelineInfoFragment";
 import { IconNames } from "@blueprintjs/icons";
 
-// TODO (schrockn/bengotow)
-// For pipelines with multiple resources this was a tad aggressive,
-// so commenting it out for now.
-// const NO_DESCRIPTION = "No description provided.";
 const NO_DESCRIPTION = "";
 
 interface ISidebarPipelineInfoProps {
@@ -66,7 +62,7 @@ export default class SidebarPipelineInfo extends React.Component<
         </SidebarSection>
         <SidebarSection title={"Contexts"}>
           {pipeline.contexts.map(context => (
-            <ContextContainer key={context.name}>
+            <SectionItemContainer key={context.name}>
               <SectionItemHeader>{context.name}</SectionItemHeader>
               <Description
                 description={context.description || NO_DESCRIPTION}
@@ -74,9 +70,15 @@ export default class SidebarPipelineInfo extends React.Component<
               {context.config && <Config config={context.config} />}
               {context.resources.map(resource => (
                 <ContextResourceContainer key={resource.name}>
-                  <Icon icon={IconNames.LAYERS} color={Colors.DARK_GRAY2} />
+                  <Icon
+                    iconSize={14}
+                    icon={IconNames.LAYERS}
+                    color={Colors.DARK_GRAY2}
+                  />
                   <div>
-                    <SectionItemHeader>{resource.name}</SectionItemHeader>
+                    <ContextResourceHeader>
+                      {resource.name}
+                    </ContextResourceHeader>
                     <Description
                       description={resource.description || NO_DESCRIPTION}
                     />
@@ -84,7 +86,7 @@ export default class SidebarPipelineInfo extends React.Component<
                   </div>
                 </ContextResourceContainer>
               ))}
-            </ContextContainer>
+            </SectionItemContainer>
           ))}
         </SidebarSection>
       </div>
@@ -92,13 +94,8 @@ export default class SidebarPipelineInfo extends React.Component<
   }
 }
 
-const ContextContainer = styled(SectionItemContainer)`
-  border-bottom: 1px solid ${Colors.LIGHT_GRAY2};
-  margin-bottom: 20px;
-  padding-bottom: 20px;
-  &:last-child {
-    border-bottom: none;
-  }
+const ContextResourceHeader = styled(SectionItemHeader)`
+  font-size: 13px;
 `;
 
 const ContextResourceContainer = styled.div`
@@ -106,7 +103,7 @@ const ContextResourceContainer = styled.div`
   align-items: flex-start;
   padding-top: 15px;
   & .bp3-icon {
-    padding-top: 10px;
+    padding-top: 7px;
     padding-right: 10px;
   }
 `;
