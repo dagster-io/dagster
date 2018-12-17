@@ -63,6 +63,10 @@ class DagsterType(object):
         self.__doc__ = description
 
     @property
+    def is_configurable(self):
+        return isinstance(self, Configurable)
+
+    @property
     def is_system_config(self):
         return self.type_attributes.is_system_config
 

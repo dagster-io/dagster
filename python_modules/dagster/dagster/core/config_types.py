@@ -11,6 +11,7 @@ from .config import (
 )
 
 from .configurable import (
+    Configurable,
     ConfigurableObjectFromDict,
     ConfigurableSelectorFromDict,
     Field,
@@ -20,6 +21,7 @@ from .definitions import (
     PipelineContextDefinition,
     PipelineDefinition,
     ResourceDefinition,
+    SolidDefinition,
 )
 
 from .evaluator import hard_create_config_value
@@ -28,6 +30,7 @@ from .types import (
     Bool,
     DagsterTypeAttributes,
     DagsterType,
+    NamedDict,
 )
 
 
@@ -189,19 +192,29 @@ def create_specific_context_type(pipeline_name, context_name, context_definition
 
 
 class SolidConfigType(SystemConfigObject):
-    def __init__(self, name, config_field):
+    def __init__(self, name, config_field, inputs_field):
         check.str_param(name, 'name')
-        check.inst_param(config_field, 'config_field', Field)
+        check.opt_inst_param(config_field, 'config_field', Field)
+        check.opt_inst_param(inputs_field, 'inputs_field', Field)
+        fields = {}
+        if config_field:
+            fields['config'] = config_field
+        if inputs_field:
+            fields['inputs'] = inputs_field
+
         super(SolidConfigType, self).__init__(
             name=name,
-            fields={'config': config_field},
+            fields=fields,
             type_attributes=DagsterTypeAttributes(is_system_config=True),
         )
 
     def construct_from_config_value(self, config_value):
         # TODO we need better rules around optional and default evaluation
         # making this permissive for now
-        return Solid(config=config_value.get('config'))
+        return Solid(
+            config=config_value.get('config'),
+            inputs=config_value.get('inputs', {}),
+        )
 
 
 class EnvironmentConfigType(SystemConfigObject):
@@ -260,22 +273,47 @@ class ExpectationsConfigType(SystemConfigObject):
         return Expectations(**config_value)
 
 
+def solid_has_configurable_inputs(solid_definition):
+    check.inst_param(solid_definition, 'solid_definition', SolidDefinition)
+    return any(map(lambda inp: inp.dagster_type.is_configurable, solid_definition.input_defs))
+
+
+def get_inputs_field(pipeline_def, solid):
+    if not solid_has_configurable_inputs(solid.definition):
+        return None
+
+    inputs_field_fields = {}
+    for inp in [inp for inp in solid.definition.input_defs if inp.dagster_type.is_configurable]:
+        inputs_field_fields[inp.name] = Field(inp.dagster_type, is_optional=True)
+
+    return Field(
+        NamedDict(
+            '{pipeline_name}.{solid_name}.Inputs'.format(
+                pipeline_name=camelcase(pipeline_def.name),
+                solid_name=camelcase(solid.name),
+            ),
+            inputs_field_fields,
+        ),
+        is_optional=True,
+    )
+
+
 class SolidDictionaryType(SystemConfigObject):
     def __init__(self, name, pipeline_def):
         check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
 
-        pipeline_name = camelcase(pipeline_def.name)
         field_dict = {}
         for solid in pipeline_def.solids:
-            if solid.definition.config_field:
-                solid_name = camelcase(solid.name)
+            if solid.definition.config_field or solid_has_configurable_inputs(solid.definition):
                 solid_config_type = SolidConfigType(
                     '{pipeline_name}.SolidConfig.{solid_name}'.format(
-                        pipeline_name=pipeline_name,
-                        solid_name=solid_name,
+                        pipeline_name=camelcase(pipeline_def.name),
+                        solid_name=camelcase(solid.name),
                     ),
                     solid.definition.config_field,
+                    get_inputs_field(pipeline_def, solid),
                 )
+
                 field_dict[solid.name] = Field(solid_config_type)
 
         super(SolidDictionaryType, self).__init__(

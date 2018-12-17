@@ -17,7 +17,6 @@ will not invoke *any* outputs (and their APIs don't allow the user to).
 
 from collections import namedtuple
 from contextlib import contextmanager
-import json
 import itertools
 import inspect
 import uuid
@@ -29,8 +28,6 @@ from dagster import (
     check,
     config,
 )
-
-from dagster.utils import camelcase
 
 from .definitions import (
     DEFAULT_OUTPUT,
