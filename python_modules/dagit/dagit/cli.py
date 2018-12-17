@@ -43,9 +43,8 @@ REPO_TARGET_WARNING = (
 @click.command(
     name='ui',
     help=(
-        'Run dagit. Loads a repository or pipeline.\n\n{warning}'.format(
-            warning=REPO_TARGET_WARNING
-        ) + '\n\n Examples:'
+        'Run dagit. Loads a repository or pipeline.\n\n{warning}'.
+        format(warning=REPO_TARGET_WARNING) + '\n\n Examples:'
         '\n\n1. dagit'
         '\n\n2. dagit -y path/to/repository.yml'
         '\n\n3. dagit -f path/to/file.py -n define_repo'

@@ -36,30 +36,6 @@ def solid_a_b_list():
     ]
 
 
-def test_no_dep_specified():
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match=
-        'Solid B is passed to list of pipeline solids, but is not used in pipeline. You must define its dependencies:'
-    ):
-        PipelineDefinition(solids=solid_a_b_list(), dependencies={})
-
-
-def test_missing_inputs():
-    bar_solid = define_stub_solid('bar', [{'baz': 'bip'}])
-    foo_solid = create_solid_with_deps('foo', bar_solid)
-    baz_solid = create_solid_with_deps('baz', foo_solid)
-    with pytest.raises(
-        DagsterInvalidDefinitionError, match='Dependency must be specified for solid foo input bar'
-    ):
-        PipelineDefinition(
-            solids=[baz_solid, foo_solid],
-            dependencies={'baz': {
-                'foo': DependencyDefinition('foo')
-            }},
-        )
-
-
 def test_create_pipeline_with_bad_solids_list():
     stub_solid = define_stub_solid('stub', [{'a key': 'a value'}])
     with pytest.raises(check.ParameterCheckError, match='Param "solids" is not a list.'):

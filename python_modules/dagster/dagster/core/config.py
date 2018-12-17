@@ -16,9 +16,13 @@ class Context(namedtuple('ContextData', 'name config resources')):
         )
 
 
-class Solid(namedtuple('Solid', 'config')):
-    def __new__(cls, config):
-        return super(Solid, cls).__new__(cls, config)
+class Solid(namedtuple('Solid', 'config inputs')):
+    def __new__(cls, config, inputs=None):
+        return super(Solid, cls).__new__(
+            cls,
+            config,
+            check.opt_dict_param(inputs, 'inputs', key_type=str),
+        )
 
 
 class Environment(namedtuple('EnvironmentData', 'context solids expectations execution')):

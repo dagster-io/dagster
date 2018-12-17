@@ -438,20 +438,7 @@ def _create_execution_structure(name, solids, dependencies_dict):
     pipeline_solids = []
     for solid_def in solids:
         if isinstance(solid_def, SolidDefinition):
-            uses_of_solid = mapper.get_uses_of_solid(solid_def.name)
-            if uses_of_solid is None:
-                if not solid_def.input_defs:
-                    uses_of_solid = set([solid_def.name])
-                else:
-                    raise DagsterInvalidDefinitionError(
-                        'Solid {name} is passed to list of pipeline solids, but is not used in '
-                        'pipeline. You must define its dependencies: [{inputs}]'.format(
-                            name=solid_def.name,
-                            inputs=', '.join([input.name for input in solid_def.input_defs])
-                        )
-                    )
-
-            check.inst(uses_of_solid, set, 'must be a set')
+            uses_of_solid = mapper.get_uses_of_solid(solid_def.name) or set([solid_def.name])
 
             for alias in uses_of_solid:
                 pipeline_solids.append(Solid(name=alias, definition=solid_def))
@@ -478,8 +465,6 @@ def _create_execution_structure(name, solids, dependencies_dict):
         pipeline_solid_dict,
         mapper.aliased_dependencies_dict,
     )
-
-    _validate_dependency_structure(name, pipeline_solid_dict, dependency_structure)
 
     return dependency_structure, pipeline_solid_dict
 
@@ -534,24 +519,6 @@ def _validate_dependencies(dependencies, solid_dict, alias_lookup):
                 raise DagsterInvalidDefinitionError(
                     'Solid {dep.solid} does not have output {dep.output}'.format(dep=dep),
                 )
-
-
-def _validate_dependency_structure(name, pipeline_solid_dict, dependency_structure):
-    for pipeline_solid in pipeline_solid_dict.values():
-        solid = pipeline_solid.definition
-        for input_def in solid.input_defs:
-            if not dependency_structure.has_dep(pipeline_solid.input_handle(input_def.name)):
-
-                error_msg = (
-                    'Dependency must be specified for solid ' +
-                    '{pipeline_name} input {input_name}.'.format(
-                        pipeline_name=pipeline_solid.name,
-                        input_name=input_def.name,
-                    )
-                )
-                if name:
-                    error_msg += ' in pipeline {name}'.format(name=name)
-                raise DagsterInvalidDefinitionError(error_msg)
 
 
 def _gather_all_types(solids, context_definitions, environment_type):
