@@ -71,9 +71,7 @@ class ResourceDefinition(object):
 
     @staticmethod
     def null_resource():
-        return ResourceDefinition(
-            resource_fn=lambda _info: None,
-        )
+        return ResourceDefinition(resource_fn=lambda _info: None)
 
     @staticmethod
     def string_resource(description=None):
@@ -82,6 +80,7 @@ class ResourceDefinition(object):
             config_field=Field(types.String),
             description=description,
         )
+
 
 class PipelineContextDefinition(object):
     '''Pipelines declare the different context types they support, in the form

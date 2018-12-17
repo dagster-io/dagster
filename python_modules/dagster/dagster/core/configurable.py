@@ -1,14 +1,14 @@
 from dagster import check
+'''
+Configurable
 
-#
-# Configurable
-#
-# This is a mixin-style addition to the core type this the allows
-# us to declare where a type is Configurability declaratively.
-# What mixin the user declares determines the config schema
-# for the type. Now *any* type that is Configurable can be
-# a config, and that config scheam is wholly disconnectedd
-# by its in-memory respresentation.
+This is a mixin-style addition to the core type this the allows
+us to declare where a type is Configurability declaratively.
+What mixin the user declares determines the config schema
+for the type. Now *any* type that is Configurable can be
+a config, and that config scheam is wholly disconnectedd
+by its in-memory respresentation.
+'''
 
 
 class FieldDefinitionDictionary(dict):
