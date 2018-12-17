@@ -3,7 +3,7 @@ from dagster import execute_pipeline
 from ..part_two import define_hello_dag_pipeline
 
 
-def test_tutorial_part_one():
+def test_tutorial_part_two():
     pipeline = define_hello_dag_pipeline()
 
     result = execute_pipeline(pipeline)

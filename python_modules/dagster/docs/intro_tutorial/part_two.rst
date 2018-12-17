@@ -13,13 +13,16 @@ two concatenated copies of the hardcoded string.
 
 This pipeline introduces a few new concepts.
 
-1.  Solids can have **inputs** defined by instances of ``InputDefinition``. Inputs allow us to
-    connect solids to each other, and gives dagster information about solids' dependencies (and,
-    as we'll see later, optionally lets dagster check the types of the inputs at runtime).
+1.  Solids can have **inputs** defined by instances of
+    :py:class:`InputDefinition <dagster.InputDefinition>`. Inputs allow us to connect solids to
+    each other, and gives dagster information about solids' dependencies (and, as we'll see later,
+    optionally let dagster check the types of the inputs at runtime).
 
-2.  Solids' **dependencies** on each other are expressed by instances of ``DependencyDefinition``.
-    You'll notice the new argument to ``PipelineDefinition`` called ``dependencies``, which is a
-    dict that defines the connections between solids in a pipeline's DAG.
+2.  Solids' **dependencies** on each other are expressed by instances of 
+    :py:class:`DependencyDefinition <dagster.DependencyDefinition>`.
+    You'll notice the new argument to :py:class:`PipelineDefinition <dagster.PipelineDefinition>`
+    called ``dependencies``, which is a dict that defines the connections between solids in a
+    pipeline's DAG.
 
     .. literalinclude::  ../../tutorials/intro_tutorial/part_two.py
        :lines: 22-26
@@ -27,8 +30,8 @@ This pipeline introduces a few new concepts.
 
     The first layer of keys in this dict are the *names* of solids in the pipeline. The second layer
     of keys are the *names* of the inputs to each solid. Each input in the DAG must be provided a
-    ``DependencyDefinition``. (Don't worry -- if you forget to specify an input, a helpful error
-    message will tell you what you missed.)
+    :py:class:`DependencyDefinition <dagster.DependencyDefinition>`. (Don't worry -- if you forget
+    to specify an input, a helpful error message will tell you what you missed.)
     
     In this case the dictionary encodes the fact that the input ``arg_one`` of solid ``solid_two``
     should flow from the output of ``solid_one``.

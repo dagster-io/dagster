@@ -11,32 +11,33 @@ provides to make that possible.
 Let's return to our hello world example. But this time, we'll parametrize the string that the
 solid yields through config.
 
-This time, we'll use a more fully-featured API to define our solid -- ``@solid`` instead of
-``@lambda_solid``.
+This time, we'll use a more fully-featured API to define our solid -- 
+:py:func:`@solid <dagster.solid>` instead of :py:func:`@lambda_solid <dagster.lambda_solid>`.
 
 .. literalinclude:: ../../tutorials/intro_tutorial/part_four.py
    :linenos:
    :caption: part_four.py
 
+We will be exploring the :py:func:`@solid <dagster.solid>` API in much more detail as this tutorial
+proceeds. For now, the only salient difference is that the annotated function takes an additional
+first parameter, ``info``, which is of type
+:py:class:`TransformExecutionInfo <dagster.TransformExecutionInfo>`. The property ``info.config``
+is then the configuration passed into each individual solid.
 
-You'll notice a new API, ``solid``. We will be exploring this API in much more detail as these
-tutorials proceed. For now, the only difference is that the function annotated by solid now
-takes one parameter where before it took zero (if it accepted no inputs). This
-new parameter is the info parameter, which is of type :py:class:`TransformExecutionInfo`. It
-has a property config, which is the configuration that is passed into this
-particular solid.
+That configuration is specified in the second argument to
+:py:func:`execute_pipeline <dagster.execute_pipeline>`, which must be a dict. This dict specifies
+*all* of the configuration to execute an entire pipeline. It may have many sections, but we're only
+using one of them here: per-solid configuration specified under the key ``solids``:
 
-We must provide that configuration. So turn your attention to the second argument
-of execute_pipeline, which must be a dictionary. This dictionary 
-encompasses *all* of the configuration to execute an entire pipeline, and directly mirrors
-the structure of the environment yaml file. It has many
-sections. One of these is configuration provided on a per-solid basis, which is what
-we are using here. The ``solids`` property is a dictionary keyed by
-solid name. These dictionaries take a 'config' property which must correspond to the user-
-defined configuration of that particular solid. In this case it takes the value
-that will be passed directly to the solid in question, here a string to be printed.
+.. literalinclude:: ../../tutorials/intro_tutorial/part_four.py
+   :lines: 23-27
+   :dedent: 12
 
-So save this example as step_four.py
+The ``solids`` dict is keyed by solid name, and each of its values in turn defines a ``config``
+key corresponding to the user-defined configuration schema for each particular solid. In this case,
+that's a single scalar string value.
+
+When you run this example as ``part_four.py``
 
 .. code-block:: sh
 

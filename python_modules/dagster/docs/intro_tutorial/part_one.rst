@@ -12,16 +12,18 @@ Let's write our first pipeline and save it as ``part_one.py``.
 
 This example introduces three concepts:
 
-1) A **solid** is a functional unit of computation in a data pipeline. In this example, we use the
-decorator ``@lambda_solid`` to mark the function ``hello_world`` as a solid: a functional unit
-which takes no inputs and returns the output ``'hello'`` every time it's run.
+1.  A **solid** is a functional unit of computation in a data pipeline. In this example, we use the
+    decorator :py:func:`@lambda_solid <dagster.lambda_solid>` to mark the function ``hello_world``
+    as a solid: a functional unit which takes no inputs and returns the output ``'hello'`` every
+    time it's run.
 
-2) A **pipeline** is a set of solids arranged into a DAG of computation that produces data assets.
-In this example, the call to ``PipelineDefinition`` defines a pipeline with a single solid.
+2.  A **pipeline** is a set of solids arranged into a DAG of computation that produces data assets.
+    In this example, the call to :py:class:`PipelineDefinition <dagster.PipelineDefinition>` defines
+    a pipeline with a single solid.
 
-3) We **execute** the pipeline by running ``execute_pipeline``. Dagster will call into each solid
-in the pipeline, functionally transforming its inputs, if any, and threading its outputs to solids
-further on in thre DAG.
+3.  We **execute** the pipeline by running :py:func:`execute_pipeline <dagster.execute_pipeline>`.
+    Dagster will call into each solid in the pipeline, functionally transforming its inputs, if any,
+    and threading its outputs to solids further on in thre DAG.
 
 Assuming you've saved this pipeline as ``part_one.py``, we can execute it using the dagster CLI:
 
