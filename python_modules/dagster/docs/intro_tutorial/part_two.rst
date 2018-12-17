@@ -1,7 +1,7 @@
 Hello, DAG
 ----------
 One of the core capabitilies of dagster is the ability to express data pipelines as arbitrary
-directed, acyclic graphs of solids.
+directed acyclic graphs (DAGs) of solids.
 
 Let's define a very simple two-solid pipeline whose first solid returns a hardcoded string,
 and whose second solid concatenates two copies of its input. The output of the pipeline should be
@@ -52,3 +52,6 @@ Now run the pipeline we've just defined, either from dagit or from the command l
 .. code-block:: console
 
 	$ dagster pipeline execute -f part_two.py -n define_hello_dag_pipeline
+
+In the next section, :doc:`An actual DAG <part_three>`, we'll build our first DAG with interesting
+topology and see how dagster determines the execution order of a pipeline.

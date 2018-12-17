@@ -1,83 +1,36 @@
 An actual DAG
 -------------
 
-Next we will build a slightly more complicated DAG that demonstrates how it
-effects execution order. In this case will be build a diamond dag:
+Next we will build a slightly more topologically complex DAG that demonstrates how dagster
+determines the execution order of solids in a pipeline:
 
-.. code-block:: python
+.. image:: part_three_fig_one.png
 
-    from dagster import (
-        DependencyDefinition,
-        InputDefinition,
-        PipelineDefinition,
-        execute_pipeline,
-        lambda_solid,
-    )
+.. literalinclude:: ../../tutorials/intro_tutorial/part_three.py
+   :linenos:
+   :caption: part_three.py
 
-    #   A
-    #  / \
-    # B   C
-    #  \ /
-    #   D
-
-
-    @lambda_solid
-    def solid_a():
-        print('a: 1')
-        return 1
-
-
-    @lambda_solid(inputs=[InputDefinition('arg_a')])
-    def solid_b(arg_a):
-        print('b: {b}'.format(b=arg_a * 2))
-        return arg_a * 2
-
-
-    @lambda_solid(inputs=[InputDefinition('arg_a')])
-    def solid_c(arg_a):
-        print('c: {c}'.format(c=arg_a * 3))
-        return arg_a * 3
-
-
-    @lambda_solid(inputs=[
-        InputDefinition('arg_b'),
-        InputDefinition('arg_c'),
-    ])
-    def solid_d(arg_b, arg_c):
-        print('d: {d}'.format(d=arg_b * arg_c))
-
-
-    def define_pipeline():
-        return PipelineDefinition(
-            name='actual_dag',
-            # The order of this solid list does not matter.
-            # The dependencies argument determines execution order.
-            # Solids will execute in topological order.
-            solids=[solid_d, solid_c, solid_b, solid_a],
-            dependencies={
-                'solid_b': {
-                    'arg_a': DependencyDefinition('solid_a'),
-                },
-                'solid_c': {
-                    'arg_a': DependencyDefinition('solid_a'),
-                },
-                'solid_d': {
-                    'arg_b': DependencyDefinition('solid_b'),
-                    'arg_c': DependencyDefinition('solid_c'),
-                }
-            }
-        )
-
-
-Again it is worth noting how we are connecting *inputs* and *outputs* rather than just *tasks*.
-Point your attention to the ``solid_d`` entry in the dependencies dictionary. We are declaring
+Again, it is worth noting how we are connecting *inputs* and *outputs* rather than just *tasks*.
+Point your attention to the ``solid_d`` entry in the dependencies dictionary: we declare
 dependencies on a per-input basis.
 
-Save this to a file named ``part_three.py``
+When you execute this example, you'll see that ``solid_a`` executes first, then ``solid_b`` and
+``solid_c`` -- in any order -- and ``solid_d`` executes last, after ``solid_b`` and ``solid_c``
+have both executed.
+
+In more sophisticated execution environments, ``solid_b`` and ``solid_c`` could execute not just
+in any order, but at the same time, since their inputs don't depend on each other's outputs --
+but both would still have to execute after ``solid_a`` (because they depend on its output to
+satisfy their inputs) and before ``solid_d`` (because their outputs in turn are depended on by
+the input of ``solid_d``).
+
+Try it in dagit or from the command line:
 
 .. code-block:: sh
 
-	$ dagster pipeline execute -f part_three.py -n define_pipeline
+	$ dagster pipeline execute -f part_three.py -n define_diamond_dag_pipeline
 
-In this case ``solid_b`` happens to execute before ``solid_c``. However ``solid_c`` executing
-before ``solid_b`` would also be a valid execution order given this DAG.
+What's the output of this DAG?
+
+Next we'll learn about :doc:`Configuration <part_four>`, which lets a pipeline interact with
+its external environment.

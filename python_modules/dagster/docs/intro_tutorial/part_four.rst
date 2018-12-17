@@ -1,50 +1,23 @@
 Configuration
 -------------
+So far we have only demonstrated pipelines whose solids yield hardcoded values and then flow them
+through the pipeline. In order to be useful a pipeline must also interact with its external
+environment.
 
-So far we have only demonstrated pipelines that produce hardcoded values
-and then flow them through the pipeline. In order to be useful a pipeline
-must also interact with its external environment, and in general, it should
-use configuration to do so.
+For maximum flexibility, testability, and reusability, we want to avoid hardcoding solids'
+(or pipelines') dependencies on the external world. Configuration is the mechanism dagster
+provides to make that possible.
 
-For maximum flexiblity, testabilty, and reusability pipelines should be fully
-parameterizable. Configuration is how we achieve that end in dagster.
+Let's return to our hello world example. But this time, we'll parametrize the string that the
+solid yields through config.
 
-We return to our hello world example, but now we will be able to parameterize
-the string printed via config.
- 
-In order to accomplish this we need to change APIs, from ``lambda_solid`` to ``solid``.
-A ``lambda_solid`` only exposes a subset of solid features in order to provide a more
-minimal API. ``solid`` is more complicated, and has more capabilities:
+This time, we'll use a more fully-featured API to define our solid -- ``@solid`` instead of
+``@lambda_solid``.
 
-.. code-block:: python
+.. literalinclude:: ../../tutorials/intro_tutorial/part_four.py
+   :linenos:
+   :caption: part_four.py
 
-    from dagster import (
-        ConfigDefinition,
-        PipelineDefinition,
-        execute_pipeline,
-        solid,
-        types,
-    )
-
-    @solid(config_field=ConfigDefinition(types.String))
-    def hello_world(info):
-        print(info.config)
-
-    def define_pipeline():
-        return PipelineDefinition(solids=[hello_world])
-
-
-    if __name__ == '__main__':
-        execute_pipeline(
-            define_pipeline(),
-            {
-                'solids': {
-                    'hello_world': {
-                        'config': 'Hello, World!',
-                    },
-                },
-            },
-        )
 
 You'll notice a new API, ``solid``. We will be exploring this API in much more detail as these
 tutorials proceed. For now, the only difference is that the function annotated by solid now
