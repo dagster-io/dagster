@@ -19,7 +19,10 @@ from .subscription_server import DagsterSubscriptionServer
 from .schema import create_schema
 from .schema.context import DagsterGraphQLContext
 from .templates.playground import TEMPLATE as PLAYGROUND_TEMPLATE
-from .pipeline_execution_manager import MultiprocessingExecutionManager
+from .pipeline_execution_manager import (
+    MultiprocessingExecutionManager,
+    SynchronousExecutionManager,
+)
 
 
 class RepositoryContainer(object):
@@ -127,7 +130,7 @@ def notebook_view(_path):
         return "<style>" + resources['inlining']['css'][0] + "</style>" + body, 200
 
 
-def create_app(repository_container, pipeline_runs):
+def create_app(repository_container, pipeline_runs, use_synchronous_execution_manager=False):
     app = Flask('dagster-ui')
     sockets = Sockets(app)
     app.app_protocol = lambda environ_path_info: 'graphql-ws'
@@ -135,10 +138,14 @@ def create_app(repository_container, pipeline_runs):
     schema = create_schema()
     subscription_server = DagsterSubscriptionServer(schema=schema)
 
+    if use_synchronous_execution_manager:
+        execution_manager = SynchronousExecutionManager()
+    else:
+        execution_manager = MultiprocessingExecutionManager()
     context = DagsterGraphQLContext(
         repository_container=repository_container,
         pipeline_runs=pipeline_runs,
-        execution_manager=MultiprocessingExecutionManager()
+        execution_manager=execution_manager
     )
 
     app.add_url_rule(
