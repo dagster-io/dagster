@@ -60,7 +60,7 @@ class ConfigurableFromAny(Configurable):
 
 class ConfigurableFromDict(Configurable):
     def __init__(self, fields, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super(ConfigurableFromDict, self).__init__(*args, **kwargs)
         self.field_dict = FieldDefinitionDictionary(fields)
 
     def construct_from_config_value(self, config_value):
@@ -121,7 +121,7 @@ class ConfigurableSelectorFromDict(ConfigurableFromDict):
 
 class ConfigurableFromList(Configurable):
     def __init__(self, inner_configurable, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super(ConfigurableFromList, self).__init__(*args, **kwargs)
         self.inner_configurable = check.inst_param(
             inner_configurable,
             'inner_configurable',
@@ -135,7 +135,7 @@ class ConfigurableFromList(Configurable):
 
 class ConfigurableFromNullable(Configurable):
     def __init__(self, inner_configurable, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super(ConfigurableFromNullable, self).__init__(*args, **kwargs)
         self.inner_configurable = check.inst_param(
             inner_configurable,
             'inner_configurable',
