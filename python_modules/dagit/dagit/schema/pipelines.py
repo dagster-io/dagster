@@ -1,7 +1,5 @@
 from __future__ import absolute_import
 
-import dagster
-from dagster.core.types import DagsterCompositeTypeBase
 from dagster import (
     ExpectationDefinition,
     Field,
@@ -13,6 +11,7 @@ from dagster import (
     SolidDefinition,
     check,
 )
+
 from dagster.core.definitions import (
     Solid,
     SolidInputHandle,
@@ -436,7 +435,7 @@ class DauphinType(dauphin.Interface):
 
     @classmethod
     def from_dagster_type(cls, info, dagster_type):
-        if isinstance(dagster_type, DagsterCompositeTypeBase):
+        if dagster_type.configurable_from_dict:
             return info.schema.type_named('CompositeType')(dagster_type)
         else:
             return info.schema.type_named('RegularType')(dagster_type)

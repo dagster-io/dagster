@@ -1,5 +1,7 @@
 from dagster import types
 
+from dagster.core.configurable import ConfigurableSelectorFromDict
+
 from dagster.core.evaluator import (
     DagsterEvaluationErrorReason,
     EvaluationStackListItemEntry,
@@ -345,10 +347,10 @@ def test_deep_mixed_level_errors():
     assert final_level_error.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
 
 
-class ExampleSelectorType(types.DagsterSelectorType):
+class ExampleSelectorType(ConfigurableSelectorFromDict, types.DagsterType):
     def __init__(self):
         super(ExampleSelectorType, self).__init__(
-            'ExampleSelector',
+            name='ExampleSelector',
             fields={
                 'option_one': types.Field(types.String),
                 'option_two': types.Field(types.String),
@@ -396,11 +398,11 @@ def test_example_selector_multiple_fields():
     assert result.errors[0].reason == DagsterEvaluationErrorReason.SELECTOR_FIELD_ERROR
 
 
-class SelectorWithDefaultsType(types.DagsterSelectorType):
+class SelectorWithDefaultsType(ConfigurableSelectorFromDict, types.DagsterType):
     def __init__(self):
         super(SelectorWithDefaultsType, self).__init__(
-            'SelectorWithDefaultsType',
-            {'default': types.Field(types.String, is_optional=True, default_value='foo')}
+            name='SelectorWithDefaultsType',
+            fields={'default': types.Field(types.String, is_optional=True, default_value='foo')}
         )
 
 

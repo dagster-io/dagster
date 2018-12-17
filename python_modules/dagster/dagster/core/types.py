@@ -13,7 +13,6 @@ from dagster.core.errors import (
 from .configurable import (
     Configurable,
     ConfigurableFromAny,
-    ConfigurableFromDict,
     ConfigurableFromList,
     ConfigurableObjectFromDict,
     ConfigurableFromScalar,
@@ -264,67 +263,6 @@ class _DagsterBoolType(DagsterBuiltinScalarType):
         return isinstance(value, bool)
 
 
-class DagsterCompositeTypeBase(DagsterType):
-    '''Dagster type representing a type with a list of named :py:class:`Field` objects.
-    '''
-
-    def __init__(
-        self,
-        name,
-        fields,
-        description=None,
-        type_attributes=DEFAULT_TYPE_ATTRIBUTES,
-    ):
-        # self.field_dict = FieldDefinitionDictionary(fields)
-        super(DagsterCompositeTypeBase, self).__init__(
-            name=name,
-            fields=fields,
-            description=description,
-            type_attributes=type_attributes,
-        )
-
-    def coerce_runtime_value(self, value):
-        return value
-
-
-class DagsterCompositeType(ConfigurableObjectFromDict, DagsterType):
-    def __init__(
-        self,
-        name,
-        fields,
-        description=None,
-        type_attributes=DEFAULT_TYPE_ATTRIBUTES,
-    ):
-        super(DagsterCompositeType, self).__init__(
-            name=name,
-            fields=fields,
-            description=description,
-            type_attributes=type_attributes,
-        )
-
-
-class DagsterSelectorType(ConfigurableSelectorFromDict, DagsterType):
-    '''This subclass "marks" a composite type as one where only
-    one of its fields can be configured at a time. This was originally designed
-    for context definition selection (only one context can be used for a particular
-    pipeline invocation); this is generalization of that concept.
-    '''
-
-    def __init__(
-        self,
-        name,
-        fields,
-        description=None,
-        type_attributes=DEFAULT_TYPE_ATTRIBUTES,
-    ):
-        super(DagsterSelectorType, self).__init__(
-            name=name,
-            fields=fields,
-            description=description,
-            type_attributes=type_attributes,
-        )
-
-
 def Nullable(inner_type):
     return _DagsterNullableType(inner_type)
 
@@ -391,6 +329,10 @@ class DictCounter:
 
 def Dict(fields):
     return _Dict('Dict.' + str(DictCounter.get_next_count()), fields)
+
+
+def NamedDict(name, fields):
+    return _Dict(name, fields)
 
 
 class _Dict(ConfigurableObjectFromDict, DagsterType):

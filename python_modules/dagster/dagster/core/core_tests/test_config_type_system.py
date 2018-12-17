@@ -2,6 +2,8 @@ from collections import namedtuple
 
 import pytest
 
+from dagster.core.configurable import ConfigurableObjectFromDict
+
 from dagster import (
     DagsterEvaluateConfigValueError,
     DagsterInvalidDefinitionError,
@@ -317,11 +319,11 @@ def test_nested_optional_with_no_default():
 CustomStructConfig = namedtuple('CustomStructConfig', 'foo bar')
 
 
-class CustomStructConfigType(types.DagsterCompositeType):
+class CustomStructConfigType(ConfigurableObjectFromDict, types.DagsterType):
     def __init__(self):
         super(CustomStructConfigType, self).__init__(
-            'CustomStructConfigType',
-            {
+            name='CustomStructConfigType',
+            fields={
                 'foo': Field(types.String),
                 'bar': Field(types.Int),
             },

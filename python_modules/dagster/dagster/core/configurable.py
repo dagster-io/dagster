@@ -90,6 +90,7 @@ class ConfigurableFromDict(Configurable):
             for inner_type in field.dagster_type.inner_types:
                 yield inner_type
 
+    # TODO better place for this
     def iterate_types(self):
         for field_type in self.field_dict.values():
             for inner_type in field_type.dagster_type.iterate_types():
