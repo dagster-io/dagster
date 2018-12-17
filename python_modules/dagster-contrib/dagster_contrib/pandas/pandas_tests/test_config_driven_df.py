@@ -1,9 +1,13 @@
 import pytest
 
+import pandas as pd
+
 from dagster import (
     DagsterInvariantViolationError,
+    DependencyDefinition,
     InputDefinition,
     PipelineDefinition,
+    OutputDefinition,
     execute_pipeline,
     solid,
     types,
@@ -95,6 +99,50 @@ def test_dataframe_csv_missing_inputs():
     with pytest.raises(DagsterInvariantViolationError) as exc_info:
         execute_pipeline(pipeline)
 
-    'In pipeline missing_inputs solid df_as_input, input df' in str(exc_info.value)
+    assert 'In pipeline missing_inputs solid df_as_input, input df' in str(exc_info.value)
+
+    assert 'yup' not in called
+
+
+def test_dataframe_csv_missing_input_collision():
+    called = {}
+
+    @solid(outputs=[OutputDefinition(DataFrame)])
+    def df_as_output(_info):
+        return pd.DataFrame()
+
+    @solid(inputs=[InputDefinition('df', DataFrame)])
+    def df_as_input(_info, df):  # pylint: disable=W0613
+        called['yup'] = True
+
+    pipeline = PipelineDefinition(
+        name='overlapping',
+        solids=[df_as_input, df_as_output],
+        dependencies={
+            'df_as_input': {
+                'df': DependencyDefinition('df_as_output'),
+            },
+        },
+    )
+    with pytest.raises(DagsterInvariantViolationError) as exc_info:
+        execute_pipeline(
+            pipeline,
+            {
+                'solids': {
+                    'df_as_input': {
+                        'inputs': {
+                            'df': {
+                                'csv': {
+                                    'path': script_relative_path('num.csv'),
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        )
+
+    assert 'In pipeline overlapping solid df_as_input, input df' in str(exc_info.value)
+    assert 'while also specifying' in str(exc_info.value)
 
     assert 'yup' not in called

@@ -657,6 +657,21 @@ def create_step_inputs(info, state, pipeline_solid):
 
         solid_config = info.environment.solids.get(topo_solid.name)
         if solid_config and input_def.name in solid_config.inputs:
+
+            if dependency_structure.has_dep(input_handle):
+                raise DagsterInvariantViolationError(
+                    (
+                        'In pipeline {pipeline_name} solid {solid_name}, input {input_name} '
+                        'you have specified an input via config while also specifying '
+                        'a dependency. Either remove the dependency, specify a subdag '
+                        'to execute, or remove the inputs specification in the environment.'
+                    ).format(
+                        pipeline_name=info.execution_graph.pipeline.name,
+                        solid_name=pipeline_solid.name,
+                        input_name=input_def.name,
+                    )
+                )
+
             input_thunk = create_input_thunk_execution_step(
                 pipeline_solid,
                 input_def,
