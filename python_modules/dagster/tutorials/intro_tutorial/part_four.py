@@ -1,5 +1,5 @@
 from dagster import (
-    ConfigDefinition,
+    Field,
     PipelineDefinition,
     execute_pipeline,
     solid,
@@ -7,18 +7,18 @@ from dagster import (
 )
 
 
-@solid(config_field=ConfigDefinition(types.String))
+@solid(config_field=Field(types.String))
 def hello_world(info):
-    print(info.config)
+    return info.config
 
 
-def define_pipeline():
+def define_configurable_hello_world_pipeline():
     return PipelineDefinition(solids=[hello_world])
 
 
 if __name__ == '__main__':
     execute_pipeline(
-        define_pipeline(),
+        define_configurable_hello_world_pipeline(),
         {
             'solids': {
                 'hello_world': {
