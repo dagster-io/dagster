@@ -4,26 +4,27 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL fragment: PipelineRunExecutionPlanFragment
+// GraphQL fragment: StepMetadataProviderMessageFragment
 // ====================================================
 
-export interface PipelineRunExecutionPlanFragment_executionPlan_steps_solid {
+export interface StepMetadataProviderMessageFragment_LogMessageEvent {
+  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent";
+  message: string;
+  timestamp: string;
+}
+
+export interface StepMetadataProviderMessageFragment_ExecutionStepStartEvent_step {
   name: string;
 }
 
-export interface PipelineRunExecutionPlanFragment_executionPlan_steps {
-  name: string;
-  solid: PipelineRunExecutionPlanFragment_executionPlan_steps_solid;
-  tag: StepTag;
+export interface StepMetadataProviderMessageFragment_ExecutionStepStartEvent {
+  __typename: "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepFailureEvent";
+  message: string;
+  timestamp: string;
+  step: StepMetadataProviderMessageFragment_ExecutionStepStartEvent_step;
 }
 
-export interface PipelineRunExecutionPlanFragment_executionPlan {
-  steps: PipelineRunExecutionPlanFragment_executionPlan_steps[];
-}
-
-export interface PipelineRunExecutionPlanFragment {
-  executionPlan: PipelineRunExecutionPlanFragment_executionPlan;
-}
+export type StepMetadataProviderMessageFragment = StepMetadataProviderMessageFragment_LogMessageEvent | StepMetadataProviderMessageFragment_ExecutionStepStartEvent;
 
 /* tslint:disable */
 // This file was automatically generated and should not be edited.
