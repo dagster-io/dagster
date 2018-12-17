@@ -280,7 +280,7 @@ def download_from_s3(info):
                 Field(types.String, description='The key to which to upload the file.'),
                 'kwargs':
                 Field(
-                    types.PythonDict,
+                    types.Any, # TODO fix
                     description='Kwargs to pass through to the S3 client',
                     is_optional=True,
                 )
