@@ -41,9 +41,9 @@ def scaffold_type(config_type, skip_optional=True):
 
             default_dict[field_name] = scaffold_type(field.dagster_type, skip_optional)
         return default_dict
-    elif config_type.is_any:
+    elif config_type.configurable_from_any:
         return 'AnyType'
-    elif config_type.is_scalar:
+    elif config_type.configurable_from_scalar:
         defaults = {
             types.String: '',
             types.Path: 'path/to/something',

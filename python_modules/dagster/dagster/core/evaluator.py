@@ -82,7 +82,7 @@ class EvaluationStack(namedtuple('_EvaluationStack', 'root_type entries')):
         ttype = self.entries[-1].dagster_type if self.entries else self.root_type
         # TODO: This is the wrong place for this
         # Should have general facility for unwrapping named types
-        if ttype.is_nullable:
+        if ttype.configurable_from_nullable:
             return ttype.inner_type
         else:
             return ttype
@@ -236,7 +236,7 @@ def stack_with_field(stack, field_name, field_def):
 
 def stack_with_list_index(stack, list_index):
     list_type = stack.type_in_context
-    check.invariant(list_type.is_list)
+    check.invariant(list_type.configurable_from_list)
     return EvaluationStack(
         root_type=stack.root_type,
         entries=stack.entries + [EvaluationStackListItemEntry(list_type.inner_type, list_index)],
@@ -276,7 +276,7 @@ def _validate_config(dagster_type, config_value, stack):
     check.inst_param(dagster_type, 'dagster_type', Configurable)
     check.inst_param(stack, 'stack', EvaluationStack)
 
-    if dagster_type.is_scalar:
+    if dagster_type.configurable_from_scalar:
         if not dagster_type.is_python_valid_value(config_value):
             yield EvaluationError(
                 stack=stack,
@@ -294,16 +294,16 @@ def _validate_config(dagster_type, config_value, stack):
 
     errors = []
 
-    if dagster_type.is_any:
+    if dagster_type.configurable_from_any:
         # no-op: we're safe
         return
     elif dagster_type.is_selector:
         errors = validate_selector_config_value(dagster_type, config_value, stack)
     elif dagster_type.is_composite:
         errors = validate_composite_config_value(dagster_type, config_value, stack)
-    elif dagster_type.is_list:
+    elif dagster_type.configurable_from_list:
         errors = validate_list_value(dagster_type, config_value, stack)
-    elif dagster_type.is_nullable:
+    elif dagster_type.configurable_from_nullable:
         errors = [] if config_value is None else _validate_config(
             dagster_type.inner_type,
             config_value,
@@ -319,19 +319,19 @@ def _validate_config(dagster_type, config_value, stack):
 def deserialize_config(dagster_type, config_value):
     check.inst_param(dagster_type, 'dagster_type', Configurable)
 
-    if dagster_type.is_scalar:
+    if dagster_type.configurable_from_scalar:
         return config_value
     elif dagster_type.is_selector:
         return deserialize_selector_config(dagster_type, config_value)
     elif dagster_type.is_composite:
         return deserialize_composite_config_value(dagster_type, config_value)
-    elif dagster_type.is_list:
+    elif dagster_type.configurable_from_list:
         return deserialize_list_value(dagster_type, config_value)
-    elif dagster_type.is_nullable:
+    elif dagster_type.configurable_from_nullable:
         if config_value is None:
             return None
         return deserialize_config(dagster_type.inner_type, config_value)
-    elif dagster_type.is_any:
+    elif dagster_type.configurable_from_any:
         return config_value
     else:
         check.failed('Unsupported type {name}'.format(name=dagster_type.name))
@@ -549,7 +549,7 @@ def deserialize_composite_config_value(dagster_composite_type, config_value):
 
 
 def validate_list_value(dagster_list_type, config_value, stack):
-    check.param_invariant(dagster_list_type.is_list, 'dagster_list_type')
+    check.param_invariant(dagster_list_type.configurable_from_list, 'dagster_list_type')
     check.inst_param(stack, 'stack', EvaluationStack)
 
     if not isinstance(config_value, list):
@@ -577,7 +577,7 @@ def validate_list_value(dagster_list_type, config_value, stack):
 
 
 def deserialize_list_value(dagster_list_type, config_value):
-    check.param_invariant(dagster_list_type.is_list, 'dagster_list_type')
+    check.param_invariant(dagster_list_type.configurable_from_list, 'dagster_list_type')
 
     if not config_value:
         return []

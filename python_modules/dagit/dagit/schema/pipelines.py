@@ -453,9 +453,9 @@ class DauphinRegularType(dauphin.ObjectType):
         super(DauphinRegularType, self).__init__(
             name=dagster_type.name,
             description=dagster_type.description,
-            is_dict=dagster_type.is_dict,
-            is_nullable=dagster_type.is_nullable,
-            is_list=dagster_type.is_list,
+            is_dict=dagster_type.configurable_from_dict,
+            is_nullable=dagster_type.configurable_from_nullable,
+            is_list=dagster_type.configurable_from_list,
         )
         self._dagster_type = dagster_type
 
@@ -482,9 +482,9 @@ class DauphinCompositeType(dauphin.ObjectType):
         super(DauphinCompositeType, self).__init__(
             name=dagster_type.name,
             description=dagster_type.description,
-            is_dict=dagster_type.is_dict,
-            is_nullable=dagster_type.is_nullable,
-            is_list=dagster_type.is_list,
+            is_dict=dagster_type.configurable_from_dict,
+            is_nullable=dagster_type.configurable_from_nullable,
+            is_list=dagster_type.configurable_from_list,
         )
         self._dagster_type = dagster_type
 

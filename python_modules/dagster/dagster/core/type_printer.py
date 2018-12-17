@@ -16,14 +16,14 @@ def print_type(dagster_type, print_fn=print):
 
 
 def _do_print(dagster_type, printer):
-    if dagster_type.is_list:
+    if dagster_type.configurable_from_list:
         printer.append('[')
         _do_print(dagster_type.inner_type, printer)
         printer.append(']')
-    elif dagster_type.is_nullable:
+    elif dagster_type.configurable_from_nullable:
         _do_print(dagster_type.inner_type, printer)
         printer.append('?')
-    elif dagster_type.is_dict:
+    elif dagster_type.configurable_from_dict:
         printer.line('{')
         with printer.with_indent():
             for name, field in sorted(dagster_type.fields.items()):

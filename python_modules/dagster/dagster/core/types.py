@@ -72,17 +72,17 @@ class DagsterType(object):
         return self.type_attributes.is_named
 
     @property
-    def is_dict(self):
+    def configurable_from_dict(self):
         check.invariant(not isinstance(self, Configurable))
         return False
 
     @property
-    def is_nullable(self):
+    def configurable_from_nullable(self):
         check.invariant(not isinstance(self, Configurable))
         return False
 
     @property
-    def is_list(self):
+    def configurable_from_list(self):
         check.invariant(not isinstance(self, Configurable))
         return False
 

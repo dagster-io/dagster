@@ -12,7 +12,7 @@ class FieldDefinitionDictionary(dict):
 
 class Configurable(object):
     @property
-    def is_list(self):
+    def configurable_from_list(self):
         return isinstance(self, ConfigurableFromList)
 
     @property
@@ -20,15 +20,15 @@ class Configurable(object):
         return isinstance(self, ConfigurableSelector)
 
     @property
-    def is_nullable(self):
+    def configurable_from_nullable(self):
         return isinstance(self, NullableConfigurable)
 
     @property
-    def is_dict(self):
+    def configurable_from_dict(self):
         return isinstance(self, ConfigurableFromDictMixin)
 
     @property
-    def is_scalar(self):
+    def configurable_from_scalar(self):
         return isinstance(self, ConfigurableScalar)
 
     @property
@@ -36,7 +36,7 @@ class Configurable(object):
         return isinstance(self, ConfigurableComposite)
 
     @property
-    def is_any(self):
+    def configurable_from_any(self):
         return isinstance(self, ConfigurableAny)
 
     @property
