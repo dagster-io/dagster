@@ -354,6 +354,14 @@ class _Dict(ConfigurableObjectFromDict, DagsterType):
     def coerce_runtime_value(self, value):
         return value
 
+    def iterate_types(self):
+        for field_type in self.field_dict.values():
+            for inner_type in field_type.dagster_type.iterate_types():
+                yield inner_type
+
+        if self.is_named:
+            yield self
+
 
 String = DagsterStringType(name='String', description='A string.')
 Path = DagsterStringType(
