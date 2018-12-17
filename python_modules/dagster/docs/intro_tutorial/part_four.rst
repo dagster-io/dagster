@@ -37,8 +37,18 @@ The ``solids`` dict is keyed by solid name, and each of its values in turn defin
 key corresponding to the user-defined configuration schema for each particular solid. In this case,
 that's a single scalar string value.
 
-When you run this example as ``part_four.py``
+When you run this example as ``part_four.py``, you'll see that the output of the pipeline is the
+configured value.
 
 .. code-block:: sh
 
 	$ dagster pipeline execute -f part_four.py -n define_pipeline
+
+If you run this example from dagit, you can also edit the configuration on the fly in the built-in
+config editor. This editor includes a handy type-ahead and useful tooltips when you've entered an
+invalid config. Play around with it!
+
+.. image:: part_four_fig_one.png
+
+Next, we'll learn about another part of the ``info`` parameter, the
+:doc:`Execution Context <part_four>`.

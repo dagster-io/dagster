@@ -13,7 +13,7 @@ def hello_world(info):
 
 
 def define_configurable_hello_world_pipeline():
-    return PipelineDefinition(solids=[hello_world])
+    return PipelineDefinition(name='part_four_pipeline', solids=[hello_world])
 
 
 if __name__ == '__main__':

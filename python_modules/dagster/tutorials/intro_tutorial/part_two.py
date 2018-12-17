@@ -19,7 +19,7 @@ def solid_two(arg_one):
 
 def define_hello_dag_pipeline():
     return PipelineDefinition(
-        name='hello_dag_pipeline',
+        name='part_two_pipeline',
         solids=[solid_one, solid_two],
         dependencies={
             'solid_two': {
