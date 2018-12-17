@@ -17,10 +17,10 @@ may execute in different environments.
 
 Self-describing
 ^^^^^^^^^^^^^^^
-Pipelines should be self-describing with rich metadata and types. Users should be able to approach
-a pipeline, and use tooling to inspect the pipelines for their structure and capabilities. This
-metadata should be co-located with actual code of the pipeline. Documentation and code should be
-delivered as a single artifact.
+Data pipelines should be self-describing, with rich metadata and types. Users should be able to
+approach an unfamiliar pipeline and use tooling to inspect it and discover its structure,
+capabilities, and requirements. Pipeline metadata should be co-located with the pipeline's actual
+code: documentation and code should be delivered as a single artifact.
 
 Compute-agnostic
 ^^^^^^^^^^^^^^^^
