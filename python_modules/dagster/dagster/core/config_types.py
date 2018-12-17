@@ -11,8 +11,8 @@ from .config import (
 )
 
 from .configurable import (
-    ConfigurableComposite,
-    ConfigurableSelector,
+    ConfigurableObjectFromDict,
+    ConfigurableSelectorFromDict,
     Field,
 )
 
@@ -31,11 +31,11 @@ from .types import (
 )
 
 
-class SystemConfigObject(ConfigurableComposite, DagsterType):
+class SystemConfigObject(ConfigurableObjectFromDict, DagsterType):
     pass
 
 
-class SystemConfigSelector(ConfigurableSelector, DagsterType):
+class SystemConfigSelector(ConfigurableSelectorFromDict, DagsterType):
     pass
 
 

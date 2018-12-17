@@ -17,48 +17,48 @@ class Configurable(object):
 
     @property
     def configurable_selector_from_dict(self):
-        return isinstance(self, ConfigurableSelector)
+        return isinstance(self, ConfigurableSelectorFromDict)
 
     @property
     def configurable_from_nullable(self):
-        return isinstance(self, NullableConfigurable)
+        return isinstance(self, ConfigurableFromNullable)
 
     @property
     def configurable_from_dict(self):
-        return isinstance(self, ConfigurableFromDictMixin)
+        return isinstance(self, ConfigurableFromDict)
 
     @property
     def configurable_from_scalar(self):
-        return isinstance(self, ConfigurableScalar)
+        return isinstance(self, ConfigurableFromScalar)
 
     @property
     def configurable_object_from_dict(self):
-        return isinstance(self, ConfigurableComposite)
+        return isinstance(self, ConfigurableObjectFromDict)
 
     @property
     def configurable_from_any(self):
-        return isinstance(self, ConfigurableAny)
+        return isinstance(self, ConfigurableFromAny)
 
     @property
     def inner_types(self):
         return []
 
 
-class ConfigurableScalar(Configurable):
+class ConfigurableFromScalar(Configurable):
     def construct_from_config_value(self, config_value):
         '''This function is called *after* the config value has been processed
         (error-checked and default values applied)'''
         return config_value
 
 
-class ConfigurableAny(Configurable):
+class ConfigurableFromAny(Configurable):
     def construct_from_config_value(self, config_value):
         '''This function is called *after* the config value has been processed
         (error-checked and default values applied)'''
         return config_value
 
 
-class ConfigurableFromDictMixin(Configurable):
+class ConfigurableFromDict(Configurable):
     def __init__(self, fields, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.field_dict = FieldDefinitionDictionary(fields)
@@ -114,11 +114,11 @@ class ConfigurableFromDictMixin(Configurable):
         return self.field_dict[name]
 
 
-class ConfigurableComposite(ConfigurableFromDictMixin):
+class ConfigurableObjectFromDict(ConfigurableFromDict):
     pass
 
 
-class ConfigurableSelector(ConfigurableFromDictMixin):
+class ConfigurableSelectorFromDict(ConfigurableFromDict):
     '''This subclass "marks" a composite type as one where only
     one of its fields can be configured at a time. This was originally designed
     for context definition selection (only one context can be used for a particular
@@ -141,7 +141,7 @@ class ConfigurableFromList(Configurable):
         return [self.inner_configurable] + list(self.inner_configurable.inner_types)
 
 
-class NullableConfigurable(Configurable):
+class ConfigurableFromNullable(Configurable):
     def __init__(self, inner_configurable, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.inner_configurable = check.inst_param(
@@ -171,7 +171,7 @@ INFER_OPTIONAL_COMPOSITE_FIELD = __InferOptionalCompositeFieldSentinel
 def all_optional_type(configurable_type):
     check.inst_param(configurable_type, 'dagster_type', Configurable)
 
-    if isinstance(configurable_type, ConfigurableComposite):
+    if isinstance(configurable_type, ConfigurableObjectFromDict):
         return configurable_type.all_fields_optional
     return False
 

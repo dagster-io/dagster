@@ -12,14 +12,14 @@ from dagster.core.errors import (
 
 from .configurable import (
     Configurable,
-    ConfigurableAny,
-    ConfigurableFromDictMixin,
+    ConfigurableFromAny,
+    ConfigurableFromDict,
     ConfigurableFromList,
-    ConfigurableComposite,
-    ConfigurableScalar,
-    ConfigurableSelector,
+    ConfigurableObjectFromDict,
+    ConfigurableFromScalar,
+    ConfigurableSelectorFromDict,
     Field,
-    NullableConfigurable,
+    ConfigurableFromNullable,
 )
 
 SerializedTypeValue = namedtuple('SerializedTypeValue', 'name value')
@@ -168,7 +168,7 @@ class DagsterScalarType(UncoercedTypeMixin, DagsterType):
 
 
 # All builtins are configurable
-class DagsterBuiltinScalarType(ConfigurableScalar, DagsterScalarType):
+class DagsterBuiltinScalarType(ConfigurableFromScalar, DagsterScalarType):
     def __init__(self, name, description=None):
         super(DagsterBuiltinScalarType, self).__init__(
             name=name,
@@ -176,13 +176,8 @@ class DagsterBuiltinScalarType(ConfigurableScalar, DagsterScalarType):
             description=None,
         )
 
-    def construct_from_config_value(self, config_value):
-        '''This function is called *after* the config value has been processed
-        (error-checked and default values applied)'''
-        return config_value
 
-
-class _DagsterAnyType(ConfigurableAny, UncoercedTypeMixin, DagsterType):
+class _DagsterAnyType(ConfigurableFromAny, UncoercedTypeMixin, DagsterType):
     def __init__(self):
         super(_DagsterAnyType, self).__init__(
             name='Any',
@@ -192,11 +187,6 @@ class _DagsterAnyType(ConfigurableAny, UncoercedTypeMixin, DagsterType):
 
     def is_python_valid_value(self, _value):
         return True
-
-    def construct_from_config_value(self, config_value):
-        '''This function is called *after* the config value has been processed
-        (error-checked and default values applied)'''
-        return config_value
 
 
 class PythonObjectType(UncoercedTypeMixin, DagsterType):
@@ -297,7 +287,7 @@ class DagsterCompositeTypeBase(DagsterType):
         return value
 
 
-class DagsterCompositeType(ConfigurableComposite, DagsterType):
+class DagsterCompositeType(ConfigurableObjectFromDict, DagsterType):
     def __init__(
         self,
         name,
@@ -313,7 +303,7 @@ class DagsterCompositeType(ConfigurableComposite, DagsterType):
         )
 
 
-class DagsterSelectorType(ConfigurableSelector, DagsterType):
+class DagsterSelectorType(ConfigurableSelectorFromDict, DagsterType):
     '''This subclass "marks" a composite type as one where only
     one of its fields can be configured at a time. This was originally designed
     for context definition selection (only one context can be used for a particular
@@ -339,7 +329,7 @@ def Nullable(inner_type):
     return _DagsterNullableType(inner_type)
 
 
-class _DagsterNullableType(NullableConfigurable, DagsterType):
+class _DagsterNullableType(ConfigurableFromNullable, DagsterType):
     def __init__(self, inner_type):
         self.inner_type = check.inst_param(inner_type, 'inner_type', DagsterType)
         super(_DagsterNullableType, self).__init__(
@@ -353,10 +343,6 @@ class _DagsterNullableType(NullableConfigurable, DagsterType):
 
     def iterate_types(self):
         yield self.inner_type
-
-    # @property
-    # def inner_types(self):
-    #     return [self.inner_type] + list(self.inner_type.inner_types)
 
 
 def List(inner_type):
@@ -379,15 +365,8 @@ class _DagsterListType(ConfigurableFromList, DagsterType):
 
         return list(map(self.inner_type.coerce_runtime_value, value))
 
-    # @property
-    # def inner_types(self):
-    #     return [self.inner_type] + list(self.inner_type.inner_types)
-
     def iterate_types(self):
         yield self.inner_type
-
-    def construct_from_config_value(self, _config_value):
-        check.failed('should never be called')
 
 
 # HACK HACK HACK
@@ -414,7 +393,7 @@ def Dict(fields):
     return _Dict('Dict.' + str(DictCounter.get_next_count()), fields)
 
 
-class _Dict(ConfigurableComposite, DagsterType):
+class _Dict(ConfigurableObjectFromDict, DagsterType):
     '''Configuration dictionary.
 
     Typed-checked but then passed to implementations as a python dict
