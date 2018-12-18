@@ -95,6 +95,15 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
     description = '''This solid executes the following SQL statement:
     {select_statement}'''.format(select_statement=select_statement)
 
+    # n.b., we will eventually want to make this resources key configurable
+    sql_statement = (
+        'drop table if exists {table_name};\n'
+        'create table {table_name} as {select_statement};'
+    ).format(
+        table_name=table_name,
+        select_statement=select_statement,
+    )
+
     def transform_fn(info, _inputs):
         '''Inner function defining the new solid.
 
@@ -106,14 +115,6 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
             str:
                 The table name of the newly materialized SQL select statement.
         '''
-        # n.b., we will eventually want to make this resources key configurable
-        sql_statement = (
-            'drop table if exists {table_name}; '
-            'create table {table_name} as {select_statement};'
-        ).format(
-            table_name=table_name,
-            select_statement=select_statement,
-        )
 
         info.context.info(
             'Executing sql statement:\n{sql_statement}'.format(sql_statement=sql_statement)
@@ -134,6 +135,7 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
         description=description,
         metadata={
             'kind': 'sql',
+            'sql': sql_statement,
         },
     )
 
