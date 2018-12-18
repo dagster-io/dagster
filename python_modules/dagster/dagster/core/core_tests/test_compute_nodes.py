@@ -24,13 +24,13 @@ from dagster.core.execution_plan.objects import (
     StepTag,
 )
 
-from dagster.core.simple_engine import (execute_step)
+from dagster.core.execution_plan.simple_engine import execute_step
 
 from dagster.utils.test import create_test_runtime_execution_context
 
 
 def silencing_default_context():
-    return {'default': PipelineContextDefinition(context_fn=lambda *_args: ExecutionContext(), )}
+    return {'default': PipelineContextDefinition(context_fn=lambda *_args: ExecutionContext())}
 
 
 @lambda_solid

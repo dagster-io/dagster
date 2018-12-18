@@ -9,9 +9,9 @@ from dagster.utils.logging import get_formatted_stack_trace
 
 from dagster.utils.timing import time_execution_scope
 
-from .definitions import Result
+from dagster.core.definitions import Result
 
-from .errors import (
+from dagster.core.errors import (
     DagsterError,
     DagsterInvariantViolationError,
     DagsterRuntimeCoercionError,
@@ -19,9 +19,9 @@ from .errors import (
     DagsterTypeError,
 )
 
-from .execution_context import RuntimeExecutionContext
+from dagster.core.execution_context import RuntimeExecutionContext
 
-from .execution_plan.objects import (
+from .objects import (
     ExecutionPlan,
     ExecutionStep,
     StepResult,

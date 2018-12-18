@@ -65,7 +65,7 @@ from .execution_plan.objects import (
     StepTag,
 )
 
-from .simple_engine import execute_plan
+from .execution_plan.simple_engine import execute_plan
 
 
 class PipelineExecutionResult(object):
