@@ -7,6 +7,16 @@ from dagster.core.execution import (
     execute_pipeline_iterator,
 )
 
+from dagster.core.configurable import (
+    Configurable,
+    ConfigurableFromAny,
+    ConfigurableFromList,
+    ConfigurableFromNullable,
+    ConfigurableFromScalar,
+    ConfigurableObjectFromDict,
+    ConfigurableSelectorFromDict,
+)
+
 from dagster.core.execution_context import (
     ExecutionContext,
 )
