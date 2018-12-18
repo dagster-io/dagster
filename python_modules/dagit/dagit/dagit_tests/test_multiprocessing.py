@@ -51,6 +51,7 @@ def test_running():
     assert len(pipeline_run.all_logs()) > 0
 
 
+@pytest.mark.skip('Flaky. See Issue 432')
 def test_failing():
     run_id = 'run-1'
     pipeline = define_failing_pipeline()
