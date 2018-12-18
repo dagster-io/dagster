@@ -163,7 +163,9 @@ class MultiprocessingExecutionManager(PipelineExecutionManager):
 
     def join(self):
         '''Joins on all processes synchronously.'''
-        for process in self._processes:
+        with self._processes_lock:
+            processes = self._processes
+        for process in processes:
             while process.process.is_alive():
                 process.process.join(0.1)
                 gevent.sleep(0.1)
