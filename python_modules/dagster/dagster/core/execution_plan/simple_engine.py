@@ -41,7 +41,7 @@ def _all_inputs_covered(step, results):
 def execute_plan(context, execution_plan):
     check.inst_param(context, 'context', RuntimeExecutionContext)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
-    steps = execution_plan.steps
+    steps = list(execution_plan.topological_steps())
 
     intermediate_results = {}
     context.debug(

@@ -101,52 +101,65 @@ class StepTag(Enum):
     INPUT_THUNK = 'INPUT_THUNK'
 
 
-class StepInput(object):
-    def __init__(self, name, dagster_type, prev_output_handle):
-        self.name = check.str_param(name, 'name')
-        self.dagster_type = check.inst_param(dagster_type, 'dagster_type', DagsterType)
-        self.prev_output_handle = check.inst_param(
-            prev_output_handle,
-            'prev_output_handle',
-            StepOutputHandle,
+class StepInput(namedtuple('_StepInput', 'name dagster_type prev_output_handle')):
+    def __new__(cls, name, dagster_type, prev_output_handle):
+        return super(StepInput, cls).__new__(
+            cls,
+            name=check.str_param(name, 'name'),
+            dagster_type=check.inst_param(dagster_type, 'dagster_type', DagsterType),
+            prev_output_handle=check.inst_param(
+                prev_output_handle,
+                'prev_output_handle',
+                StepOutputHandle,
+            ),
         )
 
 
-class StepOutput(object):
-    def __init__(self, name, dagster_type):
-        self.name = check.str_param(name, 'name')
-        self.dagster_type = check.inst_param(dagster_type, 'dagster_type', DagsterType)
+class StepOutput(namedtuple('_StepOutput', 'name dagster_type')):
+    def __new__(cls, name, dagster_type):
+        return super(StepOutput, cls).__new__(
+            cls,
+            name=check.str_param(name, 'name'),
+            dagster_type=check.inst_param(dagster_type, 'dagster_type', DagsterType),
+        )
 
 
-class ExecutionStep(object):
-    def __init__(self, key, step_inputs, step_outputs, compute_fn, tag, solid):
-        self.key = check.str_param(key, 'key')
-
-        self.step_inputs = check.list_param(step_inputs, 'step_inputs', of_type=StepInput)
-        self._step_input_dict = {si.name: si for si in step_inputs}
-
-        self.step_outputs = check.list_param(step_outputs, 'step_outputs', of_type=StepOutput)
-        self._step_output_dict = {so.name: so for so in step_outputs}
-
-        self.compute_fn = check.callable_param(compute_fn, 'compute_fn')
-        self.tag = check.inst_param(tag, 'tag', StepTag)
-        self.solid = check.inst_param(solid, 'solid', Solid)
+class ExecutionStep(
+    namedtuple(
+        '_ExecutionStep',
+        'key step_inputs step_input_dict step_outputs step_output_dict compute_fn tag solid',
+    ),
+):
+    def __new__(cls, key, step_inputs, step_outputs, compute_fn, tag, solid):
+        return super(ExecutionStep, cls).__new__(
+            cls,
+            key=check.str_param(key, 'key'),
+            step_inputs=check.list_param(step_inputs, 'step_inputs', of_type=StepInput),
+            step_input_dict={si.name: si
+                             for si in step_inputs},
+            step_outputs=check.list_param(step_outputs, 'step_outputs', of_type=StepOutput),
+            step_output_dict={so.name: so
+                              for so in step_outputs},
+            compute_fn=check.callable_param(compute_fn, 'compute_fn'),
+            tag=check.inst_param(tag, 'tag', StepTag),
+            solid=check.inst_param(solid, 'solid', Solid),
+        )
 
     def has_step_output(self, name):
         check.str_param(name, 'name')
-        return name in self._step_output_dict
+        return name in self.step_output_dict
 
     def step_output_named(self, name):
         check.str_param(name, 'name')
-        return self._step_output_dict[name]
+        return self.step_output_dict[name]
 
     def has_step_input(self, name):
         check.str_param(name, 'name')
-        return name in self._step_input_dict
+        return name in self.step_input_dict
 
     def step_input_named(self, name):
         check.str_param(name, 'name')
-        return self._step_input_dict[name]
+        return self.step_input_dict[name]
 
 
 ExecutionSubPlan = namedtuple(
