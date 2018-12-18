@@ -61,15 +61,19 @@ class PipelineRun(object):
         if not self._flush_queued:
             self._queue_timeout = time.time()
             self._flush_queued = True
+            # wait till we have elapsed 1 second from first event, while
+            # letting other gevent threads do the work (0.1s is an arbitrary chosen sleep cycle)
             while (time.time() - self._queue_timeout) < 1:
                 gevent.sleep(0.1)
+            events = None
             with self._log_queue_lock:
                 if self._log_queue:
-                    events = self._log_queue
+                    events = self._log_queue.slice()
                     self._log_queue = []
 
-                    for subscriber in self._subscribers:
-                        subscriber.handle_new_events(events)
+            if events:
+                for subscriber in self._subscribers:
+                    subscriber.handle_new_events(events)
             self._flush_queued = False
 
     def logs_after(self, cursor):
