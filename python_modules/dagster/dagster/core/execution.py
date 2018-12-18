@@ -56,10 +56,13 @@ from .evaluator import (
 from .events import construct_event_logger
 
 from .execution_plan import (
+    create_execution_plan_core,
     ExecutionPlanInfo,
+)
+
+from .execution_plan.objects import (
     StepResult,
     StepTag,
-    create_execution_plan_core,
 )
 
 from .simple_engine import execute_plan

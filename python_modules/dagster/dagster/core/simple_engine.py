@@ -21,7 +21,7 @@ from .errors import (
 
 from .execution_context import RuntimeExecutionContext
 
-from .execution_plan import (
+from .execution_plan.objects import (
     ExecutionPlan,
     ExecutionStep,
     StepResult,

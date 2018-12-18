@@ -9,19 +9,19 @@ from dagster import (
     lambda_solid,
 )
 
-from dagster.core.execution import (
-    create_execution_plan,
-    ExecutionPlanInfo,
-    RuntimeExecutionContext,
-)
+from dagster.core.execution import create_execution_plan
 
 from dagster.core.definitions import ExecutionGraph
 
-from dagster.core.execution_plan import (
-    ExecutionStep,
-    StepTag,
+from dagster.core.execution_plan.create import (
+    ExecutionPlanInfo,
     create_execution_plan_core,
     create_execution_plan_from_steps,
+)
+
+from dagster.core.execution_plan.objects import (
+    ExecutionStep,
+    StepTag,
 )
 
 from dagster.core.simple_engine import (execute_step)
