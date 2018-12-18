@@ -22,6 +22,7 @@ from .errors import (
 from .execution_context import RuntimeExecutionContext
 
 from .execution_plan import (
+    ExecutionPlan,
     ExecutionStep,
     StepResult,
     StepOutputHandle,
@@ -37,9 +38,10 @@ def _all_inputs_covered(step, results):
     return True
 
 
-def execute_steps(context, steps):
+def execute_plan(context, execution_plan):
     check.inst_param(context, 'context', RuntimeExecutionContext)
-    check.list_param(steps, 'steps', of_type=ExecutionStep)
+    check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+    steps = execution_plan.steps
 
     intermediate_results = {}
     context.debug(

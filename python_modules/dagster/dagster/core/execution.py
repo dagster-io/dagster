@@ -44,12 +44,10 @@ from .execution_context import (
 
 from .errors import (
     DagsterInvariantViolationError,
-    DagsterTypeError,
     DagsterUserCodeExecutionError,
 )
 
 from .evaluator import (
-    DagsterEvaluateConfigValueError,
     EvaluationError,
     evaluate_config_value,
     friendly_string_for_error,
@@ -64,7 +62,7 @@ from .execution_plan import (
     create_execution_plan_core,
 )
 
-from .simple_engine import (execute_steps)
+from .simple_engine import execute_plan
 
 
 class PipelineExecutionResult(object):
@@ -477,7 +475,7 @@ def _execute_graph_iterator(context, execution_graph, environment):
 
     solid = None
     solid_results = []
-    for step_result in execute_steps(context, steps):
+    for step_result in execute_plan(context, execution_plan):
         step = step_result.step
 
         if solid and solid is not step.solid:
