@@ -44,12 +44,10 @@ from .execution_context import (
 
 from .errors import (
     DagsterInvariantViolationError,
-    DagsterTypeError,
     DagsterUserCodeExecutionError,
 )
 
 from .evaluator import (
-    DagsterEvaluateConfigValueError,
     EvaluationError,
     evaluate_config_value,
     friendly_string_for_error,
@@ -58,12 +56,16 @@ from .evaluator import (
 from .events import construct_event_logger
 
 from .execution_plan import (
+    create_execution_plan_core,
     ExecutionPlanInfo,
+)
+
+from .execution_plan.objects import (
     StepResult,
     StepTag,
-    create_execution_plan_core,
-    execute_steps,
 )
+
+from .execution_plan.simple_engine import execute_plan
 
 
 class PipelineExecutionResult(object):
@@ -475,25 +477,27 @@ def _execute_graph_iterator(context, execution_graph, environment):
     check.invariant(len(steps[0].step_inputs) == 0)
 
     solid = None
-    solid_results = []
-    for step_result in execute_steps(context, steps):
+    step_results = []
+    for step_result in execute_plan(context, execution_plan):
+        check.inst_param(step_result, 'step_result', StepResult)
+
         step = step_result.step
 
         if solid and solid is not step.solid:
-            yield SolidExecutionResult.from_results(context, solid_results)
-            solid_results = []
+            yield SolidExecutionResult.from_results(context, step_results)
+            step_results = []
 
         if not step_result.success:
-            solid_results.append(step_result)
-            yield SolidExecutionResult.from_results(context, solid_results)
-            solid_results = []
+            step_results.append(step_result)
+            yield SolidExecutionResult.from_results(context, step_results)
+            step_results = []
             return
 
         solid = step.solid
-        solid_results.append(step_result)
+        step_results.append(step_result)
 
-    if solid and solid_results:
-        yield SolidExecutionResult.from_results(context, solid_results)
+    if solid and step_results:
+        yield SolidExecutionResult.from_results(context, step_results)
 
 
 class ReentrantInfo(namedtuple('_ReentrantInfo', 'run_id context_stack event_callback')):

@@ -136,13 +136,11 @@ def test_all_types_provided():
         },
     )
 
-
     all_types = list(pipeline_def.all_types())
     type_names = set(t.name for t in all_types)
     assert 'SomeContextNamedDict' in type_names
     assert 'Pipeline.ContextDefinitionConfig.SomeContext' in type_names
     assert 'Pipeline.ContextDefinitionConfig.SomeContext.Resources' in type_names
-
 
 
 def test_provided_default_config():

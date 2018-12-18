@@ -9,26 +9,28 @@ from dagster import (
     lambda_solid,
 )
 
-from dagster.core.execution import (
-    create_execution_plan,
-    ExecutionPlanInfo,
-    RuntimeExecutionContext,
-)
+from dagster.core.execution import create_execution_plan
 
 from dagster.core.definitions import ExecutionGraph
 
-from dagster.core.execution_plan import (
-    ExecutionStep,
-    StepTag,
+from dagster.core.execution_plan.create import (
+    ExecutionPlanInfo,
     create_execution_plan_core,
     create_execution_plan_from_steps,
 )
+
+from dagster.core.execution_plan.objects import (
+    ExecutionStep,
+    StepTag,
+)
+
+from dagster.core.execution_plan.simple_engine import execute_step
 
 from dagster.utils.test import create_test_runtime_execution_context
 
 
 def silencing_default_context():
-    return {'default': PipelineContextDefinition(context_fn=lambda *_args: ExecutionContext(), )}
+    return {'default': PipelineContextDefinition(context_fn=lambda *_args: ExecutionContext())}
 
 
 @lambda_solid
@@ -58,7 +60,7 @@ def test_compute_noop_node_core():
 
     assert len(plan.steps) == 1
 
-    outputs = list(plan.steps[0].execute(create_test_runtime_execution_context(), {}))
+    outputs = list(execute_step(plan.steps[0], create_test_runtime_execution_context(), {}))
 
     assert outputs[0].success_data.value == 'foo'
 
@@ -71,7 +73,7 @@ def test_compute_noop_node():
     plan = create_execution_plan(pipeline)
 
     assert len(plan.steps) == 1
-    outputs = list(plan.steps[0].execute(create_test_runtime_execution_context(), {}))
+    outputs = list(execute_step(plan.steps[0], create_test_runtime_execution_context(), {}))
 
     assert outputs[0].success_data.value == 'foo'
 
