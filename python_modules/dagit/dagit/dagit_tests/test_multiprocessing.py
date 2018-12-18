@@ -26,6 +26,7 @@ from dagit.pipeline_execution_manager import MultiprocessingExecutionManager
 from dagit.pipeline_run_storage import PipelineRun, PipelineRunStatus
 
 
+@pytest.mark.skip('Flaky. See Issue 432')
 def test_running():
     run_id = 'run-1'
     pipeline = define_passing_pipeline()
