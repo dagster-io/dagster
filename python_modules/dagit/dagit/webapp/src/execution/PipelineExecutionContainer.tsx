@@ -101,22 +101,9 @@ export default class PipelineExecutionContainer extends React.Component<
         }
       });
 
-      let queued: PipelineRunLogsSubscription[] = [];
-      let timer = setInterval(() => {
-        if (queued.length) {
-          this.handleNewMessages(queued);
-          queued = [];
-        }
-      }, 200);
-
       this._subscriptions[run.runId] = observable.subscribe({
-        next: msg => msg.data && queued.push(msg.data),
-        complete: () => {
-          console.log("sub complete");
-          clearInterval(timer);
-          if (queued.length) {
-            this.handleNewMessages(queued);
-          }
+        next: msg => {
+          this.handleNewMessages(msg.data);
         }
       });
     });
@@ -200,8 +187,8 @@ export default class PipelineExecutionContainer extends React.Component<
     }
   };
 
-  handleNewMessages = (results: PipelineRunLogsSubscription[]) => {
-    const runId = results[0].pipelineRunLogs.run.runId;
+  handleNewMessages = (result: PipelineRunLogsSubscription) => {
+    const runId = result.pipelineRunLogs.messages[0].run.runId;
     const id = `PipelineRun.${runId}`;
 
     let localData: PipelineRunLogsUpdateFragment | null = this.props.client.readFragment(
@@ -217,17 +204,13 @@ export default class PipelineExecutionContainer extends React.Component<
     localData = produce(
       localData as PipelineRunLogsUpdateFragment,
       draftData => {
-        results.forEach(data => {
-          draftData.logs.nodes.push(data.pipelineRunLogs);
-          if (data.pipelineRunLogs.__typename === "PipelineStartEvent") {
+        result.pipelineRunLogs.messages.forEach(message => {
+          draftData.logs.nodes.push(message);
+          if (message.__typename === "PipelineStartEvent") {
             draftData.status = PipelineRunStatus.STARTED;
-          } else if (
-            data.pipelineRunLogs.__typename === "PipelineSuccessEvent"
-          ) {
+          } else if (message.__typename === "PipelineSuccessEvent") {
             draftData.status = PipelineRunStatus.SUCCESS;
-          } else if (
-            data.pipelineRunLogs.__typename === "PipelineFailureEvent"
-          ) {
+          } else if (message.__typename === "PipelineFailureEvent") {
             draftData.status = PipelineRunStatus.FAILURE;
           }
         });
@@ -318,11 +301,13 @@ const START_PIPELINE_EXECUTION_MUTATION = gql`
 const PIPELINE_RUN_LOGS_SUBSCRIPTION = gql`
   subscription PipelineRunLogsSubscription($runId: ID!, $after: Cursor) {
     pipelineRunLogs(runId: $runId, after: $after) {
-      ... on MessageEvent {
-        run {
-          runId
+      messages {
+        ... on MessageEvent {
+          run {
+            runId
+          }
+          ...PipelineExecutionPipelineRunEventFragment
         }
-        ...PipelineExecutionPipelineRunEventFragment
       }
     }
   }

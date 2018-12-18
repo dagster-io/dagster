@@ -85,7 +85,7 @@ class DauphinSubscription(dauphin.ObjectType):
         name = 'Subscription'
 
     pipelineRunLogs = dauphin.Field(
-        dauphin.NonNull('PipelineRunEvent'),
+        dauphin.NonNull('PipelineRunLogsSubscriptionPayload'),
         runId=dauphin.Argument(dauphin.NonNull(dauphin.ID)),
         after=dauphin.Argument('Cursor')
     )

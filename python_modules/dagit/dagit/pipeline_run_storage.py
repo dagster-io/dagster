@@ -1,5 +1,7 @@
+import time
 from collections import OrderedDict
 from enum import Enum
+import gevent
 import logging
 from rx import Observable
 from dagster import check
@@ -50,6 +52,25 @@ class PipelineRun(object):
         self.pipeline_name = pipeline_name
         self.config = config
         self.execution_plan = execution_plan
+        self._log_queue_lock = gevent.lock.Semaphore()
+        self._log_queue = []
+        self._flush_queued = False
+        self._queue_timeout = None
+
+    def _enqueue_flush_logs(self):
+        if not self._flush_queued:
+            self._queue_timeout = time.time()
+            self._flush_queued = True
+            while (time.time() - self._queue_timeout) < 1:
+                gevent.sleep(0.1)
+            with self._log_queue_lock:
+                if self._log_queue:
+                    events = self._log_queue
+                    self._log_queue = []
+
+                    for subscriber in self._subscribers:
+                        subscriber.handle_new_events(events)
+            self._flush_queued = False
 
     def logs_after(self, cursor):
         cursor = int(cursor) + 1
@@ -68,9 +89,9 @@ class PipelineRun(object):
         elif new_event.event_type == EventType.PIPELINE_FAILURE:
             self._status = PipelineRunStatus.FAILURE
 
-        self._logs.append(new_event)
-        for subscriber in self._subscribers:
-            subscriber.handle_new_event(new_event)
+        with self._log_queue_lock:
+            self._log_queue.append(new_event)
+        gevent.spawn(self._enqueue_flush_logs)
 
     @property
     def run_id(self):
@@ -101,6 +122,6 @@ class PipelineRunObservableSubscribe(object):
             self.observer.on_next(event)
         self.pipeline_run.subscribe(self)
 
-    def handle_new_event(self, event):
-        check.inst_param(event, 'event', EventRecord)
-        self.observer.on_next(event)
+    def handle_new_events(self, events):
+        check.list_param(events, 'events', EventRecord)
+        self.observer.on_next(events)
