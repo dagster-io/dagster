@@ -1,7 +1,9 @@
 import time
+import copy
 from collections import OrderedDict
 from enum import Enum
 import gevent
+import gevent.lock
 import logging
 from rx import Observable
 from dagster import check
@@ -58,22 +60,28 @@ class PipelineRun(object):
         self._queue_timeout = None
 
     def _enqueue_flush_logs(self):
-        if not self._flush_queued:
-            self._queue_timeout = time.time()
-            self._flush_queued = True
-            # wait till we have elapsed 1 second from first event, while
-            # letting other gevent threads do the work (0.1s is an arbitrary chosen sleep cycle)
-            while (time.time() - self._queue_timeout) < 1:
-                gevent.sleep(0.1)
-            events = None
-            with self._log_queue_lock:
-                if self._log_queue:
-                    events = self._log_queue.slice()
-                    self._log_queue = []
+        with self._log_queue_lock:
+            if not self._flush_queued:
+                self._queue_timeout = time.time()
+                self._flush_queued = True
+            else:
+                return
 
-            if events:
-                for subscriber in self._subscribers:
-                    subscriber.handle_new_events(events)
+        # wait till we have elapsed 1 second from first event, while
+        # letting other gevent threads do the work (0.1s is an arbitrary chosen sleep cycle)
+        while (time.time() - self._queue_timeout) < 1:
+            gevent.sleep(0.1)
+        events = None
+        with self._log_queue_lock:
+            if self._log_queue:
+                events = copy.copy(self._log_queue)
+                self._log_queue = []
+
+        if events:
+            for subscriber in self._subscribers:
+                subscriber.handle_new_events(events)
+
+        with self._log_queue_lock:
             self._flush_queued = False
 
     def logs_after(self, cursor):
@@ -93,6 +101,7 @@ class PipelineRun(object):
         elif new_event.event_type == EventType.PIPELINE_FAILURE:
             self._status = PipelineRunStatus.FAILURE
 
+        self._logs.append(new_event)
         with self._log_queue_lock:
             self._log_queue.append(new_event)
         gevent.spawn(self._enqueue_flush_logs)
@@ -122,8 +131,7 @@ class PipelineRunObservableSubscribe(object):
 
     def __call__(self, observer):
         self.observer = observer
-        for event in self.pipeline_run.logs_after(self.start_cursor):
-            self.observer.on_next(event)
+        self.observer.on_next(self.pipeline_run.logs_after(self.start_cursor))
         self.pipeline_run.subscribe(self)
 
     def handle_new_events(self, events):
