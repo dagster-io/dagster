@@ -2,9 +2,16 @@ from collections import namedtuple
 from enum import Enum
 import toposort
 
-from dagster import check
-from dagster.core.definitions import Solid
+from dagster import (
+    check,
+    config,
+)
+from dagster.core.definitions import (
+    ExecutionGraph,
+    Solid,
+)
 from dagster.core.errors import DagsterError
+from dagster.core.execution_context import RuntimeExecutionContext
 from dagster.core.types import DagsterType
 
 
@@ -142,6 +149,12 @@ class ExecutionStep(object):
         return self._step_input_dict[name]
 
 
+ExecutionSubPlan = namedtuple(
+    'ExecutionSubPlan',
+    'steps terminal_step_output_handle',
+)
+
+
 class ExecutionPlan(object):
     def __init__(self, step_dict, deps):
         self.step_dict = check.dict_param(
@@ -160,3 +173,21 @@ class ExecutionPlan(object):
         sorted_step_guids = toposort.toposort_flatten(self.deps)
         for step_guid in sorted_step_guids:
             yield self.step_dict[step_guid]
+
+
+class ExecutionPlanInfo(namedtuple('_ExecutionPlanInfo', 'context execution_graph environment')):
+    def __new__(cls, context, execution_graph, environment):
+        return super(ExecutionPlanInfo, cls).__new__(
+            cls,
+            check.inst_param(context, 'context', RuntimeExecutionContext),
+            check.inst_param(execution_graph, 'execution_graph', ExecutionGraph),
+            check.inst_param(environment, 'environment', config.Environment),
+        )
+
+    @property
+    def pipeline(self):
+        return self.execution_graph.pipeline
+
+    @property
+    def serialize_intermediates(self):
+        return self.environment.execution.serialize_intermediates
