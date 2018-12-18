@@ -123,6 +123,13 @@ class DauphinLogMessageConnection(dauphin.ObjectType):
         )
 
 
+class DaupinPipelineRunLogsSubscriptionPayload(dauphin.ObjectType):
+    class Meta:
+        name = 'PipelineRunLogsSubscriptionPayload'
+
+    messages = dauphin.non_null_list('PipelineRunEvent')
+
+
 class DauphinLogMessageEvent(dauphin.ObjectType):
     class Meta:
         name = 'LogMessageEvent'

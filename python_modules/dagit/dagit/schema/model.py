@@ -153,7 +153,8 @@ def get_pipeline_run_observable(info, runId, after=None):
 
     def get_observable(pipeline):
         return run.observable_after_cursor(after).map(
-            lambda event: info.schema.type_named('PipelineRunEvent').from_dagster_event(info, event, pipeline)
+            lambda events: info.schema.type_named('PipelineRunLogsSubscriptionPayload')( messages=[        info.schema.type_named('PipelineRunEvent').from_dagster_event(info, event, pipeline) for event in events]
+            )
         )
 
     return _pipeline_or_error_from_container(

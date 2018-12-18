@@ -1,5 +1,9 @@
+import time
+import copy
 from collections import OrderedDict
 from enum import Enum
+import gevent
+import gevent.lock
 import logging
 from rx import Observable
 from dagster import check
@@ -50,6 +54,35 @@ class PipelineRun(object):
         self.pipeline_name = pipeline_name
         self.config = config
         self.execution_plan = execution_plan
+        self._log_queue_lock = gevent.lock.Semaphore()
+        self._log_queue = []
+        self._flush_queued = False
+        self._queue_timeout = None
+
+    def _enqueue_flush_logs(self):
+        with self._log_queue_lock:
+            if not self._flush_queued:
+                self._queue_timeout = time.time()
+                self._flush_queued = True
+            else:
+                return
+
+        # wait till we have elapsed 1 second from first event, while
+        # letting other gevent threads do the work (0.1s is an arbitrary chosen sleep cycle)
+        while (time.time() - self._queue_timeout) < 1:
+            gevent.sleep(0.1)
+        events = None
+        with self._log_queue_lock:
+            if self._log_queue:
+                events = copy.copy(self._log_queue)
+                self._log_queue = []
+
+        if events:
+            for subscriber in self._subscribers:
+                subscriber.handle_new_events(events)
+
+        with self._log_queue_lock:
+            self._flush_queued = False
 
     def logs_after(self, cursor):
         cursor = int(cursor) + 1
@@ -69,8 +102,9 @@ class PipelineRun(object):
             self._status = PipelineRunStatus.FAILURE
 
         self._logs.append(new_event)
-        for subscriber in self._subscribers:
-            subscriber.handle_new_event(new_event)
+        with self._log_queue_lock:
+            self._log_queue.append(new_event)
+        gevent.spawn(self._enqueue_flush_logs)
 
     @property
     def run_id(self):
@@ -97,10 +131,9 @@ class PipelineRunObservableSubscribe(object):
 
     def __call__(self, observer):
         self.observer = observer
-        for event in self.pipeline_run.logs_after(self.start_cursor):
-            self.observer.on_next(event)
+        self.observer.on_next(self.pipeline_run.logs_after(self.start_cursor))
         self.pipeline_run.subscribe(self)
 
-    def handle_new_event(self, event):
-        check.inst_param(event, 'event', EventRecord)
-        self.observer.on_next(event)
+    def handle_new_events(self, events):
+        check.list_param(events, 'events', EventRecord)
+        self.observer.on_next(events)
