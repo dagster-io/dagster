@@ -1,12 +1,12 @@
 from dagster import check
 
 from dagster.core.definitions import (
-    Solid,
+    ExpectationDefinition,
+    ExpectationExecutionInfo,
     InputDefinition,
     OutputDefinition,
     Result,
-    ExpectationDefinition,
-    ExpectationExecutionInfo,
+    Solid,
 )
 
 from dagster.core.errors import DagsterExpectationFailedError
@@ -21,46 +21,10 @@ from .objects import (
     StepTag,
 )
 
+from .utility import create_join_step
+
 EXPECTATION_INPUT = 'expectation_input'
 EXPECTATION_VALUE_OUTPUT = 'expectation_value'
-
-JOIN_OUTPUT = 'join_output'
-
-
-def __join_lambda(_context, _step, inputs):
-    yield Result(output_name=JOIN_OUTPUT, value=list(inputs.values())[0])
-
-
-# Move to generalized utility file
-def _create_join_step(solid, step_key, prev_steps, prev_output_name):
-    check.inst_param(solid, 'solid', Solid)
-    check.str_param(step_key, 'step_key')
-    check.list_param(prev_steps, 'prev_steps', of_type=ExecutionStep)
-    check.invariant(len(prev_steps) > 0)
-    check.str_param(prev_output_name, 'output_name')
-
-    step_inputs = []
-    seen_dagster_type = None
-    for prev_step in prev_steps:
-        prev_step_output = prev_step.step_output_named(prev_output_name)
-
-        if seen_dagster_type is None:
-            seen_dagster_type = prev_step_output.dagster_type
-        else:
-            check.invariant(seen_dagster_type == prev_step_output.dagster_type)
-
-        output_handle = StepOutputHandle(prev_step, prev_output_name)
-
-        step_inputs.append(StepInput(prev_step.key, prev_step_output.dagster_type, output_handle))
-
-    return ExecutionStep(
-        key=step_key,
-        step_inputs=step_inputs,
-        step_outputs=[StepOutput(JOIN_OUTPUT, seen_dagster_type)],
-        compute_fn=__join_lambda,
-        tag=StepTag.JOIN,
-        solid=solid,
-    )
 
 
 def _create_expectation_lambda(solid, inout_def, expectation_def, internal_output_name):
@@ -120,7 +84,7 @@ def create_expectations_subplan(solid, inout_def, prev_step_output_handle, tag):
         input_expect_steps.append(expect_step)
         steps.append(expect_step)
 
-    join_step = _create_join_step(
+    join_step = create_join_step(
         solid,
         '{solid}.{desc_key}.{name}.expectations.join'.format(
             solid=solid.name,

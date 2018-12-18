@@ -8,15 +8,11 @@ from dagster import check
 from dagster.core.definitions import (
     InputDefinition,
     OutputDefinition,
-    Result,
     Solid,
     SolidOutputHandle,
-    TransformExecutionInfo,
 )
 
 from dagster.core.errors import DagsterInvariantViolationError
-
-from dagster.core.execution_context import RuntimeExecutionContext
 
 from .expectations import (
     create_expectations_subplan,
@@ -31,81 +27,14 @@ from .objects import (
     ExecutionStep,
     ExecutionSubPlan,
     StepInput,
-    StepOutput,
     StepOutputHandle,
     StepTag,
 )
 
-from .serialization import (
-    decorate_with_serialization,
-)
+from .serialization import decorate_with_serialization
 
-def _yield_transform_results(context, step, conf, inputs):
-    gen = step.solid.definition.transform_fn(
-        TransformExecutionInfo(context, conf, step.solid.definition),
-        inputs,
-    )
+from .transform import create_transform_step
 
-    if isinstance(gen, Result):
-        raise DagsterInvariantViolationError(
-            (
-                'Transform for solid {solid_name} returned a Result rather than ' +
-                'yielding it. The transform_fn of the core SolidDefinition must yield ' +
-                'its results'
-            ).format(solid_name=step.solid.name)
-        )
-
-    if gen is None:
-        return
-
-    for result in gen:
-        if not isinstance(result, Result):
-            raise DagsterInvariantViolationError(
-                (
-                    'Transform for solid {solid_name} yielded {result} rather an ' +
-                    'an instance of the Result class.'
-                ).format(
-                    result=repr(result),
-                    solid_name=step.solid.name,
-                )
-            )
-
-        context.info(
-            'Solid {solid} emitted output "{output}" value {value}'.format(
-                solid=step.solid.name,
-                output=result.output_name,
-                value=repr(result.value),
-            )
-        )
-        yield result
-
-def _execute_core_transform(context, step, conf, inputs):
-    '''
-    Execute the user-specified transform for the solid. Wrap in an error boundary and do
-    all relevant logging and metrics tracking
-    '''
-    check.inst_param(context, 'context', RuntimeExecutionContext)
-    check.inst_param(step, 'step', ExecutionStep)
-    check.dict_param(inputs, 'inputs', key_type=str)
-
-    solid = step.solid
-
-    context.debug('Executing core transform for solid {solid}.'.format(solid=solid.name))
-
-    all_results = list(_yield_transform_results(context, step, conf, inputs))
-
-    if len(all_results) != len(solid.definition.output_defs):
-        emitted_result_names = set([r.output_name for r in all_results])
-        solid_output_names = set([output_def.name for output_def in solid.definition.output_defs])
-        omitted_outputs = solid_output_names.difference(emitted_result_names)
-        context.info(
-            'Solid {solid} did not fire outputs {outputs}'.format(
-                solid=solid.name,
-                outputs=repr(omitted_outputs),
-            )
-        )
-
-    return all_results
 
 def get_solid_user_config(execution_info, pipeline_solid):
     check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
@@ -116,16 +45,12 @@ def get_solid_user_config(execution_info, pipeline_solid):
     return solid_configs[name].config if name in solid_configs else None
 
 
-
-
-
 # This is the state that is built up during the execution plan build process.
 # steps is just a list of the steps that have been created
 # step_output_map maps logical solid outputs (solid_name, output_name) to particular
 # step outputs. This covers the case where a solid maps to multiple steps
 # and one wants to be able to attach to the logical output of a solid during execution
 StepBuilderState = namedtuple('StepBuilderState', 'steps step_output_map')
-
 
 
 class StepOutputMap(dict):
@@ -137,14 +62,6 @@ class StepOutputMap(dict):
         check.inst_param(key, 'key', SolidOutputHandle)
         check.inst_param(val, 'val', StepOutputHandle)
         return dict.__setitem__(self, key, val)
-
-
-
-
-
-
-
-
 
 
 def create_execution_plan_core(execution_info):
@@ -229,8 +146,6 @@ def create_subplan_for_input(execution_info, solid, prev_step_output_handle, inp
         )
 
 
-
-
 def create_subplan_for_output(execution_info, solid, solid_transform_step, output_def):
     check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
     check.inst_param(solid, 'solid', Solid)
@@ -240,31 +155,6 @@ def create_subplan_for_output(execution_info, solid, solid_transform_step, outpu
     subplan = decorate_with_expectations(execution_info, solid, solid_transform_step, output_def)
 
     return decorate_with_serialization(execution_info, solid, output_def, subplan)
-
-
-
-
-def create_transform_step(solid, step_inputs, conf):
-    check.inst_param(solid, 'solid', Solid)
-    check.list_param(step_inputs, 'step_inputs', of_type=StepInput)
-
-    return ExecutionStep(
-        key='{solid.name}.transform'.format(solid=solid),
-        step_inputs=step_inputs,
-        step_outputs=[
-            StepOutput(name=output_def.name, dagster_type=output_def.dagster_type)
-            for output_def in solid.definition.output_defs
-        ],
-        compute_fn=lambda context, step, inputs: _execute_core_transform(
-            context,
-            step,
-            conf,
-            inputs,
-        ),
-        tag=StepTag.TRANSFORM,
-        solid=solid,
-    )
-
 
 
 def create_step_inputs(info, state, pipeline_solid):

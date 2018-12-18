@@ -1,9 +1,9 @@
 from dagster import check
 
 from dagster.core.definitions import (
+    InputDefinition,
     Result,
     Solid,
-    InputDefinition,
 )
 
 from dagster.core.errors import DagsterInvariantViolationError
