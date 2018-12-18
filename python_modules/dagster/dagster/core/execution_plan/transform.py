@@ -4,9 +4,7 @@ from dagster.core.definitions import (
     Solid,
     TransformExecutionInfo,
 )
-from dagster.core.errors import (
-    DagsterInvariantViolationError
-)
+from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution_context import RuntimeExecutionContext
 
 from .objects import (
@@ -15,6 +13,7 @@ from .objects import (
     StepOutput,
     StepTag,
 )
+
 
 def create_transform_step(solid, step_inputs, conf):
     check.inst_param(solid, 'solid', Solid)
@@ -36,6 +35,7 @@ def create_transform_step(solid, step_inputs, conf):
         tag=StepTag.TRANSFORM,
         solid=solid,
     )
+
 
 def _yield_transform_results(context, step, conf, inputs):
     gen = step.solid.definition.transform_fn(

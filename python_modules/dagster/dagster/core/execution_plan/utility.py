@@ -19,7 +19,6 @@ def __join_lambda(_context, _step, inputs):
     yield Result(output_name=JOIN_OUTPUT, value=list(inputs.values())[0])
 
 
-# Move to generalized utility file
 def create_join_step(solid, step_key, prev_steps, prev_output_name):
     check.inst_param(solid, 'solid', Solid)
     check.str_param(step_key, 'step_key')
