@@ -62,8 +62,9 @@ from .execution_plan import (
     StepResult,
     StepTag,
     create_execution_plan_core,
-    execute_steps,
 )
+
+from .simple_engine import (execute_steps)
 
 
 class PipelineExecutionResult(object):

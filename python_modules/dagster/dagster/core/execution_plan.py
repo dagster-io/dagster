@@ -1,11 +1,8 @@
 from __future__ import print_function
 from collections import (namedtuple, defaultdict)
-from contextlib import contextmanager
 from enum import Enum
 import os
-import sys
 
-from future.utils import raise_from
 
 import toposort
 
@@ -15,9 +12,6 @@ from dagster import (
 )
 
 from dagster.utils.indenting_printer import IndentingPrinter
-from dagster.utils.logging import get_formatted_stack_trace
-
-from dagster.utils.timing import time_execution_scope
 
 from .definitions import (
     ExecutionGraph,
@@ -37,9 +31,6 @@ from .errors import (
     DagsterError,
     DagsterExpectationFailedError,
     DagsterInvariantViolationError,
-    DagsterRuntimeCoercionError,
-    DagsterTypeError,
-    DagsterUserCodeExecutionError,
 )
 
 from .types import DagsterType
@@ -140,42 +131,6 @@ class StepResult(namedtuple(
         )
 
 
-@contextmanager
-def _execution_step_error_boundary(context, step, msg, **kwargs):
-    '''
-    Wraps the execution of user-space code in an error boundary. This places a uniform
-    policy around an user code invoked by the framework. This ensures that all user
-    errors are wrapped in the SolidUserCodeExecutionError, and that the original stack
-    trace of the user error is preserved, so that it can be reported without confusing
-    framework code in the stack trace, if a tool author wishes to do so. This has
-    been especially help in a notebooking context.
-    '''
-    check.inst_param(context, 'context', RuntimeExecutionContext)
-    check.str_param(msg, 'msg')
-
-    context.events.execution_plan_step_start(step.key)
-    try:
-        with time_execution_scope() as timer_result:
-            yield
-
-        context.events.execution_plan_step_success(step.key, timer_result.millis)
-    except Exception as e:  # pylint: disable=W0703
-        context.events.execution_plan_step_failure(step.key, sys.exc_info())
-
-        stack_trace = get_formatted_stack_trace(e)
-        context.error(str(e), stack_trace=stack_trace)
-
-        if isinstance(e, DagsterError):
-            raise e
-        else:
-            raise_from(
-                DagsterUserCodeExecutionError(
-                    msg.format(**kwargs),
-                    user_exception=e,
-                    original_exc_info=sys.exc_info(),
-                ),
-                e,
-            )
 
 
 class StepTag(Enum):
@@ -292,180 +247,25 @@ class ExecutionStep(object):
         self.tag = check.inst_param(tag, 'tag', StepTag)
         self.solid = check.inst_param(solid, 'solid', Solid)
 
-    def has_step(self, name):
+    def has_step_output(self, name):
         check.str_param(name, 'name')
         return name in self._step_output_dict
 
-    def step_named(self, name):
+    def step_output_named(self, name):
         check.str_param(name, 'name')
         return self._step_output_dict[name]
 
-    def _create_step_result(self, result):
-        check.inst_param(result, 'result', Result)
-
-        step_output = self.step_named(result.output_name)
-
-        try:
-            coerced_value = step_output.dagster_type.coerce_runtime_value(result.value)
-        except DagsterRuntimeCoercionError as e:
-            raise DagsterInvariantViolationError(
-                '''Solid {step.solid.name} output name {output_name} output {result.value}
-                type failure: {error_msg}'''.format(
-                    step=self,
-                    result=result,
-                    error_msg=','.join(e.args),
-                    output_name=result.output_name,
-                )
-            )
-
-        return StepResult.success_result(
-            step=self,
-            tag=self.tag,
-            success_data=StepSuccessData(
-                output_name=result.output_name,
-                value=coerced_value,
-            ),
-        )
-
-    def _get_evaluated_input(self, input_name, input_value):
-        step_input = self._step_input_dict[input_name]
-        try:
-            return step_input.dagster_type.coerce_runtime_value(input_value)
-        except DagsterRuntimeCoercionError as evaluate_error:
-            raise_from(
-                DagsterTypeError(
-                    (
-                        'Solid {step.solid.name} input {input_name} received value {input_value} ' +
-                        'which does not pass the typecheck for Dagster type ' +
-                        '{step_input.dagster_type.name}. Step {step.key}'
-                    ).format(
-                        step=self,
-                        input_name=input_name,
-                        input_value=input_value,
-                        step_input=step_input,
-                    )
-                ),
-                evaluate_error,
-            )
-
-    def _compute_result_list(self, context, evaluated_inputs):
-        error_str = 'Error occured during step {key}'.format(key=self.key)
-
-        def_name = self.solid.definition.name
-
-        with context.values({'solid': self.solid.name, 'solid_definition': def_name}):
-            with _execution_step_error_boundary(context, self, error_str):
-                gen = self.compute_fn(context, self, evaluated_inputs)
-
-                if gen is None:
-                    check.invariant(not self.step_outputs)
-                    return
-
-                results = list(gen)
-
-            return results
-
-    def _error_check_results(self, results):
-        seen_outputs = set()
-        for result in results:
-            if not self.has_step(result.output_name):
-                output_names = list(
-                    [output_def.name for output_def in self.solid.definition.output_defs]
-                )
-                raise DagsterInvariantViolationError(
-                    '''Core transform for {step.solid.name} returned an output
-                    {result.output_name} that does not exist. The available
-                    outputs are {output_names}'''
-                    .format(step=self, result=result, output_names=output_names)
-                )
-
-            if result.output_name in seen_outputs:
-                raise DagsterInvariantViolationError(
-                    '''Core transform for {step.solid.name} returned an output
-                    {result.output_name} multiple times'''.format(step=self, result=result)
-                )
-
-            seen_outputs.add(result.output_name)
-
-    def _execute_steps_core_loop(self, context, inputs):
-        evaluated_inputs = {}
-        # do runtime type checks of inputs versus step inputs
-        for input_name, input_value in inputs.items():
-            evaluated_inputs[input_name] = self._get_evaluated_input(input_name, input_value)
-
-        results = self._compute_result_list(context, evaluated_inputs)
-
-        self._error_check_results(results)
-
-        return [self._create_step_result(result) for result in results]
-
-    def execute(self, context, inputs):
-        check.inst_param(context, 'context', RuntimeExecutionContext)
-        check.dict_param(inputs, 'inputs', key_type=str)
-
-        try:
-            for step_result in self._execute_steps_core_loop(context, inputs):
-                yield step_result
-
-        except DagsterError as dagster_error:
-            context.error(str(dagster_error))
-            yield StepResult.failure_result(
-                step=self,
-                tag=self.tag,
-                failure_data=StepFailureData(dagster_error=dagster_error, ),
-            )
-            return
-
-    def output_named(self, name):
+    def has_step_input(self, name):
         check.str_param(name, 'name')
+        return name in self._step_input_dict
 
-        for step_output in self.step_outputs:
-            if step_output.name == name:
-                return step_output
-
-        check.failed('output {name} not found'.format(name=name))
-
-
-def _all_inputs_covered(step, results):
-    for step_input in step.step_inputs:
-        if step_input.prev_output_handle not in results:
-            return False
-    return True
+    def step_input_named(self, name):
+        check.str_param(name, 'name')
+        return self._step_input_dict[name]
 
 
-def execute_steps(context, steps):
-    check.inst_param(context, 'context', RuntimeExecutionContext)
-    check.list_param(steps, 'steps', of_type=ExecutionStep)
 
-    intermediate_results = {}
-    context.debug(
-        'Entering execute_steps loop. Order: {order}'.format(order=[step.key for step in steps])
-    )
 
-    for step in steps:
-        if not _all_inputs_covered(step, intermediate_results):
-            result_keys = set(intermediate_results.keys())
-            expected_outputs = [ni.prev_output_handle for ni in step.step_inputs]
-
-            context.debug(
-                'Not all inputs covered for {step}. Not executing.'.format(step=step.key) +
-                '\nKeys in result: {result_keys}.'.format(result_keys=result_keys) +
-                '\nOutputs need for inputs {expected_outputs}'.
-                format(expected_outputs=expected_outputs, )
-            )
-            continue
-
-        input_values = {}
-        for step_input in step.step_inputs:
-            prev_output_handle = step_input.prev_output_handle
-            input_value = intermediate_results[prev_output_handle].success_data.value
-            input_values[step_input.name] = input_value
-
-        for result in step.execute(context, input_values):
-            check.invariant(isinstance(result, StepResult))
-            yield result
-            output_handle = StepOutputHandle(step, result.success_data.output_name)
-            intermediate_results[output_handle] = result
 
 
 def print_graph(graph, printer=print):
@@ -570,7 +370,7 @@ def create_expectations_subplan(solid, inout_def, prev_step_output_handle, tag):
             solid=solid,
             expectation_def=expectation_def,
             key='{solid.name}.{inout_def.name}.expectation.{expectation_def.name}'.format(
-                solid=solid, inout_def=inout_def, expectation_def=expectation_def
+                solid=solid, inout_def=inout_def, expectation_def=expectation_def,
             ),
             tag=tag,
             prev_step_output_handle=prev_step_output_handle,
@@ -913,7 +713,7 @@ def _create_join_step(solid, step_key, prev_steps, prev_output_name):
     step_inputs = []
     seen_dagster_type = None
     for prev_step in prev_steps:
-        prev_step_output = prev_step.output_named(prev_output_name)
+        prev_step_output = prev_step.step_output_named(prev_output_name)
 
         if seen_dagster_type is None:
             seen_dagster_type = prev_step_output.dagster_type

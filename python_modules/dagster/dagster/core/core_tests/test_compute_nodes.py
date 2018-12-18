@@ -24,6 +24,8 @@ from dagster.core.execution_plan import (
     create_execution_plan_from_steps,
 )
 
+from dagster.core.simple_engine import (execute_step)
+
 from dagster.utils.test import create_test_runtime_execution_context
 
 
@@ -58,7 +60,7 @@ def test_compute_noop_node_core():
 
     assert len(plan.steps) == 1
 
-    outputs = list(plan.steps[0].execute(create_test_runtime_execution_context(), {}))
+    outputs = list(execute_step(plan.steps[0], create_test_runtime_execution_context(), {}))
 
     assert outputs[0].success_data.value == 'foo'
 
@@ -71,7 +73,7 @@ def test_compute_noop_node():
     plan = create_execution_plan(pipeline)
 
     assert len(plan.steps) == 1
-    outputs = list(plan.steps[0].execute(create_test_runtime_execution_context(), {}))
+    outputs = list(execute_step(plan.steps[0], create_test_runtime_execution_context(), {}))
 
     assert outputs[0].success_data.value == 'foo'
 
