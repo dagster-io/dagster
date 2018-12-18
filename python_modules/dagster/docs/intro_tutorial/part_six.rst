@@ -1,15 +1,20 @@
 Repositories and Tools
 ----------------------
-
 Dagster is a not just a programming model for pipelines, it is also a platform for
-tool-building. Included within dagster is a CLI tool, the first tool you'll use
-to interact with pipelines.
+tool-building. You've already met the dagster and dagit CLI tools, which let you programmatically
+run and visualize pipelines.
 
-In previous examples we have specified what file and function a pipeline definition resides
-in order to load. However it can get tedious to load individual pipelines. We will want to
-be able to browse many pipelines at once and then be able to launch tools against that set
-of pipelines without having to specify arguments. This is where repositories and repository
-config files come into play.
+In previous examples we have specified a file (``-f``) and named a pipeline definition function
+(``-n``) in order to tell the CLI tools how to load a pipeline:
+
+.. code-block:: console
+
+   $ dagit -f part_one.py -n define_hello_world_pipeline
+   $ dagster pipeline execute -f part_one.py -n define_hello_world_pipeline
+
+But most of the time, especially when working on long-running projects with other people, we will
+want to be able to target many pipelines at once with our tools. This is where **repositories** and
+repository config files come into play.
 
 Dagster has a concept of a repositories which is used to organize a collection of pipelines
 (and eventually other concepts). Dagster tools must be pointed to a repository or many repositories
