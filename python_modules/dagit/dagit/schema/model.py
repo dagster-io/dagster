@@ -120,12 +120,16 @@ def start_pipeline_execution(info, pipelineName, config):
     pipeline_run_storage = info.context.pipeline_runs
 
     def get_config_and_start_execution(pipeline):
-        def start_execution(config):
+        def start_execution(typed_enviroment):
             new_run_id = str(uuid.uuid4())
-            execution_plan = create_execution_plan(pipeline.get_dagster_pipeline(), config.value)
-            run = pipeline_run_storage.add_run(new_run_id, pipelineName, config, execution_plan)
+            execution_plan = create_execution_plan(
+                pipeline.get_dagster_pipeline(), typed_enviroment.value
+            )
+            run = pipeline_run_storage.add_run(
+                new_run_id, pipelineName, typed_enviroment.value, config, execution_plan
+            )
             info.context.execution_manager.execute_pipeline(
-                pipeline.get_dagster_pipeline(), config.value, run
+                info.context.repository_container, pipeline.get_dagster_pipeline(), run
             )
             return info.schema.type_named('StartPipelineExecutionSuccess')(
                 run=info.schema.type_named('PipelineRun')(run)
