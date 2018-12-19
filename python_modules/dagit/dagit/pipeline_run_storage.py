@@ -45,6 +45,54 @@ class PipelineRunStorage(object):
         return self.get_run_by_id(id_)
 
 
+class DebouncingLogQueue(object):
+    '''
+    A queue that debounces dequeuing operation
+    '''
+
+    def __init__(self, timeout_length=1.0, sleep_length=0.1):
+        self._log_queue_lock = gevent.lock.Semaphore()
+        self._log_queue = []
+        self._is_dequeueing_blocked = False
+        self._queue_timeout = None
+        self._timeout_length = check.float_param(timeout_length, 'timeout_length')
+        self._sleep_length = check.float_param(sleep_length, 'sleep_length')
+
+    def attempt_dequeue(self):
+        '''
+        Attempt to dequeue from queue. Will block first call to this until the
+        timeout_length has elapsed from last enqueue. Subsequent calls return
+        empty list, until the dequeing timeout happens.
+        '''
+        with self._log_queue_lock:
+            if self._is_dequeueing_blocked:
+                return []
+            else:
+                self._is_dequeueing_blocked = True
+
+        # wait till we have elapsed timeout_length seconds from first event, while
+        # letting other gevent threads do the work (sleep_length is the chosen sleep cycle)
+        while (time.time() - self._queue_timeout) < self._timeout_length:
+            gevent.sleep(self._sleep_length)
+
+        with self._log_queue_lock:
+            if self._log_queue:
+                events = copy.copy(self._log_queue)
+                self._log_queue = []
+            else:
+                events = []
+            self._is_dequeueing_blocked = False
+            self._queue_timeout = None
+
+        return events
+
+    def enqueue(self, item):
+        with self._log_queue_lock:
+            if not self._queue_timeout:
+                self._queue_timeout = time.time()
+            self._log_queue.append(item)
+
+
 class PipelineRun(object):
     def __init__(self, run_id, pipeline_name, typed_environment, config, execution_plan):
         self._logs = []
@@ -55,35 +103,14 @@ class PipelineRun(object):
         self.config = config
         self.typed_environment = typed_environment
         self.execution_plan = execution_plan
-        self._log_queue_lock = gevent.lock.Semaphore()
-        self._log_queue = []
-        self._flush_queued = False
-        self._queue_timeout = None
+        self._debouncing_queue = DebouncingLogQueue()
 
     def _enqueue_flush_logs(self):
-        with self._log_queue_lock:
-            if not self._flush_queued:
-                self._queue_timeout = time.time()
-                self._flush_queued = True
-            else:
-                return
-
-        # wait till we have elapsed 1 second from first event, while
-        # letting other gevent threads do the work (0.1s is an arbitrary chosen sleep cycle)
-        while (time.time() - self._queue_timeout) < 1:
-            gevent.sleep(0.1)
-        events = None
-        with self._log_queue_lock:
-            if self._log_queue:
-                events = copy.copy(self._log_queue)
-                self._log_queue = []
+        events = self._debouncing_queue.attempt_dequeue()
 
         if events:
             for subscriber in self._subscribers:
                 subscriber.handle_new_events(events)
-
-        with self._log_queue_lock:
-            self._flush_queued = False
 
     def logs_after(self, cursor):
         cursor = int(cursor) + 1
@@ -103,8 +130,7 @@ class PipelineRun(object):
             self._status = PipelineRunStatus.FAILURE
 
         self._logs.append(new_event)
-        with self._log_queue_lock:
-            self._log_queue.append(new_event)
+        self._debouncing_queue.enqueue(new_event)
         gevent.spawn(self._enqueue_flush_logs)
 
     @property
