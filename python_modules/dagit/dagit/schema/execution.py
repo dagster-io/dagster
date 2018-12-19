@@ -99,6 +99,7 @@ a single output that the next computation can depend on.
         elif self == DauphinStepTag.SERIALIZE:
             return '''This is a special system-defined step to serialize
 an intermediate value if the pipeline is configured to do that.'''
+
         elif self == DauphinStepTag.INPUT_THUNK:
             return '''Special system-defined step to represent an input
 specified in the environment'''
