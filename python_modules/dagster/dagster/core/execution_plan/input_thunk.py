@@ -24,7 +24,7 @@ def _create_input_thunk_execution_step(solid, input_def, value):
         yield Result(value, INPUT_THUNK_OUTPUT)
 
     return ExecutionStep(
-        key='input_thunk.' + solid.name + '.' + input_def.name,
+        key=solid.name + '.' + input_def.name + '.input_thunk',
         step_inputs=[],
         step_outputs=[StepOutput(
             name=INPUT_THUNK_OUTPUT,
