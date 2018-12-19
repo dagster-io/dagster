@@ -41,7 +41,7 @@ def create_input_thunk_execution_step(info, solid, input_def, value):
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(input_def, 'input_def', InputDefinition)
 
-    dependency_structure = info.execution_graph.dependency_structure
+    dependency_structure = info.pipeline.dependency_structure
     input_handle = solid.input_handle(input_def.name)
 
     if dependency_structure.has_dep(input_handle):
@@ -52,7 +52,7 @@ def create_input_thunk_execution_step(info, solid, input_def, value):
                 'a dependency. Either remove the dependency, specify a subdag '
                 'to execute, or remove the inputs specification in the environment.'
             ).format(
-                pipeline_name=info.execution_graph.pipeline.name,
+                pipeline_name=info.pipeline.name,
                 solid_name=solid.name,
                 input_name=input_def.name,
             )

@@ -7,7 +7,7 @@ from dagster import (
     config,
 )
 from dagster.core.definitions import (
-    ExecutionGraph,
+    PipelineDefinition,
     Solid,
 )
 from dagster.core.errors import DagsterError
@@ -99,6 +99,7 @@ class StepTag(Enum):
     JOIN = 'JOIN'
     SERIALIZE = 'SERIALIZE'
     INPUT_THUNK = 'INPUT_THUNK'
+    VALUE_THUNK = 'VALUE_THUNK'
 
 
 class StepInput(namedtuple('_StepInput', 'name dagster_type prev_output_handle')):
@@ -145,6 +146,16 @@ class ExecutionStep(
             solid=check.inst_param(solid, 'solid', Solid),
         )
 
+    def with_new_inputs(self, step_inputs):
+        return ExecutionStep(
+            key=self.key,
+            step_inputs=step_inputs,
+            step_outputs=self.step_outputs,
+            compute_fn=self.compute_fn,
+            tag=self.tag,
+            solid=self.solid,
+        )
+
     def has_step_output(self, name):
         check.str_param(name, 'name')
         return name in self.step_output_dict
@@ -183,24 +194,31 @@ class ExecutionPlan(object):
         return self.step_dict[key]
 
     def topological_steps(self):
+        return list(self._topological_steps())
+
+    def _topological_steps(self):
         sorted_step_guids = toposort.toposort_flatten(self.deps)
         for step_guid in sorted_step_guids:
             yield self.step_dict[step_guid]
 
 
-class ExecutionPlanInfo(namedtuple('_ExecutionPlanInfo', 'context execution_graph environment')):
-    def __new__(cls, context, execution_graph, environment):
+class ExecutionPlanInfo(namedtuple('_ExecutionPlanInfo', 'context pipeline environment')):
+    def __new__(cls, context, pipeline, environment):
         return super(ExecutionPlanInfo, cls).__new__(
             cls,
             check.inst_param(context, 'context', RuntimeExecutionContext),
-            check.inst_param(execution_graph, 'execution_graph', ExecutionGraph),
+            check.inst_param(pipeline, 'pipeline', PipelineDefinition),
             check.inst_param(environment, 'environment', config.Environment),
         )
 
     @property
-    def pipeline(self):
-        return self.execution_graph.pipeline
-
-    @property
     def serialize_intermediates(self):
         return self.environment.execution.serialize_intermediates
+
+
+class ExecutionSubsetInfo(namedtuple('_ExecutionSubsetInfo', 'subset inputs')):
+    def __new__(cls, included_steps, inputs=None):
+        return super(ExecutionSubsetInfo, cls).__new__(
+            cls, set(check.list_param(included_steps, 'included_steps', of_type=str)),
+            check.opt_dict_param(inputs, 'inputs')
+        )

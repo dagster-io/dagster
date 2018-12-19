@@ -10,6 +10,7 @@ from dagster import (
     PipelineDefinition,
     check,
     lambda_solid,
+    execute_solid,
 )
 
 from dagster.core.execution import (
@@ -19,14 +20,14 @@ from dagster.core.execution import (
 
 import dagster_contrib.pandas as dagster_pd
 
-from dagster.core.test_utils import single_output_transform
-
 from dagster.utils import script_relative_path
 
 from dagster.utils.test import (
     get_temp_file_name,
     get_temp_file_names,
 )
+
+from dagster.core.test_utils import single_output_transform
 
 
 def _dataframe_solid(name, inputs, transform_fn):
@@ -496,9 +497,9 @@ def test_pandas_output_intermediate_csv_files():
             }
         )
 
-        subgraph_one_result = execute_pipeline(pipeline, environment=environment)
+        whole_pipeline_result = execute_pipeline(pipeline, environment=environment)
 
-        assert len(subgraph_one_result.result_list) == 5
+        assert len(whole_pipeline_result.result_list) == 5
 
         expected_sum = {
             'num1': [1, 3],
@@ -507,7 +508,7 @@ def test_pandas_output_intermediate_csv_files():
         }
 
         assert pd.read_csv(sum_file).to_dict('list') == expected_sum
-        sum_table_result = subgraph_one_result.result_for_solid('sum_table')
+        sum_table_result = whole_pipeline_result.result_for_solid('sum_table')
         assert sum_table_result.transformed_value().to_dict('list') == expected_sum
 
         expected_mult = {
@@ -516,46 +517,19 @@ def test_pandas_output_intermediate_csv_files():
             'mult': [2, 12],
         }
         assert pd.read_csv(mult_file).to_dict('list') == expected_mult
-        mult_table_result = subgraph_one_result.result_for_solid('mult_table')
+        mult_table_result = whole_pipeline_result.result_for_solid('mult_table')
         assert mult_table_result.transformed_value().to_dict('list') == expected_mult
 
-        injected_solids = {
-            'sum_mult_table': {
-                'sum_table': dagster_pd.load_csv_solid('load_sum_table'),
-                'mult_table': dagster_pd.load_csv_solid('load_mult_table'),
-            }
-        }
-
-        pipeline_result = execute_pipeline(
-            PipelineDefinition.create_sub_pipeline(
-                pipeline,
-                ['sum_mult_table'],
-                ['sum_mult_table'],
-                injected_solids,
-            ),
-            environment={
-                'solids': {
-                    'load_sum_table': {
-                        'config': {
-                            'path': sum_file,
-                        },
-                    },
-                    'load_mult_table': {
-                        'config': {
-                            'path': mult_file,
-                        },
-                    },
-                },
+        result = execute_solid(
+            pipeline,
+            'sum_mult_table',
+            {
+                'sum_table': pd.read_csv(sum_file),
+                'mult_table': pd.read_csv(mult_file),
             },
         )
 
-        assert pipeline_result.success
-
-        subgraph_two_result_list = pipeline_result.result_list
-
-        assert len(subgraph_two_result_list) == 3
-        output_df = pipeline_result.result_for_solid('sum_mult_table').transformed_value()
-        assert output_df.to_dict('list') == {
+        assert result.transformed_value().to_dict('list') == {
             'num1': [1, 3],
             'num2': [2, 4],
             'sum': [3, 7],

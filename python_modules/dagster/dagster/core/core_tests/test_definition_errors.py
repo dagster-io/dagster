@@ -80,7 +80,7 @@ def test_from_solid_not_there():
 def test_from_non_existant_input():
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match='Solid B does not have input not_an_input',
+        match='Solid "B" does not have input "not_an_input"',
     ):
         PipelineDefinition(
             solids=solid_a_b_list(),

@@ -59,7 +59,10 @@ from dagster.core.evaluator import DagsterEvaluateConfigValueError
 
 from dagster.core.utility_solids import define_stub_solid
 
-from dagster.utils.test import execute_solid
+from dagster.utils.test import (
+    execute_solid,
+    execute_solids,
+)
 
 import dagster.core.config as config
 import dagster.core.types as types
@@ -112,6 +115,7 @@ __all__ = [
     # Utilities
     'define_stub_solid',
     'execute_solid',
+    'execute_solids',
 
     # config
     'config',

@@ -48,3 +48,23 @@ def create_join_step(solid, step_key, prev_steps, prev_output_name):
         tag=StepTag.JOIN,
         solid=solid,
     )
+
+
+VALUE_OUTPUT = 'value_output'
+
+
+def create_value_thunk_step(solid, dagster_type, step_key, value):
+    def _fn(_context, _step, _inputs):
+        yield Result(value, VALUE_OUTPUT)
+
+    return StepOutputHandle(
+        ExecutionStep(
+            key=step_key,
+            step_inputs=[],
+            step_outputs=[StepOutput(VALUE_OUTPUT, dagster_type)],
+            compute_fn=_fn,
+            tag=StepTag.VALUE_THUNK,
+            solid=solid,
+        ),
+        VALUE_OUTPUT,
+    )
