@@ -112,10 +112,10 @@ class MultiprocessingExecutionManager(PipelineExecutionManager):
         # Older versions are stuck with whatever is the default on their platform (fork on Unix-like and spawn on windows)
         # https://docs.python.org/3/library/multiprocessing.html#multiprocessing.get_context
         if hasattr(multiprocessing, 'get_context'):
-            self._context = multiprocessing.get_context('spawn')
+            self._multiprocessing_context = multiprocessing.get_context('spawn')
         else:
-            self._context = multiprocessing
-        self._processes_lock = self._context.Lock()
+            self._multiprocessing_context = multiprocessing
+        self._processes_lock = self._multiprocessing_context.Lock()
         self._processes = []
         # This is actually a reverse semaphore. We keep track of number of
         # processes we have by releasing semaphore every time we start
@@ -188,8 +188,8 @@ class MultiprocessingExecutionManager(PipelineExecutionManager):
             gevent.sleep(0.1)
 
     def execute_pipeline(self, repository_container, pipeline, pipeline_run):
-        message_queue = self._context.Queue()
-        p = self._context.Process(
+        message_queue = self._multiprocessing_context.Queue()
+        p = self._multiprocessing_context.Process(
             target=execute_pipeline_through_queue,
             args=(
                 repository_container.repository_info,
