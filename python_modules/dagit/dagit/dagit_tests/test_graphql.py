@@ -42,6 +42,7 @@ def define_repository():
             'pandas_hello_world': define_pipeline_one,
             'pandas_hello_world_two': define_pipeline_two,
             'pipeline_with_list': define_pipeline_with_list,
+            'pandas_hello_world_df_input': define_pipeline_with_pandas_df_input,
         },
     )
 
@@ -98,6 +99,21 @@ def define_pipeline_one():
             'sum_solid': {
                 'num': DependencyDefinition('load_num_csv')
             },
+            'sum_sq_solid': {
+                'sum_df': DependencyDefinition(sum_solid.name),
+            },
+        },
+    )
+
+
+def define_pipeline_with_pandas_df_input():
+    return PipelineDefinition(
+        name='pandas_hello_world_df_input',
+        solids=[
+            sum_solid,
+            sum_sq_solid,
+        ],
+        dependencies={
             'sum_sq_solid': {
                 'sum_df': DependencyDefinition(sum_solid.name),
             },
@@ -838,14 +854,7 @@ def test_pipelines():
     assert result.data
 
     assert set([p['name'] for p in result.data['pipelines']['nodes']]) == set(
-        [
-            'context_config_pipeline',
-            'more_complicated_config',
-            'more_complicated_nested_config',
-            'pandas_hello_world',
-            'pandas_hello_world_two',
-            'pipeline_with_list',
-        ]
+        [p.name for p in define_repository().get_all_pipelines()]
     )
 
 
@@ -857,14 +866,7 @@ def test_pipelines_or_error():
     assert result.data
 
     assert set([p['name'] for p in result.data['pipelinesOrError']['nodes']]) == set(
-        [
-            'context_config_pipeline',
-            'more_complicated_config',
-            'more_complicated_nested_config',
-            'pandas_hello_world',
-            'pandas_hello_world_two',
-            'pipeline_with_list',
-        ]
+        [p.name for p in define_repository().get_all_pipelines()]
     )
 
 
@@ -1281,6 +1283,41 @@ def has_event_of_type(logs, message_type):
     return first_event_of_type(logs, message_type) is not None
 
 
+def test_basic_execution_input_injection():
+    context = define_context()
+    result = execute_dagster_graphql(
+        context,
+        SYNC_MUTATION_QUERY,
+        variables={
+            'executionParams': {
+                'pipelineName': define_pipeline_with_pandas_df_input().name,
+                'config': {
+                    'solids': {
+                        'sum_solid': {
+                            'inputs': {
+                                'num': {
+                                    'csv': {
+                                        'path': script_relative_path('num.csv'),
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    )
+
+    assert not result.errors
+    assert result.data
+
+    logs = result.data['startPipelineExecution']['run']['logs']['nodes']
+    assert isinstance(logs, list)
+    assert has_event_of_type(logs, 'PipelineStartEvent')
+    assert has_event_of_type(logs, 'PipelineSuccessEvent')
+    assert not has_event_of_type(logs, 'PipelineFailureEvent')
+
+
 SYNC_MUTATION_QUERY = '''
 mutation ($executionParams: PipelineExecutionParams!) {
     startPipelineExecution(
@@ -1297,6 +1334,9 @@ mutation ($executionParams: PipelineExecutionParams!) {
                         ... on MessageEvent {
                             message
                             level
+                        }
+                        ... on ExecutionStepStartEvent {
+                            step { tag }
                         }
                     }
                 }
