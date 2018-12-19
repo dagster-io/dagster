@@ -26,9 +26,9 @@ class PipelineRunStorage(object):
     def __init__(self):
         self._runs = OrderedDict()
 
-    def add_run(self, run_id, pipeline_name, config, execution_plan):
+    def add_run(self, run_id, pipeline_name, typed_environment, config, execution_plan):
         check.invariant(run_id not in self._runs)
-        run = PipelineRun(run_id, pipeline_name, config, execution_plan)
+        run = PipelineRun(run_id, pipeline_name, typed_environment, config, execution_plan)
         self._runs[run_id] = run
         return run
 
@@ -46,13 +46,14 @@ class PipelineRunStorage(object):
 
 
 class PipelineRun(object):
-    def __init__(self, run_id, pipeline_name, config, execution_plan):
+    def __init__(self, run_id, pipeline_name, typed_environment, config, execution_plan):
         self._logs = []
         self._run_id = run_id
         self._status = PipelineRunStatus.NOT_STARTED
         self._subscribers = []
         self.pipeline_name = pipeline_name
         self.config = config
+        self.typed_environment = typed_environment
         self.execution_plan = execution_plan
         self._log_queue_lock = gevent.lock.Semaphore()
         self._log_queue = []
@@ -131,7 +132,9 @@ class PipelineRunObservableSubscribe(object):
 
     def __call__(self, observer):
         self.observer = observer
-        self.observer.on_next(self.pipeline_run.logs_after(self.start_cursor))
+        events = self.pipeline_run.logs_after(self.start_cursor)
+        if events:
+            self.observer.on_next(events)
         self.pipeline_run.subscribe(self)
 
     def handle_new_events(self, events):

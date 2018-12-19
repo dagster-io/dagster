@@ -21,81 +21,104 @@ from dagster.core.execution import (
 from dagster.core.evaluator import evaluate_config_value
 from dagster.utils import script_relative_path
 import dagster_contrib.pandas as dagster_pd
+from dagster.cli.dynamic_loader import RepositoryTargetInfo
 
+from dagit.app import RepositoryContainer
 from dagit.pipeline_execution_manager import MultiprocessingExecutionManager
 from dagit.pipeline_run_storage import PipelineRun, PipelineRunStatus
 
 
-@pytest.mark.skip('Flaky. See Issue 432')
 def test_running():
     run_id = 'run-1'
-    pipeline = define_passing_pipeline()
-    config = evaluate_config_value(
-        pipeline.environment_type, {
-            'solids': {
-                'load_num_csv': {
-                    'config': {
-                        'path': script_relative_path('num.csv'),
-                    }
-                },
-            },
-        }
+    repository_container = RepositoryContainer(
+        RepositoryTargetInfo(
+            repository_yaml=None,
+            python_file=None,
+            fn_name='define_passing_pipeline',
+            module_name='dagit.dagit_tests.test_multiprocessing',
+        )
     )
+    pipeline = define_passing_pipeline()
+    config = {
+        'solids': {
+            'load_num_csv': {
+                'config': {
+                    'path': script_relative_path('num.csv'),
+                }
+            },
+        },
+    }
+    typed_environment = evaluate_config_value(pipeline.environment_type, config)
     pipeline_run = PipelineRun(
-        run_id, 'pandas_hello_world', config, create_execution_plan(pipeline, config.value)
+        run_id, 'pandas_hello_world', typed_environment.value, config,
+        create_execution_plan(pipeline, typed_environment.value)
     )
     execution_manager = MultiprocessingExecutionManager()
-    execution_manager.execute_pipeline(pipeline, config.value, pipeline_run)
+    execution_manager.execute_pipeline(repository_container, pipeline, pipeline_run)
     execution_manager.join()
     assert pipeline_run.status == PipelineRunStatus.SUCCESS
     assert len(pipeline_run.all_logs()) > 0
 
 
-@pytest.mark.skip('Flaky. See Issue 432')
 def test_failing():
     run_id = 'run-1'
-    pipeline = define_failing_pipeline()
-    config = evaluate_config_value(
-        pipeline.environment_type, {
-            'solids': {
-                'load_num_csv': {
-                    'config': {
-                        'path': script_relative_path('num.csv'),
-                    }
-                },
-            },
-        }
+    repository_container = RepositoryContainer(
+        RepositoryTargetInfo(
+            repository_yaml=None,
+            python_file=None,
+            fn_name='define_failing_pipeline',
+            module_name='dagit.dagit_tests.test_multiprocessing',
+        )
     )
+    pipeline = define_failing_pipeline()
+    config = {
+        'solids': {
+            'load_num_csv': {
+                'config': {
+                    'path': script_relative_path('num.csv'),
+                }
+            },
+        },
+    }
+    typed_environment = evaluate_config_value(pipeline.environment_type, config)
     pipeline_run = PipelineRun(
-        run_id, 'pandas_hello_world', config, create_execution_plan(pipeline, config.value)
+        run_id, 'pandas_hello_world', typed_environment.value, config,
+        create_execution_plan(pipeline, typed_environment.value)
     )
     execution_manager = MultiprocessingExecutionManager()
-    execution_manager.execute_pipeline(pipeline, config.value, pipeline_run)
+    execution_manager.execute_pipeline(repository_container, pipeline, pipeline_run)
     execution_manager.join()
     assert pipeline_run.status == PipelineRunStatus.FAILURE
     assert len(pipeline_run.all_logs()) > 0
 
 
-@pytest.mark.skip('Flaky. See Issue 432')
 def test_execution_crash():
     run_id = 'run-1'
-    pipeline = define_crashy_pipeline()
-    config = evaluate_config_value(
-        pipeline.environment_type, {
-            'solids': {
-                'load_num_csv': {
-                    'config': {
-                        'path': script_relative_path('num.csv'),
-                    }
-                },
-            },
-        }
+    repository_container = RepositoryContainer(
+        RepositoryTargetInfo(
+            repository_yaml=None,
+            python_file=None,
+            fn_name='define_crashy_pipeline',
+            module_name='dagit.dagit_tests.test_multiprocessing',
+        )
     )
+    pipeline = define_crashy_pipeline()
+    config = {
+        'solids': {
+            'load_num_csv': {
+                'config': {
+                    'path': script_relative_path('num.csv'),
+                }
+            },
+        },
+    }
+    typed_environment = evaluate_config_value(pipeline.environment_type, config)
     pipeline_run = PipelineRun(
-        run_id, 'pandas_hello_world', config, create_execution_plan(pipeline, config.value)
+        run_id, 'pandas_hello_world', typed_environment.value, config,
+        create_execution_plan(pipeline, typed_environment.value)
     )
     execution_manager = MultiprocessingExecutionManager()
-    execution_manager.execute_pipeline(pipeline, config.value, pipeline_run)
+    execution_manager.execute_pipeline(repository_container, pipeline, pipeline_run)
     execution_manager.join()
     assert pipeline_run.status == PipelineRunStatus.FAILURE
     last_log = pipeline_run.all_logs()[-1]
