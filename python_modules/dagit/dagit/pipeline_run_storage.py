@@ -46,9 +46,9 @@ class PipelineRunStorage(object):
 
 
 class DebouncingLogQueue(object):
-    """
-    A queue that debounces dequeing operation
-    """
+    '''
+    A queue that debounces dequeuing operation
+    '''
 
     def __init__(self, timeout_length=1.0, sleep_length=0.1):
         self._log_queue_lock = gevent.lock.Semaphore()
@@ -59,11 +59,11 @@ class DebouncingLogQueue(object):
         self._sleep_length = check.float_param(sleep_length, 'sleep_length')
 
     def attempt_dequeue(self):
-        """
+        '''
         Attempt to dequeue from queue. Will block first call to this until the
         timeout_length has elapsed from last enqueue. Subsequent calls return
         empty list, until the dequeing timeout happens.
-        """
+        '''
         with self._log_queue_lock:
             if self._is_dequeueing_blocked:
                 return []
