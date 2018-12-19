@@ -36,6 +36,12 @@ workflows:
           context: coveralls
       - dagster-contrib-py27:
           context: coveralls
+      - dagma-py36:
+          context: coveralls
+      - dagma-py35:
+          context: coveralls
+      - dagma-py27:
+          context: coveralls
 
       - coverage:
           requires:
@@ -112,6 +118,30 @@ jobs:
           paths:
             - .coverage*
 
+  dagma-py36: &dagma-template
+    <<: *dagster-template
+    steps:
+      - checkout
+
+      - run:
+          name: Install Dependencies
+          command: |
+            sudo pip install tox
+
+      - run:
+          name: Run Dagma Tests
+          command: |
+            cd python_modules/dagma
+            tox -e $TOXENV
+
+      - run:
+          command: mv python_modules/dagma/.coverage python_modules/dagma/.coverage.dagma.${CIRCLE_BUILD_NUM}
+
+      - persist_to_workspace:
+          root: python_modules/dagma/
+          paths:
+            - .coverage*
+
   dagster-py35:
     <<: *dagster-template
     docker:
@@ -126,6 +156,12 @@ jobs:
     environment:
       TOXENV: py35
 
+  dagma-py35:
+    <<: *dagma-template
+    docker:
+      - image: circleci/python:3.5.6
+    environment:
+      TOXENV: py35
 
   dagster-py27:
     <<: *dagster-template
@@ -136,6 +172,13 @@ jobs:
 
   dagit-py27:
     <<: *dagit-template
+    docker:
+      - image: circleci/python:2.7.15
+    environment:
+      TOXENV: py27
+
+  dagma-py27:
+    <<: *dagma-template
     docker:
       - image: circleci/python:2.7.15
     environment:
