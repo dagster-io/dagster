@@ -108,10 +108,12 @@ class MultiprocessingError(object):
 
 class MultiprocessingExecutionManager(PipelineExecutionManager):
     def __init__(self):
+        # Set execution method to spawn, to avoid fork and to have same behavior between platforms.
+        # Older versions are stuck with whatever is the default on their platform (fork on Unix-like and spawn on windows)
+        # https://docs.python.org/3/library/multiprocessing.html#multiprocessing.get_context
         if hasattr(multiprocessing, 'get_context'):
             self._context = multiprocessing.get_context('spawn')
         else:
-            # Python 2.7 doesn't support alternative starting methods
             self._context = multiprocessing
         self._processes_lock = self._context.Lock()
         self._processes = []
