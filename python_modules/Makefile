@@ -24,7 +24,7 @@ reinstall:
 	pip install -e dagit
 
 rebuild_dagit:
-	cd dagit/dagit/webapp; yarn install && yarn build
+	cd ../js_modules/dagit/; yarn install && yarn build-for-python
 
 run_dagit:
 	cd dagit/dagit/webapp; make
