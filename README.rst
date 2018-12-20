@@ -34,6 +34,7 @@ This repository contains a number of distinct subprojects:
   tools like Pandas and SQLAlchemy, along with worked examples.
 - **airline-demo**: A substantial demo project illustrating how these tools can be used together
   to manage a realistic data pipeline.
+- **js_modules/dagit** - a web app that is a ui for dagit
 
 Go to https://dagster.readthedocs.io/en/latest/ for complete documentation, including a
 step-by-step tutorial and notes on the demo project.

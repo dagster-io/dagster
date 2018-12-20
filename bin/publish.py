@@ -18,9 +18,9 @@ python setup.py sdist bdist_wheel && \\
 twine upload dist/*
 '''
 
-DAGIT_ADDITIONAL_STEPS = '''pushd ./dagit/webapp; \\
+DAGIT_ADDITIONAL_STEPS = '''pushd ../../js_modules/dagit; \\
 yarn install && \\
-yarn build; \\
+yarn build-for-python; \\
 popd
 '''
 
@@ -114,8 +114,8 @@ def get_git_tag():
             str(exc_info.output))
         if match:
             raise Exception(
-                'Bailing: there is no git tag for the current commit, {commit}'.
-                format(commit=match.group('commit')))
+                'Bailing: there is no git tag for the current commit, {commit}'
+                .format(commit=match.group('commit')))
         raise Exception(str(exc_info.output))
 
     return git_tag
@@ -245,8 +245,8 @@ def check_git_status():
     changes = subprocess.check_output(['git', 'status', '--porcelain'])
     if changes != b'':
         raise Exception(
-            'Bailing: Cannot publish with changes present in git repo:\n{changes}'.
-            format(changes=changes))
+            'Bailing: Cannot publish with changes present in git repo:\n{changes}'
+            .format(changes=changes))
 
 
 CLI_HELP = """Tools to help tag and publish releases of the Dagster projects.
@@ -268,7 +268,7 @@ def cli():
 @cli.command()
 def publish():
     """Publishes (uploads) all submodules to PyPI.
-    
+
     Appropriate credentials must be available to twin, e.g. in a ~/.pypirc file, and users must
     be permissioned as maintainers on the PyPI projects. Publishing will fail if versions (git
     tags and Python versions) are not in lockstep, if the current commit is not tagged, or if

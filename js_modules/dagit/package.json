@@ -1,5 +1,5 @@
 {
-  "name": "webapp",
+  "name": "dagit",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -69,6 +69,7 @@
   "scripts": {
     "start": "react-scripts-ts start",
     "build": "react-scripts-ts build",
+    "build-for-python": "npm run build && cd ../../python_modules/dagit/dagit && mkdir -p webapp && cp -r ../../../js_modules/dagit/build ./webapp/",
     "eject": "react-scripts-ts eject",
     "prettier": "prettier --write \"./src/**/*.tsx\"",
     "test": "npm run ts && npm run jest && npm run check-prettier",
