@@ -103,7 +103,7 @@ def execute_solids(
     existing = [pipeline_def.solid_named(solid_name).definition for solid_name in solid_names]
 
     isolated_pipeline = PipelineDefinition(
-        name=pipeline_def.name + '_isolated',  # TODO: lame
+        name=pipeline_def.name + '_isolated',
         solids=existing + injected_solids,
         context_definitions=pipeline_def.context_definitions,
         dependencies=deps,
