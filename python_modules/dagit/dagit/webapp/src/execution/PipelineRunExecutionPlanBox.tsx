@@ -106,7 +106,6 @@ export class ExecutionPlanBox extends React.Component<
     let elapsed = this.props.elapsed;
     if (state === IStepState.RUNNING && start) {
       elapsed = Math.floor((Date.now() - start) / 1000) * 1000;
-      if (elapsed === 0) elapsed = undefined;
     }
 
     return (
@@ -131,7 +130,7 @@ export class ExecutionPlanBox extends React.Component<
           )}
         </ExeuctionStateWrap>
         <ExecutionPlanBoxName>{name}</ExecutionPlanBoxName>
-        {elapsed && (
+        {elapsed !== undefined && (
           <ExecutionStateLabel>
             {formatExecutionTime(elapsed)}
           </ExecutionStateLabel>
