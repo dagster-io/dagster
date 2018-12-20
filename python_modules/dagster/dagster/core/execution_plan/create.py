@@ -225,32 +225,37 @@ def create_subplan(execution_plan_info, execution_plan, subset_info):
 
         if step.key not in subset_info.inputs:
             steps.append(step)
-            continue
-
-        new_step_inputs = []
-        for step_input in step.step_inputs:
-            if step_input.name in subset_info.inputs[step.key]:
-                value_thunk_step_output_handle = create_value_thunk_step(
-                    step.solid,
-                    step_input.dagster_type,
-                    step.key + '.input.' + step_input.name + '.value',
-                    subset_info.inputs[step.key][step_input.name],
-                )
-
-                new_value_step = value_thunk_step_output_handle.step
-
-                steps.append(new_value_step)
-
-                new_step_inputs.append(
-                    StepInput(
-                        step_input.name,
-                        step_input.dagster_type,
-                        value_thunk_step_output_handle,
-                    )
-                )
-            else:
-                new_step_inputs.append(step_input)
-
-        steps.append(step.with_new_inputs(new_step_inputs))
+        else:
+            steps.extend(_create_new_steps_for_input(step, subset_info))
 
     return create_execution_plan_from_steps(steps)
+
+
+def _create_new_steps_for_input(step, subset_info):
+    new_steps = []
+    new_step_inputs = []
+    for step_input in step.step_inputs:
+        if step_input.name in subset_info.inputs[step.key]:
+            value_thunk_step_output_handle = create_value_thunk_step(
+                step.solid,
+                step_input.dagster_type,
+                step.key + '.input.' + step_input.name + '.value',
+                subset_info.inputs[step.key][step_input.name],
+            )
+
+            new_value_step = value_thunk_step_output_handle.step
+
+            new_steps.append(new_value_step)
+
+            new_step_inputs.append(
+                StepInput(
+                    step_input.name,
+                    step_input.dagster_type,
+                    value_thunk_step_output_handle,
+                )
+            )
+        else:
+            new_step_inputs.append(step_input)
+
+    new_steps.append(step.with_new_inputs(new_step_inputs))
+    return new_steps
