@@ -172,3 +172,17 @@ def test_single_solid_type_checking_output_error():
 
     with pytest.raises(DagsterInvariantViolationError):
         execute_solid(pipeline_def, 'return_string')
+
+
+def test_failing_solid_execute_solid():
+    class ThisException(Exception):
+        pass
+
+    @lambda_solid
+    def throw_an_error():
+        raise ThisException('nope')
+
+    pipeline_def = PipelineDefinition(solids=[throw_an_error])
+
+    with pytest.raises(ThisException):
+        execute_solid(pipeline_def, 'throw_an_error')

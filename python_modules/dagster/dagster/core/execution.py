@@ -526,12 +526,12 @@ def execute_plan(pipeline, execution_plan, environment=None, subset_info=None):
     typed_environment = create_typed_environment(pipeline, environment)
 
     with yield_context(pipeline, typed_environment) as context:
-        true_execution_plan = create_subplan(
+        plan_to_execute = create_subplan(
             ExecutionPlanInfo(context=context, pipeline=pipeline, environment=typed_environment),
             execution_plan,
             subset_info,
         ) if subset_info else execution_plan
-        return list(execute_plan_core(context, true_execution_plan))
+        return list(execute_plan_core(context, plan_to_execute))
 
 
 def execute_pipeline(

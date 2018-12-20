@@ -677,10 +677,6 @@ class PipelineDefinition(object):
         '''
         return list(set(self._solid_dict.values()))
 
-    @property
-    def solid_dict(self):
-        return self._solid_dict
-
     def has_solid(self, name):
         '''Return whether or not the solid is in the piepline
 
