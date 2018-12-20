@@ -1,48 +1,17 @@
 Pipeline Execution
 ------------------
+Just as in the last part of the tutorial, we'll define a pipeline and a repository, and create
+a yaml file to tell the CLI tool about the repository.
 
-Similar to the the part six tutorial, we are going to create a pipeline, a repository,
-and a yaml file so that the CLI tool can know about the repository.
-
-.. code-block:: python
-
-    @solid(config_field=ConfigDefinition(types.Any))
-    def double_the_word(info):
-        return info.config['word'] * 2
-
-    @lambda_solid(inputs=[InputDefinition('word')])
-    def count_letters(word):
-        counts = defaultdict(int)
-        for letter in word:
-            counts[letter] += 1
-        return dict(counts)
-
-    def define_part_seven_pipeline():
-        return PipelineDefinition(
-            name='part_seven',
-            solids=[double_the_word, count_letters],
-            dependencies={
-                'count_letters': {
-                    'word': DependencyDefinition('double_the_word'),
-                },
-            },
-        )
-
-    def define_part_seven_repo():
-        return RepositoryDefinition(
-            name='part_seven_repo',
-            pipeline_dict={
-                'part_seven': define_part_seven_pipeline,
-            },
-        )
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/part_seven.py
+   :linenos:
+   :caption: part_seven.py
 
 And now the repository file:
 
-.. code-block:: yaml
-
-    repository:
-      file: part_seven.py
-      fn: define_part_seven_repo
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/part_seven_repository.yml
+   :linenos:
+   :caption: repository.yml
 
 Now we want to execute it from the command line. In order to do that we need to create a yaml file
 with all the elements we need to create an environment. 
