@@ -1,7 +1,4 @@
-from collections import (
-    defaultdict,
-    namedtuple,
-)
+from collections import namedtuple
 
 from dagster import check
 
