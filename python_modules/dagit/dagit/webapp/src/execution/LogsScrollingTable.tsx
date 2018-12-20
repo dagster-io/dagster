@@ -158,12 +158,15 @@ class LogsScrollingTableSized extends React.Component<
     const width = this.columnWidth({ index: columnIndex });
 
     let content = null;
+    let CellClass: any = Cell;
+
     switch (columnIndex) {
       case 0:
         content = node.level;
         break;
       case 1:
         content = textForLog(node);
+        CellClass = OverflowDetectingCell;
         break;
       case 2:
         style.textAlign = "right";
@@ -183,9 +186,9 @@ class LogsScrollingTableSized extends React.Component<
         parent={parent}
         key={key}
       >
-        <Cell style={{ ...style, width }} level={node.level}>
+        <CellClass style={{ ...style, width }} level={node.level}>
           {content}
-        </Cell>
+        </CellClass>
       </CellMeasurer>
     );
   };
@@ -235,6 +238,8 @@ const Cell = styled.div<{ level: LogLevel }>`
   font-size: 0.85em;
   width: 100%;
   height: 100%;
+  max-height: 17em;
+  overflow-y: hidden;
   padding: 4px;
   padding-left: 15px;
   word-break: break-all;
@@ -258,3 +263,91 @@ const Cell = styled.div<{ level: LogLevel }>`
       [LogLevel.CRITICAL]: Colors.RED3
     }[props.level])};
 `;
+
+const OverflowFade = styled.div`
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40px;
+  user-select: none;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    rgba(245, 248, 250, 0) 0%,
+    rgba(245, 248, 250, 255) 100%
+  );
+`;
+const OverflowBanner = styled.div`
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  user-select: none;
+  background: ${Colors.LIGHT_GRAY3};
+  padding: 2px 12px;
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
+  &:hover {
+    background: ${Colors.LIGHT_GRAY1};
+  }
+`;
+
+class OverflowDetectingCell extends React.Component<
+  {
+    level: LogLevel;
+    style: { height: number };
+  },
+  { isOverflowing: boolean }
+> {
+  state = {
+    isOverflowing: false
+  };
+  componentDidMount() {
+    this.detectOverflow();
+  }
+
+  componentDidUpdate() {
+    this.detectOverflow();
+  }
+
+  detectOverflow() {
+    const el = ReactDOM.findDOMNode(this);
+    if (!(el && "clientHeight" in el)) return;
+
+    const isOverflowing = el.scrollHeight > this.props.style.height;
+    if (isOverflowing !== this.state.isOverflowing) {
+      this.setState({ isOverflowing });
+    }
+  }
+
+  onCopy = () => {
+    const el = ReactDOM.findDOMNode(this);
+    const sel = document.getSelection();
+    if (!el || !sel) return;
+    const range = document.createRange();
+    range.selectNode(el);
+    sel.removeAllRanges();
+    sel.addRange(range);
+    document.execCommand("copy");
+    sel.removeAllRanges();
+  };
+
+  render() {
+    const { level, style } = this.props;
+
+    return (
+      <Cell style={style} level={level}>
+        {this.props.children}
+        {this.state.isOverflowing && (
+          <>
+            <OverflowFade />
+            <OverflowBanner onClick={this.onCopy}>
+              Copy entire message
+            </OverflowBanner>
+          </>
+        )}
+      </Cell>
+    );
+  }
+}
