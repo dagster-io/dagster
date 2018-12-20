@@ -75,5 +75,5 @@ no arguments, and you can visualize and execute all the pipelines in your reposi
 
 .. image:: part_six_fig_one.png
 
-In part seven of the tutorial, we'll get to know :doc:`Pipeline Execution <part_seven>`. a little
+In part seven of the tutorial, we'll get to know :doc:`Pipeline Execution <part_seven>` a little
 better, and learn how to execute pipelines from the command line, with swappable config.

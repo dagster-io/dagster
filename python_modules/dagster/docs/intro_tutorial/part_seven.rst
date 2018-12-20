@@ -26,3 +26,6 @@ name. The tool loads the repository using the repository.yml file and looks up t
 .. code-block:: console
 
     $ dagster pipeline execute part_seven -e env.yml
+
+In part eight, :doc:`Basic Typing <part_eight>`, we'll start to see how gradually typing our
+pipelines can guard against bugs and enrich pipeline documentation.
