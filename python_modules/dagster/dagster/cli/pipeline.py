@@ -11,7 +11,7 @@ from dagster import (
     check,
 )
 
-from dagster.core.definitions import ExecutionGraph, Solid
+from dagster.core.definitions import Solid
 from dagster.core.execution import execute_pipeline_iterator
 from dagster.graphviz import build_graphviz_graph
 from dagster.utils import load_yaml_from_glob_list
@@ -53,6 +53,9 @@ def list_command(**kwargs):
     return execute_list_command(kwargs, click.echo)
 
 
+from dagster.core.execution_plan.create import solids_in_topological_order
+
+
 def execute_list_command(cli_args, print_fn):
     repository_target_info = load_target_info_from_cli_args(cli_args)
     repository = load_repository_from_target_info(repository_target_info)
@@ -73,8 +76,7 @@ def execute_list_command(cli_args, print_fn):
             print_fn('Description:')
             print_fn(format_description(pipeline.description, indent=' ' * 4))
         print_fn('Solids: (Execution Order)')
-        solid_graph = ExecutionGraph(pipeline, pipeline.solids, pipeline.dependency_structure)
-        for solid in solid_graph.topological_solids:
+        for solid in solids_in_topological_order(pipeline):
             print_fn('    ' + solid.name)
 
 

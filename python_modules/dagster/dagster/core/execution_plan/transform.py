@@ -39,7 +39,7 @@ def create_transform_step(solid, step_inputs, conf):
 
 def _yield_transform_results(context, step, conf, inputs):
     gen = step.solid.definition.transform_fn(
-        TransformExecutionInfo(context, conf, step.solid.definition),
+        TransformExecutionInfo(context, conf, step.solid),
         inputs,
     )
 

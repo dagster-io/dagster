@@ -32,7 +32,6 @@ from dagster import (
 from .definitions import (
     DEFAULT_OUTPUT,
     ContextCreationExecutionInfo,
-    ExecutionGraph,
     PipelineDefinition,
     Solid,
 )
@@ -55,17 +54,20 @@ from .evaluator import (
 
 from .events import construct_event_logger
 
-from .execution_plan import (
+from .execution_plan.create import (
     create_execution_plan_core,
-    ExecutionPlanInfo,
+    create_subplan,
 )
 
 from .execution_plan.objects import (
+    ExecutionPlan,
+    ExecutionPlanInfo,
+    ExecutionSubsetInfo,
     StepResult,
     StepTag,
 )
 
-from .execution_plan.simple_engine import execute_plan
+from .execution_plan.simple_engine import execute_plan_core
 
 
 class PipelineExecutionResult(object):
@@ -241,22 +243,12 @@ class SolidExecutionResult(object):
                 return result.failure_data.dagster_error
 
 
-def create_execution_plan(pipeline, environment=None):
+def create_execution_plan(pipeline, typed_environment):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    check.opt_inst_param(environment, 'environment', config.Environment)
+    check.inst_param(typed_environment, 'environment', config.Environment)
 
-    pipeline_env_type = pipeline.environment_type
-
-    if environment is None:
-        environment = evaluate_config_value(pipeline_env_type, None).value
-
-    check.inst(environment, config.Environment)
-
-    execution_graph = ExecutionGraph.from_pipeline(pipeline)
-    with yield_context(pipeline, environment) as context:
-        return create_execution_plan_core(
-            ExecutionPlanInfo(context, execution_graph, environment),
-        )
+    with yield_context(pipeline, typed_environment) as context:
+        return create_execution_plan_core(ExecutionPlanInfo(context, pipeline, typed_environment))
 
 
 def get_run_id(reentrant_info):
@@ -435,35 +427,26 @@ def execute_pipeline_iterator(pipeline, environment=None):
       execution (ExecutionContext): execution context of the run
     '''
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-
-    typed_environment = get_typed_environment(pipeline, environment)
-
-    execution_graph = ExecutionGraph.from_pipeline(pipeline)
+    typed_environment = create_typed_environment(pipeline, environment)
     with yield_context(pipeline, typed_environment) as context:
-        with context.value('pipeline', execution_graph.pipeline.display_name):
-            for result in _execute_graph_iterator(context, execution_graph, typed_environment):
+        with context.value('pipeline', pipeline.display_name):
+            for result in _execute_graph_iterator(context, pipeline, typed_environment):
                 yield result
 
 
-def _execute_graph_iterator(context, execution_graph, environment):
+def _execute_graph_iterator(context, pipeline, environment):
     check.inst_param(context, 'context', RuntimeExecutionContext)
-    check.inst_param(execution_graph, 'execution_graph', ExecutionGraph)
+    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.inst_param(environment, 'environent', config.Environment)
 
-    execution_plan = create_execution_plan_core(
-        ExecutionPlanInfo(
-            context,
-            execution_graph,
-            environment,
-        ),
-    )
+    execution_plan = create_execution_plan_core(ExecutionPlanInfo(context, pipeline, environment))
 
     steps = list(execution_plan.topological_steps())
 
     if not steps:
         context.debug(
             'Pipeline {pipeline} has no nodes and no execution will happen'.format(
-                pipeline=execution_graph.pipeline.display_name
+                pipeline=pipeline.display_name
             )
         )
         return
@@ -478,7 +461,7 @@ def _execute_graph_iterator(context, execution_graph, environment):
 
     solid = None
     step_results = []
-    for step_result in execute_plan(context, execution_plan):
+    for step_result in execute_plan_core(context, execution_plan):
         check.inst_param(step_result, 'step_result', StepResult)
 
         step = step_result.step
@@ -534,6 +517,23 @@ class PipelineConfigEvaluationError(Exception):
         super(PipelineConfigEvaluationError, self).__init__(error_msg, *args, **kwargs)
 
 
+def execute_plan(pipeline, execution_plan, environment=None, subset_info=None):
+    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+    check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+    check.opt_dict_param(environment, 'environment')
+    check.opt_inst_param(subset_info, 'subset_info', ExecutionSubsetInfo)
+
+    typed_environment = create_typed_environment(pipeline, environment)
+
+    with yield_context(pipeline, typed_environment) as context:
+        plan_to_execute = create_subplan(
+            ExecutionPlanInfo(context=context, pipeline=pipeline, environment=typed_environment),
+            execution_plan,
+            subset_info,
+        ) if subset_info else execution_plan
+        return list(execute_plan_core(context, plan_to_execute))
+
+
 def execute_pipeline(
     pipeline,
     environment=None,
@@ -562,7 +562,7 @@ def execute_pipeline(
     check.bool_param(throw_on_error, 'throw_on_error')
     check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
 
-    typed_environment = get_typed_environment(pipeline, environment)
+    typed_environment = create_typed_environment(pipeline, environment)
 
     return execute_reentrant_pipeline(pipeline, typed_environment, throw_on_error, reentrant_info)
 
@@ -577,16 +577,15 @@ def execute_reentrant_pipeline(
     check.inst_param(typed_environment, 'typed_environment', config.Environment)
     check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
 
-    execution_graph = ExecutionGraph.from_pipeline(pipeline)
     return _execute_graph(
-        execution_graph,
+        pipeline,
         typed_environment,
         throw_on_error=throw_on_error,
         reentrant_info=reentrant_info,
     )
 
 
-def get_typed_environment(pipeline, environment):
+def create_typed_environment(pipeline, environment=None):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.opt_dict_param(environment, 'environment')
 
@@ -600,28 +599,28 @@ def get_typed_environment(pipeline, environment):
 
 
 def _execute_graph(
-    execution_graph,
+    pipeline,
     environment,
     throw_on_error=True,
     reentrant_info=None,
 ):
-    check.inst_param(execution_graph, 'execution_graph', ExecutionGraph)
+    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.inst_param(environment, 'environment', config.Environment)
     check.bool_param(throw_on_error, 'throw_on_error')
     check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
     results = []
-    with yield_context(execution_graph.pipeline, environment, reentrant_info) as context:
+    with yield_context(pipeline, environment, reentrant_info) as context:
         check.inst(context, RuntimeExecutionContext)
-        with context.value('pipeline', execution_graph.pipeline.display_name):
+        with context.value('pipeline', pipeline.display_name):
             context.events.pipeline_start()
 
-            for result in _execute_graph_iterator(context, execution_graph, environment):
+            for result in _execute_graph_iterator(context, pipeline, environment):
                 if throw_on_error and not result.success:
                     result.reraise_user_error()
 
                 results.append(result)
 
-            pipeline_result = PipelineExecutionResult(execution_graph.pipeline, context, results)
+            pipeline_result = PipelineExecutionResult(pipeline, context, results)
             if pipeline_result.success:
                 context.events.pipeline_success()
             else:

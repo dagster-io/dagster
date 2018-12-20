@@ -6,6 +6,7 @@ from collections import (
 from dagster import check
 
 from dagster.core.definitions import (
+    solids_in_topological_order,
     InputDefinition,
     OutputDefinition,
     Solid,
@@ -26,6 +27,7 @@ from .objects import (
     ExecutionPlanInfo,
     ExecutionStep,
     ExecutionSubPlan,
+    ExecutionSubsetInfo,
     StepInput,
     StepOutputHandle,
     StepTag,
@@ -34,6 +36,8 @@ from .objects import (
 from .serialization import decorate_with_serialization
 
 from .transform import create_transform_step
+
+from .utility import create_value_thunk_step
 
 
 def get_solid_user_config(execution_info, pipeline_solid):
@@ -67,14 +71,13 @@ class StepOutputMap(dict):
 def create_execution_plan_core(execution_info):
     check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
 
-    execution_graph = execution_info.execution_graph
-
     state = StepBuilderState(
         steps=[],
         step_output_map=StepOutputMap(),
     )
 
-    for pipeline_solid in execution_graph.topological_solids:
+    for pipeline_solid in solids_in_topological_order(execution_info.pipeline):
+
         step_inputs = create_step_inputs(execution_info, state, pipeline_solid)
 
         solid_transform_step = create_transform_step(
@@ -165,7 +168,7 @@ def create_step_inputs(info, state, pipeline_solid):
     step_inputs = []
 
     topo_solid = pipeline_solid.definition
-    dependency_structure = info.execution_graph.dependency_structure
+    dependency_structure = info.pipeline.dependency_structure
 
     for input_def in topo_solid.input_defs:
         input_handle = pipeline_solid.input_handle(input_def.name)
@@ -189,7 +192,7 @@ def create_step_inputs(info, state, pipeline_solid):
                     'must get a value either (a) from a dependency or (b) from the '
                     'inputs section of its configuration.'
                 ).format(
-                    pipeline_name=info.execution_graph.pipeline.name,
+                    pipeline_name=info.pipeline.name,
                     solid_name=pipeline_solid.name,
                     input_name=input_def.name,
                 )
@@ -212,3 +215,59 @@ def create_step_inputs(info, state, pipeline_solid):
         )
 
     return step_inputs
+
+
+def create_subplan(execution_plan_info, execution_plan, subset_info):
+    check.inst_param(execution_plan_info, 'execution_plan_info', ExecutionPlanInfo)
+    check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+    check.inst_param(subset_info, 'subset_info', ExecutionSubsetInfo)
+
+    deps = defaultdict(set)
+    step_dict = {}
+
+    for step in execution_plan.steps:
+        if step.key not in subset_info.subset:
+            # Not included in subset. Skip.
+            continue
+
+        if step.key not in subset_info.inputs:
+            step_dict[step.key] = step
+            if not step.step_inputs:
+                deps[step.key] = set()
+            else:
+                for step_input in step.step_inputs:
+                    deps[step.key].add(step_input.prev_output_handle.step.key)
+
+            continue
+
+        new_step_inputs = []
+        for step_input in step.step_inputs:
+            if step_input.name in subset_info.inputs[step.key]:
+                value_thunk_step_output_handle = create_value_thunk_step(
+                    step.solid,
+                    step_input.dagster_type,
+                    step.key + '.input.' + step_input.name + '.value',
+                    subset_info.inputs[step.key][step_input.name],
+                )
+
+                new_value_step = value_thunk_step_output_handle.step
+
+                step_dict[new_value_step.key] = new_value_step
+
+                new_step_inputs.append(
+                    StepInput(
+                        step_input.name,
+                        step_input.dagster_type,
+                        value_thunk_step_output_handle,
+                    )
+                )
+            else:
+                new_step_inputs.append(step_input)
+
+        new_step = step.with_new_inputs(new_step_inputs)
+
+        step_dict[new_step.key] = new_step
+        for step_input in new_step.step_inputs:
+            deps[new_step.key].add(step_input.prev_output_handle.step.key)
+
+    return ExecutionPlan(step_dict, deps)

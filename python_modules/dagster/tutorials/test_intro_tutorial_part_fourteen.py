@@ -5,8 +5,8 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     SolidInstance,
-    define_stub_solid,
-    execute_pipeline,
+    execute_solid,
+    execute_solids,
     lambda_solid,
     solid,
     types,
@@ -71,43 +71,31 @@ def define_part_fourteen_step_one_pipeline():
 
 
 def test_only_final():
-    pipeline = PipelineDefinition.create_single_solid_pipeline(
+    solid_result = execute_solid(
         define_part_fourteen_step_one_pipeline(),
         'final',
-        injected_solids={
-            'final': {
-                'num1': define_stub_solid('stub_a', 3),
-                'num2': define_stub_solid('stub_b', 4),
-            }
-        }
+        inputs={
+            'num1': 3,
+            'num2': 4,
+        },
     )
-
-    result = execute_pipeline(pipeline)
-
-    assert result.success
-    assert len(result.result_list) == 3
-    assert result.result_for_solid('stub_a').transformed_value() == 3
-    assert result.result_for_solid('stub_b').transformed_value() == 4
-    assert result.result_for_solid('final').transformed_value() == 12
+    assert solid_result.success
+    assert solid_result.transformed_value() == 12
 
 
 def test_a_plus_b_final_subdag():
-    pipeline = PipelineDefinition.create_sub_pipeline(
+    results = execute_solids(
         define_part_fourteen_step_one_pipeline(),
         ['a_plus_b', 'final'],
-        ['final'],
-        injected_solids={
+        inputs={
             'a_plus_b': {
-                'num1': define_stub_solid('stub_a', 2),
-                'num2': define_stub_solid('stub_b', 4),
+                'num1': 2,
+                'num2': 4,
             },
             'final': {
-                'num2': define_stub_solid('stub_c_plus_d', 6),
-            }
+                'num2': 6,
+            },
         },
     )
-
-    pipeline_result = execute_pipeline(pipeline)
-
-    assert pipeline_result.result_for_solid('a_plus_b').transformed_value() == 6
-    assert pipeline_result.result_for_solid('final').transformed_value() == 36
+    assert results['a_plus_b'].transformed_value() == 6
+    assert results['final'].transformed_value() == 36
