@@ -415,7 +415,63 @@ def get_resource_or_gen(context_definition, resource_name, environment, run_id):
     return resource_def.resource_fn(ResourceCreationInfo(resource_config, run_id))
 
 
-def execute_pipeline_iterator(pipeline, environment=None):
+def _do_iterate_pipeline(
+    pipeline,
+    context,
+    typed_environment,
+    throw_on_error=True,
+):
+    check.inst(context, RuntimeExecutionContext)
+    pipeline_success = True
+    with context.value('pipeline', pipeline.display_name):
+        context.events.pipeline_start()
+
+        execution_plan = create_execution_plan_core(
+            ExecutionPlanInfo(context, pipeline, typed_environment)
+        )
+
+        steps = list(execution_plan.topological_steps())
+
+        if not steps:
+            context.debug(
+                'Pipeline {pipeline} has no nodes and no execution will happen'.format(
+                    pipeline=pipeline.display_name
+                )
+            )
+            context.events.pipeline_success()
+            return
+
+        context.debug(
+            'About to execute the compute node graph in the following order {order}'.format(
+                order=[step.key for step in steps]
+            )
+        )
+
+        check.invariant(len(steps[0].step_inputs) == 0)
+
+        for solid_result in _process_step_results(
+            context,
+            execute_plan_core(context, execution_plan),
+        ):
+            if throw_on_error and not solid_result.success:
+                solid_result.reraise_user_error()
+
+            if not solid_result.success:
+                pipeline_success = False
+            yield solid_result
+
+        if pipeline_success:
+            context.events.pipeline_success()
+        else:
+            context.events.pipeline_failure()
+
+
+def execute_pipeline_iterator(
+    pipeline,
+    environment=None,
+    throw_on_error=True,
+    reentrant_info=None,
+):
     '''Returns iterator that yields :py:class:`SolidExecutionResult` for each
     solid executed in the pipeline.
 
@@ -427,60 +483,44 @@ def execute_pipeline_iterator(pipeline, environment=None):
       execution (ExecutionContext): execution context of the run
     '''
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+    check.opt_dict_param(environment, 'environment')
     typed_environment = create_typed_environment(pipeline, environment)
-    with yield_context(pipeline, typed_environment) as context:
-        with context.value('pipeline', pipeline.display_name):
-            for result in _execute_graph_iterator(context, pipeline, typed_environment):
-                yield result
+    check.bool_param(throw_on_error, 'throw_on_error')
+    check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
+
+    with yield_context(pipeline, typed_environment, reentrant_info) as context:
+        for solid_result in _do_iterate_pipeline(
+            pipeline,
+            context,
+            typed_environment,
+            throw_on_error,
+        ):
+            yield solid_result
 
 
-def _execute_graph_iterator(context, pipeline, environment):
-    check.inst_param(context, 'context', RuntimeExecutionContext)
-    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    check.inst_param(environment, 'environent', config.Environment)
-
-    execution_plan = create_execution_plan_core(ExecutionPlanInfo(context, pipeline, environment))
-
-    steps = list(execution_plan.topological_steps())
-
-    if not steps:
-        context.debug(
-            'Pipeline {pipeline} has no nodes and no execution will happen'.format(
-                pipeline=pipeline.display_name
-            )
-        )
-        return
-
-    context.debug(
-        'About to execute the compute node graph in the following order {order}'.format(
-            order=[step.key for step in steps]
-        )
-    )
-
-    check.invariant(len(steps[0].step_inputs) == 0)
-
+def _process_step_results(context, step_results):
     solid = None
-    step_results = []
-    for step_result in execute_plan_core(context, execution_plan):
+    current_step_results = []
+    for step_result in step_results:
         check.inst_param(step_result, 'step_result', StepResult)
 
         step = step_result.step
 
         if solid and solid is not step.solid:
-            yield SolidExecutionResult.from_results(context, step_results)
-            step_results = []
+            yield SolidExecutionResult.from_results(context, current_step_results)
+            current_step_results = []
 
         if not step_result.success:
-            step_results.append(step_result)
-            yield SolidExecutionResult.from_results(context, step_results)
-            step_results = []
+            current_step_results.append(step_result)
+            yield SolidExecutionResult.from_results(context, current_step_results)
+            current_step_results = []
             return
 
         solid = step.solid
-        step_results.append(step_result)
+        current_step_results.append(step_result)
 
-    if solid and step_results:
-        yield SolidExecutionResult.from_results(context, step_results)
+    if solid and current_step_results:
+        yield SolidExecutionResult.from_results(context, current_step_results)
 
 
 class ReentrantInfo(namedtuple('_ReentrantInfo', 'run_id context_stack event_callback')):
@@ -577,12 +617,12 @@ def execute_reentrant_pipeline(
     check.inst_param(typed_environment, 'typed_environment', config.Environment)
     check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
 
-    return _execute_graph(
-        pipeline,
-        typed_environment,
-        throw_on_error=throw_on_error,
-        reentrant_info=reentrant_info,
-    )
+    with yield_context(pipeline, typed_environment, reentrant_info) as context:
+        return PipelineExecutionResult(
+            pipeline,
+            context,
+            list(_do_iterate_pipeline(pipeline, context, typed_environment, throw_on_error)),
+        )
 
 
 def create_typed_environment(pipeline, environment=None):
@@ -596,34 +636,3 @@ def create_typed_environment(pipeline, environment=None):
         raise PipelineConfigEvaluationError(pipeline, result.errors, environment)
 
     return result.value
-
-
-def _execute_graph(
-    pipeline,
-    environment,
-    throw_on_error=True,
-    reentrant_info=None,
-):
-    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    check.inst_param(environment, 'environment', config.Environment)
-    check.bool_param(throw_on_error, 'throw_on_error')
-    check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
-    results = []
-    with yield_context(pipeline, environment, reentrant_info) as context:
-        check.inst(context, RuntimeExecutionContext)
-        with context.value('pipeline', pipeline.display_name):
-            context.events.pipeline_start()
-
-            for result in _execute_graph_iterator(context, pipeline, environment):
-                if throw_on_error and not result.success:
-                    result.reraise_user_error()
-
-                results.append(result)
-
-            pipeline_result = PipelineExecutionResult(pipeline, context, results)
-            if pipeline_result.success:
-                context.events.pipeline_success()
-            else:
-                context.events.pipeline_failure()
-
-            return pipeline_result
