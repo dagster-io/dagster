@@ -1,17 +1,16 @@
 Basic Typing
 ------------
+Dagster includes an optional type system that can be applied to both runtime values (inputs and
+outputs of solids) and configuration values. We can use these types to provide runtime type
+guarantees as well as to improve pipeline documentation and intelligibility.
 
-Dagster includes an optional type system that can be applied to both runtime values
-and configuration. We can use these types to both provide runtime type guarantees
-as well as improve documentation and understandability.
-
-There actually *have* been types during all previous parts of this tutorial. If the
-use does not specify types for inputs, outputs, or config in dagster, they default
-to the ``Any`` type, which can accept any and all values.
+Actually, we've been using the type system all along. Throughout this tutorial, anywhere we didn't
+specify a type for an input, output, or config value, they defaulted to the ``Any`` type, which
+can accept any and all values.
 
 We are going to incrementally add typing to the example in part seven.
 
-Before we had this:
+Previously, we had this:
 
 .. code-block:: python
 
