@@ -1,17 +1,32 @@
-import os
-import subprocess
+import pytest
 
 from dagster import execute_pipeline
 
-from ..part_five import define_configurable_hello_world_pipeline
+from ..part_five import (
+    define_execution_context_pipeline_step_one,
+    define_execution_context_pipeline_step_two,
+    define_execution_context_pipeline_step_three,
+)
 
 
-def test_tutorial_part_four():
-    pipeline = define_configurable_hello_world_pipeline()
+def test_tutorial_part_five():
+    for pipeline_definition in [
+        define_execution_context_pipeline_step_one,
+        define_execution_context_pipeline_step_two,
+        define_execution_context_pipeline_step_three,
+    ]:
+        pipeline = pipeline_definition()
 
-    result = execute_pipeline(pipeline, {'solids': {'hello_world': {'config': 'Hello, World!'}}})
-
-    assert result.success
-    assert len(result.result_list) == 1
-    assert result.result_for_solid('hello_world').transformed_value() == 'Hello, World!'
-    return result
+        with pytest.raises():
+            execute_pipeline(
+                pipeline,
+                {
+                    'context': {
+                        'default': {
+                            'config': {
+                                'log_level': 'DEBUG',
+                            },
+                        },
+                    },
+                },
+            )
