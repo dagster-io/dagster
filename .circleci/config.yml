@@ -56,7 +56,7 @@ workflows:
             - dagster-contrib-py27
           context: coveralls
 
-        
+
 
 jobs:
   dagster-py36: &dagster-template
@@ -151,25 +151,25 @@ jobs:
       - run:
           name: Install Dependencies
           command: |
-            cd python_modules/dagit/dagit/webapp
+            cd js_modules/dagit
             yarn
 
       - run:
           name: Run Typescript
           command: |
-            cd python_modules/dagit/dagit/webapp
+            cd js_modules/dagit
             yarn run ts
 
       - run:
           name: Run Tests
           command: |
-            cd python_modules/dagit/dagit/webapp
+            cd js_modules/dagit
             yarn run jest
 
       - run:
           name: Check coding style
           command: |
-            cd python_modules/dagit/dagit/webapp
+            cd js_modules/dagit
             yarn run check-prettier
 
   dagstermill-py36: &dagstermill-template
