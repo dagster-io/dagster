@@ -5,7 +5,7 @@ the web UI tool used to visualize your data pipelines -- installed on your platf
 
 Let's write our first pipeline and save it as ``part_one.py``.
 
-.. literalinclude:: ../../tutorials/intro_tutorial/part_one.py
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/part_one.py
    :linenos:
    :lines: 1-2, 4-17
    :caption: part_one.py
@@ -62,7 +62,7 @@ log level.
 If you'd rather execute your pipelines as a script, you can do that without using the dagster CLI
 at all. Just add a few lines to `part_one.py` (highlighted in yellow):
 
-.. literalinclude:: ../../tutorials/intro_tutorial/part_one.py
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/part_one.py
    :linenos:
    :caption: part_one.py
    :emphasize-lines: 3,19-21

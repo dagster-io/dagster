@@ -11,7 +11,7 @@ rather than particular to an individual solid, should be associated with the con
 
 One of the most basic pipeline-level facilities is logging.
 
-.. literalinclude:: ../../tutorials/intro_tutorial/part_five.py
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/part_five.py
    :lines: 1-2,4-21
    :caption: part_five.py
 
@@ -32,7 +32,7 @@ two solids is indeterminate -- they don't depend on each other.)
 
 Let's change the example by adding a name to the pipeline. (Naming things is good practice).
 
-.. literalinclude:: ../../tutorials/intro_tutorial/part_five.py
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/part_five.py
    :lines: 24-25
    :caption: part_five.py
 
@@ -53,13 +53,13 @@ filter error messages at any level.) In order to print ``DEBUG`` messages to the
 use the configuration system again -- this time, to configure the context rather than an individual
 solid.
 
-.. literalinclude:: ../../tutorials/intro_tutorial/part_five.py
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/part_five.py
    :lines: 28-29
    :caption: part_five.py
 
 We could use the same config syntax as before in order to configure the pipeline:
 
-.. literalinclude:: ../../tutorials/intro_tutorial/part_five.py
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/part_five.py
    :lines: 3,30-31,33-44
    :dedent: 4
 
@@ -71,7 +71,7 @@ instance, pipeline-level config that is common across many projects) or kept out
 (for instance, credentials or information specific to a developer environment) and combined at
 pipeline execution time.
 
-.. literalinclude:: ../../tutorials/intro_tutorial/part_five.yaml
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/part_five.yaml
    :caption: part_five.yaml
 
 If we re-run the pipeline, you'll see a lot more output, including our custom ``DEBUG`` message.

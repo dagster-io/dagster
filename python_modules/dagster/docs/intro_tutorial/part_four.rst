@@ -14,7 +14,7 @@ solid yields through config.
 This time, we'll use a more fully-featured API to define our solid -- 
 :py:func:`@solid <dagster.solid>` instead of :py:func:`@lambda_solid <dagster.lambda_solid>`.
 
-.. literalinclude:: ../../tutorials/intro_tutorial/part_four.py
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/part_four.py
    :linenos:
    :caption: part_four.py
 
@@ -29,7 +29,7 @@ That configuration is specified in the second argument to
 *all* of the configuration to execute an entire pipeline. It may have many sections, but we're only
 using one of them here: per-solid configuration specified under the key ``solids``:
 
-.. literalinclude:: ../../tutorials/intro_tutorial/part_four.py
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/part_four.py
    :lines: 23-27
    :dedent: 12
 
