@@ -46,6 +46,7 @@ API Reference
   apidocs/execution
   apidocs/errors
   apidocs/types
+  apidocs/utilities
 
 Indices and tables
 ==================

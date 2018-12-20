@@ -89,3 +89,6 @@ make configurable for different environments -- for instance, access to file sys
 or compute substrates -- can be configured using the context. This is how pipelines can be made
 executable in different operating environments (e.g. unit-testing, CI/CD, prod, etc) without
 changing business logic.
+
+Next, we'll see how to declare :doc:`Repositories <part_six>`. -- groups of pipelines -- so that
+the dagster tools can manage them.
