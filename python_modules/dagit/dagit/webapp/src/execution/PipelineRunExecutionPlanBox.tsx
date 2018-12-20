@@ -17,22 +17,8 @@ interface IExecutionPlanBoxState {
   v: number;
 }
 
-function formatExecutionTime(msec: number) {
-  if (msec < 1000) {
-    // < 1 second, show msec
-    return `${Math.ceil(msec)} msec`;
-  } else if (msec < 10 * 1000) {
-    // < 10 seconds, show seconds with one decimal point
-    return `${Math.ceil(msec / 100) / 10} sec`;
-  } else if (msec < 60 * 1000) {
-    // < 1 min, show seconds
-    return `${Math.ceil(msec / 1000)} sec`;
-  } else if (msec < 60 * 60 * 1000) {
-    // < 1 hour, show minutes
-    return `${Math.ceil(msec / (60 * 1000))} min`;
-  } else {
-    return `${Math.ceil(msec / (60 * 60 * 1000))} hours`;
-  }
+function twoDigit(v: number) {
+  return `${v < 10 ? "0" : ""}${v}`;
 }
 
 export class ExecutionPlanBox extends React.Component<
@@ -106,7 +92,6 @@ export class ExecutionPlanBox extends React.Component<
     let elapsed = this.props.elapsed;
     if (state === IStepState.RUNNING && start) {
       elapsed = Math.floor((Date.now() - start) / 1000) * 1000;
-      if (elapsed === 0) elapsed = undefined;
     }
 
     return (
@@ -131,11 +116,7 @@ export class ExecutionPlanBox extends React.Component<
           )}
         </ExeuctionStateWrap>
         <ExecutionPlanBoxName>{name}</ExecutionPlanBoxName>
-        {elapsed && (
-          <ExecutionStateLabel>
-            {formatExecutionTime(elapsed)}
-          </ExecutionStateLabel>
-        )}
+        {elapsed !== undefined && <ExecutionTime elapsed={elapsed} />}
       </ExecutionPlanBoxContainer>
     );
   }
@@ -170,7 +151,35 @@ const ExecutionStateDot = styled.div<{ state: IStepState }>`
   }
 `;
 
-const ExecutionStateLabel = styled.div`
+const ExecutionTime = ({ elapsed }: { elapsed: number }) => {
+  let text = "";
+
+  if (elapsed < 1000) {
+    // < 1 second, show "X msec"
+    text = `${Math.ceil(elapsed)} msec`;
+  } else {
+    // < 1 hour, show "42:12"
+    const sec = Math.floor(elapsed / 1000) % 60;
+    const min = Math.floor(elapsed / 1000 / 60) % 60;
+    const hours = Math.floor(elapsed / 1000 / 60 / 60);
+
+    if (hours > 0) {
+      text = `${hours}:${twoDigit(min)}:${twoDigit(sec)}`;
+    } else {
+      text = `${min}:${twoDigit(sec)}`;
+    }
+  }
+
+  // Note: Adding a min-width prevents the size of the execution plan box from
+  // shifting /slightly/ as the elapsed time increments.
+  return (
+    <ExecutionTimeContainer style={{ minWidth: text.length * 6.8 }}>
+      {text}
+    </ExecutionTimeContainer>
+  );
+};
+
+const ExecutionTimeContainer = styled.div`
   opacity: 0.7;
   font-size: 0.9em;
   margin-left: 10px;
