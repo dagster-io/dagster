@@ -27,7 +27,7 @@ rebuild_dagit:
 	cd ../js_modules/dagit/; yarn install && yarn build-for-python
 
 run_dagit:
-	cd dagit/dagit/webapp; make
+	cd ../js_modules/dagit/; make
 
 dagster_yapf:
 	find dagster -name "*.py" | grep -v ".tox" | grep -v ".vscode" | grep -v "snapshots" | xargs yapf -i
