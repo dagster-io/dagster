@@ -107,13 +107,11 @@ def create_execution_plan_from_steps(steps):
     check.list_param(steps, 'steps', of_type=ExecutionStep)
 
     step_dict = {step.key: step for step in steps}
-
-    deps = defaultdict()
+    deps = {step.key: set() for step in steps}
 
     seen_keys = set()
 
     for step in steps:
-
         if step.key in seen_keys:
             keys = [s.key for s in steps]
             check.failed(
@@ -122,7 +120,6 @@ def create_execution_plan_from_steps(steps):
 
         seen_keys.add(step.key)
 
-        deps[step.key] = set()
         for step_input in step.step_inputs:
             deps[step.key].add(step_input.prev_output_handle.step.key)
 
@@ -222,8 +219,7 @@ def create_subplan(execution_plan_info, execution_plan, subset_info):
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     check.inst_param(subset_info, 'subset_info', ExecutionSubsetInfo)
 
-    deps = defaultdict(set)
-    step_dict = {}
+    steps = []
 
     for step in execution_plan.steps:
         if step.key not in subset_info.subset:
@@ -231,13 +227,7 @@ def create_subplan(execution_plan_info, execution_plan, subset_info):
             continue
 
         if step.key not in subset_info.inputs:
-            step_dict[step.key] = step
-            if not step.step_inputs:
-                deps[step.key] = set()
-            else:
-                for step_input in step.step_inputs:
-                    deps[step.key].add(step_input.prev_output_handle.step.key)
-
+            steps.append(step)
             continue
 
         new_step_inputs = []
@@ -252,7 +242,7 @@ def create_subplan(execution_plan_info, execution_plan, subset_info):
 
                 new_value_step = value_thunk_step_output_handle.step
 
-                step_dict[new_value_step.key] = new_value_step
+                steps.append(new_value_step)
 
                 new_step_inputs.append(
                     StepInput(
@@ -264,10 +254,6 @@ def create_subplan(execution_plan_info, execution_plan, subset_info):
             else:
                 new_step_inputs.append(step_input)
 
-        new_step = step.with_new_inputs(new_step_inputs)
+        steps.append(step.with_new_inputs(new_step_inputs))
 
-        step_dict[new_step.key] = new_step
-        for step_input in new_step.step_inputs:
-            deps[new_step.key].add(step_input.prev_output_handle.step.key)
-
-    return ExecutionPlan(step_dict, deps)
+    return create_execution_plan_from_steps(steps)
