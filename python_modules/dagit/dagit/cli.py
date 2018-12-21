@@ -66,7 +66,7 @@ REPO_TARGET_WARNING = (
     is_flag=True,
     help='Use the synchronous execution manager',
 )
-@click.option('--log', is_flag=True, help='Record logs of pipeline runs')
+@click.option('--log', is_flag=False, help='Record logs of pipeline runs')
 @click.option('--log-dir', help="Directory to record logs to", default='dagit_run_logs/')
 def ui(host, port, watch, sync, log, log_dir, **kwargs):
     repository_target_info = load_target_info_from_cli_args(kwargs)
