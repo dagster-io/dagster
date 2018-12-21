@@ -1,17 +1,18 @@
+import os
+import json
+import time
+import copy
 from collections import OrderedDict
 from enum import Enum
-import copy
-import json
-import os
-import time
-
 import gevent
 import gevent.lock
+import logging
 from rx import Observable
-
 from dagster import check
+from dagster.utils.logging import StructuredLoggerMessage
 from dagster.core.events import (
     EventRecord,
+    PipelineEventRecord,
     EventType,
 )
 
@@ -64,7 +65,7 @@ class PipelineRun(object):
         self.__debouncing_queue = DebouncingLogQueue()
 
         self._run_id = run_id
-        self._status = status,
+        self._status = PipelineRunStatus.NOT_STARTED
         self._pipeline_name = pipeline_name
         self._config = config
         self._typed_environment = typed_environment

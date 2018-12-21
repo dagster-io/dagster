@@ -10,18 +10,14 @@ from watchdog.events import FileSystemEventHandler
 from dagster.cli.dynamic_loader import (
     repository_target_argument,
     load_target_info_from_cli_args,
+    load_repository_object_from_target_info,
 )
 
 from .app import (
     create_app,
     RepositoryContainer,
 )
-
-from .pipeline_run_storage import (
-    PipelineRunStorage,
-    LogFilePipelineRun,
-    InMemoryPipelineRun,
-)
+from .pipeline_run_storage import PipelineRunStorage, LogFilePipelineRun, InMemoryPipelineRun
 
 
 def create_dagit_cli():
