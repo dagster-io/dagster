@@ -53,7 +53,7 @@ setup(
         # core (not explicitly expressed atm)
         'six>=1.11.0',
         'toposort>=1.5',
-
+        'pyrsistent>=0.14.8',
         # dev/test - Installed via dev-requirements.txt
         # 'pylint>=1.8.4',
         # 'pytest>=3.5.1',

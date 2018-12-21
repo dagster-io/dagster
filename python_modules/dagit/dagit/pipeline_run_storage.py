@@ -5,9 +5,10 @@ import json
 import os
 import time
 
+from rx import Observable
 import gevent
 import gevent.lock
-from rx import Observable
+import pyrsistent
 
 from dagster import (
     check,
@@ -149,20 +150,22 @@ class InMemoryPipelineRun(PipelineRun):
     def __init__(self, *args, **kwargs):
         super(InMemoryPipelineRun, self).__init__(*args, **kwargs)
         self._log_storage_lock = gevent.lock.Semaphore()
-        self._logs = []
+        self._log_sequence = LogSequence()
 
     def logs_after(self, cursor):
         cursor = int(cursor) + 1
         with self._log_storage_lock:
-            return copy.copy(self._logs[cursor:])
+            return self._log_sequence[cursor:]
 
     def all_logs(self):
         with self._log_storage_lock:
-            return copy.copy(self._logs)
+            return self._log_sequence
 
     def store_event(self, new_event):
+        check.inst_param(new_event, 'new_event', EventRecord)
+
         with self._log_storage_lock:
-            self._logs.append(new_event)
+            self._log_sequence = self._log_sequence.append(new_event)
 
 
 class LogFilePipelineRun(InMemoryPipelineRun):
@@ -193,6 +196,8 @@ class LogFilePipelineRun(InMemoryPipelineRun):
             )
 
     def store_event(self, new_event):
+        check.inst_param(new_event, 'new_event', EventRecord)
+
         super().store_event(new_event)
 
         with self._log_file_lock:
@@ -223,8 +228,12 @@ class PipelineRunObservableSubscribe(object):
         self.pipeline_run.subscribe(self)
 
     def handle_new_events(self, events):
-        check.list_param(events, 'events', EventRecord)
+        check.inst_param(events, 'events', LogSequence)
         self.observer.on_next(events)
+
+
+class LogSequence(pyrsistent.CheckedPVector):
+    __type__ = EventRecord
 
 
 class DebouncingLogQueue(object):
@@ -234,7 +243,7 @@ class DebouncingLogQueue(object):
 
     def __init__(self, timeout_length=1.0, sleep_length=0.1):
         self._log_queue_lock = gevent.lock.Semaphore()
-        self._log_queue = []
+        self._log_sequence = LogSequence()
         self._is_dequeueing_blocked = False
         self._queue_timeout = None
         self._timeout_length = check.float_param(timeout_length, 'timeout_length')
@@ -248,7 +257,7 @@ class DebouncingLogQueue(object):
         '''
         with self._log_queue_lock:
             if self._is_dequeueing_blocked:
-                return []
+                return LogSequence()
             else:
                 self._is_dequeueing_blocked = True
 
@@ -258,18 +267,14 @@ class DebouncingLogQueue(object):
             gevent.sleep(self._sleep_length)
 
         with self._log_queue_lock:
-            if self._log_queue:
-                events = copy.copy(self._log_queue)
-                self._log_queue = []
-            else:
-                events = []
+            events = self._log_sequence
+            self._log_sequence = LogSequence()
             self._is_dequeueing_blocked = False
             self._queue_timeout = None
-
-        return events
+            return events
 
     def enqueue(self, item):
         with self._log_queue_lock:
             if not self._queue_timeout:
                 self._queue_timeout = time.time()
-            self._log_queue.append(item)
+            self._log_sequence = self._log_sequence.append(item)
