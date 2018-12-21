@@ -1,5 +1,8 @@
-from dagster import (RepositoryDefinition)
-from dagster_contrib.dagster_examples.pandas_hello_world.pipeline import define_success_pipeline, define_failure_pipeline
+from dagster import RepositoryDefinition
+from dagster_contrib.dagster_examples.pandas_hello_world.pipeline import (
+    define_success_pipeline,
+    define_failure_pipeline,
+)
 
 
 def define_example_repository():
