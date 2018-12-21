@@ -76,7 +76,7 @@ def ui(host, port, watch, sync, log, log_dir, **kwargs):
     if log:
 
         def create_pipeline_run(*args, **kwargs):
-            return LogFilePipelineRun(*args, log_dir=log_dir, **kwargs)
+            return LogFilePipelineRun(log_dir, *args, **kwargs)
     else:
         create_pipeline_run = InMemoryPipelineRun
 
