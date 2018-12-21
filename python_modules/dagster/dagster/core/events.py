@@ -146,11 +146,27 @@ class EventRecord(object):
     def error_info(self):
         return self._error_info
 
+    def to_dict(self):
+        return {
+            'run_id': self.run_id,
+            'message': self.message,
+            'level': self.level,
+            'original_message': self.original_message,
+            'event_type': str(self.event_type),
+            'timestamp': self.timestamp,
+            'error_info': self._error_info,
+        }
+
 
 class PipelineEventRecord(EventRecord):
     @property
     def pipeline_name(self):
         return self._logger_message.meta['pipeline']
+
+    def to_dict(self):
+        orig = super(PipelineEventRecord, self).to_dict()
+        orig['pipeline_name'] = self.pipeline_name
+        return orig
 
 
 class ExecutionStepEventRecord(EventRecord):
@@ -170,11 +186,28 @@ class ExecutionStepEventRecord(EventRecord):
     def solid_definition_name(self):
         return self._logger_message.meta['solid_definition']
 
+    def to_dict(self):
+        orig = super(ExecutionStepEventRecord, self).to_dict()
+        orig.update(
+            {
+                'pipeline_name': self.pipeline_name,
+                'step_key': self.step_key,
+                'solid_name': self.solid_name,
+                'solid_definition_name': self.solid_definition_name,
+            }
+        )
+        return orig
+
 
 class ExecutionStepSuccessRecord(ExecutionStepEventRecord):
     @property
     def millis(self):
         return self._logger_message.meta['millis']
+
+    def to_dict(self):
+        orig = super(ExecutionStepSuccessRecord, self).to_dict()
+        orig['millis'] = self.millis
+        return orig
 
 
 class LogMessageRecord(EventRecord):

@@ -25,7 +25,7 @@ from dagster.cli.dynamic_loader import RepositoryTargetInfo
 
 from dagit.app import RepositoryContainer
 from dagit.pipeline_execution_manager import MultiprocessingExecutionManager
-from dagit.pipeline_run_storage import PipelineRun, PipelineRunStatus
+from dagit.pipeline_run_storage import InMemoryPipelineRun, PipelineRunStatus
 
 
 def test_running():
@@ -49,7 +49,7 @@ def test_running():
         },
     }
     typed_environment = evaluate_config_value(pipeline.environment_type, config)
-    pipeline_run = PipelineRun(
+    pipeline_run = InMemoryPipelineRun(
         run_id, 'pandas_hello_world', typed_environment.value, config,
         create_execution_plan(pipeline, typed_environment.value)
     )
@@ -81,7 +81,7 @@ def test_failing():
         },
     }
     typed_environment = evaluate_config_value(pipeline.environment_type, config)
-    pipeline_run = PipelineRun(
+    pipeline_run = InMemoryPipelineRun(
         run_id, 'pandas_hello_world', typed_environment.value, config,
         create_execution_plan(pipeline, typed_environment.value)
     )
@@ -113,7 +113,7 @@ def test_execution_crash():
         },
     }
     typed_environment = evaluate_config_value(pipeline.environment_type, config)
-    pipeline_run = PipelineRun(
+    pipeline_run = InMemoryPipelineRun(
         run_id, 'pandas_hello_world', typed_environment.value, config,
         create_execution_plan(pipeline, typed_environment.value)
     )

@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 import json
 from dagit import app
 from dagit.pipeline_run_storage import PipelineRunStorage
@@ -15,4 +15,14 @@ def test_smoke_app():
 
     data = json.loads(result.data.decode('utf-8'))
 
-    assert data == {"data": {"pipelines": {"nodes": [{"name": "pandas_hello_world"}]}}}
+    assert data == {
+        'data': {
+            'pipelines': {
+                'nodes': [{
+                    'name': 'pandas_hello_world'
+                }, {
+                    'name': 'pandas_hello_world_fails'
+                }]
+            }
+        }
+    }
