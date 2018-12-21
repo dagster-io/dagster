@@ -15,8 +15,14 @@ def test_smoke_app():
 
     data = json.loads(result.data.decode('utf-8'))
 
-    assert len(data['data']['pipelines']['nodes']) == 2
-
-    assert set([node_data['name'] for node_data in data['data']['pipelines']['nodes']]) == set(
-        ['pandas_hello_world', 'pandas_hello_world_fails']
-    )
+    assert data == {
+        'data': {
+            'pipelines': {
+                'nodes': [{
+                    'name': 'pandas_hello_world'
+                }, {
+                    'name': 'pandas_hello_world_fails'
+                }]
+            }
+        }
+    }
