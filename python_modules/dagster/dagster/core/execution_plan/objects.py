@@ -197,9 +197,9 @@ class ExecutionPlan(object):
         return list(self._topological_steps())
 
     def _topological_steps(self):
-        sorted_step_guids = toposort.toposort_flatten(self.deps)
-        for step_guid in sorted_step_guids:
-            yield self.step_dict[step_guid]
+        ordered_step_keys = toposort.toposort_flatten(self.deps)
+        for step_key in ordered_step_keys:
+            yield self.step_dict[step_key]
 
 
 class ExecutionPlanInfo(namedtuple('_ExecutionPlanInfo', 'context pipeline environment')):
@@ -219,6 +219,7 @@ class ExecutionPlanInfo(namedtuple('_ExecutionPlanInfo', 'context pipeline envir
 class ExecutionSubsetInfo(namedtuple('_ExecutionSubsetInfo', 'subset inputs')):
     def __new__(cls, included_steps, inputs=None):
         return super(ExecutionSubsetInfo, cls).__new__(
-            cls, set(check.list_param(included_steps, 'included_steps', of_type=str)),
-            check.opt_dict_param(inputs, 'inputs')
+            cls,
+            set(check.list_param(included_steps, 'included_steps', of_type=str)),
+            check.opt_dict_param(inputs, 'inputs'),
         )

@@ -4,6 +4,7 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     Result,
+    ReentrantInfo,
     lambda_solid,
     solid,
     types,
@@ -178,3 +179,25 @@ def test_execution_plan_two_outputs():
     assert step_results[1].step.key == 'return_one_two.transform'
     assert step_results[1].success_data.value == 2
     assert step_results[1].success_data.output_name == 'num_two'
+
+
+def test_reentrant_execute_plan():
+    called = {}
+
+    @solid
+    def has_context_value(info):
+        assert info.context.has_context_value('foo')
+        assert info.context.get_context_value('foo') == 'bar'
+        called['yup'] = True
+
+    pipeline_def = PipelineDefinition(name='has_context_value_pipeline', solids=[has_context_value])
+    execution_plan = create_execution_plan(pipeline_def, create_typed_environment(pipeline_def))
+
+    step_results = execute_plan(
+        pipeline_def,
+        execution_plan,
+        reentrant_info=ReentrantInfo(context_stack={'foo': 'bar'}),
+    )
+
+    assert called['yup']
+    assert len(step_results) == 1
