@@ -1,7 +1,6 @@
 from dagster.core.execution import (
     PipelineConfigEvaluationError,
     PipelineExecutionResult,
-    ReentrantInfo,
     SolidExecutionResult,
     execute_pipeline,
     execute_pipeline_iterator,
@@ -19,6 +18,7 @@ from dagster.core.configurable import (
 
 from dagster.core.execution_context import (
     ExecutionContext,
+    ReentrantInfo,
 )
 
 from dagster.core.definitions import (

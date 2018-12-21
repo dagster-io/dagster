@@ -230,3 +230,13 @@ class RuntimeExecutionContext:
     @property
     def run_id(self):
         return self._run_id
+
+
+class ReentrantInfo(namedtuple('_ReentrantInfo', 'run_id context_stack event_callback')):
+    def __new__(cls, run_id=None, context_stack=None, event_callback=None):
+        return super(ReentrantInfo, cls).__new__(
+            cls,
+            run_id=check.opt_str_param(run_id, 'run_id'),
+            context_stack=check.opt_dict_param(context_stack, 'context_stack'),
+            event_callback=check.opt_callable_param(event_callback, 'event_callback'),
+        )

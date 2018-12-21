@@ -38,6 +38,7 @@ from .definitions import (
 
 from .execution_context import (
     ExecutionContext,
+    ReentrantInfo,
     RuntimeExecutionContext,
 )
 
@@ -523,16 +524,6 @@ def _process_step_results(context, step_results):
         yield SolidExecutionResult.from_results(context, current_step_results)
 
 
-class ReentrantInfo(namedtuple('_ReentrantInfo', 'run_id context_stack event_callback')):
-    def __new__(cls, run_id=None, context_stack=None, event_callback=None):
-        return super(ReentrantInfo, cls).__new__(
-            cls,
-            run_id=check.opt_str_param(run_id, 'run_id'),
-            context_stack=check.opt_dict_param(context_stack, 'context_stack'),
-            event_callback=check.opt_callable_param(event_callback, 'event_callback'),
-        )
-
-
 class PipelineConfigEvaluationError(Exception):
     def __init__(self, pipeline, errors, config_value, *args, **kwargs):
         self.pipeline = check.inst_param(pipeline, 'pipeline', PipelineDefinition)
@@ -557,15 +548,16 @@ class PipelineConfigEvaluationError(Exception):
         super(PipelineConfigEvaluationError, self).__init__(error_msg, *args, **kwargs)
 
 
-def execute_plan(pipeline, execution_plan, environment=None, subset_info=None):
+def execute_plan(pipeline, execution_plan, environment=None, subset_info=None, reentrant_info=None):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     check.opt_dict_param(environment, 'environment')
     check.opt_inst_param(subset_info, 'subset_info', ExecutionSubsetInfo)
+    check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
 
     typed_environment = create_typed_environment(pipeline, environment)
 
-    with yield_context(pipeline, typed_environment) as context:
+    with yield_context(pipeline, typed_environment, reentrant_info) as context:
         plan_to_execute = create_subplan(
             ExecutionPlanInfo(context=context, pipeline=pipeline, environment=typed_environment),
             execution_plan,
