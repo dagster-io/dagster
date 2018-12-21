@@ -151,12 +151,8 @@ class InMemoryPipelineRun(PipelineRun):
 
 
 class LogFilePipelineRun(InMemoryPipelineRun):
-    def __init__(
-        self,
-        *args,
-        log_dir='dagit_run_logs/',
-        **kwargs,
-    ):
+    def __init__(self, *args, **kwargs):
+        log_dir = kwargs.pop('log_dir', 'dagit_run_logs/')
         super(LogFilePipelineRun, self).__init__(*args, **kwargs)
         self._log_dir = log_dir
         self._file_prefix = os.path.join(
