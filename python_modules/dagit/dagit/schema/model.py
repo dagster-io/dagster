@@ -73,12 +73,12 @@ def get_run(info, runId):
     if not run:
         raise Exception('No run with such id: {run_id}'.format(run_id=runId))
     else:
-        return runs.PipelineRun(run)
+        return info.schema.type_named('PipelineRun')
 
 
 def get_runs(info):
     pipeline_run_storage = info.context.pipeline_runs
-    return [runs.PipelineRun(run) for run in pipeline_run_storage.all_runs()]
+    return [info.schema.type_named('PipelineRun')(run) for run in pipeline_run_storage.all_runs()]
 
 
 def validate_pipeline_config(info, pipelineName, config):
@@ -125,9 +125,10 @@ def start_pipeline_execution(info, pipelineName, config):
             execution_plan = create_execution_plan(
                 pipeline.get_dagster_pipeline(), typed_enviroment.value
             )
-            run = pipeline_run_storage.add_run(
+            run = pipeline_run_storage.create_run(
                 new_run_id, pipelineName, typed_enviroment.value, config, execution_plan
             )
+            pipeline_run_storage.add_run(run)
             info.context.execution_manager.execute_pipeline(
                 info.context.repository_container, pipeline.get_dagster_pipeline(), run
             )
