@@ -17,7 +17,7 @@ from .app import (
     create_app,
     RepositoryContainer,
 )
-from .pipeline_run_storage import PipelineRunStorage
+from .pipeline_run_storage import PipelineRunStorage, LogFilePipelineRun, InMemoryPipelineRun
 
 
 def create_dagit_cli():
@@ -66,12 +66,22 @@ REPO_TARGET_WARNING = (
     is_flag=True,
     help='Use the synchronous execution manager',
 )
-def ui(host, port, watch, sync, **kwargs):
+@click.option('--log', is_flag=True, help='Record logs of pipeline runs')
+@click.option('--log-dir', help="Directory to record logs to", default='dagit_run_logs/')
+def ui(host, port, watch, sync, log, log_dir, **kwargs):
     repository_target_info = load_target_info_from_cli_args(kwargs)
 
     sys.path.append(os.getcwd())
     repository_container = RepositoryContainer(repository_target_info)
-    pipeline_run_storage = PipelineRunStorage()
+    if log:
+
+        def create_pipeline_run(*args, **kwargs):
+            return LogFilePipelineRun(*args, log_dir=log_dir, **kwargs)
+    else:
+        create_pipeline_run = InMemoryPipelineRun
+
+    pipeline_run_storage = PipelineRunStorage(create_pipeline_run=create_pipeline_run)
+
     if watch:
         observer = Observer()
         handler = ReloaderHandler(repository_container)

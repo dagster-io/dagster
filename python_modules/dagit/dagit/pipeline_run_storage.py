@@ -1,3 +1,5 @@
+import os
+import json
 import time
 import copy
 from collections import OrderedDict
@@ -23,11 +25,11 @@ class PipelineRunStatus(Enum):
 
 
 class PipelineRunStorage(object):
-    def __init__(self, pipeline_run_implementation=None):
+    def __init__(self, create_pipeline_run=None):
         self._runs = OrderedDict()
-        if not pipeline_run_implementation:
-            pipeline_run_implementation = InMemoryPipelineRun
-        self._pipeline_run_implementation = pipeline_run_implementation
+        if not create_pipeline_run:
+            create_pipeline_run = InMemoryPipelineRun
+        self._create_pipeline_run = create_pipeline_run
 
     def add_run(self, pipeline_run):
         check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
@@ -46,7 +48,7 @@ class PipelineRunStorage(object):
         return self.get_run_by_id(id_)
 
     def create_run(self, *args, **kwargs):
-        return self._pipeline_run_implementation(*args, **kwargs)
+        return self._create_pipeline_run(*args, **kwargs)
 
 
 class PipelineRun(object):
@@ -146,6 +148,53 @@ class InMemoryPipelineRun(PipelineRun):
 
     def store_event(self, new_event):
         self._logs.append(new_event)
+
+
+class LogFilePipelineRun(InMemoryPipelineRun):
+    def __init__(
+        self,
+        *args,
+        log_dir='dagit_run_logs/',
+        **kwargs,
+    ):
+        super(LogFilePipelineRun, self).__init__(*args, **kwargs)
+        self._log_dir = log_dir
+        self._file_prefix = os.path.join(
+            self._log_dir, '{}_{}'.format(int(time.time()), self.run_id)
+        )
+        ensure_dir(log_dir)
+        self._write_metadata_to_file()
+        self._log_file = '{}.log'.format(self._file_prefix)
+        self._log_file_handle = None
+
+    def _write_metadata_to_file(self):
+        metadata_file = '{}.json'.format(self._file_prefix)
+        with open(metadata_file, 'w', encoding="utf-8") as f:
+            f.write(
+                json.dumps(
+                    {
+                        'run_id': self.run_id,
+                        'pipeline_name': self.pipeline_name,
+                        'config': self.config,
+                        'execution_plan': 'TODO',
+                    }
+                )
+            )
+
+    def store_event(self, new_event):
+        self._logs.append(new_event)
+        if not self._log_file_handle:
+            self._log_file_handle = open(self._log_file, 'a', encoding="utf-8")
+        self._log_file_handle.write(json.dumps(new_event.to_dict()))
+        self._log_file_handle.write('\n')
+        if self.status == EventType.PIPELINE_SUCCESS or self.status == EventType.PIPELINE_FAILURE:
+            self._log_file_handle.close()
+
+
+def ensure_dir(file_path):
+    directory = os.path.dirname(file_path)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
 
 
 class PipelineRunObservableSubscribe(object):
