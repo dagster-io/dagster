@@ -80,29 +80,6 @@ ExecutionSubPlan = namedtuple(
 )
 
 
-class ExecutionPlan(object):
-    def __init__(self, step_dict, deps):
-        self.step_dict = check.dict_param(
-            step_dict,
-            'step_dict',
-            key_type=str,
-            value_type=ExecutionStep,
-        )
-        self.deps = check.dict_param(deps, 'deps', key_type=str, value_type=set)
-        self.steps = list(step_dict.values())
-
-    def get_step_by_key(self, key):
-        return self.step_dict[key]
-
-    def topological_steps(self):
-        return list(self._topological_steps())
-
-    def _topological_steps(self):
-        ordered_step_keys = toposort.toposort_flatten(self.deps)
-        for step_key in ordered_step_keys:
-            yield self.step_dict[step_key]
-
-
 class ExecutionPlanInfo(namedtuple('_ExecutionPlanInfo', 'context pipeline environment')):
     def __new__(cls, context, pipeline, environment):
         return super(ExecutionPlanInfo, cls).__new__(
@@ -324,3 +301,26 @@ class ExecutionStep(
     def step_input_named(self, name):
         check.str_param(name, 'name')
         return self.step_input_dict[name]
+
+
+class ExecutionPlan(object):
+    def __init__(self, step_dict, deps):
+        self.step_dict = check.dict_param(
+            step_dict,
+            'step_dict',
+            key_type=str,
+            value_type=ExecutionStep,
+        )
+        self.deps = check.dict_param(deps, 'deps', key_type=str, value_type=set)
+        self.steps = list(step_dict.values())
+
+    def get_step_by_key(self, key):
+        return self.step_dict[key]
+
+    def topological_steps(self):
+        return list(self._topological_steps())
+
+    def _topological_steps(self):
+        ordered_step_keys = toposort.toposort_flatten(self.deps)
+        for step_key in ordered_step_keys:
+            yield self.step_dict[step_key]
