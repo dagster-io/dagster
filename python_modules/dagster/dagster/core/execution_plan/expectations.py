@@ -128,7 +128,7 @@ def create_expectation_step(
             )
         ],
         step_outputs=[
-            StepOutput(name=EXPECTATION_VALUE_OUTPUT, dagster_type=value_type),
+            StepOutput.from_props(name=EXPECTATION_VALUE_OUTPUT, dagster_type=value_type),
         ],
         compute_fn=_create_expectation_lambda(
             solid,

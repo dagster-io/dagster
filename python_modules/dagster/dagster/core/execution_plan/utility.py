@@ -50,7 +50,7 @@ def create_join_step(solid, step_key, prev_steps, prev_output_name):
     return ExecutionStep(
         key=step_key,
         step_inputs=step_inputs,
-        step_outputs=[StepOutput(name=JOIN_OUTPUT, dagster_type=seen_dagster_type)],
+        step_outputs=[StepOutput.from_props(name=JOIN_OUTPUT, dagster_type=seen_dagster_type)],
         compute_fn=__join_lambda,
         tag=StepTag.JOIN,
         solid=solid,
@@ -67,7 +67,7 @@ def create_value_thunk_step(solid, dagster_type, step_key, value):
     new_step = ExecutionStep(
         key=step_key,
         step_inputs=[],
-        step_outputs=[StepOutput(name=VALUE_OUTPUT, dagster_type=dagster_type)],
+        step_outputs=[StepOutput.from_props(name=VALUE_OUTPUT, dagster_type=dagster_type)],
         compute_fn=_fn,
         tag=StepTag.VALUE_THUNK,
         solid=solid,

@@ -222,6 +222,25 @@ class StepInput(PClass):
     dagster_type = field(type=DagsterType, mandatory=True)
 
 
-class StepOutput(PClass):
+class StepOutputMeta(PClass):
     name = field(type=str, mandatory=True)
+    dagster_type_name = field(type=str, mandatory=True)
+
+
+class StepOutput(PClass):
+    @staticmethod
+    def from_props(name, dagster_type):
+        return StepOutput(
+            meta=StepOutputMeta(name=name, dagster_type_name=dagster_type.name),
+            dagster_type=dagster_type,
+        )
+
+    # PClass fools lint
+    # pylint: disable=E1101
+
+    @property
+    def name(self):
+        return self.meta.name
+
+    meta = field(type=StepOutputMeta, mandatory=True)
     dagster_type = field(type=DagsterType, mandatory=True)

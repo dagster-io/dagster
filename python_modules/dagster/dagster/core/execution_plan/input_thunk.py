@@ -27,10 +27,12 @@ def _create_input_thunk_execution_step(solid, input_def, value):
     return ExecutionStep(
         key=solid.name + '.' + input_def.name + '.input_thunk',
         step_inputs=[],
-        step_outputs=[StepOutput(
-            name=INPUT_THUNK_OUTPUT,
-            dagster_type=input_def.dagster_type,
-        )],
+        step_outputs=[
+            StepOutput.from_props(
+                name=INPUT_THUNK_OUTPUT,
+                dagster_type=input_def.dagster_type,
+            )
+        ],
         compute_fn=_fn,
         tag=StepTag.INPUT_THUNK,
         solid=solid,

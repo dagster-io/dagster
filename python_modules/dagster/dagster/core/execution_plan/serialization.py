@@ -80,10 +80,12 @@ def create_serialization_step(solid, output_def, prev_subplan):
                 prev_output_handle=prev_subplan.terminal_step_output_handle,
             )
         ],
-        step_outputs=[StepOutput(
-            name=SERIALIZE_OUTPUT,
-            dagster_type=output_def.dagster_type,
-        )],
+        step_outputs=[
+            StepOutput.from_props(
+                name=SERIALIZE_OUTPUT,
+                dagster_type=output_def.dagster_type,
+            )
+        ],
         compute_fn=_create_serialization_lambda(solid, output_def),
         tag=StepTag.SERIALIZE,
         solid=solid,
