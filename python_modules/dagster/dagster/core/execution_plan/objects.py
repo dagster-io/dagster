@@ -14,42 +14,41 @@ from dagster.core.errors import DagsterError
 from dagster.core.execution_context import RuntimeExecutionContext
 from dagster.core.types import DagsterType
 
-import pyrsistent
+from pyrsistent import (PClass, field)
 
+# class StepOutputHandle(namedtuple('_StepOutputHandle', 'step output_name')):
+#     def __new__(cls, step, output_name):
+#         return super(StepOutputHandle, cls).__new__(
+#             cls,
+#             step=check.inst_param(step, 'step', ExecutionStep),
+#             output_name=check.str_param(output_name, 'output_name'),
+#         )
 
-class StepOutputHandle(namedtuple('_StepOutputHandle', 'step output_name')):
-    def __new__(cls, step, output_name):
-        return super(StepOutputHandle, cls).__new__(
-            cls,
-            step=check.inst_param(step, 'step', ExecutionStep),
-            output_name=check.str_param(output_name, 'output_name'),
-        )
+#     # Make this hashable so it be a key in a dictionary
 
-    # Make this hashable so it be a key in a dictionary
+#     def __str__(self):
+#         return (
+#             'StepOutputHandle'
+#             '(step="{step.key}", output_name="{output_name}")'.format(
+#                 step=self.step,
+#                 output_name=self.output_name,
+#             )
+#         )
 
-    def __str__(self):
-        return (
-            'StepOutputHandle'
-            '(step="{step.key}", output_name="{output_name}")'.format(
-                step=self.step,
-                output_name=self.output_name,
-            )
-        )
+#     def __repr__(self):
+#         return (
+#             'StepOutputHandle'
+#             '(step="{step.key}", output_name="{output_name}")'.format(
+#                 step=self.step,
+#                 output_name=self.output_name,
+#             )
+#         )
 
-    def __repr__(self):
-        return (
-            'StepOutputHandle'
-            '(step="{step.key}", output_name="{output_name}")'.format(
-                step=self.step,
-                output_name=self.output_name,
-            )
-        )
+#     def __hash__(self):
+#         return hash(self.step.key + self.output_name)
 
-    def __hash__(self):
-        return hash(self.step.key + self.output_name)
-
-    def __eq__(self, other):
-        return self.step.key == other.step.key and self.output_name == other.output_name
+#     def __eq__(self, other):
+#         return self.step.key == other.step.key and self.output_name == other.output_name
 
 
 class StepSuccessData(namedtuple('_StepSuccessData', 'output_name value')):
@@ -175,6 +174,20 @@ class ExecutionStep(
         return self.step_input_dict[name]
 
 
+class StepOutputHandle(PClass):
+    step_key = field(type=str, mandatory=True)
+    output_name = field(type=str, mandatory=True)
+
+    # PClass fools lint
+    # pylint: disable=E1101
+
+    def __hash__(self):
+        return hash(self.step_key + ':' + self.output_name)
+
+    def __eq__(self, other):
+        return self.step_key == other.step_key and self.output_name == other.output_name
+
+
 ExecutionSubPlan = namedtuple(
     'ExecutionSubPlan',
     'steps terminal_step_output_handle',
@@ -225,3 +238,6 @@ class ExecutionSubsetInfo(namedtuple('_ExecutionSubsetInfo', 'subset inputs')):
             set(check.list_param(included_steps, 'included_steps', of_type=str)),
             check.opt_dict_param(inputs, 'inputs'),
         )
+
+
+StepCreationInfo = namedtuple('StepCreationInfo', 'step output_handle')

@@ -70,7 +70,10 @@ def execute_plan_core(context, execution_plan):
         for result in execute_step(step, context, input_values):
             check.invariant(isinstance(result, StepResult))
             yield result
-            output_handle = StepOutputHandle(step, result.success_data.output_name)
+            output_handle = StepOutputHandle(
+                step_key=step.key,
+                output_name=result.success_data.output_name,
+            )
             intermediate_results[output_handle] = result
 
 

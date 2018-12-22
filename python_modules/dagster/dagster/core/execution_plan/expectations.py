@@ -98,7 +98,7 @@ def create_expectations_subplan(solid, inout_def, prev_step_output_handle, tag):
     output_name = join_step.step_outputs[0].name
     return ExecutionSubPlan(
         steps + [join_step],
-        StepOutputHandle(join_step, output_name),
+        StepOutputHandle(step_key=join_step.key, output_name=output_name),
     )
 
 
@@ -151,14 +151,14 @@ def decorate_with_expectations(execution_info, solid, transform_step, output_def
         return create_expectations_subplan(
             solid,
             output_def,
-            StepOutputHandle(transform_step, output_def.name),
+            StepOutputHandle(step_key=transform_step.key, output_name=output_def.name),
             tag=StepTag.OUTPUT_EXPECTATION
         )
     else:
         return ExecutionSubPlan(
             steps=[],
             terminal_step_output_handle=StepOutputHandle(
-                transform_step,
-                output_def.name,
+                step_key=transform_step.key,
+                output_name=output_def.name,
             ),
         )

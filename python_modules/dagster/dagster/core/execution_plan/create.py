@@ -118,7 +118,7 @@ def create_execution_plan_from_steps(steps):
         seen_keys.add(step.key)
 
         for step_input in step.step_inputs:
-            deps[step.key].add(step_input.prev_output_handle.step.key)
+            deps[step.key].add(step_input.prev_output_handle.step_key)
 
     return ExecutionPlan(step_dict, deps)
 
@@ -169,13 +169,14 @@ def create_step_inputs(info, state, pipeline_solid):
 
         solid_config = info.environment.solids.get(topo_solid.name)
         if solid_config and input_def.name in solid_config.inputs:
-            prev_step_output_handle = create_input_thunk_execution_step(
+            input_thunk_creation_info = create_input_thunk_execution_step(
                 info,
                 pipeline_solid,
                 input_def,
                 solid_config.inputs[input_def.name],
             )
-            state.steps.append(prev_step_output_handle.step)
+            state.steps.append(input_thunk_creation_info.step)
+            prev_step_output_handle = input_thunk_creation_info.output_handle
         elif dependency_structure.has_dep(input_handle):
             solid_output_handle = dependency_structure.get_dep(input_handle)
             prev_step_output_handle = state.step_output_map[solid_output_handle]
@@ -236,14 +237,14 @@ def _create_new_steps_for_input(step, subset_info):
     new_step_inputs = []
     for step_input in step.step_inputs:
         if step_input.name in subset_info.inputs[step.key]:
-            value_thunk_step_output_handle = create_value_thunk_step(
+            value_thunk_creation_info = create_value_thunk_step(
                 step.solid,
                 step_input.dagster_type,
                 step.key + '.input.' + step_input.name + '.value',
                 subset_info.inputs[step.key][step_input.name],
             )
 
-            new_value_step = value_thunk_step_output_handle.step
+            new_value_step = value_thunk_creation_info.step
 
             new_steps.append(new_value_step)
 
@@ -251,7 +252,7 @@ def _create_new_steps_for_input(step, subset_info):
                 StepInput(
                     step_input.name,
                     step_input.dagster_type,
-                    value_thunk_step_output_handle,
+                    value_thunk_creation_info.output_handle,
                 )
             )
         else:

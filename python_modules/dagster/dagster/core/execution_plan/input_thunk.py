@@ -11,6 +11,7 @@ from dagster.core.errors import DagsterInvariantViolationError
 from .objects import (
     ExecutionPlanInfo,
     ExecutionStep,
+    StepCreationInfo,
     StepOutput,
     StepOutputHandle,
     StepTag,
@@ -59,4 +60,7 @@ def create_input_thunk_execution_step(info, solid, input_def, value):
         )
 
     input_thunk = _create_input_thunk_execution_step(solid, input_def, value)
-    return StepOutputHandle(input_thunk, INPUT_THUNK_OUTPUT)
+    return StepCreationInfo(
+        input_thunk,
+        StepOutputHandle(step_key=input_thunk.key, output_name=INPUT_THUNK_OUTPUT),
+    )

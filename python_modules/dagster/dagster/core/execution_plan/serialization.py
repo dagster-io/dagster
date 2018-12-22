@@ -12,6 +12,7 @@ from .objects import (
     ExecutionPlanInfo,
     ExecutionStep,
     ExecutionSubPlan,
+    StepCreationInfo,
     StepInput,
     StepOutput,
     StepOutputHandle,
@@ -33,8 +34,8 @@ def decorate_with_serialization(execution_info, solid, output_def, subplan):
         return ExecutionSubPlan(
             steps=subplan.steps + [serialize_step],
             terminal_step_output_handle=StepOutputHandle(
-                serialize_step,
-                SERIALIZE_OUTPUT,
+                step_key=serialize_step.key,
+                output_name=SERIALIZE_OUTPUT,
             )
         )
     else:

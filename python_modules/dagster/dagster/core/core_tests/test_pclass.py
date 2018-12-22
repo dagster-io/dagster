@@ -38,3 +38,8 @@ def test_serialize_cycle():
 def test_derived():
     obj = FooBar(foo=1, bar=2)
     assert obj.added == 3
+
+
+def test_repr():
+    obj = FooBar(foo=1, bar=2)
+    print(repr(obj))

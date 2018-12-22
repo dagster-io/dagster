@@ -6,6 +6,7 @@ from dagster.core.definitions import (
 
 from .objects import (
     ExecutionStep,
+    StepCreationInfo,
     StepInput,
     StepOutput,
     StepOutputHandle,
@@ -36,7 +37,7 @@ def create_join_step(solid, step_key, prev_steps, prev_output_name):
         else:
             check.invariant(seen_dagster_type == prev_step_output.dagster_type)
 
-        output_handle = StepOutputHandle(prev_step, prev_output_name)
+        output_handle = StepOutputHandle(step_key=prev_step.key, output_name=prev_output_name)
 
         step_inputs.append(StepInput(prev_step.key, prev_step_output.dagster_type, output_handle))
 
@@ -57,14 +58,19 @@ def create_value_thunk_step(solid, dagster_type, step_key, value):
     def _fn(_context, _step, _inputs):
         yield Result(value, VALUE_OUTPUT)
 
-    return StepOutputHandle(
-        ExecutionStep(
-            key=step_key,
-            step_inputs=[],
-            step_outputs=[StepOutput(VALUE_OUTPUT, dagster_type)],
-            compute_fn=_fn,
-            tag=StepTag.VALUE_THUNK,
-            solid=solid,
+    new_step = ExecutionStep(
+        key=step_key,
+        step_inputs=[],
+        step_outputs=[StepOutput(VALUE_OUTPUT, dagster_type)],
+        compute_fn=_fn,
+        tag=StepTag.VALUE_THUNK,
+        solid=solid,
+    )
+
+    return StepCreationInfo(
+        new_step,
+        StepOutputHandle(
+            step_key=new_step.key,
+            output_name=VALUE_OUTPUT,
         ),
-        VALUE_OUTPUT,
     )

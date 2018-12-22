@@ -117,7 +117,7 @@ def test_create_subplan_middle_step():
         assert steps[1].key == 'add_one.transform'
         assert len(steps[1].step_inputs) == 1
         step_input = steps[1].step_inputs[0]
-        assert step_input.prev_output_handle.step.key == 'add_one.transform.input.num.value'
+        assert step_input.prev_output_handle.step_key == 'add_one.transform.input.num.value'
         assert step_input.prev_output_handle.output_name == VALUE_OUTPUT
         assert len(steps[1].step_outputs) == 1
         assert len(subplan.topological_steps()) == 2
