@@ -203,9 +203,9 @@ def create_step_inputs(info, state, pipeline_solid):
         state.steps.extend(subplan.steps)
         step_inputs.append(
             StepInput(
-                input_def.name,
-                input_def.dagster_type,
-                subplan.terminal_step_output_handle,
+                name=input_def.name,
+                dagster_type=input_def.dagster_type,
+                prev_output_handle=subplan.terminal_step_output_handle,
             )
         )
 
@@ -250,9 +250,9 @@ def _create_new_steps_for_input(step, subset_info):
 
             new_step_inputs.append(
                 StepInput(
-                    step_input.name,
-                    step_input.dagster_type,
-                    value_thunk_creation_info.output_handle,
+                    name=step_input.name,
+                    dagster_type=step_input.dagster_type,
+                    prev_output_handle=value_thunk_creation_info.output_handle,
                 )
             )
         else:

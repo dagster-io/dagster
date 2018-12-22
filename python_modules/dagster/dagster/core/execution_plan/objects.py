@@ -2,6 +2,11 @@ from collections import namedtuple
 from enum import Enum
 import toposort
 
+from pyrsistent import (
+    PClass,
+    field,
+)
+
 from dagster import (
     check,
     config,
@@ -13,42 +18,6 @@ from dagster.core.definitions import (
 from dagster.core.errors import DagsterError
 from dagster.core.execution_context import RuntimeExecutionContext
 from dagster.core.types import DagsterType
-
-from pyrsistent import (PClass, field)
-
-# class StepOutputHandle(namedtuple('_StepOutputHandle', 'step output_name')):
-#     def __new__(cls, step, output_name):
-#         return super(StepOutputHandle, cls).__new__(
-#             cls,
-#             step=check.inst_param(step, 'step', ExecutionStep),
-#             output_name=check.str_param(output_name, 'output_name'),
-#         )
-
-#     # Make this hashable so it be a key in a dictionary
-
-#     def __str__(self):
-#         return (
-#             'StepOutputHandle'
-#             '(step="{step.key}", output_name="{output_name}")'.format(
-#                 step=self.step,
-#                 output_name=self.output_name,
-#             )
-#         )
-
-#     def __repr__(self):
-#         return (
-#             'StepOutputHandle'
-#             '(step="{step.key}", output_name="{output_name}")'.format(
-#                 step=self.step,
-#                 output_name=self.output_name,
-#             )
-#         )
-
-#     def __hash__(self):
-#         return hash(self.step.key + self.output_name)
-
-#     def __eq__(self, other):
-#         return self.step.key == other.step.key and self.output_name == other.output_name
 
 
 class StepSuccessData(namedtuple('_StepSuccessData', 'output_name value')):
@@ -101,20 +70,6 @@ class StepTag(Enum):
     SERIALIZE = 'SERIALIZE'
     INPUT_THUNK = 'INPUT_THUNK'
     VALUE_THUNK = 'VALUE_THUNK'
-
-
-class StepInput(namedtuple('_StepInput', 'name dagster_type prev_output_handle')):
-    def __new__(cls, name, dagster_type, prev_output_handle):
-        return super(StepInput, cls).__new__(
-            cls,
-            name=check.str_param(name, 'name'),
-            dagster_type=check.inst_param(dagster_type, 'dagster_type', DagsterType),
-            prev_output_handle=check.inst_param(
-                prev_output_handle,
-                'prev_output_handle',
-                StepOutputHandle,
-            ),
-        )
 
 
 class StepOutput(namedtuple('_StepOutput', 'name dagster_type')):
@@ -174,20 +129,6 @@ class ExecutionStep(
         return self.step_input_dict[name]
 
 
-class StepOutputHandle(PClass):
-    step_key = field(type=str, mandatory=True)
-    output_name = field(type=str, mandatory=True)
-
-    # PClass fools lint
-    # pylint: disable=E1101
-
-    def __hash__(self):
-        return hash(self.step_key + ':' + self.output_name)
-
-    def __eq__(self, other):
-        return self.step_key == other.step_key and self.output_name == other.output_name
-
-
 ExecutionSubPlan = namedtuple(
     'ExecutionSubPlan',
     'steps terminal_step_output_handle',
@@ -241,3 +182,23 @@ class ExecutionSubsetInfo(namedtuple('_ExecutionSubsetInfo', 'subset inputs')):
 
 
 StepCreationInfo = namedtuple('StepCreationInfo', 'step output_handle')
+
+
+class StepOutputHandle(PClass):
+    step_key = field(type=str, mandatory=True)
+    output_name = field(type=str, mandatory=True)
+
+    # PClass fools lint
+    # pylint: disable=E1101
+
+    def __hash__(self):
+        return hash(self.step_key + ':' + self.output_name)
+
+    def __eq__(self, other):
+        return self.step_key == other.step_key and self.output_name == other.output_name
+
+
+class StepInput(PClass):
+    name = field(type=str, mandatory=True)
+    dagster_type = field(type=DagsterType, mandatory=True)
+    prev_output_handle = field(type=StepOutputHandle, mandatory=True)
