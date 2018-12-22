@@ -40,7 +40,7 @@ def create_join_step(solid, step_key, prev_steps, prev_output_name):
         output_handle = StepOutputHandle(step_key=prev_step.key, output_name=prev_output_name)
 
         step_inputs.append(
-            StepInput(
+            StepInput.from_props(
                 name=prev_step.key,
                 dagster_type=prev_step_output.dagster_type,
                 prev_output_handle=output_handle,

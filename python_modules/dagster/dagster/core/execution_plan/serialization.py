@@ -74,7 +74,7 @@ def create_serialization_step(solid, output_def, prev_subplan):
     return ExecutionStep(
         key='serialize.' + solid.name + '.' + output_def.name,
         step_inputs=[
-            StepInput(
+            StepInput.from_props(
                 name=SERIALIZE_INPUT,
                 dagster_type=output_def.dagster_type,
                 prev_output_handle=prev_subplan.terminal_step_output_handle,

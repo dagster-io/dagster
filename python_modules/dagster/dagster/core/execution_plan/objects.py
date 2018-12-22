@@ -189,10 +189,37 @@ class StepOutputHandle(PClass):
         return self.step_key == other.step_key and self.output_name == other.output_name
 
 
-class StepInput(PClass):
+class StepInputMeta(PClass):
     name = field(type=str, mandatory=True)
-    dagster_type = field(type=DagsterType, mandatory=True)
+    dagster_type_name = field(type=str, mandatory=True)
     prev_output_handle = field(type=StepOutputHandle, mandatory=True)
+
+
+class StepInput(PClass):
+    @staticmethod
+    def from_props(name, dagster_type, prev_output_handle):
+        return StepInput(
+            meta=StepInputMeta(
+                name=name,
+                dagster_type_name=dagster_type.name,
+                prev_output_handle=prev_output_handle,
+            ),
+            dagster_type=dagster_type,
+        )
+
+    # PClass fools lint
+    # pylint: disable=E1101
+
+    @property
+    def name(self):
+        return self.meta.name
+
+    @property
+    def prev_output_handle(self):
+        return self.meta.prev_output_handle
+
+    meta = field(type=StepInputMeta, mandatory=True)
+    dagster_type = field(type=DagsterType, mandatory=True)
 
 
 class StepOutput(PClass):

@@ -121,7 +121,7 @@ def create_expectation_step(
     return ExecutionStep(
         key=key,
         step_inputs=[
-            StepInput(
+            StepInput.from_props(
                 name=EXPECTATION_INPUT,
                 dagster_type=value_type,
                 prev_output_handle=prev_step_output_handle,
