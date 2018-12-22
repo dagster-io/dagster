@@ -1,6 +1,7 @@
 from collections import namedtuple
 from enum import Enum
 import toposort
+from six import string_types
 
 from pyrsistent import (
     PClass,
@@ -128,7 +129,7 @@ StepCreationInfo = namedtuple('StepCreationInfo', 'step output_handle')
 
 
 def str_field():
-    return field(type=str, mandatory=True)
+    return field(type=string_types, mandatory=True)
 
 
 class StepOutputHandle(PClass):
