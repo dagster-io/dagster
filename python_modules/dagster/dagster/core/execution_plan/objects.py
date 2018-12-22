@@ -4,6 +4,7 @@ import toposort
 from six import string_types
 
 from pyrsistent import (
+    CheckedPVector,
     PClass,
     field,
 )
@@ -246,17 +247,19 @@ class StepOutput(PClass):
     dagster_type = field(type=DagsterType, mandatory=True)
 
 
+class StepInputMetaVector(CheckedPVector):
+    __type__ = StepInputMeta
+
+
+class StepOutputMetaVector(CheckedPVector):
+    __type__ = StepOutputMeta
+
+
 class ExecutionStepMeta(PClass):
     key = str_field()
-    # step_input_metas = list_field()
-    # step_output_metas = list_field()
+    step_input_metas = field(type=StepInputMetaVector)
+    step_output_metas = field(type=StepOutputMetaVector)
     tag = enum_field(StepTag)
-    # field(
-    #     type=StepTag,
-    #     mandatory=True,
-    #     serializer=lambda _format, value: value.value,
-    #     factory=_factory,
-    # )
 
 
 class ExecutionStep(
@@ -270,8 +273,12 @@ class ExecutionStep(
             cls,
             meta=ExecutionStepMeta(
                 key=key,
-                # step_input_metas=list(map(StepInputMeta.from_step_input, step_inputs)),
-                # step_output_metas=list(map(StepOutputMeta.from_step_output, step_outputs)),
+                step_input_metas=StepInputMetaVector(
+                    map(StepInputMeta.from_step_input, step_inputs)
+                ),
+                step_output_metas=StepOutputMetaVector(
+                    map(StepOutputMeta.from_step_output, step_outputs)
+                ),
                 tag=tag,
             ),
             step_inputs=check.list_param(step_inputs, 'step_inputs', of_type=StepInput),
