@@ -14,6 +14,8 @@ from dagster.core.errors import DagsterError
 from dagster.core.execution_context import RuntimeExecutionContext
 from dagster.core.types import DagsterType
 
+import pyrsistent
+
 
 class StepOutputHandle(namedtuple('_StepOutputHandle', 'step output_name')):
     def __new__(cls, step, output_name):

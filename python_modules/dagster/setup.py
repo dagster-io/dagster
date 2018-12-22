@@ -51,6 +51,7 @@ setup(
         'pyyaml>=3.12',
 
         # core (not explicitly expressed atm)
+        'pyrsistent>=0.14.8',
         'six>=1.11.0',
         'toposort>=1.5',
 
