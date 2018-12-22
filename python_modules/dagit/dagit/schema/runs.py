@@ -225,6 +225,7 @@ class DauphinPipelineRunEvent(dauphin.Union):
         elif event.event_type == EventType.EXECUTION_PLAN_STEP_START:
             return info.schema.type_named('ExecutionStepStartEvent')(
                 step=info.schema.type_named('ExecutionStep')(
+                    pipeline_run.execution_plan,
                     pipeline_run.execution_plan.get_step_by_key(event.step_key)
                 ),
                 **basic_params
@@ -232,6 +233,7 @@ class DauphinPipelineRunEvent(dauphin.Union):
         elif event.event_type == EventType.EXECUTION_PLAN_STEP_SUCCESS:
             return info.schema.type_named('ExecutionStepSuccessEvent')(
                 step=info.schema.type_named('ExecutionStep')(
+                    pipeline_run.execution_plan,
                     pipeline_run.execution_plan.get_step_by_key(event.step_key)
                 ),
                 **basic_params
@@ -240,6 +242,7 @@ class DauphinPipelineRunEvent(dauphin.Union):
             check.inst(event.error_info, SerializableErrorInfo)
             failure_event = info.schema.type_named('ExecutionStepFailureEvent')(
                 step=info.schema.type_named('ExecutionStep')(
+                    pipeline_run.execution_plan,
                     pipeline_run.execution_plan.get_step_by_key(event.step_key)
                 ),
                 error=info.schema.type_named('PythonError')(event.error_info),

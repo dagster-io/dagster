@@ -23,19 +23,23 @@ class DauphinExecutionPlan(dauphin.ObjectType):
         self.execution_plan = check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
 
     def resolve_steps(self, _info):
-        return [DauphinExecutionStep(cn) for cn in self.execution_plan.topological_steps()]
+        return [
+            DauphinExecutionStep(self.execution_plan, step)
+            for step in self.execution_plan.topological_steps()
+        ]
 
 
 class DauphinExecutionStepOutput(dauphin.ObjectType):
     class Meta:
         name = 'ExecutionStepOutput'
 
+    def __init__(self, execution_plan, step_output):
+        super(DauphinExecutionStepOutput, self).__init__()
+        self.execution_plan = check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+        self._step_output = check.inst_param(step_output, 'step_output', StepOutput)
+
     name = dauphin.NonNull(dauphin.String)
     type = dauphin.Field(dauphin.NonNull('Type'))
-
-    def __init__(self, step_output):
-        super(DauphinExecutionStepOutput, self).__init__()
-        self._step_output = check.inst_param(step_output, 'step_output', StepOutput)
 
     def resolve_name(self, _info):
         return self._step_output.name
@@ -54,8 +58,9 @@ class DauphinExecutionStepInput(dauphin.ObjectType):
     type = dauphin.Field(dauphin.NonNull('Type'))
     dependsOn = dauphin.Field(dauphin.NonNull('ExecutionStep'))
 
-    def __init__(self, step_input):
+    def __init__(self, execution_plan, step_input):
         super(DauphinExecutionStepInput, self).__init__()
+        self.execution_plan = check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
         self._step_input = check.inst_param(step_input, 'step_input', StepInput)
 
     def resolve_name(self, _info):
@@ -67,7 +72,8 @@ class DauphinExecutionStepInput(dauphin.ObjectType):
         )
 
     def resolve_dependsOn(self, info):
-        return info.schema.type_named('ExecutionStep')(self._step_input.prev_output_handle.step)
+        step = self.execution_plan.get_step_by_key(self._step_input.prev_output_handle.step_key)
+        return info.schema.type_named('ExecutionStep')(self.execution_plan, step)
 
 
 class DauphinStepTag(dauphin.Enum):
@@ -117,19 +123,20 @@ class DauphinExecutionStep(dauphin.ObjectType):
     solid = dauphin.NonNull('Solid')
     tag = dauphin.NonNull('StepTag')
 
-    def __init__(self, execution_step):
+    def __init__(self, execution_plan, execution_step):
         super(DauphinExecutionStep, self).__init__()
+        self.execution_plan = check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
         self.execution_step = check.inst_param(execution_step, 'execution_step', ExecutionStep)
 
     def resolve_inputs(self, info):
         return [
-            info.schema.type_named('ExecutionStepInput')(inp)
+            info.schema.type_named('ExecutionStepInput')(self.execution_plan, inp)
             for inp in self.execution_step.step_inputs
         ]
 
     def resolve_outputs(self, info):
         return [
-            info.schema.type_named('ExecutionStepOutput')(out)
+            info.schema.type_named('ExecutionStepOutput')(self.execution_plan, out)
             for out in self.execution_step.step_outputs
         ]
 
