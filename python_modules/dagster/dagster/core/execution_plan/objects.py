@@ -132,6 +132,34 @@ def str_field():
     return field(type=string_types, mandatory=True)
 
 
+def list_field():
+    return field(type=list, mandatory=True)
+
+
+def enum_field(enum_type):
+    def _factory(str_or_enum):
+        if isinstance(str_or_enum, StepTag):
+            # in-memory
+            return str_or_enum
+        if isinstance(str_or_enum, str):
+            # deserialization
+            return StepTag(str_or_enum)
+
+        check.failed(
+            'Unsupported value for enum {enum_type}: {enum_value}'.format(
+                enum_type=enum_type,
+                enum_value=str_or_enum,
+            )
+        )
+
+    return field(
+        type=enum_type,
+        mandatory=True,
+        serializer=lambda _format, enum_value: enum_value.value,
+        factory=_factory,
+    )
+
+
 class StepOutputHandle(PClass):
     step_key = str_field()
     output_name = str_field()
@@ -147,6 +175,14 @@ class StepOutputHandle(PClass):
 
 
 class StepInputMeta(PClass):
+    @staticmethod
+    def from_step_input(step_input):
+        return StepInputMeta(
+            name=step_input.name,
+            dagster_type_name=step_input.dagster_type.name,
+            prev_output_handle=step_input.prev_output_handle,
+        )
+
     name = str_field()
     dagster_type_name = str_field()
     prev_output_handle = field(type=StepOutputHandle, mandatory=True)
@@ -180,6 +216,13 @@ class StepInput(PClass):
 
 
 class StepOutputMeta(PClass):
+    @staticmethod
+    def from_step_output(step_output):
+        return StepOutputMeta(
+            name=step_output.name,
+            dagster_type_name=step_output.dagster_type.name,
+        )
+
     name = str_field()
     dagster_type_name = str_field()
 
@@ -203,26 +246,51 @@ class StepOutput(PClass):
     dagster_type = field(type=DagsterType, mandatory=True)
 
 
+class ExecutionStepMeta(PClass):
+    key = str_field()
+    # step_input_metas = list_field()
+    # step_output_metas = list_field()
+    tag = enum_field(StepTag)
+    # field(
+    #     type=StepTag,
+    #     mandatory=True,
+    #     serializer=lambda _format, value: value.value,
+    #     factory=_factory,
+    # )
+
+
 class ExecutionStep(
     namedtuple(
         '_ExecutionStep',
-        'key step_inputs step_input_dict step_outputs step_output_dict compute_fn tag solid',
+        'meta step_inputs step_outputs step_input_dict step_output_dict compute_fn solid',
     ),
 ):
     def __new__(cls, key, step_inputs, step_outputs, compute_fn, tag, solid):
         return super(ExecutionStep, cls).__new__(
             cls,
-            key=check.str_param(key, 'key'),
+            meta=ExecutionStepMeta(
+                key=key,
+                # step_input_metas=list(map(StepInputMeta.from_step_input, step_inputs)),
+                # step_output_metas=list(map(StepOutputMeta.from_step_output, step_outputs)),
+                tag=tag,
+            ),
             step_inputs=check.list_param(step_inputs, 'step_inputs', of_type=StepInput),
+            step_outputs=check.list_param(step_outputs, 'step_outputs', of_type=StepOutput),
             step_input_dict={si.name: si
                              for si in step_inputs},
-            step_outputs=check.list_param(step_outputs, 'step_outputs', of_type=StepOutput),
             step_output_dict={so.name: so
                               for so in step_outputs},
             compute_fn=check.callable_param(compute_fn, 'compute_fn'),
-            tag=check.inst_param(tag, 'tag', StepTag),
             solid=check.inst_param(solid, 'solid', Solid),
         )
+
+    @property
+    def key(self):
+        return self.meta.key
+
+    @property
+    def tag(self):
+        return self.meta.tag
 
     def with_new_inputs(self, step_inputs):
         return ExecutionStep(

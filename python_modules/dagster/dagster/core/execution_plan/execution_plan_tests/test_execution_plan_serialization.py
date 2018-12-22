@@ -11,10 +11,12 @@ from pyrsistent import (
 from dagster import types
 
 from dagster.core.execution_plan.objects import (
+    ExecutionStepMeta,
     StepInput,
     StepInputMeta,
     StepOutputMeta,
     StepOutputHandle,
+    StepTag,
 )
 
 # Generic PClass Testing (delete at some point)
@@ -103,3 +105,45 @@ def test_step_input_failed():
 
     with pytest.raises(TypeError):
         assert json_round_trip(StepInput, step_input) == step_input
+
+
+def test_execution_step_meta():
+    step_meta = ExecutionStepMeta(
+        key='step_key',
+        # step_input_metas=[
+        #     StepInputMeta(
+        #         name='input_one',
+        #         dagster_type_name='Int',
+        #         prev_output_handle=StepOutputHandle(
+        #             step_key='prev_step',
+        #             output_name='some_output',
+        #         )
+        #     )
+        # ],
+        # step_output_metas=[
+        #     StepOutputMeta(
+        #         name='output_one',
+        #         dagster_type_name='String',
+        #     ),
+        # ],
+        tag=StepTag.TRANSFORM,
+    )
+
+    print(step_meta.serialize())
+
+    assert step_meta.serialize() == {
+        'key': 'step_key',
+        # 'step_input_metas': [
+        #     StepInputMeta(
+        #         name='input_one',
+        #         dagster_type_name='Int',
+        #         prev_output_handle=StepOutputHandle(
+        #             step_key='prev_step', output_name='some_output'
+        #         )
+        #     )
+        # ],
+        # 'step_output_metas': [StepOutputMeta(name='output_one', dagster_type_name='String')],
+        'tag': 'TRANSFORM'
+    }
+
+    assert json_round_trip(ExecutionStepMeta, step_meta) == step_meta
