@@ -68,7 +68,7 @@ def test_step_output_meta():
     meta = StepOutputMeta(name='some_output', dagster_type_name='Int')
     assert meta.serialize() == {'name': 'some_output', 'dagster_type_name': 'Int'}
     assert StepOutputMeta.create(meta.serialize()) == meta
-    assert json_round_trip(StepOutputHandle, meta) == meta
+    assert json_round_trip(StepOutputMeta, meta) == meta
 
 
 def test_step_input_meta():

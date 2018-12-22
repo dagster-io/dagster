@@ -72,54 +72,6 @@ class StepTag(Enum):
     VALUE_THUNK = 'VALUE_THUNK'
 
 
-class ExecutionStep(
-    namedtuple(
-        '_ExecutionStep',
-        'key step_inputs step_input_dict step_outputs step_output_dict compute_fn tag solid',
-    ),
-):
-    def __new__(cls, key, step_inputs, step_outputs, compute_fn, tag, solid):
-        return super(ExecutionStep, cls).__new__(
-            cls,
-            key=check.str_param(key, 'key'),
-            step_inputs=check.list_param(step_inputs, 'step_inputs', of_type=StepInput),
-            step_input_dict={si.name: si
-                             for si in step_inputs},
-            step_outputs=check.list_param(step_outputs, 'step_outputs', of_type=StepOutput),
-            step_output_dict={so.name: so
-                              for so in step_outputs},
-            compute_fn=check.callable_param(compute_fn, 'compute_fn'),
-            tag=check.inst_param(tag, 'tag', StepTag),
-            solid=check.inst_param(solid, 'solid', Solid),
-        )
-
-    def with_new_inputs(self, step_inputs):
-        return ExecutionStep(
-            key=self.key,
-            step_inputs=step_inputs,
-            step_outputs=self.step_outputs,
-            compute_fn=self.compute_fn,
-            tag=self.tag,
-            solid=self.solid,
-        )
-
-    def has_step_output(self, name):
-        check.str_param(name, 'name')
-        return name in self.step_output_dict
-
-    def step_output_named(self, name):
-        check.str_param(name, 'name')
-        return self.step_output_dict[name]
-
-    def has_step_input(self, name):
-        check.str_param(name, 'name')
-        return name in self.step_input_dict
-
-    def step_input_named(self, name):
-        check.str_param(name, 'name')
-        return self.step_input_dict[name]
-
-
 ExecutionSubPlan = namedtuple(
     'ExecutionSubPlan',
     'steps terminal_step_output_handle',
@@ -175,9 +127,13 @@ class ExecutionSubsetInfo(namedtuple('_ExecutionSubsetInfo', 'subset inputs')):
 StepCreationInfo = namedtuple('StepCreationInfo', 'step output_handle')
 
 
+def str_field():
+    return field(type=str, mandatory=True)
+
+
 class StepOutputHandle(PClass):
-    step_key = field(type=str, mandatory=True)
-    output_name = field(type=str, mandatory=True)
+    step_key = str_field()
+    output_name = str_field()
 
     # PClass fools lint
     # pylint: disable=E1101
@@ -190,8 +146,8 @@ class StepOutputHandle(PClass):
 
 
 class StepInputMeta(PClass):
-    name = field(type=str, mandatory=True)
-    dagster_type_name = field(type=str, mandatory=True)
+    name = str_field()
+    dagster_type_name = str_field()
     prev_output_handle = field(type=StepOutputHandle, mandatory=True)
 
 
@@ -223,8 +179,8 @@ class StepInput(PClass):
 
 
 class StepOutputMeta(PClass):
-    name = field(type=str, mandatory=True)
-    dagster_type_name = field(type=str, mandatory=True)
+    name = str_field()
+    dagster_type_name = str_field()
 
 
 class StepOutput(PClass):
@@ -244,3 +200,51 @@ class StepOutput(PClass):
 
     meta = field(type=StepOutputMeta, mandatory=True)
     dagster_type = field(type=DagsterType, mandatory=True)
+
+
+class ExecutionStep(
+    namedtuple(
+        '_ExecutionStep',
+        'key step_inputs step_input_dict step_outputs step_output_dict compute_fn tag solid',
+    ),
+):
+    def __new__(cls, key, step_inputs, step_outputs, compute_fn, tag, solid):
+        return super(ExecutionStep, cls).__new__(
+            cls,
+            key=check.str_param(key, 'key'),
+            step_inputs=check.list_param(step_inputs, 'step_inputs', of_type=StepInput),
+            step_input_dict={si.name: si
+                             for si in step_inputs},
+            step_outputs=check.list_param(step_outputs, 'step_outputs', of_type=StepOutput),
+            step_output_dict={so.name: so
+                              for so in step_outputs},
+            compute_fn=check.callable_param(compute_fn, 'compute_fn'),
+            tag=check.inst_param(tag, 'tag', StepTag),
+            solid=check.inst_param(solid, 'solid', Solid),
+        )
+
+    def with_new_inputs(self, step_inputs):
+        return ExecutionStep(
+            key=self.key,
+            step_inputs=step_inputs,
+            step_outputs=self.step_outputs,
+            compute_fn=self.compute_fn,
+            tag=self.tag,
+            solid=self.solid,
+        )
+
+    def has_step_output(self, name):
+        check.str_param(name, 'name')
+        return name in self.step_output_dict
+
+    def step_output_named(self, name):
+        check.str_param(name, 'name')
+        return self.step_output_dict[name]
+
+    def has_step_input(self, name):
+        check.str_param(name, 'name')
+        return name in self.step_input_dict
+
+    def step_input_named(self, name):
+        check.str_param(name, 'name')
+        return self.step_input_dict[name]
