@@ -72,15 +72,6 @@ class StepTag(Enum):
     VALUE_THUNK = 'VALUE_THUNK'
 
 
-class StepOutput(namedtuple('_StepOutput', 'name dagster_type')):
-    def __new__(cls, name, dagster_type):
-        return super(StepOutput, cls).__new__(
-            cls,
-            name=check.str_param(name, 'name'),
-            dagster_type=check.inst_param(dagster_type, 'dagster_type', DagsterType),
-        )
-
-
 class ExecutionStep(
     namedtuple(
         '_ExecutionStep',
@@ -202,3 +193,8 @@ class StepInput(PClass):
     name = field(type=str, mandatory=True)
     dagster_type = field(type=DagsterType, mandatory=True)
     prev_output_handle = field(type=StepOutputHandle, mandatory=True)
+
+
+class StepOutput(PClass):
+    name = field(type=str, mandatory=True)
+    dagster_type = field(type=DagsterType, mandatory=True)
