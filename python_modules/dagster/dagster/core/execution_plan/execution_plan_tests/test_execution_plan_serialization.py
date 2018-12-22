@@ -1,3 +1,4 @@
+import json
 import pytest
 
 from pyrsistent import (
@@ -6,7 +7,10 @@ from pyrsistent import (
     PTypeError,
 )
 
+from dagster import types
+
 from dagster.core.execution_plan.objects import (
+    StepInput,
     StepInputMeta,
     StepOutputMeta,
     StepOutputHandle,
@@ -56,10 +60,15 @@ def test_repr():
 # Execution Plan Testing
 
 
+def json_round_trip(cls, thing):
+    return cls.create(json.loads(json.dumps(thing.serialize())))
+
+
 def test_step_output_meta():
     meta = StepOutputMeta(name='some_output', dagster_type_name='Int')
     assert meta.serialize() == {'name': 'some_output', 'dagster_type_name': 'Int'}
     assert StepOutputMeta.create(meta.serialize()) == meta
+    assert json_round_trip(StepOutputHandle, meta) == meta
 
 
 def test_step_input_meta():
@@ -80,3 +89,16 @@ def test_step_input_meta():
         }
     }
     assert StepInputMeta.create(meta.serialize()) == meta
+    assert json_round_trip(StepInputMeta, meta) == meta
+
+
+def test_step_input_failed():
+    step_input = StepInput.from_props(
+        'some_input', types.Int, StepOutputHandle(
+            step_key='prev_step',
+            output_name='prev_output',
+        )
+    )
+
+    with pytest.raises(TypeError):
+        assert json_round_trip(StepInput, step_input) == step_input
