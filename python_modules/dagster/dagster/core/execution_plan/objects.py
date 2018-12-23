@@ -121,7 +121,7 @@ def enum_field(enum_type):
         if isinstance(str_or_enum, StepTag):
             # in-memory
             return str_or_enum
-        if isinstance(str_or_enum, str):
+        if isinstance(str_or_enum, string_types):
             # deserialization
             return StepTag(str_or_enum)
 
