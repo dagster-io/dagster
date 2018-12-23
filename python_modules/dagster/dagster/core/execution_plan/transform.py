@@ -8,6 +8,7 @@ from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution_context import RuntimeExecutionContext
 
 from .objects import (
+    ExecutionPlanInfo,
     ExecutionStep,
     StepInput,
     StepOutput,
@@ -15,9 +16,29 @@ from .objects import (
 )
 
 
-def create_transform_step(solid, step_inputs, conf):
+def get_solid_user_config(execution_info, solid_name):
+    check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
+    check.str_param(solid_name, 'solid_name')
+
+    solid_configs = execution_info.environment.solids
+    return solid_configs[solid_name].config if solid_name in solid_configs else None
+
+
+def create_transform_compute_fn(execution_info, step_meta):
+    config = get_solid_user_config(execution_info, step_meta.solid_name)
+    return lambda context, step, inputs: _execute_core_transform(
+        context,
+        step,
+        config,
+        inputs,
+    )
+
+def create_transform_step(execution_info, solid, step_inputs):
+    check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
     check.inst_param(solid, 'solid', Solid)
     check.list_param(step_inputs, 'step_inputs', of_type=StepInput)
+
+    config = get_solid_user_config(execution_info, solid.name)
 
     return ExecutionStep(
         key='{solid.name}.transform'.format(solid=solid),
@@ -29,7 +50,7 @@ def create_transform_step(solid, step_inputs, conf):
         compute_fn=lambda context, step, inputs: _execute_core_transform(
             context,
             step,
-            conf,
+            config,
             inputs,
         ),
         tag=StepTag.TRANSFORM,

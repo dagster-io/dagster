@@ -8,7 +8,20 @@ from pyrsistent import (
     PTypeError,
 )
 
-from dagster import types
+from dagster import (
+    DependencyDefinition,
+    InputDefinition,
+    OutputDefinition,
+    PipelineDefinition,
+    lambda_solid,
+    types,
+)
+
+from dagster.core.execution import (
+    create_execution_plan,
+    create_typed_environment,
+    execute_plan,
+)
 
 from dagster.core.execution_plan.objects import (
     DepMap,
@@ -22,6 +35,11 @@ from dagster.core.execution_plan.objects import (
     StepOutputMeta,
     StepOutputMetaVector,
     StepTag,
+)
+
+from dagster.core.execution_plan.recreate import (
+    recreate_execution_steps,
+    recreate_execution_plan,
 )
 
 # Generic PClass Testing (delete at some point)
@@ -133,7 +151,9 @@ def test_execution_step_meta():
             'dagster_type_name': 'String'
         }],
         'tag':
-        'TRANSFORM'
+        'TRANSFORM',
+        'solid_name':
+        'some_solid',
     }
 
     assert json_round_trip(ExecutionStepMeta, step_meta) == step_meta
@@ -166,6 +186,8 @@ def test_execution_plan_meta():
                     'name': 'output_one',
                     'dagster_type_name': 'String'
                 }],
+                'solid_name':
+                'some_solid',
                 'tag':
                 'TRANSFORM'
             }
@@ -202,4 +224,90 @@ def create_stub_meta():
             ]
         ),
         tag=StepTag.TRANSFORM,
+        solid_name='some_solid',
     )
+
+
+def test_basic_pipeline_execution_plan_serialization():
+    @lambda_solid(output=OutputDefinition(types.Int))
+    def return_one():
+        return 1
+
+    @lambda_solid(
+        inputs=[InputDefinition('num', dagster_type=types.Int)],
+        output=OutputDefinition(types.Int),
+    )
+    def add_one(num):
+        return num + 1
+
+    pipeline_def = PipelineDefinition(
+        name='basic_plan_serialization',
+        solids=[return_one, add_one],
+        dependencies={
+            'add_one': {
+                'num': DependencyDefinition('return_one'),
+            },
+        },
+    )
+
+    typed_environment = create_typed_environment(pipeline_def)
+
+    execution_plan = create_execution_plan(pipeline_def, typed_environment)
+
+    assert execution_plan.meta.serialize() == {
+        'step_metas': [
+            {
+                'key': 'return_one.transform',
+                'step_input_metas': [],
+                'step_output_metas': [{
+                    'name': 'result',
+                    'dagster_type_name': 'Int'
+                }],
+                'tag': 'TRANSFORM',
+                'solid_name': 'return_one',
+            },
+            {
+                'key':
+                'add_one.transform',
+                'step_input_metas': [
+                    {
+                        'name': 'num',
+                        'dagster_type_name': 'Int',
+                        'prev_output_handle': {
+                            'step_key': 'return_one.transform',
+                            'output_name': 'result'
+                        }
+                    }
+                ],
+                'step_output_metas': [{
+                    'name': 'result',
+                    'dagster_type_name': 'Int'
+                }],
+                'tag':
+                'TRANSFORM',
+                'solid_name':
+                'add_one',
+            },
+        ],
+        'deps': {
+            'return_one.transform': [],
+            'add_one.transform': ['return_one.transform']
+        }
+    }
+
+    results = execute_plan(pipeline_def, execution_plan)
+    assert len(results) == 2
+
+    execution_plan_data = execution_plan.meta.serialize()
+    steps = recreate_execution_steps(pipeline_def, typed_environment, execution_plan_data)
+
+    assert len(steps) == 2
+
+    recreated_plan = recreate_execution_plan(pipeline_def, typed_environment, execution_plan_data)
+    results = execute_plan(pipeline_def, recreated_plan)
+    assert len(results) == 2
+
+    assert results[0].step.key == 'return_one.transform'
+    assert results[0].success
+    assert results[0].success_data.value == 1
+    assert results[1].success_data.value == 2

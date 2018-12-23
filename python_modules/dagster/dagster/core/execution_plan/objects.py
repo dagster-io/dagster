@@ -6,7 +6,6 @@ from six import string_types
 from pyrsistent import (
     CheckedPVector,
     CheckedPMap,
-    CheckedPSet,
     PClass,
     field,
 )
@@ -246,12 +245,14 @@ class ExecutionStepMeta(PClass):
                 map(StepOutputMeta.from_step_output, step.step_outputs)
             ),
             tag=step.tag,
+            solid_name=step.solid.name,
         )
 
     key = str_field()
     step_input_metas = field(type=StepInputMetaVector, mandatory=True)
     step_output_metas = field(type=StepOutputMetaVector, mandatory=True)
     tag = enum_field(StepTag)
+    solid_name = str_field()
 
 
 class ExecutionStep(
@@ -272,6 +273,7 @@ class ExecutionStep(
                     map(StepOutputMeta.from_step_output, step_outputs)
                 ),
                 tag=tag,
+                solid_name=solid.name,
             ),
             step_inputs=check.list_param(step_inputs, 'step_inputs', of_type=StepInput),
             step_outputs=check.list_param(step_outputs, 'step_outputs', of_type=StepOutput),
@@ -347,13 +349,17 @@ class ExecutionPlan(object):
         self.deps = check.dict_param(deps, 'deps', key_type=str, value_type=set)
         self.steps = list(step_dict.values())
 
-        map_builder = {}
-        for dep_key, deps_for_key in deps.items():
-            map_builder[dep_key] = DepVector(deps_for_key)
+        # We topologically sort here the store the serializable meta information
+        # in the topological order.
+        ordered_step_keys = toposort.toposort_flatten(self.deps)
+        step_metas = []
+        for step_key in ordered_step_keys:
+            step_metas.append(ExecutionStepMeta.from_step(step_dict[step_key]))
 
         self.meta = ExecutionPlanMeta(
-            step_metas=ExecutionStepMetaVector(map(ExecutionStepMeta.from_step, self.steps)),
-            deps=DepMap(map_builder),
+            step_metas=ExecutionStepMetaVector(step_metas),
+            deps={dep_key: DepVector(deps_for_key)
+                  for dep_key, deps_for_key in deps.items()},
         )
 
     def get_step_by_key(self, key):
@@ -363,6 +369,6 @@ class ExecutionPlan(object):
         return list(self._topological_steps())
 
     def _topological_steps(self):
-        ordered_step_keys = toposort.toposort_flatten(self.deps)
-        for step_key in ordered_step_keys:
-            yield self.step_dict[step_key]
+        # PClass fools lint
+        for step_meta in self.meta.step_metas:  # pylint: disable=E1133
+            yield self.step_dict[step_meta.key]

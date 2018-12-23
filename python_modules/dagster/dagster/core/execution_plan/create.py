@@ -36,16 +36,6 @@ from .transform import create_transform_step
 
 from .utility import create_value_thunk_step
 
-
-def get_solid_user_config(execution_info, pipeline_solid):
-    check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
-    check.inst_param(pipeline_solid, 'pipeline_solid', Solid)
-
-    name = pipeline_solid.name
-    solid_configs = execution_info.environment.solids
-    return solid_configs[name].config if name in solid_configs else None
-
-
 # This is the state that is built up during the execution plan build process.
 # steps is just a list of the steps that have been created
 # step_output_map maps logical solid outputs (solid_name, output_name) to particular
@@ -78,9 +68,9 @@ def create_execution_plan_core(execution_info):
         step_inputs = create_step_inputs(execution_info, state, pipeline_solid)
 
         solid_transform_step = create_transform_step(
+            execution_info,
             pipeline_solid,
             step_inputs,
-            get_solid_user_config(execution_info, pipeline_solid),
         )
 
         state.steps.append(solid_transform_step)
@@ -170,10 +160,7 @@ def create_step_inputs(info, state, pipeline_solid):
         solid_config = info.environment.solids.get(topo_solid.name)
         if solid_config and input_def.name in solid_config.inputs:
             input_thunk_creation_info = create_input_thunk_execution_step(
-                info,
-                pipeline_solid,
-                input_def,
-                solid_config.inputs[input_def.name],
+                info, pipeline_solid, input_def
             )
             state.steps.append(input_thunk_creation_info.step)
             prev_step_output_handle = input_thunk_creation_info.output_handle

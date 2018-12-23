@@ -20,10 +20,15 @@ from .objects import (
 INPUT_THUNK_OUTPUT = 'input_thunk_output'
 
 
-def _create_input_thunk_execution_step(solid, input_def, value):
+def create_input_thunk_compute_fn(value):
     def _fn(_context, _step, _inputs):
         yield Result(value, INPUT_THUNK_OUTPUT)
 
+    return _fn
+
+
+def _create_input_thunk_execution_step(info, solid, input_def):
+    value = info.environment.solids[solid.name].inputs[input_def.name]
     return ExecutionStep(
         key=solid.name + '.' + input_def.name + '.input_thunk',
         step_inputs=[],
@@ -33,13 +38,13 @@ def _create_input_thunk_execution_step(solid, input_def, value):
                 dagster_type=input_def.dagster_type,
             )
         ],
-        compute_fn=_fn,
+        compute_fn=create_input_thunk_compute_fn(value),
         tag=StepTag.INPUT_THUNK,
         solid=solid,
     )
 
 
-def create_input_thunk_execution_step(info, solid, input_def, value):
+def create_input_thunk_execution_step(info, solid, input_def):
     check.inst_param(info, 'info', ExecutionPlanInfo)
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(input_def, 'input_def', InputDefinition)
@@ -61,7 +66,7 @@ def create_input_thunk_execution_step(info, solid, input_def, value):
             )
         )
 
-    input_thunk = _create_input_thunk_execution_step(solid, input_def, value)
+    input_thunk = _create_input_thunk_execution_step(info, solid, input_def)
     return StepCreationInfo(
         input_thunk,
         StepOutputHandle(step_key=input_thunk.key, output_name=INPUT_THUNK_OUTPUT),
