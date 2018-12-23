@@ -347,9 +347,13 @@ class ExecutionPlan(object):
         self.deps = check.dict_param(deps, 'deps', key_type=str, value_type=set)
         self.steps = list(step_dict.values())
 
+        map_builder = {}
+        for dep_key, deps_for_key in deps.items():
+            map_builder[dep_key] = DepVector(deps_for_key)
+
         self.meta = ExecutionPlanMeta(
             step_metas=ExecutionStepMetaVector(map(ExecutionStepMeta.from_step, self.steps)),
-            deps=DepMap(deps),
+            deps=DepMap(map_builder),
         )
 
     def get_step_by_key(self, key):
