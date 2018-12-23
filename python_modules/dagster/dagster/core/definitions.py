@@ -797,13 +797,13 @@ class InputDefinition(object):
         self.dagster_type = check.inst_param(dagster_type, 'dagster_type', types.DagsterType)
 
         self.expectations = check.opt_list_param(
-            expectations, 'expectations', of_type=ExpectationDefinition
+            expectations, 'expectations', of_type=ExpectationDefinition,
         )
         self.description = check.opt_str_param(description, 'description')
 
     @property
     def descriptive_key(self):
-        return 'output' # WHOA this looks very wrong
+        return 'input'
 
     def expectation_named(self, name):
         check.str_param(name, 'name')

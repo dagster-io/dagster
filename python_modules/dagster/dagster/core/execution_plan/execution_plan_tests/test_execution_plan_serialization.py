@@ -243,7 +243,7 @@ def assert_result_list_equivalent(left, right):
         assert left_result.failure_data == right_result.failure_data
 
 
-def test_execution_plan_with_expectations(snapshot):
+def test_execution_plan_with_input_expectations(snapshot):
     @lambda_solid(output=OutputDefinition(types.Int))
     def return_one():
         return 1

@@ -59,14 +59,14 @@ snapshots['test_basic_pipeline_execution_plan_serialization 1'] = {
 
 snapshots['test_execution_plan_with_expectations 1'] = {
     'deps': {
+        'add_one.input.num.expectations.join': [
+            'add_one.num.expectation.positive'
+        ],
         'add_one.num.expectation.positive': [
             'return_one.transform'
         ],
-        'add_one.output.num.expectations.join': [
-            'add_one.num.expectation.positive'
-        ],
         'add_one.transform': [
-            'add_one.output.num.expectations.join'
+            'add_one.input.num.expectations.join'
         ],
         'return_one.transform': [
         ]
@@ -113,7 +113,7 @@ snapshots['test_execution_plan_with_expectations 1'] = {
             'tag': 'INPUT_EXPECTATION'
         },
         {
-            'key': 'add_one.output.num.expectations.join',
+            'key': 'add_one.input.num.expectations.join',
             'solid_name': 'add_one',
             'step_input_metas': [
                 {
@@ -144,7 +144,7 @@ snapshots['test_execution_plan_with_expectations 1'] = {
                     'name': 'num',
                     'prev_output_handle': {
                         'output_name': 'join_output',
-                        'step_key': 'add_one.output.num.expectations.join'
+                        'step_key': 'add_one.input.num.expectations.join'
                     }
                 }
             ],
