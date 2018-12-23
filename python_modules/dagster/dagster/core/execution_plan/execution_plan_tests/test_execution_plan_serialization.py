@@ -10,14 +10,18 @@ from pyrsistent import (
 
 from dagster import (
     DependencyDefinition,
+    ExpectationDefinition,
+    ExpectationResult,
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
+    check,
     lambda_solid,
     types,
 )
 
 from dagster.core.execution import (
+    StepResult,
     create_execution_plan,
     create_typed_environment,
     execute_plan,
@@ -130,36 +134,14 @@ def test_step_input_failed():
         assert json_round_trip(StepInput, step_input) == step_input
 
 
-def test_execution_step_meta():
+def test_execution_step_meta(snapshot):
     step_meta = create_stub_meta()
 
-    assert step_meta.serialize() == {
-        'key':
-        'step_key',
-        'step_input_metas': [
-            {
-                'name': 'input_one',
-                'dagster_type_name': 'Int',
-                'prev_output_handle': {
-                    'step_key': 'prev_step',
-                    'output_name': 'some_output'
-                }
-            }
-        ],
-        'step_output_metas': [{
-            'name': 'output_one',
-            'dagster_type_name': 'String'
-        }],
-        'tag':
-        'TRANSFORM',
-        'solid_name':
-        'some_solid',
-    }
-
+    snapshot.assert_match(step_meta.serialize())
     assert json_round_trip(ExecutionStepMeta, step_meta) == step_meta
 
 
-def test_execution_plan_meta():
+def test_execution_plan_meta(snapshot):
     plan_meta = ExecutionPlanMeta(
         step_metas=[create_stub_meta()],
         deps=DepMap({
@@ -167,36 +149,7 @@ def test_execution_plan_meta():
         }),
     )
 
-    assert plan_meta.serialize() == {
-        'step_metas': [
-            {
-                'key':
-                'step_key',
-                'step_input_metas': [
-                    {
-                        'name': 'input_one',
-                        'dagster_type_name': 'Int',
-                        'prev_output_handle': {
-                            'step_key': 'prev_step',
-                            'output_name': 'some_output'
-                        }
-                    }
-                ],
-                'step_output_metas': [{
-                    'name': 'output_one',
-                    'dagster_type_name': 'String'
-                }],
-                'solid_name':
-                'some_solid',
-                'tag':
-                'TRANSFORM'
-            }
-        ],
-        'deps': {
-            'something': ['something_else']
-        }
-    }
-
+    snapshot.assert_match(plan_meta.serialize())
     assert json_round_trip(ExecutionPlanMeta, plan_meta) == plan_meta
 
 
@@ -228,7 +181,7 @@ def create_stub_meta():
     )
 
 
-def test_basic_pipeline_execution_plan_serialization():
+def test_basic_pipeline_execution_plan_serialization(snapshot):
     @lambda_solid(output=OutputDefinition(types.Int))
     def return_one():
         return 1
@@ -254,60 +207,88 @@ def test_basic_pipeline_execution_plan_serialization():
 
     execution_plan = create_execution_plan(pipeline_def, typed_environment)
 
-    assert execution_plan.meta.serialize() == {
-        'step_metas': [
-            {
-                'key': 'return_one.transform',
-                'step_input_metas': [],
-                'step_output_metas': [{
-                    'name': 'result',
-                    'dagster_type_name': 'Int'
-                }],
-                'tag': 'TRANSFORM',
-                'solid_name': 'return_one',
-            },
-            {
-                'key':
-                'add_one.transform',
-                'step_input_metas': [
-                    {
-                        'name': 'num',
-                        'dagster_type_name': 'Int',
-                        'prev_output_handle': {
-                            'step_key': 'return_one.transform',
-                            'output_name': 'result'
-                        }
-                    }
-                ],
-                'step_output_metas': [{
-                    'name': 'result',
-                    'dagster_type_name': 'Int'
-                }],
-                'tag':
-                'TRANSFORM',
-                'solid_name':
-                'add_one',
-            },
-        ],
-        'deps': {
-            'return_one.transform': [],
-            'add_one.transform': ['return_one.transform']
-        }
-    }
+    snapshot.assert_match(execution_plan.meta.serialize())
+
+    assert_plan_recreation_matches(pipeline_def)
 
     results = execute_plan(pipeline_def, execution_plan)
     assert len(results) == 2
 
     execution_plan_data = execution_plan.meta.serialize()
-    steps = recreate_execution_steps(pipeline_def, typed_environment, execution_plan_data)
-
-    assert len(steps) == 2
 
     recreated_plan = recreate_execution_plan(pipeline_def, typed_environment, execution_plan_data)
-    results = execute_plan(pipeline_def, recreated_plan)
-    assert len(results) == 2
+    results_from_recreated = execute_plan(pipeline_def, recreated_plan)
+    assert len(results_from_recreated) == 2
 
-    assert results[0].step.key == 'return_one.transform'
-    assert results[0].success
-    assert results[0].success_data.value == 1
-    assert results[1].success_data.value == 2
+    assert results_from_recreated[0].step.key == 'return_one.transform'
+    assert results_from_recreated[0].success
+    assert results_from_recreated[0].success_data.value == 1
+    assert results_from_recreated[1].success
+    assert results_from_recreated[1].success_data.value == 2
+
+    assert_result_list_equivalent(results, results_from_recreated)
+
+
+def assert_result_list_equivalent(left, right):
+    check.list_param(left, 'left', of_type=StepResult)
+    check.list_param(right, 'right', of_type=StepResult)
+    assert len(left) == len(right)
+
+    for left_result, right_result in zip(left, right):
+        assert left_result.step.meta == right_result.step.meta
+        assert left_result.success == right_result.success
+        assert left_result.tag == right_result.tag
+        assert left_result.success_data == right_result.success_data
+        assert left_result.failure_data == right_result.failure_data
+
+
+def test_execution_plan_with_expectations(snapshot):
+    @lambda_solid(output=OutputDefinition(types.Int))
+    def return_one():
+        return 1
+
+    @lambda_solid(
+        inputs=[
+            InputDefinition(
+                'num',
+                dagster_type=types.Int,
+                expectations=[
+                    ExpectationDefinition(
+                        name='positive',
+                        expectation_fn=lambda _info, value: ExpectationResult(value > 0)
+                    )
+                ]
+            )
+        ],
+        output=OutputDefinition(types.Int),
+    )
+    def add_one(num):
+        return num + 1
+
+    pipeline_def = PipelineDefinition(
+        name='basic_plan_with_expectations',
+        solids=[return_one, add_one],
+        dependencies={
+            'add_one': {
+                'num': DependencyDefinition('return_one'),
+            },
+        },
+    )
+
+    typed_environment = create_typed_environment(pipeline_def)
+    execution_plan = create_execution_plan(pipeline_def, typed_environment)
+    snapshot.assert_match(execution_plan.meta.serialize())
+
+    # assert_plan_recreation_matches(pipeline_def)
+
+
+def assert_plan_recreation_matches(pipeline_def, environment_config=None):
+    typed_environment = create_typed_environment(pipeline_def, environment_config)
+    execution_plan = create_execution_plan(pipeline_def, typed_environment)
+    execution_plan_data = execution_plan.meta.serialize()
+    recreated_plan = recreate_execution_plan(pipeline_def, typed_environment, execution_plan_data)
+
+    results = execute_plan(pipeline_def, execution_plan, environment_config)
+    recreated_results = execute_plan(pipeline_def, recreated_plan, environment_config)
+
+    assert_result_list_equivalent(results, recreated_results)

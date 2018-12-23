@@ -33,6 +33,7 @@ def create_transform_compute_fn(execution_info, step_meta):
         inputs,
     )
 
+
 def create_transform_step(execution_info, solid, step_inputs):
     check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
     check.inst_param(solid, 'solid', Solid)
