@@ -7,59 +7,6 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
-snapshots['test_execution_step_meta 1'] = {
-    'key': 'step_key',
-    'solid_name': 'some_solid',
-    'step_input_metas': [
-        {
-            'dagster_type_name': 'Int',
-            'name': 'input_one',
-            'prev_output_handle': {
-                'output_name': 'some_output',
-                'step_key': 'prev_step'
-            }
-        }
-    ],
-    'step_output_metas': [
-        {
-            'dagster_type_name': 'String',
-            'name': 'output_one'
-        }
-    ],
-    'tag': 'TRANSFORM'
-}
-
-snapshots['test_execution_plan_meta 1'] = {
-    'deps': {
-        'something': [
-            'something_else'
-        ]
-    },
-    'step_metas': [
-        {
-            'key': 'step_key',
-            'solid_name': 'some_solid',
-            'step_input_metas': [
-                {
-                    'dagster_type_name': 'Int',
-                    'name': 'input_one',
-                    'prev_output_handle': {
-                        'output_name': 'some_output',
-                        'step_key': 'prev_step'
-                    }
-                }
-            ],
-            'step_output_metas': [
-                {
-                    'dagster_type_name': 'String',
-                    'name': 'output_one'
-                }
-            ],
-            'tag': 'TRANSFORM'
-        }
-    ]
-}
-
 snapshots['test_basic_pipeline_execution_plan_serialization 1'] = {
     'deps': {
         'add_one.transform': [
@@ -74,6 +21,8 @@ snapshots['test_basic_pipeline_execution_plan_serialization 1'] = {
             'solid_name': 'return_one',
             'step_input_metas': [
             ],
+            'step_kind_data': {
+            },
             'step_output_metas': [
                 {
                     'dagster_type_name': 'Int',
@@ -95,6 +44,8 @@ snapshots['test_basic_pipeline_execution_plan_serialization 1'] = {
                     }
                 }
             ],
+            'step_kind_data': {
+            },
             'step_output_metas': [
                 {
                     'dagster_type_name': 'Int',
@@ -126,6 +77,8 @@ snapshots['test_execution_plan_with_expectations 1'] = {
             'solid_name': 'return_one',
             'step_input_metas': [
             ],
+            'step_kind_data': {
+            },
             'step_output_metas': [
                 {
                     'dagster_type_name': 'Int',
@@ -147,6 +100,10 @@ snapshots['test_execution_plan_with_expectations 1'] = {
                     }
                 }
             ],
+            'step_kind_data': {
+                'expectation_name': 'positive',
+                'input_name': 'num'
+            },
             'step_output_metas': [
                 {
                     'dagster_type_name': 'Int',
@@ -168,6 +125,8 @@ snapshots['test_execution_plan_with_expectations 1'] = {
                     }
                 }
             ],
+            'step_kind_data': {
+            },
             'step_output_metas': [
                 {
                     'dagster_type_name': 'Int',
@@ -189,10 +148,69 @@ snapshots['test_execution_plan_with_expectations 1'] = {
                     }
                 }
             ],
+            'step_kind_data': {
+            },
             'step_output_metas': [
                 {
                     'dagster_type_name': 'Int',
                     'name': 'result'
+                }
+            ],
+            'tag': 'TRANSFORM'
+        }
+    ]
+}
+
+snapshots['test_execution_step_meta 1'] = {
+    'key': 'step_key',
+    'solid_name': 'some_solid',
+    'step_input_metas': [
+        {
+            'dagster_type_name': 'Int',
+            'name': 'input_one',
+            'prev_output_handle': {
+                'output_name': 'some_output',
+                'step_key': 'prev_step'
+            }
+        }
+    ],
+    'step_kind_data': {
+    },
+    'step_output_metas': [
+        {
+            'dagster_type_name': 'String',
+            'name': 'output_one'
+        }
+    ],
+    'tag': 'TRANSFORM'
+}
+
+snapshots['test_execution_plan_meta 1'] = {
+    'deps': {
+        'something': [
+            'something_else'
+        ]
+    },
+    'step_metas': [
+        {
+            'key': 'step_key',
+            'solid_name': 'some_solid',
+            'step_input_metas': [
+                {
+                    'dagster_type_name': 'Int',
+                    'name': 'input_one',
+                    'prev_output_handle': {
+                        'output_name': 'some_output',
+                        'step_key': 'prev_step'
+                    }
+                }
+            ],
+            'step_kind_data': {
+            },
+            'step_output_metas': [
+                {
+                    'dagster_type_name': 'String',
+                    'name': 'output_one'
                 }
             ],
             'tag': 'TRANSFORM'

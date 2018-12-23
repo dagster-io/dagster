@@ -27,6 +27,23 @@ EXPECTATION_INPUT = 'expectation_input'
 EXPECTATION_VALUE_OUTPUT = 'expectation_value'
 
 
+def create_input_expectation_lambda(execution_plan_info, step_meta):
+    input_name = step_meta.step_kind_data['input_name']
+    expectation_name = step_meta.step_kind_data['expectation_name']
+
+    pipeline = execution_plan_info.pipeline
+    solid = pipeline.solid_named(step_meta.solid_name)
+    input_def = solid.input_def_named(input_name)
+    expectation_def = input_def.expectation_named(expectation_name)
+
+    return _create_expectation_lambda(
+        solid,
+        input_def,
+        expectation_def,
+        EXPECTATION_VALUE_OUTPUT,
+    )
+
+
 def _create_expectation_lambda(solid, inout_def, expectation_def, internal_output_name):
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(inout_def, 'inout_def', (InputDefinition, OutputDefinition))
@@ -112,11 +129,22 @@ def create_expectation_step(
 ):
 
     check.inst_param(solid, 'solid', Solid)
-    check.inst_param(expectation_def, 'input_expct_def', ExpectationDefinition)
+    check.inst_param(expectation_def, 'expectation_def', ExpectationDefinition)
     check.inst_param(prev_step_output_handle, 'prev_step_output_handle', StepOutputHandle)
     check.inst_param(inout_def, 'inout_def', (InputDefinition, OutputDefinition))
 
     value_type = inout_def.dagster_type
+
+    if isinstance(inout_def, InputDefinition):
+        step_kind_data = {
+            'input_name': inout_def.name,
+            'expectation_name': expectation_def.name,
+        }
+    else:
+        step_kind_data = {
+            'output_name': inout_def.name,
+            'expectation_name': expectation_def.name,
+        }
 
     return ExecutionStep(
         key=key,
@@ -138,6 +166,7 @@ def create_expectation_step(
         ),
         tag=tag,
         solid=solid,
+        step_kind_data=step_kind_data,
     )
 
 

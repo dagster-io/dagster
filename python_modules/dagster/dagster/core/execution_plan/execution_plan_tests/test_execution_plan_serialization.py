@@ -178,6 +178,7 @@ def create_stub_meta():
         ),
         tag=StepTag.TRANSFORM,
         solid_name='some_solid',
+        step_kind_data={},
     )
 
 
@@ -279,7 +280,7 @@ def test_execution_plan_with_expectations(snapshot):
     execution_plan = create_execution_plan(pipeline_def, typed_environment)
     snapshot.assert_match(execution_plan.meta.serialize())
 
-    # assert_plan_recreation_matches(pipeline_def)
+    assert_plan_recreation_matches(pipeline_def)
 
 
 def assert_plan_recreation_matches(pipeline_def, environment_config=None):

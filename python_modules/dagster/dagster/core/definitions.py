@@ -803,7 +803,14 @@ class InputDefinition(object):
 
     @property
     def descriptive_key(self):
-        return 'output'
+        return 'output' # WHOA this looks very wrong
+
+    def expectation_named(self, name):
+        check.str_param(name, 'name')
+        for expectation in self.expectations:
+            if expectation.name == name:
+                return expectation
+        check.failed('not found')
 
 
 class OutputDefinition(object):
@@ -834,6 +841,13 @@ class OutputDefinition(object):
     @property
     def descriptive_key(self):
         return 'output'
+
+    def expectation_named(self, name):
+        check.str_param(name, 'name')
+        for expectation in self.expectations:
+            if expectation.name == name:
+                return expectation
+        check.failed('not found')
 
 
 def _kv_str(key, value):

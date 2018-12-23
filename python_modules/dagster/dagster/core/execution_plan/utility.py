@@ -16,8 +16,11 @@ from .objects import (
 JOIN_OUTPUT = 'join_output'
 
 
-def __join_lambda(_context, _step, inputs):
-    yield Result(output_name=JOIN_OUTPUT, value=list(inputs.values())[0])
+def create_join_lambda():
+    def __join_lambda(_context, _step, inputs):
+        yield Result(output_name=JOIN_OUTPUT, value=list(inputs.values())[0])
+
+    return __join_lambda
 
 
 def create_join_step(solid, step_key, prev_steps, prev_output_name):
@@ -51,7 +54,7 @@ def create_join_step(solid, step_key, prev_steps, prev_output_name):
         key=step_key,
         step_inputs=step_inputs,
         step_outputs=[StepOutput.from_props(name=JOIN_OUTPUT, dagster_type=seen_dagster_type)],
-        compute_fn=__join_lambda,
+        compute_fn=create_join_lambda(),
         tag=StepTag.JOIN,
         solid=solid,
     )

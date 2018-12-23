@@ -154,14 +154,6 @@ class StepOutputHandle(PClass):
 
 
 class StepInputMeta(PClass):
-    @staticmethod
-    def from_step_input(step_input):
-        return StepInputMeta(
-            name=step_input.name,
-            dagster_type_name=step_input.dagster_type.name,
-            prev_output_handle=step_input.prev_output_handle,
-        )
-
     name = str_field()
     dagster_type_name = str_field()
     prev_output_handle = field(type=StepOutputHandle, mandatory=True)
@@ -195,13 +187,6 @@ class StepInput(PClass):
 
 
 class StepOutputMeta(PClass):
-    @staticmethod
-    def from_step_output(step_output):
-        return StepOutputMeta(
-            name=step_output.name,
-            dagster_type_name=step_output.dagster_type.name,
-        )
-
     name = str_field()
     dagster_type_name = str_field()
 
@@ -233,26 +218,19 @@ class StepOutputMetaVector(CheckedPVector):
     __type__ = StepOutputMeta
 
 
-class ExecutionStepMeta(PClass):
-    @staticmethod
-    def from_step(step):
-        return ExecutionStepMeta(
-            key=step.key,
-            step_input_metas=StepInputMetaVector(
-                map(StepInputMeta.from_step_input, step.step_inputs)
-            ),
-            step_output_metas=StepOutputMetaVector(
-                map(StepOutputMeta.from_step_output, step.step_outputs)
-            ),
-            tag=step.tag,
-            solid_name=step.solid.name,
-        )
+# class InputExpectationStepMeta(PClass):
+#     input_name = str_field()
+#     expectation_name = str_field()
 
+
+class ExecutionStepMeta(PClass):
     key = str_field()
     step_input_metas = field(type=StepInputMetaVector, mandatory=True)
     step_output_metas = field(type=StepOutputMetaVector, mandatory=True)
     tag = enum_field(StepTag)
     solid_name = str_field()
+
+    step_kind_data = field(type=dict, mandatory=True)
 
 
 class ExecutionStep(
@@ -261,19 +239,25 @@ class ExecutionStep(
         'meta step_inputs step_outputs step_input_dict step_output_dict compute_fn solid',
     ),
 ):
-    def __new__(cls, key, step_inputs, step_outputs, compute_fn, tag, solid):
+    def __new__(cls, key, step_inputs, step_outputs, compute_fn, tag, solid, step_kind_data=None):
         return super(ExecutionStep, cls).__new__(
             cls,
             meta=ExecutionStepMeta(
                 key=key,
                 step_input_metas=StepInputMetaVector(
-                    map(StepInputMeta.from_step_input, step_inputs)
+                    [step_input.meta for step_input in step_inputs]
                 ),
                 step_output_metas=StepOutputMetaVector(
-                    map(StepOutputMeta.from_step_output, step_outputs)
+                    [step_output.meta for step_output in step_outputs]
                 ),
                 tag=tag,
                 solid_name=solid.name,
+                step_kind_data=check.opt_dict_param(
+                    step_kind_data,
+                    'step_kind_data',
+                    key_type=str,
+                    value_type=str,
+                ),
             ),
             step_inputs=check.list_param(step_inputs, 'step_inputs', of_type=StepInput),
             step_outputs=check.list_param(step_outputs, 'step_outputs', of_type=StepOutput),
@@ -354,7 +338,7 @@ class ExecutionPlan(object):
         ordered_step_keys = toposort.toposort_flatten(self.deps)
         step_metas = []
         for step_key in ordered_step_keys:
-            step_metas.append(ExecutionStepMeta.from_step(step_dict[step_key]))
+            step_metas.append(step_dict[step_key].meta)
 
         self.meta = ExecutionPlanMeta(
             step_metas=ExecutionStepMetaVector(step_metas),

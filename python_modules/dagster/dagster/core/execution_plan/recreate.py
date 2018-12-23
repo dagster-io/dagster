@@ -12,7 +12,9 @@ from .objects import (
     StepTag,
 )
 
+from .expectations import create_input_expectation_lambda
 from .transform import create_transform_compute_fn
+from .utility import create_join_lambda
 
 
 def recreate_step_input(plan_info, step_input_meta):
@@ -32,6 +34,13 @@ def recreate_step_output(plan_info, step_output_meta):
 def recreate_compute_fn(plan_info, step_meta):
     if step_meta.tag == StepTag.TRANSFORM:
         return create_transform_compute_fn(plan_info, step_meta)
+    elif step_meta.tag == StepTag.INPUT_EXPECTATION:
+        check.invariant(
+            set(step_meta.step_kind_data.keys()) == set(['input_name', 'expectation_name'])
+        )
+        return create_input_expectation_lambda(plan_info, step_meta)
+    elif step_meta.tag == StepTag.JOIN:
+        return create_join_lambda()
     else:
         check.failed('Unsupported tag {tag}'.format(tag=step_meta.tag))
 
@@ -50,6 +59,7 @@ def recreate_step(plan_info, step_meta):
         compute_fn=recreate_compute_fn(plan_info, step_meta),
         tag=step_meta.tag,
         solid=plan_info.pipeline.solid_named(step_meta.solid_name),
+        step_kind_data=step_meta.step_kind_data,
     )
 
 
