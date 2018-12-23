@@ -5,6 +5,8 @@ from six import string_types
 
 from pyrsistent import (
     CheckedPVector,
+    CheckedPMap,
+    CheckedPSet,
     PClass,
     field,
 )
@@ -233,9 +235,22 @@ class StepOutputMetaVector(CheckedPVector):
 
 
 class ExecutionStepMeta(PClass):
+    @staticmethod
+    def from_step(step):
+        return ExecutionStepMeta(
+            key=step.key,
+            step_input_metas=StepInputMetaVector(
+                map(StepInputMeta.from_step_input, step.step_inputs)
+            ),
+            step_output_metas=StepOutputMetaVector(
+                map(StepOutputMeta.from_step_output, step.step_outputs)
+            ),
+            tag=step.tag,
+        )
+
     key = str_field()
-    step_input_metas = field(type=StepInputMetaVector)
-    step_output_metas = field(type=StepOutputMetaVector)
+    step_input_metas = field(type=StepInputMetaVector, mandatory=True)
+    step_output_metas = field(type=StepOutputMetaVector, mandatory=True)
     tag = enum_field(StepTag)
 
 
@@ -303,6 +318,24 @@ class ExecutionStep(
         return self.step_input_dict[name]
 
 
+class ExecutionStepMetaVector(CheckedPVector):
+    __type__ = ExecutionStepMeta
+
+
+class DepVector(CheckedPVector):
+    __type__ = string_types
+
+
+class DepMap(CheckedPMap):
+    __key_type__ = string_types
+    __value_type__ = DepVector
+
+
+class ExecutionPlanMeta(PClass):
+    step_metas = field(type=ExecutionStepMetaVector, mandatory=True)
+    deps = field(type=DepMap, mandatory=True)
+
+
 class ExecutionPlan(object):
     def __init__(self, step_dict, deps):
         self.step_dict = check.dict_param(
@@ -313,6 +346,11 @@ class ExecutionPlan(object):
         )
         self.deps = check.dict_param(deps, 'deps', key_type=str, value_type=set)
         self.steps = list(step_dict.values())
+
+        self.meta = ExecutionPlanMeta(
+            step_metas=ExecutionStepMetaVector(map(ExecutionStepMeta.from_step, self.steps)),
+            deps=DepMap(deps),
+        )
 
     def get_step_by_key(self, key):
         return self.step_dict[key]

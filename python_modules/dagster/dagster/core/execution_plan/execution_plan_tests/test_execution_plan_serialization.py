@@ -11,6 +11,9 @@ from pyrsistent import (
 from dagster import types
 
 from dagster.core.execution_plan.objects import (
+    DepMap,
+    DepVector,
+    ExecutionPlanMeta,
     ExecutionStepMeta,
     StepInput,
     StepInputMeta,
@@ -110,30 +113,7 @@ def test_step_input_failed():
 
 
 def test_execution_step_meta():
-    step_meta = ExecutionStepMeta(
-        key='step_key',
-        step_input_metas=StepInputMetaVector(
-            [
-                StepInputMeta(
-                    name='input_one',
-                    dagster_type_name='Int',
-                    prev_output_handle=StepOutputHandle(
-                        step_key='prev_step',
-                        output_name='some_output',
-                    )
-                )
-            ]
-        ),
-        step_output_metas=StepOutputMetaVector(
-            [
-                StepOutputMeta(
-                    name='output_one',
-                    dagster_type_name='String',
-                ),
-            ]
-        ),
-        tag=StepTag.TRANSFORM,
-    )
+    step_meta = create_stub_meta()
 
     assert step_meta.serialize() == {
         'key':
@@ -157,3 +137,69 @@ def test_execution_step_meta():
     }
 
     assert json_round_trip(ExecutionStepMeta, step_meta) == step_meta
+
+
+def test_execution_plan_meta():
+    plan_meta = ExecutionPlanMeta(
+        step_metas=[create_stub_meta()],
+        deps=DepMap({
+            'something': DepVector(['something_else'])
+        }),
+    )
+
+    assert plan_meta.serialize() == {
+        'step_metas': [
+            {
+                'key':
+                'step_key',
+                'step_input_metas': [
+                    {
+                        'name': 'input_one',
+                        'dagster_type_name': 'Int',
+                        'prev_output_handle': {
+                            'step_key': 'prev_step',
+                            'output_name': 'some_output'
+                        }
+                    }
+                ],
+                'step_output_metas': [{
+                    'name': 'output_one',
+                    'dagster_type_name': 'String'
+                }],
+                'tag':
+                'TRANSFORM'
+            }
+        ],
+        'deps': {
+            'something': ['something_else']
+        }
+    }
+
+    assert json_round_trip(ExecutionPlanMeta, plan_meta) == plan_meta
+
+
+def create_stub_meta():
+    return ExecutionStepMeta(
+        key='step_key',
+        step_input_metas=StepInputMetaVector(
+            [
+                StepInputMeta(
+                    name='input_one',
+                    dagster_type_name='Int',
+                    prev_output_handle=StepOutputHandle(
+                        step_key='prev_step',
+                        output_name='some_output',
+                    )
+                )
+            ]
+        ),
+        step_output_metas=StepOutputMetaVector(
+            [
+                StepOutputMeta(
+                    name='output_one',
+                    dagster_type_name='String',
+                ),
+            ]
+        ),
+        tag=StepTag.TRANSFORM,
+    )
