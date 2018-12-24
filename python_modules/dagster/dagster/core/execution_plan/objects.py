@@ -218,11 +218,6 @@ class StepOutputMetaVector(CheckedPVector):
     __type__ = StepOutputMeta
 
 
-# class InputExpectationStepMeta(PClass):
-#     input_name = str_field()
-#     expectation_name = str_field()
-
-
 class ExecutionStepMeta(PClass):
     key = str_field()
     step_input_metas = field(type=StepInputMetaVector, mandatory=True)
