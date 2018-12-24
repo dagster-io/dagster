@@ -120,16 +120,8 @@ def enum_field(enum_type):
         if isinstance(str_or_enum, StepTag):
             # in-memory
             return str_or_enum
-        if isinstance(str_or_enum, string_types):
-            # deserialization
-            return StepTag(str_or_enum)
 
-        check.failed(
-            'Unsupported value for enum {enum_type}: {enum_value}'.format(
-                enum_type=enum_type,
-                enum_value=str_or_enum,
-            )
-        )
+        return StepTag(str_or_enum)
 
     return field(
         type=enum_type,
