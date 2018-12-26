@@ -3,6 +3,8 @@ import os
 import pickle
 import tempfile
 
+import six
+
 import pandas as pd
 
 from dagster import (
@@ -69,6 +71,7 @@ class _DataFrameType(ConfigurableSelectorFromDict, types.PythonObjectType):
         else:
             raise Exception('unsupported')
 
+
     def construct_from_config_value(self, config_value):
         file_type, file_options = list(config_value.items())[0]
         if file_type == 'csv':
@@ -76,6 +79,9 @@ class _DataFrameType(ConfigurableSelectorFromDict, types.PythonObjectType):
             del file_options['path']
             return pd.read_csv(path, **file_options)
         elif file_type == 'parquet':
+            path = file_options['path']
+            if not isinstance(path, six.string_types):
+                raise Exception(f'{path} not a string!'.format(path=path))
             return pd.read_parquet(file_options['path'])
         elif file_type == 'table':
             return pd.read_table(file_options['path'])
