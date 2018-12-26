@@ -1,18 +1,19 @@
 import pytest
 
 from dagster import (
-    DependencyDefinition,
     DagsterInvariantViolationError,
-    execute_pipeline,
-    PipelineDefinition,
-    solid,
+    DependencyDefinition,
     InputDefinition,
     OutputDefinition,
+    PipelineDefinition,
+    SolidInstance,
+    execute_pipeline,
+    solid,
     types,
 )
 
 
-def test_string_csv_from_inputs():
+def test_string_from_inputs():
     called = {}
 
     @solid(inputs=[InputDefinition('string_input', types.String)])
@@ -39,7 +40,39 @@ def test_string_csv_from_inputs():
     assert called['yup']
 
 
-def test_string__missing_inputs():
+def test_string_from_aliased_inputs():
+    called = {}
+
+    @solid(inputs=[InputDefinition('string_input', types.String)])
+    def str_as_input(_info, string_input):
+        assert string_input == 'foo'
+        called['yup'] = True
+
+    pipeline = PipelineDefinition(
+        solids=[str_as_input],
+        dependencies={
+            SolidInstance('str_as_input', alias='aliased'): {},
+        },
+    )
+
+    result = execute_pipeline(
+        pipeline,
+        {
+            'solids': {
+                'aliased': {
+                    'inputs': {
+                        'string_input': 'foo',
+                    },
+                },
+            },
+        },
+    )
+
+    assert result.success
+    assert called['yup']
+
+
+def test_string_missing_inputs():
     called = {}
 
     @solid(inputs=[InputDefinition('string_input', types.String)])
@@ -57,7 +90,7 @@ def test_string__missing_inputs():
     assert 'yup' not in called
 
 
-def test_string_csv_missing_input_collision():
+def test_string_missing_input_collision():
     called = {}
 
     @solid(outputs=[OutputDefinition(types.String)])
