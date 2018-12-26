@@ -11,6 +11,12 @@ from airline_demo.pipelines import (
 )
 
 
+from dagster.utils import (
+    load_yaml_from_glob_list,
+    script_relative_path,
+)
+
+
 @pytest.mark.nettest
 @pytest.mark.spark
 @pytest.mark.db
@@ -19,119 +25,16 @@ def test_pipelines():
     now = datetime.datetime.utcnow()
     timestamp = now.strftime('%Y_%m_%d_%H_%M_%S')
 
+    config_object = load_yaml_from_glob_list([
+        script_relative_path('../../environments/local_base.yml'),
+        script_relative_path('../../environments/local_fast_download.yml'),
+    ])
+
     result_download = execute_pipeline(
         define_airline_demo_download_pipeline(),
-        {
-            'context': {
-                'local': {
-                    'resources': {
-                        # duplication not the best
-                        'db_info': {
-                            'config': {
-                                'postgres_username': 'test',
-                                'postgres_password': 'test',
-                                'postgres_hostname': 'localhost',
-                                'postgres_db_name': 'test',
-                            }
-                        }
-                    },
-                },
-            },
-            'solids': {
-                'archive_members': {
-                    'config': [
-                        'On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_4.csv',
-                        'On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_5.csv',
-                        'On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_6.csv',
-                        'Origin_and_Destination_Survey_DB1BCoupon_2018_2.csv',
-                        'Origin_and_Destination_Survey_DB1BMarket_2018_2.csv',
-                        'Origin_and_Destination_Survey_DB1BTicket_2018_2.csv',
-                        '954834304_T_MASTER_CORD.csv',
-                    ]
-                },
-                'download_archives': {
-                    'config': [
-                        {
-                            'bucket':
-                            'dagster-airline-demo-source-data',
-                            'key':
-                            'test/On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_4.zip',
-                            'skip_if_present':
-                            True,
-                            'target_path':
-                            'source_data/On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_4.zip',
-                        }, {
-                            'bucket':
-                            'dagster-airline-demo-source-data',
-                            'key':
-                            'test/On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_5.zip',
-                            'skip_if_present':
-                            True,
-                            'target_path':
-                            'source_data/On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_5.zip',
-                        }, {
-                            'bucket':
-                            'dagster-airline-demo-source-data',
-                            'key':
-                            'test/On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_6.zip',
-                            'skip_if_present':
-                            True,
-                            'target_path':
-                            'source_data/On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_6.zip',
-                        }, {
-                            'bucket':
-                            'dagster-airline-demo-source-data',
-                            'key':
-                            'test/Origin_and_Destination_Survey_DB1BCoupon_2018_2.zip',
-                            'skip_if_present':
-                            True,
-                            'target_path':
-                            'source_data/Origin_and_Destination_Survey_DB1BCoupon_2018_2.zip',
-                        }, {
-                            'bucket':
-                            'dagster-airline-demo-source-data',
-                            'key':
-                            'test/Origin_and_Destination_Survey_DB1BMarket_2018_2.zip',
-                            'skip_if_present':
-                            True,
-                            'target_path':
-                            'source_data/Origin_and_Destination_Survey_DB1BMarket_2018_2.zip',
-                        }, {
-                            'bucket':
-                            'dagster-airline-demo-source-data',
-                            'key':
-                            'test/Origin_and_Destination_Survey_DB1BTicket_2018_2.zip',
-                            'skip_if_present':
-                            True,
-                            'target_path':
-                            'source_data/Origin_and_Destination_Survey_DB1BTicket_2018_2.zip',
-                        }, {
-                            'bucket': 'dagster-airline-demo-source-data',
-                            'key': 'test/954834304_T_MASTER_CORD.zip',
-                            'skip_if_present': True,
-                            'target_path': 'source_data/954834304_T_MASTER_CORD.zip',
-                        }
-                    ]
-                },
-                'download_q2_sfo_weather': {
-                    'config': [
-                        {
-                            'bucket': 'dagster-airline-demo-source-data',
-                            'key': 'test/sfo_q2_weather.txt',
-                            'skip_if_present': True,
-                            'target_path': 'source_data/sfo_q2_weather.txt',
-                        }
-                    ]
-                },
-                'unzip_archives': {
-                    'config': {
-                        'skip_if_present': True,
-                        'destination_dir': 'source_data',
-                    },
-                },
-            }
-        }
+        config_object,
     )
+
     assert result_download.success
 
     result_ingest = execute_pipeline(
