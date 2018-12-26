@@ -21,7 +21,7 @@ from dagster import (
 )
 from dagster.utils import script_relative_path
 
-import dagster_contrib.pandas as dagster_pd
+from dagster_contrib.pandas import DataFrame
 
 from dagit.app import RepositoryContainer
 from dagit.pipeline_execution_manager import SynchronousExecutionManager
@@ -68,8 +68,8 @@ def execute_dagster_graphql(context, query, variables=None):
 
 
 @lambda_solid(
-    inputs=[InputDefinition('num', dagster_pd.DataFrame)],
-    output=OutputDefinition(dagster_pd.DataFrame),
+    inputs=[InputDefinition('num', DataFrame)],
+    output=OutputDefinition(DataFrame),
 )
 def sum_solid(num):
     sum_df = num.copy()
@@ -78,8 +78,8 @@ def sum_solid(num):
 
 
 @lambda_solid(
-    inputs=[InputDefinition('sum_df', dagster_pd.DataFrame)],
-    output=OutputDefinition(dagster_pd.DataFrame),
+    inputs=[InputDefinition('sum_df', DataFrame)],
+    output=OutputDefinition(DataFrame),
 )
 def sum_sq_solid(sum_df):
     sum_sq_df = sum_df.copy()
@@ -91,14 +91,11 @@ def define_pipeline_one():
     return PipelineDefinition(
         name='pandas_hello_world',
         solids=[
-            dagster_pd.load_csv_solid('load_num_csv'),
             sum_solid,
             sum_sq_solid,
         ],
         dependencies={
-            'sum_solid': {
-                'num': DependencyDefinition('load_num_csv')
-            },
+            'sum_solid': {},
             'sum_sq_solid': {
                 'sum_df': DependencyDefinition(sum_solid.name),
             },
@@ -125,13 +122,10 @@ def define_pipeline_two():
     return PipelineDefinition(
         name='pandas_hello_world_two',
         solids=[
-            dagster_pd.load_csv_solid('load_num_csv'),
             sum_solid,
         ],
         dependencies={
-            'sum_solid': {
-                'num': DependencyDefinition('load_num_csv')
-            },
+            'sum_solid': {},
         },
     )
 
@@ -259,18 +253,26 @@ def test_pipeline_not_found():
     assert result.data['isPipelineConfigValid']['pipelineName'] == 'nope'
 
 
-def test_basic_valid_config():
-    result = execute_config_graphql(
-        pipeline_name='pandas_hello_world',
-        config={
-            'solids': {
-                'load_num_csv': {
-                    'config': {
-                        'path': 'pandas_hello_world/num.csv',
+def pandas_hello_world_solids_config():
+    return {
+        'solids': {
+            'sum_solid': {
+                'inputs': {
+                    'num': {
+                        'csv': {
+                            'path': script_relative_path('num.csv'),
+                        },
                     },
                 },
             },
         },
+    }
+
+
+def test_basic_valid_config():
+    result = execute_config_graphql(
+        pipeline_name='pandas_hello_world',
+        config=pandas_hello_world_solids_config(),
     )
 
     assert not result.errors
@@ -284,9 +286,13 @@ def test_root_field_not_defined():
         pipeline_name='pandas_hello_world',
         config={
             'solids': {
-                'load_num_csv': {
-                    'config': {
-                        'path': 'pandas_hello_world/num.csv',
+                'sum_solid': {
+                    'inputs': {
+                        'num': {
+                            'csv': {
+                                'path': script_relative_path('num.csv'),
+                            },
+                        },
                     },
                 },
             },
@@ -334,9 +340,13 @@ def test_basic_invalid_config_type_mismatch():
         pipeline_name='pandas_hello_world',
         config={
             'solids': {
-                'load_num_csv': {
-                    'config': {
-                        'path': 123,
+                'sum_solid': {
+                    'inputs': {
+                        'num': {
+                            'csv': {
+                                'path': 123,
+                            },
+                        },
                     },
                 },
             },
@@ -356,7 +366,7 @@ def test_basic_invalid_config_type_mismatch():
     assert error_data['valueRep'] == '123'
     assert error_data['type']['name'] == 'Path'
 
-    assert ['solids', 'load_num_csv', 'config', 'path'] == field_stack(error_data)
+    assert ['solids', 'sum_solid', 'inputs', 'num', 'csv', 'path'] == field_stack(error_data)
 
 
 def test_basic_invalid_config_missing_field():
@@ -364,8 +374,12 @@ def test_basic_invalid_config_missing_field():
         pipeline_name='pandas_hello_world',
         config={
             'solids': {
-                'load_num_csv': {
-                    'config': {},
+                'sum_solid': {
+                    'inputs': {
+                        'num': {
+                            'csv': {},
+                        }
+                    }
                 },
             },
         },
@@ -378,7 +392,7 @@ def test_basic_invalid_config_missing_field():
     assert len(result.data['isPipelineConfigValid']['errors']) == 1
     error_data = result.data['isPipelineConfigValid']['errors'][0]
 
-    assert ['solids', 'load_num_csv', 'config'] == field_stack(error_data)
+    assert ['solids', 'sum_solid', 'inputs', 'num', 'csv'] == field_stack(error_data)
     assert error_data['reason'] == 'MISSING_REQUIRED_FIELD'
     assert error_data['field']['name'] == 'path'
 
@@ -393,11 +407,15 @@ def test_basic_invalid_not_defined_field():
         pipeline_name='pandas_hello_world',
         config={
             'solids': {
-                'load_num_csv': {
-                    'config': {
-                        'path': 'foo.txt',
-                        'extra': 'nope',
-                    },
+                'sum_solid': {
+                    'inputs': {
+                        'num': {
+                            'csv': {
+                                'path': 'foo.txt',
+                                'extra': 'nope',
+                            },
+                        }
+                    }
                 },
             },
         },
@@ -409,7 +427,7 @@ def test_basic_invalid_not_defined_field():
     assert result.data['isPipelineConfigValid']['pipeline']['name'] == 'pandas_hello_world'
     assert len(result.data['isPipelineConfigValid']['errors']) == 1
     error_data = result.data['isPipelineConfigValid']['errors'][0]
-    assert ['solids', 'load_num_csv', 'config'] == field_stack(error_data)
+    assert ['solids', 'sum_solid', 'inputs', 'num', 'csv'] == field_stack(error_data)
     assert error_data['reason'] == 'FIELD_NOT_DEFINED'
     assert error_data['fieldName'] == 'extra'
 
@@ -981,15 +999,7 @@ def test_query_execution_plan_snapshot(snapshot):
         {
             'executionParams': {
                 'pipelineName': 'pandas_hello_world',
-                'config': {
-                    'solids': {
-                        'load_num_csv': {
-                            'config': {
-                                'path': 'pandas_hello_world/num.csv',
-                            },
-                        },
-                    },
-                },
+                'config': pandas_hello_world_solids_config(),
             }
         },
     )
@@ -1007,15 +1017,7 @@ def test_query_execution_plan():
         {
             'executionParams': {
                 'pipelineName': 'pandas_hello_world',
-                'config': {
-                    'solids': {
-                        'load_num_csv': {
-                            'config': {
-                                'path': 'pandas_hello_world/num.csv',
-                            },
-                        },
-                    },
-                },
+                'config': pandas_hello_world_solids_config(),
             }
         },
     )
@@ -1031,7 +1033,9 @@ def test_query_execution_plan():
     names = get_nameset(plan_data['steps'])
     assert len(names) == 3
 
-    assert names == set(['load_num_csv.transform', 'sum_solid.transform', 'sum_sq_solid.transform'])
+    assert names == set(
+        ['sum_solid.num.input_thunk', 'sum_solid.transform', 'sum_sq_solid.transform']
+    )
 
     assert result.data['executionPlan']['pipeline']['name'] == 'pandas_hello_world'
 
@@ -1045,7 +1049,7 @@ def test_query_execution_plan():
     sst_input = get_named_thing(cn['inputs'], 'num')
     assert sst_input['type']['name'] == 'PandasDataFrame'
 
-    assert sst_input['dependsOn']['name'] == 'load_num_csv.transform'
+    assert sst_input['dependsOn']['name'] == 'sum_solid.num.input_thunk'
 
     sst_output = get_named_thing(cn['outputs'], 'result')
     assert sst_output['type']['name'] == 'PandasDataFrame'
@@ -1104,15 +1108,7 @@ def test_basic_start_pipeline_execution():
         variables={
             'executionParams': {
                 'pipelineName': 'pandas_hello_world',
-                'config': {
-                    'solids': {
-                        'load_num_csv': {
-                            'config': {
-                                'path': script_relative_path('num.csv'),
-                            }
-                        },
-                    },
-                },
+                'config': pandas_hello_world_solids_config(),
             },
         },
     )
@@ -1138,10 +1134,14 @@ def test_basic_start_pipeline_execution_config_failure():
                 'pipelineName': 'pandas_hello_world',
                 'config': {
                     'solids': {
-                        'load_num_csv': {
-                            'config': {
-                                'path': 384938439
-                            }
+                        'sum_solid': {
+                            'inputs': {
+                                'num': {
+                                    'csv': {
+                                        'path': 384938439,
+                                    },
+                                },
+                            },
                         },
                     },
                 },
@@ -1163,10 +1163,14 @@ def test_basis_start_pipeline_not_found_error():
                 'pipelineName': 'sjkdfkdjkf',
                 'config': {
                     'solids': {
-                        'load_num_csv': {
-                            'config': {
-                                'path': 'test.csv'
-                            }
+                        'sum_solid': {
+                            'inputs': {
+                                'num': {
+                                    'csv': {
+                                        'path': 'test.csv',
+                                    },
+                                },
+                            },
                         },
                     },
                 },
@@ -1196,10 +1200,14 @@ def test_basic_start_pipeline_execution_and_subscribe():
                 'pipelineName': 'pandas_hello_world',
                 'config': {
                     'solids': {
-                        'load_num_csv': {
-                            'config': {
-                                'path': script_relative_path('num.csv'),
-                            }
+                        'sum_solid': {
+                            'inputs': {
+                                'num': {
+                                    'csv': {
+                                        'path': script_relative_path('num.csv'),
+                                    },
+                                },
+                            },
                         },
                     },
                 },
@@ -1247,15 +1255,7 @@ def test_basic_sync_execution():
         variables={
             'executionParams': {
                 'pipelineName': 'pandas_hello_world',
-                'config': {
-                    'solids': {
-                        'load_num_csv': {
-                            'config': {
-                                'path': script_relative_path('num.csv'),
-                            }
-                        },
-                    },
-                },
+                'config': pandas_hello_world_solids_config(),
             },
         },
     )
@@ -1281,41 +1281,6 @@ def first_event_of_type(logs, message_type):
 
 def has_event_of_type(logs, message_type):
     return first_event_of_type(logs, message_type) is not None
-
-
-def test_basic_execution_input_injection():
-    context = define_context()
-    result = execute_dagster_graphql(
-        context,
-        SYNC_MUTATION_QUERY,
-        variables={
-            'executionParams': {
-                'pipelineName': define_pipeline_with_pandas_df_input().name,
-                'config': {
-                    'solids': {
-                        'sum_solid': {
-                            'inputs': {
-                                'num': {
-                                    'csv': {
-                                        'path': script_relative_path('num.csv'),
-                                    },
-                                },
-                            },
-                        },
-                    },
-                },
-            },
-        },
-    )
-
-    assert not result.errors
-    assert result.data
-
-    logs = result.data['startPipelineExecution']['run']['logs']['nodes']
-    assert isinstance(logs, list)
-    assert has_event_of_type(logs, 'PipelineStartEvent')
-    assert has_event_of_type(logs, 'PipelineSuccessEvent')
-    assert not has_event_of_type(logs, 'PipelineFailureEvent')
 
 
 SYNC_MUTATION_QUERY = '''
