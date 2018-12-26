@@ -80,8 +80,6 @@ class _DataFrameType(ConfigurableSelectorFromDict, types.PythonObjectType):
             return pd.read_csv(path, **file_options)
         elif file_type == 'parquet':
             path = file_options['path']
-            if not isinstance(path, six.string_types):
-                raise Exception(f'{path} not a string!'.format(path=path))
             return pd.read_parquet(file_options['path'])
         elif file_type == 'table':
             return pd.read_table(file_options['path'])
