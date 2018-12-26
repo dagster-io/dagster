@@ -161,13 +161,12 @@ def create_step_inputs(info, state, pipeline_solid):
 
     step_inputs = []
 
-    topo_solid = pipeline_solid.definition
     dependency_structure = info.pipeline.dependency_structure
 
-    for input_def in topo_solid.input_defs:
+    for input_def in pipeline_solid.definition.input_defs:
         input_handle = pipeline_solid.input_handle(input_def.name)
 
-        solid_config = info.environment.solids.get(topo_solid.name)
+        solid_config = info.environment.solids.get(pipeline_solid.name)
         if solid_config and input_def.name in solid_config.inputs:
             prev_step_output_handle = create_input_thunk_execution_step(
                 info,
