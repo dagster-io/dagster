@@ -154,24 +154,23 @@ def create_subplan_for_output(execution_info, solid, solid_transform_step, outpu
     return decorate_with_serialization(execution_info, solid, output_def, subplan)
 
 
-def create_step_inputs(info, state, pipeline_solid):
+def create_step_inputs(info, state, solid):
     check.inst_param(info, 'info', ExecutionPlanInfo)
     check.inst_param(state, 'state', StepBuilderState)
-    check.inst_param(pipeline_solid, 'pipeline_solid', Solid)
+    check.inst_param(solid, 'solid', Solid)
 
     step_inputs = []
 
-    topo_solid = pipeline_solid.definition
     dependency_structure = info.pipeline.dependency_structure
 
-    for input_def in topo_solid.input_defs:
-        input_handle = pipeline_solid.input_handle(input_def.name)
+    for input_def in solid.definition.input_defs:
+        input_handle = solid.input_handle(input_def.name)
 
-        solid_config = info.environment.solids.get(topo_solid.name)
+        solid_config = info.environment.solids.get(solid.name)
         if solid_config and input_def.name in solid_config.inputs:
             prev_step_output_handle = create_input_thunk_execution_step(
                 info,
-                pipeline_solid,
+                solid,
                 input_def,
                 solid_config.inputs[input_def.name],
             )
@@ -187,14 +186,14 @@ def create_step_inputs(info, state, pipeline_solid):
                     'inputs section of its configuration.'
                 ).format(
                     pipeline_name=info.pipeline.name,
-                    solid_name=pipeline_solid.name,
+                    solid_name=solid.name,
                     input_name=input_def.name,
                 )
             )
 
         subplan = create_subplan_for_input(
             info,
-            pipeline_solid,
+            solid,
             prev_step_output_handle,
             input_def,
         )
