@@ -71,7 +71,6 @@ class _DataFrameType(ConfigurableSelectorFromDict, types.PythonObjectType):
         else:
             raise Exception('unsupported')
 
-
     def construct_from_config_value(self, config_value):
         file_type, file_options = list(config_value.items())[0]
         if file_type == 'csv':

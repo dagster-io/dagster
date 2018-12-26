@@ -89,17 +89,14 @@ def test_dataframe_csv_from_inputs():
     assert result.success
     assert called['yup']
 
+
 def test_dataframe_wrong_sep_from_inputs():
     called = {}
 
     @solid(inputs=[InputDefinition('df', DataFrame)])
     def df_as_config(_info, df):
         # this is the pandas behavior
-        assert df.to_dict('list') == {'num1,num2': ['1,2', '3,4']} 
-        {
-            'num1': [1, 3],
-            'num2': [2, 4],
-        }
+        assert df.to_dict('list') == {'num1,num2': ['1,2', '3,4']}
         called['yup'] = True
 
     pipeline = PipelineDefinition(solids=[df_as_config])
@@ -113,7 +110,7 @@ def test_dataframe_wrong_sep_from_inputs():
                         'df': {
                             'csv': {
                                 'path': script_relative_path('num.csv'),
-                                'sep' : '|'
+                                'sep': '|'
                             },
                         },
                     },
@@ -124,6 +121,7 @@ def test_dataframe_wrong_sep_from_inputs():
 
     assert result.success
     assert called['yup']
+
 
 def test_dataframe_pipe_sep_csv_from_inputs():
     called = {}
@@ -147,7 +145,7 @@ def test_dataframe_pipe_sep_csv_from_inputs():
                         'df': {
                             'csv': {
                                 'path': script_relative_path('num_pipes.csv'),
-                                'sep' : '|'
+                                'sep': '|'
                             },
                         },
                     },
@@ -252,6 +250,7 @@ def test_dataframe_parquet_from_inputs():
 
     assert result.success
     assert called['yup']
+
 
 def test_dataframe_table_from_inputs():
     called = {}
