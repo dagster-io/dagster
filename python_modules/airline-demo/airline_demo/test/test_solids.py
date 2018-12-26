@@ -12,19 +12,14 @@ import os
 import pyspark
 import pytest
 
-from collections import namedtuple
-
 from dagster import (
-    config,
     DependencyDefinition,
     ExecutionContext,
-    lambda_solid,
     PipelineContextDefinition,
     PipelineDefinition,
-    ResourceDefinition,
-    SolidInstance,
+    execute_solid,
+    lambda_solid,
 )
-from dagster.utils.test import (define_stub_solid, execute_solid)
 
 from airline_demo.solids import (
     sql_solid,

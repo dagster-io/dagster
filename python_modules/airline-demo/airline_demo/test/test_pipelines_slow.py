@@ -17,10 +17,12 @@ from airline_demo.pipelines import (
 @pytest.mark.nettest
 @pytest.mark.slow
 def test_pipeline_download():
-    config_object = load_yaml_from_glob_list([
-        script_relative_path('../../environments/local_base.yml'),
-        script_relative_path('../../environments/local_fast_download.yml'),
-    ])
+    config_object = load_yaml_from_glob_list(
+        [
+            script_relative_path('../../environments/local_base.yml'),
+            script_relative_path('../../environments/local_fast_download.yml'),
+        ]
+    )
 
     result = execute_pipeline(define_airline_demo_download_pipeline(), config_object)
 
@@ -30,10 +32,12 @@ def test_pipeline_download():
 @pytest.mark.spark
 @pytest.mark.slow
 def test_pipeline_ingest():
-    config_object = load_yaml_from_glob_list([
-        script_relative_path('../../environments/local_base.yml'),
-        script_relative_path('../../environments/local_fast_ingest.yml'),
-    ])
+    config_object = load_yaml_from_glob_list(
+        [
+            script_relative_path('../../environments/local_base.yml'),
+            script_relative_path('../../environments/local_fast_ingest.yml'),
+        ]
+    )
 
     result = execute_pipeline(
         define_airline_demo_ingest_pipeline(),

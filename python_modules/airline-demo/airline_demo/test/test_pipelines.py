@@ -1,5 +1,3 @@
-import datetime
-
 import pytest
 
 from dagster import execute_pipeline

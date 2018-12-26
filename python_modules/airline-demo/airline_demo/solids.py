@@ -3,7 +3,6 @@
 import os
 import zipfile
 
-
 from sqlalchemy import text
 from stringcase import snakecase
 
@@ -192,7 +191,8 @@ def thunk_database_engine(info):
                         types.Bool,
                         description=(
                             'If True, and a file already exists at the path described by the '
-                            'target_path config value, if present, or the key, then the solid will no-op.'
+                            'target_path config value, if present, or the key, then the solid '
+                            'will no-op.'
                         ),
                         default_value=False,
                         is_optional=True
@@ -452,7 +452,7 @@ def rename_spark_dataframe_columns(data_frame, fn):
             description='The data frame whose columns should be prefixed'
         ),
     ],
-    config_field=Field(types.String),
+    config_field=Field(types.String, description='Prefix to append.'),
     outputs=[OutputDefinition(SparkDataFrameType)]
 )
 def prefix_column_names(info, data_frame):
@@ -465,7 +465,9 @@ def prefix_column_names(info, data_frame):
     name='canonicalize_column_names',
     inputs=[
         InputDefinition(
-            'data_frame', SparkDataFrameType, description='The data frame to canonicalize'
+            'data_frame',
+            SparkDataFrameType,
+            description='The data frame to canonicalize',
         ),
     ],
     outputs=[OutputDefinition(SparkDataFrameType)]
@@ -646,7 +648,7 @@ ticket_prices_with_average_delays = sql_solid(
         coupons.dest,
         coupons.destairportid,
         coupons.destairportseqid, coupons.destcitymarketid,
-        coupons.destcountry, 
+        coupons.destcountry,
         coupons.deststatefips,
         coupons.deststate,
         coupons.deststatename,
@@ -669,7 +671,7 @@ tickets_with_destination = sql_solid(
         coupons.dest,
         coupons.destairportid,
         coupons.destairportseqid, coupons.destcitymarketid,
-        coupons.destcountry, 
+        coupons.destcountry,
         coupons.deststatefips,
         coupons.deststate,
         coupons.deststatename,
@@ -738,7 +740,7 @@ eastbound_delays = sql_solid(
         avg(cast(origin_latitude as float)) as origin_latitude,
         avg(cast(origin_longitude as float)) as origin_longitude
     from q2_on_time_data
-    where 
+    where
         cast(origin_longitude as float) < cast(dest_longitude as float) and
         originstate != 'HI' and
         deststate != 'HI' and

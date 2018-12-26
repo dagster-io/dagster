@@ -9,7 +9,6 @@ import tempfile
 from dagster import (
     DependencyDefinition,
     ExecutionContext,
-    Field,
     PipelineContextDefinition,
     PipelineDefinition,
     RepositoryDefinition,
@@ -41,9 +40,7 @@ from .solids import (
     upload_to_s3,
     westbound_delays,
 )
-from .types import (
-    AirlineDemoResources,
-)
+
 from .utils import (
     create_postgres_db_url,
     create_postgres_engine,
