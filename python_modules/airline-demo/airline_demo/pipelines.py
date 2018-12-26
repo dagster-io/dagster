@@ -282,42 +282,17 @@ def define_airline_demo_ingest_pipeline():
         normalize_weather_na_values,
         prefix_column_names,
         subsample_spark_dataset,
-        thunk,
         union_spark_data_frames,
     ]
     dependencies = {
-        SolidInstance('thunk', alias='april_on_time_data_filename'): {},
-        SolidInstance('thunk', alias='may_on_time_data_filename'): {},
-        SolidInstance('thunk', alias='june_on_time_data_filename'): {},
-        SolidInstance('thunk', alias='q2_coupon_data_filename'): {},
-        SolidInstance('thunk', alias='q2_market_data_filename'): {},
-        SolidInstance('thunk', alias='q2_ticket_data_filename'): {},
-        SolidInstance('thunk', alias='q2_sfo_weather_filename'): {},
-        SolidInstance('thunk', alias='master_cord_data_filename'): {},
-        SolidInstance('ingest_csv_to_spark', alias='ingest_april_on_time_data'): {
-            'input_csv': DependencyDefinition('april_on_time_data_filename'),
-        },
-        SolidInstance('ingest_csv_to_spark', alias='ingest_may_on_time_data'): {
-            'input_csv': DependencyDefinition('may_on_time_data_filename'),
-        },
-        SolidInstance('ingest_csv_to_spark', alias='ingest_june_on_time_data'): {
-            'input_csv': DependencyDefinition('june_on_time_data_filename'),
-        },
-        SolidInstance('ingest_csv_to_spark', alias='ingest_q2_sfo_weather'): {
-            'input_csv': DependencyDefinition('q2_sfo_weather_filename'),
-        },
-        SolidInstance('ingest_csv_to_spark', alias='ingest_q2_coupon_data'): {
-            'input_csv': DependencyDefinition('q2_coupon_data_filename'),
-        },
-        SolidInstance('ingest_csv_to_spark', alias='ingest_q2_market_data'): {
-            'input_csv': DependencyDefinition('q2_market_data_filename'),
-        },
-        SolidInstance('ingest_csv_to_spark', alias='ingest_q2_ticket_data'): {
-            'input_csv': DependencyDefinition('q2_ticket_data_filename'),
-        },
-        SolidInstance('ingest_csv_to_spark', alias='ingest_master_cord_data'): {
-            'input_csv': DependencyDefinition('master_cord_data_filename'),
-        },
+        SolidInstance('ingest_csv_to_spark', alias='ingest_april_on_time_data'): {},
+        SolidInstance('ingest_csv_to_spark', alias='ingest_may_on_time_data'): {},
+        SolidInstance('ingest_csv_to_spark', alias='ingest_june_on_time_data'): {},
+        SolidInstance('ingest_csv_to_spark', alias='ingest_q2_sfo_weather'): {},
+        SolidInstance('ingest_csv_to_spark', alias='ingest_q2_coupon_data'): {},
+        SolidInstance('ingest_csv_to_spark', alias='ingest_q2_market_data'): {},
+        SolidInstance('ingest_csv_to_spark', alias='ingest_q2_ticket_data'): {},
+        SolidInstance('ingest_csv_to_spark', alias='ingest_master_cord_data'): {},
         SolidInstance('union_spark_data_frames', alias='combine_april_may_on_time_data'): {
             'left_data_frame': DependencyDefinition('ingest_april_on_time_data'),
             'right_data_frame': DependencyDefinition('ingest_may_on_time_data'),

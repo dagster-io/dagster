@@ -238,7 +238,7 @@ def thunk_database_engine(info):
 )
 def download_from_s3(info):
     '''Download an object from s3.
-        
+
     Args:
         info (ExpectationExecutionInfo): Must expose a boto3 S3 client as its `s3` resource.
 
@@ -312,7 +312,7 @@ def download_from_s3(info):
 )
 def upload_to_s3(info, file_path):
     '''Upload a file to s3.
-        
+
     Args:
         info (ExpectationExecutionInfo): Must expose a boto3 S3 client as its `s3` resource.
 
@@ -447,26 +447,15 @@ def unzip_file(
 
 @solid(
     name='ingest_csv_to_spark',
-    config_field=Field(
-        types.Dict(
-            fields={
-                'input_csv': Field(types.Path, description='', default_value='', is_optional=True),
-            }
-        )
-    ),
-    inputs=[InputDefinition(
-        'input_csv',
-        types.Path,
-        description='',
-    )],
+    inputs=[InputDefinition('input_csv', types.Path)],
     outputs=[OutputDefinition(SparkDataFrameType)]
 )
-def ingest_csv_to_spark(info, input_csv=None):
+def ingest_csv_to_spark(info, input_csv):
     data_frame = (
         info.context.resources.spark.read.format('csv').options(
             header='true',
             # inferSchema='true',
-        ).load(input_csv or info.config['input_csv'])
+        ).load(input_csv)
     )
     return data_frame
 
