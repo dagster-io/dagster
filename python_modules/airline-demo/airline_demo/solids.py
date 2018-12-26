@@ -3,7 +3,6 @@
 import os
 import zipfile
 
-import dagster.check as check
 
 from sqlalchemy import text
 from stringcase import snakecase
@@ -13,8 +12,9 @@ from dagster import (
     InputDefinition,
     OutputDefinition,
     Result,
-    solid,
     SolidDefinition,
+    check,
+    solid,
     types,
 )
 from dagstermill import define_dagstermill_solid
@@ -162,29 +162,6 @@ def thunk(info):
     return info.config
 
 
-# Maybe parametrize this to make_thunk(type)
-@solid(
-    name='thunk_list',
-    config_field=Field(types.List(types.Any), description='The list value to output.'),
-    description='No-op solid that simply outputs its single list config value.',
-    outputs=[OutputDefinition(types.List(types.Any), description='The list passed in as config.')]
-)
-def thunk_list(info):
-    '''Output the config vakue.
-
-    Especially useful when constructing DAGs with root nodes that take inputs which might in
-    other dags come from upstream solids.
-
-    Args:
-        info (ExpectationExecutionInfo)
-
-    Returns:
-        list:
-            The config value passed to the solid.
-    '''
-    return info.config
-
-
 @solid(
     name='thunk_database_engine',
     outputs=[OutputDefinition(SqlAlchemyEngineType, description='The db resource.')]
@@ -213,8 +190,10 @@ def thunk_database_engine(info):
                     'skip_if_present':
                     Field(
                         types.Bool,
-                        description='If True, and a file already exists at the path described by the '
-                        'target_path config value, if present, or the key, then the solid will no-op.',
+                        description=(
+                            'If True, and a file already exists at the path described by the '
+                            'target_path config value, if present, or the key, then the solid will no-op.'
+                        ),
                         default_value=False,
                         is_optional=True
                     ),

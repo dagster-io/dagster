@@ -37,7 +37,6 @@ from .solids import (
     thunk,
     tickets_with_destination,
     union_spark_data_frames,
-    thunk_list,
     unzip_file,
     upload_to_s3,
     westbound_delays,

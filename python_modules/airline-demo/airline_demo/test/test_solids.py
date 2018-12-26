@@ -219,11 +219,6 @@ def test_ingest_csv_to_spark():
             'context': {
                 'test': {}
             },
-            'solids': {
-                'ingest_csv_to_spark': {
-                    'config': {}
-                }
-            }
         }
     )
     assert result.success
