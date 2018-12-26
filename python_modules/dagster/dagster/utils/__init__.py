@@ -7,6 +7,7 @@ from dagster import check
 
 from .yaml_utils import (
     load_yaml_from_path,
+    load_yaml_from_globs,
     load_yaml_from_glob_list,
 )
 
