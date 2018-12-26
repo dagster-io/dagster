@@ -256,20 +256,15 @@ CONTEXT_DEFINITIONS = {
 
 
 def define_airline_demo_download_pipeline():
-    solids = [
-        download_from_s3,
-        # thunk_list,
-        unzip_file,
-    ]
+    solids = [download_from_s3, unzip_file]
     dependencies = {
-        # SolidInstance('thunk_list', alias='archive_members'): {},
         SolidInstance('download_from_s3', alias='download_archives'): {},
         SolidInstance('unzip_file', alias='unzip_archives'): {
             'archive_paths': DependencyDefinition('download_archives'),
-            # 'archive_members': DependencyDefinition('archive_members'),
         },
         SolidInstance('download_from_s3', alias='download_q2_sfo_weather'): {},
     }
+
     return PipelineDefinition(
         name='airline_demo_download_pipeline',
         context_definitions=CONTEXT_DEFINITIONS,
