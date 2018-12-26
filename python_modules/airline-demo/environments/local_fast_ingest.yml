@@ -79,3 +79,4 @@ solids:
       subsample_pct: 100
   subsample_q2_ticket_data:
     config:
+      subsample_pct: 100
