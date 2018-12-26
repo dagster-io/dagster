@@ -23,9 +23,13 @@ def test_execute_pipeline():
     pipeline = define_success_pipeline()
     environment = {
         'solids': {
-            'load_num_csv': {
-                'config': {
-                    'path': script_relative_path('num.csv'),
+            'sum_solid': {
+                'inputs': {
+                    'num': {
+                        'csv': {
+                            'path': script_relative_path('num.csv'),
+                        },
+                    },
                 },
             },
         },
