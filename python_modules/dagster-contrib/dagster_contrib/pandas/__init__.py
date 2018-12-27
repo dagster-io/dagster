@@ -90,21 +90,6 @@ def path_dict_field():
     return Field(types.Dict({'path': Field(types.Path)}))
 
 
-def load_csv_solid(name):
-    check.str_param(name, 'name')
-
-    def _t_fn(info, _inputs):
-        yield Result(pd.read_csv(info.config['path']))
-
-    return SolidDefinition(
-        name=name,
-        inputs=[],
-        outputs=[OutputDefinition(DataFrame)],
-        transform_fn=_t_fn,
-        config_field=path_dict_field(),
-    )
-
-
 def to_csv_solid(name):
     def _t_fn(info, inputs):
         inputs['df'].to_csv(info.config['path'], index=False)
