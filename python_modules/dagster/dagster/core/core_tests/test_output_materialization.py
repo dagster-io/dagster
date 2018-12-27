@@ -14,7 +14,10 @@ from dagster import (
     types,
 )
 
-from dagster.utils.test import get_temp_file_name
+from dagster.utils.test import (
+    get_temp_file_name,
+    get_temp_file_names,
+)
 
 from dagster.core.config_types import (
     solid_has_config_entry,
@@ -189,29 +192,70 @@ def test_no_outputs_one_input_config_schema():
 def test_basic_json_materialization():
     pipeline = single_int_output_pipeline()
 
-    # with get_temp_file_name() as filename:
-    filename = '/tmp/test_materialization'
-    result = execute_pipeline(
-        pipeline,
-        {
-            'solids': {
-                'return_one': {
-                    'outputs': [
-                        {
-                            'result': {
-                                'json': {
-                                    'path': filename,
+    with get_temp_file_name() as filename:
+        result = execute_pipeline(
+            pipeline,
+            {
+                'solids': {
+                    'return_one': {
+                        'outputs': [
+                            {
+                                'result': {
+                                    'json': {
+                                        'path': filename,
+                                    },
                                 },
                             },
-                        },
-                    ],
+                        ],
+                    },
                 },
             },
-        },
-    )
+        )
 
-    assert result.success
+        assert result.success
 
-    with open(filename, 'r') as ff:
-        value = json.loads(ff.read())
-        assert value == {'value': 1}
+        with open(filename, 'r') as ff:
+            value = json.loads(ff.read())
+            assert value == {'value': 1}
+
+
+def test_basic_json_multiple_materializations():
+    pipeline = single_int_output_pipeline()
+
+    with get_temp_file_names(2) as file_tuple:
+        filename_one, filename_two = file_tuple  # pylint: disable=E0632
+        result = execute_pipeline(
+            pipeline,
+            {
+                'solids': {
+                    'return_one': {
+                        'outputs': [
+                            {
+                                'result': {
+                                    'json': {
+                                        'path': filename_one,
+                                    },
+                                },
+                            },
+                            {
+                                'result': {
+                                    'json': {
+                                        'path': filename_two,
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                },
+            },
+        )
+
+        assert result.success
+
+        with open(filename_one, 'r') as ff:
+            value = json.loads(ff.read())
+            assert value == {'value': 1}
+
+        with open(filename_two, 'r') as ff:
+            value = json.loads(ff.read())
+            assert value == {'value': 1}
