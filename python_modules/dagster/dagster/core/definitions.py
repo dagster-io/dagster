@@ -720,6 +720,24 @@ class PipelineDefinition(object):
     def solid_defs(self):
         return set([solid.definition for solid in self.solids])
 
+    def solid_def_named(self, name):
+        check.str_param(name, 'name')
+
+        for solid in self.solids:
+            if solid.definition.name == name:
+                return solid.definition
+
+        check.failed('{} not found'.format(name))
+
+    def has_solid_def(self, name):
+        check.str_param(name, 'name')
+
+        for solid in self.solids:
+            if solid.definition.name == name:
+                return True
+
+        return False
+
 
 class ExpectationResult(object):
     '''
@@ -1157,6 +1175,15 @@ class RepositoryDefinition(object):
 
         return solid_defs[name]
 
+    def solid_def_named(self, name):
+        check.str_param(name, 'name')
+        for pipeline in self.get_all_pipelines():
+            for solid in pipeline.solids:
+                if solid.definition.name == name:
+                    return solid.definition
+
+        check.failed('Did not find ' + name)
+
 
 class ContextCreationExecutionInfo(
     namedtuple('_ContextCreationExecutionInfo', 'config pipeline_def run_id')
@@ -1186,7 +1213,9 @@ class ExpectationExecutionInfo(
         )
 
 
-class TransformExecutionInfo(namedtuple('_TransformExecutionInfo', 'context config solid')):
+class TransformExecutionInfo(
+    namedtuple('_TransformExecutionInfo', 'context config solid pipeline_def')
+):
     '''An instance of TransformExecutionInfo is passed every solid transform function.
 
     Attributes:
@@ -1195,12 +1224,11 @@ class TransformExecutionInfo(namedtuple('_TransformExecutionInfo', 'context conf
         config (Any): Config object for current solid
     '''
 
-    def __new__(cls, context, config, solid):
+    def __new__(cls, context, config, solid, pipeline_def):
         return super(TransformExecutionInfo, cls).__new__(
-            cls,
-            check.inst_param(context, 'context', RuntimeExecutionContext),
-            config,
+            cls, check.inst_param(context, 'context', RuntimeExecutionContext), config,
             check.inst_param(solid, 'solid', Solid),
+            check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
         )
 
     @property

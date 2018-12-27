@@ -24,13 +24,20 @@ def nb_test_path(name):
     return script_relative_path('notebooks/{name}.ipynb'.format(name=name))
 
 
+def define_hello_world_pipeline():
+    return PipelineDefinition(
+        name='hello_world_pipeline',
+        solids=[define_hello_world_solid()],
+    )
+
+
 def define_hello_world_solid():
-    return dm.define_dagstermill_solid('test', nb_test_path('hello_world'))
+    return dm.define_dagstermill_solid('hello_world', nb_test_path('hello_world'))
 
 
 def define_hello_world_with_output():
     return dm.define_dagstermill_solid(
-        'test',
+        'hello_world_output',
         nb_test_path('hello_world_output'),
         [],
         [OutputDefinition()],
@@ -49,24 +56,30 @@ def notebook_test(f):
     )(f)
 
 
+def define_hello_world_with_output_pipeline():
+    return PipelineDefinition(
+        name='hello_world_with_output_pipeline',
+        solids=[define_hello_world_with_output()],
+    )
+
+
 @notebook_test
 def test_hello_world():
-    pipeline = PipelineDefinition(solids=[define_hello_world_solid()])
-    result = execute_pipeline(pipeline)
+    result = execute_pipeline(define_hello_world_pipeline())
     assert result.success
 
 
 @notebook_test
 def test_hello_world_with_output():
-    pipeline = PipelineDefinition(solids=[define_hello_world_with_output()])
+    pipeline = define_hello_world_with_output_pipeline()
     result = execute_pipeline(pipeline)
     assert result.success
-    assert result.result_for_solid('test').transformed_value() == 'hello, world'
+    assert result.result_for_solid('hello_world_output').transformed_value() == 'hello, world'
 
 
-def add_two_numbers_pm_solid(name):
+def add_two_numbers_pm_solid():
     return dm.define_dagstermill_solid(
-        name,
+        'add_two_numbers',
         nb_test_path('add_two_numbers'),
         [
             InputDefinition(name='a', dagster_type=types.Int),
@@ -76,9 +89,9 @@ def add_two_numbers_pm_solid(name):
     )
 
 
-def mult_two_numbers_pm_solid(name):
+def mult_two_numbers_pm_solid():
     return dm.define_dagstermill_solid(
-        name,
+        'mult_two_numbers',
         nb_test_path('mult_two_numbers'),
         [
             InputDefinition(name='a', dagster_type=types.Int),
@@ -99,7 +112,7 @@ def return_two():
 
 
 def define_add_pipeline():
-    add_two_numbers = add_two_numbers_pm_solid('add_two_numbers')
+    add_two_numbers = add_two_numbers_pm_solid()
     return PipelineDefinition(
         name='test_add_pipeline',
         solids=[return_one, return_two, add_two_numbers],
@@ -113,46 +126,25 @@ def define_add_pipeline():
 
 
 @notebook_test
-def test_hello_world_inputs():
+def test_add_pipeline():
     pipeline = define_add_pipeline()
-    result = execute_pipeline(pipeline)
-    assert result.success
-    assert result.result_for_solid('add_two_numbers').transformed_value() == 3
-
-
-def define_hello_world_config_pipeline():
-    with_config_solid = dm.define_dagstermill_solid(
-        'with_config',
-        nb_test_path('hello_world_with_config'),
-        [],
-        [OutputDefinition()],
-        config_field=Field(types.String),
-    )
-    return PipelineDefinition(name='test_config_dag', solids=[with_config_solid])
-
-
-@notebook_test
-def test_hello_world_config():
-    pipeline = define_hello_world_config_pipeline()
-    pipeline_result = execute_pipeline(
+    result = execute_pipeline(
         pipeline,
         {
-            'solids': {
-                'with_config': {
-                    'config': script_relative_path('num.csv'),
+            'context': {
+                'default': {
+                    'config': {
+                        'log_level': 'ERROR',
+                    },
                 },
             },
         },
     )
+    assert result.success
+    assert result.result_for_solid('add_two_numbers').transformed_value() == 3
 
-    assert pipeline_result.success
-    assert pipeline_result.result_for_solid('with_config').transformed_value() == 100
 
-
-@solid(
-    inputs=[],
-    config_field=Field(types.Int),
-)
+@solid(inputs=[], config_field=Field(types.Int))
 def load_constant(info):
     return info.config
 
@@ -162,17 +154,17 @@ def define_test_notebook_dag_pipeline():
         name='test_notebook_dag',
         solids=[
             load_constant,
-            add_two_numbers_pm_solid('adder'),
-            mult_two_numbers_pm_solid('multer'),
+            add_two_numbers_pm_solid(),
+            mult_two_numbers_pm_solid(),
         ],
         dependencies={
             SolidInstance('load_constant', alias='load_a'): {},
             SolidInstance('load_constant', alias='load_b'): {},
-            SolidInstance(name='adder', alias='add_two'): {
+            SolidInstance(name='add_two_numbers', alias='add_two'): {
                 'a': DependencyDefinition('load_a'),
                 'b': DependencyDefinition('load_b'),
             },
-            SolidInstance(name='multer', alias='mult_two'): {
+            SolidInstance(name='mult_two_numbers', alias='mult_two'): {
                 'a': DependencyDefinition('add_two'),
                 'b': DependencyDefinition('load_b'),
             },
@@ -198,25 +190,3 @@ def test_notebook_dag():
     assert pipeline_result.success
     assert pipeline_result.result_for_solid('add_two').transformed_value() == 3
     assert pipeline_result.result_for_solid('mult_two').transformed_value() == 6
-
-
-@notebook_test
-def test_demonstrate_solid_include():
-    pipeline_result = execute_pipeline(
-        PipelineDefinition(
-            solids=[
-                dm.define_dagstermill_solid(
-                    name='demo_include',
-                    notebook_path=nb_test_path('demonstrate_solid_include'),
-                    outputs=[OutputDefinition()]
-                ),
-            ],
-            dependencies={
-                'demo_include': {},
-            }
-        )
-    )
-
-    assert pipeline_result.success
-    assert len(pipeline_result.result_list) == 1
-    assert pipeline_result.result_for_solid('demo_include').transformed_value() == 1

@@ -5,7 +5,7 @@ from collections import namedtuple
 
 import boto3
 # import numpy
-# import pytest
+import pytest
 
 import dagster.check as check
 import dagster.core.types as types

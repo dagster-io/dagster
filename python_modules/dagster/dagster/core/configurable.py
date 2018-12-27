@@ -16,9 +16,6 @@ class FieldDefinitionDictionary(dict):
         check.dict_param(ddict, 'ddict', key_type=str, value_type=Field)
         super(FieldDefinitionDictionary, self).__init__(ddict)
 
-    def __setitem__(self, _key, _value):
-        check.failed('This dictionary is readonly')
-
 
 class Configurable(object):
     @property

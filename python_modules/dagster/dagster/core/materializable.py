@@ -53,3 +53,11 @@ class MaterializeableBuiltinScalar(Materializeable):
             check.failed(
                 'Unsupported selector key: {selector_key}'.format(selector_key=selector_key)
             )
+
+
+class FileMarshalable:
+    def marshal_value(self, _value, _to_file):
+        check.not_implemented('must implement')
+
+    def unmarshal_value(self, _from_file):
+        check.not_implemented('must implement')
