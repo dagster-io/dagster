@@ -28,12 +28,10 @@ def aws_lambda_handler(event, context):
     """The lambda handler function."""
     logger.setLevel(logging.INFO)
 
-    logger.info(event)
-
     (
         run_id, step_idx, key, s3_bucket, s3_key_inputs, s3_key_body, s3_key_resources,
         s3_key_outputs
-    ) = LambdaInvocationPayload(event['config'])
+    ) = LambdaInvocationPayload(*event['config'])
 
     s3 = boto3.client('s3')
 
