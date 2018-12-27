@@ -16,10 +16,11 @@ from .configurable import (
     ConfigurableFromList,
     ConfigurableObjectFromDict,
     ConfigurableFromScalar,
-    ConfigurableSelectorFromDict,
-    Field,
     ConfigurableFromNullable,
+    Field,
 )
+
+from .materializable import MaterializeableValue
 
 SerializedTypeValue = namedtuple('SerializedTypeValue', 'name value')
 
@@ -171,7 +172,7 @@ class DagsterScalarType(UncoercedTypeMixin, DagsterType):
 
 
 # All builtins are configurable
-class DagsterBuiltinScalarType(ConfigurableFromScalar, DagsterScalarType):
+class DagsterBuiltinScalarType(ConfigurableFromScalar, DagsterScalarType, MaterializeableValue):
     def __init__(self, name, description=None):
         super(DagsterBuiltinScalarType, self).__init__(
             name=name,

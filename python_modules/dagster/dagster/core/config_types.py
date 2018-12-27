@@ -1,17 +1,11 @@
-from dagster import check
+from dagster import (
+    check,
+    config,
+)
 
 from dagster.utils import camelcase
 
-from .config import (
-    Context,
-    Environment,
-    Execution,
-    Expectations,
-    Solid,
-)
-
 from .configurable import (
-    Configurable,
     ConfigurableObjectFromDict,
     ConfigurableSelectorFromDict,
     Field,
@@ -22,9 +16,12 @@ from .definitions import (
     PipelineDefinition,
     ResourceDefinition,
     SolidDefinition,
+    Solid,
 )
 
 from .evaluator import hard_create_config_value
+
+from .materializable import Materializeable
 
 from .types import (
     Bool,
@@ -172,7 +169,7 @@ class ContextConfigType(SystemConfigSelector):
 
     def construct_from_config_value(self, config_value):
         context_name, context_value = single_item(config_value)
-        return Context(
+        return config.Context(
             name=context_name,
             config=context_value.get('config'),
             resources=context_value['resources'],
@@ -192,15 +189,18 @@ def create_specific_context_type(pipeline_name, context_name, context_definition
 
 
 class SolidConfigType(SystemConfigObject):
-    def __init__(self, name, config_field, inputs_field):
+    def __init__(self, name, config_field, inputs_field, outputs_field):
         check.str_param(name, 'name')
         check.opt_inst_param(config_field, 'config_field', Field)
         check.opt_inst_param(inputs_field, 'inputs_field', Field)
+        check.opt_inst_param(outputs_field, 'outputs_field', Field)
         fields = {}
         if config_field:
             fields['config'] = config_field
         if inputs_field:
             fields['inputs'] = inputs_field
+        if outputs_field:
+            fields['outputs'] = outputs_field
 
         super(SolidConfigType, self).__init__(
             name=name,
@@ -211,7 +211,7 @@ class SolidConfigType(SystemConfigObject):
     def construct_from_config_value(self, config_value):
         # TODO we need better rules around optional and default evaluation
         # making this permissive for now
-        return Solid(
+        return config.Solid(
             config=config_value.get('config'),
             inputs=config_value.get('inputs', {}),
         )
@@ -258,7 +258,11 @@ class EnvironmentConfigType(SystemConfigObject):
         )
 
     def construct_from_config_value(self, config_value):
-        return Environment(**config_value)
+        return config.Environment(**config_value)
+
+
+def is_materializeable(dagster_type):
+    return isinstance(dagster_type, Materializeable)
 
 
 class ExpectationsConfigType(SystemConfigObject):
@@ -270,20 +274,30 @@ class ExpectationsConfigType(SystemConfigObject):
         )
 
     def construct_from_config_value(self, config_value):
-        return Expectations(**config_value)
+        return config.Expectations(**config_value)
 
 
-def solid_has_configurable_inputs(solid_definition):
-    check.inst_param(solid_definition, 'solid_definition', SolidDefinition)
-    return any(map(lambda inp: inp.dagster_type.is_configurable, solid_definition.input_defs))
+def solid_has_configurable_inputs(solid_def):
+    check.inst_param(solid_def, 'solid_def', SolidDefinition)
+    return any(map(lambda inp: inp.dagster_type.is_configurable, solid_def.input_defs))
+
+
+def solid_has_materializable_outputs(solid_def):
+    check.inst_param(solid_def, 'solid_def', SolidDefinition)
+    return any(map(lambda out: is_materializeable(out.dagster_type), solid_def.output_defs))
 
 
 def get_inputs_field(pipeline_def, solid):
+    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
+    check.inst_param(solid, 'solid', Solid)
+
     if not solid_has_configurable_inputs(solid.definition):
         return None
 
     inputs_field_fields = {}
     for inp in [inp for inp in solid.definition.input_defs if inp.dagster_type.is_configurable]:
+        # TODO: consider making this a method on configurable and defining
+        # a default in configurable.py
         inputs_field_fields[inp.name] = Field(inp.dagster_type, is_optional=True)
 
     return Field(
@@ -298,13 +312,45 @@ def get_inputs_field(pipeline_def, solid):
     )
 
 
+def get_outputs_field(pipeline_def, solid):
+    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
+    check.inst_param(solid, 'solid', Solid)
+
+    solid_def = solid.definition
+
+    if not solid_has_materializable_outputs(solid_def):
+        return None
+
+    outputs_field_fields = {}
+    for out in [out for out in solid_def.output_defs if is_materializeable(out.dagster_type)]:
+        outputs_field_fields[out.name] = out.dagster_type.define_output_field()
+
+    return Field(
+        NamedDict(
+            '{pipeline_name}.{solid_name}.Outputs'.format(
+                pipeline_name=camelcase(pipeline_def.name),
+                solid_name=camelcase(solid.name),
+            ),
+            outputs_field_fields,
+        ),
+        is_optional=True,
+    )
+
+
+def solid_has_config_entry(solid_def):
+    check.inst_param(solid_def, 'solid_def', SolidDefinition)
+    return solid_def.config_field or solid_has_configurable_inputs(
+        solid_def
+    ) or solid_has_materializable_outputs(solid_def)
+
+
 class SolidDictionaryType(SystemConfigObject):
     def __init__(self, name, pipeline_def):
         check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
 
         field_dict = {}
         for solid in pipeline_def.solids:
-            if solid.definition.config_field or solid_has_configurable_inputs(solid.definition):
+            if solid_has_config_entry(solid.definition):
                 solid_config_type = SolidConfigType(
                     '{pipeline_name}.SolidConfig.{solid_name}'.format(
                         pipeline_name=camelcase(pipeline_def.name),
@@ -312,6 +358,7 @@ class SolidDictionaryType(SystemConfigObject):
                     ),
                     solid.definition.config_field,
                     get_inputs_field(pipeline_def, solid),
+                    get_outputs_field(pipeline_def, solid),
                 )
 
                 field_dict[solid.name] = Field(solid_config_type)
@@ -335,4 +382,4 @@ class ExecutionConfigType(SystemConfigObject):
         )
 
     def construct_from_config_value(self, config_value):
-        return Execution(**config_value)
+        return config.Execution(**config_value)
