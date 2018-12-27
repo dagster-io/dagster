@@ -102,7 +102,6 @@ ENV/
 
 tags
 
-*.parquet
 .pytest_cache
 .DS_Store
 

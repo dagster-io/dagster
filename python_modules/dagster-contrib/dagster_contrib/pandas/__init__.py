@@ -29,8 +29,22 @@ class _DataFrameType(ConfigurableSelectorFromDict, types.PythonObjectType):
             description='''Two-dimensional size-mutable, potentially heterogeneous
     tabular data structure with labeled axes (rows and columns). See http://pandas.pydata.org/''',
             fields={
-                'csv': types.Field(types.Dict({
-                    'path': types.Field(types.String)
+                'csv':
+                types.Field(
+                    types.Dict(
+                        {
+                            'path': types.Field(types.Path),
+                            'sep': types.Field(types.String, is_optional=True, default_value=','),
+                        },
+                    ),
+                ),
+                'parquet':
+                types.Field(types.Dict({
+                    'path': types.Field(types.Path),
+                })),
+                'table':
+                types.Field(types.Dict({
+                    'path': types.Field(types.Path),
                 })),
             },
         )
@@ -58,7 +72,13 @@ class _DataFrameType(ConfigurableSelectorFromDict, types.PythonObjectType):
     def construct_from_config_value(self, config_value):
         file_type, file_options = list(config_value.items())[0]
         if file_type == 'csv':
-            return pd.read_csv(file_options['path'])
+            path = file_options['path']
+            del file_options['path']
+            return pd.read_csv(path, **file_options)
+        elif file_type == 'parquet':
+            return pd.read_parquet(file_options['path'])
+        elif file_type == 'table':
+            return pd.read_table(file_options['path'])
         else:
             check.failed('Unsupported file_type {file_type}'.format(file_type=file_type))
 
