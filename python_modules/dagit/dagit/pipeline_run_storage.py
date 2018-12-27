@@ -1,14 +1,13 @@
 from collections import OrderedDict
 from enum import Enum
-
 import copy
 import json
 import os
 import time
 
-from rx import Observable
 import gevent
 import gevent.lock
+from rx import Observable
 
 from dagster import (
     check,
@@ -18,6 +17,7 @@ from dagster.core.events import (
     EventRecord,
     EventType,
 )
+
 from dagster.core.execution_plan.objects import ExecutionPlan
 
 
@@ -67,10 +67,14 @@ class PipelineRun(object):
         self.__subscribers = []
         self.__debouncing_queue = DebouncingLogQueue()
 
-        self._run_id = check.str_param(run_id, 'run')
         self._status = PipelineRunStatus.NOT_STARTED
+        self._run_id = check.str_param(run_id, 'run_id')
         self._pipeline_name = check.str_param(pipeline_name, 'pipeline_name')
-        self._config = check.dict_param(environment_config, 'environment_config', key_type=str)
+        self._environment_config = check.dict_param(
+            environment_config,
+            'environment_config',
+            key_type=str,
+        )
         self._typed_environment = check.inst_param(
             typed_environment,
             'typed_environment',
@@ -96,7 +100,7 @@ class PipelineRun(object):
 
     @property
     def config(self):
-        return self._config
+        return self._environment_config
 
     @property
     def execution_plan(self):
@@ -144,31 +148,35 @@ class PipelineRun(object):
 class InMemoryPipelineRun(PipelineRun):
     def __init__(self, *args, **kwargs):
         super(InMemoryPipelineRun, self).__init__(*args, **kwargs)
+        self._log_storage_lock = gevent.lock.Semaphore()
         self._logs = []
 
     def logs_after(self, cursor):
         cursor = int(cursor) + 1
-        return self._logs[cursor:]
+        with self._log_storage_lock:
+            return copy.copy(self._logs[cursor:])
 
     def all_logs(self):
-        return self._logs
+        with self._log_storage_lock:
+            return copy.copy(self._logs)
 
     def store_event(self, new_event):
-        self._logs.append(new_event)
+        with self._log_storage_lock:
+            self._logs.append(new_event)
 
 
 class LogFilePipelineRun(InMemoryPipelineRun):
-    def __init__(self, *args, **kwargs):
-        log_dir = kwargs.pop('log_dir', 'dagit_run_logs/')
+    def __init__(self, log_dir, *args, **kwargs):
         super(LogFilePipelineRun, self).__init__(*args, **kwargs)
-        self._log_dir = log_dir
+        self._log_dir = check.str_param(log_dir, 'log_dir')
         self._file_prefix = os.path.join(
-            self._log_dir, '{}_{}'.format(int(time.time()), self.run_id)
+            self._log_dir,
+            '{}_{}'.format(int(time.time()), self.run_id),
         )
         ensure_dir(log_dir)
         self._write_metadata_to_file()
         self._log_file = '{}.log'.format(self._file_prefix)
-        self._log_file_handle = None
+        self._log_file_lock = gevent.lock.Semaphore()
 
     def _write_metadata_to_file(self):
         metadata_file = '{}.json'.format(self._file_prefix)
@@ -185,13 +193,14 @@ class LogFilePipelineRun(InMemoryPipelineRun):
             )
 
     def store_event(self, new_event):
-        self._logs.append(new_event)
-        if not self._log_file_handle:
-            self._log_file_handle = open(self._log_file, 'a', encoding="utf-8")
-        self._log_file_handle.write(json.dumps(new_event.to_dict()))
-        self._log_file_handle.write('\n')
-        if self.status == EventType.PIPELINE_SUCCESS or self.status == EventType.PIPELINE_FAILURE:
-            self._log_file_handle.close()
+        super().store_event(new_event)
+
+        with self._log_file_lock:
+            # Going to do the less error-prone, simpler, but slower strategy:
+            # open, append, close for every log message for now
+            with open(self._log_file, 'a', encoding='utf-8') as log_file_handle:
+                log_file_handle.write(json.dumps(new_event.to_dict()))
+                log_file_handle.write('\n')
 
 
 def ensure_dir(file_path):
