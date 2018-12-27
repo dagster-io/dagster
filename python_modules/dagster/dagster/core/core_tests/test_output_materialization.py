@@ -243,9 +243,11 @@ def test_basic_int_execution_plan():
 
     assert len(execution_plan.steps) == 3
 
-    assert execution_plan.steps[0].key == 'return_one.transform'
-    assert execution_plan.steps[1].key == 'return_one.materialization.output.result.0'
-    assert execution_plan.steps[2].key == 'return_one.materialization.output.result.join'
+    steps = execution_plan.topological_steps()
+
+    assert steps[0].key == 'return_one.transform'
+    assert steps[1].key == 'return_one.materialization.output.result.0'
+    assert steps[2].key == 'return_one.materialization.output.result.join'
 
 
 def test_basic_int_json_materialization():

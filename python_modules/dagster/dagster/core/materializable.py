@@ -17,6 +17,9 @@ def define_path_dict_field():
 
 
 class Materializeable(object):
+    def define_materialization_config_schema(self):
+        check.failed('must implement')
+
     def materialize_runtime_value(self, _config_spec, _runtime_value):
         check.failed('must implement')
 
