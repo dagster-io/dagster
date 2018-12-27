@@ -1,30 +1,15 @@
 import os
-import pytest
-import time
-import gevent
 from dagster import (
     DependencyDefinition,
-    Field,
-    PipelineContextDefinition,
     PipelineDefinition,
     InputDefinition,
     OutputDefinition,
-    RepositoryDefinition,
-    SolidDefinition,
-    check,
     lambda_solid,
-    types,
 )
-from dagster.core.execution import (
-    create_execution_plan,
-    create_typed_environment,
-)
-from dagster.core.evaluator import (
-    evaluate_config_value,
-)
+from dagster.cli.dynamic_loader import RepositoryTargetInfo
+from dagster.core.execution import create_execution_plan
 from dagster.utils import script_relative_path
 import dagster_contrib.pandas as dagster_pd
-from dagster.cli.dynamic_loader import RepositoryTargetInfo
 
 from dagit.app import RepositoryContainer
 from dagit.pipeline_execution_manager import MultiprocessingExecutionManager
@@ -42,7 +27,7 @@ def test_running():
         )
     )
     pipeline = define_passing_pipeline()
-    config = {
+    env_config = {
         'solids': {
             'sum_solid': {
                 'inputs': {
@@ -55,19 +40,17 @@ def test_running():
             },
         },
     }
-    typed_environment = create_typed_environment(pipeline, config)
     pipeline_run = InMemoryPipelineRun(
         run_id,
         'pandas_hello_world',
-        typed_environment,
-        config,
-        create_execution_plan(pipeline, typed_environment),
+        env_config,
+        create_execution_plan(pipeline, env_config),
     )
     execution_manager = MultiprocessingExecutionManager()
     execution_manager.execute_pipeline(repository_container, pipeline, pipeline_run)
     execution_manager.join()
     assert pipeline_run.status == PipelineRunStatus.SUCCESS
-    assert len(pipeline_run.all_logs()) > 0
+    assert pipeline_run.all_logs()
 
 
 def test_failing():
@@ -81,7 +64,7 @@ def test_failing():
         )
     )
     pipeline = define_failing_pipeline()
-    config = {
+    env_config = {
         'solids': {
             'sum_solid': {
                 'inputs': {
@@ -94,19 +77,17 @@ def test_failing():
             },
         },
     }
-    typed_environment = create_typed_environment(pipeline, config)
     pipeline_run = InMemoryPipelineRun(
         run_id,
         'pandas_hello_world',
-        typed_environment,
-        config,
-        create_execution_plan(pipeline, typed_environment),
+        env_config,
+        create_execution_plan(pipeline, env_config),
     )
     execution_manager = MultiprocessingExecutionManager()
     execution_manager.execute_pipeline(repository_container, pipeline, pipeline_run)
     execution_manager.join()
     assert pipeline_run.status == PipelineRunStatus.FAILURE
-    assert len(pipeline_run.all_logs()) > 0
+    pipeline_run.all_logs()
 
 
 def test_execution_crash():
@@ -120,7 +101,7 @@ def test_execution_crash():
         )
     )
     pipeline = define_crashy_pipeline()
-    config = {
+    env_config = {
         'solids': {
             'sum_solid': {
                 'inputs': {
@@ -133,15 +114,13 @@ def test_execution_crash():
             },
         },
     }
-    typed_environment = create_typed_environment(pipeline, config)
     pipeline_run = InMemoryPipelineRun(
         run_id,
         'pandas_hello_world',
-        typed_environment,
-        config,
+        env_config,
         create_execution_plan(
             pipeline,
-            typed_environment,
+            env_config,
         ),
     )
     execution_manager = MultiprocessingExecutionManager()
@@ -168,7 +147,7 @@ def sum_solid(num):
     inputs=[InputDefinition('sum_df', dagster_pd.DataFrame)],
     output=OutputDefinition(dagster_pd.DataFrame),
 )
-def error_solid(sum_df):
+def error_solid(sum_df):  # pylint: disable=W0613
     raise Exception('foo')
 
 
@@ -176,8 +155,8 @@ def error_solid(sum_df):
     inputs=[InputDefinition('sum_df', dagster_pd.DataFrame)],
     output=OutputDefinition(dagster_pd.DataFrame),
 )
-def crashy_solid(sum_df):
-    os._exit(1)
+def crashy_solid(sum_df):  # pylint: disable=W0613
+    os._exit(1)  # pylint: disable=W0212
 
 
 def define_passing_pipeline():

@@ -11,7 +11,6 @@ from dagster import (
 
 from dagster.core.execution import (
     create_execution_plan,
-    create_typed_environment,
 )
 
 from dagster.core.execution_plan.create import (
@@ -70,7 +69,7 @@ def test_compute_noop_node():
         noop,
     ])
 
-    plan = create_execution_plan(pipeline, create_typed_environment(pipeline))
+    plan = create_execution_plan(pipeline)
 
     assert len(plan.steps) == 1
     outputs = list(execute_step(plan.steps[0], create_test_runtime_execution_context(), {}))

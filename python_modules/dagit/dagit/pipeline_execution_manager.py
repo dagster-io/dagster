@@ -9,6 +9,7 @@ import gevent
 
 from dagster import (check, ReentrantInfo, PipelineDefinition)
 from dagster.core.execution import (
+    create_typed_environment,
     execute_reentrant_pipeline,
 )
 from dagster.core.evaluator import evaluate_config_value
@@ -86,7 +87,7 @@ class SynchronousExecutionManager(PipelineExecutionManager):
         try:
             return execute_reentrant_pipeline(
                 pipeline,
-                pipeline_run.typed_environment,
+                create_typed_environment(pipeline, pipeline_run.config),
                 throw_on_error=False,
                 reentrant_info=ReentrantInfo(
                     pipeline_run.run_id,
