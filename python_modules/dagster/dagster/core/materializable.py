@@ -43,6 +43,7 @@ class MaterializeableValue(Materializeable):
         if selector_key == 'json':
             json_file_path = selector_value['path']
             json_value = json.dumps({'value': runtime_value})
+            print(f'About to dump {json_value} to path {json_file_path}')
             with open(json_file_path, 'w') as ff:
                 ff.write(json_value)
         else:

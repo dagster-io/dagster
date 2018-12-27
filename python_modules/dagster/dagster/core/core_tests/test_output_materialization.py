@@ -25,7 +25,10 @@ from dagster.core.config_types import (
     is_materializeable,
 )
 
-from dagster.core.execution import create_typed_environment
+from dagster.core.execution import (
+    create_typed_environment,
+    create_execution_plan_new_api,
+)
 
 
 def single_int_output_pipeline():
@@ -34,6 +37,27 @@ def single_int_output_pipeline():
         return 1
 
     return PipelineDefinition(name='single_int_output_pipeline', solids=[return_one])
+
+def single_string_output_pipeline():
+    @lambda_solid(output=OutputDefinition(types.String))
+    def return_foo():
+        return 'foo'
+
+    return PipelineDefinition(name='single_string_output_pipeline', solids=[return_foo])
+
+def multiple_output_pipeline():
+    @solid(
+        outputs=[
+            OutputDefinition(types.Int, 'number'),
+            OutputDefinition(types.String, 'string'),
+        ]
+    )
+    def return_one_and_foo(_info):
+        yield Result(1, 'number')
+        yield Result('foo', 'string')
+
+
+    return PipelineDefinition(name='multiple_output_pipeline', solids=[return_one_and_foo])
 
 
 def single_int_named_output_pipeline():
@@ -189,8 +213,35 @@ def test_no_outputs_one_input_config_schema():
     assert exp_msg in exc_info.value.message
 
 
-def test_basic_json_materialization():
+def test_basic_int_execution_plan():
+    execution_plan = create_execution_plan_new_api(
+        single_int_output_pipeline(),
+            {
+            'solids': {
+                'return_one': {
+                    'outputs': [
+                        {
+                            'result': {
+                                'json': {
+                                    'path': 'dummy.json',
+                                },
+                            },
+                        },
+                    ],
+                },
+            },
+        },
+    )
+
+    assert len(execution_plan.steps) == 3
+
+    assert execution_plan.steps[0].key == 'return_one.transform'
+    assert execution_plan.steps[1].key == 'return_one.materialization.0.output.result'
+    assert execution_plan.steps[2].key == 'return_one.result.materializations.join'
+
+def test_basic_int_json_materialization():
     pipeline = single_int_output_pipeline()
+
 
     with get_temp_file_name() as filename:
         result = execute_pipeline(
@@ -218,8 +269,159 @@ def test_basic_json_materialization():
             value = json.loads(ff.read())
             assert value == {'value': 1}
 
+def test_basic_string_json_materialization():
+    pipeline = single_string_output_pipeline()
 
-def test_basic_json_multiple_materializations():
+    with get_temp_file_name() as filename:
+        result = execute_pipeline(
+            pipeline,
+            {
+                'solids': {
+                    'return_foo': {
+                        'outputs': [
+                            {
+                                'result': {
+                                    'json': {
+                                        'path': filename,
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                },
+            },
+        )
+
+        assert result.success
+
+        with open(filename, 'r') as ff:
+            value = json.loads(ff.read())
+            assert value == {'value': 'foo'}
+
+
+def test_basic_int_and_string_execution_plan():
+    pipeline = multiple_output_pipeline()
+    execution_plan = create_execution_plan_new_api(
+        pipeline,
+        {
+            'solids': {
+                'return_one_and_foo': {
+                    'outputs': [
+                        {
+                            'string': {
+                                'json': {
+                                    'path': 'dummy_string.json',
+                                },
+                            },
+                        },
+                        {
+                            'number': {
+                                'json': {
+                                    'path': 'dummy_number.json',
+                                },
+                            },
+                        },
+                    ],
+                },
+            },
+        },
+    )
+    
+    assert len(execution_plan.steps) == 5
+
+
+def test_basic_int_and_string_json_materialization():
+    return # not working right now
+
+    pipeline = multiple_output_pipeline()
+
+    with get_temp_file_names(2) as file_tuple:
+        filename_one, filename_two = file_tuple  # pylint: disable=E0632
+        result = execute_pipeline(
+            pipeline,
+            {
+                'solids': {
+                    'return_one_and_foo': {
+                        'outputs': [
+                            {
+                                'string': {
+                                    'json': {
+                                        'path': filename_one,
+                                    },
+                                },
+                            },
+                            {
+                                'number': {
+                                    'json': {
+                                        'path': filename_two,
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                },
+            },
+        )
+
+        assert result.success
+
+        print(f'filename_one {filename_one}')
+        print(f'filename_two {filename_two}')
+
+        with open(filename_one, 'r') as ff_1:
+            value = json.loads(ff_1.read())
+            assert value == {'value': 'foo'}
+
+        with open(filename_two, 'r') as ff_2:
+            value = json.loads(ff_2.read())
+            assert value == {'value': 1}
+
+def assert_plan_topological_level(plan, step_nums, step_keys):
+    assert set(plan.steps[step_num].key for step_num in step_nums) == set(step_keys) 
+
+def test_basic_int_multiple_serializations_execution_plan():
+    execution_plan = create_execution_plan_new_api(
+        single_int_output_pipeline(),
+        {
+            'solids': {
+                'return_one': {
+                    'outputs': [
+                        {
+                            'result': {
+                                'json': {
+                                    'path': 'dummy_one.json',
+                                },
+                            },
+                        },
+                        {
+                            'result': {
+                                'json': {
+                                    'path': 'dummy_two.json',
+                                },
+                            },
+                        },
+                    ],
+                },
+            },
+        },
+    )
+
+    assert len(execution_plan.steps) == 4
+
+    assert execution_plan.steps[0].key == 'return_one.transform'
+
+    assert_plan_topological_level(
+        execution_plan,
+        [1, 2],
+        [
+            'return_one.materialization.0.output.result',
+            'return_one.materialization.1.output.result',
+        ],
+    )
+
+    assert execution_plan.steps[3].key == 'return_one.result.materializations.join'
+
+def test_basic_int_json_multiple_materializations():
     pipeline = single_int_output_pipeline()
 
     with get_temp_file_names(2) as file_tuple:

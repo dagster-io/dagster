@@ -54,6 +54,9 @@ def decorate_with_output_materializations(execution_info, solid, output_def, sub
         output_name, config_spec = list(output_spec.items())[0]
         check.invariant(solid.has_output(output_name))
 
+        if output_name != output_def.name:
+            continue
+
         new_steps.append(
             ExecutionStep(
                 key=solid.name + '.materialization.' + str(idx) + '.output.' + output_def.name,
