@@ -27,6 +27,7 @@ from .types import (
     Bool,
     DagsterTypeAttributes,
     DagsterType,
+    List,
     NamedDict,
 )
 
@@ -214,6 +215,7 @@ class SolidConfigType(SystemConfigObject):
         return config.Solid(
             config=config_value.get('config'),
             inputs=config_value.get('inputs', {}),
+            outputs=config_value.get('outputs', []),
         )
 
 
@@ -321,20 +323,19 @@ def get_outputs_field(pipeline_def, solid):
     if not solid_has_materializable_outputs(solid_def):
         return None
 
-    outputs_field_fields = {}
+    output_dict_fields = {}
     for out in [out for out in solid_def.output_defs if is_materializeable(out.dagster_type)]:
-        outputs_field_fields[out.name] = out.dagster_type.define_output_field()
+        output_dict_fields[out.name] = out.dagster_type.define_output_field()
 
-    return Field(
-        NamedDict(
-            '{pipeline_name}.{solid_name}.Outputs'.format(
-                pipeline_name=camelcase(pipeline_def.name),
-                solid_name=camelcase(solid.name),
-            ),
-            outputs_field_fields,
+    output_entry_dict = NamedDict(
+        '{pipeline_name}.{solid_name}.Outputs'.format(
+            pipeline_name=camelcase(pipeline_def.name),
+            solid_name=camelcase(solid.name),
         ),
-        is_optional=True,
+        output_dict_fields,
     )
+
+    return Field(List(output_entry_dict), is_optional=True)
 
 
 def solid_has_config_entry(solid_def):
