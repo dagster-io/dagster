@@ -17,25 +17,25 @@ snapshots['test_query_execution_plan_snapshot 1'] = {
             {
                 'inputs': [
                 ],
-                'name': 'load_num_csv.transform',
+                'name': 'sum_solid.num.input_thunk',
                 'outputs': [
                     {
-                        'name': 'result',
+                        'name': 'input_thunk_output',
                         'type': {
                             'name': 'PandasDataFrame'
                         }
                     }
                 ],
                 'solid': {
-                    'name': 'load_num_csv'
+                    'name': 'sum_solid'
                 },
-                'tag': 'TRANSFORM'
+                'tag': 'INPUT_THUNK'
             },
             {
                 'inputs': [
                     {
                         'dependsOn': {
-                            'name': 'load_num_csv.transform'
+                            'name': 'sum_solid.num.input_thunk'
                         },
                         'name': 'num',
                         'type': {
