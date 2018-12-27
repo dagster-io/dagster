@@ -152,14 +152,14 @@ def start_pipeline_execution(info, pipelineName, config):
     return pipeline_or_error.chain(get_config_and_start_execution).value()
 
 
-def get_pipeline_run_observable(info, runId, after=None):
+def get_pipeline_run_observable(info, run_id, after=None):
     check.inst_param(info, 'info', ResolveInfo)
-    check.str_param(runId, 'runId')
+    check.str_param(run_id, 'run_id')
     check.opt_str_param(after, 'after')
     pipeline_run_storage = info.context.pipeline_runs
-    run = pipeline_run_storage.get_run_by_id(runId)
+    run = pipeline_run_storage.get_run_by_id(run_id)
     if not run:
-        raise Exception('No run with such id: {run_id}'.format(run_id=runId))
+        raise Exception('No run with such id: {run_id}'.format(run_id=run_id))
 
     pipeline_name = run.pipeline_name
 
