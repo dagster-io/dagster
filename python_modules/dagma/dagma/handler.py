@@ -1,4 +1,3 @@
-import json
 import logging
 import pickle
 
@@ -32,7 +31,7 @@ def aws_lambda_handler(event, context):
     (
         run_id, step_idx, key, s3_bucket, s3_key_inputs, s3_key_body, s3_key_resources,
         s3_key_outputs
-    ) = LambdaInvocationPayload(json.loads(event['config']))
+    ) = LambdaInvocationPayload(event['config'])
 
     s3 = boto3.client('s3')
 
