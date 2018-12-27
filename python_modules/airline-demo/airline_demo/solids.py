@@ -3,8 +3,6 @@
 import os
 import zipfile
 
-import dagster.check as check
-
 from sqlalchemy import text
 from stringcase import snakecase
 
@@ -13,8 +11,9 @@ from dagster import (
     InputDefinition,
     OutputDefinition,
     Result,
-    solid,
     SolidDefinition,
+    check,
+    solid,
     types,
 )
 from dagstermill import define_dagstermill_solid
@@ -162,29 +161,6 @@ def thunk(info):
     return info.config
 
 
-# Maybe parametrize this to make_thunk(type)
-@solid(
-    name='thunk_list',
-    config_field=Field(types.List(types.Any), description='The list value to output.'),
-    description='No-op solid that simply outputs its single list config value.',
-    outputs=[OutputDefinition(types.List(types.Any), description='The list passed in as config.')]
-)
-def thunk_list(info):
-    '''Output the config vakue.
-
-    Especially useful when constructing DAGs with root nodes that take inputs which might in
-    other dags come from upstream solids.
-
-    Args:
-        info (ExpectationExecutionInfo)
-
-    Returns:
-        list:
-            The config value passed to the solid.
-    '''
-    return info.config
-
-
 @solid(
     name='thunk_database_engine',
     outputs=[OutputDefinition(SqlAlchemyEngineType, description='The db resource.')]
@@ -213,8 +189,11 @@ def thunk_database_engine(info):
                     'skip_if_present':
                     Field(
                         types.Bool,
-                        description='If True, and a file already exists at the path described by the '
-                        'target_path config value, if present, or the key, then the solid will no-op.',
+                        description=(
+                            'If True, and a file already exists at the path described by the '
+                            'target_path config value, if present, or the key, then the solid '
+                            'will no-op.'
+                        ),
                         default_value=False,
                         is_optional=True
                     ),
@@ -238,7 +217,7 @@ def thunk_database_engine(info):
 )
 def download_from_s3(info):
     '''Download an object from s3.
-        
+
     Args:
         info (ExpectationExecutionInfo): Must expose a boto3 S3 client as its `s3` resource.
 
@@ -312,7 +291,7 @@ def download_from_s3(info):
 )
 def upload_to_s3(info, file_path):
     '''Upload a file to s3.
-        
+
     Args:
         info (ExpectationExecutionInfo): Must expose a boto3 S3 client as its `s3` resource.
 
@@ -447,26 +426,15 @@ def unzip_file(
 
 @solid(
     name='ingest_csv_to_spark',
-    config_field=Field(
-        types.Dict(
-            fields={
-                'input_csv': Field(types.Path, description='', default_value='', is_optional=True),
-            }
-        )
-    ),
-    inputs=[InputDefinition(
-        'input_csv',
-        types.Path,
-        description='',
-    )],
+    inputs=[InputDefinition('input_csv', types.Path)],
     outputs=[OutputDefinition(SparkDataFrameType)]
 )
-def ingest_csv_to_spark(info, input_csv=None):
+def ingest_csv_to_spark(info, input_csv):
     data_frame = (
         info.context.resources.spark.read.format('csv').options(
             header='true',
             # inferSchema='true',
-        ).load(input_csv or info.config['input_csv'])
+        ).load(input_csv)
     )
     return data_frame
 
@@ -484,7 +452,7 @@ def rename_spark_dataframe_columns(data_frame, fn):
             description='The data frame whose columns should be prefixed'
         ),
     ],
-    config_field=Field(types.String),
+    config_field=Field(types.String, description='Prefix to append.'),
     outputs=[OutputDefinition(SparkDataFrameType)]
 )
 def prefix_column_names(info, data_frame):
@@ -497,7 +465,9 @@ def prefix_column_names(info, data_frame):
     name='canonicalize_column_names',
     inputs=[
         InputDefinition(
-            'data_frame', SparkDataFrameType, description='The data frame to canonicalize'
+            'data_frame',
+            SparkDataFrameType,
+            description='The data frame to canonicalize',
         ),
     ],
     outputs=[OutputDefinition(SparkDataFrameType)]
@@ -678,7 +648,7 @@ ticket_prices_with_average_delays = sql_solid(
         coupons.dest,
         coupons.destairportid,
         coupons.destairportseqid, coupons.destcitymarketid,
-        coupons.destcountry, 
+        coupons.destcountry,
         coupons.deststatefips,
         coupons.deststate,
         coupons.deststatename,
@@ -701,7 +671,7 @@ tickets_with_destination = sql_solid(
         coupons.dest,
         coupons.destairportid,
         coupons.destairportseqid, coupons.destcitymarketid,
-        coupons.destcountry, 
+        coupons.destcountry,
         coupons.deststatefips,
         coupons.deststate,
         coupons.deststatename,
@@ -770,7 +740,7 @@ eastbound_delays = sql_solid(
         avg(cast(origin_latitude as float)) as origin_latitude,
         avg(cast(origin_longitude as float)) as origin_longitude
     from q2_on_time_data
-    where 
+    where
         cast(origin_longitude as float) < cast(dest_longitude as float) and
         originstate != 'HI' and
         deststate != 'HI' and
