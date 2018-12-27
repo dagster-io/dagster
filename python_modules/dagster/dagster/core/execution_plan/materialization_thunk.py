@@ -35,6 +35,15 @@ def _create_materialization_lambda(materializable, config_spec):
     return _fn
 
 
+def configs_for_output(solid, solid_config, output_def):
+    for output_spec in solid_config.outputs:
+        check.invariant(len(output_spec) == 1)
+        output_name, output_spec = list(output_spec.items())[0]
+        check.invariant(solid.has_output(output_name))
+        if output_name == output_def.name:
+            yield output_spec
+
+
 def decorate_with_output_materializations(execution_info, solid, output_def, subplan):
     check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
     check.inst_param(solid, 'solid', Solid)
@@ -48,17 +57,7 @@ def decorate_with_output_materializations(execution_info, solid, output_def, sub
 
     new_steps = []
 
-    mat_count = 0
-
-    for output_spec in solid_config.outputs:
-        # Invariants here because config system should ensure these exist as stated
-        check.invariant(len(output_spec) == 1)
-        output_name, config_spec = list(output_spec.items())[0]
-        check.invariant(solid.has_output(output_name))
-
-        if output_name != output_def.name:
-            continue
-
+    for mat_count, output_spec in enumerate(configs_for_output(solid, solid_config, output_def)):
         new_steps.append(
             ExecutionStep(
                 key='{solid}.materialization.output.{output}.{mat_count}'.format(
@@ -81,11 +80,9 @@ def decorate_with_output_materializations(execution_info, solid, output_def, sub
                 ],
                 tag=StepTag.MATERIALIZATION_THUNK,
                 solid=solid,
-                compute_fn=_create_materialization_lambda(output_def.dagster_type, config_spec)
+                compute_fn=_create_materialization_lambda(output_def.dagster_type, output_spec)
             )
         )
-
-        mat_count += 1
 
     join_step = create_join_step(
         solid,
