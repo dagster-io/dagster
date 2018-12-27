@@ -23,6 +23,7 @@ class Materializeable(object):
 
 class MaterializeableValueConfigSchema(ConfigurableSelectorFromDict):
     def __init__(self):
+        # TODO: add pickle
         super(
             MaterializeableValueConfigSchema,
             self,
@@ -33,8 +34,8 @@ class MaterializeableValueConfigSchema(ConfigurableSelectorFromDict):
 
 
 class MaterializeableValue(Materializeable):
-    def define_output_field(self):
-        return Field(MaterializeableValueConfigSchema(), is_optional=True)
+    def define_materialization_config_schema(self):
+        return MaterializeableValueConfigSchema()
 
     def materialize_runtime_value(self, config_spec, runtime_value):
         check.dict_param(config_spec, 'config_spec')

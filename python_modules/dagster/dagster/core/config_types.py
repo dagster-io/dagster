@@ -325,7 +325,10 @@ def get_outputs_field(pipeline_def, solid):
 
     output_dict_fields = {}
     for out in [out for out in solid_def.output_defs if is_materializeable(out.dagster_type)]:
-        output_dict_fields[out.name] = out.dagster_type.define_output_field()
+        output_dict_fields[out.name] = Field(
+            out.dagster_type.define_materialization_config_schema(),
+            is_optional=True,
+        )
 
     output_entry_dict = NamedDict(
         '{pipeline_name}.{solid_name}.Outputs'.format(

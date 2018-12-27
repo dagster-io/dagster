@@ -30,9 +30,7 @@ from dagster.core.execution import (
     create_execution_plan_new_api,
 )
 
-from dagster.core.execution_plan.objects import (
-    StepOutputHandle
-)
+from dagster.core.execution_plan.objects import (StepOutputHandle)
 
 from dagster.core.execution_plan.materialization_thunk import (
     MATERIALIZATION_THUNK_OUTPUT,
@@ -47,12 +45,14 @@ def single_int_output_pipeline():
 
     return PipelineDefinition(name='single_int_output_pipeline', solids=[return_one])
 
+
 def single_string_output_pipeline():
     @lambda_solid(output=OutputDefinition(types.String))
     def return_foo():
         return 'foo'
 
     return PipelineDefinition(name='single_string_output_pipeline', solids=[return_foo])
+
 
 def multiple_output_pipeline():
     @solid(
@@ -64,7 +64,6 @@ def multiple_output_pipeline():
     def return_one_and_foo(_info):
         yield Result(1, 'number')
         yield Result('foo', 'string')
-
 
     return PipelineDefinition(name='multiple_output_pipeline', solids=[return_one_and_foo])
 
@@ -225,7 +224,7 @@ def test_no_outputs_one_input_config_schema():
 def test_basic_int_execution_plan():
     execution_plan = create_execution_plan_new_api(
         single_int_output_pipeline(),
-            {
+        {
             'solids': {
                 'return_one': {
                     'outputs': [
@@ -248,9 +247,9 @@ def test_basic_int_execution_plan():
     assert execution_plan.steps[1].key == 'return_one.materialization.output.result.0'
     assert execution_plan.steps[2].key == 'return_one.materialization.output.result.join'
 
+
 def test_basic_int_json_materialization():
     pipeline = single_int_output_pipeline()
-
 
     with get_temp_file_name() as filename:
         result = execute_pipeline(
@@ -277,6 +276,7 @@ def test_basic_int_json_materialization():
         with open(filename, 'r') as ff:
             value = json.loads(ff.read())
             assert value == {'value': 1}
+
 
 def test_basic_string_json_materialization():
     pipeline = single_string_output_pipeline()
@@ -358,16 +358,15 @@ def test_basic_int_and_string_execution_plan():
         ],
     )
 
-    transform_step = execution_plan.get_step_by_key(
-        'return_one_and_foo.transform'
-    )
+    transform_step = execution_plan.get_step_by_key('return_one_and_foo.transform')
 
     string_mat_step = execution_plan.get_step_by_key(
         'return_one_and_foo.materialization.output.string.0'
     )
     assert len(string_mat_step.step_inputs) == 1
     assert string_mat_step.step_inputs[0].prev_output_handle == StepOutputHandle(
-        step=transform_step, output_name='string',
+        step=transform_step,
+        output_name='string',
     )
 
     string_mat_join_step = execution_plan.get_step_by_key(
@@ -375,7 +374,8 @@ def test_basic_int_and_string_execution_plan():
     )
     assert len(string_mat_join_step.step_inputs) == 1
     assert string_mat_join_step.step_inputs[0].prev_output_handle == StepOutputHandle(
-        step=string_mat_step, output_name=MATERIALIZATION_THUNK_OUTPUT,
+        step=string_mat_step,
+        output_name=MATERIALIZATION_THUNK_OUTPUT,
     )
 
 
@@ -421,9 +421,11 @@ def test_basic_int_and_string_json_materialization():
             value = json.loads(ff_2.read())
             assert value == {'value': 1}
 
+
 def read_file_contents(path):
     with open(path, 'r') as ff:
         return ff.read()
+
 
 def test_basic_int_and_string_json_multiple_materialization_execution_plan():
     pipeline = multiple_output_pipeline()
@@ -474,9 +476,7 @@ def test_basic_int_and_string_json_multiple_materialization_execution_plan():
     assert len(steps) == 7
 
     assert_plan_topological_level(
-        steps,
-        [1, 2, 3, 4],
-        [
+        steps, [1, 2, 3, 4], [
             'return_one_and_foo.materialization.output.number.0',
             'return_one_and_foo.materialization.output.number.1',
             'return_one_and_foo.materialization.output.string.0',
@@ -485,13 +485,12 @@ def test_basic_int_and_string_json_multiple_materialization_execution_plan():
     )
 
     assert_plan_topological_level(
-        steps,
-        [5, 6],
-        [
+        steps, [5, 6], [
             'return_one_and_foo.materialization.output.number.join',
             'return_one_and_foo.materialization.output.string.join',
         ]
     )
+
 
 def test_basic_int_and_string_json_multiple_materialization():
 
@@ -557,6 +556,7 @@ def test_basic_int_and_string_json_multiple_materialization():
             value = json.loads(ff.read())
             assert value == {'value': 1}
 
+
 def assert_step_before(steps, first_step, second_step):
     step_keys = [step.key for step in steps]
     assert step_keys.index(first_step) < step_keys.index(second_step)
@@ -564,6 +564,7 @@ def assert_step_before(steps, first_step, second_step):
 
 def assert_plan_topological_level(steps, step_nums, step_keys):
     assert set(steps[step_num].key for step_num in step_nums) == set(step_keys)
+
 
 def test_basic_int_multiple_serializations_execution_plan():
     execution_plan = create_execution_plan_new_api(
