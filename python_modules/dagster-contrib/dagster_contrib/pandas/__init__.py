@@ -3,8 +3,6 @@ import os
 import pickle
 import tempfile
 
-import six
-
 import pandas as pd
 
 from dagster import (
@@ -78,7 +76,6 @@ class _DataFrameType(ConfigurableSelectorFromDict, types.PythonObjectType):
             del file_options['path']
             return pd.read_csv(path, **file_options)
         elif file_type == 'parquet':
-            path = file_options['path']
             return pd.read_parquet(file_options['path'])
         elif file_type == 'table':
             return pd.read_table(file_options['path'])
