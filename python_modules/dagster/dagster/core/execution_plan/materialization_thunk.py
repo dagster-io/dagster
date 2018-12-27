@@ -48,7 +48,9 @@ def decorate_with_output_materializations(execution_info, solid, output_def, sub
 
     new_steps = []
 
-    for idx, output_spec in enumerate(solid_config.outputs):
+    mat_count = 0
+
+    for output_spec in solid_config.outputs:
         # Invariants here because config system should ensure these exist as stated
         check.invariant(len(output_spec) == 1)
         output_name, config_spec = list(output_spec.items())[0]
@@ -59,7 +61,11 @@ def decorate_with_output_materializations(execution_info, solid, output_def, sub
 
         new_steps.append(
             ExecutionStep(
-                key=solid.name + '.materialization.' + str(idx) + '.output.' + output_def.name,
+                key='{solid}.materialization.output.{output}.{mat_count}'.format(
+                    solid=solid.name,
+                    output=output_def.name,
+                    mat_count=mat_count,
+                ),
                 step_inputs=[
                     StepInput(
                         name=MATERIALIZATION_THUNK_INPUT,
@@ -79,9 +85,11 @@ def decorate_with_output_materializations(execution_info, solid, output_def, sub
             )
         )
 
+        mat_count += 1
+
     join_step = create_join_step(
         solid,
-        '{solid}.{output}.materializations.join'.format(
+        '{solid}.materialization.output.{output}.join'.format(
             solid=solid.name,
             output=output_def.name,
         ),

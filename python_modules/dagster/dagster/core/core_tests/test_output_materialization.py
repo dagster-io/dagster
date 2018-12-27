@@ -30,6 +30,15 @@ from dagster.core.execution import (
     create_execution_plan_new_api,
 )
 
+from dagster.core.execution_plan.objects import (
+    StepOutputHandle
+)
+
+from dagster.core.execution_plan.materialization_thunk import (
+    MATERIALIZATION_THUNK_OUTPUT,
+    StepOutputHandle,
+)
+
 
 def single_int_output_pipeline():
     @lambda_solid(output=OutputDefinition(types.Int))
@@ -236,8 +245,8 @@ def test_basic_int_execution_plan():
     assert len(execution_plan.steps) == 3
 
     assert execution_plan.steps[0].key == 'return_one.transform'
-    assert execution_plan.steps[1].key == 'return_one.materialization.0.output.result'
-    assert execution_plan.steps[2].key == 'return_one.result.materializations.join'
+    assert execution_plan.steps[1].key == 'return_one.materialization.output.result.0'
+    assert execution_plan.steps[2].key == 'return_one.materialization.output.result.join'
 
 def test_basic_int_json_materialization():
     pipeline = single_int_output_pipeline()
@@ -326,12 +335,51 @@ def test_basic_int_and_string_execution_plan():
             },
         },
     )
-    
+
     assert len(execution_plan.steps) == 5
+    steps = execution_plan.topological_steps()
+    assert steps[0].key == 'return_one_and_foo.transform'
+
+    assert_plan_topological_level(
+        steps,
+        [1, 2],
+        [
+            'return_one_and_foo.materialization.output.string.0',
+            'return_one_and_foo.materialization.output.number.0',
+        ],
+    )
+
+    assert_plan_topological_level(
+        steps,
+        [3, 4],
+        [
+            'return_one_and_foo.materialization.output.number.join',
+            'return_one_and_foo.materialization.output.string.join',
+        ],
+    )
+
+    transform_step = execution_plan.get_step_by_key(
+        'return_one_and_foo.transform'
+    )
+
+    string_mat_step = execution_plan.get_step_by_key(
+        'return_one_and_foo.materialization.output.string.0'
+    )
+    assert len(string_mat_step.step_inputs) == 1
+    assert string_mat_step.step_inputs[0].prev_output_handle == StepOutputHandle(
+        step=transform_step, output_name='string',
+    )
+
+    string_mat_join_step = execution_plan.get_step_by_key(
+        'return_one_and_foo.materialization.output.string.join',
+    )
+    assert len(string_mat_join_step.step_inputs) == 1
+    assert string_mat_join_step.step_inputs[0].prev_output_handle == StepOutputHandle(
+        step=string_mat_step, output_name=MATERIALIZATION_THUNK_OUTPUT,
+    )
 
 
 def test_basic_int_and_string_json_materialization():
-    return # not working right now
 
     pipeline = multiple_output_pipeline()
 
@@ -365,9 +413,6 @@ def test_basic_int_and_string_json_materialization():
 
         assert result.success
 
-        print(f'filename_one {filename_one}')
-        print(f'filename_two {filename_two}')
-
         with open(filename_one, 'r') as ff_1:
             value = json.loads(ff_1.read())
             assert value == {'value': 'foo'}
@@ -376,8 +421,149 @@ def test_basic_int_and_string_json_materialization():
             value = json.loads(ff_2.read())
             assert value == {'value': 1}
 
-def assert_plan_topological_level(plan, step_nums, step_keys):
-    assert set(plan.steps[step_num].key for step_num in step_nums) == set(step_keys) 
+def read_file_contents(path):
+    with open(path, 'r') as ff:
+        return ff.read()
+
+def test_basic_int_and_string_json_multiple_materialization_execution_plan():
+    pipeline = multiple_output_pipeline()
+    execution_plan = create_execution_plan_new_api(
+        pipeline,
+        {
+            'solids': {
+                'return_one_and_foo': {
+                    'outputs': [
+                        {
+                            'string': {
+                                'json': {
+                                    'path': 'foo',
+                                },
+                            },
+                        },
+                        {
+                            'string': {
+                                'json': {
+                                    'path': 'bar',
+                                },
+                            },
+                        },
+                        {
+                            'number': {
+                                'json': {
+                                    'path': 'baaz',
+                                },
+                            },
+                        },
+                        {
+                            'number': {
+                                'json': {
+                                    'path': 'quux',
+                                },
+                            },
+                        },
+                    ],
+                },
+            },
+        },
+    )
+
+    steps = execution_plan.topological_steps()
+
+    print([step.key for step in steps])
+
+    assert len(steps) == 7
+
+    assert_plan_topological_level(
+        steps,
+        [1, 2, 3, 4],
+        [
+            'return_one_and_foo.materialization.output.number.0',
+            'return_one_and_foo.materialization.output.number.1',
+            'return_one_and_foo.materialization.output.string.0',
+            'return_one_and_foo.materialization.output.string.1',
+        ]
+    )
+
+    assert_plan_topological_level(
+        steps,
+        [5, 6],
+        [
+            'return_one_and_foo.materialization.output.number.join',
+            'return_one_and_foo.materialization.output.string.join',
+        ]
+    )
+
+def test_basic_int_and_string_json_multiple_materialization():
+
+    pipeline = multiple_output_pipeline()
+
+    with get_temp_file_names(4) as file_tuple:
+        filename_one, filename_two, filename_three, filename_four = file_tuple  # pylint: disable=E0632
+        result = execute_pipeline(
+            pipeline,
+            {
+                'solids': {
+                    'return_one_and_foo': {
+                        'outputs': [
+                            {
+                                'string': {
+                                    'json': {
+                                        'path': filename_one,
+                                    },
+                                },
+                            },
+                            {
+                                'string': {
+                                    'json': {
+                                        'path': filename_two,
+                                    },
+                                },
+                            },
+                            {
+                                'number': {
+                                    'json': {
+                                        'path': filename_three,
+                                    },
+                                },
+                            },
+                            {
+                                'number': {
+                                    'json': {
+                                        'path': filename_four,
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                },
+            },
+        )
+
+        assert result.success
+
+        with open(filename_one, 'r') as ff:
+            value = json.loads(ff.read())
+            assert value == {'value': 'foo'}
+
+        with open(filename_two, 'r') as ff:
+            value = json.loads(ff.read())
+            assert value == {'value': 'foo'}
+
+        with open(filename_three, 'r') as ff:
+            value = json.loads(ff.read())
+            assert value == {'value': 1}
+
+        with open(filename_four, 'r') as ff:
+            value = json.loads(ff.read())
+            assert value == {'value': 1}
+
+def assert_step_before(steps, first_step, second_step):
+    step_keys = [step.key for step in steps]
+    assert step_keys.index(first_step) < step_keys.index(second_step)
+
+
+def assert_plan_topological_level(steps, step_nums, step_keys):
+    assert set(steps[step_num].key for step_num in step_nums) == set(step_keys)
 
 def test_basic_int_multiple_serializations_execution_plan():
     execution_plan = create_execution_plan_new_api(
@@ -408,18 +594,20 @@ def test_basic_int_multiple_serializations_execution_plan():
 
     assert len(execution_plan.steps) == 4
 
-    assert execution_plan.steps[0].key == 'return_one.transform'
+    steps = execution_plan.topological_steps()
+    assert steps[0].key == 'return_one.transform'
 
     assert_plan_topological_level(
-        execution_plan,
+        steps,
         [1, 2],
         [
-            'return_one.materialization.0.output.result',
-            'return_one.materialization.1.output.result',
+            'return_one.materialization.output.result.0',
+            'return_one.materialization.output.result.1',
         ],
     )
 
-    assert execution_plan.steps[3].key == 'return_one.result.materializations.join'
+    assert steps[3].key == 'return_one.materialization.output.result.join'
+
 
 def test_basic_int_json_multiple_materializations():
     pipeline = single_int_output_pipeline()
