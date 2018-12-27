@@ -1,20 +1,24 @@
-import os
-import json
-import time
-import copy
 from collections import OrderedDict
 from enum import Enum
+
+import copy
+import json
+import os
+import time
+
+from rx import Observable
 import gevent
 import gevent.lock
-import logging
-from rx import Observable
-from dagster import check
-from dagster.utils.logging import StructuredLoggerMessage
+
+from dagster import (
+    check,
+    config,
+)
 from dagster.core.events import (
     EventRecord,
-    PipelineEventRecord,
     EventType,
 )
+from dagster.core.execution_plan.objects import ExecutionPlan
 
 
 class PipelineRunStatus(Enum):
@@ -57,19 +61,22 @@ class PipelineRun(object):
         run_id,
         pipeline_name,
         typed_environment,
-        config,
+        environment_config,
         execution_plan,
-        status=PipelineRunStatus.NOT_STARTED,
     ):
         self.__subscribers = []
         self.__debouncing_queue = DebouncingLogQueue()
 
-        self._run_id = run_id
+        self._run_id = check.str_param(run_id, 'run')
         self._status = PipelineRunStatus.NOT_STARTED
-        self._pipeline_name = pipeline_name
-        self._config = config
-        self._typed_environment = typed_environment
-        self._execution_plan = execution_plan
+        self._pipeline_name = check.str_param(pipeline_name, 'pipeline_name')
+        self._config = check.dict_param(environment_config, 'environment_config', key_type=str)
+        self._typed_environment = check.inst_param(
+            typed_environment,
+            'typed_environment',
+            config.Environment,
+        )
+        self._execution_plan = check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
 
     @property
     def run_id(self):

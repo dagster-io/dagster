@@ -17,8 +17,11 @@ from dagster import (
 )
 from dagster.core.execution import (
     create_execution_plan,
+    create_typed_environment,
 )
-from dagster.core.evaluator import evaluate_config_value
+from dagster.core.evaluator import (
+    evaluate_config_value,
+)
 from dagster.utils import script_relative_path
 import dagster_contrib.pandas as dagster_pd
 from dagster.cli.dynamic_loader import RepositoryTargetInfo
@@ -41,17 +44,24 @@ def test_running():
     pipeline = define_passing_pipeline()
     config = {
         'solids': {
-            'load_num_csv': {
-                'config': {
-                    'path': script_relative_path('num.csv'),
+            'sum_solid': {
+                'inputs': {
+                    'num': {
+                        'csv': {
+                            'path': script_relative_path('num.csv'),
+                        },
+                    },
                 }
             },
         },
     }
-    typed_environment = evaluate_config_value(pipeline.environment_type, config)
+    typed_environment = create_typed_environment(pipeline, config)
     pipeline_run = InMemoryPipelineRun(
-        run_id, 'pandas_hello_world', typed_environment.value, config,
-        create_execution_plan(pipeline, typed_environment.value)
+        run_id,
+        'pandas_hello_world',
+        typed_environment,
+        config,
+        create_execution_plan(pipeline, typed_environment),
     )
     execution_manager = MultiprocessingExecutionManager()
     execution_manager.execute_pipeline(repository_container, pipeline, pipeline_run)
@@ -73,17 +83,24 @@ def test_failing():
     pipeline = define_failing_pipeline()
     config = {
         'solids': {
-            'load_num_csv': {
-                'config': {
-                    'path': script_relative_path('num.csv'),
+            'sum_solid': {
+                'inputs': {
+                    'num': {
+                        'csv': {
+                            'path': script_relative_path('num.csv'),
+                        },
+                    },
                 }
             },
         },
     }
-    typed_environment = evaluate_config_value(pipeline.environment_type, config)
+    typed_environment = create_typed_environment(pipeline, config)
     pipeline_run = InMemoryPipelineRun(
-        run_id, 'pandas_hello_world', typed_environment.value, config,
-        create_execution_plan(pipeline, typed_environment.value)
+        run_id,
+        'pandas_hello_world',
+        typed_environment,
+        config,
+        create_execution_plan(pipeline, typed_environment),
     )
     execution_manager = MultiprocessingExecutionManager()
     execution_manager.execute_pipeline(repository_container, pipeline, pipeline_run)
@@ -105,17 +122,27 @@ def test_execution_crash():
     pipeline = define_crashy_pipeline()
     config = {
         'solids': {
-            'load_num_csv': {
-                'config': {
-                    'path': script_relative_path('num.csv'),
+            'sum_solid': {
+                'inputs': {
+                    'num': {
+                        'csv': {
+                            'path': script_relative_path('num.csv'),
+                        },
+                    },
                 }
             },
         },
     }
-    typed_environment = evaluate_config_value(pipeline.environment_type, config)
+    typed_environment = create_typed_environment(pipeline, config)
     pipeline_run = InMemoryPipelineRun(
-        run_id, 'pandas_hello_world', typed_environment.value, config,
-        create_execution_plan(pipeline, typed_environment.value)
+        run_id,
+        'pandas_hello_world',
+        typed_environment,
+        config,
+        create_execution_plan(
+            pipeline,
+            typed_environment,
+        ),
     )
     execution_manager = MultiprocessingExecutionManager()
     execution_manager.execute_pipeline(repository_container, pipeline, pipeline_run)
@@ -157,13 +184,10 @@ def define_passing_pipeline():
     return PipelineDefinition(
         name='pandas_hello_world',
         solids=[
-            dagster_pd.load_csv_solid('load_num_csv'),
             sum_solid,
         ],
         dependencies={
-            'sum_solid': {
-                'num': DependencyDefinition('load_num_csv')
-            },
+            'sum_solid': {},
         },
     )
 
@@ -172,14 +196,11 @@ def define_failing_pipeline():
     return PipelineDefinition(
         name='pandas_hello_world',
         solids=[
-            dagster_pd.load_csv_solid('load_num_csv'),
             sum_solid,
             error_solid,
         ],
         dependencies={
-            'sum_solid': {
-                'num': DependencyDefinition('load_num_csv')
-            },
+            'sum_solid': {},
             'error_solid': {
                 'sum_df': DependencyDefinition('sum_solid')
             }
@@ -191,14 +212,11 @@ def define_crashy_pipeline():
     return PipelineDefinition(
         name='pandas_hello_world',
         solids=[
-            dagster_pd.load_csv_solid('load_num_csv'),
             sum_solid,
             crashy_solid,
         ],
         dependencies={
-            'sum_solid': {
-                'num': DependencyDefinition('load_num_csv')
-            },
+            'sum_solid': {},
             'crashy_solid': {
                 'sum_df': DependencyDefinition('sum_solid')
             }

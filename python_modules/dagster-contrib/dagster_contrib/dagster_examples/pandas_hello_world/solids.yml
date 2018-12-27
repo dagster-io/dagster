@@ -1,5 +1,6 @@
 solids:
-  load_num_csv:
-    config:
-      path: "pandas_hello_world/num.csv"
-
+  sum_solid:
+    inputs:
+      num:
+        csv:
+          path: pandas_hello_world/num.csv
