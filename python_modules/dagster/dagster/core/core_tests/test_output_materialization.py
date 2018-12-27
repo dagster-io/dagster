@@ -26,7 +26,7 @@ import json
 
 
 def test_basic_json_materialization():
-    return  # TODO: while refactoring execution core
+    return
     pipeline = single_int_output_pipeline()
 
     with get_temp_file_name() as filename:
