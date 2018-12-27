@@ -44,7 +44,7 @@ class MaterializeableValue(Materializeable):
             json_file_path = selector_value['path']
             json_value = json.dumps(value)
             with open(json_file_path, 'w+b') as ff:
-                ff.write(json_value)
+                ff.write({'value': json_value})
         else:
             check.failed(
                 'Unsupported selector key: {selector_key}'.format(selector_key=selector_key)

@@ -294,7 +294,7 @@ def test_select_context():
 
 
 def test_solid_config():
-    solid_config_type = SolidConfigType('kdjfkd', Field(types.Int), None)
+    solid_config_type = SolidConfigType('kdjfkd', Field(types.Int), None, None)
     solid_inst = throwing_evaluate_config_value(solid_config_type, {'config': 1})
     assert isinstance(solid_inst, config.Solid)
     assert solid_inst.config == 1
