@@ -61,13 +61,14 @@ setup(
         'graphene>=2.1.3',
 
         # server
-        'gevent==1.3.7',
-        'gevent-websocket==0.10.1',
-        'Flask>=1.0.2',
         'Flask-GraphQL>=2.0.0',
-        'flask-cors>=3.0.6',
         'Flask-Sockets>=0.2.1',
+        'Flask>=1.0.2',
+        'flask-cors>=3.0.6',
+        'gevent-websocket==0.10.1',
+        'gevent==1.3.7',
         'graphql-ws>=0.3.0',
+        'pyrsistent>=0.14.8',
 
         # watchdog
         'watchdog>=0.8.3',

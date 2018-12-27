@@ -1,6 +1,5 @@
 from collections import OrderedDict
 from enum import Enum
-import copy
 import json
 import os
 import time
