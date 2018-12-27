@@ -244,6 +244,7 @@ class SolidExecutionResult(object):
                 return result.failure_data.dagster_error
 
 
+# TODO: make this new top-level api in subsequent PR
 def create_execution_plan_new_api(pipeline, env_config=None):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.opt_dict_param(env_config, 'env_config', key_type=str)
