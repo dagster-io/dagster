@@ -30,12 +30,9 @@ from dagster.core.execution import (
     create_execution_plan_new_api,
 )
 
-from dagster.core.execution_plan.objects import (StepOutputHandle)
+from dagster.core.execution_plan.objects import StepOutputHandle
 
-from dagster.core.execution_plan.materialization_thunk import (
-    MATERIALIZATION_THUNK_OUTPUT,
-    StepOutputHandle,
-)
+from dagster.core.execution_plan.materialization_thunk import MATERIALIZATION_THUNK_OUTPUT
 
 
 def single_int_output_pipeline():
