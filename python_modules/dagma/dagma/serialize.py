@@ -39,6 +39,8 @@ POSSIBILITY OF SUCH DAMAGE.
 
 import pickle
 
+from io import BytesIO as StringIO
+
 from cloudpickle import CloudPickler
 
 from .module_dependency import ModuleDependencyAnalyzer
@@ -56,16 +58,19 @@ def serialize(obj):
     """
     module_manager = ModuleDependencyAnalyzer()
 
-    pickled_obj = CloudPickler.dump(obj)
+    stringio = StringIO()
+    pickler = CloudPickler(stringio, -1)
 
-    for module in pickled_obj.modules:
+    pickler.dump(obj)
+
+    for module in pickler.modules:
         module_manager.add(module.__name__)
 
     module_paths = module_manager.get_and_clear_paths()
 
     module_data = create_mod_data(module_paths)
 
-    return pickle.dumps({'obj': pickled_obj, 'module_data': module_data}, -1)
+    return pickle.dumps({'obj': stringio, 'module_data': module_data}, -1)
 
 
 def deserialize(pickled_obj):

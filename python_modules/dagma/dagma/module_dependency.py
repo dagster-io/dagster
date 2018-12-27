@@ -62,7 +62,11 @@ class ModuleDependencyAnalyzer(object):
         root_module_name = self._extract_root_module(module_name)
         self._modules_to_inspect.add(root_module_name)
         while self._modules_to_inspect:
-            self._inspect(self._modules_to_inspect.pop())
+            try:
+                self._inspect(self._modules_to_inspect.pop())
+            # Hit this because of *test* files with deliberately bad encoding strings
+            except SyntaxError as e:
+                self._logger.debug('Module analyzer found a SyntaxError: %s', e.msg)
 
     def ignore(self, module_name):
         """
