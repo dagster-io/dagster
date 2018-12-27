@@ -86,13 +86,6 @@ def _construct_deployment_package_for_step(step_idx, step, context):
     deployment_package_dir = tempfile.mkdtemp()
     TEMPDIR_REGISTRY.append(deployment_package_dir)
 
-    shutil.copyfile(
-        os.path.join(SOURCE_DIR, 'handler.py'), os.path.join(deployment_package_dir, 'handler.py')
-    )
-    shutil.copyfile(
-        os.path.join(SOURCE_DIR, 'utils.py'), os.path.join(deployment_package_dir, 'utils.py')
-    )
-
     for python_dependency in python_dependencies:
         process = subprocess.Popen(
             ['pip', 'install', python_dependency, '--target', deployment_package_dir],
@@ -141,7 +134,7 @@ def _create_lambda_step(aws_lambda, step_idx, deployment_package, context, role)
         FunctionName=get_deployment_package_key(context, step_idx).split('.')[0],
         Runtime='python3.6',
         Role=role.arn,
-        Handler='handler.aws_lambda_handler',
+        Handler='dagma.aws_lambda_handler',
         Code={
             'S3Bucket': context.resources.dagma.s3_bucket,
             'S3Key': deployment_package,
