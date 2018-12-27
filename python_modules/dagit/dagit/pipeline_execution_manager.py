@@ -1,10 +1,10 @@
 from __future__ import absolute_import
-import copy
 from collections import namedtuple
+import copy
 import multiprocessing
-import time
-import queue
 import sys
+import time
+
 import gevent
 
 from dagster import (check, ReentrantInfo, PipelineDefinition)
@@ -29,6 +29,10 @@ class PipelineExecutionManager(object):
 
 class SyntheticPipelineEventRecord(PipelineEventRecord):
     def __init__(self, message, level, event_type, run_id, timestamp, error_info):
+        super(SyntheticPipelineEventRecord, self).__init__(
+            logger_message=None,  # logger_message=None is dubious
+            error_info=error_info,
+        )
         self._message = check.str_param(message, 'message')
         self._level = check.int_param(level, 'level')
         self._event_type = check.inst_param(event_type, 'event_type', EventType)
@@ -89,10 +93,11 @@ class SynchronousExecutionManager(PipelineExecutionManager):
                     event_callback=pipeline_run.handle_new_event,
                 ),
             )
-        except Exception as e:
+        except:  # pylint: disable=W0702
             pipeline_run.handle_new_event(
                 SyntheticPipelineEventRecord.error_record(
-                    pipeline_run.run_id, serializable_error_info_from_exc_info(sys.exc_info())
+                    pipeline_run.run_id,
+                    serializable_error_info_from_exc_info(sys.exc_info()),
                 )
             )
 
@@ -109,7 +114,9 @@ class MultiprocessingError(object):
 class MultiprocessingExecutionManager(PipelineExecutionManager):
     def __init__(self):
         # Set execution method to spawn, to avoid fork and to have same behavior between platforms.
-        # Older versions are stuck with whatever is the default on their platform (fork on Unix-like and spawn on windows)
+        # Older versions are stuck with whatever is the default on their platform (fork on
+        # Unix-like and spawn on windows)
+        #
         # https://docs.python.org/3/library/multiprocessing.html#multiprocessing.get_context
         if hasattr(multiprocessing, 'get_context'):
             self._multiprocessing_context = multiprocessing.get_context('spawn')
@@ -148,7 +155,7 @@ class MultiprocessingExecutionManager(PipelineExecutionManager):
                                 run_id=process.pipeline_run.run_id
                             )
                         )
-                    except:
+                    except:  # pylint: disable=W0702
                         process.pipeline_run.handle_new_event(
                             SyntheticPipelineEventRecord.error_record(
                                 process.pipeline_run.run_id,
@@ -228,10 +235,7 @@ def execute_pipeline_through_queue(
     """
     Execute pipeline using message queue as a transport
     """
-    reentrant_info = ReentrantInfo(
-        run_id,
-        event_callback=lambda event: message_queue.put(event),
-    )
+    reentrant_info = ReentrantInfo(run_id, event_callback=message_queue.put)
 
     from .app import RepositoryContainer
     repository_container = RepositoryContainer(repository_info)
@@ -251,7 +255,7 @@ def execute_pipeline_through_queue(
             pipeline, typed_environment, throw_on_error=False, reentrant_info=reentrant_info
         )
         return result
-    except Exception as e:
+    except:  # pylint: disable=W0702
         message_queue.put(
             MultiprocessingError(serializable_error_info_from_exc_info(sys.exc_info()))
         )
