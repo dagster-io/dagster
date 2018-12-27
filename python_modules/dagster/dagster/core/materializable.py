@@ -17,7 +17,7 @@ def define_path_dict_field():
 
 
 class Materializeable(object):
-    def materialize_runtime_value(self, config_value, value):
+    def materialize_runtime_value(self, _config_spec, _runtime_value):
         check.failed('must implement')
 
 
@@ -36,15 +36,15 @@ class MaterializeableValue(Materializeable):
     def define_output_field(self):
         return Field(MaterializeableValueConfigSchema(), is_optional=True)
 
-    def materialize_runtime_value(self, config_value, value):
-        check.dict_param(config_value, 'config_value')
-        selector_key, selector_value = list(config_value.items())[0]
+    def materialize_runtime_value(self, config_spec, runtime_value):
+        check.dict_param(config_spec, 'config_spec')
+        selector_key, selector_value = list(config_spec.items())[0]
 
         if selector_key == 'json':
             json_file_path = selector_value['path']
-            json_value = json.dumps(value)
-            with open(json_file_path, 'w+b') as ff:
-                ff.write({'value': json_value})
+            json_value = json.dumps({'value': runtime_value})
+            with open(json_file_path, 'w') as ff:
+                ff.write(json_value)
         else:
             check.failed(
                 'Unsupported selector key: {selector_key}'.format(selector_key=selector_key)

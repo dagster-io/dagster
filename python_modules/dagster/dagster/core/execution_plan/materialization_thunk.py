@@ -1,45 +1,38 @@
 from dagster import check
 
 from dagster.core.definitions import (
+    Result,
     Solid,
     OutputDefinition,
 )
 
-from dagster.core.errors import DagsterInvariantViolationError
+from dagster.core.materializable import Materializeable
 
 from .objects import (
     ExecutionPlanInfo,
+    ExecutionStep,
     ExecutionSubPlan,
+    StepInput,
+    StepOutput,
+    StepOutputHandle,
+    StepTag,
 )
 
-OUTPUT_THUNK_INPUT = 'output_thunk_input'
+from .utility import (create_join_step)
+
+MATERIALIZATION_THUNK_INPUT = 'materialization_thunk_input'
+MATERIALIZATION_THUNK_OUTPUT = 'materialization_thunk_output'
 
 
-def create_output_thunk_execution_step(info, solid, output_def):
-    check.inst_param(info, 'info', ExecutionPlanInfo)
-    check.inst_param(solid, 'solid', Solid)
-    check.inst_param(output_def, 'output_def', OutputDefinition)
+def _create_materialization_lambda(materializable, config_spec):
+    check.inst_param(materializable, 'materializable', Materializeable)
 
-    dependency_structure = info.pipeline.dependency_structure
-    # input_handle = solid.input_handle(input_def.name)
+    def _fn(_info, _step, inputs):
+        runtime_value = inputs[MATERIALIZATION_THUNK_INPUT]
+        materializable.materialize_runtime_value(config_spec, runtime_value)
+        yield Result(runtime_value, MATERIALIZATION_THUNK_OUTPUT)
 
-    # if dependency_structure.has_dep(input_handle):
-    #     raise DagsterInvariantViolationError(
-    #         (
-    #             'In pipeline {pipeline_name} solid {solid_name}, input {input_name} '
-    #             'you have specified an input via config while also specifying '
-    #             'a dependency. Either remove the dependency, specify a subdag '
-    #             'to execute, or remove the inputs specification in the environment.'
-    #         ).format(
-    #             pipeline_name=info.pipeline.name,
-    #             solid_name=solid.name,
-    #             input_name=input_def.name,
-    #         )
-    #     )
-
-    # input_thunk = _create_input_thunk_execution_step(solid, input_def, value)
-    # return StepOutputHandle(input_thunk, INPUT_THUNK_OUTPUT)
-    check.failed('TODO')
+    return _fn
 
 
 def decorate_with_output_materializations(execution_info, solid, output_def, subplan):
@@ -48,4 +41,53 @@ def decorate_with_output_materializations(execution_info, solid, output_def, sub
     check.inst_param(output_def, 'output_def', OutputDefinition)
     check.inst_param(subplan, 'subplan', ExecutionSubPlan)
 
-    return subplan
+    solid_config = execution_info.environment.solids.get(solid.name)
+
+    if not (solid_config and solid_config.outputs):
+        return subplan
+
+    new_steps = []
+
+    for idx, output_spec in enumerate(solid_config.outputs):
+        # Invariants here because config system should ensure these exist as stated
+        check.invariant(len(output_spec) == 1)
+        output_name, config_spec = list(output_spec.items())[0]
+        check.invariant(solid.has_output(output_name))
+
+        new_steps.append(
+            ExecutionStep(
+                key=solid.name + '.materialization.' + str(idx) + '.output.' + output_def.name,
+                step_inputs=[
+                    StepInput(
+                        name=MATERIALIZATION_THUNK_INPUT,
+                        dagster_type=output_def.dagster_type,
+                        prev_output_handle=subplan.terminal_step_output_handle,
+                    )
+                ],
+                step_outputs=[
+                    StepOutput(
+                        name=MATERIALIZATION_THUNK_OUTPUT,
+                        dagster_type=output_def.dagster_type,
+                    )
+                ],
+                tag=StepTag.MATERIALIZATION_THUNK,
+                solid=solid,
+                compute_fn=_create_materialization_lambda(output_def.dagster_type, config_spec)
+            )
+        )
+
+    join_step = create_join_step(
+        solid,
+        '{solid}.{output}.materializations.join'.format(
+            solid=solid.name,
+            output=output_def.name,
+        ),
+        new_steps,
+        MATERIALIZATION_THUNK_OUTPUT,
+    )
+
+    output_name = join_step.step_outputs[0].name
+    return ExecutionSubPlan(
+        new_steps + [join_step],
+        StepOutputHandle(join_step, output_name),
+    )

@@ -158,18 +158,18 @@ def create_subplan_for_output(execution_info, solid, solid_transform_step, outpu
     return decorate_with_output_materializations(execution_info, solid, output_def, subplan)
 
 
-def get_input_source_step_handle(info, state, solid, input_def):
-    check.inst_param(info, 'info', ExecutionPlanInfo)
+def get_input_source_step_handle(execution_info, state, solid, input_def):
+    check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
     check.inst_param(state, 'state', StepBuilderState)
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(input_def, 'input_def', InputDefinition)
 
     input_handle = solid.input_handle(input_def.name)
-    solid_config = info.environment.solids.get(solid.name)
-    dependency_structure = info.pipeline.dependency_structure
+    solid_config = execution_info.environment.solids.get(solid.name)
+    dependency_structure = execution_info.pipeline.dependency_structure
     if solid_config and input_def.name in solid_config.inputs:
         input_thunk_output_handle = create_input_thunk_execution_step(
-            info,
+            execution_info,
             solid,
             input_def,
             solid_config.inputs[input_def.name],
@@ -186,7 +186,7 @@ def get_input_source_step_handle(info, state, solid, input_def):
                 'must get a value either (a) from a dependency or (b) from the '
                 'inputs section of its configuration.'
             ).format(
-                pipeline_name=info.pipeline.name,
+                pipeline_name=execution_info.pipeline.name,
                 solid_name=solid.name,
                 input_name=input_def.name,
             )

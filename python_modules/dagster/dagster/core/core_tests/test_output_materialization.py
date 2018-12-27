@@ -7,6 +7,7 @@ from dagster import (
     OutputDefinition,
     PipelineConfigEvaluationError,
     PipelineDefinition,
+    Result,
     execute_pipeline,
     lambda_solid,
     solid,
@@ -30,6 +31,14 @@ def single_int_output_pipeline():
         return 1
 
     return PipelineDefinition(name='single_int_output_pipeline', solids=[return_one])
+
+
+def single_int_named_output_pipeline():
+    @lambda_solid(output=OutputDefinition(types.Int, name='named'))
+    def return_named_one():
+        return Result(1, 'named')
+
+    return PipelineDefinition(name='single_int_named_output_pipeline', solids=[return_named_one])
 
 
 def no_input_no_output_pipeline():
@@ -59,7 +68,7 @@ def test_solid_has_config_entry():
     assert solid_has_config_entry(pipeline.solid_named('return_one').definition)
 
 
-def test_basic_json_config_schema():
+def test_basic_json_default_output_config_schema():
     env = create_typed_environment(
         single_int_output_pipeline(),
         {
@@ -74,13 +83,63 @@ def test_basic_json_config_schema():
                             },
                         },
                     ],
-                }
+                },
             },
         },
     )
 
     assert env.solids['return_one']
     assert env.solids['return_one'].outputs == [{'result': {'json': {'path': 'foo'}}}]
+
+
+def test_basic_json_named_output_config_schema():
+    env = create_typed_environment(
+        single_int_named_output_pipeline(),
+        {
+            'solids': {
+                'return_named_one': {
+                    'outputs': [
+                        {
+                            'named': {
+                                'json': {
+                                    'path': 'foo',
+                                },
+                            },
+                        },
+                    ],
+                },
+            },
+        },
+    )
+
+    assert env.solids['return_named_one']
+    assert env.solids['return_named_one'].outputs == [{'named': {'json': {'path': 'foo'}}}]
+
+
+def test_basic_json_misnamed_output_config_schema():
+    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
+        create_typed_environment(
+            single_int_named_output_pipeline(),
+            {
+                'solids': {
+                    'return_named_one': {
+                        'outputs': [
+                            {
+                                'wrong_name': {
+                                    'json': {
+                                        'path': 'foo',
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                },
+            },
+        )
+
+    assert len(exc_info.value.errors) == 1
+    assert 'Error 1: Undefined field "wrong_name"' in exc_info.value.message
+    assert 'at path root:solids:return_named_one:outputs[0]' in exc_info.value.message
 
 
 def test_no_outputs_no_inputs_config_schema():
@@ -128,29 +187,31 @@ def test_no_outputs_one_input_config_schema():
 
 
 def test_basic_json_materialization():
-    return
     pipeline = single_int_output_pipeline()
 
-    with get_temp_file_name() as filename:
-        result = execute_pipeline(
-            pipeline,
-            {
-                'solids': {
-                    'return_one': {
-                        'outputs': {
+    # with get_temp_file_name() as filename:
+    filename = '/tmp/test_materialization'
+    result = execute_pipeline(
+        pipeline,
+        {
+            'solids': {
+                'return_one': {
+                    'outputs': [
+                        {
                             'result': {
                                 'json': {
                                     'path': filename,
                                 },
                             },
                         },
-                    }
+                    ],
                 },
             },
-        )
+        },
+    )
 
-        assert result.success
+    assert result.success
 
-        with open(filename, 'r+b') as ff:
-            value = json.loads(ff.read())
-            assert value == 1
+    with open(filename, 'r') as ff:
+        value = json.loads(ff.read())
+        assert value == {'value': 1}
