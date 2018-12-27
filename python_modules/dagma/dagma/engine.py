@@ -264,15 +264,19 @@ def execute_plan(context, execution_plan, cleanup_lambda_functions=True):
                 )
             )
 
+    # 'LambdaInvocationPayload', 'run_id step_idx key s3_bucket s3_key_inputs s3_key_body'
+    # 's3_key_resources s3_key_outputs'
+
         for step_idx, lambda_step in enumerate(lambda_steps):
             payload = LambdaInvocationPayload(
-                context.run_id,
-                step_idx,
-                steps[step_idx].key,
-                context.resources.dagma.s3_bucket,
-                get_input_key(context, step_idx),
-                get_step_key(context, step_idx),
-                get_input_key(context, step_idx + 1),
+                run_id=context.run_id,
+                step_idx=step_idx,
+                key=steps[step_idx].key,
+                s3_bucket=context.resources.dagma.s3_bucket,
+                s3_key_inputs=get_input_key(context, step_idx),
+                s3_key_body=get_step_key(context, step_idx),
+                s3_key_resources=get_resources_key(context),
+                s3_key_outputs=get_input_key(context, step_idx + 1),
             )
 
             _execute_step_sync(aws_lambda_client, lambda_step, context, payload)
