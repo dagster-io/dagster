@@ -19,6 +19,8 @@ from .expectations import (
 
 from .input_thunk import create_input_thunk_execution_step
 
+from .materialization_thunk import decorate_with_output_materializations
+
 from .objects import (
     ExecutionPlan,
     ExecutionPlanInfo,
@@ -151,7 +153,9 @@ def create_subplan_for_output(execution_info, solid, solid_transform_step, outpu
 
     subplan = decorate_with_expectations(execution_info, solid, solid_transform_step, output_def)
 
-    return decorate_with_serialization(execution_info, solid, output_def, subplan)
+    subplan = decorate_with_serialization(execution_info, solid, output_def, subplan)
+
+    return decorate_with_output_materializations(execution_info, solid, output_def, subplan)
 
 
 def get_input_source_step_handle(info, state, solid, input_def):
