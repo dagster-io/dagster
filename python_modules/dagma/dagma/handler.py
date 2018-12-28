@@ -64,6 +64,7 @@ def aws_lambda_handler(event, context):
     )
     step = pickle.loads(step_body_object['Body'].read())
 
+    logger.info('Checking inputs')
     if not _all_inputs_covered(step, intermediate_results):
         result_keys = set(intermediate_results.keys())
         expected_outputs = [ni.prev_output_handle for ni in step.step_inputs]
@@ -73,6 +74,7 @@ def aws_lambda_handler(event, context):
         )
         raise Exception()
 
+    logger.info('Constructing input values')
     input_values = {}
     for step_input in step.step_inputs:
         prev_output_handle = step_input.prev_output_handle

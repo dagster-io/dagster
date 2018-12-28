@@ -283,8 +283,7 @@ def execute_plan(context, execution_plan, cleanup_lambda_functions=True):
             # _poll_for_completion(step_handle, context)  # TODO: Need an error handling path here
 
         final_results_object = context.resources.dagma.storage.get_object(
-            key='{run_id}_intermediate_results_{step_idx}.pickle'.
-            format(run_id=context.run_id, step_idx=str(int(step_idx) + 1))
+            key=get_input_key(context, step_idx + 1)
         )
 
         final_results = pickle.loads(final_results_object['Body'].read())
