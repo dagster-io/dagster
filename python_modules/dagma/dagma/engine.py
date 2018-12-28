@@ -264,7 +264,12 @@ def execute_plan(context, execution_plan, cleanup_lambda_functions=True):
     finally:
         for tempdir in TEMPDIR_REGISTRY:
             context.debug('Cleaning up deployment package: {tempdir}'.format(tempdir=tempdir))
-            shutil.rmtree(tempdir)
+            try:
+                shutil.rmtree(tempdir)
+            except FileNotFoundError as e:
+                context.debug(
+                    'FileNotFoundError when cleaning up deployment package %s: %s', tempdir, e.msg
+                )
 
     lambda_steps = []
     try:
