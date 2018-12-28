@@ -117,33 +117,3 @@ class _DataFrameType(ConfigurableSelectorFromDict, types.PythonObjectType, Mater
 
 
 DataFrame = _DataFrameType()
-
-
-def path_dict_field():
-    return Field(types.Dict({'path': Field(types.Path)}))
-
-
-def to_csv_solid(name):
-    def _t_fn(info, inputs):
-        inputs['df'].to_csv(info.config['path'], index=False)
-
-    return SolidDefinition(
-        name=name,
-        inputs=[InputDefinition('df', DataFrame)],
-        outputs=[],
-        config_field=path_dict_field(),
-        transform_fn=_t_fn,
-    )
-
-
-def to_parquet_solid(name):
-    def _t_fn(info, inputs):
-        inputs['df'].to_parquet(info.config['path'])
-
-    return SolidDefinition(
-        name=name,
-        inputs=[InputDefinition('df', DataFrame)],
-        outputs=[],
-        config_field=path_dict_field(),
-        transform_fn=_t_fn,
-    )

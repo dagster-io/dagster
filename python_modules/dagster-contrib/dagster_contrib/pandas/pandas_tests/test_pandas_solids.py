@@ -3,17 +3,18 @@ import os
 import pandas as pd
 
 from dagster import (
+    DependencyDefinition,
     ExecutionContext,
     Field,
-    DependencyDefinition,
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
     Result,
     SolidDefinition,
     check,
-    lambda_solid,
     execute_solid,
+    lambda_solid,
+    solid,
     types,
 )
 
@@ -31,11 +32,7 @@ from dagster.utils.test import (
     get_temp_file_names,
 )
 
-from dagster_contrib.pandas import (
-    DataFrame,
-    to_csv_solid,
-    to_parquet_solid,
-)
+from dagster_contrib.pandas import DataFrame
 
 
 def load_csv_solid(name):
@@ -64,9 +61,9 @@ def _dataframe_solid(name, inputs, transform_fn):
     )
 
 
-def get_solid_transformed_value(_context, solid_inst, environment):
+def get_solid_transformed_value(_context, solid_inst):
     pipeline = PipelineDefinition(
-        solids=[load_csv_solid('load_csv'), solid_inst],
+        solids=[load_num_csv_solid('load_csv'), solid_inst],
         dependencies={
             solid_inst.name: {
                 solid_inst.input_defs[0].name: DependencyDefinition('load_csv'),
@@ -74,21 +71,11 @@ def get_solid_transformed_value(_context, solid_inst, environment):
         }
     )
 
-    pipeline_result = execute_pipeline(pipeline, environment)
+    pipeline_result = execute_pipeline(pipeline)
 
     execution_result = pipeline_result.result_for_solid(solid_inst.name)
 
     return execution_result.transformed_value()
-
-
-def get_load_only_solids_config(load_csv_solid_name):
-    return {
-        load_csv_solid_name: {
-            'config': {
-                'path': script_relative_path('num.csv'),
-            },
-        },
-    }
 
 
 def get_num_csv_environment(solids_config):
@@ -99,106 +86,6 @@ def get_num_csv_environment(solids_config):
 
 def create_test_context():
     return ExecutionContext()
-
-
-def test_basic_pandas_solid():
-    csv_input = InputDefinition('num_csv', DataFrame)
-
-    def transform(_context, inputs):
-        num_csv = inputs['num_csv']
-        num_csv['sum'] = num_csv['num1'] + num_csv['num2']
-        return num_csv
-
-    single_solid = single_output_transform(
-        name='sum_table',
-        inputs=[csv_input],
-        transform_fn=transform,
-        output=OutputDefinition(),
-    )
-
-    pipeline = PipelineDefinition(
-        solids=[load_csv_solid('load_csv'), single_solid],
-        dependencies={single_solid.name: {
-            'num_csv': DependencyDefinition('load_csv'),
-        }}
-    )
-
-    pipeline_result = execute_pipeline(
-        pipeline,
-        environment=get_num_csv_environment(get_load_only_solids_config('load_csv')),
-    )
-
-    assert pipeline_result.success
-
-    assert pipeline_result.result_for_solid('sum_table').transformed_value().to_dict('list') == {
-        'num1': [1, 3],
-        'num2': [2, 4],
-        'sum': [3, 7]
-    }
-
-
-def test_pandas_csv_to_csv():
-    csv_input = InputDefinition('num_csv', DataFrame)
-
-    # just adding a second context arg to test that
-    def transform(_context, inputs):
-        num_csv = inputs['num_csv']
-        num_csv['sum'] = num_csv['num1'] + num_csv['num2']
-        return num_csv
-
-    solid_def = single_output_transform(
-        name='sum_table',
-        inputs=[csv_input],
-        transform_fn=transform,
-        output=OutputDefinition(DataFrame),
-    )
-
-    output_df = execute_transform_in_temp_csv_files(solid_def)
-
-    assert output_df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
-
-
-def execute_transform_in_temp_csv_files(solid_inst):
-    load_csv_solid_ = load_csv_solid('load_csv')
-    to_csv_solid_ = to_csv_solid('to_csv')
-
-    key = solid_inst.input_defs[0].name
-
-    pipeline = PipelineDefinition(
-        solids=[load_csv_solid_, solid_inst, to_csv_solid_],
-        dependencies={
-            solid_inst.name: {
-                key: DependencyDefinition('load_csv'),
-            },
-            'to_csv': {
-                'df': DependencyDefinition(solid_inst.name),
-            }
-        }
-    )
-    with get_temp_file_name() as temp_file_name:
-        result = execute_pipeline(
-            pipeline,
-            get_num_csv_environment(
-                {
-                    load_csv_solid_.name: {
-                        'config': {
-                            'path': script_relative_path('num.csv'),
-                        },
-                    },
-                    to_csv_solid_.name: {
-                        'config': {
-                            'path': temp_file_name,
-                        },
-                    },
-                },
-            ),
-        )
-
-        assert result.success
-
-        output_df = pd.read_csv(temp_file_name)
-
-    return output_df
 
 
 def create_sum_table():
@@ -243,31 +130,17 @@ def sum_sq_table_renamed_input(sum_table_renamed):
     return sum_table_renamed
 
 
-def test_pandas_csv_to_csv_better_api():
-    output_df = execute_transform_in_temp_csv_files(create_sum_table())
-    assert output_df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
-
-
-def test_pandas_csv_to_csv_decorator_api():
-    output_df = execute_transform_in_temp_csv_files(sum_table)
-    assert output_df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
-
-
 def test_pandas_csv_in_memory():
     df = get_solid_transformed_value(
         None,
         create_sum_table(),
-        get_num_csv_environment(get_load_only_solids_config('load_csv')),
     )
     assert isinstance(df, pd.DataFrame)
     assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
 
 
 def _sum_only_pipeline():
-    return PipelineDefinition(
-        solids=[sum_table, sum_sq_table],
-        dependencies={},
-    )
+    return PipelineDefinition(solids=[sum_table, sum_sq_table], dependencies={})
 
 
 def test_two_input_solid():
@@ -288,25 +161,10 @@ def test_two_input_solid():
         transform_fn=transform,
     )
 
-    environment = {
-        'solids': {
-            'load_csv1': {
-                'config': {
-                    'path': script_relative_path('num.csv'),
-                },
-            },
-            'load_csv2': {
-                'config': {
-                    'path': script_relative_path('num.csv'),
-                },
-            },
-        },
-    }
-
     pipeline = PipelineDefinition(
         solids=[
-            load_csv_solid('load_csv1'),
-            load_csv_solid('load_csv2'),
+            load_num_csv_solid('load_csv1'),
+            load_num_csv_solid('load_csv2'),
             two_input_solid,
         ],
         dependencies={
@@ -317,12 +175,11 @@ def test_two_input_solid():
         },
     )
 
-    pipeline_result = execute_pipeline(pipeline, environment)
+    pipeline_result = execute_pipeline(pipeline)
     assert pipeline_result.success
 
     df = pipeline_result.result_for_solid('two_input_solid').transformed_value()
 
-    # df = get_solid_transformed_value(create_test_context(), two_input_solid, environment)
     assert isinstance(df, pd.DataFrame)
     assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
 
@@ -334,9 +191,7 @@ def test_no_transform_solid():
         transform_fn=lambda _context, inputs: inputs['num_csv'],
     )
     context = create_test_context()
-    df = get_solid_transformed_value(
-        context, num_table, get_num_csv_environment(get_load_only_solids_config('load_csv'))
-    )
+    df = get_solid_transformed_value(context, num_table)
     assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4]}
 
 
@@ -426,59 +281,6 @@ def create_diamond_dag():
     )
 
 
-def test_pandas_in_memory_diamond_pipeline():
-    pipeline = create_diamond_pipeline()
-    result = execute_pipeline(
-        pipeline, environment=get_num_csv_environment(get_load_only_solids_config('load_csv'))
-    )
-
-    assert result.result_for_solid('sum_mult_table').transformed_value().to_dict('list') == {
-        'num1': [1, 3],
-        'num2': [2, 4],
-        'sum': [3, 7],
-        'mult': [2, 12],
-        'sum_mult': [6, 84],
-    }
-
-
-def test_pandas_output_csv_pipeline():
-    with get_temp_file_name() as temp_file_name:
-        write_solid = to_csv_solid('write_sum_mult_table')
-        pipeline = create_diamond_pipeline(
-            extra_solids=[write_solid],
-            extra_dependencies={write_solid.name: {
-                'df': DependencyDefinition('sum_mult_table')
-            }}
-        )
-        environment = get_num_csv_environment(
-            {
-                'load_csv': {
-                    'config': {
-                        'path': script_relative_path('num.csv'),
-                    },
-                },
-                write_solid.name: {
-                    'config': {
-                        'path': temp_file_name,
-                    },
-                },
-            },
-        )
-
-        for _result in execute_pipeline_iterator(pipeline=pipeline, environment=environment):
-            pass
-
-        assert os.path.exists(temp_file_name)
-        output_df = pd.read_csv(temp_file_name)
-        assert output_df.to_dict('list') == {
-            'num1': [1, 3],
-            'num2': [2, 4],
-            'sum': [3, 7],
-            'mult': [2, 12],
-            'sum_mult': [6, 84],
-        }
-
-
 def _result_for_solid(results, name):
     for result in results:
         if result.name == name:
@@ -487,161 +289,15 @@ def _result_for_solid(results, name):
     check.failed('could not find name')
 
 
-def test_pandas_output_intermediate_csv_files():
+def load_num_csv_solid(name):
+    @lambda_solid(name=name)
+    def _return_num_csv():
+        return pd.DataFrame({'num1': [1, 3], 'num2': [2, 4]})
 
-    with get_temp_file_names(2) as temp_tuple:
-        sum_file, mult_file = temp_tuple  # pylint: disable=E0632
-
-        write_sum_table = to_csv_solid('write_sum_table')
-        write_mult_table = to_csv_solid('write_mult_table')
-
-        pipeline = create_diamond_pipeline(
-            extra_solids=[write_sum_table, write_mult_table],
-            extra_dependencies={
-                write_sum_table.name: {
-                    'df': DependencyDefinition('sum_table'),
-                },
-                write_mult_table.name: {
-                    'df': DependencyDefinition('mult_table'),
-                }
-            }
-        )
-
-        environment = get_num_csv_environment(
-            {
-                'load_csv': {
-                    'config': {
-                        'path': script_relative_path('num.csv'),
-                    },
-                },
-                write_sum_table.name: {
-                    'config': {
-                        'path': sum_file,
-                    },
-                },
-                write_mult_table.name: {
-                    'config': {
-                        'path': mult_file,
-                    },
-                },
-            }
-        )
-
-        whole_pipeline_result = execute_pipeline(pipeline, environment=environment)
-
-        assert len(whole_pipeline_result.result_list) == 5
-
-        expected_sum = {
-            'num1': [1, 3],
-            'num2': [2, 4],
-            'sum': [3, 7],
-        }
-
-        assert pd.read_csv(sum_file).to_dict('list') == expected_sum
-        sum_table_result = whole_pipeline_result.result_for_solid('sum_table')
-        assert sum_table_result.transformed_value().to_dict('list') == expected_sum
-
-        expected_mult = {
-            'num1': [1, 3],
-            'num2': [2, 4],
-            'mult': [2, 12],
-        }
-        assert pd.read_csv(mult_file).to_dict('list') == expected_mult
-        mult_table_result = whole_pipeline_result.result_for_solid('mult_table')
-        assert mult_table_result.transformed_value().to_dict('list') == expected_mult
-
-        result = execute_solid(
-            pipeline,
-            'sum_mult_table',
-            {
-                'sum_table': pd.read_csv(sum_file),
-                'mult_table': pd.read_csv(mult_file),
-            },
-        )
-
-        assert result.transformed_value().to_dict('list') == {
-            'num1': [1, 3],
-            'num2': [2, 4],
-            'sum': [3, 7],
-            'mult': [2, 12],
-            'sum_mult': [6, 84],
-        }
-
-
-def test_pandas_output_intermediate_parquet_files():
-    pipeline = create_diamond_pipeline()
-
-    with get_temp_file_names(2) as temp_tuple:
-        # false positive on pylint error
-        sum_file, mult_file = temp_tuple  # pylint: disable=E0632
-
-        write_sum_table = to_parquet_solid('write_sum_table')
-        write_mult_table = to_parquet_solid('write_mult_table')
-
-        pipeline = create_diamond_pipeline(
-            extra_solids=[write_sum_table, write_mult_table],
-            extra_dependencies={
-                write_sum_table.name: {
-                    'df': DependencyDefinition('sum_table'),
-                },
-                write_mult_table.name: {
-                    'df': DependencyDefinition('mult_table'),
-                }
-            }
-        )
-
-        environment = get_num_csv_environment(
-            {
-                'load_csv': {
-                    'config': {
-                        'path': script_relative_path('num.csv'),
-                    },
-                },
-                write_sum_table.name: {
-                    'config': {
-                        'path': sum_file,
-                    },
-                },
-                write_mult_table.name: {
-                    'config': {
-                        'path': mult_file,
-                    }
-                },
-            }
-        )
-
-        pipeline_result = execute_pipeline(
-            pipeline,
-            environment,
-        )
-
-        assert pipeline_result.success
-
-        expected_sum = {
-            'num1': [1, 3],
-            'num2': [2, 4],
-            'sum': [3, 7],
-        }
-
-        assert pd.read_parquet(sum_file).to_dict('list') == expected_sum
+    return _return_num_csv
 
 
 def test_pandas_multiple_inputs():
-    environment = {
-        'solids': {
-            'load_one': {
-                'config': {
-                    'path': script_relative_path('num.csv')
-                },
-            },
-            'load_two': {
-                'config': {
-                    'path': script_relative_path('num.csv')
-                },
-            },
-        },
-    }
-
     def transform_fn(_context, inputs):
         return inputs['num_csv1'] + inputs['num_csv2']
 
@@ -656,8 +312,8 @@ def test_pandas_multiple_inputs():
 
     pipeline = PipelineDefinition(
         solids=[
-            load_csv_solid('load_one'),
-            load_csv_solid('load_two'),
+            load_num_csv_solid('load_one'),
+            load_num_csv_solid('load_two'),
             double_sum,
         ],
         dependencies={
@@ -668,10 +324,7 @@ def test_pandas_multiple_inputs():
         },
     )
 
-    output_df = execute_pipeline(
-        pipeline,
-        environment=environment,
-    ).result_for_solid('double_sum').transformed_value()
+    output_df = execute_pipeline(pipeline).result_for_solid('double_sum').transformed_value()
 
     assert not output_df.empty
 
@@ -681,74 +334,10 @@ def test_pandas_multiple_inputs():
     }
 
 
-def test_pandas_multiple_outputs():
-    with get_temp_file_names(2) as temp_tuple:
-        # false positive on pylint error
-        csv_file, parquet_file = temp_tuple  # pylint: disable=E0632
-        pipeline = create_diamond_pipeline()
-
-        write_sum_mult_csv = to_csv_solid('write_sum_mult_csv')
-        write_sum_mult_parquet = to_parquet_solid('write_sum_mult_parquet')
-
-        pipeline = create_diamond_pipeline(
-            extra_solids=[write_sum_mult_csv, write_sum_mult_parquet],
-            extra_dependencies={
-                write_sum_mult_csv.name: {
-                    'df': DependencyDefinition('sum_mult_table'),
-                },
-                write_sum_mult_parquet.name: {
-                    'df': DependencyDefinition('sum_mult_table'),
-                }
-            }
-        )
-
-        environment = get_num_csv_environment(
-            {
-                'load_csv': {
-                    'config': {
-                        'path': script_relative_path('num.csv'),
-                    },
-                },
-                write_sum_mult_csv.name: {
-                    'config': {
-                        'path': csv_file,
-                    }
-                },
-                write_sum_mult_parquet.name: {
-                    'config': {
-                        'path': parquet_file,
-                    },
-                },
-            },
-        )
-
-        execute_pipeline(pipeline, environment)
-
-        assert os.path.exists(csv_file)
-        output_csv_df = pd.read_csv(csv_file)
-        assert output_csv_df.to_dict('list') == {
-            'num1': [1, 3],
-            'num2': [2, 4],
-            'sum': [3, 7],
-            'mult': [2, 12],
-            'sum_mult': [6, 84],
-        }
-
-        assert os.path.exists(parquet_file)
-        output_parquet_df = pd.read_parquet(parquet_file)
-        assert output_parquet_df.to_dict('list') == {
-            'num1': [1, 3],
-            'num2': [2, 4],
-            'sum': [3, 7],
-            'mult': [2, 12],
-            'sum_mult': [6, 84],
-        }
-
-
 def test_rename_input():
     result = execute_pipeline(
         PipelineDefinition(
-            solids=[load_csv_solid('load_csv'), sum_table, sum_sq_table_renamed_input],
+            solids=[load_num_csv_solid('load_csv'), sum_table, sum_sq_table_renamed_input],
             dependencies={
                 'sum_table': {
                     'num_csv': DependencyDefinition('load_csv'),
@@ -758,7 +347,6 @@ def test_rename_input():
                 },
             },
         ),
-        environment=get_num_csv_environment(get_load_only_solids_config('load_csv')),
     )
 
     assert result.success
