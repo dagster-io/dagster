@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 def _all_inputs_covered(step, results):
     for step_input in step.step_inputs:
         handle = step_input.prev_output_handle
-        if (handle.step, handle.output_name) not in results:
+        if (handle.step.key, handle.output_name) not in results:
             return False
     return True
 
