@@ -75,7 +75,7 @@ def aws_lambda_handler(event, _context):
         expected_outputs = [ni.prev_output_handle for ni in step.step_inputs]
         logger.error(
             'Not all inputs covered for %s. Not executing.\nKeys in result: %s'
-            '\nOutputs need for inputs %s', key, result_keys, expected_outputs
+            '\nOutputs needed for inputs %s', key, result_keys, expected_outputs
         )
         raise Exception()
 

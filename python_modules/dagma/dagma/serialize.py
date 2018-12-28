@@ -84,15 +84,18 @@ def serialize(obj):
 
 
 def deserialize(pickled_obj):
+    logger.info('Debug 1')
     all_loaded = pickle.loads(pickled_obj)
 
+    logger.info('Debug 2')
     PYTHON_MODULE_PATH = os.path.join(
         os.path.dirname(os.path.realpath(__file__)), '..', '..', 'pymodules'
     )
     shutil.rmtree(PYTHON_MODULE_PATH, True)  # delete old modules
     os.mkdir(PYTHON_MODULE_PATH)
     sys.path.append(PYTHON_MODULE_PATH)
-
+    logger.info(PYTHON_MODULE_PATH)
+    logger.info('Debug 3')
     for m_filename, m_data in all_loaded['module_data'].items():
         m_path = os.path.dirname(m_filename)
         if len(m_path) > 0 and m_path[0] == "/":
@@ -109,12 +112,17 @@ def deserialize(pickled_obj):
         full_filename = os.path.join(to_make, os.path.basename(m_filename))
         with open(full_filename, 'wb') as fid:
             fid.write(b64str_to_bytes(m_data))
+    logger.info('Debug 4')
 
     logger.info("Finished wrting {} module files".format(len(d['module_data'])))
     logger.debug(subprocess.check_output("find {}".format(PYTHON_MODULE_PATH), shell=True))
     logger.debug(subprocess.check_output("find {}".format(os.getcwd()), shell=True))
 
+    logger.info('Debug 5')
+
     # now unpickle function; it will expect modules to be there
     loaded_func = pickle.loads(all_loaded['func'])
+
+    logger.info('Debug 6')
 
     return loaded_func
