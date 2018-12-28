@@ -8,7 +8,6 @@ from io import BytesIO
 from dagster import check
 from dagster.core.execution_context import RuntimeExecutionContext
 from dagster.core.execution_plan.objects import (
-    StepOutputHandle,
     StepResult,
 )
 from dagster.core.execution_plan.simple_engine import (
@@ -90,8 +89,12 @@ def aws_lambda_handler(event, _context):
     for result in results:
         check.invariant(isinstance(result, StepResult))
         output_name = result.success_data.output_name
-        output_handle = StepOutputHandle(step, output_name)
-        intermediate_results[output_handle] = result
+        output_handle = (step, output_name)
+        intermediate_results[output_handle] = (
+            result.success,
+            result.success_data,
+            result.failure_data,
+        )
         logger.info('Processing result: %s', output_name)
 
     logger.info('Uploading intermediate_results to %s', s3_key_outputs)
