@@ -7,6 +7,7 @@ import os
 import pickle
 import shutil
 import subprocess
+# import sys
 import tempfile
 
 from collections import namedtuple
@@ -38,6 +39,12 @@ LAMBDA_MEMORY_SIZE = 3008
 TEMPDIR_REGISTRY = []
 
 SOURCE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+
+def _get_python_runtime():
+    # if sys.version_info[0] < 3:
+    #     return 'python2.7'
+    return 'python3.6'
 
 
 def _get_or_create_iam_role(iam_client, iam_resource):
@@ -139,9 +146,10 @@ def _upload_step(s3, step_idx, step, context):
 
 
 def _create_lambda_step(aws_lambda, step_idx, deployment_package, context, role):
+    runtime = _get_python_runtime()
     res = aws_lambda.create_function(
         FunctionName=get_deployment_package_key(context, step_idx).split('.')[0],
-        Runtime='python3.6',
+        Runtime=runtime,
         Role=role.arn,
         Handler='dagma.aws_lambda_handler',
         Code={
