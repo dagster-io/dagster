@@ -1,17 +1,25 @@
-"""Utilities to construct the deployment package used by our Lambda handler."""
+# """Utilities to construct and upload the deployment package used by our Lambda handler."""
 
-# CONTEXT MANAGER!
-# import tempfile
+# import logging
+# import os
 # import subprocess
+# import tempfile
 
-# # FIXME only do this *once* -- actually, this can live in a publicly accessible S3 bucket of its
-# # own
-# def _construct_deployment_package_for_step(step_idx, step, context):
-#     python_dependencies = [
-#         'boto3', 'cloudpickler', 'git+ssh://git@github.com/dagster-io/dagster.git'
-#         '@lambda_engine#egg=dagma&subdirectory=python_modules/dagma'
-#     ]
+# from .utils import zip_folder
+# from .version import __version__
 
+# DAGMA_RUNTIME_BUCKET = 'dagma-runtime'
+
+# PYTHON_DEPENDENCIES = [
+#     'boto3', 'cloudpickler', 'git+ssh://git@github.com/dagster-io/dagster.git'
+#     '@lambda_engine#egg=dagma&subdirectory=python_modules/dagma'
+# ]
+
+# logger = logging.getLogger(__name__)
+
+# # # FIXME only do this *once* -- actually, this can live in a publicly accessible S3 bucket of its
+# # # own
+# def _construct_deployment_package(logger=logger):
 #     deployment_package_dir = tempfile.mkdtemp()
 #     TEMPDIR_REGISTRY.append(deployment_package_dir)
 
@@ -40,4 +48,8 @@
 #     finally:
 #         os.chdir(pwd)
 
-#     return archive_path
+#     try:
+#         yield archive_path
+#     finally:
+#         pass
+#         # Cleanup tempdir
