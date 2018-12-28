@@ -85,7 +85,7 @@ def aws_lambda_handler(event, _context):
     input_values = {}
     for step_input in step.step_inputs:
         prev_output_handle = step_input.prev_output_handle
-        handle = (prev_output_handle.step, prev_output_handle.output_name)
+        handle = (prev_output_handle.step.key, prev_output_handle.output_name)
         input_value = intermediate_results[handle].success_data.value
         input_values[step_input.name] = input_value
 
