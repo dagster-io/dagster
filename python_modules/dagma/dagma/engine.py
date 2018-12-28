@@ -28,6 +28,7 @@ from .utils import (
     LambdaInvocationPayload,
 )
 
+# TODO make this configurable on the dagma resource
 LAMBDA_MEMORY_SIZE = 3008
 
 TEMPDIR_REGISTRY = []

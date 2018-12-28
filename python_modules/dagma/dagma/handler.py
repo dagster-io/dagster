@@ -50,7 +50,6 @@ def aws_lambda_handler(event, _context):
         Bucket=s3_bucket,
         Key=s3_key_inputs,
     )
-    logger.info(intermediate_results_object)
     intermediate_results = pickle.loads(intermediate_results_object['Body'].read())
 
     logger.info('Looking for resources at %s/%s', s3_bucket, s3_key_resources)
@@ -58,7 +57,6 @@ def aws_lambda_handler(event, _context):
         Bucket=s3_bucket,
         Key=s3_key_resources,
     )
-    logger.info(resources_object)
     resources = pickle.loads(resources_object['Body'].read())
     execution_context = RuntimeExecutionContext(run_id, loggers=[logger], resources=resources)
 
@@ -67,10 +65,7 @@ def aws_lambda_handler(event, _context):
         Bucket=s3_bucket,
         Key=s3_key_body,
     )
-    logger.info(step_body_object)
-    logger.info('Here')
     step = deserialize(step_body_object['Body'].read())
-    logger.info('There')
 
     logger.info('Checking inputs')
     if not _all_inputs_covered(step, intermediate_results):
