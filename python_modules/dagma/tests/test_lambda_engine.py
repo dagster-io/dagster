@@ -106,23 +106,23 @@ def define_single_solid_pipeline():
     )
 
 
-def test_execution_diamond():
-    pipeline = define_diamond_dag_pipeline()
-    environment = {
-        'context': {
-            'lambda': {
-                'resources': {
-                    'aws': {
-                        'config': {
-                            'aws_region_name': 'us-east-2',
-                        }
+TEST_ENVIRONMENT = {
+    'context': {
+        'lambda': {
+            'resources': {
+                'dagma': {
+                    'config': {
+                        'aws_region_name': 'us-east-2',
                     }
                 }
             }
         }
     }
+}
 
-    typed_environment = create_typed_environment(pipeline, environment)
+
+def run_test_pipeline(pipeline):
+    typed_environment = create_typed_environment(pipeline, TEST_ENVIRONMENT)
 
     reentrant_info = ReentrantInfo(run_id=str(uuid.uuid4()))
     with yield_context(pipeline, typed_environment, reentrant_info) as context:
@@ -135,38 +135,22 @@ def test_execution_diamond():
         )
         with context.value('pipeline', pipeline.display_name):
             results = execute_plan(context, execution_plan)
+            return results
+
+
+def test_execution_diamond():
+    pipeline = define_diamond_dag_pipeline()
+    results = run_test_pipeline(pipeline)
 
     assert len(results) == 4
 
 
 def test_execution_single():
     pipeline = define_single_solid_pipeline()
-    environment = {
-        'context': {
-            'lambda': {
-                'resources': {
-                    'dagma': {
-                        'config': {
-                            'aws_region_name': 'us-east-2',
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    typed_environment = create_typed_environment(pipeline, environment)
-
-    reentrant_info = ReentrantInfo(run_id=str(uuid.uuid4()))
-    with yield_context(pipeline, typed_environment, reentrant_info) as context:
-        execution_plan = create_execution_plan_core(
-            ExecutionPlanInfo(
-                context,
-                pipeline,
-                typed_environment,
-            ),
-        )
-        with context.value('pipeline', pipeline.display_name):
-            results = execute_plan(context, execution_plan)
+    results = run_test_pipeline(pipeline)
 
     assert len(results) == 1
+    assert results[('solid_a.transform', 'result')][0] is True
+    assert results[('solid_a.transform', 'result')][1].output_name == 'result'
+    assert results[('solid_a.transform', 'result')][1].value == 1
+    assert results[('solid_a.transform', 'result')][2] is None
