@@ -229,9 +229,7 @@ def test_solid_return_list_instead_of_multiple_results():
             hello_world,
         )
 
-    assert 'unexpectedly returned output [\'foo\', \'bar\'] of type <class \'list\'>. ' in str(
-        exc_info.value
-    )
+    assert 'unexpectedly returned output [\'foo\', \'bar\']' in str(exc_info.value)
 
 
 def test_lambda_solid_with_name():
