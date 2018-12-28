@@ -77,6 +77,7 @@ def _seed_intermediate_results(context):
     )
 
 
+# FIXME only do this *once*
 def _construct_deployment_package_for_step(step_idx, step, context):
     python_dependencies = [
         'boto3', 'cloudpickler', 'git+ssh://git@github.com/dagster-io/dagster.git'
