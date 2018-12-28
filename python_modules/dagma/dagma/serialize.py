@@ -120,6 +120,6 @@ def deserialize(pickled_obj):
     logger.debug(subprocess.check_output("find {}".format(os.getcwd()), shell=True))
 
     # now unpickle function; it will expect modules to be there
-    loaded_func = pickle.loads(all_loaded['obj'])
+    loaded_func = pickle.loads(all_loaded['obj'].getvalue())
 
     return loaded_func
