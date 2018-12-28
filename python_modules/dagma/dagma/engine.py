@@ -77,7 +77,8 @@ def _seed_intermediate_results(context):
     )
 
 
-# FIXME only do this *once*
+# FIXME only do this *once* -- actually, this can live in a publicly accessible S3 bucket of its
+# own
 def _construct_deployment_package_for_step(step_idx, step, context):
     python_dependencies = [
         'boto3', 'cloudpickler', 'git+ssh://git@github.com/dagster-io/dagster.git'
