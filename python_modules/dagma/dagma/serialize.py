@@ -37,7 +37,10 @@ POSSIBILITY OF SUCH DAMAGE.
 
 """
 
+import os
 import pickle
+import shutil
+import sys
 
 from io import BytesIO as StringIO
 
@@ -74,5 +77,68 @@ def serialize(obj):
 
 
 def deserialize(pickled_obj):
+    all_loaded = pickle.loads(pickled_obj)
+
+    PYTHON_MODULE_PATH = 'modules'
+    shutil.rmtree(PYTHON_MODULE_PATH, True)  # delete old modules
+    os.mkdir(PYTHON_MODULE_PATH)
+    sys.path.append(PYTHON_MODULE_PATH)
+
     #   https://github.com/pywren/pywren/blob/master/pywren/jobrunner/jobrunner.py#L89
     pass
+
+
+#     # save modules, before we unpickle actual function
+#     PYTHON_MODULE_PATH = jobrunner_config['python_module_path']
+
+#     shutil.rmtree(PYTHON_MODULE_PATH, True) # delete old modules
+#     os.mkdir(PYTHON_MODULE_PATH)
+#     sys.path.append(PYTHON_MODULE_PATH)
+
+#     for m_filename, m_data in loaded_func_all['module_data'].items():
+#         m_path = os.path.dirname(m_filename)
+
+#         if len(m_path) > 0 and m_path[0] == "/":
+#             m_path = m_path[1:]
+#         to_make = os.path.join(PYTHON_MODULE_PATH, m_path)
+#         try:
+#             os.makedirs(to_make)
+#         except OSError as e:
+#             if e.errno == 17:
+#                 pass
+#             else:
+#                 raise e
+#         full_filename = os.path.join(to_make, os.path.basename(m_filename))
+#         #print "creating", full_filename
+#         with open(full_filename, 'wb') as fid:
+#             fid.write(b64str_to_bytes(m_data))
+
+#     # logger.info("Finished wrting {} module files".format(len(d['module_data'])))
+#     # logger.debug(subprocess.check_output("find {}".format(PYTHON_MODULE_PATH), shell=True))
+#     # logger.debug(subprocess.check_output("find {}".format(os.getcwd()), shell=True))
+
+#     # now unpickle function; it will expect modules to be there
+#     loaded_func = pickle.loads(loaded_func_all['func'])
+
+#     extra_get_args = {}
+#     if data_byte_range is not None:
+#         range_str = 'bytes={}-{}'.format(*data_byte_range)
+#         extra_get_args['Range'] = range_str
+
+#     data_download_time_t1 = time.time()
+#     data_obj_stream = get_object_with_backoff(s3_client, bucket=data_bucket,
+#                                               key=data_key,
+#                                               **extra_get_args)
+#     # FIXME make this streaming
+#     loaded_data = pickle.loads(data_obj_stream['Body'].read())
+#     data_download_time_t2 = time.time()
+#     write_stat('data_download_time',
+#                data_download_time_t2-data_download_time_t1)
+
+#     #print("loaded")
+#     y = loaded_func(loaded_data)
+#     #print("success")
+#     output_dict = {'result' : y,
+#                    'success' : True,
+#                    'sys.path' : sys.path}
+#     pickled_output = pickle.dumps(output_dict)

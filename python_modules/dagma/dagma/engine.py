@@ -235,15 +235,25 @@ def execute_plan(context, execution_plan, cleanup_lambda_functions=True):
     deployment_packages = []
     try:
         for step_idx, step in enumerate(steps):
-            context.debug('Constructing deployment package for step {key}'.format(key=step.key))
+            context.debug(
+                'Constructing deployment package for step {step_key}'.format(step_key=step.key)
+            )
             deployment_packages.append(
                 _construct_deployment_package_for_step(step_idx, step, context)
             )
         for step_idx, step in enumerate(steps):
-            context.debug('Uploading deployment package for step {key}'.format(key=step.key))
+            context.debug(
+                'Uploading deployment package for step {step_key}: {s3_key}'.format(
+                    step_key=step.key, s3_key=get_deployment_package_key(context, step_idx)
+                )
+            )
             _upload_deployment_package_for_step(context, deployment_packages[step_idx])
 
-            context.debug('Uploading step {key}'.format(key=step.key))
+            context.debug(
+                'Uploading step {step_key}: {s3_key}'.format(
+                    step_key=step.key, s3_key=get_step_key(context, step_idx)
+                )
+            )
             _upload_step(aws_s3_client, step_idx, step, context)
 
     finally:

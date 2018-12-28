@@ -3,6 +3,8 @@ import pickle
 
 import boto3
 
+from io import BytesIO
+
 from dagster import check
 from dagster.core.execution_context import RuntimeExecutionContext
 from dagster.core.execution_plan.objects import (
@@ -47,14 +49,14 @@ def aws_lambda_handler(event, context):
         Bucket=s3_bucket,
         Key=s3_key_inputs,
     )
-    intermediate_results = pickle.loads(intermediate_results_object['Body'].read())
+    intermediate_results = pickle.load(intermediate_results_object['Body'])
 
     logger.info('Looking for resources at %s/%s', s3_bucket, s3_key_resources)
     resources_object = s3.get_object(
         Bucket=s3_bucket,
         Key=s3_key_resources,
     )
-    resources = pickle.loads(resources_object['Body'].read())
+    resources = pickle.load(resources_object['Body'])
     execution_context = RuntimeExecutionContext(run_id, loggers=[logger], resources=resources)
 
     logger.info('Looking for step body at %s/%s', s3_bucket, s3_key_body)
@@ -62,7 +64,7 @@ def aws_lambda_handler(event, context):
         Bucket=s3_bucket,
         Key=s3_key_body,
     )
-    step = pickle.loads(step_body_object['Body'].read())
+    step = pickle.load(step_body_object['Body'])
 
     logger.info('Checking inputs')
     if not _all_inputs_covered(step, intermediate_results):
@@ -92,10 +94,11 @@ def aws_lambda_handler(event, context):
         logger.info('Processing result: %s', output_name)
 
     logger.info('Uploading intermediate_results to %s', s3_key_outputs)
-    intermediate_results_object = pickle.dumps(intermediate_results, -1)
+    bytesio = BytesIO()
+    pickle.dump(intermediate_results, bytesio, -1)
     s3.put_object(
         ACL='public-read',
-        Body=intermediate_results_object,
+        Body=bytesio.getvalue(),
         Bucket=s3_bucket,
         Key=s3_key_outputs,
     )
