@@ -10,10 +10,7 @@ from dagster.core.execution_context import RuntimeExecutionContext
 from dagster.core.execution_plan.objects import (
     StepResult,
 )
-from dagster.core.execution_plan.simple_engine import (
-    _all_inputs_covered,
-    execute_step,
-)
+from dagster.core.execution_plan.simple_engine import execute_step
 
 from .serialize import deserialize
 from .utils import (
@@ -24,6 +21,13 @@ from .utils import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _all_inputs_covered(step, results):
+    for step_input in step.step_inputs:
+        if step_input.prev_output_handle not in results:
+            return False
+    return True
 
 
 def aws_lambda_handler(event, _context):
@@ -49,14 +53,14 @@ def aws_lambda_handler(event, _context):
         Bucket=s3_bucket,
         Key=s3_key_inputs,
     )
-    intermediate_results = pickle.loads(intermediate_results_object['Body'].read())
+    intermediate_results = deserialize(intermediate_results_object['Body'].read())
 
     logger.info('Looking for resources at %s/%s', s3_bucket, s3_key_resources)
     resources_object = s3.get_object(
         Bucket=s3_bucket,
         Key=s3_key_resources,
     )
-    resources = pickle.loads(resources_object['Body'].read())
+    resources = deserialize(resources_object['Body'].read())
     execution_context = RuntimeExecutionContext(run_id, loggers=[logger], resources=resources)
 
     logger.info('Looking for step body at %s/%s', s3_bucket, s3_key_body)
@@ -89,7 +93,10 @@ def aws_lambda_handler(event, _context):
     for result in results:
         check.invariant(isinstance(result, StepResult))
         output_name = result.success_data.output_name
-        output_handle = (step, output_name)
+        output_handle = (
+            step.key,
+            output_name,
+        )
         intermediate_results[output_handle] = (
             result.success,
             result.success_data,

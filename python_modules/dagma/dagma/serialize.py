@@ -53,6 +53,7 @@ from .module_dependency import ModuleDependencyAnalyzer
 from .utils import (
     b64str_to_bytes,
     create_mod_data,
+    mkdir_p,
 )
 
 logger = logging.getLogger(__name__)
@@ -94,8 +95,8 @@ PYTHON_MODULE_PATH = os.path.join(TEMP, "pymodules_{0}")
 def deserialize(pickled_obj):
     all_loaded = pickle.loads(pickled_obj)
 
-    shutil.rmtree(PYTHON_MODULE_PATH, True)  # delete old modules
-    os.mkdir(PYTHON_MODULE_PATH)
+    # shutil.rmtree(PYTHON_MODULE_PATH, True)  # delete old modules
+    mkdir_p(PYTHON_MODULE_PATH)
     sys.path.append(PYTHON_MODULE_PATH)
 
     for m_filename, m_data in all_loaded['module_data'].items():
