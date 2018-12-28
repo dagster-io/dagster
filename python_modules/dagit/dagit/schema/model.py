@@ -6,7 +6,7 @@ from graphql.execution.base import ResolveInfo
 
 from dagster import check
 from dagster.core.evaluator import evaluate_config_value
-from dagster.core.execution import create_execution_plan
+from dagster.core.execution import create_execution_plan_with_typed_environment
 
 from dagster.utils.error import serializable_error_info_from_exc_info
 
@@ -105,7 +105,7 @@ def get_execution_plan(info, pipelineName, config):
         config_or_error = _config_or_error_from_pipeline(info, pipeline, config)
         return config_or_error.chain(lambda config: info.schema.type_named('ExecutionPlan')(
             pipeline,
-            create_execution_plan(pipeline.get_dagster_pipeline(), config.value),
+            create_execution_plan_with_typed_environment(pipeline.get_dagster_pipeline(), config.value),
         ))
 
     pipeline_or_error = _pipeline_or_error_from_container(
@@ -118,25 +118,32 @@ def start_pipeline_execution(info, pipelineName, config):
     check.inst_param(info, 'info', ResolveInfo)
     check.str_param(pipelineName, 'pipelineName')
     pipeline_run_storage = info.context.pipeline_runs
+    env_config = config
 
     def get_config_and_start_execution(pipeline):
         def start_execution(typed_enviroment):
             new_run_id = str(uuid.uuid4())
-            execution_plan = create_execution_plan(
-                pipeline.get_dagster_pipeline(), typed_enviroment.value
+            execution_plan = create_execution_plan_with_typed_environment(
+                pipeline.get_dagster_pipeline(),
+                typed_enviroment.value,
             )
             run = pipeline_run_storage.create_run(
-                new_run_id, pipelineName, typed_enviroment.value, config, execution_plan
+                new_run_id,
+                pipelineName,
+                env_config,
+                execution_plan,
             )
             pipeline_run_storage.add_run(run)
             info.context.execution_manager.execute_pipeline(
-                info.context.repository_container, pipeline.get_dagster_pipeline(), run
+                info.context.repository_container,
+                pipeline.get_dagster_pipeline(),
+                run,
             )
             return info.schema.type_named('StartPipelineExecutionSuccess')(
                 run=info.schema.type_named('PipelineRun')(run)
             )
 
-        config_or_error = _config_or_error_from_pipeline(info, pipeline, config)
+        config_or_error = _config_or_error_from_pipeline(info, pipeline, env_config)
         return config_or_error.chain(start_execution)
 
     pipeline_or_error = _pipeline_or_error_from_container(
@@ -157,8 +164,13 @@ def get_pipeline_run_observable(info, runId, after=None):
     pipeline_name = run.pipeline_name
 
     def get_observable(pipeline):
+        pipeline_run_event_type = info.schema.type_named('PipelineRunEvent')
         return run.observable_after_cursor(after).map(
-            lambda events: info.schema.type_named('PipelineRunLogsSubscriptionPayload')( messages=[        info.schema.type_named('PipelineRunEvent').from_dagster_event(info, event, pipeline) for event in events]
+            lambda events: info.schema.type_named('PipelineRunLogsSubscriptionPayload')(
+                messages=[
+                    pipeline_run_event_type.from_dagster_event(info, event, pipeline)
+                    for event in events
+                ],
             )
         )
 
@@ -202,9 +214,9 @@ def _pipeline_or_error_from_container(info, container, pipeline_name):
     ).chain(lambda repository: _pipeline_or_error_from_repository(info, repository, pipeline_name))
 
 
-def _config_or_error_from_pipeline(info, pipeline, config):
+def _config_or_error_from_pipeline(info, pipeline, env_config):
     pipeline_env_type = pipeline.get_dagster_pipeline().environment_type
-    config_result = evaluate_config_value(pipeline_env_type, config)
+    config_result = evaluate_config_value(pipeline_env_type, env_config)
 
     if not config_result.success:
         return EitherError(

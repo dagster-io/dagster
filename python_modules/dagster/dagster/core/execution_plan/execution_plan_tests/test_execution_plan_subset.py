@@ -45,7 +45,7 @@ def define_two_int_pipeline():
 
 def test_execution_plan_simple_two_steps():
     pipeline_def = define_two_int_pipeline()
-    execution_plan = create_execution_plan(pipeline_def, create_typed_environment(pipeline_def))
+    execution_plan = create_execution_plan(pipeline_def)
 
     assert isinstance(execution_plan.steps, list)
     assert len(execution_plan.steps) == 2
@@ -68,7 +68,7 @@ def test_execution_plan_simple_two_steps():
 def test_create_subplan_source_step():
     pipeline_def = define_two_int_pipeline()
     typed_environment = create_typed_environment(pipeline_def, None)
-    execution_plan = create_execution_plan(pipeline_def, create_typed_environment(pipeline_def))
+    execution_plan = create_execution_plan(pipeline_def)
     with yield_context(pipeline_def, typed_environment) as context:
         subplan = create_subplan(
             ExecutionPlanInfo(
@@ -90,7 +90,7 @@ def test_create_subplan_source_step():
 def test_create_subplan_middle_step():
     pipeline_def = define_two_int_pipeline()
     typed_environment = create_typed_environment(pipeline_def, None)
-    execution_plan = create_execution_plan(pipeline_def, create_typed_environment(pipeline_def))
+    execution_plan = create_execution_plan(pipeline_def)
     with yield_context(pipeline_def, typed_environment) as context:
         subplan = create_subplan(
             ExecutionPlanInfo(
@@ -129,7 +129,7 @@ def test_create_subplan_middle_step():
 
 def test_execution_plan_source_step():
     pipeline_def = define_two_int_pipeline()
-    execution_plan = create_execution_plan(pipeline_def, create_typed_environment(pipeline_def))
+    execution_plan = create_execution_plan(pipeline_def)
     step_results = execute_plan(
         pipeline_def,
         execution_plan,
@@ -142,7 +142,7 @@ def test_execution_plan_source_step():
 
 def test_execution_plan_middle_step():
     pipeline_def = define_two_int_pipeline()
-    execution_plan = create_execution_plan(pipeline_def, create_typed_environment(pipeline_def))
+    execution_plan = create_execution_plan(pipeline_def)
     step_results = execute_plan(
         pipeline_def,
         execution_plan,
@@ -168,7 +168,7 @@ def test_execution_plan_two_outputs():
 
     pipeline_def = PipelineDefinition(name='return_one_two_pipeline', solids=[return_one_two])
 
-    execution_plan = create_execution_plan(pipeline_def, create_typed_environment(pipeline_def))
+    execution_plan = create_execution_plan(pipeline_def)
 
     step_results = execute_plan(pipeline_def, execution_plan)
 
@@ -191,7 +191,7 @@ def test_reentrant_execute_plan():
         called['yup'] = True
 
     pipeline_def = PipelineDefinition(name='has_context_value_pipeline', solids=[has_context_value])
-    execution_plan = create_execution_plan(pipeline_def, create_typed_environment(pipeline_def))
+    execution_plan = create_execution_plan(pipeline_def)
 
     step_results = execute_plan(
         pipeline_def,

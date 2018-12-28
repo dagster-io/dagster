@@ -60,8 +60,7 @@ class PipelineRun(object):
         self,
         run_id,
         pipeline_name,
-        typed_environment,
-        environment_config,
+        env_config,
         execution_plan,
     ):
         self.__subscribers = []
@@ -70,15 +69,10 @@ class PipelineRun(object):
         self._status = PipelineRunStatus.NOT_STARTED
         self._run_id = check.str_param(run_id, 'run_id')
         self._pipeline_name = check.str_param(pipeline_name, 'pipeline_name')
-        self._environment_config = check.dict_param(
-            environment_config,
+        self._env_config = check.dict_param(
+            env_config,
             'environment_config',
             key_type=str,
-        )
-        self._typed_environment = check.inst_param(
-            typed_environment,
-            'typed_environment',
-            config.Environment,
         )
         self._execution_plan = check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
 
@@ -95,12 +89,8 @@ class PipelineRun(object):
         return self._pipeline_name
 
     @property
-    def typed_environment(self):
-        return self._typed_environment
-
-    @property
     def config(self):
-        return self._environment_config
+        return self._env_config
 
     @property
     def execution_plan(self):

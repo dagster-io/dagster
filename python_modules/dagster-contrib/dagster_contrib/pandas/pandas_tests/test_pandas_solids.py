@@ -22,6 +22,8 @@ from dagster.core.execution import (
     execute_pipeline,
 )
 
+from dagster.core.test_utils import single_output_transform
+
 from dagster.utils import script_relative_path
 
 from dagster.utils.test import (
@@ -34,8 +36,6 @@ from dagster_contrib.pandas import (
     to_csv_solid,
     to_parquet_solid,
 )
-
-from dagster.core.test_utils import single_output_transform
 
 
 def load_csv_solid(name):

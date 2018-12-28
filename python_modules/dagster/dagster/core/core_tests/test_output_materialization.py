@@ -27,7 +27,7 @@ from dagster.core.config_types import (
 
 from dagster.core.execution import (
     create_typed_environment,
-    create_execution_plan_new_api,
+    create_execution_plan,
 )
 
 from dagster.core.execution_plan.objects import StepOutputHandle
@@ -219,7 +219,7 @@ def test_no_outputs_one_input_config_schema():
 
 
 def test_basic_int_execution_plan():
-    execution_plan = create_execution_plan_new_api(
+    execution_plan = create_execution_plan(
         single_int_output_pipeline(),
         {
             'solids': {
@@ -309,7 +309,7 @@ def test_basic_string_json_materialization():
 
 def test_basic_int_and_string_execution_plan():
     pipeline = multiple_output_pipeline()
-    execution_plan = create_execution_plan_new_api(
+    execution_plan = create_execution_plan(
         pipeline,
         {
             'solids': {
@@ -428,7 +428,7 @@ def read_file_contents(path):
 
 def test_basic_int_and_string_json_multiple_materialization_execution_plan():
     pipeline = multiple_output_pipeline()
-    execution_plan = create_execution_plan_new_api(
+    execution_plan = create_execution_plan(
         pipeline,
         {
             'solids': {
@@ -566,7 +566,7 @@ def assert_plan_topological_level(steps, step_nums, step_keys):
 
 
 def test_basic_int_multiple_serializations_execution_plan():
-    execution_plan = create_execution_plan_new_api(
+    execution_plan = create_execution_plan(
         single_int_output_pipeline(),
         {
             'solids': {
