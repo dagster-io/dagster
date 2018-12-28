@@ -1,5 +1,8 @@
+import contextlib
 import errno
 import os
+import shutil
+import tempfile
 
 from collections import namedtuple
 
@@ -12,6 +15,25 @@ def mkdir_p(path):
             pass
         else:
             raise
+
+
+@contextlib.contextmanager
+def tempdirs(i=1):
+    try:
+        dirs = []
+        for _ in range(i):
+            dirs.append(tempfile.mkdtemp())
+        if not dirs:
+            yield None
+        if len(dirs) == 1:
+            yield dirs[0]
+        yield tuple(dirs)
+    finally:
+        for dir_ in dirs:
+            try:
+                shutil.rmtree(dir_)
+            except IOError as exc:
+                continue
 
 
 def get_step_key(context, step_idx):

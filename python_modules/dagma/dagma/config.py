@@ -42,3 +42,10 @@ BUCKET_POLICY_DOCUMENT_TEMPLATE = """{{
     ]
 }}
 """
+
+DEFAULT_RUNTIME_BUCKET = 'dagma-runtime'
+
+PYTHON_DEPENDENCIES = [
+    'boto3', 'cloudpickler', 'git+ssh://git@github.com/dagster-io/dagster.git'
+    '@lambda_engine#egg=dagma&subdirectory=python_modules/dagma'
+]
