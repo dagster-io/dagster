@@ -71,7 +71,7 @@ def _get_or_create_s3_bucket(s3_client, aws_region, role, context):
 
 def _seed_intermediate_results(context):
     intermediate_results = {}
-    context.resources.dagma.storage.put_object(
+    return context.resources.dagma.storage.put_object(
         key=get_input_key(context, 0),
         body=serialize(intermediate_results),
     )
@@ -118,14 +118,14 @@ def _construct_deployment_package_for_step(step_idx, step, context):
 
 def _upload_deployment_package_for_step(context, deployment_package_path):
     with open(deployment_package_path, 'rb') as fd:
-        context.resources.dagma.storage.put_object(
+        return context.resources.dagma.storage.put_object(
             key=os.path.basename(deployment_package_path),
             body=fd,
         )
 
 
 def _upload_step(s3, step_idx, step, context):
-    context.resources.dagma.storage.put_object(
+    return context.resources.dagma.storage.put_object(
         key=get_step_key(context, step_idx),
         body=serialize(step),
     )
