@@ -60,6 +60,9 @@ workflows:
             - dagster-contrib-py36
             - dagster-contrib-py35
             - dagster-contrib-py27
+            - dagma-py36
+            - dagma-py35
+            - dagma-py27
           context: coveralls
 
 
