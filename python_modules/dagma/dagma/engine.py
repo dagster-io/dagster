@@ -19,7 +19,10 @@ from dagster.core.execution_plan.objects import ExecutionPlan
 from dagster.utils.zip import zip_folder
 
 from .config import (ASSUME_ROLE_POLICY_DOCUMENT, BUCKET_POLICY_DOCUMENT_TEMPLATE)
-from .serialize import serialize
+from .serialize import (
+    deserialize,
+    serialize,
+)
 from .utils import (
     get_deployment_package_key,
     get_input_key,
@@ -31,6 +34,7 @@ from .utils import (
 # TODO make this configurable on the dagma resource
 LAMBDA_MEMORY_SIZE = 3008
 
+# TODO: rip out this horror
 TEMPDIR_REGISTRY = []
 
 SOURCE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -309,7 +313,7 @@ def execute_plan(context, execution_plan, cleanup_lambda_functions=True, local=F
             key=get_input_key(context, step_idx + 1)
         )
 
-        final_results = pickle.loads(final_results_object['Body'].read())
+        final_results = deserialize(final_results_object['Body'].read())
 
         return final_results
 
