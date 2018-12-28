@@ -716,6 +716,10 @@ class PipelineDefinition(object):
         check.str_param(name, 'name')
         return name in self.context_definitions
 
+    @property
+    def solid_defs(self):
+        return set([solid.definition for solid in self.solids])
+
 
 class ExpectationResult(object):
     '''
@@ -1118,7 +1122,40 @@ class RepositoryDefinition(object):
             List[PipelineDefinition]:
 
         '''
-        return list(self.iterate_over_pipelines())
+        pipelines = list(self.iterate_over_pipelines())
+
+        self._construct_solid_defs(pipelines)
+
+        return pipelines
+
+    def _construct_solid_defs(self, pipelines):
+        solid_defs = {}
+        solid_to_pipeline = {}
+        for pipeline in pipelines:
+            for solid_def in pipeline.solid_defs:
+                if solid_def.name not in solid_defs:
+                    solid_defs[solid_def.name] = solid_def
+                    solid_to_pipeline[solid_def.name] = pipeline.name
+                else:
+                    if not solid_defs[solid_def.name] is solid_def:
+                        raise DagsterInvalidDefinitionError(
+                            'Trying to add duplicate solid def {} in {}, Already saw in {}'.format(
+                                solid_def.name,
+                                pipeline.name,
+                                solid_to_pipeline[solid_def.name],
+                            )
+                        )
+        return solid_defs
+
+    def get_solid_def(self, name):
+        check.str_param(name, 'name')
+
+        solid_defs = self._construct_solid_defs(self.get_all_pipelines())
+
+        if name not in solid_defs:
+            check.failed('could not find solid_def {}'.format(name))
+
+        return solid_defs[name]
 
 
 class ContextCreationExecutionInfo(

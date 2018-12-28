@@ -1,9 +1,11 @@
 from collections import defaultdict
 
 from dagster import (
+    DagsterInvalidDefinitionError,
     PipelineDefinition,
     RepositoryDefinition,
     SolidDefinition,
+    lambda_solid,
 )
 
 
@@ -59,3 +61,27 @@ def test_repo_definition():
     pipelines = repo.get_all_pipelines()
 
     assert set(['foo', 'bar']) == set([pipeline.name for pipeline in pipelines])
+
+    assert repo.get_solid_def('foo_solid').name == 'foo_solid'
+    assert repo.get_solid_def('bar_solid').name == 'bar_solid'
+
+
+def test_dupe_solid_repo_definition():
+    @lambda_solid(name='same')
+    def noop():
+        pass
+
+    @lambda_solid(name='same')
+    def noop2():
+        pass
+
+    repo = RepositoryDefinition(
+        'error_repo',
+        pipeline_dict={
+            'first': lambda: PipelineDefinition(name='first', solids=[noop]),
+            'second': lambda: PipelineDefinition(name='second', solids=[noop2]),
+        },
+    )
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+        repo.get_all_pipelines()

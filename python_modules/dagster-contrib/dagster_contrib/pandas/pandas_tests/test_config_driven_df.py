@@ -322,6 +322,7 @@ def test_dataframe_csv_materialization():
             'num2': [2, 4],
         }
 
+
 def test_dataframe_parquet_materialization():
     @solid(outputs=[OutputDefinition(DataFrame)])
     def return_df(_info):
@@ -356,6 +357,7 @@ def test_dataframe_parquet_materialization():
             'num1': [1, 3],
             'num2': [2, 4],
         }
+
 
 def test_dataframe_table_materialization():
     @solid(outputs=[OutputDefinition(DataFrame)])
