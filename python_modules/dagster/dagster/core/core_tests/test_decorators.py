@@ -229,13 +229,8 @@ def test_solid_return_list_instead_of_multiple_results():
             hello_world,
         )
 
-    assert (
-        'Solid unexpectedly returned output [\'foo\', \'bar\'] of type <class \'list\'>. '
-        'Should be a MultipleResults object, or a generator, containing or yielding 2 results: '
-        '{\'foo\': DagsterType(Any), \'bar\': DagsterType(Any)}.' in str(exc_info.value)
-        or 'Solid unexpectedly returned output [\'foo\', \'bar\'] of type <type \'list\'>. '
-        'Should be a MultipleResults object, or a generator, containing or yielding 2 results: '
-        '{\'foo\': DagsterType(Any), \'bar\': DagsterType(Any)}.' in str(exc_info.value)  # py2 
+    assert 'unexpectedly returned output [\'foo\', \'bar\'] of type <class \'list\'>. ' in str(
+        exc_info.value
     )
 
 
