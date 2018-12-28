@@ -24,11 +24,11 @@ class Materializeable(object):
         check.failed('must implement')
 
 
-class MaterializeableValueConfigSchema(ConfigurableSelectorFromDict):
+class MaterializeableBuiltinScalarConfigSchema(ConfigurableSelectorFromDict):
     def __init__(self):
         # TODO: add pickle
         super(
-            MaterializeableValueConfigSchema,
+            MaterializeableBuiltinScalarConfigSchema,
             self,
         ).__init__(fields={'json': define_path_dict_field()})
 
@@ -36,9 +36,9 @@ class MaterializeableValueConfigSchema(ConfigurableSelectorFromDict):
         return []
 
 
-class MaterializeableValue(Materializeable):
+class MaterializeableBuiltinScalar(Materializeable):
     def define_materialization_config_schema(self):
-        return MaterializeableValueConfigSchema()
+        return MaterializeableBuiltinScalarConfigSchema()
 
     def materialize_runtime_value(self, config_spec, runtime_value):
         check.dict_param(config_spec, 'config_spec')

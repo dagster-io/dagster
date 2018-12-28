@@ -22,4 +22,5 @@
 # R1710 All returns should return an expression
 # C0302 too many lines in single module
 # R0911 Too many returns
-disable=C0111,C0330,C0103,duplicate-code,R0201,R0903,R0913,W0511,W1201,W1202,R1705,R0902,R1710,C0102,C0302,R0911
+# R0901 Too many ancestors 
+disable=C0111,C0330,C0103,duplicate-code,R0201,R0903,R0913,W0511,W1201,W1202,R1705,R0902,R1710,C0102,C0302,R0911,R0901

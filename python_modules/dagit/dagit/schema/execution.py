@@ -95,7 +95,7 @@ class DauphinStepTag(dauphin.Enum):
         elif self == DauphinStepTag.JOIN:
             return (
                 'Sometimes we fan out compute on identical values (e.g. multiple expectations '
-                'in parallel). We synthesizie these in a join step to consolidate to a single '
+                'in parallel). We synthesize these in a join step to consolidate to a single '
                 'output that the next computation can depend on.'
             )
         elif self == DauphinStepTag.SERIALIZE:

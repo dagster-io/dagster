@@ -20,7 +20,7 @@ from .configurable import (
     Field,
 )
 
-from .materializable import MaterializeableValue
+from .materializable import MaterializeableBuiltinScalar
 
 SerializedTypeValue = namedtuple('SerializedTypeValue', 'name value')
 
@@ -89,8 +89,6 @@ class DagsterType(object):
     def configurable_from_list(self):
         check.invariant(not isinstance(self, Configurable))
         return False
-
-    def __repr__(self):
         return 'DagsterType({name})'.format(name=self.name)
 
     def coerce_runtime_value(self, _value):
@@ -172,7 +170,11 @@ class DagsterScalarType(UncoercedTypeMixin, DagsterType):
 
 
 # All builtins are configurable
-class DagsterBuiltinScalarType(ConfigurableFromScalar, DagsterScalarType, MaterializeableValue):
+class DagsterBuiltinScalarType(
+    ConfigurableFromScalar,
+    DagsterScalarType,
+    MaterializeableBuiltinScalar,
+):
     def __init__(self, name, description=None):
         super(DagsterBuiltinScalarType, self).__init__(
             name=name,
