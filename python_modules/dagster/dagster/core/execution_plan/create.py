@@ -19,6 +19,8 @@ from .expectations import (
 
 from .input_thunk import create_input_thunk_execution_step
 
+from .materialization_thunk import decorate_with_output_materializations
+
 from .objects import (
     ExecutionPlan,
     ExecutionPlanInfo,
@@ -151,7 +153,44 @@ def create_subplan_for_output(execution_info, solid, solid_transform_step, outpu
 
     subplan = decorate_with_expectations(execution_info, solid, solid_transform_step, output_def)
 
-    return decorate_with_serialization(execution_info, solid, output_def, subplan)
+    subplan = decorate_with_serialization(execution_info, solid, output_def, subplan)
+
+    return decorate_with_output_materializations(execution_info, solid, output_def, subplan)
+
+
+def get_input_source_step_handle(execution_info, state, solid, input_def):
+    check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
+    check.inst_param(state, 'state', StepBuilderState)
+    check.inst_param(solid, 'solid', Solid)
+    check.inst_param(input_def, 'input_def', InputDefinition)
+
+    input_handle = solid.input_handle(input_def.name)
+    solid_config = execution_info.environment.solids.get(solid.name)
+    dependency_structure = execution_info.pipeline.dependency_structure
+    if solid_config and input_def.name in solid_config.inputs:
+        input_thunk_output_handle = create_input_thunk_execution_step(
+            execution_info,
+            solid,
+            input_def,
+            solid_config.inputs[input_def.name],
+        )
+        state.steps.append(input_thunk_output_handle.step)
+        return input_thunk_output_handle
+    elif dependency_structure.has_dep(input_handle):
+        solid_output_handle = dependency_structure.get_dep(input_handle)
+        return state.step_output_map[solid_output_handle]
+    else:
+        raise DagsterInvariantViolationError(
+            (
+                'In pipeline {pipeline_name} solid {solid_name}, input {input_name} '
+                'must get a value either (a) from a dependency or (b) from the '
+                'inputs section of its configuration.'
+            ).format(
+                pipeline_name=execution_info.pipeline.name,
+                solid_name=solid.name,
+                input_name=input_def.name,
+            )
+        )
 
 
 def create_step_inputs(info, state, solid):
@@ -161,35 +200,8 @@ def create_step_inputs(info, state, solid):
 
     step_inputs = []
 
-    dependency_structure = info.pipeline.dependency_structure
-
     for input_def in solid.definition.input_defs:
-        input_handle = solid.input_handle(input_def.name)
-
-        solid_config = info.environment.solids.get(solid.name)
-        if solid_config and input_def.name in solid_config.inputs:
-            prev_step_output_handle = create_input_thunk_execution_step(
-                info,
-                solid,
-                input_def,
-                solid_config.inputs[input_def.name],
-            )
-            state.steps.append(prev_step_output_handle.step)
-        elif dependency_structure.has_dep(input_handle):
-            solid_output_handle = dependency_structure.get_dep(input_handle)
-            prev_step_output_handle = state.step_output_map[solid_output_handle]
-        else:
-            raise DagsterInvariantViolationError(
-                (
-                    'In pipeline {pipeline_name} solid {solid_name}, input {input_name} '
-                    'must get a value either (a) from a dependency or (b) from the '
-                    'inputs section of its configuration.'
-                ).format(
-                    pipeline_name=info.pipeline.name,
-                    solid_name=solid.name,
-                    input_name=input_def.name,
-                )
-            )
+        prev_step_output_handle = get_input_source_step_handle(info, state, solid, input_def)
 
         subplan = create_subplan_for_input(
             info,

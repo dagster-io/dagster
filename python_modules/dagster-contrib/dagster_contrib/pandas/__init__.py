@@ -21,6 +21,21 @@ from dagster.core.configurable import ConfigurableSelectorFromDict
 DataFrameMeta = namedtuple('DataFrameMeta', 'format path')
 
 
+def define_path_dict_field():
+    return Field(types.Dict({'path': Field(types.Path)}))
+
+
+def define_csv_dict_field():
+    return Field(
+        types.Dict(
+            {
+                'path': Field(types.Path),
+                'sep': Field(types.String, is_optional=True, default_value=','),
+            },
+        ),
+    )
+
+
 class _DataFrameType(ConfigurableSelectorFromDict, types.PythonObjectType):
     def __init__(self):
         super(_DataFrameType, self).__init__(
@@ -29,23 +44,9 @@ class _DataFrameType(ConfigurableSelectorFromDict, types.PythonObjectType):
             description='''Two-dimensional size-mutable, potentially heterogeneous
     tabular data structure with labeled axes (rows and columns). See http://pandas.pydata.org/''',
             fields={
-                'csv':
-                types.Field(
-                    types.Dict(
-                        {
-                            'path': types.Field(types.Path),
-                            'sep': types.Field(types.String, is_optional=True, default_value=','),
-                        },
-                    ),
-                ),
-                'parquet':
-                types.Field(types.Dict({
-                    'path': types.Field(types.Path),
-                })),
-                'table':
-                types.Field(types.Dict({
-                    'path': types.Field(types.Path),
-                })),
+                'csv': define_csv_dict_field(),
+                'parquet': define_path_dict_field(),
+                'table': define_path_dict_field(),
             },
         )
 

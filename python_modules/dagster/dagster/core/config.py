@@ -16,12 +16,13 @@ class Context(namedtuple('ContextData', 'name config resources')):
         )
 
 
-class Solid(namedtuple('Solid', 'config inputs')):
-    def __new__(cls, config, inputs=None):
+class Solid(namedtuple('Solid', 'config inputs outputs')):
+    def __new__(cls, config, inputs=None, outputs=None):
         return super(Solid, cls).__new__(
             cls,
             config,
             check.opt_dict_param(inputs, 'inputs', key_type=str),
+            check.opt_list_param(outputs, 'outputs', of_type=dict),
         )
 
 
