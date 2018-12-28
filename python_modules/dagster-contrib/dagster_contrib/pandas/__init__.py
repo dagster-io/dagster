@@ -17,6 +17,7 @@ from dagster import (
 )
 
 from dagster.core.configurable import ConfigurableSelectorFromDict
+from dagster.core.materializable import Materializeable
 
 DataFrameMeta = namedtuple('DataFrameMeta', 'format path')
 
@@ -36,7 +37,21 @@ def define_csv_dict_field():
     )
 
 
-class _DataFrameType(ConfigurableSelectorFromDict, types.PythonObjectType):
+class _PandasDataFrameMaterializationConfigSchema(ConfigurableSelectorFromDict):
+    def __init__(self):
+        super(_PandasDataFrameMaterializationConfigSchema, self).__init__(
+            fields={
+                'csv': define_csv_dict_field(),
+                'parquet': define_path_dict_field(),
+                'table': define_path_dict_field(),
+            },
+        )
+
+
+PandasDataFrameMaterializationConfigSchema = _PandasDataFrameMaterializationConfigSchema()
+
+
+class _DataFrameType(ConfigurableSelectorFromDict, types.PythonObjectType, Materializeable):
     def __init__(self):
         super(_DataFrameType, self).__init__(
             name='PandasDataFrame',
@@ -49,6 +64,23 @@ class _DataFrameType(ConfigurableSelectorFromDict, types.PythonObjectType):
                 'table': define_path_dict_field(),
             },
         )
+
+    def define_materialization_config_schema(self):
+        return PandasDataFrameMaterializationConfigSchema
+
+    def materialize_runtime_value(self, config_spec, runtime_value):
+        file_type, file_options = list(config_spec.items())[0]
+        if file_type == 'csv':
+            path = file_options['path']
+            del file_options['path']
+            return runtime_value.to_csv(path, index=False, **file_options)
+        elif file_type == 'parquet':
+            return runtime_value.to_parquet(file_options['path'])
+        elif file_type == 'table':
+            return runtime_value.to_csv(file_options['path'], sep='\t', index=False)
+        else:
+            check.failed('Unsupported file_type {file_type}'.format(file_type=file_type))
+        check.failed('must implement')
 
     def create_serializable_type_value(self, value, output_dir):
         check.str_param(output_dir, 'output_dir')

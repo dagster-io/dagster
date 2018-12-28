@@ -16,6 +16,7 @@ from dagster import (
 )
 
 from dagster.utils import script_relative_path
+from dagster.utils.test import get_temp_file_name
 
 from dagster_contrib.pandas import DataFrame
 
@@ -284,3 +285,110 @@ def test_dataframe_table_from_inputs():
 
     assert result.success
     assert called['yup']
+
+
+def test_dataframe_csv_materialization():
+    @solid(outputs=[OutputDefinition(DataFrame)])
+    def return_df(_info):
+        return pd.DataFrame({'num1': [1, 3], 'num2': [2, 4]})
+
+    pipeline_def = PipelineDefinition(name='return_df_pipeline', solids=[return_df])
+
+    with get_temp_file_name() as filename:
+        result = execute_pipeline(
+            pipeline_def,
+            {
+                'solids': {
+                    'return_df': {
+                        'outputs': [
+                            {
+                                'result': {
+                                    'csv': {
+                                        'path': filename,
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                },
+            },
+        )
+
+        assert result.success
+
+        df = pd.read_csv(filename)
+        assert df.to_dict('list') == {
+            'num1': [1, 3],
+            'num2': [2, 4],
+        }
+
+def test_dataframe_parquet_materialization():
+    @solid(outputs=[OutputDefinition(DataFrame)])
+    def return_df(_info):
+        return pd.DataFrame({'num1': [1, 3], 'num2': [2, 4]})
+
+    pipeline_def = PipelineDefinition(name='return_df_pipeline', solids=[return_df])
+
+    with get_temp_file_name() as filename:
+        result = execute_pipeline(
+            pipeline_def,
+            {
+                'solids': {
+                    'return_df': {
+                        'outputs': [
+                            {
+                                'result': {
+                                    'parquet': {
+                                        'path': filename,
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                },
+            },
+        )
+
+        assert result.success
+
+        df = pd.read_parquet(filename)
+        assert df.to_dict('list') == {
+            'num1': [1, 3],
+            'num2': [2, 4],
+        }
+
+def test_dataframe_table_materialization():
+    @solid(outputs=[OutputDefinition(DataFrame)])
+    def return_df(_info):
+        return pd.DataFrame({'num1': [1, 3], 'num2': [2, 4]})
+
+    pipeline_def = PipelineDefinition(name='return_df_pipeline', solids=[return_df])
+
+    with get_temp_file_name() as filename:
+        filename = '/tmp/table_test.txt'
+        result = execute_pipeline(
+            pipeline_def,
+            {
+                'solids': {
+                    'return_df': {
+                        'outputs': [
+                            {
+                                'result': {
+                                    'table': {
+                                        'path': filename,
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                },
+            },
+        )
+
+        assert result.success
+
+        df = pd.read_table(filename)
+        assert df.to_dict('list') == {
+            'num1': [1, 3],
+            'num2': [2, 4],
+        }
