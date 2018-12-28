@@ -1,3 +1,5 @@
+import pytest
+
 from collections import defaultdict
 
 from dagster import (
