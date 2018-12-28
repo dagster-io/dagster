@@ -121,7 +121,7 @@ def deserialize(pickled_obj):
     logger.info('Debug 5')
 
     # now unpickle function; it will expect modules to be there
-    loaded_func = pickle.loads(all_loaded['func'])
+    loaded_func = pickle.loads(all_loaded['obj'])
 
     logger.info('Debug 6')
 
