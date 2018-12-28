@@ -86,7 +86,10 @@ def aws_lambda_handler(event, _context):
     for step_input in step.step_inputs:
         prev_output_handle = step_input.prev_output_handle
         handle = (prev_output_handle.step.key, prev_output_handle.output_name)
-        input_value = intermediate_results[handle].success_data.value
+        # FIXME - we need a less hacky strategy for serializing and deserializing input handles and
+        # result values -- the subscript below is like accessing .success_data on the namedtuple
+        # in the simple engine
+        input_value = intermediate_results[handle][1].value
         input_values[step_input.name] = input_value
 
     logger.info('Executing step {key}'.format(key=key))
