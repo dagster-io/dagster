@@ -25,7 +25,8 @@ logger = logging.getLogger(__name__)
 
 def _all_inputs_covered(step, results):
     for step_input in step.step_inputs:
-        if step_input.prev_output_handle not in results:
+        handle = step_input.prev_output_handle
+        if (handle.step, handle.output_name) not in results:
             return False
     return True
 
@@ -84,7 +85,8 @@ def aws_lambda_handler(event, _context):
     input_values = {}
     for step_input in step.step_inputs:
         prev_output_handle = step_input.prev_output_handle
-        input_value = intermediate_results[prev_output_handle].success_data.value
+        handle = (prev_output_handle.step, prev_output_handle.output_name)
+        input_value = intermediate_results[handle].success_data.value
         input_values[step_input.name] = input_value
 
     logger.info('Executing step {key}'.format(key=key))
