@@ -28,6 +28,8 @@ from .utils import (
     LambdaInvocationPayload,
 )
 
+LAMBDA_MEMORY_SIZE = 3008
+
 TEMPDIR_REGISTRY = []
 
 SOURCE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -145,7 +147,7 @@ def _create_lambda_step(aws_lambda, step_idx, deployment_package, context, role)
             run_id=context.run_id, step_idx='0'
         ),
         Timeout=900,
-        MemorySize=128,
+        MemorySize=LAMBDA_MEMORY_SIZE,
         Publish=True,
         Tags={'dagster_lambda_run_id': context.run_id}
     )
