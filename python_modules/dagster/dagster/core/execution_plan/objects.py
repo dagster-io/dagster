@@ -130,7 +130,7 @@ class ExecutionStep(
     namedtuple(
         '_ExecutionStep',
         'key step_inputs step_input_dict step_outputs step_output_dict compute_fn tag solid',
-    ),
+    )
 ):
     def __new__(cls, key, step_inputs, step_outputs, compute_fn, tag, solid):
         return super(ExecutionStep, cls).__new__(
@@ -145,6 +145,17 @@ class ExecutionStep(
             compute_fn=check.callable_param(compute_fn, 'compute_fn'),
             tag=check.inst_param(tag, 'tag', StepTag),
             solid=check.inst_param(solid, 'solid', Solid),
+        )
+
+    def __getnewargs__(self):
+        # print('getnewargs was called')
+        return (
+            self.key,
+            self.step_inputs,
+            self.step_outputs,
+            self.compute_fn,
+            self.tag,
+            self.solid,
         )
 
     def with_new_inputs(self, step_inputs):
