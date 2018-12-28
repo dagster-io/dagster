@@ -38,10 +38,10 @@ workflows:
           context: coveralls
       - dagma-py36:
           context: coveralls
-      - dagma-py35:
-          context: coveralls
-      - dagma-py27:
-          context: coveralls
+      # - dagma-py35:
+      #     context: coveralls
+      # - dagma-py27:
+      #     context: coveralls
 
       - coverage:
           requires:
@@ -61,8 +61,8 @@ workflows:
             - dagster-contrib-py35
             - dagster-contrib-py27
             - dagma-py36
-            - dagma-py35
-            - dagma-py27
+            # - dagma-py35
+            # - dagma-py27
           context: coveralls
 
 
