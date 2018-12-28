@@ -93,7 +93,7 @@ def _seed_intermediate_results(context):
 
 # FIXME only do this *once* -- actually, this can live in a publicly accessible S3 bucket of its
 # own
-def _construct_deployment_package_for_step(step_idx, step, context):
+def _construct_deployment_package_for_step(context):
     python_dependencies = [
         'boto3', 'cloudpickler', 'git+ssh://git@github.com/dagster-io/dagster.git'
         '@lambda_engine#egg=dagma&subdirectory=python_modules/dagma'
@@ -113,7 +113,7 @@ def _construct_deployment_package_for_step(step_idx, step, context):
 
     archive_dir = tempfile.mkdtemp()
     TEMPDIR_REGISTRY.append(archive_dir)
-    archive_path = os.path.join(tempfile.mkdtemp(), get_deployment_package_key(context, step_idx))
+    archive_path = os.path.join(tempfile.mkdtemp(), get_deployment_package_key(context))
 
     try:
         pwd = os.getcwd()
@@ -130,7 +130,7 @@ def _construct_deployment_package_for_step(step_idx, step, context):
     return archive_path
 
 
-def _upload_deployment_package_for_step(context, deployment_package_path):
+def _upload_deployment_package(context, deployment_package_path):
     with open(deployment_package_path, 'rb') as fd:
         return context.resources.dagma.storage.put_object(
             key=os.path.basename(deployment_package_path),
@@ -145,10 +145,20 @@ def _upload_step(s3, step_idx, step, context):
     )
 
 
+def _get_function_name(context, step_idx):
+    return '{run_id}_deployment_package_{step_idx}'.format(run_id=context.run_id, step_idx=step_idx)
+
+
 def _create_lambda_step(aws_lambda, step_idx, deployment_package, context, role):
     runtime = _get_python_runtime()
+    context.debug(
+        'About create function with bucket {bucket} deployment_package_key {deploy_key}'.format(
+            bucket=context.resources.dagma.s3_bucket,
+            deploy_key=deployment_package,
+        )
+    )
     res = aws_lambda.create_function(
-        FunctionName=get_deployment_package_key(context, step_idx).split('.')[0],
+        FunctionName=_get_function_name(context, step_idx),
         Runtime=runtime,
         Role=role.arn,
         Handler='dagma.aws_lambda_handler',
@@ -249,7 +259,20 @@ def execute_plan(context, execution_plan, cleanup_lambda_functions=True, local=F
         body=serialize(context.resources),
     )
 
-    deployment_packages = []
+    context.debug(
+        'Uploading deployment package:{s3_key}'.format(
+            s3_key=get_deployment_package_key(context),
+        )
+    )
+    deployment_package = _construct_deployment_package_for_step(context)
+    _upload_deployment_package(context, deployment_package)
+
+    context.debug(
+        'Done uploading deployment package:{s3_key}'.format(
+            s3_key=get_deployment_package_key(context),
+        )
+    )
+
     try:
         for step_idx, step in enumerate(steps):
             if local:
@@ -257,17 +280,7 @@ def execute_plan(context, execution_plan, cleanup_lambda_functions=True, local=F
             context.debug(
                 'Constructing deployment package for step {step_key}'.format(step_key=step.key)
             )
-            deployment_packages.append(
-                _construct_deployment_package_for_step(step_idx, step, context)
-            )
         for step_idx, step in enumerate(steps):
-            context.debug(
-                'Uploading deployment package for step {step_key}: {s3_key}'.format(
-                    step_key=step.key, s3_key=get_deployment_package_key(context, step_idx)
-                )
-            )
-            _upload_deployment_package_for_step(context, deployment_packages[step_idx])
-
             context.debug(
                 'Uploading step {step_key}: {s3_key}'.format(
                     step_key=step.key, s3_key=get_step_key(context, step_idx)
@@ -293,7 +306,7 @@ def execute_plan(context, execution_plan, cleanup_lambda_functions=True, local=F
                 _create_lambda_step(
                     aws_lambda_client,
                     step_idx,
-                    os.path.basename(deployment_packages[step_idx]),
+                    os.path.basename(deployment_package),
                     context,
                     role,
                 )

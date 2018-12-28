@@ -24,10 +24,8 @@ def get_input_key(context, step_idx):
     )
 
 
-def get_deployment_package_key(context, step_idx):
-    return '{run_id}_deployment_package_{step_idx}.zip'.format(
-        run_id=context.run_id, step_idx=step_idx
-    )
+def get_deployment_package_key(context):
+    return '{run_id}_deployment_package.zip'.format(run_id=context.run_id)
 
 
 def get_resources_key(context):
