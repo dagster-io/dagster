@@ -192,7 +192,7 @@ def _execute_step_sync(lambda_client, lambda_step, context, payload):
             context.info(line)
 
 
-def execute_plan(context, execution_plan, cleanup_lambda_functions=True):
+def execute_plan(context, execution_plan, cleanup_lambda_functions=True, local=False):
     """Core executor."""
     check.inst_param(context, 'context', RuntimeExecutionContext)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
@@ -240,6 +240,8 @@ def execute_plan(context, execution_plan, cleanup_lambda_functions=True):
     deployment_packages = []
     try:
         for step_idx, step in enumerate(steps):
+            if local:
+                continue
             context.debug(
                 'Constructing deployment package for step {step_key}'.format(step_key=step.key)
             )
@@ -268,7 +270,8 @@ def execute_plan(context, execution_plan, cleanup_lambda_functions=True):
                 shutil.rmtree(tempdir)
             except FileNotFoundError as e:
                 context.debug(
-                    'FileNotFoundError when cleaning up deployment package %s: %s', tempdir, e.msg
+                    'FileNotFoundError when cleaning up deployment package %s: %s', tempdir,
+                    e.strerror
                 )
 
     lambda_steps = []
