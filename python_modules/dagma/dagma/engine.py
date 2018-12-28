@@ -272,7 +272,7 @@ def execute_plan(context, execution_plan, cleanup_lambda_functions=True, local=F
             context.debug('Cleaning up deployment package: {tempdir}'.format(tempdir=tempdir))
             try:
                 shutil.rmtree(tempdir)
-            except (OSError, FileNotFoundError) as e:
+            except IOError as e:
                 context.debug(
                     'FileNotFoundError when cleaning up deployment package %s: %s', tempdir,
                     e.strerror
