@@ -85,7 +85,7 @@ def serialize(obj):
 
     module_data = create_mod_data(module_paths)
 
-    return pickle.dumps({'obj': stringio, 'module_data': module_data}, -1)
+    return pickle.dumps({'obj': stringio.getvalue(), 'module_data': module_data}, -1)
 
 
 # these templates will get filled in by runtime ETAG
@@ -121,6 +121,6 @@ def deserialize(pickled_obj):
     logger.debug(subprocess.check_output("find {}".format(os.getcwd()), shell=True))
 
     # now unpickle function; it will expect modules to be there
-    loaded_func = pickle.loads(all_loaded['obj'].getvalue())
+    loaded_obj = pickle.loads(all_loaded['obj'])
 
-    return loaded_func
+    return loaded_obj

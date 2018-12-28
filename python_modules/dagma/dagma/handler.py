@@ -12,7 +12,7 @@ from dagster.core.execution_plan.objects import (
 )
 from dagster.core.execution_plan.simple_engine import execute_step
 
-from .serialize import deserialize
+from .serialize import (deserialize, serialize)
 from .utils import (
     get_input_key,
     get_resources_key,
@@ -105,11 +105,9 @@ def aws_lambda_handler(event, _context):
         logger.info('Processing result: %s', output_name)
 
     logger.info('Uploading intermediate_results to %s', s3_key_outputs)
-    bytesio = BytesIO()
-    pickle.dump(intermediate_results, bytesio, -1)
     s3.put_object(
         ACL='public-read',
-        Body=bytesio.getvalue(),
+        Body=serialize(intermediate_results),
         Bucket=s3_bucket,
         Key=s3_key_outputs,
     )
