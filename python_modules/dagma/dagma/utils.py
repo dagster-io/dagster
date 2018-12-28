@@ -74,6 +74,12 @@ def bytes_to_b64str(byte_data):
     return byte_data_64_ascii
 
 
+def b64str_to_bytes(str_data):
+    str_ascii = str_data.encode('ascii')
+    byte_data = base64.b64decode(str_ascii)
+    return byte_data
+
+
 def create_mod_data(mod_paths):
     module_data = {}
     # load mod paths

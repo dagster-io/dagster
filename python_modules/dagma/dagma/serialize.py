@@ -47,7 +47,10 @@ from io import BytesIO as StringIO
 from cloudpickle import CloudPickler
 
 from .module_dependency import ModuleDependencyAnalyzer
-from .utils import create_mod_data
+from .utils import (
+    b64str_to_bytes,
+    create_mod_data,
+)
 
 
 def serialize(obj):
@@ -76,42 +79,36 @@ def serialize(obj):
     return pickle.dumps({'obj': stringio, 'module_data': module_data}, -1)
 
 
-def deserialize(pickled_obj):
+def deserialize(pickled_obj, ):
     all_loaded = pickle.loads(pickled_obj)
 
-    PYTHON_MODULE_PATH = 'modules'
+    PYTHON_MODULE_PATH = os.path.join(
+        os.path.dirname(os.path.realpath(__file__)), '..', '..', 'pymodules'
+    )
     shutil.rmtree(PYTHON_MODULE_PATH, True)  # delete old modules
     os.mkdir(PYTHON_MODULE_PATH)
     sys.path.append(PYTHON_MODULE_PATH)
 
+    for m_filename, m_data in all_loaded['module_data'].items():
+        m_path = os.path.dirname(m_filename)
+        if len(m_path) > 0 and m_path[0] == "/":
+            m_path = m_path[1:]
+        to_make = os.path.join(PYTHON_MODULE_PATH, m_path)
+
+        try:
+            os.makedirs(to_make)
+        except OSError as e:
+            if e.errno == 17:
+                pass
+            else:
+                raise e
+        full_filename = os.path.join(to_make, os.path.basename(m_filename))
+        with open(full_filename, 'wb') as fid:
+            fid.write(b64str_to_bytes(m_data))
+
     #   https://github.com/pywren/pywren/blob/master/pywren/jobrunner/jobrunner.py#L89
     pass
 
-
-#     # save modules, before we unpickle actual function
-#     PYTHON_MODULE_PATH = jobrunner_config['python_module_path']
-
-#     shutil.rmtree(PYTHON_MODULE_PATH, True) # delete old modules
-#     os.mkdir(PYTHON_MODULE_PATH)
-#     sys.path.append(PYTHON_MODULE_PATH)
-
-#     for m_filename, m_data in loaded_func_all['module_data'].items():
-#         m_path = os.path.dirname(m_filename)
-
-#         if len(m_path) > 0 and m_path[0] == "/":
-#             m_path = m_path[1:]
-#         to_make = os.path.join(PYTHON_MODULE_PATH, m_path)
-#         try:
-#             os.makedirs(to_make)
-#         except OSError as e:
-#             if e.errno == 17:
-#                 pass
-#             else:
-#                 raise e
-#         full_filename = os.path.join(to_make, os.path.basename(m_filename))
-#         #print "creating", full_filename
-#         with open(full_filename, 'wb') as fid:
-#             fid.write(b64str_to_bytes(m_data))
 
 #     # logger.info("Finished wrting {} module files".format(len(d['module_data'])))
 #     # logger.debug(subprocess.check_output("find {}".format(PYTHON_MODULE_PATH), shell=True))
