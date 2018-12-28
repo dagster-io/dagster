@@ -16,6 +16,7 @@ from dagster.core.execution_plan.simple_engine import (
     execute_step,
 )
 
+from .serialize import deserialize
 from .utils import (
     get_input_key,
     get_resources_key,
@@ -26,7 +27,7 @@ from .utils import (
 logger = logging.getLogger(__name__)
 
 
-def aws_lambda_handler(event, context):
+def aws_lambda_handler(event, _context):
     """The lambda handler function."""
     logger.setLevel(logging.INFO)
 
@@ -49,14 +50,14 @@ def aws_lambda_handler(event, context):
         Bucket=s3_bucket,
         Key=s3_key_inputs,
     )
-    intermediate_results = pickle.load(intermediate_results_object['Body'])
+    intermediate_results = pickle.loads(intermediate_results_object['Body'].read())
 
     logger.info('Looking for resources at %s/%s', s3_bucket, s3_key_resources)
     resources_object = s3.get_object(
         Bucket=s3_bucket,
         Key=s3_key_resources,
     )
-    resources = pickle.load(resources_object['Body'])
+    resources = pickle.loads(resources_object['Body'].read())
     execution_context = RuntimeExecutionContext(run_id, loggers=[logger], resources=resources)
 
     logger.info('Looking for step body at %s/%s', s3_bucket, s3_key_body)
@@ -64,7 +65,7 @@ def aws_lambda_handler(event, context):
         Bucket=s3_bucket,
         Key=s3_key_body,
     )
-    step = pickle.load(step_body_object['Body'])
+    step = deserialize(step_body_object['Body'])
 
     logger.info('Checking inputs')
     if not _all_inputs_covered(step, intermediate_results):
