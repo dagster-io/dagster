@@ -65,7 +65,9 @@ def aws_lambda_handler(event, _context):
         Bucket=s3_bucket,
         Key=s3_key_body,
     )
+    logger.info('Here')
     step = deserialize(step_body_object['Body'].read())
+    logger.info('There')
 
     logger.info('Checking inputs')
     if not _all_inputs_covered(step, intermediate_results):
