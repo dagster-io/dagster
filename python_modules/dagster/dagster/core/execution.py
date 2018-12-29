@@ -581,6 +581,7 @@ def execute_pipeline(
     environment=None,
     throw_on_error=True,
     reentrant_info=None,
+    solid_subset=None,
 ):
     '''
     "Synchronous" version of :py:function:`execute_pipeline_iterator`.
@@ -603,10 +604,20 @@ def execute_pipeline(
     check.opt_dict_param(environment, 'environment')
     check.bool_param(throw_on_error, 'throw_on_error')
     check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
+    check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
 
-    typed_environment = create_typed_environment(pipeline, environment)
+    pipeline_to_execute = pipeline if solid_subset is None else build_sub_pipeline(
+        pipeline,
+        solid_subset,
+    )
 
-    return execute_reentrant_pipeline(pipeline, typed_environment, throw_on_error, reentrant_info)
+    typed_environment = create_typed_environment(pipeline_to_execute, environment)
+    return execute_reentrant_pipeline(
+        pipeline_to_execute,
+        typed_environment,
+        throw_on_error,
+        reentrant_info,
+    )
 
 
 def _dep_key_of(solid):
