@@ -25,8 +25,8 @@ from .objects import (
     ExecutionPlan,
     ExecutionPlanInfo,
     ExecutionStep,
-    ExecutionSubPlan,
-    ExecutionSubsetInfo,
+    ExecutionValueSubPlan,
+    ExecutionPlanSubsetInfo,
     StepInput,
     StepOutputHandle,
     StepTag,
@@ -140,10 +140,7 @@ def create_subplan_for_input(execution_info, solid, prev_step_output_handle, inp
             tag=StepTag.INPUT_EXPECTATION,
         )
     else:
-        return ExecutionSubPlan(
-            steps=[],
-            terminal_step_output_handle=prev_step_output_handle,
-        )
+        return ExecutionValueSubPlan.empty(prev_step_output_handle)
 
 
 def create_subplan_for_output(execution_info, solid, solid_transform_step, output_def):
@@ -226,7 +223,7 @@ def create_step_inputs(info, state, solid):
 def create_subplan(execution_plan_info, execution_plan, subset_info):
     check.inst_param(execution_plan_info, 'execution_plan_info', ExecutionPlanInfo)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
-    check.inst_param(subset_info, 'subset_info', ExecutionSubsetInfo)
+    check.inst_param(subset_info, 'subset_info', ExecutionPlanSubsetInfo)
 
     steps = []
 
