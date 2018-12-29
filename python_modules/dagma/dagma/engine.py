@@ -20,12 +20,12 @@ from dagster.core.execution_plan.objects import ExecutionPlan
 from dagster.utils.zip import zip_folder
 
 from .config import (ASSUME_ROLE_POLICY_DOCUMENT, BUCKET_POLICY_DOCUMENT_TEMPLATE)
+from .deployment_package import get_or_create_deployment_package
 from .serialize import (
     deserialize,
     serialize,
 )
 from .utils import (
-    get_deployment_package_key,
     get_input_key,
     get_resources_key,
     get_step_key,
@@ -91,53 +91,6 @@ def _seed_intermediate_results(context):
     )
 
 
-# FIXME only do this *once* -- actually, this can live in a publicly accessible S3 bucket of its
-# own
-def _construct_deployment_package_for_step(context):
-    python_dependencies = [
-        'boto3', 'cloudpickler', 'git+ssh://git@github.com/dagster-io/dagster.git'
-        '@lambda_engine#egg=dagma&subdirectory=python_modules/dagma'
-    ]
-
-    deployment_package_dir = tempfile.mkdtemp()
-    TEMPDIR_REGISTRY.append(deployment_package_dir)
-
-    for python_dependency in python_dependencies:
-        process = subprocess.Popen(
-            ['pip', 'install', python_dependency, '--target', deployment_package_dir],
-            stderr=subprocess.PIPE,
-            stdout=subprocess.PIPE
-        )
-        for line in iter(process.stdout.readline, b''):
-            context.debug(line.decode('utf-8'))
-
-    archive_dir = tempfile.mkdtemp()
-    TEMPDIR_REGISTRY.append(archive_dir)
-    archive_path = os.path.join(tempfile.mkdtemp(), get_deployment_package_key(context))
-
-    try:
-        pwd = os.getcwd()
-        os.chdir(deployment_package_dir)
-        zip_folder('.', archive_path)
-        context.debug(
-            'Zipped archive at {archive_path}: {size} bytes'.format(
-                archive_path=archive_path, size=os.path.getsize(archive_path)
-            )
-        )
-    finally:
-        os.chdir(pwd)
-
-    return archive_path
-
-
-def _upload_deployment_package(context, deployment_package_path):
-    with open(deployment_package_path, 'rb') as fd:
-        return context.resources.dagma.storage.put_object(
-            key=os.path.basename(deployment_package_path),
-            body=fd,
-        )
-
-
 def _upload_step(s3, step_idx, step, context):
     return context.resources.dagma.storage.put_object(
         key=get_step_key(context, step_idx),
@@ -163,7 +116,7 @@ def _create_lambda_step(aws_lambda, step_idx, deployment_package, context, role)
         Role=role.arn,
         Handler='dagma.aws_lambda_handler',
         Code={
-            'S3Bucket': context.resources.dagma.s3_bucket,
+            'S3Bucket': context.resources.dagma.runtime_bucket,
             'S3Key': deployment_package,
         },
         Description='Handler for run {run_id} step {step_idx}'.format(
@@ -253,52 +206,23 @@ def execute_plan(context, execution_plan, cleanup_lambda_functions=True, local=F
     context.debug('Seeding intermediate results')
     _seed_intermediate_results(context)
 
+    deployment_package_key = get_or_create_deployment_package(context)
+
     context.debug('Uploading execution_context')
     context.resources.dagma.storage.put_object(
         key=get_resources_key(context),
         body=serialize(context.resources),
     )
 
-    context.debug(
-        'Uploading deployment package:{s3_key}'.format(
-            s3_key=get_deployment_package_key(context),
-        )
-    )
-    deployment_package = _construct_deployment_package_for_step(context)
-    _upload_deployment_package(context, deployment_package)
-
-    context.debug(
-        'Done uploading deployment package:{s3_key}'.format(
-            s3_key=get_deployment_package_key(context),
-        )
-    )
-
-    try:
-        for step_idx, step in enumerate(steps):
-            if local:
-                continue
-            context.debug(
-                'Constructing deployment package for step {step_key}'.format(step_key=step.key)
+    for step_idx, step in enumerate(steps):
+        context.debug(
+            'Uploading step {step_key}: {s3_key}'.format(
+                step_key=step.key, s3_key=get_step_key(context, step_idx)
             )
-        for step_idx, step in enumerate(steps):
-            context.debug(
-                'Uploading step {step_key}: {s3_key}'.format(
-                    step_key=step.key, s3_key=get_step_key(context, step_idx)
-                )
-            )
-            _upload_step(aws_s3_client, step_idx, step, context)
+        )
+        _upload_step(aws_s3_client, step_idx, step, context)
 
-    finally:
-        for tempdir in TEMPDIR_REGISTRY:
-            context.debug('Cleaning up deployment package: {tempdir}'.format(tempdir=tempdir))
-            try:
-                shutil.rmtree(tempdir)
-            except IOError as e:
-                context.debug(
-                    'FileNotFoundError when cleaning up deployment package {tempdir}: {error}'.
-                    format(tempdir=tempdir, error=e.strerror)
-                )
-
+    # FIXME this should only be one function that we call multiple times
     lambda_steps = []
     try:
         for step_idx, step in enumerate(steps):
@@ -306,7 +230,7 @@ def execute_plan(context, execution_plan, cleanup_lambda_functions=True, local=F
                 _create_lambda_step(
                     aws_lambda_client,
                     step_idx,
-                    os.path.basename(deployment_package),
+                    deployment_package_key,
                     context,
                     role,
                 )

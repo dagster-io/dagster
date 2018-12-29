@@ -8,16 +8,23 @@ from dagster import (
     types,
 )
 
-from .config import (DEFAULT_S3_BUCKET, DEFAULT_STORAGE_CONFIG)
+from .config import (DEFAULT_S3_BUCKET, DEFAULT_STORAGE_CONFIG, DEFAULT_RUNTIME_BUCKET)
 from .storage import Storage
 
 DagmaResourceConfig = types.Dict(
     {
-        'aws_access_key_id': types.Field(types.String, is_optional=True),
-        'aws_secret_access_key': types.Field(types.String, is_optional=True),
-        'aws_session_token': types.Field(types.String, is_optional=True),
-        'aws_region_name': types.Field(types.String),
-        's3_bucket': types.Field(types.String, default_value=DEFAULT_S3_BUCKET, is_optional=True),
+        'aws_access_key_id':
+        types.Field(types.String, is_optional=True),
+        'aws_secret_access_key':
+        types.Field(types.String, is_optional=True),
+        'aws_session_token':
+        types.Field(types.String, is_optional=True),
+        'aws_region_name':
+        types.Field(types.String),
+        's3_bucket':
+        types.Field(types.String, default_value=DEFAULT_S3_BUCKET, is_optional=True),
+        'runtime_bucket':
+        types.Field(types.String, default_value=DEFAULT_RUNTIME_BUCKET, is_optional=True),
         # 'cleanup_lambda_functions': types.Field(types.Bool, default_value=False,
         #                                         is_optional=True),  # TODO: Thread this through
         # TODO also parametrize local tempfile cleanup
@@ -29,7 +36,9 @@ DagmaResourceConfig = types.Dict(
 
 
 class DagmaResourceType(
-    namedtuple('_AwsLambdaExecutionInfo', 'sessionmaker aws_region_name storage s3_bucket')
+    namedtuple(
+        '_AwsLambdaExecutionInfo', 'sessionmaker aws_region_name storage s3_bucket runtime_bucket'
+    )
 ):
     """The dagma resource type."""
 
@@ -74,6 +83,7 @@ def define_dagma_resource():
             aws_region_name=info.config['aws_region_name'],
             storage=Storage(storage_config),
             s3_bucket=info.config['s3_bucket'],
+            runtime_bucket=info.config['runtime_bucket'],
         )
 
     return ResourceDefinition(
