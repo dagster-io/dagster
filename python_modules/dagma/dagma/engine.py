@@ -26,7 +26,6 @@ from .serialize import (
     serialize,
 )
 from .utils import (
-    get_deployment_package_key,
     get_input_key,
     get_resources_key,
     get_step_key,
@@ -117,7 +116,7 @@ def _create_lambda_step(aws_lambda, step_idx, deployment_package, context, role)
         Role=role.arn,
         Handler='dagma.aws_lambda_handler',
         Code={
-            'S3Bucket': context.resources.dagma.s3_bucket,
+            'S3Bucket': context.resources.dagma.runtime_bucket,
             'S3Key': deployment_package,
         },
         Description='Handler for run {run_id} step {step_idx}'.format(
@@ -207,13 +206,13 @@ def execute_plan(context, execution_plan, cleanup_lambda_functions=True, local=F
     context.debug('Seeding intermediate results')
     _seed_intermediate_results(context)
 
+    deployment_package_key = get_or_create_deployment_package(context)
+
     context.debug('Uploading execution_context')
     context.resources.dagma.storage.put_object(
         key=get_resources_key(context),
         body=serialize(context.resources),
     )
-
-    deployment_package_key = get_or_create_deployment_package(context)
 
     for step_idx, step in enumerate(steps):
         context.debug(

@@ -1,5 +1,7 @@
 """Dagma config."""
 
+from .version import __version__
+
 DEFAULT_S3_BUCKET = 'dagster-lambda-execution'
 
 DEFAULT_PUT_OBJECT_KWARGS = {
@@ -43,9 +45,9 @@ BUCKET_POLICY_DOCUMENT_TEMPLATE = """{{
 }}
 """
 
-DEFAULT_RUNTIME_BUCKET = 'dagma-runtime'
+DEFAULT_RUNTIME_BUCKET = 'dagma-runtime-test'
 
 PYTHON_DEPENDENCIES = [
     'boto3', 'cloudpickler', 'git+ssh://git@github.com/dagster-io/dagster.git'
-    '@lambda_engine#egg=dagma&subdirectory=python_modules/dagma'
+    '@{version}#egg=dagma&subdirectory=python_modules/dagma'.format(version=__version__)
 ]
