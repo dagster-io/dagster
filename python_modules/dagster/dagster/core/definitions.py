@@ -458,7 +458,9 @@ def _create_execution_structure(solids, dependencies_dict):
     pipeline_solid_dict = {ps.name: ps for ps in pipeline_solids}
 
     _validate_dependencies(
-        mapper.aliased_dependencies_dict, pipeline_solid_dict, mapper.alias_lookup
+        mapper.aliased_dependencies_dict,
+        pipeline_solid_dict,
+        mapper.alias_lookup,
     )
 
     dependency_structure = DependencyStructure.from_definitions(
@@ -634,7 +636,7 @@ class PipelineDefinition(object):
             value_type=PipelineContextDefinition,
         )
 
-        dependencies = check_opt_two_dim_dict(
+        self.dependencies = check_opt_two_dim_dict(
             dependencies,
             'dependencies',
             value_type=DependencyDefinition,
@@ -642,7 +644,7 @@ class PipelineDefinition(object):
 
         dependency_structure, pipeline_solid_dict = _create_execution_structure(
             solids,
-            dependencies,
+            self.dependencies,
         )
 
         self._solid_dict = pipeline_solid_dict
@@ -718,7 +720,7 @@ class PipelineDefinition(object):
 
     @property
     def solid_defs(self):
-        return set([solid.definition for solid in self.solids])
+        return list(set([solid.definition for solid in self.solids]))
 
     def solid_def_named(self, name):
         check.str_param(name, 'name')
