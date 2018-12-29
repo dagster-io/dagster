@@ -6,16 +6,14 @@ import tempfile
 import uuid
 
 from dagster import (
+    DagsterInvariantViolationError,
     DependencyDefinition,
     PipelineDefinition,
     SolidInstance,
     check,
-    config,
     define_stub_solid,
     execute_pipeline,
 )
-
-from dagster.core.definitions import SolidInputHandle
 
 from dagster.core.execution_context import RuntimeExecutionContext
 
@@ -58,6 +56,90 @@ def get_temp_file_names(number):
             _unlink_swallow_errors(temp_file_name)
 
 
+def _dep_key_of(solid):
+    return SolidInstance(solid.definition.name, solid.name)
+
+
+def build_sub_pipeline(pipeline_def, solid_names):
+    '''
+    Build a pipeline which is a subset of another pipeline.
+    Only includes the solids which are in solid_names.
+    '''
+
+    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
+    check.list_param(solid_names, 'solid_names', of_type=str)
+
+    solid_name_set = set(solid_names)
+    solids = list(map(pipeline_def.solid_named, solid_names))
+    deps = {_dep_key_of(solid): {} for solid in solids}
+
+    def _out_handle_of_inp(input_handle):
+        if pipeline_def.dependency_structure.has_dep(input_handle):
+            output_handle = pipeline_def.dependency_structure.get_dep(input_handle)
+            if output_handle.solid.name in solid_name_set:
+                return output_handle
+        return None
+
+    for solid in solids:
+        for input_handle in solid.input_handles():
+            output_handle = _out_handle_of_inp(input_handle)
+            if output_handle:
+                deps[_dep_key_of(solid)][input_handle.input_def.name] = DependencyDefinition(
+                    solid=output_handle.solid.name,
+                    output=output_handle.output_def.name,
+                )
+
+    return PipelineDefinition(
+        name=pipeline_def.name,
+        solids=list(set([solid.definition for solid in solids])),
+        context_definitions=pipeline_def.context_definitions,
+        dependencies=deps,
+    )
+
+
+def build_pipeline_with_input_stubs(pipeline_def, inputs):
+    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
+    check.dict_param(inputs, 'inputs', key_type=str, value_type=dict)
+
+    deps = defaultdict(dict)
+    for solid_name, dep_dict in pipeline_def.dependencies.items():
+        for input_name, dep in dep_dict.items():
+            deps[solid_name][input_name] = dep
+
+    stub_solid_defs = []
+
+    for solid_name, input_dict in inputs.items():
+        if not pipeline_def.has_solid(solid_name):
+            raise DagsterInvariantViolationError(
+                (
+                    'You are injecting an input value for solid {solid_name} '
+                    'into pipeline {pipeline_name} but that solid was not found'
+                ).format(
+                    solid_name=solid_name,
+                    pipeline_name=pipeline_def.name,
+                )
+            )
+
+        solid = pipeline_def.solid_named(solid_name)
+        for input_name, input_value in input_dict.items():
+            stub_solid_def = define_stub_solid(
+                '__stub_{solid_name}_{input_name}'.format(
+                    solid_name=solid_name,
+                    input_name=input_name,
+                ),
+                input_value,
+            )
+            stub_solid_defs.append(stub_solid_def)
+            deps[_dep_key_of(solid)][input_name] = DependencyDefinition(stub_solid_def.name)
+
+    return PipelineDefinition(
+        name=pipeline_def.name + '_stubbed',
+        solids=pipeline_def.solid_defs + stub_solid_defs,
+        context_definitions=pipeline_def.context_definitions,
+        dependencies=deps,
+    )
+
+
 def execute_solids(
     pipeline_def,
     solid_names,
@@ -69,47 +151,9 @@ def execute_solids(
     inputs = check.opt_dict_param(inputs, 'inputs', key_type=str, value_type=dict)
     environment = check.opt_dict_param(environment, 'environment')
 
-    injected_solids = []
-    deps = defaultdict(dict)
-
-    for solid_name in solid_names:
-        solid_def = pipeline_def.solid_named(solid_name).definition
-
-        for input_def in solid_def.input_defs:
-            input_name = input_def.name
-            dep_key = SolidInstance(solid_def.name, solid_name)
-            if input_name in inputs.get(solid_name, {}):
-                stub_solid = define_stub_solid(
-                    '{solid_name}_{input_name}'.format(
-                        solid_name=solid_name,
-                        input_name=input_name,
-                    ),
-                    inputs[solid_name][input_name],
-                )
-                injected_solids.append(stub_solid)
-                deps[dep_key][input_name] = DependencyDefinition(stub_solid.name)
-                continue
-
-            inp_handle = SolidInputHandle(pipeline_def.solid_named(solid_name), input_def)
-
-            if pipeline_def.dependency_structure.has_dep(inp_handle):
-                output_handle = pipeline_def.dependency_structure.get_dep(inp_handle)
-                deps[dep_key][input_name] = DependencyDefinition(
-                    solid=output_handle.solid.name,
-                    output=output_handle.output_def.name,
-                )
-                continue
-
-    existing = [pipeline_def.solid_named(solid_name).definition for solid_name in solid_names]
-
-    isolated_pipeline = PipelineDefinition(
-        name=pipeline_def.name + '_isolated',
-        solids=existing + injected_solids,
-        context_definitions=pipeline_def.context_definitions,
-        dependencies=deps,
-    )
-
-    result = execute_pipeline(isolated_pipeline, environment)
+    sub_pipeline = build_sub_pipeline(pipeline_def, solid_names)
+    stubbed_pipeline = build_pipeline_with_input_stubs(sub_pipeline, inputs)
+    result = execute_pipeline(stubbed_pipeline, environment)
 
     if not result.success:
         for solid_result in result.result_list:
