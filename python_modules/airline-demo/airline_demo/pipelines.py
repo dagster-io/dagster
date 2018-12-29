@@ -397,28 +397,28 @@ def define_airline_demo_warehouse_pipeline():
                 'average_sfo_outbound_avg_delays_by_destination':
                 DependencyDefinition('average_sfo_outbound_avg_delays_by_destination')
             },
-            'fares_vs___delays': {
+            'fares_vs_delays': {
                 'db_url': DependencyDefinition('db_url'),
                 'table_name': DependencyDefinition('delays_vs_fares'),
             },
-            's_f_o__delays_by__destination': {
+            'sfo_delays_by_destination': {
                 'db_url': DependencyDefinition('db_url'),
                 'table_name':
                 DependencyDefinition('average_sfo_outbound_avg_delays_by_destination'),
             },
-            'delays_by__geography': {
+            'delays_by_geo': {
                 'db_url': DependencyDefinition('db_url'),
                 'eastbound_delays': DependencyDefinition('eastbound_delays'),
                 'westbound_delays': DependencyDefinition('westbound_delays'),
             },
             SolidInstance('upload_to_s3', alias='upload_outbound_avg_delay_pdf_plots'): {
-                'file_path': DependencyDefinition('s_f_o__delays_by__destination'),
+                'file_path': DependencyDefinition('sfo_delays_by_destination'),
             },
             SolidInstance('upload_to_s3', alias='upload_delays_vs_fares_pdf_plots'): {
-                'file_path': DependencyDefinition('fares_vs___delays'),
+                'file_path': DependencyDefinition('fares_vs_delays'),
             },
             SolidInstance('upload_to_s3', alias='upload_delays_by_geography_pdf_plots'): {
-                'file_path': DependencyDefinition('delays_by__geography'),
+                'file_path': DependencyDefinition('delays_by_geo'),
             },
         },
         context_definitions=CONTEXT_DEFINITIONS,

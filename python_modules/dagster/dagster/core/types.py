@@ -64,6 +64,10 @@ class DagsterType(object):
         self.__doc__ = description
 
     @property
+    def is_any(self):
+        return isinstance(self, _DagsterAnyType)
+
+    @property
     def is_configurable(self):
         return isinstance(self, Configurable)
 
@@ -74,6 +78,11 @@ class DagsterType(object):
     @property
     def is_named(self):
         return self.type_attributes.is_named
+
+    @property
+    def configurable_from_scalar(self):
+        check.invariant(not isinstance(self, Configurable))
+        return False
 
     @property
     def configurable_from_dict(self):
@@ -89,7 +98,6 @@ class DagsterType(object):
     def configurable_from_list(self):
         check.invariant(not isinstance(self, Configurable))
         return False
-        return 'DagsterType({name})'.format(name=self.name)
 
     def coerce_runtime_value(self, _value):
         check.not_implemented('Must implement in subclass')

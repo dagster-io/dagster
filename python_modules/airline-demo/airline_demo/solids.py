@@ -33,10 +33,10 @@ def _notebook_path(name):
     return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'notebooks', name)
 
 
-def notebook_solid(name, inputs, outputs):
+def notebook_solid(name, notebook_path, inputs, outputs):
     return define_dagstermill_solid(
-        snakecase(name.split('.ipynb')[0]),
-        _notebook_path(name),
+        name,
+        _notebook_path(notebook_path),
         inputs,
         outputs,
     )
@@ -783,6 +783,7 @@ westbound_delays = sql_solid(
 )
 
 delays_by_geography = notebook_solid(
+    'delays_by_geo',
     'Delays by Geography.ipynb',
     inputs=[
         InputDefinition(
@@ -811,6 +812,7 @@ delays_by_geography = notebook_solid(
 )
 
 delays_vs_fares_nb = notebook_solid(
+    'fares_vs_delays',
     'Fares vs. Delays.ipynb',
     inputs=[
         InputDefinition(
@@ -834,6 +836,7 @@ delays_vs_fares_nb = notebook_solid(
 )
 
 sfo_delays_by_destination = notebook_solid(
+    'sfo_delays_by_destination',
     'SFO Delays by Destination.ipynb',
     inputs=[
         InputDefinition(
