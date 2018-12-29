@@ -32,8 +32,10 @@ from dagster import (
 from .definitions import (
     DEFAULT_OUTPUT,
     ContextCreationExecutionInfo,
+    DependencyDefinition,
     PipelineDefinition,
     Solid,
+    SolidInstance,
 )
 
 from .execution_context import (
@@ -605,6 +607,47 @@ def execute_pipeline(
     typed_environment = create_typed_environment(pipeline, environment)
 
     return execute_reentrant_pipeline(pipeline, typed_environment, throw_on_error, reentrant_info)
+
+
+def _dep_key_of(solid):
+    return SolidInstance(solid.definition.name, solid.name)
+
+
+def build_sub_pipeline(pipeline_def, solid_names):
+    '''
+    Build a pipeline which is a subset of another pipeline.
+    Only includes the solids which are in solid_names.
+    '''
+
+    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
+    check.list_param(solid_names, 'solid_names', of_type=str)
+
+    solid_name_set = set(solid_names)
+    solids = list(map(pipeline_def.solid_named, solid_names))
+    deps = {_dep_key_of(solid): {} for solid in solids}
+
+    def _out_handle_of_inp(input_handle):
+        if pipeline_def.dependency_structure.has_dep(input_handle):
+            output_handle = pipeline_def.dependency_structure.get_dep(input_handle)
+            if output_handle.solid.name in solid_name_set:
+                return output_handle
+        return None
+
+    for solid in solids:
+        for input_handle in solid.input_handles():
+            output_handle = _out_handle_of_inp(input_handle)
+            if output_handle:
+                deps[_dep_key_of(solid)][input_handle.input_def.name] = DependencyDefinition(
+                    solid=output_handle.solid.name,
+                    output=output_handle.output_def.name,
+                )
+
+    return PipelineDefinition(
+        name=pipeline_def.name,
+        solids=list(set([solid.definition for solid in solids])),
+        context_definitions=pipeline_def.context_definitions,
+        dependencies=deps,
+    )
 
 
 def execute_reentrant_pipeline(
