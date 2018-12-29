@@ -1178,7 +1178,7 @@ class RepositoryDefinition(object):
         if not self.enforce_uniqueness:
             raise DagsterInvariantViolationError(
                 (
-                    'In order fo get_solid_def to have reliable semantics '
+                    'In order for get_solid_def to have reliable semantics '
                     'you must construct the repo with ensure_uniqueness=True'
                 )
             )
