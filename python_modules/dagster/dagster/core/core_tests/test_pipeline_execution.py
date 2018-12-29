@@ -6,18 +6,19 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     Result,
-    execute_pipeline,
-    execute_pipeline_iterator,
     SolidDefinition,
     SolidInstance,
+    execute_pipeline,
+    execute_pipeline_iterator,
+    lambda_solid,
     solid,
 )
 
 from dagster.core.definitions import (
     DependencyStructure,
     Solid,
-    solids_in_topological_order,
     _create_adjacency_lists,
+    solids_in_topological_order,
 )
 
 from dagster.core.execution import (
@@ -408,3 +409,44 @@ def test_pipeline_name_threaded_through_context():
         {},
     ):
         assert result.success
+
+
+def test_pipeline_subset():
+    @lambda_solid
+    def return_one():
+        return 1
+
+    @lambda_solid(inputs=[InputDefinition('num')])
+    def add_one(num):
+        return num + 1
+
+    pipeline_def = PipelineDefinition(
+        solids=[return_one, add_one],
+        dependencies={
+            'add_one': {
+                'num': DependencyDefinition('return_one'),
+            },
+        },
+    )
+
+    pipeline_result = execute_pipeline(pipeline_def)
+    assert pipeline_result.success
+    assert pipeline_result.result_for_solid('add_one').transformed_value() == 2
+
+    subset_result = execute_pipeline(
+        pipeline_def,
+        {
+            'solids': {
+                'add_one': {
+                    'inputs': {
+                        'num': 3,
+                    },
+                },
+            },
+        },
+        solid_subset=['add_one'],
+    )
+
+    assert subset_result.success
+    assert len(subset_result.result_list) == 1
+    assert subset_result.result_for_solid('add_one').transformed_value() == 4
