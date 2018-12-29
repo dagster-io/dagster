@@ -10,7 +10,9 @@ from dagster import (
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
+    SolidDefinition,
     SolidInstance,
+    check,
     execute_pipeline,
     lambda_solid,
     solid,
@@ -77,6 +79,18 @@ def test_hello_world_with_output():
     assert result.result_for_solid('hello_world_output').transformed_value() == 'hello, world'
 
 
+# This probably should be moved to a library because it is immensely useful for testing
+def solid_definition_function(fn):
+    inst = fn()
+    check.inst(inst, SolidDefinition)
+
+    def helper():
+        return inst
+
+    return helper
+
+
+@solid_definition_function
 def add_two_numbers_pm_solid():
     return dm.define_dagstermill_solid(
         'add_two_numbers',
@@ -89,6 +103,7 @@ def add_two_numbers_pm_solid():
     )
 
 
+@solid_definition_function
 def mult_two_numbers_pm_solid():
     return dm.define_dagstermill_solid(
         'mult_two_numbers',
