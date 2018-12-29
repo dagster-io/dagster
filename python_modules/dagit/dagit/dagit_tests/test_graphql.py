@@ -150,7 +150,7 @@ def define_more_complicated_config():
         name='more_complicated_config',
         solids=[
             SolidDefinition(
-                name='a_solid_with_config',
+                name='a_solid_with_three_field_config',
                 inputs=[],
                 outputs=[],
                 transform_fn=lambda *_args: None,
@@ -437,7 +437,7 @@ def define_more_complicated_nested_config():
         name='more_complicated_nested_config',
         solids=[
             SolidDefinition(
-                name='a_solid_with_config',
+                name='a_solid_with_multilayered_config',
                 inputs=[],
                 outputs=[],
                 transform_fn=lambda *_args: None,
@@ -467,12 +467,12 @@ def define_more_complicated_nested_config():
                                             types.List(types.Nullable(types.Int)),
                                             is_optional=True,
                                         ),
-                                    }
-                                )
+                                    },
+                                ),
                             ),
                         },
                     ),
-                )
+                ),
             ),
         ],
     )
@@ -691,7 +691,7 @@ def test_more_complicated_works():
         pipeline_name='more_complicated_nested_config',
         config={
             'solids': {
-                'a_solid_with_config': {
+                'a_solid_with_multilayered_config': {
                     'config': {
                         'field_one': 'foo.txt',
                         'field_two': 'yup',
@@ -718,7 +718,7 @@ def test_more_complicated_multiple_errors():
         pipeline_name='more_complicated_nested_config',
         config={
             'solids': {
-                'a_solid_with_config': {
+                'a_solid_with_multilayered_config': {
                     'config': {
                         # 'field_one': 'foo.txt', # missing
                         'field_two': 'yup',
@@ -745,40 +745,42 @@ def test_more_complicated_multiple_errors():
 
     missing_error_one = find_error(
         result,
-        ['solids', 'a_solid_with_config', 'config'],
+        ['solids', 'a_solid_with_multilayered_config', 'config'],
         'MISSING_REQUIRED_FIELD',
     )
-    assert ['solids', 'a_solid_with_config', 'config'] == field_stack(missing_error_one)
+    assert ['solids', 'a_solid_with_multilayered_config',
+            'config'] == field_stack(missing_error_one)
     assert missing_error_one['reason'] == 'MISSING_REQUIRED_FIELD'
     assert missing_error_one['field']['name'] == 'field_one'
 
     not_defined_one = find_error(
         result,
-        ['solids', 'a_solid_with_config', 'config'],
+        ['solids', 'a_solid_with_multilayered_config', 'config'],
         'FIELD_NOT_DEFINED',
     )
-    assert ['solids', 'a_solid_with_config', 'config'] == field_stack(not_defined_one)
+    assert ['solids', 'a_solid_with_multilayered_config', 'config'] == field_stack(not_defined_one)
     assert not_defined_one['reason'] == 'FIELD_NOT_DEFINED'
     assert not_defined_one['fieldName'] == 'extra_one'
 
     runtime_type_error = find_error(
         result,
-        ['solids', 'a_solid_with_config', 'config', 'nested_field', 'field_four_str'],
+        ['solids', 'a_solid_with_multilayered_config', 'config', 'nested_field', 'field_four_str'],
         'RUNTIME_TYPE_MISMATCH',
     )
-    assert ['solids', 'a_solid_with_config', 'config', 'nested_field',
-            'field_four_str'] == field_stack(runtime_type_error)
+    assert [
+        'solids', 'a_solid_with_multilayered_config', 'config', 'nested_field', 'field_four_str'
+    ] == field_stack(runtime_type_error)
     assert runtime_type_error['reason'] == 'RUNTIME_TYPE_MISMATCH'
     assert runtime_type_error['valueRep'] == '23434'
     assert runtime_type_error['type']['name'] == 'String'
 
     not_defined_two = find_error(
         result,
-        ['solids', 'a_solid_with_config', 'config', 'nested_field'],
+        ['solids', 'a_solid_with_multilayered_config', 'config', 'nested_field'],
         'FIELD_NOT_DEFINED',
     )
 
-    assert ['solids', 'a_solid_with_config', 'config',
+    assert ['solids', 'a_solid_with_multilayered_config', 'config',
             'nested_field'] == field_stack(not_defined_two)
     assert not_defined_two['reason'] == 'FIELD_NOT_DEFINED'
     assert not_defined_two['fieldName'] == 'extra_two'
