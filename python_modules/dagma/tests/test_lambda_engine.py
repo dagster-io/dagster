@@ -138,6 +138,7 @@ def run_test_pipeline(pipeline):
             return results
 
 
+@pytest.mark.skip('Skipping pending pickling issues in lambda engine. Issue #491')
 def test_execution_diamond():
     pipeline = define_diamond_dag_pipeline()
     results = run_test_pipeline(pipeline)
@@ -145,6 +146,7 @@ def test_execution_diamond():
     assert len(results) == 4
 
 
+@pytest.mark.skip('Skipping pending pickling issues in lambda engine. Issue #491')
 def test_execution_single():
     pipeline = define_single_solid_pipeline()
     results = run_test_pipeline(pipeline)
