@@ -98,20 +98,20 @@ def _upload_step(s3, step_idx, step, context):
     )
 
 
-def _get_function_name(context, step_idx):
-    return '{run_id}_deployment_package_{step_idx}'.format(run_id=context.run_id, step_idx=step_idx)
+def _get_function_name(context):
+    return '{run_id}_function'.format(run_id=context.run_id)
 
 
-def _create_lambda_step(aws_lambda, step_idx, deployment_package, context, role):
+def _create_lambda_step(aws_lambda, deployment_package, context, role):
     runtime = _get_python_runtime()
     context.debug(
-        'About create function with bucket {bucket} deployment_package_key {deploy_key}'.format(
+        'About to create function with bucket {bucket} deployment_package_key {deploy_key}'.format(
             bucket=context.resources.dagma.s3_bucket,
             deploy_key=deployment_package,
         )
     )
     res = aws_lambda.create_function(
-        FunctionName=_get_function_name(context, step_idx),
+        FunctionName=_get_function_name(context),
         Runtime=runtime,
         Role=role.arn,
         Handler='dagma.aws_lambda_handler',
@@ -222,24 +222,15 @@ def execute_plan(context, execution_plan, cleanup_lambda_functions=True, local=F
         )
         _upload_step(aws_s3_client, step_idx, step, context)
 
-    # FIXME this should only be one function that we call multiple times
-    lambda_steps = []
     try:
-        for step_idx, step in enumerate(steps):
-            lambda_steps.append(
-                _create_lambda_step(
-                    aws_lambda_client,
-                    step_idx,
-                    deployment_package_key,
-                    context,
-                    role,
-                )
-            )
+        lambda_step = _create_lambda_step(
+            aws_lambda_client,
+            deployment_package_key,
+            context,
+            role,
+        )
 
-    # 'LambdaInvocationPayload', 'run_id step_idx key s3_bucket s3_key_inputs s3_key_body'
-    # 's3_key_resources s3_key_outputs'
-
-        for step_idx, lambda_step in enumerate(lambda_steps):
+        for step_idx, _ in enumerate(steps):
             payload = LambdaInvocationPayload(
                 context.run_id,
                 step_idx,
@@ -264,8 +255,7 @@ def execute_plan(context, execution_plan, cleanup_lambda_functions=True, local=F
 
     finally:
         if cleanup_lambda_functions:
-            for lambda_step in lambda_steps:
-                context.debug(
-                    'Deleting lambda function: {name}'.format(name=lambda_step['FunctionName'])
-                )
-                aws_lambda_client.delete_function(FunctionName=lambda_step['FunctionName'])
+            context.debug(
+                'Deleting lambda function: {name}'.format(name=lambda_step['FunctionName'])
+            )
+            aws_lambda_client.delete_function(FunctionName=lambda_step['FunctionName'])
