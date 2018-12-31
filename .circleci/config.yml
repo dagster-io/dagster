@@ -4,6 +4,8 @@ workflows:
   version: 2
   test:
     jobs:
+      - dagster-py37:
+          context: coveralls
       - dagster-py36:
           context: coveralls
       - dagster-py35:
@@ -45,6 +47,7 @@ workflows:
 
       - coverage:
           requires:
+            - dagster-py37
             - dagster-py36
             - dagster-py35
             - dagster-py27
@@ -144,6 +147,13 @@ jobs:
           root: python_modules/dagma/
           paths:
             - .coverage*
+
+  dagster-py37:
+    <<: *dagster-template
+    docker:
+      - image: circleci/python:3.7.2
+    environment:
+      TOXENV: py37
 
   dagster-py35:
     <<: *dagster-template
