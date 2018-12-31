@@ -408,7 +408,7 @@ jobs:
     docker:
     # TODO: pending creds issue
     # TODO switch to dagster
-      - image: schrockn/cci-test:3.7
+      - image: schrockn/cci-test:3.7.2
     environment:
       TOXENV: py37
 
