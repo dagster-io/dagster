@@ -406,7 +406,7 @@ jobs:
   dagster-contrib-py37:
     <<: *dagster-contrib-template
     docker:
-      - image: dagster/cci-test:3.5
+      - image: dagster/cci-test:3.7
     environment:
       TOXENV: py37
 
