@@ -55,6 +55,7 @@ workflows:
             - dagster-py36
             - dagster-py35
             - dagster-py27
+            - dagit-py37
             - dagit-py36
             - dagit-py35
             - dagit-py27
@@ -64,6 +65,7 @@ workflows:
             - airline-demo-py36
             - airline-demo-py35
             - airline-demo-py27
+            - dagster-contrib-py37
             - dagster-contrib-py36
             - dagster-contrib-py35
             - dagster-contrib-py27
@@ -401,12 +403,19 @@ jobs:
           paths:
             - .coverage*
 
+  dagster-contrib-py37:
+    <<: *dagster-contrib-template
+    docker:
+      - image: dagster/cci-test:3.5
+    environment:
+      TOXENV: py37
+
   dagster-contrib-py35:
     <<: *dagster-contrib-template
     docker:
       - image: dagster/cci-test:3.5
     environment:
-      TOXENV: py27
+      TOXENV: py35
 
   dagster-contrib-py27:
     <<: *dagster-contrib-template
