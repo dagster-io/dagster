@@ -17,7 +17,7 @@ def test_tutorial_part_five():
     ]:
         pipeline = pipeline_definition()
 
-        with pytest.raises():
+        with pytest.raises(Exception):
             execute_pipeline(
                 pipeline,
                 {
