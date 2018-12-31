@@ -2,13 +2,10 @@ import subprocess
 
 
 def check_script(path):
-    subprocess.check_output([
-        'python',
-        path,
-    ])
+    subprocess.check_output(['python', path])
 
 
-def check_cli_execute_file_pipeline(path, pipeline_name):
+def check_cli_execute_file_pipeline(path, pipeline_fn_name):
     cli_cmd = [
         'python',
         '-m',
@@ -18,7 +15,7 @@ def check_cli_execute_file_pipeline(path, pipeline_name):
         '-f',
         path,
         '-n',
-        pipeline_name,
+        pipeline_fn_name,
     ]
 
     subprocess.check_output(cli_cmd)
