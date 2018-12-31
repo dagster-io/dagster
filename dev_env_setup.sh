@@ -1,9 +1,10 @@
 # Execute this script once you have a clean virtual environment
 #
-# Python Virtual Environment Landscape is insanely fracturred. See:
+# Python Virtual Environment Landscape is insanely fractured. See:
 # https://stackoverflow.com/questions/41573587/what-is-the-difference-between-venv-pyvenv-pyenv-virtualenv-virtualenvwrappe
 #
-# pyenv is recommended for managing different python version on your machine
+# pyenv is recommended for managing different python versions on your machine
+#
 # Most dagster developers use venv for virtual environment management
 
 pip install --upgrade pip
