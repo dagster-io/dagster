@@ -1,70 +1,66 @@
 Configuration
 -------------
+So far we have only demonstrated pipelines whose solids yield hardcoded values and then flow them
+through the pipeline. In order to be useful a pipeline must also interact with its external
+environment.
 
-So far we have only demonstrated pipelines that produce hardcoded values
-and then flow them through the pipeline. In order to be useful a pipeline
-must also interact with its external environment, and in general, it should
-use configuration to do so.
+For maximum flexibility, testability, and reusability, we want to avoid hardcoding solids'
+(or pipelines') dependencies on the external world. Configuration is the mechanism dagster
+provides to make that possible.
 
-For maximum flexiblity, testabilty, and reusability pipelines should be fully
-parameterizable. Configuration is how we achieve that end in dagster.
+Let's return to our hello world example. But this time, we'll parametrize the string that the
+solid yields through config.
 
-We return to our hello world example, but now we will be able to parameterize
-the string printed via config.
- 
-In order to accomplish this we need to change APIs, from ``lambda_solid`` to ``solid``.
-A ``lambda_solid`` only exposes a subset of solid features in order to provide a more
-minimal API. ``solid`` is more complicated, and has more capabilities:
+This time, we'll use a more fully-featured API to define our solid -- 
+:py:func:`@solid <dagster.solid>` instead of :py:func:`@lambda_solid <dagster.lambda_solid>`.
 
-.. code-block:: python
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/part_four.py
+   :linenos:
+   :caption: part_four.py
 
-    from dagster import (
-        ConfigDefinition,
-        PipelineDefinition,
-        execute_pipeline,
-        solid,
-        types,
-    )
+We will be exploring the :py:func:`@solid <dagster.solid>` API in much more detail as this tutorial
+proceeds. For now, the only salient difference is that the annotated function takes an additional
+first parameter, ``info``, which is of type
+:py:class:`TransformExecutionInfo <dagster.TransformExecutionInfo>`. The property ``info.config``
+is then the configuration passed into each individual solid.
 
-    @solid(config_field=ConfigDefinition(types.String))
-    def hello_world(info):
-        print(info.config)
+That configuration is specified in the second argument to
+:py:func:`execute_pipeline <dagster.execute_pipeline>`, which must be a dict. This dict specifies
+*all* of the configuration to execute an entire pipeline. It may have many sections, but we're only
+using one of them here: per-solid configuration specified under the key ``solids``:
 
-    def define_pipeline():
-        return PipelineDefinition(solids=[hello_world])
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/part_four.py
+   :lines: 23-27
+   :dedent: 12
 
+The ``solids`` dict is keyed by solid name, and each of its values in turn defines a ``config``
+key corresponding to the user-defined configuration schema for each particular solid. In this case,
+that's a single scalar string value.
 
-    if __name__ == '__main__':
-        execute_pipeline(
-            define_pipeline(),
-            {
-                'solids': {
-                    'hello_world': {
-                        'config': 'Hello, World!',
-                    },
-                },
-            },
-        )
+Run this from the command line utility. In order to do this you must provide
+a yaml config file:
 
-You'll notice a new API, ``solid``. We will be exploring this API in much more detail as these
-tutorials proceed. For now, the only difference is that the function annotated by solid now
-takes one parameter where before it took zero (if it accepted no inputs). This
-new parameter is the info parameter, which is of type :py:class:`TransformExecutionInfo`. It
-has a property config, which is the configuration that is passed into this
-particular solid.
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/part_four_env.yml
+   :linenos:
+   :caption: part_four_env.yml
 
-We must provide that configuration. So turn your attention to the second argument
-of execute_pipeline, which must be a dictionary. This dictionary 
-encompasses *all* of the configuration to execute an entire pipeline, and directly mirrors
-the structure of the environment yaml file. It has many
-sections. One of these is configuration provided on a per-solid basis, which is what
-we are using here. The ``solids`` property is a dictionary keyed by
-solid name. These dictionaries take a 'config' property which must correspond to the user-
-defined configuration of that particular solid. In this case it takes the value
-that will be passed directly to the solid in question, here a string to be printed.
-
-So save this example as step_four.py
+Now you can run this pipeline with this config file like so:
 
 .. code-block:: sh
 
-	$ dagster pipeline execute -f part_four.py -n define_pipeline
+    $ dagster pipeline execute -f part_four.py \
+    -n define_configurable_hello_world_pipeline -e part_four_env.yml
+
+To run this example from dagit, use the following command:
+
+.. code-block:: sh
+    $ dagit -f part_four.py -n define_configurable_hello_world_pipeline
+
+ you can also edit the configuration on the fly in the built-in
+config editor. This editor includes a handy type-ahead and useful tooltips when you've entered an
+invalid config. Play around with it!
+
+.. image:: part_four_fig_one.png
+
+Next, we'll learn about another part of the ``info`` parameter, the
+:doc:`Execution Context <part_four>`.

@@ -1,66 +1,60 @@
 Hello, DAG
 ----------
+One of the core capabitilies of dagster is the ability to express data pipelines as arbitrary
+directed acyclic graphs (DAGs) of solids.
 
-One of the core capabitilies of dagster is the ability to arrange solids into directed, acyclic
-graphs (DAG) within pipelines. We will demonstrate how to do that.
+Let's define a very simple two-solid pipeline whose first solid returns a hardcoded string,
+and whose second solid concatenates two copies of its input. The output of the pipeline should be
+two concatenated copies of the hardcoded string.
 
-We will be building a very simple pipeline where the first step returns a hardcoded string, then
-passes that value to the next solid, which concatenates it to itself, and prints it.
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/part_two.py
+   :linenos:
+   :caption: part_two.py
 
+This pipeline introduces a few new concepts.
 
-.. code-block:: python
+1.  Solids can have **inputs** defined by instances of
+    :py:class:`InputDefinition <dagster.InputDefinition>`. Inputs allow us to connect solids to
+    each other, and gives dagster information about solids' dependencies (and, as we'll see later,
+    optionally let dagster check the types of the inputs at runtime).
 
-    from dagster import (
-        DependencyDefinition,
-        InputDefinition,
-        PipelineDefinition,
-        execute_pipeline,
-        lambda_solid,
-    )
+2.  Solids' **dependencies** on each other are expressed by instances of 
+    :py:class:`DependencyDefinition <dagster.DependencyDefinition>`.
+    You'll notice the new argument to :py:class:`PipelineDefinition <dagster.PipelineDefinition>`
+    called ``dependencies``, which is a dict that defines the connections between solids in a
+    pipeline's DAG.
 
-    @lambda_solid
-    def solid_one():
-        return 'foo'
+    .. literalinclude::  ../../dagster/tutorials/intro_tutorial/part_two.py
+       :lines: 22-26
+       :dedent: 8
 
+    The first layer of keys in this dict are the *names* of solids in the pipeline. The second layer
+    of keys are the *names* of the inputs to each solid. Each input in the DAG must be provided a
+    :py:class:`DependencyDefinition <dagster.DependencyDefinition>`. (Don't worry -- if you forget
+    to specify an input, a helpful error message will tell you what you missed.)
+    
+    In this case the dictionary encodes the fact that the input ``arg_one`` of solid ``solid_two``
+    should flow from the output of ``solid_one``.
 
-    @lambda_solid(inputs=[InputDefinition('arg_one')])
-    def solid_two(arg_one):
-        print(arg_one * 2)
+Let's visualize the DAG we've just defined in dagit.
 
-    def define_pipeline():
-        return PipelineDefinition(
-            name='hello_dag_pipeline',
-            solids=[solid_one, solid_two],
-            dependencies={
-                'solid_two': {
-                    'arg_one': DependencyDefinition('solid_one'),
-                },
-            }
-        )
+.. code-block:: console
 
+   $ dagit -f part_two.py -n define_hello_dag_pipeline
 
-We have a couple new concepts here.
-
-1) ``InputDefinition``: Creating an instance declares that a solid has an input. Dagster is
-now aware of this input and can perform tasks like managing its dependencies.
-
-2) ``DependencyDefinition``: You'll notice a new argument to ``PipelineDefinition`` called
-``dependencies``. This defines the dependency graph of the DAG resident within a pipeline.
-The first layer of keys are the names of solids. The second layer of keys are the names of
-the inputs to each solid. Each input in the DAG must be provided a
-``DependencyDefinition``. In this case the dictionary encodes the fact that the input ``arg_one``
-of solid ``solid_two`` should flow from the output of ``solid_one``.
+.. image:: part_two_fig_one.png
 
 One of the distinguishing features of dagster that separates it from many workflow engines is that
 dependencies connect *inputs* and *outputs* rather than just *tasks*. An author of a dagster
-pipeline defines the flow of execution, and also the flow of *data* within that
-execution. Understanding this is critical to understanding the programming model of dagster, where
-each step in the pipeline -- the solid -- is a *functional* unit of computation. 
+pipeline defines the flow of execution by defining the flow of *data* within that
+execution. This is core to the the programming model of dagster, where each step in the pipeline
+-- the solid -- is a *functional* unit of computation. 
 
-Save this file to ``step_two.py``
+Now run the pipeline we've just defined, either from dagit or from the command line:
 
-and run it:
+.. code-block:: console
 
-.. code-block:: sh
+	$ dagster pipeline execute -f part_two.py -n define_hello_dag_pipeline
 
-	$ dagster pipeline execute -f part_two.py -n define_pipeline
+In the next section, :doc:`An actual DAG <part_three>`, we'll build our first DAG with interesting
+topology and see how dagster determines the execution order of a pipeline.

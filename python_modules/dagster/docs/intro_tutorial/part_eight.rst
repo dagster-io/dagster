@@ -1,33 +1,21 @@
-Basic Typing
-------------
+Configuration Schema
+--------------------
 
-Dagster includes an optional type system that can be applied to both runtime values
-and configuration. We can use these types to both provide runtime type guarantees
-as well as improve documentation and understandability.
+Dagster has a system for strongly-typed, self-describing configurations schemas. These descriptions
+are very helpful when learning how to operate a pipeline, schema allows for an improved configuration
+editting experience, and catches configuration errors before pipeline execution. 
 
-There actually *have* been types during all previous parts of this tutorial. If the
-use does not specify types for inputs, outputs, or config in dagster, they default
-to the ``Any`` type, which can accept any and all values.
 
-We are going to incrementally add typing to the example in part seven.
-
-Before we had this:
-
-.. code-block:: python
-
-    @solid
-    def double_the_word(info):
-        return info.config['word'] * 2
-
-We are going to make the configuration of this strongly typed prevent errors and improve
-documentation.
+We are going show how the configuration schema can prevent errors and improve documentation.
 
 .. code-block:: python
 
     @solid(
-        config_field=types.Field(types.Dict{'word': Field(types.String)}))
+        config_field=types.Field(
+            types.Dict{'word': Field(types.String)})
+        )
     )
-    def double_the_word_with_typed_config(info):
+    def double_the_word(info):
         return info.config['word'] * 2
 
 The previous env.yml file works as before:
@@ -40,7 +28,7 @@ The previous env.yml file works as before:
           log_level: DEBUG
 
     solids:
-      double_the_word_with_typed_config:
+      double_the_word:
         config:
           word: quux
 

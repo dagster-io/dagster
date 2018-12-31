@@ -5,13 +5,16 @@ Definitions
 
 Core API to define Solids and Pipelines.
 
-.. autoclass:: ConfigDefinition
+.. autoclass:: ContextCreationExecutionInfo
     :members:
 
 .. autoclass:: DependencyDefinition
     :members:
 
 .. autoclass:: ExpectationDefinition
+    :members:
+
+.. autoclass:: ExpectationExecutionInfo
     :members:
 
 .. autoclass:: ExpectationResult
@@ -35,10 +38,16 @@ Core API to define Solids and Pipelines.
 .. autoclass:: RepositoryDefinition
     :members:
 
-.. autoclass:: SolidDefinition
+.. autoclass:: ResourceDefinition
     :members:
 
 .. autoclass:: Result
+    :members:
+
+.. autoclass:: SolidDefinition
+    :members:
+
+.. autoclass:: SolidInstance
     :members:
 
 .. autoclass:: TransformExecutionInfo

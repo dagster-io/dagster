@@ -25,7 +25,7 @@ from dagster.utils import (
 WordConfig = types.Dict({'word': Field(types.String)})
 
 
-@solid(config_field=Field(WordConfig))
+@solid(config_field=Field(types.Dict({'word': Field(types.String)})))
 def double_the_word_with_typed_config(info):
     return info.config['word'] * 2
 

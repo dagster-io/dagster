@@ -54,7 +54,10 @@ setup(
         'click>=6.7',
 
         # dagster
-        'dagster>=0.2.8.post0',
+        # 'dagster>=0.3.0rc1',
+        # FIXME: Temporarily loosen restriction while we work out kinks in publish process
+        # See Issue #499
+        'dagster',
 
         # graphql
         'graphql-core>=2.1',

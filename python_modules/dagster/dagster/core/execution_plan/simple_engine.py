@@ -81,8 +81,14 @@ def execute_step(step, context, inputs):
 
     try:
         for step_result in _execute_steps_core_loop(step, context, inputs):
+            context.info(
+                'Step {step} emitted {value} for output {output}'.format(
+                    step=step.key,
+                    value=repr(step_result.success_data.value),
+                    output=step_result.success_data.output_name,
+                )
+            )
             yield step_result
-
     except DagsterError as dagster_error:
         context.error(str(dagster_error))
         yield StepResult.failure_result(

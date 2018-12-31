@@ -1,8 +1,6 @@
-# pylint: disable=W0622,W0614,W0401
 from dagster import (
     Field,
     PipelineDefinition,
-    config,
     execute_pipeline,
     solid,
     types,
@@ -11,18 +9,16 @@ from dagster import (
 
 @solid(config_field=Field(types.String))
 def hello_world(info):
-    print(info.config)
     return info.config
 
 
-def define_pipeline():
+def define_configurable_hello_world_pipeline():
     return PipelineDefinition(name='part_four_pipeline', solids=[hello_world])
 
 
-def test_tutorial_part_four():
-
-    result = execute_pipeline(
-        define_pipeline(),
+def test_intro_tutorial_part_four():
+    execute_pipeline(
+        define_configurable_hello_world_pipeline(),
         {
             'solids': {
                 'hello_world': {
@@ -31,12 +27,3 @@ def test_tutorial_part_four():
             },
         },
     )
-
-    assert result.success
-    assert len(result.result_list) == 1
-    assert result.result_for_solid('hello_world').transformed_value() is 'Hello, World!'
-    return result
-
-
-if __name__ == '__main__':
-    test_tutorial_part_four()

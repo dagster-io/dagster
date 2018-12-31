@@ -1,4 +1,3 @@
-# pylint: disable=W0622,W0614,W0401
 from dagster import (
     DependencyDefinition,
     InputDefinition,
@@ -15,10 +14,10 @@ def solid_one():
 
 @lambda_solid(inputs=[InputDefinition('arg_one')])
 def solid_two(arg_one):
-    print(arg_one * 2)
+    return arg_one * 2
 
 
-def define_pipeline():
+def define_hello_dag_pipeline():
     return PipelineDefinition(
         name='part_two_pipeline',
         solids=[solid_one, solid_two],
@@ -28,13 +27,3 @@ def define_pipeline():
             },
         }
     )
-
-
-def test_tutorial_part_two():
-    pipeline_result = execute_pipeline(define_pipeline())
-    assert pipeline_result.success
-    return pipeline_result
-
-
-if __name__ == '__main__':
-    test_tutorial_part_two()
