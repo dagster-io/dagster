@@ -12,6 +12,8 @@ workflows:
           context: coveralls
       - dagster-py27:
           context: coveralls
+      - dagit-py37:
+          context: coveralls
       - dagit-py36:
           context: coveralls
       - dagit-py35:
@@ -31,6 +33,8 @@ workflows:
       - airline-demo-py35:
           context: coveralls
       - airline-demo-py27:
+          context: coveralls
+      - dagster-contrib-py37:
           context: coveralls
       - dagster-contrib-py36:
           context: coveralls
@@ -162,6 +166,13 @@ jobs:
     environment:
       TOXENV: py35
 
+  dagit-py37:
+    <<: *dagit-template
+    docker:
+      - image: circleci/python:3.7.2
+    environment:
+      TOXENV: py37
+
   dagit-py35:
     <<: *dagit-template
     docker:
@@ -251,6 +262,13 @@ jobs:
           root: python_modules/dagstermill/
           paths:
             - .coverage*
+
+  dagstermill-py37:
+    <<: *dagstermill-template
+    docker:
+      - image: circleci/python:3.5.6
+    environment:
+      TOXENV: py37
 
   dagstermill-py35:
     <<: *dagstermill-template
