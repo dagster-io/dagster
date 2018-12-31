@@ -25,7 +25,17 @@ This example introduces three concepts:
     Dagster will call into each solid in the pipeline, functionally transforming its inputs, if any,
     and threading its outputs to solids further on in thre DAG.
 
-Assuming you've saved this pipeline as ``part_one.py``, we can execute it using the dagster CLI:
+Pipeline Execution
+^^^^^^^^^^^^^^^^^^
+
+Assuming you've saved this pipeline as ``part_one.py``, we can execute it via three different mechanisms:
+
+1. The CLI utility `dagster`
+2. The GUI tool `dagit`
+3. Using dagster as a library within your own script.
+
+CLI
+~~~
 
 .. code-block:: console
 
@@ -39,6 +49,9 @@ Assuming you've saved this pipeline as ``part_one.py``, we can execute it using 
 There's a lot of information in these log lines (we'll get to how you can use, and customize,
 them later), but you can see that the third message is:
 ```Solid hello_world emitted output \"result\" value 'hello'"```. Success!
+
+Dagit
+~~~~~
 
 To visualize your pipeline (which only has one node) in dagit, you can run:
 
@@ -58,6 +71,9 @@ dagit. Logs will stream into the bottom right pane of the interface, where you c
 log level.
 
 .. image:: part_one_fig_two.png
+
+Library
+~~~~~~~
 
 If you'd rather execute your pipelines as a script, you can do that without using the dagster CLI
 at all. Just add a few lines to `part_one.py` (highlighted in yellow):
