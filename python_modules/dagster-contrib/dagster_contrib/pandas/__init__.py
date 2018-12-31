@@ -17,7 +17,10 @@ from dagster import (
 )
 
 from dagster.core.configurable import ConfigurableSelectorFromDict
-from dagster.core.materializable import Materializeable
+from dagster.core.materializable import (
+    FileMarshalable,
+    Materializeable,
+)
 
 DataFrameMeta = namedtuple('DataFrameMeta', 'format path')
 
@@ -51,7 +54,12 @@ class _PandasDataFrameMaterializationConfigSchema(ConfigurableSelectorFromDict):
 PandasDataFrameMaterializationConfigSchema = _PandasDataFrameMaterializationConfigSchema()
 
 
-class _DataFrameType(ConfigurableSelectorFromDict, types.PythonObjectType, Materializeable):
+class _DataFrameType(
+    ConfigurableSelectorFromDict,
+    types.PythonObjectType,
+    Materializeable,
+    FileMarshalable,
+):
     def __init__(self):
         super(_DataFrameType, self).__init__(
             name='PandasDataFrame',
@@ -64,6 +72,14 @@ class _DataFrameType(ConfigurableSelectorFromDict, types.PythonObjectType, Mater
                 'table': define_path_dict_field(),
             },
         )
+
+    def marshal_value(self, value, to_file):
+        with open(to_file, 'wb') as ff:
+            pickle.dump(value, ff)
+
+    def unmarshal_value(self, from_file):
+        with open(from_file, 'rb') as ff:
+            return pickle.load(ff)
 
     def define_materialization_config_schema(self):
         return PandasDataFrameMaterializationConfigSchema

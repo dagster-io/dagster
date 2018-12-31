@@ -80,6 +80,7 @@ def create_execution_plan_core(execution_info):
         step_inputs = create_step_inputs(execution_info, state, pipeline_solid)
 
         solid_transform_step = create_transform_step(
+            execution_info,
             pipeline_solid,
             step_inputs,
             get_solid_user_config(execution_info, pipeline_solid),

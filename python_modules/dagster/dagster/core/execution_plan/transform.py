@@ -8,6 +8,7 @@ from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution_context import RuntimeExecutionContext
 
 from .objects import (
+    ExecutionPlanInfo,
     ExecutionStep,
     StepInput,
     StepOutput,
@@ -15,7 +16,8 @@ from .objects import (
 )
 
 
-def create_transform_step(solid, step_inputs, conf):
+def create_transform_step(execution_info, solid, step_inputs, conf):
+    check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
     check.inst_param(solid, 'solid', Solid)
     check.list_param(step_inputs, 'step_inputs', of_type=StepInput)
 
@@ -27,6 +29,7 @@ def create_transform_step(solid, step_inputs, conf):
             for output_def in solid.definition.output_defs
         ],
         compute_fn=lambda context, step, inputs: _execute_core_transform(
+            execution_info,
             context,
             step,
             conf,
@@ -37,9 +40,9 @@ def create_transform_step(solid, step_inputs, conf):
     )
 
 
-def _yield_transform_results(context, step, conf, inputs):
+def _yield_transform_results(execution_info, context, step, conf, inputs):
     gen = step.solid.definition.transform_fn(
-        TransformExecutionInfo(context, conf, step.solid),
+        TransformExecutionInfo(context, conf, step.solid, execution_info.pipeline),
         inputs,
     )
 
@@ -77,11 +80,12 @@ def _yield_transform_results(context, step, conf, inputs):
         yield result
 
 
-def _execute_core_transform(context, step, conf, inputs):
+def _execute_core_transform(execution_info, context, step, conf, inputs):
     '''
     Execute the user-specified transform for the solid. Wrap in an error boundary and do
     all relevant logging and metrics tracking
     '''
+    check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
     check.inst_param(context, 'context', RuntimeExecutionContext)
     check.inst_param(step, 'step', ExecutionStep)
     check.dict_param(inputs, 'inputs', key_type=str)
@@ -90,7 +94,7 @@ def _execute_core_transform(context, step, conf, inputs):
 
     context.debug('Executing core transform for solid {solid}.'.format(solid=solid.name))
 
-    all_results = list(_yield_transform_results(context, step, conf, inputs))
+    all_results = list(_yield_transform_results(execution_info, context, step, conf, inputs))
 
     if len(all_results) != len(solid.definition.output_defs):
         emitted_result_names = set([r.output_name for r in all_results])

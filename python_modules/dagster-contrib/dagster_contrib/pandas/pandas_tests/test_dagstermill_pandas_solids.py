@@ -1,4 +1,3 @@
-import os
 import sys
 
 import pandas as pd
@@ -8,17 +7,19 @@ import dagstermill as dm
 
 from dagster import (
     DependencyDefinition,
-    Field,
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
+    RepositoryDefinition,
     define_stub_solid,
     execute_pipeline,
     types,
 )
 
-from dagster_contrib.pandas import DataFrame
+from dagster.core.utility_solids import define_stub_solid
 from dagster.utils import script_relative_path
+
+from dagster_contrib.pandas import DataFrame
 
 
 def nb_test_path(name):
@@ -68,16 +69,32 @@ def define_pandas_source_test_solid():
     return dm.define_dagstermill_solid(
         name='pandas_source_test',
         notebook_path=nb_test_path('pandas_source_test'),
-        inputs=[],
-        outputs=[OutputDefinition(DataFrame)],
-        config_field=Field(types.String),
+        inputs=[InputDefinition(name='df', dagster_type=DataFrame)],
+        outputs=[OutputDefinition(DataFrame)]
+    )
+
+
+def define_pandas_repository():
+    return RepositoryDefinition(
+        name='test_dagstermill_pandas_solids',
+        pipeline_dict={
+            'input_transform_test_pipeline': define_pandas_source_test_pipeline,
+        }
     )
 
 
 def define_pandas_source_test_pipeline():
     return PipelineDefinition(
         name='input_transform_test_pipeline',
-        solids=[define_pandas_source_test_solid()],
+        solids=[
+            define_stub_solid('load_num_csv', pd.read_csv(script_relative_path('num_prod.csv'))),
+            define_pandas_source_test_solid(),
+        ],
+        dependencies={
+            'pandas_source_test': {
+                'df': DependencyDefinition('load_num_csv'),
+            },
+        },
     )
 
 
@@ -85,7 +102,22 @@ def define_pandas_source_test_pipeline():
 @notebook_test
 def test_pandas_input_transform_test_pipeline():
     pipeline = define_pandas_input_transform_test_pipeline()
-    pipeline_result = execute_pipeline(pipeline)
+    pipeline_result = execute_pipeline(
+        pipeline,
+        {
+            'solids': {
+                'pandas_source_test': {
+                    'inputs': {
+                        'df': {
+                            'csv': {
+                                'path': script_relative_path('num.csv'),
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    )
     in_df = pd.DataFrame({'num': [3, 5, 7]})
     solid_result = pipeline_result.result_for_solid('pandas_input_transform_test')
     expected_sum_result = ((in_df + 1)['num']).sum()
@@ -96,26 +128,8 @@ def test_pandas_input_transform_test_pipeline():
 @notebook_test
 def test_pandas_source_test_pipeline():
     pipeline = define_pandas_source_test_pipeline()
-    pipeline_result = execute_pipeline(
-        pipeline,
-        {
-            'solids': {
-                'pandas_source_test': {
-                    'config': script_relative_path('num.csv'),
-                },
-            },
-        },
-    )
+    pipeline_result = execute_pipeline(pipeline)
     assert pipeline_result.success
     solid_result = pipeline_result.result_for_solid('pandas_source_test')
-    expected = pd.read_csv(script_relative_path('num.csv'))
+    expected = pd.read_csv(script_relative_path('num_prod.csv')) + 1
     assert solid_result.transformed_value().equals(expected)
-
-
-def test_manager_path():
-    rooted_manager = dm.define_manager(define_pandas_input_transform_test_solid())
-    dirname = os.path.dirname(os.path.abspath(nb_test_path('pandas_input_transform_test')))
-    assert rooted_manager.get_path('foo') == os.path.join(dirname, 'foo')
-
-    unrooted_manager = dm.define_manager()
-    assert unrooted_manager.get_path('foo') == 'foo'

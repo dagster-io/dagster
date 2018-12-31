@@ -716,6 +716,28 @@ class PipelineDefinition(object):
         check.str_param(name, 'name')
         return name in self.context_definitions
 
+    @property
+    def solid_defs(self):
+        return set([solid.definition for solid in self.solids])
+
+    def solid_def_named(self, name):
+        check.str_param(name, 'name')
+
+        for solid in self.solids:
+            if solid.definition.name == name:
+                return solid.definition
+
+        check.failed('{} not found'.format(name))
+
+    def has_solid_def(self, name):
+        check.str_param(name, 'name')
+
+        for solid in self.solids:
+            if solid.definition.name == name:
+                return True
+
+        return False
+
 
 class ExpectationResult(object):
     '''
@@ -1118,7 +1140,49 @@ class RepositoryDefinition(object):
             List[PipelineDefinition]:
 
         '''
-        return list(self.iterate_over_pipelines())
+        pipelines = list(self.iterate_over_pipelines())
+
+        self._construct_solid_defs(pipelines)
+
+        return pipelines
+
+    def _construct_solid_defs(self, pipelines):
+        solid_defs = {}
+        solid_to_pipeline = {}
+        for pipeline in pipelines:
+            for solid_def in pipeline.solid_defs:
+                if solid_def.name not in solid_defs:
+                    solid_defs[solid_def.name] = solid_def
+                    solid_to_pipeline[solid_def.name] = pipeline.name
+                else:
+                    if not solid_defs[solid_def.name] is solid_def:
+                        raise DagsterInvalidDefinitionError(
+                            'Trying to add duplicate solid def {} in {}, Already saw in {}'.format(
+                                solid_def.name,
+                                pipeline.name,
+                                solid_to_pipeline[solid_def.name],
+                            )
+                        )
+        return solid_defs
+
+    def get_solid_def(self, name):
+        check.str_param(name, 'name')
+
+        solid_defs = self._construct_solid_defs(self.get_all_pipelines())
+
+        if name not in solid_defs:
+            check.failed('could not find solid_def {}'.format(name))
+
+        return solid_defs[name]
+
+    def solid_def_named(self, name):
+        check.str_param(name, 'name')
+        for pipeline in self.get_all_pipelines():
+            for solid in pipeline.solids:
+                if solid.definition.name == name:
+                    return solid.definition
+
+        check.failed('Did not find ' + name)
 
 
 class ContextCreationExecutionInfo(
@@ -1149,7 +1213,9 @@ class ExpectationExecutionInfo(
         )
 
 
-class TransformExecutionInfo(namedtuple('_TransformExecutionInfo', 'context config solid')):
+class TransformExecutionInfo(
+    namedtuple('_TransformExecutionInfo', 'context config solid pipeline_def')
+):
     '''An instance of TransformExecutionInfo is passed every solid transform function.
 
     Attributes:
@@ -1158,12 +1224,11 @@ class TransformExecutionInfo(namedtuple('_TransformExecutionInfo', 'context conf
         config (Any): Config object for current solid
     '''
 
-    def __new__(cls, context, config, solid):
+    def __new__(cls, context, config, solid, pipeline_def):
         return super(TransformExecutionInfo, cls).__new__(
-            cls,
-            check.inst_param(context, 'context', RuntimeExecutionContext),
-            config,
+            cls, check.inst_param(context, 'context', RuntimeExecutionContext), config,
             check.inst_param(solid, 'solid', Solid),
+            check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
         )
 
     @property
