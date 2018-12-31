@@ -11,9 +11,11 @@ We are going show how the configuration schema can prevent errors and improve do
 .. code-block:: python
 
     @solid(
-        config_field=types.Field(types.Dict{'word': Field(types.String)}))
+        config_field=types.Field(
+            types.Dict{'word': Field(types.String)})
+        )
     )
-    def double_the_word_with_typed_config(info):
+    def double_the_word(info):
         return info.config['word'] * 2
 
 The previous env.yml file works as before:
@@ -26,7 +28,7 @@ The previous env.yml file works as before:
           log_level: DEBUG
 
     solids:
-      double_the_word_with_typed_config:
+      double_the_word:
         config:
           word: quux
 
