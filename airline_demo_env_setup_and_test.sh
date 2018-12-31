@@ -4,4 +4,6 @@
 pushd python_modules/airline-demo
 docker-compose up --detach
 popd
-
+pushd python_modules
+make test_airline
+popd
