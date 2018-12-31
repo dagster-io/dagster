@@ -15,3 +15,14 @@ def test_tutorial_part_four():
     assert len(result.result_list) == 1
     assert result.result_for_solid('hello_world').transformed_value() == 'Hello, World!'
     return result
+
+
+def test_tutorial_part_one_script():
+    subprocess.check_output(
+        [
+            'python',
+            os.path.normpath(
+                os.path.join(os.path.dirname(os.path.abspath(__file__)), '../part_four.py')
+            )
+        ]
+    )

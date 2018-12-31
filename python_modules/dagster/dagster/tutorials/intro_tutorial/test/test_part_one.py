@@ -1,7 +1,8 @@
-import os
 import subprocess
 
 from dagster import execute_pipeline
+from dagster.tutorials.utils import check_script
+from dagster.utils import script_relative_path
 
 from ..part_one import define_hello_world_pipeline
 
@@ -18,11 +19,20 @@ def test_tutorial_part_one():
 
 
 def test_tutorial_part_one_script():
-    subprocess.check_output(
-        [
-            'python',
-            os.path.normpath(
-                os.path.join(os.path.dirname(os.path.abspath(__file__)), '../part_one.py')
-            )
-        ]
-    )
+    check_script(script_relative_path('../part_one.py'))
+
+
+def test_tutorial_part_one_cli():
+    cli_cmd = [
+        'python',
+        '-m',
+        'dagster',
+        'pipeline',
+        'execute',
+        '-f',
+        script_relative_path('../part_one.py'),
+        '-n',
+        'define_hello_world_pipeline',
+    ]
+
+    subprocess.check_output(cli_cmd)

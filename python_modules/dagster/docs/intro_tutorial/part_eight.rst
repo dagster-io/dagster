@@ -1,25 +1,12 @@
-Basic Typing
-------------
-Dagster includes an optional type system that can be applied to both runtime values (inputs and
-outputs of solids) and configuration values. We can use these types to provide runtime type
-guarantees as well as to improve pipeline documentation and intelligibility.
+Configuration Schema
+--------------------
 
-Actually, we've been using the type system all along. Throughout this tutorial, anywhere we didn't
-specify a type for an input, output, or config value, they defaulted to the ``Any`` type, which
-can accept any and all values.
+Dagster has a system for strongly-typed, self-describing configurations schemas. These descriptions
+are very helpful when learning how to operate a pipeline, schema allows for an improved configuration
+editting experience, and catches configuration errors before pipeline execution. 
 
-We are going to incrementally add typing to the example in part seven.
 
-Previously, we had this:
-
-.. code-block:: python
-
-    @solid
-    def double_the_word(info):
-        return info.config['word'] * 2
-
-We are going to make the configuration of this strongly typed prevent errors and improve
-documentation.
+We are going show how the configuration schema can prevent errors and improve documentation.
 
 .. code-block:: python
 
