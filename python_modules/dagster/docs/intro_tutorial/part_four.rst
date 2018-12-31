@@ -42,9 +42,28 @@ configured value.
 
 .. code-block:: sh
 
-	$ dagster pipeline execute -f part_four.py -n define_configurable_hello_world_pipeline -e part_four_env.yml
+    $ python part_four.py
 
-If you run this example from dagit, you can also edit the configuration on the fly in the built-in
+One can also run this from the command line utility. In order to do this you must provide
+a yaml config file:
+
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/part_four_env.yml
+   :linenos:
+   :caption: part_four_env.yml
+
+Now you can run this pipeline with this config file like so:
+
+.. code-block:: sh
+
+    $ dagster pipeline execute -f part_four.py \
+    -n define_configurable_hello_world_pipeline -e part_four_env.yml
+
+To run this example from dagit, use the following command:
+
+.. code-block:: sh
+    $ dagit -f part_four.py -n define_configurable_hello_world_pipeline
+
+ you can also edit the configuration on the fly in the built-in
 config editor. This editor includes a handy type-ahead and useful tooltips when you've entered an
 invalid config. Play around with it!
 
