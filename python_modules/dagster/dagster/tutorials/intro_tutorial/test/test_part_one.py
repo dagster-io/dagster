@@ -1,7 +1,8 @@
-import subprocess
-
 from dagster import execute_pipeline
-from dagster.tutorials.utils import check_script
+from dagster.tutorials.utils import (
+    check_script,
+    check_cli_execute_file_pipeline,
+)
 from dagster.utils import script_relative_path
 
 from ..part_one import define_hello_world_pipeline
@@ -23,16 +24,7 @@ def test_tutorial_part_one_script():
 
 
 def test_tutorial_part_one_cli():
-    cli_cmd = [
-        'python',
-        '-m',
-        'dagster',
-        'pipeline',
-        'execute',
-        '-f',
+    check_cli_execute_file_pipeline(
         script_relative_path('../part_one.py'),
-        '-n',
         'define_hello_world_pipeline',
-    ]
-
-    subprocess.check_output(cli_cmd)
+    )
