@@ -37,14 +37,7 @@ The ``solids`` dict is keyed by solid name, and each of its values in turn defin
 key corresponding to the user-defined configuration schema for each particular solid. In this case,
 that's a single scalar string value.
 
-When you run this example as ``part_four.py``, you'll see that the output of the pipeline is the
-configured value.
-
-.. code-block:: sh
-
-    $ python part_four.py
-
-One can also run this from the command line utility. In order to do this you must provide
+Run this from the command line utility. In order to do this you must provide
 a yaml config file:
 
 .. literalinclude:: ../../dagster/tutorials/intro_tutorial/part_four_env.yml

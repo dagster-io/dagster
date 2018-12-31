@@ -55,6 +55,8 @@ setup(
 
         # dagster
         # 'dagster>=0.3.0rc1',
+        # FIXME: Temporarily loosen restriction while we work out kinks in publish process
+        # See Issue #499
         'dagster',
 
         # graphql

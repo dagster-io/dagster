@@ -16,7 +16,7 @@ def define_configurable_hello_world_pipeline():
     return PipelineDefinition(name='part_four_pipeline', solids=[hello_world])
 
 
-if __name__ == '__main__':
+def test_intro_tutorial_part_four():
     execute_pipeline(
         define_configurable_hello_world_pipeline(),
         {
