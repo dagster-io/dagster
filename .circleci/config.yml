@@ -323,6 +323,21 @@ jobs:
           paths:
             - .coverage*
 
+  airline-demo-py37:
+    <<: *airline-demo-template
+    docker:
+      - image: schrockn/cci-test:3.7.2
+        auth:
+          username: $DOCKERHUB_USERNAME
+          password: $DOCKERHUB_PASSWORD
+      - image: circleci/postgres:9.6.2-alpine
+        environment:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test
+    environment:
+      TOXENV: py37
+
   airline-demo-py35:
     <<: *airline-demo-template
     docker:

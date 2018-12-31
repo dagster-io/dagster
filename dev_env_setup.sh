@@ -31,3 +31,9 @@ python -m pytest python_modules/dagit
 pip install -e python_modules/airline-demo
 pip install -r python_modules/airline-demo/dev-requirements.txt
 
+pushd python_modules/airline-demo
+docker-compose up --detach
+popd
+pushd python_modules
+make test_airline
+popd
