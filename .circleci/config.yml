@@ -403,10 +403,12 @@ jobs:
           paths:
             - .coverage*
 
+  TODO: pending creds issue
   dagster-contrib-py37:
     <<: *dagster-contrib-template
     docker:
-      - image: dagster/cci-test:3.7
+      # TODO switch to dagster
+      - image: schrockn/cci-test:3.7
     environment:
       TOXENV: py37
 
