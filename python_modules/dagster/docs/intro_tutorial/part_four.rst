@@ -42,7 +42,7 @@ configured value.
 
 .. code-block:: sh
 
-	$ dagster pipeline execute -f part_four.py -n define_pipeline
+	$ dagster pipeline execute -f part_four.py -n define_configurable_hello_world_pipeline -e part_four_env.yml
 
 If you run this example from dagit, you can also edit the configuration on the fly in the built-in
 config editor. This editor includes a handy type-ahead and useful tooltips when you've entered an
