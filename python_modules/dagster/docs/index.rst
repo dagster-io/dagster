@@ -18,7 +18,7 @@ Intro Tutorial
   :maxdepth: 1
   :name: Intro Tutorial
 
-  intro_tutorial/part_one
+  intro_tutorial/hello_world
   intro_tutorial/part_two
   intro_tutorial/part_three
   intro_tutorial/part_four

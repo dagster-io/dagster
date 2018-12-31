@@ -5,10 +5,10 @@ from dagster.tutorials.utils import (
 )
 from dagster.utils import script_relative_path
 
-from ..part_one import define_hello_world_pipeline
+from ..intro_tutorial_hello_world import define_hello_world_pipeline
 
 
-def test_tutorial_part_one():
+def test_tutorial_intro_tutorial_hello_world():
     pipeline = define_hello_world_pipeline()
 
     result = execute_pipeline(pipeline)
@@ -19,12 +19,12 @@ def test_tutorial_part_one():
     return result
 
 
-def test_tutorial_part_one_script():
-    check_script(script_relative_path('../part_one.py'))
+def test_tutorial_intro_tutorial_hello_world_script():
+    check_script(script_relative_path('../intro_tutorial_hello_world.py'))
 
 
-def test_tutorial_part_one_cli():
+def test_tutorial_intro_tutorial_hello_world_cli():
     check_cli_execute_file_pipeline(
-        script_relative_path('../part_one.py'),
+        script_relative_path('../intro_tutorial_hello_world.py'),
         'define_hello_world_pipeline',
     )

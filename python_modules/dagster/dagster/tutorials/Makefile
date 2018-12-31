@@ -1,4 +1,4 @@
-part_one:
+hello_world:
 	dagster pipeline execute -f test_intro_tutorial_part_one.py  -n define_pipeline
 
 part_two:

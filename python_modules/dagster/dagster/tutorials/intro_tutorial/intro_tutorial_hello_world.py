@@ -12,7 +12,7 @@ def hello_world():
 
 def define_hello_world_pipeline():
     return PipelineDefinition(
-        name='part_one_pipeline',
+        name='hello_world_pipeline',
         solids=[hello_world],
     )
 
