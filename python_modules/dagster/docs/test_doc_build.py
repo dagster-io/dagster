@@ -1,17 +1,13 @@
 import os
 import subprocess
-import tempfile
+from dagster.utils import script_relative_path
 
 
 def test_build_all_docs():
-    build_dir = tempfile.mkdtemp()
-    cmds = [
-        'sphinx-build',
-        '-b',
-        'html',
-        '-d',
-        os.path.join(build_dir, 'doctrees'),
-        '.',
-        os.path.join(build_dir, 'html'),
-    ]
-    subprocess.check_output(cmds)
+    pwd = os.getcwd()
+    try:
+        os.chdir(script_relative_path('.'))
+        subprocess.check_output(['make', 'clean'])
+        subprocess.check_output(['make', 'html'])
+    finally:
+        os.chdir(pwd)
