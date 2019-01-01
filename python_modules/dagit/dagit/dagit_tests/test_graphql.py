@@ -43,6 +43,7 @@ def define_repository():
             'pandas_hello_world_two': define_pipeline_two,
             'pipeline_with_list': define_pipeline_with_list,
             'pandas_hello_world_df_input': define_pipeline_with_pandas_df_input,
+            'no_config_pipeline': define_no_config_pipeline,
         },
     )
 
@@ -117,6 +118,12 @@ def define_pipeline_with_pandas_df_input():
         },
     )
 
+def define_no_config_pipeline():
+    @lambda_solid
+    def return_hello():
+        return 'Hello'
+
+    return PipelineDefinition(name='no_config_pipeline', solids=[return_hello])
 
 def define_pipeline_two():
     return PipelineDefinition(
@@ -1247,6 +1254,28 @@ subscription subscribeTest($runId: ID!) {
     }
 }
 '''
+
+
+def test_basic_sync_execution_no_config():
+    context = define_context()
+    result = execute_dagster_graphql(
+        context,
+        SYNC_MUTATION_QUERY,
+        variables={
+            'executionParams': {
+                'pipelineName': 'no_config_pipeline',
+                'config': None,
+            },
+        },
+    )
+
+    assert not result.errors
+    assert result.data
+    logs = result.data['startPipelineExecution']['run']['logs']['nodes']
+    assert isinstance(logs, list)
+    assert has_event_of_type(logs, 'PipelineStartEvent')
+    assert has_event_of_type(logs, 'PipelineSuccessEvent')
+    assert not has_event_of_type(logs, 'PipelineFailureEvent')
 
 
 def test_basic_sync_execution():

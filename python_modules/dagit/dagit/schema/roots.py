@@ -70,6 +70,7 @@ class StartPipelineExecutionMutation(dauphin.Mutation):
     Output = dauphin.NonNull('StartPipelineExecutionResult')
 
     def mutate(self, info, executionParams):
+        print(f'EXECUTION PARAMS {executionParams}')
         return model.start_pipeline_execution(info, **executionParams)
 
 
