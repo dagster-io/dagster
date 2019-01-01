@@ -32,6 +32,33 @@ from dagit.schema.context import DagsterGraphQLContext
 from dagit.dagit_tests.production_query import PRODUCTION_QUERY
 
 
+def define_scalar_output_pipeline():
+    @lambda_solid(output=OutputDefinition(types.String))
+    def return_str():
+        return 'foo'
+
+    @lambda_solid(output=OutputDefinition(types.Int))
+    def return_int():
+        return 34234
+
+    @lambda_solid(output=OutputDefinition(types.Bool))
+    def return_bool():
+        return True
+
+    @lambda_solid(output=OutputDefinition(types.Any))
+    def return_any():
+        return 'dkjfkdjfe'
+
+    return PipelineDefinition(
+        name='scalar_output_pipeline',
+        solids=[
+            return_str,
+            return_int,
+            return_bool,
+            return_any,
+        ]
+    )
+
 def define_repository():
     return RepositoryDefinition(
         name='test',
@@ -44,6 +71,7 @@ def define_repository():
             'pipeline_with_list': define_pipeline_with_list,
             'pandas_hello_world_df_input': define_pipeline_with_pandas_df_input,
             'no_config_pipeline': define_no_config_pipeline,
+            'scalar_output_pipeline': define_scalar_output_pipeline,
         },
     )
 

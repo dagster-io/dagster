@@ -24,6 +24,9 @@ class Materializeable(object):
         check.failed('must implement')
 
 
+import uuid
+
+
 class MaterializeableBuiltinScalarConfigSchema(ConfigurableSelectorFromDict):
     def __init__(self):
         # TODO: add pickle
@@ -31,6 +34,10 @@ class MaterializeableBuiltinScalarConfigSchema(ConfigurableSelectorFromDict):
             MaterializeableBuiltinScalarConfigSchema,
             self,
         ).__init__(fields={'json': define_path_dict_field()})
+
+        # Do not check in, obviously
+        self.name = str(uuid.uuid4())
+        self.description = ''
 
     def iterate_types(self):
         return []

@@ -54,6 +54,9 @@ class _PandasDataFrameMaterializationConfigSchema(
             },
         )
 
+        self.name = 'PandasDataFrameMaterializationConfigSchema'
+        self.description = ''
+
 
 PandasDataFrameMaterializationConfigSchema = _PandasDataFrameMaterializationConfigSchema()
 
