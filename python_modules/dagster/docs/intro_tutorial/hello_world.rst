@@ -84,4 +84,4 @@ Then you can just run:
 
     $ python hello_world.py
 
-Next, let's build our first multi-solid DAG in :doc:`Hello, DAG <part_two>`!
+Next, let's build our first multi-solid DAG in :doc:`Hello, DAG <hello_dag>`!

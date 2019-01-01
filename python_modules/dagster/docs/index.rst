@@ -20,7 +20,7 @@ Intro Tutorial
 
   intro_tutorial/hello_world
   intro_tutorial/hello_dag
-  intro_tutorial/part_three
+  intro_tutorial/actual_dag
   intro_tutorial/part_four
   intro_tutorial/part_five
   intro_tutorial/part_six

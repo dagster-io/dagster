@@ -72,7 +72,7 @@ def solid_d(arg_b, arg_c):
 
 def define_diamond_dag_pipeline():
     return PipelineDefinition(
-        name='part_three_pipeline',
+        name='actual_dag_pipeline',
         context_definitions=context_definitions,
         solids=[
             solid_a,

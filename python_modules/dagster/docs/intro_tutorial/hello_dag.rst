@@ -56,5 +56,5 @@ Now run the pipeline we've just defined, either from dagit or from the command l
 
 	$ dagster pipeline execute -f hello_dag.py -n define_hello_dag_pipeline
 
-In the next section, :doc:`An actual DAG <part_three>`, we'll build our first DAG with interesting
+In the next section, :doc:`An actual DAG <actual_dag>`, we'll build our first DAG with interesting
 topology and see how dagster determines the execution order of a pipeline.

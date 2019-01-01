@@ -32,7 +32,7 @@ def solid_d(arg_b, arg_c):
 
 def define_diamond_dag_pipeline():
     return PipelineDefinition(
-        name='part_three_pipeline',
+        name='actual_dag_pipeline',
         # The order of this list does not matter:
         # dependencies determine execution order
         solids=[solid_d, solid_c, solid_b, solid_a],
