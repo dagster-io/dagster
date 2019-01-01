@@ -28,9 +28,9 @@ const AppRoutes = () => (
   <Switch>
     <Route path="/runs/:runId" component={RunRoot} />
     <Route path="/runs" component={RunsRoot} exact={true} />
-    <Route path="/:pipelineName/execute" component={PipelineExecutionRoot} />
+    <Route path="/execute/:pipelineName" component={PipelineExecutionRoot} />
     <Route
-      path="/:pipelineName/explore/:rest?"
+      path="/explore/:pipelineName/:rest?"
       component={PipelineExplorerRoot}
     />
     <Route
