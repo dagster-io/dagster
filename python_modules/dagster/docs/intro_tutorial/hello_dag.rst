@@ -7,9 +7,9 @@ Let's define a very simple two-solid pipeline whose first solid returns a hardco
 and whose second solid concatenates two copies of its input. The output of the pipeline should be
 two concatenated copies of the hardcoded string.
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/part_two.py
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/hello_dag.py
    :linenos:
-   :caption: part_two.py
+   :caption: hello_dag.py
 
 This pipeline introduces a few new concepts.
 
@@ -24,7 +24,7 @@ This pipeline introduces a few new concepts.
     called ``dependencies``, which is a dict that defines the connections between solids in a
     pipeline's DAG.
 
-    .. literalinclude::  ../../dagster/tutorials/intro_tutorial/part_two.py
+    .. literalinclude::  ../../dagster/tutorials/intro_tutorial/hello_dag.py
        :lines: 22-26
        :dedent: 8
 
@@ -40,9 +40,9 @@ Let's visualize the DAG we've just defined in dagit.
 
 .. code-block:: console
 
-   $ dagit -f part_two.py -n define_hello_dag_pipeline
+   $ dagit -f hello_dag.py -n define_hello_dag_pipeline
 
-.. image:: part_two_fig_one.png
+.. image:: hello_dag_fig_one.png
 
 One of the distinguishing features of dagster that separates it from many workflow engines is that
 dependencies connect *inputs* and *outputs* rather than just *tasks*. An author of a dagster
@@ -54,7 +54,7 @@ Now run the pipeline we've just defined, either from dagit or from the command l
 
 .. code-block:: console
 
-	$ dagster pipeline execute -f part_two.py -n define_hello_dag_pipeline
+	$ dagster pipeline execute -f hello_dag.py -n define_hello_dag_pipeline
 
 In the next section, :doc:`An actual DAG <part_three>`, we'll build our first DAG with interesting
 topology and see how dagster determines the execution order of a pipeline.
