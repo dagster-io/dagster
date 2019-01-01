@@ -14,7 +14,6 @@ from .configurable import (
     Configurable,
     ConfigurableFromAny,
     ConfigurableFromList,
-    ConfigurableSelectorFromDict,
     ConfigurableObjectFromDict,
     ConfigurableFromScalar,
     ConfigurableFromNullable,
@@ -186,8 +185,8 @@ class DagsterScalarType(UncoercedTypeMixin, DagsterType):
 # All builtins are configurable
 class DagsterBuiltinScalarType(
     ConfigurableFromScalar,
-    DagsterScalarType,
     MaterializeableBuiltinScalar,
+    DagsterScalarType,
 ):
     def __init__(self, name, description=None):
         super(DagsterBuiltinScalarType, self).__init__(
@@ -393,22 +392,17 @@ Any = _DagsterAnyType()
 # TO DISCUSS: Consolidate with Dict?
 PythonDict = PythonObjectType('Dict', dict, type_attributes=DagsterTypeAttributes(is_builtin=True))
 
+# class MaterializeableBuiltinScalarConfigSchema(ConfigurableSelectorFromDict):
+#     def __init__(self, scalar_name):
+#         # TODO: add pickle
+#         super(
+#             MaterializeableBuiltinScalarConfigSchema,
+#             self,
+#         ).__init__(fields={'json': define_path_dict_field()})
 
-def define_path_dict_field():
-    return Field(Dict({'path': Field(Path)}))
+#         # Probably should come up with a better naming convention
+#         self.name = scalar_name + '.MaterializationSchema'
+#         self.description = ''
 
-
-class MaterializeableBuiltinScalarConfigSchema(ConfigurableSelectorFromDict):
-    def __init__(self, scalar_name):
-        # TODO: add pickle
-        super(
-            MaterializeableBuiltinScalarConfigSchema,
-            self,
-        ).__init__(fields={'json': define_path_dict_field()})
-
-        # Probably should come up with a better naming convention
-        self.name = scalar_name + '.MaterializationSchema'
-        self.description = ''
-
-    def iterate_types(self):
-        return []
+#     def iterate_types(self):
+#         return []
