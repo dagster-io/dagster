@@ -8,12 +8,12 @@ from dagster import (
 
 
 @solid(config_field=Field(types.String))
-def hello_world(info):
+def configurable_hello_world(info):
     return info.config
 
 
 def define_configurable_hello_world_pipeline():
-    return PipelineDefinition(name='part_four_pipeline', solids=[hello_world])
+    return PipelineDefinition(name='part_four_pipeline', solids=[configurable_hello_world])
 
 
 def test_intro_tutorial_part_four():
@@ -21,7 +21,7 @@ def test_intro_tutorial_part_four():
         define_configurable_hello_world_pipeline(),
         {
             'solids': {
-                'hello_world': {
+                'configurable_hello_world': {
                     'config': 'Hello, World!',
                 },
             },
