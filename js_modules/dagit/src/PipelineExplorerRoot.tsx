@@ -23,7 +23,7 @@ const PipelineExplorerRoot: React.FunctionComponent<
   IPipelineExplorerRootProps
 > = props => {
   const pathSolids = props.location.pathname
-    .split(/\/explore\/?/)
+    .split(new RegExp(`${props.match.params.pipelineName}/?`))
     .pop()!
     .split("/");
   const parentNames = pathSolids.slice(0, pathSolids.length - 1);

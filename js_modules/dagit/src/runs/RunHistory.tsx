@@ -327,7 +327,7 @@ const RunRow: React.FunctionComponent<{ run: RunHistoryRunFragment }> = ({
         </RunDetails>
       </RunRowColumn>
       <RunRowColumn>
-        <Link style={{ display: "block" }} to={`/${run.pipeline.name}/explore`}>
+        <Link style={{ display: "block" }} to={`/explore/${run.pipeline.name}`}>
           <Icon icon="diagram-tree" /> {run.pipeline.name}
         </Link>
       </RunRowColumn>
