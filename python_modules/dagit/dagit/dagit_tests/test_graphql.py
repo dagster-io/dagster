@@ -1086,6 +1086,16 @@ def test_production_query():
     assert result.data
 
 
+def test_production_config_editor_query():
+    result = execute_dagster_graphql(define_context(), ALL_TYPES_QUERY)
+    if result.errors:
+        raise Exception(result.errors)
+
+    assert not result.errors
+    assert result.data
+
+
+
 MUTATION_QUERY = '''
 mutation ($executionParams: PipelineExecutionParams!) {
     startPipelineExecution(
@@ -1346,5 +1356,34 @@ mutation ($executionParams: PipelineExecutionParams!) {
             pipelineName
         }
     }
+}
+'''
+
+
+ALL_TYPES_QUERY = '''
+{
+  pipelinesOrError {
+    __typename
+    ... on PipelineConnection {
+      nodes {
+        types {
+          __typename
+          name
+          ... on CompositeType {
+            fields {
+              name
+              type {
+                name
+                __typename
+              }
+              __typename
+            }
+            __typename
+          }
+        }
+        __typename
+      }
+    }
+  }
 }
 '''
