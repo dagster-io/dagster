@@ -4,11 +4,11 @@ An actual DAG
 Next we will build a slightly more topologically complex DAG that demonstrates how dagster
 determines the execution order of solids in a pipeline:
 
-.. image:: part_three_fig_one.png
+.. image:: actual_dag_fig_one.png
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/part_three.py
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/actual_dag.py
    :linenos:
-   :caption: part_three.py
+   :caption: actual_dag.py
 
 Again, it is worth noting how we are connecting *inputs* and *outputs* rather than just *tasks*.
 Point your attention to the ``solid_d`` entry in the dependencies dictionary: we declare
@@ -28,7 +28,7 @@ Try it in dagit or from the command line:
 
 .. code-block:: sh
 
-	$ dagster pipeline execute -f part_three.py -n define_diamond_dag_pipeline
+	$ dagster pipeline execute -f actual_dag.py -n define_diamond_dag_pipeline
 
 What's the output of this DAG?
 
