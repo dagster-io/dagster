@@ -6,7 +6,6 @@ from ..hello_dag import define_hello_dag_pipeline
 
 
 def test_intro_tutorial_hello_dag():
-    raise Exception('ensure running in circleci')
     pipeline = define_hello_dag_pipeline()
 
     result = execute_pipeline(pipeline)
