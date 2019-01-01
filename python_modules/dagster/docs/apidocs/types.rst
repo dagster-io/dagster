@@ -32,6 +32,8 @@ Type definitions
 
 .. Breaking Python 3.7!
 ..
+.. Filed https://github.com/sphinx-doc/sphinx/issues/5870
+..
 .. .. autodata:: String
 ..
 .. .. autodata:: Path
