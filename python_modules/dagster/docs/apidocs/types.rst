@@ -26,17 +26,21 @@ Type definitions
 
 .. autodata:: Any
 
-.. autodata:: Nullable
+.. autofunction:: Nullable
 
-.. autodata:: List
+.. autofunction:: List
 
-.. autodata:: String
-
-.. autodata:: Path
-
-.. autodata:: Int
-
-.. autodata:: Bool
+.. Breaking Python 3.7!
+..
+.. Filed https://github.com/sphinx-doc/sphinx/issues/5870
+..
+.. .. autodata:: String
+..
+.. .. autodata:: Path
+..
+.. .. autodata:: Int
+..
+.. .. autodata:: Bool
 
 .. autoclass:: UncoercedTypeMixin
 

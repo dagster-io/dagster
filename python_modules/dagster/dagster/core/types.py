@@ -14,6 +14,7 @@ from .configurable import (
     Configurable,
     ConfigurableFromAny,
     ConfigurableFromList,
+    ConfigurableSelectorFromDict,
     ConfigurableObjectFromDict,
     ConfigurableFromScalar,
     ConfigurableFromNullable,

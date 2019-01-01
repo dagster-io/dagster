@@ -69,7 +69,7 @@ class PipelineRun(object):
         self._status = PipelineRunStatus.NOT_STARTED
         self._run_id = check.str_param(run_id, 'run_id')
         self._pipeline_name = check.str_param(pipeline_name, 'pipeline_name')
-        self._env_config = check.dict_param(
+        self._env_config = check.opt_dict_param(
             env_config,
             'environment_config',
             key_type=str,
