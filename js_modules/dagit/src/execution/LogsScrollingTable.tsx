@@ -107,8 +107,13 @@ class LogsScrollingTableSized extends React.Component<
   }
 
   componentDidUpdate(prevProps: ILogsScrollingTableSizedProps) {
+    if (!this.grid.current) return;
+
     if (this.props.width !== prevProps.width) {
       this.cache.clearAll();
+    }
+    if (this.props.nodes !== prevProps.nodes) {
+      this.grid.current.recomputeGridSize();
     }
   }
 
