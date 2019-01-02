@@ -15,7 +15,9 @@ watch:
 	
 yapf:
 	find . -name "*.py" | grep -v ".tox" | grep -v ".vscode" | grep -v "snapshots" | xargs yapf -i
-		
+
+black:
+	black . --line-length 100 -S --fast
 
 reinstall:
 	pip uninstall dagit
