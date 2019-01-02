@@ -62,7 +62,12 @@ class DagsterType(object):
             'type_attributes',
             DagsterTypeAttributes,
         )
-        self.__doc__ = description
+        # Does not appear to be strictly necessary but coding defensively because of the
+        # issues here: https://github.com/sphinx-doc/sphinx/issues/5870
+        #
+        # May be worth evaluating whether doing this is good idea at all.
+        if description is not None:
+            self.__doc__ = description
 
     @property
     def is_any(self):
@@ -188,7 +193,7 @@ class DagsterBuiltinScalarType(
         super(DagsterBuiltinScalarType, self).__init__(
             name=name,
             type_attributes=DagsterTypeAttributes(is_builtin=True),
-            description=None,
+            description=description,
         )
 
 
