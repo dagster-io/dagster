@@ -8,14 +8,6 @@ from .configurable import (
 )
 
 
-def define_path_dict_field():
-    from .types import (
-        Dict,
-        Path,
-    )
-    return Field(Dict({'path': Field(Path)}))
-
-
 class Materializeable(object):
     def define_materialization_config_schema(self):
         check.failed('must implement')
@@ -24,24 +16,11 @@ class Materializeable(object):
         check.failed('must implement')
 
 
-class MaterializeableBuiltinScalarConfigSchema(ConfigurableSelectorFromDict):
-    def __init__(self, scalar_name):
-        # TODO: add pickle
-        super(
-            MaterializeableBuiltinScalarConfigSchema,
-            self,
-        ).__init__(fields={'json': define_path_dict_field()})
-
-        # Do not check in, obviously
-        self.name = scalar_name + '.MaterializationSchema'
-        self.description = ''
-
-    def iterate_types(self):
-        return []
-
-
 class MaterializeableBuiltinScalar(Materializeable):
     def define_materialization_config_schema(self):
+        # TODO: reorganie types to avoid circular deps
+        from .types import MaterializeableBuiltinScalarConfigSchema
+
         # pylint: disable=E1101
         # For now assuming all Materializalbes are Types and have names available
         return MaterializeableBuiltinScalarConfigSchema(self.name)
