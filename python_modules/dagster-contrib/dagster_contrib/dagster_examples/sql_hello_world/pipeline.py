@@ -1,9 +1,6 @@
 import sqlalchemy as sa
 
-from dagster import (
-    DependencyDefinition,
-    PipelineDefinition,
-)
+from dagster import DependencyDefinition, PipelineDefinition
 
 from dagster_contrib.sqlalchemy.subquery_builder_experimental import (
     create_sql_solid,
@@ -21,10 +18,7 @@ def create_num_table(engine):
     metadata = sa.MetaData(engine)
 
     table = sa.Table(
-        'num_table',
-        metadata,
-        sa.Column('num1', sa.Integer),
-        sa.Column('num2', sa.Integer),
+        'num_table', metadata, sa.Column('num1', sa.Integer), sa.Column('num2', sa.Integer)
     )
 
     table.create()

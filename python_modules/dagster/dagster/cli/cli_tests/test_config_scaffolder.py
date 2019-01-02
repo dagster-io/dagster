@@ -9,10 +9,7 @@ from dagster import (
 
 from dagster.core.config_types import EnvironmentConfigType
 
-from dagster.cli.config_scaffolder import (
-    scaffold_pipeline_config,
-    scaffold_type,
-)
+from dagster.cli.config_scaffolder import scaffold_pipeline_config, scaffold_type
 
 
 def fail_me():
@@ -38,7 +35,7 @@ def test_basic_solids_config():
                 config_field=Field(types.Dict(fields={'required_int': types.Field(types.Int)})),
                 transform_fn=lambda *_args: fail_me(),
             )
-        ]
+        ],
     )
 
     env_config_type = EnvironmentConfigType(pipeline_def)
@@ -62,31 +59,11 @@ def test_basic_solids_config():
 
     assert set(default_context_user_config_type.field_dict.keys()) == set(['log_level'])
 
-    assert scaffold_pipeline_config(
-        pipeline_def,
-        skip_optional=False,
-    ) == {
-        'context': {
-            'default': {
-                'config': {
-                    'log_level': '',
-                },
-                'resources': {},
-            },
-        },
-        'solids': {
-            'required_field_solid': {
-                'config': {
-                    'required_int': 0,
-                },
-            },
-        },
-        'execution': {
-            'serialize_intermediates': True,
-        },
-        'expectations': {
-            'evaluate': True,
-        },
+    assert scaffold_pipeline_config(pipeline_def, skip_optional=False) == {
+        'context': {'default': {'config': {'log_level': ''}, 'resources': {}}},
+        'solids': {'required_field_solid': {'config': {'required_int': 0}}},
+        'execution': {'serialize_intermediates': True},
+        'expectations': {'evaluate': True},
     }
 
 
@@ -95,48 +72,25 @@ def test_two_contexts():
         name='TwoContextsPipeline',
         solids=[],
         context_definitions={
-            'context_one':
-            PipelineContextDefinition(
+            'context_one': PipelineContextDefinition(
                 context_fn=lambda *args: fail_me(),
-                config_field=Field(types.Dict({
-                    'context_one_field': types.Field(types.String)
-                })),
+                config_field=Field(types.Dict({'context_one_field': types.Field(types.String)})),
             ),
-            'context_two':
-            PipelineContextDefinition(
+            'context_two': PipelineContextDefinition(
                 context_fn=lambda *args: fail_me(),
-                config_field=Field(types.Dict({
-                    'context_two_field': types.Field(types.Int)
-                })),
+                config_field=Field(types.Dict({'context_two_field': types.Field(types.Int)})),
             ),
         },
     )
 
     assert scaffold_pipeline_config(pipeline_def) == {'context': {}}
 
-    assert scaffold_pipeline_config(
-        pipeline_def,
-        skip_optional=False,
-    ) == {
+    assert scaffold_pipeline_config(pipeline_def, skip_optional=False) == {
         'context': {
-            'context_one': {
-                'config': {
-                    'context_one_field': '',
-                },
-                'resources': {},
-            },
-            'context_two': {
-                'config': {
-                    'context_two_field': 0,
-                },
-                'resources': {},
-            },
+            'context_one': {'config': {'context_one_field': ''}, 'resources': {}},
+            'context_two': {'config': {'context_two_field': 0}, 'resources': {}},
         },
         'solids': {},
-        'execution': {
-            'serialize_intermediates': True,
-        },
-        'expectations': {
-            'evaluate': True,
-        },
+        'execution': {'serialize_intermediates': True},
+        'expectations': {'evaluate': True},
     }

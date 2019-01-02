@@ -6,9 +6,7 @@ import pickle
 from six import integer_types, string_types
 
 from dagster import check
-from dagster.core.errors import (
-    DagsterRuntimeCoercionError,
-)
+from dagster.core.errors import DagsterRuntimeCoercionError
 
 from .configurable import (
     Configurable,
@@ -27,17 +25,14 @@ SerializedTypeValue = namedtuple('SerializedTypeValue', 'name value')
 
 
 class DagsterTypeAttributes(
-    namedtuple(
-        '_DagsterTypeAttributes',
-        'is_builtin is_system_config is_named',
-    )
+    namedtuple('_DagsterTypeAttributes', 'is_builtin is_system_config is_named')
 ):
     def __new__(cls, is_builtin=False, is_system_config=False, is_named=True):
         return super(DagsterTypeAttributes, cls).__new__(
             cls,
             is_builtin=check.bool_param(is_builtin, 'is_builtin'),
             is_system_config=check.bool_param(is_system_config, 'is_system_config'),
-            is_named=check.bool_param(is_named, 'is_named')
+            is_named=check.bool_param(is_named, 'is_named'),
         )
 
 
@@ -58,9 +53,7 @@ class DagsterType(object):
         self.name = check.str_param(name, 'name')
         self.description = check.opt_str_param(description, 'description')
         self.type_attributes = check.inst_param(
-            type_attributes,
-            'type_attributes',
-            DagsterTypeAttributes,
+            type_attributes, 'type_attributes', DagsterTypeAttributes
         )
         self.__doc__ = description
 
@@ -108,26 +101,18 @@ class DagsterType(object):
 
     def serialize_value(self, output_dir, value):
         type_value = self.create_serializable_type_value(
-            self.coerce_runtime_value(value),
-            output_dir,
+            self.coerce_runtime_value(value), output_dir
         )
         output_path = os.path.join(output_dir, 'type_value')
         with open(output_path, 'w') as ff:
-            json.dump(
-                {
-                    'type': type_value.name,
-                    'value': type_value.value,
-                },
-                ff,
-            )
+            json.dump({'type': type_value.name, 'value': type_value.value}, ff)
         return type_value
 
     def deserialize_value(self, output_dir):
         with open(os.path.join(output_dir, 'type_value'), 'r') as ff:
             type_value_dict = json.load(ff)
             type_value = SerializedTypeValue(
-                name=type_value_dict['type'],
-                value=type_value_dict['value'],
+                name=type_value_dict['type'], value=type_value_dict['value']
             )
             if type_value.name != self.name:
                 raise Exception('type mismatch')
@@ -161,9 +146,8 @@ class UncoercedTypeMixin(object):
         if not self.is_python_valid_value(value):
             raise DagsterRuntimeCoercionError(
                 'Expected valid value for {type_name} but got {value}'.format(
-                    type_name=self.name,
-                    value=repr(value),
-                ),
+                    type_name=self.name, value=repr(value)
+                )
             )
         return value
 
@@ -180,15 +164,11 @@ class DagsterScalarType(UncoercedTypeMixin, DagsterType):
 
 # All builtins are configurable
 class DagsterBuiltinScalarType(
-    ConfigurableFromScalar,
-    DagsterScalarType,
-    MaterializeableBuiltinScalar,
+    ConfigurableFromScalar, DagsterScalarType, MaterializeableBuiltinScalar
 ):
     def __init__(self, name, description=None):
         super(DagsterBuiltinScalarType, self).__init__(
-            name=name,
-            type_attributes=DagsterTypeAttributes(is_builtin=True),
-            description=None,
+            name=name, type_attributes=DagsterTypeAttributes(is_builtin=True), description=None
         )
 
 
@@ -208,16 +188,10 @@ class PythonObjectType(UncoercedTypeMixin, DagsterType):
     '''Dagster Type that checks if the value is an instance of some `python_type`'''
 
     def __init__(
-        self,
-        name,
-        python_type,
-        type_attributes=DEFAULT_TYPE_ATTRIBUTES,
-        description=None,
+        self, name, python_type, type_attributes=DEFAULT_TYPE_ATTRIBUTES, description=None
     ):
         super(PythonObjectType, self).__init__(
-            name=name,
-            type_attributes=type_attributes,
-            description=description,
+            name=name, type_attributes=type_attributes, description=description
         )
         self.python_type = check.type_param(python_type, 'python_type')
 
@@ -230,13 +204,7 @@ class PythonObjectType(UncoercedTypeMixin, DagsterType):
         )
         output_path = os.path.join(output_dir, 'type_value')
         with open(output_path, 'w') as ff:
-            json.dump(
-                {
-                    'type': type_value.name,
-                    'path': 'pickle'
-                },
-                ff,
-            )
+            json.dump({'type': type_value.name, 'path': 'pickle'}, ff)
         pickle_path = os.path.join(output_dir, 'pickle')
         with open(pickle_path, 'wb') as pf:
             pickle.dump(value, pf)

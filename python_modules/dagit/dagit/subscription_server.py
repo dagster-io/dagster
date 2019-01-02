@@ -32,8 +32,11 @@ class DagsterSubscriptionServer(GeventSubscriptionServer):
                 observable = execution_result
             observable.subscribe(
                 SubscriptionObserver(
-                    connection_context, op_id, self.send_execution_result, self.send_error,
-                    self.on_close
+                    connection_context,
+                    op_id,
+                    self.send_execution_result,
+                    self.send_error,
+                    self.on_close,
                 )
             )
         except Exception as e:

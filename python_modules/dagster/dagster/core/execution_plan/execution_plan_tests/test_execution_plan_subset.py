@@ -35,11 +35,7 @@ def define_two_int_pipeline():
     return PipelineDefinition(
         name='pipeline_ints',
         solids=[return_one, add_one],
-        dependencies={
-            'add_one': {
-                'num': DependencyDefinition('return_one'),
-            },
-        },
+        dependencies={'add_one': {'num': DependencyDefinition('return_one')}},
     )
 
 
@@ -72,9 +68,7 @@ def test_create_subplan_source_step():
     with yield_context(pipeline_def, typed_environment) as context:
         subplan = create_subplan(
             ExecutionPlanInfo(
-                context=context,
-                pipeline=pipeline_def,
-                environment=typed_environment,
+                context=context, pipeline=pipeline_def, environment=typed_environment
             ),
             execution_plan,
             ExecutionSubsetInfo(['return_one.transform']),
@@ -94,19 +88,10 @@ def test_create_subplan_middle_step():
     with yield_context(pipeline_def, typed_environment) as context:
         subplan = create_subplan(
             ExecutionPlanInfo(
-                context=context,
-                pipeline=pipeline_def,
-                environment=typed_environment,
+                context=context, pipeline=pipeline_def, environment=typed_environment
             ),
             execution_plan,
-            ExecutionSubsetInfo(
-                ['add_one.transform'],
-                {
-                    'add_one.transform': {
-                        'num': 2,
-                    },
-                },
-            ),
+            ExecutionSubsetInfo(['add_one.transform'], {'add_one.transform': {'num': 2}}),
         )
         assert subplan
         steps = subplan.topological_steps()
@@ -133,7 +118,7 @@ def test_execution_plan_source_step():
     step_results = execute_plan(
         pipeline_def,
         execution_plan,
-        subset_info=ExecutionSubsetInfo(included_steps=['return_one.transform'])
+        subset_info=ExecutionSubsetInfo(included_steps=['return_one.transform']),
     )
 
     assert len(step_results) == 1
@@ -146,14 +131,7 @@ def test_execution_plan_middle_step():
     step_results = execute_plan(
         pipeline_def,
         execution_plan,
-        subset_info=ExecutionSubsetInfo(
-            ['add_one.transform'],
-            {
-                'add_one.transform': {
-                    'num': 2,
-                },
-            },
-        ),
+        subset_info=ExecutionSubsetInfo(['add_one.transform'], {'add_one.transform': {'num': 2}}),
     )
 
     assert len(step_results) == 2
@@ -194,9 +172,7 @@ def test_reentrant_execute_plan():
     execution_plan = create_execution_plan(pipeline_def)
 
     step_results = execute_plan(
-        pipeline_def,
-        execution_plan,
-        reentrant_info=ReentrantInfo(context_stack={'foo': 'bar'}),
+        pipeline_def, execution_plan, reentrant_info=ReentrantInfo(context_stack={'foo': 'bar'})
     )
 
     assert called['yup']

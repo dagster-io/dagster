@@ -20,11 +20,13 @@ class DagsterUserError(DagsterError):
 
 class DagsterRuntimeCoercionError(DagsterError):
     '''Runtime checked faild'''
+
     pass
 
 
 class DagsterInvalidDefinitionError(DagsterUserError):
     '''Indicates that some violation of the definition rules has been violated by the user'''
+
     pass
 
 
@@ -32,11 +34,13 @@ class DagsterInvariantViolationError(DagsterUserError):
     '''Indicates the user has violated a well-defined invariant that can only be deteremined
     at runtime.
     '''
+
     pass
 
 
 class DagsterTypeError(DagsterUserError):
     '''Indicates an error in the solid type system (e.g. mismatched arguments)'''
+
     pass
 
 
@@ -67,10 +71,12 @@ class DagsterExpectationFailedError(DagsterError):
     def __repr__(self):
         inout_def = self.info.inout_def
         return (
-            'DagsterExpectationFailedError(' + 'solid={name}, '.format(name=self.info.solid.name) +
-            '{key}={name}, '.format(key=inout_def.descriptive_key, name=inout_def.name) +
-            'expectation={name}'.format(name=self.info.expectation_def.name
-                                        ) + 'value={value}'.format(value=repr(self.value)) + ')'
+            'DagsterExpectationFailedError('
+            + 'solid={name}, '.format(name=self.info.solid.name)
+            + '{key}={name}, '.format(key=inout_def.descriptive_key, name=inout_def.name)
+            + 'expectation={name}'.format(name=self.info.expectation_def.name)
+            + 'value={value}'.format(value=repr(self.value))
+            + ')'
         )
 
     def __str__(self):

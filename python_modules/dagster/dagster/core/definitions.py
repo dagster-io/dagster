@@ -1,30 +1,19 @@
-from collections import (
-    defaultdict,
-    namedtuple,
-)
+from collections import defaultdict, namedtuple
 import keyword
 import re
 from toposort import toposort_flatten
 
 from dagster import check
 from dagster.core import types
-from dagster.utils.logging import (
-    level_from_string,
-    define_colored_console_logger,
-)
+from dagster.utils.logging import level_from_string, define_colored_console_logger
 
 from .config import DEFAULT_CONTEXT_NAME
 
 from .errors import DagsterInvalidDefinitionError
 
-from .execution_context import (
-    RuntimeExecutionContext,
-    ExecutionContext,
-)
+from .execution_context import RuntimeExecutionContext, ExecutionContext
 
-from .types import (
-    Field,
-)
+from .types import Field
 
 DEFAULT_OUTPUT = 'result'
 
@@ -46,7 +35,8 @@ DISALLOWED_NAMES = set(
         'output',
         'result',
         'type',
-    ] + keyword.kwlist  # just disallow all python keywords
+    ]
+    + keyword.kwlist  # just disallow all python keywords
 )
 
 
@@ -147,21 +137,13 @@ context_fn (callable):
         '''
         self.config_field = check.opt_inst_param(config_field, 'config_field', Field)
         self.context_fn = check.opt_callable_param(
-            context_fn,
-            'context_fn',
-            lambda *args, **kwargs: ExecutionContext(),
+            context_fn, 'context_fn', lambda *args, **kwargs: ExecutionContext()
         )
         self.resources = check.opt_dict_param(
-            resources,
-            'resources',
-            key_type=str,
-            value_type=ResourceDefinition,
+            resources, 'resources', key_type=str, value_type=ResourceDefinition
         )
         self.description = description
-        self.resources_type = namedtuple(
-            'Resources',
-            list(resources.keys()),
-        ) if resources else None
+        self.resources_type = namedtuple('Resources', list(resources.keys())) if resources else None
 
 
 def _default_pipeline_context_definitions():
@@ -176,14 +158,11 @@ def _default_pipeline_context_definitions():
         config_field=Field(
             types.Dict(
                 {
-                    'log_level':
-                    Field(
-                        dagster_type=types.String,
-                        is_optional=True,
-                        default_value='INFO',
-                    ),
+                    'log_level': Field(
+                        dagster_type=types.String, is_optional=True, default_value='INFO'
+                    )
                 }
-            ),
+            )
         ),
         context_fn=_default_context_fn,
     )
@@ -448,7 +427,9 @@ def _create_execution_structure(solids, dependencies_dict):
                 '''You have passed a lambda or function {func} into a pipeline that is
                 not a solid. You have likely forgetten to annotate this function with
                 an @solid or @lambda_solid decorator located in dagster.core.decorators
-                '''.format(func=solid_def.__name__)
+                '''.format(
+                    func=solid_def.__name__
+                )
             )
         else:
             raise DagsterInvalidDefinitionError(
@@ -462,8 +443,7 @@ def _create_execution_structure(solids, dependencies_dict):
     )
 
     dependency_structure = DependencyStructure.from_definitions(
-        pipeline_solid_dict,
-        mapper.aliased_dependencies_dict,
+        pipeline_solid_dict, mapper.aliased_dependencies_dict
     )
 
     return dependency_structure, pipeline_solid_dict
@@ -483,18 +463,16 @@ def _validate_dependencies(dependencies, solid_dict, alias_lookup):
                 aliased_solid = alias_lookup.get(from_solid)
                 if aliased_solid == from_solid:
                     raise DagsterInvalidDefinitionError(
-                        'Solid {from_solid} in dependency dictionary not found in solid list'.
-                        format(from_solid=from_solid),
+                        'Solid {from_solid} in dependency dictionary not found in solid list'.format(
+                            from_solid=from_solid
+                        )
                     )
                 else:
                     raise DagsterInvalidDefinitionError(
                         (
                             'Solid {aliased_solid} (aliased by {from_solid} in dependency '
                             'dictionary) not found in solid list'
-                        ).format(
-                            aliased_solid=aliased_solid,
-                            from_solid=from_solid,
-                        ),
+                        ).format(aliased_solid=aliased_solid, from_solid=from_solid)
                     )
             if not solid_dict[from_solid].definition.has_input(from_input):
                 input_list = [
@@ -502,22 +480,21 @@ def _validate_dependencies(dependencies, solid_dict, alias_lookup):
                 ]
                 raise DagsterInvalidDefinitionError(
                     'Solid "{from_solid}" does not have input "{from_input}". '.format(
-                        from_solid=from_solid,
-                        from_input=from_input,
-                    ) + \
-                    'Input list: {input_list}'.format(input_list=input_list)
+                        from_solid=from_solid, from_input=from_input
+                    )
+                    + 'Input list: {input_list}'.format(input_list=input_list)
                 )
 
             if not dep.solid in solid_dict:
                 raise DagsterInvalidDefinitionError(
                     'Solid {dep.solid} in DependencyDefinition not found in solid list'.format(
                         dep=dep
-                    ),
+                    )
                 )
 
             if not solid_dict[dep.solid].definition.has_output(dep.output):
                 raise DagsterInvalidDefinitionError(
-                    'Solid {dep.solid} does not have output {dep.output}'.format(dep=dep),
+                    'Solid {dep.solid} does not have output {dep.output}'.format(dep=dep)
                 )
 
 
@@ -603,12 +580,7 @@ class PipelineDefinition(object):
     '''
 
     def __init__(
-        self,
-        solids,
-        name=None,
-        description=None,
-        context_definitions=None,
-        dependencies=None,
+        self, solids, name=None, description=None, context_definitions=None, dependencies=None
     ):
         '''
         Args:
@@ -635,14 +607,11 @@ class PipelineDefinition(object):
         )
 
         dependencies = check_opt_two_dim_dict(
-            dependencies,
-            'dependencies',
-            value_type=DependencyDefinition,
+            dependencies, 'dependencies', value_type=DependencyDefinition
         )
 
         dependency_structure, pipeline_solid_dict = _create_execution_structure(
-            solids,
-            dependencies,
+            solids, dependencies
         )
 
         self._solid_dict = pipeline_solid_dict
@@ -653,9 +622,7 @@ class PipelineDefinition(object):
         self.environment_type = EnvironmentConfigType(self)
 
         self._type_dict = construct_type_dictionary(
-            solids,
-            self.context_definitions,
-            self.environment_type,
+            solids, self.context_definitions, self.environment_type
         )
 
     @property
@@ -936,11 +903,7 @@ class Result(namedtuple('_Result', 'value output_name')):
 '''
 
     def __new__(cls, value, output_name=DEFAULT_OUTPUT):
-        return super(Result, cls).__new__(
-            cls,
-            value,
-            check.str_param(output_name, 'output_name'),
-        )
+        return super(Result, cls).__new__(cls, value, check.str_param(output_name, 'output_name'))
 
 
 def all_fields_optional(field_dict):
@@ -1076,11 +1039,7 @@ class RepositoryDefinition(object):
         '''
         self.name = check.str_param(name, 'name')
 
-        check.dict_param(
-            pipeline_dict,
-            'pipeline_dict',
-            key_type=str,
-        )
+        check.dict_param(pipeline_dict, 'pipeline_dict', key_type=str)
 
         for val in pipeline_dict.values():
             check.is_callable(val, 'Value in pipeline_dict must be function')
@@ -1112,14 +1071,15 @@ class RepositoryDefinition(object):
             pipeline.name == name,
             'Name does not match. Name in dict {name}. Name in pipeline {pipeline.name}'.format(
                 name=name, pipeline=pipeline
-            )
+            ),
         )
 
         self._pipeline_cache[name] = check.inst(
             pipeline,
             PipelineDefinition,
-            'Function passed into pipeline_dict with key {key} must return a PipelineDefinition'.
-            format(key=name),
+            'Function passed into pipeline_dict with key {key} must return a PipelineDefinition'.format(
+                key=name
+            ),
         )
 
         return pipeline
@@ -1158,9 +1118,7 @@ class RepositoryDefinition(object):
                     if not solid_defs[solid_def.name] is solid_def:
                         raise DagsterInvalidDefinitionError(
                             'Trying to add duplicate solid def {} in {}, Already saw in {}'.format(
-                                solid_def.name,
-                                pipeline.name,
-                                solid_to_pipeline[solid_def.name],
+                                solid_def.name, pipeline.name, solid_to_pipeline[solid_def.name]
                             )
                         )
         return solid_defs
@@ -1198,10 +1156,7 @@ class ContextCreationExecutionInfo(
 
 
 class ExpectationExecutionInfo(
-    namedtuple(
-        '_ExpectationExecutionInfo',
-        'context inout_def solid expectation_def',
-    )
+    namedtuple('_ExpectationExecutionInfo', 'context inout_def solid expectation_def')
 ):
     def __new__(cls, context, inout_def, solid, expectation_def):
         return super(ExpectationExecutionInfo, cls).__new__(
@@ -1226,9 +1181,11 @@ class TransformExecutionInfo(
 
     def __new__(cls, context, config, solid, pipeline_def):
         return super(TransformExecutionInfo, cls).__new__(
-            cls, check.inst_param(context, 'context', RuntimeExecutionContext), config,
+            cls,
+            check.inst_param(context, 'context', RuntimeExecutionContext),
+            config,
             check.inst_param(solid, 'solid', Solid),
-            check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
+            check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition),
         )
 
     @property
@@ -1268,8 +1225,7 @@ def solids_in_topological_order(pipeline):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
 
     _forward_edges, backward_edges = _create_adjacency_lists(
-        pipeline.solids,
-        pipeline.dependency_structure,
+        pipeline.solids, pipeline.dependency_structure
     )
 
     order = toposort_flatten(backward_edges, sort=True)

@@ -38,11 +38,7 @@ release = ''
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.ifconfig',
-    'sphinx.ext.viewcode',
-]
+extensions = ['sphinx.ext.autodoc', 'sphinx.ext.ifconfig', 'sphinx.ext.viewcode']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -53,9 +49,7 @@ templates_path = ['_templates']
 # source_suffix = ['.rst', '.md']
 source_suffix = ['.rst', '.md']
 
-source_parsers = {
-    '.md': CommonMarkParser,
-}
+source_parsers = {'.md': CommonMarkParser}
 
 # The master toctree document.
 master_doc = 'index'
@@ -114,15 +108,12 @@ latex_elements = {
     # The paper size ('letterpaper' or 'a4paper').
     #
     # 'papersize': 'letterpaper',
-
     # The font size ('10pt', '11pt' or '12pt').
     #
     # 'pointsize': '10pt',
-
     # Additional stuff for the LaTeX preamble.
     #
     # 'preamble': '',
-
     # Latex figure (float) alignment
     #
     # 'figure_align': 'htbp',
@@ -132,7 +123,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'Dagster.tex', 'Dagster Documentation', 'Nickholas Schrock', 'manual'),
+    (master_doc, 'Dagster.tex', 'Dagster Documentation', 'Nickholas Schrock', 'manual')
 ]
 
 # -- Options for manual page output ------------------------------------------
@@ -148,9 +139,14 @@ man_pages = [(master_doc, 'dagster', 'Dagster Documentation', [author], 1)]
 #  dir menu entry, description, category)
 texinfo_documents = [
     (
-        master_doc, 'Dagster', 'Dagster Documentation', author, 'Dagster',
-        'One line description of project.', 'Miscellaneous'
-    ),
+        master_doc,
+        'Dagster',
+        'Dagster Documentation',
+        author,
+        'Dagster',
+        'One line description of project.',
+        'Miscellaneous',
+    )
 ]
 
 # -- Extension configuration -------------------------------------------------

@@ -9,9 +9,7 @@ from dagster import (
     lambda_solid,
 )
 
-from dagster.core.execution import (
-    create_execution_plan,
-)
+from dagster.core.execution import create_execution_plan
 
 from dagster.core.execution_plan.create import (
     ExecutionPlanInfo,
@@ -19,10 +17,7 @@ from dagster.core.execution_plan.create import (
     create_execution_plan_from_steps,
 )
 
-from dagster.core.execution_plan.objects import (
-    ExecutionStep,
-    StepTag,
-)
+from dagster.core.execution_plan.objects import ExecutionStep, StepTag
 
 from dagster.core.execution_plan.simple_engine import execute_step
 
@@ -43,18 +38,12 @@ def silencing_pipeline(solids):
 
 
 def test_compute_noop_node_core():
-    pipeline = silencing_pipeline(solids=[
-        noop,
-    ])
+    pipeline = silencing_pipeline(solids=[noop])
 
     environment = config.Environment()
 
     plan = create_execution_plan_core(
-        ExecutionPlanInfo(
-            create_test_runtime_execution_context(),
-            pipeline,
-            environment,
-        ),
+        ExecutionPlanInfo(create_test_runtime_execution_context(), pipeline, environment)
     )
 
     assert len(plan.steps) == 1
@@ -65,9 +54,7 @@ def test_compute_noop_node_core():
 
 
 def test_compute_noop_node():
-    pipeline = silencing_pipeline(solids=[
-        noop,
-    ])
+    pipeline = silencing_pipeline(solids=[noop])
 
     plan = create_execution_plan(pipeline)
 
@@ -86,20 +73,10 @@ def test_duplicate_steps():
         create_execution_plan_from_steps(
             [
                 ExecutionStep(
-                    'same_name',
-                    [],
-                    [],
-                    lambda *args, **kwargs: None,
-                    StepTag.TRANSFORM,
-                    foo,
+                    'same_name', [], [], lambda *args, **kwargs: None, StepTag.TRANSFORM, foo
                 ),
                 ExecutionStep(
-                    'same_name',
-                    [],
-                    [],
-                    lambda *args, **kwargs: None,
-                    StepTag.TRANSFORM,
-                    foo,
+                    'same_name', [], [], lambda *args, **kwargs: None, StepTag.TRANSFORM, foo
                 ),
             ]
         )

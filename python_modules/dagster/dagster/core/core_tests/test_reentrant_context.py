@@ -14,10 +14,7 @@ from dagster import (
 def test_injected_run_id():
     run_id = 'kdjfkdjfkd'
     pipeline_def = PipelineDefinition(name='injected_run_id', solids=[])
-    result = execute_pipeline(
-        pipeline_def,
-        reentrant_info=ReentrantInfo(run_id=run_id),
-    )
+    result = execute_pipeline(pipeline_def, reentrant_info=ReentrantInfo(run_id=run_id))
 
     assert result.success
     assert result.context.run_id == run_id
@@ -33,8 +30,7 @@ def test_injected_context_stack():
 
     pipeline_def = PipelineDefinition(name='injected_run_id', solids=[check_context_stack])
     result = execute_pipeline(
-        pipeline_def,
-        reentrant_info=ReentrantInfo(context_stack={'foo': 'bar'}),
+        pipeline_def, reentrant_info=ReentrantInfo(context_stack={'foo': 'bar'})
     )
 
     assert result.success
@@ -60,8 +56,7 @@ def test_user_injected_context_stack():
     )
 
     result = execute_pipeline(
-        pipeline_def,
-        reentrant_info=ReentrantInfo(context_stack={'foo': 'bar'}),
+        pipeline_def, reentrant_info=ReentrantInfo(context_stack={'foo': 'bar'})
     )
 
     assert result.success
@@ -87,7 +82,4 @@ def test_user_injected_context_stack_collision():
     )
 
     with pytest.raises(DagsterInvariantViolationError, match='You have specified'):
-        execute_pipeline(
-            pipeline_def,
-            reentrant_info=ReentrantInfo(context_stack={'foo': 'bar'}),
-        )
+        execute_pipeline(pipeline_def, reentrant_info=ReentrantInfo(context_stack={'foo': 'bar'}))

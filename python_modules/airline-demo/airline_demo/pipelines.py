@@ -65,8 +65,7 @@ def define_null_resource():
 
 def define_string_resource():
     return ResourceDefinition(
-        resource_fn=lambda info: info.config,
-        config_field=types.Field(types.String),
+        resource_fn=lambda info: info.config, config_field=types.Field(types.String)
     )
 
 
@@ -122,7 +121,7 @@ RedshiftConfigData = types.Dict(
         'redshift_hostname': types.Field(types.String),
         'redshift_db_name': types.Field(types.String),
         's3_temp_dir': types.Field(types.String),
-    },
+    }
 )
 
 DbInfo = namedtuple('DbInfo', 'engine url jdbc_url dialect load_table')
@@ -148,11 +147,9 @@ def define_redshift_db_info_resource():
         s3_temp_dir = info.config['s3_temp_dir']
 
         def _do_load(data_frame, table_name):
-            data_frame.write \
-            .format('com.databricks.spark.redshift') \
-            .option('tempdir', s3_temp_dir) \
-            .mode('overwrite') \
-            .jdbc(db_url_jdbc, table_name)
+            data_frame.write.format('com.databricks.spark.redshift').option(
+                'tempdir', s3_temp_dir
+            ).mode('overwrite').jdbc(db_url_jdbc, table_name)
 
         return DbInfo(
             url=db_url,
@@ -163,8 +160,7 @@ def define_redshift_db_info_resource():
         )
 
     return ResourceDefinition(
-        resource_fn=_create_redshift_db_info,
-        config_field=types.Field(RedshiftConfigData),
+        resource_fn=_create_redshift_db_info, config_field=types.Field(RedshiftConfigData)
     )
 
 
@@ -186,10 +182,9 @@ def define_postgres_db_info_resource():
         )
 
         def _do_load(data_frame, table_name):
-            data_frame.write \
-            .option('driver', 'org.postgresql.Driver') \
-            .mode('overwrite') \
-            .jdbc(db_url_jdbc, table_name)
+            data_frame.write.option('driver', 'org.postgresql.Driver').mode('overwrite').jdbc(
+                db_url_jdbc, table_name
+            )
 
         return DbInfo(
             url=db_url,
@@ -200,8 +195,7 @@ def define_postgres_db_info_resource():
         )
 
     return ResourceDefinition(
-        resource_fn=_create_postgres_db_info,
-        config_field=types.Field(PostgresConfigData),
+        resource_fn=_create_postgres_db_info, config_field=types.Field(PostgresConfigData)
     )
 
 
@@ -221,7 +215,7 @@ PostgresConfigData = types.Dict(
         'postgres_password': types.Field(types.String),
         'postgres_hostname': types.Field(types.String),
         'postgres_db_name': types.Field(types.String),
-    },
+    }
 )
 
 local_context = PipelineContextDefinition(
@@ -244,11 +238,7 @@ cloud_context = PipelineContextDefinition(
     },
 )
 
-CONTEXT_DEFINITIONS = {
-    'test': test_context,
-    'local': local_context,
-    'cloud': cloud_context,
-}
+CONTEXT_DEFINITIONS = {'test': test_context, 'local': local_context, 'cloud': cloud_context}
 
 
 def define_airline_demo_download_pipeline():
@@ -256,7 +246,7 @@ def define_airline_demo_download_pipeline():
     dependencies = {
         SolidInstance('download_from_s3', alias='download_archives'): {},
         SolidInstance('unzip_file', alias='unzip_archives'): {
-            'archive_paths': DependencyDefinition('download_archives'),
+            'archive_paths': DependencyDefinition('download_archives')
         },
         SolidInstance('download_from_s3', alias='download_q2_sfo_weather'): {},
     }
@@ -298,19 +288,19 @@ def define_airline_demo_ingest_pipeline():
             'right_data_frame': DependencyDefinition('ingest_june_on_time_data'),
         },
         SolidInstance('subsample_spark_dataset', alias='subsample_q2_on_time_data'): {
-            'data_frame': DependencyDefinition('combine_q2_on_time_data'),
+            'data_frame': DependencyDefinition('combine_q2_on_time_data')
         },
         SolidInstance('subsample_spark_dataset', alias='subsample_q2_ticket_data'): {
-            'data_frame': DependencyDefinition('ingest_q2_ticket_data'),
+            'data_frame': DependencyDefinition('ingest_q2_ticket_data')
         },
         SolidInstance('subsample_spark_dataset', alias='subsample_q2_market_data'): {
-            'data_frame': DependencyDefinition('ingest_q2_market_data'),
+            'data_frame': DependencyDefinition('ingest_q2_market_data')
         },
         SolidInstance('subsample_spark_dataset', alias='subsample_q2_coupon_data'): {
-            'data_frame': DependencyDefinition('ingest_q2_coupon_data'),
+            'data_frame': DependencyDefinition('ingest_q2_coupon_data')
         },
         SolidInstance('normalize_weather_na_values', alias='normalize_q2_weather_na_values'): {
-            'data_frame': DependencyDefinition('ingest_q2_sfo_weather'),
+            'data_frame': DependencyDefinition('ingest_q2_sfo_weather')
         },
         SolidInstance('prefix_column_names', alias='prefix_dest_cord_data'): {
             'data_frame': DependencyDefinition('ingest_master_cord_data')
@@ -327,34 +317,34 @@ def define_airline_demo_ingest_pipeline():
             'right_data_frame': DependencyDefinition('prefix_origin_cord_data'),
         },
         SolidInstance('canonicalize_column_names', alias='canonicalize_q2_on_time_data'): {
-            'data_frame': DependencyDefinition('join_q2_on_time_data_to_origin_cord_data'),
+            'data_frame': DependencyDefinition('join_q2_on_time_data_to_origin_cord_data')
         },
         SolidInstance('canonicalize_column_names', alias='canonicalize_q2_coupon_data'): {
-            'data_frame': DependencyDefinition('subsample_q2_coupon_data'),
+            'data_frame': DependencyDefinition('subsample_q2_coupon_data')
         },
         SolidInstance('canonicalize_column_names', alias='canonicalize_q2_market_data'): {
-            'data_frame': DependencyDefinition('subsample_q2_market_data'),
+            'data_frame': DependencyDefinition('subsample_q2_market_data')
         },
         SolidInstance('canonicalize_column_names', alias='canonicalize_q2_ticket_data'): {
-            'data_frame': DependencyDefinition('subsample_q2_ticket_data'),
+            'data_frame': DependencyDefinition('subsample_q2_ticket_data')
         },
         SolidInstance('canonicalize_column_names', alias='canonicalize_q2_sfo_weather'): {
-            'data_frame': DependencyDefinition('normalize_q2_weather_na_values'),
+            'data_frame': DependencyDefinition('normalize_q2_weather_na_values')
         },
         SolidInstance('load_data_to_database_from_spark', alias='load_q2_on_time_data'): {
-            'data_frame': DependencyDefinition('canonicalize_q2_on_time_data'),
+            'data_frame': DependencyDefinition('canonicalize_q2_on_time_data')
         },
         SolidInstance('load_data_to_database_from_spark', alias='load_q2_coupon_data'): {
-            'data_frame': DependencyDefinition('canonicalize_q2_coupon_data'),
+            'data_frame': DependencyDefinition('canonicalize_q2_coupon_data')
         },
         SolidInstance('load_data_to_database_from_spark', alias='load_q2_market_data'): {
-            'data_frame': DependencyDefinition('canonicalize_q2_market_data'),
+            'data_frame': DependencyDefinition('canonicalize_q2_market_data')
         },
         SolidInstance('load_data_to_database_from_spark', alias='load_q2_ticket_data'): {
-            'data_frame': DependencyDefinition('canonicalize_q2_ticket_data'),
+            'data_frame': DependencyDefinition('canonicalize_q2_ticket_data')
         },
         SolidInstance('load_data_to_database_from_spark', alias='load_q2_sfo_weather'): {
-            'data_frame': DependencyDefinition('canonicalize_q2_sfo_weather'),
+            'data_frame': DependencyDefinition('canonicalize_q2_sfo_weather')
         },
     }
 
@@ -389,13 +379,13 @@ def define_airline_demo_warehouse_pipeline():
             'westbound_delays': {},
             'eastbound_delays': {},
             'average_sfo_outbound_avg_delays_by_destination': {
-                'q2_sfo_outbound_flights': DependencyDefinition('q2_sfo_outbound_flights'),
+                'q2_sfo_outbound_flights': DependencyDefinition('q2_sfo_outbound_flights')
             },
             'delays_vs_fares': {
-                'tickets_with_destination':
-                DependencyDefinition('tickets_with_destination'),
-                'average_sfo_outbound_avg_delays_by_destination':
-                DependencyDefinition('average_sfo_outbound_avg_delays_by_destination')
+                'tickets_with_destination': DependencyDefinition('tickets_with_destination'),
+                'average_sfo_outbound_avg_delays_by_destination': DependencyDefinition(
+                    'average_sfo_outbound_avg_delays_by_destination'
+                ),
             },
             'fares_vs_delays': {
                 'db_url': DependencyDefinition('db_url'),
@@ -403,8 +393,9 @@ def define_airline_demo_warehouse_pipeline():
             },
             'sfo_delays_by_destination': {
                 'db_url': DependencyDefinition('db_url'),
-                'table_name':
-                DependencyDefinition('average_sfo_outbound_avg_delays_by_destination'),
+                'table_name': DependencyDefinition(
+                    'average_sfo_outbound_avg_delays_by_destination'
+                ),
             },
             'delays_by_geo': {
                 'db_url': DependencyDefinition('db_url'),
@@ -412,13 +403,13 @@ def define_airline_demo_warehouse_pipeline():
                 'westbound_delays': DependencyDefinition('westbound_delays'),
             },
             SolidInstance('upload_to_s3', alias='upload_outbound_avg_delay_pdf_plots'): {
-                'file_path': DependencyDefinition('sfo_delays_by_destination'),
+                'file_path': DependencyDefinition('sfo_delays_by_destination')
             },
             SolidInstance('upload_to_s3', alias='upload_delays_vs_fares_pdf_plots'): {
-                'file_path': DependencyDefinition('fares_vs_delays'),
+                'file_path': DependencyDefinition('fares_vs_delays')
             },
             SolidInstance('upload_to_s3', alias='upload_delays_by_geography_pdf_plots'): {
-                'file_path': DependencyDefinition('delays_by_geo'),
+                'file_path': DependencyDefinition('delays_by_geo')
             },
         },
         context_definitions=CONTEXT_DEFINITIONS,
@@ -432,5 +423,5 @@ def define_repo():
             'airline_demo_download_pipeline': define_airline_demo_download_pipeline,
             'airline_demo_ingest_pipeline': define_airline_demo_ingest_pipeline,
             'airline_demo_warehouse_pipeline': define_airline_demo_warehouse_pipeline,
-        }
+        },
     )

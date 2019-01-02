@@ -29,18 +29,11 @@ def define_part_seven_pipeline():
     return PipelineDefinition(
         name='part_seven',
         solids=[double_the_word, count_letters],
-        dependencies={
-            'count_letters': {
-                'word': DependencyDefinition('double_the_word'),
-            },
-        },
+        dependencies={'count_letters': {'word': DependencyDefinition('double_the_word')}},
     )
 
 
 def define_part_seven_repo():
     return RepositoryDefinition(
-        name='part_seven_repo',
-        pipeline_dict={
-            'part_seven': define_part_seven_pipeline,
-        },
+        name='part_seven_repo', pipeline_dict={'part_seven': define_part_seven_pipeline}
     )

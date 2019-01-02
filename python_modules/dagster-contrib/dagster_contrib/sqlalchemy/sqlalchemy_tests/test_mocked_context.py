@@ -1,8 +1,5 @@
 import sqlalchemy
-from dagster import (
-    check,
-    ExecutionContext,
-)
+from dagster import check, ExecutionContext
 import dagster_contrib.sqlalchemy as dagster_sa
 
 from dagster_contrib.sqlalchemy.common import (

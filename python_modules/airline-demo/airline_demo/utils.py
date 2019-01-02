@@ -22,11 +22,13 @@ def create_spark_session_local():
     # Need two versions of this, one for test/local and one with a
     # configurable cluster
     spark = (
-        SparkSession.builder.appName("AirlineDemo").config(
+        SparkSession.builder.appName("AirlineDemo")
+        .config(
             'spark.jars.packages',
             'com.databricks:spark-avro_2.11:3.0.0,com.databricks:spark-redshift_2.11:2.0.1,'
             'com.databricks:spark-csv_2.11:1.5.0,org.postgresql:postgresql:42.2.5',
-        ).getOrCreate()
+        )
+        .getOrCreate()
     )
     return spark
 
@@ -43,20 +45,12 @@ def create_redshift_db_url(username, password, hostname, db_name, jdbc=True):
         db_url = (
             'jdbc:postgresql://{hostname}:5432/{db_name}?'
             'user={username}&password={password}'.format(
-                username=username,
-                password=password,
-                hostname=hostname,
-                db_name=db_name,
+                username=username, password=password, hostname=hostname, db_name=db_name
             )
         )
     else:
-        db_url = (
-            "redshift_psycopg2://{username}:{password}@{hostname}:5439/{db_name}".format(
-                username=username,
-                password=password,
-                hostname=hostname,
-                db_name=db_name,
-            )
+        db_url = "redshift_psycopg2://{username}:{password}@{hostname}:5439/{db_name}".format(
+            username=username, password=password, hostname=hostname, db_name=db_name
         )
     return db_url
 
@@ -70,20 +64,12 @@ def create_postgres_db_url(username, password, hostname, db_name, jdbc=True):
         db_url = (
             'jdbc:postgresql://{hostname}:5432/{db_name}?'
             'user={username}&password={password}'.format(
-                username=username,
-                password=password,
-                hostname=hostname,
-                db_name=db_name,
+                username=username, password=password, hostname=hostname, db_name=db_name
             )
         )
     else:
-        db_url = (
-            'postgresql://{username}:{password}@{hostname}:5432/{db_name}'.format(
-                username=username,
-                password=password,
-                hostname=hostname,
-                db_name=db_name,
-            )
+        db_url = 'postgresql://{username}:{password}@{hostname}:5432/{db_name}'.format(
+            username=username, password=password, hostname=hostname, db_name=db_name
         )
     return db_url
 

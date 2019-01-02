@@ -72,13 +72,7 @@ class MultipleResults(namedtuple('_MultipleResults', 'results')):
 
 
 class _LambdaSolid(object):
-    def __init__(
-        self,
-        name=None,
-        inputs=None,
-        output=None,
-        description=None,
-    ):
+    def __init__(self, name=None, inputs=None, output=None, description=None):
         self.name = check.opt_str_param(name, 'name')
         self.input_defs = check.opt_list_param(inputs, 'inputs', InputDefinition)
         self.output_def = check.inst_param(output, 'output', OutputDefinition)
@@ -102,14 +96,7 @@ class _LambdaSolid(object):
 
 
 class _Solid(object):
-    def __init__(
-        self,
-        name=None,
-        inputs=None,
-        outputs=None,
-        description=None,
-        config_field=None,
-    ):
+    def __init__(self, name=None, inputs=None, outputs=None, description=None, config_field=None):
         self.name = check.opt_str_param(name, 'name')
         self.input_defs = check.opt_list_param(inputs, 'inputs', InputDefinition)
         outputs = outputs or ([OutputDefinition()] if outputs is None else [])
@@ -135,12 +122,7 @@ class _Solid(object):
         )
 
 
-def lambda_solid(
-    name=None,
-    inputs=None,
-    output=None,
-    description=None,
-):
+def lambda_solid(name=None, inputs=None, output=None, description=None):
     '''(decorator) Create a simple solid
 
     This shortcut allows the creation of simple solids that do not require
@@ -173,21 +155,10 @@ def lambda_solid(
         check.invariant(description is None)
         return _LambdaSolid(output=output)(name)
 
-    return _LambdaSolid(
-        name=name,
-        inputs=inputs,
-        output=output,
-        description=description,
-    )
+    return _LambdaSolid(name=name, inputs=inputs, output=output, description=description)
 
 
-def solid(
-    name=None,
-    inputs=None,
-    outputs=None,
-    config_field=None,
-    description=None,
-):
+def solid(name=None, inputs=None, outputs=None, config_field=None, description=None):
     '''(decorator) Create a solid with specified parameters.
 
     This shortcut simplifies core solid API by exploding arguments into kwargs of the
@@ -351,10 +322,11 @@ def _create_solid_transform_wrapper(fn, input_defs, output_defs):
                                 [
                                     '\'{result_name}\': {dagster_type}'.format(
                                         result_name=output_def.name,
-                                        dagster_type=output_def.dagster_type
-                                    ) for output_def in output_defs
+                                        dagster_type=output_def.dagster_type,
+                                    )
+                                    for output_def in output_defs
                                 ]
-                            )
+                            ),
                         )
                     )
 
@@ -362,12 +334,7 @@ def _create_solid_transform_wrapper(fn, input_defs, output_defs):
 
 
 class FunctionValidationError(Exception):
-    TYPES = {
-        'vararg': 1,
-        'missing_name': 2,
-        'missing_positional': 3,
-        'extra': 4,
-    }
+    TYPES = {'vararg': 1, 'missing_name': 2, 'missing_positional': 3, 'extra': 4}
 
     def __init__(self, error_type, param=None, missing_names=None, **kwargs):
         super(FunctionValidationError, self).__init__(**kwargs)
@@ -381,9 +348,7 @@ def _validate_transform_fn(solid_name, transform_fn, inputs, expected_positional
     check.callable_param(transform_fn, 'transform_fn')
     check.list_param(inputs, 'inputs', of_type=InputDefinition)
     expected_positionals = check.opt_list_param(
-        expected_positionals,
-        'expected_positionals',
-        of_type=str,
+        expected_positionals, 'expected_positionals', of_type=str
     )
 
     names = set(inp.name for inp in inputs)
@@ -393,24 +358,28 @@ def _validate_transform_fn(solid_name, transform_fn, inputs, expected_positional
     except FunctionValidationError as e:
         if e.error_type == FunctionValidationError.TYPES['vararg']:
             raise DagsterInvalidDefinitionError(
-                "solid '{solid_name}' transform function has positional vararg parameter '{e.param}'. Transform functions should only have keyword arguments that match input names and a first positional parameter named 'info'.".
-                format(solid_name=solid_name, e=e)
+                "solid '{solid_name}' transform function has positional vararg parameter '{e.param}'. Transform functions should only have keyword arguments that match input names and a first positional parameter named 'info'.".format(
+                    solid_name=solid_name, e=e
+                )
             )
         elif e.error_type == FunctionValidationError.TYPES['missing_name']:
             raise DagsterInvalidDefinitionError(
-                "solid '{solid_name}' transform function has parameter '{e.param}' that is not one of the solid inputs. Transform functions should only have keyword arguments that match input names and a first positional parameter named 'info'.".
-                format(solid_name=solid_name, e=e)
+                "solid '{solid_name}' transform function has parameter '{e.param}' that is not one of the solid inputs. Transform functions should only have keyword arguments that match input names and a first positional parameter named 'info'.".format(
+                    solid_name=solid_name, e=e
+                )
             )
         elif e.error_type == FunctionValidationError.TYPES['missing_positional']:
             raise DagsterInvalidDefinitionError(
-                "solid '{solid_name}' transform function do not have required positional parameter '{e.param}'. Transform functions should only have keyword arguments that match input names and a first positional parameter named 'info'.".
-                format(solid_name=solid_name, e=e)
+                "solid '{solid_name}' transform function do not have required positional parameter '{e.param}'. Transform functions should only have keyword arguments that match input names and a first positional parameter named 'info'.".format(
+                    solid_name=solid_name, e=e
+                )
             )
         elif e.error_type == FunctionValidationError.TYPES['extra']:
             undeclared_inputs_printed = ", '".join(e.missing_names)
             raise DagsterInvalidDefinitionError(
-                "solid '{solid_name}' transform function do not have parameter(s) '{undeclared_inputs_printed}', which are in solid's inputs. Transform functions should only have keyword arguments that match input names and a first positional parameter named 'info'.".
-                format(solid_name=solid_name, undeclared_inputs_printed=undeclared_inputs_printed)
+                "solid '{solid_name}' transform function do not have parameter(s) '{undeclared_inputs_printed}', which are in solid's inputs. Transform functions should only have keyword arguments that match input names and a first positional parameter named 'info'.".format(
+                    solid_name=solid_name, undeclared_inputs_printed=undeclared_inputs_printed
+                )
             )
         else:
             raise e
@@ -423,8 +392,8 @@ def _validate_decorated_fn(fn, names, expected_positionals):
     signature = funcsigs.signature(fn)
     params = list(signature.parameters.values())
 
-    expected_positional_params = params[0:len(expected_positionals)]
-    other_params = params[len(expected_positionals):]
+    expected_positional_params = params[0 : len(expected_positionals)]
+    other_params = params[len(expected_positionals) :]
 
     for expected, actual in zip(expected_positionals, expected_positional_params):
         possible_names = [
@@ -434,9 +403,8 @@ def _validate_decorated_fn(fn, names, expected_positionals):
             '{expected}_'.format(expected=expected),
         ]
         if (
-            actual.kind not in [
-                funcsigs.Parameter.POSITIONAL_OR_KEYWORD, funcsigs.Parameter.POSITIONAL_ONLY
-            ]
+            actual.kind
+            not in [funcsigs.Parameter.POSITIONAL_OR_KEYWORD, funcsigs.Parameter.POSITIONAL_ONLY]
         ) or (actual.name not in possible_names):
             raise FunctionValidationError(
                 FunctionValidationError.TYPES['missing_positional'], param=expected

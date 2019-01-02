@@ -17,10 +17,7 @@ from dagster import (
 )
 
 from dagster.core.configurable import ConfigurableSelectorFromDict
-from dagster.core.materializable import (
-    FileMarshalable,
-    Materializeable,
-)
+from dagster.core.materializable import FileMarshalable, Materializeable
 
 DataFrameMeta = namedtuple('DataFrameMeta', 'format path')
 
@@ -35,8 +32,8 @@ def define_csv_dict_field():
             {
                 'path': Field(types.Path),
                 'sep': Field(types.String, is_optional=True, default_value=','),
-            },
-        ),
+            }
+        )
     )
 
 
@@ -47,7 +44,7 @@ class _PandasDataFrameMaterializationConfigSchema(ConfigurableSelectorFromDict):
                 'csv': define_csv_dict_field(),
                 'parquet': define_path_dict_field(),
                 'table': define_path_dict_field(),
-            },
+            }
         )
 
 
@@ -55,10 +52,7 @@ PandasDataFrameMaterializationConfigSchema = _PandasDataFrameMaterializationConf
 
 
 class _DataFrameType(
-    ConfigurableSelectorFromDict,
-    types.PythonObjectType,
-    Materializeable,
-    FileMarshalable,
+    ConfigurableSelectorFromDict, types.PythonObjectType, Materializeable, FileMarshalable
 ):
     def __init__(self):
         super(_DataFrameType, self).__init__(

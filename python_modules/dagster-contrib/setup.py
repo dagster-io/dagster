@@ -25,8 +25,7 @@ setup(
     version=version['__version__'],
     author='Elementl',
     license='Apache-2.0',
-    description=
-    'Utilities and examples for working with dagster, an opinionated framework for expressing data pipelines.',
+    description='Utilities and examples for working with dagster, an opinionated framework for expressing data pipelines.',
     long_description=long_description(),
     long_description_content_type='text/markdown',
     url='https://github.com/dagster-io/dagster',
@@ -44,18 +43,9 @@ setup(
             'sqlalchemy_sqlalchemy_tests',
         ]
     ),
-    install_requires=[
-        'dagster',
-        'dagstermill',
-    ],
+    install_requires=['dagster', 'dagstermill'],
     extras_require={
-        'pandas': [
-            'pandas>=0.22.0',
-            'pyarrow>=0.8.0',
-        ],
-        'sqlalchemy': [
-            'sqlalchemy>=1.2.7',
-            'jinja2>=2.8',
-        ]
-    }
+        'pandas': ['pandas>=0.22.0', 'pyarrow>=0.8.0'],
+        'sqlalchemy': ['sqlalchemy>=1.2.7', 'jinja2>=2.8'],
+    },
 )

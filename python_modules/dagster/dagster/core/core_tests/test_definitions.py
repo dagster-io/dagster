@@ -31,43 +31,30 @@ def test_pipeline_types():
     @solid(
         inputs=[InputDefinition('input_one', types.String)],
         outputs=[OutputDefinition(types.Any)],
-        config_field=Field(types.Dict({
-            'another_field': Field(types.Int)
-        })),
+        config_field=Field(types.Dict({'another_field': Field(types.Int)})),
     )
     def solid_one(_info, input_one):
         raise Exception('should not execute')
 
     pipeline_def = PipelineDefinition(
         solids=[produce_string, solid_one],
-        dependencies={'solid_one': {
-            'input_one': DependencyDefinition('produce_string'),
-        }},
+        dependencies={'solid_one': {'input_one': DependencyDefinition('produce_string')}},
         context_definitions={
-            'context_one':
-            PipelineContextDefinition(
+            'context_one': PipelineContextDefinition(
                 context_fn=lambda: None,
-                config_field=Field(types.Dict({
-                    'field_one': Field(types.String)
-                })),
+                config_field=Field(types.Dict({'field_one': Field(types.String)})),
             )
-        }
+        },
     )
 
-    present_types = [
-        types.String,
-        types.Any,
-        types.Int,
-    ]
+    present_types = [types.String, types.Any, types.Int]
 
     for present_type in present_types:
         name = present_type.name
         assert pipeline_def.has_type(name)
         assert pipeline_def.type_named(name).name == name
 
-    not_present_types = [
-        types.PythonObjectType('Duisjdfke', dict),
-    ]
+    not_present_types = [types.PythonObjectType('Duisjdfke', dict)]
 
     for not_present_type in not_present_types:
         assert not pipeline_def.has_type(not_present_type.name)
@@ -86,9 +73,7 @@ def test_mapper_errors():
 
     with pytest.raises(DagsterInvalidDefinitionError) as excinfo_1:
         PipelineDefinition(
-            solids=[solid_a], dependencies={'solid_b': {
-                'arg_a': DependencyDefinition('solid_a')
-            }}
+            solids=[solid_a], dependencies={'solid_b': {'arg_a': DependencyDefinition('solid_a')}}
         )
     assert str(excinfo_1.value) == 'Solid solid_b in dependency dictionary not found in solid list'
 
@@ -99,8 +84,9 @@ def test_mapper_errors():
                 SolidInstance('solid_b', alias='solid_c'): {
                     'arg_a': DependencyDefinition('solid_a')
                 }
-            }
+            },
         )
-    assert str(
-        excinfo_2.value
-    ) == 'Solid solid_b (aliased by solid_c in dependency dictionary) not found in solid list'
+    assert (
+        str(excinfo_2.value)
+        == 'Solid solid_b (aliased by solid_c in dependency dictionary) not found in solid list'
+    )

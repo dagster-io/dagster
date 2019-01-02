@@ -2,17 +2,12 @@ import json
 
 from dagster import check
 
-from .configurable import (
-    Field,
-    ConfigurableSelectorFromDict,
-)
+from .configurable import Field, ConfigurableSelectorFromDict
 
 
 def define_path_dict_field():
-    from .types import (
-        Dict,
-        Path,
-    )
+    from .types import Dict, Path
+
     return Field(Dict({'path': Field(Path)}))
 
 
@@ -27,10 +22,9 @@ class Materializeable(object):
 class MaterializeableBuiltinScalarConfigSchema(ConfigurableSelectorFromDict):
     def __init__(self):
         # TODO: add pickle
-        super(
-            MaterializeableBuiltinScalarConfigSchema,
-            self,
-        ).__init__(fields={'json': define_path_dict_field()})
+        super(MaterializeableBuiltinScalarConfigSchema, self).__init__(
+            fields={'json': define_path_dict_field()}
+        )
 
     def iterate_types(self):
         return []

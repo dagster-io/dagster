@@ -1,4 +1,4 @@
-from __future__ import (absolute_import, division, print_function, unicode_literals)
+from __future__ import absolute_import, division, print_function, unicode_literals
 from builtins import *  # pylint: disable=W0622,W0401
 
 import base64
@@ -26,10 +26,7 @@ from dagster import (
 
 from dagster.core.configurable import ConfigurableFromScalar
 from dagster.core.definitions import TransformExecutionInfo
-from dagster.core.materializable import (
-    MaterializeableBuiltinScalar,
-    FileMarshalable,
-)
+from dagster.core.materializable import MaterializeableBuiltinScalar, FileMarshalable
 
 # magic incantation for syncing up notebooks to enclosing virtual environment.
 # I don't claim to understand it.
@@ -119,8 +116,7 @@ class Manager:
         if not solid_def.has_output(output_name):
             raise DagstermillError(
                 'Solid {solid_name} does not have output named {output_name}'.format(
-                    solid_name=solid_def.name,
-                    output_name=output_name,
+                    solid_name=solid_def.name, output_name=output_name
                 )
             )
 
@@ -147,10 +143,7 @@ MANAGER_FOR_NOTEBOOK_INSTANCE = Manager()
 
 
 def declare_as_solid(pipeline_def, solid_def_name):
-    return MANAGER_FOR_NOTEBOOK_INSTANCE.declare_as_solid(
-        pipeline_def,
-        solid_def_name,
-    )
+    return MANAGER_FOR_NOTEBOOK_INSTANCE.declare_as_solid(pipeline_def, solid_def_name)
 
 
 def define_context(inputs=None):
@@ -158,18 +151,12 @@ def define_context(inputs=None):
 
 
 def get_input(dm_context, input_name):
-    check.param_invariant(
-        isinstance(dm_context, (InMemoryDagstermillContext, str)),
-        'dm_context',
-    )
+    check.param_invariant(isinstance(dm_context, (InMemoryDagstermillContext, str)), 'dm_context')
     return MANAGER_FOR_NOTEBOOK_INSTANCE.get_input(dm_context, input_name)
 
 
 def get_inputs(dm_context, *input_names):
-    check.param_invariant(
-        isinstance(dm_context, (InMemoryDagstermillContext, str)),
-        'dm_context',
-    )
+    check.param_invariant(isinstance(dm_context, (InMemoryDagstermillContext, str)), 'dm_context')
     return MANAGER_FOR_NOTEBOOK_INSTANCE.get_inputs(dm_context, *input_names)
 
 
@@ -201,9 +188,7 @@ def serialize_dm_context(transform_execution_info, inputs):
         dagster_type = input_def_dict[input_name].dagster_type
 
         new_inputs_structure['inputs'][input_name] = marshal_value(
-            dagster_type,
-            input_value,
-            os.path.join(marshal_dir, 'input-{}'.format(input_name)),
+            dagster_type, input_value, os.path.join(marshal_dir, 'input-{}'.format(input_name))
         )
 
     return json.dumps(new_inputs_structure)
@@ -277,8 +262,7 @@ def _dm_solid_transform(name, notebook_path):
 
             info.context.debug(
                 'Notebook execution complete for {name}. Data is {data}'.format(
-                    name=name,
-                    data=output_nb.data,
+                    name=name, data=output_nb.data
                 )
             )
 
@@ -286,14 +270,10 @@ def _dm_solid_transform(name, notebook_path):
                 if output_def.name in output_nb.data:
 
                     value = unmarshal_value(
-                        output_def.dagster_type,
-                        output_nb.data[output_def.name],
+                        output_def.dagster_type, output_nb.data[output_def.name]
                     )
 
-                    yield Result(
-                        value,
-                        output_def.name,
-                    )
+                    yield Result(value, output_def.name)
 
         finally:
             if do_cleanup and os.path.exists(temp_path):
@@ -310,13 +290,7 @@ def is_json_serializable(value):
         return False
 
 
-def define_dagstermill_solid(
-    name,
-    notebook_path,
-    inputs=None,
-    outputs=None,
-    config_field=None,
-):
+def define_dagstermill_solid(name, notebook_path, inputs=None, outputs=None, config_field=None):
     check.str_param(name, 'name')
     check.str_param(notebook_path, 'notebook_path')
     inputs = check.opt_list_param(inputs, 'input_defs', of_type=InputDefinition)
@@ -329,8 +303,5 @@ def define_dagstermill_solid(
         outputs=outputs,
         config_field=config_field,
         description='This solid is backed by the notebook at {path}'.format(path=notebook_path),
-        metadata={
-            'notebook_path': notebook_path,
-            'kind': 'ipynb',
-        }
+        metadata={'notebook_path': notebook_path, 'kind': 'ipynb'},
     )

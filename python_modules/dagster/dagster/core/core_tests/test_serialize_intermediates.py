@@ -1,10 +1,4 @@
-from dagster import (
-    OutputDefinition,
-    PipelineDefinition,
-    execute_pipeline,
-    lambda_solid,
-    types,
-)
+from dagster import OutputDefinition, PipelineDefinition, execute_pipeline, lambda_solid, types
 
 
 @lambda_solid

@@ -20,17 +20,11 @@ from dagster.core.definitions import (
     _create_adjacency_lists,
 )
 
-from dagster.core.execution import (
-    SolidExecutionResult,
-    PipelineExecutionResult,
-)
+from dagster.core.execution import SolidExecutionResult, PipelineExecutionResult
 
 from dagster.core.utility_solids import define_stub_solid
 
-from dagster.utils.test import (
-    create_test_runtime_execution_context,
-    execute_solid,
-)
+from dagster.utils.test import create_test_runtime_execution_context, execute_solid
 
 # protected members
 # pylint: disable=W0212
@@ -84,10 +78,7 @@ def create_solid_with_deps(name, *solid_deps):
     inputs = [InputDefinition(solid_dep.name) for solid_dep in solid_deps]
 
     return SolidDefinition(
-        name=name,
-        inputs=inputs,
-        transform_fn=_transform_fn,
-        outputs=[OutputDefinition()],
+        name=name, inputs=inputs, transform_fn=_transform_fn, outputs=[OutputDefinition()]
     )
 
 
@@ -96,10 +87,7 @@ def create_root_solid(name):
     inp = InputDefinition(input_name)
 
     return SolidDefinition(
-        name=name,
-        inputs=[inp],
-        transform_fn=_transform_fn,
-        outputs=[OutputDefinition()],
+        name=name, inputs=[inp], transform_fn=_transform_fn, outputs=[OutputDefinition()]
     )
 
 
@@ -122,12 +110,7 @@ def test_single_dep_adjacency_lists():
     node_b = create_solid_with_deps('B', node_a)
 
     forward_edges, backwards_edges = _do_construct(
-        [node_a, node_b],
-        {
-            'B': {
-                'A': DependencyDefinition('A'),
-            },
-        },
+        [node_a, node_b], {'B': {'A': DependencyDefinition('A')}}
     )
 
     assert forward_edges == {'A': {'B'}, 'B': set()}
@@ -135,10 +118,7 @@ def test_single_dep_adjacency_lists():
 
 
 def test_diamond_deps_adjaceny_lists():
-    forward_edges, backwards_edges = _do_construct(
-        create_diamond_solids(),
-        diamond_deps(),
-    )
+    forward_edges, backwards_edges = _do_construct(create_diamond_solids(), diamond_deps())
 
     assert forward_edges == {'A_source': {'A'}, 'A': {'B', 'C'}, 'B': {'D'}, 'C': {'D'}, 'D': set()}
     assert backwards_edges == {
@@ -146,25 +126,16 @@ def test_diamond_deps_adjaceny_lists():
         'B': {'A'},
         'C': {'A'},
         'A': {'A_source'},
-        'A_source': set()
+        'A_source': set(),
     }
 
 
 def diamond_deps():
     return {
-        'A': {
-            'A_input': DependencyDefinition('A_source'),
-        },
-        'B': {
-            'A': DependencyDefinition('A')
-        },
-        'C': {
-            'A': DependencyDefinition('A')
-        },
-        'D': {
-            'B': DependencyDefinition('B'),
-            'C': DependencyDefinition('C'),
-        }
+        'A': {'A_input': DependencyDefinition('A_source')},
+        'B': {'A': DependencyDefinition('A')},
+        'C': {'A': DependencyDefinition('A')},
+        'D': {'B': DependencyDefinition('B'), 'C': DependencyDefinition('C')},
     }
 
 
@@ -178,14 +149,8 @@ def test_disconnected_graphs_adjaceny_lists():
     node_d = create_solid_with_deps('D', node_c)
 
     forward_edges, backwards_edges = _do_construct(
-        [node_a, node_b, node_c, node_d], {
-            'B': {
-                'A': DependencyDefinition('A')
-            },
-            'D': {
-                'C': DependencyDefinition('C'),
-            }
-        }
+        [node_a, node_b, node_c, node_d],
+        {'B': {'A': DependencyDefinition('A')}, 'D': {'C': DependencyDefinition('C')}},
     )
     assert forward_edges == {'A': {'B'}, 'B': set(), 'C': {'D'}, 'D': set()}
     assert backwards_edges == {'B': {'A'}, 'A': set(), 'D': {'C'}, 'C': set()}
@@ -202,15 +167,17 @@ def create_diamond_solids():
 
 def create_diamond_pipeline():
     return PipelineDefinition(
-        name='diamond_pipeline',
-        solids=create_diamond_solids(),
-        dependencies=diamond_deps(),
+        name='diamond_pipeline', solids=create_diamond_solids(), dependencies=diamond_deps()
     )
 
 
 def test_diamond_toposort():
     assert [s.name for s in solids_in_topological_order(create_diamond_pipeline())] == [
-        'A_source', 'A', 'B', 'C', 'D'
+        'A_source',
+        'A',
+        'B',
+        'C',
+        'D',
     ]
 
 
@@ -247,24 +214,11 @@ def test_pipeline_execution_graph_diamond():
 
 def test_execute_solid_in_diamond():
     solid_result = execute_solid(
-        create_diamond_pipeline(),
-        'A',
-        inputs={
-            'A_input': [{
-                'a key': 'a value'
-            }],
-        },
+        create_diamond_pipeline(), 'A', inputs={'A_input': [{'a key': 'a value'}]}
     )
 
     assert solid_result.success
-    assert solid_result.transformed_value() == [
-        {
-            'a key': 'a value'
-        },
-        {
-            'A': 'transform_called'
-        },
-    ]
+    assert solid_result.transformed_value() == [{'a key': 'a value'}, {'A': 'transform_called'}]
 
 
 def test_execute_aliased_solid_in_diamond():
@@ -273,38 +227,23 @@ def test_execute_aliased_solid_in_diamond():
         name='aliased_pipeline',
         solids=[a_source, create_root_solid('A')],
         dependencies={
-            SolidInstance('A', alias='aliased'): {
-                'A_input': DependencyDefinition(a_source.name)
-            },
+            SolidInstance('A', alias='aliased'): {'A_input': DependencyDefinition(a_source.name)}
         },
     )
 
     solid_result = execute_solid(
-        pipeline_def,
-        'aliased',
-        inputs={
-            'A_input': [{
-                'a key': 'a value'
-            }],
-        },
+        pipeline_def, 'aliased', inputs={'A_input': [{'a key': 'a value'}]}
     )
 
     assert solid_result.success
     assert solid_result.transformed_value() == [
-        {
-            'a key': 'a value'
-        },
-        {
-            'aliased': 'transform_called'
-        },
+        {'a key': 'a value'},
+        {'aliased': 'transform_called'},
     ]
 
 
 def test_create_pipeline_with_empty_solids_list():
-    single_solid_pipeline = PipelineDefinition(
-        solids=[],
-        dependencies={},
-    )
+    single_solid_pipeline = PipelineDefinition(solids=[], dependencies={})
 
     result = execute_pipeline(single_solid_pipeline)
     assert result.success
@@ -312,10 +251,7 @@ def test_create_pipeline_with_empty_solids_list():
 
 def test_singleton_pipeline():
     stub_solid = define_stub_solid('stub', [{'a key': 'a value'}])
-    single_solid_pipeline = PipelineDefinition(
-        solids=[stub_solid],
-        dependencies={},
-    )
+    single_solid_pipeline = PipelineDefinition(solids=[stub_solid], dependencies={})
 
     result = execute_pipeline(single_solid_pipeline)
     assert result.success
@@ -324,10 +260,7 @@ def test_singleton_pipeline():
 def test_two_root_solid_pipeline_with_empty_dependency_definition():
     stub_solid_a = define_stub_solid('stub_a', [{'a key': 'a value'}])
     stub_solid_b = define_stub_solid('stub_b', [{'a key': 'a value'}])
-    single_solid_pipeline = PipelineDefinition(
-        solids=[stub_solid_a, stub_solid_b],
-        dependencies={},
-    )
+    single_solid_pipeline = PipelineDefinition(solids=[stub_solid_a, stub_solid_b], dependencies={})
 
     result = execute_pipeline(single_solid_pipeline)
     assert result.success
@@ -337,8 +270,7 @@ def test_two_root_solid_pipeline_with_partial_dependency_definition():
     stub_solid_a = define_stub_solid('stub_a', [{'a key': 'a value'}])
     stub_solid_b = define_stub_solid('stub_b', [{'a key': 'a value'}])
     single_solid_pipeline = PipelineDefinition(
-        solids=[stub_solid_a, stub_solid_b],
-        dependencies={'stub_a': {}},
+        solids=[stub_solid_a, stub_solid_b], dependencies={'stub_a': {}}
     )
 
     result = execute_pipeline(single_solid_pipeline)
@@ -355,7 +287,8 @@ def _do_test(pipeline, do_execute_pipeline_iter):
     result = PipelineExecutionResult(pipeline, create_test_runtime_execution_context(), results)
 
     assert result.result_for_solid('A').transformed_value() == [
-        input_set('A_input'), transform_called('A')
+        input_set('A_input'),
+        transform_called('A'),
     ]
 
     assert result.result_for_solid('B').transformed_value() == [
@@ -404,7 +337,6 @@ def test_pipeline_name_threaded_through_context():
     assert result.success
 
     for result in execute_pipeline_iterator(
-        PipelineDefinition(name="foobar", solids=[assert_name_transform]),
-        {},
+        PipelineDefinition(name="foobar", solids=[assert_name_transform]), {}
     ):
         assert result.success

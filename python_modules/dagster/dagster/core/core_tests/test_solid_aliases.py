@@ -25,15 +25,9 @@ def test_aliased_solids():
     pipeline = PipelineDefinition(
         solids=[first, not_first],
         dependencies={
-            'not_first': {
-                'prev': DependencyDefinition('first'),
-            },
-            SolidInstance('not_first', alias='second'): {
-                'prev': DependencyDefinition('not_first'),
-            },
-            SolidInstance('not_first', alias='third'): {
-                'prev': DependencyDefinition('second'),
-            },
+            'not_first': {'prev': DependencyDefinition('first')},
+            SolidInstance('not_first', alias='second'): {'prev': DependencyDefinition('not_first')},
+            SolidInstance('not_first', alias='third'): {'prev': DependencyDefinition('second')},
         },
     )
 
@@ -57,7 +51,7 @@ def test_only_aliased_solids():
         dependencies={
             SolidInstance('first', alias='the_root'): {},
             SolidInstance('not_first', alias='the_consequence'): {
-                'prev': DependencyDefinition('the_root'),
+                'prev': DependencyDefinition('the_root')
             },
         },
     )
@@ -69,10 +63,7 @@ def test_only_aliased_solids():
 
 
 def test_aliased_configs():
-    @solid(
-        inputs=[],
-        config_field=Field(types.Int),
-    )
+    @solid(inputs=[], config_field=Field(types.Int))
     def load_constant(info):
         return info.config
 
@@ -81,21 +72,11 @@ def test_aliased_configs():
         dependencies={
             SolidInstance(load_constant.name, 'load_a'): {},
             SolidInstance(load_constant.name, 'load_b'): {},
-        }
+        },
     )
 
     result = execute_pipeline(
-        pipeline,
-        {
-            'solids': {
-                'load_a': {
-                    'config': 2,
-                },
-                'load_b': {
-                    'config': 3,
-                },
-            },
-        },
+        pipeline, {'solids': {'load_a': {'config': 2}, 'load_b': {'config': 3}}}
     )
 
     assert result.success
@@ -117,7 +98,7 @@ def test_aliased_solids_context():
         dependencies={
             SolidInstance('log_things', 'log_a'): {},
             SolidInstance('log_things', 'log_b'): {},
-        }
+        },
     )
 
     result = execute_pipeline(pipeline)

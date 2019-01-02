@@ -35,20 +35,14 @@ def _create_expectation_lambda(solid, inout_def, expectation_def, internal_outpu
 
     def _do_expectation(context, step, inputs):
         with context.values(
-            {
-                inout_def.descriptive_key: inout_def.name,
-                'expectation': expectation_def.name
-            }
+            {inout_def.descriptive_key: inout_def.name, 'expectation': expectation_def.name}
         ):
             value = inputs[EXPECTATION_INPUT]
             info = ExpectationExecutionInfo(context, inout_def, solid, expectation_def)
             expt_result = expectation_def.expectation_fn(info, value)
             if expt_result.success:
                 context.debug(
-                    'Expectation {key} succeeded on {value}.'.format(
-                        key=step.key,
-                        value=value,
-                    )
+                    'Expectation {key} succeeded on {value}.'.format(key=step.key, value=value)
                 )
                 yield Result(output_name=internal_output_name, value=inputs[EXPECTATION_INPUT])
             else:
@@ -73,9 +67,7 @@ def create_expectations_subplan(solid, inout_def, prev_step_output_handle, tag):
             solid=solid,
             expectation_def=expectation_def,
             key='{solid.name}.{inout_def.name}.expectation.{expectation_def.name}'.format(
-                solid=solid,
-                inout_def=inout_def,
-                expectation_def=expectation_def,
+                solid=solid, inout_def=inout_def, expectation_def=expectation_def
             ),
             tag=tag,
             prev_step_output_handle=prev_step_output_handle,
@@ -87,29 +79,17 @@ def create_expectations_subplan(solid, inout_def, prev_step_output_handle, tag):
     join_step = create_join_step(
         solid,
         '{solid}.{desc_key}.{name}.expectations.join'.format(
-            solid=solid.name,
-            desc_key=inout_def.descriptive_key,
-            name=inout_def.name,
+            solid=solid.name, desc_key=inout_def.descriptive_key, name=inout_def.name
         ),
         input_expect_steps,
         EXPECTATION_VALUE_OUTPUT,
     )
 
     output_name = join_step.step_outputs[0].name
-    return ExecutionSubPlan(
-        steps + [join_step],
-        StepOutputHandle(join_step, output_name),
-    )
+    return ExecutionSubPlan(steps + [join_step], StepOutputHandle(join_step, output_name))
 
 
-def create_expectation_step(
-    solid,
-    expectation_def,
-    key,
-    tag,
-    prev_step_output_handle,
-    inout_def,
-):
+def create_expectation_step(solid, expectation_def, key, tag, prev_step_output_handle, inout_def):
 
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(expectation_def, 'input_expct_def', ExpectationDefinition)
@@ -127,14 +107,9 @@ def create_expectation_step(
                 prev_output_handle=prev_step_output_handle,
             )
         ],
-        step_outputs=[
-            StepOutput(name=EXPECTATION_VALUE_OUTPUT, dagster_type=value_type),
-        ],
+        step_outputs=[StepOutput(name=EXPECTATION_VALUE_OUTPUT, dagster_type=value_type)],
         compute_fn=_create_expectation_lambda(
-            solid,
-            inout_def,
-            expectation_def,
-            EXPECTATION_VALUE_OUTPUT,
+            solid, inout_def, expectation_def, EXPECTATION_VALUE_OUTPUT
         ),
         tag=tag,
         solid=solid,
@@ -152,13 +127,9 @@ def decorate_with_expectations(execution_info, solid, transform_step, output_def
             solid,
             output_def,
             StepOutputHandle(transform_step, output_def.name),
-            tag=StepTag.OUTPUT_EXPECTATION
+            tag=StepTag.OUTPUT_EXPECTATION,
         )
     else:
         return ExecutionSubPlan(
-            steps=[],
-            terminal_step_output_handle=StepOutputHandle(
-                transform_step,
-                output_def.name,
-            ),
+            steps=[], terminal_step_output_handle=StepOutputHandle(transform_step, output_def.name)
         )

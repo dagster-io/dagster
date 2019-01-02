@@ -22,10 +22,7 @@ def solid_c(arg_a):
     return arg_a * 3
 
 
-@lambda_solid(inputs=[
-    InputDefinition('arg_b'),
-    InputDefinition('arg_c'),
-])
+@lambda_solid(inputs=[InputDefinition('arg_b'), InputDefinition('arg_c')])
 def solid_d(arg_b, arg_c):
     return arg_b * arg_c
 
@@ -37,15 +34,11 @@ def define_diamond_dag_pipeline():
         # dependencies determine execution order
         solids=[solid_d, solid_c, solid_b, solid_a],
         dependencies={
-            'solid_b': {
-                'arg_a': DependencyDefinition('solid_a'),
-            },
-            'solid_c': {
-                'arg_a': DependencyDefinition('solid_a'),
-            },
+            'solid_b': {'arg_a': DependencyDefinition('solid_a')},
+            'solid_c': {'arg_a': DependencyDefinition('solid_a')},
             'solid_d': {
                 'arg_b': DependencyDefinition('solid_b'),
                 'arg_c': DependencyDefinition('solid_c'),
-            }
-        }
+            },
+        },
     )

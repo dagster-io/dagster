@@ -1,8 +1,4 @@
-from dagster import (
-    PipelineDefinition,
-    check,
-    types,
-)
+from dagster import PipelineDefinition, check, types
 
 
 def scaffold_pipeline_config(pipeline_def, skip_optional=True):

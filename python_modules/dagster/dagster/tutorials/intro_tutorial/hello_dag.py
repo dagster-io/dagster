@@ -1,9 +1,4 @@
-from dagster import (
-    DependencyDefinition,
-    InputDefinition,
-    PipelineDefinition,
-    lambda_solid,
-)
+from dagster import DependencyDefinition, InputDefinition, PipelineDefinition, lambda_solid
 
 
 @lambda_solid
@@ -20,9 +15,5 @@ def define_hello_dag_pipeline():
     return PipelineDefinition(
         name='hello_dag_pipeline',
         solids=[solid_one, solid_two],
-        dependencies={
-            'solid_two': {
-                'arg_one': DependencyDefinition('solid_one'),
-            },
-        }
+        dependencies={'solid_two': {'arg_one': DependencyDefinition('solid_one')}},
     )

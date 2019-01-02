@@ -55,31 +55,23 @@ PartNineResources = namedtuple('PartNineResources', 'store')
 
 
 def define_contextless_solids():
-    @solid(
-        config_field=Field(types.Int),
-        outputs=[OutputDefinition(types.Int)],
-    )
+    @solid(config_field=Field(types.Int), outputs=[OutputDefinition(types.Int)])
     def injest_a(info):
         return info.config
 
-    @solid(
-        config_field=Field(types.Int),
-        outputs=[OutputDefinition(types.Int)],
-    )
+    @solid(config_field=Field(types.Int), outputs=[OutputDefinition(types.Int)])
     def injest_b(info):
         return info.config
 
     @lambda_solid(
-        inputs=[InputDefinition('num_one', types.Int),
-                InputDefinition('num_two', types.Int)],
+        inputs=[InputDefinition('num_one', types.Int), InputDefinition('num_two', types.Int)],
         output=OutputDefinition(types.Int),
     )
     def add_ints(num_one, num_two):
         return num_one + num_two
 
     @lambda_solid(
-        inputs=[InputDefinition('num_one', types.Int),
-                InputDefinition('num_two', types.Int)],
+        inputs=[InputDefinition('num_one', types.Int), InputDefinition('num_two', types.Int)],
         output=OutputDefinition(types.Int),
     )
     def mult_ints(num_one, num_two):
@@ -89,25 +81,18 @@ def define_contextless_solids():
 
 
 def define_contextful_solids():
-    @solid(
-        config_field=Field(types.Int),
-        outputs=[OutputDefinition(types.Int)],
-    )
+    @solid(config_field=Field(types.Int), outputs=[OutputDefinition(types.Int)])
     def injest_a(info):
         info.context.resources.store.record_value(info.context, 'a', info.config)
         return info.config
 
-    @solid(
-        config_field=Field(types.Int),
-        outputs=[OutputDefinition(types.Int)],
-    )
+    @solid(config_field=Field(types.Int), outputs=[OutputDefinition(types.Int)])
     def injest_b(info):
         info.context.resources.store.record_value(info.context, 'b', info.config)
         return info.config
 
     @solid(
-        inputs=[InputDefinition('num_one', types.Int),
-                InputDefinition('num_two', types.Int)],
+        inputs=[InputDefinition('num_one', types.Int), InputDefinition('num_two', types.Int)],
         outputs=[OutputDefinition(types.Int)],
     )
     def add_ints(info, num_one, num_two):
@@ -116,8 +101,7 @@ def define_contextful_solids():
         return result
 
     @solid(
-        inputs=[InputDefinition('num_one', types.Int),
-                InputDefinition('num_two', types.Int)],
+        inputs=[InputDefinition('num_one', types.Int), InputDefinition('num_two', types.Int)],
         outputs=[OutputDefinition(types.Int)],
     )
     def mult_ints(info, num_one, num_two):
@@ -163,15 +147,12 @@ def define_part_nine_step_two_pipeline():
             },
         },
         context_definitions={
-            'local':
-            PipelineContextDefinition(
-                context_fn=lambda *_args:
-                    ExecutionContext.console_logging(
-                        log_level=DEBUG,
-                        resources=PartNineResources(InMemoryStore())
-                    )
-            ),
-        }
+            'local': PipelineContextDefinition(
+                context_fn=lambda *_args: ExecutionContext.console_logging(
+                    log_level=DEBUG, resources=PartNineResources(InMemoryStore())
+                )
+            )
+        },
     )
 
 
@@ -190,28 +171,31 @@ def define_part_nine_final_pipeline():
             },
         },
         context_definitions={
-            'local':
-            PipelineContextDefinition(
+            'local': PipelineContextDefinition(
                 context_fn=lambda *_args: ExecutionContext.console_logging(
-                    log_level=DEBUG,
-                    resources=PartNineResources(InMemoryStore())
+                    log_level=DEBUG, resources=PartNineResources(InMemoryStore())
                 )
             ),
-            'cloud':
-            PipelineContextDefinition(
+            'cloud': PipelineContextDefinition(
                 context_fn=lambda info: ExecutionContext.console_logging(
                     resources=PartNineResources(PublicCloudStore(info.config['credentials']))
                 ),
-                config_field=Field(dagster_type=types.Dict(
-                    fields={
-                    'credentials': Field(types.Dict(
+                config_field=Field(
+                    dagster_type=types.Dict(
                         fields={
-                        'user' : Field(types.String),
-                        'pass' : Field(types.String),
-                    })),
-                })),
-            )
-        }
+                            'credentials': Field(
+                                types.Dict(
+                                    fields={
+                                        'user': Field(types.String),
+                                        'pass': Field(types.String),
+                                    }
+                                )
+                            )
+                        }
+                    )
+                ),
+            ),
+        },
     )
 
 
@@ -221,7 +205,7 @@ def define_part_nine_repo():
         pipeline_dict={
             'part_nine_step_one': define_part_nine_step_one_pipeline,
             'part_nine_final': define_part_nine_final_pipeline,
-        }
+        },
     )
 
 
@@ -240,7 +224,7 @@ context:
         config:
             log_level: DEBUG
 '''
-        )
+        ),
     )
 
     assert result.success
@@ -289,10 +273,7 @@ solids:
     ]
     for yaml_variant in yaml_variants:
 
-        result = execute_pipeline(
-            define_part_nine_step_one_pipeline(),
-            yaml.load(yaml_variant),
-        )
+        result = execute_pipeline(define_part_nine_step_one_pipeline(), yaml.load(yaml_variant))
 
         assert result.success
         assert result.result_for_solid('injest_a').transformed_value() == 2
@@ -324,12 +305,7 @@ solids:
     assert result.result_for_solid('add_ints').transformed_value() == 5
     assert result.result_for_solid('mult_ints').transformed_value() == 6
 
-    assert result.context.resources.store.values == {
-        'a': 2,
-        'b': 3,
-        'add': 5,
-        'mult': 6,
-    }
+    assert result.context.resources.store.values == {'a': 2, 'b': 3, 'add': 5, 'mult': 6}
 
 
 def test_intro_tutorial_part_nine_final_cloud_success():

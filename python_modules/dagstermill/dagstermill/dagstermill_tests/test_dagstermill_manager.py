@@ -4,14 +4,7 @@ import pytest
 
 import dagstermill as dm
 
-from dagster import (
-    Field,
-    SolidDefinition,
-    InputDefinition,
-    OutputDefinition,
-    check,
-    types,
-)
+from dagster import Field, SolidDefinition, InputDefinition, OutputDefinition, check, types
 
 # def test_basic_get_in_memory_input():
 #     manager = dm.Manager()

@@ -1,10 +1,6 @@
 from dagster import check
 
-from dagster.core.definitions import (
-    Result,
-    Solid,
-    OutputDefinition,
-)
+from dagster.core.definitions import Result, Solid, OutputDefinition
 
 from dagster.core.materializable import Materializeable
 
@@ -18,7 +14,7 @@ from .objects import (
     StepTag,
 )
 
-from .utility import (create_join_step)
+from .utility import create_join_step
 
 MATERIALIZATION_THUNK_INPUT = 'materialization_thunk_input'
 MATERIALIZATION_THUNK_OUTPUT = 'materialization_thunk_output'
@@ -61,9 +57,7 @@ def decorate_with_output_materializations(execution_info, solid, output_def, sub
         new_steps.append(
             ExecutionStep(
                 key='{solid}.materialization.output.{output}.{mat_count}'.format(
-                    solid=solid.name,
-                    output=output_def.name,
-                    mat_count=mat_count,
+                    solid=solid.name, output=output_def.name, mat_count=mat_count
                 ),
                 step_inputs=[
                     StepInput(
@@ -74,28 +68,23 @@ def decorate_with_output_materializations(execution_info, solid, output_def, sub
                 ],
                 step_outputs=[
                     StepOutput(
-                        name=MATERIALIZATION_THUNK_OUTPUT,
-                        dagster_type=output_def.dagster_type,
+                        name=MATERIALIZATION_THUNK_OUTPUT, dagster_type=output_def.dagster_type
                     )
                 ],
                 tag=StepTag.MATERIALIZATION_THUNK,
                 solid=solid,
-                compute_fn=_create_materialization_lambda(output_def.dagster_type, output_spec)
+                compute_fn=_create_materialization_lambda(output_def.dagster_type, output_spec),
             )
         )
 
     join_step = create_join_step(
         solid,
         '{solid}.materialization.output.{output}.join'.format(
-            solid=solid.name,
-            output=output_def.name,
+            solid=solid.name, output=output_def.name
         ),
         new_steps,
         MATERIALIZATION_THUNK_OUTPUT,
     )
 
     output_name = join_step.step_outputs[0].name
-    return ExecutionSubPlan(
-        new_steps + [join_step],
-        StepOutputHandle(join_step, output_name),
-    )
+    return ExecutionSubPlan(new_steps + [join_step], StepOutputHandle(join_step, output_name))

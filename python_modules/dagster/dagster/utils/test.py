@@ -58,12 +58,7 @@ def get_temp_file_names(number):
             _unlink_swallow_errors(temp_file_name)
 
 
-def execute_solids(
-    pipeline_def,
-    solid_names,
-    inputs=None,
-    environment=None,
-):
+def execute_solids(pipeline_def, solid_names, inputs=None, environment=None):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     check.list_param(solid_names, 'solid_names', of_type=str)
     inputs = check.opt_dict_param(inputs, 'inputs', key_type=str, value_type=dict)
@@ -81,8 +76,7 @@ def execute_solids(
             if input_name in inputs.get(solid_name, {}):
                 stub_solid = define_stub_solid(
                     '{solid_name}_{input_name}'.format(
-                        solid_name=solid_name,
-                        input_name=input_name,
+                        solid_name=solid_name, input_name=input_name
                     ),
                     inputs[solid_name][input_name],
                 )
@@ -95,8 +89,7 @@ def execute_solids(
             if pipeline_def.dependency_structure.has_dep(inp_handle):
                 output_handle = pipeline_def.dependency_structure.get_dep(inp_handle)
                 deps[dep_key][input_name] = DependencyDefinition(
-                    solid=output_handle.solid.name,
-                    output=output_handle.output_def.name,
+                    solid=output_handle.solid.name, output=output_handle.output_def.name
                 )
                 continue
 
@@ -119,20 +112,12 @@ def execute_solids(
     return {sr.solid.name: sr for sr in result.result_list}
 
 
-def execute_solid(
-    pipeline_def,
-    solid_name,
-    inputs=None,
-    environment=None,
-):
+def execute_solid(pipeline_def, solid_name, inputs=None, environment=None):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     check.str_param(solid_name, 'solid_name')
     inputs = check.opt_dict_param(inputs, 'inputs', key_type=str)
     environment = check.opt_dict_param(environment, 'environment')
 
     return execute_solids(
-        pipeline_def,
-        [solid_name],
-        {solid_name: inputs} if inputs else None,
-        environment,
+        pipeline_def, [solid_name], {solid_name: inputs} if inputs else None, environment
     )[solid_name]

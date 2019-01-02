@@ -1,12 +1,6 @@
-from dagster.utils.logging import (
-    define_structured_logger,
-    DEBUG,
-)
+from dagster.utils.logging import define_structured_logger, DEBUG
 
-from dagster import (
-    check,
-    ExecutionContext,
-)
+from dagster import check, ExecutionContext
 
 from dagster.core.events import (
     EventType,

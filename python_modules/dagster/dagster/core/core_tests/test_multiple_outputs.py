@@ -22,10 +22,7 @@ def test_multiple_outputs():
     solid = SolidDefinition(
         name='multiple_outputs',
         inputs=[],
-        outputs=[
-            OutputDefinition(name='output_one'),
-            OutputDefinition(name='output_two'),
-        ],
+        outputs=[OutputDefinition(name='output_one'), OutputDefinition(name='output_two')],
         transform_fn=_t_fn,
     )
 
@@ -39,8 +36,7 @@ def test_multiple_outputs():
     assert solid_result.transformed_value('output_two') == 'bar'
 
     with pytest.raises(
-        DagsterInvariantViolationError,
-        match='not_defined not defined in solid multiple_outputs',
+        DagsterInvariantViolationError, match='not_defined not defined in solid multiple_outputs'
     ):
         solid_result.transformed_value('not_defined')
 
@@ -68,7 +64,7 @@ def test_multiple_outputs_expectations():
                 name='output_one',
                 expectations=[
                     ExpectationDefinition(name='some_expectation', expectation_fn=_expect_fn_one)
-                ]
+                ],
             ),
             OutputDefinition(
                 name='output_two',
@@ -98,9 +94,7 @@ def test_wrong_multiple_output():
     solid = SolidDefinition(
         name='multiple_outputs',
         inputs=[],
-        outputs=[
-            OutputDefinition(name='output_one'),
-        ],
+        outputs=[OutputDefinition(name='output_one')],
         transform_fn=_t_fn,
     )
 
@@ -120,9 +114,7 @@ def test_multiple_outputs_of_same_name_disallowed():
     solid = SolidDefinition(
         name='multiple_outputs',
         inputs=[],
-        outputs=[
-            OutputDefinition(name='output_one'),
-        ],
+        outputs=[OutputDefinition(name='output_one')],
         transform_fn=_t_fn,
     )
 
@@ -139,10 +131,7 @@ def test_multiple_outputs_only_emit_one():
     solid = SolidDefinition(
         name='multiple_outputs',
         inputs=[],
-        outputs=[
-            OutputDefinition(name='output_one'),
-            OutputDefinition(name='output_two'),
-        ],
+        outputs=[OutputDefinition(name='output_one'), OutputDefinition(name='output_two')],
         transform_fn=_t_fn,
     )
 
@@ -171,12 +160,8 @@ def test_multiple_outputs_only_emit_one():
     pipeline = PipelineDefinition(
         solids=[solid, downstream_one, downstream_two],
         dependencies={
-            'downstream_one': {
-                'some_input': DependencyDefinition(solid.name, output='output_one'),
-            },
-            'downstream_two': {
-                'some_input': DependencyDefinition(solid.name, output='output_two'),
-            },
+            'downstream_one': {'some_input': DependencyDefinition(solid.name, output='output_one')},
+            'downstream_two': {'some_input': DependencyDefinition(solid.name, output='output_two')},
         },
     )
 
@@ -188,15 +173,11 @@ def test_multiple_outputs_only_emit_one():
     assert set(solid_result.transformed_values.keys()) == set(['output_one'])
 
     with pytest.raises(
-        DagsterInvariantViolationError,
-        match='not_defined not defined in solid multiple_outputs',
+        DagsterInvariantViolationError, match='not_defined not defined in solid multiple_outputs'
     ):
         solid_result.transformed_value('not_defined')
 
-    with pytest.raises(
-        DagsterInvariantViolationError,
-        match='Did not find result output_two',
-    ):
+    with pytest.raises(DagsterInvariantViolationError, match='Did not find result output_two'):
         solid_result.transformed_value('output_two')
 
     with pytest.raises(

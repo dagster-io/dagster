@@ -87,7 +87,7 @@ class DauphinSubscription(dauphin.ObjectType):
     pipelineRunLogs = dauphin.Field(
         dauphin.NonNull('PipelineRunLogsSubscriptionPayload'),
         runId=dauphin.Argument(dauphin.NonNull(dauphin.ID)),
-        after=dauphin.Argument('Cursor')
+        after=dauphin.Argument('Cursor'),
     )
 
     def resolve_pipelineRunLogs(self, info, runId, after=None):

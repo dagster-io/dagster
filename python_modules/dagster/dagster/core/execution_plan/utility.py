@@ -1,16 +1,7 @@
 from dagster import check
-from dagster.core.definitions import (
-    Result,
-    Solid,
-)
+from dagster.core.definitions import Result, Solid
 
-from .objects import (
-    ExecutionStep,
-    StepInput,
-    StepOutput,
-    StepOutputHandle,
-    StepTag,
-)
+from .objects import ExecutionStep, StepInput, StepOutput, StepOutputHandle, StepTag
 
 JOIN_OUTPUT = 'join_output'
 

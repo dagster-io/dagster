@@ -6,10 +6,7 @@ import yaml
 
 import click
 
-from dagster import (
-    PipelineDefinition,
-    check,
-)
+from dagster import PipelineDefinition, check
 
 from dagster.core.definitions import Solid
 from dagster.core.execution import execute_pipeline_iterator
@@ -107,8 +104,10 @@ def create_pipeline_from_cli_args(kwargs):
         )
 
     if (
-        kwargs['pipeline_name'] and kwargs['repository_yaml'] is None
-        and kwargs['module_name'] is None and kwargs['python_file'] is None
+        kwargs['pipeline_name']
+        and kwargs['repository_yaml'] is None
+        and kwargs['module_name'] is None
+        and kwargs['python_file'] is None
     ):
         repository_yaml = 'repository.yml'
     else:

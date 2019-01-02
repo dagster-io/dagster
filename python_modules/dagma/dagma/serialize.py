@@ -50,11 +50,7 @@ from io import BytesIO as StringIO
 from cloudpickle import CloudPickler
 
 from .module_dependency import ModuleDependencyAnalyzer
-from .utils import (
-    b64str_to_bytes,
-    create_mod_data,
-    mkdir_p,
-)
+from .utils import b64str_to_bytes, create_mod_data, mkdir_p
 
 logger = logging.getLogger(__name__)
 

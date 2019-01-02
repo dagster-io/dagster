@@ -24,16 +24,7 @@ def test_string_from_inputs():
     pipeline = PipelineDefinition(solids=[str_as_input])
 
     result = execute_pipeline(
-        pipeline,
-        {
-            'solids': {
-                'str_as_input': {
-                    'inputs': {
-                        'string_input': 'foo',
-                    },
-                },
-            },
-        },
+        pipeline, {'solids': {'str_as_input': {'inputs': {'string_input': 'foo'}}}}
     )
 
     assert result.success
@@ -49,23 +40,11 @@ def test_string_from_aliased_inputs():
         called['yup'] = True
 
     pipeline = PipelineDefinition(
-        solids=[str_as_input],
-        dependencies={
-            SolidInstance('str_as_input', alias='aliased'): {},
-        },
+        solids=[str_as_input], dependencies={SolidInstance('str_as_input', alias='aliased'): {}}
     )
 
     result = execute_pipeline(
-        pipeline,
-        {
-            'solids': {
-                'aliased': {
-                    'inputs': {
-                        'string_input': 'foo',
-                    },
-                },
-            },
-        },
+        pipeline, {'solids': {'aliased': {'inputs': {'string_input': 'foo'}}}}
     )
 
     assert result.success
@@ -104,24 +83,11 @@ def test_string_missing_input_collision():
     pipeline = PipelineDefinition(
         name='overlapping',
         solids=[str_as_input, str_as_output],
-        dependencies={
-            'str_as_input': {
-                'string_input': DependencyDefinition('str_as_output'),
-            },
-        },
+        dependencies={'str_as_input': {'string_input': DependencyDefinition('str_as_output')}},
     )
     with pytest.raises(DagsterInvariantViolationError) as exc_info:
         execute_pipeline(
-            pipeline,
-            {
-                'solids': {
-                    'str_as_input': {
-                        'inputs': {
-                            'string_input': 'bar',
-                        },
-                    },
-                },
-            },
+            pipeline, {'solids': {'str_as_input': {'inputs': {'string_input': 'bar'}}}}
         )
 
     assert 'In pipeline overlapping solid str_as_input, input string_input' in str(exc_info.value)

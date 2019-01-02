@@ -3,10 +3,7 @@ import json
 
 from dagster import check
 
-from dagster.utils.error import (
-    serializable_error_info_from_exc_info,
-    SerializableErrorInfo,
-)
+from dagster.utils.error import serializable_error_info_from_exc_info, SerializableErrorInfo
 
 from dagster.utils.logging import (
     DEBUG,
@@ -43,7 +40,7 @@ class ExecutionEvents:
         self.check_pipeline_in_context()
         self.context.info(
             'Completing successful execution of pipeline {pipeline}'.format(
-                pipeline=self.pipeline_name(),
+                pipeline=self.pipeline_name()
             ),
             event_type=EventType.PIPELINE_SUCCESS.value,
         )
@@ -71,8 +68,7 @@ class ExecutionEvents:
 
         self.context.info(
             'Execution of {step_key} succeeded in {millis}'.format(
-                step_key=step_key,
-                millis=millis,
+                step_key=step_key, millis=millis
             ),
             event_type=EventType.EXECUTION_PLAN_STEP_SUCCESS.value,
             millis=millis,
@@ -94,8 +90,7 @@ class ExecutionEvents:
 
     def check_pipeline_in_context(self):
         check.invariant(
-            self.context.has_context_value('pipeline'),
-            'Must have pipeline context value',
+            self.context.has_context_value('pipeline'), 'Must have pipeline context value'
         )
 
 

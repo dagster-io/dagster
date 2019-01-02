@@ -22,7 +22,7 @@ def create_single_node_pipeline(name, called):
                 outputs=[],
                 transform_fn=lambda *_args, **_kwargs: None,
             )
-        ]
+        ],
     )
 
 
@@ -33,7 +33,7 @@ def test_repo_definition():
         pipeline_dict={
             'foo': lambda: create_single_node_pipeline('foo', called),
             'bar': lambda: create_single_node_pipeline('bar', called),
-        }
+        },
     )
 
     foo_pipeline = repo.get_pipeline('foo')
