@@ -5,6 +5,7 @@ from dagster import (
     DependencyDefinition,
     InputDefinition,
     OutputDefinition,
+    PipelineConfigEvaluationError,
     PipelineDefinition,
     SolidInstance,
     execute_pipeline,
@@ -80,13 +81,12 @@ def test_string_missing_inputs():
         called['yup'] = True
 
     pipeline = PipelineDefinition(name='missing_inputs', solids=[str_as_input])
-    with pytest.raises(DagsterInvariantViolationError) as exc_info:
+    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
         execute_pipeline(pipeline)
 
-    assert 'In pipeline missing_inputs solid str_as_input, input string_input' in str(
+    assert 'Error 1: Missing required field "solids" at document config root.' in str(
         exc_info.value
     )
-
     assert 'yup' not in called
 
 
@@ -110,7 +110,7 @@ def test_string_missing_input_collision():
             },
         },
     )
-    with pytest.raises(DagsterInvariantViolationError) as exc_info:
+    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
         execute_pipeline(
             pipeline,
             {
@@ -124,7 +124,10 @@ def test_string_missing_input_collision():
             },
         )
 
-    assert 'In pipeline overlapping solid str_as_input, input string_input' in str(exc_info.value)
-    assert 'while also specifying' in str(exc_info.value)
+    assert 'Error 1: Undefined field "inputs" at path root:solids:str_as_input' in str(
+        exc_info.value
+    )
+    # assert 'In pipeline overlapping solid str_as_input, input string_input' in str(exc_info.value)
+    # assert 'while also specifying' in str(exc_info.value)
 
     assert 'yup' not in called

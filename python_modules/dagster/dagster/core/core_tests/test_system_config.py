@@ -2,14 +2,19 @@ import pytest
 
 from dagster import (
     DagsterEvaluateConfigValueError,
+    DependencyDefinition,
     ExecutionContext,
     Field,
+    InputDefinition,
+    OutputDefinition,
     PipelineContextDefinition,
     PipelineDefinition,
     SolidDefinition,
+    SolidInstance,
     config,
-    types,
     execute_pipeline,
+    lambda_solid,
+    types,
 )
 
 from dagster.core.config_types import (
@@ -803,3 +808,37 @@ def test_optional_and_required_context():
 
     assert env_obj.context.name == 'optional_field_context'
     assert env_obj.context.config == {'optional_field': 'foobar'}
+
+
+def test_required_inputs():
+    @lambda_solid(inputs=[InputDefinition('num', types.Int)], output=OutputDefinition(types.Int))
+    def add_one(num):
+        return num + 1
+
+    pipeline_def = PipelineDefinition(
+        name='required_int_input',
+        solids=[add_one],
+        dependencies={
+            SolidInstance('add_one', 'first_add'): {},
+            SolidInstance('add_one', 'second_add'): {
+                'num': DependencyDefinition('first_add')
+            },
+        },
+    )
+
+    env_type = pipeline_def.environment_type
+
+    solids_type = env_type.field_dict['solids'].dagster_type
+
+    first_add_fields = solids_type.field_dict['first_add'].dagster_type.field_dict
+
+    assert 'inputs'in first_add_fields
+
+    inputs_field = first_add_fields['inputs']
+
+    assert inputs_field.is_required
+
+    assert inputs_field.dagster_type.field_dict['num'].is_required
+
+    # second_add has a dependency so the input is not available
+    assert 'inputs' not in solids_type.field_dict['second_add'].dagster_type.field_dict
