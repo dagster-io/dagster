@@ -29,6 +29,9 @@ pip install -r python_modules/dagit/dev-requirements.txt
 
 python -m pytest python_modules/dagit
 
+pip install -e python_modules/dagster-ge
+python -m pytest python_modules/dagster-ge
+
 pip install -e python_modules/airline-demo
 pip install -r python_modules/airline-demo/dev-requirements.txt
 
