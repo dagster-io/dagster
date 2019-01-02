@@ -127,7 +127,5 @@ def test_string_missing_input_collision():
     assert 'Error 1: Undefined field "inputs" at path root:solids:str_as_input' in str(
         exc_info.value
     )
-    # assert 'In pipeline overlapping solid str_as_input, input string_input' in str(exc_info.value)
-    # assert 'while also specifying' in str(exc_info.value)
 
     assert 'yup' not in called
