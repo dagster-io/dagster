@@ -40,10 +40,7 @@ def define_csv_dict_field():
     )
 
 
-class _PandasDataFrameMaterializationConfigSchema(
-    ConfigurableSelectorFromDict,
-    types.DagsterType
-):
+class _PandasDataFrameMaterializationConfigSchema(ConfigurableSelectorFromDict, types.DagsterType):
     def __init__(self):
         super(_PandasDataFrameMaterializationConfigSchema, self).__init__(
             name='PandasDataFrameMaterializationConfigSchema',
@@ -53,9 +50,6 @@ class _PandasDataFrameMaterializationConfigSchema(
                 'table': define_path_dict_field(),
             },
         )
-
-        self.name = 'PandasDataFrameMaterializationConfigSchema'
-        self.description = ''
 
 
 PandasDataFrameMaterializationConfigSchema = _PandasDataFrameMaterializationConfigSchema()

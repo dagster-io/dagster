@@ -2,11 +2,6 @@ import json
 
 from dagster import check
 
-from .configurable import (
-    Field,
-    ConfigurableSelectorFromDict,
-)
-
 
 class Materializeable(object):
     def define_materialization_config_schema(self):
