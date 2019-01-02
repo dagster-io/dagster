@@ -1,9 +1,19 @@
-import os
 import subprocess
+import sys
+import os
+
+import pytest
 
 from dagster.utils import script_relative_path
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 6),
+    reason='''Notebooks execute in their own process and hardcode what "kernel" they use.
+    All of the development notebooks currently use the python3 "kernel" so they will
+    not be executable in a container that only have python2.7 (e.g. in CircleCI)
+    ''',
+)
 def test_formatting():
     # cwd = os.getcwd()
     # try:
