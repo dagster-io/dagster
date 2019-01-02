@@ -50,14 +50,14 @@ def define_scalar_output_pipeline():
         return 'dkjfkdjfe'
 
     return PipelineDefinition(
-        name='scalar_output_pipeline',
-        solids=[
+        name='scalar_output_pipeline', solids=[
             return_str,
             return_int,
             return_bool,
             return_any,
         ]
     )
+
 
 def define_repository():
     return RepositoryDefinition(
@@ -146,12 +146,14 @@ def define_pipeline_with_pandas_df_input():
         },
     )
 
+
 def define_no_config_pipeline():
     @lambda_solid
     def return_hello():
         return 'Hello'
 
     return PipelineDefinition(name='no_config_pipeline', solids=[return_hello])
+
 
 def define_pipeline_two():
     return PipelineDefinition(
@@ -1123,7 +1125,6 @@ def test_production_config_editor_query():
     assert result.data
 
 
-
 MUTATION_QUERY = '''
 mutation ($executionParams: PipelineExecutionParams!) {
     startPipelineExecution(
@@ -1386,7 +1387,6 @@ mutation ($executionParams: PipelineExecutionParams!) {
     }
 }
 '''
-
 
 ALL_TYPES_QUERY = '''
 {

@@ -107,5 +107,4 @@ def _execute_core_transform(execution_info, context, step, conf, inputs):
             )
         )
 
-
     return all_results
