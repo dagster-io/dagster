@@ -832,7 +832,7 @@ def test_required_inputs():
 
     first_add_fields = solids_type.field_dict['first_add'].dagster_type.field_dict
 
-    assert 'inputs'in first_add_fields
+    assert 'inputs' in first_add_fields
 
     inputs_field = first_add_fields['inputs']
 
@@ -842,3 +842,36 @@ def test_required_inputs():
 
     # second_add has a dependency so the input is not available
     assert 'inputs' not in solids_type.field_dict['second_add'].dagster_type.field_dict
+
+
+def test_mix_required_inputs():
+    @lambda_solid(
+        inputs=[
+            InputDefinition('left', types.Int),
+            InputDefinition('right', types.Int),
+        ],
+        output=OutputDefinition(types.Int),
+    )
+    def add_numbers(left, right):
+        return left + right
+
+    @lambda_solid
+    def return_three():
+        return 3
+
+    pipeline_def = PipelineDefinition(
+        name='mixed_required_inputs',
+        solids=[add_numbers, return_three],
+        dependencies={
+            'add_numbers': {
+                'right': DependencyDefinition('return_three'),
+            },
+        },
+    )
+
+    solids_type = pipeline_def.environment_type.field_dict['solids'].dagster_type
+    add_numbers_type = solids_type.field_dict['add_numbers'].dagster_type
+    inputs_fields_dict = add_numbers_type.field_dict['inputs'].dagster_type.field_dict
+
+    assert 'left' in inputs_fields_dict
+    assert not 'right' in inputs_fields_dict

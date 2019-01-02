@@ -213,7 +213,9 @@ def test_dataframe_csv_missing_input_collision():
             },
         )
 
-    assert 'Error 1: Undefined field "inputs" at path root:solids:df_as_input' in str(exc_info.value)
+    assert 'Error 1: Undefined field "inputs" at path root:solids:df_as_input' in str(
+        exc_info.value
+    )
 
     assert 'yup' not in called
 

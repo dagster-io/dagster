@@ -1,7 +1,6 @@
 import pytest
 
 from dagster import (
-    DagsterInvariantViolationError,
     DependencyDefinition,
     InputDefinition,
     OutputDefinition,
