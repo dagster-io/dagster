@@ -23,11 +23,15 @@ workflows:
           context: coveralls
       - dagit-webapp:
           context: coveralls
+      - dagstermill-py37:
+          context: coveralls
       - dagstermill-py36:
           context: coveralls
       - dagstermill-py35:
           context: coveralls
       - dagstermill-py27:
+          context: coveralls
+      - airline-demo-py37:
           context: coveralls
       - airline-demo-py36:
           context: coveralls
@@ -290,7 +294,7 @@ jobs:
   dagstermill-py37:
     <<: *dagstermill-template
     docker:
-      - image: circleci/python:3.5.6
+      - image: circleci/python:3.7.2
     environment:
       TOXENV: py37
 
