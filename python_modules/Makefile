@@ -33,11 +33,10 @@ dagster_yapf:
 	find dagster -name "*.py" | grep -v ".tox" | grep -v ".vscode" | grep -v "snapshots" | xargs yapf -i
 
 test_airline:
-	cd airline-demo; pytest -vv -s -W ignore:::psycopg2 -m "not slow"
+	cd airline-demo; pytest -vv -s -W ignore:::psycopg2 -m "not slow and not py3"
 
 clean:
 	find . -name \*.pyc -delete
 	rm -rf ./dagster/docs/_build
 	rm -rf ./dagster/htmlcov/
 	rm -rf ./dagster/build/
-
