@@ -5,7 +5,6 @@ workflows:
   test:
     jobs:
       - lint:
-          context: coveralls
       - dagster-py37:
           context: coveralls
       - dagster-py36:
@@ -49,7 +48,6 @@ workflows:
 
       - coverage:
           requires:
-            - lint
             - dagster-py37
             - dagster-py36
             - dagster-py35
