@@ -496,15 +496,12 @@ def execute_pipeline_iterator(
     '''
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.opt_dict_param(environment, 'environment')
-    typed_environment = create_typed_environment(pipeline, environment)
     check.bool_param(throw_on_error, 'throw_on_error')
     check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
     check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
 
-    pipeline_to_execute = pipeline if solid_subset is None else build_sub_pipeline(
-        pipeline,
-        solid_subset,
-    )
+    pipeline_to_execute = _get_subsetted_pipeline(pipeline, solid_subset)
+    typed_environment = create_typed_environment(pipeline_to_execute, environment)
 
     with yield_context(pipeline_to_execute, typed_environment, reentrant_info) as context:
         for solid_result in _do_iterate_pipeline(
@@ -613,13 +610,13 @@ def execute_pipeline(
     check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
     check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
 
-    typed_environment = create_typed_environment(pipeline, environment)
+    pipeline_to_execute = _get_subsetted_pipeline(pipeline, solid_subset)
+    typed_environment = create_typed_environment(pipeline_to_execute, environment)
     return execute_reentrant_pipeline(
-        pipeline,
+        pipeline_to_execute,
         typed_environment,
         throw_on_error,
         reentrant_info,
-        solid_subset,
     )
 
 
@@ -669,31 +666,26 @@ def execute_reentrant_pipeline(
     typed_environment,
     throw_on_error,
     reentrant_info,
-    solid_subset=None,
 ):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.inst_param(typed_environment, 'typed_environment', config.Environment)
     check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
-    check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
 
-    pipeline_to_execute = pipeline if solid_subset is None else build_sub_pipeline(
+    with yield_context(pipeline, typed_environment, reentrant_info) as context:
+        return PipelineExecutionResult(
+            pipeline,
+            context,
+            list(_do_iterate_pipeline(pipeline, context, typed_environment, throw_on_error)),
+        )
+
+
+def _get_subsetted_pipeline(pipeline, solid_subset):
+    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+    check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
+    return pipeline if solid_subset is None else build_sub_pipeline(
         pipeline,
         solid_subset,
     )
-
-    with yield_context(pipeline_to_execute, typed_environment, reentrant_info) as context:
-        return PipelineExecutionResult(
-            pipeline_to_execute,
-            context,
-            list(
-                _do_iterate_pipeline(
-                    pipeline_to_execute,
-                    context,
-                    typed_environment,
-                    throw_on_error,
-                )
-            ),
-        )
 
 
 def create_typed_environment(pipeline, environment=None):
