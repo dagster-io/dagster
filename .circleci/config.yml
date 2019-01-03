@@ -382,9 +382,9 @@ jobs:
       - attach_workspace:
           at: /tmp/workspace
 
-      - run: |
-          ls -la
-          pylint python_modules/dagster/dagster --rcfile=python_modules/.pylintrc
+      # only block warnings for now
+      - run:
+          pylint python_modules/dagster/dagster --rcfile=python_modules/.pylintrc --disable=R,C
 
   coverage:
     docker:
