@@ -4,11 +4,11 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL fragment: PipelineJumpBarFragment
+// GraphQL query operation: VersionQuery
 // ====================================================
 
-export interface PipelineJumpBarFragment {
-  name: string;
+export interface VersionQuery {
+  version: string;
 }
 
 /* tslint:disable */

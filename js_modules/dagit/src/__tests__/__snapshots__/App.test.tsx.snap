@@ -24,7 +24,7 @@ Array [
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-jbKcbu eqchJY"
+        className="sc-jqCOkK cnNsyg"
       >
         <span
           className="bp3-popover-wrapper"
@@ -75,11 +75,11 @@ Array [
           className="bp3-navbar-divider"
         />
         <div
-          className="sc-dNLxif dqDcvH"
+          className="sc-uJMKN gIbEmX"
         >
           <a
             active={true}
-            className="sc-jqCOkK jAAHtg"
+            className="sc-bbmXgH lhNabq"
             href="/pandas_hello_world/explore"
             onClick={[Function]}
           >
@@ -87,7 +87,7 @@ Array [
           </a>
           <a
             active={false}
-            className="sc-jqCOkK bWRHZH"
+            className="sc-bbmXgH eKhEro"
             href="/pandas_hello_world/execute"
             onClick={[Function]}
           >
@@ -96,12 +96,19 @@ Array [
         </div>
       </div>
     </div>
+    <div
+      className="bp3-navbar-group bp3-align-right"
+    >
+      <span
+        className="sc-bxivhb cvIdVt"
+      />
+    </div>
   </div>,
   <div
-    className="sc-brqgnP kbTxLu"
+    className="sc-jAaTju hVcXSX"
   >
     <div
-      className="sc-cMljjf bkQPOZ"
+      className="sc-jDwBTQ hIQdeE"
       style={
         Object {
           "width": "70vw",
@@ -109,7 +116,7 @@ Array [
       }
     >
       <div
-        className="sc-jDwBTQ bSCVyv"
+        className="sc-iRbamj RvEzA"
       >
         <span
           className="bp3-popover-wrapper"
@@ -157,7 +164,7 @@ Array [
           </span>
         </span>
         <input
-          className="sc-gPEVay ldPQtW"
+          className="sc-jlyJG dciFqp"
           onChange={[Function]}
           placeholder="Filter..."
           type="text"
@@ -189,7 +196,7 @@ Array [
           }
         >
           <svg
-            className="sc-gzVnrw gBGkHq"
+            className="sc-dnqmqq gJLXro"
             height={660}
             onClick={[Function]}
             onDoubleClick={[Function]}
@@ -208,7 +215,7 @@ Array [
                   onMouseLeave={[Function]}
                 >
                   <path
-                    className="vx-link-vertical sc-htoDjs jbckmQ"
+                    className="vx-link-vertical sc-iwsKbI eEqUhT"
                     d="M115,360C115,403,115,403,115,446"
                   >
                     <title>
@@ -221,7 +228,7 @@ Array [
                   onMouseLeave={[Function]}
                 >
                   <path
-                    className="vx-link-vertical sc-htoDjs jbckmQ"
+                    className="vx-link-vertical sc-iwsKbI eEqUhT"
                     d="M115,178C115,221,115,221,115,264"
                   >
                     <title>
@@ -484,15 +491,15 @@ Array [
       </div>
     </div>
     <div
-      className="sc-dnqmqq gDcGMW"
+      className="sc-gZMcBi jTYMUn"
     >
       <div
-        className="sc-gZMcBi bksKfm"
+        className="sc-VigVT kowydZ"
         onMouseDown={[Function]}
       />
     </div>
     <div
-      className="sc-jAaTju cVRbSZ"
+      className="sc-gPEVay irhxEn"
       style={
         Object {
           "width": "30vw",
@@ -500,14 +507,14 @@ Array [
       }
     >
       <div
-        className="sc-cvbbAY eJUIRn"
+        className="sc-brqgnP leVdzG"
       >
         <a
           href="/pandas_hello_world/load_num_csv"
           onClick={[Function]}
         >
           <div
-            className="sc-jWBwVP jjMzhC"
+            className="sc-cMljjf bktvny"
           >
             <span
               className="bp3-icon bp3-icon-diagram-tree"
@@ -541,7 +548,7 @@ Array [
           onClick={[Function]}
         >
           <div
-            className="sc-jWBwVP hPUXXS"
+            className="sc-cMljjf cHabyD"
           >
             <span
               className="bp3-icon bp3-icon-manual"
@@ -603,7 +610,7 @@ Array [
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-jbKcbu eqchJY"
+        className="sc-jqCOkK cnNsyg"
       >
         <span
           className="bp3-popover-wrapper"
@@ -652,6 +659,13 @@ Array [
         </span>
       </div>
     </div>
+    <div
+      className="bp3-navbar-group bp3-align-right"
+    >
+      <span
+        className="sc-bxivhb cvIdVt"
+      />
+    </div>
   </div>,
   <div
     className="bp3-non-ideal-state"
@@ -692,7 +706,7 @@ Array [
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-jbKcbu eqchJY"
+        className="sc-jqCOkK cnNsyg"
       >
         <span
           className="bp3-popover-wrapper"
@@ -743,11 +757,11 @@ Array [
           className="bp3-navbar-divider"
         />
         <div
-          className="sc-dNLxif dqDcvH"
+          className="sc-uJMKN gIbEmX"
         >
           <a
             active={true}
-            className="sc-jqCOkK jAAHtg"
+            className="sc-bbmXgH lhNabq"
             href="/pandas_hello_world/explore"
             onClick={[Function]}
           >
@@ -755,7 +769,7 @@ Array [
           </a>
           <a
             active={false}
-            className="sc-jqCOkK bWRHZH"
+            className="sc-bbmXgH eKhEro"
             href="/pandas_hello_world/execute"
             onClick={[Function]}
           >
@@ -764,12 +778,19 @@ Array [
         </div>
       </div>
     </div>
+    <div
+      className="bp3-navbar-group bp3-align-right"
+    >
+      <span
+        className="sc-bxivhb cvIdVt"
+      />
+    </div>
   </div>,
   <div
-    className="sc-brqgnP kbTxLu"
+    className="sc-jAaTju hVcXSX"
   >
     <div
-      className="sc-cMljjf bkQPOZ"
+      className="sc-jDwBTQ hIQdeE"
       style={
         Object {
           "width": "70vw",
@@ -777,7 +798,7 @@ Array [
       }
     >
       <div
-        className="sc-jDwBTQ bSCVyv"
+        className="sc-iRbamj RvEzA"
       >
         <span
           className="bp3-popover-wrapper"
@@ -825,7 +846,7 @@ Array [
           </span>
         </span>
         <input
-          className="sc-gPEVay ldPQtW"
+          className="sc-jlyJG dciFqp"
           onChange={[Function]}
           placeholder="Filter..."
           type="text"
@@ -857,7 +878,7 @@ Array [
           }
         >
           <svg
-            className="sc-gzVnrw gBGkHq"
+            className="sc-dnqmqq gJLXro"
             height={660}
             onClick={[Function]}
             onDoubleClick={[Function]}
@@ -876,7 +897,7 @@ Array [
                   onMouseLeave={[Function]}
                 >
                   <path
-                    className="vx-link-vertical sc-htoDjs jbckmQ"
+                    className="vx-link-vertical sc-iwsKbI eEqUhT"
                     d="M115,360C115,403,115,403,115,446"
                   >
                     <title>
@@ -889,7 +910,7 @@ Array [
                   onMouseLeave={[Function]}
                 >
                   <path
-                    className="vx-link-vertical sc-htoDjs jbckmQ"
+                    className="vx-link-vertical sc-iwsKbI eEqUhT"
                     d="M115,178C115,221,115,221,115,264"
                   >
                     <title>
@@ -1152,15 +1173,15 @@ Array [
       </div>
     </div>
     <div
-      className="sc-dnqmqq gDcGMW"
+      className="sc-gZMcBi jTYMUn"
     >
       <div
-        className="sc-gZMcBi bksKfm"
+        className="sc-VigVT kowydZ"
         onMouseDown={[Function]}
       />
     </div>
     <div
-      className="sc-jAaTju cVRbSZ"
+      className="sc-gPEVay irhxEn"
       style={
         Object {
           "width": "30vw",
@@ -1168,14 +1189,14 @@ Array [
       }
     >
       <div
-        className="sc-cvbbAY eJUIRn"
+        className="sc-brqgnP leVdzG"
       >
         <a
           href="/pandas_hello_world"
           onClick={[Function]}
         >
           <div
-            className="sc-jWBwVP hPUXXS"
+            className="sc-cMljjf cHabyD"
           >
             <span
               className="bp3-icon bp3-icon-diagram-tree"
@@ -1209,7 +1230,7 @@ Array [
           onClick={[Function]}
         >
           <div
-            className="sc-jWBwVP jjMzhC"
+            className="sc-cMljjf bktvny"
           >
             <span
               className="bp3-icon bp3-icon-manual"
@@ -1241,23 +1262,23 @@ Array [
       </div>
       <div>
         <div
-          className="sc-kGXeez dzfngV"
+          className="sc-dxgOiQ bFbAkT"
         >
           Pipeline
         </div>
         <h3
-          className="sc-chPdSV bzbdDT"
+          className="sc-kGXeez kzQKcV"
         >
           pandas_hello_world
         </h3>
         <div>
           <div
-            className="sc-dxgOiQ cKKwng"
+            className="sc-jKJlTe fDhhMf"
             onClick={[Function]}
           >
             Description
             <span
-              className="bp3-icon bp3-icon-chevron-down sc-kAzzGY VSOpZ"
+              className="bp3-icon bp3-icon-chevron-down sc-kgoBCf cTiUnf"
               icon="chevron-down"
             >
               <svg
@@ -1297,19 +1318,19 @@ Array [
               }
             >
               <div
-                className="sc-ckVGcZ bvbtGU"
+                className="sc-eNQAEJ iwPNJP"
               />
             </div>
           </div>
         </div>
         <div>
           <div
-            className="sc-dxgOiQ cKKwng"
+            className="sc-jKJlTe fDhhMf"
             onClick={[Function]}
           >
             Contexts
             <span
-              className="bp3-icon bp3-icon-chevron-down sc-kAzzGY VSOpZ"
+              className="bp3-icon bp3-icon-chevron-down sc-kgoBCf cTiUnf"
               icon="chevron-down"
             >
               <svg
@@ -1349,31 +1370,31 @@ Array [
               }
             >
               <div
-                className="sc-ckVGcZ bvbtGU"
+                className="sc-eNQAEJ iwPNJP"
               >
                 <div
-                  className="sc-kpOJdX guzwWI"
+                  className="sc-ckVGcZ hZjvuH"
                 >
                   <h4
-                    className="sc-kgoBCf kuSnom"
+                    className="sc-kpOJdX iqPirb"
                   >
                     default
                   </h4>
                   <code
-                    className="sc-jTzLTM cHNpXj"
+                    className="sc-jzJRlG kspdlD"
                   >
                     <div
-                      className="sc-cSHVUG DSQKX"
+                      className="sc-chPdSV cKsbum"
                     >
                       /* A configuration dictionary with typed fields */
                     </div>
                     {
                     <div
-                      className="sc-fjdhpX nsimD"
+                      className="sc-cSHVUG CAuLq"
                     >
                         
                       <span
-                        className="sc-jzJRlG hwUMlM"
+                        className="sc-kAzzGY kRQObZ"
                       >
                         log_level
                       </span>
@@ -1393,7 +1414,7 @@ Array [
                         onClick={[Function]}
                       >
                         <code
-                          className="sc-VigVT iLoJBN"
+                          className="sc-fjdhpX bDXufr"
                         >
                           String
                         </code>
@@ -1436,7 +1457,7 @@ Array [
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-jbKcbu eqchJY"
+        className="sc-jqCOkK cnNsyg"
       >
         <span
           className="bp3-popover-wrapper"
@@ -1487,11 +1508,11 @@ Array [
           className="bp3-navbar-divider"
         />
         <div
-          className="sc-dNLxif dqDcvH"
+          className="sc-uJMKN gIbEmX"
         >
           <a
             active={true}
-            className="sc-jqCOkK jAAHtg"
+            className="sc-bbmXgH lhNabq"
             href="/pandas_hello_world/explore"
             onClick={[Function]}
           >
@@ -1499,7 +1520,7 @@ Array [
           </a>
           <a
             active={false}
-            className="sc-jqCOkK bWRHZH"
+            className="sc-bbmXgH eKhEro"
             href="/pandas_hello_world/execute"
             onClick={[Function]}
           >
@@ -1508,12 +1529,19 @@ Array [
         </div>
       </div>
     </div>
+    <div
+      className="bp3-navbar-group bp3-align-right"
+    >
+      <span
+        className="sc-bxivhb cvIdVt"
+      />
+    </div>
   </div>,
   <div
-    className="sc-brqgnP kbTxLu"
+    className="sc-jAaTju hVcXSX"
   >
     <div
-      className="sc-cMljjf bkQPOZ"
+      className="sc-jDwBTQ hIQdeE"
       style={
         Object {
           "width": "70vw",
@@ -1521,7 +1549,7 @@ Array [
       }
     >
       <div
-        className="sc-jDwBTQ bSCVyv"
+        className="sc-iRbamj RvEzA"
       >
         <span
           className="bp3-popover-wrapper"
@@ -1569,7 +1597,7 @@ Array [
           </span>
         </span>
         <input
-          className="sc-gPEVay ldPQtW"
+          className="sc-jlyJG dciFqp"
           onChange={[Function]}
           placeholder="Filter..."
           type="text"
@@ -1601,7 +1629,7 @@ Array [
           }
         >
           <svg
-            className="sc-gzVnrw gBGkHq"
+            className="sc-dnqmqq gJLXro"
             height={660}
             onClick={[Function]}
             onDoubleClick={[Function]}
@@ -1620,7 +1648,7 @@ Array [
                   onMouseLeave={[Function]}
                 >
                   <path
-                    className="vx-link-vertical sc-htoDjs jbckmQ"
+                    className="vx-link-vertical sc-iwsKbI eEqUhT"
                     d="M115,360C115,403,115,403,115,446"
                   >
                     <title>
@@ -1633,7 +1661,7 @@ Array [
                   onMouseLeave={[Function]}
                 >
                   <path
-                    className="vx-link-vertical sc-htoDjs jbckmQ"
+                    className="vx-link-vertical sc-iwsKbI eEqUhT"
                     d="M115,178C115,221,115,221,115,264"
                   >
                     <title>
@@ -1896,15 +1924,15 @@ Array [
       </div>
     </div>
     <div
-      className="sc-dnqmqq gDcGMW"
+      className="sc-gZMcBi jTYMUn"
     >
       <div
-        className="sc-gZMcBi bksKfm"
+        className="sc-VigVT kowydZ"
         onMouseDown={[Function]}
       />
     </div>
     <div
-      className="sc-jAaTju cVRbSZ"
+      className="sc-gPEVay irhxEn"
       style={
         Object {
           "width": "30vw",
@@ -1912,14 +1940,14 @@ Array [
       }
     >
       <div
-        className="sc-cvbbAY eJUIRn"
+        className="sc-brqgnP leVdzG"
       >
         <a
           href="/pandas_hello_world/load_num_csv"
           onClick={[Function]}
         >
           <div
-            className="sc-jWBwVP hPUXXS"
+            className="sc-cMljjf cHabyD"
           >
             <span
               className="bp3-icon bp3-icon-diagram-tree"
@@ -1953,7 +1981,7 @@ Array [
           onClick={[Function]}
         >
           <div
-            className="sc-jWBwVP jjMzhC"
+            className="sc-cMljjf bktvny"
           >
             <span
               className="bp3-icon bp3-icon-manual"
@@ -1985,23 +2013,23 @@ Array [
       </div>
       <div>
         <div
-          className="sc-kGXeez dzfngV"
+          className="sc-dxgOiQ bFbAkT"
         >
           Pipeline
         </div>
         <h3
-          className="sc-chPdSV bzbdDT"
+          className="sc-kGXeez kzQKcV"
         >
           pandas_hello_world
         </h3>
         <div>
           <div
-            className="sc-dxgOiQ cKKwng"
+            className="sc-jKJlTe fDhhMf"
             onClick={[Function]}
           >
             Description
             <span
-              className="bp3-icon bp3-icon-chevron-down sc-kAzzGY VSOpZ"
+              className="bp3-icon bp3-icon-chevron-down sc-kgoBCf cTiUnf"
               icon="chevron-down"
             >
               <svg
@@ -2041,19 +2069,19 @@ Array [
               }
             >
               <div
-                className="sc-ckVGcZ bvbtGU"
+                className="sc-eNQAEJ iwPNJP"
               />
             </div>
           </div>
         </div>
         <div>
           <div
-            className="sc-dxgOiQ cKKwng"
+            className="sc-jKJlTe fDhhMf"
             onClick={[Function]}
           >
             Contexts
             <span
-              className="bp3-icon bp3-icon-chevron-down sc-kAzzGY VSOpZ"
+              className="bp3-icon bp3-icon-chevron-down sc-kgoBCf cTiUnf"
               icon="chevron-down"
             >
               <svg
@@ -2093,31 +2121,31 @@ Array [
               }
             >
               <div
-                className="sc-ckVGcZ bvbtGU"
+                className="sc-eNQAEJ iwPNJP"
               >
                 <div
-                  className="sc-kpOJdX guzwWI"
+                  className="sc-ckVGcZ hZjvuH"
                 >
                   <h4
-                    className="sc-kgoBCf kuSnom"
+                    className="sc-kpOJdX iqPirb"
                   >
                     default
                   </h4>
                   <code
-                    className="sc-jTzLTM cHNpXj"
+                    className="sc-jzJRlG kspdlD"
                   >
                     <div
-                      className="sc-cSHVUG DSQKX"
+                      className="sc-chPdSV cKsbum"
                     >
                       /* A configuration dictionary with typed fields */
                     </div>
                     {
                     <div
-                      className="sc-fjdhpX nsimD"
+                      className="sc-cSHVUG CAuLq"
                     >
                         
                       <span
-                        className="sc-jzJRlG hwUMlM"
+                        className="sc-kAzzGY kRQObZ"
                       >
                         log_level
                       </span>
@@ -2137,7 +2165,7 @@ Array [
                         onClick={[Function]}
                       >
                         <code
-                          className="sc-VigVT iLoJBN"
+                          className="sc-fjdhpX bDXufr"
                         >
                           String
                         </code>
@@ -2180,7 +2208,7 @@ Array [
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-jbKcbu eqchJY"
+        className="sc-jqCOkK cnNsyg"
       >
         <span
           className="bp3-popover-wrapper"
@@ -2231,11 +2259,11 @@ Array [
           className="bp3-navbar-divider"
         />
         <div
-          className="sc-dNLxif dqDcvH"
+          className="sc-uJMKN gIbEmX"
         >
           <a
             active={true}
-            className="sc-jqCOkK jAAHtg"
+            className="sc-bbmXgH lhNabq"
             href="/pandas_hello_world/explore"
             onClick={[Function]}
           >
@@ -2243,7 +2271,7 @@ Array [
           </a>
           <a
             active={false}
-            className="sc-jqCOkK bWRHZH"
+            className="sc-bbmXgH eKhEro"
             href="/pandas_hello_world/execute"
             onClick={[Function]}
           >
@@ -2252,12 +2280,19 @@ Array [
         </div>
       </div>
     </div>
+    <div
+      className="bp3-navbar-group bp3-align-right"
+    >
+      <span
+        className="sc-bxivhb cvIdVt"
+      />
+    </div>
   </div>,
   <div
-    className="sc-brqgnP kbTxLu"
+    className="sc-jAaTju hVcXSX"
   >
     <div
-      className="sc-cMljjf bkQPOZ"
+      className="sc-jDwBTQ hIQdeE"
       style={
         Object {
           "width": "70vw",
@@ -2265,7 +2300,7 @@ Array [
       }
     >
       <div
-        className="sc-jDwBTQ bSCVyv"
+        className="sc-iRbamj RvEzA"
       >
         <span
           className="bp3-popover-wrapper"
@@ -2313,7 +2348,7 @@ Array [
           </span>
         </span>
         <input
-          className="sc-gPEVay ldPQtW"
+          className="sc-jlyJG dciFqp"
           onChange={[Function]}
           placeholder="Filter..."
           type="text"
@@ -2345,7 +2380,7 @@ Array [
           }
         >
           <svg
-            className="sc-gzVnrw gBGkHq"
+            className="sc-dnqmqq gJLXro"
             height={660}
             onClick={[Function]}
             onDoubleClick={[Function]}
@@ -2364,7 +2399,7 @@ Array [
                   onMouseLeave={[Function]}
                 >
                   <path
-                    className="vx-link-vertical sc-htoDjs jbckmQ"
+                    className="vx-link-vertical sc-iwsKbI eEqUhT"
                     d="M115,360C115,403,115,403,115,446"
                   >
                     <title>
@@ -2377,7 +2412,7 @@ Array [
                   onMouseLeave={[Function]}
                 >
                   <path
-                    className="vx-link-vertical sc-htoDjs jbckmQ"
+                    className="vx-link-vertical sc-iwsKbI eEqUhT"
                     d="M115,178C115,221,115,221,115,264"
                   >
                     <title>
@@ -2640,15 +2675,15 @@ Array [
       </div>
     </div>
     <div
-      className="sc-dnqmqq gDcGMW"
+      className="sc-gZMcBi jTYMUn"
     >
       <div
-        className="sc-gZMcBi bksKfm"
+        className="sc-VigVT kowydZ"
         onMouseDown={[Function]}
       />
     </div>
     <div
-      className="sc-jAaTju cVRbSZ"
+      className="sc-gPEVay irhxEn"
       style={
         Object {
           "width": "30vw",
@@ -2656,14 +2691,14 @@ Array [
       }
     >
       <div
-        className="sc-cvbbAY eJUIRn"
+        className="sc-brqgnP leVdzG"
       >
         <a
           href="/pandas_hello_world/load_num_csv"
           onClick={[Function]}
         >
           <div
-            className="sc-jWBwVP jjMzhC"
+            className="sc-cMljjf bktvny"
           >
             <span
               className="bp3-icon bp3-icon-diagram-tree"
@@ -2697,7 +2732,7 @@ Array [
           onClick={[Function]}
         >
           <div
-            className="sc-jWBwVP hPUXXS"
+            className="sc-cMljjf cHabyD"
           >
             <span
               className="bp3-icon bp3-icon-manual"
@@ -2728,21 +2763,21 @@ Array [
         </a>
       </div>
       <div
-        className="sc-kGXeez dzfngV"
+        className="sc-dxgOiQ bFbAkT"
       />
       <h3
-        className="sc-chPdSV bzbdDT"
+        className="sc-kGXeez kzQKcV"
       >
         Pipeline Types
       </h3>
       <div>
         <div
-          className="sc-dxgOiQ cKKwng"
+          className="sc-jKJlTe fDhhMf"
           onClick={[Function]}
         >
           Custom
           <span
-            className="bp3-icon bp3-icon-chevron-down sc-kAzzGY VSOpZ"
+            className="bp3-icon bp3-icon-chevron-down sc-kgoBCf cTiUnf"
             icon="chevron-down"
           >
             <svg
@@ -2782,20 +2817,20 @@ Array [
             }
           >
             <div
-              className="sc-ckVGcZ bvbtGU"
+              className="sc-eNQAEJ iwPNJP"
             >
               <ul
                 className="bp3-list"
               >
                 <li
-                  className="sc-jKJlTe hLXNeg"
+                  className="sc-hMqMXs fBSDvM"
                 >
                   <a
                     href="/?typeExplorer=PandasDataFrame"
                     onClick={[Function]}
                   >
                     <code
-                      className="sc-VigVT iLoJBN"
+                      className="sc-fjdhpX bDXufr"
                     >
                       PandasDataFrame
                     </code>
@@ -2808,12 +2843,12 @@ Array [
       </div>
       <div>
         <div
-          className="sc-dxgOiQ cKKwng"
+          className="sc-jKJlTe fDhhMf"
           onClick={[Function]}
         >
           Generated
           <span
-            className="bp3-icon bp3-icon-chevron-up sc-kAzzGY VSOpZ"
+            className="bp3-icon bp3-icon-chevron-up sc-kgoBCf cTiUnf"
             icon="chevron-up"
           >
             <svg
@@ -2856,12 +2891,12 @@ Array [
       </div>
       <div>
         <div
-          className="sc-dxgOiQ cKKwng"
+          className="sc-jKJlTe fDhhMf"
           onClick={[Function]}
         >
           Built-in
           <span
-            className="bp3-icon bp3-icon-chevron-up sc-kAzzGY VSOpZ"
+            className="bp3-icon bp3-icon-chevron-up sc-kgoBCf cTiUnf"
             icon="chevron-up"
           >
             <svg
@@ -2934,7 +2969,7 @@ Array [
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-jbKcbu eqchJY"
+        className="sc-jqCOkK cnNsyg"
       >
         <span
           className="bp3-popover-wrapper"
@@ -2982,6 +3017,13 @@ Array [
           </span>
         </span>
       </div>
+    </div>
+    <div
+      className="bp3-navbar-group bp3-align-right"
+    >
+      <span
+        className="sc-bxivhb cvIdVt"
+      />
     </div>
   </div>,
   <div
