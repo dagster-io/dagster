@@ -2,19 +2,6 @@ import json
 
 from dagster import check
 
-from .configurable import (
-    Field,
-    ConfigurableSelectorFromDict,
-)
-
-
-def define_path_dict_field():
-    from .types import (
-        Dict,
-        Path,
-    )
-    return Field(Dict({'path': Field(Path)}))
-
 
 class Materializeable(object):
     def define_materialization_config_schema(self):
@@ -24,21 +11,14 @@ class Materializeable(object):
         check.failed('must implement')
 
 
-class MaterializeableBuiltinScalarConfigSchema(ConfigurableSelectorFromDict):
-    def __init__(self):
-        # TODO: add pickle
-        super(
-            MaterializeableBuiltinScalarConfigSchema,
-            self,
-        ).__init__(fields={'json': define_path_dict_field()})
-
-    def iterate_types(self):
-        return []
-
-
 class MaterializeableBuiltinScalar(Materializeable):
     def define_materialization_config_schema(self):
-        return MaterializeableBuiltinScalarConfigSchema()
+        # TODO: organize types to avoid circular deps
+        from .types import MaterializeableBuiltinScalarConfigSchema
+
+        # pylint: disable=E1101
+        # For now assuming all Materializables are Types and have names available
+        return MaterializeableBuiltinScalarConfigSchema(self.name)
 
     def materialize_runtime_value(self, config_spec, runtime_value):
         check.dict_param(config_spec, 'config_spec')

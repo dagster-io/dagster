@@ -1,4 +1,3 @@
-from dagster import check
 '''
 Configurable
 
@@ -9,6 +8,8 @@ for the type. Now *any* type that is Configurable can be
 a config, and that config scheam is wholly disconnectedd
 by its in-memory respresentation.
 '''
+
+from dagster import check
 
 
 class FieldDefinitionDictionary(dict):
