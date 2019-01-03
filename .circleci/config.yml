@@ -6,70 +6,69 @@ workflows:
     jobs:
       - lint:
           context: coveralls
-      # - dagster-py37:
-      #     context: coveralls
-      # - dagster-py36:
-      #     context: coveralls
-      # - dagster-py35:
-      #     context: coveralls
-      # - dagster-py27:
-      #     context: coveralls
-      # - dagit-py37:
-      #     context: coveralls
-      # - dagit-py36:
-      #     context: coveralls
-      # - dagit-py35:
-      #     context: coveralls
-      # - dagit-py27:
-      #     context: coveralls
-      # - dagit-webapp:
-      #     context: coveralls
-      # - dagstermill-py36:
-      #     context: coveralls
-      # - dagstermill-py35:
-      #     context: coveralls
-      # - dagstermill-py27:
-      #     context: coveralls
-      # - airline-demo-py36:
-      #     context: coveralls
-      # - airline-demo-py35:
-      #     context: coveralls
-      # - airline-demo-py27:
-      #     context: coveralls
-      # - dagster-contrib-py37:
-      #     context: coveralls
-      # - dagster-contrib-py36:
-      #     context: coveralls
-      # - dagster-contrib-py35:
-      #     context: coveralls
-      # - dagster-contrib-py27:
-      #     context: coveralls
-      # - dagma-py36:
-      #     context: coveralls
+      - dagster-py37:
+          context: coveralls
+      - dagster-py36:
+          context: coveralls
+      - dagster-py35:
+          context: coveralls
+      - dagster-py27:
+          context: coveralls
+      - dagit-py37:
+          context: coveralls
+      - dagit-py36:
+          context: coveralls
+      - dagit-py35:
+          context: coveralls
+      - dagit-py27:
+          context: coveralls
+      - dagit-webapp:
+          context: coveralls
+      - dagstermill-py36:
+          context: coveralls
+      - dagstermill-py35:
+          context: coveralls
+      - dagstermill-py27:
+          context: coveralls
+      - airline-demo-py36:
+          context: coveralls
+      - airline-demo-py35:
+          context: coveralls
+      - airline-demo-py27:
+          context: coveralls
+      - dagster-contrib-py37:
+          context: coveralls
+      - dagster-contrib-py36:
+          context: coveralls
+      - dagster-contrib-py35:
+          context: coveralls
+      - dagster-contrib-py27:
+          context: coveralls
+      - dagma-py36:
+          context: coveralls
 
-      # - coverage:
-      #     requires:
-      #       - lint
-      #       - dagster-py37
-      #       - dagster-py36
-      #       - dagster-py35
-      #       - dagster-py27
-      #       - dagit-py36
-      #       - dagit-py35
-      #       - dagit-py27
-      #       - dagstermill-py36
-      #       - dagstermill-py35
-      #       - dagstermill-py27
-      #       - airline-demo-py36
-      #       - airline-demo-py35
-      #       - airline-demo-py27
-      #       - dagster-contrib-py36
-      #       - dagster-contrib-py35
-      #       - dagster-contrib-py27
-      #       - dagma-py36
+      - coverage:
+          requires:
+            - lint
+            - dagster-py37
+            - dagster-py36
+            - dagster-py35
+            - dagster-py27
+            - dagit-py36
+            - dagit-py35
+            - dagit-py27
+            - dagstermill-py36
+            - dagstermill-py35
+            - dagstermill-py27
+            - airline-demo-py36
+            - airline-demo-py35
+            - airline-demo-py27
+            - dagster-contrib-py36
+            - dagster-contrib-py35
+            - dagster-contrib-py27
+            - dagma-py36
       #       # - dagma-py35
       #       # - dagma-py27
-      #     context: coveralls
 
 
 
