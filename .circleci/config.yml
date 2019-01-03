@@ -147,9 +147,9 @@ jobs:
       - run:
           command: |
             mv python_modules/dagster/.coverage python_modules/.coverage.dagster.${CIRCLE_BUILD_NUM}
-            mv python_modules/dagster/.coverage python_modules/.coverage.dagit.${CIRCLE_BUILD_NUM}
-            mv python_modules/dagster/.coverage python_modules/.coverage.dagstermill.${CIRCLE_BUILD_NUM}
-            mv python_modules/dagster/.coverage python_modules/.coverage.dagster-contrib.${CIRCLE_BUILD_NUM}
+            mv python_modules/dagit/.coverage python_modules/.coverage.dagit.${CIRCLE_BUILD_NUM}
+            mv python_modules/dagstermill/.coverage python_modules/.coverage.dagstermill.${CIRCLE_BUILD_NUM}
+            mv python_modules/dagster-contrib/.coverage python_modules/.coverage.dagster-contrib.${CIRCLE_BUILD_NUM}
 
       - persist_to_workspace:
           root: python_modules/dagster/
