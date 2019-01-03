@@ -17,7 +17,7 @@ yapf:
 	find . -name "*.py" | grep -v ".tox" | grep -v ".vscode" | grep -v "snapshots" | xargs yapf -i
 
 pylint:
-	pylint --disable=R,C dagster/dagster dagit/dagit
+	pylint --disable=R,C dagster/dagster dagit/dagit dagstermill/dagstermill
 		
 
 reinstall:
