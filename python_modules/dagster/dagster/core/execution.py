@@ -669,7 +669,7 @@ def execute_reentrant_pipeline(
     typed_environment,
     throw_on_error,
     reentrant_info,
-    solid_subset,
+    solid_subset=None,
 ):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.inst_param(typed_environment, 'typed_environment', config.Environment)

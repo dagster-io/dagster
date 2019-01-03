@@ -22,8 +22,9 @@ from dagster.core.definitions import (
 )
 
 from dagster.core.execution import (
-    SolidExecutionResult,
     PipelineExecutionResult,
+    SolidExecutionResult,
+    execute_reentrant_pipeline,
 )
 
 from dagster.core.utility_solids import define_stub_solid
