@@ -100,6 +100,8 @@ jobs:
             sudo pip install -r python_modules/dagit/dev-requirements.txt
             sudo pip install -e python_modules/dagstermill
             sudo pip install -e python_modules/dagster-contrib
+            sudo pip install -e python_modules/dagster-contrib[pandas]
+            sudo pip install -e python_modules/dagster-contrib[sqlalchemy]
 
       - attach_workspace:
           at: /tmp/workspace
