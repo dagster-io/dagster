@@ -11,14 +11,13 @@ from dagster.core.materializable import Materializeable
 from .objects import (
     ExecutionPlanInfo,
     ExecutionStep,
-    ExecutionSubPlan,
+    ExecutionValueSubPlan,
     StepInput,
     StepOutput,
-    StepOutputHandle,
     StepTag,
 )
 
-from .utility import (create_join_step)
+from .utility import create_joining_subplan
 
 MATERIALIZATION_THUNK_INPUT = 'materialization_thunk_input'
 MATERIALIZATION_THUNK_OUTPUT = 'materialization_thunk_output'
@@ -48,7 +47,7 @@ def decorate_with_output_materializations(execution_info, solid, output_def, sub
     check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(output_def, 'output_def', OutputDefinition)
-    check.inst_param(subplan, 'subplan', ExecutionSubPlan)
+    check.inst_param(subplan, 'subplan', ExecutionValueSubPlan)
 
     solid_config = execution_info.environment.solids.get(solid.name)
 
@@ -84,7 +83,7 @@ def decorate_with_output_materializations(execution_info, solid, output_def, sub
             )
         )
 
-    join_step = create_join_step(
+    return create_joining_subplan(
         solid,
         '{solid}.materialization.output.{output}.join'.format(
             solid=solid.name,
@@ -92,10 +91,4 @@ def decorate_with_output_materializations(execution_info, solid, output_def, sub
         ),
         new_steps,
         MATERIALIZATION_THUNK_OUTPUT,
-    )
-
-    output_name = join_step.step_outputs[0].name
-    return ExecutionSubPlan(
-        new_steps + [join_step],
-        StepOutputHandle(join_step, output_name),
     )

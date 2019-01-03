@@ -63,7 +63,7 @@ from .execution_plan.create import (
 from .execution_plan.objects import (
     ExecutionPlan,
     ExecutionPlanInfo,
-    ExecutionSubsetInfo,
+    ExecutionPlanSubsetInfo,
     StepResult,
     StepTag,
 )
@@ -560,7 +560,7 @@ def execute_plan(pipeline, execution_plan, environment=None, subset_info=None, r
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     check.opt_dict_param(environment, 'environment')
-    check.opt_inst_param(subset_info, 'subset_info', ExecutionSubsetInfo)
+    check.opt_inst_param(subset_info, 'subset_info', ExecutionPlanSubsetInfo)
     check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
 
     typed_environment = create_typed_environment(pipeline, environment)

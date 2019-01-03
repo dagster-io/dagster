@@ -14,14 +14,14 @@ from dagster.core.errors import DagsterExpectationFailedError
 from .objects import (
     ExecutionPlanInfo,
     ExecutionStep,
-    ExecutionSubPlan,
+    ExecutionValueSubPlan,
     StepInput,
     StepOutput,
     StepOutputHandle,
     StepTag,
 )
 
-from .utility import create_join_step
+from .utility import create_joining_subplan
 
 EXPECTATION_INPUT = 'expectation_input'
 EXPECTATION_VALUE_OUTPUT = 'expectation_value'
@@ -66,39 +66,32 @@ def create_expectations_subplan(solid, inout_def, prev_step_output_handle, tag):
     check.inst_param(prev_step_output_handle, 'prev_step_output_handle', StepOutputHandle)
     check.inst_param(tag, 'tag', StepTag)
 
-    steps = []
     input_expect_steps = []
     for expectation_def in inout_def.expectations:
         expect_step = create_expectation_step(
             solid=solid,
             expectation_def=expectation_def,
-            key='{solid.name}.{inout_def.name}.expectation.{expectation_def.name}'.format(
-                solid=solid,
-                inout_def=inout_def,
-                expectation_def=expectation_def,
+            key='{solid}.{desc_key}.{inout_name}.expectation.{expectation_name}'.format(
+                solid=solid.name,
+                desc_key=inout_def.descriptive_key,
+                inout_name=inout_def.name,
+                expectation_name=expectation_def.name,
             ),
             tag=tag,
             prev_step_output_handle=prev_step_output_handle,
             inout_def=inout_def,
         )
         input_expect_steps.append(expect_step)
-        steps.append(expect_step)
 
-    join_step = create_join_step(
+    return create_joining_subplan(
         solid,
-        '{solid}.{desc_key}.{name}.expectations.join'.format(
+        '{solid}.{desc_key}.{inout_name}.expectations.join'.format(
             solid=solid.name,
             desc_key=inout_def.descriptive_key,
-            name=inout_def.name,
+            inout_name=inout_def.name,
         ),
         input_expect_steps,
         EXPECTATION_VALUE_OUTPUT,
-    )
-
-    output_name = join_step.step_outputs[0].name
-    return ExecutionSubPlan(
-        steps + [join_step],
-        StepOutputHandle(join_step, output_name),
     )
 
 
@@ -155,10 +148,4 @@ def decorate_with_expectations(execution_info, solid, transform_step, output_def
             tag=StepTag.OUTPUT_EXPECTATION
         )
     else:
-        return ExecutionSubPlan(
-            steps=[],
-            terminal_step_output_handle=StepOutputHandle(
-                transform_step,
-                output_def.name,
-            ),
-        )
+        return ExecutionValueSubPlan.empty(StepOutputHandle(transform_step, output_def.name))
