@@ -1,7 +1,9 @@
 import * as React from "react";
-import { Alignment, Navbar, NonIdealState } from "@blueprintjs/core";
+import { Alignment, Navbar } from "@blueprintjs/core";
 import { History } from "history";
 import navBarImage from "./images/nav-logo.png";
+import WebsocketStatus from "./WebsocketStatus";
+import VersionLabel from "./VersionLabel";
 
 interface IPageProps {
   children: React.ReactNode;
@@ -24,6 +26,10 @@ export default class Page extends React.Component<IPageProps> {
             </Navbar.Heading>
             <Navbar.Divider />
             {this.props.navbarContents}
+          </Navbar.Group>
+          <Navbar.Group align={Alignment.RIGHT}>
+            <WebsocketStatus />
+            <VersionLabel />
           </Navbar.Group>
         </Navbar>
         {this.props.children}
