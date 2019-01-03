@@ -223,7 +223,7 @@ jobs:
             yarn run check-prettier
 
   airline-demo-py36: &airline-demo-template
-    <<: *dagster-template
+    <<: *dagster-core-modules-template
     docker:
       - image: dagster/cci-test:3.6
         auth:
