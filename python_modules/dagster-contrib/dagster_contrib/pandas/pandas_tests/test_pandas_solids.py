@@ -1,5 +1,3 @@
-import os
-
 import pandas as pd
 
 from dagster import (
@@ -12,25 +10,12 @@ from dagster import (
     Result,
     SolidDefinition,
     check,
-    execute_solid,
+    execute_pipeline,
     lambda_solid,
-    solid,
     types,
 )
 
-from dagster.core.execution import (
-    execute_pipeline_iterator,
-    execute_pipeline,
-)
-
 from dagster.core.test_utils import single_output_transform
-
-from dagster.utils import script_relative_path
-
-from dagster.utils.test import (
-    get_temp_file_name,
-    get_temp_file_names,
-)
 
 from dagster_contrib.pandas import DataFrame
 

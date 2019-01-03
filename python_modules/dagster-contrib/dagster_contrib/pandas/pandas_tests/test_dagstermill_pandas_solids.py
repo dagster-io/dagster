@@ -16,7 +16,6 @@ from dagster import (
     types,
 )
 
-from dagster.core.utility_solids import define_stub_solid
 from dagster.utils import script_relative_path
 
 from dagster_contrib.pandas import DataFrame
