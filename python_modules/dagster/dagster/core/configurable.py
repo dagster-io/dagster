@@ -228,6 +228,10 @@ class Field:
         self.is_optional = is_optional
 
     @property
+    def is_required(self):
+        return not self.is_optional
+
+    @property
     def default_provided(self):
         '''Was a default value provided
 
