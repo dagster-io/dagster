@@ -1,7 +1,5 @@
 import json
 
-from dagster.core.execution_context import ExecutionContext
-
 from dagster.utils.test import (
     create_test_runtime_execution_context,
     get_temp_file_name,

@@ -1,4 +1,3 @@
-from collections import namedtuple
 from enum import Enum
 
 from dagster import check
@@ -20,24 +19,20 @@ class DagsterUserError(DagsterError):
 
 class DagsterRuntimeCoercionError(DagsterError):
     '''Runtime checked faild'''
-    pass
 
 
 class DagsterInvalidDefinitionError(DagsterUserError):
     '''Indicates that some violation of the definition rules has been violated by the user'''
-    pass
 
 
 class DagsterInvariantViolationError(DagsterUserError):
     '''Indicates the user has violated a well-defined invariant that can only be deteremined
     at runtime.
     '''
-    pass
 
 
 class DagsterTypeError(DagsterUserError):
     '''Indicates an error in the solid type system (e.g. mismatched arguments)'''
-    pass
 
 
 class DagsterUserCodeExecutionError(DagsterUserError):

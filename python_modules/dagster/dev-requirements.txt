@@ -1,5 +1,5 @@
-pylint==1.9.2
-pytest==3.6.1
+pylint==2.2.2; python_version >= '3.6'
+pytest==4.0.2
 pytest-cov==2.6.0
 recommonmark==0.4.0
 rope==0.11

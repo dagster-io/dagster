@@ -16,8 +16,6 @@ from dagster import (
 
 from dagster.core.utility_solids import define_stub_solid
 
-from .test_pipeline_execution import create_solid_with_deps
-
 
 def solid_a_b_list():
     return [

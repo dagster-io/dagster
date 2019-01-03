@@ -8,7 +8,6 @@ from dagster import (
     OutputDefinition,
     PipelineContextDefinition,
     PipelineDefinition,
-    ResourceDefinition,
     Result,
     SolidDefinition,
     check,

@@ -10,7 +10,6 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     Result,
-    config,
     execute_pipeline,
     solid,
     types,

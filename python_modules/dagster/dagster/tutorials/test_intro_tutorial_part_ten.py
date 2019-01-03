@@ -1,6 +1,4 @@
 # pylint: disable=W0622,W0614,W0401
-from logging import DEBUG
-
 import pytest
 
 from dagster import (
@@ -12,7 +10,6 @@ from dagster import (
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
-    config,
     execute_pipeline,
     lambda_solid,
     solid,

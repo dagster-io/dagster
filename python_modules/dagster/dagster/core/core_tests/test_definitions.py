@@ -79,11 +79,6 @@ def test_mapper_errors():
         print('a: 1')
         return 1
 
-    @lambda_solid(inputs=[InputDefinition('arg_a')])
-    def solid_b(arg_a):
-        print('b: {b}'.format(b=arg_a * 2))
-        return arg_a * 2
-
     with pytest.raises(DagsterInvalidDefinitionError) as excinfo_1:
         PipelineDefinition(
             solids=[solid_a], dependencies={'solid_b': {

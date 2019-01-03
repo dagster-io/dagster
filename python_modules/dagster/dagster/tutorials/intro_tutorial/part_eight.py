@@ -2,7 +2,6 @@ from collections import defaultdict
 
 from dagster import (
     Field,
-    OutputDefinition,
     PipelineDefinition,
     DependencyDefinition,
     InputDefinition,

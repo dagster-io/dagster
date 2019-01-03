@@ -4,6 +4,7 @@ workflows:
   version: 2
   test:
     jobs:
+      - lint
       - dagster-py37:
           context: coveralls
       - dagster-py36:
@@ -22,11 +23,15 @@ workflows:
           context: coveralls
       - dagit-webapp:
           context: coveralls
+      - dagstermill-py37:
+          context: coveralls
       - dagstermill-py36:
           context: coveralls
       - dagstermill-py35:
           context: coveralls
       - dagstermill-py27:
+          context: coveralls
+      - airline-demo-py37:
           context: coveralls
       - airline-demo-py36:
           context: coveralls
@@ -77,6 +82,27 @@ workflows:
 
 
 jobs:
+  lint:
+    docker:
+      - image: circleci/python:3.7.2
+
+    working_directory: ~/repo
+
+    steps:
+      - checkout
+
+      - run:
+          name: Install Dependencies
+          command: |
+            sudo pip install -e python_modules/dagster
+            sudo pip install -r python_modules/dagster/dev-requirements.txt
+
+      - attach_workspace:
+          at: /tmp/workspace
+
+      # only block warnings for now
+      - run: pylint python_modules/dagster/dagster --rcfile=python_modules/.pylintrc --disable=R,C
+
   dagster-py36: &dagster-template
     docker:
       - image: circleci/python:3.6.6
@@ -268,7 +294,7 @@ jobs:
   dagstermill-py37:
     <<: *dagstermill-template
     docker:
-      - image: circleci/python:3.5.6
+      - image: circleci/python:3.7.2
     environment:
       TOXENV: py37
 

@@ -1,5 +1,4 @@
 from collections import namedtuple
-import pickle
 import os
 import uuid
 
