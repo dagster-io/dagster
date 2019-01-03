@@ -366,24 +366,24 @@ jobs:
     environment:
       TOXENV: py27
 
-  lint:
-    docker:
-      - image: circleci/python:3.7.2
-    working_directory: ~/repo
-    steps:
-      - checkout
+  # lint:
+  #   docker:
+  #     - image: circleci/python:3.7.2
+  #   working_directory: ~/repo
+  #   steps:
+  #     - checkout
 
-      - run:
-          name: Install Dependencies
-          command: |
-            sudo pip install -e python_modules/dagster
-            sudo pip install -r python_modules/dagster/dev-requirements.txt
+  #     - run:
+  #         name: Install Dependencies
+  #         command: |
+  #           sudo pip install -e python_modules/dagster
+  #           sudo pip install -r python_modules/dagster/dev-requirements.txt
 
-      - attach_workspace:
-          at: /tmp/workspace
+  #     - attach_workspace:
+  #         at: /tmp/workspace
 
-      # only block warnings for now
-      - run: pylint python_modules/dagster/dagster --rcfile=python_modules/.pylintrc --disable=R,C
+  #     # only block warnings for now
+  #     - run: pylint python_modules/dagster/dagster --rcfile=python_modules/.pylintrc --disable=R,C
 
   coverage:
     docker:
