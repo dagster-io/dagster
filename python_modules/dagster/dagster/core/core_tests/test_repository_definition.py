@@ -4,6 +4,7 @@ from collections import defaultdict
 
 from dagster import (
     DagsterInvalidDefinitionError,
+    DagsterInvariantViolationError,
     PipelineDefinition,
     RepositoryDefinition,
     SolidDefinition,
@@ -87,3 +88,27 @@ def test_dupe_solid_repo_definition():
 
     with pytest.raises(DagsterInvalidDefinitionError):
         repo.get_all_pipelines()
+
+
+def test_dupe_solid_repo_definition_unforced():
+    @lambda_solid(name='same')
+    def noop():
+        pass
+
+    @lambda_solid(name='same')
+    def noop2():
+        pass
+
+    repo = RepositoryDefinition(
+        'error_repo',
+        pipeline_dict={
+            'first': lambda: PipelineDefinition(name='first', solids=[noop]),
+            'second': lambda: PipelineDefinition(name='second', solids=[noop2]),
+        },
+        enforce_uniqueness=False
+    )
+
+    assert repo.get_all_pipelines()
+
+    with pytest.raises(DagsterInvariantViolationError):
+        repo.get_solid_def('first')
