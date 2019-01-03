@@ -44,7 +44,10 @@ workflows:
           context: coveralls
       - dagma-py36:
           context: coveralls
-      # - lint
+      # - dagma-py35:
+      #     context: coveralls
+      # - dagma-py27:
+      #     context: coveralls
 
       - coverage:
           requires:
@@ -56,7 +59,6 @@ workflows:
             - dagit-py36
             - dagit-py35
             - dagit-py27
-            - dagstermill-py37
             - dagstermill-py36
             - dagstermill-py35
             - dagstermill-py27
@@ -68,8 +70,9 @@ workflows:
             - dagster-contrib-py35
             - dagster-contrib-py27
             - dagma-py36
-      #       # - dagma-py35
-      #       # - dagma-py27
+            # - dagma-py35
+            # - dagma-py27
+          context: coveralls
 
 
 
@@ -265,7 +268,7 @@ jobs:
   dagstermill-py37:
     <<: *dagstermill-template
     docker:
-      - image: circleci/python:3.7.2
+      - image: circleci/python:3.5.6
     environment:
       TOXENV: py37
 
@@ -366,25 +369,6 @@ jobs:
     environment:
       TOXENV: py27
 
-  # lint:
-  #   docker:
-  #     - image: circleci/python:3.7.2
-  #   working_directory: ~/repo
-  #   steps:
-  #     - checkout
-
-  #     - run:
-  #         name: Install Dependencies
-  #         command: |
-  #           sudo pip install -e python_modules/dagster
-  #           sudo pip install -r python_modules/dagster/dev-requirements.txt
-
-  #     - attach_workspace:
-  #         at: /tmp/workspace
-
-  #     # only block warnings for now
-  #     - run: pylint python_modules/dagster/dagster --rcfile=python_modules/.pylintrc --disable=R,C
-
   coverage:
     docker:
       - image: circleci/python:3.6.6
@@ -404,6 +388,7 @@ jobs:
           cp /tmp/workspace/.coverage* .
           coverage combine
           coveralls
+
 
   dagster-contrib-py36: &dagster-contrib-template
     <<: *dagster-template
