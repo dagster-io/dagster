@@ -15,8 +15,8 @@ from .definitions import (
     PipelineContextDefinition,
     PipelineDefinition,
     ResourceDefinition,
-    SolidDefinition,
     Solid,
+    SolidDefinition,
     SolidInputHandle,
 )
 
