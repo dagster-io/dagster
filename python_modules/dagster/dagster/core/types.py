@@ -363,7 +363,6 @@ class _Dict(ConfigurableObjectFromDict, DagsterType):
         super(_Dict, self).__init__(
             name=name,
             fields=fields,
-            description='A configuration dictionary with typed fields',
             type_attributes=DagsterTypeAttributes(is_named=True, is_builtin=True),
         )
 

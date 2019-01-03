@@ -164,7 +164,6 @@ class ContextConfigType(SystemConfigSelector):
         super(ContextConfigType, self).__init__(
             name=full_type_name,
             fields=field_dict,
-            description='A configuration dictionary with typed fields',
             type_attributes=DagsterTypeAttributes(is_system_config=True),
         )
 
