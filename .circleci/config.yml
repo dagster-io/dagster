@@ -23,6 +23,8 @@ workflows:
           context: coveralls
       - dagit-webapp:
           context: coveralls
+      - airline-demo-py37:
+          context: coveralls
       - airline-demo-py36:
           context: coveralls
       - airline-demo-py35:
