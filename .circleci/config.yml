@@ -326,6 +326,7 @@ jobs:
   airline-demo-py37:
     <<: *airline-demo-template
     docker:
+      # FIXME: https://github.com/dagster-io/dagster/issues/521 
       - image: schrockn/cci-test:3.7.2
         auth:
           username: $DOCKERHUB_USERNAME
@@ -421,8 +422,7 @@ jobs:
   dagster-contrib-py37:
     <<: *dagster-contrib-template
     docker:
-    # TODO: pending creds issue
-    # TODO switch to dagster
+      # FIXME: https://github.com/dagster-io/dagster/issues/521 
       - image: schrockn/cci-test:3.7.2
     environment:
       TOXENV: py37
