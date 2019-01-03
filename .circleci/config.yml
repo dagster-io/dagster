@@ -79,9 +79,6 @@ workflows:
             # - dagma-py35
             # - dagma-py27
           context: coveralls
-
-
-
 jobs:
   dagster-all-modules-py36: &dagster-all-template
     docker:
