@@ -375,7 +375,7 @@ jobs:
 
       - run:
           name: Install Dependencies
-          command: 
+          command: |
             sudo pip install -e python_modules/dagster
             sudo pip install -r python_modules/dagster/dev-requirements.txt
 
