@@ -5,7 +5,7 @@ workflows:
   test:
     jobs:
       - lint
-      - dagster-all-modules-py36
+      # - dagster-all-modules-py36
       - dagster-py37:
           context: coveralls
       - dagster-py36:
@@ -79,42 +79,41 @@ workflows:
             # - dagma-py35
             # - dagma-py27
           context: coveralls
+  # dagster-all-modules-py36: &dagster-all-template
+  #   docker:
+  #     - image: circleci/python:3.6.6
+  #   environment:
+  #     TOXENV: py36
+  #   working_directory: ~/repo
+
+  #   steps:
+  #     - checkout
+
+  #     - run:
+  #         name: Install Dependencies
+  #         command: |
+  #           sudo pip install tox
+
+  #     - run:
+  #         name: Run Dagster Tests
+  #         command: |
+  #           cd python_modules/dagster
+  #           tox -e $TOXENV
+  #           cd python_modules/dagit
+  #           tox -e $TOXENV
+  #           cd python_modules/dagstermill
+  #           tox -e $TOXENV
+  #           cd python_modules/dagster-contrib
+  #           tox -e $TOXENV
+
+  #     - run:
+  #         command: mv python_modules/dagster/.coverage python_modules/dagster/.coverage.dagster.${CIRCLE_BUILD_NUM}
+
+  #     - persist_to_workspace:
+  #         root: python_modules/dagster/
+  #         paths:
+  #           - .coverage*
 jobs:
-  dagster-all-modules-py36: &dagster-all-template
-    docker:
-      - image: circleci/python:3.6.6
-    environment:
-      TOXENV: py36
-    working_directory: ~/repo
-
-    steps:
-      - checkout
-
-      - run:
-          name: Install Dependencies
-          command: |
-            sudo pip install tox
-
-      - run:
-          name: Run Dagster Tests
-          command: |
-            cd python_modules/dagster
-            tox -e $TOXENV
-            cd python_modules/dagit
-            tox -e $TOXENV
-            cd python_modules/dagstermill
-            tox -e $TOXENV
-            cd python_modules/dagster-contrib
-            tox -e $TOXENV
-
-      - run:
-          command: mv python_modules/dagster/.coverage python_modules/dagster/.coverage.dagster.${CIRCLE_BUILD_NUM}
-
-      - persist_to_workspace:
-          root: python_modules/dagster/
-          paths:
-            - .coverage*
-
   lint:
     docker:
       - image: circleci/python:3.7.2
