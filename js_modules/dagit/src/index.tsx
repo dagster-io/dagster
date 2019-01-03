@@ -5,9 +5,11 @@ import ApolloClient from "apollo-client";
 import { ApolloProvider } from "react-apollo";
 import { SubscriptionClient } from "subscriptions-transport-ws";
 import { WebSocketLink } from "apollo-link-ws";
+import { WebsocketContext } from "./WebsocketStatus";
 import App from "./App";
 import ApiResultRenderer from "./ApiResultRenderer";
 import AppCache from "./AppCache";
+
 import "@blueprintjs/core/lib/css/blueprint.css";
 import "@blueprintjs/icons/lib/css/blueprint-icons.css";
 import "@blueprintjs/select/lib/css/blueprint-select.css";
@@ -33,9 +35,11 @@ if (process.env.REACT_APP_RENDER_API_RESULTS) {
   );
 } else {
   ReactDOM.render(
-    <ApolloProvider client={client}>
-      <App />
-    </ApolloProvider>,
+    <WebsocketContext.Provider value={websocketClient}>
+      <ApolloProvider client={client}>
+        <App />
+      </ApolloProvider>
+    </WebsocketContext.Provider>,
     document.getElementById("root") as HTMLElement
   );
 }
