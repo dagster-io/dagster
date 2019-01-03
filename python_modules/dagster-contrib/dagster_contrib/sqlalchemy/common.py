@@ -5,10 +5,7 @@ from dagster import (
     check,
 )
 
-from dagster.core.execution_context import (
-    ExecutionContext,
-    RuntimeExecutionContext,
-)
+from dagster.core.execution_context import RuntimeExecutionContext
 
 
 class SqlAlchemyResource(object):
