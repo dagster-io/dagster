@@ -70,7 +70,7 @@ workflows:
             # - dagstermill-py36
             # - dagstermill-py35
             # - dagstermill-py27
-            - airline-demo-py37
+            # - airline-demo-py37
             - airline-demo-py36
             - airline-demo-py35
             - airline-demo-py27
