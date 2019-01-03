@@ -433,20 +433,27 @@ def test_pipeline_subset():
     assert pipeline_result.success
     assert pipeline_result.result_for_solid('add_one').transformed_value() == 2
 
-    subset_result = execute_pipeline(
-        pipeline_def,
-        {
-            'solids': {
-                'add_one': {
-                    'inputs': {
-                        'num': 3,
-                    },
+    env_config = {
+        'solids': {
+            'add_one': {
+                'inputs': {
+                    'num': 3,
                 },
             },
         },
-        solid_subset=['add_one'],
-    )
+    }
+
+    subset_result = execute_pipeline(pipeline_def, environment=env_config, solid_subset=['add_one'])
 
     assert subset_result.success
     assert len(subset_result.result_list) == 1
     assert subset_result.result_for_solid('add_one').transformed_value() == 4
+
+    iter_results = execute_pipeline_iterator(
+        pipeline_def,
+        environment=env_config,
+        solid_subset=['add_one'],
+    )
+
+    for result in iter_results:
+        assert result.success
