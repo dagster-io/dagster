@@ -391,18 +391,3 @@ Any = _DagsterAnyType()
 
 # TO DISCUSS: Consolidate with Dict?
 PythonDict = PythonObjectType('Dict', dict, type_attributes=DagsterTypeAttributes(is_builtin=True))
-
-# class MaterializeableBuiltinScalarConfigSchema(ConfigurableSelectorFromDict):
-#     def __init__(self, scalar_name):
-#         # TODO: add pickle
-#         super(
-#             MaterializeableBuiltinScalarConfigSchema,
-#             self,
-#         ).__init__(fields={'json': define_path_dict_field()})
-
-#         # Probably should come up with a better naming convention
-#         self.name = scalar_name + '.MaterializationSchema'
-#         self.description = ''
-
-#     def iterate_types(self):
-#         return []
