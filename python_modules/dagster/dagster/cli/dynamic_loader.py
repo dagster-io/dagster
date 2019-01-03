@@ -27,6 +27,9 @@ if sys.version_info[0] >= 3:
     # in user code causes `instanceof` checks to fail since this code still references
     # the original copies of RespositoryDefinition, etc.
     #
+
+    # allow use of protected member
+    # pylint: disable=W0212
     _reload = reloader._reload
 
     def conditional_reload(m, visited):

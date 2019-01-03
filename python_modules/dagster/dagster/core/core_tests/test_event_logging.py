@@ -2,12 +2,10 @@ from collections import defaultdict
 
 from dagster import (
     ExecutionContext,
-    ReentrantInfo,
     PipelineDefinition,
     PipelineContextDefinition,
     execute_pipeline,
     lambda_solid,
-    solid,
 )
 
 from dagster.core.events import (

@@ -1,5 +1,4 @@
 from dagster import (
-    Field,
     PipelineContextDefinition,
     PipelineDefinition,
     ResourceDefinition,

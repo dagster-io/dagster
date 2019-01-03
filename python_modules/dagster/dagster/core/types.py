@@ -10,6 +10,8 @@ from dagster.core.errors import (
     DagsterRuntimeCoercionError,
 )
 
+# other files depend on the Field include
+# pylint: disable=W0611
 from .configurable import (
     Configurable,
     ConfigurableFromAny,

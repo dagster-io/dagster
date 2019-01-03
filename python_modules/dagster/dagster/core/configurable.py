@@ -133,7 +133,6 @@ class ConfigurableSelectorFromDict(ConfigurableFromDict):
     for context definition selection (only one context can be used for a particular
     pipeline invocation); this is generalization of that concept.
     '''
-    pass
 
 
 class ConfigurableFromList(Configurable):
