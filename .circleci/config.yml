@@ -4,6 +4,7 @@ workflows:
   version: 2
   test:
     jobs:
+      - lint
       - dagster-py37:
           context: coveralls
       - dagster-py36:
