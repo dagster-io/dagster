@@ -152,7 +152,7 @@ jobs:
             mv python_modules/dagster-contrib/.coverage python_modules/.coverage.dagster-contrib.${CIRCLE_BUILD_NUM}
 
       - persist_to_workspace:
-          root: python_modules/dagster/
+          root: python_modules/
           paths:
             - .coverage*
 
