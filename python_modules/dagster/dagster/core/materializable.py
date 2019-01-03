@@ -13,11 +13,11 @@ class Materializeable(object):
 
 class MaterializeableBuiltinScalar(Materializeable):
     def define_materialization_config_schema(self):
-        # TODO: reorganie types to avoid circular deps
+        # TODO: organize types to avoid circular deps
         from .types import MaterializeableBuiltinScalarConfigSchema
 
         # pylint: disable=E1101
-        # For now assuming all Materializalbes are Types and have names available
+        # For now assuming all Materializables are Types and have names available
         return MaterializeableBuiltinScalarConfigSchema(self.name)
 
     def materialize_runtime_value(self, config_spec, runtime_value):
