@@ -383,8 +383,7 @@ jobs:
           at: /tmp/workspace
 
       # only block warnings for now
-      - run:
-          pylint python_modules/dagster/dagster --rcfile=python_modules/.pylintrc --disable=R,C
+      - run: pylint python_modules/dagster/dagster --rcfile=python_modules/.pylintrc --disable=R,C
 
   coverage:
     docker:
