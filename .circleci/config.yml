@@ -131,18 +131,18 @@ jobs:
       - run:
           name: Run Dagster Tests
           command: |
-            cd python_modules/dagster
+            pushd python_modules/dagster
             tox -e $TOXENV
-            cd ..
-            cd python_modules/dagit
+            popd
+            pushd python_modules/dagit
             tox -e $TOXENV
-            cd ..
-            cd python_modules/dagstermill
+            popd
+            pushd python_modules/dagstermill
             tox -e $TOXENV
-            cd ..
-            cd python_modules/dagster-contrib
+            popd
+            pushd python_modules/dagster-contrib
             tox -e $TOXENV
-            cd ..
+            popd
 
       - run:
           command: |
