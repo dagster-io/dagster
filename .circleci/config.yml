@@ -4,7 +4,6 @@ workflows:
   version: 2
   test:
     jobs:
-      - lint:
       - dagster-py37:
           context: coveralls
       - dagster-py36:
@@ -45,6 +44,7 @@ workflows:
           context: coveralls
       - dagma-py36:
           context: coveralls
+      - lint
 
       - coverage:
           requires:
@@ -52,15 +52,18 @@ workflows:
             - dagster-py36
             - dagster-py35
             - dagster-py27
+            - dagit-py37
             - dagit-py36
             - dagit-py35
             - dagit-py27
+            - dagstermill-py37
             - dagstermill-py36
             - dagstermill-py35
             - dagstermill-py27
             - airline-demo-py36
             - airline-demo-py35
             - airline-demo-py27
+            - dagster-contrib-py37
             - dagster-contrib-py36
             - dagster-contrib-py35
             - dagster-contrib-py27
@@ -262,7 +265,7 @@ jobs:
   dagstermill-py37:
     <<: *dagstermill-template
     docker:
-      - image: circleci/python:3.5.6
+      - image: circleci/python:3.7.2
     environment:
       TOXENV: py37
 
