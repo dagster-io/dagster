@@ -96,12 +96,13 @@ jobs:
           command: |
             sudo pip install -e python_modules/dagster
             sudo pip install -r python_modules/dagster/dev-requirements.txt
+            sudo pip install -e python_modules/dagit
 
       - attach_workspace:
           at: /tmp/workspace
 
       # only block warnings for now
-      - run: pylint python_modules/dagster/dagster --rcfile=python_modules/.pylintrc --disable=R,C
+      - run: pylint python_modules/dagster/dagster python_modules/dagit/dagit --rcfile=python_modules/.pylintrc --disable=R,C
 
   dagster-py36: &dagster-template
     docker:
