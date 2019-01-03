@@ -102,7 +102,9 @@ class DauphinResource(dauphin.ObjectType):
     config = dauphin.Field('TypeField')
 
     def resolve_config(self, info):
-        return info.schema.type_named('TypeField')(name="config", field=self._resource.config_field)
+        return info.schema.type_named('TypeField')(
+            name="config", field=self._resource.config_field
+        ) if self._resource.config_field else None
 
 
 class DauphinPipelineContext(dauphin.ObjectType):
@@ -119,7 +121,9 @@ class DauphinPipelineContext(dauphin.ObjectType):
         self._context = check.inst_param(context, 'context', PipelineContextDefinition)
 
     def resolve_config(self, info):
-        return info.schema.type_named('TypeField')(name="config", field=self._context.config_field)
+        return info.schema.type_named('TypeField')(
+            name="config", field=self._context.config_field
+        ) if self._context.config_field else None
 
     def resolve_resources(self, _info):
         return [DauphinResource(*item) for item in self._context.resources.items()]
@@ -274,7 +278,9 @@ class DauphinSolidDefinition(dauphin.ObjectType):
         ]
 
     def resolve_config_definition(self, info):
-        return info.schema.type_named('TypeField')(name="config", field=self._solid_def.config_field)
+        return info.schema.type_named('TypeField')(
+            name="config", field=self._solid_def.config_field
+        ) if self._solid_def.config_field else None
 
 
 class DauphinInputDefinition(dauphin.ObjectType):
