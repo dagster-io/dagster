@@ -29,8 +29,8 @@ workflows:
       #     context: coveralls
       # - dagit-py27:
       #     context: coveralls
-      # - dagit-webapp:
-      #     context: coveralls
+      - dagit-webapp:
+          context: coveralls
       # - dagstermill-py37:
       #     context: coveralls
       # - dagstermill-py36:
@@ -146,19 +146,19 @@ jobs:
             pushd python_modules/dagit
             tox -e $TOXENV
             popd
-            pushd python_modules/dagstermill
-            tox -e $TOXENV
-            popd
-            pushd python_modules/dagster-contrib
-            tox -e $TOXENV
-            popd
+            # pushd python_modules/dagstermill
+            # tox -e $TOXENV
+            # popd
+            # pushd python_modules/dagster-contrib
+            # tox -e $TOXENV
+            # popd
 
       - run:
           command: |
             mv python_modules/dagster/.coverage python_modules/.coverage.dagster.${CIRCLE_BUILD_NUM}
             mv python_modules/dagit/.coverage python_modules/.coverage.dagit.${CIRCLE_BUILD_NUM}
-            mv python_modules/dagstermill/.coverage python_modules/.coverage.dagstermill.${CIRCLE_BUILD_NUM}
-            mv python_modules/dagster-contrib/.coverage python_modules/.coverage.dagster-contrib.${CIRCLE_BUILD_NUM}
+            # mv python_modules/dagstermill/.coverage python_modules/.coverage.dagstermill.${CIRCLE_BUILD_NUM}
+            # mv python_modules/dagster-contrib/.coverage python_modules/.coverage.dagster-contrib.${CIRCLE_BUILD_NUM}
 
       - persist_to_workspace:
           root: python_modules/
