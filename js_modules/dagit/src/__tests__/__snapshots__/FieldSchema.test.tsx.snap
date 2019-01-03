@@ -4,6 +4,11 @@ exports[`renders given a basic type 1`] = `
 <code
   className="sc-bwzfXH kJdBIT"
 >
+  <div
+    className="sc-ifAKCX OCUpN"
+  >
+    /* An int */
+  </div>
   <a
     href="/?typeExplorer=Int"
     onClick={[Function]}
@@ -21,6 +26,11 @@ exports[`renders given a complex type 1`] = `
 <code
   className="sc-bwzfXH kJdBIT"
 >
+  <div
+    className="sc-ifAKCX OCUpN"
+  >
+    /*  */
+  </div>
   {
   <div
     className="sc-htpNat KtFsv"

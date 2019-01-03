@@ -3,11 +3,11 @@ import gql from "graphql-tag";
 import styled from "styled-components";
 import { Colors } from "@blueprintjs/core";
 import TypeWithTooltip from "./TypeWithTooltip";
-import { ConfigFragment } from "./types/ConfigFragment";
+import { TypeSchemaFragment } from "./types/TypeSchemaFragment";
 import { TypeInfoFragment } from "./types/TypeInfoFragment";
 
-interface ConfigProps {
-  config: ConfigFragment;
+interface ITypeSchemaProps {
+  type: TypeSchemaFragment;
 }
 
 function renderTypeRecursive(
@@ -22,11 +22,10 @@ function renderTypeRecursive(
         {`{`}
         {type.fields.map(fieldData => (
           <DictEntry key={fieldData.name}>
-            {fieldData.description && (
-              <DictComment>{`${innerIndent}/* ${
-                fieldData.description
-              } */`}</DictComment>
-            )}
+            <DictBlockComment
+              indent={innerIndent}
+              content={fieldData.description}
+            />
             {innerIndent}
             <DictKey>{fieldData.name}</DictKey>
             {fieldData.isOptional && Optional}
@@ -60,9 +59,9 @@ function renderTypeRecursive(
   return <TypeWithTooltip type={type} />;
 }
 
-export default class Config extends React.Component<ConfigProps, {}> {
+export default class TypeSchema extends React.Component<ITypeSchemaProps> {
   static fragments = {
-    ConfigFragment: gql`
+    TypeSchemaFragment: gql`
       fragment TypeInfoFragment on Type {
         name
         description
@@ -85,12 +84,10 @@ export default class Config extends React.Component<ConfigProps, {}> {
         ...TypeWithTooltipFragment
       }
 
-      fragment ConfigFragment on Config {
-        type {
+      fragment TypeSchemaFragment on Type {
+        ...TypeInfoFragment
+        innerTypes {
           ...TypeInfoFragment
-          innerTypes {
-            ...TypeInfoFragment
-          }
         }
       }
       ${TypeWithTooltip.fragments.TypeWithTooltipFragment}
@@ -98,7 +95,7 @@ export default class Config extends React.Component<ConfigProps, {}> {
   };
 
   public render() {
-    const { type } = this.props.config;
+    const { type } = this.props;
 
     const innerTypeLookup = {};
     for (const innerTypeData of type.innerTypes) {
@@ -106,14 +103,15 @@ export default class Config extends React.Component<ConfigProps, {}> {
     }
 
     return (
-      <ConfigWrapper>
+      <TypeSchemaContainer>
+        <DictBlockComment content={type.description} indent="" />
         {renderTypeRecursive(type, innerTypeLookup)}
-      </ConfigWrapper>
+      </TypeSchemaContainer>
     );
   }
 }
 
-const ConfigWrapper = styled.code`
+const TypeSchemaContainer = styled.code`
   color: ${Colors.GRAY3};
   display: block;
   white-space: pre-wrap;
@@ -130,9 +128,24 @@ const DictKey = styled.span`
 const DictComment = styled.div`
   /* This allows long comments to wrap as nice indented blocks, while
      copy/pasting as a single line with space-based indentation. */
-  text-indent: -3em;
-  padding-left: 3em;
+  text-indent: -1.85em;
+  padding-left: 1.85em;
+  white-space: initial;
 `;
+
+const DictBlockComment = ({
+  indent = "",
+  content
+}: {
+  indent: string;
+  content: string | null;
+}) =>
+  content != null ? (
+    <DictComment>{`${indent.replace(
+      / /g,
+      "\u00A0"
+    )}/* ${content} */`}</DictComment>
+  ) : null;
 
 const Optional = (
   <span style={{ fontWeight: 500, color: Colors.ORANGE2 }}>?</span>

@@ -10,7 +10,7 @@ import {
   SectionItemHeader
 } from "./SidebarComponents";
 import Description from "./Description";
-import Config from "./Config";
+import TypeSchema from "./TypeSchema";
 import { SidebarPipelineInfoFragment } from "./types/SidebarPipelineInfoFragment";
 import { IconNames } from "@blueprintjs/icons";
 
@@ -32,19 +32,23 @@ export default class SidebarPipelineInfo extends React.Component<
           name
           description
           config {
-            ...ConfigFragment
+            type {
+              ...TypeSchemaFragment
+            }
           }
           resources {
             name
             description
             config {
-              ...ConfigFragment
+              type {
+                ...TypeSchemaFragment
+              }
             }
           }
         }
       }
 
-      ${Config.fragments.ConfigFragment}
+      ${TypeSchema.fragments.TypeSchemaFragment}
     `
   };
 
@@ -67,7 +71,7 @@ export default class SidebarPipelineInfo extends React.Component<
               <Description
                 description={context.description || NO_DESCRIPTION}
               />
-              {context.config && <Config config={context.config} />}
+              {context.config && <TypeSchema type={context.config.type} />}
               {context.resources.map(resource => (
                 <ContextResourceContainer key={resource.name}>
                   <Icon
@@ -82,7 +86,9 @@ export default class SidebarPipelineInfo extends React.Component<
                     <Description
                       description={resource.description || NO_DESCRIPTION}
                     />
-                    {resource.config && <Config config={resource.config} />}
+                    {resource.config && (
+                      <TypeSchema type={resource.config.type} />
+                    )}
                   </div>
                 </ContextResourceContainer>
               ))}

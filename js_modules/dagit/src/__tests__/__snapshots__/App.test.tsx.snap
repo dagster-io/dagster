@@ -572,149 +572,7 @@ Array [
         </a>
       </div>
       <div>
-        <div
-          className="sc-kgoBCf igxmqw"
-        />
-        <h3
-          className="sc-kAzzGY jYDBGE"
-        >
-          <a
-            href="/pandas_hello_world/load_num_csv?types=true"
-            onClick={[Function]}
-          >
-            Pipeline Types
-          </a>
-           &gt; 
-          PandasDataFrame
-        </h3>
-        <div>
-          <div
-            className="sc-kpOJdX goxjbg"
-            onClick={[Function]}
-          >
-            Description
-            <span
-              className="bp3-icon bp3-icon-chevron-down sc-cSHVUG fvtgDa"
-              icon="chevron-down"
-            >
-              <svg
-                data-icon="chevron-down"
-                height={16}
-                viewBox="0 0 16 16"
-                width={16}
-              >
-                <desc>
-                  chevron-down
-                </desc>
-                <path
-                  d="M12 5c-.28 0-.53.11-.71.29L8 8.59l-3.29-3.3a1.003 1.003 0 0 0-1.42 1.42l4 4c.18.18.43.29.71.29s.53-.11.71-.29l4-4A1.003 1.003 0 0 0 12 5z"
-                  fillRule="evenodd"
-                />
-              </svg>
-            </span>
-          </div>
-          <div
-            className="bp3-collapse"
-            style={
-              Object {
-                "height": "auto",
-                "overflowY": "visible",
-                "transition": "none",
-              }
-            }
-          >
-            <div
-              aria-hidden={false}
-              className="bp3-collapse-body"
-              style={
-                Object {
-                  "transform": "translateY(0)",
-                  "transition": "none",
-                }
-              }
-            >
-              <div
-                className="sc-dxgOiQ dPbrCh"
-              >
-                <div
-                  className="sc-jTzLTM hukIzI"
-                  onClick={[Function]}
-                  style={
-                    Object {
-                      "maxHeight": 320,
-                    }
-                  }
-                >
-                  <div>
-                    <div>
-                      <p>
-                        Two-dimensional size-mutable, potentially heterogeneous
-    tabular data structure with labeled axes (rows and columns). See 
-                        <a
-                          href="http://pandas.pydata.org/"
-                        >
-                          http://pandas.pydata.org/
-                        </a>
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div>
-          <div
-            className="sc-kpOJdX goxjbg"
-            onClick={[Function]}
-          >
-            Fields
-            <span
-              className="bp3-icon bp3-icon-chevron-down sc-cSHVUG fvtgDa"
-              icon="chevron-down"
-            >
-              <svg
-                data-icon="chevron-down"
-                height={16}
-                viewBox="0 0 16 16"
-                width={16}
-              >
-                <desc>
-                  chevron-down
-                </desc>
-                <path
-                  d="M12 5c-.28 0-.53.11-.71.29L8 8.59l-3.29-3.3a1.003 1.003 0 0 0-1.42 1.42l4 4c.18.18.43.29.71.29s.53-.11.71-.29l4-4A1.003 1.003 0 0 0 12 5z"
-                  fillRule="evenodd"
-                />
-              </svg>
-            </span>
-          </div>
-          <div
-            className="bp3-collapse"
-            style={
-              Object {
-                "height": "auto",
-                "overflowY": "visible",
-                "transition": "none",
-              }
-            }
-          >
-            <div
-              aria-hidden={false}
-              className="bp3-collapse-body"
-              style={
-                Object {
-                  "transform": "translateY(0)",
-                  "transition": "none",
-                }
-              }
-            >
-              <div
-                className="sc-dxgOiQ dPbrCh"
-              />
-            </div>
-          </div>
-        </div>
+        Type Not Found
       </div>
     </div>
   </div>,
@@ -1383,23 +1241,23 @@ Array [
       </div>
       <div>
         <div
-          className="sc-kgoBCf igxmqw"
+          className="sc-kGXeez dzfngV"
         >
           Pipeline
         </div>
         <h3
-          className="sc-kAzzGY jYDBGE"
+          className="sc-chPdSV bzbdDT"
         >
           pandas_hello_world
         </h3>
         <div>
           <div
-            className="sc-kpOJdX goxjbg"
+            className="sc-dxgOiQ cKKwng"
             onClick={[Function]}
           >
             Description
             <span
-              className="bp3-icon bp3-icon-chevron-down sc-cSHVUG fvtgDa"
+              className="bp3-icon bp3-icon-chevron-down sc-kAzzGY VSOpZ"
               icon="chevron-down"
             >
               <svg
@@ -1439,19 +1297,19 @@ Array [
               }
             >
               <div
-                className="sc-dxgOiQ dPbrCh"
+                className="sc-ckVGcZ bvbtGU"
               />
             </div>
           </div>
         </div>
         <div>
           <div
-            className="sc-kpOJdX goxjbg"
+            className="sc-dxgOiQ cKKwng"
             onClick={[Function]}
           >
             Contexts
             <span
-              className="bp3-icon bp3-icon-chevron-down sc-cSHVUG fvtgDa"
+              className="bp3-icon bp3-icon-chevron-down sc-kAzzGY VSOpZ"
               icon="chevron-down"
             >
               <svg
@@ -1491,26 +1349,31 @@ Array [
               }
             >
               <div
-                className="sc-dxgOiQ dPbrCh"
+                className="sc-ckVGcZ bvbtGU"
               >
                 <div
-                  className="sc-kGXeez eAvgrC"
+                  className="sc-kpOJdX guzwWI"
                 >
                   <h4
-                    className="sc-chPdSV bzfSHL"
+                    className="sc-kgoBCf kuSnom"
                   >
                     default
                   </h4>
                   <code
-                    className="sc-jKJlTe rcQGl"
+                    className="sc-jTzLTM cHNpXj"
                   >
+                    <div
+                      className="sc-cSHVUG DSQKX"
+                    >
+                      /* A configuration dictionary with typed fields */
+                    </div>
                     {
                     <div
-                      className="sc-eNQAEJ fAbPPh"
+                      className="sc-fjdhpX nsimD"
                     >
                         
                       <span
-                        className="sc-hMqMXs Wlxbq"
+                        className="sc-jzJRlG hwUMlM"
                       >
                         log_level
                       </span>
@@ -2122,23 +1985,23 @@ Array [
       </div>
       <div>
         <div
-          className="sc-kgoBCf igxmqw"
+          className="sc-kGXeez dzfngV"
         >
           Pipeline
         </div>
         <h3
-          className="sc-kAzzGY jYDBGE"
+          className="sc-chPdSV bzbdDT"
         >
           pandas_hello_world
         </h3>
         <div>
           <div
-            className="sc-kpOJdX goxjbg"
+            className="sc-dxgOiQ cKKwng"
             onClick={[Function]}
           >
             Description
             <span
-              className="bp3-icon bp3-icon-chevron-down sc-cSHVUG fvtgDa"
+              className="bp3-icon bp3-icon-chevron-down sc-kAzzGY VSOpZ"
               icon="chevron-down"
             >
               <svg
@@ -2178,19 +2041,19 @@ Array [
               }
             >
               <div
-                className="sc-dxgOiQ dPbrCh"
+                className="sc-ckVGcZ bvbtGU"
               />
             </div>
           </div>
         </div>
         <div>
           <div
-            className="sc-kpOJdX goxjbg"
+            className="sc-dxgOiQ cKKwng"
             onClick={[Function]}
           >
             Contexts
             <span
-              className="bp3-icon bp3-icon-chevron-down sc-cSHVUG fvtgDa"
+              className="bp3-icon bp3-icon-chevron-down sc-kAzzGY VSOpZ"
               icon="chevron-down"
             >
               <svg
@@ -2230,26 +2093,31 @@ Array [
               }
             >
               <div
-                className="sc-dxgOiQ dPbrCh"
+                className="sc-ckVGcZ bvbtGU"
               >
                 <div
-                  className="sc-kGXeez eAvgrC"
+                  className="sc-kpOJdX guzwWI"
                 >
                   <h4
-                    className="sc-chPdSV bzfSHL"
+                    className="sc-kgoBCf kuSnom"
                   >
                     default
                   </h4>
                   <code
-                    className="sc-jKJlTe rcQGl"
+                    className="sc-jTzLTM cHNpXj"
                   >
+                    <div
+                      className="sc-cSHVUG DSQKX"
+                    >
+                      /* A configuration dictionary with typed fields */
+                    </div>
                     {
                     <div
-                      className="sc-eNQAEJ fAbPPh"
+                      className="sc-fjdhpX nsimD"
                     >
                         
                       <span
-                        className="sc-hMqMXs Wlxbq"
+                        className="sc-jzJRlG hwUMlM"
                       >
                         log_level
                       </span>
@@ -2860,21 +2728,21 @@ Array [
         </a>
       </div>
       <div
-        className="sc-kgoBCf igxmqw"
+        className="sc-kGXeez dzfngV"
       />
       <h3
-        className="sc-kAzzGY jYDBGE"
+        className="sc-chPdSV bzbdDT"
       >
         Pipeline Types
       </h3>
       <div>
         <div
-          className="sc-kpOJdX goxjbg"
+          className="sc-dxgOiQ cKKwng"
           onClick={[Function]}
         >
           Custom
           <span
-            className="bp3-icon bp3-icon-chevron-down sc-cSHVUG fvtgDa"
+            className="bp3-icon bp3-icon-chevron-down sc-kAzzGY VSOpZ"
             icon="chevron-down"
           >
             <svg
@@ -2914,13 +2782,13 @@ Array [
             }
           >
             <div
-              className="sc-dxgOiQ dPbrCh"
+              className="sc-ckVGcZ bvbtGU"
             >
               <ul
                 className="bp3-list"
               >
                 <li
-                  className="sc-ckVGcZ emzRpM"
+                  className="sc-jKJlTe hLXNeg"
                 >
                   <a
                     href="/?typeExplorer=PandasDataFrame"
@@ -2940,12 +2808,12 @@ Array [
       </div>
       <div>
         <div
-          className="sc-kpOJdX goxjbg"
+          className="sc-dxgOiQ cKKwng"
           onClick={[Function]}
         >
           Generated
           <span
-            className="bp3-icon bp3-icon-chevron-up sc-cSHVUG fvtgDa"
+            className="bp3-icon bp3-icon-chevron-up sc-kAzzGY VSOpZ"
             icon="chevron-up"
           >
             <svg
@@ -2988,12 +2856,12 @@ Array [
       </div>
       <div>
         <div
-          className="sc-kpOJdX goxjbg"
+          className="sc-dxgOiQ cKKwng"
           onClick={[Function]}
         >
           Built-in
           <span
-            className="bp3-icon bp3-icon-chevron-up sc-cSHVUG fvtgDa"
+            className="bp3-icon bp3-icon-chevron-up sc-kAzzGY VSOpZ"
             icon="chevron-up"
           >
             <svg
