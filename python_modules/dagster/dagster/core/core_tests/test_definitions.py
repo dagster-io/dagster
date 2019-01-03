@@ -73,6 +73,9 @@ def test_pipeline_types():
         assert not pipeline_def.has_type(not_present_type.name)
 
 
+# comment elsewhere
+
+
 def test_mapper_errors():
     @lambda_solid
     def solid_a():
