@@ -40,9 +40,13 @@ def define_csv_dict_field():
     )
 
 
-class _PandasDataFrameMaterializationConfigSchema(ConfigurableSelectorFromDict):
+class _PandasDataFrameMaterializationConfigSchema(
+    ConfigurableSelectorFromDict,
+    types.DagsterType
+):
     def __init__(self):
         super(_PandasDataFrameMaterializationConfigSchema, self).__init__(
+            name='PandasDataFrameMaterializationConfigSchema',
             fields={
                 'csv': define_csv_dict_field(),
                 'parquet': define_path_dict_field(),
