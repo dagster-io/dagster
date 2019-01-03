@@ -14,6 +14,7 @@ from dagster import (
 def nonce_solid(name, n_inputs, n_outputs):
     """Creates a solid with the given number of (meaningless) inputs and outputs.
 
+
     Config controls the behavior of the nonce solid."""
 
     @solid(
