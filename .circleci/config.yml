@@ -44,7 +44,7 @@ workflows:
           context: coveralls
       - dagma-py36:
           context: coveralls
-      - lint
+      # - lint
 
       - coverage:
           requires:
