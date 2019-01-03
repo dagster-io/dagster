@@ -5,7 +5,13 @@ workflows:
   test:
     jobs:
       - lint
+      - dagster-all-modules-py37:
+          context: coveralls
       - dagster-all-modules-py36:
+          context: coveralls
+      - dagster-all-modules-py35:
+          context: coveralls
+      - dagster-all-modules-py27:
           context: coveralls
       # - dagster-py37:
       #     context: coveralls
@@ -58,7 +64,10 @@ workflows:
 
       - coverage:
           requires:
+            - dagster-all-modules-py37
             - dagster-all-modules-py36
+            - dagster-all-modules-py35
+            - dagster-all-modules-py27
             # - dagster-py37
             # - dagster-py36
             # - dagster-py35
@@ -184,6 +193,27 @@ jobs:
           root: python_modules/dagster/
           paths:
             - .coverage*
+
+  dagster-all-modules-py37:
+    <<: *dagster-all-modules-template
+    docker:
+      - image: circleci/python:3.7.2
+    environment:
+      TOXENV: py37
+
+  dagster-all-modules-py35:
+    <<: *dagster-all-modules-template
+    docker:
+      - image: circleci/python:3.5.6
+    environment:
+      TOXENV: py35
+
+  dagster-all-modules-py27:
+    <<: *dagster-all-modules-template
+    docker:
+      - image: circleci/python:2.7.15
+    environment:
+      TOXENV: py27
 
   dagit-py36: &dagit-template
     <<: *dagster-template
