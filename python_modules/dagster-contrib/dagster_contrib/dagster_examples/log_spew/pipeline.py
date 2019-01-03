@@ -1,3 +1,5 @@
+import time
+
 from dagster import (
     DependencyDefinition,
     InputDefinition,
@@ -7,7 +9,6 @@ from dagster import (
     solid,
     SolidInstance,
 )
-import time
 
 
 def nonce_solid(name, n_inputs, n_outputs):
@@ -20,7 +21,7 @@ def nonce_solid(name, n_inputs, n_outputs):
         inputs=[InputDefinition(name='input_{}'.format(i), ) for i in range(n_inputs)],
         outputs=[OutputDefinition(name='output_{}'.format(i)) for i in range(n_outputs)]
     )
-    def solid_fn(info, **kwargs):
+    def solid_fn(info, **_kwargs):
         for i in range(200):
             time.sleep(0.02)
             if i % 1000 == 420:
