@@ -5,8 +5,7 @@ workflows:
   test:
     jobs:
       - lint
-      - dagster-all-modules-py36:
-          context: coveralls
+      - dagster-all-modules-py36
       - dagster-py37:
           context: coveralls
       - dagster-py36:
