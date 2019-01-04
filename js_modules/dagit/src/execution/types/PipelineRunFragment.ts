@@ -11,7 +11,7 @@ export interface PipelineRunFragment_logs_nodes_LogMessageEvent {
   message: string;
   timestamp: string;
   level: LogLevel;
-  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent";
+  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "PipelineProcessStartEvent" | "PipelineProcessStartedEvent";
 }
 
 export interface PipelineRunFragment_logs_nodes_ExecutionStepFailureEvent_step {

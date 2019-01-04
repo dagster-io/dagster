@@ -161,6 +161,20 @@ class DauphinPipelineFailureEvent(dauphin.ObjectType):
         interfaces = (DauphinMessageEvent, DauphinPipelineEvent)
 
 
+class DauphinPipelineProcessStartEvent(dauphin.ObjectType):
+    class Meta:
+        name = 'PipelineProcessStartEvent'
+        interfaces = (DauphinMessageEvent, DauphinPipelineEvent)
+
+
+class DauphinPipelineProcessStartedEvent(dauphin.ObjectType):
+    class Meta:
+        name = 'PipelineProcessStartedEvent'
+        interfaces = (DauphinMessageEvent, DauphinPipelineEvent)
+
+    process_id = dauphin.NonNull(dauphin.Int)
+
+
 class DauphinExecutionStepEvent(dauphin.Interface):
     class Meta:
         name = 'ExecutionStepEvent'
@@ -200,6 +214,8 @@ class DauphinPipelineRunEvent(dauphin.Union):
             DauphinExecutionStepStartEvent,
             DauphinExecutionStepSuccessEvent,
             DauphinExecutionStepFailureEvent,
+            DauphinPipelineProcessStartEvent,
+            DauphinPipelineProcessStartedEvent,
         )
 
     @staticmethod
@@ -211,7 +227,7 @@ class DauphinPipelineRunEvent(dauphin.Union):
 
         basic_params = {
             'run': run,
-            'message': event.original_message,
+            'message': event.user_message,
             'timestamp': int(event.timestamp * 1000),
             'level': DauphinLogLevel.from_level(event.level),
         }
@@ -222,6 +238,14 @@ class DauphinPipelineRunEvent(dauphin.Union):
             return info.schema.type_named('PipelineSuccessEvent')(pipeline=pipeline, **basic_params)
         elif event.event_type == EventType.PIPELINE_FAILURE:
             return info.schema.type_named('PipelineFailureEvent')(pipeline=pipeline, **basic_params)
+        elif event.event_type == EventType.PIPELINE_PROCESS_START:
+            return info.schema.type_named('PipelineProcessStartEvent')(
+                pipeline=pipeline, **basic_params
+            )
+        elif event.event_type == EventType.PIPELINE_PROCESS_STARTED:
+            return info.schema.type_named('PipelineProcessStartedEvent')(
+                pipeline=pipeline, process_id=event.process_id, **basic_params
+            )
         elif event.event_type == EventType.EXECUTION_PLAN_STEP_START:
             return info.schema.type_named('ExecutionStepStartEvent')(
                 step=info.schema.type_named('ExecutionStep')(
@@ -238,13 +262,12 @@ class DauphinPipelineRunEvent(dauphin.Union):
             )
         elif event.event_type == EventType.EXECUTION_PLAN_STEP_FAILURE:
             check.inst(event.error_info, SerializableErrorInfo)
-            failure_event = info.schema.type_named('ExecutionStepFailureEvent')(
+            return info.schema.type_named('ExecutionStepFailureEvent')(
                 step=info.schema.type_named('ExecutionStep')(
                     pipeline_run.execution_plan.get_step_by_key(event.step_key)
                 ),
                 error=info.schema.type_named('PythonError')(event.error_info),
                 **basic_params
             )
-            return failure_event
         else:
             return info.schema.type_named('LogMessageEvent')(**basic_params)

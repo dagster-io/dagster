@@ -7,6 +7,7 @@ from dagster import (
     lambda_solid,
 )
 from dagster.cli.dynamic_loader import RepositoryTargetInfo
+from dagster.core.events import EventType
 from dagster.core.execution import create_execution_plan
 from dagster.utils import script_relative_path
 import dagster_contrib.pandas as dagster_pd
@@ -14,6 +15,10 @@ import dagster_contrib.pandas as dagster_pd
 from dagit.app import RepositoryContainer
 from dagit.pipeline_execution_manager import MultiprocessingExecutionManager
 from dagit.pipeline_run_storage import InMemoryPipelineRun, PipelineRunStatus
+
+
+def get_events_of_type(events, event_type):
+    return [event for event in events if event.event_type == event_type]
 
 
 def test_running():
@@ -50,7 +55,14 @@ def test_running():
     execution_manager.execute_pipeline(repository_container, pipeline, pipeline_run)
     execution_manager.join()
     assert pipeline_run.status == PipelineRunStatus.SUCCESS
-    assert pipeline_run.all_logs()
+    events = pipeline_run.all_logs()
+    assert events
+
+    process_start_events = get_events_of_type(events, EventType.PIPELINE_PROCESS_START)
+    assert len(process_start_events) == 1
+
+    process_started_events = get_events_of_type(events, EventType.PIPELINE_PROCESS_STARTED)
+    assert len(process_started_events) == 1
 
 
 def test_failing():
@@ -87,7 +99,7 @@ def test_failing():
     execution_manager.execute_pipeline(repository_container, pipeline, pipeline_run)
     execution_manager.join()
     assert pipeline_run.status == PipelineRunStatus.FAILURE
-    pipeline_run.all_logs()
+    assert pipeline_run.all_logs()
 
 
 def test_execution_crash():
@@ -128,9 +140,9 @@ def test_execution_crash():
     execution_manager.join()
     assert pipeline_run.status == PipelineRunStatus.FAILURE
     last_log = pipeline_run.all_logs()[-1]
-    assert last_log.message == 'Exception: Pipeline execution process for {run_id} unexpectedly exited\n'.format(
-        run_id=run_id
-    )
+    assert last_log.message == (
+        'Exception: Pipeline execution process for {run_id} unexpectedly exited\n'
+    ).format(run_id=run_id)
 
 
 @lambda_solid(

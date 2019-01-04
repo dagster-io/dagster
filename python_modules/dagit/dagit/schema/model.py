@@ -103,10 +103,15 @@ def get_execution_plan(info, pipelineName, config):
 
     def create_plan(pipeline):
         config_or_error = _config_or_error_from_pipeline(info, pipeline, config)
-        return config_or_error.chain(lambda config: info.schema.type_named('ExecutionPlan')(
-            pipeline,
-            create_execution_plan_with_typed_environment(pipeline.get_dagster_pipeline(), config.value,),
-        ))
+        return config_or_error.chain(
+            lambda config: info.schema.type_named('ExecutionPlan')(
+                pipeline,
+                create_execution_plan_with_typed_environment(
+                    pipeline.get_dagster_pipeline(),
+                    config.value
+                ),
+            ),
+        )
 
     pipeline_or_error = _pipeline_or_error_from_container(
         info, info.context.repository_container, pipelineName
@@ -183,7 +188,7 @@ def get_pipeline_run_observable(info, run_id, after=None):
 
 def _repository_or_error_from_container(info, container):
     error = container.error
-    if error != None:
+    if error is not None:
         return EitherError(
             info.schema.type_named('PythonError')(serializable_error_info_from_exc_info(error))
         )
