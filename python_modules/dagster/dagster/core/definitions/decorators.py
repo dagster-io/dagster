@@ -2,20 +2,21 @@ from collections import namedtuple
 from functools import wraps
 import inspect
 
-from .definitions import (
-    InputDefinition,
-    OutputDefinition,
-    Result,
-    SolidDefinition,
-    check,
-)
+from dagster import check
 
-from .errors import (
+from dagster.core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
 )
 
-from .types import Field
+from dagster.core.types import Field
+
+from . import (
+    InputDefinition,
+    OutputDefinition,
+    Result,
+    SolidDefinition,
+)
 
 if hasattr(inspect, 'signature'):
     funcsigs = inspect
