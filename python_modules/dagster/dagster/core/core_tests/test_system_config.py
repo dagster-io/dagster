@@ -11,11 +11,18 @@ from dagster import (
     PipelineDefinition,
     SolidDefinition,
     SolidInstance,
-    config,
     execute_pipeline,
     lambda_solid,
     types,
 )
+
+from dagster.core.config_objects import (
+    ContextConfig,
+    EnvironmentConfig,
+    ExecutionConfig,
+    ExpectationsConfig, 
+    SolidConfig,
+) 
 
 from dagster.core.config_types import (
     ContextConfigType,
@@ -70,7 +77,7 @@ def test_context_config():
             }
         }}
     )
-    assert isinstance(output, config.Context)
+    assert isinstance(output, ContextConfig)
     assert output.name == 'test'
     assert output.config == {'some_str': 'something'}
 
@@ -261,7 +268,7 @@ def test_select_context():
         'int_context': {
             'config': 1
         },
-    }) == config.Context(
+    }) == ContextConfig(
         name='int_context',
         config=1,
     )
@@ -272,7 +279,7 @@ def test_select_context():
                 'config': 'bar'
             },
         }
-    ) == config.Context(
+    ) == ContextConfig(
         name='string_context',
         config='bar',
     )
@@ -301,7 +308,7 @@ def test_select_context():
 def test_solid_config():
     solid_config_type = SolidConfigType('kdjfkd', Field(types.Int), None, None)
     solid_inst = throwing_evaluate_config_value(solid_config_type, {'config': 1})
-    assert isinstance(solid_inst, config.Solid)
+    assert isinstance(solid_inst, SolidConfig)
     assert solid_inst.config == 1
     assert solid_config_type.type_attributes.is_system_config
 
@@ -310,12 +317,12 @@ def test_expectations_config():
     expectations_config_type = ExpectationsConfigType('ksjdfkd')
     expectations = throwing_evaluate_config_value(expectations_config_type, {'evaluate': True})
 
-    assert isinstance(expectations, config.Expectations)
+    assert isinstance(expectations, ExpectationsConfig)
     assert expectations.evaluate is True
 
     assert throwing_evaluate_config_value(expectations_config_type,
                                           {'evaluate': False
-                                           }) == config.Expectations(evaluate=False)
+                                           }) == ExpectationsConfig(evaluate=False)
 
 
 def test_solid_dictionary_type():
@@ -336,8 +343,8 @@ def test_solid_dictionary_type():
 
     assert set(['int_config_solid', 'string_config_solid']) == set(value.keys())
     assert value == {
-        'int_config_solid': config.Solid(1),
-        'string_config_solid': config.Solid('bar'),
+        'int_config_solid': SolidConfig(1),
+        'string_config_solid': SolidConfig('bar'),
     }
 
     assert solid_dict_type.type_attributes.is_system_config
@@ -426,7 +433,7 @@ def test_solid_dictionary_some_no_config():
 
     assert set(['int_config_solid']) == set(value.keys())
     assert value == {
-        'int_config_solid': config.Solid(1),
+        'int_config_solid': SolidConfig(1),
     }
 
 
@@ -482,12 +489,12 @@ def test_whole_environment():
         }
     )
 
-    assert isinstance(env, config.Environment)
-    assert env.context == config.Context('test', 1)
+    assert isinstance(env, EnvironmentConfig)
+    assert env.context == ContextConfig('test', 1)
     assert env.solids == {
-        'int_config_solid': config.Solid(123),
+        'int_config_solid': SolidConfig(123),
     }
-    assert env.expectations == config.Expectations(evaluate=True)
+    assert env.expectations == ExpectationsConfig(evaluate=True)
 
 
 def test_solid_config_error():
@@ -509,7 +516,7 @@ def test_execution_config():
             'serialize_intermediates': True
         }},
     )
-    assert isinstance(env_obj.execution, config.Execution)
+    assert isinstance(env_obj.execution, ExecutionConfig)
     assert env_obj.execution.serialize_intermediates
 
 

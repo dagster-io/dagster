@@ -64,7 +64,6 @@ from dagster.utils.test import (
     execute_solids,
 )
 
-import dagster.core.config as config
 import dagster.core.types as types
 
 from .version import __version__
@@ -116,9 +115,6 @@ __all__ = [
     'define_stub_solid',
     'execute_solid',
     'execute_solids',
-
-    # config
-    'config',
 
     # types
     'types',

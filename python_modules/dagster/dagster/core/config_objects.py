@@ -6,9 +6,9 @@ DEFAULT_CONTEXT_NAME = 'default'
 
 
 # lifted from https://bit.ly/2HcQAuv
-class Context(namedtuple('ContextData', 'name config resources')):
+class ContextConfig(namedtuple('_ContextConfig', 'name config resources')):
     def __new__(cls, name=None, config=None, resources=None):
-        return super(Context, cls).__new__(
+        return super(ContextConfig, cls).__new__(
             cls,
             check.opt_str_param(name, 'name', DEFAULT_CONTEXT_NAME),
             config,
@@ -16,9 +16,9 @@ class Context(namedtuple('ContextData', 'name config resources')):
         )
 
 
-class Solid(namedtuple('Solid', 'config inputs outputs')):
+class SolidConfig(namedtuple('_SolidConfig', 'config inputs outputs')):
     def __new__(cls, config, inputs=None, outputs=None):
-        return super(Solid, cls).__new__(
+        return super(SolidConfig, cls).__new__(
             cls,
             config,
             check.opt_dict_param(inputs, 'inputs', key_type=str),
@@ -26,42 +26,42 @@ class Solid(namedtuple('Solid', 'config inputs outputs')):
         )
 
 
-class Environment(namedtuple('EnvironmentData', 'context solids expectations execution')):
+class EnvironmentConfig(namedtuple('_EnvironmentConfig', 'context solids expectations execution')):
     def __new__(cls, solids=None, context=None, expectations=None, execution=None):
-        check.opt_inst_param(context, 'context', Context)
-        check.opt_inst_param(expectations, 'expectations', Expectations)
-        check.opt_inst_param(execution, 'execution', Execution)
+        check.opt_inst_param(context, 'context', ContextConfig)
+        check.opt_inst_param(expectations, 'expectations', ExpectationsConfig)
+        check.opt_inst_param(execution, 'execution', ExecutionConfig)
 
         if context is None:
-            context = Context()
+            context = ContextConfig()
 
         if expectations is None:
-            expectations = Expectations(evaluate=True)
+            expectations = ExpectationsConfig(evaluate=True)
 
         if execution is None:
-            execution = Execution(serialize_intermediates=False)
+            execution = ExecutionConfig(serialize_intermediates=False)
 
-        return super(Environment, cls).__new__(
+        return super(EnvironmentConfig, cls).__new__(
             cls,
             context=context,
-            solids=check.opt_dict_param(solids, 'solids', key_type=str, value_type=Solid),
+            solids=check.opt_dict_param(solids, 'solids', key_type=str, value_type=SolidConfig),
             expectations=expectations,
             execution=execution,
         )
 
 
-class Expectations(namedtuple('ExpectationsData', 'evaluate')):
+class ExpectationsConfig(namedtuple('_ExpecationsConfig', 'evaluate')):
     def __new__(cls, evaluate):
-        return super(Expectations, cls).__new__(
+        return super(ExpectationsConfig, cls).__new__(
             cls,
             evaluate=check.bool_param(evaluate, 'evaluate'),
         )
 
 
-class Execution(namedtuple('ExecutionData', 'serialize_intermediates')):
+class ExecutionConfig(namedtuple('_ExecutionConfig', 'serialize_intermediates')):
     def __new__(cls, serialize_intermediates):
 
-        return super(Execution, cls).__new__(
+        return super(ExecutionConfig, cls).__new__(
             cls,
             check.bool_param(serialize_intermediates, 'serialize_intermediates'),
         )
