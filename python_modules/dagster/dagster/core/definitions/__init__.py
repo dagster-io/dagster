@@ -47,6 +47,12 @@ from .expectation import (
     ExpectationResult,
 )
 
+from .infos import (
+    ContextCreationExecutionInfo,
+    ExpectationExecutionInfo,
+    TransformExecutionInfo,
+)
+
 from .input import InputDefinition
 
 from .output import OutputDefinition
@@ -94,57 +100,6 @@ def all_fields_optional(field_dict):
         if not field.is_optional:
             return False
     return True
-
-
-class ContextCreationExecutionInfo(
-    namedtuple('_ContextCreationExecutionInfo', 'config pipeline_def run_id')
-):
-    def __new__(cls, config, pipeline_def, run_id):
-        return super(ContextCreationExecutionInfo, cls).__new__(
-            cls,
-            config,
-            check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition),
-            check.str_param(run_id, 'run_id'),
-        )
-
-
-class ExpectationExecutionInfo(
-    namedtuple(
-        '_ExpectationExecutionInfo',
-        'context inout_def solid expectation_def',
-    )
-):
-    def __new__(cls, context, inout_def, solid, expectation_def):
-        return super(ExpectationExecutionInfo, cls).__new__(
-            cls,
-            check.inst_param(context, 'context', RuntimeExecutionContext),
-            check.inst_param(inout_def, 'inout_def', (InputDefinition, OutputDefinition)),
-            check.inst_param(solid, 'solid', Solid),
-            check.inst_param(expectation_def, 'expectation_def', ExpectationDefinition),
-        )
-
-
-class TransformExecutionInfo(
-    namedtuple('_TransformExecutionInfo', 'context config solid pipeline_def')
-):
-    '''An instance of TransformExecutionInfo is passed every solid transform function.
-
-    Attributes:
-
-        context (ExecutionContext): Context instance for this pipeline invocation
-        config (Any): Config object for current solid
-    '''
-
-    def __new__(cls, context, config, solid, pipeline_def):
-        return super(TransformExecutionInfo, cls).__new__(
-            cls, check.inst_param(context, 'context', RuntimeExecutionContext), config,
-            check.inst_param(solid, 'solid', Solid),
-            check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
-        )
-
-    @property
-    def solid_def(self):
-        return self.solid.definition
 
 
 def _create_adjacency_lists(solids, dep_structure):
