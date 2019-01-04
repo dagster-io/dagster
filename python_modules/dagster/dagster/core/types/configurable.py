@@ -113,9 +113,9 @@ class ConfigurableFromDict(Configurable):
         check.str_param(name, 'name')
         return self.field_dict[name]
 
-    def iterate_types(self):
+    def iterate_types(self, seen):
         for field_type in self.field_dict.values():
-            for inner_type in field_type.dagster_type.iterate_types():
+            for inner_type in field_type.dagster_type.iterate_types(seen):
                 yield inner_type
 
         # FIXME: is_named needs to be moved into Configurable

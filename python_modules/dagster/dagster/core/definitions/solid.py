@@ -96,15 +96,15 @@ class SolidDefinition(object):
         check.str_param(name, 'name')
         return self._output_dict[name]
 
-    def iterate_types(self):
+    def iterate_types(self, seen):
         for input_def in self.input_defs:
-            for dagster_type in input_def.dagster_type.iterate_types():
+            for dagster_type in input_def.dagster_type.iterate_types(seen):
                 yield dagster_type
 
         for output_def in self.output_defs:
-            for dagster_type in output_def.dagster_type.iterate_types():
+            for dagster_type in output_def.dagster_type.iterate_types(seen):
                 yield dagster_type
 
         if self.config_field:
-            for dagster_type in self.config_field.dagster_type.iterate_types():
+            for dagster_type in self.config_field.dagster_type.iterate_types(seen):
                 yield dagster_type

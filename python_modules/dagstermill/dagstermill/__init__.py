@@ -26,10 +26,8 @@ from dagster import (
 
 from dagster.core.types.configurable import ConfigurableFromScalar
 from dagster.core.definitions import TransformExecutionInfo
-from dagster.core.types.materializable import (
-    MaterializeableBuiltinScalar,
-    FileMarshalable,
-)
+from dagster.core.types.builtins import MaterializeableBuiltinScalar
+from dagster.core.types.materializable import FileMarshalable
 
 # magic incantation for syncing up notebooks to enclosing virtual environment.
 # I don't claim to understand it.

@@ -149,16 +149,18 @@ def _gather_all_types(solids, context_definitions, environment_type):
 
     check.inst_param(environment_type, 'environment_type', types.DagsterType)
 
+    seen = set()
+
     for solid in solids:
-        for dagster_type in solid.iterate_types():
+        for dagster_type in solid.iterate_types(seen):
             yield dagster_type
 
     for context_definition in context_definitions.values():
         if context_definition.config_field:
-            for dagster_type in context_definition.config_field.dagster_type.iterate_types():
+            for dagster_type in context_definition.config_field.dagster_type.iterate_types(seen):
                 yield dagster_type
 
-    for dagster_type in environment_type.iterate_types():
+    for dagster_type in environment_type.iterate_types(seen):
         yield dagster_type
 
 
