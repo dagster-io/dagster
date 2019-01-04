@@ -11,7 +11,7 @@ workflows:
           context: coveralls
       - dagster-py35:
           context: coveralls
-      - dagster-py34:
+      - dagster-py27:
           context: coveralls
       - dagit-py37:
           context: coveralls
