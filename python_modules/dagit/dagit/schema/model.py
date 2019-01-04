@@ -6,7 +6,7 @@ from graphql.execution.base import ResolveInfo
 
 from dagster import check
 from dagster.core.types.evaluator import evaluate_config_value
-from dagster.core.execution import create_execution_plan_with_typed_environment
+from dagster.core.execution import create_execution_plan_with_typed_environment, get_subset_pipeline
 
 from dagster.utils.error import serializable_error_info_from_exc_info
 
@@ -38,20 +38,23 @@ def _get_pipelines(info):
     return repository_or_error.chain(process_pipelines)
 
 
-def get_pipeline(info, name):
+def get_pipeline(info, name, solid_subset):
     check.inst_param(info, 'info', ResolveInfo)
-    return _get_pipeline(info, name).value()
+    return _get_pipeline(info, name, solid_subset).value()
 
 
-def get_pipeline_or_raise(info, name):
+def get_pipeline_or_raise(info, name, solid_subset=None):
     check.inst_param(info, 'info', ResolveInfo)
-    return _get_pipeline(info, name).value_or_raise()
+    return _get_pipeline(info, name, solid_subset).value_or_raise()
 
 
-def _get_pipeline(info, name):
+def _get_pipeline(info, name, solid_subset):
     check.inst_param(info, 'info', ResolveInfo)
     check.str_param(name, 'name')
-    return _pipeline_or_error_from_container(info, info.context.repository_container, name)
+    check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
+    return _pipeline_or_error_from_container(
+        info, info.context.repository_container, name, solid_subset
+    )
 
 
 def get_pipeline_type(info, pipelineName, typeName):
@@ -170,7 +173,9 @@ def get_pipeline_run_observable(info, run_id, after=None):
         )
 
     return (
-        _pipeline_or_error_from_container(info, info.context.repository_container, pipeline_name)
+        _pipeline_or_error_from_container(
+            info, info.context.repository_container, pipeline_name, solid_subset=None
+        )
         .chain(get_observable)
         .value_or_raise()
     )
@@ -192,20 +197,29 @@ def _repository_or_error_from_container(info, container):
         )
 
 
-def _pipeline_or_error_from_repository(info, repository, pipeline_name):
+def _pipeline_or_error_from_repository(info, repository, pipeline_name, solid_subset):
     if not repository.has_pipeline(pipeline_name):
         return EitherError(
             info.schema.type_named('PipelineNotFoundError')(pipeline_name=pipeline_name)
         )
     else:
-        return EitherValue(
-            info.schema.type_named('Pipeline')(repository.get_pipeline(pipeline_name))
-        )
+        orig_pipeline = repository.get_pipeline(pipeline_name)
+        if solid_subset is not None:
+            for solid_name in solid_subset:
+                if not orig_pipeline.has_solid(solid_name):
+                    return EitherError(
+                        info.schema.type_named('SolidNotFoundError')(solid_name=solid_name)
+                    )
+        pipeline = get_subset_pipeline(orig_pipeline, solid_subset)
+
+        return EitherValue(info.schema.type_named('Pipeline')(pipeline))
 
 
-def _pipeline_or_error_from_container(info, container, pipeline_name):
+def _pipeline_or_error_from_container(info, container, pipeline_name, solid_subset=None):
     return _repository_or_error_from_container(info, container).chain(
-        lambda repository: _pipeline_or_error_from_repository(info, repository, pipeline_name)
+        lambda repository: _pipeline_or_error_from_repository(
+            info, repository, pipeline_name, solid_subset
+        )
     )
 
 

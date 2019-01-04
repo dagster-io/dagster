@@ -58,7 +58,7 @@ def define_repository():
             'context_config_pipeline': define_context_config_pipeline,
             'more_complicated_config': define_more_complicated_config,
             'more_complicated_nested_config': define_more_complicated_nested_config,
-            'pandas_hello_world': define_pipeline_one,
+            'pandas_hello_world': define_pandas_hello_world,
             'pandas_hello_world_two': define_pipeline_two,
             'pipeline_with_list': define_pipeline_with_list,
             'pandas_hello_world_df_input': define_pipeline_with_pandas_df_input,
@@ -102,7 +102,128 @@ def sum_sq_solid(sum_df):
     return sum_sq_df
 
 
-def define_pipeline_one():
+PIPELINE_OR_ERROR_SUBSET_QUERY = '''
+query PipelineQuery($name: String! $solidSubset: [String!])
+{
+    pipelineOrError(name: $name, solidSubset: $solidSubset) {
+        __typename
+        ... on Pipeline {
+            name
+            solids {
+                name
+            }
+            types {
+            __typename
+            name
+            ... on CompositeType {
+                fields {
+                name
+                type {
+                    name
+                    __typename
+                }
+                __typename
+                }
+                __typename
+            }
+            }
+        }
+        ... on SolidNotFoundError {
+            solidName
+        }
+    }
+}
+'''
+PIPELINE_SUBSET_QUERY = '''
+query PipelineQuery($name: String! $solidSubset: [String!])
+{
+    pipeline(name: $name, solidSubset: $solidSubset) {
+        name
+        solids {
+            name
+        }
+        types {
+          __typename
+          name
+          ... on CompositeType {
+            fields {
+              name
+              type {
+                name
+                __typename
+              }
+              __typename
+            }
+            __typename
+          }
+        }
+    }
+}
+'''
+
+
+def field_names_of(type_dict, typename):
+    return {field_data['name'] for field_data in type_dict[typename]['fields']}
+
+
+def types_dict_of_result(subset_result, top_key):
+    return {type_data['name']: type_data for type_data in subset_result.data[top_key]['types']}
+
+
+def test_pandas_hello_world_pipeline_subset():
+    do_test_subset(PIPELINE_SUBSET_QUERY, 'pipeline')
+
+
+def test_pandas_hello_world_pipeline_or_error_subset():
+    do_test_subset(PIPELINE_OR_ERROR_SUBSET_QUERY, 'pipelineOrError')
+
+
+def test_pandas_hello_world_pipeline_or_error_subset_wrong_solid_name():
+    result = execute_dagster_graphql(
+        define_context(),
+        PIPELINE_OR_ERROR_SUBSET_QUERY,
+        {'name': 'pandas_hello_world', 'solidSubset': ['nope']},
+    )
+
+    if result.errors:
+        raise Exception(result.errors)
+
+    assert not result.errors
+    assert result.data
+    assert result.data['pipelineOrError']['__typename'] == 'SolidNotFoundError'
+    assert result.data['pipelineOrError']['solidName'] == 'nope'
+
+
+def do_test_subset(query, top_key):
+    subset_result = execute_dagster_graphql(
+        define_context(), query, {'name': 'pandas_hello_world', 'solidSubset': ['sum_sq_solid']}
+    )
+
+    if subset_result.errors:
+        raise Exception(subset_result.errors)
+
+    assert not subset_result.errors
+    assert subset_result.data
+
+    assert [solid_data['name'] for solid_data in subset_result.data[top_key]['solids']] == [
+        'sum_sq_solid'
+    ]
+
+    subset_types_dict = types_dict_of_result(subset_result, top_key)
+    assert field_names_of(subset_types_dict, 'PandasHelloWorld.SumSqSolid.Inputs') == {'sum_df'}
+    assert 'PandasHelloWorld.SumSolid.Inputs' not in subset_types_dict
+
+    full_types_dict = types_dict_of_result(
+        execute_dagster_graphql(define_context(), query, {'name': 'pandas_hello_world'}), top_key
+    )
+
+    assert 'PandasHelloWorld.SumSolid.Inputs' in full_types_dict
+    assert 'PandasHelloWorld.SumSqSolid.Inputs' not in full_types_dict
+
+    assert field_names_of(full_types_dict, 'PandasHelloWorld.SumSolid.Inputs') == {'num'}
+
+
+def define_pandas_hello_world():
     return PipelineDefinition(
         name='pandas_hello_world',
         solids=[sum_solid, sum_sq_solid],

@@ -50,6 +50,19 @@ class DauphinPipelineNotFoundError(dauphin.ObjectType):
         self.message = 'Pipeline {pipeline_name} does not exist'.format(pipeline_name=pipeline_name)
 
 
+class DauphinSolidNotFoundError(dauphin.ObjectType):
+    class Meta:
+        name = 'SolidNotFoundError'
+        interfaces = (DauphinError,)
+
+    solid_name = dauphin.NonNull(dauphin.String)
+
+    def __init__(self, solid_name):
+        super(DauphinSolidNotFoundError, self).__init__()
+        self.solid_name = check.str_param(solid_name, 'solid_name')
+        self.message = 'Solid {solid_name} does not exist'.format(solid_name=solid_name)
+
+
 class DauphinPipelineConfigValidationValid(dauphin.ObjectType):
     class Meta:
         name = 'PipelineConfigValidationValid'
@@ -236,7 +249,12 @@ class DauphinEvaluationStack(dauphin.ObjectType):
 class DauphinPipelineOrError(dauphin.Union):
     class Meta:
         name = 'PipelineOrError'
-        types = ('Pipeline', DauphinPythonError, DauphinPipelineNotFoundError)
+        types = (
+            'Pipeline',
+            DauphinPythonError,
+            DauphinPipelineNotFoundError,
+            DauphinSolidNotFoundError,
+        )
 
 
 class DauphinPipelinesOrError(dauphin.Union):
