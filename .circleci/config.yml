@@ -77,17 +77,17 @@ jobs:
     steps:
       - checkout
 
-      # - run:
-      #     name: Install Dependencies
-      #     command: |
-      #       sudo pip install -r python_modules/dagster/dev-requirements.txt
-          #   sudo pip install -e python_modules/dagster
-          #   sudo pip install -e python_modules/dagit
-          #   sudo pip install -r python_modules/dagit/dev-requirements.txt
-          #   sudo pip install -e python_modules/dagstermill
-          #   sudo pip install -e python_modules/dagster-contrib
-          #   sudo pip install -e python_modules/dagster-contrib[pandas]
-          #   sudo pip install -e python_modules/dagster-contrib[sqlalchemy]
+      - run:
+          name: Install Dependencies
+          command: |
+            sudo pip install -r python_modules/dagster/dev-requirements.txt
+            sudo pip install -e python_modules/dagster
+            sudo pip install -e python_modules/dagit
+            sudo pip install -r python_modules/dagit/dev-requirements.txt
+            sudo pip install -e python_modules/dagstermill
+            sudo pip install -e python_modules/dagster-contrib
+            sudo pip install -e python_modules/dagster-contrib[pandas]
+            sudo pip install -e python_modules/dagster-contrib[sqlalchemy]
 
       - attach_workspace:
           at: /tmp/workspace
@@ -223,6 +223,10 @@ jobs:
       - image: circleci/python:3.7.2
     environment:
       TOXENV: py37
+    steps:
+      -run:
+        name: Lint
+        command: pylint python_modules/dagster/dagster --rcfile=python_modules/.pylintrc --disable=R,C
 
   dagster-py35:
     <<: *dagster-template
