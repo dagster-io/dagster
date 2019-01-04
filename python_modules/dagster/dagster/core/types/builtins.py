@@ -69,18 +69,13 @@ class MaterializeableBuiltinScalarConfigSchema(ConfigurableSelectorFromDict, Dag
             description='Materialization schema for scalar ' + name,
             fields={'json': define_path_dict_field()},
         )
-        # # TODO: add pickle
-        # super(
-        #     MaterializeableBuiltinScalarConfigSchema,
-        #     self,
-        # ).__init__(fields={'json': define_path_dict_field()})
 
-    def iterate_types(self, seen):
+    def iterate_types(self, seen_config_schemas):
         # return []
         yield self
 
         for field_type in self.field_dict.values():
-            for inner_type in field_type.dagster_type.iterate_types(seen):
+            for inner_type in field_type.dagster_type.iterate_types(seen_config_schemas):
                 if not isinstance(inner_type, DagsterBuiltinScalarType):
                     yield inner_type
 
@@ -97,27 +92,6 @@ class DagsterBuiltinScalarType(
             type_attributes=DagsterTypeAttributes(is_builtin=True),
             description=description,
         )
-
-    def iterate_types(self, seen):
-        # HACK HACK HACK
-        # This is quite terrible and stems from the confusion between
-        # the runtime and config type systems. The problem here is that
-        # materialization config schemas can themselves contain scalars
-        # and without some kind of check we get into an infinite recursion
-        # situation. The real fix will be to separate config and runtime types
-        # in which case the config "Int" and the runtime "Int" will actually be
-        # separate concepts
-        if isinstance(self, Materializeable):
-            # Guaranteed to work after isinstance check
-            # pylint: disable=E1101
-            config_schema = self.define_materialization_config_schema()
-            if not config_schema in seen:
-                seen.add(config_schema)
-                yield config_schema
-                for inner_type in config_schema.iterate_types(seen):
-                    yield inner_type
-
-        yield self
 
 
 class _DagsterAnyType(ConfigurableFromAny, UncoercedTypeMixin, DagsterType):
@@ -227,7 +201,7 @@ class _DagsterNullableType(ConfigurableFromNullable, DagsterType):
     def coerce_runtime_value(self, value):
         return None if value is None else self.inner_type.coerce_runtime_value(value)
 
-    def iterate_types(self, _seen):
+    def iterate_types(self, _seen_config_schemas):
         yield self.inner_type
 
 
@@ -251,7 +225,7 @@ class _DagsterListType(ConfigurableFromList, DagsterType):
 
         return list(map(self.inner_type.coerce_runtime_value, value))
 
-    def iterate_types(self, _seen):
+    def iterate_types(self, _seen_config_schemas):
         yield self.inner_type
 
 
