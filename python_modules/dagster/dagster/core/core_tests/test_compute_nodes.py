@@ -48,7 +48,7 @@ def test_compute_noop_node_core():
         noop,
     ])
 
-    environment = config_objects.Environment()
+    environment = config_objects.EnvironmentConfig()
 
     plan = create_execution_plan_core(
         ExecutionPlanInfo(

@@ -255,7 +255,7 @@ def create_execution_plan(pipeline, env_config=None):
 
 def create_execution_plan_with_typed_environment(pipeline, typed_environment):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    check.inst_param(typed_environment, 'environment', config_objects.Environment)
+    check.inst_param(typed_environment, 'environment', config_objects.EnvironmentConfig)
 
     with yield_context(pipeline, typed_environment) as context:
         return create_execution_plan_core(ExecutionPlanInfo(context, pipeline, typed_environment))
@@ -337,7 +337,7 @@ def with_maybe_gen(thing_or_gen):
 @contextmanager
 def yield_context(pipeline, environment, reentrant_info=None):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    check.inst_param(environment, 'environment', config_objects.Environment)
+    check.inst_param(environment, 'environment', config_objects.EnvironmentConfig)
     check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
 
     context_definition = pipeline.context_definitions[environment.context.name]
@@ -667,7 +667,7 @@ def execute_reentrant_pipeline(
     reentrant_info,
 ):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    check.inst_param(typed_environment, 'typed_environment', config_objects.Environment)
+    check.inst_param(typed_environment, 'typed_environment', config_objects.EnvironmentConfig)
     check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
 
     with yield_context(pipeline, typed_environment, reentrant_info) as context:

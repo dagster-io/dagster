@@ -172,7 +172,7 @@ class ContextConfigType(SystemConfigSelector):
 
     def construct_from_config_value(self, config_value):
         context_name, context_value = single_item(config_value)
-        return config_objects.Context(
+        return config_objects.ContextConfig(
             name=context_name,
             config=context_value.get('config'),
             resources=context_value['resources'],
@@ -214,7 +214,7 @@ class SolidConfigType(SystemConfigObject):
     def construct_from_config_value(self, config_value):
         # TODO we need better rules around optional and default evaluation
         # making this permissive for now
-        return config_objects.Solid(
+        return config_objects.SolidConfig(
             config=config_value.get('config'),
             inputs=config_value.get('inputs', {}),
             outputs=config_value.get('outputs', []),
@@ -262,7 +262,7 @@ class EnvironmentConfigType(SystemConfigObject):
         )
 
     def construct_from_config_value(self, config_value):
-        return config_objects.Environment(**config_value)
+        return config_objects.EnvironmentConfig(**config_value)
 
 
 def is_materializeable(dagster_type):
@@ -278,7 +278,7 @@ class ExpectationsConfigType(SystemConfigObject):
         )
 
     def construct_from_config_value(self, config_value):
-        return config_objects.Expectations(**config_value)
+        return config_objects.ExpectationsConfig(**config_value)
 
 
 def solid_has_configurable_inputs(solid_def):
@@ -393,4 +393,4 @@ class ExecutionConfigType(SystemConfigObject):
         )
 
     def construct_from_config_value(self, config_value):
-        return config_objects.Execution(**config_value)
+        return config_objects.ExecutionConfig(**config_value)
