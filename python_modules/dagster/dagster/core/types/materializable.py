@@ -9,7 +9,7 @@ from .configurable import (
 
 
 def define_path_dict_field():
-    from .types import Dict, Path
+    from . import Dict, Path
     return Field(Dict({'path': Field(Path)}))
 
 

@@ -9,7 +9,7 @@ from dagster import (
     execute_pipeline,
 )
 
-from dagster.core.evaluator import evaluate_config_value
+from dagster.core.types.evaluator import evaluate_config_value
 
 from dagster.core.execution_context import ExecutionContext
 

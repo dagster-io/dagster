@@ -12,7 +12,7 @@ from dagster.core.errors import (
 
 # other files depend on the Field include
 # pylint: disable=W0611
-from dagster.core.configurable import (
+from .configurable import (
     Configurable,
     ConfigurableFromAny,
     ConfigurableFromList,
@@ -22,7 +22,7 @@ from dagster.core.configurable import (
     Field,
 )
 
-from dagster.core.materializable import MaterializeableBuiltinScalar
+from .materializable import MaterializeableBuiltinScalar
 
 SerializedTypeValue = namedtuple('SerializedTypeValue', 'name value')
 

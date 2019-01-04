@@ -24,9 +24,9 @@ from dagster import (
     types,
 )
 
-from dagster.core.configurable import ConfigurableFromScalar
+from dagster.core.types.configurable import ConfigurableFromScalar
 from dagster.core.definitions import TransformExecutionInfo
-from dagster.core.materializable import (
+from dagster.core.types.materializable import (
     MaterializeableBuiltinScalar,
     FileMarshalable,
 )

@@ -2,7 +2,7 @@ from collections import namedtuple
 
 import pytest
 
-from dagster.core.configurable import ConfigurableObjectFromDict
+from dagster.core.types.configurable import ConfigurableObjectFromDict
 
 from dagster import (
     DagsterEvaluateConfigValueError,
@@ -17,7 +17,7 @@ from dagster import (
     types,
 )
 
-from dagster.core.evaluator import (
+from dagster.core.types.evaluator import (
     evaluate_config_value,
     DagsterEvaluationErrorReason,
 )

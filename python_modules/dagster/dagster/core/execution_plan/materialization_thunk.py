@@ -6,7 +6,7 @@ from dagster.core.definitions import (
     OutputDefinition,
 )
 
-from dagster.core.materializable import Materializeable
+from dagster.core.types.materializable import Materializeable
 
 from .objects import (
     ExecutionPlanInfo,

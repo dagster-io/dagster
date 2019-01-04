@@ -5,7 +5,7 @@ import uuid
 from graphql.execution.base import ResolveInfo
 
 from dagster import check
-from dagster.core.evaluator import evaluate_config_value
+from dagster.core.types.evaluator import evaluate_config_value
 from dagster.core.execution import create_execution_plan_with_typed_environment
 
 from dagster.utils.error import serializable_error_info_from_exc_info
@@ -105,7 +105,7 @@ def get_execution_plan(info, pipelineName, config):
         config_or_error = _config_or_error_from_pipeline(info, pipeline, config)
         return config_or_error.chain(lambda config: info.schema.type_named('ExecutionPlan')(
             pipeline,
-            create_execution_plan_with_typed_environment(pipeline.get_dagster_pipeline(), config.value),
+            create_execution_plan_with_typed_environment(pipeline.get_dagster_pipeline(), config.value,),
         ))
 
     pipeline_or_error = _pipeline_or_error_from_container(

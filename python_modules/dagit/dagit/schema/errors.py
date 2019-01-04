@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 from dagster import check
 
-from dagster.core.evaluator import (
+from dagster.core.types.evaluator import (
     EvaluationError,
     EvaluationStackPathEntry,
     EvaluationStackListItemEntry,

@@ -48,7 +48,7 @@ from .errors import (
     DagsterUserCodeExecutionError,
 )
 
-from .evaluator import (
+from .types.evaluator import (
     EvaluationError,
     evaluate_config_value,
     friendly_string_for_error,

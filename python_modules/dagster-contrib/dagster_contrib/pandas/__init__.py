@@ -16,8 +16,8 @@ from dagster import (
     types,
 )
 
-from dagster.core.configurable import ConfigurableSelectorFromDict
-from dagster.core.materializable import (
+from dagster.core.types.configurable import ConfigurableSelectorFromDict
+from dagster.core.types.materializable import (
     FileMarshalable,
     Materializeable,
 )

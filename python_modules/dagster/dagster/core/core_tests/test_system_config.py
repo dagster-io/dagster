@@ -20,9 +20,9 @@ from dagster.core.config_objects import (
     ContextConfig,
     EnvironmentConfig,
     ExecutionConfig,
-    ExpectationsConfig, 
+    ExpectationsConfig,
     SolidConfig,
-) 
+)
 
 from dagster.core.config_types import (
     ContextConfigType,
@@ -34,7 +34,7 @@ from dagster.core.config_types import (
     SpecificContextConfig,
 )
 
-from dagster.core.evaluator import evaluate_config_value
+from dagster.core.types.evaluator import evaluate_config_value
 
 from dagster.core.test_utils import throwing_evaluate_config_value
 
