@@ -14,6 +14,7 @@ from dagster.core.types.configurable import (
     ConfigurableFromScalar,
     ConfigurableObjectFromDict,
     ConfigurableSelectorFromDict,
+    Field,
 )
 
 from dagster.core.execution_context import (
@@ -27,7 +28,6 @@ from dagster.core.definitions import (
     ExpectationDefinition,
     ExpectationExecutionInfo,
     ExpectationResult,
-    Field,
     InputDefinition,
     OutputDefinition,
     PipelineContextDefinition,

@@ -3,15 +3,19 @@ from functools import wraps
 import inspect
 
 from .definitions import (
-    DagsterInvalidDefinitionError,
-    Field,
     InputDefinition,
     OutputDefinition,
     Result,
     SolidDefinition,
     check,
 )
-from .errors import DagsterInvariantViolationError
+
+from .errors import (
+    DagsterInvalidDefinitionError,
+    DagsterInvariantViolationError,
+)
+
+from .types import Field
 
 if hasattr(inspect, 'signature'):
     funcsigs = inspect

@@ -1,6 +1,6 @@
 import pytest
 
-from dagster.core.definitions import check_valid_name
+from dagster.core.definitions.utils import check_valid_name
 from dagster.core.errors import DagsterInvalidDefinitionError
 
 
