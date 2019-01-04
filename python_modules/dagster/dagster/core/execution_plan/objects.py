@@ -5,7 +5,7 @@ import toposort
 from dagster import (
     check,
 )
-from dagster.core import config_objects
+from dagster.core.config_objects import EnvironmentConfig
 from dagster.core.definitions import (
     PipelineDefinition,
     Solid,
@@ -243,7 +243,7 @@ class ExecutionPlanInfo(namedtuple('_ExecutionPlanInfo', 'context pipeline envir
             cls,
             check.inst_param(context, 'context', RuntimeExecutionContext),
             check.inst_param(pipeline, 'pipeline', PipelineDefinition),
-            check.inst_param(environment, 'environment', config_objects.EnvironmentConfig),
+            check.inst_param(environment, 'environment', EnvironmentConfig),
         )
 
     @property

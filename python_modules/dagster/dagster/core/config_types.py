@@ -2,14 +2,20 @@ from dagster import (
     check,
 )
 
-from dagster.core import config_objects
-
 from dagster.utils import camelcase
 
 from .configurable import (
     ConfigurableObjectFromDict,
     ConfigurableSelectorFromDict,
     Field,
+)
+
+from .config_objects import (
+    ContextConfig,
+    EnvironmentConfig,
+    ExecutionConfig,
+    ExpectationsConfig,
+    SolidConfig,
 )
 
 from .definitions import (
@@ -172,7 +178,7 @@ class ContextConfigType(SystemConfigSelector):
 
     def construct_from_config_value(self, config_value):
         context_name, context_value = single_item(config_value)
-        return config_objects.ContextConfig(
+        return ContextConfig(
             name=context_name,
             config=context_value.get('config'),
             resources=context_value['resources'],
@@ -214,7 +220,7 @@ class SolidConfigType(SystemConfigObject):
     def construct_from_config_value(self, config_value):
         # TODO we need better rules around optional and default evaluation
         # making this permissive for now
-        return config_objects.SolidConfig(
+        return SolidConfig(
             config=config_value.get('config'),
             inputs=config_value.get('inputs', {}),
             outputs=config_value.get('outputs', []),
@@ -262,7 +268,7 @@ class EnvironmentConfigType(SystemConfigObject):
         )
 
     def construct_from_config_value(self, config_value):
-        return config_objects.EnvironmentConfig(**config_value)
+        return EnvironmentConfig(**config_value)
 
 
 def is_materializeable(dagster_type):
@@ -278,7 +284,7 @@ class ExpectationsConfigType(SystemConfigObject):
         )
 
     def construct_from_config_value(self, config_value):
-        return config_objects.ExpectationsConfig(**config_value)
+        return ExpectationsConfig(**config_value)
 
 
 def solid_has_configurable_inputs(solid_def):
@@ -393,4 +399,4 @@ class ExecutionConfigType(SystemConfigObject):
         )
 
     def construct_from_config_value(self, config_value):
-        return config_objects.ExecutionConfig(**config_value)
+        return ExecutionConfig(**config_value)

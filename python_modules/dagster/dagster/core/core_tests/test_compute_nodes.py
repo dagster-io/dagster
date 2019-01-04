@@ -8,7 +8,7 @@ from dagster import (
     lambda_solid,
 )
 
-from dagster.core import config_objects
+from dagster.core.config_objects import EnvironmentConfig
 
 from dagster.core.execution import (
     create_execution_plan,
@@ -48,7 +48,7 @@ def test_compute_noop_node_core():
         noop,
     ])
 
-    environment = config_objects.EnvironmentConfig()
+    environment = EnvironmentConfig()
 
     plan = create_execution_plan_core(
         ExecutionPlanInfo(
