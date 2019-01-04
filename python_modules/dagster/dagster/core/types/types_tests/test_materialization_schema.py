@@ -17,7 +17,4 @@ def test_materialization_schema_types():
 
     string_json_mat_schema = string_mat_schema.field_dict['json'].dagster_type
 
-    print(string_json_mat_schema.name)
-    print(string_json_mat_schema.field_dict)
-
     assert pipeline_def.type_named(string_json_mat_schema.name)
