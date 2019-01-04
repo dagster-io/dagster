@@ -2,8 +2,9 @@ import pytest
 
 from dagster import types
 
+from dagster.core.errors import DagsterRuntimeCoercionError
+
 from dagster.core.types import (
-    DagsterRuntimeCoercionError,
     DagsterType,
     PythonObjectType,
 )

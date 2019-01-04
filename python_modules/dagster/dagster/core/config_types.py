@@ -4,12 +4,6 @@ from dagster import (
 
 from dagster.utils import camelcase
 
-from .configurable import (
-    ConfigurableObjectFromDict,
-    ConfigurableSelectorFromDict,
-    Field,
-)
-
 from .config_objects import (
     ContextConfig,
     EnvironmentConfig,
@@ -27,10 +21,6 @@ from .definitions import (
     SolidInputHandle,
 )
 
-from .evaluator import hard_create_config_value
-
-from .materializable import Materializeable
-
 from .types import (
     Bool,
     DagsterTypeAttributes,
@@ -38,6 +28,16 @@ from .types import (
     List,
     NamedDict,
 )
+
+from .types.configurable import (
+    ConfigurableObjectFromDict,
+    ConfigurableSelectorFromDict,
+    Field,
+)
+
+from .types.evaluator import hard_create_config_value
+
+from .types.materializable import Materializeable
 
 
 class SystemConfigObject(ConfigurableObjectFromDict, DagsterType):

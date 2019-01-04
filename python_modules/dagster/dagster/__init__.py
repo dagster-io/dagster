@@ -6,7 +6,7 @@ from dagster.core.execution import (
     execute_pipeline_iterator,
 )
 
-from dagster.core.configurable import (
+from dagster.core.types.configurable import (
     Configurable,
     ConfigurableFromAny,
     ConfigurableFromList,
@@ -55,7 +55,7 @@ from dagster.core.errors import (
     DagsterUserCodeExecutionError,
 )
 
-from dagster.core.evaluator import DagsterEvaluateConfigValueError
+from dagster.core.types.evaluator import DagsterEvaluateConfigValueError
 
 from dagster.core.utility_solids import define_stub_solid
 

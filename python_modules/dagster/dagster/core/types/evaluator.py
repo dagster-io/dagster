@@ -3,12 +3,12 @@ from enum import Enum
 
 from dagster import check
 
+from dagster.core.errors import DagsterError
+
 from .configurable import (
     Configurable,
     Field,
 )
-
-from .errors import DagsterError
 
 
 class DagsterEvaluationErrorReason(Enum):

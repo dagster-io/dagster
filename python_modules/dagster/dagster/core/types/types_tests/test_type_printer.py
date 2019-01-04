@@ -4,7 +4,7 @@ from dagster import (
     types,
 )
 
-from dagster.core.type_printer import print_type_to_string
+from dagster.core.types.type_printer import print_type_to_string
 
 
 def test_basic_type_print():

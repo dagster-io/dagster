@@ -12,7 +12,7 @@ from dagster.core.execution import (
     create_typed_environment,
     execute_reentrant_pipeline,
 )
-from dagster.core.evaluator import evaluate_config_value
+from dagster.core.types.evaluator import evaluate_config_value
 from dagster.core.events import PipelineEventRecord, EventType
 from dagster.utils.error import (
     serializable_error_info_from_exc_info,

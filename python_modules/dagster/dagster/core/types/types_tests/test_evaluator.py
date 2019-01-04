@@ -1,8 +1,8 @@
 from dagster import types
 
-from dagster.core.configurable import ConfigurableSelectorFromDict
+from dagster.core.types.configurable import ConfigurableSelectorFromDict
 
-from dagster.core.evaluator import (
+from dagster.core.types.evaluator import (
     DagsterEvaluationErrorReason,
     EvaluationStackListItemEntry,
     EvaluationStackPathEntry,
