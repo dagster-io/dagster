@@ -8,7 +8,7 @@ from dagster import (
     lambda_solid,
 )
 
-from dagster.core.config_objects import EnvironmentConfig
+from dagster.core.system_config.objects import EnvironmentConfig
 
 from dagster.core.execution import (
     create_execution_plan,

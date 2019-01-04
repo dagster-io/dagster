@@ -7,7 +7,7 @@ from dagster import (
     types,
 )
 
-from dagster.core.config_types import EnvironmentConfigType
+from dagster.core.system_config.types import EnvironmentConfigType
 
 from dagster.cli.config_scaffolder import (
     scaffold_pipeline_config,

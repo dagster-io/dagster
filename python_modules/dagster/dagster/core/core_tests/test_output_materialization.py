@@ -19,7 +19,7 @@ from dagster.utils.test import (
     get_temp_file_names,
 )
 
-from dagster.core.config_types import (
+from dagster.core.system_config.types import (
     solid_has_config_entry,
     solid_has_materializable_outputs,
     is_materializeable,
