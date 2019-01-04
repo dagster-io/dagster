@@ -19,8 +19,6 @@ from .configurable import (
     Field,
 )
 
-from .materializable import (MaterializeableBuiltinScalar, Materializeable)
-
 SerializedTypeValue = namedtuple('SerializedTypeValue', 'name value')
 
 
@@ -106,11 +104,27 @@ class DagsterType(object):
     def coerce_runtime_value(self, _value):
         check.not_implemented('Must implement in subclass')
 
-    def iterate_types(self):
-        yield self
+    def iterate_types(self, seen_config_schemas):
+        # HACK HACK HACK
+        # This is quite terrible and stems from the confusion between
+        # the runtime and config type systems. The problem here is that
+        # materialization config schemas can themselves contain scalars
+        # and without some kind of check we get into an infinite recursion
+        # situation. The real fix will be to separate config and runtime types
+        # in which case the config "Int" and the runtime "Int" will actually be
+        # separate concepts
+        from .materializable import Materializeable
         if isinstance(self, Materializeable):
             # Guaranteed to work after isinstance check
-            yield self.define_materialization_config_schema()  # pylint: disable=E1101
+            # pylint: disable=E1101
+            config_schema = self.define_materialization_config_schema()
+            if not config_schema in seen_config_schemas:
+                seen_config_schemas.add(config_schema)
+                yield config_schema
+                for inner_type in config_schema.iterate_types(seen_config_schemas):
+                    yield inner_type
+
+        yield self
 
     def serialize_value(self, output_dir, value):
         type_value = self.create_serializable_type_value(

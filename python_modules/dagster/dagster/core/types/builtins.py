@@ -17,14 +17,66 @@ from .base import (
 )
 
 from .configurable import (
+    ConfigurableSelectorFromDict,
     ConfigurableObjectFromDict,
     ConfigurableFromScalar,
     ConfigurableFromAny,
     ConfigurableFromNullable,
     ConfigurableFromList,
+    Field,
 )
 
-from .materializable import MaterializeableBuiltinScalar
+from .materializable import Materializeable
+
+
+class MaterializeableBuiltinScalar(Materializeable):
+    def __init__(self, *args, **kwargs):
+        super(MaterializeableBuiltinScalar, self).__init__(*args, **kwargs)
+        self.config_schema = None
+
+    def define_materialization_config_schema(self):
+        if self.config_schema is None:
+            # This has to be applied to a dagster type so name is available
+            # pylint: disable=E1101
+            self.config_schema = MaterializeableBuiltinScalarConfigSchema(
+                '{name}.MaterializationSchema'.format(name=self.name)
+            )
+        return self.config_schema
+
+    def materialize_runtime_value(self, config_spec, runtime_value):
+        check.dict_param(config_spec, 'config_spec')
+        selector_key, selector_value = list(config_spec.items())[0]
+
+        if selector_key == 'json':
+            json_file_path = selector_value['path']
+            json_value = json.dumps({'value': runtime_value})
+            with open(json_file_path, 'w') as ff:
+                ff.write(json_value)
+        else:
+            check.failed(
+                'Unsupported selector key: {selector_key}'.format(selector_key=selector_key)
+            )
+
+
+def define_path_dict_field():
+    return Field(Dict({'path': Field(Path)}))
+
+
+class MaterializeableBuiltinScalarConfigSchema(ConfigurableSelectorFromDict, DagsterType):
+    def __init__(self, name):
+        super(MaterializeableBuiltinScalarConfigSchema, self).__init__(
+            name=name,
+            description='Materialization schema for scalar ' + name,
+            fields={'json': define_path_dict_field()},
+        )
+
+    def iterate_types(self, seen_config_schemas):
+        yield self
+
+        for field_type in self.field_dict.values():
+            for inner_type in field_type.dagster_type.iterate_types(seen_config_schemas):
+                if not isinstance(inner_type, DagsterBuiltinScalarType):
+                    yield inner_type
 
 
 # All builtins are configurable
@@ -148,7 +200,7 @@ class _DagsterNullableType(ConfigurableFromNullable, DagsterType):
     def coerce_runtime_value(self, value):
         return None if value is None else self.inner_type.coerce_runtime_value(value)
 
-    def iterate_types(self):
+    def iterate_types(self, _seen_config_schemas):
         yield self.inner_type
 
 
@@ -172,7 +224,7 @@ class _DagsterListType(ConfigurableFromList, DagsterType):
 
         return list(map(self.inner_type.coerce_runtime_value, value))
 
-    def iterate_types(self):
+    def iterate_types(self, _seen_config_schemas):
         yield self.inner_type
 
 
