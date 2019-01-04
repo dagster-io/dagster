@@ -10,14 +10,13 @@ from dagster import (
     Result,
     SolidDefinition,
     check,
+    types,
 )
-
-import dagster.core.types.builtins
 
 from .common import execute_sql_text_on_context
 
 
-class DagsterSqlTextType(dagster.core.types.builtins.DagsterStringType):
+class DagsterSqlTextType(types.builtins.DagsterStringType):
     def __init__(self):
         super(DagsterSqlTextType, self).__init__(
             name='SqlText',
