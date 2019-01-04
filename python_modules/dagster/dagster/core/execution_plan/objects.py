@@ -5,7 +5,7 @@ import toposort
 from dagster import (
     check,
 )
-from dagster.core.config_objects import EnvironmentConfig
+from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.definitions import (
     PipelineDefinition,
     Solid,

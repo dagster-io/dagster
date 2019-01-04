@@ -4,15 +4,7 @@ from dagster import (
 
 from dagster.utils import camelcase
 
-from .config_objects import (
-    ContextConfig,
-    EnvironmentConfig,
-    ExecutionConfig,
-    ExpectationsConfig,
-    SolidConfig,
-)
-
-from .definitions import (
+from dagster.core.definitions import (
     PipelineContextDefinition,
     PipelineDefinition,
     ResourceDefinition,
@@ -21,7 +13,7 @@ from .definitions import (
     SolidInputHandle,
 )
 
-from .types import (
+from dagster.core.types import (
     Bool,
     DagsterTypeAttributes,
     DagsterType,
@@ -29,15 +21,23 @@ from .types import (
     NamedDict,
 )
 
-from .types.configurable import (
+from dagster.core.types.configurable import (
     ConfigurableObjectFromDict,
     ConfigurableSelectorFromDict,
     Field,
 )
 
-from .types.evaluator import hard_create_config_value
+from dagster.core.types.evaluator import hard_create_config_value
 
-from .types.materializable import Materializeable
+from dagster.core.types.materializable import Materializeable
+
+from .objects import (
+    ContextConfig,
+    EnvironmentConfig,
+    ExecutionConfig,
+    ExpectationsConfig,
+    SolidConfig,
+)
 
 
 class SystemConfigObject(ConfigurableObjectFromDict, DagsterType):

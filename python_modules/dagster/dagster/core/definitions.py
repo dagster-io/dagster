@@ -13,8 +13,6 @@ from dagster.utils.logging import (
     define_colored_console_logger,
 )
 
-from .config_objects import DEFAULT_CONTEXT_NAME
-
 from .errors import (
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
@@ -24,6 +22,8 @@ from .execution_context import (
     RuntimeExecutionContext,
     ExecutionContext,
 )
+
+from .system_config.objects import DEFAULT_CONTEXT_NAME
 
 from .types import (
     Field,
@@ -653,7 +653,7 @@ class PipelineDefinition(object):
         self._solid_dict = pipeline_solid_dict
         self.dependency_structure = dependency_structure
 
-        from .config_types import EnvironmentConfigType
+        from dagster.core.system_config.types import EnvironmentConfigType
 
         self.environment_type = EnvironmentConfigType(self)
 

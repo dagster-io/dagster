@@ -16,7 +16,7 @@ from dagster import (
     types,
 )
 
-from dagster.core.config_objects import (
+from dagster.core.system_config.objects import (
     ContextConfig,
     EnvironmentConfig,
     ExecutionConfig,
@@ -24,7 +24,7 @@ from dagster.core.config_objects import (
     SolidConfig,
 )
 
-from dagster.core.config_types import (
+from dagster.core.system_config.types import (
     ContextConfigType,
     EnvironmentConfigType,
     ExecutionConfigType,

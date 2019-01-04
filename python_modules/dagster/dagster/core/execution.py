@@ -26,8 +26,6 @@ import six
 
 from dagster import check
 
-from .config_objects import EnvironmentConfig
-
 from .definitions import (
     DEFAULT_OUTPUT,
     ContextCreationExecutionInfo,
@@ -70,6 +68,8 @@ from .execution_plan.objects import (
 )
 
 from .execution_plan.simple_engine import execute_plan_core
+
+from .system_config.objects import EnvironmentConfig
 
 
 class PipelineExecutionResult(object):
