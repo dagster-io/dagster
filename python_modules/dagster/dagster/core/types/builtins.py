@@ -71,7 +71,6 @@ class MaterializeableBuiltinScalarConfigSchema(ConfigurableSelectorFromDict, Dag
         )
 
     def iterate_types(self, seen_config_schemas):
-        # return []
         yield self
 
         for field_type in self.field_dict.values():
