@@ -15,10 +15,11 @@ from dagster import (
 )
 
 from dagster.core.definitions import (
-    DependencyStructure,
     Solid,
     solids_in_topological_order,
 )
+
+from dagster.core.definitions.dependency import DependencyStructure
 
 from dagster.core.definitions.pipeline import _create_adjacency_lists
 

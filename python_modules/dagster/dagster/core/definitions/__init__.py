@@ -1,37 +1,13 @@
 from collections import namedtuple
-import re
 
 from dagster import check
-from dagster.core import types
-from dagster.utils.logging import (
-    level_from_string,
-    define_colored_console_logger,
-)
-
-from dagster.core.errors import (
-    DagsterInvalidDefinitionError,
-    DagsterInvariantViolationError,
-)
-
-from dagster.core.execution_context import (
-    RuntimeExecutionContext,
-    ExecutionContext,
-)
-
-from dagster.core.system_config.objects import DEFAULT_CONTEXT_NAME
-
-from dagster.core.types import (
-    Field,
-)
 
 from .context import (
-    default_pipeline_context_definitions,
     PipelineContextDefinition,
 )
 
 from .dependency import (
     DependencyDefinition,
-    DependencyStructure,
     Solid,
     SolidInputHandle,
     SolidInstance,
@@ -62,18 +38,14 @@ from .pipeline import (
     solids_in_topological_order,
 )
 
-from .pipeline_creation import create_execution_structure, construct_type_dictionary
+from .pipeline_creation import (
+    construct_type_dictionary,
+    create_execution_structure,
+)
 
 from .solid import SolidDefinition
 
-from .utils import (
-    DEFAULT_OUTPUT,
-    check_opt_two_dim_dict,
-    check_opt_two_dim_str_dict,
-    check_two_dim_dict,
-    check_two_dim_str_dict,
-    check_valid_name,
-)
+from .utils import DEFAULT_OUTPUT
 
 
 class Result(namedtuple('_Result', 'value output_name')):
