@@ -40,7 +40,7 @@ from dagster.core.definitions import (
     TransformExecutionInfo,
 )
 
-from dagster.core.decorators import (
+from dagster.core.definitions.decorators import (
     MultipleResults,
     lambda_solid,
     solid,
