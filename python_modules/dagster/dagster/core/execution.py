@@ -24,10 +24,9 @@ import uuid
 from contextlib2 import ExitStack
 import six
 
-from dagster import (
-    check,
-    config,
-)
+from dagster import check
+
+from dagster.core import config_objects
 
 from .definitions import (
     DEFAULT_OUTPUT,
@@ -256,7 +255,7 @@ def create_execution_plan(pipeline, env_config=None):
 
 def create_execution_plan_with_typed_environment(pipeline, typed_environment):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    check.inst_param(typed_environment, 'environment', config.Environment)
+    check.inst_param(typed_environment, 'environment', config_objects.Environment)
 
     with yield_context(pipeline, typed_environment) as context:
         return create_execution_plan_core(ExecutionPlanInfo(context, pipeline, typed_environment))
@@ -338,7 +337,7 @@ def with_maybe_gen(thing_or_gen):
 @contextmanager
 def yield_context(pipeline, environment, reentrant_info=None):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    check.inst_param(environment, 'environment', config.Environment)
+    check.inst_param(environment, 'environment', config_objects.Environment)
     check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
 
     context_definition = pipeline.context_definitions[environment.context.name]
@@ -594,7 +593,7 @@ def execute_pipeline(
 
     Parameters:
       pipeline (PipelineDefinition): Pipeline to run
-      environment (config.Environment | dict): The enviroment that parameterizes this run
+      environment (dict): The enviroment that parameterizes this run
       throw_on_error (bool):
         throw_on_error makes the function throw when an error is encoutered rather than returning
         the py:class:`SolidExecutionResult` in an error-state.
@@ -668,7 +667,7 @@ def execute_reentrant_pipeline(
     reentrant_info,
 ):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    check.inst_param(typed_environment, 'typed_environment', config.Environment)
+    check.inst_param(typed_environment, 'typed_environment', config_objects.Environment)
     check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
 
     with yield_context(pipeline, typed_environment, reentrant_info) as context:

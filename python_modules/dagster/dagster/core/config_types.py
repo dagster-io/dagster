@@ -1,7 +1,8 @@
 from dagster import (
     check,
-    config,
 )
+
+from dagster.core import config_objects
 
 from dagster.utils import camelcase
 
@@ -171,7 +172,7 @@ class ContextConfigType(SystemConfigSelector):
 
     def construct_from_config_value(self, config_value):
         context_name, context_value = single_item(config_value)
-        return config.Context(
+        return config_objects.Context(
             name=context_name,
             config=context_value.get('config'),
             resources=context_value['resources'],
@@ -213,7 +214,7 @@ class SolidConfigType(SystemConfigObject):
     def construct_from_config_value(self, config_value):
         # TODO we need better rules around optional and default evaluation
         # making this permissive for now
-        return config.Solid(
+        return config_objects.Solid(
             config=config_value.get('config'),
             inputs=config_value.get('inputs', {}),
             outputs=config_value.get('outputs', []),
@@ -261,7 +262,7 @@ class EnvironmentConfigType(SystemConfigObject):
         )
 
     def construct_from_config_value(self, config_value):
-        return config.Environment(**config_value)
+        return config_objects.Environment(**config_value)
 
 
 def is_materializeable(dagster_type):
@@ -277,7 +278,7 @@ class ExpectationsConfigType(SystemConfigObject):
         )
 
     def construct_from_config_value(self, config_value):
-        return config.Expectations(**config_value)
+        return config_objects.Expectations(**config_value)
 
 
 def solid_has_configurable_inputs(solid_def):
@@ -392,4 +393,4 @@ class ExecutionConfigType(SystemConfigObject):
         )
 
     def construct_from_config_value(self, config_value):
-        return config.Execution(**config_value)
+        return config_objects.Execution(**config_value)

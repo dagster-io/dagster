@@ -13,7 +13,7 @@ from dagster.utils.logging import (
     define_colored_console_logger,
 )
 
-from .config import DEFAULT_CONTEXT_NAME
+from .config_objects import DEFAULT_CONTEXT_NAME
 
 from .errors import (
     DagsterInvalidDefinitionError,

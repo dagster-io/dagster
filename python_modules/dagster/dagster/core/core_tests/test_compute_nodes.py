@@ -5,9 +5,10 @@ from dagster import (
     PipelineContextDefinition,
     PipelineDefinition,
     check,
-    config,
     lambda_solid,
 )
+
+from dagster.core import config_objects
 
 from dagster.core.execution import (
     create_execution_plan,
@@ -47,7 +48,7 @@ def test_compute_noop_node_core():
         noop,
     ])
 
-    environment = config.Environment()
+    environment = config_objects.Environment()
 
     plan = create_execution_plan_core(
         ExecutionPlanInfo(
