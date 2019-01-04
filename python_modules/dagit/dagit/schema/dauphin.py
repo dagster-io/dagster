@@ -28,6 +28,9 @@ GRAPHENE_BUILT_IN = [
     GenericScalar,
 ]
 
+# we change map to map_ in construct_union override because of collision with built-in
+# pylint: disable=W0221
+
 
 def get_meta(graphene_type):
     return graphene_type._meta  #pylint: disable=W0212
@@ -164,7 +167,8 @@ class DauphinTypeMap(GrapheneTypeMap):
 
         if type_meta.possible_types:
             # FIXME: is_type_of_from_possible_types does not exist
-            is_type_of = partial(is_type_of_from_possible_types, type_meta.possible_types)
+            # is_type_of = partial(is_type_of_from_possible_types, type_meta.possible_types)
+            raise Exception('Not sure what is going on here. Untested codepath')
         else:
             is_type_of = type.is_type_of
 

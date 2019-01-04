@@ -9,10 +9,7 @@ import gevent
 import gevent.lock
 import pyrsistent
 
-from dagster import (
-    check,
-    config,
-)
+from dagster import check
 from dagster.core.events import (
     EventRecord,
     EventType,

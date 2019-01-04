@@ -11,7 +11,7 @@ from dagster.core.definitions import (
 from .objects import (
     ExecutionPlanInfo,
     ExecutionStep,
-    ExecutionSubPlan,
+    ExecutionValueSubPlan,
     StepInput,
     StepOutput,
     StepOutputHandle,
@@ -26,11 +26,11 @@ def decorate_with_serialization(execution_info, solid, output_def, subplan):
     check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(output_def, 'output_def', OutputDefinition)
-    check.inst_param(subplan, 'subplan', ExecutionSubPlan)
+    check.inst_param(subplan, 'subplan', ExecutionValueSubPlan)
 
     if execution_info.serialize_intermediates:
         serialize_step = create_serialization_step(solid, output_def, subplan)
-        return ExecutionSubPlan(
+        return ExecutionValueSubPlan(
             steps=subplan.steps + [serialize_step],
             terminal_step_output_handle=StepOutputHandle(
                 serialize_step,
@@ -68,7 +68,7 @@ def _create_serialization_lambda(solid, output_def):
 def create_serialization_step(solid, output_def, prev_subplan):
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(output_def, 'output_def', OutputDefinition)
-    check.inst_param(prev_subplan, 'prev_subplan', ExecutionSubPlan)
+    check.inst_param(prev_subplan, 'prev_subplan', ExecutionValueSubPlan)
 
     return ExecutionStep(
         key='serialize.' + solid.name + '.' + output_def.name,

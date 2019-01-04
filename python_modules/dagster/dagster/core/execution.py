@@ -32,8 +32,10 @@ from dagster import (
 from .definitions import (
     DEFAULT_OUTPUT,
     ContextCreationExecutionInfo,
+    DependencyDefinition,
     PipelineDefinition,
     Solid,
+    SolidInstance,
 )
 
 from .execution_context import (
@@ -63,7 +65,7 @@ from .execution_plan.create import (
 from .execution_plan.objects import (
     ExecutionPlan,
     ExecutionPlanInfo,
-    ExecutionSubsetInfo,
+    ExecutionPlanSubsetInfo,
     StepResult,
     StepTag,
 )
@@ -480,6 +482,7 @@ def execute_pipeline_iterator(
     environment=None,
     throw_on_error=True,
     reentrant_info=None,
+    solid_subset=None,
 ):
     '''Returns iterator that yields :py:class:`SolidExecutionResult` for each
     solid executed in the pipeline.
@@ -493,13 +496,16 @@ def execute_pipeline_iterator(
     '''
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.opt_dict_param(environment, 'environment')
-    typed_environment = create_typed_environment(pipeline, environment)
     check.bool_param(throw_on_error, 'throw_on_error')
     check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
+    check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
 
-    with yield_context(pipeline, typed_environment, reentrant_info) as context:
+    pipeline_to_execute = _get_subsetted_pipeline(pipeline, solid_subset)
+    typed_environment = create_typed_environment(pipeline_to_execute, environment)
+
+    with yield_context(pipeline_to_execute, typed_environment, reentrant_info) as context:
         for solid_result in _do_iterate_pipeline(
-            pipeline,
+            pipeline_to_execute,
             context,
             typed_environment,
             throw_on_error,
@@ -560,7 +566,7 @@ def execute_plan(pipeline, execution_plan, environment=None, subset_info=None, r
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     check.opt_dict_param(environment, 'environment')
-    check.opt_inst_param(subset_info, 'subset_info', ExecutionSubsetInfo)
+    check.opt_inst_param(subset_info, 'subset_info', ExecutionPlanSubsetInfo)
     check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
 
     typed_environment = create_typed_environment(pipeline, environment)
@@ -579,6 +585,7 @@ def execute_pipeline(
     environment=None,
     throw_on_error=True,
     reentrant_info=None,
+    solid_subset=None,
 ):
     '''
     "Synchronous" version of :py:function:`execute_pipeline_iterator`.
@@ -601,10 +608,57 @@ def execute_pipeline(
     check.opt_dict_param(environment, 'environment')
     check.bool_param(throw_on_error, 'throw_on_error')
     check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
+    check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
 
-    typed_environment = create_typed_environment(pipeline, environment)
+    pipeline_to_execute = _get_subsetted_pipeline(pipeline, solid_subset)
+    typed_environment = create_typed_environment(pipeline_to_execute, environment)
+    return execute_reentrant_pipeline(
+        pipeline_to_execute,
+        typed_environment,
+        throw_on_error,
+        reentrant_info,
+    )
 
-    return execute_reentrant_pipeline(pipeline, typed_environment, throw_on_error, reentrant_info)
+
+def _dep_key_of(solid):
+    return SolidInstance(solid.definition.name, solid.name)
+
+
+def build_sub_pipeline(pipeline_def, solid_names):
+    '''
+    Build a pipeline which is a subset of another pipeline.
+    Only includes the solids which are in solid_names.
+    '''
+
+    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
+    check.list_param(solid_names, 'solid_names', of_type=str)
+
+    solid_name_set = set(solid_names)
+    solids = list(map(pipeline_def.solid_named, solid_names))
+    deps = {_dep_key_of(solid): {} for solid in solids}
+
+    def _out_handle_of_inp(input_handle):
+        if pipeline_def.dependency_structure.has_dep(input_handle):
+            output_handle = pipeline_def.dependency_structure.get_dep(input_handle)
+            if output_handle.solid.name in solid_name_set:
+                return output_handle
+        return None
+
+    for solid in solids:
+        for input_handle in solid.input_handles():
+            output_handle = _out_handle_of_inp(input_handle)
+            if output_handle:
+                deps[_dep_key_of(solid)][input_handle.input_def.name] = DependencyDefinition(
+                    solid=output_handle.solid.name,
+                    output=output_handle.output_def.name,
+                )
+
+    return PipelineDefinition(
+        name=pipeline_def.name,
+        solids=list(set([solid.definition for solid in solids])),
+        context_definitions=pipeline_def.context_definitions,
+        dependencies=deps,
+    )
 
 
 def execute_reentrant_pipeline(
@@ -623,6 +677,15 @@ def execute_reentrant_pipeline(
             context,
             list(_do_iterate_pipeline(pipeline, context, typed_environment, throw_on_error)),
         )
+
+
+def _get_subsetted_pipeline(pipeline, solid_subset):
+    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+    check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
+    return pipeline if solid_subset is None else build_sub_pipeline(
+        pipeline,
+        solid_subset,
+    )
 
 
 def create_typed_environment(pipeline, environment=None):

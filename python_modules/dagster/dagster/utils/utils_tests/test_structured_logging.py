@@ -3,11 +3,6 @@ from dagster.utils.logging import (
     DEBUG,
 )
 
-from dagster import (
-    check,
-    ExecutionContext,
-)
-
 from dagster.core.events import (
     EventType,
     construct_event_record,

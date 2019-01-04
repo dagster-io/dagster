@@ -1,3 +1,5 @@
+import sqlalchemy
+
 from dagster import (
     DependencyDefinition,
     SolidDefinition,
@@ -9,11 +11,10 @@ from dagster import (
     Result,
     check,
     execute_pipeline,
-    solid,
     types,
 )
 
-import sqlalchemy
+from .math_test_db import in_mem_engine
 
 
 def _is_sqlite_context(context):
@@ -77,8 +78,6 @@ def create_sql_statement_solid(name, sql_text, inputs=None):
         outputs=[OutputDefinition()],
     )
 
-
-from .math_test_db import in_mem_engine
 
 InMemSqlLiteEngineResource = ResourceDefinition(
     resource_fn=lambda info: in_mem_engine(info.config['num_table']),

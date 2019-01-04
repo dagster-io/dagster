@@ -1,28 +1,30 @@
 from __future__ import absolute_import
+
 import os
 import sys
-from promise import Promise
-from graphql.execution.executors.gevent import GeventExecutor as Executor
+
+import nbformat
 from flask import Flask, send_file, send_from_directory
-from flask_graphql import GraphQLView
 from flask_cors import CORS
+from flask_graphql import GraphQLView
 from flask_sockets import Sockets
+from graphql.execution.executors.gevent import GeventExecutor as Executor
+from nbconvert import HTMLExporter
 
 from dagster import check
-
 from dagster.cli.dynamic_loader import (
-    load_repository_object_from_target_info,
     DynamicObject,
+    load_repository_object_from_target_info,
 )
 
-from .subscription_server import DagsterSubscriptionServer
-from .schema import create_schema
-from .schema.context import DagsterGraphQLContext
-from .templates.playground import TEMPLATE as PLAYGROUND_TEMPLATE
 from .pipeline_execution_manager import (
     MultiprocessingExecutionManager,
     SynchronousExecutionManager,
 )
+from .schema import create_schema
+from .schema.context import DagsterGraphQLContext
+from .subscription_server import DagsterSubscriptionServer
+from .templates.playground import TEMPLATE as PLAYGROUND_TEMPLATE
 
 
 class RepositoryContainer(object):
@@ -33,7 +35,7 @@ class RepositoryContainer(object):
     '''
 
     def __init__(self, repository_target_info=None, repository=None):
-        if repository_target_info != None:
+        if repository_target_info is not None:
             self.repository_target_info = repository_target_info
             self.repo_dynamic_obj = check.inst(
                 load_repository_object_from_target_info(repository_target_info),
@@ -42,7 +44,7 @@ class RepositoryContainer(object):
             self.repo = None
             self.repo_error = None
             self.reload()
-        elif repository != None:
+        elif repository is not None:
             self.repository_target_info = None
             self.repo = repository
             self.repo_error = None
@@ -53,7 +55,7 @@ class RepositoryContainer(object):
         try:
             self.repo = self.repo_dynamic_obj.load()
             self.repo_error = None
-        except:
+        except:  # pylint: disable=W0702
             self.repo_error = sys.exc_info()
 
     @property
@@ -114,11 +116,6 @@ def index_view(_path):
 yarn
 yarn build</pre>'''
         return text, 500
-
-
-import nbformat
-from traitlets.config import Config
-from nbconvert import HTMLExporter
 
 
 def notebook_view(_path):

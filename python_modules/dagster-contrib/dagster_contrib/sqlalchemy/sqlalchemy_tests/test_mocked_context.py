@@ -1,8 +1,9 @@
 import sqlalchemy
-from dagster import (
-    check,
-    ExecutionContext,
-)
+
+from dagster import check
+
+from dagster.utils.test import create_test_runtime_execution_context
+
 import dagster_contrib.sqlalchemy as dagster_sa
 
 from dagster_contrib.sqlalchemy.common import (
@@ -10,8 +11,6 @@ from dagster_contrib.sqlalchemy.common import (
     SqlAlchemyResource,
     check_supports_sql_alchemy_resource,
 )
-
-from dagster.utils.test import create_test_runtime_execution_context
 
 
 def create_sql_alchemy_context_from_sa_resource(sa_resource, *args, **kwargs):

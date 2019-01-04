@@ -15,8 +15,9 @@ from .definitions import (
     PipelineContextDefinition,
     PipelineDefinition,
     ResourceDefinition,
-    SolidDefinition,
     Solid,
+    SolidDefinition,
+    SolidInputHandle,
 )
 
 from .evaluator import hard_create_config_value
@@ -297,9 +298,14 @@ def get_inputs_field(pipeline_def, solid):
 
     inputs_field_fields = {}
     for inp in [inp for inp in solid.definition.input_defs if inp.dagster_type.is_configurable]:
-        # TODO: consider making this a method on configurable and defining
-        # a default in configurable.py
-        inputs_field_fields[inp.name] = Field(inp.dagster_type, is_optional=True)
+        inp_handle = SolidInputHandle(solid, inp)
+        # If this input is not satisfied by a dependency you must
+        # provide it via config
+        if not pipeline_def.dependency_structure.has_dep(inp_handle):
+            inputs_field_fields[inp.name] = Field(inp.dagster_type)
+
+    if not inputs_field_fields:
+        return None
 
     return Field(
         NamedDict(
@@ -309,7 +315,6 @@ def get_inputs_field(pipeline_def, solid):
             ),
             inputs_field_fields,
         ),
-        is_optional=True,
     )
 
 
@@ -354,14 +359,15 @@ class SolidDictionaryType(SystemConfigObject):
         field_dict = {}
         for solid in pipeline_def.solids:
             if solid_has_config_entry(solid.definition):
+
                 solid_config_type = SolidConfigType(
                     '{pipeline_name}.SolidConfig.{solid_name}'.format(
                         pipeline_name=camelcase(pipeline_def.name),
                         solid_name=camelcase(solid.name),
                     ),
                     solid.definition.config_field,
-                    get_inputs_field(pipeline_def, solid),
-                    get_outputs_field(pipeline_def, solid),
+                    inputs_field=get_inputs_field(pipeline_def, solid),
+                    outputs_field=get_outputs_field(pipeline_def, solid),
                 )
 
                 field_dict[solid.name] = Field(solid_config_type)

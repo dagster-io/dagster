@@ -32,6 +32,33 @@ from dagit.schema.context import DagsterGraphQLContext
 from dagit.dagit_tests.production_query import PRODUCTION_QUERY
 
 
+def define_scalar_output_pipeline():
+    @lambda_solid(output=OutputDefinition(types.String))
+    def return_str():
+        return 'foo'
+
+    @lambda_solid(output=OutputDefinition(types.Int))
+    def return_int():
+        return 34234
+
+    @lambda_solid(output=OutputDefinition(types.Bool))
+    def return_bool():
+        return True
+
+    @lambda_solid(output=OutputDefinition(types.Any))
+    def return_any():
+        return 'dkjfkdjfe'
+
+    return PipelineDefinition(
+        name='scalar_output_pipeline', solids=[
+            return_str,
+            return_int,
+            return_bool,
+            return_any,
+        ]
+    )
+
+
 def define_repository():
     return RepositoryDefinition(
         name='test',
@@ -44,6 +71,7 @@ def define_repository():
             'pipeline_with_list': define_pipeline_with_list,
             'pandas_hello_world_df_input': define_pipeline_with_pandas_df_input,
             'no_config_pipeline': define_no_config_pipeline,
+            'scalar_output_pipeline': define_scalar_output_pipeline,
         },
     )
 
@@ -118,12 +146,14 @@ def define_pipeline_with_pandas_df_input():
         },
     )
 
+
 def define_no_config_pipeline():
     @lambda_solid
     def return_hello():
         return 'Hello'
 
     return PipelineDefinition(name='no_config_pipeline', solids=[return_hello])
+
 
 def define_pipeline_two():
     return PipelineDefinition(
@@ -1086,6 +1116,15 @@ def test_production_query():
     assert result.data
 
 
+def test_production_config_editor_query():
+    result = execute_dagster_graphql(define_context(), ALL_TYPES_QUERY)
+    if result.errors:
+        raise Exception(result.errors)
+
+    assert not result.errors
+    assert result.data
+
+
 MUTATION_QUERY = '''
 mutation ($executionParams: PipelineExecutionParams!) {
     startPipelineExecution(
@@ -1346,5 +1385,33 @@ mutation ($executionParams: PipelineExecutionParams!) {
             pipelineName
         }
     }
+}
+'''
+
+ALL_TYPES_QUERY = '''
+{
+  pipelinesOrError {
+    __typename
+    ... on PipelineConnection {
+      nodes {
+        types {
+          __typename
+          name
+          ... on CompositeType {
+            fields {
+              name
+              type {
+                name
+                __typename
+              }
+              __typename
+            }
+            __typename
+          }
+        }
+        __typename
+      }
+    }
+  }
 }
 '''

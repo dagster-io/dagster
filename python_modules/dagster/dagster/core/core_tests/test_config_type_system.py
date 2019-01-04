@@ -6,7 +6,6 @@ from dagster.core.configurable import ConfigurableObjectFromDict
 
 from dagster import (
     DagsterEvaluateConfigValueError,
-    DagsterInvalidDefinitionError,
     ExecutionContext,
     Field,
     PipelineConfigEvaluationError,

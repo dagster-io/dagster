@@ -10,11 +10,12 @@ from dagster.core.errors import (
     DagsterRuntimeCoercionError,
 )
 
+# other files depend on the Field include
+# pylint: disable=W0611
 from .configurable import (
     Configurable,
     ConfigurableFromAny,
     ConfigurableFromList,
-    ConfigurableSelectorFromDict,
     ConfigurableObjectFromDict,
     ConfigurableFromScalar,
     ConfigurableFromNullable,
@@ -62,7 +63,12 @@ class DagsterType(object):
             'type_attributes',
             DagsterTypeAttributes,
         )
-        self.__doc__ = description
+        # Does not appear to be strictly necessary but coding defensively because of the
+        # issues here: https://github.com/sphinx-doc/sphinx/issues/5870
+        #
+        # May be worth evaluating whether doing this is good idea at all.
+        if description is not None:
+            self.__doc__ = description
 
     @property
     def is_any(self):
@@ -181,14 +187,14 @@ class DagsterScalarType(UncoercedTypeMixin, DagsterType):
 # All builtins are configurable
 class DagsterBuiltinScalarType(
     ConfigurableFromScalar,
-    DagsterScalarType,
     MaterializeableBuiltinScalar,
+    DagsterScalarType,
 ):
     def __init__(self, name, description=None):
         super(DagsterBuiltinScalarType, self).__init__(
             name=name,
             type_attributes=DagsterTypeAttributes(is_builtin=True),
-            description=None,
+            description=description,
         )
 
 

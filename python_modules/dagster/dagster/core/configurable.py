@@ -1,4 +1,3 @@
-from dagster import check
 '''
 Configurable
 
@@ -9,6 +8,8 @@ for the type. Now *any* type that is Configurable can be
 a config, and that config scheam is wholly disconnectedd
 by its in-memory respresentation.
 '''
+
+from dagster import check
 
 
 class FieldDefinitionDictionary(dict):
@@ -132,7 +133,6 @@ class ConfigurableSelectorFromDict(ConfigurableFromDict):
     for context definition selection (only one context can be used for a particular
     pipeline invocation); this is generalization of that concept.
     '''
-    pass
 
 
 class ConfigurableFromList(Configurable):
@@ -225,6 +225,10 @@ class Field:
             )
 
         self.is_optional = is_optional
+
+    @property
+    def is_required(self):
+        return not self.is_optional
 
     @property
     def default_provided(self):

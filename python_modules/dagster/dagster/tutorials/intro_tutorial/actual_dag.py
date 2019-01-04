@@ -2,7 +2,6 @@ from dagster import (
     DependencyDefinition,
     InputDefinition,
     PipelineDefinition,
-    execute_pipeline,
     lambda_solid,
 )
 

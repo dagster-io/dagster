@@ -6,23 +6,24 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     Result,
-    execute_pipeline,
-    execute_pipeline_iterator,
     SolidDefinition,
     SolidInstance,
+    execute_pipeline,
+    execute_pipeline_iterator,
+    lambda_solid,
     solid,
 )
 
 from dagster.core.definitions import (
     DependencyStructure,
     Solid,
-    solids_in_topological_order,
     _create_adjacency_lists,
+    solids_in_topological_order,
 )
 
 from dagster.core.execution import (
-    SolidExecutionResult,
     PipelineExecutionResult,
+    SolidExecutionResult,
 )
 
 from dagster.core.utility_solids import define_stub_solid
@@ -407,4 +408,52 @@ def test_pipeline_name_threaded_through_context():
         PipelineDefinition(name="foobar", solids=[assert_name_transform]),
         {},
     ):
+        assert result.success
+
+
+def test_pipeline_subset():
+    @lambda_solid
+    def return_one():
+        return 1
+
+    @lambda_solid(inputs=[InputDefinition('num')])
+    def add_one(num):
+        return num + 1
+
+    pipeline_def = PipelineDefinition(
+        solids=[return_one, add_one],
+        dependencies={
+            'add_one': {
+                'num': DependencyDefinition('return_one'),
+            },
+        },
+    )
+
+    pipeline_result = execute_pipeline(pipeline_def)
+    assert pipeline_result.success
+    assert pipeline_result.result_for_solid('add_one').transformed_value() == 2
+
+    env_config = {
+        'solids': {
+            'add_one': {
+                'inputs': {
+                    'num': 3,
+                },
+            },
+        },
+    }
+
+    subset_result = execute_pipeline(pipeline_def, environment=env_config, solid_subset=['add_one'])
+
+    assert subset_result.success
+    assert len(subset_result.result_list) == 1
+    assert subset_result.result_for_solid('add_one').transformed_value() == 4
+
+    iter_results = execute_pipeline_iterator(
+        pipeline_def,
+        environment=env_config,
+        solid_subset=['add_one'],
+    )
+
+    for result in iter_results:
         assert result.success

@@ -6,7 +6,6 @@ from dagster.core.types import (
     DagsterRuntimeCoercionError,
     DagsterType,
     PythonObjectType,
-    Nullable,
 )
 
 
