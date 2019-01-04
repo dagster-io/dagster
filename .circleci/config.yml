@@ -224,9 +224,9 @@ jobs:
     environment:
       TOXENV: py37
     steps:
-      -run:
-        name: Lint
-        command: pylint python_modules/dagster/dagster --rcfile=python_modules/.pylintrc --disable=R,C
+      - run:
+          name: Lint
+          command: pylint python_modules/dagster/dagster --rcfile=python_modules/.pylintrc --disable=R,C
 
   dagster-py35:
     <<: *dagster-template
