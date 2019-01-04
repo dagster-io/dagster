@@ -19,7 +19,7 @@ from .configurable import (
     Field,
 )
 
-from .materializable import MaterializeableBuiltinScalar
+from .materializable import (MaterializeableBuiltinScalar, Materializeable)
 
 SerializedTypeValue = namedtuple('SerializedTypeValue', 'name value')
 
@@ -108,6 +108,9 @@ class DagsterType(object):
 
     def iterate_types(self):
         yield self
+        if isinstance(self, Materializeable):
+            # Guaranteed to work after isinstance check
+            yield self.define_materialization_config_schema()  # pylint: disable=E1101
 
     def serialize_value(self, output_dir, value):
         type_value = self.create_serializable_type_value(

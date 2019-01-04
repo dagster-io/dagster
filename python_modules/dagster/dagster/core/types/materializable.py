@@ -32,16 +32,22 @@ class MaterializeableBuiltinScalarConfigSchema(ConfigurableSelectorFromDict):
         self.description = 'Materialization schema for scalar ' + name
 
     def iterate_types(self):
-        return []
+        yield self
 
 
 class MaterializeableBuiltinScalar(Materializeable):
+    def __init__(self, *args, **kwargs):
+        super(MaterializeableBuiltinScalar, self).__init__(*args, **kwargs)
+        self.config_schema = None
+
     def define_materialization_config_schema(self):
-        # This has to be applied to a dagster type so name is available
-        # pylint: disable=E1101
-        return MaterializeableBuiltinScalarConfigSchema(
-            '{name}.MaterializationSchema'.format(name=self.name)
-        )
+        if self.config_schema is None:
+            # This has to be applied to a dagster type so name is available
+            # pylint: disable=E1101
+            self.config_schema = MaterializeableBuiltinScalarConfigSchema(
+                '{name}.MaterializationSchema'.format(name=self.name)
+            )
+        return self.config_schema
 
     def materialize_runtime_value(self, config_spec, runtime_value):
         check.dict_param(config_spec, 'config_spec')
