@@ -77,11 +77,11 @@ jobs:
     steps:
       - checkout
 
-      - run:
-          name: Install Dependencies
-          # command: |
+      # - run:
+      #     name: Install Dependencies
+      #     command: |
+      #       sudo pip install -r python_modules/dagster/dev-requirements.txt
           #   sudo pip install -e python_modules/dagster
-          #   sudo pip install -r python_modules/dagster/dev-requirements.txt
           #   sudo pip install -e python_modules/dagit
           #   sudo pip install -r python_modules/dagit/dev-requirements.txt
           #   sudo pip install -e python_modules/dagstermill
