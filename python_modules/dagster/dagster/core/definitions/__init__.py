@@ -1,7 +1,4 @@
-from collections import (
-    defaultdict,
-    namedtuple,
-)
+from collections import namedtuple
 import re
 
 from dagster import check
@@ -95,10 +92,3 @@ class Result(namedtuple('_Result', 'value output_name')):
             value,
             check.str_param(output_name, 'output_name'),
         )
-
-
-def all_fields_optional(field_dict):
-    for field in field_dict.values():
-        if not field.is_optional:
-            return False
-    return True
