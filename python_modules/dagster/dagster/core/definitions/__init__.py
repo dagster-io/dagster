@@ -33,29 +33,16 @@ from .expectation import (
     ExpectationResult,
 )
 
+from .resource import ResourceDefinition
+
 from .utils import (
-    check_valid_name,
     DEFAULT_OUTPUT,
+    check_opt_two_dim_dict,
+    check_opt_two_dim_str_dict,
+    check_two_dim_dict,
+    check_two_dim_str_dict,
+    check_valid_name,
 )
-
-
-class ResourceDefinition(object):
-    def __init__(self, resource_fn, config_field=None, description=None):
-        self.resource_fn = check.callable_param(resource_fn, 'resource_fn')
-        self.config_field = check.opt_inst_param(config_field, 'config_field', Field)
-        self.description = check.opt_str_param(description, 'description')
-
-    @staticmethod
-    def null_resource():
-        return ResourceDefinition(resource_fn=lambda _info: None)
-
-    @staticmethod
-    def string_resource(description=None):
-        return ResourceDefinition(
-            resource_fn=lambda info: info.config,
-            config_field=Field(types.String),
-            description=description,
-        )
 
 
 class PipelineContextDefinition(object):
@@ -201,28 +188,6 @@ class InputToOutputHandleDict(dict):
         check.inst_param(key, 'key', SolidInputHandle)
         check.inst_param(val, 'val', SolidOutputHandle)
         return dict.__setitem__(self, key, val)
-
-
-def check_two_dim_dict(ddict, param_name, key_type=None, value_type=None):
-    check.dict_param(ddict, param_name, key_type=key_type, value_type=dict)
-    for sub_dict in ddict.values():
-        check.dict_param(sub_dict, 'sub_dict', key_type=key_type, value_type=value_type)
-    return ddict
-
-
-def check_opt_two_dim_dict(ddict, param_name, key_type=None, value_type=None):
-    ddict = check.opt_dict_param(ddict, param_name, key_type=key_type, value_type=dict)
-    for sub_dict in ddict.values():
-        check.dict_param(sub_dict, 'sub_dict', key_type=key_type, value_type=value_type)
-    return ddict
-
-
-def check_two_dim_str_dict(ddict, param_name, value_type):
-    return check_two_dim_dict(ddict, param_name, key_type=str, value_type=value_type)
-
-
-def check_opt_two_dim_str_dict(ddict, param_name, value_type):
-    return check_opt_two_dim_dict(ddict, param_name, key_type=str, value_type=value_type)
 
 
 def _create_handle_dict(solid_dict, dep_dict):
