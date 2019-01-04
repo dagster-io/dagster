@@ -17,9 +17,10 @@ from dagster import (
 from dagster.core.definitions import (
     DependencyStructure,
     Solid,
-    _create_adjacency_lists,
     solids_in_topological_order,
 )
+
+from dagster.core.definitions.pipeline import _create_adjacency_lists
 
 from dagster.core.execution import (
     PipelineExecutionResult,

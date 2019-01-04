@@ -1,3 +1,5 @@
+from toposort import toposort_flatten
+
 from dagster import check
 
 from .context import (
@@ -5,7 +7,11 @@ from .context import (
     default_pipeline_context_definitions,
 )
 
-from .dependency import DependencyDefinition
+from .dependency import (
+    DependencyDefinition,
+    DependencyStructure,
+    Solid,
+)
 
 from .pipeline_creation import (
     create_execution_structure,
@@ -188,3 +194,43 @@ class PipelineDefinition(object):
                 return True
 
         return False
+
+
+def _create_adjacency_lists(solids, dep_structure):
+    check.list_param(solids, 'solids', Solid)
+    check.inst_param(dep_structure, 'dep_structure', DependencyStructure)
+
+    visit_dict = {s.name: False for s in solids}
+    forward_edges = {s.name: set() for s in solids}
+    backward_edges = {s.name: set() for s in solids}
+
+    def visit(solid_name):
+        if visit_dict[solid_name]:
+            return
+
+        visit_dict[solid_name] = True
+
+        for output_handle in dep_structure.deps_of_solid(solid_name):
+            forward_node = output_handle.solid.name
+            backward_node = solid_name
+            if forward_node in forward_edges:
+                forward_edges[forward_node].add(backward_node)
+                backward_edges[backward_node].add(forward_node)
+                visit(forward_node)
+
+    for s in solids:
+        visit(s.name)
+
+    return (forward_edges, backward_edges)
+
+
+def solids_in_topological_order(pipeline):
+    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+
+    _forward_edges, backward_edges = _create_adjacency_lists(
+        pipeline.solids,
+        pipeline.dependency_structure,
+    )
+
+    order = toposort_flatten(backward_edges, sort=True)
+    return [pipeline.solid_named(solid_name) for solid_name in order]
