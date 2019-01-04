@@ -4,7 +4,12 @@ workflows:
   version: 2
   test:
     jobs:
+
+      # Required for merge
+
       - lint
+      - dagit-webapp:
+          context: coveralls
       - dagster-py37:
           context: coveralls
       - dagster-py36:
@@ -19,6 +24,9 @@ workflows:
           context: coveralls
       - dagit-py35:
           context: coveralls
+
+      # Optional steps below
+
       - dagit-py27:
           context: coveralls
       - dagster-aux-modules-py37:
@@ -28,8 +36,6 @@ workflows:
       - dagster-aux-modules-py35:
           context: coveralls
       - dagster-aux-modules-py27:
-          context: coveralls
-      - dagit-webapp:
           context: coveralls
       - airline-demo-py37:
           context: coveralls
