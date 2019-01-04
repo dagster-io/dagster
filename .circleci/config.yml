@@ -5,13 +5,21 @@ workflows:
   test:
     jobs:
       - lint
-      - dagster-core-modules-py37:
+      - dagster-py37:
           context: coveralls
-      - dagster-core-modules-py36:
+      - dagster-py36:
           context: coveralls
-      - dagster-core-modules-py35:
+      - dagster-py35:
           context: coveralls
-      - dagster-core-modules-py27:
+      - dagster-py34:
+          context: coveralls
+      - dagit-py37:
+          context: coveralls
+      - dagit-py36:
+          context: coveralls
+      - dagit-py35:
+          context: coveralls
+      - dagit-py27:
           context: coveralls
       - dagster-aux-modules-py37:
           context: coveralls
@@ -33,10 +41,14 @@ workflows:
           context: coveralls
       - coverage:
           requires:
-            - dagster-core-modules-py37
-            - dagster-core-modules-py36
-            - dagster-core-modules-py35
-            - dagster-core-modules-py27
+            - dagster-py37
+            - dagster-py36
+            - dagster-py35
+            - dagster-py27
+            - dagit-py37
+            - dagit-py36
+            - dagit-py35
+            - dagit-py27
             - dagster-aux-modules-py37
             - dagster-aux-modules-py36
             - dagster-aux-modules-py35
@@ -77,7 +89,38 @@ jobs:
       # only block warnings for now
       - run: pylint python_modules/dagster/dagster python_modules/dagit/dagit python_modules/dagstermill/dagstermill python_modules/dagster-contrib/dagster_contrib --rcfile=python_modules/.pylintrc --disable=R,C
 
-  dagster-core-modules-py36: &dagster-core-modules-template
+  dagit-py36: &dagit-template
+    docker:
+      - image: circleci/python:3.6.6
+    environment:
+      TOXENV: py36
+    working_directory: ~/repo
+
+    steps:
+      - checkout
+
+      - run:
+          name: Install Dependencies
+          command: |
+            sudo pip install tox
+
+      - run:
+          name: Run Dagster Tests
+          command: |
+            pushd python_modules/dagit
+            tox -e $TOXENV
+            popd
+
+      - run:
+          command: |
+            mv python_modules/dagit/.coverage python_modules/.coverage.dagit.${CIRCLE_BUILD_NUM}
+
+      - persist_to_workspace:
+          root: python_modules/
+          paths:
+            - .coverage*
+
+  dagster-py36: &dagster-template
     docker:
       - image: circleci/python:3.6.6
     environment:
@@ -98,14 +141,10 @@ jobs:
             pushd python_modules/dagster
             tox -e $TOXENV
             popd
-            pushd python_modules/dagit
-            tox -e $TOXENV
-            popd
 
       - run:
           command: |
             mv python_modules/dagster/.coverage python_modules/.coverage.dagster.${CIRCLE_BUILD_NUM}
-            mv python_modules/dagit/.coverage python_modules/.coverage.dagit.${CIRCLE_BUILD_NUM}
 
       - persist_to_workspace:
           root: python_modules/
@@ -151,22 +190,43 @@ jobs:
           paths:
             - .coverage*
 
-  dagster-core-modules-py37:
-    <<: *dagster-core-modules-template
+  dagit-py37:
+    <<: *dagit-template
     docker:
       - image: circleci/python:3.7.2
     environment:
       TOXENV: py37
 
-  dagster-core-modules-py35:
-    <<: *dagster-core-modules-template
+  dagit-py35:
+    <<: *dagit-template
     docker:
       - image: circleci/python:3.5.6
     environment:
       TOXENV: py35
 
-  dagster-core-modules-py27:
-    <<: *dagster-core-modules-template
+  dagit-py27:
+    <<: *dagit-template
+    docker:
+      - image: circleci/python:2.7.15
+    environment:
+      TOXENV: py27
+
+  dagster-py37:
+    <<: *dagster-template
+    docker:
+      - image: circleci/python:3.7.2
+    environment:
+      TOXENV: py37
+
+  dagster-py35:
+    <<: *dagster-template
+    docker:
+      - image: circleci/python:3.5.6
+    environment:
+      TOXENV: py35
+
+  dagster-py27:
+    <<: *dagster-template
     docker:
       - image: circleci/python:2.7.15
     environment:
@@ -225,7 +285,7 @@ jobs:
             yarn run check-prettier
 
   airline-demo-py36: &airline-demo-template
-    <<: *dagster-core-modules-template
+    <<: *dagster-template
     docker:
       - image: dagster/cci-test:3.6
         auth:
