@@ -7,7 +7,6 @@ workflows:
 
       # Required for merge
 
-      - lint
       - dagit-webapp:
           context: coveralls
       - dagster-py37:
@@ -27,6 +26,7 @@ workflows:
 
       # Optional steps below
 
+      - lint
       - dagit-py27:
           context: coveralls
       - dagster-aux-modules-py37:
@@ -223,10 +223,6 @@ jobs:
       - image: circleci/python:3.7.2
     environment:
       TOXENV: py37
-    steps:
-      - run:
-          name: Lint
-          command: pylint python_modules/dagster/dagster --rcfile=python_modules/.pylintrc --disable=R,C
 
   dagster-py35:
     <<: *dagster-template
