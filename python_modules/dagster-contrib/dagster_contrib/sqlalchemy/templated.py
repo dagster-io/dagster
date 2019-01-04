@@ -13,10 +13,12 @@ from dagster import (
     types,
 )
 
+from dagster.core.types.builtins import DagsterStringType
+
 from .common import execute_sql_text_on_context
 
 
-class DagsterSqlTextType(types.builtins.DagsterStringType):
+class DagsterSqlTextType(DagsterStringType):
     def __init__(self):
         super(DagsterSqlTextType, self).__init__(
             name='SqlText',
