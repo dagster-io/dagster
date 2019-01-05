@@ -153,8 +153,8 @@ def iterate_solid_def_types(solid_def, seen_config_schemas):
             yield dagster_type
 
 
-def _gather_all_types(solids, context_definitions, environment_type):
-    check.list_param(solids, 'solids', SolidDefinition)
+def _gather_all_types(solid_defs, context_definitions, environment_type):
+    check.list_param(solid_defs, 'solid_defs', SolidDefinition)
     check.dict_param(
         context_definitions,
         'context_definitions',
@@ -166,8 +166,8 @@ def _gather_all_types(solids, context_definitions, environment_type):
 
     seen_config_schemas = set()
 
-    for solid in solids:
-        for dagster_type in iterate_solid_def_types(solid, seen_config_schemas):
+    for solid_def in solid_defs:
+        for dagster_type in iterate_solid_def_types(solid_def, seen_config_schemas):
             yield dagster_type
 
     for context_definition in context_definitions.values():
