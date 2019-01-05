@@ -318,8 +318,6 @@ def test_basic_int_and_string_json_multiple_materialization_execution_plan():
 
     steps = execution_plan.topological_steps()
 
-    print([step.key for step in steps])
-
     assert len(steps) == 7
 
     assert_plan_topological_level(
@@ -348,9 +346,9 @@ def test_basic_int_and_string_json_multiple_materialization():
     pipeline = multiple_output_pipeline()
 
     with get_temp_file_names(4) as file_tuple:
-        filename_one, filename_two, filename_three, filename_four = (
-            file_tuple
-        )  # pylint: disable=E0632
+        # False positive for unbalanced tuple unpacking
+        # pylint: disable=E0632
+        filename_one, filename_two, filename_three, filename_four = file_tuple
         result = execute_pipeline(
             pipeline,
             {
