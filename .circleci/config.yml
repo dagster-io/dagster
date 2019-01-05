@@ -84,7 +84,7 @@ jobs:
 
       - run:
           name: Format
-          command: black . --line-length 100 -S --fast --check
+          command: black python_modules --line-length 100 -S --fast --check
 
   lint:
     docker:
