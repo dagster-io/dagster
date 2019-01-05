@@ -17,10 +17,7 @@ from dagster import (
     types,
 )
 
-from dagster.utils import (
-    load_yaml_from_path,
-    script_relative_path,
-)
+from dagster.utils import load_yaml_from_path, script_relative_path
 
 WordConfig = types.Dict({'word': Field(types.String)})
 
@@ -30,18 +27,12 @@ def double_the_word_with_typed_config(info):
     return info.config['word'] * 2
 
 
-@solid(
-    config_field=Field(WordConfig),
-    outputs=[OutputDefinition(types.String)],
-)
+@solid(config_field=Field(WordConfig), outputs=[OutputDefinition(types.String)])
 def typed_double_word(info):
     return info.config['word'] * 2
 
 
-@solid(
-    config_field=Field(WordConfig),
-    outputs=[OutputDefinition(types.Int)],
-)
+@solid(config_field=Field(WordConfig), outputs=[OutputDefinition(types.Int)])
 def typed_double_word_mismatch(info):
     return info.config['word'] * 2
 
@@ -59,9 +50,7 @@ def define_part_eight_step_one_pipeline():
         name='part_eight_step_one_pipeline',
         solids=[double_the_word_with_typed_config, count_letters],
         dependencies={
-            'count_letters': {
-                'word': DependencyDefinition('double_the_word_with_typed_config'),
-            },
+            'count_letters': {'word': DependencyDefinition('double_the_word_with_typed_config')}
         },
     )
 
@@ -70,11 +59,7 @@ def define_part_eight_step_two_pipeline():
     return PipelineDefinition(
         name='part_eight_step_two_pipeline',
         solids=[typed_double_word, count_letters],
-        dependencies={
-            'count_letters': {
-                'word': DependencyDefinition('typed_double_word'),
-            },
-        },
+        dependencies={'count_letters': {'word': DependencyDefinition('typed_double_word')}},
     )
 
 
@@ -83,9 +68,7 @@ def define_part_eight_step_three_pipeline():
         name='part_eight_step_three_pipeline',
         solids=[typed_double_word_mismatch, count_letters],
         dependencies={
-            'count_letters': {
-                'word': DependencyDefinition('typed_double_word_mismatch'),
-            },
+            'count_letters': {'word': DependencyDefinition('typed_double_word_mismatch')}
         },
     )
 
@@ -97,7 +80,7 @@ def define_part_eight_repo():
             'part_eight_step_one': define_part_eight_step_one_pipeline,
             'part_eight_step_two': define_part_eight_step_two_pipeline,
             'part_eight_step_three': define_part_eight_step_three_pipeline,
-        }
+        },
     )
 
 
@@ -107,8 +90,10 @@ def test_part_eight_repo_step_one():
     pipeline_result = execute_pipeline(define_part_eight_step_one_pipeline(), environment)
 
     assert pipeline_result.success
-    assert pipeline_result.result_for_solid('double_the_word_with_typed_config'
-                                            ).transformed_value() == 'quuxquux'
+    assert (
+        pipeline_result.result_for_solid('double_the_word_with_typed_config').transformed_value()
+        == 'quuxquux'
+    )
     assert pipeline_result.result_for_solid('count_letters').transformed_value() == {
         'q': 2,
         'u': 4,
@@ -146,6 +131,6 @@ def test_part_eight_repo_step_three():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match='Solid typed_double_word_mismatch output name result output quuxquux'
+        match='Solid typed_double_word_mismatch output name result output quuxquux',
     ):
         execute_pipeline(define_part_eight_step_three_pipeline(), environment)

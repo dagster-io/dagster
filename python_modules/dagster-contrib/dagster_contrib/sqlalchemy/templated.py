@@ -3,15 +3,7 @@ import os
 
 import jinja2
 
-from dagster import (
-    Field,
-    InputDefinition,
-    OutputDefinition,
-    Result,
-    SolidDefinition,
-    check,
-    types,
-)
+from dagster import Field, InputDefinition, OutputDefinition, Result, SolidDefinition, check, types
 
 from dagster.core.types.builtins import DagsterStringType
 
@@ -21,24 +13,16 @@ from .common import execute_sql_text_on_context
 class DagsterSqlTextType(DagsterStringType):
     def __init__(self):
         super(DagsterSqlTextType, self).__init__(
-            name='SqlText',
-            description='A string of SQL text that is directly executable.',
+            name='SqlText', description='A string of SQL text that is directly executable.'
         )
 
     def serialize_value(self, output_dir, value):
         type_value = self.create_serializable_type_value(
-            self.coerce_runtime_value(value),
-            output_dir,
+            self.coerce_runtime_value(value), output_dir
         )
         output_path = os.path.join(output_dir, 'type_value')
         with open(output_path, 'w') as ff:
-            json.dump(
-                {
-                    'type': type_value.name,
-                    'value': type_value.value,
-                },
-                ff,
-            )
+            json.dump({'type': type_value.name, 'value': type_value.value}, ff)
 
         with open(os.path.join(output_dir, 'sql'), 'w') as sf:
             sf.write(value)

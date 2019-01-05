@@ -18,15 +18,8 @@ from dagster import (
 )
 from dagstermill import define_dagstermill_solid
 
-from .types import (
-    FileExistsAtPath,
-    SparkDataFrameType,
-    SqlAlchemyEngineType,
-    SqlTableName,
-)
-from .utils import (
-    mkdir_p,
-)
+from .types import FileExistsAtPath, SparkDataFrameType, SqlAlchemyEngineType, SqlTableName
+from .utils import mkdir_p
 
 
 def _notebook_path(name):
@@ -34,12 +27,7 @@ def _notebook_path(name):
 
 
 def notebook_solid(name, notebook_path, inputs, outputs):
-    return define_dagstermill_solid(
-        name,
-        _notebook_path(notebook_path),
-        inputs,
-        outputs,
-    )
+    return define_dagstermill_solid(name, _notebook_path(notebook_path), inputs, outputs)
 
 
 # need a sql context w a sqlalchemy engine
@@ -76,7 +64,7 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
             'Invalid materialization strategy {materialization_strategy}, must '
             'be one of {materialization_strategies}'.format(
                 materialization_strategy=materialization_strategy,
-                materialization_strategies=str(list(materialization_strategy_output_types.keys()))
+                materialization_strategies=str(list(materialization_strategy_output_types.keys())),
             )
         )
 
@@ -86,22 +74,20 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
 
     output_description = (
         'The string name of the new table created by the solid'
-        if materialization_strategy == 'table' else
-        'The materialized SQL statement. If the materialization_strategy is '
+        if materialization_strategy == 'table'
+        else 'The materialized SQL statement. If the materialization_strategy is '
         '\'table\', this is the string name of the new table created by the solid.'
     )
 
     description = '''This solid executes the following SQL statement:
-    {select_statement}'''.format(select_statement=select_statement)
+    {select_statement}'''.format(
+        select_statement=select_statement
+    )
 
     # n.b., we will eventually want to make this resources key configurable
     sql_statement = (
-        'drop table if exists {table_name};\n'
-        'create table {table_name} as {select_statement};'
-    ).format(
-        table_name=table_name,
-        select_statement=select_statement,
-    )
+        'drop table if exists {table_name};\n' 'create table {table_name} as {select_statement};'
+    ).format(table_name=table_name, select_statement=select_statement)
 
     def transform_fn(info, _inputs):
         '''Inner function defining the new solid.
@@ -127,15 +113,12 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
         outputs=[
             OutputDefinition(
                 materialization_strategy_output_types[materialization_strategy],
-                description=output_description
+                description=output_description,
             )
         ],
         transform_fn=transform_fn,
         description=description,
-        metadata={
-            'kind': 'sql',
-            'sql': sql_statement,
-        },
+        metadata={'kind': 'sql', 'sql': sql_statement},
     )
 
 
@@ -143,7 +126,7 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
     name='thunk',
     config_field=Field(types.String, description='The string value to output.'),
     description='No-op solid that simply outputs its single string config value.',
-    outputs=[OutputDefinition(types.String, description='The string passed in as config.')]
+    outputs=[OutputDefinition(types.String, description='The string passed in as config.')],
 )
 def thunk(info):
     '''Output the config vakue.
@@ -163,7 +146,7 @@ def thunk(info):
 
 @solid(
     name='thunk_database_engine',
-    outputs=[OutputDefinition(SqlAlchemyEngineType, description='The db resource.')]
+    outputs=[OutputDefinition(SqlAlchemyEngineType, description='The db resource.')],
 )
 def thunk_database_engine(info):
     """Returns the db resource as its output.
@@ -182,12 +165,11 @@ def thunk_database_engine(info):
             types.Dict(
                 fields={
                     # Probably want to make the region configuable too
-                    'bucket':
-                    Field(types.String, description='The S3 bucket in which to look for the key.'),
-                    'key':
-                    Field(types.String, description='The key to download.'),
-                    'skip_if_present':
-                    Field(
+                    'bucket': Field(
+                        types.String, description='The S3 bucket in which to look for the key.'
+                    ),
+                    'key': Field(types.String, description='The key to download.'),
+                    'skip_if_present': Field(
                         types.Bool,
                         description=(
                             'If True, and a file already exists at the path described by the '
@@ -195,14 +177,12 @@ def thunk_database_engine(info):
                             'will no-op.'
                         ),
                         default_value=False,
-                        is_optional=True
+                        is_optional=True,
                     ),
-                    'target_path':
-                    Field(
+                    'target_path': Field(
                         types.Path,
-                        description=
-                        'If present, specifies the path at which to download the object.',
-                        is_optional=True
+                        description='If present, specifies the path at which to download the object.',
+                        is_optional=True,
                     ),
                 }
             )
@@ -213,7 +193,7 @@ def thunk_database_engine(info):
         OutputDefinition(
             types.List(FileExistsAtPath), description='The path to the downloaded object.'
         )
-    ]
+    ],
 )
 def download_from_s3(info):
     '''Download an object from s3.
@@ -229,7 +209,7 @@ def download_from_s3(info):
     for file_ in info.config:
         bucket = file_['bucket']
         key = file_['key']
-        target_path = (file_.get('target_path') or key)
+        target_path = file_.get('target_path') or key
 
         if target_path is None:
             target_path = info.context.resources.tempfile.tempfile().name
@@ -255,37 +235,28 @@ def download_from_s3(info):
         types.Dict(
             fields={
                 # Probably want to make the region configuable too
-                'bucket':
-                Field(types.String, description='The S3 bucket to which to upload the file.'),
-                'key':
-                Field(types.String, description='The key to which to upload the file.'),
-                'kwargs':
-                Field(
+                'bucket': Field(
+                    types.String, description='The S3 bucket to which to upload the file.'
+                ),
+                'key': Field(types.String, description='The key to which to upload the file.'),
+                'kwargs': Field(
                     types.Any,  # TODO fix
                     description='Kwargs to pass through to the S3 client',
                     is_optional=True,
-                )
+                ),
             }
         )
     ),
     inputs=[
-        InputDefinition(
-            'file_path',
-            types.Path,
-            description='The path of the file to upload.',
-        ),
+        InputDefinition('file_path', types.Path, description='The path of the file to upload.')
     ],
     description='Uploads a file to S3.',
     outputs=[
         OutputDefinition(
-            types.String,
-            description='The bucket to which the file was uploaded.',
-            name='bucket',
+            types.String, description='The bucket to which the file was uploaded.', name='bucket'
         ),
         OutputDefinition(
-            types.String,
-            description='The key to which the file was uploaded.',
-            name='key',
+            types.String, description='The key to which the file was uploaded.', name='key'
         ),
     ],
 )
@@ -321,9 +292,7 @@ def upload_to_s3(info, file_path):
     # ),
     inputs=[
         InputDefinition(
-            'archive_paths',
-            types.List(types.Path),
-            description='The path to the archive.',
+            'archive_paths', types.List(types.Path), description='The path to the archive.'
         ),
         InputDefinition(
             'archive_members',
@@ -339,21 +308,19 @@ def upload_to_s3(info, file_path):
     config_field=Field(
         types.Dict(
             fields={
-                'skip_if_present':
-                Field(
+                'skip_if_present': Field(
                     types.Bool,
                     description='If True, and a file already exists at the path to which the '
                     'archive member would be unzipped, then the solid will no-op',
                     default_value=False,
-                    is_optional=True
+                    is_optional=True,
                 ),
-                'destination_dir':
-                Field(
+                'destination_dir': Field(
                     types.String,
                     description='If no destination_dir is specified, the archive will be unzipped '
                     'to a temporary directory.',
                     is_optional=True,
-                )
+                ),
             }
         )
     ),
@@ -398,7 +365,7 @@ def unzip_file(
                             'file already present at {target_path}'.format(
                                 archive_member=archive_member,
                                 archive_path=archive_path,
-                                target_path=target_path
+                                target_path=target_path,
                             )
                         )
                     if is_dir:
@@ -407,7 +374,7 @@ def unzip_file(
                             'directory already present at {target_path}'.format(
                                 archive_member=archive_member,
                                 archive_path=archive_path,
-                                target_path=target_path
+                                target_path=target_path,
                             )
                         )
             else:
@@ -427,14 +394,16 @@ def unzip_file(
 @solid(
     name='ingest_csv_to_spark',
     inputs=[InputDefinition('input_csv', types.Path)],
-    outputs=[OutputDefinition(SparkDataFrameType)]
+    outputs=[OutputDefinition(SparkDataFrameType)],
 )
 def ingest_csv_to_spark(info, input_csv):
     data_frame = (
-        info.context.resources.spark.read.format('csv').options(
+        info.context.resources.spark.read.format('csv')
+        .options(
             header='true',
             # inferSchema='true',
-        ).load(input_csv)
+        )
+        .load(input_csv)
     )
     return data_frame
 
@@ -449,11 +418,11 @@ def rename_spark_dataframe_columns(data_frame, fn):
         InputDefinition(
             'data_frame',
             SparkDataFrameType,
-            description='The data frame whose columns should be prefixed'
-        ),
+            description='The data frame whose columns should be prefixed',
+        )
     ],
     config_field=Field(types.String, description='Prefix to append.'),
-    outputs=[OutputDefinition(SparkDataFrameType)]
+    outputs=[OutputDefinition(SparkDataFrameType)],
 )
 def prefix_column_names(info, data_frame):
     return rename_spark_dataframe_columns(
@@ -465,12 +434,10 @@ def prefix_column_names(info, data_frame):
     name='canonicalize_column_names',
     inputs=[
         InputDefinition(
-            'data_frame',
-            SparkDataFrameType,
-            description='The data frame to canonicalize',
-        ),
+            'data_frame', SparkDataFrameType, description='The data frame to canonicalize'
+        )
     ],
-    outputs=[OutputDefinition(SparkDataFrameType)]
+    outputs=[OutputDefinition(SparkDataFrameType)],
 )
 def canonicalize_column_names(_info, data_frame):
     return rename_spark_dataframe_columns(data_frame, lambda c: c.lower())
@@ -510,9 +477,7 @@ def normalize_weather_na_values(_info, data_frame):
         )
     ],
     outputs=[OutputDefinition(SparkDataFrameType)],
-    config_field=Field(types.Dict(fields={
-        'table_name': Field(types.String, description=''),
-    }))
+    config_field=Field(types.Dict(fields={'table_name': Field(types.String, description='')})),
 )
 def load_data_to_database_from_spark(info, data_frame):
     info.context.resources.db_info.load_table(data_frame, info.config['table_name'])
@@ -523,16 +488,12 @@ def load_data_to_database_from_spark(info, data_frame):
     name='subsample_spark_dataset',
     description='Subsample a spark dataset.',
     config_field=Field(
-        types.Dict(fields={
-            'subsample_pct': Field(types.Int, description=''),
-        })
+        types.Dict(fields={'subsample_pct': Field(types.Int, description='')})
         # description='The integer percentage of rows to sample from the input dataset.'
     ),
     inputs=[
         InputDefinition(
-            'data_frame',
-            SparkDataFrameType,
-            description='The pyspark DataFrame to subsample.',
+            'data_frame', SparkDataFrameType, description='The pyspark DataFrame to subsample.'
         )
     ],
     outputs=[
@@ -540,24 +501,20 @@ def load_data_to_database_from_spark(info, data_frame):
             SparkDataFrameType,
             # description='A pyspark DataFrame containing a subsample of the input rows.',
         )
-    ]
+    ],
 )
 def subsample_spark_dataset(info, data_frame):
-    return data_frame.sample(False, info.config['subsample_pct'] / 100.)
+    return data_frame.sample(False, info.config['subsample_pct'] / 100.0)
 
 
 @solid(
     name='join_spark_data_frames',
     inputs=[
         InputDefinition(
-            'left_data_frame',
-            SparkDataFrameType,
-            description='The left DataFrame to join.',
+            'left_data_frame', SparkDataFrameType, description='The left DataFrame to join.'
         ),
         InputDefinition(
-            'right_data_frame',
-            SparkDataFrameType,
-            description='The right DataFrame to join.',
+            'right_data_frame', SparkDataFrameType, description='The right DataFrame to join.'
         ),
     ],
     outputs=[
@@ -570,23 +527,25 @@ def subsample_spark_dataset(info, data_frame):
         types.Dict(
             fields={
                 # Probably want to make the region configuable too
-                'on_left':
-                Field(types.String, description='', default_value='id', is_optional=True),
-                'on_right':
-                Field(types.String, description='', default_value='id', is_optional=True),
+                'on_left': Field(
+                    types.String, description='', default_value='id', is_optional=True
+                ),
+                'on_right': Field(
+                    types.String, description='', default_value='id', is_optional=True
+                ),
                 'how': Field(types.String, description='', default_value='inner', is_optional=True),
             }
         )
-    )
+    ),
 )
 def join_spark_data_frames(info, left_data_frame, right_data_frame):
     return left_data_frame.join(
         right_data_frame,
         on=(
-            getattr(left_data_frame,
-                    info.config['on_left']) == getattr(right_data_frame, info.config['on_right'])
+            getattr(left_data_frame, info.config['on_left'])
+            == getattr(right_data_frame, info.config['on_right'])
         ),
-        how=info.config['how']
+        how=info.config['how'],
     )
 
 
@@ -594,14 +553,10 @@ def join_spark_data_frames(info, left_data_frame, right_data_frame):
     name='union_spark_data_frames',
     inputs=[
         InputDefinition(
-            'left_data_frame',
-            SparkDataFrameType,
-            description='The left DataFrame to union.',
+            'left_data_frame', SparkDataFrameType, description='The left DataFrame to union.'
         ),
         InputDefinition(
-            'right_data_frame',
-            SparkDataFrameType,
-            description='The right DataFrame to union.',
+            'right_data_frame', SparkDataFrameType, description='The right DataFrame to union.'
         ),
     ],
     outputs=[
@@ -637,7 +592,7 @@ average_sfo_outbound_avg_delays_by_destination = sql_solid(
     ''',
     'table',
     table_name='average_sfo_outbound_avg_delays_by_destination',
-    inputs=[InputDefinition('q2_sfo_outbound_flights', dagster_type=SqlTableName)]
+    inputs=[InputDefinition('q2_sfo_outbound_flights', dagster_type=SqlTableName)],
 )
 
 ticket_prices_with_average_delays = sql_solid(
@@ -722,8 +677,8 @@ delays_vs_fares = sql_solid(
     table_name='delays_vs_fares',
     inputs=[
         InputDefinition('tickets_with_destination', SqlTableName),
-        InputDefinition('average_sfo_outbound_avg_delays_by_destination', SqlTableName)
-    ]
+        InputDefinition('average_sfo_outbound_avg_delays_by_destination', SqlTableName),
+    ],
 )
 
 eastbound_delays = sql_solid(
@@ -751,7 +706,7 @@ eastbound_delays = sql_solid(
     limit 100;
     ''',
     'table',
-    table_name='eastbound_delays'
+    table_name='eastbound_delays',
 )
 
 westbound_delays = sql_solid(
@@ -779,7 +734,7 @@ westbound_delays = sql_solid(
     limit 100;
     ''',
     'table',
-    table_name='westbound_delays'
+    table_name='westbound_delays',
 )
 
 delays_by_geography = notebook_solid(
@@ -807,7 +762,7 @@ delays_by_geography = notebook_solid(
             dagster_type=types.Path,
             # name='plots_pdf_path',
             description='The path to the saved PDF plots.',
-        ),
+        )
     ],
 )
 
@@ -821,9 +776,7 @@ delays_vs_fares_nb = notebook_solid(
             description='The db_url to use to construct a SQLAlchemy engine.',
         ),
         InputDefinition(
-            'table_name',
-            SqlTableName,
-            description='The SQL table to use for calcuations.',
+            'table_name', SqlTableName, description='The SQL table to use for calcuations.'
         ),
     ],
     outputs=[
@@ -831,7 +784,7 @@ delays_vs_fares_nb = notebook_solid(
             dagster_type=types.Path,
             # name='plots_pdf_path',
             description='The path to the saved PDF plots.',
-        ),
+        )
     ],
 )
 
@@ -845,9 +798,7 @@ sfo_delays_by_destination = notebook_solid(
             description='The db_url to use to construct a SQLAlchemy engine.',
         ),
         InputDefinition(
-            'table_name',
-            SqlTableName,
-            description='The SQL table to use for calcuations.',
+            'table_name', SqlTableName, description='The SQL table to use for calcuations.'
         ),
     ],
     outputs=[
@@ -855,6 +806,6 @@ sfo_delays_by_destination = notebook_solid(
             dagster_type=types.Path,
             # name='plots_pdf_path',
             description='The path to the saved PDF plots.',
-        ),
+        )
     ],
 )

@@ -8,20 +8,11 @@ import time
 
 import gevent
 
-from dagster import (check, ReentrantInfo, PipelineDefinition)
-from dagster.core.execution import (
-    create_typed_environment,
-    execute_reentrant_pipeline,
-)
-from dagster.core.events import (
-    PipelineEventRecord,
-    EventType,
-)
+from dagster import check, ReentrantInfo, PipelineDefinition
+from dagster.core.execution import create_typed_environment, execute_reentrant_pipeline
+from dagster.core.events import PipelineEventRecord, EventType
 from dagster.core.types.evaluator import evaluate_config_value
-from dagster.utils.error import (
-    serializable_error_info_from_exc_info,
-    SerializableErrorInfo,
-)
+from dagster.utils.error import serializable_error_info_from_exc_info, SerializableErrorInfo
 from dagster.utils.logging import level_from_string
 
 from .pipeline_run_storage import PipelineRun
@@ -47,8 +38,7 @@ def build_synthetic_pipeline_error_record(run_id, error_info, pipeline_name):
 
 def build_process_start_event(run_id, pipeline_name):
     message = 'About to start process for pipeline {pipeline_name} run_id {run_id}'.format(
-        pipeline_name=pipeline_name,
-        run_id=run_id,
+        pipeline_name=pipeline_name, run_id=run_id
     )
 
     return PipelineEventRecord(
@@ -65,9 +55,7 @@ def build_process_start_event(run_id, pipeline_name):
 
 def build_process_started_event(run_id, pipeline_name, process_id):
     message = 'Started process {process_id} for pipeline {pipeline_name} run_id {run_id}'.format(
-        pipeline_name=pipeline_name,
-        run_id=run_id,
-        process_id=process_id,
+        pipeline_name=pipeline_name, run_id=run_id, process_id=process_id
     )
 
     return PipelineProcessStartedEvent(
@@ -79,7 +67,7 @@ def build_process_started_event(run_id, pipeline_name, process_id):
         timestamp=time.time(),
         error_info=None,
         pipeline_name=pipeline_name,
-        process_id=process_id
+        process_id=process_id,
     )
 
 
@@ -102,8 +90,7 @@ class SynchronousExecutionManager(PipelineExecutionManager):
                 create_typed_environment(pipeline, pipeline_run.config),
                 throw_on_error=False,
                 reentrant_info=ReentrantInfo(
-                    pipeline_run.run_id,
-                    event_callback=pipeline_run.handle_new_event,
+                    pipeline_run.run_id, event_callback=pipeline_run.handle_new_event
                 ),
             )
         except:  # pylint: disable=W0702
@@ -228,26 +215,15 @@ class MultiprocessingExecutionManager(PipelineExecutionManager):
         message_queue = self._multiprocessing_context.Queue()
         p = self._multiprocessing_context.Process(
             target=execute_pipeline_through_queue,
-            args=(
-                repository_container.repository_info,
-                pipeline.name,
-                pipeline_run.config,
-            ),
-            kwargs={
-                'run_id': pipeline_run.run_id,
-                'message_queue': message_queue,
-            }
+            args=(repository_container.repository_info, pipeline.name, pipeline_run.config),
+            kwargs={'run_id': pipeline_run.run_id, 'message_queue': message_queue},
         )
 
         pipeline_run.handle_new_event(build_process_start_event(pipeline_run.run_id, pipeline.name))
 
         p.start()
         with self._processes_lock:
-            process = RunProcessWrapper(
-                pipeline_run,
-                p,
-                message_queue,
-            )
+            process = RunProcessWrapper(pipeline_run, p, message_queue)
             self._processes.append(process)
 
 
@@ -258,13 +234,7 @@ class RunProcessWrapper(namedtuple('RunProcessWrapper', 'pipeline_run process me
         )
 
 
-def execute_pipeline_through_queue(
-    repository_info,
-    pipeline_name,
-    config,
-    run_id,
-    message_queue,
-):
+def execute_pipeline_through_queue(repository_info, pipeline_name, config, run_id, message_queue):
     """
     Execute pipeline using message queue as a transport
     """
@@ -274,6 +244,7 @@ def execute_pipeline_through_queue(
     reentrant_info = ReentrantInfo(run_id, event_callback=message_queue.put)
 
     from .app import RepositoryContainer
+
     repository_container = RepositoryContainer(repository_info)
     if repository_container.repo_error:
         message_queue.put(
@@ -288,10 +259,7 @@ def execute_pipeline_through_queue(
 
     try:
         result = execute_reentrant_pipeline(
-            pipeline,
-            typed_environment,
-            throw_on_error=False,
-            reentrant_info=reentrant_info,
+            pipeline, typed_environment, throw_on_error=False, reentrant_info=reentrant_info
         )
         return result
     except:  # pylint: disable=W0702

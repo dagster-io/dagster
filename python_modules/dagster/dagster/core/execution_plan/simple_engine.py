@@ -54,10 +54,11 @@ def execute_plan_core(context, execution_plan):
             expected_outputs = [ni.prev_output_handle for ni in step.step_inputs]
 
             context.debug(
-                'Not all inputs covered for {step}. Not executing.'.format(step=step.key) +
-                '\nKeys in result: {result_keys}.'.format(result_keys=result_keys) +
-                '\nOutputs need for inputs {expected_outputs}'.
-                format(expected_outputs=expected_outputs, )
+                'Not all inputs covered for {step}. Not executing.'.format(step=step.key)
+                + '\nKeys in result: {result_keys}.'.format(result_keys=result_keys)
+                + '\nOutputs need for inputs {expected_outputs}'.format(
+                    expected_outputs=expected_outputs
+                )
             )
             continue
 
@@ -92,9 +93,7 @@ def execute_step(step, context, inputs):
     except DagsterError as dagster_error:
         context.error(str(dagster_error))
         yield StepResult.failure_result(
-            step=step,
-            tag=step.tag,
-            failure_data=StepFailureData(dagster_error=dagster_error),
+            step=step, tag=step.tag, failure_data=StepFailureData(dagster_error=dagster_error)
         )
         return
 
@@ -109,14 +108,17 @@ def _error_check_results(step, results):
             raise DagsterInvariantViolationError(
                 '''Core transform for {step.solid.name} returned an output
                 {result.output_name} that does not exist. The available
-                outputs are {output_names}'''
-                .format(step=step, result=result, output_names=output_names)
+                outputs are {output_names}'''.format(
+                    step=step, result=result, output_names=output_names
+                )
             )
 
         if result.output_name in seen_outputs:
             raise DagsterInvariantViolationError(
                 '''Core transform for {step.solid.name} returned an output
-                {result.output_name} multiple times'''.format(step=step, result=result)
+                {result.output_name} multiple times'''.format(
+                    step=step, result=result
+                )
             )
 
         seen_outputs.add(result.output_name)
@@ -146,20 +148,14 @@ def _create_step_result(step, result):
         raise DagsterInvariantViolationError(
             '''Solid {step.solid.name} output name {output_name} output {result.value}
             type failure: {error_msg}'''.format(
-                step=step,
-                result=result,
-                error_msg=','.join(e.args),
-                output_name=result.output_name,
+                step=step, result=result, error_msg=','.join(e.args), output_name=result.output_name
             )
         )
 
     return StepResult.success_result(
         step=step,
         tag=step.tag,
-        success_data=StepSuccessData(
-            output_name=result.output_name,
-            value=coerced_value,
-        ),
+        success_data=StepSuccessData(output_name=result.output_name, value=coerced_value),
     )
 
 
@@ -175,10 +171,7 @@ def _get_evaluated_input(step, input_name, input_value):
                     'which does not pass the typecheck for Dagster type '
                     '{step_input.dagster_type.name}. Step {step.key}'
                 ).format(
-                    step=step,
-                    input_name=input_name,
-                    input_value=input_value,
-                    step_input=step_input,
+                    step=step, input_name=input_name, input_value=input_value, step_input=step_input
                 )
             ),
             evaluate_error,
@@ -233,9 +226,7 @@ def _execution_step_error_boundary(context, step, msg, **kwargs):
         else:
             raise_from(
                 DagsterUserCodeExecutionError(
-                    msg.format(**kwargs),
-                    user_exception=e,
-                    original_exc_info=sys.exc_info(),
+                    msg.format(**kwargs), user_exception=e, original_exc_info=sys.exc_info()
                 ),
                 e,
             )

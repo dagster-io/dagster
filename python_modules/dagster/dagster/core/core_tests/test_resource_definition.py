@@ -10,8 +10,7 @@ from dagster import (
 
 def define_string_resource():
     return ResourceDefinition(
-        config_field=types.Field(types.String),
-        resource_fn=lambda info: info.config,
+        config_field=types.Field(types.String), resource_fn=lambda info: info.config
     )
 
 
@@ -27,23 +26,12 @@ def test_basic_resource():
         name='with_a_resource',
         solids=[a_solid],
         context_definitions={
-            'default': PipelineContextDefinition(resources={'a_string': define_string_resource()}),
+            'default': PipelineContextDefinition(resources={'a_string': define_string_resource()})
         },
     )
 
     result = execute_pipeline(
-        pipeline_def,
-        {
-            'context': {
-                'default': {
-                    'resources': {
-                        'a_string': {
-                            'config': 'foo',
-                        },
-                    },
-                },
-            },
-        },
+        pipeline_def, {'context': {'default': {'resources': {'a_string': {'config': 'foo'}}}}}
     )
 
     assert result.success
@@ -62,31 +50,19 @@ def test_yield_resource():
         yield info.config
 
     yield_string_resource = ResourceDefinition(
-        config_field=types.Field(types.String),
-        resource_fn=_do_resource,
+        config_field=types.Field(types.String), resource_fn=_do_resource
     )
 
     pipeline_def = PipelineDefinition(
         name='with_a_yield_resource',
         solids=[a_solid],
         context_definitions={
-            'default': PipelineContextDefinition(resources={'a_string': yield_string_resource}),
+            'default': PipelineContextDefinition(resources={'a_string': yield_string_resource})
         },
     )
 
     result = execute_pipeline(
-        pipeline_def,
-        {
-            'context': {
-                'default': {
-                    'resources': {
-                        'a_string': {
-                            'config': 'foo',
-                        },
-                    },
-                },
-            },
-        },
+        pipeline_def, {'context': {'default': {'resources': {'a_string': {'config': 'foo'}}}}}
     )
 
     assert result.success
@@ -110,21 +86,16 @@ def test_yield_multiple_resources():
         saw.append('after yield ' + info.config)
 
     yield_string_resource = ResourceDefinition(
-        config_field=types.Field(types.String),
-        resource_fn=_do_resource,
+        config_field=types.Field(types.String), resource_fn=_do_resource
     )
 
     pipeline_def = PipelineDefinition(
         name='with_yield_resources',
         solids=[a_solid],
         context_definitions={
-            'default':
-            PipelineContextDefinition(
-                resources={
-                    'string_one': yield_string_resource,
-                    'string_two': yield_string_resource,
-                },
-            ),
+            'default': PipelineContextDefinition(
+                resources={'string_one': yield_string_resource, 'string_two': yield_string_resource}
+            )
         },
     )
 
@@ -133,16 +104,9 @@ def test_yield_multiple_resources():
         {
             'context': {
                 'default': {
-                    'resources': {
-                        'string_one': {
-                            'config': 'foo',
-                        },
-                        'string_two': {
-                            'config': 'bar',
-                        },
-                    },
-                },
-            },
+                    'resources': {'string_one': {'config': 'foo'}, 'string_two': {'config': 'bar'}}
+                }
+            }
         },
     )
 
@@ -173,8 +137,7 @@ def test_mixed_multiple_resources():
         saw.append('after yield ' + info.config)
 
     yield_string_resource = ResourceDefinition(
-        config_field=types.Field(types.String),
-        resource_fn=_do_yield_resource,
+        config_field=types.Field(types.String), resource_fn=_do_yield_resource
     )
 
     def _do_return_resource(info):
@@ -182,21 +145,19 @@ def test_mixed_multiple_resources():
         return info.config
 
     return_string_resource = ResourceDefinition(
-        config_field=types.Field(types.String),
-        resource_fn=_do_return_resource,
+        config_field=types.Field(types.String), resource_fn=_do_return_resource
     )
 
     pipeline_def = PipelineDefinition(
         name='with_a_yield_resource',
         solids=[a_solid],
         context_definitions={
-            'default':
-            PipelineContextDefinition(
+            'default': PipelineContextDefinition(
                 resources={
                     'yielded_string': yield_string_resource,
                     'returned_string': return_string_resource,
-                },
-            ),
+                }
+            )
         },
     )
 
@@ -206,15 +167,11 @@ def test_mixed_multiple_resources():
             'context': {
                 'default': {
                     'resources': {
-                        'returned_string': {
-                            'config': 'foo',
-                        },
-                        'yielded_string': {
-                            'config': 'bar',
-                        },
-                    },
-                },
-            },
+                        'returned_string': {'config': 'foo'},
+                        'yielded_string': {'config': 'bar'},
+                    }
+                }
+            }
         },
     )
 
@@ -238,12 +195,9 @@ def test_null_resource():
         name='test_null_resource',
         solids=[solid_test_null],
         context_definitions={
-            'default':
-            PipelineContextDefinition(
-                resources={
-                    'test_null': ResourceDefinition.null_resource(),
-                },
-            ),
+            'default': PipelineContextDefinition(
+                resources={'test_null': ResourceDefinition.null_resource()}
+            )
         },
     )
 
@@ -265,28 +219,14 @@ def test_string_resource():
         name='test_string_resource',
         solids=[solid_test_string],
         context_definitions={
-            'default':
-            PipelineContextDefinition(
-                resources={
-                    'test_string': ResourceDefinition.string_resource(),
-                },
-            ),
+            'default': PipelineContextDefinition(
+                resources={'test_string': ResourceDefinition.string_resource()}
+            )
         },
     )
 
     result = execute_pipeline(
-        pipeline,
-        {
-            'context': {
-                'default': {
-                    'resources': {
-                        'test_string': {
-                            'config': 'foo'
-                        },
-                    },
-                },
-            },
-        },
+        pipeline, {'context': {'default': {'resources': {'test_string': {'config': 'foo'}}}}}
     )
 
     assert result.success

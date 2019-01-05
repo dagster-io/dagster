@@ -1,8 +1,5 @@
 from dagster import check
-from dagster.core.errors import (
-    DagsterInvalidDefinitionError,
-    DagsterInvariantViolationError,
-)
+from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from .pipeline import PipelineDefinition
 
 
@@ -31,11 +28,7 @@ class RepositoryDefinition(object):
         '''
         self.name = check.str_param(name, 'name')
 
-        check.dict_param(
-            pipeline_dict,
-            'pipeline_dict',
-            key_type=str,
-        )
+        check.dict_param(pipeline_dict, 'pipeline_dict', key_type=str)
 
         for val in pipeline_dict.values():
             check.is_callable(val, 'Value in pipeline_dict must be function')
@@ -69,14 +62,15 @@ class RepositoryDefinition(object):
             pipeline.name == name,
             'Name does not match. Name in dict {name}. Name in pipeline {pipeline.name}'.format(
                 name=name, pipeline=pipeline
-            )
+            ),
         )
 
         self._pipeline_cache[name] = check.inst(
             pipeline,
             PipelineDefinition,
-            'Function passed into pipeline_dict with key {key} must return a PipelineDefinition'.
-            format(key=name),
+            'Function passed into pipeline_dict with key {key} must return a PipelineDefinition'.format(
+                key=name
+            ),
         )
 
         return pipeline
@@ -115,9 +109,7 @@ class RepositoryDefinition(object):
                     if not solid_defs[solid_def.name] is solid_def:
                         raise DagsterInvalidDefinitionError(
                             'Trying to add duplicate solid def {} in {}, Already saw in {}'.format(
-                                solid_def.name,
-                                pipeline.name,
-                                solid_to_pipeline[solid_def.name],
+                                solid_def.name, pipeline.name, solid_to_pipeline[solid_def.name]
                             )
                         )
         return solid_defs

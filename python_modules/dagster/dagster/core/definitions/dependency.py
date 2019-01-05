@@ -1,7 +1,4 @@
-from collections import (
-    defaultdict,
-    namedtuple,
-)
+from collections import defaultdict, namedtuple
 
 from dagster import check
 
@@ -11,11 +8,7 @@ from .input import InputDefinition
 
 from .output import OutputDefinition
 
-from .utils import (
-    DEFAULT_OUTPUT,
-    check_two_dim_str_dict,
-    struct_to_string,
-)
+from .utils import DEFAULT_OUTPUT, check_two_dim_str_dict, struct_to_string
 
 
 class SolidInstance(namedtuple('Solid', 'name alias')):

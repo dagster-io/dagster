@@ -3,7 +3,7 @@ from collections import namedtuple
 import copy
 import json
 import logging
-from logging import (CRITICAL, DEBUG, ERROR, INFO, WARNING)
+from logging import CRITICAL, DEBUG, ERROR, INFO, WARNING
 import traceback
 
 import coloredlogs
@@ -12,13 +12,7 @@ from dagster import check
 
 VALID_LEVELS = set([CRITICAL, DEBUG, ERROR, INFO, WARNING])
 
-LOOKUP = {
-    'CRITICAL': CRITICAL,
-    'DEBUG': DEBUG,
-    'ERROR': ERROR,
-    'INFO': INFO,
-    'WARNING': WARNING,
-}
+LOOKUP = {'CRITICAL': CRITICAL, 'DEBUG': DEBUG, 'ERROR': ERROR, 'INFO': INFO, 'WARNING': WARNING}
 
 
 def level_from_string(string):
@@ -184,5 +178,6 @@ def get_formatted_stack_trace(exception):
         tb = exception.__traceback__
     else:
         import sys
+
         _exc_type, _exc_value, tb = sys.exc_info()
     return ''.join(traceback.format_tb(tb))

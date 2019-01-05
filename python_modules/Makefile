@@ -12,13 +12,12 @@ watch:
 	"dagit/dagit_tests "\
 	"dagster-ge/dagster_ge_tests " \
 	--drop dagster/dagster dagster/dagster_tests/ dagster-ge/dagster_ge dagster-ge/dagster_ge_tests dagit/dagit dagit/dagit_tests
-	
-yapf:
-	find . -name "*.py" | grep -v ".tox" | grep -v ".vscode" | grep -v "snapshots" | xargs yapf -i
+
+black:
+	black . --line-length 100 -S --fast
 
 pylint:
 	pylint --disable=R,C dagster/dagster dagit/dagit dagstermill/dagstermill dagster-contrib/dagster_contrib
-		
 
 reinstall:
 	pip uninstall dagit

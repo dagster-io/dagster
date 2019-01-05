@@ -1,6 +1,4 @@
-from dagster import (
-    check,
-)
+from dagster import check
 
 from dagster.utils import camelcase
 
@@ -13,13 +11,7 @@ from dagster.core.definitions import (
     SolidInputHandle,
 )
 
-from dagster.core.types import (
-    Bool,
-    DagsterTypeAttributes,
-    DagsterType,
-    List,
-    NamedDict,
-)
+from dagster.core.types import Bool, DagsterTypeAttributes, DagsterType, List, NamedDict
 
 from dagster.core.types.configurable import (
     ConfigurableObjectFromDict,
@@ -60,40 +52,33 @@ def define_maybe_optional_selector_field(dagster_type):
     check.inst_param(dagster_type, 'dagster_type', SystemConfigSelector)
     is_optional = _is_selector_field_optional(dagster_type)
 
-    return Field(
-        dagster_type,
-        is_optional=is_optional,
-        default_value=lambda: hard_create_config_value(dagster_type, None),
-    ) if is_optional else Field(dagster_type)
+    return (
+        Field(
+            dagster_type,
+            is_optional=is_optional,
+            default_value=lambda: hard_create_config_value(dagster_type, None),
+        )
+        if is_optional
+        else Field(dagster_type)
+    )
 
 
 class SpecificResourceConfig(SystemConfigObject):
     def __init__(self, name, config_field):
-        super(SpecificResourceConfig, self).__init__(
-            name=name,
-            fields={
-                'config': config_field,
-            },
-        )
+        super(SpecificResourceConfig, self).__init__(name=name, fields={'config': config_field})
 
 
 class ResourceDictionaryType(SystemConfigObject):
     def __init__(self, name, resources):
         check.str_param(name, 'name')
-        check.dict_param(
-            resources,
-            'resources',
-            key_type=str,
-            value_type=ResourceDefinition,
-        )
+        check.dict_param(resources, 'resources', key_type=str, value_type=ResourceDefinition)
 
         field_dict = {}
 
         for resource_name, resource in resources.items():
             if resource.config_field:
                 specific_resource_type = SpecificResourceConfig(
-                    name + '.' + resource_name,
-                    resource.config_field,
+                    name + '.' + resource_name, resource.config_field
                 )
                 field_dict[resource_name] = Field(specific_resource_type)
 
@@ -108,24 +93,13 @@ class SpecificContextConfig(SystemConfigObject):
     def __init__(self, name, config_field, resources):
         check.str_param(name, 'name')
         check.opt_inst_param(config_field, 'config_field', Field)
-        check.dict_param(
-            resources,
-            'resources',
-            key_type=str,
-            value_type=ResourceDefinition,
-        )
-        resource_dict_type = ResourceDictionaryType(
-            '{name}.Resources'.format(name=name),
-            resources,
-        )
+        check.dict_param(resources, 'resources', key_type=str, value_type=ResourceDefinition)
+        resource_dict_type = ResourceDictionaryType('{name}.Resources'.format(name=name), resources)
         super(SpecificContextConfig, self).__init__(
             name=name,
-            fields={
-                'config': config_field,
-                'resources': Field(resource_dict_type),
-            } if config_field else {
-                'resources': Field(resource_dict_type),
-            },
+            fields={'config': config_field, 'resources': Field(resource_dict_type)}
+            if config_field
+            else {'resources': Field(resource_dict_type)},
             type_attributes=DagsterTypeAttributes(is_system_config=True),
         )
 
@@ -152,20 +126,12 @@ class ContextConfigType(SystemConfigSelector):
         if len(context_definitions) == 1:
             context_name, context_definition = single_item(context_definitions)
             field_dict[context_name] = Field(
-                create_specific_context_type(
-                    pipeline_name,
-                    context_name,
-                    context_definition,
-                ),
+                create_specific_context_type(pipeline_name, context_name, context_definition)
             )
         else:
             for context_name, context_definition in context_definitions.items():
                 field_dict[context_name] = Field(
-                    create_specific_context_type(
-                        pipeline_name,
-                        context_name,
-                        context_definition,
-                    ),
+                    create_specific_context_type(pipeline_name, context_name, context_definition),
                     is_optional=True,
                 )
 
@@ -188,8 +154,7 @@ class ContextConfigType(SystemConfigSelector):
 def create_specific_context_type(pipeline_name, context_name, context_definition):
     specific_context_config_type = SpecificContextConfig(
         '{pipeline_name}.ContextDefinitionConfig.{context_name}'.format(
-            pipeline_name=pipeline_name,
-            context_name=camelcase(context_name),
+            pipeline_name=pipeline_name, context_name=camelcase(context_name)
         ),
         context_definition.config_field,
         context_definition.resources,
@@ -212,9 +177,7 @@ class SolidConfigType(SystemConfigObject):
             fields['outputs'] = outputs_field
 
         super(SolidConfigType, self).__init__(
-            name=name,
-            fields=fields,
-            type_attributes=DagsterTypeAttributes(is_system_config=True),
+            name=name, fields=fields, type_attributes=DagsterTypeAttributes(is_system_config=True)
         )
 
     def construct_from_config_value(self, config_value):
@@ -234,7 +197,7 @@ class EnvironmentConfigType(SystemConfigObject):
         pipeline_name = camelcase(pipeline_def.name)
 
         context_field = define_maybe_optional_selector_field(
-            ContextConfigType(pipeline_name, pipeline_def.context_definitions),
+            ContextConfigType(pipeline_name, pipeline_def.context_definitions)
         )
 
         solids_field = Field(
@@ -318,11 +281,10 @@ def get_inputs_field(pipeline_def, solid):
     return Field(
         NamedDict(
             '{pipeline_name}.{solid_name}.Inputs'.format(
-                pipeline_name=camelcase(pipeline_def.name),
-                solid_name=camelcase(solid.name),
+                pipeline_name=camelcase(pipeline_def.name), solid_name=camelcase(solid.name)
             ),
             inputs_field_fields,
-        ),
+        )
     )
 
 
@@ -338,14 +300,12 @@ def get_outputs_field(pipeline_def, solid):
     output_dict_fields = {}
     for out in [out for out in solid_def.output_defs if is_materializeable(out.dagster_type)]:
         output_dict_fields[out.name] = Field(
-            out.dagster_type.define_materialization_config_schema(),
-            is_optional=True,
+            out.dagster_type.define_materialization_config_schema(), is_optional=True
         )
 
     output_entry_dict = NamedDict(
         '{pipeline_name}.{solid_name}.Outputs'.format(
-            pipeline_name=camelcase(pipeline_def.name),
-            solid_name=camelcase(solid.name),
+            pipeline_name=camelcase(pipeline_def.name), solid_name=camelcase(solid.name)
         ),
         output_dict_fields,
     )
@@ -355,9 +315,11 @@ def get_outputs_field(pipeline_def, solid):
 
 def solid_has_config_entry(solid_def):
     check.inst_param(solid_def, 'solid_def', SolidDefinition)
-    return solid_def.config_field or solid_has_configurable_inputs(
-        solid_def
-    ) or solid_has_materializable_outputs(solid_def)
+    return (
+        solid_def.config_field
+        or solid_has_configurable_inputs(solid_def)
+        or solid_has_materializable_outputs(solid_def)
+    )
 
 
 class SolidDictionaryType(SystemConfigObject):
@@ -370,8 +332,7 @@ class SolidDictionaryType(SystemConfigObject):
 
                 solid_config_type = SolidConfigType(
                     '{pipeline_name}.SolidConfig.{solid_name}'.format(
-                        pipeline_name=camelcase(pipeline_def.name),
-                        solid_name=camelcase(solid.name),
+                        pipeline_name=camelcase(pipeline_def.name), solid_name=camelcase(solid.name)
                     ),
                     solid.definition.config_field,
                     inputs_field=get_inputs_field(pipeline_def, solid),
@@ -392,9 +353,7 @@ class ExecutionConfigType(SystemConfigObject):
         check.str_param(name, 'name')
         super(ExecutionConfigType, self).__init__(
             name=name,
-            fields={
-                'serialize_intermediates': Field(Bool, is_optional=True, default_value=False),
-            },
+            fields={'serialize_intermediates': Field(Bool, is_optional=True, default_value=False)},
             type_attributes=DagsterTypeAttributes(is_system_config=True),
         )
 

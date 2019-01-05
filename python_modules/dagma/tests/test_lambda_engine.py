@@ -4,6 +4,7 @@ import uuid
 from collections import namedtuple
 
 import boto3
+
 # import numpy
 import pytest
 
@@ -26,18 +27,13 @@ from dagster.core.execution import (
     create_typed_environment,
     yield_context,
 )
-from dagma import (
-    execute_plan,
-    define_dagma_resource,
-)
+from dagma import execute_plan, define_dagma_resource
 
 
 def create_lambda_context():
     return PipelineContextDefinition(
         context_fn=lambda info: ExecutionContext.console_logging(log_level=logging.DEBUG),
-        resources={
-            'dagma': define_dagma_resource(),
-        },
+        resources={'dagma': define_dagma_resource()},
     )
 
 
@@ -59,12 +55,9 @@ def solid_c(arg_a):
     return arg_a * 3
 
 
-@lambda_solid(inputs=[
-    InputDefinition('arg_b'),
-    InputDefinition('arg_c'),
-])
+@lambda_solid(inputs=[InputDefinition('arg_b'), InputDefinition('arg_c')])
 def solid_d(arg_b, arg_c):
-    return (arg_b + arg_c / 2.)
+    return arg_b + arg_c / 2.0
     # return numpy.mean([arg_b, arg_c])
     # TODO: figure out how to deal with installing packages like numpy where the target
     # architecture on lambda is not the architecture running the pipeline
@@ -74,24 +67,15 @@ def define_diamond_dag_pipeline():
     return PipelineDefinition(
         name='actual_dag_pipeline',
         context_definitions=context_definitions,
-        solids=[
-            solid_a,
-            solid_b,
-            solid_c,
-            solid_d,
-        ],
+        solids=[solid_a, solid_b, solid_c, solid_d],
         dependencies={
-            'solid_b': {
-                'arg_a': DependencyDefinition('solid_a'),
-            },
-            'solid_c': {
-                'arg_a': DependencyDefinition('solid_a'),
-            },
+            'solid_b': {'arg_a': DependencyDefinition('solid_a')},
+            'solid_c': {'arg_a': DependencyDefinition('solid_a')},
             'solid_d': {
                 'arg_b': DependencyDefinition('solid_b'),
                 'arg_c': DependencyDefinition('solid_c'),
-            }
-        }
+            },
+        },
     )
 
 
@@ -99,25 +83,13 @@ def define_single_solid_pipeline():
     return PipelineDefinition(
         name='single_solid_pipeline',
         context_definitions=context_definitions,
-        solids=[
-            solid_a,
-        ],
+        solids=[solid_a],
         dependencies={},
     )
 
 
 TEST_ENVIRONMENT = {
-    'context': {
-        'lambda': {
-            'resources': {
-                'dagma': {
-                    'config': {
-                        'aws_region_name': 'us-east-2',
-                    }
-                }
-            }
-        }
-    }
+    'context': {'lambda': {'resources': {'dagma': {'config': {'aws_region_name': 'us-east-2'}}}}}
 }
 
 
@@ -127,11 +99,7 @@ def run_test_pipeline(pipeline):
     reentrant_info = ReentrantInfo(run_id=str(uuid.uuid4()))
     with yield_context(pipeline, typed_environment, reentrant_info) as context:
         execution_plan = create_execution_plan_core(
-            ExecutionPlanInfo(
-                context,
-                pipeline,
-                typed_environment,
-            ),
+            ExecutionPlanInfo(context, pipeline, typed_environment)
         )
         with context.value('pipeline', pipeline.display_name):
             results = execute_plan(context, execution_plan)

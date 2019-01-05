@@ -2,9 +2,7 @@ from collections import namedtuple
 
 from dagster import check
 
-from .context import (
-    PipelineContextDefinition,
-)
+from .context import PipelineContextDefinition
 
 from .dependency import (
     DependencyDefinition,
@@ -14,16 +12,9 @@ from .dependency import (
     SolidOutputHandle,
 )
 
-from .expectation import (
-    ExpectationDefinition,
-    ExpectationResult,
-)
+from .expectation import ExpectationDefinition, ExpectationResult
 
-from .infos import (
-    ContextCreationExecutionInfo,
-    ExpectationExecutionInfo,
-    TransformExecutionInfo,
-)
+from .infos import ContextCreationExecutionInfo, ExpectationExecutionInfo, TransformExecutionInfo
 
 from .input import InputDefinition
 
@@ -33,15 +24,9 @@ from .resource import ResourceDefinition
 
 from .repository import RepositoryDefinition
 
-from .pipeline import (
-    PipelineDefinition,
-    solids_in_topological_order,
-)
+from .pipeline import PipelineDefinition, solids_in_topological_order
 
-from .pipeline_creation import (
-    construct_type_dictionary,
-    create_execution_structure,
-)
+from .pipeline_creation import construct_type_dictionary, create_execution_structure
 
 from .solid import SolidDefinition
 
@@ -59,8 +44,4 @@ class Result(namedtuple('_Result', 'value output_name')):
 '''
 
     def __new__(cls, value, output_name=DEFAULT_OUTPUT):
-        return super(Result, cls).__new__(
-            cls,
-            value,
-            check.str_param(output_name, 'output_name'),
-        )
+        return super(Result, cls).__new__(cls, value, check.str_param(output_name, 'output_name'))

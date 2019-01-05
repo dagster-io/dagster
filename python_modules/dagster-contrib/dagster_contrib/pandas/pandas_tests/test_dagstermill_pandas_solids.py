@@ -52,15 +52,8 @@ def define_pandas_input_transform_test_pipeline():
     in_df = pd.DataFrame({'num': [3, 5, 7]})
     return PipelineDefinition(
         name='input_transform_test_pipeline',
-        solids=[
-            define_stub_solid('load_df', in_df),
-            define_pandas_input_transform_test_solid(),
-        ],
-        dependencies={
-            'pandas_input_transform_test': {
-                'df': DependencyDefinition('load_df'),
-            },
-        },
+        solids=[define_stub_solid('load_df', in_df), define_pandas_input_transform_test_solid()],
+        dependencies={'pandas_input_transform_test': {'df': DependencyDefinition('load_df')}},
     )
 
 
@@ -69,16 +62,14 @@ def define_pandas_source_test_solid():
         name='pandas_source_test',
         notebook_path=nb_test_path('pandas_source_test'),
         inputs=[InputDefinition(name='df', dagster_type=DataFrame)],
-        outputs=[OutputDefinition(DataFrame)]
+        outputs=[OutputDefinition(DataFrame)],
     )
 
 
 def define_pandas_repository():
     return RepositoryDefinition(
         name='test_dagstermill_pandas_solids',
-        pipeline_dict={
-            'input_transform_test_pipeline': define_pandas_source_test_pipeline,
-        }
+        pipeline_dict={'input_transform_test_pipeline': define_pandas_source_test_pipeline},
     )
 
 
@@ -89,11 +80,7 @@ def define_pandas_source_test_pipeline():
             define_stub_solid('load_num_csv', pd.read_csv(script_relative_path('num_prod.csv'))),
             define_pandas_source_test_solid(),
         ],
-        dependencies={
-            'pandas_source_test': {
-                'df': DependencyDefinition('load_num_csv'),
-            },
-        },
+        dependencies={'pandas_source_test': {'df': DependencyDefinition('load_num_csv')}},
     )
 
 
@@ -106,15 +93,9 @@ def test_pandas_input_transform_test_pipeline():
         {
             'solids': {
                 'pandas_source_test': {
-                    'inputs': {
-                        'df': {
-                            'csv': {
-                                'path': script_relative_path('num.csv'),
-                            },
-                        },
-                    },
-                },
-            },
+                    'inputs': {'df': {'csv': {'path': script_relative_path('num.csv')}}}
+                }
+            }
         },
     )
     in_df = pd.DataFrame({'num': [3, 5, 7]})

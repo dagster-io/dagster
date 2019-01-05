@@ -7,11 +7,7 @@ import os
 
 import click
 
-from dagster import (
-    PipelineDefinition,
-    RepositoryDefinition,
-    check,
-)
+from dagster import PipelineDefinition, RepositoryDefinition, check
 
 from dagster.utils import load_yaml_from_path
 
@@ -51,17 +47,10 @@ else:
 
     reloader = ReloaderStub()
 
-INFO_FIELDS = set([
-    'repository_yaml',
-    'pipeline_name',
-    'python_file',
-    'fn_name',
-    'module_name',
-])
+INFO_FIELDS = set(['repository_yaml', 'pipeline_name', 'python_file', 'fn_name', 'module_name'])
 
 PipelineTargetInfo = namedtuple(
-    'PipelineTargetInfo',
-    'repository_yaml pipeline_name python_file fn_name module_name',
+    'PipelineTargetInfo', 'repository_yaml pipeline_name python_file fn_name module_name'
 )
 
 
@@ -72,8 +61,7 @@ class RepositoryTargetMode(Enum):
 
 
 RepositoryTargetInfo = namedtuple(
-    'RepositoryTargetInfo',
-    'repository_yaml module_name python_file fn_name',
+    'RepositoryTargetInfo', 'repository_yaml module_name python_file fn_name'
 )
 
 
@@ -90,19 +78,12 @@ FileTargetFunction = namedtuple('FileTargetFunction', 'python_file fn_name')
 ModuleTargetFunction = namedtuple('ModuleTargetFunction', 'module_name fn_name')
 
 RepositoryPythonFileData = namedtuple(
-    'RepositoryPythonFileData',
-    'file_target_function pipeline_name',
+    'RepositoryPythonFileData', 'file_target_function pipeline_name'
 )
 
-RepositoryModuleData = namedtuple(
-    'RepositoryModuleData',
-    'module_target_function pipeline_name',
-)
+RepositoryModuleData = namedtuple('RepositoryModuleData', 'module_target_function pipeline_name')
 
-RepositoryYamlData = namedtuple(
-    'RepositoryYamlData',
-    'repository_yaml pipeline_name',
-)
+RepositoryYamlData = namedtuple('RepositoryYamlData', 'repository_yaml pipeline_name')
 
 PipelineLoadingModeData = namedtuple('PipelineLoadingModeData', 'mode data')
 
@@ -133,9 +114,7 @@ def check_info_fields(info, *fields):
                     'field: {none_field} with value {value} should not be set if'
                     '{fields} were provided'
                 ).format(
-                    value=repr(info_dict[none_field]),
-                    none_field=none_field,
-                    fields=repr(fields),
+                    value=repr(info_dict[none_field]), none_field=none_field, fields=repr(fields)
                 )
             )
 
@@ -155,28 +134,21 @@ def create_repository_loading_mode_data(info):
         repo_load_invariant(info.python_file is None)
         repo_load_invariant(info.fn_name is None)
         return RepositoryLoadingModeData(
-            mode=RepositoryTargetMode.YAML_FILE,
-            data=info.repository_yaml,
+            mode=RepositoryTargetMode.YAML_FILE, data=info.repository_yaml
         )
     elif info.module_name and info.fn_name:
         repo_load_invariant(info.repository_yaml is None)
         repo_load_invariant(info.python_file is None)
         return RepositoryLoadingModeData(
             mode=RepositoryTargetMode.MODULE,
-            data=ModuleTargetFunction(
-                module_name=info.module_name,
-                fn_name=info.fn_name,
-            )
+            data=ModuleTargetFunction(module_name=info.module_name, fn_name=info.fn_name),
         )
     elif info.python_file and info.fn_name:
         repo_load_invariant(info.repository_yaml is None)
         repo_load_invariant(info.module_name is None)
         return RepositoryLoadingModeData(
             mode=RepositoryTargetMode.FILE,
-            data=FileTargetFunction(
-                python_file=info.python_file,
-                fn_name=info.fn_name,
-            )
+            data=FileTargetFunction(python_file=info.python_file, fn_name=info.fn_name),
         )
     else:
         raise InvalidRepositoryLoadingComboError()
@@ -190,46 +162,37 @@ def create_pipeline_loading_mode_data(info):
             mode=PipelineTargetMode.REPOSITORY_PYTHON_FILE,
             data=RepositoryPythonFileData(
                 file_target_function=FileTargetFunction(
-                    python_file=info.python_file,
-                    fn_name=info.fn_name,
+                    python_file=info.python_file, fn_name=info.fn_name
                 ),
                 pipeline_name=info.pipeline_name,
-            )
+            ),
         )
     elif check_info_fields(info, 'module_name', 'fn_name', 'pipeline_name'):
         return PipelineLoadingModeData(
             mode=PipelineTargetMode.REPOSITORY_MODULE,
             data=RepositoryModuleData(
                 module_target_function=ModuleTargetFunction(
-                    module_name=info.module_name,
-                    fn_name=info.fn_name,
+                    module_name=info.module_name, fn_name=info.fn_name
                 ),
                 pipeline_name=info.pipeline_name,
-            )
+            ),
         )
     elif check_info_fields(info, 'python_file', 'fn_name'):
         return PipelineLoadingModeData(
             mode=PipelineTargetMode.PIPELINE_PYTHON_FILE,
-            data=FileTargetFunction(
-                python_file=info.python_file,
-                fn_name=info.fn_name,
-            )
+            data=FileTargetFunction(python_file=info.python_file, fn_name=info.fn_name),
         )
     elif check_info_fields(info, 'module_name', 'fn_name'):
         return PipelineLoadingModeData(
             mode=PipelineTargetMode.PIPELINE_MODULE,
-            data=ModuleTargetFunction(
-                module_name=info.module_name,
-                fn_name=info.fn_name,
-            )
+            data=ModuleTargetFunction(module_name=info.module_name, fn_name=info.fn_name),
         )
     elif info.pipeline_name:
         for none_field in ['python_file', 'fn_name', 'module_name']:
             if getattr(info, none_field) is not None:
                 raise InvalidPipelineLoadingComboError(
                     '{none_field} is not None. Got {value}'.format(
-                        none_field=none_field,
-                        value=getattr(info, none_field),
+                        none_field=none_field, value=getattr(info, none_field)
                     )
                 )
 
@@ -238,9 +201,8 @@ def create_pipeline_loading_mode_data(info):
         return PipelineLoadingModeData(
             mode=PipelineTargetMode.REPOSITORY_YAML_FILE,
             data=RepositoryYamlData(
-                repository_yaml=info.repository_yaml,
-                pipeline_name=info.pipeline_name,
-            )
+                repository_yaml=info.repository_yaml, pipeline_name=info.pipeline_name
+            ),
         )
     else:
         raise InvalidPipelineLoadingComboError()
@@ -272,8 +234,7 @@ class DynamicObject:
                 self.object = obj
             elif isinstance(obj, PipelineDefinition):
                 self.object = RepositoryDefinition(
-                    name=EMPHERMAL_NAME,
-                    pipeline_dict={obj.name: lambda: obj},
+                    name=EMPHERMAL_NAME, pipeline_dict={obj.name: lambda: obj}
                 )
             else:
                 raise InvalidPipelineLoadingComboError(
@@ -297,11 +258,7 @@ def load_module_target_function(module_target_function):
     reloader.enable()
     check.inst_param(module_target_function, 'module_target_function', ModuleTargetFunction)
     module = importlib.import_module(module_target_function.module_name)
-    return DynamicObject(
-        module,
-        module_target_function.module_name,
-        module_target_function.fn_name,
-    )
+    return DynamicObject(module, module_target_function.module_name, module_target_function.fn_name)
 
 
 EMPHERMAL_NAME = '<<unnamed>>'
@@ -373,19 +330,12 @@ def load_pipeline_from_target_info(info):
         # return _pipeline_from_dynamic_object(mode_data, dynamic_object)
         # If this is still around in a week or two delete this -- schrockn (09/18/18)
     elif mode_data.mode == PipelineTargetMode.PIPELINE_PYTHON_FILE:
-        return check.inst(
-            load_file_target_function(mode_data.data).load(),
-            PipelineDefinition,
-        )
+        return check.inst(load_file_target_function(mode_data.data).load(), PipelineDefinition)
     elif mode_data.mode == PipelineTargetMode.PIPELINE_MODULE:
-        return check.inst(
-            load_module_target_function(mode_data.data).load(),
-            PipelineDefinition,
-        )
+        return check.inst(load_module_target_function(mode_data.data).load(), PipelineDefinition)
     elif mode_data.mode == PipelineTargetMode.REPOSITORY_YAML_FILE:
         repository = check.inst(
-            load_repository_from_file(mode_data.data.repository_yaml).load(),
-            RepositoryDefinition,
+            load_repository_from_file(mode_data.data.repository_yaml).load(), RepositoryDefinition
         )
         return repository.get_pipeline(mode_data.data.pipeline_name)
     else:
@@ -425,17 +375,15 @@ def repository_target_argument(f):
             help=(
                 'Path to config file. Defaults to ./repository.yml. if --python-file '
                 'and --module-name are not specified'
-            )
+            ),
         ),
         click.option(
             '--python-file',
             '-f',
-            help='Specify python file where repository or pipeline function lives.'
+            help='Specify python file where repository or pipeline function lives.',
         ),
         click.option(
-            '--module-name',
-            '-m',
-            help='Specify module where repository or pipeline function lives'
+            '--module-name', '-m', help='Specify module where repository or pipeline function lives'
         ),
         click.option('--fn-name', '-n', help='Function that returns either repository or pipeline'),
     )
@@ -455,7 +403,7 @@ def pipeline_target_command(f):
             help=(
                 'Path to config file. Defaults to ./repository.yml. if --python-file '
                 'and --module-name are not specified'
-            )
+            ),
         ),
         click.argument('pipeline_name', nargs=-1),
         click.option('--python-file', '-f'),

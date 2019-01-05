@@ -86,28 +86,28 @@ def valid_cli_args():
     return [
         {
             'repository_yaml': script_relative_path('repository_file.yml'),
-            'pipeline_name': ('foo', ),
+            'pipeline_name': ('foo',),
             'python_file': None,
             'module_name': None,
             'fn_name': None,
         },
         {
             'repository_yaml': script_relative_path('repository_module.yml'),
-            'pipeline_name': ('foo', ),
+            'pipeline_name': ('foo',),
             'python_file': None,
             'module_name': None,
             'fn_name': None,
         },
         {
             'repository_yaml': None,
-            'pipeline_name': ('foo', ),
+            'pipeline_name': ('foo',),
             'python_file': script_relative_path('test_dynamic_loader.py'),
             'module_name': None,
             'fn_name': 'define_bar_repo',
         },
         {
             'repository_yaml': None,
-            'pipeline_name': ('foo', ),
+            'pipeline_name': ('foo',),
             'python_file': None,
             'module_name': 'dagster.cli.cli_tests.test_dynamic_loader',
             'fn_name': 'define_bar_repo',
@@ -131,46 +131,26 @@ def valid_cli_args():
 
 def test_print_command():
     for cli_args in valid_cli_args():
-        execute_print_command(
-            verbose=True,
-            cli_args=cli_args,
-            print_fn=no_print,
-        )
+        execute_print_command(verbose=True, cli_args=cli_args, print_fn=no_print)
 
     for cli_args in valid_cli_args():
-        execute_print_command(
-            verbose=False,
-            cli_args=cli_args,
-            print_fn=no_print,
-        )
+        execute_print_command(verbose=False, cli_args=cli_args, print_fn=no_print)
 
 
 def test_execute_command():
     for cli_args in valid_cli_args():
-        execute_execute_command(
-            env=None,
-            cli_args=cli_args,
-            print_fn=no_print,
-        )
+        execute_execute_command(env=None, cli_args=cli_args, print_fn=no_print)
 
     for cli_args in valid_cli_args():
         execute_execute_command(
-            env=[script_relative_path('env.yml')],
-            cli_args=cli_args,
-            print_fn=no_print,
+            env=[script_relative_path('env.yml')], cli_args=cli_args, print_fn=no_print
         )
 
 
 def test_scaffold_command():
     for cli_args in valid_cli_args():
         cli_args['print_only_required'] = True
-        execute_scaffold_command(
-            cli_args=cli_args,
-            print_fn=no_print,
-        )
+        execute_scaffold_command(cli_args=cli_args, print_fn=no_print)
 
         cli_args['print_only_required'] = False
-        execute_scaffold_command(
-            cli_args=cli_args,
-            print_fn=no_print,
-        )
+        execute_scaffold_command(cli_args=cli_args, print_fn=no_print)

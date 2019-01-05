@@ -1,6 +1,6 @@
 import pytest
 
-from dagster.utils.timing import (time_execution_scope, TimerResult)
+from dagster.utils.timing import time_execution_scope, TimerResult
 
 
 def test_basic_usage():

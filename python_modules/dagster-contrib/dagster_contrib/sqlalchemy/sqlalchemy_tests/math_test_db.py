@@ -14,10 +14,7 @@ def create_num_table(engine, num_table_name='num_table'):
     metadata = sa.MetaData(engine)
 
     table = sa.Table(
-        num_table_name,
-        metadata,
-        sa.Column('num1', sa.Integer),
-        sa.Column('num2', sa.Integer),
+        num_table_name, metadata, sa.Column('num1', sa.Integer), sa.Column('num2', sa.Integer)
     )
 
     table.create()

@@ -23,10 +23,7 @@ class ContextCreationExecutionInfo(
 
 
 class ExpectationExecutionInfo(
-    namedtuple(
-        '_ExpectationExecutionInfo',
-        'context inout_def solid expectation_def',
-    )
+    namedtuple('_ExpectationExecutionInfo', 'context inout_def solid expectation_def')
 ):
     def __new__(cls, context, inout_def, solid, expectation_def):
         return super(ExpectationExecutionInfo, cls).__new__(
@@ -51,9 +48,11 @@ class TransformExecutionInfo(
 
     def __new__(cls, context, config, solid, pipeline_def):
         return super(TransformExecutionInfo, cls).__new__(
-            cls, check.inst_param(context, 'context', RuntimeExecutionContext), config,
+            cls,
+            check.inst_param(context, 'context', RuntimeExecutionContext),
+            config,
             check.inst_param(solid, 'solid', Solid),
-            check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
+            check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition),
         )
 
     @property

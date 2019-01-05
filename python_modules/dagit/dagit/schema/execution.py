@@ -1,12 +1,7 @@
 from __future__ import absolute_import
 
 from dagster import check
-from dagster.core.execution_plan.objects import (
-    ExecutionStep,
-    ExecutionPlan,
-    StepInput,
-    StepOutput,
-)
+from dagster.core.execution_plan.objects import ExecutionStep, ExecutionPlan, StepInput, StepOutput
 
 from dagit.schema import dauphin
 

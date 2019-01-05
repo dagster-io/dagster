@@ -3,7 +3,7 @@ import logging
 import uuid
 
 from dagster.core.execution_context import DAGSTER_META_KEY
-from dagster.utils.logging import (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+from dagster.utils.logging import DEBUG, INFO, WARNING, ERROR, CRITICAL
 from dagster.utils.test import create_test_runtime_execution_context
 
 
@@ -145,10 +145,7 @@ def test_message_specific_logging():
 def test_multicontext_value():
     logger = LoggerForTest()
     context = create_test_runtime_execution_context(loggers=[logger])
-    with context.values({
-        'key_one': 'value_one',
-        'key_two': 'value_two',
-    }):
+    with context.values({'key_one': 'value_one', 'key_two': 'value_two'}):
         context.info('message one')
 
     message_two = logger.messages[0]

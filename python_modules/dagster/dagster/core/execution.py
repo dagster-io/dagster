@@ -35,29 +35,15 @@ from .definitions import (
     SolidInstance,
 )
 
-from .execution_context import (
-    ExecutionContext,
-    ReentrantInfo,
-    RuntimeExecutionContext,
-)
+from .execution_context import ExecutionContext, ReentrantInfo, RuntimeExecutionContext
 
-from .errors import (
-    DagsterInvariantViolationError,
-    DagsterUserCodeExecutionError,
-)
+from .errors import DagsterInvariantViolationError, DagsterUserCodeExecutionError
 
-from .types.evaluator import (
-    EvaluationError,
-    evaluate_config_value,
-    friendly_string_for_error,
-)
+from .types.evaluator import EvaluationError, evaluate_config_value, friendly_string_for_error
 
 from .events import construct_event_logger
 
-from .execution_plan.create import (
-    create_execution_plan_core,
-    create_subplan,
-)
+from .execution_plan.create import create_execution_plan_core, create_subplan
 
 from .execution_plan.objects import (
     ExecutionPlan,
@@ -81,18 +67,11 @@ class PipelineExecutionResult(object):
         result_list (list[SolidExecutionResult]): List of results for each pipeline solid.
     '''
 
-    def __init__(
-        self,
-        pipeline,
-        context,
-        result_list,
-    ):
+    def __init__(self, pipeline, context, result_list):
         self.pipeline = check.inst_param(pipeline, 'pipeline', PipelineDefinition)
         self.context = check.inst_param(context, 'context', RuntimeExecutionContext)
         self.result_list = check.list_param(
-            result_list,
-            'result_list',
-            of_type=SolidExecutionResult,
+            result_list, 'result_list', of_type=SolidExecutionResult
         )
         self.run_id = context.run_id
 
@@ -112,8 +91,7 @@ class PipelineExecutionResult(object):
         if not self.pipeline.has_solid(name):
             raise DagsterInvariantViolationError(
                 'Try to get result for solid {name} in {pipeline}. No such solid.'.format(
-                    name=name,
-                    pipeline=self.pipeline.display_name,
+                    name=name, pipeline=self.pipeline.display_name
                 )
             )
 
@@ -138,14 +116,10 @@ class SolidExecutionResult(object):
         self.context = check.inst_param(context, 'context', RuntimeExecutionContext)
         self.solid = check.inst_param(solid, 'solid', Solid)
         self.input_expectations = check.list_param(
-            input_expectations,
-            'input_expectations',
-            StepResult,
+            input_expectations, 'input_expectations', StepResult
         )
         self.output_expectations = check.list_param(
-            output_expectations,
-            'output_expectations',
-            StepResult,
+            output_expectations, 'output_expectations', StepResult
         )
         self.transforms = check.list_param(transforms, 'transforms', StepResult)
 
@@ -180,8 +154,10 @@ class SolidExecutionResult(object):
         '''Whether the solid execution was successful'''
         return all(
             [
-                result.success for result in
-                itertools.chain(self.input_expectations, self.output_expectations, self.transforms)
+                result.success
+                for result in itertools.chain(
+                    self.input_expectations, self.output_expectations, self.transforms
+                )
             ]
         )
 
@@ -205,8 +181,7 @@ class SolidExecutionResult(object):
         if not self.solid.definition.has_output(output_name):
             raise DagsterInvariantViolationError(
                 '{output_name} not defined in solid {solid}'.format(
-                    output_name=output_name,
-                    solid=self.solid.name,
+                    output_name=output_name, solid=self.solid.name
                 )
             )
 
@@ -215,8 +190,9 @@ class SolidExecutionResult(object):
                 if result.success_data.output_name == output_name:
                     return result.success_data.value
             raise DagsterInvariantViolationError(
-                'Did not find result {output_name} in solid {self.solid.name} execution result'.
-                format(output_name=output_name, self=self)
+                'Did not find result {output_name} in solid {self.solid.name} execution result'.format(
+                    output_name=output_name, self=self
+                )
             )
         else:
             return None
@@ -227,10 +203,7 @@ class SolidExecutionResult(object):
                 self.input_expectations, self.output_expectations, self.transforms
             ):
                 if not result.success:
-                    if isinstance(
-                        result.failure_data.dagster_error,
-                        DagsterUserCodeExecutionError,
-                    ):
+                    if isinstance(result.failure_data.dagster_error, DagsterUserCodeExecutionError):
                         six.reraise(*result.failure_data.dagster_error.original_exc_info)
                     else:
                         raise result.failure_data.dagster_error
@@ -288,10 +261,7 @@ def get_context_stack(user_context_params, reentrant_info):
                     'You have specified re-entrant keys and user-defined keys '
                     'that overlap. User keys: {user_keys}. Reentrant keys: '
                     '{reentrant_keys}.'
-                ).format(
-                    user_keys=user_keys,
-                    reentrant_keys=reentrant_keys,
-                )
+                ).format(user_keys=user_keys, reentrant_keys=reentrant_keys)
             )
 
         return merge_two_dicts(user_context_params.context_stack, reentrant_info.context_stack)
@@ -346,21 +316,15 @@ def yield_context(pipeline, environment, reentrant_info=None):
 
     ec_or_gen = context_definition.context_fn(
         ContextCreationExecutionInfo(
-            config=environment.context.config,
-            pipeline_def=pipeline,
-            run_id=run_id,
-        ),
+            config=environment.context.config, pipeline_def=pipeline, run_id=run_id
+        )
     )
 
     with with_maybe_gen(ec_or_gen) as execution_context:
         check.inst(execution_context, ExecutionContext)
 
         with _create_resources(
-            pipeline,
-            context_definition,
-            environment,
-            execution_context,
-            run_id,
+            pipeline, context_definition, environment, execution_context, run_id
         ) as resources:
             loggers = _create_loggers(reentrant_info, execution_context)
 
@@ -402,10 +366,7 @@ def _create_resources(pipeline_def, context_def, environment, execution_context,
     with ExitStack() as stack:
         for resource_name in context_def.resources.keys():
             resource_obj_or_gen = get_resource_or_gen(
-                context_def,
-                resource_name,
-                environment,
-                run_id,
+                context_def, resource_name, environment, run_id
             )
 
             resource_obj = stack.enter_context(with_maybe_gen(resource_obj_or_gen))
@@ -425,12 +386,7 @@ def get_resource_or_gen(context_definition, resource_name, environment, run_id):
     return resource_def.resource_fn(ResourceCreationInfo(resource_config, run_id))
 
 
-def _do_iterate_pipeline(
-    pipeline,
-    context,
-    typed_environment,
-    throw_on_error=True,
-):
+def _do_iterate_pipeline(pipeline, context, typed_environment, throw_on_error=True):
     check.inst(context, RuntimeExecutionContext)
     pipeline_success = True
     with context.value('pipeline', pipeline.display_name):
@@ -460,8 +416,7 @@ def _do_iterate_pipeline(
         check.invariant(len(steps[0].step_inputs) == 0)
 
         for solid_result in _process_step_results(
-            context,
-            execute_plan_core(context, execution_plan),
+            context, execute_plan_core(context, execution_plan)
         ):
             if throw_on_error and not solid_result.success:
                 solid_result.reraise_user_error()
@@ -477,11 +432,7 @@ def _do_iterate_pipeline(
 
 
 def execute_pipeline_iterator(
-    pipeline,
-    environment=None,
-    throw_on_error=True,
-    reentrant_info=None,
-    solid_subset=None,
+    pipeline, environment=None, throw_on_error=True, reentrant_info=None, solid_subset=None
 ):
     '''Returns iterator that yields :py:class:`SolidExecutionResult` for each
     solid executed in the pipeline.
@@ -504,10 +455,7 @@ def execute_pipeline_iterator(
 
     with yield_context(pipeline_to_execute, typed_environment, reentrant_info) as context:
         for solid_result in _do_iterate_pipeline(
-            pipeline_to_execute,
-            context,
-            typed_environment,
-            throw_on_error,
+            pipeline_to_execute, context, typed_environment, throw_on_error
         ):
             yield solid_result
 
@@ -551,8 +499,7 @@ class PipelineConfigEvaluationError(Exception):
             error_message = friendly_string_for_error(error)
             error_messages.append(error_message)
             error_msg += '\n    Error {i_error}: {error_message}'.format(
-                i_error=i_error + 1,
-                error_message=error_message,
+                i_error=i_error + 1, error_message=error_message
             )
 
         self.message = error_msg
@@ -571,20 +518,22 @@ def execute_plan(pipeline, execution_plan, environment=None, subset_info=None, r
     typed_environment = create_typed_environment(pipeline, environment)
 
     with yield_context(pipeline, typed_environment, reentrant_info) as context:
-        plan_to_execute = create_subplan(
-            ExecutionPlanInfo(context=context, pipeline=pipeline, environment=typed_environment),
-            execution_plan,
-            subset_info,
-        ) if subset_info else execution_plan
+        plan_to_execute = (
+            create_subplan(
+                ExecutionPlanInfo(
+                    context=context, pipeline=pipeline, environment=typed_environment
+                ),
+                execution_plan,
+                subset_info,
+            )
+            if subset_info
+            else execution_plan
+        )
         return list(execute_plan_core(context, plan_to_execute))
 
 
 def execute_pipeline(
-    pipeline,
-    environment=None,
-    throw_on_error=True,
-    reentrant_info=None,
-    solid_subset=None,
+    pipeline, environment=None, throw_on_error=True, reentrant_info=None, solid_subset=None
 ):
     '''
     "Synchronous" version of :py:function:`execute_pipeline_iterator`.
@@ -612,10 +561,7 @@ def execute_pipeline(
     pipeline_to_execute = _get_subsetted_pipeline(pipeline, solid_subset)
     typed_environment = create_typed_environment(pipeline_to_execute, environment)
     return execute_reentrant_pipeline(
-        pipeline_to_execute,
-        typed_environment,
-        throw_on_error,
-        reentrant_info,
+        pipeline_to_execute, typed_environment, throw_on_error, reentrant_info
     )
 
 
@@ -648,8 +594,7 @@ def build_sub_pipeline(pipeline_def, solid_names):
             output_handle = _out_handle_of_inp(input_handle)
             if output_handle:
                 deps[_dep_key_of(solid)][input_handle.input_def.name] = DependencyDefinition(
-                    solid=output_handle.solid.name,
-                    output=output_handle.output_def.name,
+                    solid=output_handle.solid.name, output=output_handle.output_def.name
                 )
 
     return PipelineDefinition(
@@ -660,12 +605,7 @@ def build_sub_pipeline(pipeline_def, solid_names):
     )
 
 
-def execute_reentrant_pipeline(
-    pipeline,
-    typed_environment,
-    throw_on_error,
-    reentrant_info,
-):
+def execute_reentrant_pipeline(pipeline, typed_environment, throw_on_error, reentrant_info):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.inst_param(typed_environment, 'typed_environment', EnvironmentConfig)
     check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
@@ -681,10 +621,7 @@ def execute_reentrant_pipeline(
 def _get_subsetted_pipeline(pipeline, solid_subset):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
-    return pipeline if solid_subset is None else build_sub_pipeline(
-        pipeline,
-        solid_subset,
-    )
+    return pipeline if solid_subset is None else build_sub_pipeline(pipeline, solid_subset)
 
 
 def create_typed_environment(pipeline, environment=None):

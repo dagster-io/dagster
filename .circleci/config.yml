@@ -26,6 +26,7 @@ workflows:
 
       # Optional steps below
 
+      - format
       - lint
       - dagit-py27:
           context: coveralls
@@ -68,6 +69,23 @@ workflows:
 
 
 jobs:
+  format:
+    docker:
+      - image: circleci/python:3.7.2
+
+    working_directory: ~/repo
+
+    steps:
+      - checkout
+
+      - run:
+          name: Install Black
+          command: sudo pip install black==18.9b0
+
+      - run:
+          name: Format
+          command: black python_modules --line-length 100 -S --fast --check
+
   lint:
     docker:
       - image: circleci/python:3.7.2

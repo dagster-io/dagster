@@ -43,13 +43,11 @@ setup(
         'future>=0.16.0',
         'funcsigs>=1.0.2',
         'contextlib2>=0.5.5',
-
         # cli
         'click>=6.7',
         'coloredlogs>=10.0',
         'graphviz>=0.8.3',
         'pyyaml>=3.12',
-
         # core (not explicitly expressed atm)
         'six>=1.11.0',
         'toposort>=1.5',
@@ -64,8 +62,6 @@ setup(
         # 'twine>=1.11.0',
         # 'pre-commit'>=1.10.1',
     ],
-    extras_require={
-        ":python_version>'3'": ["reloader>=0.6"],
-    },
-    scripts=['bin/dagster']
+    extras_require={":python_version>'3'": ["reloader>=0.6"]},
+    scripts=['bin/dagster'],
 )

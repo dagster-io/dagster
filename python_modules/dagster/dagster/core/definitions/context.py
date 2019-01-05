@@ -6,10 +6,7 @@ from dagster.core import types
 from dagster.core.execution_context import ExecutionContext
 from dagster.core.system_config.objects import DEFAULT_CONTEXT_NAME
 
-from dagster.utils.logging import (
-    level_from_string,
-    define_colored_console_logger,
-)
+from dagster.utils.logging import level_from_string, define_colored_console_logger
 
 from .resource import ResourceDefinition
 
@@ -79,21 +76,13 @@ context_fn (callable):
         '''
         self.config_field = check.opt_inst_param(config_field, 'config_field', types.Field)
         self.context_fn = check.opt_callable_param(
-            context_fn,
-            'context_fn',
-            lambda *args, **kwargs: ExecutionContext(),
+            context_fn, 'context_fn', lambda *args, **kwargs: ExecutionContext()
         )
         self.resources = check.opt_dict_param(
-            resources,
-            'resources',
-            key_type=str,
-            value_type=ResourceDefinition,
+            resources, 'resources', key_type=str, value_type=ResourceDefinition
         )
         self.description = description
-        self.resources_type = namedtuple(
-            'Resources',
-            list(resources.keys()),
-        ) if resources else None
+        self.resources_type = namedtuple('Resources', list(resources.keys())) if resources else None
 
 
 def default_pipeline_context_definitions():
@@ -108,14 +97,11 @@ def default_pipeline_context_definitions():
         config_field=types.Field(
             types.Dict(
                 {
-                    'log_level':
-                    types.Field(
-                        dagster_type=types.String,
-                        is_optional=True,
-                        default_value='INFO',
-                    ),
+                    'log_level': types.Field(
+                        dagster_type=types.String, is_optional=True, default_value='INFO'
+                    )
                 }
-            ),
+            )
         ),
         context_fn=_default_context_fn,
     )

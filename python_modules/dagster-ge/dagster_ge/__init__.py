@@ -4,7 +4,7 @@ import json
 import great_expectations as ge
 
 from dagster import check
-from dagster.core.definitions import (ExpectationDefinition, ExpectationResult)
+from dagster.core.definitions import ExpectationDefinition, ExpectationResult
 
 
 # e.g.

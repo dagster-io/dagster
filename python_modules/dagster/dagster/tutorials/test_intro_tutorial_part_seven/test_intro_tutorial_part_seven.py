@@ -14,9 +14,7 @@ from dagster import (
 )
 
 
-@solid(
-    config_field=Field(types.Any),
-)
+@solid(config_field=Field(types.Any))
 def double_the_word(info):
     return info.config['word'] * 2
 
@@ -33,32 +31,18 @@ def define_part_seven_pipeline():
     return PipelineDefinition(
         name='part_seven_pipeline',
         solids=[double_the_word, count_letters],
-        dependencies={
-            'count_letters': {
-                'word': DependencyDefinition('double_the_word'),
-            },
-        },
+        dependencies={'count_letters': {'word': DependencyDefinition('double_the_word')}},
     )
 
 
 def define_part_seven_repo():
     return RepositoryDefinition(
-        name='part_seven_repo', pipeline_dict={
-            'part_seven': define_part_seven_pipeline,
-        }
+        name='part_seven_repo', pipeline_dict={'part_seven': define_part_seven_pipeline}
     )
 
 
 def test_part_seven_repo():
-    environment = {
-        'solids': {
-            'double_the_word': {
-                'config': {
-                    'word': 'bar',
-                },
-            },
-        },
-    }
+    environment = {'solids': {'double_the_word': {'config': {'word': 'bar'}}}}
 
     pipeline_result = execute_pipeline(define_part_seven_pipeline(), environment)
 

@@ -40,29 +40,23 @@ setup(
         # standard python 2/3 compatability things
         'enum34>=1.1.6',
         'future>=0.16.0',
-
         # cli
         # 'click>=6.7',
         # 'coloredlogs>=10.0',
         # 'graphviz>=0.8.3',
         'pyyaml>=3.12',
-
         # core (not explicitly expressed atm)
         'six>=1.11.0',
-
         # cli
         'click>=6.7',
-
         # dagster
         # 'dagster>=0.3.0rc1',
         # FIXME: Temporarily loosen restriction while we work out kinks in publish process
         # See Issue #499
         'dagster',
-
         # graphql
         'graphql-core>=2.1',
         'graphene>=2.1.3',
-
         # server
         'Flask-GraphQL>=2.0.0',
         'Flask-Sockets>=0.2.1',
@@ -72,13 +66,10 @@ setup(
         'gevent==1.3.7',
         'graphql-ws>=0.3.0',
         'pyrsistent>=0.14.8',
-
         # watchdog
         'watchdog>=0.8.3',
-
         # notebooks support
         'nbconvert>=5.4.0',
-
         # dev/test - Installed via dev-requirements.txt
         # 'pylint>=1.8.4',
         # 'pytest>=3.5.1',
@@ -90,5 +81,5 @@ setup(
         # 'twine>=1.11.0',
         # 'pre-commit'>=1.10.1',
     ],
-    scripts=['bin/dagit']
+    scripts=['bin/dagit'],
 )

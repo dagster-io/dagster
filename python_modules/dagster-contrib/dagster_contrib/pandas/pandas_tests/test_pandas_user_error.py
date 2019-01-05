@@ -24,9 +24,7 @@ def test_wrong_output_value():
     csv_input = InputDefinition('num_csv', dagster_pd.DataFrame)
 
     @lambda_solid(
-        name="test_wrong_output",
-        inputs=[csv_input],
-        output=OutputDefinition(dagster_pd.DataFrame),
+        name="test_wrong_output", inputs=[csv_input], output=OutputDefinition(dagster_pd.DataFrame)
     )
     def df_solid(num_csv):
         return 'not a dataframe'
@@ -35,9 +33,7 @@ def test_wrong_output_value():
 
     pipeline = PipelineDefinition(
         solids=[pass_solid, df_solid],
-        dependencies={'test_wrong_output': {
-            'num_csv': DependencyDefinition('pass_solid'),
-        }}
+        dependencies={'test_wrong_output': {'num_csv': DependencyDefinition('pass_solid')}},
     )
 
     with pytest.raises(DagsterInvariantViolationError):
@@ -45,10 +41,7 @@ def test_wrong_output_value():
 
 
 def test_wrong_input_value():
-    @lambda_solid(
-        name="test_wrong_input",
-        inputs=[InputDefinition('foo', dagster_pd.DataFrame)],
-    )
+    @lambda_solid(name="test_wrong_input", inputs=[InputDefinition('foo', dagster_pd.DataFrame)])
     def df_solid(foo):
         return foo
 
@@ -56,9 +49,7 @@ def test_wrong_input_value():
 
     pipeline = PipelineDefinition(
         solids=[pass_solid, df_solid],
-        dependencies={'test_wrong_input': {
-            'foo': DependencyDefinition('pass_solid'),
-        }}
+        dependencies={'test_wrong_input': {'foo': DependencyDefinition('pass_solid')}},
     )
 
     with pytest.raises(DagsterTypeError):
