@@ -52,6 +52,17 @@ function parentsAddingChildKeyToLast(
   ];
 }
 
+function parentsAddingChildKeyAtIndent(
+  parents: IParseStateParent[],
+  key: string,
+  indent: number
+) {
+  parents = parentsPoppingItemsDeeperThan(parents, indent);
+  parents = parentsAddingChildKeyToLast(parents, key);
+  parents = [...parents, { key, indent: indent, childKeys: [] }];
+  return parents;
+}
+
 const Constants = ["true", "false", "on", "off", "yes", "no"];
 
 const RegExps = {
@@ -194,15 +205,11 @@ CodeMirror.defineMode("yaml", () => {
         if (match) {
           const key = match[0];
           const keyIndent = stream.pos - key.length;
-          state.parents = parentsPoppingItemsDeeperThan(
+          state.parents = parentsAddingChildKeyAtIndent(
             state.parents,
+            key,
             keyIndent
           );
-          state.parents = parentsAddingChildKeyToLast(state.parents, key);
-          state.parents = [
-            ...state.parents,
-            { key, indent: keyIndent, childKeys: [] }
-          ];
           return "atom";
         }
       }
@@ -225,6 +232,20 @@ CodeMirror.defineMode("yaml", () => {
         }
         if (stream.match(RegExps.KEYWORD)) {
           result = "keyword";
+        }
+
+        // Child dicts can start within a value if the user is creating a list
+        const match = stream.match(RegExps.DICT_KEY);
+        if (match) {
+          const key = match[0];
+          const keyIndent = stream.pos - key.length;
+          state.inValue = false;
+          state.parents = parentsAddingChildKeyAtIndent(
+            state.parents,
+            key,
+            keyIndent
+          );
+          result = "atom";
         }
 
         stream.eatSpace();
@@ -366,28 +387,36 @@ function findAutocomplete(
   currentIndent: number
 ): FoundHint[] {
   parents = parents.filter(({ indent }) => currentIndent > indent);
+  const immediateParent = parents[parents.length - 1];
 
   let available = typeConfig.environment;
 
   if (available && parents.length > 0) {
     for (const parent of parents) {
       const parentTypeDef = available.find(({ name }) => parent.key === name);
-      if (
-        parentTypeDef &&
-        parentTypeDef.typeName &&
-        typeConfig.types[parentTypeDef.typeName]
-      ) {
-        available = typeConfig.types[parentTypeDef.typeName];
-      } else {
+
+      if (!parentTypeDef || !parentTypeDef.typeName) {
         return [];
       }
-    }
 
-    const immediateParent = parents[parents.length - 1];
-    if (immediateParent) {
-      available = available.filter(
-        item => immediateParent.childKeys.indexOf(item.name) === -1
-      );
+      let childTypeName = parentTypeDef.typeName;
+      let childEntiresUnique = true;
+
+      if (parentTypeDef.typeName.startsWith("List.")) {
+        childTypeName = parentTypeDef.typeName.substr(5);
+        childEntiresUnique = false;
+      }
+      available = typeConfig.types[childTypeName];
+      if (!available) {
+        console.warn(`No type config is available for ${childTypeName}`);
+        return [];
+      }
+
+      if (parent === immediateParent && childEntiresUnique) {
+        available = available.filter(
+          item => immediateParent.childKeys.indexOf(item.name) === -1
+        );
+      }
     }
   }
 
