@@ -61,7 +61,6 @@ class PipelineRun(object):
         execution_plan,
     ):
         self.__subscribers = []
-        self.__debouncing_queue = DebouncingLogQueue()
 
         self._status = PipelineRunStatus.NOT_STARTED
         self._run_id = check.str_param(run_id, 'run_id')
@@ -102,13 +101,6 @@ class PipelineRun(object):
     def store_event(self, new_event):
         raise NotImplementedError()
 
-    def _enqueue_flush_logs(self):
-        events = self.__debouncing_queue.attempt_dequeue()
-
-        if events:
-            for subscriber in self.__subscribers:
-                subscriber.handle_new_events(events)
-
     def handle_new_event(self, new_event):
         check.inst_param(new_event, 'new_event', EventRecord)
 
@@ -120,8 +112,8 @@ class PipelineRun(object):
             self._status = PipelineRunStatus.FAILURE
 
         self.store_event(new_event)
-        self.__debouncing_queue.enqueue(new_event)
-        gevent.spawn(self._enqueue_flush_logs)
+        for subscriber in self.__subscribers:
+            subscriber.handle_new_event(new_event)
 
     def subscribe(self, subscriber):
         self.__subscribers.append(subscriber)
@@ -201,21 +193,27 @@ def ensure_dir(file_path):
 
 
 class PipelineRunObservableSubscribe(object):
-    def __init__(self, pipeline_run, start_cursor=None):
+    def __init__(self, pipeline_run, after_cursor=None):
+        self.debouncing_queue = DebouncingLogQueue()
         self.pipeline_run = pipeline_run
         self.observer = None
-        self.start_cursor = start_cursor or 0
+        self.after_cursor = after_cursor or -1
 
     def __call__(self, observer):
         self.observer = observer
-        events = self.pipeline_run.logs_after(self.start_cursor)
+        events = self.pipeline_run.logs_after(self.after_cursor)
         if events:
             self.observer.on_next(events)
         self.pipeline_run.subscribe(self)
 
-    def handle_new_events(self, events):
-        check.inst_param(events, 'events', LogSequence)
-        self.observer.on_next(events)
+    def handle_new_event(self, new_event):
+        self.debouncing_queue.enqueue(new_event)
+        gevent.spawn(self._enqueue_flush_logs)
+
+    def _enqueue_flush_logs(self):
+        events = self.debouncing_queue.attempt_dequeue()
+        if events:
+            self.observer.on_next(events)
 
 
 class LogSequence(pyrsistent.CheckedPVector):
