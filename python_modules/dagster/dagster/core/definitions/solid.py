@@ -1,9 +1,6 @@
 from dagster import check
 
-from dagster.core.types import (
-    Field,
-    iterate_types,
-)
+from dagster.core.types import Field
 
 from .input import InputDefinition
 
