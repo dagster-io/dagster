@@ -56,9 +56,9 @@ PandasDataFrameMaterializationConfigSchema = _PandasDataFrameMaterializationConf
 
 
 class _DataFrameType(
-    Materializeable,
     ConfigurableSelectorFromDict,
     types.PythonObjectType,
+    Materializeable,
     FileMarshalable,
 ):
     def __init__(self):
