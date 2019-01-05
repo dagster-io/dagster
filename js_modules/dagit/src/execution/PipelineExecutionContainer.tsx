@@ -206,7 +206,10 @@ export default class PipelineExecutionContainer extends React.Component<
       draftData => {
         result.pipelineRunLogs.messages.forEach(message => {
           draftData.logs.nodes.push(message);
-          if (message.__typename === "PipelineStartEvent") {
+          if (
+            message.__typename === "PipelineStartEvent" ||
+            message.__typename === "PipelineProcessStartEvent"
+          ) {
             draftData.status = PipelineRunStatus.STARTED;
           } else if (message.__typename === "PipelineSuccessEvent") {
             draftData.status = PipelineRunStatus.SUCCESS;

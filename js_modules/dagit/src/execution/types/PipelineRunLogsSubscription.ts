@@ -13,7 +13,7 @@ export interface PipelineRunLogsSubscription_pipelineRunLogs_messages_LogMessage
 
 export interface PipelineRunLogsSubscription_pipelineRunLogs_messages_LogMessageEvent {
   run: PipelineRunLogsSubscription_pipelineRunLogs_messages_LogMessageEvent_run;
-  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent";
+  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "PipelineProcessStartEvent" | "PipelineProcessStartedEvent";
   message: string;
   timestamp: string;
   level: LogLevel;
