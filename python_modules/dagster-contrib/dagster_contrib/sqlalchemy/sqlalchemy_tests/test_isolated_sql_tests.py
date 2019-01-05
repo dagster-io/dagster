@@ -19,7 +19,7 @@ def pipeline_test_def(solids, context, dependencies=None):
     return PipelineDefinition(
         solids=solids,
         context_definitions={
-            'default': PipelineContextDefinition(context_fn=lambda *_args: context),
+            'default': PipelineContextDefinition(context_fn=lambda *_args: context)
         },
         dependencies=dependencies,
     )
@@ -50,18 +50,14 @@ def test_basic_pipeline():
     sum_sql_solid = create_sql_statement_solid('sum_sql_solid', sum_sql_text)
 
     sum_sq_sql_solid = create_sql_statement_solid(
-        'sum_sq_sql_solid',
-        sum_sq_sql_text,
-        inputs=[InputDefinition(name=sum_sql_solid.name)],
+        'sum_sq_sql_solid', sum_sq_sql_text, inputs=[InputDefinition(name=sum_sql_solid.name)]
     )
 
     pipeline = pipeline_test_def(
         solids=[sum_sql_solid, sum_sq_sql_solid],
         context=in_mem_context_params(),
         dependencies={
-            'sum_sq_sql_solid': {
-                sum_sql_solid.name: DependencyDefinition(sum_sql_solid.name),
-            }
+            'sum_sq_sql_solid': {sum_sql_solid.name: DependencyDefinition(sum_sql_solid.name)}
         },
     )
 
@@ -98,7 +94,7 @@ def test_pipeline_from_files():
         context=in_mem_context_params(),
         dependencies={
             create_sum_sq_table_solid.name: {
-                create_sum_table_solid.name: DependencyDefinition(create_sum_table_solid.name),
+                create_sum_table_solid.name: DependencyDefinition(create_sum_table_solid.name)
             }
         },
     )

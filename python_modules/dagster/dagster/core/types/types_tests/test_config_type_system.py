@@ -17,10 +17,7 @@ from dagster import (
     types,
 )
 
-from dagster.core.types.evaluator import (
-    evaluate_config_value,
-    DagsterEvaluationErrorReason,
-)
+from dagster.core.types.evaluator import evaluate_config_value, DagsterEvaluationErrorReason
 
 from dagster.core.test_utils import throwing_evaluate_config_value
 
@@ -30,13 +27,9 @@ def test_noop_config():
 
 
 def test_int_field():
-    config_field = types.Field(types.Dict({
-        'int_field': Field(types.Int),
-    }, ))
+    config_field = types.Field(types.Dict({'int_field': Field(types.Int)}))
 
-    assert evaluate_config_value(config_field.dagster_type, {
-        'int_field': 1
-    }).value == {
+    assert evaluate_config_value(config_field.dagster_type, {'int_field': 1}).value == {
         'int_field': 1
     }
 
@@ -52,9 +45,7 @@ def assert_eval_failure(dagster_type, value):
 
 
 def test_int_fails():
-    config_field = types.Field(types.Dict({
-        'int_field': Field(types.Int),
-    }))
+    config_field = types.Field(types.Dict({'int_field': Field(types.Int)}))
 
     assert_eval_failure(config_field.dagster_type, {'int_field': 'fjkdj'})
     assert_eval_failure(config_field.dagster_type, {'int_field': True})
@@ -62,9 +53,7 @@ def test_int_fails():
 
 def test_default_arg():
     config_field = types.Field(
-        types.Dict({
-            'int_field': Field(types.Int, default_value=2, is_optional=True),
-        })
+        types.Dict({'int_field': Field(types.Int, default_value=2, is_optional=True)})
     )
 
     assert_config_value_success(config_field.dagster_type, {}, {'int_field': 2})
@@ -76,10 +65,7 @@ def _single_required_string_config_dict():
 
 def _multiple_required_fields_config_dict():
     return types.Field(
-        types.Dict({
-            'field_one': Field(types.String),
-            'field_two': Field(types.String),
-        })
+        types.Dict({'field_one': Field(types.String), 'field_two': Field(types.String)})
     )
 
 
@@ -88,23 +74,15 @@ def _single_optional_string_config_dict():
 
 
 def _single_optional_string_field_config_dict_with_default():
-    optional_field_def = Field(
-        types.String,
-        is_optional=True,
-        default_value='some_default',
-    )
-    return types.Field(types.Dict({'optional_field': optional_field_def}, ))
+    optional_field_def = Field(types.String, is_optional=True, default_value='some_default')
+    return types.Field(types.Dict({'optional_field': optional_field_def}))
 
 
 def _mixed_required_optional_string_config_dict_with_default():
     return types.Field(
         types.Dict(
             {
-                'optional_arg': Field(
-                    types.String,
-                    is_optional=True,
-                    default_value='some_default',
-                ),
+                'optional_arg': Field(types.String, is_optional=True, default_value='some_default'),
                 'required_arg': Field(types.String, is_optional=False),
                 'optional_arg_no_default': Field(types.String, is_optional=True),
             }
@@ -137,14 +115,8 @@ def test_single_required_string_field_config_type():
 def test_multiple_required_fields_passing():
     assert _validate(
         _multiple_required_fields_config_dict(),
-        {
-            'field_one': 'value_one',
-            'field_two': 'value_two',
-        },
-    ) == {
-        'field_one': 'value_one',
-        'field_two': 'value_two',
-    }
+        {'field_one': 'value_one', 'field_two': 'value_two'},
+    ) == {'field_one': 'value_one', 'field_two': 'value_two'}
 
 
 def test_multiple_required_fields_failing():
@@ -159,10 +131,7 @@ def test_multiple_required_fields_failing():
 
     with pytest.raises(DagsterEvaluateConfigValueError):
         _validate(
-            _multiple_required_fields_config_dict(), {
-                'field_one': 'value_one',
-                'field_two': 2
-            }
+            _multiple_required_fields_config_dict(), {'field_one': 'value_one', 'field_two': 2}
         )
 
 
@@ -194,36 +163,22 @@ def test_single_optional_field_passing_with_default():
 
     assert _validate(
         _single_optional_string_field_config_dict_with_default(), {'optional_field': 'override'}
-    ) == {
-        'optional_field': 'override'
-    }
+    ) == {'optional_field': 'override'}
 
 
 def test_mixed_args_passing():
     assert _validate(
-        _mixed_required_optional_string_config_dict_with_default(), {
-            'optional_arg': 'value_one',
-            'required_arg': 'value_two',
-        }
-    ) == {
-        'optional_arg': 'value_one',
-        'required_arg': 'value_two',
-    }
+        _mixed_required_optional_string_config_dict_with_default(),
+        {'optional_arg': 'value_one', 'required_arg': 'value_two'},
+    ) == {'optional_arg': 'value_one', 'required_arg': 'value_two'}
 
     assert _validate(
-        _mixed_required_optional_string_config_dict_with_default(), {
-            'required_arg': 'value_two',
-        }
-    ) == {
-        'optional_arg': 'some_default',
-        'required_arg': 'value_two',
-    }
+        _mixed_required_optional_string_config_dict_with_default(), {'required_arg': 'value_two'}
+    ) == {'optional_arg': 'some_default', 'required_arg': 'value_two'}
 
     assert _validate(
-        _mixed_required_optional_string_config_dict_with_default(), {
-            'required_arg': 'value_two',
-            'optional_arg_no_default': 'value_three',
-        }
+        _mixed_required_optional_string_config_dict_with_default(),
+        {'required_arg': 'value_two', 'optional_arg_no_default': 'value_three'},
     ) == {
         'optional_arg': 'some_default',
         'required_arg': 'value_two',
@@ -239,40 +194,22 @@ def _nested_optional_config_with_default():
     return Field(
         types.Dict(
             {
-                'nested':
-                Field(
-                    types.Dict(
-                        {
-                            'int_field': Field(
-                                types.Int,
-                                is_optional=True,
-                                default_value=3,
-                            )
-                        }
-                    )
-                ),
+                'nested': Field(
+                    types.Dict({'int_field': Field(types.Int, is_optional=True, default_value=3)})
+                )
             }
         )
     )
 
 
 def _nested_optional_config_with_no_default():
-    nested_type = types.Dict({
-        'int_field': Field(
-            types.Int,
-            is_optional=True,
-        ),
-    }, )
-    return Field(types.Dict({'nested': Field(dagster_type=nested_type)}, ))
+    nested_type = types.Dict({'int_field': Field(types.Int, is_optional=True)})
+    return Field(types.Dict({'nested': Field(dagster_type=nested_type)}))
 
 
 def test_single_nested_config():
-    assert _validate(_single_nested_config(), {'nested': {
-        'int_field': 2
-    }}) == {
-        'nested': {
-            'int_field': 2
-        }
+    assert _validate(_single_nested_config(), {'nested': {'int_field': 2}}) == {
+        'nested': {'int_field': 2}
     }
 
 
@@ -288,28 +225,18 @@ def test_single_nested_config_failures():
 
 
 def test_nested_optional_with_default():
-    assert _validate(_nested_optional_config_with_default(), {'nested': {
-        'int_field': 2
-    }}) == {
-        'nested': {
-            'int_field': 2
-        }
+    assert _validate(_nested_optional_config_with_default(), {'nested': {'int_field': 2}}) == {
+        'nested': {'int_field': 2}
     }
 
     assert _validate(_nested_optional_config_with_default(), {'nested': {}}) == {
-        'nested': {
-            'int_field': 3
-        }
+        'nested': {'int_field': 3}
     }
 
 
 def test_nested_optional_with_no_default():
-    assert _validate(_nested_optional_config_with_no_default(), {'nested': {
-        'int_field': 2
-    }}) == {
-        'nested': {
-            'int_field': 2
-        }
+    assert _validate(_nested_optional_config_with_no_default(), {'nested': {'int_field': 2}}) == {
+        'nested': {'int_field': 2}
     }
 
     assert _validate(_nested_optional_config_with_no_default(), {'nested': {}}) == {'nested': {}}
@@ -322,10 +249,7 @@ class CustomStructConfigType(ConfigurableObjectFromDict, types.DagsterType):
     def __init__(self):
         super(CustomStructConfigType, self).__init__(
             name='CustomStructConfigType',
-            fields={
-                'foo': Field(types.String),
-                'bar': Field(types.Int),
-            },
+            fields={'foo': Field(types.String), 'bar': Field(types.Int)},
         )
 
     def construct_from_config_value(self, config_value):
@@ -335,29 +259,19 @@ class CustomStructConfigType(ConfigurableObjectFromDict, types.DagsterType):
 def test_custom_composite_type():
     config_type = CustomStructConfigType()
 
-    assert throwing_evaluate_config_value(config_type, {
-        'foo': 'some_string',
-        'bar': 2
-    }) == CustomStructConfig(
-        foo='some_string', bar=2
-    )
+    assert throwing_evaluate_config_value(
+        config_type, {'foo': 'some_string', 'bar': 2}
+    ) == CustomStructConfig(foo='some_string', bar=2)
 
     with pytest.raises(DagsterEvaluateConfigValueError):
-        assert throwing_evaluate_config_value(config_type, {
-            'foo': 'some_string',
-        })
+        assert throwing_evaluate_config_value(config_type, {'foo': 'some_string'})
 
     with pytest.raises(DagsterEvaluateConfigValueError):
-        assert throwing_evaluate_config_value(config_type, {
-            'bar': 'some_string',
-        })
+        assert throwing_evaluate_config_value(config_type, {'bar': 'some_string'})
 
     with pytest.raises(DagsterEvaluateConfigValueError):
         assert throwing_evaluate_config_value(
-            config_type, {
-                'foo': 'some_string',
-                'bar': 'not_an_int',
-            }
+            config_type, {'foo': 'some_string', 'bar': 'not_an_int'}
         )
 
 
@@ -369,15 +283,11 @@ def test_build_optionality():
     optional_test_type = types.Field(
         types.Dict(
             {
-                'required':
-                types.Field(types.Dict({
-                    'value': types.Field(types.String),
-                })),
-                'optional':
-                types.Field(types.Dict({
-                    'value': types.Field(types.String, is_optional=True),
-                })),
-            },
+                'required': types.Field(types.Dict({'value': types.Field(types.String)})),
+                'optional': types.Field(
+                    types.Dict({'value': types.Field(types.String, is_optional=True)})
+                ),
+            }
         )
     ).dagster_type
 
@@ -395,17 +305,11 @@ def test_wrong_solid_name():
                 outputs=[],
                 config_field=types.Field(types.Int),
                 transform_fn=lambda *_args: None,
-            ),
+            )
         ],
     )
 
-    env_config = {
-        'solids': {
-            'another_name': {
-                'config': {},
-            },
-        },
-    }
+    env_config = {'solids': {'another_name': {'config': {}}}}
 
     with pytest.raises(PipelineConfigEvaluationError) as pe_info:
         execute_pipeline(pipeline_def, env_config)
@@ -424,46 +328,30 @@ def test_multiple_context():
     pipeline_def = PipelineDefinition(
         name='pipeline_test_multiple_context',
         context_definitions={
-            'context_one': PipelineContextDefinition(context_fn=lambda *_args: fail_me(), ),
-            'context_two': PipelineContextDefinition(context_fn=lambda *_args: fail_me(), ),
+            'context_one': PipelineContextDefinition(context_fn=lambda *_args: fail_me()),
+            'context_two': PipelineContextDefinition(context_fn=lambda *_args: fail_me()),
         },
         solids=[],
     )
 
     with pytest.raises(PipelineConfigEvaluationError):
-        execute_pipeline(
-            pipeline_def,
-            {
-                'context': {
-                    'context_one': {},
-                    'context_two': {},
-                },
-            },
-        )
+        execute_pipeline(pipeline_def, {'context': {'context_one': {}, 'context_two': {}}})
 
 
 def test_wrong_context():
     pipeline_def = PipelineDefinition(
         name='pipeline_test_multiple_context',
         context_definitions={
-            'context_one': PipelineContextDefinition(context_fn=lambda *_args: fail_me(), ),
-            'context_two': PipelineContextDefinition(context_fn=lambda *_args: fail_me(), ),
+            'context_one': PipelineContextDefinition(context_fn=lambda *_args: fail_me()),
+            'context_two': PipelineContextDefinition(context_fn=lambda *_args: fail_me()),
         },
         solids=[],
     )
 
     with pytest.raises(
-        PipelineConfigEvaluationError,
-        match='Undefined field "nope" at path root:context',
+        PipelineConfigEvaluationError, match='Undefined field "nope" at path root:context'
     ):
-        execute_pipeline(
-            pipeline_def,
-            {
-                'context': {
-                    'nope': {},
-                },
-            },
-        )
+        execute_pipeline(pipeline_def, {'context': {'nope': {}}})
 
 
 def test_solid_list_config():
@@ -482,17 +370,13 @@ def test_solid_list_config():
                 inputs=[],
                 outputs=[],
                 config_field=Field(types.List(types.Int)),
-                transform_fn=_test_config
-            ),
+                transform_fn=_test_config,
+            )
         ],
     )
 
     result = execute_pipeline(
-        pipeline_def, environment={'solids': {
-            'solid_list_config': {
-                'config': value
-            }
-        }}
+        pipeline_def, environment={'solids': {'solid_list_config': {'config': value}}}
     )
 
     assert result.success
@@ -512,11 +396,11 @@ def test_two_list_types():
                         {
                             'list_one': types.Field(types.List(types.Int)),
                             'list_two': types.Field(types.List(types.Int)),
-                        },
+                        }
                     )
                 ),
                 transform_fn=lambda *_args: None,
-            ),
+            )
         ],
     )
 
@@ -527,8 +411,7 @@ def test_multilevel_default_handling():
         assert info.config == 234
 
     pipeline_def = PipelineDefinition(
-        name='multilevel_default_handling',
-        solids=[has_default_value],
+        name='multilevel_default_handling', solids=[has_default_value]
     )
 
     assert execute_pipeline(pipeline_def).success
@@ -537,32 +420,13 @@ def test_multilevel_default_handling():
     assert execute_pipeline(pipeline_def, environment={'solids': None}).success
     assert execute_pipeline(pipeline_def, environment={'solids': {}}).success
     assert execute_pipeline(
-        pipeline_def,
-        environment={
-            'solids': {
-                'has_default_value': None
-            }
-        },
+        pipeline_def, environment={'solids': {'has_default_value': None}}
     ).success
 
-    assert execute_pipeline(
-        pipeline_def,
-        environment={
-            'solids': {
-                'has_default_value': {}
-            }
-        },
-    ).success
+    assert execute_pipeline(pipeline_def, environment={'solids': {'has_default_value': {}}}).success
 
     assert execute_pipeline(
-        pipeline_def,
-        environment={
-            'solids': {
-                'has_default_value': {
-                    'config': 234
-                }
-            }
-        },
+        pipeline_def, environment={'solids': {'has_default_value': {'config': 234}}}
     ).success
 
 
@@ -572,8 +436,7 @@ def test_no_env_missing_required_error_handling():
         pass
 
     pipeline_def = PipelineDefinition(
-        name='no_env_missing_required_error',
-        solids=[required_int_solid],
+        name='no_env_missing_required_error', solids=[required_int_solid]
     )
 
     with pytest.raises(PipelineConfigEvaluationError) as pe_info:
@@ -596,22 +459,12 @@ def test_root_extra_field():
     def required_int_solid(_info):
         pass
 
-    pipeline_def = PipelineDefinition(
-        name='root_extra_field',
-        solids=[required_int_solid],
-    )
+    pipeline_def = PipelineDefinition(name='root_extra_field', solids=[required_int_solid])
 
     with pytest.raises(PipelineConfigEvaluationError) as pe_info:
         execute_pipeline(
             pipeline_def,
-            environment={
-                'solids': {
-                    'required_int_solid': {
-                        'config': 948594
-                    }
-                },
-                'nope': None,
-            },
+            environment={'solids': {'required_int_solid': {'config': 948594}}, 'nope': None},
         )
 
     pe = pe_info.value
@@ -626,21 +479,11 @@ def test_deeper_path():
     def required_int_solid(_info):
         pass
 
-    pipeline_def = PipelineDefinition(
-        name='deeper_path',
-        solids=[required_int_solid],
-    )
+    pipeline_def = PipelineDefinition(name='deeper_path', solids=[required_int_solid])
 
     with pytest.raises(PipelineConfigEvaluationError) as pe_info:
         execute_pipeline(
-            pipeline_def,
-            environment={
-                'solids': {
-                    'required_int_solid': {
-                        'config': 'asdf',
-                    },
-                },
-            },
+            pipeline_def, environment={'solids': {'required_int_solid': {'config': 'asdf'}}}
         )
 
     pe = pe_info.value
@@ -657,20 +500,10 @@ def test_working_list_path():
         assert info.config == [1, 2]
         called['yup'] = True
 
-    pipeline_def = PipelineDefinition(
-        name='list_path',
-        solids=[required_list_int_solid],
-    )
+    pipeline_def = PipelineDefinition(name='list_path', solids=[required_list_int_solid])
 
     result = execute_pipeline(
-        pipeline_def,
-        environment={
-            'solids': {
-                'required_list_int_solid': {
-                    'config': [1, 2],
-                },
-            },
-        },
+        pipeline_def, environment={'solids': {'required_list_int_solid': {'config': [1, 2]}}}
     )
 
     assert result.success
@@ -685,21 +518,12 @@ def test_item_error_list_path():
         assert info.config == [1, 2]
         called['yup'] = True
 
-    pipeline_def = PipelineDefinition(
-        name='list_path',
-        solids=[required_list_int_solid],
-    )
+    pipeline_def = PipelineDefinition(name='list_path', solids=[required_list_int_solid])
 
     with pytest.raises(PipelineConfigEvaluationError) as pe_info:
         execute_pipeline(
             pipeline_def,
-            environment={
-                'solids': {
-                    'required_list_int_solid': {
-                        'config': [1, 'nope'],
-                    },
-                },
-            },
+            environment={'solids': {'required_list_int_solid': {'config': [1, 'nope']}}},
         )
 
     pe = pe_info.value
@@ -722,23 +546,15 @@ def test_context_selector_working():
         name='context_selector_working',
         solids=[check_context],
         context_definitions={
-            'context_required_int':
-            PipelineContextDefinition(
+            'context_required_int': PipelineContextDefinition(
                 context_fn=lambda info: ExecutionContext(resources=info.config),
                 config_field=types.Field(types.Int),
             )
-        }
+        },
     )
 
     result = execute_pipeline(
-        pipeline_def,
-        environment={
-            'context': {
-                'context_required_int': {
-                    'config': 32,
-                },
-            },
-        },
+        pipeline_def, environment={'context': {'context_required_int': {'config': 32}}}
     )
 
     assert result.success
@@ -754,12 +570,11 @@ def test_context_selector_extra_context():
         name='context_selector_extra_context',
         solids=[check_context],
         context_definitions={
-            'context_required_int':
-            PipelineContextDefinition(
+            'context_required_int': PipelineContextDefinition(
                 context_fn=lambda info: ExecutionContext(resources=info.config),
                 config_field=types.Field(types.Int),
             )
-        }
+        },
     )
 
     with pytest.raises(PipelineConfigEvaluationError) as pe_info:
@@ -767,13 +582,9 @@ def test_context_selector_extra_context():
             pipeline_def,
             environment={
                 'context': {
-                    'context_required_int': {
-                        'config': 32,
-                    },
-                    'extra_context': {
-                        'config': None,
-                    },
-                },
+                    'context_required_int': {'config': 32},
+                    'extra_context': {'config': None},
+                }
             },
         )
 
@@ -792,25 +603,15 @@ def test_context_selector_wrong_name():
         name='context_selector_wrong_name',
         solids=[check_context],
         context_definitions={
-            'context_required_int':
-            PipelineContextDefinition(
+            'context_required_int': PipelineContextDefinition(
                 context_fn=lambda info: ExecutionContext(resources=info.config),
                 config_field=types.Field(types.Int),
             )
-        }
+        },
     )
 
     with pytest.raises(PipelineConfigEvaluationError) as pe_info:
-        execute_pipeline(
-            pipeline_def,
-            environment={
-                'context': {
-                    'wrong_name': {
-                        'config': None,
-                    },
-                },
-            },
-        )
+        execute_pipeline(pipeline_def, environment={'context': {'wrong_name': {'config': None}}})
 
     pe = pe_info.value
     cse = pe.errors[0]
@@ -827,19 +628,15 @@ def test_context_selector_none_given():
         name='context_selector_none_given',
         solids=[check_context],
         context_definitions={
-            'context_required_int':
-            PipelineContextDefinition(
+            'context_required_int': PipelineContextDefinition(
                 context_fn=lambda info: ExecutionContext(resources=info.config),
                 config_field=types.Field(types.Int),
             )
-        }
+        },
     )
 
     with pytest.raises(PipelineConfigEvaluationError) as pe_info:
-        execute_pipeline(
-            pipeline_def,
-            environment={'context': None},
-        )
+        execute_pipeline(pipeline_def, environment={'context': None})
 
     pe = pe_info.value
     cse = pe.errors[0]
@@ -853,8 +650,7 @@ def test_multilevel_good_error_handling_solids():
         pass
 
     pipeline_def = PipelineDefinition(
-        name='multilevel_good_error_handling',
-        solids=[good_error_handling],
+        name='multilevel_good_error_handling', solids=[good_error_handling]
     )
 
     with pytest.raises(PipelineConfigEvaluationError) as pe_info:
@@ -870,8 +666,7 @@ def test_multilevel_good_error_handling_solid_name_solids():
         pass
 
     pipeline_def = PipelineDefinition(
-        name='multilevel_good_error_handling',
-        solids=[good_error_handling],
+        name='multilevel_good_error_handling', solids=[good_error_handling]
     )
 
     with pytest.raises(PipelineConfigEvaluationError) as pe_info:
@@ -887,14 +682,9 @@ def test_multilevel_good_error_handling_config_solids_name_solids():
         pass
 
     pipeline_def = PipelineDefinition(
-        name='multilevel_good_error_handling',
-        solids=[good_error_handling],
+        name='multilevel_good_error_handling', solids=[good_error_handling]
     )
 
     execute_pipeline(
-        pipeline_def, environment={'solids': {
-            'good_error_handling': {
-                'config': None
-            }
-        }}
+        pipeline_def, environment={'solids': {'good_error_handling': {'config': None}}}
     )

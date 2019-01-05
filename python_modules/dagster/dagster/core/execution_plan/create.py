@@ -12,10 +12,7 @@ from dagster.core.definitions import (
 
 from dagster.core.errors import DagsterInvariantViolationError
 
-from .expectations import (
-    create_expectations_subplan,
-    decorate_with_expectations,
-)
+from .expectations import create_expectations_subplan, decorate_with_expectations
 
 from .input_thunk import create_input_thunk_execution_step
 
@@ -70,10 +67,7 @@ class StepOutputMap(dict):
 def create_execution_plan_core(execution_info):
     check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
 
-    state = StepBuilderState(
-        steps=[],
-        step_output_map=StepOutputMap(),
-    )
+    state = StepBuilderState(steps=[], step_output_map=StepOutputMap())
 
     for pipeline_solid in solids_in_topological_order(execution_info.pipeline):
 
@@ -90,10 +84,7 @@ def create_execution_plan_core(execution_info):
 
         for output_def in pipeline_solid.definition.output_defs:
             subplan = create_subplan_for_output(
-                execution_info,
-                pipeline_solid,
-                solid_transform_step,
-                output_def,
+                execution_info, pipeline_solid, solid_transform_step, output_def
             )
             state.steps.extend(subplan.steps)
 
@@ -134,10 +125,7 @@ def create_subplan_for_input(execution_info, solid, prev_step_output_handle, inp
 
     if execution_info.environment.expectations.evaluate and input_def.expectations:
         return create_expectations_subplan(
-            solid,
-            input_def,
-            prev_step_output_handle,
-            tag=StepTag.INPUT_EXPECTATION,
+            solid, input_def, prev_step_output_handle, tag=StepTag.INPUT_EXPECTATION
         )
     else:
         return ExecutionValueSubPlan.empty(prev_step_output_handle)
@@ -167,10 +155,7 @@ def get_input_source_step_handle(execution_info, state, solid, input_def):
     dependency_structure = execution_info.pipeline.dependency_structure
     if solid_config and input_def.name in solid_config.inputs:
         input_thunk_output_handle = create_input_thunk_execution_step(
-            execution_info,
-            solid,
-            input_def,
-            solid_config.inputs[input_def.name],
+            execution_info, solid, input_def, solid_config.inputs[input_def.name]
         )
         state.steps.append(input_thunk_output_handle.step)
         return input_thunk_output_handle
@@ -201,20 +186,11 @@ def create_step_inputs(info, state, solid):
     for input_def in solid.definition.input_defs:
         prev_step_output_handle = get_input_source_step_handle(info, state, solid, input_def)
 
-        subplan = create_subplan_for_input(
-            info,
-            solid,
-            prev_step_output_handle,
-            input_def,
-        )
+        subplan = create_subplan_for_input(info, solid, prev_step_output_handle, input_def)
 
         state.steps.extend(subplan.steps)
         step_inputs.append(
-            StepInput(
-                input_def.name,
-                input_def.dagster_type,
-                subplan.terminal_step_output_handle,
-            )
+            StepInput(input_def.name, input_def.dagster_type, subplan.terminal_step_output_handle)
         )
 
     return step_inputs
@@ -257,11 +233,7 @@ def _create_new_steps_for_input(step, subset_info):
             new_steps.append(new_value_step)
 
             new_step_inputs.append(
-                StepInput(
-                    step_input.name,
-                    step_input.dagster_type,
-                    value_thunk_step_output_handle,
-                )
+                StepInput(step_input.name, step_input.dagster_type, value_thunk_step_output_handle)
             )
         else:
             new_step_inputs.append(step_input)

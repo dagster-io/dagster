@@ -1,8 +1,5 @@
 from dagster import check
-from dagster.core.definitions import (
-    Result,
-    Solid,
-)
+from dagster.core.definitions import Result, Solid
 
 from .objects import (
     ExecutionValueSubPlan,
@@ -76,8 +73,7 @@ def create_joining_subplan(solid, join_step_key, parallel_steps, parallel_step_o
 
     output_name = join_step.step_outputs[0].name
     return ExecutionValueSubPlan(
-        parallel_steps + [join_step],
-        StepOutputHandle(join_step, output_name),
+        parallel_steps + [join_step], StepOutputHandle(join_step, output_name)
     )
 
 

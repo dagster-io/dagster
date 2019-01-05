@@ -34,22 +34,11 @@ def test_running():
     pipeline = define_passing_pipeline()
     env_config = {
         'solids': {
-            'sum_solid': {
-                'inputs': {
-                    'num': {
-                        'csv': {
-                            'path': script_relative_path('num.csv'),
-                        },
-                    },
-                }
-            },
-        },
+            'sum_solid': {'inputs': {'num': {'csv': {'path': script_relative_path('num.csv')}}}}
+        }
     }
     pipeline_run = InMemoryPipelineRun(
-        run_id,
-        'pandas_hello_world',
-        env_config,
-        create_execution_plan(pipeline, env_config),
+        run_id, 'pandas_hello_world', env_config, create_execution_plan(pipeline, env_config)
     )
     execution_manager = MultiprocessingExecutionManager()
     execution_manager.execute_pipeline(repository_container, pipeline, pipeline_run)
@@ -78,22 +67,11 @@ def test_failing():
     pipeline = define_failing_pipeline()
     env_config = {
         'solids': {
-            'sum_solid': {
-                'inputs': {
-                    'num': {
-                        'csv': {
-                            'path': script_relative_path('num.csv'),
-                        },
-                    },
-                }
-            },
-        },
+            'sum_solid': {'inputs': {'num': {'csv': {'path': script_relative_path('num.csv')}}}}
+        }
     }
     pipeline_run = InMemoryPipelineRun(
-        run_id,
-        'pandas_hello_world',
-        env_config,
-        create_execution_plan(pipeline, env_config),
+        run_id, 'pandas_hello_world', env_config, create_execution_plan(pipeline, env_config)
     )
     execution_manager = MultiprocessingExecutionManager()
     execution_manager.execute_pipeline(repository_container, pipeline, pipeline_run)
@@ -115,25 +93,11 @@ def test_execution_crash():
     pipeline = define_crashy_pipeline()
     env_config = {
         'solids': {
-            'sum_solid': {
-                'inputs': {
-                    'num': {
-                        'csv': {
-                            'path': script_relative_path('num.csv'),
-                        },
-                    },
-                }
-            },
-        },
+            'sum_solid': {'inputs': {'num': {'csv': {'path': script_relative_path('num.csv')}}}}
+        }
     }
     pipeline_run = InMemoryPipelineRun(
-        run_id,
-        'pandas_hello_world',
-        env_config,
-        create_execution_plan(
-            pipeline,
-            env_config,
-        ),
+        run_id, 'pandas_hello_world', env_config, create_execution_plan(pipeline, env_config)
     )
     execution_manager = MultiprocessingExecutionManager()
     execution_manager.execute_pipeline(repository_container, pipeline, pipeline_run)
@@ -173,28 +137,17 @@ def crashy_solid(sum_df):  # pylint: disable=W0613
 
 def define_passing_pipeline():
     return PipelineDefinition(
-        name='pandas_hello_world',
-        solids=[
-            sum_solid,
-        ],
-        dependencies={
-            'sum_solid': {},
-        },
+        name='pandas_hello_world', solids=[sum_solid], dependencies={'sum_solid': {}}
     )
 
 
 def define_failing_pipeline():
     return PipelineDefinition(
         name='pandas_hello_world',
-        solids=[
-            sum_solid,
-            error_solid,
-        ],
+        solids=[sum_solid, error_solid],
         dependencies={
             'sum_solid': {},
-            'error_solid': {
-                'sum_df': DependencyDefinition('sum_solid')
-            }
+            'error_solid': {'sum_df': DependencyDefinition('sum_solid')},
         },
     )
 
@@ -202,14 +155,9 @@ def define_failing_pipeline():
 def define_crashy_pipeline():
     return PipelineDefinition(
         name='pandas_hello_world',
-        solids=[
-            sum_solid,
-            crashy_solid,
-        ],
+        solids=[sum_solid, crashy_solid],
         dependencies={
             'sum_solid': {},
-            'crashy_solid': {
-                'sum_df': DependencyDefinition('sum_solid')
-            }
+            'crashy_solid': {'sum_df': DependencyDefinition('sum_solid')},
         },
     )

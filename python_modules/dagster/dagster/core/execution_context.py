@@ -7,11 +7,7 @@ from collections import namedtuple
 from contextlib import contextmanager
 
 from dagster import check
-from dagster.utils.logging import (
-    CompositeLogger,
-    INFO,
-    define_colored_console_logger,
-)
+from dagster.utils.logging import CompositeLogger, INFO, define_colored_console_logger
 
 from .events import ExecutionEvents
 
@@ -39,8 +35,7 @@ class ExecutionContext(namedtuple('_ExecutionContext', 'loggers resources contex
     @staticmethod
     def console_logging(log_level=INFO, resources=None):
         return ExecutionContext(
-            loggers=[define_colored_console_logger('dagster', log_level)],
-            resources=resources,
+            loggers=[define_colored_console_logger('dagster', log_level)], resources=resources
         )
 
 
@@ -85,12 +80,10 @@ class RuntimeExecutionContext:
         check.dict_param(message_props, 'message_props')
 
         check.invariant(
-            'extra' not in message_props,
-            'do not allow until explicit support is handled',
+            'extra' not in message_props, 'do not allow until explicit support is handled'
         )
         check.invariant(
-            'exc_info' not in message_props,
-            'do not allow until explicit support is handled',
+            'exc_info' not in message_props, 'do not allow until explicit support is handled'
         )
 
         check.invariant('orig_message' not in message_props, 'orig_message reserved value')
@@ -108,11 +101,7 @@ class RuntimeExecutionContext:
         # We first generate all props for the purpose of producing the semi-structured
         # log message via _kv_messsage
         all_props = dict(
-            itertools.chain(
-                synth_props.items(),
-                self._context_stack.items(),
-                message_props.items(),
-            )
+            itertools.chain(synth_props.items(), self._context_stack.items(), message_props.items())
         )
 
         message_with_structured_props = _kv_message(all_props.items())
@@ -126,10 +115,7 @@ class RuntimeExecutionContext:
         # See __init__.py:363 (makeLogRecord) in the python 3.6 logging module source
         # for the gory details.
         getattr(self._logger, method)(
-            message_with_structured_props,
-            extra={
-                DAGSTER_META_KEY: all_props,
-            },
+            message_with_structured_props, extra={DAGSTER_META_KEY: all_props}
         )
 
     def debug(self, msg, **kwargs):

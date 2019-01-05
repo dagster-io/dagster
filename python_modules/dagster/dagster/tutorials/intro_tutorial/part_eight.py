@@ -28,9 +28,5 @@ def define_part_eight_step_one_pipeline():
     return PipelineDefinition(
         name='part_eight_step_one_pipeline',
         solids=[double_the_word, count_letters],
-        dependencies={
-            'count_letters': {
-                'word': DependencyDefinition('double_the_word'),
-            },
-        },
+        dependencies={'count_letters': {'word': DependencyDefinition('double_the_word')}},
     )

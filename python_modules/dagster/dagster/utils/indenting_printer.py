@@ -27,8 +27,7 @@ class IndentingPrinter(object):
 
     def blank_line(self):
         check.invariant(
-            not self._line_so_far,
-            'Cannot throw away appended strings by calling blank_line',
+            not self._line_so_far, 'Cannot throw away appended strings by calling blank_line'
         )
         self.printer('')
 

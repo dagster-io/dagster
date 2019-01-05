@@ -1,7 +1,4 @@
-from .base import (
-    DagsterType,
-    DagsterTypeAttributes,
-)
+from .base import DagsterType, DagsterTypeAttributes
 
 from .builtins import (
     Any,

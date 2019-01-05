@@ -1,8 +1,4 @@
-from dagster import (
-    PipelineDefinition,
-    SolidDefinition,
-    types,
-)
+from dagster import PipelineDefinition, SolidDefinition, types
 
 from dagster.core.types.type_printer import print_type_to_string
 
@@ -54,10 +50,7 @@ def test_basic_dict():
 
 def test_two_field_dicts():
     two_field_dict = types.Dict(
-        {
-            'int_field': types.Field(types.Int),
-            'string_field': types.Field(types.String),
-        }
+        {'int_field': types.Field(types.Int), 'string_field': types.Field(types.String)}
     )
     inners = list(two_field_dict.inner_types)
     assert types.Int in inners
@@ -76,10 +69,7 @@ def test_two_field_dicts():
 
 def test_two_field_dicts_same_type():
     two_field_dict = types.Dict(
-        {
-            'int_field1': types.Field(types.Int),
-            'int_field2': types.Field(types.Int),
-        }
+        {'int_field1': types.Field(types.Int), 'int_field2': types.Field(types.Int)}
     )
     inners = list(two_field_dict.inner_types)
     assert inners == [types.Int]
@@ -96,9 +86,7 @@ def test_two_field_dicts_same_type():
 
 def test_optional_field():
     output = print_type_to_string(
-        types.Dict({
-            'int_field': types.Field(types.Int, is_optional=True)
-        })
+        types.Dict({'int_field': types.Field(types.Int, is_optional=True)})
     )
 
     # print('OUTPUT')
@@ -171,12 +159,10 @@ def define_test_type_pipeline():
             define_solid_for_test_type('int_config', types.Int),
             define_solid_for_test_type('list_of_int_config', types.List(types.Int)),
             define_solid_for_test_type(
-                'nullable_list_of_int_config',
-                types.Nullable(types.List(types.Int)),
+                'nullable_list_of_int_config', types.Nullable(types.List(types.Int))
             ),
             define_solid_for_test_type(
-                'list_of_nullable_int_config',
-                types.List(types.Nullable(types.Int)),
+                'list_of_nullable_int_config', types.List(types.Nullable(types.Int))
             ),
             define_solid_for_test_type(
                 'nullable_list_of_nullable_int_config',
@@ -185,11 +171,8 @@ def define_test_type_pipeline():
             define_solid_for_test_type(
                 'simple_dict',
                 types.Dict(
-                    {
-                        'int_field': types.Field(types.Int),
-                        'string_field': types.Field(types.String),
-                    }
-                )
+                    {'int_field': types.Field(types.Int), 'string_field': types.Field(types.String)}
+                ),
             ),
             define_solid_for_test_type(
                 'dict_with_optional_field',
@@ -204,11 +187,7 @@ def define_test_type_pipeline():
             define_solid_for_test_type(
                 'nested_dict',
                 types.Dict(
-                    {
-                        'nested': types.Field(types.Dict({
-                            'int_field': types.Field(types.Int),
-                        }))
-                    }
+                    {'nested': types.Field(types.Dict({'int_field': types.Field(types.Int)}))}
                 ),
             ),
         ],

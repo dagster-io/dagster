@@ -3,10 +3,7 @@ import json
 
 from dagster import check
 
-from dagster.utils.error import (
-    serializable_error_info_from_exc_info,
-    SerializableErrorInfo,
-)
+from dagster.utils.error import serializable_error_info_from_exc_info, SerializableErrorInfo
 
 from dagster.utils.logging import (
     DEBUG,
@@ -47,7 +44,7 @@ class ExecutionEvents:
         self.check_pipeline_in_context()
         self.context.info(
             'Completing successful execution of pipeline {pipeline}'.format(
-                pipeline=self.pipeline_name(),
+                pipeline=self.pipeline_name()
             ),
             event_type=EventType.PIPELINE_SUCCESS.value,
         )
@@ -75,8 +72,7 @@ class ExecutionEvents:
 
         self.context.info(
             'Execution of {step_key} succeeded in {millis}'.format(
-                step_key=step_key,
-                millis=millis,
+                step_key=step_key, millis=millis
             ),
             event_type=EventType.EXECUTION_PLAN_STEP_SUCCESS.value,
             millis=millis,
@@ -98,8 +94,7 @@ class ExecutionEvents:
 
     def check_pipeline_in_context(self):
         check.invariant(
-            self.context.has_context_value('pipeline'),
-            'Must have pipeline context value',
+            self.context.has_context_value('pipeline'), 'Must have pipeline context value'
         )
 
 
@@ -117,16 +112,7 @@ def construct_event_type(event_type):
 
 
 class EventRecord(object):
-    def __init__(
-        self,
-        error_info,
-        message,
-        level,
-        user_message,
-        event_type,
-        run_id,
-        timestamp,
-    ):
+    def __init__(self, error_info, message, level, user_message, event_type, run_id, timestamp):
         self._error_info = check.opt_inst_param(error_info, 'error_info', SerializableErrorInfo)
         self._message = check.str_param(message, 'message')
         self._level = check_valid_level_param(level)
@@ -197,8 +183,7 @@ class ExecutionStepEventRecord(EventRecord):
         self._pipeline_name = check.str_param(pipeline_name, 'pipeline_name')
         self._solid_name = check.str_param(solid_name, 'solid_name')
         self._solid_definition_name = check.str_param(
-            solid_definition_name,
-            'solid_definition_name',
+            solid_definition_name, 'solid_definition_name'
         )
 
     @property
@@ -259,11 +244,7 @@ EVENT_CLS_LOOKUP = {
     EventType.UNCATEGORIZED: LogMessageRecord,
 }
 
-PIPELINE_EVENTS = {
-    EventType.PIPELINE_FAILURE,
-    EventType.PIPELINE_START,
-    EventType.PIPELINE_SUCCESS,
-}
+PIPELINE_EVENTS = {EventType.PIPELINE_FAILURE, EventType.PIPELINE_START, EventType.PIPELINE_SUCCESS}
 
 
 def construct_error_info(logger_message):

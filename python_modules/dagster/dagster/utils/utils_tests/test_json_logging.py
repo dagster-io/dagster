@@ -1,15 +1,8 @@
 import json
 
-from dagster.utils.test import (
-    create_test_runtime_execution_context,
-    get_temp_file_name,
-)
+from dagster.utils.test import create_test_runtime_execution_context, get_temp_file_name
 
-from dagster.utils.logging import (
-    define_json_file_logger,
-    DEBUG,
-    INFO,
-)
+from dagster.utils.logging import define_json_file_logger, DEBUG, INFO
 
 
 def test_basic_logging():

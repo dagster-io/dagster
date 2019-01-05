@@ -14,10 +14,7 @@ from dagster import (
     types,
 )
 
-from dagster.utils.test import (
-    get_temp_file_name,
-    get_temp_file_names,
-)
+from dagster.utils.test import get_temp_file_name, get_temp_file_names
 
 from dagster.core.system_config.types import (
     solid_has_config_entry,
@@ -25,10 +22,7 @@ from dagster.core.system_config.types import (
     is_materializeable,
 )
 
-from dagster.core.execution import (
-    create_typed_environment,
-    create_execution_plan,
-)
+from dagster.core.execution import create_typed_environment, create_execution_plan
 
 from dagster.core.execution_plan.objects import StepOutputHandle
 
@@ -53,10 +47,7 @@ def single_string_output_pipeline():
 
 def multiple_output_pipeline():
     @solid(
-        outputs=[
-            OutputDefinition(types.Int, 'number'),
-            OutputDefinition(types.String, 'string'),
-        ]
+        outputs=[OutputDefinition(types.Int, 'number'), OutputDefinition(types.String, 'string')]
     )
     def return_one_and_foo(_info):
         yield Result(1, 'number')
@@ -103,21 +94,7 @@ def test_solid_has_config_entry():
 def test_basic_json_default_output_config_schema():
     env = create_typed_environment(
         single_int_output_pipeline(),
-        {
-            'solids': {
-                'return_one': {
-                    'outputs': [
-                        {
-                            'result': {
-                                'json': {
-                                    'path': 'foo',
-                                },
-                            },
-                        },
-                    ],
-                },
-            },
-        },
+        {'solids': {'return_one': {'outputs': [{'result': {'json': {'path': 'foo'}}}]}}},
     )
 
     assert env.solids['return_one']
@@ -127,21 +104,7 @@ def test_basic_json_default_output_config_schema():
 def test_basic_json_named_output_config_schema():
     env = create_typed_environment(
         single_int_named_output_pipeline(),
-        {
-            'solids': {
-                'return_named_one': {
-                    'outputs': [
-                        {
-                            'named': {
-                                'json': {
-                                    'path': 'foo',
-                                },
-                            },
-                        },
-                    ],
-                },
-            },
-        },
+        {'solids': {'return_named_one': {'outputs': [{'named': {'json': {'path': 'foo'}}}]}}},
     )
 
     assert env.solids['return_named_one']
@@ -154,18 +117,8 @@ def test_basic_json_misnamed_output_config_schema():
             single_int_named_output_pipeline(),
             {
                 'solids': {
-                    'return_named_one': {
-                        'outputs': [
-                            {
-                                'wrong_name': {
-                                    'json': {
-                                        'path': 'foo',
-                                    },
-                                },
-                            },
-                        ],
-                    },
-                },
+                    'return_named_one': {'outputs': [{'wrong_name': {'json': {'path': 'foo'}}}]}
+                }
             },
         )
 
@@ -187,15 +140,7 @@ def test_no_outputs_no_inputs_config_schema():
 def test_no_outputs_one_input_config_schema():
     assert create_typed_environment(
         one_input_no_output_pipeline(),
-        {
-            'solids': {
-                'take_input_return_nothing': {
-                    'inputs': {
-                        'dummy': 'value',
-                    },
-                },
-            },
-        },
+        {'solids': {'take_input_return_nothing': {'inputs': {'dummy': 'value'}}}},
     )
 
     with pytest.raises(PipelineConfigEvaluationError) as exc_info:
@@ -203,13 +148,8 @@ def test_no_outputs_one_input_config_schema():
             one_input_no_output_pipeline(),
             {
                 'solids': {
-                    'take_input_return_nothing': {
-                        'inputs': {
-                            'dummy': 'value',
-                        },
-                        'outputs': {},
-                    },
-                },
+                    'take_input_return_nothing': {'inputs': {'dummy': 'value'}, 'outputs': {}}
+                }
             },
         )
 
@@ -221,21 +161,7 @@ def test_no_outputs_one_input_config_schema():
 def test_basic_int_execution_plan():
     execution_plan = create_execution_plan(
         single_int_output_pipeline(),
-        {
-            'solids': {
-                'return_one': {
-                    'outputs': [
-                        {
-                            'result': {
-                                'json': {
-                                    'path': 'dummy.json',
-                                },
-                            },
-                        },
-                    ],
-                },
-            },
-        },
+        {'solids': {'return_one': {'outputs': [{'result': {'json': {'path': 'dummy.json'}}}]}}},
     )
 
     assert len(execution_plan.steps) == 3
@@ -253,21 +179,7 @@ def test_basic_int_json_materialization():
     with get_temp_file_name() as filename:
         result = execute_pipeline(
             pipeline,
-            {
-                'solids': {
-                    'return_one': {
-                        'outputs': [
-                            {
-                                'result': {
-                                    'json': {
-                                        'path': filename,
-                                    },
-                                },
-                            },
-                        ],
-                    },
-                },
-            },
+            {'solids': {'return_one': {'outputs': [{'result': {'json': {'path': filename}}}]}}},
         )
 
         assert result.success
@@ -283,21 +195,7 @@ def test_basic_string_json_materialization():
     with get_temp_file_name() as filename:
         result = execute_pipeline(
             pipeline,
-            {
-                'solids': {
-                    'return_foo': {
-                        'outputs': [
-                            {
-                                'result': {
-                                    'json': {
-                                        'path': filename,
-                                    },
-                                },
-                            },
-                        ],
-                    },
-                },
-            },
+            {'solids': {'return_foo': {'outputs': [{'result': {'json': {'path': filename}}}]}}},
         )
 
         assert result.success
@@ -315,23 +213,11 @@ def test_basic_int_and_string_execution_plan():
             'solids': {
                 'return_one_and_foo': {
                     'outputs': [
-                        {
-                            'string': {
-                                'json': {
-                                    'path': 'dummy_string.json',
-                                },
-                            },
-                        },
-                        {
-                            'number': {
-                                'json': {
-                                    'path': 'dummy_number.json',
-                                },
-                            },
-                        },
-                    ],
-                },
-            },
+                        {'string': {'json': {'path': 'dummy_string.json'}}},
+                        {'number': {'json': {'path': 'dummy_number.json'}}},
+                    ]
+                }
+            }
         },
     )
 
@@ -364,17 +250,15 @@ def test_basic_int_and_string_execution_plan():
     )
     assert len(string_mat_step.step_inputs) == 1
     assert string_mat_step.step_inputs[0].prev_output_handle == StepOutputHandle(
-        step=transform_step,
-        output_name='string',
+        step=transform_step, output_name='string'
     )
 
     string_mat_join_step = execution_plan.get_step_by_key(
-        'return_one_and_foo.materialization.output.string.join',
+        'return_one_and_foo.materialization.output.string.join'
     )
     assert len(string_mat_join_step.step_inputs) == 1
     assert string_mat_join_step.step_inputs[0].prev_output_handle == StepOutputHandle(
-        step=string_mat_step,
-        output_name=MATERIALIZATION_THUNK_OUTPUT,
+        step=string_mat_step, output_name=MATERIALIZATION_THUNK_OUTPUT
     )
 
 
@@ -390,23 +274,11 @@ def test_basic_int_and_string_json_materialization():
                 'solids': {
                     'return_one_and_foo': {
                         'outputs': [
-                            {
-                                'string': {
-                                    'json': {
-                                        'path': filename_one,
-                                    },
-                                },
-                            },
-                            {
-                                'number': {
-                                    'json': {
-                                        'path': filename_two,
-                                    },
-                                },
-                            },
-                        ],
-                    },
-                },
+                            {'string': {'json': {'path': filename_one}}},
+                            {'number': {'json': {'path': filename_two}}},
+                        ]
+                    }
+                }
             },
         )
 
@@ -434,37 +306,13 @@ def test_basic_int_and_string_json_multiple_materialization_execution_plan():
             'solids': {
                 'return_one_and_foo': {
                     'outputs': [
-                        {
-                            'string': {
-                                'json': {
-                                    'path': 'foo',
-                                },
-                            },
-                        },
-                        {
-                            'string': {
-                                'json': {
-                                    'path': 'bar',
-                                },
-                            },
-                        },
-                        {
-                            'number': {
-                                'json': {
-                                    'path': 'baaz',
-                                },
-                            },
-                        },
-                        {
-                            'number': {
-                                'json': {
-                                    'path': 'quux',
-                                },
-                            },
-                        },
-                    ],
-                },
-            },
+                        {'string': {'json': {'path': 'foo'}}},
+                        {'string': {'json': {'path': 'bar'}}},
+                        {'number': {'json': {'path': 'baaz'}}},
+                        {'number': {'json': {'path': 'quux'}}},
+                    ]
+                }
+            }
         },
     )
 
@@ -475,19 +323,23 @@ def test_basic_int_and_string_json_multiple_materialization_execution_plan():
     assert len(steps) == 7
 
     assert_plan_topological_level(
-        steps, [1, 2, 3, 4], [
+        steps,
+        [1, 2, 3, 4],
+        [
             'return_one_and_foo.materialization.output.number.0',
             'return_one_and_foo.materialization.output.number.1',
             'return_one_and_foo.materialization.output.string.0',
             'return_one_and_foo.materialization.output.string.1',
-        ]
+        ],
     )
 
     assert_plan_topological_level(
-        steps, [5, 6], [
+        steps,
+        [5, 6],
+        [
             'return_one_and_foo.materialization.output.number.join',
             'return_one_and_foo.materialization.output.string.join',
-        ]
+        ],
     )
 
 
@@ -496,44 +348,22 @@ def test_basic_int_and_string_json_multiple_materialization():
     pipeline = multiple_output_pipeline()
 
     with get_temp_file_names(4) as file_tuple:
-        filename_one, filename_two, filename_three, filename_four = file_tuple  # pylint: disable=E0632
+        filename_one, filename_two, filename_three, filename_four = (
+            file_tuple
+        )  # pylint: disable=E0632
         result = execute_pipeline(
             pipeline,
             {
                 'solids': {
                     'return_one_and_foo': {
                         'outputs': [
-                            {
-                                'string': {
-                                    'json': {
-                                        'path': filename_one,
-                                    },
-                                },
-                            },
-                            {
-                                'string': {
-                                    'json': {
-                                        'path': filename_two,
-                                    },
-                                },
-                            },
-                            {
-                                'number': {
-                                    'json': {
-                                        'path': filename_three,
-                                    },
-                                },
-                            },
-                            {
-                                'number': {
-                                    'json': {
-                                        'path': filename_four,
-                                    },
-                                },
-                            },
-                        ],
-                    },
-                },
+                            {'string': {'json': {'path': filename_one}}},
+                            {'string': {'json': {'path': filename_two}}},
+                            {'number': {'json': {'path': filename_three}}},
+                            {'number': {'json': {'path': filename_four}}},
+                        ]
+                    }
+                }
             },
         )
 
@@ -572,23 +402,11 @@ def test_basic_int_multiple_serializations_execution_plan():
             'solids': {
                 'return_one': {
                     'outputs': [
-                        {
-                            'result': {
-                                'json': {
-                                    'path': 'dummy_one.json',
-                                },
-                            },
-                        },
-                        {
-                            'result': {
-                                'json': {
-                                    'path': 'dummy_two.json',
-                                },
-                            },
-                        },
-                    ],
-                },
-            },
+                        {'result': {'json': {'path': 'dummy_one.json'}}},
+                        {'result': {'json': {'path': 'dummy_two.json'}}},
+                    ]
+                }
+            }
         },
     )
 
@@ -620,23 +438,11 @@ def test_basic_int_json_multiple_materializations():
                 'solids': {
                     'return_one': {
                         'outputs': [
-                            {
-                                'result': {
-                                    'json': {
-                                        'path': filename_one,
-                                    },
-                                },
-                            },
-                            {
-                                'result': {
-                                    'json': {
-                                        'path': filename_two,
-                                    },
-                                },
-                            },
-                        ],
-                    },
-                },
+                            {'result': {'json': {'path': filename_one}}},
+                            {'result': {'json': {'path': filename_two}}},
+                        ]
+                    }
+                }
             },
         )
 

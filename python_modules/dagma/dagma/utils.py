@@ -55,8 +55,8 @@ def get_resources_key(context):
 
 
 LambdaInvocationPayload = namedtuple(
-    'LambdaInvocationPayload', 'run_id step_idx key s3_bucket s3_key_inputs s3_key_body '
-    's3_key_resources s3_key_outputs'
+    'LambdaInvocationPayload',
+    'run_id step_idx key s3_bucket s3_key_inputs s3_key_body ' 's3_key_resources s3_key_outputs',
 )
 
 ####################################################################################################
@@ -127,7 +127,7 @@ def create_mod_data(mod_paths):
             f = os.path.abspath(f)
             mod_str = open(f, 'rb').read()
 
-            dest_filename = f[len(pkg_root) + 1:].replace(os.sep, "/")
+            dest_filename = f[len(pkg_root) + 1 :].replace(os.sep, "/")
             module_data[dest_filename] = bytes_to_b64str(mod_str)
 
     return module_data

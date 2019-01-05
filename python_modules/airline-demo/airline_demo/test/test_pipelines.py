@@ -2,10 +2,7 @@ import pytest
 
 from dagster import execute_pipeline
 
-from dagster.utils import (
-    load_yaml_from_globs,
-    script_relative_path,
-)
+from dagster.utils import load_yaml_from_globs, script_relative_path
 
 from airline_demo.pipelines import (
     define_airline_demo_download_pipeline,
@@ -25,8 +22,7 @@ def test_pipelines():
     )
 
     result_download = execute_pipeline(
-        define_airline_demo_download_pipeline(),
-        download_config_object,
+        define_airline_demo_download_pipeline(), download_config_object
     )
 
     assert result_download.success
@@ -36,10 +32,7 @@ def test_pipelines():
         script_relative_path('../../environments/local_fast_ingest.yml'),
     )
 
-    result_ingest = execute_pipeline(
-        define_airline_demo_ingest_pipeline(),
-        ingest_config_object,
-    )
+    result_ingest = execute_pipeline(define_airline_demo_ingest_pipeline(), ingest_config_object)
 
     assert result_ingest.success
 
@@ -49,7 +42,6 @@ def test_pipelines():
     )
 
     result_warehouse = execute_pipeline(
-        define_airline_demo_warehouse_pipeline(),
-        warehouse_config_object,
+        define_airline_demo_warehouse_pipeline(), warehouse_config_object
     )
     assert result_warehouse.success

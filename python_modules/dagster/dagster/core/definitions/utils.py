@@ -24,7 +24,8 @@ DISALLOWED_NAMES = set(
         'input',
         'output',
         'type',
-    ] + keyword.kwlist  # just disallow all python keywords
+    ]
+    + keyword.kwlist  # just disallow all python keywords
 )
 
 

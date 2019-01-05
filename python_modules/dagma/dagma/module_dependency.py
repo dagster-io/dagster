@@ -121,8 +121,7 @@ class ModuleDependencyAnalyzer(object):
                 source_imps = self._find_imports(ast.parse(fp.read(), root_module_name))
             except SyntaxError:
                 self._logger.debug(
-                    'Module %r has a syntax error. '
-                    'Skipping source analysis', root_module_name
+                    'Module %r has a syntax error. ' 'Skipping source analysis', root_module_name
                 )
                 # For malformed source code
                 source_imps = []
@@ -132,25 +131,23 @@ class ModuleDependencyAnalyzer(object):
             for source_imp in source_imps:
                 if source_imp in self._inspected_modules:
                     self._logger.debug(
-                        'Module %r Source import %r '
-                        'already inspected', root_module_name, source_imp
+                        'Module %r Source import %r ' 'already inspected',
+                        root_module_name,
+                        source_imp,
                     )
                 elif source_imp in self._modules_to_inspect:
                     self._logger.debug(
-                        'Module %r Source import %r '
-                        'already queued', root_module_name, source_imp
+                        'Module %r Source import %r ' 'already queued', root_module_name, source_imp
                     )
                 elif source_imp in self._modules_to_ignore:
                     self._logger.debug(
-                        'Module %r Source import %r '
-                        'to be ignored', root_module_name, source_imp
+                        'Module %r Source import %r ' 'to be ignored', root_module_name, source_imp
                     )
                 else:
                     # Cannot be relative import since this is top-level
                     self._modules_to_inspect.add(source_imp)
                     self._logger.debug(
-                        'Module %r Source import %r added '
-                        'to queue', root_module_name, source_imp
+                        'Module %r Source import %r added ' 'to queue', root_module_name, source_imp
                     )
         elif mod_type == imp.PKG_DIRECTORY:
             self._logger.debug('Module %r is package. Recursing...', root_module_name)
@@ -179,16 +176,18 @@ class ModuleDependencyAnalyzer(object):
             _, _, mod_type = description
             if mod_type == imp.PY_SOURCE:
                 self._logger.debug(
-                    '%r -> %r is source/compiled. '
-                    'Scanning imports.', package_name, submodule_name
+                    '%r -> %r is source/compiled. ' 'Scanning imports.',
+                    package_name,
+                    submodule_name,
                 )
                 # TODO: Does this work with compiled sources?
                 try:
                     source_imps = self._find_imports(ast.parse(fp.read(), submodule_name))
                 except SyntaxError:
                     self._logger.debug(
-                        '%r -> %r has a syntax error. '
-                        'Skipping source analysis', package_name, submodule_name
+                        '%r -> %r has a syntax error. ' 'Skipping source analysis',
+                        package_name,
+                        submodule_name,
                     )
                     source_imps = []
                 # Close the file handle that's been opened for us by find_module
@@ -199,13 +198,17 @@ class ModuleDependencyAnalyzer(object):
                 for source_imp in source_imps:
                     if source_imp in self._inspected_modules:
                         self._logger.debug(
-                            '%r -> %r -> %r already inspected', package_name, submodule_name,
-                            source_imp
+                            '%r -> %r -> %r already inspected',
+                            package_name,
+                            submodule_name,
+                            source_imp,
                         )
                     elif source_imp in self._modules_to_inspect:
                         self._logger.debug(
-                            '%r -> %r -> %r already queued', package_name, submodule_name,
-                            source_imp
+                            '%r -> %r -> %r already queued',
+                            package_name,
+                            submodule_name,
+                            source_imp,
                         )
                     elif source_imp in self._modules_to_ignore:
                         self._logger.debug(
@@ -218,8 +221,10 @@ class ModuleDependencyAnalyzer(object):
                     else:
                         self._modules_to_inspect.add(source_imp)
                         self._logger.debug(
-                            '%r -> %r -> %r added to queue', package_name, submodule_name,
-                            source_imp
+                            '%r -> %r -> %r added to queue',
+                            package_name,
+                            submodule_name,
+                            source_imp,
                         )
             elif mod_type == imp.PKG_DIRECTORY:
                 self._logger.debug(

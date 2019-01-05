@@ -1,9 +1,4 @@
-from dagster import (
-    PipelineDefinition,
-    OutputDefinition,
-    lambda_solid,
-    types,
-)
+from dagster import PipelineDefinition, OutputDefinition, lambda_solid, types
 
 
 def test_materialization_schema_types():

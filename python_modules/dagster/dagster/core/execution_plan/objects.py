@@ -2,14 +2,9 @@ from collections import namedtuple
 from enum import Enum
 import toposort
 
-from dagster import (
-    check,
-)
+from dagster import check
 from dagster.core.system_config.objects import EnvironmentConfig
-from dagster.core.definitions import (
-    PipelineDefinition,
-    Solid,
-)
+from dagster.core.definitions import PipelineDefinition, Solid
 from dagster.core.errors import DagsterError
 from dagster.core.execution_context import RuntimeExecutionContext
 from dagster.core.types import DagsterType
@@ -26,21 +21,13 @@ class StepOutputHandle(namedtuple('_StepOutputHandle', 'step output_name')):
     # Make this hashable so it be a key in a dictionary
 
     def __str__(self):
-        return (
-            'StepOutputHandle'
-            '(step="{step.key}", output_name="{output_name}")'.format(
-                step=self.step,
-                output_name=self.output_name,
-            )
+        return 'StepOutputHandle' '(step="{step.key}", output_name="{output_name}")'.format(
+            step=self.step, output_name=self.output_name
         )
 
     def __repr__(self):
-        return (
-            'StepOutputHandle'
-            '(step="{step.key}", output_name="{output_name}")'.format(
-                step=self.step,
-                output_name=self.output_name,
-            )
+        return 'StepOutputHandle' '(step="{step.key}", output_name="{output_name}")'.format(
+            step=self.step, output_name=self.output_name
         )
 
     def __hash__(self):
@@ -53,24 +40,18 @@ class StepOutputHandle(namedtuple('_StepOutputHandle', 'step output_name')):
 class StepSuccessData(namedtuple('_StepSuccessData', 'output_name value')):
     def __new__(cls, output_name, value):
         return super(StepSuccessData, cls).__new__(
-            cls,
-            output_name=check.str_param(output_name, 'output_name'),
-            value=value,
+            cls, output_name=check.str_param(output_name, 'output_name'), value=value
         )
 
 
 class StepFailureData(namedtuple('_StepFailureData', 'dagster_error')):
     def __new__(cls, dagster_error):
         return super(StepFailureData, cls).__new__(
-            cls,
-            dagster_error=check.inst_param(dagster_error, 'dagster_error', DagsterError),
+            cls, dagster_error=check.inst_param(dagster_error, 'dagster_error', DagsterError)
         )
 
 
-class StepResult(namedtuple(
-    '_StepResult',
-    'success step tag success_data failure_data',
-)):
+class StepResult(namedtuple('_StepResult', 'success step tag success_data failure_data')):
     @staticmethod
     def success_result(step, tag, success_data):
         return StepResult(
@@ -110,9 +91,7 @@ class StepInput(namedtuple('_StepInput', 'name dagster_type prev_output_handle')
             name=check.str_param(name, 'name'),
             dagster_type=check.inst_param(dagster_type, 'dagster_type', DagsterType),
             prev_output_handle=check.inst_param(
-                prev_output_handle,
-                'prev_output_handle',
-                StepOutputHandle,
+                prev_output_handle, 'prev_output_handle', StepOutputHandle
             ),
         )
 
@@ -137,11 +116,9 @@ class ExecutionStep(
             cls,
             key=check.str_param(key, 'key'),
             step_inputs=check.list_param(step_inputs, 'step_inputs', of_type=StepInput),
-            step_input_dict={si.name: si
-                             for si in step_inputs},
+            step_input_dict={si.name: si for si in step_inputs},
             step_outputs=check.list_param(step_outputs, 'step_outputs', of_type=StepOutput),
-            step_output_dict={so.name: so
-                              for so in step_outputs},
+            step_output_dict={so.name: so for so in step_outputs},
             compute_fn=check.callable_param(compute_fn, 'compute_fn'),
             tag=check.inst_param(tag, 'tag', StepTag),
             solid=check.inst_param(solid, 'solid', Solid),
@@ -203,9 +180,7 @@ class ExecutionValueSubPlan(
             cls,
             check.list_param(steps, 'steps', of_type=ExecutionStep),
             check.inst_param(
-                terminal_step_output_handle,
-                'terminal_step_output_handle',
-                StepOutputHandle,
+                terminal_step_output_handle, 'terminal_step_output_handle', StepOutputHandle
             ),
         )
 
@@ -217,10 +192,7 @@ class ExecutionValueSubPlan(
 class ExecutionPlan(object):
     def __init__(self, step_dict, deps):
         self.step_dict = check.dict_param(
-            step_dict,
-            'step_dict',
-            key_type=str,
-            value_type=ExecutionStep,
+            step_dict, 'step_dict', key_type=str, value_type=ExecutionStep
         )
         self.deps = check.dict_param(deps, 'deps', key_type=str, value_type=set)
         self.steps = list(step_dict.values())

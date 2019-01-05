@@ -17,10 +17,7 @@ from dagster.core.types.configurable import (
     Field,
 )
 
-from dagster.core.execution_context import (
-    ExecutionContext,
-    ReentrantInfo,
-)
+from dagster.core.execution_context import ExecutionContext, ReentrantInfo
 
 from dagster.core.definitions import (
     ContextCreationExecutionInfo,
@@ -40,11 +37,7 @@ from dagster.core.definitions import (
     TransformExecutionInfo,
 )
 
-from dagster.core.definitions.decorators import (
-    MultipleResults,
-    lambda_solid,
-    solid,
-)
+from dagster.core.definitions.decorators import MultipleResults, lambda_solid, solid
 
 from dagster.core.errors import (
     DagsterExpectationFailedError,
@@ -59,10 +52,7 @@ from dagster.core.types.evaluator import DagsterEvaluateConfigValueError
 
 from dagster.core.utility_solids import define_stub_solid
 
-from dagster.utils.test import (
-    execute_solid,
-    execute_solids,
-)
+from dagster.utils.test import execute_solid, execute_solids
 
 import dagster.core.types as types
 
@@ -83,17 +73,14 @@ __all__ = [
     'SolidDefinition',
     'Result',
     'SolidInstance',
-
     # Infos
     'ContextCreationExecutionInfo',
     'ExpectationExecutionInfo',
     'TransformExecutionInfo',
-
     # Decorators
     'lambda_solid',
     'solid',
     'MultipleResults',
-
     # Execution
     'execute_pipeline_iterator',
     'execute_pipeline',
@@ -101,7 +88,6 @@ __all__ = [
     'PipelineExecutionResult',
     'ReentrantInfo',
     'SolidExecutionResult',
-
     # Errors
     'DagsterInvalidDefinitionError',
     'DagsterInvariantViolationError',
@@ -110,12 +96,10 @@ __all__ = [
     'DagsterUserCodeExecutionError',
     'DagsterExpectationFailedError',
     'DagsterEvaluateConfigValueError',
-
     # Utilities
     'define_stub_solid',
     'execute_solid',
     'execute_solids',
-
     # types
     'types',
 ]

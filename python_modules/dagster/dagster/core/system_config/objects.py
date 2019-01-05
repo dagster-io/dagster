@@ -53,8 +53,7 @@ class EnvironmentConfig(namedtuple('_EnvironmentConfig', 'context solids expecta
 class ExpectationsConfig(namedtuple('_ExpecationsConfig', 'evaluate')):
     def __new__(cls, evaluate):
         return super(ExpectationsConfig, cls).__new__(
-            cls,
-            evaluate=check.bool_param(evaluate, 'evaluate'),
+            cls, evaluate=check.bool_param(evaluate, 'evaluate')
         )
 
 
@@ -62,6 +61,5 @@ class ExecutionConfig(namedtuple('_ExecutionConfig', 'serialize_intermediates'))
     def __new__(cls, serialize_intermediates):
 
         return super(ExecutionConfig, cls).__new__(
-            cls,
-            check.bool_param(serialize_intermediates, 'serialize_intermediates'),
+            cls, check.bool_param(serialize_intermediates, 'serialize_intermediates')
         )

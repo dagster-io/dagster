@@ -73,9 +73,7 @@ class MaterializeableBuiltinScalarConfigSchema(ConfigurableSelectorFromDict, Dag
 
 # All builtins are configurable
 class DagsterBuiltinScalarType(
-    ConfigurableFromScalar,
-    MaterializeableBuiltinScalar,
-    DagsterScalarType,
+    ConfigurableFromScalar, MaterializeableBuiltinScalar, DagsterScalarType
 ):
     def __init__(self, name, description=None):
         super(DagsterBuiltinScalarType, self).__init__(
@@ -105,16 +103,10 @@ class PythonObjectType(UncoercedTypeMixin, DagsterType):
     '''Dagster Type that checks if the value is an instance of some `python_type`'''
 
     def __init__(
-        self,
-        name,
-        python_type,
-        type_attributes=DEFAULT_TYPE_ATTRIBUTES,
-        description=None,
+        self, name, python_type, type_attributes=DEFAULT_TYPE_ATTRIBUTES, description=None
     ):
         super(PythonObjectType, self).__init__(
-            name=name,
-            type_attributes=type_attributes,
-            description=description,
+            name=name, type_attributes=type_attributes, description=description
         )
         self.python_type = check.type_param(python_type, 'python_type')
 
@@ -127,13 +119,7 @@ class PythonObjectType(UncoercedTypeMixin, DagsterType):
         )
         output_path = os.path.join(output_dir, 'type_value')
         with open(output_path, 'w') as ff:
-            json.dump(
-                {
-                    'type': type_value.name,
-                    'path': 'pickle'
-                },
-                ff,
-            )
+            json.dump({'type': type_value.name, 'path': 'pickle'}, ff)
         pickle_path = os.path.join(output_dir, 'pickle')
         with open(pickle_path, 'wb') as pf:
             pickle.dump(value, pf)

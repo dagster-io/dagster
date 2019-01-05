@@ -2,21 +2,11 @@ from toposort import toposort_flatten
 
 from dagster import check
 
-from .context import (
-    PipelineContextDefinition,
-    default_pipeline_context_definitions,
-)
+from .context import PipelineContextDefinition, default_pipeline_context_definitions
 
-from .dependency import (
-    DependencyDefinition,
-    DependencyStructure,
-    Solid,
-)
+from .dependency import DependencyDefinition, DependencyStructure, Solid
 
-from .pipeline_creation import (
-    create_execution_structure,
-    construct_type_dictionary,
-)
+from .pipeline_creation import create_execution_structure, construct_type_dictionary
 
 from .utils import check_opt_two_dim_dict
 
@@ -60,12 +50,7 @@ class PipelineDefinition(object):
     '''
 
     def __init__(
-        self,
-        solids,
-        name=None,
-        description=None,
-        context_definitions=None,
-        dependencies=None,
+        self, solids, name=None, description=None, context_definitions=None, dependencies=None
     ):
         '''
         Args:
@@ -92,14 +77,11 @@ class PipelineDefinition(object):
         )
 
         self.dependencies = check_opt_two_dim_dict(
-            dependencies,
-            'dependencies',
-            value_type=DependencyDefinition,
+            dependencies, 'dependencies', value_type=DependencyDefinition
         )
 
         dependency_structure, pipeline_solid_dict = create_execution_structure(
-            solids,
-            self.dependencies,
+            solids, self.dependencies
         )
 
         self._solid_dict = pipeline_solid_dict
@@ -110,9 +92,7 @@ class PipelineDefinition(object):
         self.environment_type = EnvironmentConfigType(self)
 
         self._type_dict = construct_type_dictionary(
-            solids,
-            self.context_definitions,
-            self.environment_type,
+            solids, self.context_definitions, self.environment_type
         )
 
     @property
@@ -228,8 +208,7 @@ def solids_in_topological_order(pipeline):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
 
     _forward_edges, backward_edges = _create_adjacency_lists(
-        pipeline.solids,
-        pipeline.dependency_structure,
+        pipeline.solids, pipeline.dependency_structure
     )
 
     order = toposort_flatten(backward_edges, sort=True)

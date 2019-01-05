@@ -1,8 +1,4 @@
-from dagster import (
-    PipelineDefinition,
-    execute_pipeline,
-    solid,
-)
+from dagster import PipelineDefinition, execute_pipeline, solid
 
 
 @solid
@@ -32,13 +28,5 @@ def define_execution_context_pipeline_step_three():
 if __name__ == '__main__':
     execute_pipeline(
         define_execution_context_pipeline_step_three(),
-        {
-            'context': {
-                'default': {
-                    'config': {
-                        'log_level': 'DEBUG',
-                    },
-                },
-            },
-        },
+        {'context': {'default': {'config': {'log_level': 'DEBUG'}}}},
     )

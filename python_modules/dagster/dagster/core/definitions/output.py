@@ -2,10 +2,7 @@ from dagster import check
 
 from dagster.core import types
 from .expectation import ExpectationDefinition
-from .utils import (
-    check_valid_name,
-    DEFAULT_OUTPUT,
-)
+from .utils import check_valid_name, DEFAULT_OUTPUT
 
 
 class OutputDefinition(object):
@@ -25,16 +22,11 @@ class OutputDefinition(object):
         self.name = check_valid_name(check.opt_str_param(name, 'name', DEFAULT_OUTPUT))
 
         self.dagster_type = check.opt_inst_param(
-            dagster_type,
-            'dagster_type',
-            types.DagsterType,
-            types.Any,
+            dagster_type, 'dagster_type', types.DagsterType, types.Any
         )
 
         self.expectations = check.opt_list_param(
-            expectations,
-            'expectations',
-            of_type=ExpectationDefinition,
+            expectations, 'expectations', of_type=ExpectationDefinition
         )
         self.description = check.opt_str_param(description, 'description')
 

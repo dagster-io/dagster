@@ -1,6 +1,7 @@
 """Utilities to construct and upload the deployment package used by our Lambda handler."""
 
 import contextlib
+
 # https://github.com/PyCQA/pylint/issues/73
 import distutils.spawn  # pylint: disable=no-name-in-module, import-error
 import os
@@ -38,7 +39,7 @@ def _construct_deployment_package(context, key):
             process = subprocess.Popen(
                 ['pip', 'install', python_dependency, '--target', deployment_package_dir],
                 stderr=subprocess.PIPE,
-                stdout=subprocess.PIPE
+                stdout=subprocess.PIPE,
             )
             for line in iter(process.stdout.readline, b''):
                 context.debug(line.decode('utf-8'))
@@ -64,9 +65,7 @@ def _upload_deployment_package(context, key, path):
     context.debug('Uploading deployment package')
     with open(path, 'rb') as fd:
         return context.resources.dagma.storage.client.put_object(
-            Bucket=context.resources.dagma.runtime_bucket,
-            Key=key,
-            Body=fd,
+            Bucket=context.resources.dagma.runtime_bucket, Key=key, Body=fd
         )
     context.debug('Done uploading deployment package')
 

@@ -5,11 +5,7 @@ import yaml
 
 from dagster import check
 
-from .yaml_utils import (
-    load_yaml_from_path,
-    load_yaml_from_globs,
-    load_yaml_from_glob_list,
-)
+from .yaml_utils import load_yaml_from_path, load_yaml_from_globs, load_yaml_from_glob_list
 
 
 def script_relative_path(file_path):
@@ -34,7 +30,5 @@ def camelcase(string):
     if not string:
         return string
     return str(string[0]).upper() + re.sub(
-        r'[\-_\.\s]([a-z])',
-        lambda matched: str(matched.group(1)).upper(),
-        string[1:],
+        r'[\-_\.\s]([a-z])', lambda matched: str(matched.group(1)).upper(), string[1:]
     )

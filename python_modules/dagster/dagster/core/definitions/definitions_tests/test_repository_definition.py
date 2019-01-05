@@ -23,7 +23,7 @@ def create_single_node_pipeline(name, called):
                 outputs=[],
                 transform_fn=lambda *_args, **_kwargs: None,
             )
-        ]
+        ],
     )
 
 
@@ -34,7 +34,7 @@ def test_repo_definition():
         pipeline_dict={
             'foo': lambda: create_single_node_pipeline('foo', called),
             'bar': lambda: create_single_node_pipeline('bar', called),
-        }
+        },
     )
 
     foo_pipeline = repo.get_pipeline('foo')
@@ -105,7 +105,7 @@ def test_dupe_solid_repo_definition_unforced():
             'first': lambda: PipelineDefinition(name='first', solids=[noop]),
             'second': lambda: PipelineDefinition(name='second', solids=[noop2]),
         },
-        enforce_uniqueness=False
+        enforce_uniqueness=False,
     )
 
     assert repo.get_all_pipelines()

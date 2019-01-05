@@ -1,25 +1,12 @@
 from __future__ import absolute_import
 
 from dagster import check
-from dagster.core.events import (
-    EventRecord,
-    EventType,
-)
-from dagster.utils.logging import (
-    CRITICAL,
-    DEBUG,
-    ERROR,
-    INFO,
-    WARNING,
-    check_valid_level_param,
-)
+from dagster.core.events import EventRecord, EventType
+from dagster.utils.logging import CRITICAL, DEBUG, ERROR, INFO, WARNING, check_valid_level_param
 
 from dagster.utils.error import SerializableErrorInfo
 from dagit import pipeline_run_storage
-from dagit.pipeline_run_storage import (
-    PipelineRunStatus,
-    PipelineRun,
-)
+from dagit.pipeline_run_storage import PipelineRunStatus, PipelineRun
 from dagit.schema import dauphin, model
 
 DauphinPipelineRunStatus = dauphin.Enum.from_enum(PipelineRunStatus)
@@ -133,7 +120,7 @@ class DaupinPipelineRunLogsSubscriptionPayload(dauphin.ObjectType):
 class DauphinLogMessageEvent(dauphin.ObjectType):
     class Meta:
         name = 'LogMessageEvent'
-        interfaces = (DauphinMessageEvent, )
+        interfaces = (DauphinMessageEvent,)
 
 
 class DauphinPipelineEvent(dauphin.Interface):

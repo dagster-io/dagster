@@ -7,11 +7,7 @@ from dagster.core.errors import DagsterInvalidDefinitionError
 
 from .context import PipelineContextDefinition
 
-from .dependency import (
-    DependencyStructure,
-    SolidInstance,
-    Solid,
-)
+from .dependency import DependencyStructure, SolidInstance, Solid
 
 from .solid import SolidDefinition
 
@@ -64,7 +60,9 @@ def create_execution_structure(solids, dependencies_dict):
                 '''You have passed a lambda or function {func} into a pipeline that is
                 not a solid. You have likely forgetten to annotate this function with
                 an @solid or @lambda_solid decorator located in dagster.core.decorators
-                '''.format(func=solid_def.__name__)
+                '''.format(
+                    func=solid_def.__name__
+                )
             )
         else:
             raise DagsterInvalidDefinitionError(
@@ -74,14 +72,11 @@ def create_execution_structure(solids, dependencies_dict):
     pipeline_solid_dict = {ps.name: ps for ps in pipeline_solids}
 
     _validate_dependencies(
-        mapper.aliased_dependencies_dict,
-        pipeline_solid_dict,
-        mapper.alias_lookup,
+        mapper.aliased_dependencies_dict, pipeline_solid_dict, mapper.alias_lookup
     )
 
     dependency_structure = DependencyStructure.from_definitions(
-        pipeline_solid_dict,
-        mapper.aliased_dependencies_dict,
+        pipeline_solid_dict, mapper.aliased_dependencies_dict
     )
 
     return dependency_structure, pipeline_solid_dict
@@ -101,18 +96,16 @@ def _validate_dependencies(dependencies, solid_dict, alias_lookup):
                 aliased_solid = alias_lookup.get(from_solid)
                 if aliased_solid == from_solid:
                     raise DagsterInvalidDefinitionError(
-                        'Solid {from_solid} in dependency dictionary not found in solid list'.
-                        format(from_solid=from_solid),
+                        'Solid {from_solid} in dependency dictionary not found in solid list'.format(
+                            from_solid=from_solid
+                        )
                     )
                 else:
                     raise DagsterInvalidDefinitionError(
                         (
                             'Solid {aliased_solid} (aliased by {from_solid} in dependency '
                             'dictionary) not found in solid list'
-                        ).format(
-                            aliased_solid=aliased_solid,
-                            from_solid=from_solid,
-                        ),
+                        ).format(aliased_solid=aliased_solid, from_solid=from_solid)
                     )
             if not solid_dict[from_solid].definition.has_input(from_input):
                 input_list = [
@@ -120,22 +113,21 @@ def _validate_dependencies(dependencies, solid_dict, alias_lookup):
                 ]
                 raise DagsterInvalidDefinitionError(
                     'Solid "{from_solid}" does not have input "{from_input}". '.format(
-                        from_solid=from_solid,
-                        from_input=from_input,
-                    ) + \
-                    'Input list: {input_list}'.format(input_list=input_list)
+                        from_solid=from_solid, from_input=from_input
+                    )
+                    + 'Input list: {input_list}'.format(input_list=input_list)
                 )
 
             if not dep.solid in solid_dict:
                 raise DagsterInvalidDefinitionError(
                     'Solid {dep.solid} in DependencyDefinition not found in solid list'.format(
                         dep=dep
-                    ),
+                    )
                 )
 
             if not solid_dict[dep.solid].definition.has_output(dep.output):
                 raise DagsterInvalidDefinitionError(
-                    'Solid {dep.solid} does not have output {dep.output}'.format(dep=dep),
+                    'Solid {dep.solid} does not have output {dep.output}'.format(dep=dep)
                 )
 
 

@@ -14,7 +14,7 @@ watch:
 	--drop dagster/dagster dagster/dagster_tests/ dagster-ge/dagster_ge dagster-ge/dagster_ge_tests dagit/dagit dagit/dagit_tests
 
 black:
-  black . --line-length 100 -S --fast
+	black . --line-length 100 -S --fast
 
 pylint:
 	pylint --disable=R,C dagster/dagster dagit/dagit dagstermill/dagstermill dagster-contrib/dagster_contrib
