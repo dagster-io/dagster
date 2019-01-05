@@ -70,14 +70,6 @@ class MaterializeableBuiltinScalarConfigSchema(ConfigurableSelectorFromDict, Dag
             fields={'json': define_path_dict_field()},
         )
 
-    def iterate_types(self, seen_config_schemas):
-        yield self
-
-        for field_type in self.field_dict.values():
-            for inner_type in field_type.dagster_type.iterate_types(seen_config_schemas):
-                if not isinstance(inner_type, DagsterBuiltinScalarType):
-                    yield inner_type
-
 
 # All builtins are configurable
 class DagsterBuiltinScalarType(
@@ -188,6 +180,10 @@ def Nullable(inner_type):
     return _DagsterNullableType(inner_type)
 
 
+def is_wrapping_type(dagster_type):
+    return isinstance(dagster_type, (_DagsterNullableType, _DagsterListType))
+
+
 class _DagsterNullableType(ConfigurableFromNullable, DagsterType):
     def __init__(self, inner_type):
         self.inner_type = check.inst_param(inner_type, 'inner_type', DagsterType)
@@ -199,9 +195,6 @@ class _DagsterNullableType(ConfigurableFromNullable, DagsterType):
 
     def coerce_runtime_value(self, value):
         return None if value is None else self.inner_type.coerce_runtime_value(value)
-
-    def iterate_types(self, _seen_config_schemas):
-        yield self.inner_type
 
 
 def List(inner_type):
@@ -223,9 +216,6 @@ class _DagsterListType(ConfigurableFromList, DagsterType):
             raise DagsterRuntimeCoercionError('Must be a list')
 
         return list(map(self.inner_type.coerce_runtime_value, value))
-
-    def iterate_types(self, _seen_config_schemas):
-        yield self.inner_type
 
 
 # HACK HACK HACK
