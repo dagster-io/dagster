@@ -435,6 +435,7 @@ class DauphinType(dauphin.Interface):
 
     @classmethod
     def from_dagster_type(cls, info, dagster_type):
+        print(f'calling from_dagster_type on {dagster_type.name}')
         if dagster_type.configurable_from_dict:
             return info.schema.type_named('CompositeType')(dagster_type)
         else:

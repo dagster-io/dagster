@@ -2,6 +2,7 @@ from collections import defaultdict
 from dagster import check
 
 from dagster.core import types
+from dagster.core.types import iterate_types
 from dagster.core.errors import DagsterInvalidDefinitionError
 
 from .context import PipelineContextDefinition
@@ -138,6 +139,20 @@ def _validate_dependencies(dependencies, solid_dict, alias_lookup):
                 )
 
 
+def iterate_solid_def_types(solid_def, seen_config_schemas):
+    for input_def in solid_def.input_defs:
+        for dagster_type in iterate_types(input_def.dagster_type, seen_config_schemas):
+            yield dagster_type
+
+    for output_def in solid_def.output_defs:
+        for dagster_type in iterate_types(output_def.dagster_type, seen_config_schemas):
+            yield dagster_type
+
+    if solid_def.config_field:
+        for dagster_type in iterate_types(solid_def.config_field.dagster_type, seen_config_schemas):
+            yield dagster_type
+
+
 def _gather_all_types(solids, context_definitions, environment_type):
     check.list_param(solids, 'solids', SolidDefinition)
     check.dict_param(
@@ -152,17 +167,16 @@ def _gather_all_types(solids, context_definitions, environment_type):
     seen_config_schemas = set()
 
     for solid in solids:
-        for dagster_type in solid.iterate_types(seen_config_schemas):
+        for dagster_type in iterate_solid_def_types(solid, seen_config_schemas):
             yield dagster_type
 
     for context_definition in context_definitions.values():
         if context_definition.config_field:
-            for dagster_type in context_definition.config_field.dagster_type.iterate_types(
-                seen_config_schemas
-            ):
+            context_config_type = context_definition.config_field.dagster_type
+            for dagster_type in iterate_types(context_config_type, seen_config_schemas):
                 yield dagster_type
 
-    for dagster_type in environment_type.iterate_types(seen_config_schemas):
+    for dagster_type in iterate_types(environment_type, seen_config_schemas):
         yield dagster_type
 
 

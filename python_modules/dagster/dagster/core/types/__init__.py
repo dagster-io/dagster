@@ -1,4 +1,5 @@
 from .base import (
+    iterate_types,
     DagsterType,
     DagsterTypeAttributes,
 )

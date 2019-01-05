@@ -1,6 +1,9 @@
 from dagster import check
 
-from dagster.core.types import Field
+from dagster.core.types import (
+    Field,
+    iterate_types,
+)
 
 from .input import InputDefinition
 
@@ -95,16 +98,3 @@ class SolidDefinition(object):
     def output_def_named(self, name):
         check.str_param(name, 'name')
         return self._output_dict[name]
-
-    def iterate_types(self, seen_config_schemas):
-        for input_def in self.input_defs:
-            for dagster_type in input_def.dagster_type.iterate_types(seen_config_schemas):
-                yield dagster_type
-
-        for output_def in self.output_defs:
-            for dagster_type in output_def.dagster_type.iterate_types(seen_config_schemas):
-                yield dagster_type
-
-        if self.config_field:
-            for dagster_type in self.config_field.dagster_type.iterate_types(seen_config_schemas):
-                yield dagster_type
