@@ -2,6 +2,8 @@ black==18.9b0; python_version >= '3.6'
 pylint==2.2.2; python_version >= '3.6'
 pytest==4.0.2
 pytest-cov==2.6.0
+pytest-dependency==0.4.0
+pytest-runner==4.2
 recommonmark==0.4.0
 rope==0.11
 Sphinx==1.7.5
