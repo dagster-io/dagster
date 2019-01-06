@@ -7,7 +7,7 @@ from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.definitions import PipelineDefinition, Solid
 from dagster.core.errors import DagsterError
 from dagster.core.execution_context import RuntimeExecutionContext
-from dagster.core.types import DagsterType
+from dagster.core.types.runtime import RuntimeType
 
 
 class StepOutputHandle(namedtuple('_StepOutputHandle', 'step output_name')):
@@ -84,24 +84,24 @@ class StepTag(Enum):
     VALUE_THUNK = 'VALUE_THUNK'
 
 
-class StepInput(namedtuple('_StepInput', 'name dagster_type prev_output_handle')):
-    def __new__(cls, name, dagster_type, prev_output_handle):
+class StepInput(namedtuple('_StepInput', 'name runtime_type prev_output_handle')):
+    def __new__(cls, name, runtime_type, prev_output_handle):
         return super(StepInput, cls).__new__(
             cls,
             name=check.str_param(name, 'name'),
-            dagster_type=check.inst_param(dagster_type, 'dagster_type', DagsterType),
+            runtime_type=check.inst_param(runtime_type, 'runtime_type', RuntimeType),
             prev_output_handle=check.inst_param(
                 prev_output_handle, 'prev_output_handle', StepOutputHandle
             ),
         )
 
 
-class StepOutput(namedtuple('_StepOutput', 'name dagster_type')):
-    def __new__(cls, name, dagster_type):
+class StepOutput(namedtuple('_StepOutput', 'name runtime_type')):
+    def __new__(cls, name, runtime_type):
         return super(StepOutput, cls).__new__(
             cls,
             name=check.str_param(name, 'name'),
-            dagster_type=check.inst_param(dagster_type, 'dagster_type', DagsterType),
+            runtime_type=check.inst_param(runtime_type, 'runtime_type', RuntimeType),
         )
 
 

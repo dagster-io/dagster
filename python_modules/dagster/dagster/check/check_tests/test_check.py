@@ -582,3 +582,22 @@ def test_type_param():
 
     with pytest.raises(CheckError):
         check.type_param(Bar(), 'foo')
+
+
+def test_subclass_param():
+    class Super(object):
+        pass
+
+    class Sub(Super):
+        pass
+
+    class Alone(object):
+        pass
+
+    assert check.subclass_param(Sub, 'foo', Super)
+
+    with pytest.raises(CheckError):
+        assert check.subclass_param(Alone, 'foo', Super)
+
+    with pytest.raises(CheckError):
+        assert check.subclass_param('value', 'foo', Super)

@@ -47,7 +47,7 @@ def _create_serialization_lambda(solid, output_def):
         if not os.path.exists(path):
             os.makedirs(path)
 
-        output_def.dagster_type.serialize_value(path, value)
+        output_def.runtime_type.serialize_value(path, value)
 
         context.info('Serialized output to {path}'.format(path=path))
 
@@ -66,11 +66,11 @@ def create_serialization_step(solid, output_def, prev_subplan):
         step_inputs=[
             StepInput(
                 name=SERIALIZE_INPUT,
-                dagster_type=output_def.dagster_type,
+                runtime_type=output_def.runtime_type,
                 prev_output_handle=prev_subplan.terminal_step_output_handle,
             )
         ],
-        step_outputs=[StepOutput(name=SERIALIZE_OUTPUT, dagster_type=output_def.dagster_type)],
+        step_outputs=[StepOutput(name=SERIALIZE_OUTPUT, runtime_type=output_def.runtime_type)],
         compute_fn=_create_serialization_lambda(solid, output_def),
         tag=StepTag.SERIALIZE,
         solid=solid,

@@ -1,20 +1,22 @@
-from .base import DagsterType, DagsterTypeAttributes
+from .builtin_enum import BuiltinEnum
+from .dagster_type import Nullable, List
+from .field import Dict, Field, NamedDict
+from .runtime import PythonObjectType
 
-from .builtins import (
-    Any,
-    Bool,
-    DagsterStringType,
-    Dict,
-    Int,
-    List,
-    NamedDict,
-    Nullable,
-    Path,
-    PythonDict,
-    PythonObjectType,
-    String,
-)
+Any = BuiltinEnum.ANY
+String = BuiltinEnum.STRING
+Int = BuiltinEnum.INT
+Bool = BuiltinEnum.BOOL
+Path = BuiltinEnum.PATH
+Float = BuiltinEnum.FLOAT
 
-from .configurable import Field
 
-from .iterate_types import iterate_types
+'''
+Note for internal developers. Naming convention:
+
+runtime_cls
+config_cls
+runtime_type
+config_type
+dagster_type
+'''

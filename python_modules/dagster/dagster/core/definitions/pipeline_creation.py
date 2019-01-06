@@ -1,8 +1,8 @@
 from collections import defaultdict
 from dagster import check
 
-from dagster.core import types
-from dagster.core.types import iterate_types
+from dagster.core.types import config
+from dagster.core.types.iterate_types import iterate_config_types
 from dagster.core.errors import DagsterInvalidDefinitionError
 
 from .context import PipelineContextDefinition
@@ -96,8 +96,8 @@ def _validate_dependencies(dependencies, solid_dict, alias_lookup):
                 aliased_solid = alias_lookup.get(from_solid)
                 if aliased_solid == from_solid:
                     raise DagsterInvalidDefinitionError(
-                        'Solid {from_solid} in dependency dictionary not found in solid list'.format(
-                            from_solid=from_solid
+                        'Solid {solid} in dependency dictionary not found in solid list'.format(
+                            solid=from_solid
                         )
                     )
                 else:
@@ -131,21 +131,13 @@ def _validate_dependencies(dependencies, solid_dict, alias_lookup):
                 )
 
 
-def iterate_solid_def_types(solid_def, seen_config_schemas):
-    for input_def in solid_def.input_defs:
-        for dagster_type in iterate_types(input_def.dagster_type, seen_config_schemas):
-            yield dagster_type
-
-    for output_def in solid_def.output_defs:
-        for dagster_type in iterate_types(output_def.dagster_type, seen_config_schemas):
-            yield dagster_type
-
+def iterate_solid_def_types(solid_def):
     if solid_def.config_field:
-        for dagster_type in iterate_types(solid_def.config_field.dagster_type, seen_config_schemas):
-            yield dagster_type
+        for runtime_type in iterate_config_types(solid_def.config_field.config_type):
+            yield runtime_type
 
 
-def _gather_all_types(solid_defs, context_definitions, environment_type):
+def _gather_all_config_types(solid_defs, context_definitions, environment_type):
     check.list_param(solid_defs, 'solid_defs', SolidDefinition)
     check.dict_param(
         context_definitions,
@@ -154,38 +146,71 @@ def _gather_all_types(solid_defs, context_definitions, environment_type):
         value_type=PipelineContextDefinition,
     )
 
-    check.inst_param(environment_type, 'environment_type', types.DagsterType)
-
-    seen_config_schemas = set()
+    check.inst_param(environment_type, 'environment_type', config.ConfigType)
 
     for solid_def in solid_defs:
-        for dagster_type in iterate_solid_def_types(solid_def, seen_config_schemas):
-            yield dagster_type
+        for runtime_type in iterate_solid_def_types(solid_def):
+            yield runtime_type
 
     for context_definition in context_definitions.values():
         if context_definition.config_field:
-            context_config_type = context_definition.config_field.dagster_type
-            for dagster_type in iterate_types(context_config_type, seen_config_schemas):
-                yield dagster_type
+            context_config_type = context_definition.config_field.config_type
+            for runtime_type in iterate_config_types(context_config_type):
+                yield runtime_type
 
-    for dagster_type in iterate_types(environment_type, seen_config_schemas):
-        yield dagster_type
+    for runtime_type in iterate_config_types(environment_type):
+        yield runtime_type
 
 
-def construct_type_dictionary(solids, context_definitions, environment_type):
+def construct_runtime_type_dictionary(solid_defs):
     type_dict = {}
-    all_types = list(_gather_all_types(solids, context_definitions, environment_type))
-    for dagster_type in all_types:
-        name = dagster_type.name
+    for solid_def in solid_defs:
+        for input_def in solid_def.input_defs:
+            type_dict[input_def.runtime_type.name] = input_def.runtime_type
+
+        for output_def in solid_def.output_defs:
+            type_dict[output_def.runtime_type.name] = output_def.runtime_type
+
+    return type_dict
+
+
+def _gather_all_schemas(solid_defs):
+    runtime_types = construct_runtime_type_dictionary(solid_defs)
+    for rtt in runtime_types.values():
+        if rtt.input_schema:
+            for ct in iterate_config_types(rtt.input_schema):
+                yield ct
+        if rtt.output_schema:
+            for ct in iterate_config_types(rtt.output_schema):
+                yield ct
+
+
+def construct_config_type_dictionary(solid_defs, context_definitions, environment_type):
+    check.list_param(solid_defs, 'solid_defs', SolidDefinition)
+    check.dict_param(
+        context_definitions,
+        'context_definitions',
+        key_type=str,
+        value_type=PipelineContextDefinition,
+    )
+    check.inst_param(environment_type, 'environment_type', config.ConfigType)
+
+    type_dict = {}
+    all_types = list(
+        _gather_all_config_types(solid_defs, context_definitions, environment_type)
+    ) + list(_gather_all_schemas(solid_defs))
+    for config_type in all_types:
+        name = config_type.name
         if name in type_dict:
-            if dagster_type is not type_dict[name]:
+            if type(config_type) is not type(type_dict[name]):
                 raise DagsterInvalidDefinitionError(
                     (
                         'Type names must be unique. You have construct two instances of types '
-                        'with the same name {name} but have different instances'.format(name=name)
-                    )
+                        'with the same name {name} but have different instances. Instance one '
+                        '{inst_one}. Instance two {inst_two}'
+                    ).format(name=name, inst_one=type(config_type), inst_two=type(type_dict[name]))
                 )
         else:
-            type_dict[dagster_type.name] = dagster_type
+            type_dict[config_type.name] = config_type
 
     return type_dict

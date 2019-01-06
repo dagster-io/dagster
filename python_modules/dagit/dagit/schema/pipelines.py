@@ -12,6 +12,8 @@ from dagster import (
 )
 
 from dagster.core.definitions import Solid, SolidInputHandle, SolidOutputHandle
+from dagster.core.types.runtime import RuntimeType
+from dagster.core.types.config import ConfigType, DEFAULT_TYPE_ATTRIBUTES
 
 from dagit.schema import dauphin
 
@@ -49,15 +51,13 @@ class DauphinPipeline(dauphin.ObjectType):
         ]
 
     def resolve_environment_type(self, info):
-        return info.schema.type_named('Type').from_dagster_type(
-            info, self._pipeline.environment_type
-        )
+        return info.schema.type_named('Type').to_dauphin_type(info, self._pipeline.environment_type)
 
     def resolve_types(self, info):
         return sorted(
             [
-                info.schema.type_named('Type').from_dagster_type(info, type_)
-                for type_ in self._pipeline.all_types()
+                info.schema.type_named('Type').to_dauphin_type(info, type_)
+                for type_ in all_types(self._pipeline)
             ],
             key=lambda type_: type_.name,
         )
@@ -72,7 +72,7 @@ class DauphinPipeline(dauphin.ObjectType):
         return self._pipeline
 
     def get_type(self, info, typeName):
-        return info.schema.type_named('Type').from_dagster_type(
+        return info.schema.type_named('Type').to_dauphin_type(
             info, self._pipeline.type_named(typeName)
         )
 
@@ -303,8 +303,8 @@ class DauphinInputDefinition(dauphin.ObjectType):
         )
 
     def resolve_type(self, info):
-        return info.schema.type_named('Type').from_dagster_type(
-            info, dagster_type=self._input_definition.dagster_type
+        return info.schema.type_named('Type').to_dauphin_type(
+            info, self._input_definition.runtime_type
         )
 
     def resolve_expectations(self, info):
@@ -341,8 +341,8 @@ class DauphinOutputDefinition(dauphin.ObjectType):
         )
 
     def resolve_type(self, info):
-        return info.schema.type_named('Type').from_dagster_type(
-            info, dagster_type=self._output_definition.dagster_type
+        return info.schema.type_named('Type').to_dauphin_type(
+            info, self._output_definition.runtime_type
         )
 
     def resolve_expectations(self, info):
@@ -407,11 +407,11 @@ class DauphinType(dauphin.Interface):
     inner_types = dauphin.non_null_list('Type')
 
     @classmethod
-    def from_dagster_type(cls, info, dagster_type):
-        if dagster_type.configurable_from_dict:
-            return info.schema.type_named('CompositeType')(dagster_type)
+    def to_dauphin_type(cls, info, config_or_runtime_type):
+        if isinstance(config_or_runtime_type, ConfigType) and config_or_runtime_type.has_fields:
+            return info.schema.type_named('CompositeType')(config_or_runtime_type)
         else:
-            return info.schema.type_named('RegularType')(dagster_type)
+            return info.schema.type_named('RegularType')(config_or_runtime_type)
 
 
 class DauphinRegularType(dauphin.ObjectType):
@@ -419,24 +419,87 @@ class DauphinRegularType(dauphin.ObjectType):
         name = 'RegularType'
         interfaces = [DauphinType]
 
-    def __init__(self, dagster_type):
-        super(DauphinRegularType, self).__init__(
-            name=dagster_type.name,
-            description=dagster_type.description,
-            is_dict=dagster_type.configurable_from_dict,
-            is_nullable=dagster_type.configurable_from_nullable,
-            is_list=dagster_type.configurable_from_list,
-        )
-        self._dagster_type = dagster_type
+    def __init__(self, runtime_type):
+
+        super(DauphinRegularType, self).__init__(**ctor_kwargs(runtime_type))
+        self._runtime_type = runtime_type
 
     def resolve_type_attributes(self, _info):
-        return self._dagster_type.type_attributes
+        return type_attributes(self._runtime_type)
 
     def resolve_inner_types(self, info):
-        return [
-            DauphinType.from_dagster_type(info, inner_type)
-            for inner_type in self._dagster_type.inner_types
-        ]
+        return inner_types(info, self._runtime_type)
+
+
+# Section: Type Reconciliation
+# These are a temporary set of functions that should be eliminated
+# once dagit is aware of the config vs runtime systems and the
+# graphql schema updated accordingly
+#
+# DauphinType.to_dauphin_type also qualifies as a function that is
+# aware of the two type systems
+#
+def all_types(pipeline):
+    runtime_types = pipeline.all_runtime_types()
+
+    all_types_dicts = {rt.name: rt for rt in runtime_types}
+
+    for config_type in pipeline.all_config_types():
+        all_types_dicts[config_type.name] = config_type
+    return list(all_types_dicts.values())
+
+
+def ctor_kwargs(runtime_type):
+    if isinstance(runtime_type, RuntimeType):
+        return dict(
+            name=runtime_type.name,
+            description=runtime_type.description,
+            is_dict=False,
+            is_nullable=runtime_type.is_nullable,
+            is_list=runtime_type.is_list,
+        )
+    elif isinstance(runtime_type, ConfigType):
+        return dict(
+            name=runtime_type.name,
+            description=runtime_type.description,
+            is_dict=check.bool_param(runtime_type.has_fields, 'is_dict'),
+            is_nullable=runtime_type.is_nullable,
+            is_list=runtime_type.is_list,
+        )
+    else:
+        check.failed('Not a valid type inst')
+
+
+def type_attributes(runtime_type):
+    if isinstance(runtime_type, RuntimeType):
+        return DEFAULT_TYPE_ATTRIBUTES
+    elif isinstance(runtime_type, ConfigType):
+        return runtime_type.type_attributes
+    else:
+        check.failed('')
+
+
+def inner_types_of_runtime(info, runtime_type):
+    if runtime_type.is_list or runtime_type.is_nullable:
+        return [DauphinType.to_dauphin_type(info, runtime_type.inner_type)]
+    else:
+        return []
+
+
+def inner_types_of_config(info, config_type):
+    return [DauphinType.to_dauphin_type(info, inner_type) for inner_type in config_type.inner_types]
+
+
+def inner_types(info, runtime_type):
+    if isinstance(runtime_type, RuntimeType):
+        return inner_types_of_runtime(info, runtime_type)
+    elif isinstance(runtime_type, ConfigType):
+        return inner_types_of_config(info, runtime_type)
+    else:
+        check.failed('')
+
+
+# End Type Reconciliation section
 
 
 class DauphinCompositeType(dauphin.ObjectType):
@@ -446,29 +509,20 @@ class DauphinCompositeType(dauphin.ObjectType):
 
     fields = dauphin.non_null_list('TypeField')
 
-    def __init__(self, dagster_type):
-        super(DauphinCompositeType, self).__init__(
-            name=dagster_type.name,
-            description=dagster_type.description,
-            is_dict=dagster_type.configurable_from_dict,
-            is_nullable=dagster_type.configurable_from_nullable,
-            is_list=dagster_type.configurable_from_list,
-        )
-        self._dagster_type = dagster_type
+    def __init__(self, runtime_type):
+        super(DauphinCompositeType, self).__init__(**ctor_kwargs(runtime_type))
+        self._runtime_type = runtime_type
 
     def resolve_inner_types(self, info):
-        return [
-            DauphinType.from_dagster_type(info, inner_type)
-            for inner_type in self._dagster_type.inner_types
-        ]
+        return inner_types(info, self._runtime_type)
 
-    def resolve_type_attributes(self, info):
-        return info.schema.type_named('TypeAttributes')(*self._dagster_type.type_attributes)
+    def resolve_type_attributes(self, _info):
+        return type_attributes(self._runtime_type)
 
     def resolve_fields(self, info):
         return [
             info.schema.type_named('TypeField')(name=k, field=v)
-            for k, v in self._dagster_type.field_dict.items()
+            for k, v in self._runtime_type.fields.items()
         ]
 
 
@@ -492,6 +546,4 @@ class DauphinTypeField(dauphin.ObjectType):
         self._field = field
 
     def resolve_type(self, info):
-        return info.schema.type_named('Type').from_dagster_type(
-            info, dagster_type=self._field.dagster_type
-        )
+        return info.schema.type_named('Type').to_dauphin_type(info, self._field.config_type)

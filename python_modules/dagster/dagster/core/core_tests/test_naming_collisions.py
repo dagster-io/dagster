@@ -2,7 +2,6 @@ import dagster
 
 from dagster import (
     DependencyDefinition,
-    Field,
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
@@ -11,11 +10,14 @@ from dagster import (
     check,
     execute_pipeline,
     types,
+    Dict,
+    Field,
+    String,
 )
 
 from dagster.core.test_utils import single_output_transform
 
-SingleValueDict = types.Dict({'value': Field(types.String)})
+SingleValueDict = Dict({'value': Field(String)})
 
 
 def define_pass_value_solid(name, description=None):

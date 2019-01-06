@@ -4,17 +4,22 @@ import os
 import zipfile
 
 from sqlalchemy import text
-from stringcase import snakecase
 
 from dagster import (
+    Any,
+    Bool,
+    Dict,
     Field,
     InputDefinition,
+    Int,
+    List,
     OutputDefinition,
+    Path,
     Result,
     SolidDefinition,
+    String,
     check,
     solid,
-    types,
 )
 from dagstermill import define_dagstermill_solid
 
@@ -52,7 +57,7 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
 
     materialization_strategy_output_types = {  # pylint:disable=C0103
         'table': SqlTableName,
-        # 'view': types.String,
+        # 'view': String,
         # 'query': SqlAlchemyQueryType,
         # 'subquery': SqlAlchemySubqueryType,
         # 'result_proxy': SqlAlchemyResultProxyType,
@@ -124,9 +129,9 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
 
 @solid(
     name='thunk',
-    config_field=Field(types.String, description='The string value to output.'),
+    config_field=Field(String, description='The string value to output.'),
     description='No-op solid that simply outputs its single string config value.',
-    outputs=[OutputDefinition(types.String, description='The string passed in as config.')],
+    outputs=[OutputDefinition(String, description='The string passed in as ')],
 )
 def thunk(info):
     '''Output the config vakue.
@@ -161,16 +166,16 @@ def thunk_database_engine(info):
 @solid(
     name='download_from_s3',
     config_field=Field(
-        types.List(
-            types.Dict(
+        List(
+            Dict(
                 fields={
                     # Probably want to make the region configuable too
                     'bucket': Field(
-                        types.String, description='The S3 bucket in which to look for the key.'
+                        String, description='The S3 bucket in which to look for the key.'
                     ),
-                    'key': Field(types.String, description='The key to download.'),
+                    'key': Field(String, description='The key to download.'),
                     'skip_if_present': Field(
-                        types.Bool,
+                        Bool,
                         description=(
                             'If True, and a file already exists at the path described by the '
                             'target_path config value, if present, or the key, then the solid '
@@ -180,8 +185,10 @@ def thunk_database_engine(info):
                         is_optional=True,
                     ),
                     'target_path': Field(
-                        types.Path,
-                        description='If present, specifies the path at which to download the object.',
+                        Path,
+                        description=(
+                            'If present, specifies the path at which to download the object.'
+                        ),
                         is_optional=True,
                     ),
                 }
@@ -190,9 +197,7 @@ def thunk_database_engine(info):
     ),
     description='Downloads an object from S3.',
     outputs=[
-        OutputDefinition(
-            types.List(FileExistsAtPath), description='The path to the downloaded object.'
-        )
+        OutputDefinition(List(FileExistsAtPath), description='The path to the downloaded object.')
     ],
 )
 def download_from_s3(info):
@@ -232,32 +237,26 @@ def download_from_s3(info):
 @solid(
     name='upload_to_s3',
     config_field=Field(
-        types.Dict(
+        Dict(
             fields={
                 # Probably want to make the region configuable too
-                'bucket': Field(
-                    types.String, description='The S3 bucket to which to upload the file.'
-                ),
-                'key': Field(types.String, description='The key to which to upload the file.'),
+                'bucket': Field(String, description='The S3 bucket to which to upload the file.'),
+                'key': Field(String, description='The key to which to upload the file.'),
                 'kwargs': Field(
-                    types.Any,  # TODO fix
+                    Any,  # TODO fix
                     description='Kwargs to pass through to the S3 client',
                     is_optional=True,
                 ),
             }
         )
     ),
-    inputs=[
-        InputDefinition('file_path', types.Path, description='The path of the file to upload.')
-    ],
+    inputs=[InputDefinition('file_path', Path, description='The path of the file to upload.')],
     description='Uploads a file to S3.',
     outputs=[
         OutputDefinition(
-            types.String, description='The bucket to which the file was uploaded.', name='bucket'
+            String, description='The bucket to which the file was uploaded.', name='bucket'
         ),
-        OutputDefinition(
-            types.String, description='The key to which the file was uploaded.', name='key'
-        ),
+        OutputDefinition(String, description='The key to which the file was uploaded.', name='key'),
     ],
 )
 def upload_to_s3(info, file_path):
@@ -284,39 +283,35 @@ def upload_to_s3(info, file_path):
 @solid(
     name='unzip_file',
     # config_field=Field(
-    #     types.ConfigDictionary(name='UnzipFileConfigType', fields={
-    #         'archive_path': Field(types.String, description=''),
-    #         'archive_member': Field(types.String, description=''),
-    #         'destination_dir': Field(types.String, description=''),
+    #     ConfigDictionary(name='UnzipFileConfigType', fields={
+    #         'archive_path': Field(String, description=''),
+    #         'archive_member': Field(String, description=''),
+    #         'destination_dir': Field(String, description=''),
     #     })
     # ),
     inputs=[
+        InputDefinition('archive_paths', List(Path), description='The path to the archive.'),
         InputDefinition(
-            'archive_paths', types.List(types.Path), description='The path to the archive.'
-        ),
-        InputDefinition(
-            'archive_members',
-            types.List(types.String),
-            description='The archive member to extract.',
+            'archive_members', List(String), description='The archive member to extract.'
         ),
         # InputDefinition(
         #     'destination_dir',
-        #     types.String,
+        #     String,
         #     description='',
         # ),
     ],
     config_field=Field(
-        types.Dict(
+        Dict(
             fields={
                 'skip_if_present': Field(
-                    types.Bool,
+                    Bool,
                     description='If True, and a file already exists at the path to which the '
                     'archive member would be unzipped, then the solid will no-op',
                     default_value=False,
                     is_optional=True,
                 ),
                 'destination_dir': Field(
-                    types.String,
+                    String,
                     description='If no destination_dir is specified, the archive will be unzipped '
                     'to a temporary directory.',
                     is_optional=True,
@@ -327,7 +322,7 @@ def upload_to_s3(info, file_path):
     description='Extracts an archive member from a zip archive.',
     outputs=[
         OutputDefinition(
-            types.List(FileExistsAtPath), description='The path to the unzipped archive member.'
+            List(FileExistsAtPath), description='The path to the unzipped archive member.'
         )
     ],
 )
@@ -393,7 +388,7 @@ def unzip_file(
 
 @solid(
     name='ingest_csv_to_spark',
-    inputs=[InputDefinition('input_csv', types.Path)],
+    inputs=[InputDefinition('input_csv', Path)],
     outputs=[OutputDefinition(SparkDataFrameType)],
 )
 def ingest_csv_to_spark(info, input_csv):
@@ -421,7 +416,7 @@ def rename_spark_dataframe_columns(data_frame, fn):
             description='The data frame whose columns should be prefixed',
         )
     ],
-    config_field=Field(types.String, description='Prefix to append.'),
+    config_field=Field(String, description='Prefix to append.'),
     outputs=[OutputDefinition(SparkDataFrameType)],
 )
 def prefix_column_names(info, data_frame):
@@ -452,7 +447,7 @@ def replace_values_spark(data_frame, old, new):
     description="Normalizes the given NA values by replacing them with None",
     # FIXME can this be optional
     # config_field=Field(
-    #     types.String,
+    #     String,
     #     # description='The string NA value to normalize to None.'
     # ),
     inputs=[
@@ -477,7 +472,7 @@ def normalize_weather_na_values(_info, data_frame):
         )
     ],
     outputs=[OutputDefinition(SparkDataFrameType)],
-    config_field=Field(types.Dict(fields={'table_name': Field(types.String, description='')})),
+    config_field=Field(Dict(fields={'table_name': Field(String, description='')})),
 )
 def load_data_to_database_from_spark(info, data_frame):
     info.context.resources.db_info.load_table(data_frame, info.config['table_name'])
@@ -488,7 +483,7 @@ def load_data_to_database_from_spark(info, data_frame):
     name='subsample_spark_dataset',
     description='Subsample a spark dataset.',
     config_field=Field(
-        types.Dict(fields={'subsample_pct': Field(types.Int, description='')})
+        Dict(fields={'subsample_pct': Field(Int, description='')})
         # description='The integer percentage of rows to sample from the input dataset.'
     ),
     inputs=[
@@ -524,16 +519,12 @@ def subsample_spark_dataset(info, data_frame):
         )
     ],
     config_field=Field(
-        types.Dict(
+        Dict(
             fields={
                 # Probably want to make the region configuable too
-                'on_left': Field(
-                    types.String, description='', default_value='id', is_optional=True
-                ),
-                'on_right': Field(
-                    types.String, description='', default_value='id', is_optional=True
-                ),
-                'how': Field(types.String, description='', default_value='inner', is_optional=True),
+                'on_left': Field(String, description='', default_value='id', is_optional=True),
+                'on_right': Field(String, description='', default_value='id', is_optional=True),
+                'how': Field(String, description='', default_value='inner', is_optional=True),
             }
         )
     ),
@@ -592,7 +583,7 @@ average_sfo_outbound_avg_delays_by_destination = sql_solid(
     ''',
     'table',
     table_name='average_sfo_outbound_avg_delays_by_destination',
-    inputs=[InputDefinition('q2_sfo_outbound_flights', dagster_type=SqlTableName)],
+    inputs=[InputDefinition('q2_sfo_outbound_flights', runtime_type=SqlTableName)],
 )
 
 ticket_prices_with_average_delays = sql_solid(
@@ -742,9 +733,7 @@ delays_by_geography = notebook_solid(
     'Delays by Geography.ipynb',
     inputs=[
         InputDefinition(
-            'db_url',
-            types.String,
-            description='The db_url to use to construct a SQLAlchemy engine.',
+            'db_url', String, description='The db_url to use to construct a SQLAlchemy engine.'
         ),
         InputDefinition(
             'westbound_delays',
@@ -759,7 +748,7 @@ delays_by_geography = notebook_solid(
     ],
     outputs=[
         OutputDefinition(
-            dagster_type=types.Path,
+            dagster_type=Path,
             # name='plots_pdf_path',
             description='The path to the saved PDF plots.',
         )
@@ -771,9 +760,7 @@ delays_vs_fares_nb = notebook_solid(
     'Fares vs. Delays.ipynb',
     inputs=[
         InputDefinition(
-            'db_url',
-            types.String,
-            description='The db_url to use to construct a SQLAlchemy engine.',
+            'db_url', String, description='The db_url to use to construct a SQLAlchemy engine.'
         ),
         InputDefinition(
             'table_name', SqlTableName, description='The SQL table to use for calcuations.'
@@ -781,7 +768,7 @@ delays_vs_fares_nb = notebook_solid(
     ],
     outputs=[
         OutputDefinition(
-            dagster_type=types.Path,
+            dagster_type=Path,
             # name='plots_pdf_path',
             description='The path to the saved PDF plots.',
         )
@@ -793,9 +780,7 @@ sfo_delays_by_destination = notebook_solid(
     'SFO Delays by Destination.ipynb',
     inputs=[
         InputDefinition(
-            'db_url',
-            types.String,
-            description='The db_url to use to construct a SQLAlchemy engine.',
+            'db_url', String, description='The db_url to use to construct a SQLAlchemy engine.'
         ),
         InputDefinition(
             'table_name', SqlTableName, description='The SQL table to use for calcuations.'
@@ -803,7 +788,7 @@ sfo_delays_by_destination = notebook_solid(
     ],
     outputs=[
         OutputDefinition(
-            dagster_type=types.Path,
+            dagster_type=Path,
             # name='plots_pdf_path',
             description='The path to the saved PDF plots.',
         )

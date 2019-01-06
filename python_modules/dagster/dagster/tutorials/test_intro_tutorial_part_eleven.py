@@ -12,14 +12,15 @@ from dagster import (
     Result,
     execute_pipeline,
     solid,
-    types,
+    String,
+    Int,
 )
 
 
 @solid(
     outputs=[
-        OutputDefinition(dagster_type=types.Int, name='out_one'),
-        OutputDefinition(dagster_type=types.Int, name='out_two'),
+        OutputDefinition(dagster_type=Int, name='out_one'),
+        OutputDefinition(dagster_type=Int, name='out_two'),
     ]
 )
 def yield_outputs(_info):
@@ -29,8 +30,8 @@ def yield_outputs(_info):
 
 @solid(
     outputs=[
-        OutputDefinition(dagster_type=types.Int, name='out_one'),
-        OutputDefinition(dagster_type=types.Int, name='out_two'),
+        OutputDefinition(dagster_type=Int, name='out_one'),
+        OutputDefinition(dagster_type=Int, name='out_two'),
     ]
 )
 def return_dict_results(_info):
@@ -38,10 +39,10 @@ def return_dict_results(_info):
 
 
 @solid(
-    config_field=Field(types.String, description='Should be either out_one or out_two'),
+    config_field=Field(String, description='Should be either out_one or out_two'),
     outputs=[
-        OutputDefinition(dagster_type=types.Int, name='out_one'),
-        OutputDefinition(dagster_type=types.Int, name='out_two'),
+        OutputDefinition(dagster_type=Int, name='out_one'),
+        OutputDefinition(dagster_type=Int, name='out_two'),
     ],
 )
 def conditional(info):
@@ -53,13 +54,13 @@ def conditional(info):
         raise Exception('invalid config')
 
 
-@solid(inputs=[InputDefinition('num', dagster_type=types.Int)])
+@solid(inputs=[InputDefinition('num', runtime_type=Int)])
 def log_num(info, num):
     info.context.info('num {num}'.format(num=num))
     return num
 
 
-@solid(inputs=[InputDefinition('num', dagster_type=types.Int)])
+@solid(inputs=[InputDefinition('num', runtime_type=Int)])
 def log_num_squared(info, num):
     info.context.info('num_squared {num_squared}'.format(num_squared=num * num))
     return num * num

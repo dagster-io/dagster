@@ -5,7 +5,6 @@ from dagster import (
     DagsterInvalidDefinitionError,
     DependencyDefinition,
     ExecutionContext,
-    Field,
     InputDefinition,
     MultipleResults,
     OutputDefinition,
@@ -14,7 +13,8 @@ from dagster import (
     execute_pipeline,
     lambda_solid,
     solid,
-    types,
+    Field,
+    Any,
 )
 
 from dagster.core.errors import DagsterInvariantViolationError
@@ -316,7 +316,7 @@ def test_any_config_field():
     called = {}
     conf_value = 234
 
-    @solid(config_field=Field(types.Any))
+    @solid(config_field=Field(Any))
     def hello_world(info):
         assert info.config == conf_value
         called['yup'] = True

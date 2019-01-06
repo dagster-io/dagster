@@ -12,8 +12,8 @@ supporting dynamic branching and conditional execution of pipelines.
 
     @solid(
         outputs=[
-            OutputDefinition(dagster_type=types.Int, name='out_one'),
-            OutputDefinition(dagster_type=types.Int, name='out_two'),
+            OutputDefinition(runtime_type=types.Int, name='out_one'),
+            OutputDefinition(runtime_type=types.Int, name='out_two'),
         ],
     )
     def return_dict_results(_info):
@@ -22,12 +22,12 @@ supporting dynamic branching and conditional execution of pipelines.
             'out_two': 45,
         })
 
-    @solid(inputs=[InputDefinition('num', dagster_type=types.Int)])
+    @solid(inputs=[InputDefinition('num', runtime_type=types.Int)])
     def log_num(info, num):
         info.context.info('num {num}'.format(num=num))
         return num
 
-    @solid(inputs=[InputDefinition('num', dagster_type=types.Int)])
+    @solid(inputs=[InputDefinition('num', runtime_type=types.Int)])
     def log_num_squared(info, num):
         info.context.info(
             'num_squared {num_squared}'.format(num_squared=num * num)
@@ -95,8 +95,8 @@ the iterator form.)
 
     @solid(
         outputs=[
-            OutputDefinition(dagster_type=types.Int, name='out_one'),
-            OutputDefinition(dagster_type=types.Int, name='out_two'),
+            OutputDefinition(runtime_type=types.Int, name='out_one'),
+            OutputDefinition(runtime_type=types.Int, name='out_two'),
         ],
     )
     def yield_outputs(_info):
@@ -140,8 +140,8 @@ and then execute that pipeline.
     @solid(
         config_field=ConfigDefinition(types.String, description='Should be either out_one or out_two'),
         outputs=[
-            OutputDefinition(dagster_type=types.Int, name='out_one'),
-            OutputDefinition(dagster_type=types.Int, name='out_two'),
+            OutputDefinition(runtime_type=types.Int, name='out_one'),
+            OutputDefinition(runtime_type=types.Int, name='out_two'),
         ],
     )
     def conditional(info):

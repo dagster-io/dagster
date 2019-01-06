@@ -3,17 +3,20 @@ import uuid
 import pytest
 
 from dagster import (
+    Dict,
     ExecutionContext,
     Field,
     OutputDefinition,
-    PipelineDefinition,
     PipelineConfigEvaluationError,
     PipelineContextDefinition,
+    PipelineDefinition,
+    String,
     execute_pipeline,
     lambda_solid,
     solid,
-    types,
 )
+
+
 from dagster.utils.logging import INFO
 
 # protected variable. need to test loggers
@@ -81,11 +84,11 @@ def test_default_value():
         solids=[_get_config_test_solid('field_one', 'heyo')],
         context_definitions={
             'custom_one': PipelineContextDefinition(
-                config_field=types.Field(
-                    types.Dict(
+                config_field=Field(
+                    Dict(
                         {
                             'field_one': Field(
-                                dagster_type=types.String, is_optional=True, default_value='heyo'
+                                dagster_type=String, is_optional=True, default_value='heyo'
                             )
                         }
                     )
@@ -109,15 +112,11 @@ def test_custom_contexts():
         solids=[custom_context_transform],
         context_definitions={
             'custom_one': PipelineContextDefinition(
-                config_field=types.Field(
-                    types.Dict({'field_one': Field(dagster_type=types.String)})
-                ),
+                config_field=Field(Dict({'field_one': Field(dagster_type=String)})),
                 context_fn=lambda info: ExecutionContext(resources=info.config),
             ),
             'custom_two': PipelineContextDefinition(
-                config_field=types.Field(
-                    types.Dict({'field_one': Field(dagster_type=types.String)})
-                ),
+                config_field=Field(Dict({'field_one': Field(dagster_type=String)})),
                 context_fn=lambda info: ExecutionContext(resources=info.config),
             ),
         },
@@ -151,9 +150,7 @@ def test_yield_context():
         solids=[custom_context_transform],
         context_definitions={
             'custom_one': PipelineContextDefinition(
-                config_field=types.Field(
-                    types.Dict({'field_one': Field(dagster_type=types.String)})
-                ),
+                config_field=Field(Dict({'field_one': Field(dagster_type=String)})),
                 context_fn=_yield_context,
             )
         },
@@ -197,7 +194,7 @@ def test_invalid_context():
         solids=[never_transform],
         context_definitions={
             'default': PipelineContextDefinition(
-                config_field=types.Field(types.Dict({'string_field': Field(types.String)})),
+                config_field=Field(Dict({'string_field': Field(String)})),
                 context_fn=lambda info: ExecutionContext(resources=info.config),
             )
         },

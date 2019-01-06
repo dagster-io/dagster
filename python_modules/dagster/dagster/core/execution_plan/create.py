@@ -190,7 +190,7 @@ def create_step_inputs(info, state, solid):
 
         state.steps.extend(subplan.steps)
         step_inputs.append(
-            StepInput(input_def.name, input_def.dagster_type, subplan.terminal_step_output_handle)
+            StepInput(input_def.name, input_def.runtime_type, subplan.terminal_step_output_handle)
         )
 
     return step_inputs
@@ -223,7 +223,7 @@ def _create_new_steps_for_input(step, subset_info):
         if step_input.name in subset_info.inputs[step.key]:
             value_thunk_step_output_handle = create_value_thunk_step(
                 step.solid,
-                step_input.dagster_type,
+                step_input.runtime_type,
                 step.key + '.input.' + step_input.name + '.value',
                 subset_info.inputs[step.key][step_input.name],
             )
@@ -233,7 +233,7 @@ def _create_new_steps_for_input(step, subset_info):
             new_steps.append(new_value_step)
 
             new_step_inputs.append(
-                StepInput(step_input.name, step_input.dagster_type, value_thunk_step_output_handle)
+                StepInput(step_input.name, step_input.runtime_type, value_thunk_step_output_handle)
             )
         else:
             new_step_inputs.append(step_input)

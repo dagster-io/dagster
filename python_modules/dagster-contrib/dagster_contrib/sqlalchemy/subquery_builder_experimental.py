@@ -1,6 +1,6 @@
 import os
 
-from dagster import Field, InputDefinition, OutputDefinition, SolidDefinition, check, types
+from dagster import Field, InputDefinition, OutputDefinition, SolidDefinition, check, Dict, String
 
 from dagster.core.test_utils import single_output_transform
 
@@ -56,7 +56,7 @@ def define_create_table_solid(name):
         inputs=[InputDefinition('expr')],
         outputs=[],
         transform_fn=_materialization_fn,
-        config_field=Field(types.Dict({'table_name': Field(types.String)})),
+        config_field=Field(Dict({'table_name': Field(String)})),
     )
 
 

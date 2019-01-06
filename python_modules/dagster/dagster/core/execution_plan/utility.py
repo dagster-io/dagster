@@ -25,23 +25,23 @@ def create_join_step(solid, step_key, prev_steps, prev_output_name):
     check.str_param(prev_output_name, 'output_name')
 
     step_inputs = []
-    seen_dagster_type = None
+    seen_runtime_type = None
     for prev_step in prev_steps:
         prev_step_output = prev_step.step_output_named(prev_output_name)
 
-        if seen_dagster_type is None:
-            seen_dagster_type = prev_step_output.dagster_type
+        if seen_runtime_type is None:
+            seen_runtime_type = prev_step_output.runtime_type
         else:
-            check.invariant(seen_dagster_type == prev_step_output.dagster_type)
+            check.invariant(seen_runtime_type == prev_step_output.runtime_type)
 
         output_handle = StepOutputHandle(prev_step, prev_output_name)
 
-        step_inputs.append(StepInput(prev_step.key, prev_step_output.dagster_type, output_handle))
+        step_inputs.append(StepInput(prev_step.key, prev_step_output.runtime_type, output_handle))
 
     return ExecutionStep(
         key=step_key,
         step_inputs=step_inputs,
-        step_outputs=[StepOutput(JOIN_OUTPUT, seen_dagster_type)],
+        step_outputs=[StepOutput(JOIN_OUTPUT, seen_runtime_type)],
         compute_fn=__join_lambda,
         tag=StepTag.JOIN,
         solid=solid,
@@ -80,7 +80,7 @@ def create_joining_subplan(solid, join_step_key, parallel_steps, parallel_step_o
 VALUE_OUTPUT = 'value_output'
 
 
-def create_value_thunk_step(solid, dagster_type, step_key, value):
+def create_value_thunk_step(solid, runtime_type, step_key, value):
     def _fn(_context, _step, _inputs):
         yield Result(value, VALUE_OUTPUT)
 
@@ -88,7 +88,7 @@ def create_value_thunk_step(solid, dagster_type, step_key, value):
         ExecutionStep(
             key=step_key,
             step_inputs=[],
-            step_outputs=[StepOutput(VALUE_OUTPUT, dagster_type)],
+            step_outputs=[StepOutput(VALUE_OUTPUT, runtime_type)],
             compute_fn=_fn,
             tag=StepTag.VALUE_THUNK,
             solid=solid,

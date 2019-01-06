@@ -2,96 +2,98 @@ from collections import namedtuple
 
 import pytest
 
-from dagster.core.types.configurable import ConfigurableObjectFromDict
-
 from dagster import (
+    Any,
     DagsterEvaluateConfigValueError,
+    Dict,
     ExecutionContext,
     Field,
+    Int,
+    List,
+    Nullable,
     PipelineConfigEvaluationError,
     PipelineContextDefinition,
     PipelineDefinition,
     SolidDefinition,
+    String,
     execute_pipeline,
     solid,
-    types,
 )
 
+
 from dagster.core.types.evaluator import evaluate_config_value, DagsterEvaluationErrorReason
+
+from dagster.core.types.field import ConfigComposite
 
 from dagster.core.test_utils import throwing_evaluate_config_value
 
 
 def test_noop_config():
-    assert Field(types.Any)
+    assert Field(Any)
 
 
 def test_int_field():
-    config_field = types.Field(types.Dict({'int_field': Field(types.Int)}))
+    config_field = Field(Dict({'int_field': Field(Int)}))
 
-    assert evaluate_config_value(config_field.dagster_type, {'int_field': 1}).value == {
+    assert evaluate_config_value(config_field.config_type, {'int_field': 1}).value == {
         'int_field': 1
     }
 
 
-def assert_config_value_success(dagster_type, config_value, expected):
-    result = evaluate_config_value(dagster_type, config_value)
+def assert_config_value_success(config_type, config_value, expected):
+    result = evaluate_config_value(config_type, config_value)
     assert result.success
     assert result.value == expected
 
 
-def assert_eval_failure(dagster_type, value):
-    assert not evaluate_config_value(dagster_type, value).success
+def assert_eval_failure(config_type, value):
+    assert not evaluate_config_value(config_type, value).success
 
 
 def test_int_fails():
-    config_field = types.Field(types.Dict({'int_field': Field(types.Int)}))
+    config_field = Field(Dict({'int_field': Field(Int)}))
 
-    assert_eval_failure(config_field.dagster_type, {'int_field': 'fjkdj'})
-    assert_eval_failure(config_field.dagster_type, {'int_field': True})
+    assert_eval_failure(config_field.config_type, {'int_field': 'fjkdj'})
+    assert_eval_failure(config_field.config_type, {'int_field': True})
 
 
 def test_default_arg():
-    config_field = types.Field(
-        types.Dict({'int_field': Field(types.Int, default_value=2, is_optional=True)})
-    )
+    config_field = Field(Dict({'int_field': Field(Int, default_value=2, is_optional=True)}))
 
-    assert_config_value_success(config_field.dagster_type, {}, {'int_field': 2})
+    assert_config_value_success(config_field.config_type, {}, {'int_field': 2})
 
 
 def _single_required_string_config_dict():
-    return types.Field(types.Dict({'string_field': Field(types.String)}))
+    return Field(Dict({'string_field': Field(String)}))
 
 
 def _multiple_required_fields_config_dict():
-    return types.Field(
-        types.Dict({'field_one': Field(types.String), 'field_two': Field(types.String)})
-    )
+    return Field(Dict({'field_one': Field(String), 'field_two': Field(String)}))
 
 
 def _single_optional_string_config_dict():
-    return types.Field(types.Dict({'optional_field': Field(types.String, is_optional=True)}))
+    return Field(Dict({'optional_field': Field(String, is_optional=True)}))
 
 
 def _single_optional_string_field_config_dict_with_default():
-    optional_field_def = Field(types.String, is_optional=True, default_value='some_default')
-    return types.Field(types.Dict({'optional_field': optional_field_def}))
+    optional_field_def = Field(String, is_optional=True, default_value='some_default')
+    return Field(Dict({'optional_field': optional_field_def}))
 
 
 def _mixed_required_optional_string_config_dict_with_default():
-    return types.Field(
-        types.Dict(
+    return Field(
+        Dict(
             {
-                'optional_arg': Field(types.String, is_optional=True, default_value='some_default'),
-                'required_arg': Field(types.String, is_optional=False),
-                'optional_arg_no_default': Field(types.String, is_optional=True),
+                'optional_arg': Field(String, is_optional=True, default_value='some_default'),
+                'required_arg': Field(String, is_optional=False),
+                'optional_arg_no_default': Field(String, is_optional=True),
             }
         )
     )
 
 
 def _validate(config_field, value):
-    return throwing_evaluate_config_value(config_field.dagster_type, value)
+    return throwing_evaluate_config_value(config_field.config_type, value)
 
 
 def test_single_required_string_field_config_type():
@@ -187,24 +189,18 @@ def test_mixed_args_passing():
 
 
 def _single_nested_config():
-    return Field(types.Dict({'nested': Field(types.Dict({'int_field': Field(types.Int)}))}))
+    return Field(Dict({'nested': Field(Dict({'int_field': Field(Int)}))}))
 
 
 def _nested_optional_config_with_default():
     return Field(
-        types.Dict(
-            {
-                'nested': Field(
-                    types.Dict({'int_field': Field(types.Int, is_optional=True, default_value=3)})
-                )
-            }
-        )
+        Dict({'nested': Field(Dict({'int_field': Field(Int, is_optional=True, default_value=3)}))})
     )
 
 
 def _nested_optional_config_with_no_default():
-    nested_type = types.Dict({'int_field': Field(types.Int, is_optional=True)})
-    return Field(types.Dict({'nested': Field(dagster_type=nested_type)}))
+    nested_type = Dict({'int_field': Field(Int, is_optional=True)})
+    return Field(Dict({'nested': Field(dagster_type=nested_type)}))
 
 
 def test_single_nested_config():
@@ -242,26 +238,23 @@ def test_nested_optional_with_no_default():
     assert _validate(_nested_optional_config_with_no_default(), {'nested': {}}) == {'nested': {}}
 
 
-CustomStructConfig = namedtuple('CustomStructConfig', 'foo bar')
+CustomStructTuple = namedtuple('CustomStructTuple', 'foo bar')
 
 
-class CustomStructConfigType(ConfigurableObjectFromDict, types.DagsterType):
+class CustomStructConfig(ConfigComposite):
     def __init__(self):
-        super(CustomStructConfigType, self).__init__(
-            name='CustomStructConfigType',
-            fields={'foo': Field(types.String), 'bar': Field(types.Int)},
-        )
+        super(CustomStructConfig, self).__init__(fields={'foo': Field(String), 'bar': Field(Int)})
 
     def construct_from_config_value(self, config_value):
-        return CustomStructConfig(**config_value)
+        return CustomStructTuple(**config_value)
 
 
 def test_custom_composite_type():
-    config_type = CustomStructConfigType()
+    config_type = CustomStructConfig.inst()
 
     assert throwing_evaluate_config_value(
         config_type, {'foo': 'some_string', 'bar': 2}
-    ) == CustomStructConfig(foo='some_string', bar=2)
+    ) == CustomStructTuple(foo='some_string', bar=2)
 
     with pytest.raises(DagsterEvaluateConfigValueError):
         assert throwing_evaluate_config_value(config_type, {'foo': 'some_string'})
@@ -280,19 +273,17 @@ def single_elem(ddict):
 
 
 def test_build_optionality():
-    optional_test_type = types.Field(
-        types.Dict(
+    optional_test_type = Field(
+        Dict(
             {
-                'required': types.Field(types.Dict({'value': types.Field(types.String)})),
-                'optional': types.Field(
-                    types.Dict({'value': types.Field(types.String, is_optional=True)})
-                ),
+                'required': Field(Dict({'value': Field(String)})),
+                'optional': Field(Dict({'value': Field(String, is_optional=True)})),
             }
         )
-    ).dagster_type
+    ).config_type
 
-    assert optional_test_type.field_dict['required'].is_optional is False
-    assert optional_test_type.field_dict['optional'].is_optional is True
+    assert optional_test_type.fields['required'].is_optional is False
+    assert optional_test_type.fields['optional'].is_optional is True
 
 
 def test_wrong_solid_name():
@@ -303,7 +294,7 @@ def test_wrong_solid_name():
                 name='some_solid',
                 inputs=[],
                 outputs=[],
-                config_field=types.Field(types.Int),
+                config_field=Field(Int),
                 transform_fn=lambda *_args: None,
             )
         ],
@@ -369,7 +360,7 @@ def test_solid_list_config():
                 name='solid_list_config',
                 inputs=[],
                 outputs=[],
-                config_field=Field(types.List(types.Int)),
+                config_field=Field(List(Int)),
                 transform_fn=_test_config,
             )
         ],
@@ -391,13 +382,8 @@ def test_two_list_types():
                 name='two_list_type',
                 inputs=[],
                 outputs=[],
-                config_field=types.Field(
-                    types.Dict(
-                        {
-                            'list_one': types.Field(types.List(types.Int)),
-                            'list_two': types.Field(types.List(types.Int)),
-                        }
-                    )
+                config_field=Field(
+                    Dict({'list_one': Field(List(Int)), 'list_two': Field(List(Int))})
                 ),
                 transform_fn=lambda *_args: None,
             )
@@ -406,7 +392,7 @@ def test_two_list_types():
 
 
 def test_multilevel_default_handling():
-    @solid(config_field=Field(types.Int, is_optional=True, default_value=234))
+    @solid(config_field=Field(Int, is_optional=True, default_value=234))
     def has_default_value(info):
         assert info.config == 234
 
@@ -431,7 +417,7 @@ def test_multilevel_default_handling():
 
 
 def test_no_env_missing_required_error_handling():
-    @solid(config_field=Field(types.Int))
+    @solid(config_field=Field(Int))
     def required_int_solid(_info):
         pass
 
@@ -455,7 +441,7 @@ def test_no_env_missing_required_error_handling():
 
 
 def test_root_extra_field():
-    @solid(config_field=Field(types.Int))
+    @solid(config_field=Field(Int))
     def required_int_solid(_info):
         pass
 
@@ -475,7 +461,7 @@ def test_root_extra_field():
 
 
 def test_deeper_path():
-    @solid(config_field=Field(types.Int))
+    @solid(config_field=Field(Int))
     def required_int_solid(_info):
         pass
 
@@ -495,7 +481,7 @@ def test_deeper_path():
 def test_working_list_path():
     called = {}
 
-    @solid(config_field=Field(types.List(types.Int)))
+    @solid(config_field=Field(List(Int)))
     def required_list_int_solid(info):
         assert info.config == [1, 2]
         called['yup'] = True
@@ -513,7 +499,7 @@ def test_working_list_path():
 def test_item_error_list_path():
     called = {}
 
-    @solid(config_field=Field(types.List(types.Int)))
+    @solid(config_field=Field(List(Int)))
     def required_list_int_solid(info):
         assert info.config == [1, 2]
         called['yup'] = True
@@ -548,7 +534,7 @@ def test_context_selector_working():
         context_definitions={
             'context_required_int': PipelineContextDefinition(
                 context_fn=lambda info: ExecutionContext(resources=info.config),
-                config_field=types.Field(types.Int),
+                config_field=Field(Int),
             )
         },
     )
@@ -572,7 +558,7 @@ def test_context_selector_extra_context():
         context_definitions={
             'context_required_int': PipelineContextDefinition(
                 context_fn=lambda info: ExecutionContext(resources=info.config),
-                config_field=types.Field(types.Int),
+                config_field=Field(Int),
             )
         },
     )
@@ -605,7 +591,7 @@ def test_context_selector_wrong_name():
         context_definitions={
             'context_required_int': PipelineContextDefinition(
                 context_fn=lambda info: ExecutionContext(resources=info.config),
-                config_field=types.Field(types.Int),
+                config_field=Field(Int),
             )
         },
     )
@@ -630,7 +616,7 @@ def test_context_selector_none_given():
         context_definitions={
             'context_required_int': PipelineContextDefinition(
                 context_fn=lambda info: ExecutionContext(resources=info.config),
-                config_field=types.Field(types.Int),
+                config_field=Field(Int),
             )
         },
     )
@@ -645,7 +631,7 @@ def test_context_selector_none_given():
 
 
 def test_multilevel_good_error_handling_solids():
-    @solid(config_field=Field(types.Int))
+    @solid(config_field=Field(Int))
     def good_error_handling(_info):
         pass
 
@@ -661,7 +647,7 @@ def test_multilevel_good_error_handling_solids():
 
 
 def test_multilevel_good_error_handling_solid_name_solids():
-    @solid(config_field=Field(types.Int))
+    @solid(config_field=Field(Int))
     def good_error_handling(_info):
         pass
 
@@ -677,7 +663,7 @@ def test_multilevel_good_error_handling_solid_name_solids():
 
 
 def test_multilevel_good_error_handling_config_solids_name_solids():
-    @solid(config_field=Field(types.Nullable(types.Int)))
+    @solid(config_field=Field(Nullable(Int)))
     def good_error_handling(_info):
         pass
 

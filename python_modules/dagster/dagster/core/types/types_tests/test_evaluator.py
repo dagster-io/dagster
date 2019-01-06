@@ -1,7 +1,6 @@
-from dagster import types
+from dagster import Field, Dict, String, Int, Bool, Nullable, List
 
-from dagster.core.types.configurable import ConfigurableSelectorFromDict
-
+from dagster.core.types.config import resolve_config_type
 from dagster.core.types.evaluator import (
     DagsterEvaluationErrorReason,
     EvaluationStackListItemEntry,
@@ -10,6 +9,12 @@ from dagster.core.types.evaluator import (
     evaluate_config_value,
 )
 
+from dagster.core.types.field import ConfigSelector
+
+
+def eval_config_value_from_dagster_type(dagster_type, value):
+    return evaluate_config_value(resolve_config_type(dagster_type), value)
+
 
 def assert_success(result, expected_value):
     assert result.success
@@ -17,34 +22,36 @@ def assert_success(result, expected_value):
 
 
 def test_evaluate_scalar_success():
-    assert_success(evaluate_config_value(types.String, 'foobar'), 'foobar')
-    assert_success(evaluate_config_value(types.Int, 34234), 34234)
-    assert_success(evaluate_config_value(types.Bool, True), True)
+    assert_success(eval_config_value_from_dagster_type(String, 'foobar'), 'foobar')
+    assert_success(eval_config_value_from_dagster_type(Int, 34234), 34234)
+    assert_success(eval_config_value_from_dagster_type(Bool, True), True)
 
 
 def test_evaluate_scalar_failure():
-    result = evaluate_config_value(types.String, 2343)
+    result = eval_config_value_from_dagster_type(String, 2343)
     assert not result.success
     assert result.value is None
     assert len(result.errors) == 1
     error = result.errors[0]
     assert error.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
     assert not error.stack.entries
-    assert error.error_data.dagster_type.name == 'String'
+    assert error.error_data.config_type.name == 'String'
     assert error.error_data.value_rep == '2343'
 
 
-SingleLevelDict = types.Dict({'level_one': types.Field(types.String)})
+SingleLevelDict = Dict({'level_one': Field(String)})
 
 
 def test_single_error():
     success_value = {'level_one': 'ksjdfd'}
-    assert_success(evaluate_config_value(SingleLevelDict, success_value), success_value)
+    assert_success(
+        eval_config_value_from_dagster_type(SingleLevelDict, success_value), success_value
+    )
 
 
 def test_single_level_scalar_mismatch():
     value = {'level_one': 234}
-    result = evaluate_config_value(SingleLevelDict, value)
+    result = eval_config_value_from_dagster_type(SingleLevelDict, value)
     assert not result.success
     assert result.value is None
     assert len(result.errors) == 1
@@ -52,12 +59,12 @@ def test_single_level_scalar_mismatch():
     assert error.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
     assert len(error.stack.entries) == 1
     assert error.stack.entries[0].field_name == 'level_one'
-    assert error.stack.entries[0].field_def.dagster_type.name == 'String'
+    assert error.stack.entries[0].field_def.config_type.name == 'String'
 
 
 def test_single_level_dict_not_a_dict():
     value = 'not_a_dict'
-    result = evaluate_config_value(SingleLevelDict, value)
+    result = eval_config_value_from_dagster_type(SingleLevelDict, value)
     assert not result.success
     assert result.value is None
     assert len(result.errors) == 1
@@ -67,7 +74,7 @@ def test_single_level_dict_not_a_dict():
 
 
 def test_root_missing_field():
-    result = evaluate_config_value(SingleLevelDict, {})
+    result = eval_config_value_from_dagster_type(SingleLevelDict, {})
     assert not result.success
     assert result.value is None
     assert len(result.errors) == 1
@@ -77,14 +84,14 @@ def test_root_missing_field():
     assert error.error_data.field_name == 'level_one'
 
 
-DoubleLevelDict = types.Dict(
+DoubleLevelDict = Dict(
     {
-        'level_one': types.Field(
-            types.Dict(
+        'level_one': Field(
+            Dict(
                 {
-                    'string_field': types.Field(types.String),
-                    'int_field': types.Field(types.Int, is_optional=True, default_value=989),
-                    'bool_field': types.Field(types.Bool),
+                    'string_field': Field(String),
+                    'int_field': Field(Int, is_optional=True, default_value=989),
+                    'bool_field': Field(Bool),
                 }
             )
         )
@@ -95,9 +102,9 @@ DoubleLevelDict = types.Dict(
 def test_nested_success():
     value = {'level_one': {'string_field': 'skdsjfkdj', 'int_field': 123, 'bool_field': True}}
 
-    assert_success(evaluate_config_value(DoubleLevelDict, value), value)
+    assert_success(eval_config_value_from_dagster_type(DoubleLevelDict, value), value)
 
-    result = evaluate_config_value(
+    result = eval_config_value_from_dagster_type(
         DoubleLevelDict, {'level_one': {'string_field': 'kjfkd', 'bool_field': True}}
     )
 
@@ -117,7 +124,7 @@ def test_nested_error_one_field_not_defined():
         }
     }
 
-    result = evaluate_config_value(DoubleLevelDict, value)
+    result = eval_config_value_from_dagster_type(DoubleLevelDict, value)
 
     assert not result.success
     assert len(result.errors) == 1
@@ -127,7 +134,7 @@ def test_nested_error_one_field_not_defined():
     assert len(error.stack.entries) == 1
     stack_entry = error.stack.entries[0]
     assert stack_entry.field_name == 'level_one'
-    assert 'Dict' in stack_entry.field_def.dagster_type.name
+    assert 'Dict' in stack_entry.field_def.config_type.name
 
 
 def get_field_name_error(result, field_name):
@@ -148,7 +155,7 @@ def test_nested_error_two_fields_not_defined():
         }
     }
 
-    result = evaluate_config_value(DoubleLevelDict, value)
+    result = eval_config_value_from_dagster_type(DoubleLevelDict, value)
 
     assert not result.success
     assert len(result.errors) == 2
@@ -165,7 +172,7 @@ def test_nested_error_two_fields_not_defined():
 def test_nested_error_missing_fields():
     value = {'level_one': {'string_field': 'skdsjfkdj'}}
 
-    result = evaluate_config_value(DoubleLevelDict, value)
+    result = eval_config_value_from_dagster_type(DoubleLevelDict, value)
     assert not result.success
     assert len(result.errors) == 1
     error = result.errors[0]
@@ -176,7 +183,7 @@ def test_nested_error_missing_fields():
 def test_nested_error_multiple_missing_fields():
     value = {'level_one': {}}
 
-    result = evaluate_config_value(DoubleLevelDict, value)
+    result = eval_config_value_from_dagster_type(DoubleLevelDict, value)
     assert not result.success
     assert len(result.errors) == 2
 
@@ -193,7 +200,7 @@ def test_nested_error_multiple_missing_fields():
 def test_nested_missing_and_not_defined():
     value = {'level_one': {'not_defined': 'kjdfkdj'}}
 
-    result = evaluate_config_value(DoubleLevelDict, value)
+    result = eval_config_value_from_dagster_type(DoubleLevelDict, value)
     assert not result.success
     assert len(result.errors) == 3
 
@@ -213,16 +220,14 @@ def test_nested_missing_and_not_defined():
     )
 
 
-MultiLevelDictType = types.Dict(
+MultiLevelDictType = Dict(
     {
-        'level_one_string_field': types.Field(types.String),
-        'level_two_dict': types.Field(
-            types.Dict(
+        'level_one_string_field': Field(String),
+        'level_two_dict': Field(
+            Dict(
                 {
-                    'level_two_int_field': types.Field(types.Int),
-                    'level_three_dict': types.Field(
-                        types.Dict({'level_three_string': types.Field(types.String)})
-                    ),
+                    'level_two_int_field': Field(Int),
+                    'level_three_dict': Field(Dict({'level_three_string': Field(String)})),
                 }
             )
         ),
@@ -239,7 +244,9 @@ def test_multilevel_success():
         },
     }
 
-    assert_success(evaluate_config_value(MultiLevelDictType, working_value), working_value)
+    assert_success(
+        eval_config_value_from_dagster_type(MultiLevelDictType, working_value), working_value
+    )
 
 
 def test_deep_scalar():
@@ -251,12 +258,12 @@ def test_deep_scalar():
         },
     }
 
-    result = evaluate_config_value(MultiLevelDictType, value)
+    result = eval_config_value_from_dagster_type(MultiLevelDictType, value)
     assert not result.success
     assert len(result.errors) == 1
     error = result.errors[0]
     assert error.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
-    assert error.error_data.dagster_type.name == 'String'
+    assert error.error_data.config_type.name == 'String'
     assert error.error_data.value_rep == '123'
     assert len(error.stack.entries) == 3
 
@@ -284,7 +291,7 @@ def test_deep_mixed_level_errors():
         },
     }
 
-    result = evaluate_config_value(MultiLevelDictType, value)
+    result = eval_config_value_from_dagster_type(MultiLevelDictType, value)
     assert not result.success
     assert len(result.errors) == 3
 
@@ -312,32 +319,25 @@ def test_deep_mixed_level_errors():
     assert final_level_error.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
 
 
-class ExampleSelectorType(ConfigurableSelectorFromDict, types.DagsterType):
+class ExampleSelector(ConfigSelector):
     def __init__(self):
-        super(ExampleSelectorType, self).__init__(
-            name='ExampleSelector',
-            fields={
-                'option_one': types.Field(types.String),
-                'option_two': types.Field(types.String),
-            },
+        super(ExampleSelector, self).__init__(
+            fields={'option_one': Field(String), 'option_two': Field(String)}
         )
 
 
-ExampleSelector = ExampleSelectorType()
-
-
 def test_example_selector_success():
-    result = evaluate_config_value(ExampleSelector, {'option_one': 'foo'})
+    result = eval_config_value_from_dagster_type(ExampleSelector, {'option_one': 'foo'})
     assert result.success
     assert result.value == {'option_one': 'foo'}
 
-    result = evaluate_config_value(ExampleSelector, {'option_two': 'foo'})
+    result = eval_config_value_from_dagster_type(ExampleSelector, {'option_two': 'foo'})
     assert result.success
     assert result.value == {'option_two': 'foo'}
 
 
 def test_example_selector_error_top_level_type():
-    result = evaluate_config_value(ExampleSelector, 'kjsdkf')
+    result = eval_config_value_from_dagster_type(ExampleSelector, 'kjsdkf')
     assert not result.success
     assert result.value is None
     assert len(result.errors) == 1
@@ -345,7 +345,7 @@ def test_example_selector_error_top_level_type():
 
 
 def test_example_selector_wrong_field():
-    result = evaluate_config_value(ExampleSelector, {'nope': 234})
+    result = eval_config_value_from_dagster_type(ExampleSelector, {'nope': 234})
     assert not result.success
     assert result.value is None
     assert len(result.errors) == 1
@@ -353,74 +353,72 @@ def test_example_selector_wrong_field():
 
 
 def test_example_selector_multiple_fields():
-    result = evaluate_config_value(ExampleSelector, {'option_one': 'foo', 'option_two': 'boo'})
+    result = eval_config_value_from_dagster_type(
+        ExampleSelector, {'option_one': 'foo', 'option_two': 'boo'}
+    )
 
     assert not result.success
     assert len(result.errors) == 1
     assert result.errors[0].reason == DagsterEvaluationErrorReason.SELECTOR_FIELD_ERROR
 
 
-class SelectorWithDefaultsType(ConfigurableSelectorFromDict, types.DagsterType):
+class SelectorWithDefaults(ConfigSelector):
     def __init__(self):
-        super(SelectorWithDefaultsType, self).__init__(
-            name='SelectorWithDefaultsType',
-            fields={'default': types.Field(types.String, is_optional=True, default_value='foo')},
+        super(SelectorWithDefaults, self).__init__(
+            fields={'default': Field(String, is_optional=True, default_value='foo')}
         )
 
 
-SelectorWithDefaults = SelectorWithDefaultsType()
-
-
 def test_selector_with_defaults():
-    result = evaluate_config_value(SelectorWithDefaults, {})
+    result = eval_config_value_from_dagster_type(SelectorWithDefaults, {})
     assert result.success
     assert result.value == {'default': 'foo'}
 
 
 def test_evaluate_list_string():
-    string_list = types.List(types.String)
-    result = evaluate_config_value(string_list, ["foo"])
+    string_list = List(String)
+    result = eval_config_value_from_dagster_type(string_list, ["foo"])
     assert result.success
     assert result.value == ["foo"]
 
 
 def test_evaluate_list_error_item_mismatch():
-    string_list = types.List(types.String)
-    result = evaluate_config_value(string_list, [1])
+    string_list = List(String)
+    result = eval_config_value_from_dagster_type(string_list, [1])
     assert not result.success
     assert len(result.errors) == 1
     assert result.errors[0].reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
 
 
 def test_evaluate_list_error_top_level_mismatch():
-    string_list = types.List(types.String)
-    result = evaluate_config_value(string_list, 1)
+    string_list = List(String)
+    result = eval_config_value_from_dagster_type(string_list, 1)
     assert not result.success
     assert len(result.errors) == 1
     assert result.errors[0].reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
 
 
 def test_evaluate_double_list():
-    string_double_list = types.List(types.List(types.String))
-    result = evaluate_config_value(string_double_list, [['foo']])
+    string_double_list = List(List(String))
+    result = eval_config_value_from_dagster_type(string_double_list, [['foo']])
     assert result.success
     assert result.value == [['foo']]
 
 
 def test_config_list_in_dict():
-    nested_list = types.Dict({'nested_list': types.Field(types.List(types.Int))})
+    nested_list = Dict({'nested_list': Field(List(Int))})
 
     value = {'nested_list': [1, 2, 3]}
-    result = evaluate_config_value(nested_list, value)
+    result = eval_config_value_from_dagster_type(nested_list, value)
     assert result.success
     assert result.value == value
 
 
 def test_config_list_in_dict_error():
-    nested_list = types.Dict({'nested_list': types.Field(types.List(types.Int))})
+    nested_list = Dict({'nested_list': Field(List(Int))})
 
     value = {'nested_list': [1, 'bar', 3]}
-    result = evaluate_config_value(nested_list, value)
+    result = eval_config_value_from_dagster_type(nested_list, value)
     assert not result.success
     assert len(result.errors) == 1
     error = result.errors[0]
@@ -429,113 +427,111 @@ def test_config_list_in_dict_error():
     stack_entry = error.stack.entries[0]
     assert isinstance(stack_entry, EvaluationStackPathEntry)
     assert stack_entry.field_name == 'nested_list'
-    assert stack_entry.field_def.dagster_type.name == 'List.Int'
+    assert stack_entry.field_def.config_type.name == 'List.Int'
     list_entry = error.stack.entries[1]
     assert isinstance(list_entry, EvaluationStackListItemEntry)
     assert list_entry.list_index == 1
 
 
 def test_config_double_list():
-    nested_lists = types.Dict(
-        {
-            'nested_list_one': types.Field(types.List(types.Int)),
-            'nested_list_two': types.Field(types.List(types.String)),
-        }
+    nested_lists = Dict(
+        {'nested_list_one': Field(List(Int)), 'nested_list_two': Field(List(String))}
     )
 
     value = {'nested_list_one': [1, 2, 3], 'nested_list_two': ['foo', 'bar']}
 
-    result = evaluate_config_value(nested_lists, value)
+    result = eval_config_value_from_dagster_type(nested_lists, value)
     assert result.success
     assert result.value == value
 
     error_value = {'nested_list_one': 'kjdfkdj', 'nested_list_two': ['bar']}
 
-    error_result = evaluate_config_value(nested_lists, error_value)
+    error_result = eval_config_value_from_dagster_type(nested_lists, error_value)
     assert not error_result.success
 
 
 def test_config_double_list_double_error():
-    nested_lists = types.Dict(
-        fields={
-            'nested_list_one': types.Field(types.List(types.Int)),
-            'nested_list_two': types.Field(types.List(types.String)),
-        }
+    nested_lists = Dict(
+        fields={'nested_list_one': Field(List(Int)), 'nested_list_two': Field(List(String))}
     )
 
     error_value = {'nested_list_one': 'kjdfkdj', 'nested_list_two': ['bar', 2]}
-    error_result = evaluate_config_value(nested_lists, error_value)
+    error_result = eval_config_value_from_dagster_type(nested_lists, error_value)
     assert not error_result.success
     assert len(error_result.errors) == 2
 
 
 def test_nullable_int():
-    assert not evaluate_config_value(types.Int, None).success
-    assert evaluate_config_value(types.Int, 0).success
-    assert evaluate_config_value(types.Int, 1).success
+    assert not eval_config_value_from_dagster_type(Int, None).success
+    assert eval_config_value_from_dagster_type(Int, 0).success
+    assert eval_config_value_from_dagster_type(Int, 1).success
 
-    assert evaluate_config_value(types.Nullable(types.Int), None).success
-    assert evaluate_config_value(types.Nullable(types.Int), 0).success
-    assert evaluate_config_value(types.Nullable(types.Int), 1).success
+    assert eval_config_value_from_dagster_type(Nullable(Int), None).success
+    assert eval_config_value_from_dagster_type(Nullable(Int), 0).success
+    assert eval_config_value_from_dagster_type(Nullable(Int), 1).success
 
 
 def test_nullable_list():
-    list_of_ints = types.List(types.Int)
+    list_of_ints = List(Int)
 
-    assert not evaluate_config_value(list_of_ints, None).success
-    assert evaluate_config_value(list_of_ints, []).success
-    assert not evaluate_config_value(list_of_ints, [None]).success
-    assert evaluate_config_value(list_of_ints, [1]).success
+    assert not eval_config_value_from_dagster_type(list_of_ints, None).success
+    assert eval_config_value_from_dagster_type(list_of_ints, []).success
+    assert not eval_config_value_from_dagster_type(list_of_ints, [None]).success
+    assert eval_config_value_from_dagster_type(list_of_ints, [1]).success
 
-    nullable_list_of_ints = types.Nullable(types.List(types.Int))
+    nullable_list_of_ints = Nullable(List(Int))
 
-    assert evaluate_config_value(nullable_list_of_ints, None).success
-    assert evaluate_config_value(nullable_list_of_ints, []).success
-    assert not evaluate_config_value(nullable_list_of_ints, [None]).success
-    assert evaluate_config_value(nullable_list_of_ints, [1]).success
+    assert eval_config_value_from_dagster_type(nullable_list_of_ints, None).success
+    assert eval_config_value_from_dagster_type(nullable_list_of_ints, []).success
+    assert not eval_config_value_from_dagster_type(nullable_list_of_ints, [None]).success
+    assert eval_config_value_from_dagster_type(nullable_list_of_ints, [1]).success
 
-    list_of_nullable_ints = types.List(types.Nullable(types.Int))
+    list_of_nullable_ints = List(Nullable(Int))
 
-    assert not evaluate_config_value(list_of_nullable_ints, None).success
-    assert evaluate_config_value(list_of_nullable_ints, []).success
-    assert evaluate_config_value(list_of_nullable_ints, [None]).success
-    assert evaluate_config_value(list_of_nullable_ints, [1]).success
+    assert not eval_config_value_from_dagster_type(list_of_nullable_ints, None).success
+    assert eval_config_value_from_dagster_type(list_of_nullable_ints, []).success
+    assert eval_config_value_from_dagster_type(list_of_nullable_ints, [None]).success
+    assert eval_config_value_from_dagster_type(list_of_nullable_ints, [1]).success
 
-    nullable_list_of_nullable_ints = types.Nullable(types.List(types.Nullable(types.Int)))
+    nullable_list_of_nullable_ints = Nullable(List(Nullable(Int)))
 
-    assert evaluate_config_value(nullable_list_of_nullable_ints, None).success
-    assert evaluate_config_value(nullable_list_of_nullable_ints, []).success
-    assert evaluate_config_value(nullable_list_of_nullable_ints, [None]).success
-    assert evaluate_config_value(nullable_list_of_nullable_ints, [1]).success
+    assert eval_config_value_from_dagster_type(nullable_list_of_nullable_ints, None).success
+    assert eval_config_value_from_dagster_type(nullable_list_of_nullable_ints, []).success
+    assert eval_config_value_from_dagster_type(nullable_list_of_nullable_ints, [None]).success
+    assert eval_config_value_from_dagster_type(nullable_list_of_nullable_ints, [1]).success
 
 
 def test_nullable_dict():
-    dict_with_int = types.Dict({'int_field': types.Field(types.Int)})
+    dict_with_int = Dict({'int_field': Field(Int)})
 
-    assert not evaluate_config_value(dict_with_int, None).success
-    assert not evaluate_config_value(dict_with_int, {}).success
-    assert not evaluate_config_value(dict_with_int, {'int_field': None}).success
-    assert evaluate_config_value(dict_with_int, {'int_field': 1}).success
+    assert not eval_config_value_from_dagster_type(dict_with_int, None).success
+    assert not eval_config_value_from_dagster_type(dict_with_int, {}).success
+    assert not eval_config_value_from_dagster_type(dict_with_int, {'int_field': None}).success
+    assert eval_config_value_from_dagster_type(dict_with_int, {'int_field': 1}).success
 
-    nullable_dict_with_int = types.Nullable(types.Dict({'int_field': types.Field(types.Int)}))
+    nullable_dict_with_int = Nullable(Dict({'int_field': Field(Int)}))
 
-    assert evaluate_config_value(nullable_dict_with_int, None).success
-    assert not evaluate_config_value(nullable_dict_with_int, {}).success
-    assert not evaluate_config_value(nullable_dict_with_int, {'int_field': None}).success
-    assert evaluate_config_value(nullable_dict_with_int, {'int_field': 1}).success
+    assert eval_config_value_from_dagster_type(nullable_dict_with_int, None).success
+    assert not eval_config_value_from_dagster_type(nullable_dict_with_int, {}).success
+    assert not eval_config_value_from_dagster_type(
+        nullable_dict_with_int, {'int_field': None}
+    ).success
+    assert eval_config_value_from_dagster_type(nullable_dict_with_int, {'int_field': 1}).success
 
-    dict_with_nullable_int = types.Dict({'int_field': types.Field(types.Nullable(types.Int))})
+    dict_with_nullable_int = Dict({'int_field': Field(Nullable(Int))})
 
-    assert not evaluate_config_value(dict_with_nullable_int, None).success
-    assert not evaluate_config_value(dict_with_nullable_int, {}).success
-    assert evaluate_config_value(dict_with_nullable_int, {'int_field': None}).success
-    assert evaluate_config_value(dict_with_nullable_int, {'int_field': 1}).success
+    assert not eval_config_value_from_dagster_type(dict_with_nullable_int, None).success
+    assert not eval_config_value_from_dagster_type(dict_with_nullable_int, {}).success
+    assert eval_config_value_from_dagster_type(dict_with_nullable_int, {'int_field': None}).success
+    assert eval_config_value_from_dagster_type(dict_with_nullable_int, {'int_field': 1}).success
 
-    nullable_dict_with_nullable_int = types.Nullable(
-        types.Dict({'int_field': types.Field(types.Nullable(types.Int))})
-    )
+    nullable_dict_with_nullable_int = Nullable(Dict({'int_field': Field(Nullable(Int))}))
 
-    assert evaluate_config_value(nullable_dict_with_nullable_int, None).success
-    assert not evaluate_config_value(nullable_dict_with_nullable_int, {}).success
-    assert evaluate_config_value(nullable_dict_with_nullable_int, {'int_field': None}).success
-    assert evaluate_config_value(nullable_dict_with_nullable_int, {'int_field': 1}).success
+    assert eval_config_value_from_dagster_type(nullable_dict_with_nullable_int, None).success
+    assert not eval_config_value_from_dagster_type(nullable_dict_with_nullable_int, {}).success
+    assert eval_config_value_from_dagster_type(
+        nullable_dict_with_nullable_int, {'int_field': None}
+    ).success
+    assert eval_config_value_from_dagster_type(
+        nullable_dict_with_nullable_int, {'int_field': 1}
+    ).success

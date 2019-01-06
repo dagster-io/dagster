@@ -1,41 +1,47 @@
-from dagster import PipelineDefinition, SolidDefinition, types
+from dagster import PipelineDefinition, SolidDefinition, Int, Field, String, List, Nullable, Dict
 
+from dagster.core.types.config import resolve_config_type
 from dagster.core.types.type_printer import print_type_to_string
 
 
+def assert_inner_types(parent_type, *dagster_types):
+    assert set(list(map(lambda t: t.name, resolve_config_type(parent_type).inner_types))) == set(
+        map(lambda x: x.name, map(resolve_config_type, dagster_types))
+    )
+
+
 def test_basic_type_print():
-    assert print_type_to_string(types.Int) == 'Int'
-    assert types.Int.inner_types == []
+    assert print_type_to_string(Int) == 'Int'
+    assert_inner_types(Int)
 
 
 def test_basic_list_type_print():
-    assert print_type_to_string(types.List(types.Int)) == '[Int]'
-    int_list = types.List(types.Int)
-    assert int_list.inner_types == [types.Int]
+    assert print_type_to_string(List(Int)) == '[Int]'
+    assert_inner_types(List(Int), Int)
 
 
 def test_double_list_type_print():
-    assert print_type_to_string(types.List(types.List(types.Int))) == '[[Int]]'
-    int_list = types.List(types.Int)
-    list_int_list = types.List(int_list)
-    assert set(list_int_list.inner_types) == set([types.Int, int_list])
+    assert print_type_to_string(List(List(Int))) == '[[Int]]'
+    int_list = List(Int)
+    list_int_list = List(int_list)
+    assert_inner_types(list_int_list, Int, int_list)
 
 
 def test_basic_nullable_type_print():
-    assert print_type_to_string(types.Nullable(types.Int)) == 'Int?'
-    nullable_int = types.Nullable(types.Int)
-    assert set(nullable_int.inner_types) == set([types.Int])
+    assert print_type_to_string(Nullable(Int)) == 'Int?'
+    nullable_int = Nullable(Int)
+    assert_inner_types(nullable_int, Int)
 
 
 def test_nullable_list_combos():
-    assert print_type_to_string(types.List(types.Int)) == '[Int]'
-    assert print_type_to_string(types.Nullable(types.List(types.Int))) == '[Int]?'
-    assert print_type_to_string(types.List(types.Nullable(types.Int))) == '[Int?]'
-    assert print_type_to_string(types.Nullable(types.List(types.Nullable(types.Int)))) == '[Int?]?'
+    assert print_type_to_string(List(Int)) == '[Int]'
+    assert print_type_to_string(Nullable(List(Int))) == '[Int]?'
+    assert print_type_to_string(List(Nullable(Int))) == '[Int?]'
+    assert print_type_to_string(Nullable(List(Nullable(Int)))) == '[Int?]?'
 
 
 def test_basic_dict():
-    output = print_type_to_string(types.Dict({'int_field': types.Field(types.Int)}))
+    output = print_type_to_string(Dict({'int_field': Field(Int)}))
 
     # print('OUTPUT')
     # print(output.replace(' ', '-'))
@@ -49,13 +55,8 @@ def test_basic_dict():
 
 
 def test_two_field_dicts():
-    two_field_dict = types.Dict(
-        {'int_field': types.Field(types.Int), 'string_field': types.Field(types.String)}
-    )
-    inners = list(two_field_dict.inner_types)
-    assert types.Int in inners
-    assert types.String in inners
-    assert len(inners) == 2
+    two_field_dict = Dict({'int_field': Field(Int), 'string_field': Field(String)})
+    assert_inner_types(two_field_dict, Int, String)
 
     output = print_type_to_string(two_field_dict)
 
@@ -68,11 +69,8 @@ def test_two_field_dicts():
 
 
 def test_two_field_dicts_same_type():
-    two_field_dict = types.Dict(
-        {'int_field1': types.Field(types.Int), 'int_field2': types.Field(types.Int)}
-    )
-    inners = list(two_field_dict.inner_types)
-    assert inners == [types.Int]
+    two_field_dict = Dict({'int_field1': Field(Int), 'int_field2': Field(Int)})
+    assert_inner_types(two_field_dict, Int)
 
     output = print_type_to_string(two_field_dict)
 
@@ -85,9 +83,7 @@ def test_two_field_dicts_same_type():
 
 
 def test_optional_field():
-    output = print_type_to_string(
-        types.Dict({'int_field': types.Field(types.Int, is_optional=True)})
-    )
+    output = print_type_to_string(Dict({'int_field': Field(Int, is_optional=True)}))
 
     # print('OUTPUT')
     # print(output.replace(' ', '-'))
@@ -102,11 +98,11 @@ def test_optional_field():
 
 def test_single_level_dict_lists_and_nullable():
     output = print_type_to_string(
-        types.Dict(
+        Dict(
             {
-                'nullable_int_field': types.Field(types.Nullable(types.Int)),
-                'optional_int_field': types.Field(types.Int, is_optional=True),
-                'string_list_field': types.Field(types.List(types.String)),
+                'nullable_int_field': Field(Nullable(Int)),
+                'optional_int_field': Field(Int, is_optional=True),
+                'string_list_field': Field(List(String)),
             }
         )
     )
@@ -121,11 +117,11 @@ def test_single_level_dict_lists_and_nullable():
 
 
 def test_nested_dict():
-    nested_type = types.Dict({'int_field': types.Field(types.Int)})
-    outer_type = types.Dict({'nested': types.Field(nested_type)})
+    nested_type = Dict({'int_field': Field(Int)})
+    outer_type = Dict({'nested': Field(nested_type)})
     output = print_type_to_string(outer_type)
 
-    assert set(outer_type.inner_types) == set([types.Int, nested_type])
+    assert_inner_types(outer_type, Int, nested_type)
 
     expected = '''{
   nested: {
@@ -140,12 +136,12 @@ def test_test_type_pipeline_construction():
     assert define_test_type_pipeline()
 
 
-def define_solid_for_test_type(name, dagster_type):
+def define_solid_for_test_type(name, runtime_type):
     return SolidDefinition(
         name=name,
         inputs=[],
         outputs=[],
-        config_field=types.Field(dagster_type),
+        config_field=Field(runtime_type),
         transform_fn=lambda _info, _inputs: None,
     )
 
@@ -156,39 +152,28 @@ def define_test_type_pipeline():
     return PipelineDefinition(
         name='test_type_pipeline',
         solids=[
-            define_solid_for_test_type('int_config', types.Int),
-            define_solid_for_test_type('list_of_int_config', types.List(types.Int)),
+            define_solid_for_test_type('int_config', Int),
+            define_solid_for_test_type('list_of_int_config', List(Int)),
+            define_solid_for_test_type('nullable_list_of_int_config', Nullable(List(Int))),
+            define_solid_for_test_type('list_of_nullable_int_config', List(Nullable(Int))),
             define_solid_for_test_type(
-                'nullable_list_of_int_config', types.Nullable(types.List(types.Int))
+                'nullable_list_of_nullable_int_config', Nullable(List(Nullable(Int)))
             ),
             define_solid_for_test_type(
-                'list_of_nullable_int_config', types.List(types.Nullable(types.Int))
-            ),
-            define_solid_for_test_type(
-                'nullable_list_of_nullable_int_config',
-                types.Nullable(types.List(types.Nullable(types.Int))),
-            ),
-            define_solid_for_test_type(
-                'simple_dict',
-                types.Dict(
-                    {'int_field': types.Field(types.Int), 'string_field': types.Field(types.String)}
-                ),
+                'simple_dict', Dict({'int_field': Field(Int), 'string_field': Field(String)})
             ),
             define_solid_for_test_type(
                 'dict_with_optional_field',
-                types.Dict(
+                Dict(
                     {
-                        'nullable_int_field': types.Field(types.Nullable(types.Int)),
-                        'optional_int_field': types.Field(types.Int, is_optional=True),
-                        'string_list_field': types.Field(types.List(types.String)),
+                        'nullable_int_field': Field(Nullable(Int)),
+                        'optional_int_field': Field(Int, is_optional=True),
+                        'string_list_field': Field(List(String)),
                     }
                 ),
             ),
             define_solid_for_test_type(
-                'nested_dict',
-                types.Dict(
-                    {'nested': types.Field(types.Dict({'int_field': types.Field(types.Int)}))}
-                ),
+                'nested_dict', Dict({'nested': Field(Dict({'int_field': Field(Int)}))})
             ),
         ],
     )

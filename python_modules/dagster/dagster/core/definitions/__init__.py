@@ -26,7 +26,7 @@ from .repository import RepositoryDefinition
 
 from .pipeline import PipelineDefinition, solids_in_topological_order
 
-from .pipeline_creation import construct_type_dictionary, create_execution_structure
+from .pipeline_creation import create_execution_structure
 
 from .solid import SolidDefinition
 

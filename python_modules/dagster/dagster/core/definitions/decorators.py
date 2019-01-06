@@ -6,7 +6,7 @@ from dagster import check
 
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 
-from dagster.core.types import Field
+from dagster.core.types.field import Field
 
 from . import InputDefinition, OutputDefinition, Result, SolidDefinition
 
@@ -300,7 +300,7 @@ def _create_solid_transform_wrapper(fn, input_defs, output_defs):
             elif len(output_defs) == 1:
                 yield Result(value=result, output_name=output_defs[0].name)
             elif result is not None:
-                if len(output_defs) == 0:
+                if not output_defs:
                     raise DagsterInvariantViolationError(
                         'Solid unexpectedly returned output {result} of type {type_}. Solid is '
                         'explicitly defined to return no results.'.format(
@@ -317,9 +317,9 @@ def _create_solid_transform_wrapper(fn, input_defs, output_defs):
                             n_results=len(output_defs),
                             expected_results=', '.join(
                                 [
-                                    '\'{result_name}\': {dagster_type}'.format(
+                                    '\'{result_name}\': {runtime_type}'.format(
                                         result_name=output_def.name,
-                                        dagster_type=output_def.dagster_type,
+                                        runtime_type=output_def.runtime_type,
                                     )
                                     for output_def in output_defs
                                 ]

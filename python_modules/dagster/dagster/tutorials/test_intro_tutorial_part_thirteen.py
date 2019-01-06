@@ -8,23 +8,22 @@ from dagster import (
     execute_pipeline,
     lambda_solid,
     solid,
-    types,
+    Int,
 )
 
 
-@solid(config_field=Field(types.Int), outputs=[OutputDefinition(types.Int)])
+@solid(config_field=Field(Int), outputs=[OutputDefinition(Int)])
 def load_a(info):
     return info.config
 
 
-@solid(config_field=Field(types.Int), outputs=[OutputDefinition(types.Int)])
+@solid(config_field=Field(Int), outputs=[OutputDefinition(Int)])
 def load_b(info):
     return info.config
 
 
 @lambda_solid(
-    inputs=[InputDefinition('a', types.Int), InputDefinition('b', types.Int)],
-    output=OutputDefinition(types.Int),
+    inputs=[InputDefinition('a', Int), InputDefinition('b', Int)], output=OutputDefinition(Int)
 )
 def a_plus_b(a, b):
     return a + b
@@ -51,14 +50,14 @@ def test_part_thirteen_step_one():
     assert solid_result.transformed_value() == 234 + 384
 
 
-@solid(config_field=Field(types.Int), outputs=[OutputDefinition(types.Int)])
+@solid(config_field=Field(Int), outputs=[OutputDefinition(Int)])
 def load_number(info):
     return info.config
 
 
 @lambda_solid(
-    inputs=[InputDefinition('num1', types.Int), InputDefinition('num2', types.Int)],
-    output=OutputDefinition(types.Int),
+    inputs=[InputDefinition('num1', Int), InputDefinition('num2', Int)],
+    output=OutputDefinition(Int),
 )
 def adder(num1, num2):
     return num1 + num2
@@ -91,8 +90,8 @@ def test_part_thirteen_step_two():
 
 
 @lambda_solid(
-    inputs=[InputDefinition('num1', types.Int), InputDefinition('num2', types.Int)],
-    output=OutputDefinition(types.Int),
+    inputs=[InputDefinition('num1', Int), InputDefinition('num2', Int)],
+    output=OutputDefinition(Int),
 )
 def multer(num1, num2):
     return num1 * num2

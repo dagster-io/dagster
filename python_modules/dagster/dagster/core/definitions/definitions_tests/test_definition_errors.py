@@ -4,14 +4,15 @@ import dagster.check as check
 
 from dagster import (
     DagsterInvalidDefinitionError,
-    Field,
     DependencyDefinition,
     PipelineDefinition,
     SolidDefinition,
     OutputDefinition,
     InputDefinition,
     solid,
-    types,
+    Field,
+    String,
+    NamedDict,
 )
 
 from dagster.core.utility_solids import define_stub_solid
@@ -100,11 +101,11 @@ def test_invalid_item_in_solid_list():
 
 
 def test_double_type():
-    @solid(config_field=Field(types.NamedDict('Name', {'some_field': Field(types.String)})))
+    @solid(config_field=Field(NamedDict('Name', {'some_field': Field(String)})))
     def solid_one(_info):
         raise Exception('should not execute')
 
-    @solid(config_field=Field(types.NamedDict('Name', {'some_field': Field(types.String)})))
+    @solid(config_field=Field(NamedDict('Name', {'some_field': Field(String)})))
     def solid_two(_info):
         raise Exception('should not execute')
 

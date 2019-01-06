@@ -1,12 +1,13 @@
 import pytest
 
 from dagster import (
-    Field,
     PipelineConfigEvaluationError,
     PipelineDefinition,
     SolidDefinition,
     execute_pipeline,
-    types,
+    Dict,
+    Field,
+    String,
 )
 
 
@@ -20,7 +21,7 @@ def test_basic_solid_with_config():
         name='solid_with_context',
         inputs=[],
         outputs=[],
-        config_field=types.Field(types.Dict({'some_config': Field(types.String)})),
+        config_field=Field(Dict({'some_config': Field(String)})),
         transform_fn=_t_fn,
     )
 
@@ -42,7 +43,7 @@ def test_config_arg_mismatch():
         name='solid_with_context',
         inputs=[],
         outputs=[],
-        config_field=types.Field(types.Dict({'some_config': Field(types.String)})),
+        config_field=Field(Dict({'some_config': Field(String)})),
         transform_fn=_t_fn,
     )
 

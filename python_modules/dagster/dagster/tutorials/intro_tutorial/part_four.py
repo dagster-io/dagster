@@ -1,7 +1,7 @@
-from dagster import Field, PipelineDefinition, execute_pipeline, solid, types
+from dagster import Field, PipelineDefinition, execute_pipeline, solid, String
 
 
-@solid(config_field=Field(types.String))
+@solid(config_field=Field(String))
 def configurable_hello_world(info):
     return info.config
 
