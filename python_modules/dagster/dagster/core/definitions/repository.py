@@ -57,7 +57,20 @@ class RepositoryDefinition(object):
         if name in self._pipeline_cache:
             return self._pipeline_cache[name]
 
-        pipeline = self.pipeline_dict[name]()
+        try:
+            pipeline = self.pipeline_dict[name]()
+        except KeyError:
+            raise Exception(
+                'Could not find pipeline "{name}". Found: {pipeline_names}.'.format(
+                    name=name,
+                    pipeline_names=', '.join(
+                        [
+                            '"{pipeline_name}"'.format(pipeline_name=pipeline_name)
+                            for pipeline_name in self.pipeline_dict.keys()
+                        ]
+                    ),
+                )
+            )
         check.invariant(
             pipeline.name == name,
             'Name does not match. Name in dict {name}. Name in pipeline {pipeline.name}'.format(
