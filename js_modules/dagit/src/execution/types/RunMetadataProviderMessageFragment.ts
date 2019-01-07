@@ -4,55 +4,34 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL fragment: PipelineExecutionPipelineRunEventFragment
+// GraphQL fragment: RunMetadataProviderMessageFragment
 // ====================================================
 
-export interface PipelineExecutionPipelineRunEventFragment_LogMessageEvent {
+export interface RunMetadataProviderMessageFragment_LogMessageEvent {
   __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "PipelineProcessStartEvent";
   message: string;
   timestamp: string;
-  level: LogLevel;
 }
 
-export interface PipelineExecutionPipelineRunEventFragment_ExecutionStepFailureEvent_step {
-  name: string;
-}
-
-export interface PipelineExecutionPipelineRunEventFragment_ExecutionStepFailureEvent_error {
-  stack: string[];
-  message: string;
-}
-
-export interface PipelineExecutionPipelineRunEventFragment_ExecutionStepFailureEvent {
-  __typename: "ExecutionStepFailureEvent";
-  message: string;
-  timestamp: string;
-  level: LogLevel;
-  step: PipelineExecutionPipelineRunEventFragment_ExecutionStepFailureEvent_step;
-  error: PipelineExecutionPipelineRunEventFragment_ExecutionStepFailureEvent_error;
-}
-
-export interface PipelineExecutionPipelineRunEventFragment_PipelineProcessStartedEvent {
+export interface RunMetadataProviderMessageFragment_PipelineProcessStartedEvent {
   __typename: "PipelineProcessStartedEvent";
   message: string;
   timestamp: string;
-  level: LogLevel;
   processId: number;
 }
 
-export interface PipelineExecutionPipelineRunEventFragment_ExecutionStepStartEvent_step {
+export interface RunMetadataProviderMessageFragment_ExecutionStepStartEvent_step {
   name: string;
 }
 
-export interface PipelineExecutionPipelineRunEventFragment_ExecutionStepStartEvent {
-  __typename: "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent";
+export interface RunMetadataProviderMessageFragment_ExecutionStepStartEvent {
+  __typename: "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepFailureEvent";
   message: string;
   timestamp: string;
-  level: LogLevel;
-  step: PipelineExecutionPipelineRunEventFragment_ExecutionStepStartEvent_step;
+  step: RunMetadataProviderMessageFragment_ExecutionStepStartEvent_step;
 }
 
-export type PipelineExecutionPipelineRunEventFragment = PipelineExecutionPipelineRunEventFragment_LogMessageEvent | PipelineExecutionPipelineRunEventFragment_ExecutionStepFailureEvent | PipelineExecutionPipelineRunEventFragment_PipelineProcessStartedEvent | PipelineExecutionPipelineRunEventFragment_ExecutionStepStartEvent;
+export type RunMetadataProviderMessageFragment = RunMetadataProviderMessageFragment_LogMessageEvent | RunMetadataProviderMessageFragment_PipelineProcessStartedEvent | RunMetadataProviderMessageFragment_ExecutionStepStartEvent;
 
 /* tslint:disable */
 // This file was automatically generated and should not be edited.

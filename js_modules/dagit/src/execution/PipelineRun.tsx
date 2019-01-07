@@ -15,7 +15,7 @@ import {
 } from "./types/PipelineRunFragment";
 import { PanelDivider } from "../PanelDivider";
 import PythonErrorInfo from "../PythonErrorInfo";
-import StepMetadataProvider from "./StepMetadataProvider";
+import RunMetadataProvider from "./RunMetadataProvider";
 import LogsToolbar from "./LogsToolbar";
 
 interface IPipelineRunProps {
@@ -39,7 +39,7 @@ export class PipelineRun extends React.Component<
           nodes {
             ...LogsFilterProviderMessageFragment
             ...LogsScrollingTableMessageFragment
-            ...StepMetadataProviderMessageFragment
+            ...RunMetadataProviderMessageFragment
             ... on ExecutionStepFailureEvent {
               step {
                 name
@@ -54,7 +54,7 @@ export class PipelineRun extends React.Component<
         ...PipelineRunExecutionPlanFragment
       }
 
-      ${StepMetadataProvider.fragments.StepMetadataProviderMessageFragment}
+      ${RunMetadataProvider.fragments.RunMetadataProviderMessageFragment}
       ${PipelineRunExecutionPlan.fragments.PipelineRunExecutionPlanFragment}
       ${LogsFilterProvider.fragments.LogsFilterProviderMessageFragment}
       ${LogsScrollingTable.fragments.LogsScrollingTableMessageFragment}
@@ -63,10 +63,10 @@ export class PipelineRun extends React.Component<
       fragment PipelineRunPipelineRunEventFragment on PipelineRunEvent {
         ...LogsScrollingTableMessageFragment
         ...LogsFilterProviderMessageFragment
-        ...StepMetadataProviderMessageFragment
+        ...RunMetadataProviderMessageFragment
       }
 
-      ${StepMetadataProvider.fragments.StepMetadataProviderMessageFragment}
+      ${RunMetadataProvider.fragments.RunMetadataProviderMessageFragment}
       ${LogsFilterProvider.fragments.LogsFilterProviderMessageFragment}
       ${LogsScrollingTable.fragments.LogsScrollingTableMessageFragment}
     `
@@ -96,18 +96,18 @@ export class PipelineRun extends React.Component<
 
     return (
       <PipelineRunWrapper>
-        <StepMetadataProvider logs={logs.nodes}>
-          {stepMetadata => (
+        <RunMetadataProvider logs={logs.nodes}>
+          {metadata => (
             <PipelineRunExecutionPlan
-              stepMetadata={stepMetadata}
-              pipelineRun={this.props.pipelineRun}
+              run={this.props.pipelineRun}
+              runMetadata={metadata}
               onShowStateDetails={this.onShowStateDetails}
               onApplyStepFilter={stepName =>
                 this.setState({ logsFilter: { ...logsFilter, text: stepName } })
               }
             />
           )}
-        </StepMetadataProvider>
+        </RunMetadataProvider>
         <PanelDivider
           onMove={(vh: number) => this.setState({ logsVH: 100 - vh })}
           axis="vertical"
