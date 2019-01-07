@@ -26,9 +26,9 @@ def test_running():
     repository_container = RepositoryContainer(
         RepositoryTargetInfo(
             repository_yaml=None,
-            python_file=None,
+            python_file=__file__,
             fn_name='define_passing_pipeline',
-            module_name='dagit.dagit_tests.test_multiprocessing',
+            module_name=None,
         )
     )
     pipeline = define_passing_pipeline()
@@ -59,9 +59,9 @@ def test_failing():
     repository_container = RepositoryContainer(
         RepositoryTargetInfo(
             repository_yaml=None,
-            python_file=None,
+            python_file=__file__,
             fn_name='define_failing_pipeline',
-            module_name='dagit.dagit_tests.test_multiprocessing',
+            module_name=None,
         )
     )
     pipeline = define_failing_pipeline()
@@ -85,9 +85,9 @@ def test_execution_crash():
     repository_container = RepositoryContainer(
         RepositoryTargetInfo(
             repository_yaml=None,
-            python_file=None,
+            python_file=__file__,
             fn_name='define_crashy_pipeline',
-            module_name='dagit.dagit_tests.test_multiprocessing',
+            module_name=None,
         )
     )
     pipeline = define_crashy_pipeline()
