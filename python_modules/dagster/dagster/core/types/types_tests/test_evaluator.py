@@ -1,8 +1,8 @@
 from dagster import types
 
-from dagster.core.configurable import ConfigurableSelectorFromDict
+from dagster.core.types.configurable import ConfigurableSelectorFromDict
 
-from dagster.core.evaluator import (
+from dagster.core.types.evaluator import (
     DagsterEvaluationErrorReason,
     EvaluationStackListItemEntry,
     EvaluationStackPathEntry,
@@ -34,9 +34,7 @@ def test_evaluate_scalar_failure():
     assert error.error_data.value_rep == '2343'
 
 
-SingleLevelDict = types.Dict({
-    'level_one': types.Field(types.String),
-}, )
+SingleLevelDict = types.Dict({'level_one': types.Field(types.String)})
 
 
 def test_single_error():
@@ -81,39 +79,26 @@ def test_root_missing_field():
 
 DoubleLevelDict = types.Dict(
     {
-        'level_one':
-        types.Field(
+        'level_one': types.Field(
             types.Dict(
                 {
                     'string_field': types.Field(types.String),
                     'int_field': types.Field(types.Int, is_optional=True, default_value=989),
                     'bool_field': types.Field(types.Bool),
-                },
-            ),
-        ),
-    },
+                }
+            )
+        )
+    }
 )
 
 
 def test_nested_success():
-    value = {
-        'level_one': {
-            'string_field': 'skdsjfkdj',
-            'int_field': 123,
-            'bool_field': True,
-        }
-    }
+    value = {'level_one': {'string_field': 'skdsjfkdj', 'int_field': 123, 'bool_field': True}}
 
     assert_success(evaluate_config_value(DoubleLevelDict, value), value)
 
     result = evaluate_config_value(
-        DoubleLevelDict,
-        {
-            'level_one': {
-                'string_field': 'kjfkd',
-                'bool_field': True,
-            },
-        },
+        DoubleLevelDict, {'level_one': {'string_field': 'kjfkd', 'bool_field': True}}
     )
 
     assert isinstance(result, EvaluateValueResult)
@@ -178,11 +163,7 @@ def test_nested_error_two_fields_not_defined():
 
 
 def test_nested_error_missing_fields():
-    value = {
-        'level_one': {
-            'string_field': 'skdsjfkdj',
-        }
-    }
+    value = {'level_one': {'string_field': 'skdsjfkdj'}}
 
     result = evaluate_config_value(DoubleLevelDict, value)
     assert not result.success
@@ -199,14 +180,14 @@ def test_nested_error_multiple_missing_fields():
     assert not result.success
     assert len(result.errors) == 2
 
-    assert get_field_name_error(
-        result,
-        'bool_field',
-    ).reason == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELD
-    assert get_field_name_error(
-        result,
-        'string_field',
-    ).reason == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELD
+    assert (
+        get_field_name_error(result, 'bool_field').reason
+        == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELD
+    )
+    assert (
+        get_field_name_error(result, 'string_field').reason
+        == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELD
+    )
 
 
 def test_nested_missing_and_not_defined():
@@ -216,40 +197,36 @@ def test_nested_missing_and_not_defined():
     assert not result.success
     assert len(result.errors) == 3
 
-    assert get_field_name_error(
-        result,
-        'bool_field',
-    ).reason == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELD
+    assert (
+        get_field_name_error(result, 'bool_field').reason
+        == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELD
+    )
 
-    assert get_field_name_error(
-        result,
-        'string_field',
-    ).reason == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELD
+    assert (
+        get_field_name_error(result, 'string_field').reason
+        == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELD
+    )
 
-    assert get_field_name_error(
-        result,
-        'not_defined',
-    ).reason == DagsterEvaluationErrorReason.FIELD_NOT_DEFINED
+    assert (
+        get_field_name_error(result, 'not_defined').reason
+        == DagsterEvaluationErrorReason.FIELD_NOT_DEFINED
+    )
 
 
 MultiLevelDictType = types.Dict(
     {
-        'level_one_string_field':
-        types.Field(types.String),
-        'level_two_dict':
-        types.Field(
+        'level_one_string_field': types.Field(types.String),
+        'level_two_dict': types.Field(
             types.Dict(
                 {
-                    'level_two_int_field':
-                    types.Field(types.Int),
-                    'level_three_dict':
-                    types.Field(types.Dict({
-                        'level_three_string': types.Field(types.String),
-                    })),
+                    'level_two_int_field': types.Field(types.Int),
+                    'level_three_dict': types.Field(
+                        types.Dict({'level_three_string': types.Field(types.String)})
+                    ),
                 }
             )
         ),
-    },
+    }
 )
 
 
@@ -258,9 +235,7 @@ def test_multilevel_success():
         'level_one_string_field': 'foo',
         'level_two_dict': {
             'level_two_int_field': 234234,
-            'level_three_dict': {
-                'level_three_string': 'kjdfkd',
-            },
+            'level_three_dict': {'level_three_string': 'kjdfkd'},
         },
     }
 
@@ -272,9 +247,7 @@ def test_deep_scalar():
         'level_one_string_field': 'foo',
         'level_two_dict': {
             'level_two_int_field': 234234,
-            'level_three_dict': {
-                'level_three_string': 123,
-            },
+            'level_three_dict': {'level_three_string': 123},
         },
     }
 
@@ -296,13 +269,9 @@ def test_deep_scalar():
     assert not result.errors_at_level('level_one_string_field')
     assert not result.errors_at_level('level_two_dict')
     assert not result.errors_at_level('level_two_dict', 'level_three_dict')
-    assert len(
-        result.errors_at_level(
-            'level_two_dict',
-            'level_three_dict',
-            'level_three_string',
-        ),
-    ) == 1
+    assert (
+        len(result.errors_at_level('level_two_dict', 'level_three_dict', 'level_three_string')) == 1
+    )
 
 
 def test_deep_mixed_level_errors():
@@ -311,9 +280,7 @@ def test_deep_mixed_level_errors():
         'level_one_not_defined': 'kjsdkfjd',
         'level_two_dict': {
             # 'level_two_int_field': 234234, # missing
-            'level_three_dict': {
-                'level_three_string': 123,
-            },
+            'level_three_dict': {'level_three_string': 123}
         },
     }
 
@@ -336,9 +303,7 @@ def test_deep_mixed_level_errors():
     assert not result.errors_at_level('level_two_dict', 'level_three_dict')
 
     final_level_errors = result.errors_at_level(
-        'level_two_dict',
-        'level_three_dict',
-        'level_three_string',
+        'level_two_dict', 'level_three_dict', 'level_three_string'
     )
 
     assert len(final_level_errors) == 1
@@ -354,7 +319,7 @@ class ExampleSelectorType(ConfigurableSelectorFromDict, types.DagsterType):
             fields={
                 'option_one': types.Field(types.String),
                 'option_two': types.Field(types.String),
-            }
+            },
         )
 
 
@@ -388,10 +353,7 @@ def test_example_selector_wrong_field():
 
 
 def test_example_selector_multiple_fields():
-    result = evaluate_config_value(ExampleSelector, {
-        'option_one': 'foo',
-        'option_two': 'boo',
-    })
+    result = evaluate_config_value(ExampleSelector, {'option_one': 'foo', 'option_two': 'boo'})
 
     assert not result.success
     assert len(result.errors) == 1
@@ -402,7 +364,7 @@ class SelectorWithDefaultsType(ConfigurableSelectorFromDict, types.DagsterType):
     def __init__(self):
         super(SelectorWithDefaultsType, self).__init__(
             name='SelectorWithDefaultsType',
-            fields={'default': types.Field(types.String, is_optional=True, default_value='foo')}
+            fields={'default': types.Field(types.String, is_optional=True, default_value='foo')},
         )
 
 
@@ -446,9 +408,7 @@ def test_evaluate_double_list():
 
 
 def test_config_list_in_dict():
-    nested_list = types.Dict({
-        'nested_list': types.Field(types.List(types.Int)),
-    }, )
+    nested_list = types.Dict({'nested_list': types.Field(types.List(types.Int))})
 
     value = {'nested_list': [1, 2, 3]}
     result = evaluate_config_value(nested_list, value)
@@ -457,9 +417,7 @@ def test_config_list_in_dict():
 
 
 def test_config_list_in_dict_error():
-    nested_list = types.Dict({
-        'nested_list': types.Field(types.List(types.Int)),
-    }, )
+    nested_list = types.Dict({'nested_list': types.Field(types.List(types.Int))})
 
     value = {'nested_list': [1, 'bar', 3]}
     result = evaluate_config_value(nested_list, value)
@@ -482,7 +440,7 @@ def test_config_double_list():
         {
             'nested_list_one': types.Field(types.List(types.Int)),
             'nested_list_two': types.Field(types.List(types.String)),
-        },
+        }
     )
 
     value = {'nested_list_one': [1, 2, 3], 'nested_list_two': ['foo', 'bar']}
@@ -502,7 +460,7 @@ def test_config_double_list_double_error():
         fields={
             'nested_list_one': types.Field(types.List(types.Int)),
             'nested_list_two': types.Field(types.List(types.String)),
-        },
+        }
     )
 
     error_value = {'nested_list_one': 'kjdfkdj', 'nested_list_two': ['bar', 2]}
@@ -566,9 +524,7 @@ def test_nullable_dict():
     assert not evaluate_config_value(nullable_dict_with_int, {'int_field': None}).success
     assert evaluate_config_value(nullable_dict_with_int, {'int_field': 1}).success
 
-    dict_with_nullable_int = types.Dict({
-        'int_field': types.Field(types.Nullable(types.Int)),
-    })
+    dict_with_nullable_int = types.Dict({'int_field': types.Field(types.Nullable(types.Int))})
 
     assert not evaluate_config_value(dict_with_nullable_int, None).success
     assert not evaluate_config_value(dict_with_nullable_int, {}).success
@@ -576,9 +532,7 @@ def test_nullable_dict():
     assert evaluate_config_value(dict_with_nullable_int, {'int_field': 1}).success
 
     nullable_dict_with_nullable_int = types.Nullable(
-        types.Dict({
-            'int_field': types.Field(types.Nullable(types.Int)),
-        })
+        types.Dict({'int_field': types.Field(types.Nullable(types.Int))})
     )
 
     assert evaluate_config_value(nullable_dict_with_nullable_int, None).success

@@ -27,10 +27,7 @@ def nb_test_path(name):
 
 
 def define_hello_world_pipeline():
-    return PipelineDefinition(
-        name='hello_world_pipeline',
-        solids=[define_hello_world_solid()],
-    )
+    return PipelineDefinition(name='hello_world_pipeline', solids=[define_hello_world_solid()])
 
 
 def define_hello_world_solid():
@@ -39,10 +36,7 @@ def define_hello_world_solid():
 
 def define_hello_world_with_output():
     return dm.define_dagstermill_solid(
-        'hello_world_output',
-        nb_test_path('hello_world_output'),
-        [],
-        [OutputDefinition()],
+        'hello_world_output', nb_test_path('hello_world_output'), [], [OutputDefinition()]
     )
 
 
@@ -60,8 +54,7 @@ def notebook_test(f):
 
 def define_hello_world_with_output_pipeline():
     return PipelineDefinition(
-        name='hello_world_with_output_pipeline',
-        solids=[define_hello_world_with_output()],
+        name='hello_world_with_output_pipeline', solids=[define_hello_world_with_output()]
     )
 
 
@@ -130,7 +123,7 @@ def define_add_pipeline():
                 'a': DependencyDefinition('return_one'),
                 'b': DependencyDefinition('return_two'),
             }
-        }
+        },
     )
 
 
@@ -138,16 +131,7 @@ def define_add_pipeline():
 def test_add_pipeline():
     pipeline = define_add_pipeline()
     result = execute_pipeline(
-        pipeline,
-        {
-            'context': {
-                'default': {
-                    'config': {
-                        'log_level': 'ERROR',
-                    },
-                },
-            },
-        },
+        pipeline, {'context': {'default': {'config': {'log_level': 'ERROR'}}}}
     )
     assert result.success
     assert result.result_for_solid('add_two_numbers').transformed_value() == 3
@@ -161,11 +145,7 @@ def load_constant(info):
 def define_test_notebook_dag_pipeline():
     return PipelineDefinition(
         name='test_notebook_dag',
-        solids=[
-            load_constant,
-            add_two_numbers_pm_solid,
-            mult_two_numbers_pm_solid,
-        ],
+        solids=[load_constant, add_two_numbers_pm_solid, mult_two_numbers_pm_solid],
         dependencies={
             SolidInstance('load_constant', alias='load_a'): {},
             SolidInstance('load_constant', alias='load_b'): {},
@@ -185,16 +165,7 @@ def define_test_notebook_dag_pipeline():
 def test_notebook_dag():
     pipeline_result = execute_pipeline(
         define_test_notebook_dag_pipeline(),
-        environment={
-            'solids': {
-                'load_a': {
-                    'config': 1,
-                },
-                'load_b': {
-                    'config': 2,
-                },
-            },
-        },
+        environment={'solids': {'load_a': {'config': 1}, 'load_b': {'config': 2}}},
     )
     assert pipeline_result.success
     assert pipeline_result.result_for_solid('add_two').transformed_value() == 3

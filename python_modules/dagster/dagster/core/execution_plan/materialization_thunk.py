@@ -1,12 +1,8 @@
 from dagster import check
 
-from dagster.core.definitions import (
-    Result,
-    Solid,
-    OutputDefinition,
-)
+from dagster.core.definitions import Result, Solid, OutputDefinition
 
-from dagster.core.materializable import Materializeable
+from dagster.core.types.materializable import Materializeable
 
 from .objects import (
     ExecutionPlanInfo,
@@ -60,9 +56,7 @@ def decorate_with_output_materializations(execution_info, solid, output_def, sub
         new_steps.append(
             ExecutionStep(
                 key='{solid}.materialization.output.{output}.{mat_count}'.format(
-                    solid=solid.name,
-                    output=output_def.name,
-                    mat_count=mat_count,
+                    solid=solid.name, output=output_def.name, mat_count=mat_count
                 ),
                 step_inputs=[
                     StepInput(
@@ -73,21 +67,19 @@ def decorate_with_output_materializations(execution_info, solid, output_def, sub
                 ],
                 step_outputs=[
                     StepOutput(
-                        name=MATERIALIZATION_THUNK_OUTPUT,
-                        dagster_type=output_def.dagster_type,
+                        name=MATERIALIZATION_THUNK_OUTPUT, dagster_type=output_def.dagster_type
                     )
                 ],
                 tag=StepTag.MATERIALIZATION_THUNK,
                 solid=solid,
-                compute_fn=_create_materialization_lambda(output_def.dagster_type, output_spec)
+                compute_fn=_create_materialization_lambda(output_def.dagster_type, output_spec),
             )
         )
 
     return create_joining_subplan(
         solid,
         '{solid}.materialization.output.{output}.join'.format(
-            solid=solid.name,
-            output=output_def.name,
+            solid=solid.name, output=output_def.name
         ),
         new_steps,
         MATERIALIZATION_THUNK_OUTPUT,

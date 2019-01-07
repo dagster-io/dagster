@@ -20,7 +20,7 @@ from dagster import (
     outputs=[
         OutputDefinition(dagster_type=types.Int, name='out_one'),
         OutputDefinition(dagster_type=types.Int, name='out_two'),
-    ],
+    ]
 )
 def yield_outputs(_info):
     yield Result(23, 'out_one')
@@ -31,13 +31,10 @@ def yield_outputs(_info):
     outputs=[
         OutputDefinition(dagster_type=types.Int, name='out_one'),
         OutputDefinition(dagster_type=types.Int, name='out_two'),
-    ],
+    ]
 )
 def return_dict_results(_info):
-    return MultipleResults.from_dict({
-        'out_one': 23,
-        'out_two': 45,
-    })
+    return MultipleResults.from_dict({'out_one': 23, 'out_two': 45})
 
 
 @solid(
@@ -73,12 +70,8 @@ def define_part_eleven_step_one_pipeline():
         name='part_eleven_step_one_pipeline',
         solids=[return_dict_results, log_num, log_num_squared],
         dependencies={
-            'log_num': {
-                'num': DependencyDefinition('return_dict_results', 'out_one')
-            },
-            'log_num_squared': {
-                'num': DependencyDefinition('return_dict_results', 'out_two')
-            },
+            'log_num': {'num': DependencyDefinition('return_dict_results', 'out_one')},
+            'log_num_squared': {'num': DependencyDefinition('return_dict_results', 'out_two')},
         },
     )
 
@@ -88,12 +81,8 @@ def define_part_eleven_step_two_pipeline():
         name='part_eleven_step_two_pipeline',
         solids=[yield_outputs, log_num, log_num_squared],
         dependencies={
-            'log_num': {
-                'num': DependencyDefinition('yield_outputs', 'out_one')
-            },
-            'log_num_squared': {
-                'num': DependencyDefinition('yield_outputs', 'out_two')
-            },
+            'log_num': {'num': DependencyDefinition('yield_outputs', 'out_one')},
+            'log_num_squared': {'num': DependencyDefinition('yield_outputs', 'out_two')},
         },
     )
 
@@ -103,12 +92,8 @@ def define_part_eleven_step_three_pipeline():
         name='part_eleven_step_three_pipeline',
         solids=[conditional, log_num, log_num_squared],
         dependencies={
-            'log_num': {
-                'num': DependencyDefinition('conditional', 'out_one')
-            },
-            'log_num_squared': {
-                'num': DependencyDefinition('conditional', 'out_two')
-            },
+            'log_num': {'num': DependencyDefinition('conditional', 'out_one')},
+            'log_num_squared': {'num': DependencyDefinition('conditional', 'out_two')},
         },
     )
 
@@ -135,13 +120,7 @@ def test_intro_tutorial_part_eleven_step_two():
 
 def test_intro_tutorial_part_eleven_step_three():
     result = execute_pipeline(
-        define_part_eleven_step_three_pipeline(), {
-            'solids': {
-                'conditional': {
-                    'config': 'out_two',
-                },
-            },
-        }
+        define_part_eleven_step_three_pipeline(), {'solids': {'conditional': {'config': 'out_two'}}}
     )
 
     # successful things
@@ -162,14 +141,7 @@ def test_intro_tutorial_part_eleven_step_three():
 
 if __name__ == '__main__':
     execute_pipeline(
-        define_part_eleven_step_three_pipeline(),
-        {
-            'solids': {
-                'conditional': {
-                    'config': 'out_two'
-                },
-            },
-        },
+        define_part_eleven_step_three_pipeline(), {'solids': {'conditional': {'config': 'out_two'}}}
     )
 
     # execute_pipeline(define_part_eleven_step_two())

@@ -1,9 +1,6 @@
 import uuid
 
-from graphql import (
-    graphql,
-    parse,
-)
+from graphql import graphql, parse
 
 from dagster import (
     DependencyDefinition,
@@ -50,12 +47,7 @@ def define_scalar_output_pipeline():
         return 'dkjfkdjfe'
 
     return PipelineDefinition(
-        name='scalar_output_pipeline', solids=[
-            return_str,
-            return_int,
-            return_bool,
-            return_any,
-        ]
+        name='scalar_output_pipeline', solids=[return_str, return_int, return_bool, return_any]
     )
 
 
@@ -92,42 +84,31 @@ def execute_dagster_graphql(context, query, variables=None):
         variables=variables,
         # executor=GeventObservableExecutor(),
         allow_subscriptions=True,
-        return_promise=False
+        return_promise=False,
     )
 
 
-@lambda_solid(
-    inputs=[InputDefinition('num', DataFrame)],
-    output=OutputDefinition(DataFrame),
-)
+@lambda_solid(inputs=[InputDefinition('num', DataFrame)], output=OutputDefinition(DataFrame))
 def sum_solid(num):
     sum_df = num.copy()
     sum_df['sum'] = sum_df['num1'] + sum_df['num2']
     return sum_df
 
 
-@lambda_solid(
-    inputs=[InputDefinition('sum_df', DataFrame)],
-    output=OutputDefinition(DataFrame),
-)
+@lambda_solid(inputs=[InputDefinition('sum_df', DataFrame)], output=OutputDefinition(DataFrame))
 def sum_sq_solid(sum_df):
     sum_sq_df = sum_df.copy()
-    sum_sq_df['sum_sq'] = sum_df['sum']**2
+    sum_sq_df['sum_sq'] = sum_df['sum'] ** 2
     return sum_sq_df
 
 
 def define_pipeline_one():
     return PipelineDefinition(
         name='pandas_hello_world',
-        solids=[
-            sum_solid,
-            sum_sq_solid,
-        ],
+        solids=[sum_solid, sum_sq_solid],
         dependencies={
             'sum_solid': {},
-            'sum_sq_solid': {
-                'sum_df': DependencyDefinition(sum_solid.name),
-            },
+            'sum_sq_solid': {'sum_df': DependencyDefinition(sum_solid.name)},
         },
     )
 
@@ -135,15 +116,8 @@ def define_pipeline_one():
 def define_pipeline_with_pandas_df_input():
     return PipelineDefinition(
         name='pandas_hello_world_df_input',
-        solids=[
-            sum_solid,
-            sum_sq_solid,
-        ],
-        dependencies={
-            'sum_sq_solid': {
-                'sum_df': DependencyDefinition(sum_solid.name),
-            },
-        },
+        solids=[sum_solid, sum_sq_solid],
+        dependencies={'sum_sq_solid': {'sum_df': DependencyDefinition(sum_solid.name)}},
     )
 
 
@@ -157,13 +131,7 @@ def define_no_config_pipeline():
 
 def define_pipeline_two():
     return PipelineDefinition(
-        name='pandas_hello_world_two',
-        solids=[
-            sum_solid,
-        ],
-        dependencies={
-            'sum_solid': {},
-        },
+        name='pandas_hello_world_two', solids=[sum_solid], dependencies={'sum_solid': {}}
     )
 
 
@@ -177,7 +145,7 @@ def define_pipeline_with_list():
                 outputs=[],
                 transform_fn=lambda *_args: None,
                 config_field=Field(types.List(types.Int)),
-            ),
+            )
         ],
     )
 
@@ -194,20 +162,15 @@ def define_more_complicated_config():
                 config_field=types.Field(
                     types.Dict(
                         {
-                            'field_one':
-                            types.Field(types.String),
-                            'field_two':
-                            types.Field(types.String, is_optional=True),
-                            'field_three':
-                            types.Field(
-                                types.String,
-                                is_optional=True,
-                                default_value='some_value',
-                            )
-                        },
-                    ),
-                )
-            ),
+                            'field_one': types.Field(types.String),
+                            'field_two': types.Field(types.String, is_optional=True),
+                            'field_three': types.Field(
+                                types.String, is_optional=True, default_value='some_value'
+                            ),
+                        }
+                    )
+                ),
+            )
         ],
     )
 
@@ -269,20 +232,12 @@ def execute_config_graphql(pipeline_name, config):
     return execute_dagster_graphql(
         define_context(),
         CONFIG_VALIDATION_QUERY,
-        {
-            'executionParams': {
-                'pipelineName': pipeline_name,
-                'config': config,
-            },
-        },
+        {'executionParams': {'pipelineName': pipeline_name, 'config': config}},
     )
 
 
 def test_pipeline_not_found():
-    result = execute_config_graphql(
-        pipeline_name='nope',
-        config={},
-    )
+    result = execute_config_graphql(pipeline_name='nope', config={})
 
     assert not result.errors
     assert result.data
@@ -293,23 +248,14 @@ def test_pipeline_not_found():
 def pandas_hello_world_solids_config():
     return {
         'solids': {
-            'sum_solid': {
-                'inputs': {
-                    'num': {
-                        'csv': {
-                            'path': script_relative_path('num.csv'),
-                        },
-                    },
-                },
-            },
-        },
+            'sum_solid': {'inputs': {'num': {'csv': {'path': script_relative_path('num.csv')}}}}
+        }
     }
 
 
 def test_basic_valid_config():
     result = execute_config_graphql(
-        pipeline_name='pandas_hello_world',
-        config=pandas_hello_world_solids_config(),
+        pipeline_name='pandas_hello_world', config=pandas_hello_world_solids_config()
     )
 
     assert not result.errors
@@ -323,15 +269,7 @@ def test_root_field_not_defined():
         pipeline_name='pandas_hello_world',
         config={
             'solids': {
-                'sum_solid': {
-                    'inputs': {
-                        'num': {
-                            'csv': {
-                                'path': script_relative_path('num.csv'),
-                            },
-                        },
-                    },
-                },
+                'sum_solid': {'inputs': {'num': {'csv': {'path': script_relative_path('num.csv')}}}}
             },
             'nope': {},
         },
@@ -350,10 +288,7 @@ def test_root_field_not_defined():
 
 
 def test_root_wrong_type():
-    result = execute_config_graphql(
-        pipeline_name='pandas_hello_world',
-        config=123,
-    )
+    result = execute_config_graphql(pipeline_name='pandas_hello_world', config=123)
     assert not result.errors
     assert result.data
     assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationInvalid'
@@ -367,7 +302,8 @@ def test_root_wrong_type():
 
 def field_stack(error_data):
     return [
-        entry['field']['name'] for entry in error_data['stack']['entries']
+        entry['field']['name']
+        for entry in error_data['stack']['entries']
         if entry['__typename'] == 'EvaluationStackPathEntry'
     ]
 
@@ -375,19 +311,7 @@ def field_stack(error_data):
 def test_basic_invalid_config_type_mismatch():
     result = execute_config_graphql(
         pipeline_name='pandas_hello_world',
-        config={
-            'solids': {
-                'sum_solid': {
-                    'inputs': {
-                        'num': {
-                            'csv': {
-                                'path': 123,
-                            },
-                        },
-                    },
-                },
-            },
-        },
+        config={'solids': {'sum_solid': {'inputs': {'num': {'csv': {'path': 123}}}}}},
     )
 
     assert not result.errors
@@ -409,17 +333,7 @@ def test_basic_invalid_config_type_mismatch():
 def test_basic_invalid_config_missing_field():
     result = execute_config_graphql(
         pipeline_name='pandas_hello_world',
-        config={
-            'solids': {
-                'sum_solid': {
-                    'inputs': {
-                        'num': {
-                            'csv': {},
-                        }
-                    }
-                },
-            },
-        },
+        config={'solids': {'sum_solid': {'inputs': {'num': {'csv': {}}}}}},
     )
 
     assert not result.errors
@@ -444,17 +358,8 @@ def test_basic_invalid_not_defined_field():
         pipeline_name='pandas_hello_world',
         config={
             'solids': {
-                'sum_solid': {
-                    'inputs': {
-                        'num': {
-                            'csv': {
-                                'path': 'foo.txt',
-                                'extra': 'nope',
-                            },
-                        }
-                    }
-                },
-            },
+                'sum_solid': {'inputs': {'num': {'csv': {'path': 'foo.txt', 'extra': 'nope'}}}}
+            }
         },
     )
 
@@ -481,36 +386,26 @@ def define_more_complicated_nested_config():
                 config_field=types.Field(
                     types.Dict(
                         {
-                            'field_one':
-                            types.Field(types.String),
-                            'field_two':
-                            types.Field(types.String, is_optional=True),
-                            'field_three':
-                            types.Field(
-                                types.String,
-                                is_optional=True,
-                                default_value='some_value',
+                            'field_one': types.Field(types.String),
+                            'field_two': types.Field(types.String, is_optional=True),
+                            'field_three': types.Field(
+                                types.String, is_optional=True, default_value='some_value'
                             ),
-                            'nested_field':
-                            types.Field(
+                            'nested_field': types.Field(
                                 types.Dict(
                                     {
-                                        'field_four_str':
-                                        types.Field(types.String),
-                                        'field_five_int':
-                                        types.Field(types.Int),
-                                        'field_six_nullable_int_list':
-                                        types.Field(
-                                            types.List(types.Nullable(types.Int)),
-                                            is_optional=True,
+                                        'field_four_str': types.Field(types.String),
+                                        'field_five_int': types.Field(types.Int),
+                                        'field_six_nullable_int_list': types.Field(
+                                            types.List(types.Nullable(types.Int)), is_optional=True
                                         ),
-                                    },
-                                ),
+                                    }
+                                )
                             ),
-                        },
-                    ),
+                        }
+                    )
                 ),
-            ),
+            )
         ],
     )
 
@@ -567,30 +462,21 @@ def define_context_config_pipeline():
         name='context_config_pipeline',
         solids=[],
         context_definitions={
-            'context_one':
-            PipelineContextDefinition(
-                context_fn=lambda *args, **kwargs: None,
-                config_field=Field(types.String),
+            'context_one': PipelineContextDefinition(
+                context_fn=lambda *args, **kwargs: None, config_field=Field(types.String)
             ),
-            'context_two':
-            PipelineContextDefinition(
-                context_fn=lambda *args, **kwargs: None,
-                config_field=Field(types.Int),
+            'context_two': PipelineContextDefinition(
+                context_fn=lambda *args, **kwargs: None, config_field=Field(types.Int)
             ),
-            'context_with_resources':
-            PipelineContextDefinition(
+            'context_with_resources': PipelineContextDefinition(
                 resources={
-                    'resource_one':
-                    ResourceDefinition(
-                        resource_fn=lambda *args, **kwargs: None,
-                        config_field=Field(types.Int),
+                    'resource_one': ResourceDefinition(
+                        resource_fn=lambda *args, **kwargs: None, config_field=Field(types.Int)
                     ),
-                    'resource_two':
-                    ResourceDefinition(resource_fn=lambda *args, **kwargs: None,
-                                       ),
+                    'resource_two': ResourceDefinition(resource_fn=lambda *args, **kwargs: None),
                 }
-            )
-        }
+            ),
+        },
     )
 
 
@@ -623,10 +509,7 @@ RESOURCE_QUERY = '''
 
 
 def test_context_fetch_resources():
-    result = execute_dagster_graphql(
-        define_context(),
-        RESOURCE_QUERY,
-    )
+    result = execute_dagster_graphql(define_context(), RESOURCE_QUERY)
 
     assert not result.errors
     assert result.data
@@ -637,13 +520,7 @@ def test_context_fetch_resources():
 def test_context_config_works():
     result = execute_config_graphql(
         pipeline_name='context_config_pipeline',
-        config={
-            'context': {
-                'context_one': {
-                    'config': 'kj23k4j3'
-                },
-            },
-        },
+        config={'context': {'context_one': {'config': 'kj23k4j3'}}},
     )
 
     assert not result.errors
@@ -653,13 +530,7 @@ def test_context_config_works():
 
     result = execute_config_graphql(
         pipeline_name='context_config_pipeline',
-        config={
-            'context': {
-                'context_two': {
-                    'config': 38934
-                },
-            },
-        },
+        config={'context': {'context_two': {'config': 38934}}},
     )
 
     assert not result.errors
@@ -669,10 +540,7 @@ def test_context_config_works():
 
 
 def test_context_config_selector_error():
-    result = execute_config_graphql(
-        pipeline_name='context_config_pipeline',
-        config={'context': {}},
-    )
+    result = execute_config_graphql(pipeline_name='context_config_pipeline', config={'context': {}})
 
     assert not result.errors
     assert result.data
@@ -684,12 +552,7 @@ def test_context_config_selector_error():
 
 def test_context_config_wrong_selector():
     result = execute_config_graphql(
-        pipeline_name='context_config_pipeline',
-        config={
-            'context': {
-                'not_defined': {}
-            },
-        },
+        pipeline_name='context_config_pipeline', config={'context': {'not_defined': {}}}
     )
 
     assert not result.errors
@@ -703,16 +566,7 @@ def test_context_config_wrong_selector():
 def test_context_config_multiple_selectors():
     result = execute_config_graphql(
         pipeline_name='context_config_pipeline',
-        config={
-            'context': {
-                'context_one': {
-                    'config': 'kdjfd'
-                },
-                'context_two': {
-                    'config': 123,
-                },
-            },
-        },
+        config={'context': {'context_one': {'config': 'kdjfd'}, 'context_two': {'config': 123}}},
     )
 
     assert not result.errors
@@ -733,13 +587,10 @@ def test_more_complicated_works():
                         'field_one': 'foo.txt',
                         'field_two': 'yup',
                         'field_three': 'mmmhmmm',
-                        'nested_field': {
-                            'field_four_str': 'yaya',
-                            'field_five_int': 234,
-                        }
-                    },
-                },
-            },
+                        'nested_field': {'field_four_str': 'yaya', 'field_five_int': 234},
+                    }
+                }
+            }
         },
     )
 
@@ -765,10 +616,10 @@ def test_more_complicated_multiple_errors():
                             'field_four_str': 23434,  # runtime type
                             'field_five_int': 234,
                             'extra_two': 'ksjdkfjd',  # another extra
-                        }
-                    },
-                },
-            },
+                        },
+                    }
+                }
+            }
         },
     )
 
@@ -781,19 +632,16 @@ def test_more_complicated_multiple_errors():
     assert len(valid_data['errors']) == 4
 
     missing_error_one = find_error(
-        result,
-        ['solids', 'a_solid_with_multilayered_config', 'config'],
-        'MISSING_REQUIRED_FIELD',
+        result, ['solids', 'a_solid_with_multilayered_config', 'config'], 'MISSING_REQUIRED_FIELD'
     )
-    assert ['solids', 'a_solid_with_multilayered_config',
-            'config'] == field_stack(missing_error_one)
+    assert ['solids', 'a_solid_with_multilayered_config', 'config'] == field_stack(
+        missing_error_one
+    )
     assert missing_error_one['reason'] == 'MISSING_REQUIRED_FIELD'
     assert missing_error_one['field']['name'] == 'field_one'
 
     not_defined_one = find_error(
-        result,
-        ['solids', 'a_solid_with_multilayered_config', 'config'],
-        'FIELD_NOT_DEFINED',
+        result, ['solids', 'a_solid_with_multilayered_config', 'config'], 'FIELD_NOT_DEFINED'
     )
     assert ['solids', 'a_solid_with_multilayered_config', 'config'] == field_stack(not_defined_one)
     assert not_defined_one['reason'] == 'FIELD_NOT_DEFINED'
@@ -805,7 +653,11 @@ def test_more_complicated_multiple_errors():
         'RUNTIME_TYPE_MISMATCH',
     )
     assert [
-        'solids', 'a_solid_with_multilayered_config', 'config', 'nested_field', 'field_four_str'
+        'solids',
+        'a_solid_with_multilayered_config',
+        'config',
+        'nested_field',
+        'field_four_str',
     ] == field_stack(runtime_type_error)
     assert runtime_type_error['reason'] == 'RUNTIME_TYPE_MISMATCH'
     assert runtime_type_error['valueRep'] == '23434'
@@ -817,8 +669,9 @@ def test_more_complicated_multiple_errors():
         'FIELD_NOT_DEFINED',
     )
 
-    assert ['solids', 'a_solid_with_multilayered_config', 'config',
-            'nested_field'] == field_stack(not_defined_two)
+    assert ['solids', 'a_solid_with_multilayered_config', 'config', 'nested_field'] == field_stack(
+        not_defined_two
+    )
     assert not_defined_two['reason'] == 'FIELD_NOT_DEFINED'
     assert not_defined_two['fieldName'] == 'extra_two'
 
@@ -828,13 +681,7 @@ def test_more_complicated_multiple_errors():
 def test_config_list():
     result = execute_config_graphql(
         pipeline_name='pipeline_with_list',
-        config={
-            'solids': {
-                'solid_with_list': {
-                    'config': [1, 2],
-                },
-            },
-        },
+        config={'solids': {'solid_with_list': {'config': [1, 2]}}},
     )
 
     assert not result.errors
@@ -847,13 +694,7 @@ def test_config_list():
 def test_config_list_invalid():
     result = execute_config_graphql(
         pipeline_name='pipeline_with_list',
-        config={
-            'solids': {
-                'solid_with_list': {
-                    'config': 'foo',
-                },
-            },
-        },
+        config={'solids': {'solid_with_list': {'config': 'foo'}}},
     )
 
     assert not result.errors
@@ -868,13 +709,7 @@ def test_config_list_invalid():
 def test_config_list_item_invalid():
     result = execute_config_graphql(
         pipeline_name='pipeline_with_list',
-        config={
-            'solids': {
-                'solid_with_list': {
-                    'config': [1, 'foo'],
-                },
-            },
-        },
+        config={'solids': {'solid_with_list': {'config': [1, 'foo']}}},
     )
 
     assert not result.errors
@@ -1002,12 +837,7 @@ def test_query_execution_plan_errors():
     result = execute_dagster_graphql(
         define_context(),
         EXECUTION_PLAN_QUERY,
-        {
-            'executionParams': {
-                'pipelineName': 'pandas_hello_world',
-                'config': 2334893,
-            },
-        },
+        {'executionParams': {'pipelineName': 'pandas_hello_world', 'config': 2334893}},
     )
 
     assert not result.errors
@@ -1017,12 +847,7 @@ def test_query_execution_plan_errors():
     result = execute_dagster_graphql(
         define_context(),
         EXECUTION_PLAN_QUERY,
-        {
-            'executionParams': {
-                'pipelineName': 'nope',
-                'config': 2334893,
-            },
-        },
+        {'executionParams': {'pipelineName': 'nope', 'config': 2334893}},
     )
 
     assert not result.errors
@@ -1157,7 +982,7 @@ def test_basic_start_pipeline_execution():
             'executionParams': {
                 'pipelineName': 'pandas_hello_world',
                 'config': pandas_hello_world_solids_config(),
-            },
+            }
         },
     )
 
@@ -1181,19 +1006,9 @@ def test_basic_start_pipeline_execution_config_failure():
             'executionParams': {
                 'pipelineName': 'pandas_hello_world',
                 'config': {
-                    'solids': {
-                        'sum_solid': {
-                            'inputs': {
-                                'num': {
-                                    'csv': {
-                                        'path': 384938439,
-                                    },
-                                },
-                            },
-                        },
-                    },
+                    'solids': {'sum_solid': {'inputs': {'num': {'csv': {'path': 384938439}}}}}
                 },
-            },
+            }
         },
     )
 
@@ -1210,19 +1025,9 @@ def test_basis_start_pipeline_not_found_error():
             'executionParams': {
                 'pipelineName': 'sjkdfkdjkf',
                 'config': {
-                    'solids': {
-                        'sum_solid': {
-                            'inputs': {
-                                'num': {
-                                    'csv': {
-                                        'path': 'test.csv',
-                                    },
-                                },
-                            },
-                        },
-                    },
+                    'solids': {'sum_solid': {'inputs': {'num': {'csv': {'path': 'test.csv'}}}}}
                 },
-            },
+            }
         },
     )
 
@@ -1249,17 +1054,11 @@ def test_basic_start_pipeline_execution_and_subscribe():
                 'config': {
                     'solids': {
                         'sum_solid': {
-                            'inputs': {
-                                'num': {
-                                    'csv': {
-                                        'path': script_relative_path('num.csv'),
-                                    },
-                                },
-                            },
-                        },
-                    },
+                            'inputs': {'num': {'csv': {'path': script_relative_path('num.csv')}}}
+                        }
+                    }
                 },
-            },
+            }
         },
     )
 
@@ -1272,9 +1071,7 @@ def test_basic_start_pipeline_execution_and_subscribe():
     assert uuid.UUID(run_id)
 
     subscription = execute_dagster_graphql(
-        context,
-        parse(SUBSCRIPTION_QUERY),
-        variables={'runId': run_id},
+        context, parse(SUBSCRIPTION_QUERY), variables={'runId': run_id}
     )
 
     messages = []
@@ -1300,12 +1097,7 @@ def test_basic_sync_execution_no_config():
     result = execute_dagster_graphql(
         context,
         SYNC_MUTATION_QUERY,
-        variables={
-            'executionParams': {
-                'pipelineName': 'no_config_pipeline',
-                'config': None,
-            },
-        },
+        variables={'executionParams': {'pipelineName': 'no_config_pipeline', 'config': None}},
     )
 
     assert not result.errors
@@ -1326,7 +1118,7 @@ def test_basic_sync_execution():
             'executionParams': {
                 'pipelineName': 'pandas_hello_world',
                 'config': pandas_hello_world_solids_config(),
-            },
+            }
         },
     )
 

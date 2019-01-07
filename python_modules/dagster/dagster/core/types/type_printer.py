@@ -3,7 +3,7 @@ from dagster import check
 
 from dagster.utils.indenting_printer import IndentingPrinter
 
-from .types import DagsterType
+from .base import DagsterType
 
 
 def print_type(dagster_type, print_fn=print):

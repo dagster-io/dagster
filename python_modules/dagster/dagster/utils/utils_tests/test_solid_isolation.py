@@ -40,11 +40,7 @@ def test_single_solid_with_single():
 
     pipeline_def = PipelineDefinition(
         solids=[solid_one, add_one_solid],
-        dependencies={
-            'add_one_solid': {
-                'num': DependencyDefinition('solid_one'),
-            },
-        },
+        dependencies={'add_one_solid': {'num': DependencyDefinition('solid_one')}},
     )
 
     result = execute_solid(pipeline_def, 'add_one_solid', inputs={'num': 2})
@@ -67,18 +63,11 @@ def test_single_solid_with_multiple_inputs():
             'add_solid': {
                 'num_one': DependencyDefinition('solid_one'),
                 'num_two': DependencyDefinition('solid_one'),
-            },
+            }
         },
     )
 
-    result = execute_solid(
-        pipeline_def,
-        'add_solid',
-        inputs={
-            'num_one': 2,
-            'num_two': 3,
-        },
-    )
+    result = execute_solid(pipeline_def, 'add_solid', inputs={'num_one': 2, 'num_two': 3})
 
     assert result.success
     assert result.transformed_value() == 5
@@ -96,13 +85,7 @@ def test_single_solid_with_config():
     result = execute_solid(
         pipeline_def,
         'check_config_for_two',
-        environment={
-            'solids': {
-                'check_config_for_two': {
-                    'config': 2
-                },
-            },
-        },
+        environment={'solids': {'check_config_for_two': {'config': 2}}},
     )
 
     assert result.success
@@ -120,24 +103,17 @@ def test_single_solid_with_context_config():
     pipeline_def = PipelineDefinition(
         solids=[check_context_config_for_two],
         context_definitions={
-            'test_context':
-            PipelineContextDefinition(
+            'test_context': PipelineContextDefinition(
                 config_field=Field(types.Int, is_optional=True, default_value=2),
                 context_fn=lambda info: ExecutionContext(resources=info.config),
-            ),
+            )
         },
     )
 
     result = execute_solid(
         pipeline_def,
         'check_context_config_for_two',
-        environment={
-            'context': {
-                'test_context': {
-                    'config': 2
-                },
-            },
-        },
+        environment={'context': {'test_context': {'config': 2}}},
     )
 
     assert result.success

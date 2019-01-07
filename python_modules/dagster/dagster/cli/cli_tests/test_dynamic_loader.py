@@ -1,10 +1,6 @@
 import pytest
 
-from dagster import (
-    PipelineDefinition,
-    RepositoryDefinition,
-    lambda_solid,
-)
+from dagster import PipelineDefinition, RepositoryDefinition, lambda_solid
 
 from dagster.cli.dynamic_loader import (
     FileTargetFunction,
@@ -43,11 +39,10 @@ def test_repository_python_file():
         mode=PipelineTargetMode.REPOSITORY_PYTHON_FILE,
         data=RepositoryPythonFileData(
             file_target_function=FileTargetFunction(
-                python_file='bar_repo.py',
-                fn_name='define_bar_repo',
+                python_file='bar_repo.py', fn_name='define_bar_repo'
             ),
             pipeline_name='foo',
-        )
+        ),
     )
 
     with pytest.raises(InvalidPipelineLoadingComboError):
@@ -88,11 +83,10 @@ def test_repository_module():
         mode=PipelineTargetMode.REPOSITORY_MODULE,
         data=RepositoryModuleData(
             module_target_function=ModuleTargetFunction(
-                module_name='bar_module',
-                fn_name='define_bar_repo',
+                module_name='bar_module', fn_name='define_bar_repo'
             ),
             pipeline_name='foo',
-        )
+        ),
     )
 
 
@@ -109,10 +103,7 @@ def test_pipeline_python_file():
 
     assert mode_data == PipelineLoadingModeData(
         mode=PipelineTargetMode.PIPELINE_PYTHON_FILE,
-        data=FileTargetFunction(
-            python_file='foo.py',
-            fn_name='define_pipeline',
-        ),
+        data=FileTargetFunction(python_file='foo.py', fn_name='define_pipeline'),
     )
 
 
@@ -129,10 +120,7 @@ def test_pipeline_module():
 
     assert mode_data == PipelineLoadingModeData(
         mode=PipelineTargetMode.PIPELINE_MODULE,
-        data=ModuleTargetFunction(
-            module_name='foo_module',
-            fn_name='define_pipeline',
-        ),
+        data=ModuleTargetFunction(module_name='foo_module', fn_name='define_pipeline'),
     )
 
 
@@ -147,7 +135,7 @@ def test_yaml_file():
         )
     ) == PipelineLoadingModeData(
         mode=PipelineTargetMode.REPOSITORY_YAML_FILE,
-        data=RepositoryYamlData(repository_yaml='some_file.yml', pipeline_name='foobar')
+        data=RepositoryYamlData(repository_yaml='some_file.yml', pipeline_name='foobar'),
     )
 
     with pytest.raises(InvalidPipelineLoadingComboError):
@@ -277,44 +265,26 @@ def test_loader_from_default_repository_file_yaml():
 def test_repo_mode_data():
     assert create_repository_loading_mode_data(
         RepositoryTargetInfo(
-            repository_yaml='foo.yaml',
-            module_name=None,
-            python_file=None,
-            fn_name=None,
+            repository_yaml='foo.yaml', module_name=None, python_file=None, fn_name=None
         )
-    ) == RepositoryLoadingModeData(
-        mode=RepositoryTargetMode.YAML_FILE,
-        data='foo.yaml',
-    )
+    ) == RepositoryLoadingModeData(mode=RepositoryTargetMode.YAML_FILE, data='foo.yaml')
 
     assert create_repository_loading_mode_data(
         RepositoryTargetInfo(
-            repository_yaml=None,
-            module_name='foo',
-            python_file=None,
-            fn_name='define_bar_repo',
+            repository_yaml=None, module_name='foo', python_file=None, fn_name='define_bar_repo'
         )
     ) == RepositoryLoadingModeData(
         mode=RepositoryTargetMode.MODULE,
-        data=ModuleTargetFunction(
-            module_name='foo',
-            fn_name='define_bar_repo',
-        )
+        data=ModuleTargetFunction(module_name='foo', fn_name='define_bar_repo'),
     )
 
     assert create_repository_loading_mode_data(
         RepositoryTargetInfo(
-            repository_yaml=None,
-            module_name=None,
-            python_file='foo.py',
-            fn_name='define_bar_repo',
+            repository_yaml=None, module_name=None, python_file='foo.py', fn_name='define_bar_repo'
         )
     ) == RepositoryLoadingModeData(
         mode=RepositoryTargetMode.FILE,
-        data=FileTargetFunction(
-            python_file='foo.py',
-            fn_name='define_bar_repo',
-        )
+        data=FileTargetFunction(python_file='foo.py', fn_name='define_bar_repo'),
     )
 
 

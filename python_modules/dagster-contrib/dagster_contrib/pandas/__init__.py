@@ -16,11 +16,8 @@ from dagster import (
     types,
 )
 
-from dagster.core.configurable import ConfigurableSelectorFromDict
-from dagster.core.materializable import (
-    FileMarshalable,
-    Materializeable,
-)
+from dagster.core.types.configurable import ConfigurableSelectorFromDict
+from dagster.core.types.materializable import FileMarshalable, Materializeable
 
 DataFrameMeta = namedtuple('DataFrameMeta', 'format path')
 
@@ -35,8 +32,8 @@ def define_csv_dict_field():
             {
                 'path': Field(types.Path),
                 'sep': Field(types.String, is_optional=True, default_value=','),
-            },
-        ),
+            }
+        )
     )
 
 
@@ -56,10 +53,7 @@ PandasDataFrameMaterializationConfigSchema = _PandasDataFrameMaterializationConf
 
 
 class _DataFrameType(
-    ConfigurableSelectorFromDict,
-    types.PythonObjectType,
-    Materializeable,
-    FileMarshalable,
+    ConfigurableSelectorFromDict, types.PythonObjectType, Materializeable, FileMarshalable
 ):
     def __init__(self):
         super(_DataFrameType, self).__init__(
@@ -104,7 +98,9 @@ class _DataFrameType(
         csv_path = os.path.join(output_dir, 'csv')
         value.to_csv(csv_path, index=False)
         df_meta = DataFrameMeta(format='csv', path='csv')
-        return types.SerializedTypeValue(name=self.name, value=df_meta._asdict())
+        import dagster.core.types.base
+
+        return dagster.core.types.base.SerializedTypeValue(name=self.name, value=df_meta._asdict())
 
     def deserialize_from_type_value(self, type_value, output_dir):
         check.str_param(output_dir, 'output_dir')

@@ -45,5 +45,5 @@ setup(
             '@lambda_engine#egg=dagster&subdirectory=python_modules/dagster'
         ),
         'glob2==0.6',
-    ]
+    ],
 )

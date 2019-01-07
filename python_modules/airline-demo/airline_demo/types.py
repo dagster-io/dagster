@@ -6,12 +6,8 @@ import sqlalchemy
 
 from collections import namedtuple
 
-from pyspark.sql import (
-    DataFrame,
-)
-from dagster import (
-    types,
-)
+from pyspark.sql import DataFrame
+from dagster import types
 
 AirlineDemoResources = namedtuple(
     'AirlineDemoResources',
@@ -19,9 +15,7 @@ AirlineDemoResources = namedtuple(
 )
 
 SparkDataFrameType = types.PythonObjectType(
-    'SparkDataFrameType',
-    python_type=DataFrame,
-    description='A Pyspark data frame.',
+    'SparkDataFrameType', python_type=DataFrame, description='A Pyspark data frame.'
 )
 
 SqlAlchemyEngineType = types.PythonObjectType(
@@ -59,9 +53,7 @@ class _FileExistsAtPath(types.DagsterStringType):
         )
 
     def is_python_valid_value(self, value):
-        return (
-            super(_FileExistsAtPath, self).is_python_valid_value(value) and os.path.isfile(value)
-        )
+        return super(_FileExistsAtPath, self).is_python_valid_value(value) and os.path.isfile(value)
 
 
 FileExistsAtPath = _FileExistsAtPath()

@@ -2,11 +2,7 @@ from functools import partial
 from graphql.type.introspection import IntrospectionSchema
 
 import graphene
-from graphene.types.definitions import (
-    GrapheneGraphQLType,
-    GrapheneObjectType,
-    GrapheneUnionType,
-)
+from graphene.types.definitions import GrapheneGraphQLType, GrapheneObjectType, GrapheneUnionType
 from graphene.types.enum import EnumMeta
 from graphene.types.generic import GenericScalar
 from graphene.types.typemap import TypeMap as GrapheneTypeMap, resolve_type
@@ -33,7 +29,7 @@ GRAPHENE_BUILT_IN = [
 
 
 def get_meta(graphene_type):
-    return graphene_type._meta  #pylint: disable=W0212
+    return graphene_type._meta  # pylint: disable=W0212
 
 
 class DauphinRegistry(object):
@@ -51,8 +47,7 @@ class DauphinRegistry(object):
         # Not looping over GRAPHENE_TYPES in order to not fool lint
         self.ObjectType = create_registering_class(graphene.ObjectType, registering_metaclass)
         self.InputObjectType = create_registering_class(
-            graphene.InputObjectType,
-            registering_metaclass,
+            graphene.InputObjectType, registering_metaclass
         )
         self.Interface = create_registering_class(graphene.Interface, registering_metaclass)
         self.Scalar = create_registering_class(graphene.Scalar, registering_metaclass)
@@ -77,7 +72,7 @@ class DauphinRegistry(object):
             mutation=self.getTypeOrNull('Mutation'),
             subscription=self.getTypeOrNull('Subscription'),
             types=self.getAllImplementationTypes(),
-            registry=self
+            registry=self,
         )
 
     def getTypeOrNull(self, typeName):
@@ -118,19 +113,14 @@ class DauphinSchema(graphene.Schema):
         super(DauphinSchema, self).__init__(**kwargs)
 
     def build_typemap(self):
-        initial_types = [
-            self._query,
-            self._mutation,
-            self._subscription,
-            IntrospectionSchema,
-        ]
+        initial_types = [self._query, self._mutation, self._subscription, IntrospectionSchema]
         if self.types:
             initial_types += self.types
         self._type_map = DauphinTypeMap(
             initial_types,
             auto_camelcase=self.auto_camelcase,
             schema=self,
-            typeRegistry=self._typeRegistry
+            typeRegistry=self._typeRegistry,
         )
 
     def type_named(self, name):
@@ -186,10 +176,7 @@ class DauphinTypeMap(GrapheneTypeMap):
         type_meta = get_meta(graphene_type)
         if graphene_type.resolve_type:
             union_resolve_type = partial(
-                resolve_type,
-                graphene_type.resolve_type,
-                map_,
-                type_meta.name,
+                resolve_type, graphene_type.resolve_type, map_, type_meta.name
             )
 
         def types():
@@ -223,14 +210,14 @@ def create_registering_metaclass(registry):
 
 
 def create_registering_class(cls, metaclass):
-    new_cls = metaclass(cls.__name__, (cls, ), {})
+    new_cls = metaclass(cls.__name__, (cls,), {})
     setattr(new_cls, '__dauphinCoreType', True)
     return new_cls
 
 
 def create_union(metaclass, _registry):
-    meta_class = type('Meta', (object, ), {'types': ('__', '__')})
-    Union = metaclass('Union', (graphene.Union, ), {'Meta': meta_class})
+    meta_class = type('Meta', (object,), {'types': ('__', '__')})
+    Union = metaclass('Union', (graphene.Union,), {'Meta': meta_class})
     setattr(Union, '__dauphinCoreType', True)
     return Union
 
@@ -246,12 +233,10 @@ def create_enum(metaclass):
             "description": description,
             "deprecation_reason": deprecation_reason,
         }
-        meta_class = type("Meta", (object, ), meta_dict)
-        return type(meta_class.enum.__name__, (cls, ), {"Meta": meta_class})
+        meta_class = type("Meta", (object,), meta_dict)
+        return type(meta_class.enum.__name__, (cls,), {"Meta": meta_class})
 
-    Enum = EnumRegisteringMetaclass(
-        'Enum', (graphene.Enum, ), {'from_enum': classmethod(from_enum)}
-    )
+    Enum = EnumRegisteringMetaclass('Enum', (graphene.Enum,), {'from_enum': classmethod(from_enum)})
     setattr(Enum, '__dauphinCoreType', True)
     return Enum
 

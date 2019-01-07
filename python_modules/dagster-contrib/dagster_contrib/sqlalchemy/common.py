@@ -1,9 +1,6 @@
 import sqlalchemy
 
-from dagster import (
-    ExecutionContext,
-    check,
-)
+from dagster import ExecutionContext, check
 
 from dagster.core.execution_context import RuntimeExecutionContext
 

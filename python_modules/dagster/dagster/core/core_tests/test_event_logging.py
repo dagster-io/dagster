@@ -8,11 +8,7 @@ from dagster import (
     lambda_solid,
 )
 
-from dagster.core.events import (
-    construct_event_logger,
-    EventRecord,
-    EventType,
-)
+from dagster.core.events import construct_event_logger, EventRecord, EventType
 
 from dagster.utils.logging import define_colored_console_logger
 
@@ -29,15 +25,15 @@ def define_event_logging_pipeline(name, solids, event_callback, deps=None):
         solids=solids,
         description=deps,
         context_definitions={
-            'default':
-            PipelineContextDefinition(
-                context_fn=
-                lambda info: ExecutionContext(loggers=[
-                    construct_event_logger(event_callback),
-                    define_colored_console_logger('yup'),
-                ])
+            'default': PipelineContextDefinition(
+                context_fn=lambda info: ExecutionContext(
+                    loggers=[
+                        construct_event_logger(event_callback),
+                        define_colored_console_logger('yup'),
+                    ]
+                )
             )
-        }
+        },
     )
 
 
@@ -49,9 +45,7 @@ def test_empty_pipeline():
         events[record.event_type].append(record)
 
     pipeline_def = define_event_logging_pipeline(
-        name='empty_pipeline',
-        solids=[],
-        event_callback=_event_callback,
+        name='empty_pipeline', solids=[], event_callback=_event_callback
     )
 
     result = execute_pipeline(pipeline_def)
@@ -73,9 +67,7 @@ def test_single_solid_pipeline_success():
         events[record.event_type].append(record)
 
     pipeline_def = define_event_logging_pipeline(
-        name='single_solid_pipeline',
-        solids=[solid_one],
-        event_callback=_event_callback,
+        name='single_solid_pipeline', solids=[solid_one], event_callback=_event_callback
     )
 
     result = execute_pipeline(pipeline_def)
@@ -107,9 +99,7 @@ def test_single_solid_pipeline_failure():
         events[record.event_type].append(record)
 
     pipeline_def = define_event_logging_pipeline(
-        name='single_solid_pipeline',
-        solids=[solid_one],
-        event_callback=_event_callback,
+        name='single_solid_pipeline', solids=[solid_one], event_callback=_event_callback
     )
 
     result = execute_pipeline(pipeline_def, throw_on_error=False)

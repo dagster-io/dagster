@@ -17,15 +17,9 @@ def create_num_csv_environment():
     return {
         'solids': {
             'hello_world': {
-                'inputs': {
-                    'num_csv': {
-                        'csv': {
-                            'path': script_relative_path('num.csv'),
-                        }
-                    }
-                },
-            },
-        },
+                'inputs': {'num_csv': {'csv': {'path': script_relative_path('num.csv')}}}
+            }
+        }
     }
 
 
@@ -39,10 +33,7 @@ def run_hello_world(hello_world):
 
     pipeline = PipelineDefinition(solids=[hello_world], dependencies={'hello_world': {}})
 
-    pipeline_result = execute_pipeline(
-        pipeline,
-        environment=create_num_csv_environment(),
-    )
+    pipeline_result = execute_pipeline(pipeline, environment=create_num_csv_environment())
 
     result = pipeline_result.result_for_solid('hello_world')
 
@@ -68,15 +59,14 @@ def create_definition_based_solid():
         name='hello_world',
         inputs=[table_input],
         transform_fn=transform_fn,
-        output=OutputDefinition(DataFrame)
+        output=OutputDefinition(DataFrame),
     )
     return hello_world
 
 
 def create_decorator_based_solid():
     @lambda_solid(
-        inputs=[InputDefinition('num_csv', DataFrame)],
-        output=OutputDefinition(DataFrame),
+        inputs=[InputDefinition('num_csv', DataFrame)], output=OutputDefinition(DataFrame)
     )
     def hello_world(num_csv):
         num_csv['sum'] = num_csv['num1'] + num_csv['num2']

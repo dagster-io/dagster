@@ -1,20 +1,10 @@
 from dagster import check
 
-from dagster.core.definitions import (
-    InputDefinition,
-    Result,
-    Solid,
-)
+from dagster.core.definitions import InputDefinition, Result, Solid
 
 from dagster.core.errors import DagsterInvariantViolationError
 
-from .objects import (
-    ExecutionPlanInfo,
-    ExecutionStep,
-    StepOutput,
-    StepOutputHandle,
-    StepTag,
-)
+from .objects import ExecutionPlanInfo, ExecutionStep, StepOutput, StepOutputHandle, StepTag
 
 INPUT_THUNK_OUTPUT = 'input_thunk_output'
 
@@ -26,10 +16,7 @@ def _create_input_thunk_execution_step(solid, input_def, value):
     return ExecutionStep(
         key=solid.name + '.' + input_def.name + '.input_thunk',
         step_inputs=[],
-        step_outputs=[StepOutput(
-            name=INPUT_THUNK_OUTPUT,
-            dagster_type=input_def.dagster_type,
-        )],
+        step_outputs=[StepOutput(name=INPUT_THUNK_OUTPUT, dagster_type=input_def.dagster_type)],
         compute_fn=_fn,
         tag=StepTag.INPUT_THUNK,
         solid=solid,
@@ -52,9 +39,7 @@ def create_input_thunk_execution_step(info, solid, input_def, value):
                 'a dependency. Either remove the dependency, specify a subdag '
                 'to execute, or remove the inputs specification in the environment.'
             ).format(
-                pipeline_name=info.pipeline.name,
-                solid_name=solid.name,
-                input_name=input_def.name,
+                pipeline_name=info.pipeline.name, solid_name=solid.name, input_name=input_def.name
             )
         )
 

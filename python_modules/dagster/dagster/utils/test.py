@@ -78,18 +78,14 @@ def build_pipeline_with_input_stubs(pipeline_def, inputs):
                 (
                     'You are injecting an input value for solid {solid_name} '
                     'into pipeline {pipeline_name} but that solid was not found'
-                ).format(
-                    solid_name=solid_name,
-                    pipeline_name=pipeline_def.name,
-                )
+                ).format(solid_name=solid_name, pipeline_name=pipeline_def.name)
             )
 
         solid = pipeline_def.solid_named(solid_name)
         for input_name, input_value in input_dict.items():
             stub_solid_def = define_stub_solid(
                 '__stub_{solid_name}_{input_name}'.format(
-                    solid_name=solid_name,
-                    input_name=input_name,
+                    solid_name=solid_name, input_name=input_name
                 ),
                 input_value,
             )
@@ -104,12 +100,7 @@ def build_pipeline_with_input_stubs(pipeline_def, inputs):
     )
 
 
-def execute_solids(
-    pipeline_def,
-    solid_names,
-    inputs=None,
-    environment=None,
-):
+def execute_solids(pipeline_def, solid_names, inputs=None, environment=None):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     check.list_param(solid_names, 'solid_names', of_type=str)
     inputs = check.opt_dict_param(inputs, 'inputs', key_type=str, value_type=dict)
@@ -127,20 +118,12 @@ def execute_solids(
     return {sr.solid.name: sr for sr in result.result_list}
 
 
-def execute_solid(
-    pipeline_def,
-    solid_name,
-    inputs=None,
-    environment=None,
-):
+def execute_solid(pipeline_def, solid_name, inputs=None, environment=None):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     check.str_param(solid_name, 'solid_name')
     inputs = check.opt_dict_param(inputs, 'inputs', key_type=str)
     environment = check.opt_dict_param(environment, 'environment')
 
     return execute_solids(
-        pipeline_def,
-        [solid_name],
-        {solid_name: inputs} if inputs else None,
-        environment,
+        pipeline_def, [solid_name], {solid_name: inputs} if inputs else None, environment
     )[solid_name]

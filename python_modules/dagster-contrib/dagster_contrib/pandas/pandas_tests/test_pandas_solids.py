@@ -31,18 +31,13 @@ def load_csv_solid(name):
         inputs=[],
         outputs=[OutputDefinition(DataFrame)],
         transform_fn=_t_fn,
-        config_field=Field(types.Dict({
-            'path': Field(types.Path)
-        })),
+        config_field=Field(types.Dict({'path': Field(types.Path)})),
     )
 
 
 def _dataframe_solid(name, inputs, transform_fn):
     return single_output_transform(
-        name=name,
-        inputs=inputs,
-        transform_fn=transform_fn,
-        output=OutputDefinition(DataFrame),
+        name=name, inputs=inputs, transform_fn=transform_fn, output=OutputDefinition(DataFrame)
     )
 
 
@@ -50,10 +45,8 @@ def get_solid_transformed_value(_context, solid_inst):
     pipeline = PipelineDefinition(
         solids=[load_num_csv_solid('load_csv'), solid_inst],
         dependencies={
-            solid_inst.name: {
-                solid_inst.input_defs[0].name: DependencyDefinition('load_csv'),
-            }
-        }
+            solid_inst.name: {solid_inst.input_defs[0].name: DependencyDefinition('load_csv')}
+        },
     )
 
     pipeline_result = execute_pipeline(pipeline)
@@ -64,9 +57,7 @@ def get_solid_transformed_value(_context, solid_inst):
 
 
 def get_num_csv_environment(solids_config):
-    return {
-        'solids': solids_config,
-    }
+    return {'solids': solids_config}
 
 
 def create_test_context():
@@ -81,34 +72,25 @@ def create_sum_table():
         return num_csv
 
     return _dataframe_solid(
-        name='sum_table',
-        inputs=[InputDefinition('num_csv', DataFrame)],
-        transform_fn=transform,
+        name='sum_table', inputs=[InputDefinition('num_csv', DataFrame)], transform_fn=transform
     )
 
 
-@lambda_solid(
-    inputs=[InputDefinition('num_csv', DataFrame)],
-    output=OutputDefinition(DataFrame),
-)
+@lambda_solid(inputs=[InputDefinition('num_csv', DataFrame)], output=OutputDefinition(DataFrame))
 def sum_table(num_csv):
     check.inst_param(num_csv, 'num_csv', pd.DataFrame)
     num_csv['sum'] = num_csv['num1'] + num_csv['num2']
     return num_csv
 
 
-@lambda_solid(
-    inputs=[InputDefinition('sum_df', DataFrame)],
-    output=OutputDefinition(DataFrame),
-)
+@lambda_solid(inputs=[InputDefinition('sum_df', DataFrame)], output=OutputDefinition(DataFrame))
 def sum_sq_table(sum_df):
     sum_df['sum_squared'] = sum_df['sum'] * sum_df['sum']
     return sum_df
 
 
 @lambda_solid(
-    inputs=[InputDefinition('sum_table_renamed', DataFrame)],
-    output=OutputDefinition(DataFrame),
+    inputs=[InputDefinition('sum_table_renamed', DataFrame)], output=OutputDefinition(DataFrame)
 )
 def sum_sq_table_renamed_input(sum_table_renamed):
     sum_table_renamed['sum_squared'] = sum_table_renamed['sum'] * sum_table_renamed['sum']
@@ -116,10 +98,7 @@ def sum_sq_table_renamed_input(sum_table_renamed):
 
 
 def test_pandas_csv_in_memory():
-    df = get_solid_transformed_value(
-        None,
-        create_sum_table(),
-    )
+    df = get_solid_transformed_value(None, create_sum_table())
     assert isinstance(df, pd.DataFrame)
     assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
 
@@ -139,24 +118,17 @@ def test_two_input_solid():
 
     two_input_solid = _dataframe_solid(
         name='two_input_solid',
-        inputs=[
-            InputDefinition('num_csv1', DataFrame),
-            InputDefinition('num_csv2', DataFrame),
-        ],
+        inputs=[InputDefinition('num_csv1', DataFrame), InputDefinition('num_csv2', DataFrame)],
         transform_fn=transform,
     )
 
     pipeline = PipelineDefinition(
-        solids=[
-            load_num_csv_solid('load_csv1'),
-            load_num_csv_solid('load_csv2'),
-            two_input_solid,
-        ],
+        solids=[load_num_csv_solid('load_csv1'), load_num_csv_solid('load_csv2'), two_input_solid],
         dependencies={
             'two_input_solid': {
                 'num_csv1': DependencyDefinition('load_csv1'),
                 'num_csv2': DependencyDefinition('load_csv2'),
-            },
+            }
         },
     )
 
@@ -191,19 +163,13 @@ def create_diamond_pipeline(extra_solids=None, extra_dependencies=None):
 
 def create_diamond_deps():
     return {
-        'num_table': {
-            'num_csv': DependencyDefinition('load_csv'),
-        },
-        'sum_table': {
-            'num_table': DependencyDefinition('num_table'),
-        },
-        'mult_table': {
-            'num_table': DependencyDefinition('num_table'),
-        },
+        'num_table': {'num_csv': DependencyDefinition('load_csv')},
+        'sum_table': {'num_table': DependencyDefinition('num_table')},
+        'mult_table': {'num_table': DependencyDefinition('num_table')},
         'sum_mult_table': {
             'sum_table': DependencyDefinition('sum_table'),
             'mult_table': DependencyDefinition('mult_table'),
-        }
+        },
     }
 
 
@@ -250,10 +216,7 @@ def create_diamond_dag():
 
     sum_mult_table_solid = _dataframe_solid(
         name='sum_mult_table',
-        inputs=[
-            InputDefinition('sum_table', DataFrame),
-            InputDefinition('mult_table', DataFrame),
-        ],
+        inputs=[InputDefinition('sum_table', DataFrame), InputDefinition('mult_table', DataFrame)],
         transform_fn=sum_mult_transform,
     )
 
@@ -288,24 +251,17 @@ def test_pandas_multiple_inputs():
 
     double_sum = _dataframe_solid(
         name='double_sum',
-        inputs=[
-            InputDefinition('num_csv1', DataFrame),
-            InputDefinition('num_csv2', DataFrame),
-        ],
-        transform_fn=transform_fn
+        inputs=[InputDefinition('num_csv1', DataFrame), InputDefinition('num_csv2', DataFrame)],
+        transform_fn=transform_fn,
     )
 
     pipeline = PipelineDefinition(
-        solids=[
-            load_num_csv_solid('load_one'),
-            load_num_csv_solid('load_two'),
-            double_sum,
-        ],
+        solids=[load_num_csv_solid('load_one'), load_num_csv_solid('load_two'), double_sum],
         dependencies={
             'double_sum': {
                 'num_csv1': DependencyDefinition('load_one'),
                 'num_csv2': DependencyDefinition('load_two'),
-            },
+            }
         },
     )
 
@@ -313,10 +269,7 @@ def test_pandas_multiple_inputs():
 
     assert not output_df.empty
 
-    assert output_df.to_dict('list') == {
-        'num1': [2, 6],
-        'num2': [4, 8],
-    }
+    assert output_df.to_dict('list') == {'num1': [2, 6], 'num2': [4, 8]}
 
 
 def test_rename_input():
@@ -324,23 +277,16 @@ def test_rename_input():
         PipelineDefinition(
             solids=[load_num_csv_solid('load_csv'), sum_table, sum_sq_table_renamed_input],
             dependencies={
-                'sum_table': {
-                    'num_csv': DependencyDefinition('load_csv'),
-                },
+                'sum_table': {'num_csv': DependencyDefinition('load_csv')},
                 sum_sq_table_renamed_input.name: {
-                    'sum_table_renamed': DependencyDefinition(sum_table.name),
+                    'sum_table_renamed': DependencyDefinition(sum_table.name)
                 },
             },
-        ),
+        )
     )
 
     assert result.success
 
-    expected = {
-        'num1': [1, 3],
-        'num2': [2, 4],
-        'sum': [3, 7],
-        'sum_squared': [9, 49],
-    }
+    expected = {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7], 'sum_squared': [9, 49]}
     solid_result = result.result_for_solid('sum_sq_table_renamed_input')
     assert solid_result.transformed_value().to_dict('list') == expected

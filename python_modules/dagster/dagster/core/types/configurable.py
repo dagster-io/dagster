@@ -113,15 +113,6 @@ class ConfigurableFromDict(Configurable):
         check.str_param(name, 'name')
         return self.field_dict[name]
 
-    def iterate_types(self):
-        for field_type in self.field_dict.values():
-            for inner_type in field_type.dagster_type.iterate_types():
-                yield inner_type
-
-        # FIXME: is_named needs to be moved into Configurable
-        if self.is_named:  # pylint: disable=E1101
-            yield self
-
 
 class ConfigurableObjectFromDict(ConfigurableFromDict):
     pass
@@ -139,9 +130,7 @@ class ConfigurableFromList(Configurable):
     def __init__(self, inner_configurable, *args, **kwargs):
         super(ConfigurableFromList, self).__init__(*args, **kwargs)
         self.inner_configurable = check.inst_param(
-            inner_configurable,
-            'inner_configurable',
-            Configurable,
+            inner_configurable, 'inner_configurable', Configurable
         )
 
     @property
@@ -153,9 +142,7 @@ class ConfigurableFromNullable(Configurable):
     def __init__(self, inner_configurable, *args, **kwargs):
         super(ConfigurableFromNullable, self).__init__(*args, **kwargs)
         self.inner_configurable = check.inst_param(
-            inner_configurable,
-            'inner_configurable',
-            Configurable,
+            inner_configurable, 'inner_configurable', Configurable
         )
 
     @property
@@ -210,6 +197,7 @@ class Field:
             is_optional = all_optional_type(dagster_type)
             if is_optional is True:
                 from .evaluator import hard_create_config_value
+
                 self._default_value = lambda: hard_create_config_value(dagster_type, None)
             else:
                 self._default_value = default_value
@@ -241,10 +229,7 @@ class Field:
 
     @property
     def default_value(self):
-        check.invariant(
-            self.default_provided,
-            'Asking for default value when none was provided',
-        )
+        check.invariant(self.default_provided, 'Asking for default value when none was provided')
 
         if callable(self._default_value):
             return self._default_value()
@@ -253,10 +238,7 @@ class Field:
 
     @property
     def default_value_as_str(self):
-        check.invariant(
-            self.default_provided,
-            'Asking for default value when none was provided',
-        )
+        check.invariant(self.default_provided, 'Asking for default value when none was provided')
 
         if callable(self._default_value):
             return repr(self._default_value)

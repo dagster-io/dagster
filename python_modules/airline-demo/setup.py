@@ -39,7 +39,5 @@ setup(
         'SQLAlchemy-Utils',
         'stringcase',
     ],
-    dependency_links=[
-        'git+ssh://git@github.com:dagster-io/dagster.git',
-    ]
+    dependency_links=['git+ssh://git@github.com:dagster-io/dagster.git'],
 )

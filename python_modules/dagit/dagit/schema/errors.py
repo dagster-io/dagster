@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 from dagster import check
 
-from dagster.core.evaluator import (
+from dagster.core.types.evaluator import (
     EvaluationError,
     EvaluationStackPathEntry,
     EvaluationStackListItemEntry,
@@ -28,7 +28,7 @@ class DauphinError(dauphin.Interface):
 class DauphinPythonError(dauphin.ObjectType):
     class Meta:
         name = 'PythonError'
-        interfaces = (DauphinError, )
+        interfaces = (DauphinError,)
 
     def __init__(self, error_info):
         super(DauphinPythonError, self).__init__()
@@ -40,7 +40,7 @@ class DauphinPythonError(dauphin.ObjectType):
 class DauphinPipelineNotFoundError(dauphin.ObjectType):
     class Meta:
         name = 'PipelineNotFoundError'
-        interfaces = (DauphinError, )
+        interfaces = (DauphinError,)
 
     pipeline_name = dauphin.NonNull(dauphin.String)
 
@@ -132,7 +132,7 @@ class DauphinPipelineConfigValidationError(dauphin.Interface):
 class DauphinRuntimeMismatchConfigError(dauphin.ObjectType):
     class Meta:
         name = 'RuntimeMismatchConfigError'
-        interfaces = (DauphinPipelineConfigValidationError, )
+        interfaces = (DauphinPipelineConfigValidationError,)
 
     type = dauphin.NonNull('Type')
     value_rep = dauphin.Field(dauphin.String)
@@ -144,7 +144,7 @@ class DauphinRuntimeMismatchConfigError(dauphin.ObjectType):
 class DauphinMissingFieldConfigError(dauphin.ObjectType):
     class Meta:
         name = 'MissingFieldConfigError'
-        interfaces = (DauphinPipelineConfigValidationError, )
+        interfaces = (DauphinPipelineConfigValidationError,)
 
     field = dauphin.NonNull('TypeField')
 
@@ -152,7 +152,7 @@ class DauphinMissingFieldConfigError(dauphin.ObjectType):
 class DauphinFieldNotDefinedConfigError(dauphin.ObjectType):
     class Meta:
         name = 'FieldNotDefinedConfigError'
-        interfaces = (DauphinPipelineConfigValidationError, )
+        interfaces = (DauphinPipelineConfigValidationError,)
 
     field_name = dauphin.NonNull(dauphin.String)
 
@@ -160,7 +160,7 @@ class DauphinFieldNotDefinedConfigError(dauphin.ObjectType):
 class DauphinSelectorTypeConfigError(dauphin.ObjectType):
     class Meta:
         name = 'SelectorTypeConfigError'
-        interfaces = (DauphinPipelineConfigValidationError, )
+        interfaces = (DauphinPipelineConfigValidationError,)
 
     incoming_fields = dauphin.non_null_list(dauphin.String)
 
@@ -201,7 +201,9 @@ class DauphinEvaluationStackPathEntry(dauphin.ObjectType):
     field = dauphin.NonNull('TypeField')
 
     def resolve_field(self, info):
-        return info.schema.type_named('TypeField')(name=self._field_name, field=self._field_def)  # pylint: disable=E1101
+        return info.schema.type_named('TypeField')(
+            name=self._field_name, field=self._field_def
+        )  # pylint: disable=E1101
 
 
 class DauphinEvaluationStackEntry(dauphin.Union):
@@ -213,8 +215,7 @@ class DauphinEvaluationStackEntry(dauphin.Union):
     def from_native_entry(entry):
         if isinstance(entry, EvaluationStackPathEntry):
             return DauphinEvaluationStackPathEntry(
-                field_name=entry.field_name,
-                field_def=entry.field_def,
+                field_name=entry.field_name, field_def=entry.field_def
             )
         elif isinstance(entry, EvaluationStackListItemEntry):
             return DauphinEvaluationStackListItemEntry(list_index=entry.list_index)

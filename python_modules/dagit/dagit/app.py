@@ -12,15 +12,9 @@ from graphql.execution.executors.gevent import GeventExecutor as Executor
 from nbconvert import HTMLExporter
 
 from dagster import check
-from dagster.cli.dynamic_loader import (
-    DynamicObject,
-    load_repository_object_from_target_info,
-)
+from dagster.cli.dynamic_loader import DynamicObject, load_repository_object_from_target_info
 
-from .pipeline_execution_manager import (
-    MultiprocessingExecutionManager,
-    SynchronousExecutionManager,
-)
+from .pipeline_execution_manager import MultiprocessingExecutionManager, SynchronousExecutionManager
 from .schema import create_schema
 from .schema.context import DagsterGraphQLContext
 from .subscription_server import DagsterSubscriptionServer
@@ -38,8 +32,7 @@ class RepositoryContainer(object):
         if repository_target_info is not None:
             self.repository_target_info = repository_target_info
             self.repo_dynamic_obj = check.inst(
-                load_repository_object_from_target_info(repository_target_info),
-                DynamicObject,
+                load_repository_object_from_target_info(repository_target_info), DynamicObject
             )
             self.repo = None
             self.repo_error = None
@@ -74,22 +67,14 @@ class RepositoryContainer(object):
 class DagsterGraphQLView(GraphQLView):
     def __init__(self, context, **kwargs):
         super(DagsterGraphQLView, self).__init__(**kwargs)
-        self.context = check.inst_param(
-            context,
-            'context',
-            DagsterGraphQLContext,
-        )
+        self.context = check.inst_param(context, 'context', DagsterGraphQLContext)
 
     def get_context(self):
         return self.context
 
 
 def dagster_graphql_subscription_view(subscription_server, context):
-    context = check.inst_param(
-        context,
-        'context',
-        DagsterGraphQLContext,
-    )
+    context = check.inst_param(context, 'context', DagsterGraphQLContext)
 
     def view(ws):
         subscription_server.handle(ws, request_context=context)
@@ -148,7 +133,7 @@ def create_app(repository_container, pipeline_runs, use_synchronous_execution_ma
     context = DagsterGraphQLContext(
         repository_container=repository_container,
         pipeline_runs=pipeline_runs,
-        execution_manager=execution_manager
+        execution_manager=execution_manager,
     )
 
     app.add_url_rule(
@@ -162,22 +147,15 @@ def create_app(repository_container, pipeline_runs, use_synchronous_execution_ma
             graphiql_template=PLAYGROUND_TEMPLATE,
             executor=Executor(),
             context=context,
-        )
+        ),
     )
     sockets.add_url_rule(
-        '/graphql',
-        'graphql',
-        dagster_graphql_subscription_view(subscription_server, context),
+        '/graphql', 'graphql', dagster_graphql_subscription_view(subscription_server, context)
     )
     app.add_url_rule('/notebook/<path:_path>', 'notebook', notebook_view)
     app.add_url_rule('/static/<path:path>/<string:file>', 'static_view', static_view)
     app.add_url_rule('/<path:_path>', 'index_catchall', index_view)
-    app.add_url_rule(
-        '/',
-        'index',
-        index_view,
-        defaults={'_path': ''},
-    )
+    app.add_url_rule('/', 'index', index_view, defaults={'_path': ''})
 
     CORS(app)
 

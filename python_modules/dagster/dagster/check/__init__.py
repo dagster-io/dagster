@@ -83,18 +83,14 @@ def is_callable(obj, desc=None):
             raise_with_traceback(
                 CheckError(
                     'Must be callable. Got {obj}. Description: {desc}'.format(
-                        obj=repr(obj),
-                        desc=desc,
+                        obj=repr(obj), desc=desc
                     )
                 )
             )
         else:
             raise_with_traceback(
                 CheckError(
-                    'Must be callable. Got {obj}. Description: {desc}'.format(
-                        obj=obj,
-                        desc=desc,
-                    )
+                    'Must be callable. Got {obj}. Description: {desc}'.format(obj=obj, desc=desc)
                 )
             )
 
@@ -236,8 +232,7 @@ def _check_list_items(obj_list, of_type):
             raise_with_traceback(
                 CheckError(
                     'Member of list mismatches type. Expected {of_type}. Got {obj_repr}'.format(
-                        of_type=of_type,
-                        obj_repr=repr(obj),
+                        of_type=of_type, obj_repr=repr(obj)
                     )
                 )
             )
@@ -283,8 +278,7 @@ def _check_key_value_types(obj, key_type, value_type):
             raise_with_traceback(
                 CheckError(
                     'Key in dictionary mismatches type. Expected {key_type}. Got {obj_repr}'.format(
-                        key_type=repr(key_type),
-                        obj_repr=repr(key),
+                        key_type=repr(key_type), obj_repr=repr(key)
                     )
                 )
             )
@@ -293,10 +287,7 @@ def _check_key_value_types(obj, key_type, value_type):
                 CheckError(
                     'Value in dictionary mismatches expected type for key {key}. Expected value '
                     'of type {vtype}. Got value {value} of type {obj_repr}.'.format(
-                        vtype=repr(value_type),
-                        obj_repr=repr(value),
-                        key=key,
-                        value=value,
+                        vtype=repr(value_type), obj_repr=repr(value), key=key, value=value
                     )
                 )
             )

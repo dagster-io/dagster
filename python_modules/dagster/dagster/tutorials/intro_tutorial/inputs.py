@@ -26,20 +26,13 @@ def execute_with_another_world():
             # This is the "solids" section
             'solids': {
                 # Configuration for the add_hello_to_word solid
-                'add_hello_to_word': {
-                    'inputs': {
-                        'word': 'Another World',
-                    },
-                },
-            },
+                'add_hello_to_word': {'inputs': {'word': 'Another World'}}
+            }
         },
     )
 
 
-@lambda_solid(
-    inputs=[InputDefinition('word', types.String)],
-    output=OutputDefinition(types.String),
-)
+@lambda_solid(inputs=[InputDefinition('word', types.String)], output=OutputDefinition(types.String))
 def add_hello_to_word_typed(word):
     return 'Hello, ' + word + '!'
 

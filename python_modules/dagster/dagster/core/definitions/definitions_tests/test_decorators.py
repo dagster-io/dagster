@@ -44,8 +44,7 @@ def test_multiple_double_result():
 def test_multiple_dict():
     mr = MultipleResults.from_dict({'output_one': 'value_one', 'output_two': 'value_two'})
     assert set(mr.results) == set(
-        [Result('value_one', 'output_one'),
-         Result('value_two', 'output_two')]
+        [Result('value_one', 'output_one'), Result('value_two', 'output_two')]
     )
 
 
@@ -56,10 +55,7 @@ def test_no_parens_solid():
     def hello_world():
         called['yup'] = True
 
-    result = execute_single_solid_in_isolation(
-        create_test_context(),
-        hello_world,
-    )
+    result = execute_single_solid_in_isolation(create_test_context(), hello_world)
 
     assert called['yup']
 
@@ -71,10 +67,7 @@ def test_empty_solid():
     def hello_world():
         called['yup'] = True
 
-    result = execute_single_solid_in_isolation(
-        create_test_context(),
-        hello_world,
-    )
+    result = execute_single_solid_in_isolation(create_test_context(), hello_world)
 
     assert called['yup']
 
@@ -84,10 +77,7 @@ def test_solid():
     def hello_world(_info):
         return {'foo': 'bar'}
 
-    result = execute_single_solid_in_isolation(
-        create_test_context(),
-        hello_world,
-    )
+    result = execute_single_solid_in_isolation(create_test_context(), hello_world)
 
     assert result.success
     assert len(result.result_list) == 1
@@ -99,10 +89,7 @@ def test_solid_one_output():
     def hello_world():
         return {'foo': 'bar'}
 
-    result = execute_single_solid_in_isolation(
-        create_test_context(),
-        hello_world,
-    )
+    result = execute_single_solid_in_isolation(create_test_context(), hello_world)
 
     assert result.success
     assert len(result.result_list) == 1
@@ -114,10 +101,7 @@ def test_solid_yield():
     def hello_world(_info):
         yield Result(value={'foo': 'bar'})
 
-    result = execute_single_solid_in_isolation(
-        create_test_context(),
-        hello_world,
-    )
+    result = execute_single_solid_in_isolation(create_test_context(), hello_world)
 
     assert result.success
     assert len(result.result_list) == 1
@@ -129,10 +113,7 @@ def test_solid_result_return():
     def hello_world(_info):
         return Result(value={'foo': 'bar'})
 
-    result = execute_single_solid_in_isolation(
-        create_test_context(),
-        hello_world,
-    )
+    result = execute_single_solid_in_isolation(create_test_context(), hello_world)
 
     assert result.success
     assert len(result.result_list) == 1
@@ -144,13 +125,10 @@ def test_solid_multiple_outputs():
     def hello_world(_info):
         return MultipleResults(
             Result(value={'foo': 'left'}, output_name='left'),
-            Result(value={'foo': 'right'}, output_name='right')
+            Result(value={'foo': 'right'}, output_name='right'),
         )
 
-    result = execute_single_solid_in_isolation(
-        create_test_context(),
-        hello_world,
-    )
+    result = execute_single_solid_in_isolation(create_test_context(), hello_world)
 
     assert result.success
     assert len(result.result_list) == 1
@@ -162,19 +140,9 @@ def test_solid_multiple_outputs():
 def test_dict_multiple_outputs():
     @solid(outputs=[OutputDefinition(name="left"), OutputDefinition(name="right")])
     def hello_world(_info):
-        return MultipleResults.from_dict({
-            'left': {
-                'foo': 'left'
-            },
-            'right': {
-                'foo': 'right'
-            },
-        })
+        return MultipleResults.from_dict({'left': {'foo': 'left'}, 'right': {'foo': 'right'}})
 
-    result = execute_single_solid_in_isolation(
-        create_test_context(),
-        hello_world,
-    )
+    result = execute_single_solid_in_isolation(create_test_context(), hello_world)
 
     assert result.success
     assert len(result.result_list) == 1
@@ -189,17 +157,13 @@ def test_solid_with_explicit_empty_outputs():
         return 'foo'
 
     with pytest.raises(DagsterInvariantViolationError) as exc_info:
-        result = execute_single_solid_in_isolation(
-            create_test_context(),
-            hello_world,
-        )
+        result = execute_single_solid_in_isolation(create_test_context(), hello_world)
 
-    assert (
-        'Solid unexpectedly returned output foo of type <class \'str\'>. Solid is explicitly '
-        'defined to return no results.' in str(exc_info.value)
-        or 'Solid unexpectedly returned output foo of type <type \'str\'>. Solid is explicitly '
-        'defined to return no results.' in str(exc_info.value)  # py2
-    )
+    assert 'Solid unexpectedly returned output foo of type <class \'str\'>. Solid is explicitly ' 'defined to return no results.' in str(
+        exc_info.value
+    ) or 'Solid unexpectedly returned output foo of type <type \'str\'>. Solid is explicitly ' 'defined to return no results.' in str(
+        exc_info.value
+    )  # py2
 
 
 def test_solid_with_implicit_single_output():
@@ -207,10 +171,7 @@ def test_solid_with_implicit_single_output():
     def hello_world(_info):
         return 'foo'
 
-    result = execute_single_solid_in_isolation(
-        create_test_context(),
-        hello_world,
-    )
+    result = execute_single_solid_in_isolation(create_test_context(), hello_world)
 
     assert result.success
     assert len(result.result_list) == 1
@@ -224,10 +185,7 @@ def test_solid_return_list_instead_of_multiple_results():
         return ['foo', 'bar']
 
     with pytest.raises(DagsterInvariantViolationError) as exc_info:
-        result = execute_single_solid_in_isolation(
-            create_test_context(),
-            hello_world,
-        )
+        result = execute_single_solid_in_isolation(create_test_context(), hello_world)
 
     assert 'unexpectedly returned output [\'foo\', \'bar\']' in str(exc_info.value)
 
@@ -237,10 +195,7 @@ def test_lambda_solid_with_name():
     def hello_world():
         return {'foo': 'bar'}
 
-    result = execute_single_solid_in_isolation(
-        create_test_context(),
-        hello_world,
-    )
+    result = execute_single_solid_in_isolation(create_test_context(), hello_world)
 
     assert result.success
     assert len(result.result_list) == 1
@@ -252,10 +207,7 @@ def test_solid_with_name():
     def hello_world(_info):
         return {'foo': 'bar'}
 
-    result = execute_single_solid_in_isolation(
-        create_test_context(),
-        hello_world,
-    )
+    result = execute_single_solid_in_isolation(create_test_context(), hello_world)
 
     assert result.success
     assert len(result.result_list) == 1
@@ -269,9 +221,7 @@ def test_solid_with_input():
 
     pipeline = PipelineDefinition(
         solids=[define_stub_solid('test_value', {'foo': 'bar'}), hello_world],
-        dependencies={'hello_world': {
-            'foo_to_foo': DependencyDefinition('test_value'),
-        }}
+        dependencies={'hello_world': {'foo_to_foo': DependencyDefinition('test_value')}},
     )
 
     pipeline_result = execute_pipeline(pipeline)
@@ -306,11 +256,8 @@ def test_solid_definition_errors():
     with pytest.raises(DagsterInvalidDefinitionError):
 
         @solid(
-            inputs=[
-                InputDefinition(name="foo"),
-                InputDefinition(name="bar"),
-            ],
-            outputs=[OutputDefinition()]
+            inputs=[InputDefinition(name="foo"), InputDefinition(name="bar")],
+            outputs=[OutputDefinition()],
         )
         def wrong_name_2(info, foo):
             pass
@@ -328,17 +275,15 @@ def test_solid_definition_errors():
             pass
 
     @solid(
-        inputs=[InputDefinition(name="foo"),
-                InputDefinition(name="bar")],
-        outputs=[OutputDefinition()]
+        inputs=[InputDefinition(name="foo"), InputDefinition(name="bar")],
+        outputs=[OutputDefinition()],
     )
     def valid_kwargs(info, **kwargs):
         pass
 
     @solid(
-        inputs=[InputDefinition(name="foo"),
-                InputDefinition(name="bar")],
-        outputs=[OutputDefinition()]
+        inputs=[InputDefinition(name="foo"), InputDefinition(name="bar")],
+        outputs=[OutputDefinition()],
     )
     def valid(info, foo, bar):
         pass
@@ -379,13 +324,7 @@ def test_any_config_field():
     result = execute_single_solid_in_isolation(
         create_test_context(),
         hello_world,
-        environment={
-            'solids': {
-                'hello_world': {
-                    'config': conf_value,
-                },
-            },
-        },
+        environment={'solids': {'hello_world': {'config': conf_value}}},
     )
 
     assert called['yup']

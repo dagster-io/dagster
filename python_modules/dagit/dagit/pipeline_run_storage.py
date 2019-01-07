@@ -10,10 +10,7 @@ import gevent.lock
 import pyrsistent
 
 from dagster import check
-from dagster.core.events import (
-    EventRecord,
-    EventType,
-)
+from dagster.core.events import EventRecord, EventType
 
 from dagster.core.execution_plan.objects import ExecutionPlan
 
@@ -53,24 +50,13 @@ class PipelineRunStorage(object):
 
 
 class PipelineRun(object):
-    def __init__(
-        self,
-        run_id,
-        pipeline_name,
-        env_config,
-        execution_plan,
-    ):
+    def __init__(self, run_id, pipeline_name, env_config, execution_plan):
         self.__subscribers = []
-        self.__debouncing_queue = DebouncingLogQueue()
 
         self._status = PipelineRunStatus.NOT_STARTED
         self._run_id = check.str_param(run_id, 'run_id')
         self._pipeline_name = check.str_param(pipeline_name, 'pipeline_name')
-        self._env_config = check.opt_dict_param(
-            env_config,
-            'environment_config',
-            key_type=str,
-        )
+        self._env_config = check.opt_dict_param(env_config, 'environment_config', key_type=str)
         self._execution_plan = check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
 
     @property
@@ -102,13 +88,6 @@ class PipelineRun(object):
     def store_event(self, new_event):
         raise NotImplementedError()
 
-    def _enqueue_flush_logs(self):
-        events = self.__debouncing_queue.attempt_dequeue()
-
-        if events:
-            for subscriber in self.__subscribers:
-                subscriber.handle_new_events(events)
-
     def handle_new_event(self, new_event):
         check.inst_param(new_event, 'new_event', EventRecord)
 
@@ -120,15 +99,15 @@ class PipelineRun(object):
             self._status = PipelineRunStatus.FAILURE
 
         self.store_event(new_event)
-        self.__debouncing_queue.enqueue(new_event)
-        gevent.spawn(self._enqueue_flush_logs)
+        for subscriber in self.__subscribers:
+            subscriber.handle_new_event(new_event)
 
     def subscribe(self, subscriber):
         self.__subscribers.append(subscriber)
 
     def observable_after_cursor(self, cursor=None):
-        return Observable.create( # pylint: disable=E1101
-            PipelineRunObservableSubscribe(self, cursor),
+        return Observable.create(  # pylint: disable=E1101
+            PipelineRunObservableSubscribe(self, cursor)
         )
 
 
@@ -159,8 +138,7 @@ class LogFilePipelineRun(InMemoryPipelineRun):
         super(LogFilePipelineRun, self).__init__(*args, **kwargs)
         self._log_dir = check.str_param(log_dir, 'log_dir')
         self._file_prefix = os.path.join(
-            self._log_dir,
-            '{}_{}'.format(int(time.time()), self.run_id),
+            self._log_dir, '{}_{}'.format(int(time.time()), self.run_id)
         )
         ensure_dir(log_dir)
         self._write_metadata_to_file()
@@ -201,21 +179,27 @@ def ensure_dir(file_path):
 
 
 class PipelineRunObservableSubscribe(object):
-    def __init__(self, pipeline_run, start_cursor=None):
+    def __init__(self, pipeline_run, after_cursor=None):
+        self.debouncing_queue = DebouncingLogQueue()
         self.pipeline_run = pipeline_run
         self.observer = None
-        self.start_cursor = start_cursor or 0
+        self.after_cursor = after_cursor or -1
 
     def __call__(self, observer):
         self.observer = observer
-        events = self.pipeline_run.logs_after(self.start_cursor)
+        events = self.pipeline_run.logs_after(self.after_cursor)
         if events:
             self.observer.on_next(events)
         self.pipeline_run.subscribe(self)
 
-    def handle_new_events(self, events):
-        check.inst_param(events, 'events', LogSequence)
-        self.observer.on_next(events)
+    def handle_new_event(self, new_event):
+        self.debouncing_queue.enqueue(new_event)
+        gevent.spawn(self._enqueue_flush_logs)
+
+    def _enqueue_flush_logs(self):
+        events = self.debouncing_queue.attempt_dequeue()
+        if events:
+            self.observer.on_next(events)
 
 
 class LogSequence(pyrsistent.CheckedPVector):

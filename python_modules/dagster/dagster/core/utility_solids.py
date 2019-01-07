@@ -1,7 +1,4 @@
-from dagster import (
-    check,
-    lambda_solid,
-)
+from dagster import check, lambda_solid
 
 
 def define_stub_solid(name, value):
