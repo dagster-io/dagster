@@ -2,7 +2,6 @@ from __future__ import absolute_import
 
 from dagster import (
     ExpectationDefinition,
-    Field,
     InputDefinition,
     OutputDefinition,
     PipelineContextDefinition,
@@ -96,11 +95,11 @@ class DauphinResource(dauphin.ObjectType):
 
     name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
-    config = dauphin.Field('Config')
+    config = dauphin.Field('TypeField')
 
     def resolve_config(self, info):
         return (
-            info.schema.type_named('Config')(self._resource.config_field)
+            info.schema.type_named('TypeField')(name="config", field=self._resource.config_field)
             if self._resource.config_field
             else None
         )
@@ -112,7 +111,7 @@ class DauphinPipelineContext(dauphin.ObjectType):
 
     name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
-    config = dauphin.Field('Config')
+    config = dauphin.Field('TypeField')
     resources = dauphin.non_null_list('Resource')
 
     def __init__(self, name, context):
@@ -121,7 +120,7 @@ class DauphinPipelineContext(dauphin.ObjectType):
 
     def resolve_config(self, info):
         return (
-            info.schema.type_named('Config')(self._context.config_field)
+            info.schema.type_named('TypeField')(name="config", field=self._context.config_field)
             if self._context.config_field
             else None
         )
@@ -244,7 +243,7 @@ class DauphinSolidDefinition(dauphin.ObjectType):
     metadata = dauphin.non_null_list('SolidMetadataItemDefinition')
     input_definitions = dauphin.non_null_list('InputDefinition')
     output_definitions = dauphin.non_null_list('OutputDefinition')
-    config_definition = dauphin.Field('Config')
+    config_definition = dauphin.Field('TypeField')
 
     # solids - ?
 
@@ -275,7 +274,7 @@ class DauphinSolidDefinition(dauphin.ObjectType):
 
     def resolve_config_definition(self, info):
         return (
-            info.schema.type_named('Config')(self._solid_def.config_field)
+            info.schema.type_named('TypeField')(name="config", field=self._solid_def.config_field)
             if self._solid_def.config_field
             else None
         )
@@ -367,22 +366,6 @@ class DauphinExpectation(dauphin.ObjectType):
         check.inst_param(expectation, 'expectation', ExpectationDefinition)
         super(DauphinExpectation, self).__init__(
             name=expectation.name, description=expectation.description
-        )
-
-
-class DauphinConfig(dauphin.ObjectType):
-    class Meta:
-        name = 'Config'
-
-    type = dauphin.NonNull('Type')
-
-    def __init__(self, config_field):
-        super(DauphinConfig, self).__init__()
-        self._config_field = check.opt_inst_param(config_field, 'config_field', Field)
-
-    def resolve_type(self, info):
-        return info.schema.type_named('Type').from_dagster_type(
-            info, dagster_type=self._config_field.dagster_type
         )
 
 

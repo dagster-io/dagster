@@ -16,7 +16,7 @@ import {
   SectionItemContainer
 } from "./SidebarComponents";
 import Description from "./Description";
-import Config from "./Config";
+import TypeSchema from "./TypeSchema";
 import { SidebarSolidInfoFragment } from "./types/SidebarSolidInfoFragment";
 
 interface ISidebarSolidInfoProps {
@@ -39,7 +39,9 @@ export default class SidebarSolidInfo extends React.Component<
             value
           }
           configDefinition {
-            ...ConfigFragment
+            type {
+              ...TypeSchemaFragment
+            }
           }
         }
         inputs {
@@ -80,7 +82,7 @@ export default class SidebarSolidInfo extends React.Component<
 
       ${TypeWithTooltip.fragments.TypeWithTooltipFragment}
       ${SolidTypeSignature.fragments.SolidTypeSignatureFragment}
-      ${Config.fragments.ConfigFragment}
+      ${TypeSchema.fragments.TypeSchemaFragment}
     `
   };
 
@@ -164,7 +166,7 @@ export default class SidebarSolidInfo extends React.Component<
         </SidebarSection>
         {solid.definition.configDefinition && (
           <SidebarSection title={"Config"}>
-            <Config config={solid.definition.configDefinition} />
+            <TypeSchema type={solid.definition.configDefinition.type} />
           </SidebarSection>
         )}
         <SidebarSection title={"Inputs"}>{this.renderInputs()}</SidebarSection>

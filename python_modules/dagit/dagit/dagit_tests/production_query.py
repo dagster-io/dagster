@@ -27,7 +27,7 @@ fragment PipelineFragment on Pipeline {
     name
     description
     config {
-      ...ConfigFragment
+      ...ConfigFieldFragment
       __typename
     }
     __typename
@@ -48,7 +48,7 @@ fragment SolidFragment on Solid {
       __typename
     }
     configDefinition {
-      ...ConfigFragment
+      ...ConfigFieldFragment
       __typename
     }
     __typename
@@ -142,7 +142,7 @@ fragment SolidTypeSignatureFragment on Solid {
   __typename
 }
 
-fragment ConfigFragment on Config {
+fragment ConfigFieldFragment on TypeField {
   type {
     __typename
     name
@@ -247,7 +247,7 @@ fragment ConfigExplorerFragment on Pipeline {
     name
     description
     config {
-      ...ConfigFragment
+      ...ConfigFieldFragment
       __typename
     }
     __typename
@@ -257,7 +257,7 @@ fragment ConfigExplorerFragment on Pipeline {
       name
       description
       configDefinition {
-        ...ConfigFragment
+        ...ConfigFieldFragment
         __typename
       }
       __typename

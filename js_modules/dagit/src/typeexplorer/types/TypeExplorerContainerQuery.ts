@@ -7,73 +7,142 @@
 // GraphQL query operation: TypeExplorerContainerQuery
 // ====================================================
 
+export interface TypeExplorerContainerQuery_type_RegularType_innerTypes_RegularType_innerTypes {
+  name: string;
+}
+
+export interface TypeExplorerContainerQuery_type_RegularType_innerTypes_RegularType_typeAttributes {
+  isNamed: boolean;
+}
+
+export interface TypeExplorerContainerQuery_type_RegularType_innerTypes_RegularType {
+  name: string;
+  description: string | null;
+  isDict: boolean;
+  isList: boolean;
+  isNullable: boolean;
+  innerTypes: TypeExplorerContainerQuery_type_RegularType_innerTypes_RegularType_innerTypes[];
+  typeAttributes: TypeExplorerContainerQuery_type_RegularType_innerTypes_RegularType_typeAttributes;
+}
+
+export interface TypeExplorerContainerQuery_type_RegularType_innerTypes_CompositeType_innerTypes {
+  name: string;
+}
+
+export interface TypeExplorerContainerQuery_type_RegularType_innerTypes_CompositeType_typeAttributes {
+  isNamed: boolean;
+}
+
+export interface TypeExplorerContainerQuery_type_RegularType_innerTypes_CompositeType_fields_type {
+  name: string;
+}
+
+export interface TypeExplorerContainerQuery_type_RegularType_innerTypes_CompositeType_fields {
+  name: string;
+  description: string | null;
+  type: TypeExplorerContainerQuery_type_RegularType_innerTypes_CompositeType_fields_type;
+  isOptional: boolean;
+}
+
+export interface TypeExplorerContainerQuery_type_RegularType_innerTypes_CompositeType {
+  name: string;
+  description: string | null;
+  isDict: boolean;
+  isList: boolean;
+  isNullable: boolean;
+  innerTypes: TypeExplorerContainerQuery_type_RegularType_innerTypes_CompositeType_innerTypes[];
+  typeAttributes: TypeExplorerContainerQuery_type_RegularType_innerTypes_CompositeType_typeAttributes;
+  fields: TypeExplorerContainerQuery_type_RegularType_innerTypes_CompositeType_fields[];
+}
+
+export type TypeExplorerContainerQuery_type_RegularType_innerTypes = TypeExplorerContainerQuery_type_RegularType_innerTypes_RegularType | TypeExplorerContainerQuery_type_RegularType_innerTypes_CompositeType;
+
 export interface TypeExplorerContainerQuery_type_RegularType_typeAttributes {
-  /**
-   * 
-   * True if the system defines it and it is the same type across pipelines.
-   * Examples include "Int" and "String."
-   */
-  isBuiltin: boolean;
-  /**
-   * 
-   * Dagster generates types for base elements of the config system (e.g. the solids and
-   * context field of the base environment). These types are always present
-   * and are typically not relevant to an end user. This flag allows tool authors to
-   * filter out those types by default.
-   * 
-   */
-  isSystemConfig: boolean;
   isNamed: boolean;
 }
 
 export interface TypeExplorerContainerQuery_type_RegularType {
-  __typename: "RegularType";
   name: string;
   description: string | null;
+  isDict: boolean;
+  isList: boolean;
+  isNullable: boolean;
+  innerTypes: TypeExplorerContainerQuery_type_RegularType_innerTypes[];
   typeAttributes: TypeExplorerContainerQuery_type_RegularType_typeAttributes;
 }
 
-export interface TypeExplorerContainerQuery_type_CompositeType_typeAttributes {
-  /**
-   * 
-   * True if the system defines it and it is the same type across pipelines.
-   * Examples include "Int" and "String."
-   */
-  isBuiltin: boolean;
-  /**
-   * 
-   * Dagster generates types for base elements of the config system (e.g. the solids and
-   * context field of the base environment). These types are always present
-   * and are typically not relevant to an end user. This flag allows tool authors to
-   * filter out those types by default.
-   * 
-   */
-  isSystemConfig: boolean;
+export interface TypeExplorerContainerQuery_type_CompositeType_innerTypes_RegularType_innerTypes {
+  name: string;
+}
+
+export interface TypeExplorerContainerQuery_type_CompositeType_innerTypes_RegularType_typeAttributes {
   isNamed: boolean;
 }
 
-export interface TypeExplorerContainerQuery_type_CompositeType_fields_type_typeAttributes {
+export interface TypeExplorerContainerQuery_type_CompositeType_innerTypes_RegularType {
+  name: string;
+  description: string | null;
+  isDict: boolean;
+  isList: boolean;
+  isNullable: boolean;
+  innerTypes: TypeExplorerContainerQuery_type_CompositeType_innerTypes_RegularType_innerTypes[];
+  typeAttributes: TypeExplorerContainerQuery_type_CompositeType_innerTypes_RegularType_typeAttributes;
+}
+
+export interface TypeExplorerContainerQuery_type_CompositeType_innerTypes_CompositeType_innerTypes {
+  name: string;
+}
+
+export interface TypeExplorerContainerQuery_type_CompositeType_innerTypes_CompositeType_typeAttributes {
+  isNamed: boolean;
+}
+
+export interface TypeExplorerContainerQuery_type_CompositeType_innerTypes_CompositeType_fields_type {
+  name: string;
+}
+
+export interface TypeExplorerContainerQuery_type_CompositeType_innerTypes_CompositeType_fields {
+  name: string;
+  description: string | null;
+  type: TypeExplorerContainerQuery_type_CompositeType_innerTypes_CompositeType_fields_type;
+  isOptional: boolean;
+}
+
+export interface TypeExplorerContainerQuery_type_CompositeType_innerTypes_CompositeType {
+  name: string;
+  description: string | null;
+  isDict: boolean;
+  isList: boolean;
+  isNullable: boolean;
+  innerTypes: TypeExplorerContainerQuery_type_CompositeType_innerTypes_CompositeType_innerTypes[];
+  typeAttributes: TypeExplorerContainerQuery_type_CompositeType_innerTypes_CompositeType_typeAttributes;
+  fields: TypeExplorerContainerQuery_type_CompositeType_innerTypes_CompositeType_fields[];
+}
+
+export type TypeExplorerContainerQuery_type_CompositeType_innerTypes = TypeExplorerContainerQuery_type_CompositeType_innerTypes_RegularType | TypeExplorerContainerQuery_type_CompositeType_innerTypes_CompositeType;
+
+export interface TypeExplorerContainerQuery_type_CompositeType_typeAttributes {
   isNamed: boolean;
 }
 
 export interface TypeExplorerContainerQuery_type_CompositeType_fields_type {
   name: string;
-  description: string | null;
-  typeAttributes: TypeExplorerContainerQuery_type_CompositeType_fields_type_typeAttributes;
 }
 
 export interface TypeExplorerContainerQuery_type_CompositeType_fields {
   name: string;
   description: string | null;
-  isOptional: boolean;
-  defaultValue: string | null;
   type: TypeExplorerContainerQuery_type_CompositeType_fields_type;
+  isOptional: boolean;
 }
 
 export interface TypeExplorerContainerQuery_type_CompositeType {
-  __typename: "CompositeType";
   name: string;
   description: string | null;
+  isDict: boolean;
+  isList: boolean;
+  isNullable: boolean;
+  innerTypes: TypeExplorerContainerQuery_type_CompositeType_innerTypes[];
   typeAttributes: TypeExplorerContainerQuery_type_CompositeType_typeAttributes;
   fields: TypeExplorerContainerQuery_type_CompositeType_fields[];
 }

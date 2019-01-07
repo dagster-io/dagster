@@ -2,7 +2,7 @@ import * as React from "react";
 import * as TestRenderer from "react-test-renderer";
 import { BrowserRouter } from "react-router-dom";
 
-import Config from "../Config";
+import TypeSchema from "../TypeSchema";
 
 it("renders given a basic type", () => {
   let intConfigData = {
@@ -20,7 +20,7 @@ it("renders given a basic type", () => {
   };
   const component = TestRenderer.create(
     <BrowserRouter>
-      <Config config={intConfigData} />
+      <TypeSchema type={intConfigData.type} />
     </BrowserRouter>
   );
   expect(component.toJSON()).toMatchSnapshot();
@@ -163,7 +163,7 @@ it("renders given a complex type", () => {
   };
   const component = TestRenderer.create(
     <BrowserRouter>
-      <Config config={complexConfigData} />
+      <TypeSchema type={complexConfigData.type} />
     </BrowserRouter>
   );
   expect(component.toJSON()).toMatchSnapshot();
