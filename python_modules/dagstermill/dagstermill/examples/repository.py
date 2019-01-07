@@ -21,7 +21,9 @@ from dagster import RepositoryDefinition
 
 
 def nb_test_path(name):
-    return os.path.join(os.path.dirname(os.path.realpath(__file__)), 'notebooks/{name}.ipynb'.format(name=name))
+    return os.path.join(
+        os.path.dirname(os.path.realpath(__file__)), 'notebooks/{name}.ipynb'.format(name=name)
+    )
 
 
 def define_hello_world_pipeline():
