@@ -34,8 +34,8 @@ def test_list_command():
         {
             'repository_yaml': None,
             'python_file': None,
-            'module_name': 'dagster.cli.cli_tests.test_dynamic_loader',
-            'fn_name': 'define_bar_repo',
+            'module_name': 'dagster.tutorials.intro_tutorial.part_six',
+            'fn_name': 'define_part_six_repo',
         },
         no_print,
     )
@@ -55,8 +55,8 @@ def test_list_command():
             {
                 'repository_yaml': None,
                 'python_file': 'foo.py',
-                'module_name': 'dagster.cli.cli_tests.test_dynamic_loader',
-                'fn_name': 'define_bar_repo',
+                'module_name': 'dagster.tutorials.intro_tutorial.part_six',
+                'fn_name': 'define_part_six_repo',
             },
             no_print,
         )
@@ -66,7 +66,7 @@ def test_list_command():
             {
                 'repository_yaml': None,
                 'python_file': None,
-                'module_name': 'dagster.cli.cli_tests.test_dynamic_loader',
+                'module_name': 'dagster.tutorials.intro_tutorial.part_six',
                 'fn_name': None,
             },
             no_print,
@@ -95,7 +95,7 @@ def valid_cli_args():
         },
         {
             'repository_yaml': script_relative_path('repository_module.yml'),
-            'pipeline_name': ('foo',),
+            'pipeline_name': ('part_six',),
             'python_file': None,
             'module_name': None,
             'fn_name': None,
@@ -109,17 +109,17 @@ def valid_cli_args():
         },
         {
             'repository_yaml': None,
-            'pipeline_name': ('foo',),
+            'pipeline_name': ('part_six',),
             'python_file': None,
-            'module_name': 'dagster.cli.cli_tests.test_dynamic_loader',
-            'fn_name': 'define_bar_repo',
+            'module_name': 'dagster.tutorials.intro_tutorial.part_six',
+            'fn_name': 'define_part_six_repo',
         },
         {
             'repository_yaml': None,
             'pipeline_name': (),
             'python_file': None,
-            'module_name': 'dagster.cli.cli_tests.test_dynamic_loader',
-            'fn_name': 'define_foo_pipeline',
+            'module_name': 'dagster.tutorials.intro_tutorial.part_six',
+            'fn_name': 'define_part_six_pipeline',
         },
         {
             'repository_yaml': None,
