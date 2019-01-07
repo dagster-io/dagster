@@ -448,6 +448,7 @@ export type LintJson = (json: any) => Promise<ValidationResult>;
 type ValidationError = {
   message: string;
   path: Array<string>;
+  reason: string;
 };
 
 CodeMirror.registerHelper(
@@ -485,7 +486,9 @@ CodeMirror.registerHelper(
       const validationResult = await checkConfig(json);
       if (!validationResult.isValid) {
         validationResult.errors.forEach(error => {
-          const range = findRangeInDocumentFromPath(doc, error.path);
+          const part =
+            error.reason === "RUNTIME_TYPE_MISMATCH" ? "value" : "key";
+          const range = findRangeInDocumentFromPath(doc, error.path, part);
           lints.push({
             message: error.message,
             severity: "error",
@@ -505,11 +508,12 @@ CodeMirror.registerHelper(
 
 function findRangeInDocumentFromPath(
   doc: yaml.ast.Document,
-  path: Array<string>
+  path: Array<string>,
+  pathPart: "key" | "value"
 ): { start: number; end: number } | null {
   let node: any = nodeAtPath(doc, path);
   if (node && node.type && node.type === "PAIR") {
-    node = node.key;
+    node = node[pathPart];
   }
   if (node && node.range) {
     return {
