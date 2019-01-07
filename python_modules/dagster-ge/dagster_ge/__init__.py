@@ -4,7 +4,7 @@ import json
 import great_expectations as ge
 
 from dagster import check
-from dagster.core.definitions import (ExpectationDefinition, ExpectationResult)
+from dagster.core.definitions import ExpectationDefinition, ExpectationResult
 
 
 # e.g.
@@ -19,10 +19,11 @@ def json_config_expectation(name, file_path):
             # on the same dataframe instance, changing the type. But a
             # ge can't be copied, because it causes an error.
             # The error is
-            #  AttributeError: 'PandasDataset' object has no attribute 'discard_subset_failing_expectations'
+            #  AttributeError: 'PandasDataset' object has no attribute
+            #  'discard_subset_failing_expectations'
             # See https://github.com/great-expectations/great_expectations/issues/342
             df_copy = copy.deepcopy(df)
-            ge_df = ge.from_pandas(df_copy, expt_config)
+            ge_df = ge.from_pandas(df_copy, expectations_config=expt_config)
             validate_result = ge_df.validate()
             check.invariant('success' in validate_result)
             check.invariant('results' in validate_result)

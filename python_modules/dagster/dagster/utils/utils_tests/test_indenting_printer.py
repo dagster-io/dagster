@@ -35,8 +35,11 @@ def test_indent_printer():
     with printer.with_indent():
         printer.line('test indent')
 
-    assert printer.result() == '''test
+    assert (
+        printer.result()
+        == '''test
   test indent'''
+    )
 
 
 def test_parameterized_indent():
@@ -45,8 +48,11 @@ def test_parameterized_indent():
     with printer.with_indent():
         printer.line('test indent')
 
-    assert printer.result() == '''test
+    assert (
+        printer.result()
+        == '''test
     test indent'''
+    )
 
 
 def test_bad_decrease_indent():
@@ -62,9 +68,12 @@ def test_indent_printer_blank_line():
     with printer.with_indent():
         printer.line('test indent')
 
-    assert printer.result() == '''test
+    assert (
+        printer.result()
+        == '''test
 
   test indent'''
+    )
 
 
 def test_double_indent():
@@ -75,9 +84,12 @@ def test_double_indent():
         with printer.with_indent():
             printer.line('test double indent')
 
-    assert printer.result() == '''test
+    assert (
+        printer.result()
+        == '''test
   test indent
     test double indent'''
+    )
 
 
 def test_append():

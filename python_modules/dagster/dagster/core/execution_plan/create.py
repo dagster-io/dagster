@@ -1,11 +1,9 @@
-from collections import (
-    defaultdict,
-    namedtuple,
-)
+from collections import namedtuple
 
 from dagster import check
 
 from dagster.core.definitions import (
+    solids_in_topological_order,
     InputDefinition,
     OutputDefinition,
     Solid,
@@ -14,18 +12,18 @@ from dagster.core.definitions import (
 
 from dagster.core.errors import DagsterInvariantViolationError
 
-from .expectations import (
-    create_expectations_subplan,
-    decorate_with_expectations,
-)
+from .expectations import create_expectations_subplan, decorate_with_expectations
 
 from .input_thunk import create_input_thunk_execution_step
+
+from .materialization_thunk import decorate_with_output_materializations
 
 from .objects import (
     ExecutionPlan,
     ExecutionPlanInfo,
     ExecutionStep,
-    ExecutionSubPlan,
+    ExecutionValueSubPlan,
+    ExecutionPlanSubsetInfo,
     StepInput,
     StepOutputHandle,
     StepTag,
@@ -34,6 +32,8 @@ from .objects import (
 from .serialization import decorate_with_serialization
 
 from .transform import create_transform_step
+
+from .utility import create_value_thunk_step
 
 
 def get_solid_user_config(execution_info, pipeline_solid):
@@ -67,17 +67,14 @@ class StepOutputMap(dict):
 def create_execution_plan_core(execution_info):
     check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
 
-    execution_graph = execution_info.execution_graph
+    state = StepBuilderState(steps=[], step_output_map=StepOutputMap())
 
-    state = StepBuilderState(
-        steps=[],
-        step_output_map=StepOutputMap(),
-    )
+    for pipeline_solid in solids_in_topological_order(execution_info.pipeline):
 
-    for pipeline_solid in execution_graph.topological_solids:
         step_inputs = create_step_inputs(execution_info, state, pipeline_solid)
 
         solid_transform_step = create_transform_step(
+            execution_info,
             pipeline_solid,
             step_inputs,
             get_solid_user_config(execution_info, pipeline_solid),
@@ -87,10 +84,7 @@ def create_execution_plan_core(execution_info):
 
         for output_def in pipeline_solid.definition.output_defs:
             subplan = create_subplan_for_output(
-                execution_info,
-                pipeline_solid,
-                solid_transform_step,
-                output_def,
+                execution_info, pipeline_solid, solid_transform_step, output_def
             )
             state.steps.extend(subplan.steps)
 
@@ -104,13 +98,11 @@ def create_execution_plan_from_steps(steps):
     check.list_param(steps, 'steps', of_type=ExecutionStep)
 
     step_dict = {step.key: step for step in steps}
-
-    deps = defaultdict()
+    deps = {step.key: set() for step in steps}
 
     seen_keys = set()
 
     for step in steps:
-
         if step.key in seen_keys:
             keys = [s.key for s in steps]
             check.failed(
@@ -119,7 +111,6 @@ def create_execution_plan_from_steps(steps):
 
         seen_keys.add(step.key)
 
-        deps[step.key] = set()
         for step_input in step.step_inputs:
             deps[step.key].add(step_input.prev_output_handle.step.key)
 
@@ -134,16 +125,10 @@ def create_subplan_for_input(execution_info, solid, prev_step_output_handle, inp
 
     if execution_info.environment.expectations.evaluate and input_def.expectations:
         return create_expectations_subplan(
-            solid,
-            input_def,
-            prev_step_output_handle,
-            tag=StepTag.INPUT_EXPECTATION,
+            solid, input_def, prev_step_output_handle, tag=StepTag.INPUT_EXPECTATION
         )
     else:
-        return ExecutionSubPlan(
-            steps=[],
-            terminal_step_output_handle=prev_step_output_handle,
-        )
+        return ExecutionValueSubPlan.empty(prev_step_output_handle)
 
 
 def create_subplan_for_output(execution_info, solid, solid_transform_step, output_def):
@@ -154,61 +139,104 @@ def create_subplan_for_output(execution_info, solid, solid_transform_step, outpu
 
     subplan = decorate_with_expectations(execution_info, solid, solid_transform_step, output_def)
 
-    return decorate_with_serialization(execution_info, solid, output_def, subplan)
+    subplan = decorate_with_serialization(execution_info, solid, output_def, subplan)
+
+    return decorate_with_output_materializations(execution_info, solid, output_def, subplan)
 
 
-def create_step_inputs(info, state, pipeline_solid):
+def get_input_source_step_handle(execution_info, state, solid, input_def):
+    check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
+    check.inst_param(state, 'state', StepBuilderState)
+    check.inst_param(solid, 'solid', Solid)
+    check.inst_param(input_def, 'input_def', InputDefinition)
+
+    input_handle = solid.input_handle(input_def.name)
+    solid_config = execution_info.environment.solids.get(solid.name)
+    dependency_structure = execution_info.pipeline.dependency_structure
+    if solid_config and input_def.name in solid_config.inputs:
+        input_thunk_output_handle = create_input_thunk_execution_step(
+            execution_info, solid, input_def, solid_config.inputs[input_def.name]
+        )
+        state.steps.append(input_thunk_output_handle.step)
+        return input_thunk_output_handle
+    elif dependency_structure.has_dep(input_handle):
+        solid_output_handle = dependency_structure.get_dep(input_handle)
+        return state.step_output_map[solid_output_handle]
+    else:
+        raise DagsterInvariantViolationError(
+            (
+                'In pipeline {pipeline_name} solid {solid_name}, input {input_name} '
+                'must get a value either (a) from a dependency or (b) from the '
+                'inputs section of its configuration.'
+            ).format(
+                pipeline_name=execution_info.pipeline.name,
+                solid_name=solid.name,
+                input_name=input_def.name,
+            )
+        )
+
+
+def create_step_inputs(info, state, solid):
     check.inst_param(info, 'info', ExecutionPlanInfo)
     check.inst_param(state, 'state', StepBuilderState)
-    check.inst_param(pipeline_solid, 'pipeline_solid', Solid)
+    check.inst_param(solid, 'solid', Solid)
 
     step_inputs = []
 
-    topo_solid = pipeline_solid.definition
-    dependency_structure = info.execution_graph.dependency_structure
+    for input_def in solid.definition.input_defs:
+        prev_step_output_handle = get_input_source_step_handle(info, state, solid, input_def)
 
-    for input_def in topo_solid.input_defs:
-        input_handle = pipeline_solid.input_handle(input_def.name)
-
-        solid_config = info.environment.solids.get(topo_solid.name)
-        if solid_config and input_def.name in solid_config.inputs:
-            prev_step_output_handle = create_input_thunk_execution_step(
-                info,
-                pipeline_solid,
-                input_def,
-                solid_config.inputs[input_def.name],
-            )
-            state.steps.append(prev_step_output_handle.step)
-        elif dependency_structure.has_dep(input_handle):
-            solid_output_handle = dependency_structure.get_dep(input_handle)
-            prev_step_output_handle = state.step_output_map[solid_output_handle]
-        else:
-            raise DagsterInvariantViolationError(
-                (
-                    'In pipeline {pipeline_name} solid {solid_name}, input {input_name} '
-                    'must get a value either (a) from a dependency or (b) from the '
-                    'inputs section of its configuration.'
-                ).format(
-                    pipeline_name=info.execution_graph.pipeline.name,
-                    solid_name=pipeline_solid.name,
-                    input_name=input_def.name,
-                )
-            )
-
-        subplan = create_subplan_for_input(
-            info,
-            pipeline_solid,
-            prev_step_output_handle,
-            input_def,
-        )
+        subplan = create_subplan_for_input(info, solid, prev_step_output_handle, input_def)
 
         state.steps.extend(subplan.steps)
         step_inputs.append(
-            StepInput(
-                input_def.name,
-                input_def.dagster_type,
-                subplan.terminal_step_output_handle,
-            )
+            StepInput(input_def.name, input_def.dagster_type, subplan.terminal_step_output_handle)
         )
 
     return step_inputs
+
+
+def create_subplan(execution_plan_info, execution_plan, subset_info):
+    check.inst_param(execution_plan_info, 'execution_plan_info', ExecutionPlanInfo)
+    check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+    check.inst_param(subset_info, 'subset_info', ExecutionPlanSubsetInfo)
+
+    steps = []
+
+    for step in execution_plan.steps:
+        if step.key not in subset_info.subset:
+            # Not included in subset. Skip.
+            continue
+
+        if step.key not in subset_info.inputs:
+            steps.append(step)
+        else:
+            steps.extend(_create_new_steps_for_input(step, subset_info))
+
+    return create_execution_plan_from_steps(steps)
+
+
+def _create_new_steps_for_input(step, subset_info):
+    new_steps = []
+    new_step_inputs = []
+    for step_input in step.step_inputs:
+        if step_input.name in subset_info.inputs[step.key]:
+            value_thunk_step_output_handle = create_value_thunk_step(
+                step.solid,
+                step_input.dagster_type,
+                step.key + '.input.' + step_input.name + '.value',
+                subset_info.inputs[step.key][step_input.name],
+            )
+
+            new_value_step = value_thunk_step_output_handle.step
+
+            new_steps.append(new_value_step)
+
+            new_step_inputs.append(
+                StepInput(step_input.name, step_input.dagster_type, value_thunk_step_output_handle)
+            )
+        else:
+            new_step_inputs.append(step_input)
+
+    new_steps.append(step.with_new_inputs(new_step_inputs))
+    return new_steps

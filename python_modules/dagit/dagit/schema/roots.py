@@ -1,11 +1,13 @@
 from dagit.schema import dauphin
 from dagit.schema import model
+from ..version import __version__
 
 
 class DauphinQuery(dauphin.ObjectType):
     class Meta:
         name = 'Query'
 
+    version = dauphin.NonNull(dauphin.String)
     pipelineOrError = dauphin.Field(
         dauphin.NonNull('PipelineOrError'), name=dauphin.NonNull(dauphin.String)
     )
@@ -31,6 +33,9 @@ class DauphinQuery(dauphin.ObjectType):
         dauphin.NonNull('ExecutionPlanResult'),
         args={'executionParams': dauphin.Argument(dauphin.NonNull('PipelineExecutionParams'))},
     )
+
+    def resolve_version(self, _info):
+        return __version__
 
     def resolve_pipelineOrError(self, info, name):
         return model.get_pipeline(info, name)
@@ -87,7 +92,7 @@ class DauphinSubscription(dauphin.ObjectType):
     pipelineRunLogs = dauphin.Field(
         dauphin.NonNull('PipelineRunLogsSubscriptionPayload'),
         runId=dauphin.Argument(dauphin.NonNull(dauphin.ID)),
-        after=dauphin.Argument('Cursor')
+        after=dauphin.Argument('Cursor'),
     )
 
     def resolve_pipelineRunLogs(self, info, runId, after=None):

@@ -8,19 +8,27 @@ Dagster type system.
 Type definitions
 -----------------
 
+.. autoclass:: DagsterBuiltinScalarType
+    :members: is_python_valid_value
+
+.. autoclass:: DagsterScalarType
+    :members: is_python_valid_value
+
+.. autoclass:: DagsterStringType
+    :members: is_python_valid_value
+
 .. autoclass:: DagsterType
     :members:
 
-.. autoclass:: DagsterScalarType
-    :members: process_value, is_python_valid_value
-
-.. autoclass:: DagsterCompositeType
-
-.. autoclass:: Dict
+.. autofunction:: Dict
 
 .. autoclass:: PythonObjectType
 
 .. autodata:: Any
+
+.. autofunction:: Nullable
+
+.. autofunction:: List
 
 .. autodata:: String
 
@@ -30,8 +38,31 @@ Type definitions
 
 .. autodata:: Bool
 
+.. autoclass:: UncoercedTypeMixin
+
 Utilities
 ------------
+
+.. autoclass:: Configurable
+   :members:
+
+.. autoclass:: ConfigurableFromAny
+   :members:
+
+.. autoclass:: ConfigurableFromList
+   :members:
+
+.. autoclass:: ConfigurableFromNullable
+   :members:
+
+.. autoclass:: ConfigurableFromScalar
+   :members:
+
+.. autoclass:: ConfigurableObjectFromDict
+   :members:
+
+.. autoclass:: ConfigurableSelectorFromDict
+   :members:
 
 .. autoclass:: Field
    :members:

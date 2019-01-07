@@ -1,3 +1,5 @@
+import sqlalchemy
+
 from dagster import (
     DependencyDefinition,
     SolidDefinition,
@@ -9,11 +11,10 @@ from dagster import (
     Result,
     check,
     execute_pipeline,
-    solid,
     types,
 )
 
-import sqlalchemy
+from .math_test_db import in_mem_engine
 
 
 def _is_sqlite_context(context):
@@ -78,21 +79,13 @@ def create_sql_statement_solid(name, sql_text, inputs=None):
     )
 
 
-from .math_test_db import in_mem_engine
-
 InMemSqlLiteEngineResource = ResourceDefinition(
     resource_fn=lambda info: in_mem_engine(info.config['num_table']),
     config_field=types.Field(
         types.Dict(
-            {
-                'num_table': types.Field(
-                    types.String,
-                    is_optional=True,
-                    default_value='num_table',
-                ),
-            },
-        ),
-    )
+            {'num_table': types.Field(types.String, is_optional=True, default_value='num_table')}
+        )
+    ),
 )
 
 
@@ -106,40 +99,22 @@ def test_resource_format():
     sum_sql_solid = create_sql_statement_solid('sum_sql_solid', sum_sql_text)
 
     sum_sq_sql_solid = create_sql_statement_solid(
-        'sum_sq_sql_solid',
-        sum_sq_sql_text,
-        inputs=[InputDefinition(name=sum_sql_solid.name)],
+        'sum_sq_sql_solid', sum_sq_sql_text, inputs=[InputDefinition(name=sum_sql_solid.name)]
     )
 
     pipeline = PipelineDefinition(
         name='kdjfkd',
         solids=[sum_sql_solid, sum_sq_sql_solid],
         context_definitions={
-            'in_mem':
-            PipelineContextDefinition(resources={
-                'engine': InMemSqlLiteEngineResource,
-            }, )
+            'in_mem': PipelineContextDefinition(resources={'engine': InMemSqlLiteEngineResource})
         },
         dependencies={
-            'sum_sq_sql_solid': {
-                sum_sql_solid.name: DependencyDefinition(sum_sql_solid.name),
-            }
+            'sum_sq_sql_solid': {sum_sql_solid.name: DependencyDefinition(sum_sql_solid.name)}
         },
     )
 
     result = execute_pipeline(
-        pipeline,
-        {
-            'context': {
-                'in_mem': {
-                    'resources': {
-                        'engine': {
-                            'config': {},
-                        },
-                    },
-                },
-            },
-        },
+        pipeline, {'context': {'in_mem': {'resources': {'engine': {'config': {}}}}}}
     )
 
     assert result.success
@@ -155,42 +130,23 @@ def test_resource_format_with_config():
     sum_sql_solid = create_sql_statement_solid('sum_sql_solid', sum_sql_text)
 
     sum_sq_sql_solid = create_sql_statement_solid(
-        'sum_sq_sql_solid',
-        sum_sq_sql_text,
-        inputs=[InputDefinition(name=sum_sql_solid.name)],
+        'sum_sq_sql_solid', sum_sq_sql_text, inputs=[InputDefinition(name=sum_sql_solid.name)]
     )
 
     pipeline = PipelineDefinition(
         name='kjdkfjd',
         solids=[sum_sql_solid, sum_sq_sql_solid],
         context_definitions={
-            'in_mem':
-            PipelineContextDefinition(resources={
-                'engine': InMemSqlLiteEngineResource,
-            }, )
+            'in_mem': PipelineContextDefinition(resources={'engine': InMemSqlLiteEngineResource})
         },
         dependencies={
-            'sum_sq_sql_solid': {
-                sum_sql_solid.name: DependencyDefinition(sum_sql_solid.name),
-            }
+            'sum_sq_sql_solid': {sum_sql_solid.name: DependencyDefinition(sum_sql_solid.name)}
         },
     )
 
     result = execute_pipeline(
         pipeline,
-        {
-            'context': {
-                'in_mem': {
-                    'resources': {
-                        'engine': {
-                            'config': {
-                                'num_table': 'passed_in'
-                            },
-                        },
-                    },
-                },
-            },
-        },
+        {'context': {'in_mem': {'resources': {'engine': {'config': {'num_table': 'passed_in'}}}}}},
     )
 
     assert result.success

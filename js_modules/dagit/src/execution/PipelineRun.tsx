@@ -163,6 +163,7 @@ const PipelineRunWrapper = styled.div`
   display: flex;
   flex-direction: column;
   flex: 1 1;
+  min-height: 0;
 `;
 
 const LogsContainer = styled.div`

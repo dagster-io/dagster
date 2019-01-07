@@ -12,10 +12,12 @@ watch:
 	"dagit/dagit_tests "\
 	"dagster-ge/dagster_ge_tests " \
 	--drop dagster/dagster dagster/dagster_tests/ dagster-ge/dagster_ge dagster-ge/dagster_ge_tests dagit/dagit dagit/dagit_tests
-	
-yapf:
-	find . -name "*.py" | grep -v ".tox" | grep -v ".vscode" | grep -v "snapshots" | xargs yapf -i
-		
+
+black:
+	black . --line-length 100 -S --fast
+
+pylint:
+	pylint --disable=R,C dagster/dagster dagit/dagit dagstermill/dagstermill dagster-contrib/dagster_contrib
 
 reinstall:
 	pip uninstall dagit
@@ -24,13 +26,19 @@ reinstall:
 	pip install -e dagit
 
 rebuild_dagit:
-	cd dagit/dagit/webapp; yarn install && yarn build
+	cd ../js_modules/dagit/; yarn install && yarn build-for-python
 
 run_dagit:
-	cd dagit/dagit/webapp; make
+	cd ../js_modules/dagit/; make
 
 dagster_yapf:
 	find dagster -name "*.py" | grep -v ".tox" | grep -v ".vscode" | grep -v "snapshots" | xargs yapf -i
 
 test_airline:
-	cd airline-demo; pytest -vv -s -W ignore:::psycopg2 -m "not slow"
+	cd airline-demo; pytest -vv -s -W ignore:::psycopg2 -m "not slow and not py3"
+
+clean:
+	find . -name \*.pyc -delete
+	rm -rf ./dagster/docs/_build
+	rm -rf ./dagster/htmlcov/
+	rm -rf ./dagster/build/

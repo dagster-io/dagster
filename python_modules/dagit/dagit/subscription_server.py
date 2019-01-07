@@ -8,13 +8,13 @@ class DagsterSubscriptionServer(GeventSubscriptionServer):
 
     def __init__(self, middleware=None, **kwargs):
         self.middleware = middleware or []
-        super(GeventSubscriptionServer, self).__init__(**kwargs)
+        super(DagsterSubscriptionServer, self).__init__(**kwargs)
 
     def execute(self, request_context, params):
         # https://github.com/graphql-python/graphql-ws/issues/7
         params['context_value'] = request_context
         params['middleware'] = self.middleware
-        return super(GeventSubscriptionServer, self).execute(request_context, params)
+        return super(DagsterSubscriptionServer, self).execute(request_context, params)
 
     def send_execution_result(self, connection_context, op_id, execution_result):
         if execution_result == GQL_COMPLETE:
@@ -27,14 +27,19 @@ class DagsterSubscriptionServer(GeventSubscriptionServer):
         try:
             execution_result = self.execute(connection_context.request_context, params)
             if not isinstance(execution_result, Observable):
-                observable = Observable.of(execution_result, GQL_COMPLETE)
+                # pylint cannot find of method
+                observable = Observable.of(execution_result, GQL_COMPLETE)  # pylint: disable=E1101
             else:
                 observable = execution_result
             observable.subscribe(
                 SubscriptionObserver(
-                    connection_context, op_id, self.send_execution_result, self.send_error,
-                    self.on_close
+                    connection_context,
+                    op_id,
+                    self.send_execution_result,
+                    self.send_error,
+                    self.on_close,
                 )
             )
-        except Exception as e:
+        # appropriate to catch all errors here
+        except Exception as e:  # pylint: disable=W0703
             self.send_error(connection_context, op_id, str(e))

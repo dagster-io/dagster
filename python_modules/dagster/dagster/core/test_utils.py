@@ -9,7 +9,7 @@ from dagster import (
     execute_pipeline,
 )
 
-from dagster.core.evaluator import evaluate_config_value
+from dagster.core.types.evaluator import evaluate_config_value
 
 from dagster.core.execution_context import ExecutionContext
 
@@ -17,10 +17,7 @@ from dagster.core.types import DagsterType
 
 
 def execute_single_solid_in_isolation(
-    context_params,
-    solid_def,
-    environment=None,
-    throw_on_error=True,
+    context_params, solid_def, environment=None, throw_on_error=True
 ):
     '''
     Deprecated.
@@ -37,16 +34,17 @@ def execute_single_solid_in_isolation(
     single_solid_environment = {
         'expectations': environment.get('expectations'),
         'context': environment.get('context'),
-        'solids': {
-            solid_def.name: environment['solids'][solid_def.name]
-        } if solid_def.name in environment.get('solids', {}) else None
+        'solids': {solid_def.name: environment['solids'][solid_def.name]}
+        if solid_def.name in environment.get('solids', {})
+        else None,
     }
 
     pipeline_result = execute_pipeline(
         PipelineDefinition(
             solids=[solid_def],
-            context_definitions=PipelineContextDefinition.
-            passthrough_context_definition(context_params),
+            context_definitions=PipelineContextDefinition.passthrough_context_definition(
+                context_params
+            ),
         ),
         environment=single_solid_environment,
     )
@@ -109,8 +107,5 @@ def throwing_evaluate_config_value(dagster_type, config_value):
     check.inst_param(dagster_type, 'dagster_type', DagsterType)
     result = evaluate_config_value(dagster_type, config_value)
     if not result.success:
-        raise DagsterEvaluateConfigValueError(
-            result.errors[0].stack,
-            result.errors[0].message,
-        )
+        raise DagsterEvaluateConfigValueError(result.errors[0].stack, result.errors[0].message)
     return result.value

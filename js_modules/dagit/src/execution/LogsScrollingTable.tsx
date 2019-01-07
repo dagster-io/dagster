@@ -27,17 +27,6 @@ interface ILogsScrollingTableSizedState {
   scrollTop: number;
 }
 
-function settle(fn: () => boolean): void {
-  let count = 0;
-  const step = () => {
-    count += 1;
-    if (fn() && count < 5) {
-      window.requestAnimationFrame(step);
-    }
-  };
-  step();
-}
-
 function textForLog(log: LogsScrollingTableMessageFragment) {
   if (log.__typename === "ExecutionStepFailureEvent") {
     return `${log.message}\n${log.error.message}\n${log.error.stack}`;
@@ -46,8 +35,7 @@ function textForLog(log: LogsScrollingTableMessageFragment) {
 }
 
 export default class LogsScrollingTable extends React.Component<
-  ILogsScrollingTableProps,
-  {}
+  ILogsScrollingTableProps
 > {
   static fragments = {
     LogsScrollingTableMessageFragment: gql`
@@ -96,6 +84,14 @@ class LogsScrollingTableSized extends React.Component<
 > {
   grid = React.createRef<Grid>();
 
+  get gridEl() {
+    const el = this.grid.current && ReactDOM.findDOMNode(this.grid.current);
+    if (!(el instanceof HTMLElement)) {
+      return null;
+    }
+    return el;
+  }
+
   cache = new CellMeasurerCache({
     defaultHeight: 30,
     fixedWidth: true,
@@ -104,36 +100,53 @@ class LogsScrollingTableSized extends React.Component<
   });
 
   isAtBottomOrZero: boolean = true;
+  scrollToBottomObserver: MutationObserver;
+
+  componentDidMount() {
+    this.attachScrollToBottomObserver();
+  }
 
   componentDidUpdate(prevProps: ILogsScrollingTableSizedProps) {
+    if (!this.grid.current) return;
+
     if (this.props.width !== prevProps.width) {
       this.cache.clearAll();
     }
-
-    if (this.isAtBottomOrZero) {
-      this.scrollToBottom();
+    if (this.props.nodes !== prevProps.nodes) {
+      this.grid.current.recomputeGridSize();
     }
   }
 
-  scrollToBottom = () => {
-    if (!this.grid.current) return;
-    const el = ReactDOM.findDOMNode(this.grid.current);
-    if (!(el instanceof Element)) return;
+  componentWillUnmount() {
+    if (this.scrollToBottomObserver) {
+      this.scrollToBottomObserver.disconnect();
+    }
+  }
 
-    /*
-    Note BG: Not happy about this. If you change the width of the grid, the
-    component renders and /then/ computes the heights of cells. We need to
-    push the scroll offset to the bottom repeatedly as the grid's scrollHeight
-    is finalized.
-    */
-    settle(() => {
-      const target = el.scrollHeight - el.clientHeight;
-      if (!this.isAtBottomOrZero) return false;
-      if (Math.abs(el.scrollTop - target) < 2) return false;
-      el.scrollTop = target;
-      return true;
+  attachScrollToBottomObserver() {
+    const el = this.gridEl;
+    if (!el) return;
+
+    let lastHeight: string | null = null;
+
+    this.scrollToBottomObserver = new MutationObserver(() => {
+      const rowgroupEl = el.querySelector("[role=rowgroup]") as HTMLElement;
+      if (!rowgroupEl) {
+        lastHeight = null;
+        return;
+      }
+      if (rowgroupEl.style.height === lastHeight) return;
+      if (!this.isAtBottomOrZero) return;
+
+      lastHeight = rowgroupEl.style.height;
+      el.scrollTop = el.scrollHeight - el.clientHeight;
     });
-  };
+
+    this.scrollToBottomObserver.observe(el, {
+      attributes: true,
+      subtree: true
+    });
+  }
 
   onScroll = (e: React.UIEvent<HTMLDivElement>) => {
     if (!this.grid.current) return;

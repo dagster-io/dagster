@@ -8,17 +8,13 @@ from dagster import (
     OutputDefinition,
     PipelineContextDefinition,
     PipelineDefinition,
-    ResourceDefinition,
     Result,
     SolidDefinition,
     check,
     execute_pipeline,
 )
 
-from dagster.core.test_utils import (
-    execute_single_solid_in_isolation,
-    single_output_transform,
-)
+from dagster.core.test_utils import execute_single_solid_in_isolation, single_output_transform
 from dagster.core.errors import DagsterUserCodeExecutionError
 
 
@@ -28,9 +24,7 @@ def silencing_default_context():
 
 def silencing_pipeline(solids, dependencies=None):
     return PipelineDefinition(
-        solids=solids,
-        dependencies=dependencies,
-        context_definitions=silencing_default_context(),
+        solids=solids, dependencies=dependencies, context_definitions=silencing_default_context()
     )
 
 
@@ -41,10 +35,7 @@ def create_root_success_solid(name):
         return passed_rows
 
     return single_output_transform(
-        name=name,
-        inputs=[],
-        transform_fn=root_transform,
-        output=OutputDefinition(),
+        name=name, inputs=[], transform_fn=root_transform, output=OutputDefinition()
     )
 
 
@@ -53,10 +44,7 @@ def create_root_transform_failure_solid(name):
         raise Exception('Transform failed')
 
     return single_output_transform(
-        name=name,
-        inputs=[],
-        transform_fn=failed_transform,
-        output=OutputDefinition(),
+        name=name, inputs=[], transform_fn=failed_transform, output=OutputDefinition()
     )
 
 
@@ -91,16 +79,10 @@ def test_failure_midstream():
     pipeline = silencing_pipeline(
         solids=[solid_a, solid_b, solid_c],
         dependencies={
-            'C': {
-                'A': DependencyDefinition(solid_a.name),
-                'B': DependencyDefinition(solid_b.name),
-            }
-        }
+            'C': {'A': DependencyDefinition(solid_a.name), 'B': DependencyDefinition(solid_b.name)}
+        },
     )
-    pipeline_result = execute_pipeline(
-        pipeline,
-        throw_on_error=False,
-    )
+    pipeline_result = execute_pipeline(pipeline, throw_on_error=False)
 
     result_list = pipeline_result.result_list
 
@@ -115,7 +97,7 @@ def test_do_not_yield_result():
         name='do_not_yield_result',
         inputs=[],
         outputs=[OutputDefinition()],
-        transform_fn=lambda *_args, **_kwargs: Result('foo')
+        transform_fn=lambda *_args, **_kwargs: Result('foo'),
     )
 
     with pytest.raises(
@@ -130,15 +112,11 @@ def test_yield_non_result():
         yield 'foo'
 
     solid_inst = SolidDefinition(
-        name='yield_wrong_thing',
-        inputs=[],
-        outputs=[OutputDefinition()],
-        transform_fn=_tn,
+        name='yield_wrong_thing', inputs=[], outputs=[OutputDefinition()], transform_fn=_tn
     )
 
     with pytest.raises(
-        DagsterInvariantViolationError,
-        match="Transform for solid yield_wrong_thing yielded 'foo'",
+        DagsterInvariantViolationError, match="Transform for solid yield_wrong_thing yielded 'foo'"
     ):
         execute_single_solid_in_isolation(ExecutionContext(), solid_inst)
 
@@ -148,7 +126,7 @@ def test_single_transform_returning_result():
         'test_return_result',
         inputs=[],
         transform_fn=lambda *_args, **_kwargs: Result(None),
-        output=OutputDefinition()
+        output=OutputDefinition(),
     )
 
     with pytest.raises(DagsterInvariantViolationError):

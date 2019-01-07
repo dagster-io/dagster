@@ -1,0 +1,3 @@
+solids:
+  configurable_hello_world:
+    config: "Hello, World!"

@@ -1,63 +1,56 @@
-Repositories and Tools
-----------------------
-
+Repositories
+------------
 Dagster is a not just a programming model for pipelines, it is also a platform for
-tool-building. Included within dagster is a CLI tool, the first tool you'll use
-to interact with pipelines.
+tool-building. You've already met the dagster and dagit CLI tools, which let you programmatically
+run and visualize pipelines.
 
-In previous examples we have specified what file and function a pipeline definition resides
-in order to load. However it can get tedious to load individual pipelines. We will want to
-be able to browse many pipelines at once and then be able to launch tools against that set
-of pipelines without having to specify arguments. This is where repositories and repository
-config files come into play.
+In previous examples we have specified a file (``-f``) and named a pipeline definition function
+(``-n``) in order to tell the CLI tools how to load a pipeline:
 
-Dagster has a concept of a repositories which is used to organize a collection of pipelines
-(and eventually other concepts). Dagster tools must be pointed to a repository or many repositories
-into order to function.
+.. code-block:: console
 
-Repostories are declared like this:
+   $ dagit -f part_one.py -n define_hello_world_pipeline
+   $ dagster pipeline execute -f part_one.py -n define_hello_world_pipeline
 
-.. code-block:: python
+But most of the time, especially when working on long-running projects with other people, we will
+want to be able to target many pipelines at once with our tools. 
 
-    @lambda_solid
-    def hello_world():
-        pass
+A **repository** is a collection of pipelines to which dagster tools may be pointed.
 
+Repostories are declared using a new API,
+:py:func:`RepositoryDefinition <dagster.RepositoryDefinition>`:
 
-    def define_part_six_pipeline():
-        return PipelineDefinition(name='part_six', solids=[hello_world])
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/part_six.py
+   :linenos:
+   :caption: part_six.py
 
+If you save this file as ``part_six.py``, you can then run the command line tools on it. Try running:
 
-    def define_part_six_repo():
-        return RepositoryDefinition(
-            name='part_six_repo',
-            pipeline_dict={
-                'part_six': define_part_six_pipeline,
-            },
-        )
+.. code-block:: console
 
-Save this file as ``part_six.py``.
+    $ dagster pipeline list -f part_six.py -n define_part_six_repo
+    Repository part_six_repo
+    ************************
+    Pipeline: part_six
+    Solids: (Execution Order)
+        hello_world
 
-Dagster tools are easiest to used when they can operate on a repository. It is particularily convenient
-to create a config file containing the location and name of the function to create that repository. This
-avoids unnecessary and repetitive typing for CL+I tools. The  current mechanism is to
-create a yaml file (default name: 'repository.yml') where you state the module or file and the
-function that creates the repository you want to operate on.
+Typing the name of the file and function defining the repository gets tiresome and repetitive, so
+let's create a declarative config file with this information to make using the command line tools
+easier. Save this file as "repository.yml". This is the default name for a repository config file,
+although you can tell the CLI tools to use any file you like.
 
-.. code-block:: yaml
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/part_six_repository_1.yml
+   :linenos:
+   :caption: repository.yml
 
-    repository:
-        file: part_six.py
-        fn: define_part_six_repo
+Now you should be able to list the pipelines in this repo without all the typing:
 
-Save this file as "repository.yml"
-
-Now you should be able to list the pipelines in this repo:
-
-.. code-block:: sh
+.. code-block:: console
 
     $ dagster pipeline list
     Repository part_six_repo
+    ************************
     Pipeline: part_six
     Solids: (Execution Order)
         hello_world
@@ -65,22 +58,22 @@ Now you should be able to list the pipelines in this repo:
 
 You can also specify a module instead of a file in the repository.yml file.
 
-.. code-block:: yaml
-
-    repository:
-        module: some_module 
-        fn: define_some_repository 
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/part_six_repository_2.yml
+   :linenos:
+   :caption: repository.yml
 
 Dagit
 ^^^^^
+We've already seen dagit in action when we visualized our pipelines earlier. Dagit uses the same
+pattern as the other dagster CLI tools. If you've defined a repository.yml file, just run it with
+no arguments, and you can visualize and execute all the pipelines in your repository:
 
-Dagit is an essential tool for managing and visualizing dagster pipelines. Install dagit
-via pypi (``pip install dagit``) and then run it on your repository in the same way as
-the CLI tool.
-
-.. code-block:: sh
+.. code-block:: console
 
     $ dagit
     Serving on http://localhost:3000
 
-Now navigate to http://localhost:3000 in your web browser and you can visualize your pipelines!
+.. image:: part_six_fig_one.png
+
+In part seven of the tutorial, we'll get to know :doc:`Pipeline Execution <part_seven>` a little
+better, and learn how to execute pipelines from the command line, with swappable config.

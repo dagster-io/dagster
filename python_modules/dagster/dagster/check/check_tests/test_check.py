@@ -2,7 +2,10 @@ import pytest
 
 from dagster import check
 from dagster.check import (
-    ParameterCheckError, ElementCheckError, CheckError, NotImplementedCheckError
+    ParameterCheckError,
+    ElementCheckError,
+    CheckError,
+    NotImplementedCheckError,
 )
 
 

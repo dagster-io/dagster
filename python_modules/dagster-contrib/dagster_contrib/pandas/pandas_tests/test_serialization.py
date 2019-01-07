@@ -1,11 +1,9 @@
 from collections import namedtuple
-import pickle
 import os
 import uuid
 
 import pandas as pd
 
-from dagster import types
 from dagster_contrib.pandas import DataFrame
 
 SomeTuple = namedtuple('SomeTuple', 'foo')

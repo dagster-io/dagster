@@ -16,12 +16,45 @@ from dagster import (
     types,
 )
 
-from dagster.core.configurable import ConfigurableSelectorFromDict
+from dagster.core.types.configurable import ConfigurableSelectorFromDict
+from dagster.core.types.materializable import FileMarshalable, Materializeable
 
 DataFrameMeta = namedtuple('DataFrameMeta', 'format path')
 
 
-class _DataFrameType(ConfigurableSelectorFromDict, types.PythonObjectType):
+def define_path_dict_field():
+    return Field(types.Dict({'path': Field(types.Path)}))
+
+
+def define_csv_dict_field():
+    return Field(
+        types.Dict(
+            {
+                'path': Field(types.Path),
+                'sep': Field(types.String, is_optional=True, default_value=','),
+            }
+        )
+    )
+
+
+class _PandasDataFrameMaterializationConfigSchema(ConfigurableSelectorFromDict, types.DagsterType):
+    def __init__(self):
+        super(_PandasDataFrameMaterializationConfigSchema, self).__init__(
+            name='PandasDataFrameMaterializationConfigSchema',
+            fields={
+                'csv': define_csv_dict_field(),
+                'parquet': define_path_dict_field(),
+                'table': define_path_dict_field(),
+            },
+        )
+
+
+PandasDataFrameMaterializationConfigSchema = _PandasDataFrameMaterializationConfigSchema()
+
+
+class _DataFrameType(
+    ConfigurableSelectorFromDict, types.PythonObjectType, Materializeable, FileMarshalable
+):
     def __init__(self):
         super(_DataFrameType, self).__init__(
             name='PandasDataFrame',
@@ -29,18 +62,45 @@ class _DataFrameType(ConfigurableSelectorFromDict, types.PythonObjectType):
             description='''Two-dimensional size-mutable, potentially heterogeneous
     tabular data structure with labeled axes (rows and columns). See http://pandas.pydata.org/''',
             fields={
-                'csv': types.Field(types.Dict({
-                    'path': types.Field(types.String)
-                })),
+                'csv': define_csv_dict_field(),
+                'parquet': define_path_dict_field(),
+                'table': define_path_dict_field(),
             },
         )
+
+    def marshal_value(self, value, to_file):
+        with open(to_file, 'wb') as ff:
+            pickle.dump(value, ff)
+
+    def unmarshal_value(self, from_file):
+        with open(from_file, 'rb') as ff:
+            return pickle.load(ff)
+
+    def define_materialization_config_schema(self):
+        return PandasDataFrameMaterializationConfigSchema
+
+    def materialize_runtime_value(self, config_spec, runtime_value):
+        file_type, file_options = list(config_spec.items())[0]
+        if file_type == 'csv':
+            path = file_options['path']
+            del file_options['path']
+            return runtime_value.to_csv(path, index=False, **file_options)
+        elif file_type == 'parquet':
+            return runtime_value.to_parquet(file_options['path'])
+        elif file_type == 'table':
+            return runtime_value.to_csv(file_options['path'], sep='\t', index=False)
+        else:
+            check.failed('Unsupported file_type {file_type}'.format(file_type=file_type))
+        check.failed('must implement')
 
     def create_serializable_type_value(self, value, output_dir):
         check.str_param(output_dir, 'output_dir')
         csv_path = os.path.join(output_dir, 'csv')
         value.to_csv(csv_path, index=False)
         df_meta = DataFrameMeta(format='csv', path='csv')
-        return types.SerializedTypeValue(name=self.name, value=df_meta._asdict())
+        import dagster.core.types.base
+
+        return dagster.core.types.base.SerializedTypeValue(name=self.name, value=df_meta._asdict())
 
     def deserialize_from_type_value(self, type_value, output_dir):
         check.str_param(output_dir, 'output_dir')
@@ -58,54 +118,15 @@ class _DataFrameType(ConfigurableSelectorFromDict, types.PythonObjectType):
     def construct_from_config_value(self, config_value):
         file_type, file_options = list(config_value.items())[0]
         if file_type == 'csv':
-            return pd.read_csv(file_options['path'])
+            path = file_options['path']
+            del file_options['path']
+            return pd.read_csv(path, **file_options)
+        elif file_type == 'parquet':
+            return pd.read_parquet(file_options['path'])
+        elif file_type == 'table':
+            return pd.read_table(file_options['path'])
         else:
             check.failed('Unsupported file_type {file_type}'.format(file_type=file_type))
 
 
 DataFrame = _DataFrameType()
-
-
-def path_dict_field():
-    return Field(types.Dict({'path': Field(types.Path)}))
-
-
-def load_csv_solid(name):
-    check.str_param(name, 'name')
-
-    def _t_fn(info, _inputs):
-        yield Result(pd.read_csv(info.config['path']))
-
-    return SolidDefinition(
-        name=name,
-        inputs=[],
-        outputs=[OutputDefinition(DataFrame)],
-        transform_fn=_t_fn,
-        config_field=path_dict_field(),
-    )
-
-
-def to_csv_solid(name):
-    def _t_fn(info, inputs):
-        inputs['df'].to_csv(info.config['path'], index=False)
-
-    return SolidDefinition(
-        name=name,
-        inputs=[InputDefinition('df', DataFrame)],
-        outputs=[],
-        config_field=path_dict_field(),
-        transform_fn=_t_fn,
-    )
-
-
-def to_parquet_solid(name):
-    def _t_fn(info, inputs):
-        inputs['df'].to_parquet(info.config['path'])
-
-    return SolidDefinition(
-        name=name,
-        inputs=[InputDefinition('df', DataFrame)],
-        outputs=[],
-        config_field=path_dict_field(),
-        transform_fn=_t_fn,
-    )

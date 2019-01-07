@@ -1,7 +1,4 @@
-import pandas as pd
-
 from dagster import (
-    DependencyDefinition,
     InputDefinition,
     OutputDefinition,
     execute_pipeline,
@@ -12,20 +9,17 @@ from dagster import (
 from dagster.core.test_utils import single_output_transform
 
 from dagster.utils import script_relative_path
-from dagster.utils.test import get_temp_file_name
 
-import dagster_contrib.pandas as dagster_pd
+from dagster_contrib.pandas import DataFrame
 
 
 def create_num_csv_environment():
     return {
         'solids': {
-            'load_csv': {
-                'config': {
-                    'path': script_relative_path('num.csv'),
-                },
-            },
-        },
+            'hello_world': {
+                'inputs': {'num_csv': {'csv': {'path': script_relative_path('num.csv')}}}
+            }
+        }
     }
 
 
@@ -37,22 +31,9 @@ def test_hello_world_with_dataframe_fns():
 def run_hello_world(hello_world):
     assert len(hello_world.input_defs) == 1
 
-    pipeline = PipelineDefinition(
-        solids=[
-            dagster_pd.load_csv_solid('load_csv'),
-            hello_world,
-        ],
-        dependencies={
-            'hello_world': {
-                'num_csv': DependencyDefinition('load_csv'),
-            },
-        }
-    )
+    pipeline = PipelineDefinition(solids=[hello_world], dependencies={'hello_world': {}})
 
-    pipeline_result = execute_pipeline(
-        pipeline,
-        environment=create_num_csv_environment(),
-    )
+    pipeline_result = execute_pipeline(pipeline, environment=create_num_csv_environment())
 
     result = pipeline_result.result_for_solid('hello_world')
 
@@ -64,56 +45,9 @@ def run_hello_world(hello_world):
         'sum': [3, 7],
     }
 
-    pipeline_two = PipelineDefinition(
-        solids=[
-            dagster_pd.load_csv_solid('load_csv'),
-            hello_world,
-            dagster_pd.to_csv_solid('to_csv'),
-        ],
-        dependencies={
-            'hello_world': {
-                'num_csv': DependencyDefinition('load_csv'),
-            },
-            'to_csv': {
-                'df': DependencyDefinition('hello_world'),
-            }
-        }
-    )
-
-    with get_temp_file_name() as temp_file_name:
-        environment = {
-            'solids': {
-                'load_csv': {
-                    'config': {
-                        'path': script_relative_path('num.csv'),
-                    },
-                },
-                'to_csv': {
-                    'config': {
-                        'path': temp_file_name,
-                    },
-                },
-            },
-        }
-
-        pipeline_result = execute_pipeline(
-            pipeline_two,
-            environment,
-        )
-
-        output_result = pipeline_result.result_for_solid('hello_world')
-
-        assert output_result.success
-
-        assert pd.read_csv(temp_file_name).to_dict('list') == {
-            'num1': [1, 3],
-            'num2': [2, 4],
-            'sum': [3, 7],
-        }
-
 
 def create_definition_based_solid():
-    table_input = InputDefinition('num_csv', dagster_pd.DataFrame)
+    table_input = InputDefinition('num_csv', DataFrame)
 
     def transform_fn(_context, inputs):
         num_csv = inputs['num_csv']
@@ -125,15 +59,14 @@ def create_definition_based_solid():
         name='hello_world',
         inputs=[table_input],
         transform_fn=transform_fn,
-        output=OutputDefinition(dagster_pd.DataFrame)
+        output=OutputDefinition(DataFrame),
     )
     return hello_world
 
 
 def create_decorator_based_solid():
     @lambda_solid(
-        inputs=[InputDefinition('num_csv', dagster_pd.DataFrame)],
-        output=OutputDefinition(dagster_pd.DataFrame),
+        inputs=[InputDefinition('num_csv', DataFrame)], output=OutputDefinition(DataFrame)
     )
     def hello_world(num_csv):
         num_csv['sum'] = num_csv['num1'] + num_csv['num2']

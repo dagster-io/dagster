@@ -1,22 +1,18 @@
 from __future__ import absolute_import
-import copy
 from collections import namedtuple
+import copy
 import multiprocessing
-import time
-import queue
+import os
 import sys
+import time
+
 import gevent
 
-from dagster import (check, ReentrantInfo, PipelineDefinition)
-from dagster.core.execution import (
-    execute_reentrant_pipeline,
-)
-from dagster.core.evaluator import evaluate_config_value
+from dagster import check, ReentrantInfo, PipelineDefinition
+from dagster.core.execution import create_typed_environment, execute_reentrant_pipeline
 from dagster.core.events import PipelineEventRecord, EventType
-from dagster.utils.error import (
-    serializable_error_info_from_exc_info,
-    SerializableErrorInfo,
-)
+from dagster.core.types.evaluator import evaluate_config_value
+from dagster.utils.error import serializable_error_info_from_exc_info, SerializableErrorInfo
 from dagster.utils.logging import level_from_string
 
 from .pipeline_run_storage import PipelineRun
@@ -27,53 +23,62 @@ class PipelineExecutionManager(object):
         raise NotImplementedError()
 
 
-class SyntheticPipelineEventRecord(PipelineEventRecord):
-    def __init__(self, message, level, event_type, run_id, timestamp, error_info):
-        self._message = check.str_param(message, 'message')
-        self._level = check.int_param(level, 'level')
-        self._event_type = check.inst_param(event_type, 'event_type', EventType)
-        self._run_id = check.str_param(run_id, 'run_id')
-        self._timestamp = check.float_param(timestamp, 'timestamp')
-        self._error_info = check.opt_inst_param(error_info, 'error_info', SerializableErrorInfo)
+def build_synthetic_pipeline_error_record(run_id, error_info, pipeline_name):
+    return PipelineEventRecord(
+        message=error_info.message,
+        user_message=error_info.message,
+        level=level_from_string('ERROR'),
+        event_type=EventType.PIPELINE_FAILURE,
+        run_id=run_id,
+        timestamp=time.time(),
+        error_info=error_info,
+        pipeline_name=pipeline_name,
+    )
+
+
+def build_process_start_event(run_id, pipeline_name):
+    message = 'About to start process for pipeline {pipeline_name} run_id {run_id}'.format(
+        pipeline_name=pipeline_name, run_id=run_id
+    )
+
+    return PipelineEventRecord(
+        message=message,
+        user_message=message,
+        level=level_from_string('INFO'),
+        event_type=EventType.PIPELINE_PROCESS_START,
+        run_id=run_id,
+        timestamp=time.time(),
+        error_info=None,
+        pipeline_name=pipeline_name,
+    )
+
+
+def build_process_started_event(run_id, pipeline_name, process_id):
+    message = 'Started process {process_id} for pipeline {pipeline_name} run_id {run_id}'.format(
+        pipeline_name=pipeline_name, run_id=run_id, process_id=process_id
+    )
+
+    return PipelineProcessStartedEvent(
+        message=message,
+        user_message=message,
+        level=level_from_string('INFO'),
+        event_type=EventType.PIPELINE_PROCESS_STARTED,
+        run_id=run_id,
+        timestamp=time.time(),
+        error_info=None,
+        pipeline_name=pipeline_name,
+        process_id=process_id,
+    )
+
+
+class PipelineProcessStartedEvent(PipelineEventRecord):
+    def __init__(self, process_id, **kwargs):
+        super(PipelineProcessStartedEvent, self).__init__(**kwargs)
+        self._process_id = check.int_param(process_id, 'process_id')
 
     @property
-    def message(self):
-        return self._message
-
-    @property
-    def level(self):
-        return self._level
-
-    @property
-    def original_message(self):
-        return self._message
-
-    @property
-    def event_type(self):
-        return self._event_type
-
-    @property
-    def run_id(self):
-        return self._run_id
-
-    @property
-    def timestamp(self):
-        return self._timestamp
-
-    @property
-    def error_info(self):
-        return self._error_info
-
-    @staticmethod
-    def error_record(run_id, error_info):
-        return SyntheticPipelineEventRecord(
-            message=error_info.message,
-            level=level_from_string('ERROR'),
-            event_type=EventType.PIPELINE_FAILURE,
-            run_id=run_id,
-            timestamp=time.time(),
-            error_info=error_info
-        )
+    def process_id(self):
+        return self._process_id
 
 
 class SynchronousExecutionManager(PipelineExecutionManager):
@@ -82,17 +87,18 @@ class SynchronousExecutionManager(PipelineExecutionManager):
         try:
             return execute_reentrant_pipeline(
                 pipeline,
-                pipeline_run.typed_environment,
+                create_typed_environment(pipeline, pipeline_run.config),
                 throw_on_error=False,
                 reentrant_info=ReentrantInfo(
-                    pipeline_run.run_id,
-                    event_callback=pipeline_run.handle_new_event,
+                    pipeline_run.run_id, event_callback=pipeline_run.handle_new_event
                 ),
             )
-        except Exception as e:
+        except:  # pylint: disable=W0702
             pipeline_run.handle_new_event(
-                SyntheticPipelineEventRecord.error_record(
-                    pipeline_run.run_id, serializable_error_info_from_exc_info(sys.exc_info())
+                build_synthetic_pipeline_error_record(
+                    pipeline_run.run_id,
+                    serializable_error_info_from_exc_info(sys.exc_info()),
+                    pipeline.name,
                 )
             )
 
@@ -106,10 +112,17 @@ class MultiprocessingError(object):
         self.error_info = check.inst_param(error_info, 'error_info', SerializableErrorInfo)
 
 
+class ProcessStartedSentinel(object):
+    def __init__(self, process_id):
+        self.process_id = check.int_param(process_id, 'process_id')
+
+
 class MultiprocessingExecutionManager(PipelineExecutionManager):
     def __init__(self):
         # Set execution method to spawn, to avoid fork and to have same behavior between platforms.
-        # Older versions are stuck with whatever is the default on their platform (fork on Unix-like and spawn on windows)
+        # Older versions are stuck with whatever is the default on their platform (fork on
+        # Unix-like and spawn on windows)
+        #
         # https://docs.python.org/3/library/multiprocessing.html#multiprocessing.get_context
         if hasattr(multiprocessing, 'get_context'):
             self._multiprocessing_context = multiprocessing.get_context('spawn')
@@ -148,11 +161,12 @@ class MultiprocessingExecutionManager(PipelineExecutionManager):
                                 run_id=process.pipeline_run.run_id
                             )
                         )
-                    except:
+                    except:  # pylint: disable=W0702
                         process.pipeline_run.handle_new_event(
-                            SyntheticPipelineEventRecord.error_record(
+                            build_synthetic_pipeline_error_record(
                                 process.pipeline_run.run_id,
-                                serializable_error_info_from_exc_info(sys.exc_info())
+                                serializable_error_info_from_exc_info(sys.exc_info()),
+                                process.pipeline_run.pipeline_name,
                             )
                         )
 
@@ -171,8 +185,18 @@ class MultiprocessingExecutionManager(PipelineExecutionManager):
                 return True
             elif isinstance(message, MultiprocessingError):
                 process.pipeline_run.handle_new_event(
-                    SyntheticPipelineEventRecord.error_record(
-                        process.pipeline_run.run_id, message.error_info
+                    build_synthetic_pipeline_error_record(
+                        process.pipeline_run.run_id,
+                        message.error_info,
+                        process.pipeline_run.pipeline_name,
+                    )
+                )
+            elif isinstance(message, ProcessStartedSentinel):
+                process.pipeline_run.handle_new_event(
+                    build_process_started_event(
+                        process.pipeline_run.run_id,
+                        process.pipeline_run.pipeline_name,
+                        message.process_id,
                     )
                 )
             else:
@@ -191,23 +215,15 @@ class MultiprocessingExecutionManager(PipelineExecutionManager):
         message_queue = self._multiprocessing_context.Queue()
         p = self._multiprocessing_context.Process(
             target=execute_pipeline_through_queue,
-            args=(
-                repository_container.repository_info,
-                pipeline.name,
-                pipeline_run.config,
-            ),
-            kwargs={
-                'run_id': pipeline_run.run_id,
-                'message_queue': message_queue,
-            }
+            args=(repository_container.repository_info, pipeline.name, pipeline_run.config),
+            kwargs={'run_id': pipeline_run.run_id, 'message_queue': message_queue},
         )
+
+        pipeline_run.handle_new_event(build_process_start_event(pipeline_run.run_id, pipeline.name))
+
         p.start()
         with self._processes_lock:
-            process = RunProcessWrapper(
-                pipeline_run,
-                p,
-                message_queue,
-            )
+            process = RunProcessWrapper(pipeline_run, p, message_queue)
             self._processes.append(process)
 
 
@@ -218,22 +234,17 @@ class RunProcessWrapper(namedtuple('RunProcessWrapper', 'pipeline_run process me
         )
 
 
-def execute_pipeline_through_queue(
-    repository_info,
-    pipeline_name,
-    config,
-    run_id,
-    message_queue,
-):
+def execute_pipeline_through_queue(repository_info, pipeline_name, config, run_id, message_queue):
     """
     Execute pipeline using message queue as a transport
     """
-    reentrant_info = ReentrantInfo(
-        run_id,
-        event_callback=lambda event: message_queue.put(event),
-    )
+
+    message_queue.put(ProcessStartedSentinel(os.getpid()))
+
+    reentrant_info = ReentrantInfo(run_id, event_callback=message_queue.put)
 
     from .app import RepositoryContainer
+
     repository_container = RepositoryContainer(repository_info)
     if repository_container.repo_error:
         message_queue.put(
@@ -251,7 +262,7 @@ def execute_pipeline_through_queue(
             pipeline, typed_environment, throw_on_error=False, reentrant_info=reentrant_info
         )
         return result
-    except Exception as e:
+    except:  # pylint: disable=W0702
         message_queue.put(
             MultiprocessingError(serializable_error_info_from_exc_info(sys.exc_info()))
         )

@@ -45,22 +45,11 @@ def test_execute_solid_with_input_same_name():
 
     pipeline = PipelineDefinition(
         solids=[define_pass_value_solid('pass_value'), a_thing_solid],
-        dependencies={'a_thing': {
-            'a_thing': DependencyDefinition('pass_value')
-        }},
+        dependencies={'a_thing': {'a_thing': DependencyDefinition('pass_value')}},
     )
 
     result = execute_pipeline(
-        pipeline,
-        environment={
-            'solids': {
-                'pass_value': {
-                    'config': {
-                        'value': 'foo',
-                    },
-                },
-            },
-        },
+        pipeline, environment={'solids': {'pass_value': {'config': {'value': 'foo'}}}}
     )
 
     assert result.result_for_solid('a_thing').transformed_value() == 'foofoo'
@@ -91,30 +80,18 @@ def test_execute_two_solids_with_same_input_name():
             solid_two,
         ],
         dependencies={
-            'solid_one': {
-                'a_thing': DependencyDefinition('pass_to_one')
-            },
-            'solid_two': {
-                'a_thing': DependencyDefinition('pass_to_two')
-            }
-        }
+            'solid_one': {'a_thing': DependencyDefinition('pass_to_one')},
+            'solid_two': {'a_thing': DependencyDefinition('pass_to_two')},
+        },
     )
 
     result = execute_pipeline(
         pipeline,
         environment={
             'solids': {
-                'pass_to_one': {
-                    'config': {
-                        'value': 'foo',
-                    },
-                },
-                'pass_to_two': {
-                    'config': {
-                        'value': 'bar',
-                    },
-                },
-            },
+                'pass_to_one': {'config': {'value': 'foo'}},
+                'pass_to_two': {'config': {'value': 'bar'}},
+            }
         },
     )
 
@@ -136,9 +113,7 @@ def test_execute_dep_solid_different_input_name():
 
     second_solid = single_output_transform(
         'second_solid',
-        inputs=[
-            InputDefinition(name='an_input'),
-        ],
+        inputs=[InputDefinition(name='an_input')],
         transform_fn=lambda context, inputs: inputs['an_input'] + inputs['an_input'],
         output=dagster.OutputDefinition(),
     )
@@ -146,26 +121,13 @@ def test_execute_dep_solid_different_input_name():
     pipeline = dagster.PipelineDefinition(
         solids=[pass_to_first, first_solid, second_solid],
         dependencies={
-            'first_solid': {
-                'a_thing': DependencyDefinition('pass_to_first'),
-            },
-            'second_solid': {
-                'an_input': DependencyDefinition('first_solid'),
-            },
-        }
+            'first_solid': {'a_thing': DependencyDefinition('pass_to_first')},
+            'second_solid': {'an_input': DependencyDefinition('first_solid')},
+        },
     )
 
     result = dagster.execute_pipeline(
-        pipeline,
-        environment={
-            'solids': {
-                'pass_to_first': {
-                    'config': {
-                        'value': 'bar',
-                    },
-                },
-            },
-        },
+        pipeline, environment={'solids': {'pass_to_first': {'config': {'value': 'bar'}}}}
     )
 
     assert result.success

@@ -45,7 +45,7 @@ def test_run_id():
 
     pipeline = PipelineDefinition(
         solids=[],
-        context_definitions={'default': PipelineContextDefinition(context_fn=construct_context, )}
+        context_definitions={'default': PipelineContextDefinition(context_fn=construct_context)},
     )
     execute_pipeline(pipeline)
 
@@ -60,30 +60,12 @@ def test_default_context_with_log_level():
 
     pipeline = PipelineDefinition(solids=[default_context_transform])
     execute_pipeline(
-        pipeline,
-        environment={
-            'context': {
-                'default': {
-                    'config': {
-                        'log_level': 'INFO',
-                    },
-                },
-            },
-        },
+        pipeline, environment={'context': {'default': {'config': {'log_level': 'INFO'}}}}
     )
 
     with pytest.raises(PipelineConfigEvaluationError):
         execute_pipeline(
-            pipeline,
-            environment={
-                'context': {
-                    'default': {
-                        'config': {
-                            'log_level': 2,
-                        },
-                    },
-                },
-            },
+            pipeline, environment={'context': {'default': {'config': {'log_level': 2}}}}
         )
 
 
@@ -98,42 +80,24 @@ def test_default_value():
     pipeline = PipelineDefinition(
         solids=[_get_config_test_solid('field_one', 'heyo')],
         context_definitions={
-            'custom_one':
-            PipelineContextDefinition(
+            'custom_one': PipelineContextDefinition(
                 config_field=types.Field(
                     types.Dict(
                         {
-                            'field_one':
-                            Field(
-                                dagster_type=types.String,
-                                is_optional=True,
-                                default_value='heyo',
-                            ),
-                        },
+                            'field_one': Field(
+                                dagster_type=types.String, is_optional=True, default_value='heyo'
+                            )
+                        }
                     )
                 ),
                 context_fn=lambda info: ExecutionContext(resources=info.config),
-            ),
-        }
-    )
-
-    execute_pipeline(
-        pipeline,
-        environment={
-            'context': {
-                'custom_one': {},
-            },
+            )
         },
     )
 
-    execute_pipeline(
-        pipeline,
-        environment={
-            'context': {
-                'custom_one': None,
-            },
-        },
-    )
+    execute_pipeline(pipeline, environment={'context': {'custom_one': {}}})
+
+    execute_pipeline(pipeline, environment={'context': {'custom_one': None}})
 
 
 def test_custom_contexts():
@@ -144,47 +108,25 @@ def test_custom_contexts():
     pipeline = PipelineDefinition(
         solids=[custom_context_transform],
         context_definitions={
-            'custom_one':
-            PipelineContextDefinition(
+            'custom_one': PipelineContextDefinition(
                 config_field=types.Field(
-                    types.Dict({
-                        'field_one': Field(dagster_type=types.String)
-                    })
+                    types.Dict({'field_one': Field(dagster_type=types.String)})
                 ),
                 context_fn=lambda info: ExecutionContext(resources=info.config),
             ),
-            'custom_two':
-            PipelineContextDefinition(
+            'custom_two': PipelineContextDefinition(
                 config_field=types.Field(
-                    types.Dict({
-                        'field_one': Field(dagster_type=types.String)
-                    }, )
+                    types.Dict({'field_one': Field(dagster_type=types.String)})
                 ),
                 context_fn=lambda info: ExecutionContext(resources=info.config),
-            )
+            ),
         },
     )
-    environment_one = {
-        'context': {
-            'custom_one': {
-                'config': {
-                    'field_one': 'value_two',
-                },
-            },
-        },
-    }
+    environment_one = {'context': {'custom_one': {'config': {'field_one': 'value_two'}}}}
 
     execute_pipeline(pipeline, environment=environment_one)
 
-    environment_two = {
-        'context': {
-            'custom_two': {
-                'config': {
-                    'field_one': 'value_two',
-                },
-            },
-        },
-    }
+    environment_two = {'context': {'custom_two': {'config': {'field_one': 'value_two'}}}}
 
     execute_pipeline(pipeline, environment=environment_two)
 
@@ -208,27 +150,16 @@ def test_yield_context():
     pipeline = PipelineDefinition(
         solids=[custom_context_transform],
         context_definitions={
-            'custom_one':
-            PipelineContextDefinition(
+            'custom_one': PipelineContextDefinition(
                 config_field=types.Field(
-                    types.Dict({
-                        'field_one': Field(dagster_type=types.String)
-                    })
+                    types.Dict({'field_one': Field(dagster_type=types.String)})
                 ),
                 context_fn=_yield_context,
-            ),
-        }
+            )
+        },
     )
 
-    environment_one = {
-        'context': {
-            'custom_one': {
-                'config': {
-                    'field_one': 'value_two',
-                },
-            },
-        },
-    }
+    environment_one = {'context': {'custom_one': {'config': {'field_one': 'value_two'}}}}
 
     execute_pipeline(pipeline, environment=environment_one)
 
@@ -241,83 +172,49 @@ def test_invalid_context():
         raise Exception('should never execute')
 
     default_context_pipeline = PipelineDefinition(
-        name='default_context_pipeline',
-        solids=[never_transform],
+        name='default_context_pipeline', solids=[never_transform]
     )
 
-    environment_context_not_found = {
-        'context': {
-            'not_found': {},
-        },
-    }
+    environment_context_not_found = {'context': {'not_found': {}}}
 
     with pytest.raises(
-        PipelineConfigEvaluationError,
-        match='Undefined field "not_found" at path root:context',
+        PipelineConfigEvaluationError, match='Undefined field "not_found" at path root:context'
     ):
         execute_pipeline(
-            default_context_pipeline,
-            environment=environment_context_not_found,
-            throw_on_error=True
+            default_context_pipeline, environment=environment_context_not_found, throw_on_error=True
         )
 
-    environment_field_name_mismatch = {
-        'context': {
-            'default': {
-                'config': {
-                    'unexpected': 'value',
-                },
-            },
-        },
-    }
+    environment_field_name_mismatch = {'context': {'default': {'config': {'unexpected': 'value'}}}}
 
     with pytest.raises(PipelineConfigEvaluationError, match='Undefined field "unexpected"'):
         execute_pipeline(
             default_context_pipeline,
             environment=environment_field_name_mismatch,
-            throw_on_error=True
+            throw_on_error=True,
         )
 
     with_argful_context_pipeline = PipelineDefinition(
         solids=[never_transform],
         context_definitions={
-            'default':
-            PipelineContextDefinition(
-                config_field=types.Field(types.Dict({
-                    'string_field': Field(types.String)
-                })),
-                context_fn=lambda info: ExecutionContext(resources=info.config)
+            'default': PipelineContextDefinition(
+                config_field=types.Field(types.Dict({'string_field': Field(types.String)})),
+                context_fn=lambda info: ExecutionContext(resources=info.config),
             )
-        }
+        },
     )
 
-    environment_no_config_error = {
-        'context': {
-            'default': {
-                'config': {},
-            },
-        },
-    }
+    environment_no_config_error = {'context': {'default': {'config': {}}}}
 
     with pytest.raises(
-        PipelineConfigEvaluationError,
-        match='Missing required field "string_field"',
+        PipelineConfigEvaluationError, match='Missing required field "string_field"'
     ):
         execute_pipeline(
             with_argful_context_pipeline,
             environment=environment_no_config_error,
-            throw_on_error=True
+            throw_on_error=True,
         )
 
-    environment_type_mismatch_error = {
-        'context': {
-            'default': {
-                'config': {
-                    'string_field': 1,
-                },
-            },
-        },
-    }
+    environment_type_mismatch_error = {'context': {'default': {'config': {'string_field': 1}}}}
 
     with pytest.raises(
         PipelineConfigEvaluationError,
@@ -326,5 +223,5 @@ def test_invalid_context():
         execute_pipeline(
             with_argful_context_pipeline,
             environment=environment_type_mismatch_error,
-            throw_on_error=True
+            throw_on_error=True,
         )

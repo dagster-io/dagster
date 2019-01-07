@@ -25,7 +25,7 @@ def sum_solid(num):
 )
 def sum_sq_solid(sum_df):
     sum_sq_df = sum_df.copy()
-    sum_sq_df['sum_sq'] = sum_df['sum']**2
+    sum_sq_df['sum_sq'] = sum_df['sum'] ** 2
     return sum_sq_df
 
 
@@ -40,36 +40,20 @@ def always_fails_solid(**_kwargs):
 def define_failure_pipeline():
     return dagster.PipelineDefinition(
         name='pandas_hello_world_fails',
-        solids=[
-            dagster_pd.load_csv_solid('load_num_csv'),
-            sum_solid,
-            sum_sq_solid,
-            always_fails_solid,
-        ],
+        solids=[sum_solid, sum_sq_solid, always_fails_solid],
         dependencies={
-            'sum_solid': {
-                'num': DependencyDefinition('load_num_csv')
-            },
-            'sum_sq_solid': {
-                'sum_df': DependencyDefinition(sum_solid.name),
-            },
-            'always_fails_solid': {
-                'sum_sq_solid': DependencyDefinition(sum_sq_solid.name),
-            }
-        }
+            'sum_sq_solid': {'sum_df': DependencyDefinition(sum_solid.name)},
+            'always_fails_solid': {'sum_sq_solid': DependencyDefinition(sum_sq_solid.name)},
+        },
     )
 
 
 def define_success_pipeline():
     return PipelineDefinition(
         name='pandas_hello_world',
-        solids=[dagster_pd.load_csv_solid('load_num_csv'), sum_solid, sum_sq_solid],
+        solids=[sum_solid, sum_sq_solid],
         dependencies={
-            'sum_solid': {
-                'num': DependencyDefinition('load_num_csv')
-            },
-            'sum_sq_solid': {
-                'sum_df': DependencyDefinition(sum_solid.name),
-            },
+            'sum_solid': {},
+            'sum_sq_solid': {'sum_df': DependencyDefinition(sum_solid.name)},
         },
     )

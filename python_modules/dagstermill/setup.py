@@ -22,7 +22,7 @@ setup(
         # standard python 2/3 compatability things
         'enum34>=1.1.6',
         'future>=0.16.0',
-        'papermill>=0.15.0',
         'ipykernel>=4.9.0',
+        'papermill>=0.15.0',
     ],
 )

@@ -11,7 +11,7 @@ export interface PipelineExecutionPipelineRunFragment_logs_nodes_LogMessageEvent
   message: string;
   timestamp: string;
   level: LogLevel;
-  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent";
+  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "PipelineProcessStartEvent" | "PipelineProcessStartedEvent";
 }
 
 export interface PipelineExecutionPipelineRunFragment_logs_nodes_ExecutionStepFailureEvent_step {
@@ -98,7 +98,9 @@ export enum PipelineRunStatus {
 
 export enum StepTag {
   INPUT_EXPECTATION = "INPUT_EXPECTATION",
+  INPUT_THUNK = "INPUT_THUNK",
   JOIN = "JOIN",
+  MATERIALIZATION_THUNK = "MATERIALIZATION_THUNK",
   OUTPUT_EXPECTATION = "OUTPUT_EXPECTATION",
   SERIALIZE = "SERIALIZE",
   TRANSFORM = "TRANSFORM",

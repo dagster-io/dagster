@@ -1,3 +1,5 @@
+import time
+
 from dagster import (
     DependencyDefinition,
     InputDefinition,
@@ -7,7 +9,6 @@ from dagster import (
     solid,
     SolidInstance,
 )
-import time
 
 
 def nonce_solid(name, n_inputs, n_outputs):
@@ -17,10 +18,10 @@ def nonce_solid(name, n_inputs, n_outputs):
 
     @solid(
         name=name,
-        inputs=[InputDefinition(name='input_{}'.format(i), ) for i in range(n_inputs)],
-        outputs=[OutputDefinition(name='output_{}'.format(i)) for i in range(n_outputs)]
+        inputs=[InputDefinition(name='input_{}'.format(i)) for i in range(n_inputs)],
+        outputs=[OutputDefinition(name='output_{}'.format(i)) for i in range(n_outputs)],
     )
-    def solid_fn(info, **kwargs):
+    def solid_fn(info, **_kwargs):
         for i in range(200):
             time.sleep(0.02)
             if i % 1000 == 420:
@@ -51,24 +52,24 @@ def define_spew_pipeline():
         dependencies={
             SolidInstance('no_in_two_out', alias='solid_a'): {},
             SolidInstance('one_in_one_out', alias='solid_b'): {
-                'input_0': DependencyDefinition('solid_a', 'output_0'),
+                'input_0': DependencyDefinition('solid_a', 'output_0')
             },
             SolidInstance('one_in_two_out', alias='solid_c'): {
-                'input_0': DependencyDefinition('solid_a', 'output_1'),
+                'input_0': DependencyDefinition('solid_a', 'output_1')
             },
             SolidInstance('two_in_one_out', alias='solid_d'): {
                 'input_0': DependencyDefinition('solid_b', 'output_0'),
                 'input_1': DependencyDefinition('solid_c', 'output_0'),
             },
             SolidInstance('one_in_one_out', alias='solid_e'): {
-                'input_0': DependencyDefinition('solid_c', 'output_0'),
+                'input_0': DependencyDefinition('solid_c', 'output_0')
             },
             SolidInstance('two_in_one_out', alias='solid_f'): {
                 'input_0': DependencyDefinition('solid_d', 'output_0'),
                 'input_1': DependencyDefinition('solid_e', 'output_0'),
             },
             SolidInstance('one_in_none_out', alias='solid_g'): {
-                'input_0': DependencyDefinition('solid_f', 'output_0'),
-            }
+                'input_0': DependencyDefinition('solid_f', 'output_0')
+            },
         },
     )

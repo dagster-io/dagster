@@ -18,9 +18,10 @@ Intro Tutorial
   :maxdepth: 1
   :name: Intro Tutorial
 
-  intro_tutorial/part_one
-  intro_tutorial/part_two
-  intro_tutorial/part_three
+  intro_tutorial/hello_world
+  intro_tutorial/hello_dag
+  intro_tutorial/actual_dag
+  intro_tutorial/inputs
   intro_tutorial/part_four
   intro_tutorial/part_five
   intro_tutorial/part_six
@@ -46,6 +47,7 @@ API Reference
   apidocs/execution
   apidocs/errors
   apidocs/types
+  apidocs/utilities
 
 Indices and tables
 ==================

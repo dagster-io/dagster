@@ -1,8 +1,8 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components";
-import { H4, H5, Colors, Code } from "@blueprintjs/core";
-import Config from "../Config";
+import { H4, H5, Code } from "@blueprintjs/core";
+import TypeSchema from "../TypeSchema";
 import Description from "../Description";
 import { ConfigExplorerFragment } from "./types/ConfigExplorerFragment";
 
@@ -21,7 +21,9 @@ export default class ConfigExplorer extends React.Component<
           name
           description
           config {
-            ...ConfigFragment
+            type {
+              ...TypeSchemaFragment
+            }
           }
         }
         solids {
@@ -29,13 +31,15 @@ export default class ConfigExplorer extends React.Component<
             name
             description
             configDefinition {
-              ...ConfigFragment
+              type {
+                ...TypeSchemaFragment
+              }
             }
           }
         }
       }
 
-      ${Config.fragments.ConfigFragment}
+      ${TypeSchema.fragments.TypeSchemaFragment}
     `
   };
 
@@ -48,7 +52,7 @@ export default class ConfigExplorer extends React.Component<
         <DescriptionWrapper>
           <Description description={context.description} />
         </DescriptionWrapper>
-        {context.config && <Config config={context.config} />}
+        {context.config && <TypeSchema type={context.config.type} />}
       </div>
     ));
   }
@@ -63,7 +67,7 @@ export default class ConfigExplorer extends React.Component<
           <Description description={solid.definition.description} />
         </DescriptionWrapper>
         {solid.definition.configDefinition && (
-          <Config config={solid.definition.configDefinition} />
+          <TypeSchema type={solid.definition.configDefinition.type} />
         )}
       </div>
     ));

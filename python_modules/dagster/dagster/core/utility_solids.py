@@ -1,20 +1,11 @@
-from dagster import (
-    OutputDefinition,
-    Result,
-    SolidDefinition,
-    check,
-)
+from dagster import check, lambda_solid
 
 
 def define_stub_solid(name, value):
     check.str_param(name, 'name')
 
-    def _value_t_fn(*_args):
-        yield Result(value)
+    @lambda_solid(name=name)
+    def _stub():
+        return value
 
-    return SolidDefinition(
-        name=name,
-        inputs=[],
-        outputs=[OutputDefinition()],
-        transform_fn=_value_t_fn,
-    )
+    return _stub

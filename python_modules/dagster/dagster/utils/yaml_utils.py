@@ -6,6 +6,10 @@ from dagster import check
 from .merger import dict_merge
 
 
+def load_yaml_from_globs(*globs):
+    return load_yaml_from_glob_list(list(globs))
+
+
 def load_yaml_from_glob_list(glob_list):
     check.list_param(glob_list, 'glob_list', of_type=str)
 

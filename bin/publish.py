@@ -24,7 +24,7 @@ yarn build-for-python; \\
 popd
 '''
 
-MODULE_NAMES = ['dagster', 'dagit', 'dagstermill']
+MODULE_NAMES = ['dagster', 'dagit', 'dagstermill', 'dagma']
 
 
 def all_equal(iterable):

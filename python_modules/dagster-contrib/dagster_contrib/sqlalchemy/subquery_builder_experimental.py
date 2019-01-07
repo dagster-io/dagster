@@ -1,13 +1,6 @@
 import os
 
-from dagster import (
-    Field,
-    InputDefinition,
-    OutputDefinition,
-    SolidDefinition,
-    check,
-    types,
-)
+from dagster import Field, InputDefinition, OutputDefinition, SolidDefinition, check, types
 
 from dagster.core.test_utils import single_output_transform
 
@@ -63,9 +56,7 @@ def define_create_table_solid(name):
         inputs=[InputDefinition('expr')],
         outputs=[],
         transform_fn=_materialization_fn,
-        config_field=Field(types.Dict({
-            'table_name': Field(types.String)
-        })),
+        config_field=Field(types.Dict({'table_name': Field(types.String)})),
     )
 
 
@@ -94,10 +85,7 @@ def create_sql_solid(name, inputs, sql_text):
     check.str_param(sql_text, 'sql_text')
 
     return single_output_transform(
-        name,
-        inputs=inputs,
-        transform_fn=create_sql_transform(sql_text),
-        output=OutputDefinition(),
+        name, inputs=inputs, transform_fn=create_sql_transform(sql_text), output=OutputDefinition()
     )
 
 
@@ -122,7 +110,7 @@ def create_sql_statement_solid(name, sql_text, inputs=None):
         name=name,
         transform_fn=_create_sql_alchemy_transform_fn(sql_text),
         inputs=inputs,
-        output=OutputDefinition()
+        output=OutputDefinition(),
     )
 
 

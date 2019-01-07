@@ -1,12 +1,7 @@
 from __future__ import absolute_import
 
 from dagster import check
-from dagster.core.execution_plan.objects import (
-    ExecutionStep,
-    ExecutionPlan,
-    StepInput,
-    StepOutput,
-)
+from dagster.core.execution_plan.objects import ExecutionStep, ExecutionPlan, StepInput, StepOutput
 
 from dagit.schema import dauphin
 
@@ -80,6 +75,7 @@ class DauphinStepTag(dauphin.Enum):
     JOIN = 'JOIN'
     SERIALIZE = 'SERIALIZE'
     INPUT_THUNK = 'INPUT_THUNK'
+    MATERIALIZATION_THUNK = 'MATERIALIZATION_THUNK'
 
     @property
     def description(self):
@@ -92,17 +88,24 @@ class DauphinStepTag(dauphin.Enum):
         elif self == DauphinStepTag.OUTPUT_EXPECTATION:
             return 'Expectation defined on an output'
         elif self == DauphinStepTag.JOIN:
-            return '''Sometimes we fan out compute on identical values
-(e.g. multiple expectations in parallel). We synthesizie these in a join step to consolidate to
-a single output that the next computation can depend on.
-'''
+            return (
+                'Sometimes we fan out compute on identical values (e.g. multiple expectations '
+                'in parallel). We synthesize these in a join step to consolidate to a single '
+                'output that the next computation can depend on.'
+            )
         elif self == DauphinStepTag.SERIALIZE:
-            return '''This is a special system-defined step to serialize
-an intermediate value if the pipeline is configured to do that.'''
+            return (
+                'This is a special system-defined step to serialize an intermediate value if '
+                'the pipeline is configured to do that.'
+            )
 
         elif self == DauphinStepTag.INPUT_THUNK:
-            return '''Special system-defined step to represent an input
-specified in the environment'''
+            return 'Special system-defined step to represent an input specified in the environment'
+        elif self == DauphinStepTag.MATERIALIZATION_THUNK:
+            return (
+                'Special system-defined step to represent an output materialization specified in '
+                'the environment'
+            )
         else:
             return 'Unknown enum {value}'.format(value=self)
 
