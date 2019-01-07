@@ -2,7 +2,6 @@ from __future__ import absolute_import
 
 from dagster import (
     ExpectationDefinition,
-    Field,
     InputDefinition,
     OutputDefinition,
     PipelineContextDefinition,
