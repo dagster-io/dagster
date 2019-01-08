@@ -91,9 +91,7 @@ def execute_dagstermill_cli(
 def test_module_example():
     original_cwd = os.getcwd()
     try:
-        os.chdir(
-            script_relative_path('.')
-        )  # makes sure that the repository.yaml file is found by default
+        os.chdir(script_relative_path('.'))
         execute_dagstermill_cli(
             module_name="module_name",
             fn_name="function_name",
@@ -128,9 +126,7 @@ def test_file_example():
 def test_default_solid_name():
     original_cwd = os.getcwd()
     try:
-        os.chdir(
-            script_relative_path('.')
-        )  # makes sure that the repository.yaml file is found by default
+        os.chdir(script_relative_path('.'))
         execute_dagstermill_cli(
             module_name="module_name",
             fn_name="function_name",
@@ -151,9 +147,7 @@ def test_default_solid_name():
 def test_yaml_example():
     original_cwd = os.getcwd()
     try:
-        os.chdir(
-            script_relative_path('.')
-        )  # makes sure that the repository.yaml file is found by default
+        os.chdir(script_relative_path('.'))
         execute_dagstermill_cli(
             notebook_name="notebooks/CLI_test_YAML", solid_name="notebook_solid"
         )
@@ -177,9 +171,8 @@ def test_invalid_filename_example():
             notebook_name="notebooks/CLI!!~@",
             solid_name="notebook_solid",
         )
-        assert "Notebook name {name} is not valid, cannot contain anything except alphanumeric characters, -, _, \ and / for path manipulation".format(
-            name="CLI!!~@"
-        ) in str(
-            cpe.value
-        )
-
+        assert (
+            'Notebook name {name} is not valid, '
+            'cannot contain anything except alphanumeric characters, '
+            '-, _, \\ and / for path manipulation'
+        ).format(name="CLI!!~@") in str(cpe.value)

@@ -21,7 +21,7 @@ def get_notebook_scaffolding(register_repo_info):
         register_repo_info.declaration_statement, 'register_repo_info.declaration_statement'
     )
 
-    STARTING_NOTEBOOK_INIT = '''
+    starting_notebook_init = '''
     {{
     "cells": [
     {{
@@ -55,7 +55,7 @@ def get_notebook_scaffolding(register_repo_info):
     "nbformat": 4,
     "nbformat_minor": 2
     }}'''
-    return STARTING_NOTEBOOK_INIT.format(
+    return starting_notebook_init.format(
         import_statement=register_repo_info.import_statement,
         declaration_statement=register_repo_info.declaration_statement,
     )
@@ -69,7 +69,10 @@ def get_notebook_scaffolding(register_repo_info):
     '-s',
     default="",
     type=click.STRING,
-    help="Name of solid that represents notebook in the repository. If empty, defaults to notebook name.",
+    help=(
+        'Name of solid that represents notebook in the repository. '
+        'If empty, defaults to notebook name.'
+    ),
 )
 @click.option(
     '--force-overwrite',
@@ -81,11 +84,11 @@ def scaffold(notebook, solid_name, force_overwrite, **kwargs):
     if not re.match(r'^[a-zA-Z0-9\-_\\/]+$', notebook):
         raise click.BadOptionUsage(
             notebook,
-            "Notebook name {name} is not valid, \
-            cannot contain anything except alphanumeric characters, \
-            -, _, \\ and / for path manipulation".format(
-                name=notebook
-            ),
+            (
+                'Notebook name {name} is not valid, '
+                'cannot contain anything except alphanumeric characters, '
+                '-, _, \\ and / for path manipulation'
+            ).format(name=notebook),
         )
 
     notebook_path = os.path.join(
@@ -98,11 +101,11 @@ def scaffold(notebook, solid_name, force_overwrite, **kwargs):
 
     if not force_overwrite and os.path.isfile(notebook_path):
         click.confirm(
-            "Warning, {notebook_path} already exists and continuing \
-            will overwrite the existing notebook. \
-            Are you sure you want to continue?".format(
-                notebook_path=notebook_path
-            ),
+            (
+                'Warning, {notebook_path} already exists and continuing '
+                'will overwrite the existing notebook. '
+                'Are you sure you want to continue?'
+            ).format(notebook_path=notebook_path),
             abort=True,
         )
 
