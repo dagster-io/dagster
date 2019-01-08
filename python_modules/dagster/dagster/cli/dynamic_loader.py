@@ -126,27 +126,6 @@ def repo_load_invariant(condition):
         raise InvalidRepositoryLoadingComboError()
 
 
-def get_module_target_function(info):
-    check.inst_param(info, 'info', RepositoryTargetInfo)
-    if info.repository_yaml:
-        mode_data = create_repository_loading_mode_data(info)
-        file_path = mode_data.data
-        check.str_param(file_path, 'file_path')
-        config = load_yaml_from_path(file_path)
-        repository_config = check.dict_elem(config, 'repository')
-        module_name = check.opt_str_elem(repository_config, 'module')
-        fn_name = check.str_elem(repository_config, 'fn')
-        if module_name:
-            return ModuleTargetFunction(module_name=module_name, fn_name=fn_name)
-        return None
-    elif info.module_name and info.fn_name:
-        return ModuleTargetFunction(module_name=info.module_name, fn_name=info.fn_name)
-    elif info.python_file and info.fn_name:
-        return None
-    else:
-        raise InvalidRepositoryLoadingComboError()
-
-
 def create_repository_loading_mode_data(info):
     check.inst_param(info, 'info', RepositoryTargetInfo)
 
