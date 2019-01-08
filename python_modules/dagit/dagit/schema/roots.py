@@ -9,16 +9,22 @@ class DauphinQuery(dauphin.ObjectType):
 
     version = dauphin.NonNull(dauphin.String)
     pipelineOrError = dauphin.Field(
-        dauphin.NonNull('PipelineOrError'), name=dauphin.NonNull(dauphin.String)
+        dauphin.NonNull('PipelineOrError'),
+        name=dauphin.NonNull(dauphin.String),
+        solidSubset=dauphin.Argument(dauphin.List(dauphin.NonNull(dauphin.String)), required=False),
     )
-    pipeline = dauphin.Field(dauphin.NonNull('Pipeline'), name=dauphin.NonNull(dauphin.String))
+    pipeline = dauphin.Field(
+        dauphin.NonNull('Pipeline'),
+        name=dauphin.NonNull(dauphin.String),
+        solidSubset=dauphin.Argument(dauphin.List(dauphin.NonNull(dauphin.String)), required=False),
+    )
     pipelinesOrError = dauphin.NonNull('PipelinesOrError')
     pipelines = dauphin.Field(dauphin.NonNull('PipelineConnection'))
 
     type = dauphin.Field(
         'Type',
         pipelineName=dauphin.NonNull(dauphin.String),
-        typeName=dauphin.NonNull(dauphin.String),
+        typeName=dauphin.Argument(dauphin.NonNull(dauphin.String)),
     )
 
     pipelineRuns = dauphin.non_null_list('PipelineRun')
@@ -37,11 +43,11 @@ class DauphinQuery(dauphin.ObjectType):
     def resolve_version(self, _info):
         return __version__
 
-    def resolve_pipelineOrError(self, info, name):
-        return model.get_pipeline(info, name)
+    def resolve_pipelineOrError(self, info, **kwargs):
+        return model.get_pipeline(info, kwargs['name'], kwargs.get('solidSubset'))
 
-    def resolve_pipeline(self, info, name):
-        return model.get_pipeline_or_raise(info, name)
+    def resolve_pipeline(self, info, **kwargs):
+        return model.get_pipeline_or_raise(info, kwargs['name'], kwargs.get('solidSubset'))
 
     def resolve_pipelinesOrError(self, info):
         return model.get_pipelines(info)
