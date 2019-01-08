@@ -132,6 +132,6 @@ def test_execute_dep_solid_different_input_name():
 
     assert result.success
     assert len(result.result_list) == 3
-    assert result.result_list[0].transformed_value() == 'bar'
-    assert result.result_list[1].transformed_value() == 'barbar'
-    assert result.result_list[2].transformed_value() == 'barbarbarbar'
+    assert result.result_for_solid('pass_to_first').transformed_value() == 'bar'
+    assert result.result_for_solid('first_solid').transformed_value() == 'barbar'
+    assert result.result_for_solid('second_solid').transformed_value() == 'barbarbarbar'
