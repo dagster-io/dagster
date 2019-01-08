@@ -62,7 +62,7 @@ solid.
 
 We can use the same config syntax as we've seen before in order to configure the pipeline:
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/part_five.py
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/execution_context.py
    :lines: 32-35
    :dedent: 4
 
@@ -84,9 +84,9 @@ If we re-run the pipeline, you'll see a lot more output, now including our custo
 .. code-block:: console
 
     $ dagster pipeline execute -f execution_context.py \
-    -n define_execution_context_pipeline_step_three -e part_five.yaml
+    -n define_execution_context_pipeline_step_three -e execution_context.yaml
     ...
-    2018-12-17 17:18:06 - dagster - DEBUG - orig_message="A debug message." log_message_id="497c9d47-571a-44f6-a04c-8f24049b0f66" run_id="5b233906-9b36-4f15-a220-a850a1643b9f" pipeline="part_five_pipeline" solid="solid_one" solid_definition="solid_one"
+    2018-12-17 17:18:06 - dagster - DEBUG - orig_message="A debug message." log_message_id="497c9d47-571a-44f6-a04c-8f24049b0f66" run_id="5b233906-9b36-4f15-a220-a850a1643b9f" pipeline="execution_context_pipeline" solid="solid_one" solid_definition="solid_one"
     ...
 
 Although logging is a universally useful case for the execution context, this example only touches

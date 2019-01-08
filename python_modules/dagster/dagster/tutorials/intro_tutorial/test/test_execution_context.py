@@ -1,5 +1,3 @@
-import pytest
-
 from dagster import execute_pipeline
 
 from ..execution_context import (

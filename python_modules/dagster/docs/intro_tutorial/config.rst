@@ -35,7 +35,7 @@ That configuration is specified in the second argument to
 using one of them here: per-solid configuration specified under the key ``solids``:
 
 .. literalinclude:: ../../dagster/tutorials/intro_tutorial/config.py
-   :lines: 33
+   :lines: 31
    :dedent: 8
 
 The ``solids`` dict is keyed by solid name, and each of its values in turn defines a ``config``

@@ -23,8 +23,8 @@ Intro Tutorial
   intro_tutorial/actual_dag
   intro_tutorial/inputs
   intro_tutorial/config
-  intro_tutorial/part_five
-  intro_tutorial/part_six
+  intro_tutorial/execution_context
+  intro_tutorial/repos
   intro_tutorial/part_seven
   intro_tutorial/part_eight
   intro_tutorial/part_nine
