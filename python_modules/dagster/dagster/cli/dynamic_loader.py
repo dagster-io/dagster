@@ -125,6 +125,7 @@ def repo_load_invariant(condition):
     if not condition:
         raise InvalidRepositoryLoadingComboError()
 
+
 def get_module_target_function(info):
     check.inst_param(info, 'info', RepositoryTargetInfo)
     if info.repository_yaml:
@@ -144,6 +145,7 @@ def get_module_target_function(info):
         return None
     else:
         raise InvalidRepositoryLoadingComboError()
+
 
 def create_repository_loading_mode_data(info):
     check.inst_param(info, 'info', RepositoryTargetInfo)
@@ -359,6 +361,7 @@ def load_pipeline_from_target_info(info):
         return repository.get_pipeline(mode_data.data.pipeline_name)
     else:
         check.failed('Should never reach')
+
 
 def load_repository_from_file(file_path):
     check.str_param(file_path, 'file_path')

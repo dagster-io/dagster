@@ -1,79 +1,113 @@
+from collections import namedtuple
 import os
-import sys
-import click        
 import re
+import click
+from dagster import check
 
-from dagster.cli.dynamic_loader import repository_target_argument, load_target_info_from_cli_args, get_module_target_function
+from dagster.cli.dynamic_loader import (
+    repository_target_argument,
+    load_target_info_from_cli_args,
+    get_module_target_function,
+)
 
-def get_scaffolding(register_repo_str):
-    STARTING_NOTEBOOK_INIT = '''
-        {{
-        "cells": [
-        {{
-        "cell_type": "code",
-        "execution_count": null,
-        "metadata": {{}},
-        "outputs": [],
-        "source": [
-            "import dagstermill as dm\\n",
-            "{0}\\n",
-            "{1}"
-        ]
-        }},
-        {{
-        "cell_type": "code",
-        "execution_count": null,
-        "metadata": {{
-            "tags": [
-            "parameters"
-            ]
-        }},
-        "outputs": [],
-        "source": [
-            "dm_context = dm.define_context()"
-        ]
-        }}
-        ],
-        "metadata": {{
-        "celltoolbar": "Tags"
-        }},
-        "nbformat": 4,
-        "nbformat_minor": 2
-        }}
-    '''
-    return STARTING_NOTEBOOK_INIT.format(register_repo_str[0], register_repo_str[1])
 
 def create_dagstermill_cli():
-    return ui
+    return scaffold
 
-@click.command(
-    name='ui',
-    help=(
-        'Creates new dagstermill notebook.'
-    ),
-)
+
+def get_notebook_scaffolding(register_repo_info):
+    check.str_param(register_repo_info.import_statement, 'register_repo_info.import_statement')
+    check.str_param(
+        register_repo_info.declaration_statement, 'register_repo_info.declaration_statement'
+    )
+
+    STARTING_NOTEBOOK_INIT = '''
+    {{
+    "cells": [
+    {{
+    "cell_type": "code",
+    "execution_count": null,
+    "metadata": {{}},
+    "outputs": [],
+    "source": [
+        "import dagstermill as dm\\n",
+        "{import_statement}\\n",
+        "{declaration_statement}"
+    ]
+    }},
+    {{
+    "cell_type": "code",
+    "execution_count": null,
+    "metadata": {{
+        "tags": [
+        "parameters"
+        ]
+    }},
+    "outputs": [],
+    "source": [
+        "dm_context = dm.define_context()"
+    ]
+    }}
+    ],
+    "metadata": {{
+    "celltoolbar": "Tags"
+    }},
+    "nbformat": 4,
+    "nbformat_minor": 2
+    }}'''
+    return STARTING_NOTEBOOK_INIT.format(
+        import_statement=register_repo_info.import_statement,
+        declaration_statement=register_repo_info.declaration_statement,
+    )
+
+
+@click.command(name='scaffold', help=('Creates new dagstermill notebook.'))
 @repository_target_argument
 @click.option('--notebook', '-note', type=click.STRING, help="Name of notebook")
-@click.option('--solid-name', '-s', default="", type=click.STRING, help="Name of solid that represents notebook in the repository. If empty, defaults to notebook name.")
-@click.option('--jupyter', '-j', is_flag = True, help="Launches jupyter notebook and opens to newly created notebook")
-@click.option('--force-overwrite', is_flag = True, help="Will force overwrite any existing notebook or file with the same name.")
-def ui(notebook, solid_name, jupyter, force_overwrite, **kwargs):
-    
-    #@Uma TODO: we might want to sanitize the notebook name so that it's a valid filename
-    #Perhaps something like this: https://github.com/django/django/blob/master/django/utils/text.py function: get_valid_filename()
+@click.option(
+    '--solid-name',
+    '-s',
+    default="",
+    type=click.STRING,
+    help="Name of solid that represents notebook in the repository. If empty, defaults to notebook name.",
+)
+@click.option(
+    '--force-overwrite',
+    is_flag=True,
+    help="Will force overwrite any existing notebook or file with the same name.",
+)
+def scaffold(notebook, solid_name, force_overwrite, **kwargs):
 
-    if not notebook.endswith(".ipynb"):
-        notebook += ".ipynb"
-    notebook_path = os.path.join(os.getcwd(), notebook)
+    if not re.match(r'^[a-zA-Z0-9\-_\\/]+$', notebook):
+        raise click.BadOptionUsage(
+            notebook,
+            "Notebook name {name} is not valid, \
+            cannot contain anything except alphanumeric characters, \
+            -, _, \\ and / for path manipulation".format(
+                name=notebook
+            ),
+        )
+
+    notebook_path = os.path.join(
+        os.getcwd(), notebook if notebook.endswith('.ipynb') else notebook + ".ipynb"
+    )
+
+    notebook_dir = os.path.dirname(notebook_path)
+    if not os.path.exists(notebook_dir):
+        os.makedirs(notebook_dir)
 
     if not force_overwrite and os.path.isfile(notebook_path):
-        click.confirm("Warning, {notebook_path} already exists and continuing will overwrite the existing notebook. Are you sure you want to continue?".format(notebook_path=notebook_path), abort=True)
+        click.confirm(
+            "Warning, {notebook_path} already exists and continuing \
+            will overwrite the existing notebook. \
+            Are you sure you want to continue?".format(
+                notebook_path=notebook_path
+            ),
+            abort=True,
+        )
 
     if solid_name == "":
         solid_name = os.path.basename(notebook_path).split(".")[0]
-
-    register_repo_str = ["#Register notebook as solid within repo",
-                         "#dm.declare_as_solid(PLACEHOLDER_repository_defn_function(), '{solid_name}')".format(solid_name=solid_name)]
 
     repository_target_info = load_target_info_from_cli_args(kwargs)
     module_target_info = get_module_target_function(repository_target_info)
@@ -81,13 +115,18 @@ def ui(notebook, solid_name, jupyter, force_overwrite, **kwargs):
     if module_target_info:
         module = module_target_info.module_name
         fn_name = module_target_info.fn_name
-        register_repo_str = ["from {module} import {fn_name}".format(module=module, fn_name=fn_name),
-                            "dm.declare_as_solid({fn_name}(), '{solid_name}')".format(fn_name=fn_name, solid_name=solid_name)]
+        RegisterRepoInfo = namedtuple('RegisterRepoInfo', 'import_statement declaration_statement')
+        register_repo_info = RegisterRepoInfo(
+            "from {module} import {fn_name}".format(module=module, fn_name=fn_name),
+            "dm.declare_as_solid({fn_name}(), '{solid_name}')".format(
+                fn_name=fn_name, solid_name=solid_name
+            ),
+        )
+    else:
+        raise click.UsageError(
+            "Cannot instantiate notebook with repository definition given by a function from a file"
+        )
 
     with open(notebook_path, 'w') as f:
-        f.write(get_scaffolding(register_repo_str))
+        f.write(get_notebook_scaffolding(register_repo_info))
         click.echo("Created new dagstermill notebook at {path}".format(path=notebook_path))
-    
-    if jupyter:
-        #@Uma TODO: We should probably not be making system calls, and if we are, we should probably make sure it's from the right folder
-        os.system("jupyter notebook {name}".format(name=notebook)) 
