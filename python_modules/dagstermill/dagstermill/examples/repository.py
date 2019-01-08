@@ -1,6 +1,4 @@
-import sys
-
-import pytest
+import os
 
 import dagstermill as dm
 
@@ -13,17 +11,18 @@ from dagster import (
     SolidDefinition,
     SolidInstance,
     check,
-    execute_pipeline,
     lambda_solid,
     solid,
     types,
 )
 
-from dagster.utils import script_relative_path
+from dagster import RepositoryDefinition
 
 
 def nb_test_path(name):
-    return script_relative_path('notebooks/{name}.ipynb'.format(name=name))
+    return os.path.join(
+        os.path.dirname(os.path.realpath(__file__)), 'notebooks/{name}.ipynb'.format(name=name)
+    )
 
 
 def define_hello_world_pipeline():
@@ -40,36 +39,10 @@ def define_hello_world_with_output():
     )
 
 
-# Notebooks encode what version of python (e.g. their kernel)
-# they run on, so we can't run notebooks in python2 atm
-def notebook_test(f):
-    return pytest.mark.skipif(
-        sys.version_info < (3, 5),
-        reason='''Notebooks execute in their own process and hardcode what "kernel" they use.
-        All of the development notebooks currently use the python3 "kernel" so they will
-        not be executable in a container that only have python2.7 (e.g. in CircleCI)
-        ''',
-    )(f)
-
-
 def define_hello_world_with_output_pipeline():
     return PipelineDefinition(
         name='hello_world_with_output_pipeline', solids=[define_hello_world_with_output()]
     )
-
-
-@notebook_test
-def test_hello_world():
-    result = execute_pipeline(define_hello_world_pipeline())
-    assert result.success
-
-
-@notebook_test
-def test_hello_world_with_output():
-    pipeline = define_hello_world_with_output_pipeline()
-    result = execute_pipeline(pipeline)
-    assert result.success
-    assert result.result_for_solid('hello_world_output').transformed_value() == 'hello, world'
 
 
 # This probably should be moved to a library because it is immensely useful for testing
@@ -127,16 +100,6 @@ def define_add_pipeline():
     )
 
 
-@notebook_test
-def test_add_pipeline():
-    pipeline = define_add_pipeline()
-    result = execute_pipeline(
-        pipeline, {'context': {'default': {'config': {'log_level': 'ERROR'}}}}
-    )
-    assert result.success
-    assert result.result_for_solid('add_two_numbers').transformed_value() == 3
-
-
 @solid(inputs=[], config_field=Field(types.Int))
 def load_constant(info):
     return info.config
@@ -161,12 +124,13 @@ def define_test_notebook_dag_pipeline():
     )
 
 
-@notebook_test
-def test_notebook_dag():
-    pipeline_result = execute_pipeline(
-        define_test_notebook_dag_pipeline(),
-        environment={'solids': {'load_a': {'config': 1}, 'load_b': {'config': 2}}},
+def define_example_repository():
+    return RepositoryDefinition(
+        name='notebook_repo',
+        pipeline_dict={
+            'test_notebook_dag': define_test_notebook_dag_pipeline,
+            'test_add_pipeline': define_add_pipeline,
+            'hello_world_with_output_pipeline': define_hello_world_with_output_pipeline,
+            'hello_world_pipeline': define_hello_world_pipeline,
+        },
     )
-    assert pipeline_result.success
-    assert pipeline_result.result_for_solid('add_two').transformed_value() == 3
-    assert pipeline_result.result_for_solid('mult_two').transformed_value() == 6
