@@ -39,6 +39,7 @@ export const CONFIG_EDITOR_CHECK_CONFIG_QUERY = gql`
 
       ... on PipelineConfigValidationInvalid {
         errors {
+          reason
           message
           stack {
             entries {
@@ -118,15 +119,18 @@ export async function checkConfig(
     return { isValid: true };
   }
 
-  const errors = isPipelineConfigValid.errors.map(({ message, stack }) => ({
-    message: message,
-    path: stack.entries.map(
-      entry =>
-        entry.__typename === "EvaluationStackPathEntry"
-          ? entry.field.name
-          : `${entry.listIndex}`
-    )
-  }));
+  const errors = isPipelineConfigValid.errors.map(
+    ({ message, reason, stack }) => ({
+      message: message,
+      reason: reason,
+      path: stack.entries.map(
+        entry =>
+          entry.__typename === "EvaluationStackPathEntry"
+            ? entry.field.name
+            : `${entry.listIndex}`
+      )
+    })
+  );
 
   // Errors at the top level have no stack path because they are not within any
   // dicts. To avoid highlighting the entire editor, associate them with the first

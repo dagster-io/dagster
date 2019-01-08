@@ -4,18 +4,34 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL fragment: TypeWithTooltipFragment
+// GraphQL fragment: RunMetadataProviderMessageFragment
 // ====================================================
 
-export interface TypeWithTooltipFragment_typeAttributes {
-  isNamed: boolean;
+export interface RunMetadataProviderMessageFragment_LogMessageEvent {
+  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "PipelineProcessStartEvent";
+  message: string;
+  timestamp: string;
 }
 
-export interface TypeWithTooltipFragment {
-  name: string;
-  description: string | null;
-  typeAttributes: TypeWithTooltipFragment_typeAttributes;
+export interface RunMetadataProviderMessageFragment_PipelineProcessStartedEvent {
+  __typename: "PipelineProcessStartedEvent";
+  message: string;
+  timestamp: string;
+  processId: number;
 }
+
+export interface RunMetadataProviderMessageFragment_ExecutionStepStartEvent_step {
+  name: string;
+}
+
+export interface RunMetadataProviderMessageFragment_ExecutionStepStartEvent {
+  __typename: "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepFailureEvent";
+  message: string;
+  timestamp: string;
+  step: RunMetadataProviderMessageFragment_ExecutionStepStartEvent_step;
+}
+
+export type RunMetadataProviderMessageFragment = RunMetadataProviderMessageFragment_LogMessageEvent | RunMetadataProviderMessageFragment_PipelineProcessStartedEvent | RunMetadataProviderMessageFragment_ExecutionStepStartEvent;
 
 /* tslint:disable */
 // This file was automatically generated and should not be edited.

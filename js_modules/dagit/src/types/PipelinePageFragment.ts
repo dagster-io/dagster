@@ -17,7 +17,7 @@ export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_L
   message: string;
   timestamp: string;
   level: LogLevel;
-  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "PipelineProcessStartEvent" | "PipelineProcessStartedEvent";
+  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "PipelineProcessStartEvent";
 }
 
 export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepFailureEvent_step {
@@ -38,6 +38,14 @@ export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_E
   error: PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepFailureEvent_error;
 }
 
+export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_PipelineProcessStartedEvent {
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  __typename: "PipelineProcessStartedEvent";
+  processId: number;
+}
+
 export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepStartEvent_step {
   name: string;
 }
@@ -50,7 +58,7 @@ export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_E
   step: PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepStartEvent_step;
 }
 
-export type PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes = PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_LogMessageEvent | PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepFailureEvent | PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepStartEvent;
+export type PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes = PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_LogMessageEvent | PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepFailureEvent | PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_PipelineProcessStartedEvent | PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepStartEvent;
 
 export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs_pageInfo {
   lastCursor: any | null;
@@ -676,6 +684,13 @@ export type PipelinePageFragment = PipelinePageFragment_PythonError | PipelinePa
 //==============================================================
 // START Enums and Input Objects
 //==============================================================
+
+export enum EvaluationErrorReason {
+  FIELD_NOT_DEFINED = "FIELD_NOT_DEFINED",
+  MISSING_REQUIRED_FIELD = "MISSING_REQUIRED_FIELD",
+  RUNTIME_TYPE_MISMATCH = "RUNTIME_TYPE_MISMATCH",
+  SELECTOR_FIELD_ERROR = "SELECTOR_FIELD_ERROR",
+}
 
 export enum LogLevel {
   CRITICAL = "CRITICAL",

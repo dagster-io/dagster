@@ -32,6 +32,7 @@ export interface ConfigEditorCheckConfigQuery_isPipelineConfigValid_PipelineConf
 }
 
 export interface ConfigEditorCheckConfigQuery_isPipelineConfigValid_PipelineConfigValidationInvalid_errors {
+  reason: EvaluationErrorReason;
   message: string;
   stack: ConfigEditorCheckConfigQuery_isPipelineConfigValid_PipelineConfigValidationInvalid_errors_stack;
 }
@@ -57,6 +58,13 @@ export interface ConfigEditorCheckConfigQueryVariables {
 //==============================================================
 // START Enums and Input Objects
 //==============================================================
+
+export enum EvaluationErrorReason {
+  FIELD_NOT_DEFINED = "FIELD_NOT_DEFINED",
+  MISSING_REQUIRED_FIELD = "MISSING_REQUIRED_FIELD",
+  RUNTIME_TYPE_MISMATCH = "RUNTIME_TYPE_MISMATCH",
+  SELECTOR_FIELD_ERROR = "SELECTOR_FIELD_ERROR",
+}
 
 export enum LogLevel {
   CRITICAL = "CRITICAL",

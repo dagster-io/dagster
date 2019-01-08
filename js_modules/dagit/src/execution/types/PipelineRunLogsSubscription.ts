@@ -13,7 +13,7 @@ export interface PipelineRunLogsSubscription_pipelineRunLogs_messages_LogMessage
 
 export interface PipelineRunLogsSubscription_pipelineRunLogs_messages_LogMessageEvent {
   run: PipelineRunLogsSubscription_pipelineRunLogs_messages_LogMessageEvent_run;
-  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "PipelineProcessStartEvent" | "PipelineProcessStartedEvent";
+  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "PipelineProcessStartEvent";
   message: string;
   timestamp: string;
   level: LogLevel;
@@ -42,6 +42,19 @@ export interface PipelineRunLogsSubscription_pipelineRunLogs_messages_ExecutionS
   error: PipelineRunLogsSubscription_pipelineRunLogs_messages_ExecutionStepFailureEvent_error;
 }
 
+export interface PipelineRunLogsSubscription_pipelineRunLogs_messages_PipelineProcessStartedEvent_run {
+  runId: string;
+}
+
+export interface PipelineRunLogsSubscription_pipelineRunLogs_messages_PipelineProcessStartedEvent {
+  run: PipelineRunLogsSubscription_pipelineRunLogs_messages_PipelineProcessStartedEvent_run;
+  __typename: "PipelineProcessStartedEvent";
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  processId: number;
+}
+
 export interface PipelineRunLogsSubscription_pipelineRunLogs_messages_ExecutionStepStartEvent_run {
   runId: string;
 }
@@ -59,7 +72,7 @@ export interface PipelineRunLogsSubscription_pipelineRunLogs_messages_ExecutionS
   step: PipelineRunLogsSubscription_pipelineRunLogs_messages_ExecutionStepStartEvent_step;
 }
 
-export type PipelineRunLogsSubscription_pipelineRunLogs_messages = PipelineRunLogsSubscription_pipelineRunLogs_messages_LogMessageEvent | PipelineRunLogsSubscription_pipelineRunLogs_messages_ExecutionStepFailureEvent | PipelineRunLogsSubscription_pipelineRunLogs_messages_ExecutionStepStartEvent;
+export type PipelineRunLogsSubscription_pipelineRunLogs_messages = PipelineRunLogsSubscription_pipelineRunLogs_messages_LogMessageEvent | PipelineRunLogsSubscription_pipelineRunLogs_messages_ExecutionStepFailureEvent | PipelineRunLogsSubscription_pipelineRunLogs_messages_PipelineProcessStartedEvent | PipelineRunLogsSubscription_pipelineRunLogs_messages_ExecutionStepStartEvent;
 
 export interface PipelineRunLogsSubscription_pipelineRunLogs {
   messages: PipelineRunLogsSubscription_pipelineRunLogs_messages[];
@@ -80,6 +93,13 @@ export interface PipelineRunLogsSubscriptionVariables {
 //==============================================================
 // START Enums and Input Objects
 //==============================================================
+
+export enum EvaluationErrorReason {
+  FIELD_NOT_DEFINED = "FIELD_NOT_DEFINED",
+  MISSING_REQUIRED_FIELD = "MISSING_REQUIRED_FIELD",
+  RUNTIME_TYPE_MISMATCH = "RUNTIME_TYPE_MISMATCH",
+  SELECTOR_FIELD_ERROR = "SELECTOR_FIELD_ERROR",
+}
 
 export enum LogLevel {
   CRITICAL = "CRITICAL",

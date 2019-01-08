@@ -8,7 +8,7 @@
 // ====================================================
 
 export interface PipelineExecutionPipelineRunEventFragment_LogMessageEvent {
-  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "PipelineProcessStartEvent" | "PipelineProcessStartedEvent";
+  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "PipelineProcessStartEvent";
   message: string;
   timestamp: string;
   level: LogLevel;
@@ -32,6 +32,14 @@ export interface PipelineExecutionPipelineRunEventFragment_ExecutionStepFailureE
   error: PipelineExecutionPipelineRunEventFragment_ExecutionStepFailureEvent_error;
 }
 
+export interface PipelineExecutionPipelineRunEventFragment_PipelineProcessStartedEvent {
+  __typename: "PipelineProcessStartedEvent";
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  processId: number;
+}
+
 export interface PipelineExecutionPipelineRunEventFragment_ExecutionStepStartEvent_step {
   name: string;
 }
@@ -44,7 +52,7 @@ export interface PipelineExecutionPipelineRunEventFragment_ExecutionStepStartEve
   step: PipelineExecutionPipelineRunEventFragment_ExecutionStepStartEvent_step;
 }
 
-export type PipelineExecutionPipelineRunEventFragment = PipelineExecutionPipelineRunEventFragment_LogMessageEvent | PipelineExecutionPipelineRunEventFragment_ExecutionStepFailureEvent | PipelineExecutionPipelineRunEventFragment_ExecutionStepStartEvent;
+export type PipelineExecutionPipelineRunEventFragment = PipelineExecutionPipelineRunEventFragment_LogMessageEvent | PipelineExecutionPipelineRunEventFragment_ExecutionStepFailureEvent | PipelineExecutionPipelineRunEventFragment_PipelineProcessStartedEvent | PipelineExecutionPipelineRunEventFragment_ExecutionStepStartEvent;
 
 /* tslint:disable */
 // This file was automatically generated and should not be edited.
@@ -52,6 +60,13 @@ export type PipelineExecutionPipelineRunEventFragment = PipelineExecutionPipelin
 //==============================================================
 // START Enums and Input Objects
 //==============================================================
+
+export enum EvaluationErrorReason {
+  FIELD_NOT_DEFINED = "FIELD_NOT_DEFINED",
+  MISSING_REQUIRED_FIELD = "MISSING_REQUIRED_FIELD",
+  RUNTIME_TYPE_MISMATCH = "RUNTIME_TYPE_MISMATCH",
+  SELECTOR_FIELD_ERROR = "SELECTOR_FIELD_ERROR",
+}
 
 export enum LogLevel {
   CRITICAL = "CRITICAL",

@@ -11,7 +11,7 @@ export interface PipelineExecutionContainerFragment_runs_logs_nodes_LogMessageEv
   message: string;
   timestamp: string;
   level: LogLevel;
-  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "PipelineProcessStartEvent" | "PipelineProcessStartedEvent";
+  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "PipelineProcessStartEvent";
 }
 
 export interface PipelineExecutionContainerFragment_runs_logs_nodes_ExecutionStepFailureEvent_step {
@@ -32,6 +32,14 @@ export interface PipelineExecutionContainerFragment_runs_logs_nodes_ExecutionSte
   error: PipelineExecutionContainerFragment_runs_logs_nodes_ExecutionStepFailureEvent_error;
 }
 
+export interface PipelineExecutionContainerFragment_runs_logs_nodes_PipelineProcessStartedEvent {
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  __typename: "PipelineProcessStartedEvent";
+  processId: number;
+}
+
 export interface PipelineExecutionContainerFragment_runs_logs_nodes_ExecutionStepStartEvent_step {
   name: string;
 }
@@ -44,7 +52,7 @@ export interface PipelineExecutionContainerFragment_runs_logs_nodes_ExecutionSte
   step: PipelineExecutionContainerFragment_runs_logs_nodes_ExecutionStepStartEvent_step;
 }
 
-export type PipelineExecutionContainerFragment_runs_logs_nodes = PipelineExecutionContainerFragment_runs_logs_nodes_LogMessageEvent | PipelineExecutionContainerFragment_runs_logs_nodes_ExecutionStepFailureEvent | PipelineExecutionContainerFragment_runs_logs_nodes_ExecutionStepStartEvent;
+export type PipelineExecutionContainerFragment_runs_logs_nodes = PipelineExecutionContainerFragment_runs_logs_nodes_LogMessageEvent | PipelineExecutionContainerFragment_runs_logs_nodes_ExecutionStepFailureEvent | PipelineExecutionContainerFragment_runs_logs_nodes_PipelineProcessStartedEvent | PipelineExecutionContainerFragment_runs_logs_nodes_ExecutionStepStartEvent;
 
 export interface PipelineExecutionContainerFragment_runs_logs_pageInfo {
   lastCursor: any | null;
@@ -116,6 +124,13 @@ export interface PipelineExecutionContainerFragment {
 //==============================================================
 // START Enums and Input Objects
 //==============================================================
+
+export enum EvaluationErrorReason {
+  FIELD_NOT_DEFINED = "FIELD_NOT_DEFINED",
+  MISSING_REQUIRED_FIELD = "MISSING_REQUIRED_FIELD",
+  RUNTIME_TYPE_MISMATCH = "RUNTIME_TYPE_MISMATCH",
+  SELECTOR_FIELD_ERROR = "SELECTOR_FIELD_ERROR",
+}
 
 export enum LogLevel {
   CRITICAL = "CRITICAL",

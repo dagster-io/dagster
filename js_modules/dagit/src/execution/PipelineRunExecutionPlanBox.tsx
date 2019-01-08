@@ -1,7 +1,7 @@
 import * as React from "react";
 import styled from "styled-components";
 import { Colors, Spinner, Intent } from "@blueprintjs/core";
-import { IStepState } from "./StepMetadataProvider";
+import { IStepState } from "./RunMetadataProvider";
 
 interface IExecutionPlanBoxProps {
   state: IStepState;

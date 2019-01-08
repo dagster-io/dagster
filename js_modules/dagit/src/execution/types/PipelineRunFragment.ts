@@ -11,7 +11,7 @@ export interface PipelineRunFragment_logs_nodes_LogMessageEvent {
   message: string;
   timestamp: string;
   level: LogLevel;
-  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "PipelineProcessStartEvent" | "PipelineProcessStartedEvent";
+  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "PipelineProcessStartEvent";
 }
 
 export interface PipelineRunFragment_logs_nodes_ExecutionStepFailureEvent_step {
@@ -32,6 +32,14 @@ export interface PipelineRunFragment_logs_nodes_ExecutionStepFailureEvent {
   error: PipelineRunFragment_logs_nodes_ExecutionStepFailureEvent_error;
 }
 
+export interface PipelineRunFragment_logs_nodes_PipelineProcessStartedEvent {
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  __typename: "PipelineProcessStartedEvent";
+  processId: number;
+}
+
 export interface PipelineRunFragment_logs_nodes_ExecutionStepStartEvent_step {
   name: string;
 }
@@ -44,7 +52,7 @@ export interface PipelineRunFragment_logs_nodes_ExecutionStepStartEvent {
   step: PipelineRunFragment_logs_nodes_ExecutionStepStartEvent_step;
 }
 
-export type PipelineRunFragment_logs_nodes = PipelineRunFragment_logs_nodes_LogMessageEvent | PipelineRunFragment_logs_nodes_ExecutionStepFailureEvent | PipelineRunFragment_logs_nodes_ExecutionStepStartEvent;
+export type PipelineRunFragment_logs_nodes = PipelineRunFragment_logs_nodes_LogMessageEvent | PipelineRunFragment_logs_nodes_ExecutionStepFailureEvent | PipelineRunFragment_logs_nodes_PipelineProcessStartedEvent | PipelineRunFragment_logs_nodes_ExecutionStepStartEvent;
 
 export interface PipelineRunFragment_logs {
   nodes: PipelineRunFragment_logs_nodes[];
@@ -75,6 +83,13 @@ export interface PipelineRunFragment {
 //==============================================================
 // START Enums and Input Objects
 //==============================================================
+
+export enum EvaluationErrorReason {
+  FIELD_NOT_DEFINED = "FIELD_NOT_DEFINED",
+  MISSING_REQUIRED_FIELD = "MISSING_REQUIRED_FIELD",
+  RUNTIME_TYPE_MISMATCH = "RUNTIME_TYPE_MISMATCH",
+  SELECTOR_FIELD_ERROR = "SELECTOR_FIELD_ERROR",
+}
 
 export enum LogLevel {
   CRITICAL = "CRITICAL",

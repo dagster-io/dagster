@@ -11,7 +11,7 @@ export interface PipelineExecutionPipelineRunFragment_logs_nodes_LogMessageEvent
   message: string;
   timestamp: string;
   level: LogLevel;
-  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "PipelineProcessStartEvent" | "PipelineProcessStartedEvent";
+  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "PipelineProcessStartEvent";
 }
 
 export interface PipelineExecutionPipelineRunFragment_logs_nodes_ExecutionStepFailureEvent_step {
@@ -32,6 +32,14 @@ export interface PipelineExecutionPipelineRunFragment_logs_nodes_ExecutionStepFa
   error: PipelineExecutionPipelineRunFragment_logs_nodes_ExecutionStepFailureEvent_error;
 }
 
+export interface PipelineExecutionPipelineRunFragment_logs_nodes_PipelineProcessStartedEvent {
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  __typename: "PipelineProcessStartedEvent";
+  processId: number;
+}
+
 export interface PipelineExecutionPipelineRunFragment_logs_nodes_ExecutionStepStartEvent_step {
   name: string;
 }
@@ -44,7 +52,7 @@ export interface PipelineExecutionPipelineRunFragment_logs_nodes_ExecutionStepSt
   step: PipelineExecutionPipelineRunFragment_logs_nodes_ExecutionStepStartEvent_step;
 }
 
-export type PipelineExecutionPipelineRunFragment_logs_nodes = PipelineExecutionPipelineRunFragment_logs_nodes_LogMessageEvent | PipelineExecutionPipelineRunFragment_logs_nodes_ExecutionStepFailureEvent | PipelineExecutionPipelineRunFragment_logs_nodes_ExecutionStepStartEvent;
+export type PipelineExecutionPipelineRunFragment_logs_nodes = PipelineExecutionPipelineRunFragment_logs_nodes_LogMessageEvent | PipelineExecutionPipelineRunFragment_logs_nodes_ExecutionStepFailureEvent | PipelineExecutionPipelineRunFragment_logs_nodes_PipelineProcessStartedEvent | PipelineExecutionPipelineRunFragment_logs_nodes_ExecutionStepStartEvent;
 
 export interface PipelineExecutionPipelineRunFragment_logs {
   nodes: PipelineExecutionPipelineRunFragment_logs_nodes[];
@@ -77,6 +85,13 @@ export interface PipelineExecutionPipelineRunFragment {
 //==============================================================
 // START Enums and Input Objects
 //==============================================================
+
+export enum EvaluationErrorReason {
+  FIELD_NOT_DEFINED = "FIELD_NOT_DEFINED",
+  MISSING_REQUIRED_FIELD = "MISSING_REQUIRED_FIELD",
+  RUNTIME_TYPE_MISMATCH = "RUNTIME_TYPE_MISMATCH",
+  SELECTOR_FIELD_ERROR = "SELECTOR_FIELD_ERROR",
+}
 
 export enum LogLevel {
   CRITICAL = "CRITICAL",

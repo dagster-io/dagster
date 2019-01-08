@@ -17,7 +17,7 @@ export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_no
   message: string;
   timestamp: string;
   level: LogLevel;
-  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "PipelineProcessStartEvent" | "PipelineProcessStartedEvent";
+  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "PipelineProcessStartEvent";
 }
 
 export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepFailureEvent_step {
@@ -38,6 +38,14 @@ export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_no
   error: AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepFailureEvent_error;
 }
 
+export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_nodes_PipelineProcessStartedEvent {
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  __typename: "PipelineProcessStartedEvent";
+  processId: number;
+}
+
 export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepStartEvent_step {
   name: string;
 }
@@ -50,7 +58,7 @@ export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_no
   step: AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepStartEvent_step;
 }
 
-export type AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_nodes = AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_nodes_LogMessageEvent | AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepFailureEvent | AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepStartEvent;
+export type AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_nodes = AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_nodes_LogMessageEvent | AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepFailureEvent | AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_nodes_PipelineProcessStartedEvent | AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepStartEvent;
 
 export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_runs_logs_pageInfo {
   lastCursor: any | null;
@@ -680,6 +688,13 @@ export interface AppQuery {
 //==============================================================
 // START Enums and Input Objects
 //==============================================================
+
+export enum EvaluationErrorReason {
+  FIELD_NOT_DEFINED = "FIELD_NOT_DEFINED",
+  MISSING_REQUIRED_FIELD = "MISSING_REQUIRED_FIELD",
+  RUNTIME_TYPE_MISMATCH = "RUNTIME_TYPE_MISMATCH",
+  SELECTOR_FIELD_ERROR = "SELECTOR_FIELD_ERROR",
+}
 
 export enum LogLevel {
   CRITICAL = "CRITICAL",

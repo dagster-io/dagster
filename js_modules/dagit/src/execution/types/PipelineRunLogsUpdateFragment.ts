@@ -8,7 +8,7 @@
 // ====================================================
 
 export interface PipelineRunLogsUpdateFragment_logs_nodes_LogMessageEvent {
-  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "PipelineProcessStartEvent" | "PipelineProcessStartedEvent";
+  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "PipelineProcessStartEvent";
   message: string;
   timestamp: string;
   level: LogLevel;
@@ -32,6 +32,14 @@ export interface PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepFailureEv
   error: PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepFailureEvent_error;
 }
 
+export interface PipelineRunLogsUpdateFragment_logs_nodes_PipelineProcessStartedEvent {
+  __typename: "PipelineProcessStartedEvent";
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  processId: number;
+}
+
 export interface PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepStartEvent_step {
   name: string;
 }
@@ -44,7 +52,7 @@ export interface PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepStartEven
   step: PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepStartEvent_step;
 }
 
-export type PipelineRunLogsUpdateFragment_logs_nodes = PipelineRunLogsUpdateFragment_logs_nodes_LogMessageEvent | PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepFailureEvent | PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepStartEvent;
+export type PipelineRunLogsUpdateFragment_logs_nodes = PipelineRunLogsUpdateFragment_logs_nodes_LogMessageEvent | PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepFailureEvent | PipelineRunLogsUpdateFragment_logs_nodes_PipelineProcessStartedEvent | PipelineRunLogsUpdateFragment_logs_nodes_ExecutionStepStartEvent;
 
 export interface PipelineRunLogsUpdateFragment_logs {
   nodes: PipelineRunLogsUpdateFragment_logs_nodes[];
@@ -62,6 +70,13 @@ export interface PipelineRunLogsUpdateFragment {
 //==============================================================
 // START Enums and Input Objects
 //==============================================================
+
+export enum EvaluationErrorReason {
+  FIELD_NOT_DEFINED = "FIELD_NOT_DEFINED",
+  MISSING_REQUIRED_FIELD = "MISSING_REQUIRED_FIELD",
+  RUNTIME_TYPE_MISMATCH = "RUNTIME_TYPE_MISMATCH",
+  SELECTOR_FIELD_ERROR = "SELECTOR_FIELD_ERROR",
+}
 
 export enum LogLevel {
   CRITICAL = "CRITICAL",
