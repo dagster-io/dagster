@@ -1,3 +1,4 @@
+import argparse
 import sys
 
 from setuptools import find_packages, setup
@@ -8,25 +9,43 @@ if sys.version_info[0] < 3:
 else:
     import builtins
 
-setup(
-    name='dagster-ge',
-    version='0.2.0',
-    author='Elementl',
-    license='Apache-2.0',
-    description='Great Expectations plugin for Dagster',
-    url='https://github.com/dagster-io/dagster',
-    classifiers=[
-        'Programming Language :: Python :: 3.7',
-        'License :: OSI Approved :: Apache Software License',
-        'Operating System :: OS Independent',
-    ],
-    packages=find_packages(exclude=['dagster_ge_tests']),
-    install_requires=[
-        # standard python 2/3 compatability things
-        'enum34>=1.1.6',
-        'future>=0.16.0',
-        'dagster>=0.2.0',
-        'great-expectations>=0.4.2',
-    ]
-    # scripts=['bin/dagster']
-)
+version = {}
+with open("dagster-ge/version.py") as fp:
+    exec(fp.read(), version)  # pylint: disable=W0122
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--nightly', action='store_true')
+
+
+def _do_setup(name='dagster-ge'):
+    setup(
+        name=name,
+        version=version['__version__'],
+        author='Elementl',
+        license='Apache-2.0',
+        description='Great Expectations plugin for Dagster',
+        url='https://github.com/dagster-io/dagster',
+        classifiers=[
+            'Programming Language :: Python :: 3.7',
+            'License :: OSI Approved :: Apache Software License',
+            'Operating System :: OS Independent',
+        ],
+        packages=find_packages(exclude=['dagster_ge_tests']),
+        install_requires=[
+            # standard python 2/3 compatability things
+            'enum34>=1.1.6',
+            'future>=0.16.0',
+            'dagster>=0.2.0',
+            'great-expectations>=0.4.2',
+        ],
+    )
+
+
+if __name__ == '__main__':
+    parsed, unparsed = parser.parse_known_args()
+    sys.argv = [sys.argv[0]] + unparsed
+    if parsed.nightly:
+        _do_setup('dagster-ge-nightly')
+    else:
+        _do_setup('dagster-ge')
