@@ -15,7 +15,7 @@ will not invoke *any* outputs (and their APIs don't allow the user to).
 # too many lines
 # pylint: disable=C0302
 
-from collections import namedtuple
+from collections import defaultdict, namedtuple
 from contextlib import contextmanager
 import itertools
 import inspect
@@ -112,39 +112,44 @@ class SolidExecutionResult(object):
       solid (SolidDefinition): Solid for which this result is
     '''
 
-    def __init__(self, context, solid, input_expectations, transforms, output_expectations):
+    def __init__(self, context, solid, step_results_by_tag):
         self.context = check.inst_param(context, 'context', RuntimeExecutionContext)
         self.solid = check.inst_param(solid, 'solid', Solid)
-        self.input_expectations = check.list_param(
-            input_expectations, 'input_expectations', StepResult
+        self.step_results_by_tag = check.dict_param(
+            step_results_by_tag, 'step_results_by_tag', key_type=StepTag, value_type=list
         )
-        self.output_expectations = check.list_param(
-            output_expectations, 'output_expectations', StepResult
-        )
-        self.transforms = check.list_param(transforms, 'transforms', StepResult)
+
+    @property
+    def transforms(self):
+        return self.step_results_by_tag.get(StepTag.TRANSFORM, [])
+
+    @property
+    def input_expectations(self):
+        return self.step_results_by_tag.get(StepTag.INPUT_EXPECTATION, [])
+
+    @property
+    def output_expectations(self):
+        return self.step_results_by_tag.get(StepTag.OUTPUT_EXPECTATION, [])
 
     @staticmethod
     def from_results(context, results):
         results = check.list_param(results, 'results', StepResult)
         if results:
-            input_expectations = []
-            output_expectations = []
-            transforms = []
+            step_results_by_tag = defaultdict(list)
+
+            solid = None
+            for result in results:
+                if solid is None:
+                    solid = result.step.solid
+                check.invariant(result.step.solid is solid, 'Must all be from same solid')
 
             for result in results:
-                if result.tag == StepTag.INPUT_EXPECTATION:
-                    input_expectations.append(result)
-                elif result.tag == StepTag.OUTPUT_EXPECTATION:
-                    output_expectations.append(result)
-                elif result.tag == StepTag.TRANSFORM:
-                    transforms.append(result)
+                step_results_by_tag[result.tag].append(result)
 
             return SolidExecutionResult(
                 context=context,
                 solid=results[0].step.solid,
-                input_expectations=input_expectations,
-                output_expectations=output_expectations,
-                transforms=transforms,
+                step_results_by_tag=dict(step_results_by_tag),
             )
         else:
             check.failed("Cannot create SolidExecutionResult from empty list")
@@ -190,9 +195,10 @@ class SolidExecutionResult(object):
                 if result.success_data.output_name == output_name:
                     return result.success_data.value
             raise DagsterInvariantViolationError(
-                'Did not find result {output_name} in solid {self.solid.name} execution result'.format(
-                    output_name=output_name, self=self
-                )
+                (
+                    'Did not find result {output_name} in solid {self.solid.name} '
+                    'execution result'
+                ).format(output_name=output_name, self=self)
             )
         else:
             return None
@@ -461,28 +467,12 @@ def execute_pipeline_iterator(
 
 
 def _process_step_results(context, step_results):
-    solid = None
-    current_step_results = []
+    step_results_by_solid_name = defaultdict(list)
     for step_result in step_results:
-        check.inst_param(step_result, 'step_result', StepResult)
+        step_results_by_solid_name[step_result.step.solid.name].append(step_result)
 
-        step = step_result.step
-
-        if solid and solid is not step.solid:
-            yield SolidExecutionResult.from_results(context, current_step_results)
-            current_step_results = []
-
-        if not step_result.success:
-            current_step_results.append(step_result)
-            yield SolidExecutionResult.from_results(context, current_step_results)
-            current_step_results = []
-            return
-
-        solid = step.solid
-        current_step_results.append(step_result)
-
-    if solid and current_step_results:
-        yield SolidExecutionResult.from_results(context, current_step_results)
+    for step_results_for_solid in step_results_by_solid_name.values():
+        yield SolidExecutionResult.from_results(context, step_results_for_solid)
 
 
 class PipelineConfigEvaluationError(Exception):

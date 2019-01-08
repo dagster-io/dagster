@@ -12,6 +12,7 @@ from dagster import (
     execute_pipeline_iterator,
     lambda_solid,
     solid,
+    types,
 )
 
 from dagster.core.definitions import Solid, solids_in_topological_order
@@ -20,7 +21,11 @@ from dagster.core.definitions.dependency import DependencyStructure
 
 from dagster.core.definitions.pipeline import _create_adjacency_lists
 
-from dagster.core.execution import PipelineExecutionResult, SolidExecutionResult
+from dagster.core.execution import (
+    PipelineExecutionResult,
+    SolidExecutionResult,
+    get_subset_pipeline,
+)
 
 from dagster.core.utility_solids import define_stub_solid
 
@@ -374,3 +379,48 @@ def test_pipeline_subset():
 
     for result in iter_results:
         assert result.success
+
+
+def define_three_part_pipeline():
+    @lambda_solid(inputs=[InputDefinition('num', types.Int)], output=OutputDefinition(types.Int))
+    def add_one(num):
+        return num + 1
+
+    @lambda_solid(inputs=[InputDefinition('num', types.Int)], output=OutputDefinition(types.Int))
+    def add_two(num):
+        return num + 2
+
+    @lambda_solid(inputs=[InputDefinition('num', types.Int)], output=OutputDefinition(types.Int))
+    def add_three(num):
+        return num + 3
+
+    return PipelineDefinition(name='three_part_pipeline', solids=[add_one, add_two, add_three])
+
+
+def define_created_disjoint_three_part_pipeline():
+    return get_subset_pipeline(define_three_part_pipeline(), ['add_one', 'add_three'])
+
+
+def test_pipeline_disjoint_subset():
+    disjoint_pipeline = get_subset_pipeline(define_three_part_pipeline(), ['add_one', 'add_three'])
+    assert len(disjoint_pipeline.solids) == 2
+
+
+def test_pipeline_execution_disjoint_subset():
+    env_config = {
+        'solids': {'add_one': {'inputs': {'num': 2}}, 'add_three': {'inputs': {'num': 5}}},
+        'context': {'default': {'config': {'log_level': 'ERROR'}}},
+    }
+
+    pipeline_def = define_created_disjoint_three_part_pipeline()
+
+    result = execute_pipeline(
+        pipeline_def, environment=env_config, solid_subset=['add_one', 'add_three']
+    )
+
+    assert result.success
+
+    assert len(result.result_list) == 2
+
+    assert result.result_for_solid('add_one').transformed_value() == 3
+    assert result.result_for_solid('add_three').transformed_value() == 8

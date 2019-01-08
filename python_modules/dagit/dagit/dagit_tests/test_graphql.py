@@ -51,6 +51,22 @@ def define_scalar_output_pipeline():
     )
 
 
+def define_three_part_pipeline():
+    @lambda_solid(inputs=[InputDefinition('num', types.Int)], output=OutputDefinition(types.Int))
+    def add_one(num):
+        return num + 1
+
+    @lambda_solid(inputs=[InputDefinition('num', types.Int)], output=OutputDefinition(types.Int))
+    def add_two(num):
+        return num + 2
+
+    @lambda_solid(inputs=[InputDefinition('num', types.Int)], output=OutputDefinition(types.Int))
+    def add_three(num):
+        return num + 3
+
+    return PipelineDefinition(name='three_part_pipeline', solids=[add_one, add_two, add_three])
+
+
 def define_repository():
     return RepositoryDefinition(
         name='test',
@@ -64,6 +80,7 @@ def define_repository():
             'pandas_hello_world_df_input': define_pipeline_with_pandas_df_input,
             'no_config_pipeline': define_no_config_pipeline,
             'scalar_output_pipeline': define_scalar_output_pipeline,
+            'three_part_pipeline': define_three_part_pipeline(),
         },
     )
 
@@ -221,6 +238,10 @@ def do_test_subset(query, top_key):
     assert 'PandasHelloWorld.SumSqSolid.Inputs' not in full_types_dict
 
     assert field_names_of(full_types_dict, 'PandasHelloWorld.SumSolid.Inputs') == {'num'}
+
+
+def test_three_part_pipeline_disjoint_subset():
+    pass
 
 
 def define_pandas_hello_world():
