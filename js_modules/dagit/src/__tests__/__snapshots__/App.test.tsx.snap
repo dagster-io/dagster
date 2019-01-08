@@ -24,7 +24,7 @@ Array [
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-jqCOkK cnNsyg"
+        className="sc-uJMKN gXWNbF"
       >
         <span
           className="bp3-popover-wrapper"
@@ -75,11 +75,11 @@ Array [
           className="bp3-navbar-divider"
         />
         <div
-          className="sc-uJMKN gIbEmX"
+          className="sc-bbmXgH foimd"
         >
           <a
             active={true}
-            className="sc-bbmXgH lhNabq"
+            className="sc-gGBfsJ hiNtzF"
             href="/pandas_hello_world/explore"
             onClick={[Function]}
           >
@@ -87,7 +87,7 @@ Array [
           </a>
           <a
             active={false}
-            className="sc-bbmXgH eKhEro"
+            className="sc-gGBfsJ jLvlON"
             href="/pandas_hello_world/execute"
             onClick={[Function]}
           >
@@ -610,7 +610,7 @@ Array [
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-jqCOkK cnNsyg"
+        className="sc-uJMKN gXWNbF"
       >
         <span
           className="bp3-popover-wrapper"
@@ -706,7 +706,7 @@ Array [
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-jqCOkK cnNsyg"
+        className="sc-uJMKN gXWNbF"
       >
         <span
           className="bp3-popover-wrapper"
@@ -757,11 +757,11 @@ Array [
           className="bp3-navbar-divider"
         />
         <div
-          className="sc-uJMKN gIbEmX"
+          className="sc-bbmXgH foimd"
         >
           <a
             active={true}
-            className="sc-bbmXgH lhNabq"
+            className="sc-gGBfsJ hiNtzF"
             href="/pandas_hello_world/explore"
             onClick={[Function]}
           >
@@ -769,7 +769,7 @@ Array [
           </a>
           <a
             active={false}
-            className="sc-bbmXgH eKhEro"
+            className="sc-gGBfsJ jLvlON"
             href="/pandas_hello_world/execute"
             onClick={[Function]}
           >
@@ -1457,7 +1457,7 @@ Array [
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-jqCOkK cnNsyg"
+        className="sc-uJMKN gXWNbF"
       >
         <span
           className="bp3-popover-wrapper"
@@ -1508,11 +1508,11 @@ Array [
           className="bp3-navbar-divider"
         />
         <div
-          className="sc-uJMKN gIbEmX"
+          className="sc-bbmXgH foimd"
         >
           <a
             active={true}
-            className="sc-bbmXgH lhNabq"
+            className="sc-gGBfsJ hiNtzF"
             href="/pandas_hello_world/explore"
             onClick={[Function]}
           >
@@ -1520,7 +1520,7 @@ Array [
           </a>
           <a
             active={false}
-            className="sc-bbmXgH eKhEro"
+            className="sc-gGBfsJ jLvlON"
             href="/pandas_hello_world/execute"
             onClick={[Function]}
           >
@@ -2208,7 +2208,7 @@ Array [
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-jqCOkK cnNsyg"
+        className="sc-uJMKN gXWNbF"
       >
         <span
           className="bp3-popover-wrapper"
@@ -2259,11 +2259,11 @@ Array [
           className="bp3-navbar-divider"
         />
         <div
-          className="sc-uJMKN gIbEmX"
+          className="sc-bbmXgH foimd"
         >
           <a
             active={true}
-            className="sc-bbmXgH lhNabq"
+            className="sc-gGBfsJ hiNtzF"
             href="/pandas_hello_world/explore"
             onClick={[Function]}
           >
@@ -2271,7 +2271,7 @@ Array [
           </a>
           <a
             active={false}
-            className="sc-bbmXgH eKhEro"
+            className="sc-gGBfsJ jLvlON"
             href="/pandas_hello_world/execute"
             onClick={[Function]}
           >
@@ -2969,7 +2969,7 @@ Array [
         className="bp3-navbar-divider"
       />
       <div
-        className="sc-jqCOkK cnNsyg"
+        className="sc-uJMKN gXWNbF"
       >
         <span
           className="bp3-popover-wrapper"

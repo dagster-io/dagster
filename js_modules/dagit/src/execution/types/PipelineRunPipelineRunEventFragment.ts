@@ -8,7 +8,7 @@
 // ====================================================
 
 export interface PipelineRunPipelineRunEventFragment_LogMessageEvent {
-  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "PipelineProcessStartEvent" | "PipelineProcessStartedEvent";
+  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "PipelineProcessStartEvent";
   message: string;
   timestamp: string;
   level: LogLevel;
@@ -32,6 +32,14 @@ export interface PipelineRunPipelineRunEventFragment_ExecutionStepFailureEvent {
   error: PipelineRunPipelineRunEventFragment_ExecutionStepFailureEvent_error;
 }
 
+export interface PipelineRunPipelineRunEventFragment_PipelineProcessStartedEvent {
+  __typename: "PipelineProcessStartedEvent";
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  processId: number;
+}
+
 export interface PipelineRunPipelineRunEventFragment_ExecutionStepStartEvent_step {
   name: string;
 }
@@ -44,7 +52,7 @@ export interface PipelineRunPipelineRunEventFragment_ExecutionStepStartEvent {
   step: PipelineRunPipelineRunEventFragment_ExecutionStepStartEvent_step;
 }
 
-export type PipelineRunPipelineRunEventFragment = PipelineRunPipelineRunEventFragment_LogMessageEvent | PipelineRunPipelineRunEventFragment_ExecutionStepFailureEvent | PipelineRunPipelineRunEventFragment_ExecutionStepStartEvent;
+export type PipelineRunPipelineRunEventFragment = PipelineRunPipelineRunEventFragment_LogMessageEvent | PipelineRunPipelineRunEventFragment_ExecutionStepFailureEvent | PipelineRunPipelineRunEventFragment_PipelineProcessStartedEvent | PipelineRunPipelineRunEventFragment_ExecutionStepStartEvent;
 
 /* tslint:disable */
 // This file was automatically generated and should not be edited.
