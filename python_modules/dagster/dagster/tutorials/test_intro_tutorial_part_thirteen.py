@@ -23,8 +23,7 @@ def load_b(info):
 
 
 @lambda_solid(
-    inputs=[InputDefinition('a', Int), InputDefinition('b', Int)],
-    output=OutputDefinition(Int),
+    inputs=[InputDefinition('a', Int), InputDefinition('b', Int)], output=OutputDefinition(Int)
 )
 def a_plus_b(a, b):
     return a + b
@@ -35,10 +34,7 @@ def define_part_thirteen_step_one_pipeline():
         name='part_thirteen_step_one_pipeline',
         solids=[load_a, load_b, a_plus_b],
         dependencies={
-            'a_plus_b': {
-                'a': DependencyDefinition('load_a'),
-                'b': DependencyDefinition('load_b'),
-            }
+            'a_plus_b': {'a': DependencyDefinition('load_a'), 'b': DependencyDefinition('load_b')}
         },
     )
 
@@ -144,12 +140,6 @@ def test_run_whole_pipeline():
 
     assert pipeline_result.success
 
-    assert (
-        pipeline_result.result_for_solid('a_plus_b').transformed_value() == 8
-    )
-    assert (
-        pipeline_result.result_for_solid('c_plus_d').transformed_value() == 12
-    )
-    assert (
-        pipeline_result.result_for_solid('final').transformed_value() == 8 * 12
-    )
+    assert pipeline_result.result_for_solid('a_plus_b').transformed_value() == 8
+    assert pipeline_result.result_for_solid('c_plus_d').transformed_value() == 12
+    assert pipeline_result.result_for_solid('final').transformed_value() == 8 * 12

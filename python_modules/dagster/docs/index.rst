@@ -22,7 +22,7 @@ Intro Tutorial
   intro_tutorial/hello_dag
   intro_tutorial/actual_dag
   intro_tutorial/inputs
-  intro_tutorial/part_four
+  intro_tutorial/config
   intro_tutorial/part_five
   intro_tutorial/part_six
   intro_tutorial/part_seven

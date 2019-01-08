@@ -26,9 +26,9 @@ the input of ``solid_d``).
 
 Try it in dagit or from the command line:
 
-.. code-block:: sh
+.. code-block:: console
 
-	$ dagster pipeline execute -f actual_dag.py -n define_diamond_dag_pipeline
+   $ dagster pipeline execute -f actual_dag.py -n define_diamond_dag_pipeline
 
 What's the output of this DAG?
 

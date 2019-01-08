@@ -104,3 +104,8 @@ built-in ``String``
 By using this input instead we can catch this error prior to execution.
 
 .. image:: inputs_figure_four_error_prechecked.png
+
+We've seen how to connect solid inputs and outputs to specify dependencies and the structure of
+our DAG, as well as how to provide inputs at runtime through config. Next, we'll see how we can
+use :doc:`Configuration <config>` to parametrize our solids and avoid hardcoding their interactions
+with the outside world.

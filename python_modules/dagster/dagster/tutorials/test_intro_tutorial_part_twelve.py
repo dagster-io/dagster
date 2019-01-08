@@ -37,9 +37,7 @@ class SSNStringTypeClass(RuntimeType):
 
         if not isinstance(value, str):
             raise DagsterRuntimeCoercionError(
-                '{value} is not a string. SSNStringType typecheck failed'.format(
-                    value=repr(value)
-                )
+                '{value} is not a string. SSNStringType typecheck failed'.format(value=repr(value))
             )
 
         if not re.match(r'^(\d\d\d)-(\d\d)-(\d\d\d\d)$', value):
@@ -62,9 +60,7 @@ def produce_invalid_value():
 
 @solid(inputs=[InputDefinition('string_tuple', StringTuple)])
 def consume_string_tuple(info, string_tuple):
-    info.context.info(
-        'Logging value {string_tuple}'.format(string_tuple=string_tuple)
-    )
+    info.context.info('Logging value {string_tuple}'.format(string_tuple=string_tuple))
 
 
 @lambda_solid
@@ -89,9 +85,7 @@ def define_part_twelve_step_one_pipeline():
         name='part_twelve_step_one_pipeline',
         solids=[produce_valid_value, consume_string_tuple],
         dependencies={
-            'consume_string_tuple': {
-                'string_tuple': DependencyDefinition('produce_valid_value')
-            }
+            'consume_string_tuple': {'string_tuple': DependencyDefinition('produce_valid_value')}
         },
     )
 
@@ -101,9 +95,7 @@ def define_part_twelve_step_two_pipeline():
         name='part_twelve_step_two_pipeline',
         solids=[produce_invalid_value, consume_string_tuple],
         dependencies={
-            'consume_string_tuple': {
-                'string_tuple': DependencyDefinition('produce_invalid_value')
-            }
+            'consume_string_tuple': {'string_tuple': DependencyDefinition('produce_invalid_value')}
         },
     )
 
@@ -112,11 +104,7 @@ def define_part_twelve_step_three_pipeline():
     return PipelineDefinition(
         name='part_twelve_step_three_pipeline',
         solids=[produce_valid_ssn_string, consume_ssn],
-        dependencies={
-            'consume_ssn': {
-                'ssn': DependencyDefinition('produce_valid_ssn_string')
-            }
-        },
+        dependencies={'consume_ssn': {'ssn': DependencyDefinition('produce_valid_ssn_string')}},
     )
 
 
@@ -124,11 +112,7 @@ def define_part_twelve_step_four_pipeline():
     return PipelineDefinition(
         name='part_twelve_step_four_pipeline',
         solids=[produce_invalid_ssn_string, consume_ssn],
-        dependencies={
-            'consume_ssn': {
-                'ssn': DependencyDefinition('produce_invalid_ssn_string')
-            }
-        },
+        dependencies={'consume_ssn': {'ssn': DependencyDefinition('produce_invalid_ssn_string')}},
     )
 
 
@@ -167,13 +151,10 @@ def test_intro_tutorial_part_twelve_step_three_pipeline():
 
 def test_intro_tutorial_part_twelve_step_four():
     with pytest.raises(
-        DagsterTypeError,
-        match='Solid consume_ssn input ssn received value 394-30-203239483 ',
+        DagsterTypeError, match='Solid consume_ssn input ssn received value 394-30-203239483 '
     ):
         execute_pipeline(define_part_twelve_step_four_pipeline())
 
 
 if __name__ == '__main__':
-    execute_pipeline(
-        define_part_twelve_step_three_pipeline(), throw_on_error=True
-    )
+    execute_pipeline(define_part_twelve_step_three_pipeline(), throw_on_error=True)

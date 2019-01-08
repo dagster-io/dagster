@@ -66,11 +66,11 @@ PartNineResources = namedtuple('PartNineResources', 'store')
 
 def define_contextless_solids():
     @solid(config_field=Field(Int), outputs=[OutputDefinition(Int)])
-    def injest_a(info):
+    def ingest_a(info):
         return info.config
 
     @solid(config_field=Field(Int), outputs=[OutputDefinition(Int)])
-    def injest_b(info):
+    def ingest_b(info):
         return info.config
 
     @lambda_solid(
@@ -93,19 +93,19 @@ def define_contextless_solids():
     def mult_ints(num_one, num_two):
         return num_one * num_two
 
-    return [injest_a, injest_b, add_ints, mult_ints]
+    return [ingest_a, ingest_b, add_ints, mult_ints]
 
 
 def define_contextful_solids():
     @solid(config_field=Field(Int), outputs=[OutputDefinition(Int)])
-    def injest_a(info):
+    def ingest_a(info):
         info.context.resources.store.record_value(
             info.context, 'a', info.config
         )
         return info.config
 
     @solid(config_field=Field(Int), outputs=[OutputDefinition(Int)])
-    def injest_b(info):
+    def ingest_b(info):
         info.context.resources.store.record_value(
             info.context, 'b', info.config
         )
@@ -135,7 +135,7 @@ def define_contextful_solids():
         info.context.resources.store.record_value(info.context, 'mult', result)
         return result
 
-    return [injest_a, injest_b, add_ints, mult_ints]
+    return [ingest_a, ingest_b, add_ints, mult_ints]
 
 
 def define_part_nine_step_one_pipeline():
@@ -144,12 +144,12 @@ def define_part_nine_step_one_pipeline():
         solids=define_contextless_solids(),
         dependencies={
             'add_ints': {
-                'num_one': DependencyDefinition('injest_a'),
-                'num_two': DependencyDefinition('injest_b'),
+                'num_one': DependencyDefinition('ingest_a'),
+                'num_two': DependencyDefinition('ingest_b'),
             },
             'mult_ints': {
-                'num_one': DependencyDefinition('injest_a'),
-                'num_two': DependencyDefinition('injest_b'),
+                'num_one': DependencyDefinition('ingest_a'),
+                'num_two': DependencyDefinition('ingest_b'),
             },
         },
     )
@@ -164,12 +164,12 @@ def define_part_nine_step_two_pipeline():
         solids=define_contextful_solids(),
         dependencies={
             'add_ints': {
-                'num_one': DependencyDefinition('injest_a'),
-                'num_two': DependencyDefinition('injest_b'),
+                'num_one': DependencyDefinition('ingest_a'),
+                'num_two': DependencyDefinition('ingest_b'),
             },
             'mult_ints': {
-                'num_one': DependencyDefinition('injest_a'),
-                'num_two': DependencyDefinition('injest_b'),
+                'num_one': DependencyDefinition('ingest_a'),
+                'num_two': DependencyDefinition('ingest_b'),
             },
         },
         context_definitions={
@@ -189,12 +189,12 @@ def define_part_nine_final_pipeline():
         solids=define_contextful_solids(),
         dependencies={
             'add_ints': {
-                'num_one': DependencyDefinition('injest_a'),
-                'num_two': DependencyDefinition('injest_b'),
+                'num_one': DependencyDefinition('ingest_a'),
+                'num_two': DependencyDefinition('ingest_b'),
             },
             'mult_ints': {
-                'num_one': DependencyDefinition('injest_a'),
-                'num_two': DependencyDefinition('injest_b'),
+                'num_one': DependencyDefinition('ingest_a'),
+                'num_two': DependencyDefinition('ingest_b'),
             },
         },
         context_definitions={
@@ -245,9 +245,9 @@ def test_intro_tutorial_part_nine_step_one():
         yaml.load(
             '''
 solids:
-    injest_a:
+    ingest_a:
         config: 2
-    injest_b:
+    ingest_b:
         config: 3
 context:
     default:
@@ -258,8 +258,8 @@ context:
     )
 
     assert result.success
-    assert result.result_for_solid('injest_a').transformed_value() == 2
-    assert result.result_for_solid('injest_b').transformed_value() == 3
+    assert result.result_for_solid('ingest_a').transformed_value() == 2
+    assert result.result_for_solid('ingest_b').transformed_value() == 3
     assert result.result_for_solid('add_ints').transformed_value() == 5
     assert result.result_for_solid('mult_ints').transformed_value() == 6
 
@@ -268,9 +268,9 @@ def test_intro_tutorial_part_nine_step_one_with_various_defaults():
     yaml_variants = [
         '''
 solids:
-    injest_a:
+    ingest_a:
         config: 2
-    injest_b:
+    ingest_b:
         config: 3
 context:
     default:
@@ -278,26 +278,26 @@ context:
 ''',
         '''
 solids:
-    injest_a:
+    ingest_a:
         config: 2
-    injest_b:
+    ingest_b:
         config: 3
 context:
     default:
 ''',
         '''
 solids:
-    injest_a:
+    ingest_a:
         config: 2
-    injest_b:
+    ingest_b:
         config: 3
 context:
 ''',
         '''
 solids:
-    injest_a:
+    ingest_a:
         config: 2
-    injest_b:
+    ingest_b:
         config: 3
 ''',
     ]
@@ -308,8 +308,8 @@ solids:
         )
 
         assert result.success
-        assert result.result_for_solid('injest_a').transformed_value() == 2
-        assert result.result_for_solid('injest_b').transformed_value() == 3
+        assert result.result_for_solid('ingest_a').transformed_value() == 2
+        assert result.result_for_solid('ingest_b').transformed_value() == 3
         assert result.result_for_solid('add_ints').transformed_value() == 5
         assert result.result_for_solid('mult_ints').transformed_value() == 6
 
@@ -323,17 +323,17 @@ context:
     local:
 
 solids:
-    injest_a:
+    ingest_a:
         config: 2
-    injest_b:
+    ingest_b:
         config: 3
 '''
         ),
     )
 
     assert result.success
-    assert result.result_for_solid('injest_a').transformed_value() == 2
-    assert result.result_for_solid('injest_b').transformed_value() == 3
+    assert result.result_for_solid('ingest_a').transformed_value() == 2
+    assert result.result_for_solid('ingest_b').transformed_value() == 3
     assert result.result_for_solid('add_ints').transformed_value() == 5
     assert result.result_for_solid('mult_ints').transformed_value() == 6
 
@@ -358,9 +358,9 @@ context:
                 pass: some_password
 
 solids:
-    injest_a:
+    ingest_a:
         config: 2
-    injest_b:
+    ingest_b:
         config: 3
 '''
         ),
@@ -383,9 +383,9 @@ context:
                 pass: some_password
 
 solids:
-    injest_a:
+    ingest_a:
         config: 2
-    injest_b:
+    ingest_b:
         config: 3
 '''
             ),
