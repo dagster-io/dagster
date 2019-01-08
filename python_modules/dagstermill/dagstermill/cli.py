@@ -56,7 +56,8 @@ def create_dagstermill_cli():
 @click.option('--notebook', '-note', type=click.STRING, help="Name of notebook")
 @click.option('--solid-name', '-s', default="", type=click.STRING, help="Name of solid that represents notebook in the repository. If empty, defaults to notebook name.")
 @click.option('--jupyter', '-j', is_flag = True, help="Launches jupyter notebook and opens to newly created notebook")
-def ui(notebook, solid_name, jupyter, **kwargs):
+@click.option('--force-overwrite', is_flag = True, help="Will force overwrite any existing notebook or file with the same name.")
+def ui(notebook, solid_name, jupyter, force_overwrite, **kwargs):
     
     #@Uma TODO: we might want to sanitize the notebook name so that it's a valid filename
     #Perhaps something like this: https://github.com/django/django/blob/master/django/utils/text.py function: get_valid_filename()
@@ -65,7 +66,7 @@ def ui(notebook, solid_name, jupyter, **kwargs):
         notebook += ".ipynb"
     notebook_path = os.path.join(os.getcwd(), notebook)
 
-    if os.path.isfile(notebook_path):
+    if not force_overwrite and os.path.isfile(notebook_path):
         click.confirm("Warning, {notebook_path} already exists and continuing will overwrite the existing notebook. Are you sure you want to continue?".format(notebook_path=notebook_path), abort=True)
 
     if solid_name == "":
@@ -86,6 +87,7 @@ def ui(notebook, solid_name, jupyter, **kwargs):
     with open(notebook_path, 'w') as f:
         f.write(get_scaffolding(register_repo_str))
         click.echo("Created new dagstermill notebook at {path}".format(path=notebook_path))
+    
     if jupyter:
         #@Uma TODO: We should probably not be making system calls, and if we are, we should probably make sure it's from the right folder
         os.system("jupyter notebook {name}".format(name=notebook)) 
