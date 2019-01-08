@@ -33,6 +33,7 @@ from .definitions import (
     PipelineDefinition,
     Solid,
     SolidInstance,
+    solids_in_topological_order,
 )
 
 from .execution_context import ExecutionContext, ReentrantInfo, RuntimeExecutionContext
@@ -133,6 +134,7 @@ class SolidExecutionResult(object):
 
     @staticmethod
     def from_results(context, results):
+        check.inst_param(context, 'context', RuntimeExecutionContext)
         results = check.list_param(results, 'results', StepResult)
         if results:
             step_results_by_tag = defaultdict(list)
@@ -422,7 +424,7 @@ def _do_iterate_pipeline(pipeline, context, typed_environment, throw_on_error=Tr
         check.invariant(len(steps[0].step_inputs) == 0)
 
         for solid_result in _process_step_results(
-            context, execute_plan_core(context, execution_plan)
+            context, pipeline, execute_plan_core(context, execution_plan)
         ):
             if throw_on_error and not solid_result.success:
                 solid_result.reraise_user_error()
@@ -466,13 +468,19 @@ def execute_pipeline_iterator(
             yield solid_result
 
 
-def _process_step_results(context, step_results):
+def _process_step_results(context, pipeline, step_results):
+    check.inst_param(context, 'context', RuntimeExecutionContext)
+    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+
     step_results_by_solid_name = defaultdict(list)
     for step_result in step_results:
         step_results_by_solid_name[step_result.step.solid.name].append(step_result)
 
-    for step_results_for_solid in step_results_by_solid_name.values():
-        yield SolidExecutionResult.from_results(context, step_results_for_solid)
+    for topo_solid in solids_in_topological_order(pipeline):
+        if topo_solid.name in step_results_by_solid_name:
+            yield SolidExecutionResult.from_results(
+                context, step_results_by_solid_name[topo_solid.name]
+            )
 
 
 class PipelineConfigEvaluationError(Exception):
