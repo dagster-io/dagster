@@ -3,9 +3,9 @@ Pipeline Execution
 Just as in the last part of the tutorial, we'll define a pipeline and a repository, and create
 a yaml file to tell the CLI tool about the repository.
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/part_seven.py
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/pipeline_execution.py
    :linenos:
-   :caption: part_seven.py
+   :caption: pipeline_execution.py
 
 And now the repository file:
 

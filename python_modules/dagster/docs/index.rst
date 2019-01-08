@@ -25,7 +25,7 @@ Intro Tutorial
   intro_tutorial/config
   intro_tutorial/execution_context
   intro_tutorial/repos
-  intro_tutorial/part_seven
+  intro_tutorial/pipeline_execution
   intro_tutorial/part_eight
   intro_tutorial/part_nine
   intro_tutorial/part_ten
