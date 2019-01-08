@@ -84,12 +84,12 @@ def test_failure_midstream():
     )
     pipeline_result = execute_pipeline(pipeline, throw_on_error=False)
 
-    result_list = pipeline_result.result_list
-
-    assert result_list[0].success
-    assert result_list[1].success
-    assert not result_list[2].success
-    assert isinstance(result_list[2].dagster_error, DagsterUserCodeExecutionError)
+    assert pipeline_result.result_for_solid('A').success
+    assert pipeline_result.result_for_solid('B').success
+    assert not pipeline_result.result_for_solid('C').success
+    assert isinstance(
+        pipeline_result.result_for_solid('C').dagster_error, DagsterUserCodeExecutionError
+    )
 
 
 def test_do_not_yield_result():
