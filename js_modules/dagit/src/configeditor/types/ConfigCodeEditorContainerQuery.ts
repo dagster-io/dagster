@@ -1,50 +1,52 @@
-
-
 /* tslint:disable */
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL query operation: ConfigCodeEditorContainerQuery
+// GraphQL query operation: ConfigEditorContainerQuery
 // ====================================================
 
-export interface ConfigCodeEditorContainerQuery_pipelineOrError_PythonError {
+export interface ConfigEditorContainerQuery_pipelineOrError_PythonError {
   __typename: "PythonError" | "PipelineNotFoundError";
 }
 
-export interface ConfigCodeEditorContainerQuery_pipelineOrError_Pipeline_types_RegularType {
+export interface ConfigEditorContainerQuery_pipelineOrError_Pipeline_types_RegularType {
   __typename: "RegularType";
   name: string;
 }
 
-export interface ConfigCodeEditorContainerQuery_pipelineOrError_Pipeline_types_CompositeType_fields_type {
+export interface ConfigEditorContainerQuery_pipelineOrError_Pipeline_types_CompositeType_fields_type {
   name: string;
 }
 
-export interface ConfigCodeEditorContainerQuery_pipelineOrError_Pipeline_types_CompositeType_fields {
+export interface ConfigEditorContainerQuery_pipelineOrError_Pipeline_types_CompositeType_fields {
   name: string;
-  type: ConfigCodeEditorContainerQuery_pipelineOrError_Pipeline_types_CompositeType_fields_type;
+  type: ConfigEditorContainerQuery_pipelineOrError_Pipeline_types_CompositeType_fields_type;
 }
 
-export interface ConfigCodeEditorContainerQuery_pipelineOrError_Pipeline_types_CompositeType {
+export interface ConfigEditorContainerQuery_pipelineOrError_Pipeline_types_CompositeType {
   __typename: "CompositeType";
   name: string;
-  fields: ConfigCodeEditorContainerQuery_pipelineOrError_Pipeline_types_CompositeType_fields[];
+  fields: ConfigEditorContainerQuery_pipelineOrError_Pipeline_types_CompositeType_fields[];
 }
 
-export type ConfigCodeEditorContainerQuery_pipelineOrError_Pipeline_types = ConfigCodeEditorContainerQuery_pipelineOrError_Pipeline_types_RegularType | ConfigCodeEditorContainerQuery_pipelineOrError_Pipeline_types_CompositeType;
+export type ConfigEditorContainerQuery_pipelineOrError_Pipeline_types =
+  | ConfigEditorContainerQuery_pipelineOrError_Pipeline_types_RegularType
+  | ConfigEditorContainerQuery_pipelineOrError_Pipeline_types_CompositeType;
 
-export interface ConfigCodeEditorContainerQuery_pipelineOrError_Pipeline {
+export interface ConfigEditorContainerQuery_pipelineOrError_Pipeline {
   __typename: "Pipeline";
-  types: ConfigCodeEditorContainerQuery_pipelineOrError_Pipeline_types[];
+  types: ConfigEditorContainerQuery_pipelineOrError_Pipeline_types[];
 }
 
-export type ConfigCodeEditorContainerQuery_pipelineOrError = ConfigCodeEditorContainerQuery_pipelineOrError_PythonError | ConfigCodeEditorContainerQuery_pipelineOrError_Pipeline;
+export type ConfigEditorContainerQuery_pipelineOrError =
+  | ConfigEditorContainerQuery_pipelineOrError_PythonError
+  | ConfigEditorContainerQuery_pipelineOrError_Pipeline;
 
-export interface ConfigCodeEditorContainerQuery {
-  pipelineOrError: ConfigCodeEditorContainerQuery_pipelineOrError;
+export interface ConfigEditorContainerQuery {
+  pipelineOrError: ConfigEditorContainerQuery_pipelineOrError;
 }
 
-export interface ConfigCodeEditorContainerQueryVariables {
+export interface ConfigEditorContainerQueryVariables {
   pipelineName: string;
 }
 
@@ -60,7 +62,7 @@ export enum LogLevel {
   DEBUG = "DEBUG",
   ERROR = "ERROR",
   INFO = "INFO",
-  WARNING = "WARNING",
+  WARNING = "WARNING"
 }
 
 /**
@@ -70,7 +72,7 @@ export enum PipelineRunStatus {
   FAILURE = "FAILURE",
   NOT_STARTED = "NOT_STARTED",
   STARTED = "STARTED",
-  SUCCESS = "SUCCESS",
+  SUCCESS = "SUCCESS"
 }
 
 export enum StepTag {
@@ -80,11 +82,11 @@ export enum StepTag {
   MATERIALIZATION_THUNK = "MATERIALIZATION_THUNK",
   OUTPUT_EXPECTATION = "OUTPUT_EXPECTATION",
   SERIALIZE = "SERIALIZE",
-  TRANSFORM = "TRANSFORM",
+  TRANSFORM = "TRANSFORM"
 }
 
 /**
- * 
+ *
  */
 export interface PipelineExecutionParams {
   pipelineName: string;

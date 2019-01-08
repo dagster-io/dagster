@@ -1,53 +1,55 @@
-
-
 /* tslint:disable */
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL query operation: ConfigCodeEditorContainerCheckConfigQuery
+// GraphQL query operation: ConfigEditorContainerCheckConfigQuery
 // ====================================================
 
-export interface ConfigCodeEditorContainerCheckConfigQuery_isPipelineConfigValid_PipelineConfigValidationValid {
+export interface ConfigEditorContainerCheckConfigQuery_isPipelineConfigValid_PipelineConfigValidationValid {
   __typename: "PipelineConfigValidationValid" | "PipelineNotFoundError";
 }
 
-export interface ConfigCodeEditorContainerCheckConfigQuery_isPipelineConfigValid_PipelineConfigValidationInvalid_errors_stack_entries_EvaluationStackPathEntry_field {
+export interface ConfigEditorContainerCheckConfigQuery_isPipelineConfigValid_PipelineConfigValidationInvalid_errors_stack_entries_EvaluationStackPathEntry_field {
   name: string;
 }
 
-export interface ConfigCodeEditorContainerCheckConfigQuery_isPipelineConfigValid_PipelineConfigValidationInvalid_errors_stack_entries_EvaluationStackPathEntry {
+export interface ConfigEditorContainerCheckConfigQuery_isPipelineConfigValid_PipelineConfigValidationInvalid_errors_stack_entries_EvaluationStackPathEntry {
   __typename: "EvaluationStackPathEntry";
-  field: ConfigCodeEditorContainerCheckConfigQuery_isPipelineConfigValid_PipelineConfigValidationInvalid_errors_stack_entries_EvaluationStackPathEntry_field;
+  field: ConfigEditorContainerCheckConfigQuery_isPipelineConfigValid_PipelineConfigValidationInvalid_errors_stack_entries_EvaluationStackPathEntry_field;
 }
 
-export interface ConfigCodeEditorContainerCheckConfigQuery_isPipelineConfigValid_PipelineConfigValidationInvalid_errors_stack_entries_EvaluationStackListItemEntry {
+export interface ConfigEditorContainerCheckConfigQuery_isPipelineConfigValid_PipelineConfigValidationInvalid_errors_stack_entries_EvaluationStackListItemEntry {
   __typename: "EvaluationStackListItemEntry";
   listIndex: number;
 }
 
-export type ConfigCodeEditorContainerCheckConfigQuery_isPipelineConfigValid_PipelineConfigValidationInvalid_errors_stack_entries = ConfigCodeEditorContainerCheckConfigQuery_isPipelineConfigValid_PipelineConfigValidationInvalid_errors_stack_entries_EvaluationStackPathEntry | ConfigCodeEditorContainerCheckConfigQuery_isPipelineConfigValid_PipelineConfigValidationInvalid_errors_stack_entries_EvaluationStackListItemEntry;
+export type ConfigEditorContainerCheckConfigQuery_isPipelineConfigValid_PipelineConfigValidationInvalid_errors_stack_entries =
+  | ConfigEditorContainerCheckConfigQuery_isPipelineConfigValid_PipelineConfigValidationInvalid_errors_stack_entries_EvaluationStackPathEntry
+  | ConfigEditorContainerCheckConfigQuery_isPipelineConfigValid_PipelineConfigValidationInvalid_errors_stack_entries_EvaluationStackListItemEntry;
 
-export interface ConfigCodeEditorContainerCheckConfigQuery_isPipelineConfigValid_PipelineConfigValidationInvalid_errors_stack {
-  entries: ConfigCodeEditorContainerCheckConfigQuery_isPipelineConfigValid_PipelineConfigValidationInvalid_errors_stack_entries[];
+export interface ConfigEditorContainerCheckConfigQuery_isPipelineConfigValid_PipelineConfigValidationInvalid_errors_stack {
+  entries: ConfigEditorContainerCheckConfigQuery_isPipelineConfigValid_PipelineConfigValidationInvalid_errors_stack_entries[];
 }
 
-export interface ConfigCodeEditorContainerCheckConfigQuery_isPipelineConfigValid_PipelineConfigValidationInvalid_errors {
+export interface ConfigEditorContainerCheckConfigQuery_isPipelineConfigValid_PipelineConfigValidationInvalid_errors {
   message: string;
-  stack: ConfigCodeEditorContainerCheckConfigQuery_isPipelineConfigValid_PipelineConfigValidationInvalid_errors_stack;
+  stack: ConfigEditorContainerCheckConfigQuery_isPipelineConfigValid_PipelineConfigValidationInvalid_errors_stack;
 }
 
-export interface ConfigCodeEditorContainerCheckConfigQuery_isPipelineConfigValid_PipelineConfigValidationInvalid {
+export interface ConfigEditorContainerCheckConfigQuery_isPipelineConfigValid_PipelineConfigValidationInvalid {
   __typename: "PipelineConfigValidationInvalid";
-  errors: ConfigCodeEditorContainerCheckConfigQuery_isPipelineConfigValid_PipelineConfigValidationInvalid_errors[];
+  errors: ConfigEditorContainerCheckConfigQuery_isPipelineConfigValid_PipelineConfigValidationInvalid_errors[];
 }
 
-export type ConfigCodeEditorContainerCheckConfigQuery_isPipelineConfigValid = ConfigCodeEditorContainerCheckConfigQuery_isPipelineConfigValid_PipelineConfigValidationValid | ConfigCodeEditorContainerCheckConfigQuery_isPipelineConfigValid_PipelineConfigValidationInvalid;
+export type ConfigEditorContainerCheckConfigQuery_isPipelineConfigValid =
+  | ConfigEditorContainerCheckConfigQuery_isPipelineConfigValid_PipelineConfigValidationValid
+  | ConfigEditorContainerCheckConfigQuery_isPipelineConfigValid_PipelineConfigValidationInvalid;
 
-export interface ConfigCodeEditorContainerCheckConfigQuery {
-  isPipelineConfigValid: ConfigCodeEditorContainerCheckConfigQuery_isPipelineConfigValid;
+export interface ConfigEditorContainerCheckConfigQuery {
+  isPipelineConfigValid: ConfigEditorContainerCheckConfigQuery_isPipelineConfigValid;
 }
 
-export interface ConfigCodeEditorContainerCheckConfigQueryVariables {
+export interface ConfigEditorContainerCheckConfigQueryVariables {
   executionParams: PipelineExecutionParams;
 }
 
@@ -63,7 +65,7 @@ export enum LogLevel {
   DEBUG = "DEBUG",
   ERROR = "ERROR",
   INFO = "INFO",
-  WARNING = "WARNING",
+  WARNING = "WARNING"
 }
 
 /**
@@ -73,7 +75,7 @@ export enum PipelineRunStatus {
   FAILURE = "FAILURE",
   NOT_STARTED = "NOT_STARTED",
   STARTED = "STARTED",
-  SUCCESS = "SUCCESS",
+  SUCCESS = "SUCCESS"
 }
 
 export enum StepTag {
@@ -83,11 +85,11 @@ export enum StepTag {
   MATERIALIZATION_THUNK = "MATERIALIZATION_THUNK",
   OUTPUT_EXPECTATION = "OUTPUT_EXPECTATION",
   SERIALIZE = "SERIALIZE",
-  TRANSFORM = "TRANSFORM",
+  TRANSFORM = "TRANSFORM"
 }
 
 /**
- * 
+ *
  */
 export interface PipelineExecutionParams {
   pipelineName: string;

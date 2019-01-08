@@ -4,39 +4,40 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL fragment: PipelineExecutionCodeEditorFragment
+// GraphQL fragment: ConfigEditorPipelineFragment
 // ====================================================
 
-export interface PipelineExecutionCodeEditorFragment_environmentType {
+export interface ConfigEditorPipelineFragment_environmentType {
   name: string;
 }
 
-export interface PipelineExecutionCodeEditorFragment_types_RegularType {
+export interface ConfigEditorPipelineFragment_types_RegularType {
   __typename: "RegularType";
   name: string;
 }
 
-export interface PipelineExecutionCodeEditorFragment_types_CompositeType_fields_type {
+export interface ConfigEditorPipelineFragment_types_CompositeType_fields_type {
   name: string;
 }
 
-export interface PipelineExecutionCodeEditorFragment_types_CompositeType_fields {
+export interface ConfigEditorPipelineFragment_types_CompositeType_fields {
   name: string;
-  type: PipelineExecutionCodeEditorFragment_types_CompositeType_fields_type;
+  isOptional: boolean;
+  type: ConfigEditorPipelineFragment_types_CompositeType_fields_type;
 }
 
-export interface PipelineExecutionCodeEditorFragment_types_CompositeType {
+export interface ConfigEditorPipelineFragment_types_CompositeType {
   __typename: "CompositeType";
   name: string;
-  fields: PipelineExecutionCodeEditorFragment_types_CompositeType_fields[];
+  fields: ConfigEditorPipelineFragment_types_CompositeType_fields[];
 }
 
-export type PipelineExecutionCodeEditorFragment_types = PipelineExecutionCodeEditorFragment_types_RegularType | PipelineExecutionCodeEditorFragment_types_CompositeType;
+export type ConfigEditorPipelineFragment_types = ConfigEditorPipelineFragment_types_RegularType | ConfigEditorPipelineFragment_types_CompositeType;
 
-export interface PipelineExecutionCodeEditorFragment {
+export interface ConfigEditorPipelineFragment {
   name: string;
-  environmentType: PipelineExecutionCodeEditorFragment_environmentType;
-  types: PipelineExecutionCodeEditorFragment_types[];
+  environmentType: ConfigEditorPipelineFragment_environmentType;
+  types: ConfigEditorPipelineFragment_types[];
 }
 
 /* tslint:disable */

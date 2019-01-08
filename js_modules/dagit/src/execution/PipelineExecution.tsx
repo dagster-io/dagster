@@ -10,12 +10,17 @@ import { PipelineRun, PipelineRunEmpty } from "./PipelineRun";
 import { ExecutionTabs, ExecutionTab } from "./ExecutionTabs";
 import { PanelDivider } from "../PanelDivider";
 
-import ConfigCodeEditorContainer from "../configeditor/ConfigCodeEditorContainer";
-import { PipelineExecutionCodeEditorFragment } from "./types/PipelineExecutionCodeEditorFragment";
+import ConfigEditorContainer from "../configeditor/ConfigEditorContainer";
+import {
+  CONFIG_EDITOR_PIPELINE_FRAGMENT,
+  scaffoldConfig
+} from "../configeditor/ConfigEditorUtils";
+
+import { PipelineExecutionPipelineFragment } from "./types/PipelineExecutionPipelineFragment";
 import { PipelineExecutionPipelineRunFragment } from "./types/PipelineExecutionPipelineRunFragment";
 
 interface IPipelineExecutionProps {
-  pipeline: PipelineExecutionCodeEditorFragment;
+  pipeline: PipelineExecutionPipelineFragment;
   activeRun: PipelineExecutionPipelineRunFragment | null;
   sessions: { [name: string]: IExecutionSession };
   currentSession: IExecutionSession;
@@ -23,7 +28,7 @@ interface IPipelineExecutionProps {
   onSelectSession: (session: string) => void;
   onRenameSession: (session: string, title: string) => void;
   onSaveSession: (session: string, config: any) => void;
-  onCreateSession: () => void;
+  onCreateSession: (config: any) => void;
   onRemoveSession: (session: string) => void;
   onExecute: (config: any) => void;
 }
@@ -37,14 +42,17 @@ export default class PipelineExecution extends React.Component<
   IPipelineExecutionState
 > {
   static fragments = {
-    PipelineExecutionCodeEditorFragment: gql`
-      fragment PipelineExecutionCodeEditorFragment on Pipeline {
+    PipelineExecutionPipelineFragment: gql`
+      fragment PipelineExecutionPipelineFragment on Pipeline {
         name
         environmentType {
           name
         }
+        ...ConfigEditorPipelineFragment
       }
+      ${CONFIG_EDITOR_PIPELINE_FRAGMENT}
     `,
+
     PipelineExecutionPipelineRunFragment: gql`
       fragment PipelineExecutionPipelineRunFragment on PipelineRun {
         runId
@@ -54,6 +62,7 @@ export default class PipelineExecution extends React.Component<
 
       ${PipelineRun.fragments.PipelineRunFragment}
     `,
+
     PipelineExecutionPipelineRunEventFragment: gql`
       fragment PipelineExecutionPipelineRunEventFragment on PipelineRunEvent {
         ...PipelineRunPipelineRunEventFragment
@@ -66,11 +75,21 @@ export default class PipelineExecution extends React.Component<
     editorVW: 50
   };
 
+  componentDidMount() {
+    if (!this.props.currentSession) {
+      this.props.onCreateSession(scaffoldConfig(this.props.pipeline));
+    }
+  }
+
   onConfigChange = (config: any) => {
     this.props.onSaveSession(this.props.currentSession.key, config);
   };
 
   render() {
+    if (!this.props.currentSession) {
+      return <span />;
+    }
+
     return (
       <PipelineExecutionWrapper>
         <Split width={this.state.editorVW}>
@@ -91,12 +110,13 @@ export default class PipelineExecution extends React.Component<
             ))}
             <ExecutionTab
               title={"Add..."}
-              onClick={() => this.props.onCreateSession()}
+              onClick={() => {
+                this.props.onCreateSession(scaffoldConfig(this.props.pipeline));
+              }}
             />
           </ExecutionTabs>
-          <ConfigCodeEditorContainer
-            pipelineName={this.props.pipeline.name}
-            environmentTypeName={this.props.pipeline.environmentType.name}
+          <ConfigEditorContainer
+            pipeline={this.props.pipeline}
             configCode={this.props.currentSession.config}
             onConfigChange={this.onConfigChange}
           />

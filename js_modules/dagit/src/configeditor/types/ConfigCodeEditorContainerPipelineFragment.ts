@@ -1,42 +1,37 @@
-
-
 /* tslint:disable */
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL fragment: PipelineExecutionCodeEditorFragment
+// GraphQL fragment: ConfigEditorContainerPipelineFragment
 // ====================================================
 
-export interface PipelineExecutionCodeEditorFragment_environmentType {
-  name: string;
-}
-
-export interface PipelineExecutionCodeEditorFragment_types_RegularType {
+export interface ConfigEditorContainerPipelineFragment_types_RegularType {
   __typename: "RegularType";
   name: string;
 }
 
-export interface PipelineExecutionCodeEditorFragment_types_CompositeType_fields_type {
+export interface ConfigEditorContainerPipelineFragment_types_CompositeType_fields_type {
   name: string;
 }
 
-export interface PipelineExecutionCodeEditorFragment_types_CompositeType_fields {
+export interface ConfigEditorContainerPipelineFragment_types_CompositeType_fields {
   name: string;
-  type: PipelineExecutionCodeEditorFragment_types_CompositeType_fields_type;
+  type: ConfigEditorContainerPipelineFragment_types_CompositeType_fields_type;
 }
 
-export interface PipelineExecutionCodeEditorFragment_types_CompositeType {
+export interface ConfigEditorContainerPipelineFragment_types_CompositeType {
   __typename: "CompositeType";
   name: string;
-  fields: PipelineExecutionCodeEditorFragment_types_CompositeType_fields[];
+  fields: ConfigEditorContainerPipelineFragment_types_CompositeType_fields[];
 }
 
-export type PipelineExecutionCodeEditorFragment_types = PipelineExecutionCodeEditorFragment_types_RegularType | PipelineExecutionCodeEditorFragment_types_CompositeType;
+export type ConfigEditorContainerPipelineFragment_types =
+  | ConfigEditorContainerPipelineFragment_types_RegularType
+  | ConfigEditorContainerPipelineFragment_types_CompositeType;
 
-export interface PipelineExecutionCodeEditorFragment {
+export interface ConfigEditorContainerPipelineFragment {
   name: string;
-  environmentType: PipelineExecutionCodeEditorFragment_environmentType;
-  types: PipelineExecutionCodeEditorFragment_types[];
+  types: ConfigEditorContainerPipelineFragment_types[];
 }
 
 /* tslint:disable */
@@ -51,7 +46,7 @@ export enum LogLevel {
   DEBUG = "DEBUG",
   ERROR = "ERROR",
   INFO = "INFO",
-  WARNING = "WARNING",
+  WARNING = "WARNING"
 }
 
 /**
@@ -61,7 +56,7 @@ export enum PipelineRunStatus {
   FAILURE = "FAILURE",
   NOT_STARTED = "NOT_STARTED",
   STARTED = "STARTED",
-  SUCCESS = "SUCCESS",
+  SUCCESS = "SUCCESS"
 }
 
 export enum StepTag {
@@ -71,11 +66,11 @@ export enum StepTag {
   MATERIALIZATION_THUNK = "MATERIALIZATION_THUNK",
   OUTPUT_EXPECTATION = "OUTPUT_EXPECTATION",
   SERIALIZE = "SERIALIZE",
-  TRANSFORM = "TRANSFORM",
+  TRANSFORM = "TRANSFORM"
 }
 
 /**
- * 
+ *
  */
 export interface PipelineExecutionParams {
   pipelineName: string;

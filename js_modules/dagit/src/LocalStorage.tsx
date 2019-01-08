@@ -72,11 +72,12 @@ export function applyConfigToSession(
   return data;
 }
 
-export function applyCreateSession(data: IStorageData) {
+export function applyCreateSession(data: IStorageData, config: string) {
   const key = `s${Date.now()}`;
   data.sessions[key] = Object.assign({}, DEFAULT_SESSION, {
     key,
-    name: "Untitled"
+    name: "Untitled",
+    config: config
   });
   data.current = key;
   return data;
@@ -101,8 +102,8 @@ export class StorageProvider extends React.Component<
   IStorageProviderState
 > {
   public state: IStorageProviderState = {
-    sessions: { default: Object.assign({}, DEFAULT_SESSION) },
-    current: "default",
+    sessions: {},
+    current: "",
 
     currentSession() {
       return this.sessions[this.current];
