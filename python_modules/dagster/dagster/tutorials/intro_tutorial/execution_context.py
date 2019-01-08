@@ -10,7 +10,6 @@ def debug_message(info):
 @solid
 def error_message(info):
     info.context.error('An error occurred.')
-    raise Exception()
 
 
 def define_execution_context_pipeline_step_one():
@@ -19,13 +18,13 @@ def define_execution_context_pipeline_step_one():
 
 def define_execution_context_pipeline_step_two():
     return PipelineDefinition(
-        name='part_five_pipeline', solids=[debug_message, error_message]
+        name='execution_context_pipeline', solids=[debug_message, error_message]
     )
 
 
 def define_execution_context_pipeline_step_three():
     return PipelineDefinition(
-        name='part_five_pipeline', solids=[debug_message, error_message]
+        name='execution_context_pipeline', solids=[debug_message, error_message]
     )
 
 

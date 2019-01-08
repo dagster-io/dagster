@@ -3,7 +3,7 @@ Hello, DAG
 One of the core capabitilies of dagster is the ability to express data pipelines as arbitrary
 directed acyclic graphs (DAGs) of solids.
 
-Let's define a very simple two-solid pipeline whose first solid returns a hardcoded string,
+We'll define a very simple two-solid pipeline whose first solid returns a hardcoded string,
 and whose second solid concatenates two copies of its input. The output of the pipeline should be
 two concatenated copies of the hardcoded string.
 
@@ -15,8 +15,8 @@ This pipeline introduces a few new concepts.
 
 1.  Solids can have **inputs** defined by instances of
     :py:class:`InputDefinition <dagster.InputDefinition>`. Inputs allow us to connect solids to
-    each other, and gives dagster information about solids' dependencies (and, as we'll see later,
-    optionally let dagster check the types of the inputs at runtime).
+    each other, and give dagster information about solids' dependencies on each other (and, as
+    we'll see later, optionally let dagster check the types of the inputs at runtime).
 
 2.  Solids' **dependencies** on each other are expressed by instances of 
     :py:class:`DependencyDefinition <dagster.DependencyDefinition>`.
@@ -42,7 +42,10 @@ Let's visualize the DAG we've just defined in dagit.
 
    $ dagit -f hello_dag.py -n define_hello_dag_pipeline
 
-.. image:: hello_dag_fig_one.png
+Navigate to http://127.0.0.1:3000/hello_dag_pipeline/explore or choose the hello_dag_pipeline
+from the dropdown:
+
+.. image:: hello_dag_figure_one.png
 
 One of the distinguishing features of dagster that separates it from many workflow engines is that
 dependencies connect *inputs* and *outputs* rather than just *tasks*. An author of a dagster

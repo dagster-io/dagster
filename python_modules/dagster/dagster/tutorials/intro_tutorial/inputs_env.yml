@@ -1,4 +1,4 @@
 solids:
   add_hello_to_word:
     inputs:
-      word: "Another World"
+      word: "Mars"

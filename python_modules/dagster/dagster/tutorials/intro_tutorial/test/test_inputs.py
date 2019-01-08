@@ -14,7 +14,7 @@ def test_hello_inputs_parameterized_pipeline():
     result = execute_with_another_world()
     assert result.success
     solid_result = result.result_for_solid("add_hello_to_word")
-    assert solid_result.transformed_value() == "Hello, Another World!"
+    assert solid_result.transformed_value() == "Hello, Mars!"
 
 
 def test_hello_inputs_parameterized_cli_pipeline():

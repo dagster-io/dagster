@@ -2,7 +2,7 @@ import pytest
 
 from dagster import execute_pipeline
 
-from ..part_five import (
+from ..execution_context import (
     define_execution_context_pipeline_step_one,
     define_execution_context_pipeline_step_two,
     define_execution_context_pipeline_step_three,
