@@ -60,7 +60,7 @@ class RepositoryDefinition(object):
         try:
             pipeline = self.pipeline_dict[name]()
         except KeyError:
-            raise Exception(
+            raise check.CheckError(
                 'Could not find pipeline "{name}". Found: {pipeline_names}.'.format(
                     name=name,
                     pipeline_names=', '.join(
