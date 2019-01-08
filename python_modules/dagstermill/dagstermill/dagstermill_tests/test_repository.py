@@ -1,6 +1,5 @@
 from dagster import RepositoryDefinition
-
-from dagstermill.examples.repository import define_example_repository
+from .repository import define_example_repository
 
 
 def test_dagstermill_repo():

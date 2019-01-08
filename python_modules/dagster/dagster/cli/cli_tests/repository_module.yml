@@ -1,0 +1,3 @@
+repository:
+  module: dagster.cli.cli_tests.test_dynamic_loader
+  fn: define_bar_repo
