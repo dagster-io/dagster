@@ -98,14 +98,13 @@ jobs:
       - run:
           name: Install Dependencies
           command: |
-            sudo pip install -r python_modules/dagster/dev-requirements.txt
-            sudo pip install -e python_modules/dagster
-            sudo pip install -e python_modules/dagit
-            sudo pip install -r python_modules/dagit/dev-requirements.txt
-            sudo pip install -e python_modules/dagstermill
-            sudo pip install -e python_modules/dagster-contrib
-            sudo pip install -e python_modules/dagster-contrib[pandas]
-            sudo pip install -e python_modules/dagster-contrib[sqlalchemy]
+            sudo pip install -r python_modules/dagster/dev-requirements.txt -qqq
+            sudo pip install -e python_modules/dagster -qqq
+            sudo pip install -e python_modules/dagit -qqq
+            sudo pip install -r python_modules/dagit/dev-requirements.txt -qqq
+            sudo pip install -e python_modules/dagstermill -qqq
+            sudo pip install -e python_modules/dagster-pandas -qqq
+            sudo pip install -e python_modules/dagster-sqlalchemy -qqq
 
       - attach_workspace:
           at: /tmp/workspace
