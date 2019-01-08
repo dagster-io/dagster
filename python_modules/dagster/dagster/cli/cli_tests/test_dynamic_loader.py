@@ -190,16 +190,16 @@ def test_load_from_repository_file():
 def test_load_from_repository_module():
     pipeline = load_pipeline_from_target_info(
         PipelineTargetInfo(
-            module_name='dagster.tutorials.intro_tutorial.part_six',
-            pipeline_name='part_six',
+            module_name='dagster.cli.cli_tests.test_dynamic_loader',
+            pipeline_name='foo',
             python_file=None,
-            fn_name='define_part_six_repo',
+            fn_name='define_bar_repo',
             repository_yaml=None,
         )
     )
 
     assert isinstance(pipeline, PipelineDefinition)
-    assert pipeline.name == 'part_six'
+    assert pipeline.name == 'foo'
 
 
 def test_load_from_pipeline_file():
@@ -220,8 +220,8 @@ def test_load_from_pipeline_file():
 def test_load_from_pipeline_module():
     pipeline = load_pipeline_from_target_info(
         PipelineTargetInfo(
-            module_name='dagster.tutorials.intro_tutorial.part_six',
-            fn_name='define_part_six_pipeline',
+            module_name='dagster.cli.cli_tests.test_dynamic_loader',
+            fn_name='define_foo_pipeline',
             pipeline_name=None,
             python_file=None,
             repository_yaml=None,
@@ -229,14 +229,14 @@ def test_load_from_pipeline_module():
     )
 
     assert isinstance(pipeline, PipelineDefinition)
-    assert pipeline.name == 'part_six'
+    assert pipeline.name == 'foo'
 
 
 def test_loader_from_default_repository_module_yaml():
     pipeline = load_pipeline_from_target_info(
         PipelineTargetInfo(
             module_name=None,
-            pipeline_name='part_six',
+            pipeline_name='foo',
             python_file=None,
             fn_name=None,
             repository_yaml=script_relative_path('repository_module.yml'),
@@ -244,7 +244,7 @@ def test_loader_from_default_repository_module_yaml():
     )
 
     assert isinstance(pipeline, PipelineDefinition)
-    assert pipeline.name == 'part_six'
+    assert pipeline.name == 'foo'
 
 
 def test_loader_from_default_repository_file_yaml():
@@ -299,7 +299,7 @@ def test_repo_yaml_module_dynamic_load():
     ).load()
 
     assert isinstance(repository, RepositoryDefinition)
-    assert repository.name == 'part_six_repo'
+    assert repository.name == 'bar'
 
 
 def test_repo_yaml_file_dynamic_load():
@@ -320,14 +320,14 @@ def test_repo_module_dynamic_load():
     repository = load_repository_object_from_target_info(
         RepositoryTargetInfo(
             repository_yaml=None,
-            module_name='dagster.tutorials.intro_tutorial.part_six',
+            module_name='dagster.cli.cli_tests.test_dynamic_loader',
             python_file=None,
-            fn_name='define_part_six_repo',
+            fn_name='define_bar_repo',
         )
     ).load()
 
     assert isinstance(repository, RepositoryDefinition)
-    assert repository.name == 'part_six_repo'
+    assert repository.name == 'bar'
 
 
 def test_repo_file_dynamic_load():
@@ -348,15 +348,15 @@ def test_repo_module_dynamic_load_from_pipeline():
     repository = load_repository_object_from_target_info(
         RepositoryTargetInfo(
             repository_yaml=None,
-            module_name='dagster.tutorials.intro_tutorial.part_six',
+            module_name='dagster.cli.cli_tests.test_dynamic_loader',
             python_file=None,
-            fn_name='define_part_six_pipeline',
+            fn_name='define_foo_pipeline',
         )
     ).load()
 
     assert isinstance(repository, RepositoryDefinition)
     assert repository.name == '<<unnamed>>'
-    assert repository.get_pipeline('part_six').name == 'part_six'
+    assert repository.get_pipeline('foo').name == 'foo'
 
 
 def test_repo_file_dynamic_load_from_pipeline():
