@@ -9,7 +9,6 @@ from dagster import (
     Dict,
     ExecutionContext,
     Field,
-    Field,
     InputDefinition,
     OutputDefinition,
     Path,
