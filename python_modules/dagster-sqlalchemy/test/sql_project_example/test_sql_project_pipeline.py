@@ -53,9 +53,6 @@ def _get_sql_script_path(name):
     )
 
 
-g
-
-
 def _get_project_solid(name, inputs=None):
     return sql_file_solid(_get_sql_script_path(name), inputs=inputs)
 
