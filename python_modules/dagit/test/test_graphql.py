@@ -25,7 +25,7 @@ from dagster import (
 
 from dagster.utils import script_relative_path
 
-from dagster_contrib.pandas import DataFrame
+from dagster_pandas import DataFrame
 
 from dagit.app import RepositoryContainer
 from dagit.pipeline_execution_manager import SynchronousExecutionManager

@@ -10,7 +10,7 @@ from dagster.cli.dynamic_loader import RepositoryTargetInfo
 from dagster.core.events import EventType
 from dagster.core.execution import create_execution_plan
 from dagster.utils import script_relative_path
-import dagster_contrib.pandas as dagster_pd
+import dagster_pandas as dagster_pd
 
 from dagit.app import RepositoryContainer
 from dagit.pipeline_execution_manager import MultiprocessingExecutionManager

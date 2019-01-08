@@ -1,0 +1,6 @@
+solids:
+  sum_solid:
+    inputs:
+      num:
+        csv:
+          path: dagster_pandas/examples/pandas_hello_world/num.csv
