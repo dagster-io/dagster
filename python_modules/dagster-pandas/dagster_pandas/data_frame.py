@@ -1,13 +1,14 @@
 from collections import namedtuple
 import os
 import pickle
-import tempfile
 
 import pandas as pd
 
 from dagster import (
+    check,
     Dict,
     ExecutionContext,
+    Field,
     Field,
     InputDefinition,
     OutputDefinition,
@@ -15,8 +16,6 @@ from dagster import (
     Result,
     SolidDefinition,
     String,
-    check,
-    types,
 )
 
 from dagster.core.types.field import ConfigSelector
