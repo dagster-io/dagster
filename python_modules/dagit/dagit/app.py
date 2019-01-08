@@ -97,9 +97,8 @@ def index_view(_path):
         dagit, then probably it's a corrupted installation or a bug. However, if you are
         developing dagit locally, you problem can be fixed as follows:</p>
 
-<pre>cd ./python_modules/dagit/dagit/webapp
-yarn
-yarn build</pre>'''
+<pre>cd ./python_modules/
+make rebuild_dagit</pre>'''
         return text, 500
 
 
