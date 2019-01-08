@@ -4,16 +4,19 @@ import styled from "styled-components";
 import * as yaml from "yaml";
 import { Icon, Colors } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
+import { ApolloConsumer } from "react-apollo";
 
 import { IExecutionSession } from "../LocalStorage";
 import { PipelineRun, PipelineRunEmpty } from "./PipelineRun";
 import { ExecutionTabs, ExecutionTab } from "./ExecutionTabs";
 import { PanelDivider } from "../PanelDivider";
 
-import ConfigEditorContainer from "../configeditor/ConfigEditorContainer";
+import ConfigEditor from "../configeditor/ConfigEditor";
 import {
   CONFIG_EDITOR_PIPELINE_FRAGMENT,
-  scaffoldConfig
+  createTypeConfig,
+  scaffoldConfig,
+  checkConfig
 } from "../configeditor/ConfigEditorUtils";
 
 import { PipelineExecutionPipelineFragment } from "./types/PipelineExecutionPipelineFragment";
@@ -86,7 +89,15 @@ export default class PipelineExecution extends React.Component<
   };
 
   render() {
-    if (!this.props.currentSession) {
+    const {
+      sessions,
+      pipeline,
+      activeRun,
+      isExecuting,
+      currentSession
+    } = this.props;
+
+    if (!currentSession) {
       return <span />;
     }
 
@@ -94,15 +105,15 @@ export default class PipelineExecution extends React.Component<
       <PipelineExecutionWrapper>
         <Split width={this.state.editorVW}>
           <ExecutionTabs>
-            {Object.keys(this.props.sessions).map(key => (
+            {Object.keys(sessions).map(key => (
               <ExecutionTab
                 key={key}
-                active={key === this.props.currentSession.key}
-                title={this.props.sessions[key].name}
+                active={key === currentSession.key}
+                title={sessions[key].name}
                 onClick={() => this.props.onSelectSession(key)}
                 onChange={title => this.props.onRenameSession(key, title)}
                 onRemove={
-                  Object.keys(this.props.sessions).length > 1
+                  Object.keys(sessions).length > 1
                     ? () => this.props.onRemoveSession(key)
                     : undefined
                 }
@@ -111,33 +122,37 @@ export default class PipelineExecution extends React.Component<
             <ExecutionTab
               title={"Add..."}
               onClick={() => {
-                this.props.onCreateSession(scaffoldConfig(this.props.pipeline));
+                this.props.onCreateSession(scaffoldConfig(pipeline));
               }}
             />
           </ExecutionTabs>
-          <ConfigEditorContainer
-            pipeline={this.props.pipeline}
-            configCode={this.props.currentSession.config}
-            onConfigChange={this.onConfigChange}
-          />
+          <ApolloConsumer>
+            {client => (
+              <ConfigEditor
+                configCode={currentSession.config}
+                onConfigChange={this.onConfigChange}
+                typeConfig={createTypeConfig(pipeline)}
+                checkConfig={json => checkConfig(client, pipeline.name, json)}
+              />
+            )}
+          </ApolloConsumer>
           <IconWrapper
             role="button"
-            disabled={this.props.isExecuting}
+            disabled={isExecuting}
             onClick={async event => {
-              if (!this.props.isExecuting) {
-                let config = {};
-                try {
-                  config = yaml.parse(this.props.currentSession.config);
-                } catch (err) {
-                  alert(`Fix the errors in your config YAML and try again.`);
-                  return;
-                }
-                this.props.onExecute(config);
+              if (isExecuting) return;
+              let config = {};
+              try {
+                config = yaml.parse(currentSession.config);
+              } catch (err) {
+                alert(`Fix the errors in your config YAML and try again.`);
+                return;
               }
+              this.props.onExecute(config);
             }}
           >
             <Icon
-              icon={this.props.isExecuting ? IconNames.REFRESH : IconNames.PLAY}
+              icon={isExecuting ? IconNames.REFRESH : IconNames.PLAY}
               iconSize={40}
             />
           </IconWrapper>
@@ -147,8 +162,8 @@ export default class PipelineExecution extends React.Component<
           onMove={(vw: number) => this.setState({ editorVW: vw })}
         />
         <Split>
-          {this.props.activeRun ? (
-            <PipelineRun pipelineRun={this.props.activeRun} />
+          {activeRun ? (
+            <PipelineRun pipelineRun={activeRun} />
           ) : (
             <PipelineRunEmpty />
           )}
