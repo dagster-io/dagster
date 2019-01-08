@@ -12,7 +12,6 @@ from dagster import (
     SolidDefinition,
     SolidInstance,
     check,
-    execute_pipeline,
     lambda_solid,
     solid,
 )
