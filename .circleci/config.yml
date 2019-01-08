@@ -65,8 +65,18 @@ workflows:
             - airline-demo-py35
             - airline-demo-py27
           context: coveralls
+  nightlies:
+      - schedule:
+          cron: "0 8 * * *"
+          filters:
+            branches:
+              only:
+                - master
+    jobs:
+      - coverage
 
-
+In the above example, the commit workflow has no triggers key and will run on every git push. The nightly workflow has a triggers key and will run on the specified schedule.
+Specifying a Valid Schedule
 
 jobs:
   format:
