@@ -1,37 +1,26 @@
 from dagster import check
 
 from .builtin_enum import BuiltinEnum
+from .wrapping import WrappingType
+
+MAGIC_RUNTIME_TYPE_NAME = '__runtime_type'
 
 
-class WrappingType(object):
-    def __init__(self, inner_type):
-        # Cannot check inner_type because of circular references and no fwd declarations
-        self.inner_type = inner_type
-
-
-def List(inner_type):
-    return WrappingListType(inner_type)
-
-
-class WrappingListType(WrappingType):
-    pass
-
-
-def Nullable(inner_type):
-    return WrappingNullableType(inner_type)
-
-
-class WrappingNullableType(WrappingType):
-    pass
+def is_runtime_type_decorated_klass(klass):
+    check.type_param(klass, 'klass')
+    return hasattr(klass, MAGIC_RUNTIME_TYPE_NAME)
 
 
 def check_dagster_type_param(dagster_type, param_name, base_type):
+
     # Cannot check base_type because of circular references and no fwd declarations
     if dagster_type is None:
         return dagster_type
     if isinstance(dagster_type, BuiltinEnum):
         return dagster_type
     if isinstance(dagster_type, WrappingType):
+        return dagster_type
+    if is_runtime_type_decorated_klass(dagster_type):
         return dagster_type
 
     check.param_invariant(

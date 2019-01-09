@@ -2,9 +2,11 @@
 import pytest
 
 from dagster import (
+    Any,
     DagsterInvalidDefinitionError,
     DependencyDefinition,
     ExecutionContext,
+    Field,
     InputDefinition,
     MultipleResults,
     OutputDefinition,
@@ -13,8 +15,6 @@ from dagster import (
     execute_pipeline,
     lambda_solid,
     solid,
-    Field,
-    Any,
 )
 
 from dagster.core.errors import DagsterInvariantViolationError

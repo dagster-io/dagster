@@ -12,22 +12,15 @@ from dagster import (
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
-    PythonObjectType,
     execute_pipeline,
     lambda_solid,
+    make_dagster_type,
     solid,
 )
 
 from dagster.core.types.runtime import RuntimeType
 
-StringTuple = namedtuple('StringTuple', 'str_one str_two')
-
-
-class StringTupleType(PythonObjectType):
-    def __init__(self):
-        super(StringTupleType, self).__init__(
-            name='StringTuple', python_type=StringTuple, description=''
-        )
+StringTuple = make_dagster_type(namedtuple('StringTuple', 'str_one str_two'))
 
 
 class SSNString(str):
@@ -55,7 +48,7 @@ class SSNStringTypeClass(RuntimeType):
         return SSNString(value)
 
 
-@lambda_solid(output=OutputDefinition(StringTupleType))
+@lambda_solid(output=OutputDefinition(StringTuple))
 def produce_valid_value():
     return StringTuple(str_one='value_one', str_two='value_two')
 
@@ -65,7 +58,7 @@ def produce_invalid_value():
     return 'not_a_tuple'
 
 
-@solid(inputs=[InputDefinition('string_tuple', StringTupleType)])
+@solid(inputs=[InputDefinition('string_tuple', StringTuple)])
 def consume_string_tuple(info, string_tuple):
     info.context.info('Logging value {string_tuple}'.format(string_tuple=string_tuple))
 
