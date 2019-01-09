@@ -83,7 +83,7 @@ def get_notebook_scaffolding(register_repo_info):
     )
 
 
-@click.command(name='scaffold', help=('Creates new dagstermill notebook.'))
+@click.command(name='create-notebook', help=('Creates new dagstermill notebook.'))
 @repository_target_argument
 @click.option('--notebook', '-note', type=click.STRING, help="Name of notebook")
 @click.option(
@@ -101,11 +101,11 @@ def get_notebook_scaffolding(register_repo_info):
     is_flag=True,
     help="Will force overwrite any existing notebook or file with the same name.",
 )
-def scaffold(notebook, solid_name, force_overwrite, **kwargs):
-    execute_scaffold(notebook, solid_name, force_overwrite, **kwargs)
+def create_notebook(notebook, solid_name, force_overwrite, **kwargs):
+    execute_create_notebook(notebook, solid_name, force_overwrite, **kwargs)
 
 
-def execute_scaffold(notebook, solid_name, force_overwrite, **kwargs):
+def execute_create_notebook(notebook, solid_name, force_overwrite, **kwargs):
     if not re.match(r'^[a-zA-Z0-9\-_\\/]+$', notebook):
         raise click.BadOptionUsage(
             notebook,
@@ -161,4 +161,6 @@ def execute_scaffold(notebook, solid_name, force_overwrite, **kwargs):
 
 
 def create_dagstermill_cli():
-    return scaffold
+    group = click.Group(name="create-notebook")
+    group.add_command(create_notebook)
+    return group

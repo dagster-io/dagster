@@ -2,7 +2,7 @@ import subprocess
 import os
 import pytest
 from dagster.utils import script_relative_path
-from dagstermill.cli import execute_scaffold
+from dagstermill.cli import execute_create_notebook
 
 EXPECTED_OUTPUT_SHELL = '''
     {{
@@ -69,7 +69,7 @@ def cleanup(notebook_name):
 def execute_dagstermill_cli(
     file_name=None, module_name=None, fn_name=None, notebook_name=None, solid_name=None
 ):
-    cli_cmd = ['dagstermill']
+    cli_cmd = ['dagstermill', "create-notebook"]
     if file_name:
         cli_cmd += ['-f', file_name]
     if module_name:
@@ -184,7 +184,7 @@ def test_coverage():
     original_cwd = os.getcwd()
     try:
         os.chdir(script_relative_path('.'))
-        execute_scaffold(
+        execute_create_notebook(
             notebook="notebooks/CLI_coverage",
             solid_name="solid_name",
             force_overwrite=True,
