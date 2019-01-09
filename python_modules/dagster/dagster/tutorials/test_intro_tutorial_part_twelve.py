@@ -12,11 +12,10 @@ from dagster import (
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
-    PythonObjectType,
     execute_pipeline,
     lambda_solid,
-    solid,
     make_dagster_type,
+    solid,
 )
 
 from dagster.core.types.runtime import RuntimeType

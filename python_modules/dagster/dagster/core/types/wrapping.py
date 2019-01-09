@@ -13,6 +13,7 @@ class WrappingListType(WrappingType):
 
 
 def Nullable(inner_type):
+    # Cannot check inner_type because of circular references and no fwd declarations
     return WrappingNullableType(inner_type)
 
 
