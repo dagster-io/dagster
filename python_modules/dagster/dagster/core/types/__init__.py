@@ -1,5 +1,5 @@
 from .builtin_enum import BuiltinEnum
-from .dagster_type import Nullable, List
+from .wrapping import Nullable, List
 from .field import Dict, Field, NamedDict
 from .runtime import PythonObjectType
 

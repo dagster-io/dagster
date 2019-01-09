@@ -5,7 +5,9 @@ import six
 from dagster import check
 
 from .builtin_enum import BuiltinEnum
-from .dagster_type import WrappingListType, WrappingNullableType, check_dagster_type_param
+
+# from .dagster_type import check_dagster_type_param
+from .wrapping import WrappingListType, WrappingNullableType
 
 
 class ConfigTypeAttributes(
@@ -243,7 +245,7 @@ def resolve_to_config_nullable(nullable_type):
 
 
 def resolve_config_type(dagster_type):
-    check_dagster_type_param(dagster_type, 'dagster_type', ConfigType)
+    # check_dagster_type_param(dagster_type, 'dagster_type', ConfigType)
 
     if dagster_type is None:
         return ConfigAny.inst()

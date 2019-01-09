@@ -13,7 +13,7 @@ from .config import ConfigType
 from .config import List as ConfigList
 from .config import Nullable as ConfigNullable
 from .config import resolve_config_type
-from .dagster_type import WrappingListType, WrappingNullableType, check_dagster_type_param
+from .wrapping import WrappingListType, WrappingNullableType
 
 
 def check_opt_config_cls_param(config_cls, param_name):
@@ -237,6 +237,9 @@ _RUNTIME_MAP = {
     BuiltinEnum.PATH: Path.inst(),
 }
 
+from .dagster_type import check_dagster_type_param
+from .decorator import is_runtime_type_decorated_klass, get_runtime_type_on_decorated_klass
+
 
 def resolve_runtime_type(dagster_type):
     check_dagster_type_param(dagster_type, 'dagster_type', RuntimeType)
@@ -249,6 +252,8 @@ def resolve_runtime_type(dagster_type):
         return resolve_to_runtime_list(dagster_type)
     if isinstance(dagster_type, WrappingNullableType):
         return resolve_to_runtime_nullable(dagster_type)
+    if is_runtime_type_decorated_klass(dagster_type):
+        return get_runtime_type_on_decorated_klass(dagster_type)
     if issubclass(dagster_type, RuntimeType):
         return dagster_type.inst()
 

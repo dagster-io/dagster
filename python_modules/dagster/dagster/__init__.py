@@ -57,6 +57,8 @@ from dagster.core.types import (
     PythonObjectType,
     String,
 )
+
+from dagster.core.types.decorator import dagster_type
 from dagster.core.types.config import ConfigType
 from dagster.core.types.evaluator import DagsterEvaluateConfigValueError
 from dagster.core.types.runtime import RuntimeType
