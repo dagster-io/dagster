@@ -370,11 +370,7 @@ def define_execution_config_cls(name):
     class _ExecutionConfigType(ConfigComposite):
         def __init__(self):
             super(_ExecutionConfigType, self).__init__(
-                name=name,
-                fields={
-                    'serialize_intermediates': Field(Bool, is_optional=True, default_value=False)
-                },
-                type_attributes=ConfigTypeAttributes(is_system_config=True),
+                name=name, fields={}, type_attributes=ConfigTypeAttributes(is_system_config=True)
             )
 
         def construct_from_config_value(self, config_value):

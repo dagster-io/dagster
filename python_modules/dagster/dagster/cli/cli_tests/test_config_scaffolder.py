@@ -63,8 +63,8 @@ def test_basic_solids_config():
     assert scaffold_pipeline_config(pipeline_def, skip_optional=False) == {
         'context': {'default': {'config': {'log_level': ''}, 'resources': {}}},
         'solids': {'required_field_solid': {'config': {'required_int': 0}}},
-        'execution': {'serialize_intermediates': True},
         'expectations': {'evaluate': True},
+        'execution': {},
     }
 
 
@@ -92,6 +92,6 @@ def test_two_contexts():
             'context_two': {'config': {'context_two_field': 0}, 'resources': {}},
         },
         'solids': {},
-        'execution': {'serialize_intermediates': True},
         'expectations': {'evaluate': True},
+        'execution': {},
     }

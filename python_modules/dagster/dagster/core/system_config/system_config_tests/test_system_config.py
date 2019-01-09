@@ -24,14 +24,12 @@ from dagster import (
 from dagster.core.system_config.objects import (
     ContextConfig,
     EnvironmentConfig,
-    ExecutionConfig,
     ExpectationsConfig,
     SolidConfig,
 )
 
 from dagster.core.system_config.types import (
     define_context_context_cls,
-    define_execution_config_cls,
     define_expectations_config_cls,
     define_solid_config_cls,
     define_solid_dictionary_cls,
@@ -80,17 +78,6 @@ def test_default_expectations():
     expect_config_type = define_expectations_config_cls('some_name').inst()
     assert throwing_evaluate_config_value(expect_config_type, {}).evaluate is True
     assert throwing_evaluate_config_value(expect_config_type, None).evaluate is True
-
-
-def test_default_execution():
-    execution_config_type = define_execution_config_cls('some_name').inst()
-    assert (
-        throwing_evaluate_config_value(execution_config_type, {}).serialize_intermediates is False
-    )
-    assert (
-        throwing_evaluate_config_value(execution_config_type, None).serialize_intermediates is False
-    )
-    assert execution_config_type.inst().type_attributes.is_system_config
 
 
 def test_default_context_config():
@@ -188,7 +175,6 @@ def test_default_environment():
     env_obj = throwing_evaluate_config_value(pipeline_def.environment_type, {})
 
     assert env_obj.expectations.evaluate is True
-    assert env_obj.execution.serialize_intermediates is False
 
 
 def test_errors():
@@ -415,15 +401,6 @@ def test_solid_config_error():
 
     with pytest.raises(DagsterEvaluateConfigValueError):
         throwing_evaluate_config_value(int_solid_config_type, 1)
-
-
-def test_execution_config():
-    env_obj = throwing_evaluate_config_value(
-        define_test_solids_config_pipeline().environment_type,
-        {'execution': {'serialize_intermediates': True}},
-    )
-    assert isinstance(env_obj.execution, ExecutionConfig)
-    assert env_obj.execution.serialize_intermediates
 
 
 def test_optional_solid_with_no_config():

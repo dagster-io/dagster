@@ -218,10 +218,6 @@ class ExecutionPlanInfo(namedtuple('_ExecutionPlanInfo', 'context pipeline envir
             check.inst_param(environment, 'environment', EnvironmentConfig),
         )
 
-    @property
-    def serialize_intermediates(self):
-        return self.environment.execution.serialize_intermediates
-
 
 class ExecutionPlanSubsetInfo(namedtuple('_ExecutionPlanSubsetInfo', 'subset inputs')):
     '''

@@ -29,8 +29,6 @@ from .objects import (
     StepTag,
 )
 
-from .serialization import decorate_with_serialization
-
 from .transform import create_transform_step
 
 from .utility import create_value_thunk_step
@@ -138,8 +136,6 @@ def create_subplan_for_output(execution_info, solid, solid_transform_step, outpu
     check.inst_param(output_def, 'output_def', OutputDefinition)
 
     subplan = decorate_with_expectations(execution_info, solid, solid_transform_step, output_def)
-
-    subplan = decorate_with_serialization(execution_info, solid, output_def, subplan)
 
     return decorate_with_output_materializations(execution_info, solid, output_def, subplan)
 
