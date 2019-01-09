@@ -1,3 +1,0 @@
-repository:
-  module: dagster_contrib.dagster_examples.repository
-  fn: define_example_repository
