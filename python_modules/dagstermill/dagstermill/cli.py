@@ -1,9 +1,10 @@
 from collections import namedtuple
 import os
 import re
-import click
-from dagster import check
 
+import click
+
+from dagster import check
 from dagster.cli.dynamic_loader import (
     repository_target_argument,
     load_target_info_from_cli_args,
@@ -13,10 +14,6 @@ from dagster.cli.dynamic_loader import (
     ModuleTargetFunction,
     InvalidRepositoryLoadingComboError,
 )
-
-
-def create_dagstermill_cli():
-    return scaffold
 
 
 def get_module_target_function(info):
@@ -137,7 +134,7 @@ def execute_scaffold(notebook, solid_name, force_overwrite, **kwargs):
             abort=True,
         )
 
-    if solid_name == "":
+    if not solid_name:
         solid_name = os.path.basename(notebook_path).split(".")[0]
 
     repository_target_info = load_target_info_from_cli_args(kwargs)
@@ -161,3 +158,7 @@ def execute_scaffold(notebook, solid_name, force_overwrite, **kwargs):
     with open(notebook_path, 'w') as f:
         f.write(get_notebook_scaffolding(register_repo_info))
         click.echo("Created new dagstermill notebook at {path}".format(path=notebook_path))
+
+
+def create_dagstermill_cli():
+    return scaffold
