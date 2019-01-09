@@ -13,7 +13,6 @@ from dagster import (
     execute_pipeline_iterator,
     lambda_solid,
     solid,
-    types,
 )
 
 from dagster.core.types import Nullable, List, String

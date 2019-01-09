@@ -1,13 +1,13 @@
 import pytest
 
 from dagster import (
+    Dict,
+    Field,
     PipelineConfigEvaluationError,
     PipelineDefinition,
     SolidDefinition,
-    execute_pipeline,
-    Dict,
-    Field,
     String,
+    execute_pipeline,
 )
 
 

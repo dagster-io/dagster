@@ -2,17 +2,17 @@ import dagster
 
 from dagster import (
     DependencyDefinition,
+    Dict,
+    Field,
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
     Result,
     SolidDefinition,
+    String,
     check,
     execute_pipeline,
     types,
-    Dict,
-    Field,
-    String,
 )
 
 from dagster.core.test_utils import single_output_transform

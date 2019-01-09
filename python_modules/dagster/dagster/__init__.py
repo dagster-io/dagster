@@ -54,6 +54,7 @@ from dagster.core.types import (
     NamedDict,
     Nullable,
     Path,
+    PythonObjectType,
     String,
 )
 from dagster.core.types.config import ConfigType
@@ -113,7 +114,8 @@ __all__ = [
     'Float',
     'Int',
     'List',
+    'NamedDict',
     'Nullable',
-    'String',
     'Path',
+    'String',
 ]

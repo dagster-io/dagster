@@ -1,24 +1,24 @@
 import pytest
 
 from dagster import (
+    Any,
     DagsterEvaluateConfigValueError,
     DependencyDefinition,
+    Dict,
     ExecutionContext,
+    Field,
     InputDefinition,
+    Int,
+    NamedDict,
     OutputDefinition,
     PipelineContextDefinition,
     PipelineDefinition,
     SolidDefinition,
     SolidInstance,
+    String,
     execute_pipeline,
     lambda_solid,
     types,
-    Field,
-    Any,
-    String,
-    Int,
-    Dict,
-    NamedDict,
 )
 
 from dagster.core.system_config.objects import (
