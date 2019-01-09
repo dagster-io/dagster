@@ -1,17 +1,11 @@
-from dagster import check
-
-
-class Materializeable(object):
-    def define_materialization_config_schema(self):
-        check.failed('must implement')
-
-    def materialize_runtime_value(self, _config_spec, _runtime_value):
-        check.failed('must implement')
+import pickle
 
 
 class FileMarshalable:
-    def marshal_value(self, _value, _to_file):
-        check.not_implemented('must implement')
+    def marshal_value(self, value, to_file):
+        with open(to_file, 'wb') as ff:
+            pickle.dump(value, ff)
 
-    def unmarshal_value(self, _from_file):
-        check.not_implemented('must implement')
+    def unmarshal_value(self, from_file):
+        with open(from_file, 'rb') as ff:
+            return pickle.load(ff)

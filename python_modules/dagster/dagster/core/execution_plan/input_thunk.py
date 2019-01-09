@@ -9,8 +9,11 @@ from .objects import ExecutionPlanInfo, ExecutionStep, StepOutput, StepOutputHan
 INPUT_THUNK_OUTPUT = 'input_thunk_output'
 
 
-def _create_input_thunk_execution_step(solid, input_def, value):
+def _create_input_thunk_execution_step(solid, input_def, config_value):
+    check.invariant(input_def.runtime_type.input_schema)
+
     def _fn(_context, _step, _inputs):
+        value = input_def.runtime_type.input_schema.construct_from_config_value(config_value)
         yield Result(value, INPUT_THUNK_OUTPUT)
 
     return ExecutionStep(

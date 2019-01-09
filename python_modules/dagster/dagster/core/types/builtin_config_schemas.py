@@ -3,7 +3,8 @@ import json
 from dagster import check
 
 from .builtin_enum import BuiltinEnum
-from .field import ConfigSelector, Field, Dict
+from .config_schema import OutputSchema
+from .field import Field, Dict, NamedSelector
 
 
 def define_path_dict_field():
@@ -13,13 +14,14 @@ def define_path_dict_field():
 def define_builtin_scalar_output_schema(scalar_name):
     check.str_param(scalar_name, 'scalar_name')
 
-    class _MaterializeableBuiltinScalarConfigSchema(ConfigSelector):
-        def __init__(self):
-            super(_MaterializeableBuiltinScalarConfigSchema, self).__init__(
-                name=scalar_name + '.MaterializationSchema',
-                description='Materialization schema for scalar ' + scalar_name,
-                fields={'json': define_path_dict_field()},
-            )
+    schema_cls = NamedSelector(
+        scalar_name + '.MaterializationSchema', {'json': define_path_dict_field()}
+    )
+
+    class _BuiltinScalarOutputSchema(OutputSchema):
+        @property
+        def schema_cls(self):
+            return schema_cls
 
         def materialize_runtime_value(self, config_spec, runtime_value):
             check.dict_param(config_spec, 'config_spec')
@@ -35,4 +37,4 @@ def define_builtin_scalar_output_schema(scalar_name):
                     'Unsupported selector key: {selector_key}'.format(selector_key=selector_key)
                 )
 
-    return _MaterializeableBuiltinScalarConfigSchema
+    return _BuiltinScalarOutputSchema()

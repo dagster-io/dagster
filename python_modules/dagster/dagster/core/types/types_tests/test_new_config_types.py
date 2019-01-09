@@ -1,11 +1,11 @@
 from dagster.core.types import Int, Nullable, List
-from dagster.core.types.config import resolve_config_type
+from dagster.core.types.config import resolve_to_config_type
 
 from dagster.core.types.evaluator import validate_config
 
 
 def test_config_int():
-    int_inst = resolve_config_type(Int)
+    int_inst = resolve_to_config_type(Int)
     assert not validate_config(int_inst, 1)
     assert validate_config(int_inst, None)
     assert validate_config(int_inst, 'r')
@@ -16,14 +16,14 @@ def test_config_int():
 
 
 def test_nullable_int():
-    nullable_int_inst = resolve_config_type(Nullable(Int))
+    nullable_int_inst = resolve_to_config_type(Nullable(Int))
     assert not validate_config(nullable_int_inst, 1)
     assert not validate_config(nullable_int_inst, None)
     assert validate_config(nullable_int_inst, 'r')
 
 
 def test_list_int():
-    list_int = resolve_config_type(List(Int))
+    list_int = resolve_to_config_type(List(Int))
     assert not validate_config(list_int, [1])
     assert not validate_config(list_int, [1, 2])
     assert not validate_config(list_int, [])
@@ -34,7 +34,7 @@ def test_list_int():
 
 
 def test_list_nullable_int():
-    lni = resolve_config_type(List(Nullable(Int)))
+    lni = resolve_to_config_type(List(Nullable(Int)))
     assert not validate_config(lni, [1])
     assert not validate_config(lni, [1, 2])
     assert not validate_config(lni, [])

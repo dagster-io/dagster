@@ -178,10 +178,10 @@ def _gather_all_schemas(solid_defs):
     runtime_types = construct_runtime_type_dictionary(solid_defs)
     for rtt in runtime_types.values():
         if rtt.input_schema:
-            for ct in iterate_config_types(rtt.input_schema):
+            for ct in iterate_config_types(rtt.input_schema.schema_type):
                 yield ct
         if rtt.output_schema:
-            for ct in iterate_config_types(rtt.output_schema):
+            for ct in iterate_config_types(rtt.output_schema.schema_type):
                 yield ct
 
 

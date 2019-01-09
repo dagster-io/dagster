@@ -3,7 +3,7 @@ from dagster import check
 
 from dagster.utils.indenting_printer import IndentingPrinter
 
-from .config import ConfigType, resolve_config_type
+from .config import ConfigType, resolve_to_config_type
 
 
 def print_type(config_type, print_fn=print):
@@ -42,7 +42,7 @@ def _do_print(config_type, printer):
 
 
 def print_type_to_string(dagster_type):
-    config_type = resolve_config_type(dagster_type)
+    config_type = resolve_to_config_type(dagster_type)
     prints = []
 
     def _push(text):
