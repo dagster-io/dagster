@@ -75,6 +75,6 @@ repository:
 
 .. image:: repos_figure_one.png
 
-In the next part of the tutorial, we'll get to know :doc:`Pipeline Execution <pipeline_execution>` a little
-better, and learn how to execute pipelines in a repository from the command line by name, with
-swappable config.
+In the next part of the tutorial, we'll get to know :doc:`Pipeline Execution <pipeline_execution>`
+a little better, and learn how to execute pipelines in a repository from the command line by name,
+with swappable config.

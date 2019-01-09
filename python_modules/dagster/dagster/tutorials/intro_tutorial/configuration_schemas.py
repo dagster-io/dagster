@@ -2,7 +2,6 @@ from collections import defaultdict
 
 from dagster import (
     DependencyDefinition,
-    Field,
     InputDefinition,
     lambda_solid,
     PipelineDefinition,
@@ -11,8 +10,11 @@ from dagster import (
     types,
 )
 
-
-@solid(config_field=Field(types.Any))
+@solid(
+    config_field=types.Field(
+        types.Dict({'word': types.Field(types.String)})
+    )
+)
 def double_the_word(info):
     return info.config['word'] * 2
 
@@ -25,9 +27,9 @@ def count_letters(word):
     return dict(counts)
 
 
-def define_part_seven_pipeline():
+def define_demo_configuration_schema_pipeline():
     return PipelineDefinition(
-        name='part_seven',
+        name='demo_configuration_schema',
         solids=[double_the_word, count_letters],
         dependencies={
             'count_letters': {'word': DependencyDefinition('double_the_word')}
@@ -35,8 +37,11 @@ def define_part_seven_pipeline():
     )
 
 
-def define_part_seven_repo():
+def define_demo_configuration_schema_repo():
     return RepositoryDefinition(
-        name='part_seven_repo',
-        pipeline_dict={'part_seven': define_part_seven_pipeline},
+        name='demo_configuration_schema_repo',
+        pipeline_dict={
+            'demo_configuration_schema':
+                define_demo_configuration_schema_pipeline
+        },
     )

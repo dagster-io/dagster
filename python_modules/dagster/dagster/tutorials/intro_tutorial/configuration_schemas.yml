@@ -1,0 +1,9 @@
+context:
+  default:
+    config:
+      log_level: DEBUG
+
+solids:
+  double_the_word:
+    config:
+      word: quux

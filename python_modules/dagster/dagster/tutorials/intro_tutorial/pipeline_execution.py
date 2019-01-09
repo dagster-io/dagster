@@ -25,11 +25,18 @@ def count_letters(word):
     return dict(counts)
 
 
-def define_part_eight_step_one_pipeline():
+def define_demo_execution_pipeline():
     return PipelineDefinition(
-        name='part_eight_step_one_pipeline',
+        name='demo_execution',
         solids=[double_the_word, count_letters],
         dependencies={
             'count_letters': {'word': DependencyDefinition('double_the_word')}
         },
+    )
+
+
+def define_demo_execution_repo():
+    return RepositoryDefinition(
+        name='demo_execution_repo',
+        pipeline_dict={'part_seven': define_demo_execution_pipeline},
     )

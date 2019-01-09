@@ -76,8 +76,8 @@ Fragments of config expressed in yaml can also be reused (for instance, pipeline
 is common across many projects) or kept out of source control (for instance, credentials or
 information specific to a developer environment) and combined at pipeline execution time.
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/execution_context.yaml
-   :caption: execution_context.yaml
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/execution_context.yml
+   :caption: execution_context.yml
 
 If we re-run the pipeline, you'll see a lot more output, now including our custom ``DEBUG`` message.
 
