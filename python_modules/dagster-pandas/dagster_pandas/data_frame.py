@@ -1,5 +1,4 @@
 from collections import namedtuple
-import os
 import pickle
 
 import pandas as pd
@@ -7,20 +6,15 @@ import pandas as pd
 from dagster import (
     check,
     Dict,
-    ExecutionContext,
     Field,
-    InputDefinition,
-    OutputDefinition,
     Path,
-    Result,
-    SolidDefinition,
     String,
     types,
 )
 
 from dagster.core.types.field import ConfigSelector
 
-from dagster.core.types.materializable import FileMarshalable, Materializeable
+from dagster.core.types.materializable import FileMarshalable
 
 DataFrameMeta = namedtuple('DataFrameMeta', 'format path')
 
