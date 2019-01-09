@@ -12,8 +12,7 @@ def test_tutorial_part_four():
     pipeline = define_configurable_hello_pipeline()
 
     result = execute_pipeline(
-        pipeline,
-        {"solids": {"configurable_hello": {"config": "cn"}}},
+        pipeline, {"solids": {"configurable_hello": {"config": "cn"}}}
     )
 
     assert result.success

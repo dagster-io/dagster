@@ -1,10 +1,4 @@
-from dagster import (
-    Field,
-    PipelineDefinition,
-    execute_pipeline,
-    solid,
-    types,
-)
+from dagster import Field, PipelineDefinition, execute_pipeline, solid, types
 
 
 @solid(
