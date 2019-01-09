@@ -2,6 +2,7 @@ import subprocess
 import os
 import pytest
 from dagster.utils import script_relative_path
+from dagstermill.cli import scaffold
 
 EXPECTED_OUTPUT_SHELL = '''
     {{
@@ -176,3 +177,14 @@ def test_invalid_filename_example():
             'cannot contain anything except alphanumeric characters, '
             '-, _, \\ and / for path manipulation'
         ).format(name="CLI!!~@") in str(cpe.value)
+
+
+def test_coverage():
+    # tests covarage by calling scaffold from cli.py directly
+    original_cwd = os.getcwd()
+    try:
+        os.chdir(script_relative_path('.'))
+        scaffold(notebook="notebooks/CLI_coverage", solid_name="solid_name", force_overwrite=True)
+    finally:
+        cleanup("CLI_coverage")
+        os.chdir(original_cwd)
