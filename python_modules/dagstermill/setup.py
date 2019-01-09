@@ -25,4 +25,5 @@ setup(
         'ipykernel>=4.9.0',
         'papermill>=0.15.0',
     ],
+    scripts=['bin/dagstermill'],
 )
