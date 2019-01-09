@@ -47,3 +47,14 @@ def make_klass_runtime_type_decorated_klass(klass, runtime_type):
     check.type_param(klass, 'klass')
     check.inst_param(runtime_type, 'runtime_type', RuntimeType)
     setattr(klass, MAGIC_RUNTIME_TYPE_NAME, runtime_type)
+
+
+def make_dagster_type(existing_type, name=None, description=None):
+    check.type_param(existing_type, 'existing_type')
+    check.opt_str_param(name, 'name')
+    check.opt_str_param(description, 'description')
+    return create_inner_class(
+        existing_type,
+        name=existing_type.__name__ if name is None else name,
+        description=description,
+    )

@@ -8,6 +8,7 @@ import sqlalchemy
 
 from pyspark.sql import DataFrame
 
+from dagster import dagster_type, make_dagster_type
 from dagster.core.types.runtime import PythonObjectType, Stringish
 
 AirlineDemoResources = namedtuple(
@@ -16,18 +17,15 @@ AirlineDemoResources = namedtuple(
 )
 
 
-class SparkDataFrameType(PythonObjectType):
-    def __init__(self):
-        super(SparkDataFrameType, self).__init__(
-            python_type=DataFrame, description='A Pyspark data frame.'
-        )
+SparkDataFrameType = make_dagster_type(
+    DataFrame, name='SparkDataFrameType', description='A Pyspark data frame.'
+)
 
-
-class SqlAlchemyEngineType(PythonObjectType):
-    def __init__(self):
-        super(SqlAlchemyEngineType, self).__init__(
-            python_type=sqlalchemy.engine.Connectable, description='A SqlAlchemy Connectable'
-        )
+SqlAlchemyEngineType = make_dagster_type(
+    sqlalchemy.engine.Connectable,
+    name='SqlAlchemyEngineType',
+    description='A SqlAlchemy Connectable',
+)
 
 
 class SqlTableName(Stringish):
