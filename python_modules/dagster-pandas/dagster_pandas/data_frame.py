@@ -3,14 +3,7 @@ import pickle
 
 import pandas as pd
 
-from dagster import (
-    check,
-    Dict,
-    Field,
-    Path,
-    String,
-    types,
-)
+from dagster import check, Dict, Field, Path, String, types
 
 from dagster.core.types.field import ConfigSelector
 
