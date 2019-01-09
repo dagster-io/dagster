@@ -60,30 +60,6 @@ def test_single_templated_sql_solid_single_table_with_api():
     assert _load_table(result.context, sum_table_arg) == [(1, 2, 3), (3, 4, 7)]
 
 
-def test_single_templated_sql_solid_single_table_with_api_serialize_intermediates():
-    pipeline = define_sum_table_pipeline()
-
-    sum_table_arg = 'specific_sum_table'
-
-    environment = {
-        'solids': {'sum_table_transform': {'config': {'sum_table': sum_table_arg}}},
-        'execution': {'serialize_intermediates': True},
-    }
-
-    result = execute_pipeline(pipeline, environment=environment)
-    assert result.success
-
-    sql_output = '/tmp/dagster/runs/{run_id}/sum_table_transform/outputs/sql_text/sql'.format(
-        run_id=result.run_id
-    )
-
-    assert (
-        open(sql_output).read()
-        == '''CREATE TABLE specific_sum_table AS
-    SELECT num1, num2, num1 + num2 as sum FROM num_table'''
-    )
-
-
 def test_single_templated_sql_solid_double_table_raw_api():
     sum_table_arg = 'specific_sum_table'
     num_table_arg = 'specific_num_table'

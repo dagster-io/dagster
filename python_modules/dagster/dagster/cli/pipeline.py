@@ -10,6 +10,7 @@ from dagster import PipelineDefinition, check
 
 from dagster.core.definitions import Solid
 from dagster.core.execution import execute_pipeline_iterator
+from dagster.core.execution_plan.create import solids_in_topological_order
 from dagster.graphviz import build_graphviz_graph
 from dagster.utils import load_yaml_from_glob_list
 from dagster.utils.indenting_printer import IndentingPrinter
@@ -48,9 +49,6 @@ REPO_TARGET_WARNING = (
 @repository_target_argument
 def list_command(**kwargs):
     return execute_list_command(kwargs, click.echo)
-
-
-from dagster.core.execution_plan.create import solids_in_topological_order
 
 
 def execute_list_command(cli_args, print_fn):
@@ -210,9 +208,7 @@ def print_context_definition(printer, context_name, context_definition):
     print_description(printer, context_definition.description)
 
     printer.line(
-        'Type: {dagster_type}'.format(
-            dagster_type=context_definition.config_field.dagster_type.name
-        )
+        'Type: {runtime_type}'.format(runtime_type=context_definition.config_field.config_type.name)
     )
 
 
@@ -239,7 +235,7 @@ def print_inputs(printer, solid):
 def format_argument_dict(arg_def_dict):
     return ', '.join(
         [
-            '{name}: {type}'.format(name=name, type=arg_def.dagster_type.name)
+            '{name}: {type}'.format(name=name, type=arg_def.runtime_type.name)
             for name, arg_def in arg_def_dict.items()
         ]
     )

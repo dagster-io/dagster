@@ -16,11 +16,7 @@ from dagster import (
 
 from dagster.utils.test import get_temp_file_name, get_temp_file_names
 
-from dagster.core.system_config.types import (
-    solid_has_config_entry,
-    solid_has_materializable_outputs,
-    is_materializeable,
-)
+from dagster.core.system_config.types import solid_has_config_entry, solid_has_configurable_outputs
 
 from dagster.core.execution import create_typed_environment, create_execution_plan
 
@@ -86,8 +82,7 @@ def one_input_no_output_pipeline():
 
 def test_solid_has_config_entry():
     pipeline = single_int_output_pipeline()
-    assert is_materializeable(types.Int)
-    assert solid_has_materializable_outputs(pipeline.solid_named('return_one').definition)
+    assert solid_has_configurable_outputs(pipeline.solid_named('return_one').definition)
     assert solid_has_config_entry(pipeline.solid_named('return_one').definition)
 
 

@@ -5,7 +5,8 @@ from dagster import check
 
 from dagster.core.errors import DagsterError
 
-from .configurable import Configurable, Field
+from .config import ConfigType
+from .field import Field
 
 
 class DagsterEvaluationErrorReason(Enum):
@@ -31,18 +32,18 @@ class MissingFieldErrorData(namedtuple('_MissingFieldErrorData', 'field_name fie
         )
 
 
-class RuntimeMismatchErrorData(namedtuple('_RuntimeMismatchErrorData', 'dagster_type value_rep')):
-    def __new__(cls, dagster_type, value_rep):
+class RuntimeMismatchErrorData(namedtuple('_RuntimeMismatchErrorData', 'config_type value_rep')):
+    def __new__(cls, config_type, value_rep):
         return super(RuntimeMismatchErrorData, cls).__new__(
             cls,
-            check.inst_param(dagster_type, 'dagster_type', Configurable),
+            check.inst_param(config_type, 'config_type', ConfigType),
             check.str_param(value_rep, 'value_rep'),
         )
 
 
 class SelectorTypeErrorData(namedtuple('_SelectorTypeErrorData', 'dagster_type incoming_fields')):
     def __new__(cls, dagster_type, incoming_fields):
-        check.param_invariant(dagster_type.configurable_selector_from_dict, 'dagster_type')
+        check.param_invariant(dagster_type.is_selector, 'dagster_type')
         return super(SelectorTypeErrorData, cls).__new__(
             cls, dagster_type, check.list_param(incoming_fields, 'incoming_fields', of_type=str)
         )
@@ -56,11 +57,11 @@ ERROR_DATA_TYPES = (
 )
 
 
-class EvaluationStack(namedtuple('_EvaluationStack', 'root_type entries')):
-    def __new__(cls, root_type, entries):
+class EvaluationStack(namedtuple('_EvaluationStack', 'config_type entries')):
+    def __new__(cls, config_type, entries):
         return super(EvaluationStack, cls).__new__(
             cls,
-            check.inst_param(root_type, 'root_type', Configurable),
+            check.inst_param(config_type, 'config_type', ConfigType),
             check.list_param(entries, 'entries', of_type=EvaluationStackEntry),
         )
 
@@ -74,10 +75,10 @@ class EvaluationStack(namedtuple('_EvaluationStack', 'root_type entries')):
 
     @property
     def type_in_context(self):
-        ttype = self.entries[-1].dagster_type if self.entries else self.root_type
+        ttype = self.entries[-1].config_type if self.entries else self.config_type
         # TODO: This is the wrong place for this
         # Should have general facility for unwrapping named types
-        if ttype.configurable_from_nullable:
+        if ttype.is_nullable:
             return ttype.inner_type
         else:
             return ttype
@@ -98,18 +99,18 @@ class EvaluationStackPathEntry(
         )
 
     @property
-    def dagster_type(self):
-        return self.field_def.dagster_type
+    def config_type(self):
+        return self.field_def.config_type
 
 
 class EvaluationStackListItemEntry(
-    namedtuple('_EvaluationStackListItemEntry', 'dagster_type list_index'), EvaluationStackEntry
+    namedtuple('_EvaluationStackListItemEntry', 'config_type list_index'), EvaluationStackEntry
 ):
-    def __new__(cls, dagster_type, list_index):
+    def __new__(cls, config_type, list_index):
         check.int_param(list_index, 'list_index')
         check.param_invariant(list_index >= 0, 'list_index')
         return super(EvaluationStackListItemEntry, cls).__new__(
-            cls, check.inst_param(dagster_type, 'dagster_type', Configurable), list_index
+            cls, check.inst_param(config_type, 'config_type', ConfigType), list_index
         )
 
 
@@ -214,110 +215,112 @@ class EvaluateValueResult(namedtuple('_EvaluateValueResult', 'success value erro
 
 def stack_with_field(stack, field_name, field_def):
     return EvaluationStack(
-        root_type=stack.root_type,
+        config_type=stack.config_type,
         entries=stack.entries + [EvaluationStackPathEntry(field_name, field_def)],
     )
 
 
 def stack_with_list_index(stack, list_index):
     list_type = stack.type_in_context
-    check.invariant(list_type.configurable_from_list)
+    check.invariant(list_type.is_list)
     return EvaluationStack(
-        root_type=stack.root_type,
+        config_type=stack.config_type,
         entries=stack.entries + [EvaluationStackListItemEntry(list_type.inner_type, list_index)],
     )
 
 
-def hard_create_config_value(dagster_type, config_value):
-    check.inst_param(dagster_type, 'dagster_type', Configurable)
-
-    result = evaluate_config_value(dagster_type, config_value)
+def hard_create_config_value(config_type, config_value):
+    check.inst_param(config_type, 'config_type', ConfigType)
+    result = evaluate_config_value(config_type, config_value)
     check.invariant(result.success)
     return result.value
 
 
-def evaluate_config_value(dagster_type, config_value):
-    check.inst_param(dagster_type, 'dagster_type', Configurable)
-    errors = validate_config(dagster_type, config_value)
+def evaluate_config_value(config_type, config_value):
+    check.inst_param(config_type, 'config_type', ConfigType)
+    errors = validate_config(config_type, config_value)
     if errors:
         return EvaluateValueResult(success=False, value=None, errors=errors)
 
-    # TODO: try/catch around deserialize_config()?
-    value = deserialize_config(dagster_type, config_value)
+    value = deserialize_config(config_type, config_value)
 
     return EvaluateValueResult(success=True, value=value, errors=[])
 
 
-def validate_config(dagster_type, config_value):
-    check.inst_param(dagster_type, 'dagster_type', Configurable)
+def validate_config(config_type, config_value):
+    check.inst_param(config_type, 'config_type', ConfigType)
+
     return list(
         _validate_config(
-            dagster_type, config_value, EvaluationStack(root_type=dagster_type, entries=[])
+            config_type, config_value, EvaluationStack(config_type=config_type, entries=[])
         )
     )
 
 
-def _validate_config(dagster_type, config_value, stack):
-    check.inst_param(dagster_type, 'dagster_type', Configurable)
+def _validate_config(config_type, config_value, stack):
+    check.inst_param(config_type, 'config_type', ConfigType)
     check.inst_param(stack, 'stack', EvaluationStack)
 
-    if dagster_type.configurable_from_scalar:
-        if not dagster_type.is_python_valid_value(config_value):
+    if config_type.is_scalar:
+        if not config_type.is_config_scalar_valid(config_value):
             yield EvaluationError(
                 stack=stack,
                 reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
                 message='Value {value} is not valid for type {type_name}'.format(
-                    value=config_value, type_name=dagster_type.name
+                    value=config_value, type_name=config_type.name
                 ),
                 error_data=RuntimeMismatchErrorData(
-                    dagster_type=dagster_type, value_rep=repr(config_value)
+                    config_type=config_type, value_rep=repr(config_value)
                 ),
             )
         return
 
     errors = []
 
-    if dagster_type.configurable_from_any:
+    if config_type.is_any:
         # no-op: we're safe
         return
-    elif dagster_type.configurable_selector_from_dict:
-        errors = validate_selector_config_value(dagster_type, config_value, stack)
-    elif dagster_type.configurable_object_from_dict:
-        errors = validate_composite_config_value(dagster_type, config_value, stack)
-    elif dagster_type.configurable_from_list:
-        errors = validate_list_value(dagster_type, config_value, stack)
-    elif dagster_type.configurable_from_nullable:
+    elif config_type.is_selector:
+        errors = validate_selector_config_value(config_type, config_value, stack)
+    elif config_type.is_composite:
+        errors = validate_composite_config_value(config_type, config_value, stack)
+    elif config_type.is_list:
+        errors = validate_list_value(config_type, config_value, stack)
+    elif config_type.is_nullable:
         errors = (
             []
             if config_value is None
-            else _validate_config(dagster_type.inner_type, config_value, stack)
+            else _validate_config(config_type.inner_type, config_value, stack)
         )
     else:
-        check.failed('Unsupported type {name}'.format(name=dagster_type.name))
+        check.failed('Unsupported type {name}'.format(name=config_type.name))
 
     for error in errors:
         yield error
 
 
-def deserialize_config(dagster_type, config_value):
-    check.inst_param(dagster_type, 'dagster_type', Configurable)
+def deserialize_config(config_type, config_value):
+    check.inst_param(config_type, 'config_type', ConfigType)
+    return _deserialize_config(config_type, config_value)
 
-    if dagster_type.configurable_from_scalar:
+
+def _deserialize_config(config_type, config_value):
+    if config_type.is_scalar:
         return config_value
-    elif dagster_type.configurable_selector_from_dict:
-        return deserialize_selector_config(dagster_type, config_value)
-    elif dagster_type.configurable_object_from_dict:
-        return deserialize_composite_config_value(dagster_type, config_value)
-    elif dagster_type.configurable_from_list:
-        return deserialize_list_value(dagster_type, config_value)
-    elif dagster_type.configurable_from_nullable:
+    elif config_type.is_selector:
+        return deserialize_selector_config(config_type, config_value)
+    elif config_type.is_composite:
+        return deserialize_composite_config_value(config_type, config_value)
+    elif config_type.is_list:
+        return deserialize_list_value(config_type, config_value)
+    elif config_type.is_nullable:
         if config_value is None:
             return None
-        return deserialize_config(dagster_type.inner_type, config_value)
-    elif dagster_type.configurable_from_any:
+        return _deserialize_config(config_type.inner_type, config_value)
+    elif config_type.is_any:
         return config_value
     else:
-        check.failed('Unsupported type {name}'.format(name=dagster_type.name))
+        check.failed('Unsupported type {name}'.format(name=config_type.name))
 
 
 ## Selectors
@@ -330,7 +333,7 @@ def single_item(ddict):
 
 
 def validate_selector_config_value(selector_type, config_value, stack):
-    check.param_invariant(selector_type.configurable_selector_from_dict, 'selector_type')
+    check.param_invariant(selector_type.is_selector, 'selector_type')
     check.inst_param(stack, 'stack', EvaluationStack)
 
     if config_value and not isinstance(config_value, dict):
@@ -341,14 +344,14 @@ def validate_selector_config_value(selector_type, config_value, stack):
                 type_name=selector_type.name, value=config_value
             ),
             error_data=RuntimeMismatchErrorData(
-                dagster_type=selector_type, value_rep=repr(config_value)
+                config_type=selector_type, value_rep=repr(config_value)
             ),
         )
         return
 
     if config_value and len(config_value) > 1:
         incoming_fields = sorted(list(config_value.keys()))
-        defined_fields = sorted(list(selector_type.field_dict.keys()))
+        defined_fields = sorted(list(selector_type.fields.keys()))
         yield EvaluationError(
             stack=stack,
             reason=DagsterEvaluationErrorReason.SELECTOR_FIELD_ERROR,
@@ -363,8 +366,8 @@ def validate_selector_config_value(selector_type, config_value, stack):
         return
 
     elif not config_value:
-        defined_fields = sorted(list(selector_type.field_dict.keys()))
-        if len(selector_type.field_dict) > 1:
+        defined_fields = sorted(list(selector_type.fields.keys()))
+        if len(selector_type.fields) > 1:
             yield EvaluationError(
                 stack=stack,
                 reason=DagsterEvaluationErrorReason.SELECTOR_FIELD_ERROR,
@@ -375,7 +378,7 @@ def validate_selector_config_value(selector_type, config_value, stack):
             )
             return
 
-        field_name, field_def = single_item(selector_type.field_dict)
+        field_name, field_def = single_item(selector_type.fields)
 
         if not field_def.is_optional:
             yield EvaluationError(
@@ -394,15 +397,15 @@ def validate_selector_config_value(selector_type, config_value, stack):
         check.invariant(config_value and len(config_value) == 1)
 
         field_name, incoming_field_value = single_item(config_value)
-        if field_name not in selector_type.field_dict:
+        if field_name not in selector_type.fields:
             yield create_field_not_defined_error(
-                selector_type, stack, set(selector_type.field_dict.keys()), field_name
+                selector_type, stack, set(selector_type.fields.keys()), field_name
             )
             return
 
-    parent_field = selector_type.field_dict[field_name]
+    parent_field = selector_type.fields[field_name]
     for error in _validate_config(
-        parent_field.dagster_type,
+        parent_field.config_type,
         incoming_field_value,
         stack_with_field(stack, field_name, parent_field),
     ):
@@ -410,27 +413,27 @@ def validate_selector_config_value(selector_type, config_value, stack):
 
 
 def deserialize_selector_config(selector_type, config_value):
-    check.param_invariant(selector_type.configurable_selector_from_dict, 'selector_type')
+    check.param_invariant(selector_type.is_selector, 'selector_type')
 
     if config_value:
         check.invariant(config_value and len(config_value) == 1)
         field_name, incoming_field_value = single_item(config_value)
 
     else:
-        field_name, field_def = single_item(selector_type.field_dict)
+        field_name, field_def = single_item(selector_type.fields)
         incoming_field_value = field_def.default_value if field_def.default_provided else None
 
-    parent_field = selector_type.field_dict[field_name]
-    field_value = deserialize_config(parent_field.dagster_type, incoming_field_value)
+    parent_field = selector_type.fields[field_name]
+    field_value = _deserialize_config(parent_field.config_type, incoming_field_value)
     return selector_type.construct_from_config_value({field_name: field_value})
 
 
 ## Composites
 
 
-def validate_composite_config_value(object_type, config_value, stack):
-    check.inst_param(object_type, 'object_type', Configurable)
-    check.param_invariant(object_type.configurable_object_from_dict, 'dagster_composite_type')
+def validate_composite_config_value(composite_type, config_value, stack):
+    check.inst_param(composite_type, 'composite_type', ConfigType)
+    check.param_invariant(composite_type.is_composite, 'composite_type')
     check.inst_param(stack, 'stack', EvaluationStack)
 
     if config_value and not isinstance(config_value, dict):
@@ -438,10 +441,10 @@ def validate_composite_config_value(object_type, config_value, stack):
             stack=stack,
             reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
             message='Value for composite type {type_name} must be a dict got {value}'.format(
-                type_name=object_type.name, value=config_value
+                type_name=composite_type.name, value=config_value
             ),
             error_data=RuntimeMismatchErrorData(
-                dagster_type=object_type, value_rep=repr(config_value)
+                config_type=composite_type, value_rep=repr(config_value)
             ),
         )
         return
@@ -449,19 +452,21 @@ def validate_composite_config_value(object_type, config_value, stack):
     # ASK: this can crash on user error
     config_value = check.opt_dict_param(config_value, 'incoming_value', key_type=str)
 
-    field_dict = object_type.field_dict
+    fields = composite_type.fields
 
-    defined_fields = set(field_dict.keys())
+    defined_fields = set(fields.keys())
     incoming_fields = set(config_value.keys())
 
     for received_field in incoming_fields:
         if received_field not in defined_fields:
-            yield create_field_not_defined_error(object_type, stack, defined_fields, received_field)
+            yield create_field_not_defined_error(
+                composite_type, stack, defined_fields, received_field
+            )
 
-    for expected_field, field_def in field_dict.items():
+    for expected_field, field_def in fields.items():
         if expected_field in incoming_fields:
             for error in _validate_config(
-                field_def.dagster_type,
+                field_def.config_type,
                 config_value[expected_field],
                 stack_with_field(stack, expected_field, field_def),
             ):
@@ -473,25 +478,25 @@ def validate_composite_config_value(object_type, config_value, stack):
         else:
             check.invariant(not field_def.default_provided)
             yield create_missing_required_field_error(
-                object_type, stack, defined_fields, expected_field
+                composite_type, stack, defined_fields, expected_field
             )
 
 
-def deserialize_composite_config_value(object_type, config_value):
-    check.param_invariant(object_type.configurable_object_from_dict, 'object_type')
+def deserialize_composite_config_value(composite_type, config_value):
+    check.param_invariant(composite_type.is_composite, 'composite_type')
 
     # ASK: this can crash on user error
     config_value = check.opt_dict_param(config_value, 'config_value', key_type=str)
 
-    field_dict = object_type.field_dict
+    fields = composite_type.fields
     incoming_fields = set(config_value.keys())
 
     processed_fields = {}
 
-    for expected_field, field_def in field_dict.items():
+    for expected_field, field_def in fields.items():
         if expected_field in incoming_fields:
-            processed_fields[expected_field] = deserialize_config(
-                field_def.dagster_type, config_value[expected_field]
+            processed_fields[expected_field] = _deserialize_config(
+                field_def.config_type, config_value[expected_field]
             )
 
         elif field_def.default_provided:
@@ -500,14 +505,14 @@ def deserialize_composite_config_value(object_type, config_value):
         elif not field_def.is_optional:
             check.failed('Missing non-optional composite member not caught in validation')
 
-    return object_type.construct_from_config_value(processed_fields)
+    return composite_type.construct_from_config_value(processed_fields)
 
 
 ## Lists
 
 
 def validate_list_value(list_type, config_value, stack):
-    check.param_invariant(list_type.configurable_from_list, 'list_type')
+    check.param_invariant(list_type.is_list, 'list_type')
     check.inst_param(stack, 'stack', EvaluationStack)
 
     if not isinstance(config_value, list):
@@ -518,7 +523,7 @@ def validate_list_value(list_type, config_value, stack):
                 type_name=list_type.name, value=config_value
             ),
             error_data=RuntimeMismatchErrorData(
-                dagster_type=list_type, value_rep=repr(config_value)
+                config_type=list_type, value_rep=repr(config_value)
             ),
         )
         return
@@ -531,40 +536,38 @@ def validate_list_value(list_type, config_value, stack):
 
 
 def deserialize_list_value(list_type, config_value):
-    check.param_invariant(list_type.configurable_from_list, 'list_type')
+    check.param_invariant(list_type.is_list, 'list_type')
 
     if not config_value:
         return []
 
-    return [deserialize_config(list_type.inner_type, item) for item in config_value]
+    return [_deserialize_config(list_type.inner_type, item) for item in config_value]
 
 
 ##
 
 
-def create_field_not_defined_error(from_dict_type, stack, defined_fields, received_field):
-    check.param_invariant(from_dict_type.configurable_from_dict, 'from_dict_type')
+def create_field_not_defined_error(config_type, stack, defined_fields, received_field):
+    check.param_invariant(config_type.has_fields, 'config_type')
     return EvaluationError(
         stack=stack,
         reason=DagsterEvaluationErrorReason.FIELD_NOT_DEFINED,
         message='Field "{received}" is not defined on "{type_name}" Defined {defined}'.format(
-            type_name=from_dict_type.name, defined=repr(defined_fields), received=received_field
+            type_name=config_type.name, defined=repr(defined_fields), received=received_field
         ),
         error_data=FieldNotDefinedErrorData(field_name=received_field),
     )
 
 
-def create_missing_required_field_error(from_dict_type, stack, defined_fields, expected_field):
-    check.param_invariant(from_dict_type.configurable_from_dict, 'from_dict_type')
+def create_missing_required_field_error(config_type, stack, defined_fields, expected_field):
+    check.param_invariant(config_type.has_fields, 'config_type')
     return EvaluationError(
         stack=stack,
         reason=DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELD,
         message=(
             'Missing required field "{expected}" on "{type_name}". ' 'Defined fields: {defined}'
-        ).format(
-            expected=expected_field, type_name=from_dict_type.name, defined=repr(defined_fields)
-        ),
+        ).format(expected=expected_field, type_name=config_type.name, defined=repr(defined_fields)),
         error_data=MissingFieldErrorData(
-            field_name=expected_field, field_def=from_dict_type.field_named(expected_field)
+            field_name=expected_field, field_def=config_type.fields[expected_field]
         ),
     )

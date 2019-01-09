@@ -26,6 +26,22 @@ def _param_type_mismatch_exception(obj, ttype, param_name):
     )
 
 
+def _not_type_param_subclass_mismatch_exception(obj, param_name):
+    return ParameterCheckError(
+        'Param "{name}" was supposed to be a type. Got {obj} instead of type {obj_type}'.format(
+            name=param_name, obj=repr(obj), obj_type=type(obj)
+        )
+    )
+
+
+def _param_subclass_mismatch_exception(obj, superclass, param_name):
+    return ParameterCheckError(
+        'Param "{name}" is a type but not a subclass of {superclass}. Got {obj} instead'.format(
+            name=param_name, superclass=superclass, obj=obj
+        )
+    )
+
+
 def _type_mismatch_error(obj, ttype, desc):
     if desc:
         return CheckError(
@@ -262,7 +278,15 @@ def dict_param(obj, param_name, key_type=None, value_type=None):
 
 def type_param(obj, param_name):
     if not isinstance(obj, type):
-        raise_with_traceback(_param_type_mismatch_exception(obj, type, param_name))
+        raise_with_traceback(_not_type_param_subclass_mismatch_exception(obj, param_name))
+    return obj
+
+
+def subclass_param(obj, param_name, superclass):
+    type_param(obj, param_name)
+    if not issubclass(obj, superclass):
+        raise_with_traceback(_param_subclass_mismatch_exception(obj, superclass, param_name))
+
     return obj
 
 

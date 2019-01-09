@@ -15,7 +15,7 @@ def create_transform_step(execution_info, solid, step_inputs, conf):
         key='{solid.name}.transform'.format(solid=solid),
         step_inputs=step_inputs,
         step_outputs=[
-            StepOutput(name=output_def.name, dagster_type=output_def.dagster_type)
+            StepOutput(name=output_def.name, runtime_type=output_def.runtime_type)
             for output_def in solid.definition.output_defs
         ],
         compute_fn=lambda context, step, inputs: _execute_core_transform(

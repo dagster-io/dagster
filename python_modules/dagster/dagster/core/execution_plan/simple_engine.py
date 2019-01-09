@@ -144,7 +144,7 @@ def _create_step_result(step, result):
     step_output = step.step_output_named(result.output_name)
 
     try:
-        coerced_value = step_output.dagster_type.coerce_runtime_value(result.value)
+        coerced_value = step_output.runtime_type.coerce_runtime_value(result.value)
     except DagsterRuntimeCoercionError as e:
         raise DagsterInvariantViolationError(
             '''Solid {step.solid.name} output name {output_name} output {result.value}
@@ -163,14 +163,14 @@ def _create_step_result(step, result):
 def _get_evaluated_input(step, input_name, input_value):
     step_input = step.step_input_named(input_name)
     try:
-        return step_input.dagster_type.coerce_runtime_value(input_value)
+        return step_input.runtime_type.coerce_runtime_value(input_value)
     except DagsterRuntimeCoercionError as evaluate_error:
         raise_from(
             DagsterTypeError(
                 (
                     'Solid {step.solid.name} input {input_name} received value {input_value} '
                     'which does not pass the typecheck for Dagster type '
-                    '{step_input.dagster_type.name}. Step {step.key}'
+                    '{step_input.runtime_type.name}. Step {step.key}'
                 ).format(
                     step=step, input_name=input_name, input_value=input_value, step_input=step_input
                 )

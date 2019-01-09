@@ -36,9 +36,7 @@ class DauphinExecutionStepOutput(dauphin.ObjectType):
         return self._step_output.name
 
     def resolve_type(self, info):
-        return info.schema.type_named('Type').from_dagster_type(
-            info, dagster_type=self._step_output.dagster_type
-        )
+        return info.schema.type_named('Type').to_dauphin_type(info, self._step_output.runtime_type)
 
 
 class DauphinExecutionStepInput(dauphin.ObjectType):
@@ -57,9 +55,7 @@ class DauphinExecutionStepInput(dauphin.ObjectType):
         return self._step_input.name
 
     def resolve_type(self, info):
-        return info.schema.type_named('Type').from_dagster_type(
-            info, dagster_type=self._step_input.dagster_type
-        )
+        return info.schema.type_named('Type').to_dauphin_type(info, self._step_input.runtime_type)
 
     def resolve_dependsOn(self, info):
         return info.schema.type_named('ExecutionStep')(self._step_input.prev_output_handle.step)

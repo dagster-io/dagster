@@ -94,18 +94,18 @@ def create_expectation_step(solid, expectation_def, key, tag, prev_step_output_h
     check.inst_param(prev_step_output_handle, 'prev_step_output_handle', StepOutputHandle)
     check.inst_param(inout_def, 'inout_def', (InputDefinition, OutputDefinition))
 
-    value_type = inout_def.dagster_type
+    value_type = inout_def.runtime_type
 
     return ExecutionStep(
         key=key,
         step_inputs=[
             StepInput(
                 name=EXPECTATION_INPUT,
-                dagster_type=value_type,
+                runtime_type=value_type,
                 prev_output_handle=prev_step_output_handle,
             )
         ],
-        step_outputs=[StepOutput(name=EXPECTATION_VALUE_OUTPUT, dagster_type=value_type)],
+        step_outputs=[StepOutput(name=EXPECTATION_VALUE_OUTPUT, runtime_type=value_type)],
         compute_fn=_create_expectation_lambda(
             solid, inout_def, expectation_def, EXPECTATION_VALUE_OUTPUT
         ),

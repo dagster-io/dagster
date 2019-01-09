@@ -2,16 +2,18 @@ import sqlalchemy
 
 from dagster import (
     DependencyDefinition,
-    SolidDefinition,
-    OutputDefinition,
+    Dict,
+    Field,
     InputDefinition,
+    OutputDefinition,
     PipelineContextDefinition,
     PipelineDefinition,
     ResourceDefinition,
     Result,
+    SolidDefinition,
+    String,
     check,
     execute_pipeline,
-    types,
 )
 
 from .math_test_db import in_mem_engine
@@ -81,10 +83,8 @@ def create_sql_statement_solid(name, sql_text, inputs=None):
 
 InMemSqlLiteEngineResource = ResourceDefinition(
     resource_fn=lambda info: in_mem_engine(info.config['num_table']),
-    config_field=types.Field(
-        types.Dict(
-            {'num_table': types.Field(types.String, is_optional=True, default_value='num_table')}
-        )
+    config_field=Field(
+        Dict({'num_table': Field(String, is_optional=True, default_value='num_table')})
     ),
 )
 

@@ -8,6 +8,7 @@ from dagster import (
     DependencyDefinition,
     Field,
     InputDefinition,
+    Int,
     OutputDefinition,
     PipelineDefinition,
     SolidDefinition,
@@ -16,7 +17,6 @@ from dagster import (
     execute_pipeline,
     lambda_solid,
     solid,
-    types,
 )
 
 from dagster.utils import script_relative_path
@@ -82,11 +82,8 @@ def add_two_numbers_pm_solid():
     return dm.define_dagstermill_solid(
         'add_two_numbers',
         nb_test_path('add_two_numbers'),
-        [
-            InputDefinition(name='a', dagster_type=types.Int),
-            InputDefinition(name='b', dagster_type=types.Int),
-        ],
-        [OutputDefinition(types.Int)],
+        [InputDefinition(name='a', runtime_type=Int), InputDefinition(name='b', runtime_type=Int)],
+        [OutputDefinition(Int)],
     )
 
 
@@ -95,11 +92,8 @@ def mult_two_numbers_pm_solid():
     return dm.define_dagstermill_solid(
         'mult_two_numbers',
         nb_test_path('mult_two_numbers'),
-        [
-            InputDefinition(name='a', dagster_type=types.Int),
-            InputDefinition(name='b', dagster_type=types.Int),
-        ],
-        [OutputDefinition(types.Int)],
+        [InputDefinition(name='a', runtime_type=Int), InputDefinition(name='b', runtime_type=Int)],
+        [OutputDefinition(Int)],
     )
 
 
@@ -137,7 +131,7 @@ def test_add_pipeline():
     assert result.result_for_solid('add_two_numbers').transformed_value() == 3
 
 
-@solid(inputs=[], config_field=Field(types.Int))
+@solid(inputs=[], config_field=Field(Int))
 def load_constant(info):
     return info.config
 

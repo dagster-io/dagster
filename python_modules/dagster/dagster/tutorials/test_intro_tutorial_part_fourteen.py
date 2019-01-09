@@ -9,26 +9,26 @@ from dagster import (
     execute_solids,
     lambda_solid,
     solid,
-    types,
+    Int,
 )
 
 
-@solid(config_field=Field(types.Int), outputs=[OutputDefinition(types.Int)])
+@solid(config_field=Field(Int), outputs=[OutputDefinition(Int)])
 def load_number(info):
     return info.config
 
 
 @lambda_solid(
-    inputs=[InputDefinition('num1', types.Int), InputDefinition('num2', types.Int)],
-    output=OutputDefinition(types.Int),
+    inputs=[InputDefinition('num1', Int), InputDefinition('num2', Int)],
+    output=OutputDefinition(Int),
 )
 def adder(num1, num2):
     return num1 + num2
 
 
 @lambda_solid(
-    inputs=[InputDefinition('num1', types.Int), InputDefinition('num2', types.Int)],
-    output=OutputDefinition(types.Int),
+    inputs=[InputDefinition('num1', Int), InputDefinition('num2', Int)],
+    output=OutputDefinition(Int),
 )
 def multer(num1, num2):
     return num1 * num2

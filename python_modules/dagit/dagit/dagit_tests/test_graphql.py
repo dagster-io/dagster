@@ -3,19 +3,26 @@ import uuid
 from graphql import graphql, parse
 
 from dagster import (
+    Any,
+    Bool,
     DependencyDefinition,
+    Dict,
     Field,
+    InputDefinition,
+    Int,
+    List,
+    Nullable,
+    OutputDefinition,
     PipelineContextDefinition,
     PipelineDefinition,
-    InputDefinition,
-    OutputDefinition,
     RepositoryDefinition,
     ResourceDefinition,
     SolidDefinition,
+    String,
     check,
     lambda_solid,
-    types,
 )
+
 from dagster.utils import script_relative_path
 
 from dagster_contrib.pandas import DataFrame
@@ -30,19 +37,19 @@ from dagit.dagit_tests.production_query import PRODUCTION_QUERY
 
 
 def define_scalar_output_pipeline():
-    @lambda_solid(output=OutputDefinition(types.String))
+    @lambda_solid(output=OutputDefinition(String))
     def return_str():
         return 'foo'
 
-    @lambda_solid(output=OutputDefinition(types.Int))
+    @lambda_solid(output=OutputDefinition(Int))
     def return_int():
         return 34234
 
-    @lambda_solid(output=OutputDefinition(types.Bool))
+    @lambda_solid(output=OutputDefinition(Bool))
     def return_bool():
         return True
 
-    @lambda_solid(output=OutputDefinition(types.Any))
+    @lambda_solid(output=OutputDefinition(Any))
     def return_any():
         return 'dkjfkdjfe'
 
@@ -265,7 +272,7 @@ def define_pipeline_with_list():
                 inputs=[],
                 outputs=[],
                 transform_fn=lambda *_args: None,
-                config_field=Field(types.List(types.Int)),
+                config_field=Field(List(Int)),
             )
         ],
     )
@@ -280,13 +287,13 @@ def define_more_complicated_config():
                 inputs=[],
                 outputs=[],
                 transform_fn=lambda *_args: None,
-                config_field=types.Field(
-                    types.Dict(
+                config_field=Field(
+                    Dict(
                         {
-                            'field_one': types.Field(types.String),
-                            'field_two': types.Field(types.String, is_optional=True),
-                            'field_three': types.Field(
-                                types.String, is_optional=True, default_value='some_value'
+                            'field_one': Field(String),
+                            'field_two': Field(String, is_optional=True),
+                            'field_three': Field(
+                                String, is_optional=True, default_value='some_value'
                             ),
                         }
                     )
@@ -349,16 +356,16 @@ query PipelineQuery($executionParams: PipelineExecutionParams!)
 '''
 
 
-def execute_config_graphql(pipeline_name, config):
+def execute_config_graphql(pipeline_name, env_config):
     return execute_dagster_graphql(
         define_context(),
         CONFIG_VALIDATION_QUERY,
-        {'executionParams': {'pipelineName': pipeline_name, 'config': config}},
+        {'executionParams': {'pipelineName': pipeline_name, 'config': env_config}},
     )
 
 
 def test_pipeline_not_found():
-    result = execute_config_graphql(pipeline_name='nope', config={})
+    result = execute_config_graphql(pipeline_name='nope', env_config={})
 
     assert not result.errors
     assert result.data
@@ -376,7 +383,7 @@ def pandas_hello_world_solids_config():
 
 def test_basic_valid_config():
     result = execute_config_graphql(
-        pipeline_name='pandas_hello_world', config=pandas_hello_world_solids_config()
+        pipeline_name='pandas_hello_world', env_config=pandas_hello_world_solids_config()
     )
 
     assert not result.errors
@@ -388,7 +395,7 @@ def test_basic_valid_config():
 def test_root_field_not_defined():
     result = execute_config_graphql(
         pipeline_name='pandas_hello_world',
-        config={
+        env_config={
             'solids': {
                 'sum_solid': {'inputs': {'num': {'csv': {'path': script_relative_path('num.csv')}}}}
             },
@@ -409,7 +416,7 @@ def test_root_field_not_defined():
 
 
 def test_root_wrong_type():
-    result = execute_config_graphql(pipeline_name='pandas_hello_world', config=123)
+    result = execute_config_graphql(pipeline_name='pandas_hello_world', env_config=123)
     assert not result.errors
     assert result.data
     assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationInvalid'
@@ -432,7 +439,7 @@ def field_stack(error_data):
 def test_basic_invalid_config_type_mismatch():
     result = execute_config_graphql(
         pipeline_name='pandas_hello_world',
-        config={'solids': {'sum_solid': {'inputs': {'num': {'csv': {'path': 123}}}}}},
+        env_config={'solids': {'sum_solid': {'inputs': {'num': {'csv': {'path': 123}}}}}},
     )
 
     assert not result.errors
@@ -454,7 +461,7 @@ def test_basic_invalid_config_type_mismatch():
 def test_basic_invalid_config_missing_field():
     result = execute_config_graphql(
         pipeline_name='pandas_hello_world',
-        config={'solids': {'sum_solid': {'inputs': {'num': {'csv': {}}}}}},
+        env_config={'solids': {'sum_solid': {'inputs': {'num': {'csv': {}}}}}},
     )
 
     assert not result.errors
@@ -477,7 +484,7 @@ def single_error_data(result):
 def test_basic_invalid_not_defined_field():
     result = execute_config_graphql(
         pipeline_name='pandas_hello_world',
-        config={
+        env_config={
             'solids': {
                 'sum_solid': {'inputs': {'num': {'csv': {'path': 'foo.txt', 'extra': 'nope'}}}}
             }
@@ -504,21 +511,21 @@ def define_more_complicated_nested_config():
                 inputs=[],
                 outputs=[],
                 transform_fn=lambda *_args: None,
-                config_field=types.Field(
-                    types.Dict(
+                config_field=Field(
+                    Dict(
                         {
-                            'field_one': types.Field(types.String),
-                            'field_two': types.Field(types.String, is_optional=True),
-                            'field_three': types.Field(
-                                types.String, is_optional=True, default_value='some_value'
+                            'field_one': Field(String),
+                            'field_two': Field(String, is_optional=True),
+                            'field_three': Field(
+                                String, is_optional=True, default_value='some_value'
                             ),
-                            'nested_field': types.Field(
-                                types.Dict(
+                            'nested_field': Field(
+                                Dict(
                                     {
-                                        'field_four_str': types.Field(types.String),
-                                        'field_five_int': types.Field(types.Int),
-                                        'field_six_nullable_int_list': types.Field(
-                                            types.List(types.Nullable(types.Int)), is_optional=True
+                                        'field_four_str': Field(String),
+                                        'field_five_int': Field(Int),
+                                        'field_six_nullable_int_list': Field(
+                                            List(Nullable(Int)), is_optional=True
                                         ),
                                     }
                                 )
@@ -584,15 +591,15 @@ def define_context_config_pipeline():
         solids=[],
         context_definitions={
             'context_one': PipelineContextDefinition(
-                context_fn=lambda *args, **kwargs: None, config_field=Field(types.String)
+                context_fn=lambda *args, **kwargs: None, config_field=Field(String)
             ),
             'context_two': PipelineContextDefinition(
-                context_fn=lambda *args, **kwargs: None, config_field=Field(types.Int)
+                context_fn=lambda *args, **kwargs: None, config_field=Field(Int)
             ),
             'context_with_resources': PipelineContextDefinition(
                 resources={
                     'resource_one': ResourceDefinition(
-                        resource_fn=lambda *args, **kwargs: None, config_field=Field(types.Int)
+                        resource_fn=lambda *args, **kwargs: None, config_field=Field(Int)
                     ),
                     'resource_two': ResourceDefinition(resource_fn=lambda *args, **kwargs: None),
                 }
@@ -641,7 +648,7 @@ def test_context_fetch_resources():
 def test_context_config_works():
     result = execute_config_graphql(
         pipeline_name='context_config_pipeline',
-        config={'context': {'context_one': {'config': 'kj23k4j3'}}},
+        env_config={'context': {'context_one': {'config': 'kj23k4j3'}}},
     )
 
     assert not result.errors
@@ -651,7 +658,7 @@ def test_context_config_works():
 
     result = execute_config_graphql(
         pipeline_name='context_config_pipeline',
-        config={'context': {'context_two': {'config': 38934}}},
+        env_config={'context': {'context_two': {'config': 38934}}},
     )
 
     assert not result.errors
@@ -661,7 +668,9 @@ def test_context_config_works():
 
 
 def test_context_config_selector_error():
-    result = execute_config_graphql(pipeline_name='context_config_pipeline', config={'context': {}})
+    result = execute_config_graphql(
+        pipeline_name='context_config_pipeline', env_config={'context': {}}
+    )
 
     assert not result.errors
     assert result.data
@@ -673,7 +682,7 @@ def test_context_config_selector_error():
 
 def test_context_config_wrong_selector():
     result = execute_config_graphql(
-        pipeline_name='context_config_pipeline', config={'context': {'not_defined': {}}}
+        pipeline_name='context_config_pipeline', env_config={'context': {'not_defined': {}}}
     )
 
     assert not result.errors
@@ -687,7 +696,9 @@ def test_context_config_wrong_selector():
 def test_context_config_multiple_selectors():
     result = execute_config_graphql(
         pipeline_name='context_config_pipeline',
-        config={'context': {'context_one': {'config': 'kdjfd'}, 'context_two': {'config': 123}}},
+        env_config={
+            'context': {'context_one': {'config': 'kdjfd'}, 'context_two': {'config': 123}}
+        },
     )
 
     assert not result.errors
@@ -701,7 +712,7 @@ def test_context_config_multiple_selectors():
 def test_more_complicated_works():
     result = execute_config_graphql(
         pipeline_name='more_complicated_nested_config',
-        config={
+        env_config={
             'solids': {
                 'a_solid_with_multilayered_config': {
                     'config': {
@@ -725,7 +736,7 @@ def test_more_complicated_works():
 def test_more_complicated_multiple_errors():
     result = execute_config_graphql(
         pipeline_name='more_complicated_nested_config',
-        config={
+        env_config={
             'solids': {
                 'a_solid_with_multilayered_config': {
                     'config': {
@@ -802,7 +813,7 @@ def test_more_complicated_multiple_errors():
 def test_config_list():
     result = execute_config_graphql(
         pipeline_name='pipeline_with_list',
-        config={'solids': {'solid_with_list': {'config': [1, 2]}}},
+        env_config={'solids': {'solid_with_list': {'config': [1, 2]}}},
     )
 
     assert not result.errors
@@ -815,7 +826,7 @@ def test_config_list():
 def test_config_list_invalid():
     result = execute_config_graphql(
         pipeline_name='pipeline_with_list',
-        config={'solids': {'solid_with_list': {'config': 'foo'}}},
+        env_config={'solids': {'solid_with_list': {'config': 'foo'}}},
     )
 
     assert not result.errors
@@ -830,7 +841,7 @@ def test_config_list_invalid():
 def test_config_list_item_invalid():
     result = execute_config_graphql(
         pipeline_name='pipeline_with_list',
-        config={'solids': {'solid_with_list': {'config': [1, 'foo']}}},
+        env_config={'solids': {'solid_with_list': {'config': [1, 'foo']}}},
     )
 
     assert not result.errors

@@ -6,6 +6,7 @@ from dagster import (
     ExecutionContext,
     Field,
     InputDefinition,
+    Int,
     OutputDefinition,
     PipelineContextDefinition,
     PipelineDefinition,
@@ -76,7 +77,7 @@ def test_single_solid_with_multiple_inputs():
 def test_single_solid_with_config():
     ran = {}
 
-    @solid(config_field=Field(types.Int))
+    @solid(config_field=Field(Int))
     def check_config_for_two(info):
         assert info.config == 2
         ran['check_config_for_two'] = True
@@ -104,7 +105,7 @@ def test_single_solid_with_context_config():
         solids=[check_context_config_for_two],
         context_definitions={
             'test_context': PipelineContextDefinition(
-                config_field=Field(types.Int, is_optional=True, default_value=2),
+                config_field=Field(Int, is_optional=True, default_value=2),
                 context_fn=lambda info: ExecutionContext(resources=info.config),
             )
         },

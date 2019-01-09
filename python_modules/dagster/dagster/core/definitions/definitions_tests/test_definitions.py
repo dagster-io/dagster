@@ -2,15 +2,17 @@ import pytest
 
 from dagster import (
     DependencyDefinition,
+    Dict,
     Field,
-    PipelineContextDefinition,
-    PipelineDefinition,
-    types,
     InputDefinition,
     OutputDefinition,
+    PipelineContextDefinition,
+    PipelineDefinition,
+    SolidInstance,
+    String,
     lambda_solid,
     solid,
-    SolidInstance,
+    types,
 )
 from dagster.core.errors import DagsterInvalidDefinitionError
 
@@ -31,7 +33,7 @@ def test_pipeline_types():
     @solid(
         inputs=[InputDefinition('input_one', types.String)],
         outputs=[OutputDefinition(types.Any)],
-        config_field=Field(types.Dict({'another_field': Field(types.Int)})),
+        config_field=Field(Dict({'another_field': Field(types.Int)})),
     )
     def solid_one(_info, input_one):
         raise Exception('should not execute')
@@ -41,23 +43,14 @@ def test_pipeline_types():
         dependencies={'solid_one': {'input_one': DependencyDefinition('produce_string')}},
         context_definitions={
             'context_one': PipelineContextDefinition(
-                context_fn=lambda: None,
-                config_field=Field(types.Dict({'field_one': Field(types.String)})),
+                context_fn=lambda: None, config_field=Field(Dict({'field_one': Field(String)}))
             )
         },
     )
 
-    present_types = [types.String, types.Any, types.Int]
-
-    for present_type in present_types:
-        name = present_type.name
-        assert pipeline_def.has_type(name)
-        assert pipeline_def.type_named(name).name == name
-
-    not_present_types = [types.PythonObjectType('Duisjdfke', dict)]
-
-    for not_present_type in not_present_types:
-        assert not pipeline_def.has_type(not_present_type.name)
+    assert pipeline_def.has_config_type('String')
+    assert pipeline_def.has_config_type('Int')
+    assert not pipeline_def.has_config_type('SomeName')
 
 
 def test_mapper_errors():

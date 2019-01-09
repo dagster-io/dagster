@@ -4,12 +4,12 @@ from dagster import (
     DependencyDefinition,
     Field,
     InputDefinition,
+    Int,
     PipelineDefinition,
     SolidInstance,
     execute_pipeline,
     lambda_solid,
     solid,
-    types,
 )
 
 
@@ -63,7 +63,7 @@ def test_only_aliased_solids():
 
 
 def test_aliased_configs():
-    @solid(inputs=[], config_field=Field(types.Int))
+    @solid(inputs=[], config_field=Field(Int))
     def load_constant(info):
         return info.config
 

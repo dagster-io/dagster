@@ -10,6 +10,7 @@ from dagster import (
     ExecutionContext,
     Field,
     InputDefinition,
+    Int,
     OutputDefinition,
     PipelineConfigEvaluationError,
     PipelineContextDefinition,
@@ -18,7 +19,8 @@ from dagster import (
     execute_pipeline,
     lambda_solid,
     solid,
-    types,
+    Dict,
+    String,
 )
 
 
@@ -55,24 +57,24 @@ PartNineResources = namedtuple('PartNineResources', 'store')
 
 
 def define_contextless_solids():
-    @solid(config_field=Field(types.Int), outputs=[OutputDefinition(types.Int)])
+    @solid(config_field=Field(Int), outputs=[OutputDefinition(Int)])
     def injest_a(info):
         return info.config
 
-    @solid(config_field=Field(types.Int), outputs=[OutputDefinition(types.Int)])
+    @solid(config_field=Field(Int), outputs=[OutputDefinition(Int)])
     def injest_b(info):
         return info.config
 
     @lambda_solid(
-        inputs=[InputDefinition('num_one', types.Int), InputDefinition('num_two', types.Int)],
-        output=OutputDefinition(types.Int),
+        inputs=[InputDefinition('num_one', Int), InputDefinition('num_two', Int)],
+        output=OutputDefinition(Int),
     )
     def add_ints(num_one, num_two):
         return num_one + num_two
 
     @lambda_solid(
-        inputs=[InputDefinition('num_one', types.Int), InputDefinition('num_two', types.Int)],
-        output=OutputDefinition(types.Int),
+        inputs=[InputDefinition('num_one', Int), InputDefinition('num_two', Int)],
+        output=OutputDefinition(Int),
     )
     def mult_ints(num_one, num_two):
         return num_one * num_two
@@ -81,19 +83,19 @@ def define_contextless_solids():
 
 
 def define_contextful_solids():
-    @solid(config_field=Field(types.Int), outputs=[OutputDefinition(types.Int)])
+    @solid(config_field=Field(Int), outputs=[OutputDefinition(Int)])
     def injest_a(info):
         info.context.resources.store.record_value(info.context, 'a', info.config)
         return info.config
 
-    @solid(config_field=Field(types.Int), outputs=[OutputDefinition(types.Int)])
+    @solid(config_field=Field(Int), outputs=[OutputDefinition(Int)])
     def injest_b(info):
         info.context.resources.store.record_value(info.context, 'b', info.config)
         return info.config
 
     @solid(
-        inputs=[InputDefinition('num_one', types.Int), InputDefinition('num_two', types.Int)],
-        outputs=[OutputDefinition(types.Int)],
+        inputs=[InputDefinition('num_one', Int), InputDefinition('num_two', Int)],
+        outputs=[OutputDefinition(Int)],
     )
     def add_ints(info, num_one, num_two):
         result = num_one + num_two
@@ -101,8 +103,8 @@ def define_contextful_solids():
         return result
 
     @solid(
-        inputs=[InputDefinition('num_one', types.Int), InputDefinition('num_two', types.Int)],
-        outputs=[OutputDefinition(types.Int)],
+        inputs=[InputDefinition('num_one', Int), InputDefinition('num_two', Int)],
+        outputs=[OutputDefinition(Int)],
     )
     def mult_ints(info, num_one, num_two):
         result = num_one * num_two
@@ -181,15 +183,10 @@ def define_part_nine_final_pipeline():
                     resources=PartNineResources(PublicCloudStore(info.config['credentials']))
                 ),
                 config_field=Field(
-                    dagster_type=types.Dict(
+                    Dict(
                         fields={
                             'credentials': Field(
-                                types.Dict(
-                                    fields={
-                                        'user': Field(types.String),
-                                        'pass': Field(types.String),
-                                    }
-                                )
+                                Dict(fields={'user': Field(String), 'pass': Field(String)})
                             )
                         }
                     )

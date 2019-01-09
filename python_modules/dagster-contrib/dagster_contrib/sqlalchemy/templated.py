@@ -1,34 +1,27 @@
-import json
-import os
-
 import jinja2
 
-from dagster import Field, InputDefinition, OutputDefinition, Result, SolidDefinition, check, types
+from dagster import (
+    Any,
+    Dict,
+    Field,
+    InputDefinition,
+    OutputDefinition,
+    Result,
+    SolidDefinition,
+    String,
+    check,
+)
 
-from dagster.core.types.builtins import DagsterStringType
+from dagster.core.types.runtime import Stringish
 
 from .common import execute_sql_text_on_context
 
 
-class DagsterSqlTextType(DagsterStringType):
+class SqlTextType(Stringish):
     def __init__(self):
-        super(DagsterSqlTextType, self).__init__(
+        super(SqlTextType, self).__init__(
             name='SqlText', description='A string of SQL text that is directly executable.'
         )
-
-    def serialize_value(self, output_dir, value):
-        type_value = self.create_serializable_type_value(
-            self.coerce_runtime_value(value), output_dir
-        )
-        output_path = os.path.join(output_dir, 'type_value')
-        with open(output_path, 'w') as ff:
-            json.dump({'type': type_value.name, 'value': type_value.value}, ff)
-
-        with open(os.path.join(output_dir, 'sql'), 'w') as sf:
-            sf.write(value)
-
-
-SqlTextType = DagsterSqlTextType()
 
 
 def create_templated_sql_transform_solid(name, sql, table_arguments, dependant_solids=None):
@@ -42,15 +35,15 @@ def create_templated_sql_transform_solid(name, sql, table_arguments, dependant_s
 
     field_dict = {}
     for table in table_arguments:
-        field_dict[table] = Field(types.String)
+        field_dict[table] = Field(String)
 
     return SolidDefinition(
         name=name,
         inputs=[InputDefinition(solid.name) for solid in dependant_solids],
-        config_field=types.Field(types.Dict(field_dict)),
+        config_field=Field(Dict(field_dict)),
         transform_fn=_create_templated_sql_transform_with_output(sql),
         outputs=[
-            OutputDefinition(name='result', dagster_type=types.Any),
+            OutputDefinition(name='result', dagster_type=Any),
             OutputDefinition(name='sql_text', dagster_type=SqlTextType),
         ],
     )

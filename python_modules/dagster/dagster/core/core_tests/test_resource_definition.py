@@ -4,14 +4,13 @@ from dagster import (
     ResourceDefinition,
     execute_pipeline,
     solid,
-    types,
+    Field,
+    String,
 )
 
 
 def define_string_resource():
-    return ResourceDefinition(
-        config_field=types.Field(types.String), resource_fn=lambda info: info.config
-    )
+    return ResourceDefinition(config_field=Field(String), resource_fn=lambda info: info.config)
 
 
 def test_basic_resource():
@@ -49,9 +48,7 @@ def test_yield_resource():
     def _do_resource(info):
         yield info.config
 
-    yield_string_resource = ResourceDefinition(
-        config_field=types.Field(types.String), resource_fn=_do_resource
-    )
+    yield_string_resource = ResourceDefinition(config_field=Field(String), resource_fn=_do_resource)
 
     pipeline_def = PipelineDefinition(
         name='with_a_yield_resource',
@@ -85,9 +82,7 @@ def test_yield_multiple_resources():
         yield info.config
         saw.append('after yield ' + info.config)
 
-    yield_string_resource = ResourceDefinition(
-        config_field=types.Field(types.String), resource_fn=_do_resource
-    )
+    yield_string_resource = ResourceDefinition(config_field=Field(String), resource_fn=_do_resource)
 
     pipeline_def = PipelineDefinition(
         name='with_yield_resources',
@@ -137,7 +132,7 @@ def test_mixed_multiple_resources():
         saw.append('after yield ' + info.config)
 
     yield_string_resource = ResourceDefinition(
-        config_field=types.Field(types.String), resource_fn=_do_yield_resource
+        config_field=Field(String), resource_fn=_do_yield_resource
     )
 
     def _do_return_resource(info):
@@ -145,7 +140,7 @@ def test_mixed_multiple_resources():
         return info.config
 
     return_string_resource = ResourceDefinition(
-        config_field=types.Field(types.String), resource_fn=_do_return_resource
+        config_field=Field(String), resource_fn=_do_return_resource
     )
 
     pipeline_def = PipelineDefinition(

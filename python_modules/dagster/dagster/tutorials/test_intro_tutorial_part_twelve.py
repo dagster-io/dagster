@@ -1,23 +1,40 @@
-# pylint: disable=W0622,W0614,W0401
+# # pylint: disable=W0622,W0614,W0401
+
 from collections import namedtuple
 import re
 
 import pytest
 
-from dagster import *
+from dagster import (
+    DagsterRuntimeCoercionError,
+    DagsterTypeError,
+    DependencyDefinition,
+    InputDefinition,
+    OutputDefinition,
+    PipelineDefinition,
+    PythonObjectType,
+    execute_pipeline,
+    lambda_solid,
+    solid,
+)
+
+from dagster.core.types.runtime import RuntimeType
 
 StringTuple = namedtuple('StringTuple', 'str_one str_two')
 
-StringTupleType = types.PythonObjectType(
-    'StringTuple', python_type=StringTuple, description='A tuple of strings.'
-)
+
+class StringTupleType(PythonObjectType):
+    def __init__(self):
+        super(StringTupleType, self).__init__(
+            name='StringTuple', python_type=StringTuple, description=''
+        )
 
 
 class SSNString(str):
     pass
 
 
-class SSNStringTypeClass(types.DagsterType):
+class SSNStringTypeClass(RuntimeType):
     def __init__(self):
         super(SSNStringTypeClass, self).__init__(name='SSNString')
 
@@ -36,9 +53,6 @@ class SSNStringTypeClass(types.DagsterType):
             )
 
         return SSNString(value)
-
-
-SSNStringType = SSNStringTypeClass()
 
 
 @lambda_solid(output=OutputDefinition(StringTupleType))
@@ -66,7 +80,7 @@ def produce_invalid_ssn_string():
     return '394-30-203239483'
 
 
-@solid(inputs=[InputDefinition('ssn', SSNStringType)])
+@solid(inputs=[InputDefinition('ssn', SSNStringTypeClass)])
 def consume_ssn(info, ssn):
     if not isinstance(ssn, SSNString):
         raise Exception('This should never be thrown')
@@ -112,20 +126,21 @@ def define_part_twelve_step_four_pipeline():
 def test_ssn_type():
     good_ssn_string = '123-43-4939'
     good_ssn = SSNString(good_ssn_string)
-    assert SSNStringType.coerce_runtime_value(good_ssn_string) == good_ssn
-    assert SSNStringType.coerce_runtime_value(good_ssn) == good_ssn
+    ssn_string_type = SSNStringTypeClass.inst()
+    assert ssn_string_type.coerce_runtime_value(good_ssn_string) == good_ssn
+    assert ssn_string_type.coerce_runtime_value(good_ssn) == good_ssn
 
     with pytest.raises(DagsterRuntimeCoercionError):
-        SSNStringType.coerce_runtime_value(123)
+        ssn_string_type.coerce_runtime_value(123)
 
     with pytest.raises(DagsterRuntimeCoercionError):
-        SSNStringType.coerce_runtime_value(None)
+        ssn_string_type.coerce_runtime_value(None)
 
     with pytest.raises(DagsterRuntimeCoercionError):
-        SSNStringType.coerce_runtime_value('12932-9234892038-384')
+        ssn_string_type.coerce_runtime_value('12932-9234892038-384')
 
     with pytest.raises(DagsterRuntimeCoercionError):
-        SSNStringType.coerce_runtime_value('1292-34-383434')
+        ssn_string_type.coerce_runtime_value('1292-34-383434')
 
 
 def test_intro_tutorial_part_twelve_step_one():

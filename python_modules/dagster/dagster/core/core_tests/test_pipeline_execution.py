@@ -3,6 +3,7 @@ import dagster.check as check
 from dagster import (
     DependencyDefinition,
     InputDefinition,
+    Int,
     OutputDefinition,
     PipelineDefinition,
     Result,
@@ -12,8 +13,9 @@ from dagster import (
     execute_pipeline_iterator,
     lambda_solid,
     solid,
-    types,
 )
+
+from dagster.core.types import Nullable, List, String
 
 from dagster.core.definitions import Solid, solids_in_topological_order
 
@@ -382,15 +384,15 @@ def test_pipeline_subset():
 
 
 def define_three_part_pipeline():
-    @lambda_solid(inputs=[InputDefinition('num', types.Int)], output=OutputDefinition(types.Int))
+    @lambda_solid(inputs=[InputDefinition('num', Int)], output=OutputDefinition(Int))
     def add_one(num):
         return num + 1
 
-    @lambda_solid(inputs=[InputDefinition('num', types.Int)], output=OutputDefinition(types.Int))
+    @lambda_solid(inputs=[InputDefinition('num', Int)], output=OutputDefinition(Int))
     def add_two(num):
         return num + 2
 
-    @lambda_solid(inputs=[InputDefinition('num', types.Int)], output=OutputDefinition(types.Int))
+    @lambda_solid(inputs=[InputDefinition('num', Int)], output=OutputDefinition(Int))
     def add_three(num):
         return num + 3
 
@@ -424,3 +426,38 @@ def test_pipeline_execution_disjoint_subset():
 
     assert result.result_for_solid('add_one').transformed_value() == 3
     assert result.result_for_solid('add_three').transformed_value() == 8
+
+
+def test_pipeline_wrapping_types():
+    @lambda_solid(
+        inputs=[InputDefinition('value', Nullable(List(Nullable(String))))],
+        output=OutputDefinition(Nullable(List(Nullable(String)))),
+    )
+    def double_string_for_all(value):
+        if not value:
+            return value
+
+        output = []
+        for item in value:
+            output.append(None if item is None else item + item)
+        return output
+
+    pipeline_def = PipelineDefinition(name='wrapping_test', solids=[double_string_for_all])
+
+    assert execute_pipeline(
+        pipeline_def, environment={'solids': {'double_string_for_all': {'inputs': {'value': None}}}}
+    ).success
+
+    assert execute_pipeline(
+        pipeline_def, environment={'solids': {'double_string_for_all': {'inputs': {'value': []}}}}
+    ).success
+
+    assert execute_pipeline(
+        pipeline_def,
+        environment={'solids': {'double_string_for_all': {'inputs': {'value': ['foo']}}}},
+    ).success
+
+    assert execute_pipeline(
+        pipeline_def,
+        environment={'solids': {'double_string_for_all': {'inputs': {'value': ['bar', None]}}}},
+    ).success
