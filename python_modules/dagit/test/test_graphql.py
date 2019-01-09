@@ -33,7 +33,7 @@ from dagit.pipeline_run_storage import PipelineRunStorage
 from dagit.schema import create_schema
 from dagit.schema.context import DagsterGraphQLContext
 
-from dagit.dagit_tests.production_query import PRODUCTION_QUERY
+from .production_query import PRODUCTION_QUERY
 
 
 def define_scalar_output_pipeline():
