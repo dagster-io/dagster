@@ -39,7 +39,7 @@ EXPECTED_OUTPUT_SHELL = '''
     "nbformat_minor": 2
     }}'''
 EXPECTED_IMPORT_STATEMENT = (
-    "from dagstermill.dagstermill_tests.repository import define_example_repository"
+    "from dagstermill.examples.repository import define_example_repository"
 )
 
 
