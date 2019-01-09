@@ -11,8 +11,7 @@ interface IConfigExplorerProps {
 }
 
 export default class ConfigExplorer extends React.Component<
-  IConfigExplorerProps,
-  {}
+  IConfigExplorerProps
 > {
   static fragments = {
     ConfigExplorerFragment: gql`

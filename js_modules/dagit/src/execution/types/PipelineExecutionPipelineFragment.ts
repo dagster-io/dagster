@@ -4,49 +4,40 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL fragment: SidebarSolidInfoPipelineFragment
+// GraphQL fragment: PipelineExecutionPipelineFragment
 // ====================================================
 
-export interface SidebarSolidInfoPipelineFragment_types_RegularType_typeAttributes {
-  isNamed: boolean;
+export interface PipelineExecutionPipelineFragment_environmentType {
+  name: string;
 }
 
-export interface SidebarSolidInfoPipelineFragment_types_RegularType {
+export interface PipelineExecutionPipelineFragment_types_RegularType {
   __typename: "RegularType";
   name: string;
-  description: string | null;
-  typeAttributes: SidebarSolidInfoPipelineFragment_types_RegularType_typeAttributes;
 }
 
-export interface SidebarSolidInfoPipelineFragment_types_CompositeType_fields_type {
-  __typename: "RegularType" | "CompositeType";
+export interface PipelineExecutionPipelineFragment_types_CompositeType_fields_type {
   name: string;
 }
 
-export interface SidebarSolidInfoPipelineFragment_types_CompositeType_fields {
+export interface PipelineExecutionPipelineFragment_types_CompositeType_fields {
   name: string;
-  description: string | null;
   isOptional: boolean;
-  defaultValue: string | null;
-  type: SidebarSolidInfoPipelineFragment_types_CompositeType_fields_type;
+  type: PipelineExecutionPipelineFragment_types_CompositeType_fields_type;
 }
 
-export interface SidebarSolidInfoPipelineFragment_types_CompositeType_typeAttributes {
-  isNamed: boolean;
-}
-
-export interface SidebarSolidInfoPipelineFragment_types_CompositeType {
+export interface PipelineExecutionPipelineFragment_types_CompositeType {
   __typename: "CompositeType";
-  fields: SidebarSolidInfoPipelineFragment_types_CompositeType_fields[];
   name: string;
-  description: string | null;
-  typeAttributes: SidebarSolidInfoPipelineFragment_types_CompositeType_typeAttributes;
+  fields: PipelineExecutionPipelineFragment_types_CompositeType_fields[];
 }
 
-export type SidebarSolidInfoPipelineFragment_types = SidebarSolidInfoPipelineFragment_types_RegularType | SidebarSolidInfoPipelineFragment_types_CompositeType;
+export type PipelineExecutionPipelineFragment_types = PipelineExecutionPipelineFragment_types_RegularType | PipelineExecutionPipelineFragment_types_CompositeType;
 
-export interface SidebarSolidInfoPipelineFragment {
-  types: SidebarSolidInfoPipelineFragment_types[];
+export interface PipelineExecutionPipelineFragment {
+  name: string;
+  environmentType: PipelineExecutionPipelineFragment_environmentType;
+  types: PipelineExecutionPipelineFragment_types[];
 }
 
 /* tslint:disable */
@@ -55,6 +46,13 @@ export interface SidebarSolidInfoPipelineFragment {
 //==============================================================
 // START Enums and Input Objects
 //==============================================================
+
+export enum EvaluationErrorReason {
+  FIELD_NOT_DEFINED = "FIELD_NOT_DEFINED",
+  MISSING_REQUIRED_FIELD = "MISSING_REQUIRED_FIELD",
+  RUNTIME_TYPE_MISMATCH = "RUNTIME_TYPE_MISMATCH",
+  SELECTOR_FIELD_ERROR = "SELECTOR_FIELD_ERROR",
+}
 
 export enum LogLevel {
   CRITICAL = "CRITICAL",
@@ -76,7 +74,9 @@ export enum PipelineRunStatus {
 
 export enum StepTag {
   INPUT_EXPECTATION = "INPUT_EXPECTATION",
+  INPUT_THUNK = "INPUT_THUNK",
   JOIN = "JOIN",
+  MATERIALIZATION_THUNK = "MATERIALIZATION_THUNK",
   OUTPUT_EXPECTATION = "OUTPUT_EXPECTATION",
   SERIALIZE = "SERIALIZE",
   TRANSFORM = "TRANSFORM",

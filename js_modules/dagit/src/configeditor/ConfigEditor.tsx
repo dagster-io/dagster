@@ -36,10 +36,7 @@ const performLint = debounce((editor: any) => {
   editor.performLint();
 }, 1000);
 
-export default class ConfigCodeEditor extends React.Component<
-  IConfigEditorProps,
-  {}
-> {
+export default class ConfigEditor extends React.Component<IConfigEditorProps> {
   render() {
     return (
       <CodeMirrorReact

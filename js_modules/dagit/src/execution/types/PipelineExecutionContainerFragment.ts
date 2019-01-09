@@ -88,10 +88,34 @@ export interface PipelineExecutionContainerFragment_environmentType {
   name: string;
 }
 
+export interface PipelineExecutionContainerFragment_types_RegularType {
+  __typename: "RegularType";
+  name: string;
+}
+
+export interface PipelineExecutionContainerFragment_types_CompositeType_fields_type {
+  name: string;
+}
+
+export interface PipelineExecutionContainerFragment_types_CompositeType_fields {
+  name: string;
+  isOptional: boolean;
+  type: PipelineExecutionContainerFragment_types_CompositeType_fields_type;
+}
+
+export interface PipelineExecutionContainerFragment_types_CompositeType {
+  __typename: "CompositeType";
+  name: string;
+  fields: PipelineExecutionContainerFragment_types_CompositeType_fields[];
+}
+
+export type PipelineExecutionContainerFragment_types = PipelineExecutionContainerFragment_types_RegularType | PipelineExecutionContainerFragment_types_CompositeType;
+
 export interface PipelineExecutionContainerFragment {
   name: string;
   runs: PipelineExecutionContainerFragment_runs[];
   environmentType: PipelineExecutionContainerFragment_environmentType;
+  types: PipelineExecutionContainerFragment_types[];
 }
 
 /* tslint:disable */

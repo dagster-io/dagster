@@ -49,10 +49,10 @@ export default class PipelineExecutionContainer extends React.Component<
             }
           }
         }
-        ...PipelineExecutionCodeEditorFragment
+        ...PipelineExecutionPipelineFragment
       }
 
-      ${PipelineExecution.fragments.PipelineExecutionCodeEditorFragment}
+      ${PipelineExecution.fragments.PipelineExecutionPipelineFragment}
       ${PipelineExecution.fragments.PipelineExecutionPipelineRunFragment}
     `
   };
@@ -120,7 +120,7 @@ export default class PipelineExecutionContainer extends React.Component<
     this.props.onSave(applySelectSession(this.props.data, session));
   };
 
-  handleSaveSession = (session: string, config: any) => {
+  handleSaveSession = (session: string, config: string) => {
     this.props.onSave(applyConfigToSession(this.props.data, session, config));
   };
 
@@ -128,8 +128,8 @@ export default class PipelineExecutionContainer extends React.Component<
     this.props.onSave(applyNameToSession(this.props.data, session, title));
   };
 
-  handleCreateSession = () => {
-    this.props.onSave(applyCreateSession(this.props.data));
+  handleCreateSession = (config: string) => {
+    this.props.onSave(applyCreateSession(this.props.data, config));
   };
 
   handleRemoveSession = (session: string) => {

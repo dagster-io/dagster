@@ -94,6 +94,29 @@ export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_environmentT
   name: string;
 }
 
+export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_types_RegularType {
+  __typename: "RegularType";
+  name: string;
+}
+
+export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_types_CompositeType_fields_type {
+  name: string;
+}
+
+export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_types_CompositeType_fields {
+  name: string;
+  isOptional: boolean;
+  type: AppQuery_pipelinesOrError_PipelineConnection_nodes_types_CompositeType_fields_type;
+}
+
+export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_types_CompositeType {
+  __typename: "CompositeType";
+  name: string;
+  fields: AppQuery_pipelinesOrError_PipelineConnection_nodes_types_CompositeType_fields[];
+}
+
+export type AppQuery_pipelinesOrError_PipelineConnection_nodes_types = AppQuery_pipelinesOrError_PipelineConnection_nodes_types_RegularType | AppQuery_pipelinesOrError_PipelineConnection_nodes_types_CompositeType;
+
 export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_contexts_config_type_RegularType_innerTypes_RegularType_innerTypes {
   name: string;
 }
@@ -642,6 +665,7 @@ export interface AppQuery_pipelinesOrError_PipelineConnection_nodes {
   name: string;
   runs: AppQuery_pipelinesOrError_PipelineConnection_nodes_runs[];
   environmentType: AppQuery_pipelinesOrError_PipelineConnection_nodes_environmentType;
+  types: AppQuery_pipelinesOrError_PipelineConnection_nodes_types[];
   description: string | null;
   contexts: AppQuery_pipelinesOrError_PipelineConnection_nodes_contexts[];
   solids: AppQuery_pipelinesOrError_PipelineConnection_nodes_solids[];

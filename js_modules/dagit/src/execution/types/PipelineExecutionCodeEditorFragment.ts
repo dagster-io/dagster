@@ -11,9 +11,32 @@ export interface PipelineExecutionCodeEditorFragment_environmentType {
   name: string;
 }
 
+export interface PipelineExecutionCodeEditorFragment_types_RegularType {
+  __typename: "RegularType";
+  name: string;
+}
+
+export interface PipelineExecutionCodeEditorFragment_types_CompositeType_fields_type {
+  name: string;
+}
+
+export interface PipelineExecutionCodeEditorFragment_types_CompositeType_fields {
+  name: string;
+  type: PipelineExecutionCodeEditorFragment_types_CompositeType_fields_type;
+}
+
+export interface PipelineExecutionCodeEditorFragment_types_CompositeType {
+  __typename: "CompositeType";
+  name: string;
+  fields: PipelineExecutionCodeEditorFragment_types_CompositeType_fields[];
+}
+
+export type PipelineExecutionCodeEditorFragment_types = PipelineExecutionCodeEditorFragment_types_RegularType | PipelineExecutionCodeEditorFragment_types_CompositeType;
+
 export interface PipelineExecutionCodeEditorFragment {
   name: string;
   environmentType: PipelineExecutionCodeEditorFragment_environmentType;
+  types: PipelineExecutionCodeEditorFragment_types[];
 }
 
 /* tslint:disable */
