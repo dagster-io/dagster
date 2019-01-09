@@ -105,7 +105,10 @@ def get_notebook_scaffolding(register_repo_info):
     help="Will force overwrite any existing notebook or file with the same name.",
 )
 def scaffold(notebook, solid_name, force_overwrite, **kwargs):
+    execute_scaffold(notebook, solid_name, force_overwrite, **kwargs)
 
+
+def execute_scaffold(notebook, solid_name, force_overwrite, **kwargs):
     if not re.match(r'^[a-zA-Z0-9\-_\\/]+$', notebook):
         raise click.BadOptionUsage(
             notebook,

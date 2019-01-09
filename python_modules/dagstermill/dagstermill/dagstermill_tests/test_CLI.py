@@ -2,7 +2,7 @@ import subprocess
 import os
 import pytest
 from dagster.utils import script_relative_path
-from dagstermill.cli import scaffold
+from dagstermill.cli import execute_scaffold
 
 EXPECTED_OUTPUT_SHELL = '''
     {{
@@ -184,7 +184,15 @@ def test_coverage():
     original_cwd = os.getcwd()
     try:
         os.chdir(script_relative_path('.'))
-        scaffold(notebook="notebooks/CLI_coverage", solid_name="solid_name", force_overwrite=True)
+        execute_scaffold(
+            notebook="notebooks/CLI_coverage",
+            solid_name="solid_name",
+            force_overwrite=True,
+            module_name=None,
+            fn_name=None,
+            python_file=None,
+            repository_yaml=None,
+        )
     finally:
         cleanup("CLI_coverage")
         os.chdir(original_cwd)
