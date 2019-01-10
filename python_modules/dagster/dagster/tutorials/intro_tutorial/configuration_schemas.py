@@ -53,16 +53,6 @@ def define_demo_configuration_schema_pipeline():
     )
 
 
-def define_demo_configuration_schema_pipeline():
-    return PipelineDefinition(
-        name='demo_configuration_schema',
-        solids=[double_the_word, count_letters],
-        dependencies={
-            'count_letters': {'word': DependencyDefinition('double_the_word')}
-        },
-    )
-
-
 def define_typed_demo_configuration_schema_pipeline():
     return PipelineDefinition(
         name='typed_demo_configuration_schema',

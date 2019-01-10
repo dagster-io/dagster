@@ -6,6 +6,7 @@ from dagster import (
     Field,
     InputDefinition,
     PipelineDefinition,
+    RepositoryDefinition,
     String,
     lambda_solid,
     solid,
