@@ -20,6 +20,8 @@ from dagster.utils import script_relative_path
 
 from ..data_frame import DataFrame
 
+from .pandas_hello_world.pipeline import define_success_pipeline
+
 
 def nb_test_path(name):
     return script_relative_path('notebooks/{name}.ipynb'.format(name=name))
@@ -55,7 +57,10 @@ def define_pandas_source_test_solid():
 def define_pandas_repository():
     return RepositoryDefinition(
         name='test_dagstermill_pandas_solids',
-        pipeline_dict={'input_transform_test_pipeline': define_pandas_source_test_pipeline},
+        pipeline_dict={
+            'input_transform_test_pipeline': define_pandas_source_test_pipeline,
+            'pandas_hello_world': define_success_pipeline,
+        },
     )
 
 
