@@ -1,3 +1,5 @@
+# py27 compat, see https://stackoverflow.com/a/844443/324449
+import io
 import os
 import re
 import subprocess
@@ -41,14 +43,15 @@ def test_build_all_docs(snapshot):
                 )
                 for dirpath, dirnames, filenames in os.walk('.')
             ],
-            key=lambda x: x[0]
+            key=lambda x: x[0],
         )
         snapshot.assert_match(walked)
         for dirpath, dirnames, filenames in walked:
             for filename in filenames:
                 if any((re.match(pattern, filename) for pattern in IGNORE_FILES)):
                     continue
-                with open(os.path.join(dirpath, filename), 'r') as fd:
+                # py27 compat
+                with io.open(os.path.join(dirpath, filename), mode='r', encoding='utf-8') as fd:
                     try:
                         snapshot.assert_match(fd.read())
                     except UnicodeDecodeError:

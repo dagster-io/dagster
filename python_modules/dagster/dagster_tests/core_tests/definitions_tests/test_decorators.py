@@ -1,4 +1,6 @@
 # encoding: utf-8
+# py27 compat
+
 import pytest
 
 from dagster import (

@@ -1,4 +1,5 @@
 # encoding: utf-8
+# py27 compat
 
 from dagster import execute_pipeline
 from dagster.tutorials.utils import (
