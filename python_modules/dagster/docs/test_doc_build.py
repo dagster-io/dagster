@@ -9,7 +9,14 @@ from dagster.utils import script_relative_path
 
 BUILT_DOCS_RELATIVE_PATH = '_build/'
 
-IGNORE_FILES = ['.DS_Store', 'objects.inv', '*.png']
+IGNORE_FILES = [
+    '.DS_Store',
+    'objects.inv',
+    '[A-Z0-9a-z_-]*\\.png',
+    '[A-Z0-9a-z_-]*\\.gif',
+    '[A-Z0-9a-z_-]*\\.doctree',
+    '[A-Z0-9a-z_-]*\\.pickle',
+]
 
 
 def test_build_all_docs(snapshot):
@@ -28,7 +35,7 @@ def test_build_all_docs(snapshot):
                     [
                         filename
                         for filename in filenames
-                        if any((re.match(pattern, filename) for pattern in IGNORE_FILES))
+                        if not any((re.match(pattern, filename) for pattern in IGNORE_FILES))
                     ],
                 )
                 for dirpath, dirnames, filenames in walked
