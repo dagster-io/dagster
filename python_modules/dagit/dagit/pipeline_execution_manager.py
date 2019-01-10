@@ -12,6 +12,7 @@ from dagster import check, ReentrantInfo, PipelineDefinition
 from dagster.core.execution import create_typed_environment, execute_reentrant_pipeline
 from dagster.core.events import PipelineEventRecord, EventType
 from dagster.core.types.evaluator import evaluate_config_value
+from dagster.core.system_config.types import construct_environment_config
 from dagster.utils.error import serializable_error_info_from_exc_info, SerializableErrorInfo
 from dagster.utils.logging import level_from_string
 
@@ -255,7 +256,9 @@ def execute_pipeline_through_queue(repository_info, pipeline_name, config, run_i
         return
 
     pipeline = repository_container.repository.get_pipeline(pipeline_name)
-    typed_environment = evaluate_config_value(pipeline.environment_type, config).value
+    typed_environment = construct_environment_config(
+        evaluate_config_value(pipeline.environment_type, config).value
+    )
 
     try:
         result = execute_reentrant_pipeline(

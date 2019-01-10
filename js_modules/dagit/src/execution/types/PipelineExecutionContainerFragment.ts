@@ -91,6 +91,7 @@ export interface PipelineExecutionContainerFragment_environmentType {
 export interface PipelineExecutionContainerFragment_types_RegularType {
   __typename: "RegularType";
   name: string;
+  isSelector: boolean;
 }
 
 export interface PipelineExecutionContainerFragment_types_CompositeType_fields_type {
@@ -106,6 +107,7 @@ export interface PipelineExecutionContainerFragment_types_CompositeType_fields {
 export interface PipelineExecutionContainerFragment_types_CompositeType {
   __typename: "CompositeType";
   name: string;
+  isSelector: boolean;
   fields: PipelineExecutionContainerFragment_types_CompositeType_fields[];
 }
 

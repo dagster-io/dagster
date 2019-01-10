@@ -100,10 +100,6 @@ class ConfigType(object):
     def inner_types(self):
         return []
 
-    def construct_from_config_value(self, config_value):
-        'User can override this to customize the construction of a verified value'
-        return config_value
-
 
 # Scalars, Composites, Selectors, Lists, Nullable, Any
 
@@ -200,7 +196,7 @@ class Float(BuiltinConfigScalar):
 
 class Any(ConfigAny):
     def __init__(self):
-        super(Any, self).__init__(description='')
+        super(Any, self).__init__(type_attributes=ConfigTypeAttributes(is_builtin=True))
 
 
 def Nullable(inner_type):
@@ -234,15 +230,15 @@ def List(inner_type):
 
 def resolve_to_config_list(list_type):
     check.inst_param(list_type, 'list_type', WrappingListType)
-    return List(resolve_config_type(list_type.inner_type))
+    return List(resolve_to_config_type(list_type.inner_type))
 
 
 def resolve_to_config_nullable(nullable_type):
     check.inst_param(nullable_type, 'nullable_type', WrappingNullableType)
-    return Nullable(resolve_config_type(nullable_type.inner_type))
+    return Nullable(resolve_to_config_type(nullable_type.inner_type))
 
 
-def resolve_config_type(dagster_type):
+def resolve_to_config_type(dagster_type):
     if dagster_type is None:
         return ConfigAny.inst()
     if isinstance(dagster_type, BuiltinEnum):

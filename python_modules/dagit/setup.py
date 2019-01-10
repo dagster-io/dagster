@@ -81,5 +81,5 @@ setup(
         # 'twine>=1.11.0',
         # 'pre-commit'>=1.10.1',
     ],
-    scripts=['bin/dagit'],
+    entry_points={"console_scripts": ['dagit = dagit.cli:main']},
 )

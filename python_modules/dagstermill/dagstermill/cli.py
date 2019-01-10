@@ -164,3 +164,8 @@ def create_dagstermill_cli():
     group = click.Group(name="create-notebook")
     group.add_command(create_notebook)
     return group
+
+def main():
+    cli = create_dagstermill_cli()
+    # click magic
+    cli(obj={})  # pylint:disable=E1120

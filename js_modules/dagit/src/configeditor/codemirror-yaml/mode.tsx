@@ -278,12 +278,16 @@ CodeMirror.defineMode("yaml", () => {
 });
 
 export type TypeConfig = {
-  environment: Array<{ name: string; typeName?: string }>;
+  rootTypeName: string;
   types: {
-    [name: string]: Array<{
-      name: string;
-      typeName: string;
-    }>;
+    [name: string]: {
+      fields: Array<{
+        name: string;
+        type: {
+          name: string;
+        };
+      }>;
+    };
   };
 };
 
@@ -389,24 +393,26 @@ function findAutocomplete(
   parents = parents.filter(({ indent }) => currentIndent > indent);
   const immediateParent = parents[parents.length - 1];
 
-  let available = typeConfig.environment;
+  let available = typeConfig.types[typeConfig.rootTypeName].fields;
 
   if (available && parents.length > 0) {
     for (const parent of parents) {
       const parentTypeDef = available.find(({ name }) => parent.key === name);
 
-      if (!parentTypeDef || !parentTypeDef.typeName) {
+      if (!parentTypeDef || !parentTypeDef.type.name) {
         return [];
       }
 
-      let childTypeName = parentTypeDef.typeName;
+      let childTypeName = parentTypeDef.type.name;
       let childEntiresUnique = true;
 
-      if (parentTypeDef.typeName.startsWith("List.")) {
-        childTypeName = parentTypeDef.typeName.substr(5);
+      if (parentTypeDef.type.name.startsWith("List.")) {
+        childTypeName = parentTypeDef.type.name.substr(5);
         childEntiresUnique = false;
       }
-      available = typeConfig.types[childTypeName];
+
+      let childType = typeConfig.types[childTypeName];
+      available = childType && childType.fields;
       if (!available) {
         console.warn(`No type config is available for ${childTypeName}`);
         return [];
@@ -422,7 +428,7 @@ function findAutocomplete(
 
   return available.map(item => ({
     text: item.name,
-    hasChildren: item.typeName ? item.typeName in typeConfig.types : false
+    hasChildren: item.type.name ? item.type.name in typeConfig.types : false
   }));
 }
 

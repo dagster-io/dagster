@@ -12,7 +12,8 @@ from .config import Any as ConfigAny
 from .config import ConfigType
 from .config import List as ConfigList
 from .config import Nullable as ConfigNullable
-from .config import resolve_config_type
+from .config_schema import InputSchema, OutputSchema, make_input_schema
+from .dagster_type import check_dagster_type_param
 from .wrapping import WrappingListType, WrappingNullableType
 
 
@@ -25,7 +26,7 @@ def check_opt_config_cls_param(config_cls, param_name):
 
 
 class RuntimeType(object):
-    def __init__(self, name=None, description=None, input_schema_cls=None, output_schema_cls=None):
+    def __init__(self, name=None, description=None, input_schema=None, output_schema=None):
 
         type_obj = type(self)
         if type_obj in RuntimeType.__cache:
@@ -38,16 +39,8 @@ class RuntimeType(object):
 
         self.name = check.opt_str_param(name, 'name', type(self).__name__)
         self.description = check.opt_str_param(description, 'description')
-        self.input_schema = (
-            None if input_schema_cls is None else resolve_config_type(input_schema_cls)
-        )
-        #  check_opt_config_cls_param(input_schema_cls, 'input_schema_cls')
-        self.output_schema = (
-            None if input_schema_cls is None else resolve_config_type(output_schema_cls)
-        )
-        # self.output_schema_cls = check_opt_config_cls_param(output_schema_cls, 'output_schema_cls')
-        # self.input_schema = None if input_schema_cls is None else input_schema_cls.inst()
-        # self.output_schema = None if output_schema_cls is None else output_schema_cls.inst()
+        self.input_schema = check.opt_inst_param(input_schema, 'input_schema', InputSchema)
+        self.output_schema = check.opt_inst_param(output_schema, 'output_schema', OutputSchema)
 
     __cache = {}
 
@@ -100,12 +93,13 @@ class BuiltinScalarRuntimeType(RuntimeType):
         return True
 
 
-_IntOutputSchema = define_builtin_scalar_output_schema('Int')
+INT_INPUT_SCHEMA = make_input_schema(ConfigInt)
+INT_OUTPUT_SCHEMA = define_builtin_scalar_output_schema('Int')
 
 
 class Int(BuiltinScalarRuntimeType):
     def __init__(self):
-        super(Int, self).__init__(input_schema_cls=ConfigInt, output_schema_cls=_IntOutputSchema)
+        super(Int, self).__init__(input_schema=INT_INPUT_SCHEMA, output_schema=INT_OUTPUT_SCHEMA)
 
     def coerce_runtime_value(self, value):
         return self.throw_if_false(
@@ -113,13 +107,14 @@ class Int(BuiltinScalarRuntimeType):
         )
 
 
-_StringOutputSchema = define_builtin_scalar_output_schema('String')
+STRING_INPUT_SCHEMA = make_input_schema(ConfigString)
+STRING_OUTPUT_SCHEMA = define_builtin_scalar_output_schema('String')
 
 
 class String(BuiltinScalarRuntimeType):
     def __init__(self):
         super(String, self).__init__(
-            input_schema_cls=ConfigString, output_schema_cls=_StringOutputSchema
+            input_schema=STRING_INPUT_SCHEMA, output_schema=STRING_OUTPUT_SCHEMA
         )
 
     def coerce_runtime_value(self, value):
@@ -148,7 +143,7 @@ class Bool(RuntimeType):
 
 class Any(RuntimeType):
     def __init__(self):
-        super(Any, self).__init__(input_schema_cls=ConfigAny)
+        super(Any, self).__init__(input_schema=make_input_schema(ConfigAny))
 
     @property
     def is_any(self):
@@ -168,7 +163,7 @@ class NullableType(RuntimeType):
     def __init__(self, inner_type):
         super(NullableType, self).__init__(
             name='Nullable.' + inner_type.name,
-            input_schema_cls=ConfigNullable(inner_type.input_schema)
+            input_schema=make_input_schema(ConfigNullable(inner_type.input_schema.schema_type))
             if inner_type.input_schema
             else None,
         )
@@ -186,7 +181,7 @@ class ListType(RuntimeType):
     def __init__(self, inner_type):
         super(ListType, self).__init__(
             name='List.' + inner_type.name,
-            input_schema_cls=ConfigList(inner_type.input_schema)
+            input_schema=make_input_schema(ConfigList(inner_type.input_schema.schema_type))
             if inner_type.input_schema
             else None,
         )
@@ -237,11 +232,11 @@ _RUNTIME_MAP = {
     BuiltinEnum.PATH: Path.inst(),
 }
 
-from .dagster_type import check_dagster_type_param
-from .decorator import is_runtime_type_decorated_klass, get_runtime_type_on_decorated_klass
 
+def resolve_to_runtime_type(dagster_type):
+    # circular dep
+    from .decorator import is_runtime_type_decorated_klass, get_runtime_type_on_decorated_klass
 
-def resolve_runtime_type(dagster_type):
     check_dagster_type_param(dagster_type, 'dagster_type', RuntimeType)
 
     if dagster_type is None:
@@ -262,9 +257,9 @@ def resolve_runtime_type(dagster_type):
 
 def resolve_to_runtime_list(list_type):
     check.inst_param(list_type, 'list_type', WrappingListType)
-    return List(resolve_runtime_type(list_type.inner_type))
+    return List(resolve_to_runtime_type(list_type.inner_type))
 
 
 def resolve_to_runtime_nullable(nullable_type):
     check.inst_param(nullable_type, 'nullable_type', WrappingNullableType)
-    return Nullable(resolve_runtime_type(nullable_type.inner_type))
+    return Nullable(resolve_to_runtime_type(nullable_type.inner_type))

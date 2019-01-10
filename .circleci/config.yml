@@ -84,7 +84,11 @@ jobs:
 
       - run:
           name: Format
-          command: black python_modules --line-length 100 -S --fast --check
+          command: black python_modules --line-length 100 -S --fast --check --exclude "build/|buck-out/|dist/|_build/|\.eggs/|\.git/|\.hg/|\.mypy_cache/|\.nox/|\.tox/|\.venv/|python_modules/dagster/dagster/tutorials/"
+
+      - run:
+          name: Format
+          command: black python_modules/dagster/dagster/tutorials --line-length 79 -S --fast --check
 
   lint:
     docker:
@@ -201,6 +205,9 @@ jobs:
             pushd python_modules/dagster-sqlalchemy
             tox -e $TOXENV
             popd
+            pushd python_modules/dagster-ge
+            tox -e $TOXENV
+            popd
             pushd python_modules/dagma
             tox -e $TOXENV
             popd
@@ -210,6 +217,7 @@ jobs:
             mv python_modules/dagstermill/.coverage python_modules/.coverage.dagstermill.${CIRCLE_BUILD_NUM}
             mv python_modules/dagster-pandas/.coverage python_modules/.coverage.dagster-pandas.${CIRCLE_BUILD_NUM}
             mv python_modules/dagster-sqlalchemy/.coverage python_modules/.coverage.dagster-sqlalchemy.${CIRCLE_BUILD_NUM}
+            mv python_modules/dagster-ge/.coverage python_modules/.coverage.dagster-ge.${CIRCLE_BUILD_NUM}
             mv python_modules/dagma/.coverage python_modules/.coverage.dagma.${CIRCLE_BUILD_NUM}
 
       - persist_to_workspace:

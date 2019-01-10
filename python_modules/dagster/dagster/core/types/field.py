@@ -8,7 +8,8 @@ from .config import (
     Int,
     Path,
     String,
-    resolve_config_type,
+    resolve_to_config_type,
+    DEFAULT_TYPE_ATTRIBUTES,
 )
 from .dagster_type import check_dagster_type_param
 
@@ -68,7 +69,7 @@ class Field:
         description=None,
     ):
         check_dagster_type_param(dagster_type, 'dagster_type', ConfigType)
-        self.config_type = resolve_config_type(dagster_type)
+        self.config_type = resolve_to_config_type(dagster_type)
         self.config_cls = type(self.config_type)
 
         self.description = check.opt_str_param(description, 'description')
@@ -156,13 +157,13 @@ class _ConfigHasFields(ConfigType):
                 yield inner_type
 
 
-class ConfigComposite(_ConfigHasFields):
+class _ConfigComposite(_ConfigHasFields):
     @property
     def is_composite(self):
         return True
 
 
-class ConfigSelector(_ConfigHasFields):
+class _ConfigSelector(_ConfigHasFields):
     @property
     def is_selector(self):
         return True
@@ -188,16 +189,18 @@ class DictCounter:
         return DictCounter._count
 
 
-def NamedDict(name, fields, description=None):
-    class _NamedDict(ConfigComposite):
+def NamedDict(name, fields, description=None, type_attributes=DEFAULT_TYPE_ATTRIBUTES):
+    class _NamedDict(_ConfigComposite):
         def __init__(self):
-            super(_NamedDict, self).__init__(name=name, fields=fields, description=description)
+            super(_NamedDict, self).__init__(
+                name=name, fields=fields, description=description, type_attributes=type_attributes
+            )
 
     return _NamedDict
 
 
 def Dict(fields):
-    class _Dict(ConfigComposite):
+    class _Dict(_ConfigComposite):
         def __init__(self):
             super(_Dict, self).__init__(
                 name='Dict.' + str(DictCounter.get_next_count()),
@@ -207,3 +210,26 @@ def Dict(fields):
             )
 
     return _Dict
+
+
+def Selector(fields):
+    class _Selector(_ConfigSelector):
+        def __init__(self):
+            super(_Selector, self).__init__(
+                name='Selector.' + str(DictCounter.get_next_count()),
+                fields=fields,
+                # description='A configuration dictionary with typed fields',
+                type_attributes=ConfigTypeAttributes(is_named=True, is_builtin=True),
+            )
+
+    return _Selector
+
+
+def NamedSelector(name, fields, description=None, type_attributes=DEFAULT_TYPE_ATTRIBUTES):
+    class _NamedSelector(_ConfigSelector):
+        def __init__(self):
+            super(_NamedSelector, self).__init__(
+                name=name, fields=fields, description=description, type_attributes=type_attributes
+            )
+
+    return _NamedSelector

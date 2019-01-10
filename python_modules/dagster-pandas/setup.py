@@ -40,6 +40,6 @@ setup(
         'License :: OSI Approved :: Apache Software License',
         'Operating System :: OS Independent',
     ],
-    packages=find_packages(),
+    packages=find_packages(exclude=['dagster_pandas_tests']),
     install_requires=['dagster', 'dagstermill', 'pandas>=0.22.0', 'pyarrow>=0.11.0'],
 )

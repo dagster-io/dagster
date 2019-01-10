@@ -1,6 +1,6 @@
-from dagster import Field, Dict, String, Int, Bool, Nullable, List
+from dagster import Field, Dict, String, Int, Bool, Nullable, List, Selector
 
-from dagster.core.types.config import resolve_config_type
+from dagster.core.types.config import resolve_to_config_type
 from dagster.core.types.evaluator import (
     DagsterEvaluationErrorReason,
     EvaluationStackListItemEntry,
@@ -9,11 +9,9 @@ from dagster.core.types.evaluator import (
     evaluate_config_value,
 )
 
-from dagster.core.types.field import ConfigSelector
-
 
 def eval_config_value_from_dagster_type(dagster_type, value):
-    return evaluate_config_value(resolve_config_type(dagster_type), value)
+    return evaluate_config_value(resolve_to_config_type(dagster_type), value)
 
 
 def assert_success(result, expected_value):
@@ -319,11 +317,7 @@ def test_deep_mixed_level_errors():
     assert final_level_error.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
 
 
-class ExampleSelector(ConfigSelector):
-    def __init__(self):
-        super(ExampleSelector, self).__init__(
-            fields={'option_one': Field(String), 'option_two': Field(String)}
-        )
+ExampleSelector = Selector({'option_one': Field(String), 'option_two': Field(String)})
 
 
 def test_example_selector_success():
@@ -362,11 +356,7 @@ def test_example_selector_multiple_fields():
     assert result.errors[0].reason == DagsterEvaluationErrorReason.SELECTOR_FIELD_ERROR
 
 
-class SelectorWithDefaults(ConfigSelector):
-    def __init__(self):
-        super(SelectorWithDefaults, self).__init__(
-            fields={'default': Field(String, is_optional=True, default_value='foo')}
-        )
+SelectorWithDefaults = Selector({'default': Field(String, is_optional=True, default_value='foo')})
 
 
 def test_selector_with_defaults():

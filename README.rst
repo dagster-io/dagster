@@ -7,8 +7,8 @@
    :target: https://coveralls.io/github/dagster-io/dagster?branch=master
 .. image:: https://circleci.com/gh/dagster-io/dagster.svg?style=svg
    :target: https://circleci.com/gh/dagster-io/dagster
-.. image:: https://readthedocs.org/projects/dagster/badge/?version=latest
-   :target: https://dagster.readthedocs.io/en/latest/
+.. image:: https://readthedocs.org/projects/dagster/badge/?version=master
+   :target: https://dagster.readthedocs.io/en/master/
 
 ============
 Introduction

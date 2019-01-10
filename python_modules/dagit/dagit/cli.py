@@ -89,3 +89,9 @@ def ui(host, port, watch, sync, log, log_dir, **kwargs):
     except KeyboardInterrupt:
         if watch:
             observer.stop()
+
+
+def main():
+    cli = create_dagit_cli()
+    # click magic
+    cli(obj={})  # pylint:disable=E1120

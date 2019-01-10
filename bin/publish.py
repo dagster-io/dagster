@@ -24,7 +24,15 @@ yarn build-for-python; \\
 popd
 '''
 
-MODULE_NAMES = ['dagster', 'dagit', 'dagstermill', 'dagma']
+MODULE_NAMES = [
+    'dagit',
+    'dagma',
+    'dagster-ge',
+    'dagster-pandas',
+    'dagster-sqlalchemy',
+    'dagster',
+    'dagstermill',
+]
 
 
 def all_equal(iterable):
@@ -33,8 +41,7 @@ def all_equal(iterable):
 
 
 def path_to_module(module_name):
-    relative_path = 'python_modules/{module_name}'.format(
-        module_name=module_name)
+    relative_path = 'python_modules/{module_name}'.format(module_name=module_name)
     return os.path.abspath(relative_path)
 
 
@@ -49,54 +56,57 @@ def pushd_module(module_name):
         os.chdir(old_cwd)
 
 
-def publish_dagster():
-    with pushd_module('dagster') as cwd:
+def publish_module(module, additional_steps=''):
+    with pushd_module(module) as cwd:
         process = subprocess.Popen(
-            PUBLISH_COMMAND.format(additional_steps=''),
+            PUBLISH_COMMAND.format(additional_steps=additional_steps),
             stderr=subprocess.PIPE,
             cwd=cwd,
             shell=True,
-            stdout=subprocess.PIPE)
+            stdout=subprocess.PIPE,
+        )
         for line in iter(process.stdout.readline, b''):
             print(line.decode('utf-8'))
+
+
+def publish_dagster():
+    publish_module('dagster')
 
 
 def publish_dagit():
-    with pushd_module('dagit') as cwd:
-        process = subprocess.Popen(
-            PUBLISH_COMMAND.format(additional_steps=DAGIT_ADDITIONAL_STEPS),
-            stderr=subprocess.PIPE,
-            cwd=cwd,
-            shell=True,
-            stdout=subprocess.PIPE)
-        for line in iter(process.stdout.readline, b''):
-            print(line.decode('utf-8'))
+    publish_module('dagit', additional_steps=DAGIT_ADDITIONAL_STEPS)
 
 
 def publish_dagstermill():
-    with pushd_module('dagstermill') as cwd:
-        process = subprocess.Popen(
-            PUBLISH_COMMAND.format(additional_steps=''),
-            stderr=subprocess.PIPE,
-            cwd=cwd,
-            shell=True,
-            stdout=subprocess.PIPE)
-        for line in iter(process.stdout.readline, b''):
-            print(line.decode('utf-8'))
+    publish_module('dagstermill')
+
+
+def publish_dagster_ge():
+    publish_module('dagster-ge')
+
+
+def publish_dagster_sqlalchemy():
+    publish_module('dagster-sqlalchemy')
+
+
+def publish_dagster_pandas():
+    publish_module('dagster-pandas')
 
 
 def publish_all():
     publish_dagster()
     publish_dagit()
     publish_dagstermill()
+    publish_dagster_ge()
+    publish_dagster_pandas()
+    publish_dagster_sqlalchemy()
 
 
 def get_most_recent_git_tag():
     try:
         git_tag = str(
-            subprocess.check_output(
-                ['git', 'describe', '--abbrev=0'],
-                stderr=subprocess.STDOUT)).strip('\'b\\n')
+            subprocess.check_output(['git', 'describe', '--abbrev=0'], stderr=subprocess.STDOUT)
+        ).strip('\'b\\n')
     except subprocess.CalledProcessError as exc_info:
         raise Exception(str(exc_info.output))
     return git_tag
@@ -106,16 +116,19 @@ def get_git_tag():
     try:
         git_tag = str(
             subprocess.check_output(
-                ['git', 'describe', '--exact-match', '--abbrev=0'],
-                stderr=subprocess.STDOUT)).strip('\'b\\n')
+                ['git', 'describe', '--exact-match', '--abbrev=0'], stderr=subprocess.STDOUT
+            )
+        ).strip('\'b\\n')
     except subprocess.CalledProcessError as exc_info:
         match = re.search(
-            'fatal: no tag exactly matches \'(?P<commit>[a-z0-9]+)\'',
-            str(exc_info.output))
+            'fatal: no tag exactly matches \'(?P<commit>[a-z0-9]+)\'', str(exc_info.output)
+        )
         if match:
             raise Exception(
-                'Bailing: there is no git tag for the current commit, {commit}'
-                .format(commit=match.group('commit')))
+                'Bailing: there is no git tag for the current commit, {commit}'.format(
+                    commit=match.group('commit')
+                )
+            )
         raise Exception(str(exc_info.output))
 
     return git_tag
@@ -124,35 +137,39 @@ def get_git_tag():
 def set_git_tag(tag, signed=False):
     try:
         if signed:
-            subprocess.check_output(
-                ['git', 'tag', '-s', '-m', tag, tag], stderr=subprocess.STDOUT)
+            subprocess.check_output(['git', 'tag', '-s', '-m', tag, tag], stderr=subprocess.STDOUT)
         else:
-            subprocess.check_output(
-                ['git', 'tag', '-a', '-m', tag, tag], stderr=subprocess.STDOUT)
+            subprocess.check_output(['git', 'tag', '-a', '-m', tag, tag], stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as exc_info:
-        match = re.search('error: gpg failed to sign the data',
-                          str(exc_info.output))
+        match = re.search('error: gpg failed to sign the data', str(exc_info.output))
         if match:
             raise Exception(
                 'Bailing: cannot sign tag. You may find '
                 'https://stackoverflow.com/q/39494631/324449 helpful. Original error '
-                'output:\n{output}'.format(output=str(exc_info.output)))
+                'output:\n{output}'.format(output=str(exc_info.output))
+            )
 
-        match = re.search('fatal: tag \'(?P<tag>[\.a-z0-9]+)\' already exists',
-                          str(exc_info.output))
+        match = re.search(
+            'fatal: tag \'(?P<tag>[\.a-z0-9]+)\' already exists', str(exc_info.output)
+        )
         if match:
             raise Exception(
-                'Bailing: cannot release version tag {tag}: already exists'.
-                format(tag=match.group('tag')))
+                'Bailing: cannot release version tag {tag}: already exists'.format(
+                    tag=match.group('tag')
+                )
+            )
         raise Exception(str(exc_info.output))
 
 
 def format_module_versions(module_versions):
-    return '\n'.join([
-        '    {module_name}: {module_version}'.format(
-            module_name=module_name, module_version=module_version)
-        for module_name, module_version in module_versions.items()
-    ])
+    return '\n'.join(
+        [
+            '    {module_name}: {module_version}'.format(
+                module_name=module_name, module_version=module_version
+            )
+            for module_name, module_version in module_versions.items()
+        ]
+    )
 
 
 def get_versions(modules=MODULE_NAMES):
@@ -160,8 +177,7 @@ def get_versions(modules=MODULE_NAMES):
     for module_name in MODULE_NAMES:
         with pushd_module(module_name):
             version = {}
-            with open('{module_name}/version.py'.format(
-                    module_name=module_name)) as fp:
+            with open('{module_name}/version.py'.format(module_name=module_name)) as fp:
                 exec(fp.read(), version)  # pylint: disable=W0122
             module_versions[module_name] = version['__version__']
     return module_versions
@@ -169,10 +185,11 @@ def get_versions(modules=MODULE_NAMES):
 
 def check_versions_equal():
     module_versions = get_versions()
-    assert all_equal(module_versions.values()), \
-        'Module versions must be in lockstep to release. Found:\n{versions}'.format(
-            versions=format_module_versions(module_versions)
-        )
+    assert all_equal(
+        module_versions.values()
+    ), 'Module versions must be in lockstep to release. Found:\n{versions}'.format(
+        versions=format_module_versions(module_versions)
+    )
     return module_versions[MODULE_NAMES[0]]
 
 
@@ -180,21 +197,18 @@ def check_versions():
     version = check_versions_equal()
     git_tag = get_git_tag()
 
-    assert version == git_tag, \
-        'Version {version} does not match expected git tag {git_tag}'.format(
-            version=version, git_tag=git_tag
-        )
+    assert version == git_tag, 'Version {version} does not match expected git tag {git_tag}'.format(
+        version=version, git_tag=git_tag
+    )
 
 
 def set_new_version(version):
     for module_name in MODULE_NAMES:
         with pushd_module(module_name):
             with open(
-                    os.path.abspath('{module_name}/version.py'.format(
-                        module_name=module_name)),
-                    'w') as fd:
-                fd.write(
-                    '__version__ = \'{version}\'\n'.format(version=version))
+                os.path.abspath('{module_name}/version.py'.format(module_name=module_name)), 'w'
+            ) as fd:
+                fd.write('__version__ = \'{version}\'\n'.format(version=version))
 
 
 def commit_new_version(version):
@@ -202,20 +216,16 @@ def commit_new_version(version):
         for module_name in MODULE_NAMES:
             subprocess.check_output(
                 [
-                    'git', 'add',
-                    os.path.join(
-                        path_to_module(module_name), module_name, 'version.py')
+                    'git',
+                    'add',
+                    os.path.join(path_to_module(module_name), module_name, 'version.py'),
                 ],
-                stderr=subprocess.STDOUT)
+                stderr=subprocess.STDOUT,
+            )
         subprocess.check_output(
-            [
-                'git',
-                'commit',
-                '--no-verify',
-                '-m',
-                '\'{version}\''.format(version=version),
-            ],
-            stderr=subprocess.STDOUT)
+            ['git', 'commit', '--no-verify', '-m', '\'{version}\''.format(version=version)],
+            stderr=subprocess.STDOUT,
+        )
     except subprocess.CalledProcessError as exc_info:
         raise Exception(exc_info.output)
 
@@ -226,8 +236,8 @@ def check_new_version(version):
     if not all_equal(module_versions.values()):
         print(
             'Warning! Found repository in a bad state. Existing package versions were not '
-            'equal:\n{versions}'.format(
-                versions=format_module_versions(module_versions)))
+            'equal:\n{versions}'.format(versions=format_module_versions(module_versions))
+        )
     errors = {}
     for module_name, module_version in module_versions.items():
         if packaging.version.parse(module_version) >= parsed_version:
@@ -236,8 +246,9 @@ def check_new_version(version):
         raise Exception(
             'Bailing: Found modules with existing versions greater than or equal to the new version '
             '{version}:\n{versions}'.format(
-                version=version,
-                versions=format_module_versions(module_versions)))
+                version=version, versions=format_module_versions(module_versions)
+            )
+        )
     return True
 
 
@@ -245,8 +256,10 @@ def check_git_status():
     changes = subprocess.check_output(['git', 'status', '--porcelain'])
     if changes != b'':
         raise Exception(
-            'Bailing: Cannot publish with changes present in git repo:\n{changes}'
-            .format(changes=changes))
+            'Bailing: Cannot publish with changes present in git repo:\n{changes}'.format(
+                changes=changes
+            )
+        )
 
 
 CLI_HELP = """Tools to help tag and publish releases of the Dagster projects.
@@ -286,7 +299,8 @@ PyPI, preferably in the form of a ~/.pypirc file as follows:
     repository: https://upload.pypi.org/legacy/
     username: <username>
     password: <password>
-''')
+'''
+    )
     print(
         'Checking that module versions are in lockstep and match git tag on most recent commit...'
     )

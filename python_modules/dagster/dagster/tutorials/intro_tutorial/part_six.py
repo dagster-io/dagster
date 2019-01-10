@@ -12,5 +12,6 @@ def define_part_six_pipeline():
 
 def define_part_six_repo():
     return RepositoryDefinition(
-        name='part_six_repo', pipeline_dict={'part_six': define_part_six_pipeline}
+        name='part_six_repo',
+        pipeline_dict={'part_six': define_part_six_pipeline},
     )
