@@ -1,9 +1,11 @@
+from abc import ABCMeta, abstractmethod
 import pickle
 
-from abc import ABCMeta, abstractmethod
+import six
 
 
-class MarshallingStrategy(metaclass=ABCMeta):
+@six.add_metaclass(ABCMeta)
+class MarshallingStrategy:
     @abstractmethod
     def marshal_value(self, value, to_file):
         pass
