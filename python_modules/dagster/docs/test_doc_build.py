@@ -31,12 +31,14 @@ def test_build_all_docs(snapshot):
             [
                 (
                     dirpath,
-                    dirnames,
-                    [
-                        filename
-                        for filename in filenames
-                        if not any((re.match(pattern, filename) for pattern in IGNORE_FILES))
-                    ],
+                    sorted(dirnames),
+                    sorted(
+                        [
+                            filename
+                            for filename in filenames
+                            if not any((re.match(pattern, filename) for pattern in IGNORE_FILES))
+                        ]
+                    ),
                 )
                 for dirpath, dirnames, filenames in walked
             ]
