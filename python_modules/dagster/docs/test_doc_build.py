@@ -26,26 +26,24 @@ def test_build_all_docs(snapshot):
         subprocess.check_output(['make', 'clean'])
         subprocess.check_output(['make', 'html'])
         os.chdir(script_relative_path(BUILT_DOCS_RELATIVE_PATH))
-        walked = list(os.walk('.'))
-        snapshot.assert_match(
-            sorted(
-                [
-                    (
-                        dirpath,
-                        sorted(dirnames),
-                        sorted(
-                            [
-                                filename
-                                for filename in filenames
-                                if not any((re.match(pattern, filename) for pattern in IGNORE_FILES))
-                            ]
-                        ),
-                    )
-                    for dirpath, dirnames, filenames in walked
-                ],
-                key=lambda x: x[0]
-            )
+        walked = sorted(
+            [
+                (
+                    dirpath,
+                    sorted(dirnames),
+                    sorted(
+                        [
+                            filename
+                            for filename in filenames
+                            if not any((re.match(pattern, filename) for pattern in IGNORE_FILES))
+                        ]
+                    ),
+                )
+                for dirpath, dirnames, filenames in os.walk('.')
+            ],
+            key=lambda x: x[0]
         )
+        snapshot.assert_match(walked)
         for dirpath, dirnames, filenames in walked:
             for filename in filenames:
                 if any((re.match(pattern, filename) for pattern in IGNORE_FILES)):
