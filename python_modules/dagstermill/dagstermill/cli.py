@@ -166,4 +166,5 @@ def create_dagstermill_cli():
 
 def main():
     cli = create_dagstermill_cli()
-    cli(obj={})
+    # click magic
+    cli(obj={})  # pylint:disable=E1120

@@ -93,4 +93,5 @@ def ui(host, port, watch, sync, log, log_dir, **kwargs):
 
 def main():
     cli = create_dagit_cli()
-    cli(obj={})
+    # click magic
+    cli(obj={})  # pylint:disable=E1120
