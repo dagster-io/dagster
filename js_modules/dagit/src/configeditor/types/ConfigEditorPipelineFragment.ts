@@ -14,6 +14,7 @@ export interface ConfigEditorPipelineFragment_environmentType {
 export interface ConfigEditorPipelineFragment_types_RegularType {
   __typename: "RegularType";
   name: string;
+  isSelector: boolean;
 }
 
 export interface ConfigEditorPipelineFragment_types_CompositeType_fields_type {
@@ -29,6 +30,7 @@ export interface ConfigEditorPipelineFragment_types_CompositeType_fields {
 export interface ConfigEditorPipelineFragment_types_CompositeType {
   __typename: "CompositeType";
   name: string;
+  isSelector: boolean;
   fields: ConfigEditorPipelineFragment_types_CompositeType_fields[];
 }
 

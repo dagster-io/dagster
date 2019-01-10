@@ -97,6 +97,7 @@ export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_environmentT
 export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_types_RegularType {
   __typename: "RegularType";
   name: string;
+  isSelector: boolean;
 }
 
 export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_types_CompositeType_fields_type {
@@ -112,6 +113,7 @@ export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_types_Compos
 export interface AppQuery_pipelinesOrError_PipelineConnection_nodes_types_CompositeType {
   __typename: "CompositeType";
   name: string;
+  isSelector: boolean;
   fields: AppQuery_pipelinesOrError_PipelineConnection_nodes_types_CompositeType_fields[];
 }
 

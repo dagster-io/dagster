@@ -97,6 +97,7 @@ export interface PipelinePageFragment_PipelineConnection_nodes_environmentType {
 export interface PipelinePageFragment_PipelineConnection_nodes_types_RegularType {
   __typename: "RegularType";
   name: string;
+  isSelector: boolean;
 }
 
 export interface PipelinePageFragment_PipelineConnection_nodes_types_CompositeType_fields_type {
@@ -112,6 +113,7 @@ export interface PipelinePageFragment_PipelineConnection_nodes_types_CompositeTy
 export interface PipelinePageFragment_PipelineConnection_nodes_types_CompositeType {
   __typename: "CompositeType";
   name: string;
+  isSelector: boolean;
   fields: PipelinePageFragment_PipelineConnection_nodes_types_CompositeType_fields[];
 }
 
