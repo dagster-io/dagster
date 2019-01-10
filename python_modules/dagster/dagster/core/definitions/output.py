@@ -1,5 +1,5 @@
 from dagster import check
-from dagster.core.types.runtime import RuntimeType, resolve_runtime_type
+from dagster.core.types.runtime import RuntimeType, resolve_to_runtime_type
 
 from .expectation import ExpectationDefinition
 from .utils import check_valid_name, DEFAULT_OUTPUT
@@ -21,7 +21,7 @@ class OutputDefinition(object):
     def __init__(self, dagster_type=None, name=None, expectations=None, description=None):
         self.name = check_valid_name(check.opt_str_param(name, 'name', DEFAULT_OUTPUT))
 
-        self.runtime_type = check.inst(resolve_runtime_type(dagster_type), RuntimeType)
+        self.runtime_type = check.inst(resolve_to_runtime_type(dagster_type), RuntimeType)
 
         self.expectations = check.opt_list_param(
             expectations, 'expectations', of_type=ExpectationDefinition

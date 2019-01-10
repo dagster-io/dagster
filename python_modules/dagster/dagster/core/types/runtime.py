@@ -229,7 +229,7 @@ _RUNTIME_MAP = {
 }
 
 
-def resolve_runtime_type(dagster_type):
+def resolve_to_runtime_type(dagster_type):
     # circular dep
     from .decorator import is_runtime_type_decorated_klass, get_runtime_type_on_decorated_klass
 
@@ -253,9 +253,9 @@ def resolve_runtime_type(dagster_type):
 
 def resolve_to_runtime_list(list_type):
     check.inst_param(list_type, 'list_type', WrappingListType)
-    return List(resolve_runtime_type(list_type.inner_type))
+    return List(resolve_to_runtime_type(list_type.inner_type))
 
 
 def resolve_to_runtime_nullable(nullable_type):
     check.inst_param(nullable_type, 'nullable_type', WrappingNullableType)
-    return Nullable(resolve_runtime_type(nullable_type.inner_type))
+    return Nullable(resolve_to_runtime_type(nullable_type.inner_type))

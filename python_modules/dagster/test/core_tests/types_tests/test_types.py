@@ -3,7 +3,7 @@ import pytest
 from dagster.core.errors import DagsterRuntimeCoercionError
 
 from dagster.core.types import Int, Nullable, List, PythonObjectType
-from dagster.core.types.runtime import resolve_runtime_type
+from dagster.core.types.runtime import resolve_to_runtime_type
 
 
 class BarObj(object):
@@ -29,7 +29,7 @@ def test_python_object_type():
 
 
 def test_nullable_python_object_type():
-    nullable_type_bar = resolve_runtime_type(Nullable(Bar))
+    nullable_type_bar = resolve_to_runtime_type(Nullable(Bar))
 
     assert nullable_type_bar.coerce_runtime_value(BarObj())
     assert nullable_type_bar.coerce_runtime_value(None) is None
@@ -39,13 +39,13 @@ def test_nullable_python_object_type():
 
 
 def test_nullable_int_coercion():
-    int_type = resolve_runtime_type(Int)
+    int_type = resolve_to_runtime_type(Int)
     assert int_type.coerce_runtime_value(1) == 1
 
     with pytest.raises(DagsterRuntimeCoercionError):
         assert int_type.coerce_runtime_value(None)
 
-    nullable_int_type = resolve_runtime_type(Nullable(Int))
+    nullable_int_type = resolve_to_runtime_type(Nullable(Int))
     assert nullable_int_type.coerce_runtime_value(1) == 1
     assert nullable_int_type.coerce_runtime_value(None) is None
 
@@ -61,27 +61,27 @@ def assert_failure(fn, value):
 
 def test_nullable_list_combos_coerciion():
 
-    list_of_int = resolve_runtime_type(List(Int))
+    list_of_int = resolve_to_runtime_type(List(Int))
 
     assert_failure(list_of_int.coerce_runtime_value, None)
     assert_success(list_of_int.coerce_runtime_value, [])
     assert_success(list_of_int.coerce_runtime_value, [1])
     assert_failure(list_of_int.coerce_runtime_value, [None])
 
-    nullable_int_of_list = resolve_runtime_type(Nullable(List(Int)))
+    nullable_int_of_list = resolve_to_runtime_type(Nullable(List(Int)))
 
     assert_success(nullable_int_of_list.coerce_runtime_value, None)
     assert_success(nullable_int_of_list.coerce_runtime_value, [])
     assert_success(nullable_int_of_list.coerce_runtime_value, [1])
     assert_failure(nullable_int_of_list.coerce_runtime_value, [None])
 
-    list_of_nullable_int = resolve_runtime_type(List(Nullable(Int)))
+    list_of_nullable_int = resolve_to_runtime_type(List(Nullable(Int)))
     assert_failure(list_of_nullable_int.coerce_runtime_value, None)
     assert_success(list_of_nullable_int.coerce_runtime_value, [])
     assert_success(list_of_nullable_int.coerce_runtime_value, [1])
     assert_success(list_of_nullable_int.coerce_runtime_value, [None])
 
-    nullable_list_of_nullable_int = resolve_runtime_type(Nullable(List(Nullable(Int))))
+    nullable_list_of_nullable_int = resolve_to_runtime_type(Nullable(List(Nullable(Int))))
     assert_success(nullable_list_of_nullable_int.coerce_runtime_value, None)
     assert_success(nullable_list_of_nullable_int.coerce_runtime_value, [])
     assert_success(nullable_list_of_nullable_int.coerce_runtime_value, [1])
