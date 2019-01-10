@@ -25,5 +25,9 @@ setup(
         'ipykernel>=4.9.0',
         'papermill>=0.15.0',
     ],
-    scripts=['bin/dagstermill'],
+    entry_points={
+        "console_scripts": [
+            'dagstermill = dagstermill.cli:main'
+        ]
+    }
 )
