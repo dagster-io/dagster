@@ -7,11 +7,11 @@ def hello_world():
 
 
 def define_repo_demo_pipeline():
-    return PipelineDefinition(name="repo_demo_pipeline", solids=[hello_world])
+    return PipelineDefinition(name='repo_demo_pipeline', solids=[hello_world])
 
 
 def define_repo():
     return RepositoryDefinition(
-        name="demo_repository",
-        pipeline_dict={"repo_demo_pipeline": define_repo_demo_pipeline},
+        name='demo_repository',
+        pipeline_dict={'repo_demo_pipeline': define_repo_demo_pipeline},
     )
