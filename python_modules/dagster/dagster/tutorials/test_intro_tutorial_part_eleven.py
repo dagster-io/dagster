@@ -166,6 +166,7 @@ def test_intro_tutorial_part_eleven_step_three():
     assert (
         result.result_for_solid('conditional').transformed_value('out_two')
         == 45
+    )
     assert (
         result.result_for_solid('log_num_squared').transformed_value()
         == 45 * 45

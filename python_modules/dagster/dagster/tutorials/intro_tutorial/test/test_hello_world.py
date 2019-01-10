@@ -27,10 +27,6 @@ def test_tutorial_intro_tutorial_hello_world_script():
 
 def test_tutorial_intro_tutorial_hello_world_cli():
     check_cli_execute_file_pipeline(
-<<<<<<< HEAD
         script_relative_path('../hello_world.py'),
         'define_hello_world_pipeline',
-=======
-        script_relative_path('../hello_world.py'), 'define_hello_world_pipeline'
->>>>>>> Cp
     )
