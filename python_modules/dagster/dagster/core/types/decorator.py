@@ -2,11 +2,18 @@ from dagster import check
 from .runtime import PythonObjectType, RuntimeType
 
 
-def create_inner_class(bare_cls, name, description):
+def create_inner_class(
+    bare_cls, name, description, input_schema=None, output_schema=None, marshalling_strategy=None
+):
     class _ObjectType(PythonObjectType):
         def __init__(self):
             super(_ObjectType, self).__init__(
-                name=name, description=description, python_type=bare_cls
+                name=name,
+                description=description,
+                python_type=bare_cls,
+                input_schema=input_schema,
+                output_schema=output_schema,
+                marshalling_strategy=marshalling_strategy,
             )
 
     type_inst = _ObjectType.inst()
@@ -49,7 +56,14 @@ def make_klass_runtime_type_decorated_klass(klass, runtime_type):
     setattr(klass, MAGIC_RUNTIME_TYPE_NAME, runtime_type)
 
 
-def make_dagster_type(existing_type, name=None, description=None):
+def make_dagster_type(
+    existing_type,
+    name=None,
+    description=None,
+    input_schema=None,
+    output_schema=None,
+    marshalling_strategy=None,
+):
     check.type_param(existing_type, 'existing_type')
     check.opt_str_param(name, 'name')
     check.opt_str_param(description, 'description')
@@ -57,4 +71,7 @@ def make_dagster_type(existing_type, name=None, description=None):
         existing_type,
         name=existing_type.__name__ if name is None else name,
         description=description,
+        input_schema=input_schema,
+        output_schema=output_schema,
+        marshalling_strategy=marshalling_strategy,
     )

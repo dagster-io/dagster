@@ -1,6 +1,6 @@
 import pandas as pd
 
-from dagster import Dict, Field, Path, Selector, String, check, types
+from dagster import Dict, Field, Path, Selector, String, check, make_dagster_type
 
 from dagster.core.types.config_schema import InputSchema, OutputSchema
 
@@ -68,14 +68,12 @@ class PandasDataFrameInputSchema(InputSchema):
             check.failed('Unsupported file_type {file_type}'.format(file_type=file_type))
 
 
-class DataFrame(types.PythonObjectType):
-    def __init__(self):
-        super(DataFrame, self).__init__(
-            name='PandasDataFrame',
-            python_type=pd.DataFrame,
-            description='''Two-dimensional size-mutable, potentially heterogeneous
-    tabular data structure with labeled axes (rows and columns). See http://pandas.pydata.org/''',
-            input_schema=PandasDataFrameInputSchema(),
-            output_schema=PandasDataFrameOutputSchema(),
-            marshalling_strategy=PickleMarshallingStrategy(),
-        )
+DataFrame = make_dagster_type(
+    pd.DataFrame,
+    name='PandasDataFrame',
+    description='''Two-dimensional size-mutable, potentially heterogeneous
+tabular data structure with labeled axes (rows and columns). See http://pandas.pydata.org/''',
+    input_schema=PandasDataFrameInputSchema(),
+    output_schema=PandasDataFrameOutputSchema(),
+    marshalling_strategy=PickleMarshallingStrategy(),
+)

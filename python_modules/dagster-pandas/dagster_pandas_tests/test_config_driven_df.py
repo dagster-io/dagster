@@ -20,10 +20,6 @@ from dagster.utils.test import get_temp_file_name
 from dagster_pandas import DataFrame
 
 
-def test_dataframe():
-    assert DataFrame.inst().name == 'PandasDataFrame'
-
-
 def test_dataframe_csv_from_inputs():
     called = {}
 
