@@ -40,6 +40,6 @@ setup(
         'License :: OSI Approved :: Apache Software License',
         'Operating System :: OS Independent',
     ],
-    packages=find_packages(),
+    packages=find_packages(exclude=['dagster_sqlalchemy_tests']),
     install_requires=['dagster', 'dagstermill', 'jinja2>=2.8', 'sqlalchemy>=1.2.7'],
 )

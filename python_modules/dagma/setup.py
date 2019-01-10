@@ -36,7 +36,7 @@ setup(
         'License :: OSI Approved :: Apache Software License',
         'Operating System :: OS Independent',
     ],
-    packages=find_packages(exclude=['tests']),
+    packages=find_packages(exclude=['dagma_tests']),
     install_requires=[
         'boto3==1.9.67',
         'cloudpickle==0.3.1',
