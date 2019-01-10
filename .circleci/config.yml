@@ -84,7 +84,11 @@ jobs:
 
       - run:
           name: Format
-          command: black python_modules --line-length 100 -S --fast --check
+          command: black python_modules --line-length 100 -S --fast --check --exclude "build/|buck-out/|dist/|_build/|\.eggs/|\.git/|\.hg/|\.mypy_cache/|\.nox/|\.tox/|\.venv/|python_modules/dagster/dagster/tutorials/"
+
+      - run:
+          name: Format
+          command: black python_modules/dagster/dagster/tutorials --line-length 79 -S --fast --check
 
   lint:
     docker:
