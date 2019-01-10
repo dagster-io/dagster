@@ -1,24 +1,9 @@
 from collections import namedtuple
-import pickle
 
 import pandas as pd
 
-from dagster import (
-    Dict,
-    ExecutionContext,
-    Field,
-    InputDefinition,
-    OutputDefinition,
-    Path,
-    Result,
-    Selector,
-    SolidDefinition,
-    String,
-    check,
-    types,
-)
+from dagster import Dict, Field, Path, Selector, String, check, types
 
-from dagster.core.types.field import ConfigSelector
 from dagster.core.types.config_schema import InputSchema, OutputSchema
 
 from dagster.core.types.materializable import FileMarshalable
