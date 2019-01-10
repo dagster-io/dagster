@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 from dagster import Field, PipelineDefinition, execute_pipeline, solid, types
 
 

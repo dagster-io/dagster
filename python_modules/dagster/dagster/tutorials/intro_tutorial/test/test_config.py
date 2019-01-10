@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 from dagster import execute_pipeline
 from dagster.tutorials.utils import (
     check_cli_execute_file_pipeline,
