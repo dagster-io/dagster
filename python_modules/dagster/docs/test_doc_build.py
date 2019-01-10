@@ -3,6 +3,7 @@ import io
 import os
 import re
 import subprocess
+import sys
 
 import pytest
 
@@ -19,7 +20,6 @@ IGNORE_FILES = [
     '[A-Z0-9a-z_-]*\\.doctree',
     '[A-Z0-9a-z_-]*\\.pickle',
 ]
-
 
 def test_build_all_docs(snapshot):
     pwd = os.getcwd()
@@ -46,6 +46,10 @@ def test_build_all_docs(snapshot):
             key=lambda x: x[0],
         )
         snapshot.assert_match(walked)
+        # The snapshot tests only need to run on py3, because the docs aren't built on py2
+        if sys.version_info[0] < 3:
+            return
+
         for dirpath, dirnames, filenames in walked:
             for filename in filenames:
                 if any((re.match(pattern, filename) for pattern in IGNORE_FILES)):
