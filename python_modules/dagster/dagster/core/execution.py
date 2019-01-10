@@ -57,6 +57,7 @@ from .execution_plan.objects import (
 from .execution_plan.simple_engine import execute_plan_core
 
 from .system_config.objects import EnvironmentConfig
+from .system_config.types import construct_environment_config
 
 
 class PipelineExecutionResult(object):
@@ -631,4 +632,4 @@ def create_typed_environment(pipeline, environment=None):
     if not result.success:
         raise PipelineConfigEvaluationError(pipeline, result.errors, environment)
 
-    return result.value
+    return construct_environment_config(result.value)

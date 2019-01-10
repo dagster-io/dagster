@@ -23,8 +23,6 @@ from dagster import (
 
 from dagster.core.types.evaluator import evaluate_config_value, DagsterEvaluationErrorReason
 
-from dagster.core.types.field import ConfigComposite
-
 from dagster.core.test_utils import throwing_evaluate_config_value
 
 
@@ -236,36 +234,6 @@ def test_nested_optional_with_no_default():
     }
 
     assert _validate(_nested_optional_config_with_no_default(), {'nested': {}}) == {'nested': {}}
-
-
-CustomStructTuple = namedtuple('CustomStructTuple', 'foo bar')
-
-
-class CustomStructConfig(ConfigComposite):
-    def __init__(self):
-        super(CustomStructConfig, self).__init__(fields={'foo': Field(String), 'bar': Field(Int)})
-
-    def construct_from_config_value(self, config_value):
-        return CustomStructTuple(**config_value)
-
-
-def test_custom_composite_type():
-    config_type = CustomStructConfig.inst()
-
-    assert throwing_evaluate_config_value(
-        config_type, {'foo': 'some_string', 'bar': 2}
-    ) == CustomStructTuple(foo='some_string', bar=2)
-
-    with pytest.raises(DagsterEvaluateConfigValueError):
-        assert throwing_evaluate_config_value(config_type, {'foo': 'some_string'})
-
-    with pytest.raises(DagsterEvaluateConfigValueError):
-        assert throwing_evaluate_config_value(config_type, {'bar': 'some_string'})
-
-    with pytest.raises(DagsterEvaluateConfigValueError):
-        assert throwing_evaluate_config_value(
-            config_type, {'foo': 'some_string', 'bar': 'not_an_int'}
-        )
 
 
 def single_elem(ddict):

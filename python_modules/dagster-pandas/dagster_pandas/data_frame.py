@@ -1,5 +1,3 @@
-from collections import namedtuple
-
 import pandas as pd
 
 from dagster import Dict, Field, Path, Selector, String, check, types
@@ -7,8 +5,6 @@ from dagster import Dict, Field, Path, Selector, String, check, types
 from dagster.core.types.config_schema import InputSchema, OutputSchema
 
 from dagster.core.types.materializable import FileMarshalable
-
-DataFrameMeta = namedtuple('DataFrameMeta', 'format path')
 
 
 def define_path_dict_field():

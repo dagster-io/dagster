@@ -93,14 +93,13 @@ class BuiltinScalarRuntimeType(RuntimeType):
         return True
 
 
-INT_SCHEMA = define_builtin_scalar_output_schema('Int')
+INT_INPUT_SCHEMA = make_input_schema(ConfigInt)
+INT_OUTPUT_SCHEMA = define_builtin_scalar_output_schema('Int')
 
 
 class Int(BuiltinScalarRuntimeType):
     def __init__(self):
-        super(Int, self).__init__(
-            input_schema=make_input_schema(ConfigInt), output_schema=INT_SCHEMA
-        )
+        super(Int, self).__init__(input_schema=INT_INPUT_SCHEMA, output_schema=INT_OUTPUT_SCHEMA)
 
     def coerce_runtime_value(self, value):
         return self.throw_if_false(
@@ -108,13 +107,14 @@ class Int(BuiltinScalarRuntimeType):
         )
 
 
-STRING_SCHEMA = define_builtin_scalar_output_schema('String')
+STRING_INPUT_SCHEMA = make_input_schema(ConfigString)
+STRING_OUTPUT_SCHEMA = define_builtin_scalar_output_schema('String')
 
 
 class String(BuiltinScalarRuntimeType):
     def __init__(self):
         super(String, self).__init__(
-            input_schema=make_input_schema(ConfigString), output_schema=STRING_SCHEMA
+            input_schema=STRING_INPUT_SCHEMA, output_schema=STRING_OUTPUT_SCHEMA
         )
 
     def coerce_runtime_value(self, value):

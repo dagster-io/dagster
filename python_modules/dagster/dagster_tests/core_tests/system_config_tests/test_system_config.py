@@ -29,6 +29,9 @@ from dagster.core.system_config.objects import (
 )
 
 from dagster.core.system_config.types import (
+    construct_context_config,
+    construct_environment_config,
+    construct_solid_dictionary,
     define_context_context_cls,
     define_expectations_config_cls,
     define_solid_config_cls,
@@ -51,7 +54,9 @@ def test_context_config_any():
 
     assert context_config_type.type_attributes.is_system_config
 
-    output = throwing_evaluate_config_value(context_config_type, {'test': {'config': 1}})
+    output = construct_context_config(
+        throwing_evaluate_config_value(context_config_type, {'test': {'config': 1}})
+    )
     assert output.name == 'test'
     assert output.config == 1
 
@@ -66,8 +71,10 @@ def test_context_config():
 
     context_config_type = define_context_context_cls('something', context_defs).inst()
 
-    output = throwing_evaluate_config_value(
-        context_config_type, {'test': {'config': {'some_str': 'something'}}}
+    output = construct_context_config(
+        throwing_evaluate_config_value(
+            context_config_type, {'test': {'config': {'some_str': 'something'}}}
+        )
     )
     assert isinstance(output, ContextConfig)
     assert output.name == 'test'
@@ -76,8 +83,14 @@ def test_context_config():
 
 def test_default_expectations():
     expect_config_type = define_expectations_config_cls('some_name').inst()
-    assert throwing_evaluate_config_value(expect_config_type, {}).evaluate is True
-    assert throwing_evaluate_config_value(expect_config_type, None).evaluate is True
+    assert (
+        ExpectationsConfig(**throwing_evaluate_config_value(expect_config_type, {})).evaluate
+        is True
+    )
+    assert (
+        ExpectationsConfig(**throwing_evaluate_config_value(expect_config_type, None)).evaluate
+        is True
+    )
 
 
 def test_default_context_config():
@@ -157,9 +170,10 @@ def test_provided_default_config():
         'resources': {},
     }
 
-    result = evaluate_config_value(pipeline_def.environment_type, {})
-    assert result.success
-    assert result.value.context.name == 'some_context'
+    value = construct_environment_config(
+        throwing_evaluate_config_value(pipeline_def.environment_type, {})
+    )
+    assert value.context.name == 'some_context'
     assert env_type.type_attributes.is_system_config
 
 
@@ -172,7 +186,9 @@ def test_default_environment():
         ]
     )
 
-    env_obj = throwing_evaluate_config_value(pipeline_def.environment_type, {})
+    env_obj = construct_environment_config(
+        throwing_evaluate_config_value(pipeline_def.environment_type, {})
+    )
 
     assert env_obj.expectations.evaluate is True
 
@@ -209,12 +225,12 @@ def test_select_context():
 
     context_config_type = define_context_context_cls('something', context_defs).inst()
 
-    assert throwing_evaluate_config_value(
-        context_config_type, {'int_context': {'config': 1}}
+    assert construct_context_config(
+        throwing_evaluate_config_value(context_config_type, {'int_context': {'config': 1}})
     ) == ContextConfig(name='int_context', config=1)
 
-    assert throwing_evaluate_config_value(
-        context_config_type, {'string_context': {'config': 'bar'}}
+    assert construct_context_config(
+        throwing_evaluate_config_value(context_config_type, {'string_context': {'config': 'bar'}})
     ) == ContextConfig(name='string_context', config='bar')
 
     # mismatched field type mismatch
@@ -233,20 +249,21 @@ def test_select_context():
 def test_solid_config():
     solid_config_type = define_solid_config_cls('kdjfkd', Field(Int), None, None).inst()
     solid_inst = throwing_evaluate_config_value(solid_config_type, {'config': 1})
-    assert isinstance(solid_inst, SolidConfig)
-    assert solid_inst.config == 1
+    assert solid_inst['config'] == 1
     assert solid_config_type.inst().type_attributes.is_system_config
 
 
 def test_expectations_config():
     expectations_config_type = define_expectations_config_cls('ksjdfkd').inst()
-    expectations = throwing_evaluate_config_value(expectations_config_type, {'evaluate': True})
+    expectations = ExpectationsConfig(
+        **throwing_evaluate_config_value(expectations_config_type, {'evaluate': True})
+    )
 
     assert isinstance(expectations, ExpectationsConfig)
     assert expectations.evaluate is True
 
-    assert throwing_evaluate_config_value(
-        expectations_config_type, {'evaluate': False}
+    assert ExpectationsConfig(
+        **throwing_evaluate_config_value(expectations_config_type, {'evaluate': False})
     ) == ExpectationsConfig(evaluate=False)
 
 
@@ -255,9 +272,11 @@ def test_solid_dictionary_type():
 
     solid_dict_type = define_solid_dictionary_cls('foobar', pipeline_def).inst()
 
-    value = throwing_evaluate_config_value(
-        solid_dict_type,
-        {'int_config_solid': {'config': 1}, 'string_config_solid': {'config': 'bar'}},
+    value = construct_solid_dictionary(
+        throwing_evaluate_config_value(
+            solid_dict_type,
+            {'int_config_solid': {'config': 1}, 'string_config_solid': {'config': 'bar'}},
+        )
     )
 
     assert set(['int_config_solid', 'string_config_solid']) == set(value.keys())
@@ -336,7 +355,9 @@ def test_solid_dictionary_some_no_config():
 
     solid_dict_type = define_solid_dictionary_cls('foobar', pipeline_def).inst()
 
-    value = throwing_evaluate_config_value(solid_dict_type, {'int_config_solid': {'config': 1}})
+    value = construct_solid_dictionary(
+        throwing_evaluate_config_value(solid_dict_type, {'int_config_solid': {'config': 1}})
+    )
 
     assert set(['int_config_solid']) == set(value.keys())
     assert value == {'int_config_solid': SolidConfig(1)}
@@ -378,9 +399,11 @@ def test_whole_environment():
         == 'SomePipeline.ExpectationsConfig'
     )
 
-    env = throwing_evaluate_config_value(
-        pipeline_def.environment_type,
-        {'context': {'test': {'config': 1}}, 'solids': {'int_config_solid': {'config': 123}}},
+    env = construct_environment_config(
+        throwing_evaluate_config_value(
+            pipeline_def.environment_type,
+            {'context': {'test': {'config': 1}}, 'solids': {'int_config_solid': {'config': 123}}},
+        )
     )
 
     assert isinstance(env, EnvironmentConfig)
@@ -454,11 +477,15 @@ def test_optional_solid_with_optional_scalar_config():
 
     assert solids_cls.inst().fields['int_config_solid'].is_optional is True
 
-    solids_default_obj = throwing_evaluate_config_value(solids_cls.inst(), {})
+    solids_default_obj = construct_solid_dictionary(
+        throwing_evaluate_config_value(solids_cls.inst(), {})
+    )
 
     assert solids_default_obj['int_config_solid'].config is None
 
-    env_obj = throwing_evaluate_config_value(pipeline_def.environment_type, {})
+    env_obj = construct_environment_config(
+        throwing_evaluate_config_value(pipeline_def.environment_type, {})
+    )
 
     assert env_obj.solids['int_config_solid'].config is None
 
@@ -527,9 +554,11 @@ def test_required_solid_with_required_subfield():
     assert env_type.fields['execution'].is_optional
     assert env_type.fields['expectations'].is_optional
 
-    env_obj = throwing_evaluate_config_value(
-        pipeline_def.environment_type,
-        {'solids': {'int_config_solid': {'config': {'required_field': 'foobar'}}}},
+    env_obj = construct_environment_config(
+        throwing_evaluate_config_value(
+            pipeline_def.environment_type,
+            {'solids': {'int_config_solid': {'config': {'required_field': 'foobar'}}}},
+        )
     )
 
     assert env_obj.solids['int_config_solid'].config['required_field'] == 'foobar'
@@ -634,9 +663,11 @@ def test_optional_and_required_context():
     assert env_type.fields['execution'].is_optional
     assert env_type.fields['expectations'].is_optional
 
-    env_obj = throwing_evaluate_config_value(
-        pipeline_def.environment_type,
-        {'context': {'optional_field_context': {'config': {'optional_field': 'foobar'}}}},
+    env_obj = construct_environment_config(
+        throwing_evaluate_config_value(
+            pipeline_def.environment_type,
+            {'context': {'optional_field_context': {'config': {'optional_field': 'foobar'}}}},
+        )
     )
 
     assert env_obj.context.name == 'optional_field_context'
