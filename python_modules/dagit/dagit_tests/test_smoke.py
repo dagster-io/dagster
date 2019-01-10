@@ -2,11 +2,11 @@ from __future__ import absolute_import, unicode_literals
 import json
 from dagit import app
 from dagit.pipeline_run_storage import PipelineRunStorage
-from dagster.tutorials.intro_tutorial.part_six import define_part_six_repo
+from dagster.tutorials.intro_tutorial.repos import define_repo
 
 
 def test_smoke_app():
-    repository_container = app.RepositoryContainer(repository=define_part_six_repo())
+    repository_container = app.RepositoryContainer(repository=define_repo())
     pipeline_run_storage = PipelineRunStorage()
     flask_app = app.create_app(repository_container, pipeline_run_storage)
     client = flask_app.test_client()

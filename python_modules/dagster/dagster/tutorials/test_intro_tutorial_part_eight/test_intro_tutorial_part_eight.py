@@ -52,11 +52,7 @@ def define_part_eight_step_one_pipeline():
         name='part_eight_step_one_pipeline',
         solids=[double_the_word_with_typed_config, count_letters],
         dependencies={
-            'count_letters': {
-                'word': DependencyDefinition(
-                    'double_the_word_with_typed_config'
-                )
-            }
+            'count_letters': {'word': DependencyDefinition('double_the_word_with_typed_config')}
         },
     )
 
@@ -65,11 +61,7 @@ def define_part_eight_step_two_pipeline():
     return PipelineDefinition(
         name='part_eight_step_two_pipeline',
         solids=[typed_double_word, count_letters],
-        dependencies={
-            'count_letters': {
-                'word': DependencyDefinition('typed_double_word')
-            }
-        },
+        dependencies={'count_letters': {'word': DependencyDefinition('typed_double_word')}},
     )
 
 
@@ -78,9 +70,7 @@ def define_part_eight_step_three_pipeline():
         name='part_eight_step_three_pipeline',
         solids=[typed_double_word_mismatch, count_letters],
         dependencies={
-            'count_letters': {
-                'word': DependencyDefinition('typed_double_word_mismatch')
-            }
+            'count_letters': {'word': DependencyDefinition('typed_double_word_mismatch')}
         },
     )
 
@@ -97,70 +87,49 @@ def define_part_eight_repo():
 
 
 def test_part_eight_repo_step_one():
-    environment = load_yaml_from_path(
-        script_relative_path('env_step_one_works.yml')
-    )
+    environment = load_yaml_from_path(script_relative_path('env_step_one_works.yml'))
 
-    pipeline_result = execute_pipeline(
-        define_part_eight_step_one_pipeline(), environment
-    )
+    pipeline_result = execute_pipeline(define_part_eight_step_one_pipeline(), environment)
 
     assert pipeline_result.success
     assert (
-        pipeline_result.result_for_solid(
-            'double_the_word_with_typed_config'
-        ).transformed_value()
+        pipeline_result.result_for_solid('double_the_word_with_typed_config').transformed_value()
         == 'quuxquux'
     )
-    assert pipeline_result.result_for_solid(
-        'count_letters'
-    ).transformed_value() == {'q': 2, 'u': 4, 'x': 2}
+    assert pipeline_result.result_for_solid('count_letters').transformed_value() == {
+        'q': 2,
+        'u': 4,
+        'x': 2,
+    }
 
 
 def test_part_eight_repo_step_one_wrong_env():
-    environment = load_yaml_from_path(
-        script_relative_path('env_step_one_type_error.yml')
-    )
+    environment = load_yaml_from_path(script_relative_path('env_step_one_type_error.yml'))
     with pytest.raises(
         PipelineConfigEvaluationError,
-        match='Type failure at path \'root:solids:double_the_word_with_typed_config:config:word\'',
+        match='Type failure at path "root:solids:double_the_word_with_typed_config:config:word"',
     ):
         execute_pipeline(define_part_eight_step_one_pipeline(), environment)
 
 
 def test_part_eight_repo_step_one_wrong_field():
-    environment = load_yaml_from_path(
-        script_relative_path('env_step_one_field_error.yml')
-    )
+    environment = load_yaml_from_path(script_relative_path('env_step_one_field_error.yml'))
 
-    with pytest.raises(
-        PipelineConfigEvaluationError, match='Undefined field \'wrong_word\''
-    ):
+    with pytest.raises(PipelineConfigEvaluationError, match='Undefined field "wrong_word"'):
         execute_pipeline(define_part_eight_step_one_pipeline(), environment)
 
 
 def test_part_eight_repo_step_two():
-    environment = load_yaml_from_path(
-        script_relative_path('env_step_two_works.yml')
-    )
+    environment = load_yaml_from_path(script_relative_path('env_step_two_works.yml'))
 
-    pipeline_result = execute_pipeline(
-        define_part_eight_step_two_pipeline(), environment
-    )
+    pipeline_result = execute_pipeline(define_part_eight_step_two_pipeline(), environment)
 
     assert pipeline_result.success
-    assert (
-        pipeline_result.result_for_solid(
-            'typed_double_word'
-        ).transformed_value()
-        == 'baazbaaz'
-    )
+    assert pipeline_result.result_for_solid('typed_double_word').transformed_value() == 'baazbaaz'
 
 
 def test_part_eight_repo_step_three():
-    environment = load_yaml_from_path(
-        script_relative_path('env_step_three_type_mismatch.yml')
-    )
+    environment = load_yaml_from_path(script_relative_path('env_step_three_type_mismatch.yml'))
 
     with pytest.raises(
         DagsterInvariantViolationError,
