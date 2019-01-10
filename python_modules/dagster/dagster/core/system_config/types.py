@@ -27,6 +27,14 @@ from .objects import (
 )
 
 
+def SystemNamedDict(name, fields, description=None):
+    return NamedDict(name, fields, description, ConfigTypeAttributes(is_system_config=True))
+
+
+def SystemNamedSelector(name, fields, description=None):
+    return NamedSelector(name, fields, description, ConfigTypeAttributes(is_system_config=True))
+
+
 def _is_selector_field_optional(config_type):
     check.inst_param(config_type, 'config_type', ConfigType)
     if len(config_type.fields) > 1:
@@ -58,12 +66,10 @@ def define_resource_dictionary_cls(name, resources):
     for resource_name, resource in resources.items():
         if resource.config_field:
             fields[resource_name] = Field(
-                NamedDict(name + '.' + resource_name, {'config': resource.config_field})
+                SystemNamedDict(name + '.' + resource_name, {'config': resource.config_field})
             )
 
-    return NamedDict(
-        name=name, fields=fields, type_attributes=ConfigTypeAttributes(is_system_config=True)
-    )
+    return SystemNamedDict(name=name, fields=fields)
 
 
 def define_specific_context_config_cls(name, config_field, resources):
@@ -71,7 +77,7 @@ def define_specific_context_config_cls(name, config_field, resources):
     check.opt_inst_param(config_field, 'config_field', Field)
     check.dict_param(resources, 'resources', key_type=str, value_type=ResourceDefinition)
 
-    return NamedDict(
+    return SystemNamedDict(
         name,
         fields=remove_none_entries(
             {
@@ -81,7 +87,6 @@ def define_specific_context_config_cls(name, config_field, resources):
                 ),
             }
         ),
-        type_attributes=ConfigTypeAttributes(is_system_config=True),
     )
 
 
@@ -113,9 +118,7 @@ def define_context_context_cls(pipeline_name, context_definitions):
                 is_optional=True,
             )
 
-    return NamedSelector(
-        full_type_name, field_dict, type_attributes=ConfigTypeAttributes(is_system_config=True)
-    )
+    return SystemNamedSelector(full_type_name, field_dict)
 
 
 def define_specific_context_cls(pipeline_name, context_name, context_definition):
@@ -150,7 +153,7 @@ def define_solid_config_cls(name, config_field, inputs_field, outputs_field):
 def define_environment_cls(pipeline_def):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     pipeline_name = camelcase(pipeline_def.name)
-    return NamedDict(
+    return SystemNamedDict(
         name='{pipeline_name}.Environment'.format(pipeline_name=pipeline_name),
         fields={
             'context': define_maybe_optional_selector_field(
@@ -173,17 +176,14 @@ def define_environment_cls(pipeline_def):
                 )
             ),
         },
-        type_attributes=ConfigTypeAttributes(is_system_config=True),
     )
 
 
 def define_expectations_config_cls(name):
     check.str_param(name, 'name')
 
-    return NamedDict(
-        name,
-        fields={'evaluate': Field(Bool, is_optional=True, default_value=True)},
-        type_attributes=ConfigTypeAttributes(is_system_config=True),
+    return SystemNamedDict(
+        name, fields={'evaluate': Field(Bool, is_optional=True, default_value=True)}
     )
 
 
@@ -216,7 +216,7 @@ def get_inputs_field(pipeline_def, solid):
         return None
 
     return Field(
-        NamedDict(
+        SystemNamedDict(
             '{pipeline_name}.{solid_name}.Inputs'.format(
                 pipeline_name=camelcase(pipeline_def.name), solid_name=camelcase(solid.name)
             ),
@@ -240,7 +240,7 @@ def get_outputs_field(pipeline_def, solid):
             out.runtime_type.output_schema.schema_cls, is_optional=True
         )
 
-    output_entry_dict = NamedDict(
+    output_entry_dict = SystemNamedDict(
         '{pipeline_name}.{solid_name}.Outputs'.format(
             pipeline_name=camelcase(pipeline_def.name), solid_name=camelcase(solid.name)
         ),
@@ -276,7 +276,7 @@ def define_solid_dictionary_cls(name, pipeline_def):
             )
             fields[solid.name] = Field(solid_config_type)
 
-    return NamedDict(name, fields, type_attributes=ConfigTypeAttributes(is_system_config=True))
+    return SystemNamedDict(name, fields)
 
 
 def define_execution_config_cls(name):

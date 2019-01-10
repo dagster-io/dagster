@@ -196,7 +196,7 @@ class Float(BuiltinConfigScalar):
 
 class Any(ConfigAny):
     def __init__(self):
-        super(Any, self).__init__(description='')
+        super(Any, self).__init__(type_attributes=ConfigTypeAttributes(is_builtin=True))
 
 
 def Nullable(inner_type):

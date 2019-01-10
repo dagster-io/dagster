@@ -72,9 +72,13 @@ class DauphinPipeline(dauphin.ObjectType):
         return self._pipeline
 
     def get_type(self, info, typeName):
-        return info.schema.type_named('Type').to_dauphin_type(
-            info, self._pipeline.type_named(typeName)
-        )
+        to_dauphin_type = info.schema.type_named('Type').to_dauphin_type
+        if self._pipeline.has_config_type(typeName):
+            return to_dauphin_type(info, self._pipeline.config_type_named(typeName))
+        elif self._pipeline.has_runtime_type(typeName):
+            return to_dauphin_type(info, self._pipeline.runtime_type_named(typeName))
+        else:
+            check.failed('Not a config type or runtime type')
 
 
 class DauphinPipelineConnection(dauphin.ObjectType):

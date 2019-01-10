@@ -583,7 +583,7 @@ average_sfo_outbound_avg_delays_by_destination = sql_solid(
     ''',
     'table',
     table_name='average_sfo_outbound_avg_delays_by_destination',
-    inputs=[InputDefinition('q2_sfo_outbound_flights', runtime_type=SqlTableName)],
+    inputs=[InputDefinition('q2_sfo_outbound_flights', dagster_type=SqlTableName)],
 )
 
 ticket_prices_with_average_delays = sql_solid(

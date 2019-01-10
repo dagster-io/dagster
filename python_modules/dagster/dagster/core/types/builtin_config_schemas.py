@@ -3,6 +3,7 @@ import json
 from dagster import check
 
 from .builtin_enum import BuiltinEnum
+from .config import ConfigTypeAttributes
 from .config_schema import OutputSchema
 from .field import Field, Dict, NamedSelector
 
@@ -15,7 +16,9 @@ def define_builtin_scalar_output_schema(scalar_name):
     check.str_param(scalar_name, 'scalar_name')
 
     schema_cls = NamedSelector(
-        scalar_name + '.MaterializationSchema', {'json': define_path_dict_field()}
+        scalar_name + '.MaterializationSchema',
+        {'json': define_path_dict_field()},
+        type_attributes=ConfigTypeAttributes(is_system_config=True),
     )
 
     class _BuiltinScalarOutputSchema(OutputSchema):
