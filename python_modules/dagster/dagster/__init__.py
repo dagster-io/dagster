@@ -55,6 +55,7 @@ from dagster.core.types import (
     Nullable,
     Path,
     PythonObjectType,
+    Selector,
     String,
 )
 

@@ -8,7 +8,7 @@ from .config import (
     Int,
     Path,
     String,
-    resolve_config_type,
+    resolve_to_config_type,
 )
 from .dagster_type import check_dagster_type_param
 
@@ -68,7 +68,7 @@ class Field:
         description=None,
     ):
         check_dagster_type_param(dagster_type, 'dagster_type', ConfigType)
-        self.config_type = resolve_config_type(dagster_type)
+        self.config_type = resolve_to_config_type(dagster_type)
         self.config_cls = type(self.config_type)
 
         self.description = check.opt_str_param(description, 'description')
@@ -207,3 +207,24 @@ def Dict(fields):
             )
 
     return _Dict
+
+
+def Selector(fields):
+    class _Selector(ConfigSelector):
+        def __init__(self):
+            super(_Selector, self).__init__(
+                name='Selector.' + str(DictCounter.get_next_count()),
+                fields=fields,
+                # description='A configuration dictionary with typed fields',
+                type_attributes=ConfigTypeAttributes(is_named=True, is_builtin=True),
+            )
+
+    return _Selector
+
+
+def NamedSelector(name, fields, description=None):
+    class _NamedSelector(ConfigSelector):
+        def __init__(self):
+            super(_NamedSelector, self).__init__(name=name, fields=fields, description=description)
+
+    return _NamedSelector

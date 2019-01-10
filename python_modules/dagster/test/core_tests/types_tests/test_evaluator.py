@@ -1,6 +1,6 @@
 from dagster import Field, Dict, String, Int, Bool, Nullable, List
 
-from dagster.core.types.config import resolve_config_type
+from dagster.core.types.config import resolve_to_config_type
 from dagster.core.types.evaluator import (
     DagsterEvaluationErrorReason,
     EvaluationStackListItemEntry,
@@ -13,7 +13,7 @@ from dagster.core.types.field import ConfigSelector
 
 
 def eval_config_value_from_dagster_type(dagster_type, value):
-    return evaluate_config_value(resolve_config_type(dagster_type), value)
+    return evaluate_config_value(resolve_to_config_type(dagster_type), value)
 
 
 def assert_success(result, expected_value):

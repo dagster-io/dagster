@@ -1,6 +1,6 @@
 from dagster import check
 
-from dagster.core.types.runtime import RuntimeType, resolve_runtime_type
+from dagster.core.types.runtime import RuntimeType, resolve_to_runtime_type
 
 from .expectation import ExpectationDefinition
 from .utils import check_valid_name
@@ -22,7 +22,7 @@ class InputDefinition(object):
         ''
         self.name = check_valid_name(name)
 
-        self.runtime_type = check.inst(resolve_runtime_type(runtime_type), RuntimeType)
+        self.runtime_type = check.inst(resolve_to_runtime_type(runtime_type), RuntimeType)
 
         self.expectations = check.opt_list_param(
             expectations, 'expectations', of_type=ExpectationDefinition

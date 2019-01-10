@@ -1,11 +1,10 @@
 from collections import namedtuple
-import pickle
 
 import pandas as pd
 
-from dagster import check, Dict, Field, Path, String, types
+from dagster import Dict, Field, Path, Selector, String, check, types
 
-from dagster.core.types.field import ConfigSelector
+from dagster.core.types.config_schema import InputSchema, OutputSchema
 
 from dagster.core.types.materializable import FileMarshalable
 
@@ -22,34 +21,11 @@ def define_csv_dict_field():
     )
 
 
-class PandasDataFrameInputSchema(ConfigSelector):
-    def __init__(self):
-        super(PandasDataFrameInputSchema, self).__init__(
-            fields={
-                'csv': define_csv_dict_field(),
-                'parquet': define_path_dict_field(),
-                'table': define_path_dict_field(),
-            }
-        )
-
-    def construct_from_config_value(self, config_value):
-        file_type, file_options = list(config_value.items())[0]
-        if file_type == 'csv':
-            path = file_options['path']
-            del file_options['path']
-            return pd.read_csv(path, **file_options)
-        elif file_type == 'parquet':
-            return pd.read_parquet(file_options['path'])
-        elif file_type == 'table':
-            return pd.read_table(file_options['path'])
-        else:
-            check.failed('Unsupported file_type {file_type}'.format(file_type=file_type))
-
-
-class PandasDataFrameOutputConfigSchema(ConfigSelector):
-    def __init__(self):
-        super(PandasDataFrameOutputConfigSchema, self).__init__(
-            fields={
+class PandasDataFrameOutputSchema(OutputSchema):
+    @property
+    def schema_cls(self):
+        return Selector(
+            {
                 'csv': define_csv_dict_field(),
                 'parquet': define_path_dict_field(),
                 'table': define_path_dict_field(),
@@ -71,6 +47,31 @@ class PandasDataFrameOutputConfigSchema(ConfigSelector):
         check.failed('must implement')
 
 
+class PandasDataFrameInputSchema(InputSchema):
+    @property
+    def schema_cls(self):
+        return Selector(
+            {
+                'csv': define_csv_dict_field(),
+                'parquet': define_path_dict_field(),
+                'table': define_path_dict_field(),
+            }
+        )
+
+    def construct_from_config_value(self, value):
+        file_type, file_options = list(value.items())[0]
+        if file_type == 'csv':
+            path = file_options['path']
+            del file_options['path']
+            return pd.read_csv(path, **file_options)
+        elif file_type == 'parquet':
+            return pd.read_parquet(file_options['path'])
+        elif file_type == 'table':
+            return pd.read_table(file_options['path'])
+        else:
+            check.failed('Unsupported file_type {file_type}'.format(file_type=file_type))
+
+
 class DataFrame(FileMarshalable, types.PythonObjectType):
     def __init__(self):
         super(DataFrame, self).__init__(
@@ -78,17 +79,6 @@ class DataFrame(FileMarshalable, types.PythonObjectType):
             python_type=pd.DataFrame,
             description='''Two-dimensional size-mutable, potentially heterogeneous
     tabular data structure with labeled axes (rows and columns). See http://pandas.pydata.org/''',
-            input_schema_cls=PandasDataFrameInputSchema,
-            output_schema_cls=PandasDataFrameOutputConfigSchema,
+            input_schema=PandasDataFrameInputSchema(),
+            output_schema=PandasDataFrameOutputSchema(),
         )
-
-    def marshal_value(self, value, to_file):
-        with open(to_file, 'wb') as ff:
-            pickle.dump(value, ff)
-
-    def unmarshal_value(self, from_file):
-        with open(from_file, 'rb') as ff:
-            return pickle.load(ff)
-
-    def define_materialization_config_schema(self):
-        return PandasDataFrameOutputConfigSchema

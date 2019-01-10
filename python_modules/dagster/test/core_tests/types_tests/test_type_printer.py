@@ -1,12 +1,12 @@
 from dagster import PipelineDefinition, SolidDefinition, Int, Field, String, List, Nullable, Dict
 
-from dagster.core.types.config import resolve_config_type
+from dagster.core.types.config import resolve_to_config_type
 from dagster.core.types.type_printer import print_type_to_string
 
 
 def assert_inner_types(parent_type, *dagster_types):
-    assert set(list(map(lambda t: t.name, resolve_config_type(parent_type).inner_types))) == set(
-        map(lambda x: x.name, map(resolve_config_type, dagster_types))
+    assert set(list(map(lambda t: t.name, resolve_to_config_type(parent_type).inner_types))) == set(
+        map(lambda x: x.name, map(resolve_to_config_type, dagster_types))
     )
 
 

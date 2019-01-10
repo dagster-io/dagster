@@ -17,7 +17,7 @@ black:
 	black . --line-length 100 -S --fast
 
 pylint:
-	pylint --disable=R,C dagster/dagster dagit/dagit dagstermill/dagstermill dagster-contrib/dagster_contrib
+	pylint --disable=R,C dagster/dagster dagit/dagit dagstermill/dagstermill dagster-pandas/dagster_pandas dagster-sqlalchemy/dagster_sqlalchemy
 
 reinstall:
 	pip uninstall dagit

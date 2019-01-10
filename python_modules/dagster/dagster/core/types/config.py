@@ -234,15 +234,15 @@ def List(inner_type):
 
 def resolve_to_config_list(list_type):
     check.inst_param(list_type, 'list_type', WrappingListType)
-    return List(resolve_config_type(list_type.inner_type))
+    return List(resolve_to_config_type(list_type.inner_type))
 
 
 def resolve_to_config_nullable(nullable_type):
     check.inst_param(nullable_type, 'nullable_type', WrappingNullableType)
-    return Nullable(resolve_config_type(nullable_type.inner_type))
+    return Nullable(resolve_to_config_type(nullable_type.inner_type))
 
 
-def resolve_config_type(dagster_type):
+def resolve_to_config_type(dagster_type):
     if dagster_type is None:
         return ConfigAny.inst()
     if isinstance(dagster_type, BuiltinEnum):
