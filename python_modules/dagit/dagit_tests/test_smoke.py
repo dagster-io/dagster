@@ -18,5 +18,5 @@ def test_smoke_app():
     assert len(data['data']['pipelines']['nodes']) == 1
 
     assert set([node_data['name'] for node_data in data['data']['pipelines']['nodes']]) == set(
-        ['part_six']
+        ['repo_demo_pipeline']
     )
