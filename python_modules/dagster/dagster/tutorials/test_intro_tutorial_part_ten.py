@@ -25,7 +25,9 @@ from dagster import (
             expectations=[
                 ExpectationDefinition(
                     name="check_positive",
-                    expectation_fn=lambda _info, value: ExpectationResult(success=value > 0),
+                    expectation_fn=lambda _info, value: ExpectationResult(
+                        success=value > 0
+                    ),
                 )
             ],
         )
@@ -82,7 +84,10 @@ def define_failing_environment_config():
 
 def test_intro_tutorial_part_ten_step_two_fails_hard():
     with pytest.raises(DagsterExpectationFailedError):
-        execute_pipeline(define_part_ten_step_one_pipeline(), define_failing_environment_config())
+        execute_pipeline(
+            define_part_ten_step_one_pipeline(),
+            define_failing_environment_config(),
+        )
 
 
 def test_intro_tutorial_part_ten_step_two_fails_soft():

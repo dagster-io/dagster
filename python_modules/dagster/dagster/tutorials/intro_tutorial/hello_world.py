@@ -7,7 +7,9 @@ def hello_world():
 
 
 def define_hello_world_pipeline():
-    return PipelineDefinition(name='hello_world_pipeline', solids=[hello_world])
+    return PipelineDefinition(
+        name='hello_world_pipeline', solids=[hello_world]
+    )
 
 
 if __name__ == '__main__':

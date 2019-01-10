@@ -18,23 +18,44 @@ def nonce_solid(name, n_inputs, n_outputs):
 
     @solid(
         name=name,
-        inputs=[InputDefinition(name='input_{}'.format(i)) for i in range(n_inputs)],
-        outputs=[OutputDefinition(name='output_{}'.format(i)) for i in range(n_outputs)],
+        inputs=[
+            InputDefinition(name='input_{}'.format(i)) for i in range(n_inputs)
+        ],
+        outputs=[
+            OutputDefinition(name='output_{}'.format(i))
+            for i in range(n_outputs)
+        ],
     )
     def solid_fn(info, **_kwargs):
         for i in range(200):
             time.sleep(0.02)
             if i % 1000 == 420:
-                info.context.error('Error message seq={i} from solid {name}'.format(i=i, name=name))
+                info.context.error(
+                    'Error message seq={i} from solid {name}'.format(
+                        i=i, name=name
+                    )
+                )
             elif i % 100 == 0:
                 info.context.warning(
-                    'Warning message seq={i} from solid {name}'.format(i=i, name=name)
+                    'Warning message seq={i} from solid {name}'.format(
+                        i=i, name=name
+                    )
                 )
             elif i % 10 == 0:
-                info.context.info('Info message seq={i} from solid {name}'.format(i=i, name=name))
+                info.context.info(
+                    'Info message seq={i} from solid {name}'.format(
+                        i=i, name=name
+                    )
+                )
             else:
-                info.context.debug('Debug message seq={i} from solid {name}'.format(i=i, name=name))
-        return MultipleResults.from_dict({'output_{}'.format(i): 'foo' for i in range(n_outputs)})
+                info.context.debug(
+                    'Debug message seq={i} from solid {name}'.format(
+                        i=i, name=name
+                    )
+                )
+        return MultipleResults.from_dict(
+            {'output_{}'.format(i): 'foo' for i in range(n_outputs)}
+        )
 
     return solid_fn
 

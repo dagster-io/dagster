@@ -7,7 +7,9 @@ def configurable_hello_world(info):
 
 
 def define_configurable_hello_world_pipeline():
-    return PipelineDefinition(name='part_four_pipeline', solids=[configurable_hello_world])
+    return PipelineDefinition(
+        name='part_four_pipeline', solids=[configurable_hello_world]
+    )
 
 
 def test_intro_tutorial_part_four():

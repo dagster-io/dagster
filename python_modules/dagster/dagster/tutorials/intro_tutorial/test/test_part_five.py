@@ -18,4 +18,7 @@ def test_tutorial_part_five():
         pipeline = pipeline_definition()
 
         with pytest.raises(Exception):
-            execute_pipeline(pipeline, {'context': {'default': {'config': {'log_level': 'DEBUG'}}}})
+            execute_pipeline(
+                pipeline,
+                {'context': {'default': {'config': {'log_level': 'DEBUG'}}}},
+            )
