@@ -1351,6 +1351,37 @@ def test_production_config_editor_query():
     assert result.data
 
 
+def test_single_type_query():
+    context_config_result = execute_dagster_graphql(
+        define_context(),
+        TYPE_QUERY,
+        variables={
+            'pipelineName': 'more_complicated_nested_config',
+            'typeName': 'MoreComplicatedNestedConfig.ContextConfig',
+        },
+    )
+
+    if context_config_result.errors:
+        raise Exception(context_config_result.errors)
+
+    assert not context_config_result.errors
+    assert context_config_result.data
+    assert context_config_result.data['type']['name'] == 'MoreComplicatedNestedConfig.ContextConfig'
+
+    int_result = execute_dagster_graphql(
+        define_context(),
+        TYPE_QUERY,
+        variables={'pipelineName': 'more_complicated_nested_config', 'typeName': 'Int'},
+    )
+
+    if int_result.errors:
+        raise Exception(int_result.errors)
+
+    assert not int_result.errors
+    assert int_result.data
+    assert int_result.data['type']['name'] == 'Int'
+
+
 MUTATION_QUERY = '''
 mutation ($executionParams: PipelineExecutionParams!) {
     startPipelineExecution(
@@ -1576,6 +1607,25 @@ mutation ($executionParams: PipelineExecutionParams!) {
         }
         ... on PipelineNotFoundError {
             pipelineName
+        }
+    }
+}
+'''
+
+TYPE_QUERY = '''
+query TypeQuery($pipelineName: String!, $typeName: String!) {
+    type(pipelineName: $pipelineName typeName: $typeName) {
+        __typename
+        name
+        ... on CompositeType {
+            fields {
+                __typename
+                name
+                type {
+                    __typename
+                    name
+                }
+            }
         }
     }
 }

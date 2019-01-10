@@ -49,7 +49,7 @@ def define_pandas_source_test_solid():
     return dm.define_dagstermill_solid(
         name='pandas_source_test',
         notebook_path=nb_test_path('pandas_source_test'),
-        inputs=[InputDefinition(name='df', runtime_type=DataFrame)],
+        inputs=[InputDefinition(name='df', dagster_type=DataFrame)],
         outputs=[OutputDefinition(DataFrame)],
     )
 

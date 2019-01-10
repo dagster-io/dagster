@@ -153,6 +153,14 @@ class PipelineDefinition(object):
         check.str_param(name, 'name')
         return self._config_type_dict[name]
 
+    def has_runtime_type(self, name):
+        check.str_param(name, 'name')
+        return name in self._runtime_type_dict
+
+    def runtime_type_named(self, name):
+        check.str_param(name, 'name')
+        return self._runtime_type_dict[name]
+
     def all_config_types(self):
         return self._config_type_dict.values()
 

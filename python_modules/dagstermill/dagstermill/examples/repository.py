@@ -55,7 +55,7 @@ def add_two_numbers_pm_solid():
     return dm.define_dagstermill_solid(
         'add_two_numbers',
         nb_test_path('add_two_numbers'),
-        [InputDefinition(name='a', runtime_type=Int), InputDefinition(name='b', runtime_type=Int)],
+        [InputDefinition(name='a', dagster_type=Int), InputDefinition(name='b', dagster_type=Int)],
         [OutputDefinition(Int)],
     )
 
@@ -65,7 +65,7 @@ def mult_two_numbers_pm_solid():
     return dm.define_dagstermill_solid(
         'mult_two_numbers',
         nb_test_path('mult_two_numbers'),
-        [InputDefinition(name='a', runtime_type=Int), InputDefinition(name='b', runtime_type=Int)],
+        [InputDefinition(name='a', dagster_type=Int), InputDefinition(name='b', dagster_type=Int)],
         [OutputDefinition(Int)],
     )
 
