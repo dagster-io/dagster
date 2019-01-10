@@ -63,9 +63,5 @@ setup(
         # 'pre-commit'>=1.10.1',
     ],
     extras_require={":python_version>'3'": ["reloader>=0.6"]},
-    entry_points={
-        "console_scripts": [
-            'dagster = dagster.cli:main'
-        ]
-    }
+    entry_points={"console_scripts": ['dagster = dagster.cli:main']},
 )
