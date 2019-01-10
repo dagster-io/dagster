@@ -18,6 +18,29 @@ snapshots['test_build_all_docs 1'] = [
         ]
     ),
     (
+        './doctrees',
+        [
+            'apidocs',
+            'intro_tutorial'
+        ],
+        [
+        ]
+    ),
+    (
+        './doctrees/apidocs',
+        [
+        ],
+        [
+        ]
+    ),
+    (
+        './doctrees/intro_tutorial',
+        [
+        ],
+        [
+        ]
+    ),
+    (
         './html',
         [
             '_images',
@@ -39,25 +62,10 @@ snapshots['test_build_all_docs 1'] = [
         ]
     ),
     (
-        './html/intro_tutorial',
+        './html/_images',
         [
         ],
         [
-            'actual_dag.html',
-            'config.html',
-            'configuration_schemas.html',
-            'execution_context.html',
-            'hello_dag.html',
-            'hello_world.html',
-            'inputs.html',
-            'part_eleven.html',
-            'part_fourteen.html',
-            'part_nine.html',
-            'part_ten.html',
-            'part_thirteen.html',
-            'part_twelve.html',
-            'pipeline_execution.html',
-            'repos.html'
         ]
     ),
     (
@@ -71,6 +79,19 @@ snapshots['test_build_all_docs 1'] = [
             'index.rst.txt',
             'installation.rst.txt',
             'principles.rst.txt'
+        ]
+    ),
+    (
+        './html/_sources/apidocs',
+        [
+        ],
+        [
+            'decorators.rst.txt',
+            'definitions.rst.txt',
+            'errors.rst.txt',
+            'execution.rst.txt',
+            'types.rst.txt',
+            'utilities.rst.txt'
         ]
     ),
     (
@@ -96,19 +117,6 @@ snapshots['test_build_all_docs 1'] = [
         ]
     ),
     (
-        './html/_sources/apidocs',
-        [
-        ],
-        [
-            'decorators.rst.txt',
-            'definitions.rst.txt',
-            'errors.rst.txt',
-            'execution.rst.txt',
-            'types.rst.txt',
-            'utilities.rst.txt'
-        ]
-    ),
-    (
         './html/_static',
         [
         ],
@@ -128,13 +136,6 @@ snapshots['test_build_all_docs 1'] = [
         ]
     ),
     (
-        './html/_images',
-        [
-        ],
-        [
-        ]
-    ),
-    (
         './html/apidocs',
         [
         ],
@@ -148,26 +149,25 @@ snapshots['test_build_all_docs 1'] = [
         ]
     ),
     (
-        './doctrees',
-        [
-            'apidocs',
-            'intro_tutorial'
-        ],
-        [
-        ]
-    ),
-    (
-        './doctrees/intro_tutorial',
+        './html/intro_tutorial',
         [
         ],
         [
-        ]
-    ),
-    (
-        './doctrees/apidocs',
-        [
-        ],
-        [
+            'actual_dag.html',
+            'config.html',
+            'configuration_schemas.html',
+            'execution_context.html',
+            'hello_dag.html',
+            'hello_world.html',
+            'inputs.html',
+            'part_eleven.html',
+            'part_fourteen.html',
+            'part_nine.html',
+            'part_ten.html',
+            'part_thirteen.html',
+            'part_twelve.html',
+            'pipeline_execution.html',
+            'repos.html'
         ]
     )
 ]

@@ -28,20 +28,23 @@ def test_build_all_docs(snapshot):
         os.chdir(script_relative_path(BUILT_DOCS_RELATIVE_PATH))
         walked = list(os.walk('.'))
         snapshot.assert_match(
-            [
-                (
-                    dirpath,
-                    sorted(dirnames),
-                    sorted(
-                        [
-                            filename
-                            for filename in filenames
-                            if not any((re.match(pattern, filename) for pattern in IGNORE_FILES))
-                        ]
-                    ),
-                )
-                for dirpath, dirnames, filenames in walked
-            ]
+            sorted(
+                [
+                    (
+                        dirpath,
+                        sorted(dirnames),
+                        sorted(
+                            [
+                                filename
+                                for filename in filenames
+                                if not any((re.match(pattern, filename) for pattern in IGNORE_FILES))
+                            ]
+                        ),
+                    )
+                    for dirpath, dirnames, filenames in walked
+                ],
+                key=lambda x: x[0]
+            )
         )
         for dirpath, dirnames, filenames in walked:
             for filename in filenames:
