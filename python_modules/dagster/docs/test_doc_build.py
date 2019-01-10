@@ -1,4 +1,5 @@
 import os
+import re
 import subprocess
 
 import pytest
@@ -8,7 +9,7 @@ from dagster.utils import script_relative_path
 
 BUILT_DOCS_RELATIVE_PATH = '_build/'
 
-IGNORE_FILES = ['.DS_Store', 'objects.inv']
+IGNORE_FILES = ['.DS_Store', 'objects.inv', '*.png']
 
 
 def test_build_all_docs(snapshot):
@@ -24,14 +25,18 @@ def test_build_all_docs(snapshot):
                 (
                     dirpath,
                     dirnames,
-                    [filename for filename in filenames if filename not in IGNORE_FILES],
+                    [
+                        filename
+                        for filename in filenames
+                        if any((re.match(pattern, filename) for pattern in IGNORE_FILES))
+                    ],
                 )
                 for dirpath, dirnames, filenames in walked
             ]
         )
         for dirpath, dirnames, filenames in walked:
             for filename in filenames:
-                if filename in IGNORE_FILES:
+                if any((re.match(pattern, filename) for pattern in IGNORE_FILES)):
                     continue
                 with open(os.path.join(dirpath, filename), 'r') as fd:
                     try:
