@@ -165,6 +165,7 @@ def create_dagstermill_cli():
     group.add_command(create_notebook)
     return group
 
+
 def main():
     cli = create_dagstermill_cli()
     # click magic
