@@ -134,7 +134,7 @@ def test_part_eight_repo_step_one_wrong_field():
     )
 
     with pytest.raises(
-        PipelineConfigEvaluationError, match='Undefined field 'wrong_word''
+        PipelineConfigEvaluationError, match='Undefined field \'wrong_word\''
     ):
         execute_pipeline(define_part_eight_step_one_pipeline(), environment)
 
