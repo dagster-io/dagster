@@ -50,10 +50,6 @@ def define_maybe_optional_selector_field(config_cls):
     )
 
 
-def define_specific_resource_config_cls(name, config_field):
-    return NamedDict(name, {'config': config_field})
-
-
 def define_resource_dictionary_cls(name, resources):
     check.str_param(name, 'name')
     check.dict_param(resources, 'resources', key_type=str, value_type=ResourceDefinition)
