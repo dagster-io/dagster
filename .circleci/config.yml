@@ -201,6 +201,9 @@ jobs:
             pushd python_modules/dagster-sqlalchemy
             tox -e $TOXENV
             popd
+            pushd python_modules/dagster-ge
+            tox -e $TOXENV
+            popd
             pushd python_modules/dagma
             tox -e $TOXENV
             popd
@@ -210,6 +213,7 @@ jobs:
             mv python_modules/dagstermill/.coverage python_modules/.coverage.dagstermill.${CIRCLE_BUILD_NUM}
             mv python_modules/dagster-pandas/.coverage python_modules/.coverage.dagster-pandas.${CIRCLE_BUILD_NUM}
             mv python_modules/dagster-sqlalchemy/.coverage python_modules/.coverage.dagster-sqlalchemy.${CIRCLE_BUILD_NUM}
+            mv python_modules/dagster-ge/.coverage python_modules/.coverage.dagster-ge.${CIRCLE_BUILD_NUM}
             mv python_modules/dagma/.coverage python_modules/.coverage.dagma.${CIRCLE_BUILD_NUM}
 
       - persist_to_workspace:
