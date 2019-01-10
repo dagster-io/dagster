@@ -162,3 +162,9 @@ def execute_scaffold(notebook, solid_name, force_overwrite, **kwargs):
 
 def create_dagstermill_cli():
     return scaffold
+
+
+def main():
+    cli = create_dagstermill_cli()
+    # click magic
+    cli(obj={})  # pylint:disable=E1120
