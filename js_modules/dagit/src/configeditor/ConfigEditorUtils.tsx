@@ -17,6 +17,7 @@ export const CONFIG_EDITOR_PIPELINE_FRAGMENT = gql`
     types {
       __typename
       name
+      isSelector
       ... on CompositeType {
         fields {
           name
@@ -61,13 +62,18 @@ export const CONFIG_EDITOR_CHECK_CONFIG_QUERY = gql`
 `;
 
 interface ITypeConfig {
-  environment: Array<{ name: string; typeName: string }>;
+  rootTypeName: string;
   types: {
-    [name: string]: Array<{
-      name: string;
-      typeName: string;
-      isOptional: boolean;
-    }>;
+    [name: string]: {
+      isSelector: boolean;
+      fields: Array<{
+        name: string;
+        isOptional: boolean;
+        type: {
+          name: string;
+        };
+      }>;
+    };
   };
 }
 
@@ -75,20 +81,18 @@ export function createTypeConfig({
   types,
   environmentType
 }: ConfigEditorPipelineFragment): ITypeConfig {
-  const typeMap = {};
+  const result: ITypeConfig = {
+    types: {},
+    rootTypeName: environmentType.name
+  };
+
   for (const type of types) {
     if (type.__typename === "CompositeType") {
-      typeMap[type.name] = type.fields.map(({ name, type, isOptional }) => ({
-        name,
-        typeName: type.name,
-        isOptional
-      }));
+      result.types[type.name] = type;
     }
   }
-  return {
-    environment: typeMap[environmentType.name] || [],
-    types: typeMap
-  };
+
+  return result;
 }
 
 export async function checkConfig(
@@ -155,7 +159,10 @@ export function scaffoldConfig(pipeline: ConfigEditorPipelineFragment): string {
     Boolean: `false`
   };
 
-  const configPlaceholderFor = (typeName: string): any => {
+  const configPlaceholderFor = (
+    typeName: string,
+    commentDepth: number
+  ): any => {
     if (placeholders[typeName]) {
       return placeholders[typeName];
     }
@@ -164,20 +171,43 @@ export function scaffoldConfig(pipeline: ConfigEditorPipelineFragment): string {
     if (!type) return null;
 
     const result = {};
-    for (const field of type) {
-      if (field.isOptional) continue;
-      const val = configPlaceholderFor(field.typeName);
-      if (Object.keys(val).length > 0) {
+    type.fields.filter(f => !f.isOptional).forEach((field, idx) => {
+      const startComment = type.isSelector && idx > 0;
+      const fieldCommentDepth =
+        commentDepth > 0 ? commentDepth + 2 : startComment ? 1 : 0;
+
+      const val = configPlaceholderFor(field.type.name, fieldCommentDepth);
+      if (!val || Object.keys(val).length == 0) return;
+
+      if (fieldCommentDepth > 0) {
+        result[`COMMENTED_${fieldCommentDepth}_${field.name}`] = val;
+      } else {
         result[field.name] = val;
       }
-    }
+    });
     return result;
   };
+
+  // Convert the top level to a YAML string
+  let obj = configPlaceholderFor(pipeline.environmentType.name, 0);
+  let str = YAML.stringify(obj);
+
+  // Comment lines containing the COMMENTED_X_ prefix. X indicates how
+  // much of the preceding indentation should be placed after the #,
+  // allowing us to match the Codemirror comment strategy where entire
+  // blocks are commented with a vertically aligned row of # characters.
+  str = str.replace(/\n([\s]+)COMMENTED_(\d+)_/g, (_, whitespace, depth) => {
+    const preWhitespace = whitespace.substr(0, whitespace.length - depth / 1);
+    const postWhitespace = Array(depth / 1)
+      .fill(" ")
+      .join("");
+    return `\n${preWhitespace} #${postWhitespace}`;
+  });
 
   return `
 # This config has been auto-generated with required fields.
 # Additional optional settings may be available.
 
-${YAML.stringify(configPlaceholderFor(pipeline.environmentType.name))}
+${str}
 `;
 }

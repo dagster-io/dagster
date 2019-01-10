@@ -8,7 +8,7 @@
 // ====================================================
 
 export interface TypeListContainerQuery_pipelineOrError_PythonError {
-  __typename: "PythonError" | "PipelineNotFoundError";
+  __typename: "PythonError" | "PipelineNotFoundError" | "SolidNotFoundError";
 }
 
 export interface TypeListContainerQuery_pipelineOrError_Pipeline_types_typeAttributes {

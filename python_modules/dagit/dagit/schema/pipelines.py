@@ -403,6 +403,7 @@ class DauphinType(dauphin.Interface):
     is_dict = dauphin.NonNull(dauphin.Boolean)
     is_nullable = dauphin.NonNull(dauphin.Boolean)
     is_list = dauphin.NonNull(dauphin.Boolean)
+    is_selector = dauphin.NonNull(dauphin.Boolean)
 
     inner_types = dauphin.non_null_list('Type')
 
@@ -455,6 +456,7 @@ def ctor_kwargs(runtime_type):
             name=runtime_type.name,
             description=runtime_type.description,
             is_dict=False,
+            is_selector=False,
             is_nullable=runtime_type.is_nullable,
             is_list=runtime_type.is_list,
         )
@@ -463,6 +465,7 @@ def ctor_kwargs(runtime_type):
             name=runtime_type.name,
             description=runtime_type.description,
             is_dict=check.bool_param(runtime_type.has_fields, 'is_dict'),
+            is_selector=runtime_type.is_selector,
             is_nullable=runtime_type.is_nullable,
             is_list=runtime_type.is_list,
         )
