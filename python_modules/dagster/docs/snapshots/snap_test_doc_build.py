@@ -11,8 +11,8 @@ snapshots['test_build_all_docs 1'] = [
     (
         '.',
         [
-            'html',
-            'doctrees'
+            'doctrees',
+            'html'
         ],
         [
         ]
@@ -20,22 +20,22 @@ snapshots['test_build_all_docs 1'] = [
     (
         './html',
         [
-            'intro_tutorial',
+            '_images',
             '_sources',
             '_static',
-            '_images',
-            'apidocs'
+            'apidocs',
+            'intro_tutorial'
         ],
         [
-            'principles.html',
-            'index.html',
-            'searchindex.js',
-            'py-modindex.html',
             '.buildinfo',
-            'genindex.html',
             'contributing.html',
+            'genindex.html',
+            'index.html',
+            'installation.html',
+            'principles.html',
+            'py-modindex.html',
             'search.html',
-            'installation.html'
+            'searchindex.js'
         ]
     ),
     (
@@ -43,34 +43,34 @@ snapshots['test_build_all_docs 1'] = [
         [
         ],
         [
-            'hello_dag.html',
-            'repos.html',
-            'pipeline_execution.html',
-            'part_ten.html',
-            'execution_context.html',
             'actual_dag.html',
-            'part_eleven.html',
-            'inputs.html',
-            'part_twelve.html',
-            'configuration_schemas.html',
-            'part_thirteen.html',
             'config.html',
-            'part_fourteen.html',
+            'configuration_schemas.html',
+            'execution_context.html',
+            'hello_dag.html',
             'hello_world.html',
-            'part_nine.html'
+            'inputs.html',
+            'part_eleven.html',
+            'part_fourteen.html',
+            'part_nine.html',
+            'part_ten.html',
+            'part_thirteen.html',
+            'part_twelve.html',
+            'pipeline_execution.html',
+            'repos.html'
         ]
     ),
     (
         './html/_sources',
         [
-            'intro_tutorial',
-            'apidocs'
+            'apidocs',
+            'intro_tutorial'
         ],
         [
-            'installation.rst.txt',
-            'principles.rst.txt',
             'contributing.rst.txt',
-            'index.rst.txt'
+            'index.rst.txt',
+            'installation.rst.txt',
+            'principles.rst.txt'
         ]
     ),
     (
@@ -78,21 +78,21 @@ snapshots['test_build_all_docs 1'] = [
         [
         ],
         [
-            'part_eleven.rst.txt',
+            'actual_dag.rst.txt',
             'config.rst.txt',
+            'configuration_schemas.rst.txt',
             'execution_context.rst.txt',
+            'hello_dag.rst.txt',
+            'hello_world.rst.txt',
             'inputs.rst.txt',
-            'pipeline_execution.rst.txt',
-            'part_twelve.rst.txt',
+            'part_eleven.rst.txt',
+            'part_fourteen.rst.txt',
             'part_nine.rst.txt',
             'part_ten.rst.txt',
-            'hello_world.rst.txt',
-            'part_fourteen.rst.txt',
             'part_thirteen.rst.txt',
-            'repos.rst.txt',
-            'hello_dag.rst.txt',
-            'actual_dag.rst.txt',
-            'configuration_schemas.rst.txt'
+            'part_twelve.rst.txt',
+            'pipeline_execution.rst.txt',
+            'repos.rst.txt'
         ]
     ),
     (
@@ -100,12 +100,12 @@ snapshots['test_build_all_docs 1'] = [
         [
         ],
         [
-            'execution.rst.txt',
-            'definitions.rst.txt',
-            'utilities.rst.txt',
-            'types.rst.txt',
             'decorators.rst.txt',
-            'errors.rst.txt'
+            'definitions.rst.txt',
+            'errors.rst.txt',
+            'execution.rst.txt',
+            'types.rst.txt',
+            'utilities.rst.txt'
         ]
     ),
     (
@@ -113,18 +113,18 @@ snapshots['test_build_all_docs 1'] = [
         [
         ],
         [
-            'jquery-3.2.1.js',
-            'underscore.js',
             'alabaster.css',
-            'documentation_options.js',
-            'searchtools.js',
-            'custom.css',
-            'underscore-1.3.1.js',
             'basic.css',
-            'pygments.css',
+            'custom.css',
             'doctools.js',
-            'websupport.js',
-            'jquery.js'
+            'documentation_options.js',
+            'jquery-3.2.1.js',
+            'jquery.js',
+            'pygments.css',
+            'searchtools.js',
+            'underscore-1.3.1.js',
+            'underscore.js',
+            'websupport.js'
         ]
     ),
     (
@@ -140,18 +140,18 @@ snapshots['test_build_all_docs 1'] = [
         ],
         [
             'decorators.html',
-            'execution.html',
-            'utilities.html',
             'definitions.html',
+            'errors.html',
+            'execution.html',
             'types.html',
-            'errors.html'
+            'utilities.html'
         ]
     ),
     (
         './doctrees',
         [
-            'intro_tutorial',
-            'apidocs'
+            'apidocs',
+            'intro_tutorial'
         ],
         [
         ]
