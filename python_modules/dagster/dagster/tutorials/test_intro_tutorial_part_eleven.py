@@ -179,12 +179,6 @@ def test_intro_tutorial_part_eleven_step_three():
             == 45
         )
 
-    with pytest.raises(DagsterInvariantViolationError):
-        result.result_for_solid('unnamed')
-
-    with pytest.raises(DagsterInvariantViolationError):
-        result.result_for_solid('log_num')
-
 
 if __name__ == '__main__':
     execute_pipeline(

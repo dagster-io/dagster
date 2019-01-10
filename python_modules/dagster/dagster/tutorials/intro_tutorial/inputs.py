@@ -20,13 +20,13 @@ def define_hello_inputs_pipeline():
 def execute_with_another_world():
     return execute_pipeline(
         define_hello_inputs_pipeline(),
-        # This entire dictionary is known as the "environment".
+        # This entire dictionary is known as the 'environment'.
         # It has many sections.
         {
-            # This is the "solids" section
+            # This is the 'solids' section
             'solids': {
                 # Configuration for the add_hello_to_word solid
-                'add_hello_to_word': {'inputs': {'word': 'Another World'}}
+                'add_hello_to_word': {'inputs': {'word': 'Mars'}}
             }
         },
     )

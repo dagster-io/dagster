@@ -22,11 +22,11 @@ Intro Tutorial
   intro_tutorial/hello_dag
   intro_tutorial/actual_dag
   intro_tutorial/inputs
-  intro_tutorial/part_four
-  intro_tutorial/part_five
-  intro_tutorial/part_six
-  intro_tutorial/part_seven
-  intro_tutorial/part_eight
+  intro_tutorial/config
+  intro_tutorial/execution_context
+  intro_tutorial/repos
+  intro_tutorial/pipeline_execution
+  intro_tutorial/configuration_schemas
   intro_tutorial/part_nine
   intro_tutorial/part_ten
   intro_tutorial/part_eleven
