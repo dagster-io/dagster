@@ -63,7 +63,9 @@ def define_part_fourteen_step_one_pipeline():
 
 def test_only_final():
     solid_result = execute_solid(
-        define_part_fourteen_step_one_pipeline(), 'final', inputs={'num1': 3, 'num2': 4}
+        define_part_fourteen_step_one_pipeline(),
+        'final',
+        inputs={'num1': 3, 'num2': 4},
     )
     assert solid_result.success
     assert solid_result.transformed_value() == 12

@@ -40,7 +40,11 @@ class PublicCloudStore:
         self.conn = PublicCloudConn(credentials)
 
     def record_value(self, context, key, value):
-        context.info('Setting key={key} value={value} in cloud'.format(key=key, value=value))
+        context.info(
+            'Setting key={key} value={value} in cloud'.format(
+                key=key, value=value
+            )
+        )
         set_value_in_cloud_store(self.conn, key, value)
 
 
@@ -49,7 +53,11 @@ class InMemoryStore:
         self.values = {}
 
     def record_value(self, context, key, value):
-        context.info('Setting key={key} value={value} in memory'.format(key=key, value=value))
+        context.info(
+            'Setting key={key} value={value} in memory'.format(
+                key=key, value=value
+            )
+        )
         self.values[key] = value
 
 
@@ -66,14 +74,20 @@ def define_contextless_solids():
         return info.config
 
     @lambda_solid(
-        inputs=[InputDefinition('num_one', Int), InputDefinition('num_two', Int)],
+        inputs=[
+            InputDefinition('num_one', Int),
+            InputDefinition('num_two', Int),
+        ],
         output=OutputDefinition(Int),
     )
     def add_ints(num_one, num_two):
         return num_one + num_two
 
     @lambda_solid(
-        inputs=[InputDefinition('num_one', Int), InputDefinition('num_two', Int)],
+        inputs=[
+            InputDefinition('num_one', Int),
+            InputDefinition('num_two', Int),
+        ],
         output=OutputDefinition(Int),
     )
     def mult_ints(num_one, num_two):
@@ -85,16 +99,23 @@ def define_contextless_solids():
 def define_contextful_solids():
     @solid(config_field=Field(Int), outputs=[OutputDefinition(Int)])
     def injest_a(info):
-        info.context.resources.store.record_value(info.context, 'a', info.config)
+        info.context.resources.store.record_value(
+            info.context, 'a', info.config
+        )
         return info.config
 
     @solid(config_field=Field(Int), outputs=[OutputDefinition(Int)])
     def injest_b(info):
-        info.context.resources.store.record_value(info.context, 'b', info.config)
+        info.context.resources.store.record_value(
+            info.context, 'b', info.config
+        )
         return info.config
 
     @solid(
-        inputs=[InputDefinition('num_one', Int), InputDefinition('num_two', Int)],
+        inputs=[
+            InputDefinition('num_one', Int),
+            InputDefinition('num_two', Int),
+        ],
         outputs=[OutputDefinition(Int)],
     )
     def add_ints(info, num_one, num_two):
@@ -103,7 +124,10 @@ def define_contextful_solids():
         return result
 
     @solid(
-        inputs=[InputDefinition('num_one', Int), InputDefinition('num_two', Int)],
+        inputs=[
+            InputDefinition('num_one', Int),
+            InputDefinition('num_two', Int),
+        ],
         outputs=[OutputDefinition(Int)],
     )
     def mult_ints(info, num_one, num_two):
@@ -151,7 +175,8 @@ def define_part_nine_step_two_pipeline():
         context_definitions={
             'local': PipelineContextDefinition(
                 context_fn=lambda *_args: ExecutionContext.console_logging(
-                    log_level=DEBUG, resources=PartNineResources(InMemoryStore())
+                    log_level=DEBUG,
+                    resources=PartNineResources(InMemoryStore()),
                 )
             )
         },
@@ -175,18 +200,26 @@ def define_part_nine_final_pipeline():
         context_definitions={
             'local': PipelineContextDefinition(
                 context_fn=lambda *_args: ExecutionContext.console_logging(
-                    log_level=DEBUG, resources=PartNineResources(InMemoryStore())
+                    log_level=DEBUG,
+                    resources=PartNineResources(InMemoryStore()),
                 )
             ),
             'cloud': PipelineContextDefinition(
                 context_fn=lambda info: ExecutionContext.console_logging(
-                    resources=PartNineResources(PublicCloudStore(info.config['credentials']))
+                    resources=PartNineResources(
+                        PublicCloudStore(info.config['credentials'])
+                    )
                 ),
                 config_field=Field(
                     Dict(
                         fields={
                             'credentials': Field(
-                                Dict(fields={'user': Field(String), 'pass': Field(String)})
+                                Dict(
+                                    fields={
+                                        'user': Field(String),
+                                        'pass': Field(String),
+                                    }
+                                )
                             )
                         }
                     )
@@ -270,7 +303,9 @@ solids:
     ]
     for yaml_variant in yaml_variants:
 
-        result = execute_pipeline(define_part_nine_step_one_pipeline(), yaml.load(yaml_variant))
+        result = execute_pipeline(
+            define_part_nine_step_one_pipeline(), yaml.load(yaml_variant)
+        )
 
         assert result.success
         assert result.result_for_solid('injest_a').transformed_value() == 2
@@ -302,7 +337,12 @@ solids:
     assert result.result_for_solid('add_ints').transformed_value() == 5
     assert result.result_for_solid('mult_ints').transformed_value() == 6
 
-    assert result.context.resources.store.values == {'a': 2, 'b': 3, 'add': 5, 'mult': 6}
+    assert result.context.resources.store.values == {
+        'a': 2,
+        'b': 3,
+        'add': 5,
+        'mult': 6,
+    }
 
 
 def test_intro_tutorial_part_nine_final_cloud_success():

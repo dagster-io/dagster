@@ -14,7 +14,9 @@ watch:
 	--drop dagster/dagster dagster/dagster_tests/ dagster-ge/dagster_ge dagster-ge/dagster_ge_tests dagit/dagit dagit/dagit_tests
 
 black:
-	black . --line-length 100 -S --fast
+	black . --line-length 100 -S --fast --exclude "build/|buck-out/|dist/|_build/|\.eggs/|\.git/|\.hg/|\.mypy_cache/|\.nox/|\.tox/|\.venv/|python_modules/dagster/dagster/tutorials/" --check
+	black ./dagster/dagster/tutorials --line-length 79 -S --fast --check
+
 
 pylint:
 	pylint --disable=R,C dagster/dagster dagit/dagit dagstermill/dagstermill dagster-pandas/dagster_pandas dagster-sqlalchemy/dagster_sqlalchemy

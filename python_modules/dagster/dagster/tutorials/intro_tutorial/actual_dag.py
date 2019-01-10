@@ -1,4 +1,9 @@
-from dagster import DependencyDefinition, InputDefinition, PipelineDefinition, lambda_solid
+from dagster import (
+    DependencyDefinition,
+    InputDefinition,
+    PipelineDefinition,
+    lambda_solid,
+)
 
 
 @lambda_solid
