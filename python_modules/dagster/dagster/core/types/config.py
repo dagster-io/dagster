@@ -100,10 +100,6 @@ class ConfigType(object):
     def inner_types(self):
         return []
 
-    def construct_from_config_value(self, config_value):
-        'User can override this to customize the construction of a verified value'
-        return config_value
-
 
 # Scalars, Composites, Selectors, Lists, Nullable, Any
 

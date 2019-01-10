@@ -425,7 +425,7 @@ def deserialize_selector_config(selector_type, config_value):
 
     parent_field = selector_type.fields[field_name]
     field_value = _deserialize_config(parent_field.config_type, incoming_field_value)
-    return selector_type.construct_from_config_value({field_name: field_value})
+    return {field_name: field_value}
 
 
 ## Composites
@@ -505,7 +505,7 @@ def deserialize_composite_config_value(composite_type, config_value):
         elif not field_def.is_optional:
             check.failed('Missing non-optional composite member not caught in validation')
 
-    return composite_type.construct_from_config_value(processed_fields)
+    return processed_fields
 
 
 ## Lists

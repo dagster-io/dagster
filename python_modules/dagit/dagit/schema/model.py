@@ -6,6 +6,7 @@ from graphql.execution.base import ResolveInfo
 
 from dagster import check
 from dagster.core.types.evaluator import evaluate_config_value
+from dagster.core.system_config.types import construct_environment_config
 from dagster.core.execution import create_execution_plan_with_typed_environment, get_subset_pipeline
 
 from dagster.utils.error import serializable_error_info_from_exc_info
@@ -104,10 +105,11 @@ def get_execution_plan(info, pipelineName, config):
     def create_plan(pipeline):
         config_or_error = _config_or_error_from_pipeline(info, pipeline, config)
         return config_or_error.chain(
-            lambda config: info.schema.type_named('ExecutionPlan')(
+            lambda validated_config_either: info.schema.type_named('ExecutionPlan')(
                 pipeline,
                 create_execution_plan_with_typed_environment(
-                    pipeline.get_dagster_pipeline(), config.value
+                    pipeline.get_dagster_pipeline(),
+                    construct_environment_config(validated_config_either.value),
                 ),
             )
         )
@@ -125,10 +127,11 @@ def start_pipeline_execution(info, pipelineName, config):
     env_config = config
 
     def get_config_and_start_execution(pipeline):
-        def start_execution(typed_enviroment):
+        def start_execution(validated_config_either):
             new_run_id = str(uuid.uuid4())
             execution_plan = create_execution_plan_with_typed_environment(
-                pipeline.get_dagster_pipeline(), typed_enviroment.value
+                pipeline.get_dagster_pipeline(),
+                construct_environment_config(validated_config_either.value),
             )
             run = pipeline_run_storage.create_run(
                 new_run_id, pipelineName, env_config, execution_plan
@@ -225,9 +228,9 @@ def _pipeline_or_error_from_container(info, container, pipeline_name, solid_subs
 
 def _config_or_error_from_pipeline(info, pipeline, env_config):
     pipeline_env_type = pipeline.get_dagster_pipeline().environment_type
-    config_result = evaluate_config_value(pipeline_env_type, env_config)
+    validated_config = evaluate_config_value(pipeline_env_type, env_config)
 
-    if not config_result.success:
+    if not validated_config.success:
         return EitherError(
             info.schema.type_named('PipelineConfigValidationInvalid')(
                 pipeline=pipeline,
@@ -235,9 +238,9 @@ def _config_or_error_from_pipeline(info, pipeline, env_config):
                     info.schema.type_named('PipelineConfigValidationError').from_dagster_error(
                         info, err
                     )
-                    for err in config_result.errors
+                    for err in validated_config.errors
                 ],
             )
         )
     else:
-        return EitherValue(config_result)
+        return EitherValue(validated_config)
