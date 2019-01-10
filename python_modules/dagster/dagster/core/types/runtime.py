@@ -13,6 +13,7 @@ from .config import ConfigType
 from .config import List as ConfigList
 from .config import Nullable as ConfigNullable
 from .config_schema import InputSchema, OutputSchema, make_input_schema
+from .marshal import MarshallingStrategy
 from .dagster_type import check_dagster_type_param
 from .wrapping import WrappingListType, WrappingNullableType
 
@@ -26,7 +27,14 @@ def check_opt_config_cls_param(config_cls, param_name):
 
 
 class RuntimeType(object):
-    def __init__(self, name=None, description=None, input_schema=None, output_schema=None):
+    def __init__(
+        self,
+        name=None,
+        description=None,
+        input_schema=None,
+        output_schema=None,
+        marshalling_strategy=None,
+    ):
 
         type_obj = type(self)
         if type_obj in RuntimeType.__cache:
@@ -41,6 +49,9 @@ class RuntimeType(object):
         self.description = check.opt_str_param(description, 'description')
         self.input_schema = check.opt_inst_param(input_schema, 'input_schema', InputSchema)
         self.output_schema = check.opt_inst_param(output_schema, 'output_schema', OutputSchema)
+        self.marshalling_strategy = check.opt_inst_param(
+            marshalling_strategy, 'marshalling_strategy', MarshallingStrategy
+        )
 
     __cache = {}
 
