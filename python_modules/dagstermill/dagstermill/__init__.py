@@ -26,7 +26,6 @@ from dagster import (
 
 from dagster.core.definitions import TransformExecutionInfo
 from dagster.core.types.runtime import RuntimeType
-from dagster.core.types.materializable import FileMarshalable
 
 # magic incantation for syncing up notebooks to enclosing virtual environment.
 # I don't claim to understand it.
@@ -132,8 +131,8 @@ def marshal_value(runtime_type, value, target_file):
         return value
     elif runtime_type.is_any and is_json_serializable(value):
         return value
-    elif isinstance(runtime_type, FileMarshalable):
-        runtime_type.marshal_value(value, target_file)
+    elif runtime_type.marshalling_strategy:
+        runtime_type.marshalling_strategy.marshal_value(value, target_file)
         return target_file
     else:
         check.failed('Unsupported type {name}'.format(name=runtime_type.name))
@@ -200,8 +199,8 @@ def unmarshal_value(runtime_type, value):
         return value
     elif runtime_type.is_any and is_json_serializable(value):
         return value
-    elif isinstance(runtime_type, FileMarshalable):
-        return runtime_type.unmarshal_value(value)
+    elif runtime_type.marshalling_strategy:
+        return runtime_type.marshalling_strategy.unmarshal_value(value)
     else:
         check.failed('Unsupported type {name}'.format(name=runtime_type.name))
 

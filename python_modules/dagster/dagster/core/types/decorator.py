@@ -49,7 +49,14 @@ def make_klass_runtime_type_decorated_klass(klass, runtime_type):
     setattr(klass, MAGIC_RUNTIME_TYPE_NAME, runtime_type)
 
 
-def make_dagster_type(existing_type, name=None, description=None):
+def make_dagster_type(
+    existing_type,
+    name=None,
+    description=None,
+    input_schema=None,
+    output_schema=None,
+    marshalling_strategy=None,
+):
     check.type_param(existing_type, 'existing_type')
     check.opt_str_param(name, 'name')
     check.opt_str_param(description, 'description')

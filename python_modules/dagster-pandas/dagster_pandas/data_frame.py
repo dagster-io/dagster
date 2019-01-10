@@ -4,7 +4,7 @@ from dagster import Dict, Field, Path, Selector, String, check, types
 
 from dagster.core.types.config_schema import InputSchema, OutputSchema
 
-from dagster.core.types.materializable import FileMarshalable
+from dagster.core.types.marshal import PickleMarshallingStrategy
 
 
 def define_path_dict_field():
@@ -68,7 +68,7 @@ class PandasDataFrameInputSchema(InputSchema):
             check.failed('Unsupported file_type {file_type}'.format(file_type=file_type))
 
 
-class DataFrame(FileMarshalable, types.PythonObjectType):
+class DataFrame(types.PythonObjectType):
     def __init__(self):
         super(DataFrame, self).__init__(
             name='PandasDataFrame',
@@ -77,4 +77,5 @@ class DataFrame(FileMarshalable, types.PythonObjectType):
     tabular data structure with labeled axes (rows and columns). See http://pandas.pydata.org/''',
             input_schema=PandasDataFrameInputSchema(),
             output_schema=PandasDataFrameOutputSchema(),
+            marshalling_strategy=PickleMarshallingStrategy(),
         )
