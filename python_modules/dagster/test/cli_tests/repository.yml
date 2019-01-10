@@ -1,0 +1,3 @@
+repository:
+  module: dagster.tutorials.intro_tutorial.part_six
+  fn: define_part_six_repo

@@ -8,20 +8,20 @@ from dagster import (
     ExpectationResult,
     Field,
     InputDefinition,
+    Int,
     OutputDefinition,
     PipelineDefinition,
     execute_pipeline,
     lambda_solid,
     solid,
-    types,
 )
 
 
 @solid(
-    config_field=Field(types.Int),
+    config_field=Field(Int),
     outputs=[
         OutputDefinition(
-            types.Int,
+            Int,
             expectations=[
                 ExpectationDefinition(
                     name="check_positive",
@@ -35,14 +35,14 @@ def injest_a(info):
     return info.config
 
 
-@solid(config_field=Field(types.Int), outputs=[OutputDefinition(types.Int)])
+@solid(config_field=Field(Int), outputs=[OutputDefinition(Int)])
 def injest_b(info):
     return info.config
 
 
 @lambda_solid(
-    inputs=[InputDefinition('num_one', types.Int), InputDefinition('num_two', types.Int)],
-    output=OutputDefinition(types.Int),
+    inputs=[InputDefinition('num_one', Int), InputDefinition('num_two', Int)],
+    output=OutputDefinition(Int),
 )
 def add_ints(num_one, num_two):
     return num_one + num_two

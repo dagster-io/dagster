@@ -626,8 +626,7 @@ def create_typed_environment(pipeline, environment=None):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.opt_dict_param(environment, 'environment')
 
-    pipeline_env_type = pipeline.environment_type
-    result = evaluate_config_value(pipeline_env_type, environment)
+    result = evaluate_config_value(pipeline.environment_type, environment)
 
     if not result.success:
         raise PipelineConfigEvaluationError(pipeline, result.errors, environment)

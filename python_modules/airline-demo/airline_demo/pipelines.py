@@ -8,13 +8,15 @@ import tempfile
 
 from dagster import (
     DependencyDefinition,
+    Dict,
     ExecutionContext,
+    Field,
     PipelineContextDefinition,
     PipelineDefinition,
     RepositoryDefinition,
     ResourceDefinition,
     SolidInstance,
-    types,
+    String,
 )
 
 from .solids import (
@@ -64,9 +66,7 @@ def define_null_resource():
 
 
 def define_string_resource():
-    return ResourceDefinition(
-        resource_fn=lambda info: info.config, config_field=types.Field(types.String)
-    )
+    return ResourceDefinition(resource_fn=lambda info: info.config, config_field=Field(String))
 
 
 class TempfileManager(object):
@@ -114,13 +114,13 @@ def define_tempfile_resource():
     return ResourceDefinition(resource_fn=_tempfile_resource_fn)
 
 
-RedshiftConfigData = types.Dict(
+RedshiftConfigData = Dict(
     {
-        'redshift_username': types.Field(types.String),
-        'redshift_password': types.Field(types.String),
-        'redshift_hostname': types.Field(types.String),
-        'redshift_db_name': types.Field(types.String),
-        's3_temp_dir': types.Field(types.String),
+        'redshift_username': Field(String),
+        'redshift_password': Field(String),
+        'redshift_hostname': Field(String),
+        'redshift_db_name': Field(String),
+        's3_temp_dir': Field(String),
     }
 )
 
@@ -160,7 +160,7 @@ def define_redshift_db_info_resource():
         )
 
     return ResourceDefinition(
-        resource_fn=_create_redshift_db_info, config_field=types.Field(RedshiftConfigData)
+        resource_fn=_create_redshift_db_info, config_field=Field(RedshiftConfigData)
     )
 
 
@@ -195,7 +195,7 @@ def define_postgres_db_info_resource():
         )
 
     return ResourceDefinition(
-        resource_fn=_create_postgres_db_info, config_field=types.Field(PostgresConfigData)
+        resource_fn=_create_postgres_db_info, config_field=Field(PostgresConfigData)
     )
 
 
@@ -209,12 +209,12 @@ test_context = PipelineContextDefinition(
     },
 )
 
-PostgresConfigData = types.Dict(
+PostgresConfigData = Dict(
     {
-        'postgres_username': types.Field(types.String),
-        'postgres_password': types.Field(types.String),
-        'postgres_hostname': types.Field(types.String),
-        'postgres_db_name': types.Field(types.String),
+        'postgres_username': Field(String),
+        'postgres_password': Field(String),
+        'postgres_hostname': Field(String),
+        'postgres_db_name': Field(String),
     }
 )
 

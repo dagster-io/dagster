@@ -1,37 +1,18 @@
-from .configurable import ConfigurableFromDict
-from .materializable import Materializeable
-from .builtins import is_wrapping_type
+from dagster import check
+from dagster.core.types.config import ConfigType
 
 
-def iterate_types(dagster_type, seen_config_schemas):
-    # HACK HACK HACK
-    # This is quite terrible and stems from the confusion between
-    # the runtime and config type systems. The problem here is that
-    # materialization config schemas can themselves contain scalars
-    # and without some kind of check we get into an infinite recursion
-    # situation. The real fix will be to separate config and runtime types
-    # in which case the config "Int" and the runtime "Int" will actually be
-    # separate concepts
-
-    if is_wrapping_type(dagster_type):
-        for dt in iterate_types(dagster_type.inner_type, seen_config_schemas):
-            yield dt
+def iterate_config_types(config_type):
+    check.inst_param(config_type, 'config_type', ConfigType)
+    if config_type.is_list or config_type.is_nullable:
+        for inner_type in iterate_config_types(config_type.inner_type):
+            yield inner_type
         return
 
-    if isinstance(dagster_type, Materializeable):
-        # Guaranteed to work after isinstance check
-        # pylint: disable=E1101
-        config_schema = dagster_type.define_materialization_config_schema()
-        if not config_schema in seen_config_schemas:
-            seen_config_schemas.add(config_schema)
-            yield config_schema
-            for inner_type in iterate_types(config_schema, seen_config_schemas):
+    if config_type.has_fields:
+        for field_type in config_type.fields.values():
+            for inner_type in iterate_config_types(field_type.config_type):
                 yield inner_type
 
-    if isinstance(dagster_type, ConfigurableFromDict):
-        for field_type in dagster_type.field_dict.values():
-            for inner_type in iterate_types(field_type.dagster_type, seen_config_schemas):
-                yield inner_type
-
-    if dagster_type.is_named:
-        yield dagster_type
+    if config_type.type_attributes.is_named:
+        yield config_type

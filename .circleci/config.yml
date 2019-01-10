@@ -98,20 +98,19 @@ jobs:
       - run:
           name: Install Dependencies
           command: |
-            sudo pip install -r python_modules/dagster/dev-requirements.txt
-            sudo pip install -e python_modules/dagster
-            sudo pip install -e python_modules/dagit
-            sudo pip install -r python_modules/dagit/dev-requirements.txt
-            sudo pip install -e python_modules/dagstermill
-            sudo pip install -e python_modules/dagster-contrib
-            sudo pip install -e python_modules/dagster-contrib[pandas]
-            sudo pip install -e python_modules/dagster-contrib[sqlalchemy]
+            sudo pip install -r python_modules/dagster/dev-requirements.txt -qqq
+            sudo pip install -e python_modules/dagster -qqq
+            sudo pip install -e python_modules/dagit -qqq
+            sudo pip install -r python_modules/dagit/dev-requirements.txt -qqq
+            sudo pip install -e python_modules/dagstermill -qqq
+            sudo pip install -e python_modules/dagster-pandas -qqq
+            sudo pip install -e python_modules/dagster-sqlalchemy -qqq
 
       - attach_workspace:
           at: /tmp/workspace
 
       # only block warnings for now
-      - run: pylint python_modules/dagster/dagster python_modules/dagit/dagit python_modules/dagstermill/dagstermill python_modules/dagster-contrib/dagster_contrib --rcfile=python_modules/.pylintrc --disable=R,C
+      - run: pylint python_modules/dagster/dagster python_modules/dagit/dagit python_modules/dagstermill/dagstermill python_modules/dagster-pandas/dagster_pandas python_modules/dagster-sqlalchemy/dagster_sqlalchemy --rcfile=python_modules/.pylintrc --disable=R,C
 
   dagit-py36: &dagit-template
     docker:
@@ -196,7 +195,10 @@ jobs:
             pushd python_modules/dagstermill
             tox -e $TOXENV
             popd
-            pushd python_modules/dagster-contrib
+            pushd python_modules/dagster-pandas
+            tox -e $TOXENV
+            popd
+            pushd python_modules/dagster-sqlalchemy
             tox -e $TOXENV
             popd
             pushd python_modules/dagma
@@ -206,7 +208,8 @@ jobs:
       - run:
           command: |
             mv python_modules/dagstermill/.coverage python_modules/.coverage.dagstermill.${CIRCLE_BUILD_NUM}
-            mv python_modules/dagster-contrib/.coverage python_modules/.coverage.dagster-contrib.${CIRCLE_BUILD_NUM}
+            mv python_modules/dagster-pandas/.coverage python_modules/.coverage.dagster-pandas.${CIRCLE_BUILD_NUM}
+            mv python_modules/dagster-sqlalchemy/.coverage python_modules/.coverage.dagster-sqlalchemy.${CIRCLE_BUILD_NUM}
             mv python_modules/dagma/.coverage python_modules/.coverage.dagma.${CIRCLE_BUILD_NUM}
 
       - persist_to_workspace:

@@ -1,6 +1,6 @@
 from dagster import check
 
-from dagster.core.types import Field
+from dagster.core.types.field import Field
 
 from .input import InputDefinition
 

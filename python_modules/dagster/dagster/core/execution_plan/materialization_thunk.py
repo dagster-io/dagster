@@ -2,7 +2,7 @@ from dagster import check
 
 from dagster.core.definitions import Result, Solid, OutputDefinition
 
-from dagster.core.types.materializable import Materializeable
+from dagster.core.types.runtime import RuntimeType
 
 from .objects import (
     ExecutionPlanInfo,
@@ -19,12 +19,13 @@ MATERIALIZATION_THUNK_INPUT = 'materialization_thunk_input'
 MATERIALIZATION_THUNK_OUTPUT = 'materialization_thunk_output'
 
 
-def _create_materialization_lambda(materializable, config_spec):
-    check.inst_param(materializable, 'materializable', Materializeable)
+def _create_materialization_lambda(runtime_type, config_spec):
+    check.inst_param(runtime_type, 'runtime_type', RuntimeType)
+    check.invariant(runtime_type.output_schema, 'Must have output schema')
 
     def _fn(_info, _step, inputs):
         runtime_value = inputs[MATERIALIZATION_THUNK_INPUT]
-        materializable.materialize_runtime_value(config_spec, runtime_value)
+        runtime_type.output_schema.materialize_runtime_value(config_spec, runtime_value)
         yield Result(runtime_value, MATERIALIZATION_THUNK_OUTPUT)
 
     return _fn
@@ -61,18 +62,18 @@ def decorate_with_output_materializations(execution_info, solid, output_def, sub
                 step_inputs=[
                     StepInput(
                         name=MATERIALIZATION_THUNK_INPUT,
-                        dagster_type=output_def.dagster_type,
+                        runtime_type=output_def.runtime_type,
                         prev_output_handle=subplan.terminal_step_output_handle,
                     )
                 ],
                 step_outputs=[
                     StepOutput(
-                        name=MATERIALIZATION_THUNK_OUTPUT, dagster_type=output_def.dagster_type
+                        name=MATERIALIZATION_THUNK_OUTPUT, runtime_type=output_def.runtime_type
                     )
                 ],
                 tag=StepTag.MATERIALIZATION_THUNK,
                 solid=solid,
-                compute_fn=_create_materialization_lambda(output_def.dagster_type, output_spec),
+                compute_fn=_create_materialization_lambda(output_def.runtime_type, output_spec),
             )
         )
 

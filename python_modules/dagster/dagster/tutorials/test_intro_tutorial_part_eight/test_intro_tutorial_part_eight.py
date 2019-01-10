@@ -5,34 +5,36 @@ import pytest
 from dagster import (
     DagsterInvariantViolationError,
     DependencyDefinition,
+    Dict,
     Field,
     InputDefinition,
+    Int,
     OutputDefinition,
     PipelineConfigEvaluationError,
     PipelineDefinition,
     RepositoryDefinition,
+    String,
     execute_pipeline,
     lambda_solid,
     solid,
-    types,
 )
 
 from dagster.utils import load_yaml_from_path, script_relative_path
 
-WordConfig = types.Dict({'word': Field(types.String)})
+WordConfig = Dict({'word': Field(String)})
 
 
-@solid(config_field=Field(types.Dict({'word': Field(types.String)})))
+@solid(config_field=Field(Dict({'word': Field(String)})))
 def double_the_word_with_typed_config(info):
     return info.config['word'] * 2
 
 
-@solid(config_field=Field(WordConfig), outputs=[OutputDefinition(types.String)])
+@solid(config_field=Field(WordConfig), outputs=[OutputDefinition(String)])
 def typed_double_word(info):
     return info.config['word'] * 2
 
 
-@solid(config_field=Field(WordConfig), outputs=[OutputDefinition(types.Int)])
+@solid(config_field=Field(WordConfig), outputs=[OutputDefinition(Int)])
 def typed_double_word_mismatch(info):
     return info.config['word'] * 2
 

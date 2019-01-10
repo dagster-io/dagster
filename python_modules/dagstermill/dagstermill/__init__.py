@@ -24,9 +24,8 @@ from dagster import (
     types,
 )
 
-from dagster.core.types.configurable import ConfigurableFromScalar
 from dagster.core.definitions import TransformExecutionInfo
-from dagster.core.types.builtins import MaterializeableBuiltinScalar
+from dagster.core.types.runtime import RuntimeType
 from dagster.core.types.materializable import FileMarshalable
 
 # magic incantation for syncing up notebooks to enclosing virtual environment.
@@ -121,23 +120,23 @@ class Manager:
                 )
             )
 
-        dagster_type = solid_def.output_def_named(output_name).dagster_type
+        runtime_type = solid_def.output_def_named(output_name).runtime_type
 
         out_file = os.path.join(dm_context.marshal_dir, 'output-{}'.format(output_name))
-        pm.record(output_name, marshal_value(dagster_type, value, out_file))
+        pm.record(output_name, marshal_value(runtime_type, value, out_file))
 
 
-def marshal_value(dagster_type, value, target_file):
-    if isinstance(dagster_type, MaterializeableBuiltinScalar):
-        ## assume type check passes for now
+def marshal_value(runtime_type, value, target_file):
+    check.inst_param(runtime_type, 'runtime_type', RuntimeType)
+    if runtime_type.is_scalar:
         return value
-    elif dagster_type.is_any and is_json_serializable(value):
+    elif runtime_type.is_any and is_json_serializable(value):
         return value
-    elif isinstance(dagster_type, FileMarshalable):
-        dagster_type.marshal_value(value, target_file)
+    elif isinstance(runtime_type, FileMarshalable):
+        runtime_type.marshal_value(value, target_file)
         return target_file
     else:
-        check.failed('Unsupported type {name}'.format(name=dagster_type.name))
+        check.failed('Unsupported type {name}'.format(name=runtime_type.name))
 
 
 MANAGER_FOR_NOTEBOOK_INSTANCE = Manager()
@@ -186,24 +185,25 @@ def serialize_dm_context(transform_execution_info, inputs):
     input_defs = transform_execution_info.solid_def.input_defs
     input_def_dict = {inp.name: inp for inp in input_defs}
     for input_name, input_value in inputs.items():
-        dagster_type = input_def_dict[input_name].dagster_type
+        runtime_type = input_def_dict[input_name].runtime_type
 
         new_inputs_structure['inputs'][input_name] = marshal_value(
-            dagster_type, input_value, os.path.join(marshal_dir, 'input-{}'.format(input_name))
+            runtime_type, input_value, os.path.join(marshal_dir, 'input-{}'.format(input_name))
         )
 
     return json.dumps(new_inputs_structure)
 
 
-def unmarshal_value(dagster_type, value):
-    if dagster_type.configurable_from_scalar:
+def unmarshal_value(runtime_type, value):
+    check.inst_param(runtime_type, 'runtime_type', RuntimeType)
+    if runtime_type.is_scalar:
         return value
-    elif dagster_type.is_any and is_json_serializable(value):
+    elif runtime_type.is_any and is_json_serializable(value):
         return value
-    elif isinstance(dagster_type, FileMarshalable):
-        return dagster_type.unmarshal_value(value)
+    elif isinstance(runtime_type, FileMarshalable):
+        return runtime_type.unmarshal_value(value)
     else:
-        check.failed('Unsupported type {name}'.format(name=dagster_type.name))
+        check.failed('Unsupported type {name}'.format(name=runtime_type.name))
 
 
 def deserialize_dm_context(serialized_dm_context):
@@ -225,7 +225,7 @@ def deserialize_dm_context(serialized_dm_context):
     inputs = {}
     for input_name, input_value in inputs_data.items():
         input_def = solid_def.input_def_named(input_name)
-        inputs[input_name] = unmarshal_value(input_def.dagster_type, input_value)
+        inputs[input_name] = unmarshal_value(input_def.runtime_type, input_value)
 
     return RemotedDagstermillContext(
         pipeline_def=pipeline_def,
@@ -271,7 +271,7 @@ def _dm_solid_transform(name, notebook_path):
                 if output_def.name in output_nb.data:
 
                     value = unmarshal_value(
-                        output_def.dagster_type, output_nb.data[output_def.name]
+                        output_def.runtime_type, output_nb.data[output_def.name]
                     )
 
                     yield Result(value, output_def.name)

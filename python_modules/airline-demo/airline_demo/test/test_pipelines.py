@@ -15,7 +15,7 @@ from airline_demo.pipelines import (
 @pytest.mark.spark
 @pytest.mark.db
 @pytest.mark.py3
-def test_pipelines():
+def test_all_airline_pipelines():
     download_config_object = load_yaml_from_globs(
         script_relative_path('../../environments/local_base.yml'),
         script_relative_path('../../environments/local_fast_download.yml'),

@@ -1,20 +1,11 @@
+from dagster.core import types
+
 from dagster.core.execution import (
     PipelineConfigEvaluationError,
     PipelineExecutionResult,
     SolidExecutionResult,
     execute_pipeline,
     execute_pipeline_iterator,
-)
-
-from dagster.core.types.configurable import (
-    Configurable,
-    ConfigurableFromAny,
-    ConfigurableFromList,
-    ConfigurableFromNullable,
-    ConfigurableFromScalar,
-    ConfigurableObjectFromDict,
-    ConfigurableSelectorFromDict,
-    Field,
 )
 
 from dagster.core.execution_context import ExecutionContext, ReentrantInfo
@@ -48,13 +39,31 @@ from dagster.core.errors import (
     DagsterUserCodeExecutionError,
 )
 
-from dagster.core.types.evaluator import DagsterEvaluateConfigValueError
 
 from dagster.core.utility_solids import define_stub_solid
 
-from dagster.utils.test import execute_solid, execute_solids
 
-import dagster.core.types as types
+from dagster.core.types import (
+    Any,
+    Bool,
+    Dict,
+    Field,
+    Float,
+    Int,
+    List,
+    NamedDict,
+    Nullable,
+    Path,
+    PythonObjectType,
+    String,
+)
+
+from dagster.core.types.decorator import dagster_type, make_dagster_type
+from dagster.core.types.config import ConfigType
+from dagster.core.types.evaluator import DagsterEvaluateConfigValueError
+from dagster.core.types.runtime import RuntimeType
+
+from dagster.utils.test import execute_solid, execute_solids
 
 from .version import __version__
 
@@ -101,5 +110,14 @@ __all__ = [
     'execute_solid',
     'execute_solids',
     # types
-    'types',
+    'Any',
+    'Bool',
+    'Dict',
+    'Float',
+    'Int',
+    'List',
+    'NamedDict',
+    'Nullable',
+    'Path',
+    'String',
 ]

@@ -6,7 +6,11 @@ from .context import PipelineContextDefinition, default_pipeline_context_definit
 
 from .dependency import DependencyDefinition, DependencyStructure, Solid
 
-from .pipeline_creation import create_execution_structure, construct_type_dictionary
+from .pipeline_creation import (
+    create_execution_structure,
+    construct_config_type_dictionary,
+    construct_runtime_type_dictionary,
+)
 
 from .utils import check_opt_two_dim_dict
 
@@ -87,13 +91,16 @@ class PipelineDefinition(object):
         self._solid_dict = pipeline_solid_dict
         self.dependency_structure = dependency_structure
 
-        from dagster.core.system_config.types import EnvironmentConfigType
+        from dagster.core.system_config.types import define_environment_cls
 
-        self.environment_type = EnvironmentConfigType(self)
+        self.environment_cls = define_environment_cls(self)
+        self.environment_type = self.environment_cls.inst()
 
-        self._type_dict = construct_type_dictionary(
+        self._config_type_dict = construct_config_type_dictionary(
             solids, self.context_definitions, self.environment_type
         )
+
+        self._runtime_type_dict = construct_runtime_type_dictionary(solids)
 
     @property
     def display_name(self):
@@ -138,20 +145,23 @@ class PipelineDefinition(object):
         check.str_param(name, 'name')
         return self._solid_dict[name]
 
-    def has_type(self, name):
+    def has_config_type(self, name):
         check.str_param(name, 'name')
-        return name in self._type_dict
+        return name in self._config_type_dict
 
-    def type_named(self, name):
+    def config_type_named(self, name):
         check.str_param(name, 'name')
-        return self._type_dict[name]
+        return self._config_type_dict[name]
 
-    def all_types(self):
-        return self._type_dict.values()
+    def all_config_types(self):
+        return self._config_type_dict.values()
 
     def has_context(self, name):
         check.str_param(name, 'name')
         return name in self.context_definitions
+
+    def all_runtime_types(self):
+        return self._runtime_type_dict.values()
 
     @property
     def solid_defs(self):

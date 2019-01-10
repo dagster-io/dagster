@@ -2,7 +2,7 @@ from collections import namedtuple
 
 from dagster import check
 
-from dagster.core import types
+from dagster.core.types import Field, Dict, String
 from dagster.core.execution_context import ExecutionContext
 from dagster.core.system_config.objects import DEFAULT_CONTEXT_NAME
 
@@ -74,7 +74,7 @@ context_fn (callable):
 
             description (str): Description of the context definition.
         '''
-        self.config_field = check.opt_inst_param(config_field, 'config_field', types.Field)
+        self.config_field = check.opt_inst_param(config_field, 'config_field', Field)
         self.context_fn = check.opt_callable_param(
             context_fn, 'context_fn', lambda *args, **kwargs: ExecutionContext()
         )
@@ -94,14 +94,8 @@ def default_pipeline_context_definitions():
         return context
 
     default_context_def = PipelineContextDefinition(
-        config_field=types.Field(
-            types.Dict(
-                {
-                    'log_level': types.Field(
-                        dagster_type=types.String, is_optional=True, default_value='INFO'
-                    )
-                }
-            )
+        config_field=Field(
+            Dict({'log_level': Field(dagster_type=String, is_optional=True, default_value='INFO')})
         ),
         context_fn=_default_context_fn,
     )
