@@ -1,6 +1,6 @@
 import pandas as pd
 
-from dagster import Dict, Field, Path, Selector, String, check, types, make_dagster_type
+from dagster import Dict, Field, Path, Selector, String, check, make_dagster_type
 
 from dagster.core.types.config_schema import InputSchema, OutputSchema
 
