@@ -2,19 +2,25 @@ from dagster import check
 from .runtime import PythonObjectType, RuntimeType
 
 
+def _create_object_type_class(**kwargs):
+    class _ObjectType(PythonObjectType):
+        def __init__(self):
+            super(_ObjectType, self).__init__(**kwargs)
+
+    return _ObjectType
+
+
 def _decorate_as_dagster_type(
     bare_cls, name, description, input_schema=None, output_schema=None, marshalling_strategy=None
 ):
-    class _ObjectType(PythonObjectType):
-        def __init__(self):
-            super(_ObjectType, self).__init__(
-                name=name,
-                description=description,
-                python_type=bare_cls,
-                input_schema=input_schema,
-                output_schema=output_schema,
-                marshalling_strategy=marshalling_strategy,
-            )
+    _ObjectType = _create_object_type_class(
+        name=name,
+        description=description,
+        python_type=bare_cls,
+        input_schema=input_schema,
+        output_schema=output_schema,
+        marshalling_strategy=marshalling_strategy,
+    )
 
     type_inst = _ObjectType.inst()
 
