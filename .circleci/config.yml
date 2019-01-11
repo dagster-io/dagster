@@ -66,17 +66,14 @@ workflows:
             - airline-demo-py27
           context: coveralls
   nightlies:
-      - schedule:
-          cron: "0 8 * * *"
-          filters:
-            branches:
-              only:
-                - master
+    schedule:
+      cron: "0 8 * * *"
+      filters:
+        branches:
+          only:
+            - master
     jobs:
-      - coverage
-
-In the above example, the commit workflow has no triggers key and will run on every git push. The nightly workflow has a triggers key and will run on the specified schedule.
-Specifying a Valid Schedule
+      - nightly
 
 jobs:
   format:
@@ -432,4 +429,27 @@ jobs:
           coverage combine
           coveralls
 
+  nightly:
+    docker:
+      - image: circleci/python:3.7.2
 
+    working_directory: ~/repo
+
+    steps:
+      - checkout
+
+      - run:
+          name: Install requitements
+          command: sudo pip install -r bin/requirements.txt
+
+          - run:
+          name: Install click
+          command: sudo pip install twine==1.12.1
+
+      - run:
+          name: Format
+          command: black python_modules --line-length 100 -S --fast --check --exclude "build/|buck-out/|dist/|_build/|\.eggs/|\.git/|\.hg/|\.mypy_cache/|\.nox/|\.tox/|\.venv/|python_modules/dagster/dagster/tutorials/"
+
+      - run:
+          name: Format
+          command: black python_modules/dagster/dagster/tutorials --line-length 79 -S --fast --check
