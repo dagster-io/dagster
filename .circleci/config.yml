@@ -443,8 +443,8 @@ jobs:
           command: sudo pip install -r bin/requirements.txt
 
           - run:
-          name: Install click
-          command: sudo pip install twine==1.12.1
+          name: Publish nightlies
+          command: python bin/publish.py --nightlies
 
       - run:
           name: Format
