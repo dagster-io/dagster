@@ -17,9 +17,16 @@ def long_description():
         return fh.read()
 
 
-version = {}
-with open("dagit/version.py") as fp:
-    exec(fp.read(), version)  # pylint: disable=W0122
+def get_version(name):
+    version = {}
+    with open("dagit/version.py") as fp:
+        exec(fp.read(), version)  # pylint: disable=W0122
+
+    if name == 'dagit':
+        return version['__version__']
+    else:
+        return version['__version__'] + version['__nightly__']
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--nightly', action='store_true')
@@ -28,7 +35,7 @@ parser.add_argument('--nightly', action='store_true')
 def _do_setup(name='dagit'):
     setup(
         name=name,
-        version=version['__version__'],
+        version=get_version(name),
         author='Elementl',
         license='Apache-2.0',
         description='Web UI for dagster.',

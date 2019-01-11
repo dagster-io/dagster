@@ -9,9 +9,16 @@ if sys.version_info[0] < 3:
 else:
     import builtins
 
-version = {}
-with open("dagster-ge/version.py") as fp:
-    exec(fp.read(), version)  # pylint: disable=W0122
+
+def get_version(name):
+    version = {}
+    with open("dagster_ge/version.py") as fp:
+        exec(fp.read(), version)  # pylint: disable=W0122
+
+    if name == 'dagster-ge':
+        return version['__version__']
+    else:
+        return version['__version__'] + version['__nightly__']
 
 
 parser = argparse.ArgumentParser()
@@ -21,7 +28,7 @@ parser.add_argument('--nightly', action='store_true')
 def _do_setup(name='dagster-ge'):
     setup(
         name=name,
-        version=version['__version__'],
+        version=get_version(name),
         author='Elementl',
         license='Apache-2.0',
         description='Great Expectations plugin for Dagster',
