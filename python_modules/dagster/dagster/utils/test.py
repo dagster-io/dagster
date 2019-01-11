@@ -11,12 +11,12 @@ from dagster import (
     PipelineDefinition,
     SolidInstance,
     check,
-    define_stub_solid,
     execute_pipeline,
 )
 
 from dagster.core.execution import build_sub_pipeline
 from dagster.core.execution_context import RuntimeExecutionContext
+from dagster.core.utility_solids import define_stub_solid
 
 
 def create_test_runtime_execution_context(loggers=None, resources=None):

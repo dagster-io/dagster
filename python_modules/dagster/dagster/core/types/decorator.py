@@ -87,4 +87,3 @@ def as_dagster_type(
         output_schema=output_schema,
         marshalling_strategy=marshalling_strategy,
     )
-
