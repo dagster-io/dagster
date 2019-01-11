@@ -65,14 +65,14 @@ workflows:
             - airline-demo-py35
             - airline-demo-py27
           context: coveralls
-  nightlies:
+  nightly:
     triggers:
       - schedule:
-        cron: "0 8 * * *"
-        filters:
-          branches:
-            only:
-              - master
+          cron: "0 8 * * *"
+          filters:
+            branches:
+              only:
+                - master
     jobs:
       - nightly
 
