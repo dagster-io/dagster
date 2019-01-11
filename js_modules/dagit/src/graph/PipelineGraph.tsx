@@ -80,10 +80,12 @@ class PipelineGraphContents extends React.PureComponent<
       selectedSolid
     } = this.props;
 
+    const { highlightedConnections } = this.state;
+
     const isHighlighted = (c: ILayoutConnection) => {
       const from = c.from.solidName;
       const to = c.to.solidName;
-      return this.state.highlightedConnections.find(
+      return highlightedConnections.find(
         h => (h.a === from && h.b === to) || (h.b === from && h.a === to)
       );
     };
@@ -112,6 +114,7 @@ class PipelineGraphContents extends React.PureComponent<
             }
             layout={layout.solids[solid.name]}
             selected={selectedSolid === solid}
+            highlightedConnections={highlightedConnections}
             dim={
               highlightedSolids.length > 0 &&
               highlightedSolids.indexOf(solid) == -1

@@ -5,17 +5,21 @@ const PipelineColorScale = scaleOrdinal({
   domain: [
     "source",
     "input",
+    "inputHighlighted",
     "solid",
     "solidDarker",
     "output",
+    "outputHighlighted",
     "materializations"
   ],
   range: [
     Colors.TURQUOISE5,
     Colors.TURQUOISE3,
+    Colors.TURQUOISE1,
     "#DBE6EE",
     "#7D8C97",
     Colors.BLUE3,
+    Colors.BLUE1,
     Colors.ORANGE5
   ]
 });
