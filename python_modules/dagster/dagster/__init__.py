@@ -59,7 +59,7 @@ from dagster.core.types import (
     String,
 )
 
-from dagster.core.types.decorator import dagster_type, make_dagster_type
+from dagster.core.types.decorator import dagster_type, as_dagster_type, create_dagster_type
 from dagster.core.types.config import ConfigType
 from dagster.core.types.evaluator import DagsterEvaluateConfigValueError
 from dagster.core.types.runtime import RuntimeType
