@@ -2,7 +2,7 @@ from dagster import check
 from .runtime import PythonObjectType, RuntimeType
 
 
-def create_inner_class(
+def _decorate_as_dagster_type(
     bare_cls, name, description, input_schema=None, output_schema=None, marshalling_strategy=None
 ):
     class _ObjectType(PythonObjectType):
@@ -25,14 +25,14 @@ def create_inner_class(
 def dagster_type(name=None, description=None):
     def _with_args(bare_cls):
         check.type_param(bare_cls, 'bare_cls')
-        return create_inner_class(
+        return _decorate_as_dagster_type(
             bare_cls=bare_cls, name=name if name else bare_cls.__name__, description=description
         )
 
     # check for no args, no parens case
     if callable(name):
         klass = name
-        return create_inner_class(bare_cls=klass, name=klass.__name__, description=None)
+        return _decorate_as_dagster_type(bare_cls=klass, name=klass.__name__, description=None)
 
     return _with_args
 
@@ -67,7 +67,7 @@ def make_dagster_type(
     check.type_param(existing_type, 'existing_type')
     check.opt_str_param(name, 'name')
     check.opt_str_param(description, 'description')
-    return create_inner_class(
+    return _decorate_as_dagster_type(
         existing_type,
         name=existing_type.__name__ if name is None else name,
         description=description,
