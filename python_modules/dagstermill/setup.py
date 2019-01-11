@@ -39,6 +39,7 @@ def _do_setup(name='dagstermill'):
             'ipykernel>=4.9.0',
             'papermill>=0.15.0',
         ],
+        entry_points={"console_scripts": ['dagstermill = dagstermill.cli:main']},
     )
 
 
