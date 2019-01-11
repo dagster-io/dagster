@@ -71,37 +71,37 @@ def publish_module(module, nightly=False, additional_steps=''):
             print(line.decode('utf-8'))
 
 
-def publish_dagster(nightlies):
-    publish_module('dagster', nightlies)
+def publish_dagster(nightly):
+    publish_module('dagster', nightly)
 
 
-def publish_dagit(nightlies):
-    publish_module('dagit', nightlies, additional_steps=DAGIT_ADDITIONAL_STEPS)
+def publish_dagit(nightly):
+    publish_module('dagit', nightly, additional_steps=DAGIT_ADDITIONAL_STEPS)
 
 
-def publish_dagstermill(nightlies):
-    publish_module('dagstermill', nightlies)
+def publish_dagstermill(nightly):
+    publish_module('dagstermill', nightly)
 
 
-def publish_dagster_ge(nightlies):
-    publish_module('dagster-ge', nightlies)
+def publish_dagster_ge(nightly):
+    publish_module('dagster-ge', nightly)
 
 
-def publish_dagster_sqlalchemy(nightlies):
-    publish_module('dagster-sqlalchemy', nightlies)
+def publish_dagster_sqlalchemy(nightly):
+    publish_module('dagster-sqlalchemy', nightly)
 
 
-def publish_dagster_pandas(nightlies):
-    publish_module('dagster-pandas', nightlies)
+def publish_dagster_pandas(nightly):
+    publish_module('dagster-pandas', nightly)
 
 
-def publish_all(nightlies):
-    publish_dagster(nightlies)
-    publish_dagit(nightlies)
-    publish_dagstermill(nightlies)
-    publish_dagster_ge(nightlies)
-    publish_dagster_pandas(nightlies)
-    publish_dagster_sqlalchemy(nightlies)
+def publish_all(nightly):
+    publish_dagster(nightly)
+    publish_dagit(nightly)
+    publish_dagstermill(nightly)
+    publish_dagster_ge(nightly)
+    publish_dagster_pandas(nightly)
+    publish_dagster_sqlalchemy(nightly)
 
 
 def get_most_recent_git_tag():
@@ -288,8 +288,8 @@ def cli():
 
 
 @cli.command()
-@click.option('--nightlies', is_flag=True)
-def publish(nightlies):
+@click.option('--nightly', is_flag=True)
+def publish(nightly):
     """Publishes (uploads) all submodules to PyPI.
 
     Appropriate credentials must be available to twin, e.g. in a ~/.pypirc file, and users must
@@ -311,14 +311,14 @@ PyPI, preferably in the form of a ~/.pypirc file as follows:
     password: <password>
 '''
     )
-    print(
-        'Checking that module versions are in lockstep and match git tag on most recent commit...'
-    )
-    if not nightlies:
+    if not nightly:
+        print(
+            'Checking that module versions are in lockstep and match git tag on most recent commit...'
+        )
         check_versions()
         check_git_status()
     print('Publishing packages to PyPI...')
-    publish_all(nightlies)
+    publish_all(nightly)
 
 
 @cli.command()
