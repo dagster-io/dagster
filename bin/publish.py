@@ -14,7 +14,7 @@ import packaging.version
 from itertools import groupby
 
 PUBLISH_COMMAND = '''rm -rf dist/ && {additional_steps}\\
-python setup.py sdist bdist_wheel && \\
+python setup.py sdist bdist_wheel{nightly} && \\
 twine upload dist/*
 '''
 
@@ -56,10 +56,12 @@ def pushd_module(module_name):
         os.chdir(old_cwd)
 
 
-def publish_module(module, additional_steps=''):
+def publish_module(module, nightly=False, additional_steps=''):
     with pushd_module(module) as cwd:
         process = subprocess.Popen(
-            PUBLISH_COMMAND.format(additional_steps=additional_steps),
+            PUBLISH_COMMAND.format(
+                additional_steps=additional_steps, nightly=' --nightly' if nightly else ''
+            ),
             stderr=subprocess.PIPE,
             cwd=cwd,
             shell=True,
@@ -69,37 +71,37 @@ def publish_module(module, additional_steps=''):
             print(line.decode('utf-8'))
 
 
-def publish_dagster():
-    publish_module('dagster')
+def publish_dagster(nightlies):
+    publish_module('dagster', nightlies)
 
 
-def publish_dagit():
-    publish_module('dagit', additional_steps=DAGIT_ADDITIONAL_STEPS)
+def publish_dagit(nightlies):
+    publish_module('dagit', nightlies, additional_steps=DAGIT_ADDITIONAL_STEPS)
 
 
-def publish_dagstermill():
-    publish_module('dagstermill')
+def publish_dagstermill(nightlies):
+    publish_module('dagstermill', nightlies)
 
 
-def publish_dagster_ge():
-    publish_module('dagster-ge')
+def publish_dagster_ge(nightlies):
+    publish_module('dagster-ge', nightlies)
 
 
-def publish_dagster_sqlalchemy():
-    publish_module('dagster-sqlalchemy')
+def publish_dagster_sqlalchemy(nightlies):
+    publish_module('dagster-sqlalchemy', nightlies)
 
 
-def publish_dagster_pandas():
-    publish_module('dagster-pandas')
+def publish_dagster_pandas(nightlies):
+    publish_module('dagster-pandas', nightlies)
 
 
-def publish_all():
-    publish_dagster()
-    publish_dagit()
-    publish_dagstermill()
-    publish_dagster_ge()
-    publish_dagster_pandas()
-    publish_dagster_sqlalchemy()
+def publish_all(nightlies):
+    publish_dagster(nightlies)
+    publish_dagit(nightlies)
+    publish_dagstermill(nightlies)
+    publish_dagster_ge(nightlies)
+    publish_dagster_pandas(nightlies)
+    publish_dagster_sqlalchemy(nightlies)
 
 
 def get_most_recent_git_tag():
@@ -177,7 +179,9 @@ def get_versions(modules=MODULE_NAMES):
     for module_name in MODULE_NAMES:
         with pushd_module(module_name):
             version = {}
-            with open('{module_name}/version.py'.format(module_name=module_name)) as fp:
+            with open(
+                '{module_name}/version.py'.format(module_name=module_name.replace('-', '_'))
+            ) as fp:
                 exec(fp.read(), version)  # pylint: disable=W0122
             module_versions[module_name] = version['__version__']
     return module_versions
@@ -206,7 +210,10 @@ def set_new_version(version):
     for module_name in MODULE_NAMES:
         with pushd_module(module_name):
             with open(
-                os.path.abspath('{module_name}/version.py'.format(module_name=module_name)), 'w'
+                os.path.abspath(
+                    '{module_name}/version.py'.format(module_name=module_name.replace('-', '_'))
+                ),
+                'w',
             ) as fd:
                 fd.write('__version__ = \'{version}\'\n'.format(version=version))
 
@@ -218,7 +225,9 @@ def commit_new_version(version):
                 [
                     'git',
                     'add',
-                    os.path.join(path_to_module(module_name), module_name, 'version.py'),
+                    os.path.join(
+                        path_to_module(module_name), module_name.replace('-', '_'), 'version.py'
+                    ),
                 ],
                 stderr=subprocess.STDOUT,
             )
@@ -279,7 +288,8 @@ def cli():
 
 
 @cli.command()
-def publish():
+@click.option('--nightlies', is_flag=True)
+def publish(nightlies):
     """Publishes (uploads) all submodules to PyPI.
 
     Appropriate credentials must be available to twin, e.g. in a ~/.pypirc file, and users must
@@ -304,10 +314,11 @@ PyPI, preferably in the form of a ~/.pypirc file as follows:
     print(
         'Checking that module versions are in lockstep and match git tag on most recent commit...'
     )
-    check_versions()
-    check_git_status()
+    if not nightlies:
+        check_versions()
+        check_git_status()
     print('Publishing packages to PyPI...')
-    publish_all()
+    publish_all(nightlies)
 
 
 @cli.command()
