@@ -21,6 +21,7 @@ import { DEFAULT_RESULT_NAME } from "../Util";
 interface ISolidNodeProps {
   layout: IFullSolidLayout;
   solid: SolidNodeFragment;
+  highlightedConnections: { a: string; b: string }[];
   minified: boolean;
   selected: boolean;
   dim: boolean;
@@ -119,10 +120,18 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
         "dependsOn" in item
           ? item.dependsOn && [item.dependsOn]
           : item.dependedBy;
+
       const connections = (connected || []).map(other => ({
         a: other.solid.name,
         b: this.props.solid.name
       }));
+
+      const highlighted = connections.some(
+        ({ a, b }) =>
+          !!this.props.highlightedConnections.find(
+            h => (h.a === a || h.a === b) && (h.b === a || h.b === b)
+          )
+      );
 
       return (
         <g
@@ -137,7 +146,11 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
             stroke="#979797"
             strokeWidth={1}
             maxWidth={300}
-            fill={PipelineColorScale(colorKey)}
+            fill={
+              highlighted
+                ? PipelineColorScale(`${colorKey}Highlighted`)
+                : PipelineColorScale(colorKey)
+            }
             padding={8}
             spacing={7}
             height={height}
