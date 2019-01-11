@@ -22,6 +22,7 @@ def get_version(name):
     with open("dagster/version.py") as fp:
         exec(fp.read(), version)  # pylint: disable=W0122
 
+<<<<<<< HEAD
     if name == 'dagster':
         return version['__version__']
     else:
@@ -69,6 +70,7 @@ def _do_setup(name='dagster'):
             # 'pytest>=3.5.1',
             # 'recommonmark>=0.4.0',
             # 'rope>=0.10.7',
+            # 'snapshottest==0.5.0',
             # 'Sphinx>=1.7.5',
             # 'sphinx-autobuild>=0.7.1',
             # 'yapf>=0.22.0',
