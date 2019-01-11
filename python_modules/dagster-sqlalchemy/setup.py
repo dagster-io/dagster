@@ -21,11 +21,12 @@ def get_version(name):
     version = {}
     with open("dagster_sqlalchemy/version.py") as fp:
         exec(fp.read(), version)  # pylint: disable=W0122
-    
+
     if name == 'dagster-sqlalchemy':
         return version['__version__']
     else:
         return version['__version__'] + version['__nightly__']
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--nightly', action='store_true')
