@@ -21,6 +21,7 @@ IGNORE_FILES = [
     '[A-Z0-9a-z_-]*\\.pickle',
 ]
 
+
 def test_build_all_docs(snapshot):
     pwd = os.getcwd()
     try:
