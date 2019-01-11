@@ -1,4 +1,6 @@
 from dagster import check
+from .config_schema import InputSchema, OutputSchema
+from .marshal import MarshallingStrategy
 from .runtime import PythonObjectType, RuntimeType
 
 
@@ -73,9 +75,38 @@ def make_dagster_type(
     check.type_param(existing_type, 'existing_type')
     check.opt_str_param(name, 'name')
     check.opt_str_param(description, 'description')
+    check.opt_inst_param(input_schema, 'input_schema', InputSchema)
+    check.opt_inst_param(output_schema, 'output_schema', OutputSchema)
+    check.opt_inst_param(marshalling_strategy, 'marshalling_strategy', MarshallingStrategy)
+
     return _decorate_as_dagster_type(
         existing_type,
         name=existing_type.__name__ if name is None else name,
+        description=description,
+        input_schema=input_schema,
+        output_schema=output_schema,
+        marshalling_strategy=marshalling_strategy,
+    )
+
+
+def create_dagster_type(
+    existing_type,
+    name,
+    description=None,
+    input_schema=None,
+    output_schema=None,
+    marshalling_strategy=None,
+):
+    check.type_param(existing_type, 'existing_type')
+    check.str_param(name, 'name')
+    check.opt_str_param(description, 'description')
+    check.opt_inst_param(input_schema, 'input_schema', InputSchema)
+    check.opt_inst_param(output_schema, 'output_schema', OutputSchema)
+    check.opt_inst_param(marshalling_strategy, 'marshalling_strategy', MarshallingStrategy)
+
+    return _create_object_type_class(
+        python_type=existing_type,
+        name=name,
         description=description,
         input_schema=input_schema,
         output_schema=output_schema,
