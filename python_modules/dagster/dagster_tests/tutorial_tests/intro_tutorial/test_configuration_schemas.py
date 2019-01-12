@@ -3,6 +3,7 @@ import pytest
 from dagster import DagsterInvariantViolationError, execute_pipeline, PipelineConfigEvaluationError
 from dagster.tutorials.intro_tutorial.configuration_schemas import (
     define_demo_configuration_schema_pipeline,
+    define_demo_configuration_schema_repo,
     define_typed_demo_configuration_schema_pipeline,
     define_typed_demo_configuration_schema_error_pipeline,
 )
@@ -93,3 +94,9 @@ def test_typed_demo_configuration_schema_error_pipeline_correct_yaml():
                 )
             ),
         )
+
+
+def test_configuration_schema_repository():
+    repo = define_demo_configuration_schema_repo()
+    assert repo
+    assert repo.get_all_pipelines()
