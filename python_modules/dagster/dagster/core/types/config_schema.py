@@ -3,6 +3,7 @@ from abc import ABCMeta, abstractmethod, abstractproperty
 import six
 
 from dagster import check
+from dagster.core.errors import DagsterInvariantViolationError
 
 from .config import resolve_to_config_type
 
@@ -27,7 +28,7 @@ class SelectorInputSchema(InputSchema):
         super(SelectorInputSchema, self).__init__(*args, **kwargs)
 
         if not self.schema_type.is_selector:
-            raise Exception('nope')
+            raise DagsterInvariantViolationError('You must use a Selector in a SelectorInputSchema')
 
     def construct_from_config_value(self, value):
         check.dict_param(value, 'value', key_type=str)
@@ -74,7 +75,9 @@ class SelectorOutputSchema(OutputSchema):
         super(SelectorOutputSchema, self).__init__(*args, **kwargs)
 
         if not self.schema_type.is_selector:
-            raise Exception('nope')
+            raise DagsterInvariantViolationError(
+                'You must use a Selector in a SelectorOutputSchema'
+            )
 
     def materialize_runtime_value(self, config_value, runtime_value):
         check.dict_param(config_value, 'config_value', key_type=str)
