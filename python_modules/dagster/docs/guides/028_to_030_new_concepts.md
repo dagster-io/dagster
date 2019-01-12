@@ -58,7 +58,7 @@ def create_allscripts_fileload_unittest_context(info):
     )
 ```
 
-That's quite the ball of wax for what should be relatively straightforward. And this hides the boilerplate AllScriptsFileloadResources class as well. We're going to break this apart and eliminate the need for that class.
+That's quite the ball of wax for what should be relatively straightforward. And this doesn't even include the boilerplate AllScriptsFileloadResources class as well. We're going to break this apart and eliminate the need for that class.
 
 The only real reusable resource here is the LocalFsHandleResource, so let's break that out into it's own Resource.
 
@@ -80,7 +80,9 @@ def define_local_fs_resource():
 
 This is now a self-contained piece that can be reused in other contexts as well.
 
-Additionally, we now guarantee a system-generated run_id, so the manually created pipeline_guid resource is no longer relevant. The rest of the "resources" in the unittesting context are None, and we have a special helper to create "none" resources.
+Aside: We now guarantee a system-generated run_id, so the manually created pipeline_guid resource is no longer relevant. T
+
+The rest of the "resources" in the unittesting context are None, and we have a special helper to create "none" resources.
 
 Let's put it all together:
 
@@ -122,7 +124,7 @@ def create_allscripts_fileload_unittest_context(info):
     )
 ```
 
-Notice a few things. The bulk of the context creation function is now gone. Instead of having to manually create the `AllscriptsFileloadResources`, that is replacea by a class (a `namedtuple`) that is system-synthesized. Predictably it has N fields, one for each resource. The pipeline-code-facing API is the same, it just requires less boilerplate within the pipeline infrastructure.
+Notice a few things. The bulk of the context creation function is now gone. Instead of having to manually create the `AllscriptsFileloadResources`, that is replaced by a class (a `namedtuple`) that is system-synthesized. Predictably it has N fields, one for each resource. The pipeline-code-facing API is the same, it just requires less boilerplate within the pipeline infrastructure.
 
 **Configuring a Resource**
 
