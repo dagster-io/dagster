@@ -183,5 +183,37 @@ environment = {
 
 While slightly more verbose, you will be able to count on more consistent of configuration between pipelines as you reuse resources, and you an even potentially share resource configuration *between* pipelines using the configuration file merging feature of 0.3.0
 
+Resource Libraries
+------------------
 
+The real promise of resources to build a library of resuable, composable resources. 
 
+For example, here would be a resource to create a redshift connection.
+
+```
+def define_redshift_sa_resource():
+    def _create_resource(info):
+        user = info.config['user']
+        password = info.config['password']
+        host = info.config['host']
+        port = info.config['port']
+        dbname = info.config['dbname']
+        return sa.create_engine(f'postgresql://{user}:{password}@{host}:{port}/{dbname}')
+
+    return ResourceDefinition(
+        resource_fn=_create_resource,
+        config_field=Field(
+            Dict(
+                {
+                    'user' : Field(String),
+                    'password' : Field(String),
+                    'host' : Field(String),
+                    'port' : Field(Int),
+                    'dbname' : Field(String),
+                }
+            )
+        )
+    )
+```
+
+This could be used -- unmodified -- across all your pipelines. This will also make it easier to write reusable solids as they can know that they will be using the same resource. Indeed, we may formalize this in subsequent releases, allowing solids to formally declare their dependencies on specific resource types.
