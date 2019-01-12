@@ -18,11 +18,11 @@ pip install -e python_modules/dagstermill
 
 python -m pytest python_modules/dagstermill
 
-pip install -e python_modules/dagster-contrib
-pip install -e python_modules/dagster-contrib[pandas]
-pip install -e python_modules/dagster-contrib[sqlalchemy]
+pip install -e python_modules/dagster-pandas
+python -m pytest python_modules/dagster-pandas
 
-python -m pytest python_modules/dagster-contrib
+pip install -e python_modules/dagster-sqlalchemy
+python -m pytest python_modules/dagster-sqlalchemy
 
 pip install -e python_modules/dagit
 pip install -r python_modules/dagit/dev-requirements.txt
