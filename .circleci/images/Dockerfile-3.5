@@ -208,6 +208,14 @@ RUN groupadd --gid 3434 circleci \
 
 # Install pipenv
 RUN sudo pip install pipenv
+
+# Install yarn
+RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
+RUN echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
+RUN apt-get install apt-transport-https
+RUN apt-get update
+RUN apt-get install yarn
+
 # END IMAGE CUSTOMIZATIONS
 
 USER circleci

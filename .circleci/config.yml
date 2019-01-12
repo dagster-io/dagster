@@ -65,8 +65,16 @@ workflows:
             - airline-demo-py35
             - airline-demo-py27
           context: coveralls
-
-
+  nightly:
+    triggers:
+      - schedule:
+          cron: "0 8 * * *"
+          filters:
+            branches:
+              only:
+                - master
+    jobs:
+      - nightly
 
 jobs:
   format:
@@ -422,4 +430,34 @@ jobs:
           coverage combine
           coveralls
 
+  nightly:
+    docker:
+      - image: circleci/python:3.7.2
 
+    working_directory: ~/repo
+
+    steps:
+      - checkout
+
+      - run:
+        name: Install requitements
+        command: sudo pip install -r bin/requirements.txt
+
+      # Gruesome, see https://circleci.com/blog/continuously-deploying-python-packages-to-pypi-with-circleci/
+      # https://github.com/pypa/setuptools/issues/954 and linked issues https://github.com/pypa/setuptools/issues/941,
+      # https://github.com/pypa/setuptools/pull/961
+      - run:
+        name: Create ~/.pypirc
+        command: |
+          echo -e "[distutils]" >> ~/.pypirc
+          echo -e "index-servers =" >> ~/.pypirc
+          echo -e "  pypi" >> ~/.pypirc
+          echo -e "" >> ~/.pypirc
+          echo -e "[pypi]" >> ~/.pypirc
+          echo -e "repository: https://upload.pypi.org/legacy/" >> ~/.pypirc
+          echo -e "username: $PYPI_USERNAME" >> ~/.pypirc
+          echo -e "password: $PYPI_PASSWORD" >> ~/.pypirc
+
+      - run:
+        name: Publish nightlies
+        command: python bin/publish.py --nightlies

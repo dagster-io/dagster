@@ -14,7 +14,7 @@ import packaging.version
 from itertools import groupby
 
 PUBLISH_COMMAND = '''rm -rf dist/ && {additional_steps}\\
-python setup.py sdist bdist_wheel && \\
+python setup.py sdist bdist_wheel{nightly} && \\
 twine upload dist/*
 '''
 
@@ -33,6 +33,10 @@ MODULE_NAMES = [
     'dagster',
     'dagstermill',
 ]
+
+
+def normalize_module_name(name):
+    return name.replace('-', '_')
 
 
 def all_equal(iterable):
@@ -56,10 +60,12 @@ def pushd_module(module_name):
         os.chdir(old_cwd)
 
 
-def publish_module(module, additional_steps=''):
+def publish_module(module, nightly=False, additional_steps=''):
     with pushd_module(module) as cwd:
         process = subprocess.Popen(
-            PUBLISH_COMMAND.format(additional_steps=additional_steps),
+            PUBLISH_COMMAND.format(
+                additional_steps=additional_steps, nightly=' --nightly' if nightly else ''
+            ),
             stderr=subprocess.PIPE,
             cwd=cwd,
             shell=True,
@@ -69,37 +75,37 @@ def publish_module(module, additional_steps=''):
             print(line.decode('utf-8'))
 
 
-def publish_dagster():
-    publish_module('dagster')
+def publish_dagster(nightly):
+    publish_module('dagster', nightly)
 
 
-def publish_dagit():
-    publish_module('dagit', additional_steps=DAGIT_ADDITIONAL_STEPS)
+def publish_dagit(nightly):
+    publish_module('dagit', nightly, additional_steps=DAGIT_ADDITIONAL_STEPS)
 
 
-def publish_dagstermill():
-    publish_module('dagstermill')
+def publish_dagstermill(nightly):
+    publish_module('dagstermill', nightly)
 
 
-def publish_dagster_ge():
-    publish_module('dagster-ge')
+def publish_dagster_ge(nightly):
+    publish_module('dagster-ge', nightly)
 
 
-def publish_dagster_sqlalchemy():
-    publish_module('dagster-sqlalchemy')
+def publish_dagster_sqlalchemy(nightly):
+    publish_module('dagster-sqlalchemy', nightly)
 
 
-def publish_dagster_pandas():
-    publish_module('dagster-pandas')
+def publish_dagster_pandas(nightly):
+    publish_module('dagster-pandas', nightly)
 
 
-def publish_all():
-    publish_dagster()
-    publish_dagit()
-    publish_dagstermill()
-    publish_dagster_ge()
-    publish_dagster_pandas()
-    publish_dagster_sqlalchemy()
+def publish_all(nightly):
+    publish_dagster(nightly)
+    publish_dagit(nightly)
+    publish_dagstermill(nightly)
+    publish_dagster_ge(nightly)
+    publish_dagster_pandas(nightly)
+    publish_dagster_sqlalchemy(nightly)
 
 
 def get_most_recent_git_tag():
@@ -161,54 +167,106 @@ def set_git_tag(tag, signed=False):
         raise Exception(str(exc_info.output))
 
 
-def format_module_versions(module_versions):
+def format_module_versions(module_versions, nightly=False):
+    if nightly:
+        return '\n'.join(
+            [
+                '    {module_name}: {version}{nightly}'.format(
+                    module_name=module_name,
+                    version=module_version['__version__'],
+                    nightly=module_version['__nightly__'],
+                )
+                for module_name, module_version in module_versions.items()
+            ]
+        )
+
     return '\n'.join(
         [
-            '    {module_name}: {module_version}'.format(
-                module_name=module_name, module_version=module_version
+            '    {module_name}: {version}'.format(
+                module_name=module_name, version=module_version['__version__']
             )
             for module_name, module_version in module_versions.items()
         ]
     )
 
 
+def get_module_versions(module_name):
+    with pushd_module(module_name):
+        version = {}
+        with open(
+            '{module_name}/version.py'.format(module_name=normalize_module_name(module_name))
+        ) as fp:
+            exec(fp.read(), version)  # pylint: disable=W0122
+        return version
+
+
 def get_versions(modules=MODULE_NAMES):
     module_versions = {}
     for module_name in MODULE_NAMES:
-        with pushd_module(module_name):
-            version = {}
-            with open('{module_name}/version.py'.format(module_name=module_name)) as fp:
-                exec(fp.read(), version)  # pylint: disable=W0122
-            module_versions[module_name] = version['__version__']
+        module_versions[module_name] = get_module_versions(module_name)
     return module_versions
 
 
-def check_versions_equal():
+def check_versions_equal(nightly=False):
     module_versions = get_versions()
     assert all_equal(
-        module_versions.values()
+        [module_version['__version__'] for module_version in module_versions.values()]
     ), 'Module versions must be in lockstep to release. Found:\n{versions}'.format(
         versions=format_module_versions(module_versions)
     )
+    if nightly:
+        assert all_equal(
+            [module_version['__nightly__'] for module_version in module_versions.values()]
+        ), 'Module versions must be in lockstep to release. Found:\n{versions}'.format(
+            versions=format_module_versions(module_versions)
+        )
     return module_versions[MODULE_NAMES[0]]
 
 
-def check_versions():
-    version = check_versions_equal()
+def check_versions(nightly=False):
+    version = check_versions_equal(nightly)
     git_tag = get_git_tag()
 
-    assert version == git_tag, 'Version {version} does not match expected git tag {git_tag}'.format(
-        version=version, git_tag=git_tag
+    assert (
+        version['__version__'] == git_tag
+    ), 'Version {version} does not match expected git tag {git_tag}'.format(
+        version=version['__version__'], git_tag=git_tag
     )
+
+
+def set_version(module_name, version, nightly):
+    with pushd_module(module_name):
+        with open(
+            os.path.abspath(
+                '{module_name}/version.py'.format(module_name=normalize_module_name(module_name))
+            ),
+            'w',
+        ) as fd:
+            fd.write(
+                '__version__ = \'{version}\'\n'
+                '\n'
+                '__nightly__ = \'{nightly}\'\n'.format(version=version, nightly=nightly)
+            )
+
+
+def increment_nightly_version(module_name, version):
+    new_nightly = '.dev' + str(int(version['__nightly__'].split('.dev')[1]) + 1)
+    set_version(module_name, version['__version__'], new_nightly)
+
+
+def reset_nightly_version(module_name, version):
+    set_version(module_name, version['__version__'], '.dev0')
+
+
+def increment_nightly_versions():
+    versions = get_versions()
+    for module_name in MODULE_NAMES:
+        increment_nightly_version(module_name, versions[module_name])
 
 
 def set_new_version(version):
     for module_name in MODULE_NAMES:
-        with pushd_module(module_name):
-            with open(
-                os.path.abspath('{module_name}/version.py'.format(module_name=module_name)), 'w'
-            ) as fd:
-                fd.write('__version__ = \'{version}\'\n'.format(version=version))
+        set_version(module_name, version, '.dev0')
 
 
 def commit_new_version(version):
@@ -218,7 +276,11 @@ def commit_new_version(version):
                 [
                     'git',
                     'add',
-                    os.path.join(path_to_module(module_name), module_name, 'version.py'),
+                    os.path.join(
+                        path_to_module(module_name),
+                        normalize_module_name(module_name),
+                        'version.py',
+                    ),
                 ],
                 stderr=subprocess.STDOUT,
             )
@@ -240,8 +302,8 @@ def check_new_version(version):
         )
     errors = {}
     for module_name, module_version in module_versions.items():
-        if packaging.version.parse(module_version) >= parsed_version:
-            errors[module_name] = module_version
+        if packaging.version.parse(module_version['__version__']) >= parsed_version:
+            errors[module_name] = module_version['__version__']
     if errors:
         raise Exception(
             'Bailing: Found modules with existing versions greater than or equal to the new version '
@@ -279,7 +341,8 @@ def cli():
 
 
 @cli.command()
-def publish():
+@click.option('--nightly', is_flag=True)
+def publish(nightly):
     """Publishes (uploads) all submodules to PyPI.
 
     Appropriate credentials must be available to twin, e.g. in a ~/.pypirc file, and users must
@@ -301,13 +364,16 @@ PyPI, preferably in the form of a ~/.pypirc file as follows:
     password: <password>
 '''
     )
-    print(
-        'Checking that module versions are in lockstep and match git tag on most recent commit...'
-    )
-    check_versions()
-    check_git_status()
+    if not nightly:
+        print(
+            'Checking that module versions are in lockstep and match git tag on most recent commit...'
+        )
+        check_versions()
+        check_git_status()
     print('Publishing packages to PyPI...')
-    publish_all()
+    publish_all(nightly)
+    if nightly:
+        increment_nightly_versions()
 
 
 @cli.command()
