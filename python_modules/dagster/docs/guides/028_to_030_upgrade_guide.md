@@ -1,4 +1,3 @@
-
 This guide is a step-by-step guide for upgrading from dagster 0.2.x to 0.3.0. This represents a substantial upgrade in capabilities but also some breaking API changes. We'll detail them, provide context and reasoning, and instructions about how to upgrade.
 
 Required API Changes
@@ -35,6 +34,27 @@ ImportError: cannot import name 'ConfigDefinition'
 ```
 
 We have eliminated a separate notion of a ConfigDefinition. Instead, we realized the the user provided config in a solid, resource, or context is just a `Field` that you would use to build a dictionary. So replace `ConfigDefinition` with Field. (Generally `config_def=ConfigDefinition` is now `config_field=Field`)
+
+Before:
+
+```
+"production": PipelineContextDefinition(
+    context_fn=generate_production_execution_context,
+    config_def=ConfigDefinition(
+        # ...
+    )
+```
+
+After:
+
+```
+"production": PipelineContextDefinition(
+    context_fn=generate_production_execution_context,
+    config_field=Field(
+       # ...
+    )
+
+```
 
 4. **New, Simpler Dagster Type Definition API.**
 
@@ -325,4 +345,3 @@ After:
         },
     )
 ```
-
