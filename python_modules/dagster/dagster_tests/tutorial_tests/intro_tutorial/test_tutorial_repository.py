@@ -1,4 +1,4 @@
-from ..tutorial_repository import define_repository
+from dagster.tutorials.intro_tutorial.tutorial_repository import define_repository
 
 
 def test_intro_tutorial_repository():
