@@ -2,7 +2,7 @@ import pandas as pd
 
 from dagster import Dict, Field, Path, Selector, String, check, as_dagster_type
 
-from dagster.core.types.config_schema import InputSchema, OutputSchema
+from dagster.core.types.config_schema import SelectorInputSchema, SelectorOutputSchema
 
 from dagster.core.types.marshal import PickleMarshallingStrategy
 
@@ -17,7 +17,7 @@ def define_csv_dict_field():
     )
 
 
-class PandasDataFrameOutputSchema(OutputSchema):
+class PandasDataFrameOutputSchema(SelectorOutputSchema):
     @property
     def schema_cls(self):
         return Selector(
@@ -28,22 +28,20 @@ class PandasDataFrameOutputSchema(OutputSchema):
             }
         )
 
-    def materialize_runtime_value(self, config_spec, runtime_value):
-        file_type, file_options = list(config_spec.items())[0]
-        if file_type == 'csv':
-            path = file_options['path']
-            del file_options['path']
-            return runtime_value.to_csv(path, index=False, **file_options)
-        elif file_type == 'parquet':
-            return runtime_value.to_parquet(file_options['path'])
-        elif file_type == 'table':
-            return runtime_value.to_csv(file_options['path'], sep='\t', index=False)
+    def materialize_selector_runtime_value(self, selector_key, selector_value, runtime_value):
+        if selector_key == 'csv':
+            path = selector_value['path']
+            del selector_value['path']
+            return runtime_value.to_csv(path, index=False, **selector_value)
+        elif selector_key == 'parquet':
+            return runtime_value.to_parquet(selector_value['path'])
+        elif selector_key == 'table':
+            return runtime_value.to_csv(selector_value['path'], sep='\t', index=False)
         else:
-            check.failed('Unsupported file_type {file_type}'.format(file_type=file_type))
-        check.failed('must implement')
+            check.failed('Unsupported file_type {file_type}'.format(file_type=selector_key))
 
 
-class PandasDataFrameInputSchema(InputSchema):
+class PandasDataFrameInputSchema(SelectorInputSchema):
     @property
     def schema_cls(self):
         return Selector(
@@ -54,18 +52,17 @@ class PandasDataFrameInputSchema(InputSchema):
             }
         )
 
-    def construct_from_config_value(self, value):
-        file_type, file_options = list(value.items())[0]
-        if file_type == 'csv':
-            path = file_options['path']
-            del file_options['path']
-            return pd.read_csv(path, **file_options)
-        elif file_type == 'parquet':
-            return pd.read_parquet(file_options['path'])
-        elif file_type == 'table':
-            return pd.read_table(file_options['path'])
+    def construct_from_selector_value(self, selector_key, selector_value):
+        if selector_key == 'csv':
+            path = selector_value['path']
+            del selector_value['path']
+            return pd.read_csv(path, **selector_value)
+        elif selector_key == 'parquet':
+            return pd.read_parquet(selector_value['path'])
+        elif selector_key == 'table':
+            return pd.read_table(selector_value['path'])
         else:
-            check.failed('Unsupported file_type {file_type}'.format(file_type=file_type))
+            check.failed('Unsupported file_type {file_type}'.format(file_type=selector_key))
 
 
 DataFrame = as_dagster_type(
