@@ -1,6 +1,6 @@
 import pandas as pd
 
-from dagster import Dict, Field, Path, Selector, String, check, make_dagster_type
+from dagster import Dict, Field, Path, Selector, String, check, as_dagster_type
 
 from dagster.core.types.config_schema import InputSchema, OutputSchema
 
@@ -68,7 +68,7 @@ class PandasDataFrameInputSchema(InputSchema):
             check.failed('Unsupported file_type {file_type}'.format(file_type=file_type))
 
 
-DataFrame = make_dagster_type(
+DataFrame = as_dagster_type(
     pd.DataFrame,
     name='PandasDataFrame',
     description='''Two-dimensional size-mutable, potentially heterogeneous

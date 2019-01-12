@@ -14,13 +14,13 @@ from dagster import (
     PipelineDefinition,
     execute_pipeline,
     lambda_solid,
-    make_dagster_type,
+    as_dagster_type,
     solid,
 )
 
 from dagster.core.types.runtime import RuntimeType
 
-StringTuple = make_dagster_type(namedtuple('StringTuple', 'str_one str_two'))
+StringTuple = as_dagster_type(namedtuple('StringTuple', 'str_one str_two'))
 
 
 class SSNString(str):
