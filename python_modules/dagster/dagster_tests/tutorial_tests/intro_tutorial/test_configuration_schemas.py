@@ -1,6 +1,6 @@
 import pytest
 
-from dagster import execute_pipeline, PipelineConfigEvaluationError
+from dagster import DagsterInvariantViolationError, execute_pipeline, PipelineConfigEvaluationError
 from dagster.tutorials.intro_tutorial.configuration_schemas import (
     define_demo_configuration_schema_pipeline,
     define_typed_demo_configuration_schema_pipeline,
@@ -78,3 +78,18 @@ def test_typed_demo_configuration_schema_pipeline_correct_yaml():
     for key, value in expected_value.items():
         assert count_letters_result[key] == value
     assert result.result_for_solid('typed_double_the_word').transformed_value() == 'quuxquux'
+
+
+def test_typed_demo_configuration_schema_error_pipeline_correct_yaml():
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match='type failure: Expected valid value for Int but got \'quuxquux\'',
+    ):
+        execute_pipeline(
+            define_typed_demo_configuration_schema_error_pipeline(),
+            load_yaml_from_path(
+                script_relative_path(
+                    '../../../dagster/tutorials/intro_tutorial/configuration_schemas_typed_error.yml'
+                )
+            ),
+        )
