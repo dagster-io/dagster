@@ -41,3 +41,7 @@ popd
 pushd python_modules
 make test_airline
 popd
+
+pushd python_modules
+make rebuild_dagit
+popd
