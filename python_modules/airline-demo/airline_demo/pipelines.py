@@ -61,7 +61,7 @@ def define_value_resource(value):
     return ResourceDefinition(lambda _info: value)
 
 
-def define_null_resource():
+def define_none_resource():
     return define_value_resource(None)
 
 

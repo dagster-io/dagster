@@ -178,7 +178,7 @@ def test_mixed_multiple_resources():
     assert 'after yield bar' in saw[2]
 
 
-def test_null_resource():
+def test_none_resource():
     called = {}
 
     @solid
@@ -187,11 +187,11 @@ def test_null_resource():
         called['yup'] = True
 
     pipeline = PipelineDefinition(
-        name='test_null_resource',
+        name='test_none_resource',
         solids=[solid_test_null],
         context_definitions={
             'default': PipelineContextDefinition(
-                resources={'test_null': ResourceDefinition.null_resource()}
+                resources={'test_null': ResourceDefinition.none_resource()}
             )
         },
     )

@@ -10,8 +10,8 @@ class ResourceDefinition(object):
         self.description = check.opt_str_param(description, 'description')
 
     @staticmethod
-    def null_resource():
-        return ResourceDefinition(resource_fn=lambda _info: None)
+    def none_resource(description=None):
+        return ResourceDefinition(resource_fn=lambda _info: None, description=description)
 
     @staticmethod
     def string_resource(description=None):
