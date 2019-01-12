@@ -1,8 +1,9 @@
 from dagster import execute_pipeline
+from dagster.tutorials.intro_tutorial.hello_dag import define_hello_dag_pipeline
 from dagster.tutorials.utils import check_cli_execute_file_pipeline
 from dagster.utils import script_relative_path
 
-from ..hello_dag import define_hello_dag_pipeline
+from dagster.tutorials.intro_tutorial.hello_dag import define_hello_dag_pipeline
 
 
 def test_intro_tutorial_hello_dag():
@@ -19,5 +20,6 @@ def test_intro_tutorial_hello_dag():
 
 def test_tutorial_cli_hello_dag():
     check_cli_execute_file_pipeline(
-        script_relative_path('../hello_dag.py'), 'define_hello_dag_pipeline'
+        script_relative_path('../../../dagster/tutorials/intro_tutorial/hello_dag.py'),
+        'define_hello_dag_pipeline',
     )
