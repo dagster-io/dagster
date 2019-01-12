@@ -11,10 +11,11 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     RepositoryDefinition,
-    define_stub_solid,
     execute_pipeline,
     types,
 )
+
+from dagster.core.utility_solids import define_stub_solid
 
 from dagster.utils import script_relative_path
 
