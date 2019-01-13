@@ -24,7 +24,7 @@ def test_string_from_inputs():
     pipeline = PipelineDefinition(solids=[str_as_input])
 
     result = execute_pipeline(
-        pipeline, {'solids': {'str_as_input': {'inputs': {'string_input': 'foo'}}}}
+        pipeline, {'solids': {'str_as_input': {'inputs': {'string_input': {'value': 'foo'}}}}}
     )
 
     assert result.success
@@ -44,7 +44,7 @@ def test_string_from_aliased_inputs():
     )
 
     result = execute_pipeline(
-        pipeline, {'solids': {'aliased': {'inputs': {'string_input': 'foo'}}}}
+        pipeline, {'solids': {'aliased': {'inputs': {'string_input': {'value': 'foo'}}}}}
     )
 
     assert result.success

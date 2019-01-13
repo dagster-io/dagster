@@ -1,11 +1,46 @@
 import json
+import pickle
 
 from dagster import check
 
 from .builtin_enum import BuiltinEnum
 from .config import ConfigTypeAttributes
-from .config_schema import OutputSchema
+from .config_schema import OutputSchema, SelectorInputSchema
 from .field import Field, Dict, NamedSelector
+
+
+def define_builtin_scalar_input_schema(scalar_name, config_scalar_type):
+    check.str_param(scalar_name, 'scalar_name')
+
+    schema_cls = NamedSelector(
+        scalar_name + '.InputSchema',
+        {
+            'value': Field(config_scalar_type),
+            'json': define_path_dict_field(),
+            'pickle': define_path_dict_field(),
+        },
+        type_attributes=ConfigTypeAttributes(is_system_config=True),
+    )
+
+    class _BuiltinScalarInputSchema(SelectorInputSchema):
+        def construct_from_selector_value(self, selector_key, selector_value):
+            if selector_key == 'value':
+                return selector_value
+            elif selector_key == 'json':
+                with open(selector_value['path'], 'r') as ff:
+                    value_dict = json.load(ff)
+                    return value_dict['value']
+            elif selector_key == 'pickle':
+                with open(selector_value['path'], 'rb') as ff:
+                    return pickle.load(ff)
+            else:
+                check.failed('Unsupported key {key}'.format(key=selector_key))
+
+        @property
+        def schema_cls(self):
+            return schema_cls
+
+    return _BuiltinScalarInputSchema()
 
 
 def define_path_dict_field():
@@ -17,7 +52,7 @@ def define_builtin_scalar_output_schema(scalar_name):
 
     schema_cls = NamedSelector(
         scalar_name + '.MaterializationSchema',
-        {'json': define_path_dict_field()},
+        {'json': define_path_dict_field(), 'pickle': define_path_dict_field()},
         type_attributes=ConfigTypeAttributes(is_system_config=True),
     )
 
@@ -35,6 +70,10 @@ def define_builtin_scalar_output_schema(scalar_name):
                 json_value = json.dumps({'value': runtime_value})
                 with open(json_file_path, 'w') as ff:
                     ff.write(json_value)
+            elif selector_key == 'pickle':
+                pickle_file_path = selector_value['path']
+                with open(pickle_file_path, 'wb') as ff:
+                    pickle.dump(runtime_value, ff)
             else:
                 check.failed(
                     'Unsupported selector key: {selector_key}'.format(selector_key=selector_key)

@@ -5,7 +5,10 @@ from dagster import check
 from dagster.core.errors import DagsterRuntimeCoercionError
 
 from .builtin_enum import BuiltinEnum
-from .builtin_config_schemas import define_builtin_scalar_output_schema
+from .builtin_config_schemas import (
+    define_builtin_scalar_input_schema,
+    define_builtin_scalar_output_schema,
+)
 from .config import Int as ConfigInt
 from .config import String as ConfigString
 from .config import Any as ConfigAny
@@ -104,7 +107,7 @@ class BuiltinScalarRuntimeType(RuntimeType):
         return True
 
 
-INT_INPUT_SCHEMA = make_input_schema(ConfigInt)
+INT_INPUT_SCHEMA = define_builtin_scalar_input_schema('Int', ConfigInt)
 INT_OUTPUT_SCHEMA = define_builtin_scalar_output_schema('Int')
 
 
@@ -118,7 +121,7 @@ class Int(BuiltinScalarRuntimeType):
         )
 
 
-STRING_INPUT_SCHEMA = make_input_schema(ConfigString)
+STRING_INPUT_SCHEMA = define_builtin_scalar_input_schema('String', ConfigString)
 STRING_OUTPUT_SCHEMA = define_builtin_scalar_output_schema('String')
 
 
