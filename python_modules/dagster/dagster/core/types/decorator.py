@@ -1,6 +1,6 @@
 from dagster import check
 from .config_schema import InputSchema, OutputSchema
-from .marshal import MarshallingStrategy
+from .marshal import MarshallingStrategy, PickleMarshallingStrategy
 from .runtime import PythonObjectType, RuntimeType
 
 
@@ -78,6 +78,9 @@ def as_dagster_type(
     check.opt_inst_param(input_schema, 'input_schema', InputSchema)
     check.opt_inst_param(output_schema, 'output_schema', OutputSchema)
     check.opt_inst_param(marshalling_strategy, 'marshalling_strategy', MarshallingStrategy)
+
+    if marshalling_strategy is None:
+        marshalling_strategy = PickleMarshallingStrategy()
 
     return _decorate_as_dagster_type(
         existing_type,

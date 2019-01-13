@@ -3,7 +3,7 @@ import json
 from dagster import check
 
 from .config import ConfigTypeAttributes, Path, Int, String, Bool, Any
-from .config_schema import OutputSchema, make_input_schema
+from .config_schema import OutputSchema, make_bare_input_schema
 from .field_utils import FieldImpl, Dict, NamedSelector
 
 
@@ -22,8 +22,8 @@ def define_builtin_scalar_output_schema(scalar_name):
 
     class _BuiltinScalarOutputSchema(OutputSchema):
         @property
-        def schema_cls(self):
-            return schema_cls
+        def schema_type(self):
+            return schema_cls.inst()
 
         def materialize_runtime_value(self, config_spec, runtime_value):
             check.dict_param(config_spec, 'config_spec')
@@ -43,17 +43,17 @@ def define_builtin_scalar_output_schema(scalar_name):
 
 
 class BuiltinSchemas:
-    INT_INPUT = make_input_schema(Int)
+    INT_INPUT = make_bare_input_schema(Int)
     INT_OUTPUT = define_builtin_scalar_output_schema('Int')
 
-    STRING_INPUT = make_input_schema(String)
+    STRING_INPUT = make_bare_input_schema(String)
     STRING_OUTPUT = define_builtin_scalar_output_schema('String')
 
-    PATH_INPUT = make_input_schema(Path)
+    PATH_INPUT = make_bare_input_schema(Path)
     PATH_OUTPUT = define_builtin_scalar_output_schema('Path')
 
-    BOOL_INPUT = make_input_schema(Bool)
+    BOOL_INPUT = make_bare_input_schema(Bool)
     BOOL_OUTPUT = define_builtin_scalar_output_schema('Bool')
 
-    ANY_INPUT = make_input_schema(Any)
+    ANY_INPUT = make_bare_input_schema(Any)
     ANY_OUTPUT = define_builtin_scalar_output_schema('Any')

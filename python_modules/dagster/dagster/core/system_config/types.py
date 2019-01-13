@@ -204,7 +204,7 @@ def get_inputs_field(pipeline_def, solid):
         # If this input is not satisfied by a dependency you must
         # provide it via config
         if not pipeline_def.dependency_structure.has_dep(inp_handle):
-            inputs_field_fields[inp.name] = Field(inp.runtime_type.input_schema.schema_cls)
+            inputs_field_fields[inp.name] = Field(type(inp.runtime_type.input_schema.schema_type))
 
     if not inputs_field_fields:
         return None
@@ -231,7 +231,7 @@ def get_outputs_field(pipeline_def, solid):
     output_dict_fields = {}
     for out in [out for out in solid_def.output_defs if out.runtime_type.output_schema]:
         output_dict_fields[out.name] = Field(
-            out.runtime_type.output_schema.schema_cls, is_optional=True
+            type(out.runtime_type.output_schema.schema_type), is_optional=True
         )
 
     output_entry_dict = SystemNamedDict(
