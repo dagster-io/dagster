@@ -7,6 +7,7 @@ from dagster import (
     InputDefinition,
     Int,
     OutputDefinition,
+    Path,
     PipelineDefinition,
     PipelineConfigEvaluationError,
     String,
@@ -34,9 +35,17 @@ def define_test_all_scalars_pipeline():
     def produce_string():
         return 'foo'
 
+    @lambda_solid(inputs=[InputDefinition('path', Path)])
+    def take_path(path):
+        return path
+
+    @lambda_solid(output=OutputDefinition(Path))
+    def produce_path():
+        return '/path/to/foo'
+
     return PipelineDefinition(
         name='test_all_scalars_pipeline',
-        solids=[take_int, produce_int, take_string, produce_string],
+        solids=[take_int, produce_int, take_string, produce_string, take_path, produce_path],
     )
 
 
@@ -171,3 +180,28 @@ def test_string_pickle_schema_roundtrip():
         )
 
         assert source_result.result_for_solid('take_string').transformed_value() == 'foo'
+
+
+def test_path_input_schema_value():
+    result = execute_pipeline(
+        define_test_all_scalars_pipeline(),
+        environment=single_input_env('take_path', 'path', '/a/path'),
+        solid_subset=['take_path'],
+    )
+
+    assert result.success
+    assert result.result_for_solid('take_path').transformed_value() == '/a/path'
+
+
+def test_path_input_schema_failure():
+    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
+        execute_pipeline(
+            define_test_all_scalars_pipeline(),
+            environment=single_input_env('take_path', 'path', {'value': 3343}),
+            solid_subset=['take_path'],
+        )
+
+    assert 'Type failure at path "root:solids:take_path:inputs:path" on type "String"' in str(
+        exc_info.value
+    )
+

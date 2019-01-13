@@ -135,8 +135,14 @@ class String(BuiltinScalarRuntimeType):
         return self.throw_if_not_string(value)
 
 
-class Path(String):
-    pass
+class Path(BuiltinScalarRuntimeType):
+    def __init__(self):
+        super(Path, self).__init__(
+            input_schema=make_input_schema(ConfigString), output_schema=STRING_OUTPUT_SCHEMA
+        )
+
+    def coerce_runtime_value(self, value):
+        return self.throw_if_not_string(value)
 
 
 class Float(RuntimeType):
