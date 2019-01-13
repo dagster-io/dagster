@@ -1,6 +1,7 @@
 from .builtin_enum import BuiltinEnum
 from .wrapping import Nullable, List
-from .field import Dict, Field, NamedDict, Selector
+from .field import Field
+from .field_utils import Dict, NamedDict, Selector, NamedSelector
 from .runtime import PythonObjectType
 
 Any = BuiltinEnum.ANY

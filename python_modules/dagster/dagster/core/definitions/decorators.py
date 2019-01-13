@@ -6,7 +6,7 @@ from dagster import check
 
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 
-from dagster.core.types.field import Field
+from dagster.core.types.field_utils import check_opt_field_param
 
 from . import InputDefinition, OutputDefinition, Result, SolidDefinition
 
@@ -99,7 +99,7 @@ class _Solid(object):
         outputs = outputs or ([OutputDefinition()] if outputs is None else [])
         self.outputs = check.list_param(outputs, 'outputs', OutputDefinition)
         self.description = check.opt_str_param(description, 'description')
-        self.config_field = check.opt_inst_param(config_field, 'config_field', Field)
+        self.config_field = check_opt_field_param(config_field, 'config_field')
 
     def __call__(self, fn):
         check.callable_param(fn, 'fn')

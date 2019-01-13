@@ -1,7 +1,5 @@
 from dagster import check
 
-from .config import resolve_to_config_type
-
 
 class InputSchema:
     @property
@@ -10,6 +8,8 @@ class InputSchema:
 
     @property
     def schema_type(self):
+        from .field import resolve_to_config_type
+
         return resolve_to_config_type(self.schema_cls)
 
     def construct_from_config_value(self, value):
@@ -32,6 +32,8 @@ class OutputSchema:
 
     @property
     def schema_type(self):
+        from .field import resolve_to_config_type
+
         return resolve_to_config_type(self.schema_cls)
 
     def materialize_runtime_value(self, _config_value, _runtime_value):

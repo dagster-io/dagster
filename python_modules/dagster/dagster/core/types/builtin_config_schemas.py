@@ -2,14 +2,13 @@ import json
 
 from dagster import check
 
-from .builtin_enum import BuiltinEnum
-from .config import ConfigTypeAttributes
-from .config_schema import OutputSchema
-from .field import Field, Dict, NamedSelector
+from .config import ConfigTypeAttributes, Path, Int, String, Bool, Any
+from .config_schema import OutputSchema, make_input_schema
+from .field_utils import FieldImpl, Dict, NamedSelector
 
 
 def define_path_dict_field():
-    return Field(Dict({'path': Field(BuiltinEnum.PATH)}))
+    return FieldImpl(Dict({'path': FieldImpl(Path.inst())}).inst())
 
 
 def define_builtin_scalar_output_schema(scalar_name):
@@ -41,3 +40,20 @@ def define_builtin_scalar_output_schema(scalar_name):
                 )
 
     return _BuiltinScalarOutputSchema()
+
+
+class BuiltinSchemas:
+    INT_INPUT = make_input_schema(Int)
+    INT_OUTPUT = define_builtin_scalar_output_schema('Int')
+
+    STRING_INPUT = make_input_schema(String)
+    STRING_OUTPUT = define_builtin_scalar_output_schema('String')
+
+    PATH_INPUT = make_input_schema(Path)
+    PATH_OUTPUT = define_builtin_scalar_output_schema('Path')
+
+    BOOL_INPUT = make_input_schema(Bool)
+    BOOL_OUTPUT = define_builtin_scalar_output_schema('Bool')
+
+    ANY_INPUT = make_input_schema(Any)
+    ANY_OUTPUT = define_builtin_scalar_output_schema('Any')

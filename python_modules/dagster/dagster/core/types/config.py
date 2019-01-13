@@ -6,9 +6,6 @@ from dagster import check
 
 from .builtin_enum import BuiltinEnum
 
-# from .dagster_type import check_dagster_type_param
-from .wrapping import WrappingListType, WrappingNullableType
-
 
 class ConfigTypeAttributes(
     namedtuple('_ConfigTypeAttributes', 'is_builtin is_system_config is_named')
@@ -226,31 +223,6 @@ def List(inner_type):
             )
 
     return _List
-
-
-def resolve_to_config_list(list_type):
-    check.inst_param(list_type, 'list_type', WrappingListType)
-    return List(resolve_to_config_type(list_type.inner_type))
-
-
-def resolve_to_config_nullable(nullable_type):
-    check.inst_param(nullable_type, 'nullable_type', WrappingNullableType)
-    return Nullable(resolve_to_config_type(nullable_type.inner_type))
-
-
-def resolve_to_config_type(dagster_type):
-    if dagster_type is None:
-        return ConfigAny.inst()
-    if isinstance(dagster_type, BuiltinEnum):
-        return ConfigType.from_builtin_enum(dagster_type)
-    if isinstance(dagster_type, WrappingListType):
-        return resolve_to_config_list(dagster_type).inst()
-    if isinstance(dagster_type, WrappingNullableType):
-        return resolve_to_config_nullable(dagster_type).inst()
-    if issubclass(dagster_type, ConfigType):
-        return dagster_type.inst()
-
-    check.failed('should not reach')
 
 
 _CONFIG_MAP = {

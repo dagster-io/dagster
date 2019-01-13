@@ -1,7 +1,6 @@
 from dagster.core.types import Int, Nullable, List
-from dagster.core.types.config import resolve_to_config_type
-
 from dagster.core.types.evaluator import validate_config
+from dagster.core.types.field import resolve_to_config_type
 
 
 def test_config_int():
