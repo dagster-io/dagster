@@ -10,6 +10,7 @@ from .config import Int as ConfigInt
 from .config import String as ConfigString
 from .config import Any as ConfigAny
 from .config import Bool as ConfigBool
+from .config import Path as ConfigPath
 from .config import ConfigType
 from .config import List as ConfigList
 from .config import Nullable as ConfigNullable
@@ -133,8 +134,16 @@ class String(BuiltinScalarRuntimeType):
         return self.throw_if_not_string(value)
 
 
-class Path(String):
-    pass
+PATH_INPUT_SCHEMA = make_input_schema(ConfigPath)
+PATH_OUTPUT_SCHEMA = define_builtin_scalar_output_schema('Path')
+
+
+class Path(BuiltinScalarRuntimeType):
+    def __init__(self):
+        super(Path, self).__init__(input_schema=PATH_INPUT_SCHEMA, output_schema=PATH_OUTPUT_SCHEMA)
+
+    def coerce_runtime_value(self, value):
+        return self.throw_if_not_string(value)
 
 
 class Float(RuntimeType):
