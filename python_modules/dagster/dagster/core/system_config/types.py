@@ -1,6 +1,6 @@
 from dagster import check
 
-from dagster.utils import camelcase
+from dagster.utils import camelcase, single_item
 
 from dagster.core.definitions import (
     PipelineContextDefinition,
@@ -88,12 +88,6 @@ def define_specific_context_config_cls(name, config_field, resources):
             }
         ),
     )
-
-
-def single_item(ddict):
-    check.dict_param(ddict, 'ddict')
-    check.param_invariant(len(ddict) == 1, 'ddict')
-    return list(ddict.items())[0]
 
 
 def define_context_context_cls(pipeline_name, context_definitions):
