@@ -1,7 +1,6 @@
 from dagster import check
 from .builtin_enum import BuiltinEnum
 from .config import Any, ConfigType, List, Nullable
-from .dagster_type import check_dagster_type_param
 from .field_utils import FieldImpl, FIELD_NO_DEFAULT_PROVIDED, INFER_OPTIONAL_COMPOSITE_FIELD
 from .runtime import RuntimeType
 from .wrapping import WrappingListType, WrappingNullableType
@@ -42,16 +41,3 @@ def Field(
     description=None,
 ):
     return FieldImpl(resolve_to_config_type(dagster_type), default_value, is_optional, description)
-
-
-# class Field(FieldImpl):
-#     def __init__(
-#         self,
-#         dagster_type,
-#         default_value=FIELD_NO_DEFAULT_PROVIDED,
-#         is_optional=INFER_OPTIONAL_COMPOSITE_FIELD,
-#         description=None,
-#     ):
-#         check_dagster_type_param(dagster_type, 'dagster_type', ConfigType)
-#         config_type = resolve_to_config_type(dagster_type)
-#         super(Field, self).__init__(config_type, default_value, is_optional, description)
