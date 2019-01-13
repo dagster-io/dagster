@@ -1,4 +1,4 @@
-from dagster import Field, Dict, String, Int, Bool, Nullable, List, Selector
+from dagster import Field, Dict, String, Int, Bool, Nullable, List, Selector, Any
 
 from dagster.core.types.config import resolve_to_config_type
 from dagster.core.types.evaluator import (
@@ -525,3 +525,10 @@ def test_nullable_dict():
     assert eval_config_value_from_dagster_type(
         nullable_dict_with_nullable_int, {'int_field': 1}
     ).success
+
+
+def test_any_with_default_value():
+    dict_with_any = Dict({'any_field': Field(Any, default_value='foo', is_optional=True)})
+    result = eval_config_value_from_dagster_type(dict_with_any, None)
+    assert result.success
+    assert result.value == {'any_field': 'foo'}

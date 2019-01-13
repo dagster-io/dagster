@@ -1,8 +1,12 @@
 from dagster import check
 from dagster.utils import single_item
 
+from .config import ConfigType
+
 
 def apply_default_values(config_type, config_value):
+    check.inst_param(config_type, 'config_type', ConfigType)
+
     if config_type.is_scalar:
         return config_value
     elif config_type.is_selector:
@@ -10,7 +14,7 @@ def apply_default_values(config_type, config_value):
     elif config_type.is_composite:
         return apply_defaults_to_composite_type(config_type, config_value)
     elif config_type.is_list:
-        return apply_defaults_to_list_tpye(config_type, config_value)
+        return apply_defaults_to_list_type(config_type, config_value)
     elif config_type.is_nullable:
         if config_value is None:
             return None
@@ -39,7 +43,6 @@ def apply_default_values_to_selector(selector_type, config_value):
 
 def apply_defaults_to_composite_type(composite_type, config_value):
     check.param_invariant(composite_type.is_composite, 'composite_type')
-
     config_value = check.opt_dict_param(config_value, 'config_value', key_type=str)
 
     fields = composite_type.fields
@@ -62,7 +65,7 @@ def apply_defaults_to_composite_type(composite_type, config_value):
     return processed_fields
 
 
-def apply_defaults_to_list_tpye(list_type, config_value):
+def apply_defaults_to_list_type(list_type, config_value):
     check.param_invariant(list_type.is_list, 'list_type')
 
     if not config_value:
