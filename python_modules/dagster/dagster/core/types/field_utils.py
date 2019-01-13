@@ -1,5 +1,5 @@
 from dagster import check
-from .config import ConfigType
+from .config import ConfigType, ConfigTypeAttributes, DEFAULT_TYPE_ATTRIBUTES
 from .default_applier import apply_default_values
 
 
@@ -109,3 +109,99 @@ class FieldImpl:
             return repr(self._default_value)
 
         return str(self._default_value)
+
+
+class _ConfigHasFields(ConfigType):
+    def __init__(self, fields, *args, **kwargs):
+
+        self.fields = fields
+        # self.fields = check.dict_param(fields, 'fields', key_type=str, value_type=Field)
+        super(_ConfigHasFields, self).__init__(*args, **kwargs)
+
+    @property
+    def inner_types(self):
+        return list(set(self._yield_inner_types()))
+
+    def _yield_inner_types(self):
+        for field in self.fields.values():
+            yield field.config_type
+            for inner_type in field.config_type.inner_types:
+                yield inner_type
+
+
+class _ConfigComposite(_ConfigHasFields):
+    @property
+    def is_composite(self):
+        return True
+
+
+class _ConfigSelector(_ConfigHasFields):
+    @property
+    def is_selector(self):
+        return True
+
+
+# HACK HACK HACK
+#
+# This is not good and a better solution needs to be found. In order
+# for the client-side typeahead in dagit to work as currently structured,
+# dictionaries need names. While we deal with that we're going to automatically
+# name dictionaries. This will cause odd behavior and bugs is you restart
+# the server-side process, the type names changes, and you do not refresh the client.
+#
+# A possible short term mitigation would to name the dictionary based on the hash
+# of its member fields to provide stability in between process restarts.
+#
+class DictCounter:
+    _count = 0
+
+    @staticmethod
+    def get_next_count():
+        DictCounter._count += 1
+        return DictCounter._count
+
+
+def NamedDict(name, fields, description=None, type_attributes=DEFAULT_TYPE_ATTRIBUTES):
+    class _NamedDict(_ConfigComposite):
+        def __init__(self):
+            super(_NamedDict, self).__init__(
+                name=name, fields=fields, description=description, type_attributes=type_attributes
+            )
+
+    return _NamedDict
+
+
+def Dict(fields):
+    class _Dict(_ConfigComposite):
+        def __init__(self):
+            super(_Dict, self).__init__(
+                name='Dict.' + str(DictCounter.get_next_count()),
+                fields=fields,
+                description='A configuration dictionary with typed fields',
+                type_attributes=ConfigTypeAttributes(is_named=True, is_builtin=True),
+            )
+
+    return _Dict
+
+
+def Selector(fields):
+    class _Selector(_ConfigSelector):
+        def __init__(self):
+            super(_Selector, self).__init__(
+                name='Selector.' + str(DictCounter.get_next_count()),
+                fields=fields,
+                # description='A configuration dictionary with typed fields',
+                type_attributes=ConfigTypeAttributes(is_named=True, is_builtin=True),
+            )
+
+    return _Selector
+
+
+def NamedSelector(name, fields, description=None, type_attributes=DEFAULT_TYPE_ATTRIBUTES):
+    class _NamedSelector(_ConfigSelector):
+        def __init__(self):
+            super(_NamedSelector, self).__init__(
+                name=name, fields=fields, description=description, type_attributes=type_attributes
+            )
+
+    return _NamedSelector

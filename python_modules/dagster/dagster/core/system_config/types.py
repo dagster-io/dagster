@@ -12,8 +12,8 @@ from dagster.core.definitions import (
 )
 
 
-from dagster.core.types import Bool, Field, List
-from dagster.core.types.config import ConfigType, ConfigTypeAttributes, NamedDict, NamedSelector
+from dagster.core.types import Bool, Field, List, NamedDict, NamedSelector
+from dagster.core.types.config import ConfigType, ConfigTypeAttributes
 
 from dagster.core.types.evaluator import hard_create_config_value
 from dagster.core.types.field_utils import check_opt_field_param

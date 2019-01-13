@@ -2,9 +2,9 @@ import json
 
 from dagster import check
 
-from .config import ConfigTypeAttributes, Dict, NamedSelector, Path, Int, String, Bool, Any
+from .config import ConfigTypeAttributes, Path, Int, String, Bool, Any
 from .config_schema import OutputSchema, make_input_schema
-from .field_utils import FieldImpl
+from .field_utils import FieldImpl, Dict, NamedSelector
 
 
 def define_path_dict_field():
