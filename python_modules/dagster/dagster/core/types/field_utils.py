@@ -114,8 +114,7 @@ class FieldImpl:
 class _ConfigHasFields(ConfigType):
     def __init__(self, fields, *args, **kwargs):
 
-        self.fields = fields
-        # self.fields = check.dict_param(fields, 'fields', key_type=str, value_type=Field)
+        self.fields = check.dict_param(fields, 'fields', key_type=str, value_type=FieldImpl)
         super(_ConfigHasFields, self).__init__(*args, **kwargs)
 
     @property
