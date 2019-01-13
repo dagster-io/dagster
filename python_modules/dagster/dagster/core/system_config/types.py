@@ -14,9 +14,8 @@ from dagster.core.definitions import (
 
 from dagster.core.types import Bool, Field, List, NamedDict, NamedSelector
 from dagster.core.types.config import ConfigType, ConfigTypeAttributes
-
-from dagster.core.types.evaluator import hard_create_config_value
-from dagster.core.types.field_utils import check_opt_field_param
+from dagster.core.types.default_applier import apply_default_values
+from dagster.core.types.field_utils import check_opt_field_param, FieldImpl
 
 from .objects import (
     ContextConfig,
@@ -51,7 +50,7 @@ def define_maybe_optional_selector_field(config_cls):
         Field(
             config_cls,
             is_optional=is_optional,
-            default_value=lambda: hard_create_config_value(config_cls.inst(), None),
+            default_value=apply_default_values(config_cls.inst(), None),
         )
         if is_optional
         else Field(config_cls, is_optional=False)
@@ -204,7 +203,7 @@ def get_inputs_field(pipeline_def, solid):
         # If this input is not satisfied by a dependency you must
         # provide it via config
         if not pipeline_def.dependency_structure.has_dep(inp_handle):
-            inputs_field_fields[inp.name] = Field(type(inp.runtime_type.input_schema.schema_type))
+            inputs_field_fields[inp.name] = FieldImpl(inp.runtime_type.input_schema.schema_type)
 
     if not inputs_field_fields:
         return None

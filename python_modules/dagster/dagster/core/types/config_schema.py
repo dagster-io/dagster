@@ -2,7 +2,8 @@ from dagster import check
 from dagster.utils import single_item
 
 from .builtin_enum import BuiltinEnum
-from .config import ConfigType
+from .config import ConfigType, List, Nullable
+from .wrapping import WrappingListType, WrappingNullableType
 
 
 class InputSchema:
@@ -19,6 +20,10 @@ class InputSchema:
 def resolve_config_cls_arg(config_cls):
     if isinstance(config_cls, BuiltinEnum):
         return ConfigType.from_builtin_enum(config_cls)
+    elif isinstance(config_cls, WrappingListType):
+        return List(resolve_config_cls_arg(config_cls.inner_type))
+    elif isinstance(config_cls, WrappingNullableType):
+        return Nullable(resolve_config_cls_arg(config_cls.inner_type))
     else:
         check.type_param(config_cls, 'config_cls')
         check.param_invariant(issubclass(config_cls, ConfigType), 'config_cls')

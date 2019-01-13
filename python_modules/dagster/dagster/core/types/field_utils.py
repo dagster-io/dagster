@@ -57,7 +57,6 @@ class FieldImpl:
         description=None,
     ):
         self.config_type = check.inst_param(config_type, 'config_type', ConfigType)
-        self.config_cls = type(self.config_type)
 
         self.description = check.opt_str_param(description, 'description')
         if is_optional == INFER_OPTIONAL_COMPOSITE_FIELD:
