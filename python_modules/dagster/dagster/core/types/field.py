@@ -35,14 +35,23 @@ def resolve_to_config_type(dagster_type):
     check.failed('should not reach')
 
 
-class Field(FieldImpl):
-    def __init__(
-        self,
-        dagster_type,
-        default_value=FIELD_NO_DEFAULT_PROVIDED,
-        is_optional=INFER_OPTIONAL_COMPOSITE_FIELD,
-        description=None,
-    ):
-        check_dagster_type_param(dagster_type, 'dagster_type', ConfigType)
-        config_type = resolve_to_config_type(dagster_type)
-        super(Field, self).__init__(config_type, default_value, is_optional, description)
+def Field(
+    dagster_type,
+    default_value=FIELD_NO_DEFAULT_PROVIDED,
+    is_optional=INFER_OPTIONAL_COMPOSITE_FIELD,
+    description=None,
+):
+    return FieldImpl(resolve_to_config_type(dagster_type), default_value, is_optional, description)
+
+
+# class Field(FieldImpl):
+#     def __init__(
+#         self,
+#         dagster_type,
+#         default_value=FIELD_NO_DEFAULT_PROVIDED,
+#         is_optional=INFER_OPTIONAL_COMPOSITE_FIELD,
+#         description=None,
+#     ):
+#         check_dagster_type_param(dagster_type, 'dagster_type', ConfigType)
+#         config_type = resolve_to_config_type(dagster_type)
+#         super(Field, self).__init__(config_type, default_value, is_optional, description)

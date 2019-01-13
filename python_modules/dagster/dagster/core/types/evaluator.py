@@ -8,7 +8,6 @@ from dagster.utils import single_item
 
 from .config import ConfigType
 from .default_applier import apply_default_values
-from .field import Field
 from .field_utils import check_field_param
 
 
