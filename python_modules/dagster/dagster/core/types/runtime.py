@@ -9,6 +9,7 @@ from .builtin_config_schemas import define_builtin_scalar_output_schema
 from .config import Int as ConfigInt
 from .config import String as ConfigString
 from .config import Any as ConfigAny
+from .config import Bool as ConfigBool
 from .config import ConfigType
 from .config import List as ConfigList
 from .config import Nullable as ConfigNullable
@@ -147,14 +148,25 @@ class Float(RuntimeType):
         return self.throw_if_false(lambda v: isinstance(v, float), value)
 
 
+BOOL_INPUT_SCHEMA = make_input_schema(ConfigBool)
+BOOL_OUTPUT_SCHEMA = define_builtin_scalar_output_schema('Bool')
+
+
 class Bool(RuntimeType):
+    def __init__(self):
+        super(Bool, self).__init__(input_schema=BOOL_INPUT_SCHEMA, output_schema=BOOL_OUTPUT_SCHEMA)
+
     def coerce_runtime_value(self, value):
         return self.throw_if_false(lambda v: isinstance(v, bool), value)
 
 
+ANY_INPUT_SCHEMA = make_input_schema(ConfigAny)
+ANY_OUTPUT_SCHEMA = define_builtin_scalar_output_schema('Any')
+
+
 class Any(RuntimeType):
     def __init__(self):
-        super(Any, self).__init__(input_schema=make_input_schema(ConfigAny))
+        super(Any, self).__init__(input_schema=ANY_INPUT_SCHEMA, output_schema=ANY_OUTPUT_SCHEMA)
 
     @property
     def is_any(self):
