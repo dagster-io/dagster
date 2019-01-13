@@ -44,4 +44,7 @@ popd
 
 pushd python_modules
 make rebuild_dagit
+make black
+make pylint
 popd
+
