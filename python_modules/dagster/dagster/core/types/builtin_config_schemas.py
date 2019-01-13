@@ -3,9 +3,9 @@ import json
 from dagster import check
 
 from .builtin_enum import BuiltinEnum
-from .config import ConfigTypeAttributes
+from .config import ConfigTypeAttributes, Dict, NamedSelector
 from .config_schema import OutputSchema
-from .field import Field, Dict, NamedSelector
+from .field import Field
 
 
 def define_path_dict_field():

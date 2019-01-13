@@ -13,8 +13,7 @@ from dagster.core.definitions import (
 
 
 from dagster.core.types import Bool, Field, List
-from dagster.core.types.config import ConfigType, ConfigTypeAttributes
-from dagster.core.types.field import NamedDict, NamedSelector
+from dagster.core.types.config import ConfigType, ConfigTypeAttributes, NamedDict, NamedSelector
 
 from dagster.core.types.evaluator import hard_create_config_value
 

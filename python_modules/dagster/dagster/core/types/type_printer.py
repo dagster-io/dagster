@@ -3,7 +3,8 @@ from dagster import check
 
 from dagster.utils.indenting_printer import IndentingPrinter
 
-from .config import ConfigType, resolve_to_config_type
+from .config import ConfigType
+from .field import resolve_to_config_type
 
 
 def print_type(config_type, print_fn=print):

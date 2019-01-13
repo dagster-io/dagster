@@ -1,6 +1,6 @@
 from dagster import check
 
-from .config import resolve_to_config_type
+from .field import resolve_to_config_type
 
 
 class InputSchema:
