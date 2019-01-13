@@ -1,4 +1,4 @@
-pylint==1.9.2
+pylint>=2.2.2
 pytest==4.0.2
 pytest-cov==2.6.0
 yapf==0.22.0
