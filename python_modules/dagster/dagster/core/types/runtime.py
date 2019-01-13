@@ -5,16 +5,14 @@ from dagster import check
 from dagster.core.errors import DagsterRuntimeCoercionError
 
 from .builtin_enum import BuiltinEnum
-from .builtin_config_schemas import define_builtin_scalar_output_schema
-from .config import Int as ConfigInt
-from .config import String as ConfigString
-from .config import Any as ConfigAny
-from .config import Bool as ConfigBool
-from .config import Path as ConfigPath
+from .builtin_config_schemas import BuiltinSchemas
+
 from .config import ConfigType
 from .config import List as ConfigList
 from .config import Nullable as ConfigNullable
+
 from .config_schema import InputSchema, OutputSchema, make_input_schema
+
 from .marshal import MarshallingStrategy
 from .dagster_type import check_dagster_type_param
 from .wrapping import WrappingListType, WrappingNullableType
@@ -106,13 +104,11 @@ class BuiltinScalarRuntimeType(RuntimeType):
         return True
 
 
-INT_INPUT_SCHEMA = make_input_schema(ConfigInt)
-INT_OUTPUT_SCHEMA = define_builtin_scalar_output_schema('Int')
-
-
 class Int(BuiltinScalarRuntimeType):
     def __init__(self):
-        super(Int, self).__init__(input_schema=INT_INPUT_SCHEMA, output_schema=INT_OUTPUT_SCHEMA)
+        super(Int, self).__init__(
+            input_schema=BuiltinSchemas.INT_INPUT, output_schema=BuiltinSchemas.INT_OUTPUT
+        )
 
     def coerce_runtime_value(self, value):
         return self.throw_if_false(
@@ -120,27 +116,21 @@ class Int(BuiltinScalarRuntimeType):
         )
 
 
-STRING_INPUT_SCHEMA = make_input_schema(ConfigString)
-STRING_OUTPUT_SCHEMA = define_builtin_scalar_output_schema('String')
-
-
 class String(BuiltinScalarRuntimeType):
     def __init__(self):
         super(String, self).__init__(
-            input_schema=STRING_INPUT_SCHEMA, output_schema=STRING_OUTPUT_SCHEMA
+            input_schema=BuiltinSchemas.STRING_INPUT, output_schema=BuiltinSchemas.STRING_OUTPUT
         )
 
     def coerce_runtime_value(self, value):
         return self.throw_if_not_string(value)
 
 
-PATH_INPUT_SCHEMA = make_input_schema(ConfigPath)
-PATH_OUTPUT_SCHEMA = define_builtin_scalar_output_schema('Path')
-
-
 class Path(BuiltinScalarRuntimeType):
     def __init__(self):
-        super(Path, self).__init__(input_schema=PATH_INPUT_SCHEMA, output_schema=PATH_OUTPUT_SCHEMA)
+        super(Path, self).__init__(
+            input_schema=BuiltinSchemas.PATH_INPUT, output_schema=BuiltinSchemas.PATH_OUTPUT
+        )
 
     def coerce_runtime_value(self, value):
         return self.throw_if_not_string(value)
@@ -157,25 +147,21 @@ class Float(RuntimeType):
         return self.throw_if_false(lambda v: isinstance(v, float), value)
 
 
-BOOL_INPUT_SCHEMA = make_input_schema(ConfigBool)
-BOOL_OUTPUT_SCHEMA = define_builtin_scalar_output_schema('Bool')
-
-
 class Bool(RuntimeType):
     def __init__(self):
-        super(Bool, self).__init__(input_schema=BOOL_INPUT_SCHEMA, output_schema=BOOL_OUTPUT_SCHEMA)
+        super(Bool, self).__init__(
+            input_schema=BuiltinSchemas.BOOL_INPUT, output_schema=BuiltinSchemas.BOOL_OUTPUT
+        )
 
     def coerce_runtime_value(self, value):
         return self.throw_if_false(lambda v: isinstance(v, bool), value)
 
 
-ANY_INPUT_SCHEMA = make_input_schema(ConfigAny)
-ANY_OUTPUT_SCHEMA = define_builtin_scalar_output_schema('Any')
-
-
 class Any(RuntimeType):
     def __init__(self):
-        super(Any, self).__init__(input_schema=ANY_INPUT_SCHEMA, output_schema=ANY_OUTPUT_SCHEMA)
+        super(Any, self).__init__(
+            input_schema=BuiltinSchemas.ANY_INPUT, output_schema=BuiltinSchemas.ANY_OUTPUT
+        )
 
     @property
     def is_any(self):
