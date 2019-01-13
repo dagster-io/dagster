@@ -204,4 +204,3 @@ def test_path_input_schema_failure():
     assert 'Type failure at path "root:solids:take_path:inputs:path" on type "String"' in str(
         exc_info.value
     )
-
