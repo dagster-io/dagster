@@ -4,8 +4,10 @@ from enum import Enum
 from dagster import check
 
 from dagster.core.errors import DagsterError
+from dagster.utils import single_item
 
 from .config import ConfigType
+from .default_applier import apply_default_values
 from .field import Field
 
 
@@ -242,7 +244,7 @@ def evaluate_config_value(config_type, config_value):
     if errors:
         return EvaluateValueResult(success=False, value=None, errors=errors)
 
-    value = deserialize_config(config_type, config_value)
+    value = apply_default_values(config_type, config_value)
 
     return EvaluateValueResult(success=True, value=value, errors=[])
 
@@ -299,37 +301,7 @@ def _validate_config(config_type, config_value, stack):
         yield error
 
 
-def deserialize_config(config_type, config_value):
-    check.inst_param(config_type, 'config_type', ConfigType)
-    return _deserialize_config(config_type, config_value)
-
-
-def _deserialize_config(config_type, config_value):
-    if config_type.is_scalar:
-        return config_value
-    elif config_type.is_selector:
-        return deserialize_selector_config(config_type, config_value)
-    elif config_type.is_composite:
-        return deserialize_composite_config_value(config_type, config_value)
-    elif config_type.is_list:
-        return deserialize_list_value(config_type, config_value)
-    elif config_type.is_nullable:
-        if config_value is None:
-            return None
-        return _deserialize_config(config_type.inner_type, config_value)
-    elif config_type.is_any:
-        return config_value
-    else:
-        check.failed('Unsupported type {name}'.format(name=config_type.name))
-
-
 ## Selectors
-
-
-def single_item(ddict):
-    check.dict_param(ddict, 'ddict')
-    check.param_invariant(len(ddict) == 1, 'ddict')
-    return list(ddict.items())[0]
 
 
 def validate_selector_config_value(selector_type, config_value, stack):
@@ -412,22 +384,6 @@ def validate_selector_config_value(selector_type, config_value, stack):
         yield error
 
 
-def deserialize_selector_config(selector_type, config_value):
-    check.param_invariant(selector_type.is_selector, 'selector_type')
-
-    if config_value:
-        check.invariant(config_value and len(config_value) == 1)
-        field_name, incoming_field_value = single_item(config_value)
-
-    else:
-        field_name, field_def = single_item(selector_type.fields)
-        incoming_field_value = field_def.default_value if field_def.default_provided else None
-
-    parent_field = selector_type.fields[field_name]
-    field_value = _deserialize_config(parent_field.config_type, incoming_field_value)
-    return {field_name: field_value}
-
-
 ## Composites
 
 
@@ -482,32 +438,6 @@ def validate_composite_config_value(composite_type, config_value, stack):
             )
 
 
-def deserialize_composite_config_value(composite_type, config_value):
-    check.param_invariant(composite_type.is_composite, 'composite_type')
-
-    # ASK: this can crash on user error
-    config_value = check.opt_dict_param(config_value, 'config_value', key_type=str)
-
-    fields = composite_type.fields
-    incoming_fields = set(config_value.keys())
-
-    processed_fields = {}
-
-    for expected_field, field_def in fields.items():
-        if expected_field in incoming_fields:
-            processed_fields[expected_field] = _deserialize_config(
-                field_def.config_type, config_value[expected_field]
-            )
-
-        elif field_def.default_provided:
-            processed_fields[expected_field] = field_def.default_value
-
-        elif not field_def.is_optional:
-            check.failed('Missing non-optional composite member not caught in validation')
-
-    return processed_fields
-
-
 ## Lists
 
 
@@ -533,15 +463,6 @@ def validate_list_value(list_type, config_value, stack):
             list_type.inner_type, item, stack_with_list_index(stack, index)
         ):
             yield error
-
-
-def deserialize_list_value(list_type, config_value):
-    check.param_invariant(list_type.is_list, 'list_type')
-
-    if not config_value:
-        return []
-
-    return [_deserialize_config(list_type.inner_type, item) for item in config_value]
 
 
 ##

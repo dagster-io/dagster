@@ -32,3 +32,9 @@ def camelcase(string):
     return str(string[0]).upper() + re.sub(
         r'[\-_\.\s]([a-z])', lambda matched: str(matched.group(1)).upper(), string[1:]
     )
+
+
+def single_item(ddict):
+    check.dict_param(ddict, 'ddict')
+    check.param_invariant(len(ddict) == 1, 'ddict')
+    return list(ddict.items())[0]
