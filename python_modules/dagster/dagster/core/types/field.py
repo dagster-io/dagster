@@ -77,7 +77,7 @@ class Field:
         if is_optional == INFER_OPTIONAL_COMPOSITE_FIELD:
             is_optional = all_optional_type(self.config_type)
             if is_optional is True:
-                self._default_value = lambda: apply_default_values(self.config_type, None)
+                self._default_value = apply_default_values(self.config_type, None)
             else:
                 self._default_value = default_value
         else:
