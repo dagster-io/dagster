@@ -16,6 +16,7 @@ from dagster.core.types import Bool, Field, List
 from dagster.core.types.config import ConfigType, ConfigTypeAttributes, NamedDict, NamedSelector
 
 from dagster.core.types.evaluator import hard_create_config_value
+from dagster.core.types.field_utils import check_opt_field_param
 
 from .objects import (
     ContextConfig,
@@ -73,7 +74,7 @@ def define_resource_dictionary_cls(name, resources):
 
 def define_specific_context_config_cls(name, config_field, resources):
     check.str_param(name, 'name')
-    check.opt_inst_param(config_field, 'config_field', Field)
+    check_opt_field_param(config_field, 'config_field')
     check.dict_param(resources, 'resources', key_type=str, value_type=ResourceDefinition)
 
     return SystemNamedDict(
@@ -130,9 +131,9 @@ def remove_none_entries(ddict):
 
 def define_solid_config_cls(name, config_field, inputs_field, outputs_field):
     check.str_param(name, 'name')
-    check.opt_inst_param(config_field, 'config_field', Field)
-    check.opt_inst_param(inputs_field, 'inputs_field', Field)
-    check.opt_inst_param(outputs_field, 'outputs_field', Field)
+    check_opt_field_param(config_field, 'config_field')
+    check_opt_field_param(inputs_field, 'inputs_field')
+    check_opt_field_param(outputs_field, 'outputs_field')
 
     return NamedDict(
         name,

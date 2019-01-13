@@ -1,6 +1,6 @@
 from dagster import check
 
-from dagster.core.types.field import Field
+from dagster.core.types.field_utils import check_opt_field_param
 
 from .input import InputDefinition
 
@@ -75,7 +75,7 @@ class SolidDefinition(object):
         self.transform_fn = check.callable_param(transform_fn, 'transform_fn')
         self.output_defs = check.list_param(outputs, 'outputs', OutputDefinition)
         self.description = check.opt_str_param(description, 'description')
-        self.config_field = check.opt_inst_param(config_field, 'config_field', Field)
+        self.config_field = check_opt_field_param(config_field, 'config_field')
         self.metadata = check.opt_dict_param(metadata, 'metadata', key_type=str)
         self._input_dict = {inp.name: inp for inp in inputs}
         self._output_dict = {output.name: output for output in outputs}

@@ -3,6 +3,7 @@ from collections import namedtuple
 from dagster import check
 
 from dagster.core.types import Field, Dict, String
+from dagster.core.types.field_utils import check_opt_field_param
 from dagster.core.execution_context import ExecutionContext
 from dagster.core.system_config.objects import DEFAULT_CONTEXT_NAME
 
@@ -74,7 +75,7 @@ context_fn (callable):
 
             description (str): Description of the context definition.
         '''
-        self.config_field = check.opt_inst_param(config_field, 'config_field', Field)
+        self.config_field = check_opt_field_param(config_field, 'config_field')
         self.context_fn = check.opt_callable_param(
             context_fn, 'context_fn', lambda *args, **kwargs: ExecutionContext()
         )

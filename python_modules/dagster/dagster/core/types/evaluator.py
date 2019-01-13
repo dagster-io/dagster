@@ -9,6 +9,7 @@ from dagster.utils import single_item
 from .config import ConfigType
 from .default_applier import apply_default_values
 from .field import Field
+from .field_utils import check_field_param
 
 
 class DagsterEvaluationErrorReason(Enum):
@@ -30,7 +31,7 @@ class MissingFieldErrorData(namedtuple('_MissingFieldErrorData', 'field_name fie
         return super(MissingFieldErrorData, cls).__new__(
             cls,
             check.str_param(field_name, 'field_name'),
-            check.inst_param(field_def, 'field_def', Field),
+            check_field_param(field_def, 'field_def'),
         )
 
 
@@ -97,7 +98,7 @@ class EvaluationStackPathEntry(
         return super(EvaluationStackPathEntry, cls).__new__(
             cls,
             check.str_param(field_name, 'field_name'),
-            check.inst_param(field_def, 'field_def', Field),
+            check_field_param(field_def, 'field_def'),
         )
 
     @property
