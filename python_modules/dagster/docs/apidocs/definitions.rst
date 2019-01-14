@@ -20,8 +20,7 @@ Core API to define Solids and Pipelines.
 .. autoclass:: ExpectationResult
     :members:
 
-.. autoclass:: Field
-    :members:
+.. autofunction:: Field
 
 .. autoclass:: InputDefinition
     :members:
