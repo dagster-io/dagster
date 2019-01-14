@@ -1,23 +1,24 @@
 This guide is a step-by-step guide for upgrading from dagster 0.2.x to 0.3.0. This represents a substantial upgrade in capabilities but also some breaking API changes. We'll detail them, provide context and reasoning, and instructions about how to upgrade.
 
-Required API Changes
---------------------
+## Required API Changes
 
 1. **No more top level config subpackage.**
 
-Error: 
+Error:
+
 ```
 from dagster import (
 ImportError: cannot import name 'config'
 ```
 
-We have eliminated the public-facing "config" namespace. (You use raw dictionaries instead of a parallel, typed API to configure pipeline runs). 
+We have eliminated the public-facing "config" namespace. (You use raw dictionaries instead of a parallel, typed API to configure pipeline runs).
 
 Fix: Simply eliminate the include. You'll run into related errors later.
 
 2. **No more dagster.sqlalchemy and dagster.pandas submodules**.
 
 Error:
+
 ```
 E   ModuleNotFoundError: No module named 'dagster.sqlalchemy'
 ```
@@ -29,11 +30,12 @@ Fix: Instead of importing `dagster.sqlalchemy` you need to `pip install dagster-
 3. **ConfigDefinition no longer exists.**
 
 Error:
+
 ```
 ImportError: cannot import name 'ConfigDefinition'
 ```
 
-We have eliminated a separate notion of a ConfigDefinition. Instead, we realized the the user provided config in a solid, resource, or context is just a `Field` that you would use to build a dictionary. So replace `ConfigDefinition` with Field. (Generally `config_def=ConfigDefinition` is now `config_field=Field`)
+We have eliminated a separate notion of a ConfigDefinition. Instead, we realized the the user provided config in a solid, resource, or context is just a `Field` that you would use to build a `Dict` or `Selector`. So replace `ConfigDefinition` with Field. (Generally `config_def=ConfigDefinition` is now `config_field=Field`)
 
 Before:
 
@@ -59,17 +61,19 @@ After:
 4. **New, Simpler Dagster Type Definition API.**
 
 Error:
+
 ```
     description='''This represents a path to a file on disk'''
 E   TypeError: __init__() got multiple values for argument 'python_type'
 ```
 
 Another Error:
+
 ```
 E   dagster.check.ParameterCheckError: Param "klass" was supposed to be a type. Got <dagster.core.types.runtime.PythonObjectType object at 0x11e4fbf60> instead of type <class 'dagster.core.types.runtime.PythonObjectType'>
 ```
 
-There are now two different type creation APIs. One for *creating* new types, and one for *annotating* existing types that you include.
+There are now two different type creation APIs. One for _creating_ new types, and one for _annotating_ existing types that you include.
 
 Examples:
 
@@ -99,12 +103,13 @@ Note you can use S3FileHandle and PathToFile as if they were just "normal types"
 
 We have a much less verbose API for building configuration schema:
 
-Error: 
+Error:
+
 ```
 E   AttributeError: module 'dagster.core.types' has no attribute 'ConfigDictionary
 ```
 
-First, we can discouraging the use of the `types` namespace. Instead just `from dagster import Dict`.
+First, we can discouraging the use of the `types` namespace. Instead just `from dagster import Dict` (or whatever class directly).
 Second, `ConfigDictionary` is now just `Dict`.
 Third, you do not have to name it. The net result is much nicer:
 
@@ -141,13 +146,13 @@ This is a fairly mechanical transition.
 
 6. **define_stub_solid no longer in top-level dagster**
 
-This is now an internal utility function. If you really, really need it: 
+This is now an internal utility function. If you really, really need it:
 
-```from dagster.core.utility_solids import define_stub_solid```
+`from dagster.core.utility_solids import define_stub_solid`
 
 7. **Environments are raw dictionaries rather that config.\* classes**
 
-Per update 1 config classes no longer are public or used in execute_pipeline or similar. Use raw dictionaries instead. They should be shaped **exactly** like the yaml files.
+Per update 1 config classes no longer are public or used in the execute_pipeline family of APIs. Use raw dictionaries instead. They should be shaped **exactly** like the yaml files.
 
 Before:
 
@@ -171,8 +176,9 @@ Before:
 ```
 
 After:
-```    
-    environment = { 
+
+```
+    environment = {
         'context':{
             'unittest' : {
                 'config' : {
@@ -209,7 +215,7 @@ or
 AttributeError: type object 'PipelineDefinition' has no attribute 'create_single_solid_pipeline'
 ```
 
-The creation of "sub" and "single_solid" pipelines was awkward and error-prone. Instead we have the new functions `execute_solid` and `execute_solids`.
+The creation of "sub" and "single_solid" pipelines was awkward and error-prone. Instead we have the new functions `execute_solid` and `execute_solids`. You can now execute a single solid with a single function call.
 
 Before:
 
@@ -316,8 +322,7 @@ Error:
 AttributeError: 'ExecutionContext' object has no attribute 'value'
 ```
 
-This is officially the most difficult change, conceptually. We changed the system so that the ExecutionContext passed around to your solids (now RuntimeExecutionContext) is constructed by the system rather than the user. The ExecutionContext object the user creates can be thought of as RuntimeExecutionContextParams, although that was excessively verbose.
-
+This is officially the most difficult change, conceptually. We changed the system so that the `ExecutionContext` passed around to your solids (now `RuntimeExecutionContext`) is constructed by the system rather than the user. The `ExecutionContext` object the user creates can be thought of as `RuntimeExecutionContextParams`. We opted against that name because it was excessively verbose.
 
 Before:
 
@@ -345,4 +350,5 @@ After:
         },
     )
 ```
+
 

@@ -1,14 +1,14 @@
-The upgrade guide describes the changes you are *require* to make to install 0.3.0. This guide describes the changes you *should* make in order to use the latest capabilities. The new concepts take some getting used to, but are quite powerful.
+The upgrade guide describes the changes you are _require_ to make to install 0.3.0. This guide describes the changes you _should_ make in order to use the latest capabilities. The new concepts take some getting used to, but are quite powerful.
 
-Resources
----------
+## Resources
 
-In 0.2.0 the notion of resources were relatively informal. This is no longer true. They are now an officially supported abstraction. They break apart context creation in a composable, reusable chunks of software.
+In 0.2.0 the notion of resources were relatively informal. This is no longer true: They are now an officially supported abstraction. They break apart context creation into composable, reusable chunks of software.
 
 **Defining a Resource**
 
-
 Let's take the unittest context in the allscripts_fileload pipeline as an example.
+
+Before:
 
 ```
 def define_unittest_context():
@@ -58,9 +58,9 @@ def create_allscripts_fileload_unittest_context(info):
     )
 ```
 
-That's quite the ball of wax for what should be relatively straightforward. And this doesn't even include the boilerplate AllScriptsFileloadResources class as well. We're going to break this apart and eliminate the need for that class.
+That's quite the ball of wax for what should be relatively straightforward. And this doesn't even include the boilerplate `AllScriptsFileloadResources` class as well. We're going to break this apart using the `ResourceDefinition` abstraction and eliminate the need for that class.
 
-The only real reusable resource here is the LocalFsHandleResource, so let's break that out into it's own Resource.
+The only real reusable resource here is the LocalFsHandleResource, so let's break that out into it's own `ResourceDefinition`.
 
 ```
 def define_local_fs_resource():
@@ -80,7 +80,7 @@ def define_local_fs_resource():
 
 This is now a self-contained piece that can be reused in other contexts as well.
 
-Aside: We now guarantee a system-generated run_id, so the manually created pipeline_guid resource is no longer relevant. T
+Aside: We now guarantee a system-generated run_id, so the manually created pipeline_guid resource is no longer relevant.
 
 The rest of the "resources" in the unittesting context are None, and we have a special helper to create "none" resources.
 
@@ -133,7 +133,7 @@ The configuration schema changes, as each resource has it's own section.
 Before:
 
 ```
-environment = { 
+environment = {
     'context':{
         'unittest' : {
             'config' : {
@@ -157,7 +157,7 @@ environment = {
 In particular we need to move `cleanup_files` to a resource section of the config.
 
 ```
-environment = { 
+environment = {
     'context':{
         'unittest' : {
             'config' : {
@@ -183,12 +183,11 @@ environment = {
 }
 ```
 
-While slightly more verbose, you will be able to count on more consistent of configuration between pipelines as you reuse resources, and you an even potentially share resource configuration *between* pipelines using the configuration file merging feature of 0.3.0
+While slightly more verbose, you will be able to count on more consistent of configuration between pipelines as you reuse resources, and you an even potentially share resource configuration _between_ pipelines using the configuration file merging feature of 0.3.0
 
-Resource Libraries
-------------------
+## Resource Libraries
 
-The real promise of resources to build a library of resuable, composable resources. 
+The real promise of resources to build a library of resuable, composable resources.
 
 For example, here would be a resource to create a redshift connection.
 
