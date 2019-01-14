@@ -11,7 +11,7 @@ from .config import ConfigType
 from .config import List as ConfigList
 from .config import Nullable as ConfigNullable
 
-from .config_schema import InputSchema, OutputSchema, make_input_schema
+from .config_schema import InputSchema, OutputSchema, make_bare_input_schema
 
 from .marshal import MarshallingStrategy
 from .dagster_type import check_dagster_type_param
@@ -181,7 +181,7 @@ class NullableType(RuntimeType):
     def __init__(self, inner_type):
         super(NullableType, self).__init__(
             name='Nullable.' + inner_type.name,
-            input_schema=make_input_schema(ConfigNullable(inner_type.input_schema.schema_type))
+            input_schema=make_bare_input_schema(ConfigNullable(inner_type.input_schema.schema_type))
             if inner_type.input_schema
             else None,
         )
@@ -199,7 +199,7 @@ class ListType(RuntimeType):
     def __init__(self, inner_type):
         super(ListType, self).__init__(
             name='List.' + inner_type.name,
-            input_schema=make_input_schema(ConfigList(inner_type.input_schema.schema_type))
+            input_schema=make_bare_input_schema(ConfigList(inner_type.input_schema.schema_type))
             if inner_type.input_schema
             else None,
         )
