@@ -206,10 +206,10 @@ should produce some materialization that outlives the computation.
 
 This has a similar aesthetic to an input schema but performs a different function. Notice that
 it takes a third argument, `pandas_df` (it can be named anything), that is the value that was
-outputted from the solid in question. It then takes the configuration data as "instructions" as
+outputted from the solid in question. It then takes the configuration data as "instructions" as to
 how to materialize the value.
 
-One written connect the output schema to the type as follows:
+One connects the output schema to the type as follows:
 
 .. code-block:: py
 
@@ -227,7 +227,7 @@ Now we can provide a list of materializations to a given execution.
 
 .. image:: types_figure_two.png
 
-You'll note you can provide an arbitrary number of materializations. You can materializations any
+You'll note you can provide an arbitrary number of materializations. You can materialize any
 given output any number of times in any number of formats.
 
 .. image:: types_figure_three.png
