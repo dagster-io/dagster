@@ -2,7 +2,7 @@
 Installation
 =======================
 
-Dagster is tested on Python 3.6.6, 3.5.6, and 2.7.15. Python 3 is strongly
+Dagster is tested on Python 3.7.2, 3.6.6, 3.5.6, and 2.7.15. Python 3 is strongly
 encouraged -- if you can, you won't regret making the switch!
 
 Installing Python, pip, virtualenv, and yarn
