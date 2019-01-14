@@ -2,7 +2,6 @@ from dagster import check
 from .builtin_enum import BuiltinEnum
 from .config import Any, ConfigType, List, Nullable
 from .field_utils import FieldImpl, FIELD_NO_DEFAULT_PROVIDED, INFER_OPTIONAL_COMPOSITE_FIELD
-from .runtime import RuntimeType
 from .wrapping import WrappingListType, WrappingNullableType
 
 
@@ -20,9 +19,7 @@ def resolve_to_config_type(dagster_type):
     if dagster_type is None:
         return Any.inst()
     if isinstance(dagster_type, BuiltinEnum):
-        runtime_type = RuntimeType.from_builtin_enum(dagster_type)
-        check.invariant(runtime_type.input_schema)
-        return runtime_type.input_schema.schema_type
+        return ConfigType.from_builtin_enum(dagster_type)
     ## TODO need to check for runtime type. e.g. List(DataFrame)
     if isinstance(dagster_type, WrappingListType):
         return resolve_to_config_list(dagster_type).inst()

@@ -227,8 +227,9 @@ def List(inner_type):
 
 _CONFIG_MAP = {
     BuiltinEnum.ANY: Any.inst(),
-    BuiltinEnum.STRING: String.inst(),
-    BuiltinEnum.INT: Int.inst(),
     BuiltinEnum.BOOL: Bool.inst(),
+    BuiltinEnum.FLOAT: Float.inst(),
+    BuiltinEnum.INT: Int.inst(),
     BuiltinEnum.PATH: Path.inst(),
+    BuiltinEnum.STRING: String.inst(),
 }

@@ -11,7 +11,7 @@ from .config import ConfigType
 from .config import List as ConfigList
 from .config import Nullable as ConfigNullable
 
-from .config_schema import InputSchema, OutputSchema, make_bare_input_schema
+from .config_schema import InputSchema, OutputSchema
 
 from .marshal import MarshallingStrategy
 from .dagster_type import check_dagster_type_param
@@ -137,12 +137,11 @@ class Path(BuiltinScalarRuntimeType):
 
 
 class Float(RuntimeType):
-    # TODO
-    # def __init__(self):
-    #     super(String, self).__init__(
-    #         input_schema_cls=config.String,
-    #         output_schema_cls=define_builtin_scalar_output_schema(name='String'),
-    #     )
+    def __init__(self):
+        super(Float, self).__init__(
+            input_schema=BuiltinSchemas.FLOAT_INPUT, output_schema=BuiltinSchemas.FLOAT_OUTPUT
+        )
+
     def coerce_runtime_value(self, value):
         return self.throw_if_false(lambda v: isinstance(v, float), value)
 
@@ -177,13 +176,30 @@ class PythonObjectType(RuntimeType):
         return self.throw_if_false(lambda v: isinstance(v, self.python_type), value)
 
 
+def _create_nullable_input_schema(inner_type):
+    if not inner_type.input_schema:
+        return None
+
+    nullable_type = ConfigNullable(inner_type.input_schema.schema_type).inst()
+
+    class _NullableSchema(InputSchema):
+        @property
+        def schema_type(self):
+            return nullable_type
+
+        def construct_from_config_value(self, config_value):
+            if config_value is None:
+                return None
+            return inner_type.input_schema.construct_from_config_value(config_value)
+
+    return _NullableSchema()
+
+
 class NullableType(RuntimeType):
     def __init__(self, inner_type):
         super(NullableType, self).__init__(
             name='Nullable.' + inner_type.name,
-            input_schema=make_bare_input_schema(ConfigNullable(inner_type.input_schema.schema_type))
-            if inner_type.input_schema
-            else None,
+            input_schema=_create_nullable_input_schema(inner_type),
         )
         self.inner_type = inner_type
 
@@ -195,13 +211,27 @@ class NullableType(RuntimeType):
         return True
 
 
+def _create_list_input_schema(inner_type):
+    if not inner_type.input_schema:
+        return None
+
+    list_type = ConfigList(inner_type.input_schema.schema_type).inst()
+
+    class _ListSchema(InputSchema):
+        @property
+        def schema_type(self):
+            return list_type
+
+        def construct_from_config_value(self, config_value):
+            return list(map(inner_type.input_schema.construct_from_config_value, config_value))
+
+    return _ListSchema()
+
+
 class ListType(RuntimeType):
     def __init__(self, inner_type):
         super(ListType, self).__init__(
-            name='List.' + inner_type.name,
-            input_schema=make_bare_input_schema(ConfigList(inner_type.input_schema.schema_type))
-            if inner_type.input_schema
-            else None,
+            name='List.' + inner_type.name, input_schema=_create_list_input_schema(inner_type)
         )
         self.inner_type = inner_type
 
@@ -244,10 +274,11 @@ class Stringish(RuntimeType):
 
 _RUNTIME_MAP = {
     BuiltinEnum.ANY: Any.inst(),
-    BuiltinEnum.STRING: String.inst(),
-    BuiltinEnum.INT: Int.inst(),
     BuiltinEnum.BOOL: Bool.inst(),
+    BuiltinEnum.FLOAT: Float.inst(),
+    BuiltinEnum.INT: Int.inst(),
     BuiltinEnum.PATH: Path.inst(),
+    BuiltinEnum.STRING: String.inst(),
 }
 
 

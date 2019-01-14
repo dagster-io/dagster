@@ -367,7 +367,7 @@ def test_pipeline_subset():
     assert pipeline_result.success
     assert pipeline_result.result_for_solid('add_one').transformed_value() == 2
 
-    env_config = {'solids': {'add_one': {'inputs': {'num': 3}}}}
+    env_config = {'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}}
 
     subset_result = execute_pipeline(pipeline_def, environment=env_config, solid_subset=['add_one'])
 
@@ -410,7 +410,10 @@ def test_pipeline_disjoint_subset():
 
 def test_pipeline_execution_disjoint_subset():
     env_config = {
-        'solids': {'add_one': {'inputs': {'num': 2}}, 'add_three': {'inputs': {'num': 5}}},
+        'solids': {
+            'add_one': {'inputs': {'num': {'value': 2}}},
+            'add_three': {'inputs': {'num': {'value': 5}}},
+        },
         'context': {'default': {'config': {'log_level': 'ERROR'}}},
     }
 
@@ -454,10 +457,14 @@ def test_pipeline_wrapping_types():
 
     assert execute_pipeline(
         pipeline_def,
-        environment={'solids': {'double_string_for_all': {'inputs': {'value': ['foo']}}}},
+        environment={
+            'solids': {'double_string_for_all': {'inputs': {'value': [{'value': 'foo'}]}}}
+        },
     ).success
 
     assert execute_pipeline(
         pipeline_def,
-        environment={'solids': {'double_string_for_all': {'inputs': {'value': ['bar', None]}}}},
+        environment={
+            'solids': {'double_string_for_all': {'inputs': {'value': [{'value': 'bar'}, None]}}}
+        },
     ).success

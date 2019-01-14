@@ -473,13 +473,11 @@ def test_optional_solid_with_optional_scalar_config():
 
     assert env_type.fields['solids'].is_optional is True
 
-    solids_cls = env_type.fields['solids'].config_cls
+    solids_type = env_type.fields['solids'].config_type
 
-    assert solids_cls.inst().fields['int_config_solid'].is_optional is True
+    assert solids_type.fields['int_config_solid'].is_optional is True
 
-    solids_default_obj = construct_solid_dictionary(
-        throwing_evaluate_config_value(solids_cls.inst(), {})
-    )
+    solids_default_obj = construct_solid_dictionary(throwing_evaluate_config_value(solids_type, {}))
 
     assert solids_default_obj['int_config_solid'].config is None
 

@@ -29,5 +29,9 @@ def test_hello_typed_inputs():
     with pytest.raises(PipelineConfigEvaluationError):
         execute_pipeline(
             define_hello_typed_inputs_pipeline(),
-            {'solids': {'add_hello_to_word': {'inputs': {'word': 343}}}},
+            {
+                'solids': {
+                    'add_hello_to_word': {'inputs': {'word': {'value': 343}}}
+                }
+            },
         )

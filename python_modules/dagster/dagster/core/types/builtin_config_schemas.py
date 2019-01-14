@@ -1,10 +1,41 @@
 import json
+import pickle
 
 from dagster import check
 
-from .config import ConfigTypeAttributes, Path, Int, String, Bool, Any
-from .config_schema import OutputSchema, make_bare_input_schema
+from .config import ConfigTypeAttributes, Path, Int, String, Bool, Any, Float
+from .config_schema import make_bare_input_schema, input_selector_schema, output_selector_schema
 from .field_utils import FieldImpl, Dict, NamedSelector
+
+
+def define_builtin_scalar_input_schema(scalar_name, config_scalar_type):
+    check.str_param(scalar_name, 'scalar_name')
+
+    @input_selector_schema(
+        NamedSelector(
+            scalar_name + '.InputSchema',
+            {
+                'value': FieldImpl(config_scalar_type),
+                'json': define_path_dict_field(),
+                'pickle': define_path_dict_field(),
+            },
+            type_attributes=ConfigTypeAttributes(is_system_config=True),
+        )
+    )
+    def _builtin_input_schema(file_type, file_options):
+        if file_type == 'value':
+            return file_options
+        elif file_type == 'json':
+            with open(file_options['path'], 'r') as ff:
+                value_dict = json.load(ff)
+                return value_dict['value']
+        elif file_type == 'pickle':
+            with open(file_options['path'], 'rb') as ff:
+                return pickle.load(ff)
+        else:
+            check.failed('Unsupported key {key}'.format(key=file_type))
+
+    return _builtin_input_schema
 
 
 def define_path_dict_field():
@@ -16,44 +47,42 @@ def define_builtin_scalar_output_schema(scalar_name):
 
     schema_cls = NamedSelector(
         scalar_name + '.MaterializationSchema',
-        {'json': define_path_dict_field()},
+        {'json': define_path_dict_field(), 'pickle': define_path_dict_field()},
         type_attributes=ConfigTypeAttributes(is_system_config=True),
     )
 
-    class _BuiltinScalarOutputSchema(OutputSchema):
-        @property
-        def schema_type(self):
-            return schema_cls.inst()
+    @output_selector_schema(schema_cls)
+    def _builtin_output_schema(file_type, file_options, runtime_value):
+        if file_type == 'json':
+            json_file_path = file_options['path']
+            json_value = json.dumps({'value': runtime_value})
+            with open(json_file_path, 'w') as ff:
+                ff.write(json_value)
+        elif file_type == 'pickle':
+            pickle_file_path = file_options['path']
+            with open(pickle_file_path, 'wb') as ff:
+                pickle.dump(runtime_value, ff)
+        else:
+            check.failed('Unsupported file type: {file_type}'.format(file_type=file_type))
 
-        def materialize_runtime_value(self, config_spec, runtime_value):
-            check.dict_param(config_spec, 'config_spec')
-            selector_key, selector_value = list(config_spec.items())[0]
-
-            if selector_key == 'json':
-                json_file_path = selector_value['path']
-                json_value = json.dumps({'value': runtime_value})
-                with open(json_file_path, 'w') as ff:
-                    ff.write(json_value)
-            else:
-                check.failed(
-                    'Unsupported selector key: {selector_key}'.format(selector_key=selector_key)
-                )
-
-    return _BuiltinScalarOutputSchema()
+    return _builtin_output_schema
 
 
 class BuiltinSchemas:
-    INT_INPUT = make_bare_input_schema(Int)
-    INT_OUTPUT = define_builtin_scalar_output_schema('Int')
+    ANY_INPUT = define_builtin_scalar_input_schema('Any', Any.inst())
+    ANY_OUTPUT = define_builtin_scalar_output_schema('Any')
 
-    STRING_INPUT = make_bare_input_schema(String)
-    STRING_OUTPUT = define_builtin_scalar_output_schema('String')
+    BOOL_INPUT = define_builtin_scalar_input_schema('Bool', Bool.inst())
+    BOOL_OUTPUT = define_builtin_scalar_output_schema('Bool')
+
+    FLOAT_INPUT = define_builtin_scalar_input_schema('Float', Float.inst())
+    FLOAT_OUTPUT = define_builtin_scalar_output_schema('Float')
+
+    INT_INPUT = define_builtin_scalar_input_schema('Int', Int.inst())
+    INT_OUTPUT = define_builtin_scalar_output_schema('Int')
 
     PATH_INPUT = make_bare_input_schema(Path)
     PATH_OUTPUT = define_builtin_scalar_output_schema('Path')
 
-    BOOL_INPUT = make_bare_input_schema(Bool)
-    BOOL_OUTPUT = define_builtin_scalar_output_schema('Bool')
-
-    ANY_INPUT = make_bare_input_schema(Any)
-    ANY_OUTPUT = define_builtin_scalar_output_schema('Any')
+    STRING_INPUT = define_builtin_scalar_input_schema('String', String.inst())
+    STRING_OUTPUT = define_builtin_scalar_output_schema('String')

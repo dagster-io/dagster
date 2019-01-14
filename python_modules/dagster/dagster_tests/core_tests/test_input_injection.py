@@ -21,10 +21,10 @@ def test_string_from_inputs():
         assert string_input == 'foo'
         called['yup'] = True
 
-    pipeline = PipelineDefinition(solids=[str_as_input])
+    pipeline = PipelineDefinition(name='test_string_from_inputs_pipeline', solids=[str_as_input])
 
     result = execute_pipeline(
-        pipeline, {'solids': {'str_as_input': {'inputs': {'string_input': 'foo'}}}}
+        pipeline, {'solids': {'str_as_input': {'inputs': {'string_input': {'value': 'foo'}}}}}
     )
 
     assert result.success
@@ -44,7 +44,7 @@ def test_string_from_aliased_inputs():
     )
 
     result = execute_pipeline(
-        pipeline, {'solids': {'aliased': {'inputs': {'string_input': 'foo'}}}}
+        pipeline, {'solids': {'aliased': {'inputs': {'string_input': {'value': 'foo'}}}}}
     )
 
     assert result.success
