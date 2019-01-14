@@ -75,7 +75,7 @@ class RuntimeExecutionContext:
         self.resources = resources
         self._run_id = check.str_param(run_id, 'run_id')
         self._context_stack = check.opt_dict_param(context_stack, 'context_stack')
-        self._context_config = check.inst_param(context_config, "context_config", ContextConfig)
+        self._context_config = check.opt_inst_param(context_config, "context_config", ContextConfig)
         self.events = ExecutionEvents(self)
 
     def _log(self, method, orig_message, message_props):

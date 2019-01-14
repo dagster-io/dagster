@@ -164,14 +164,13 @@ def get_solid_definition():
 
 def define_info(context_config={}):
     solid_def = get_solid_definition()
-    solid = Solid("ephemeral notebook solid", solid_def)
     pipeline_def = PipelineDefinition(solids=[solid_def], name="emphemeral notebook pipeline")
 
     environment_config = create_typed_environment(pipeline_def, context_config)
     check.inst_param(environment_config, 'typed_environment', EnvironmentConfig)
     run_id = ""
 
-    logger_level_str = environment_config.context.config['logging']['log_level']
+    logger_level_str = environment_config.context.config['log_level']
     logger_level = utils.logging.level_from_string(logger_level_str)
 
     logger = define_colored_console_logger("In notebook logger", logger_level)
@@ -211,6 +210,7 @@ def serialize_dm_context(transform_execution_info, inputs):
         transform_execution_info.context.context_config, 'context config', ContextConfig
     )
 
+    base_dir = '/tmp/dagstermill/{run_id}/'.format(run_id=run_id)
     marshal_dir = '/tmp/dagstermill/{run_id}/marshal'.format(run_id=run_id)
     if not os.path.exists(marshal_dir):
         os.makedirs(marshal_dir)
@@ -224,6 +224,7 @@ def serialize_dm_context(transform_execution_info, inputs):
         'solid_name': transform_execution_info.solid.name,
         'inputs': {},
         'marshal_dir': marshal_dir,
+        'base_dir': base_dir,
     }
 
     input_defs = transform_execution_info.solid_def.input_defs
@@ -273,14 +274,15 @@ def deserialize_dm_context(serialized_dm_context):
         inputs[input_name] = unmarshal_value(input_def.runtime_type, input_value)
 
     run_id = dm_context_data['run_id']
-    marshal_dir = dm_context_data['marshal_dir']
+    base_dir = dm_context_data['base_dir']
     context_name = dm_context_data['context_name']
     context_config = dm_context_data['context_config']
 
-    logger_level_str = context_config['logging']['log_level']
+    logger_level_str = context_config['log_level']
     logger_level = utils.logging.level_from_string(logger_level_str)
 
-    logger_file_name = os.path.join(marshal_dir, 'notebook.log')
+    logger_file_name = os.path.join(base_dir, 'notebook.log')
+    assert os.path.exists(logger_file_name), "Notebok log file doesn't exist!"
     file_handler = logging.FileHandler(logger_file_name)
 
     logger = construct_single_handler_logger(
@@ -295,7 +297,7 @@ def deserialize_dm_context(serialized_dm_context):
         pipeline_def=pipeline_def,
         solid_def=solid_def,
         inputs=inputs,
-        marshal_dir=marshal_dir,
+        marshal_dir=dm_context_data['marshal_dir'],
         info=reconstructed_transform_execution_info,
     )
 
@@ -316,8 +318,12 @@ def _dm_solid_transform(name, notebook_path):
         temp_path = os.path.join(
             output_notebook_dir, '{prefix}-out.ipynb'.format(prefix=str(uuid.uuid4()))
         )
+        output_log_path = os.path.join(base_dir, 'notebook.log')
 
         try:
+            with open(output_log_path, 'a') as f:
+                f.close()
+
             _source_nb = pm.execute_notebook(
                 notebook_path,
                 temp_path,
@@ -326,8 +332,7 @@ def _dm_solid_transform(name, notebook_path):
 
             output_nb = pm.read_notebook(temp_path)
 
-            output_log_loc = os.path.join(base_dir, 'notebook.log')
-            with open(output_log_loc, 'r') as f:
+            with open(output_log_path, 'r') as f:
                 log_content = f.read()
                 info.context.debug(log_content)
 
@@ -349,6 +354,8 @@ def _dm_solid_transform(name, notebook_path):
         finally:
             if do_cleanup and os.path.exists(temp_path):
                 os.remove(temp_path)
+            if do_cleanup and os.path.exists(output_log_path):
+                os.remove(output_log_path)
 
     return _t_fn
 

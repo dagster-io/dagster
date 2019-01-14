@@ -56,7 +56,7 @@ from .execution_plan.objects import (
 
 from .execution_plan.simple_engine import execute_plan_core
 
-from .system_config.objects import EnvironmentConfig, ContextConfig
+from .system_config.objects import EnvironmentConfig
 from .system_config.types import construct_environment_config
 
 
@@ -318,8 +318,7 @@ def yield_context(pipeline, environment, reentrant_info=None):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.inst_param(environment, 'environment', EnvironmentConfig)
     check.opt_inst_param(reentrant_info, 'reentrant_info', ReentrantInfo)
-    check.inst_param(environment.context, "environment.context", ContextConfig)
-    context_config = environment.context
+
     context_definition = pipeline.context_definitions[environment.context.name]
 
     run_id = get_run_id(reentrant_info)
@@ -343,7 +342,6 @@ def yield_context(pipeline, environment, reentrant_info=None):
                 loggers=loggers,
                 resources=resources,
                 context_stack=get_context_stack(execution_context, reentrant_info),
-                context_config=context_config,
             )
 
 
@@ -634,6 +632,4 @@ def create_typed_environment(pipeline, environment=None):
     if not result.success:
         raise PipelineConfigEvaluationError(pipeline, result.errors, environment)
 
-    environment_config = construct_environment_config(result.value)
-
-    return environment_config
+    return construct_environment_config(result.value)
