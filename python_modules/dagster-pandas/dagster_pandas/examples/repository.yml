@@ -1,0 +1,3 @@
+repository:
+  module: dagster_pandas.examples
+  fn: define_pandas_repository
