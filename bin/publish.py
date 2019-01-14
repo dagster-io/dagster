@@ -376,10 +376,15 @@ PyPI, preferably in the form of a ~/.pypirc file as follows:
     else:
         version = check_versions(nightly=True)
     print('Publishing packages to PyPI...')
+    if nightly:
+        set_git_tag(
+            '{version}{nightly}'.format(
+                version=version['__version__'], nightly=version['__nightly__']
+            )
+        )
+        subprocess.check_output(['git', 'push', '--tags'])
     publish_all(nightly)
     if nightly:
-        set_git_tag(version)
-        subprocess.check_output(['git', 'push', '--tags'])
         version = increment_nightly_versions()
         commit_new_version(
             '{version}{nightly}'.format(
