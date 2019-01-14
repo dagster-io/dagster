@@ -24,15 +24,19 @@ def define_csv_dict_field():
         }
     )
 )
-def dataframe_output_schema(file_type, file_options, runtime_value):
+def dataframe_output_schema(file_type, file_options, pandas_df):
+    check.str_param(file_type, 'file_type')
+    check.dict_param(file_options, 'file_options')
+    check.inst_param(pandas_df, 'pandas_df', DataFrame)
+
     if file_type == 'csv':
         path = file_options['path']
         del file_options['path']
-        return runtime_value.to_csv(path, index=False, **file_options)
+        return pandas_df.to_csv(path, index=False, **file_options)
     elif file_type == 'parquet':
-        return runtime_value.to_parquet(file_options['path'])
+        return pandas_df.to_parquet(file_options['path'])
     elif file_type == 'table':
-        return runtime_value.to_csv(file_options['path'], sep='\t', index=False)
+        return pandas_df.to_csv(file_options['path'], sep='\t', index=False)
     else:
         check.failed('Unsupported file_type {file_type}'.format(file_type=file_type))
 
@@ -47,6 +51,9 @@ def dataframe_output_schema(file_type, file_options, runtime_value):
     )
 )
 def dataframe_input_schema(file_type, file_options):
+    check.str_param(file_type, 'file_type')
+    check.dict_param(file_options, 'file_options')
+
     if file_type == 'csv':
         path = file_options['path']
         del file_options['path']
