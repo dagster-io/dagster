@@ -26,21 +26,16 @@ def execute_with_another_world():
             # This is the 'solids' section
             'solids': {
                 # Configuration for the add_hello_to_word solid
-                'add_hello_to_word': {'inputs': {'word': 'Mars'}}
+                'add_hello_to_word': {'inputs': {'word': {'value': 'Mars'}}}
             }
         },
     )
 
 
-@lambda_solid(
-    inputs=[InputDefinition('word', types.String)],
-    output=OutputDefinition(types.String),
-)
+@lambda_solid(inputs=[InputDefinition('word', types.String)], output=OutputDefinition(types.String))
 def add_hello_to_word_typed(word):
     return 'Hello, ' + word + '!'
 
 
 def define_hello_typed_inputs_pipeline():
-    return PipelineDefinition(
-        name='hello_typed_inputs', solids=[add_hello_to_word_typed]
-    )
+    return PipelineDefinition(name='hello_typed_inputs', solids=[add_hello_to_word_typed])

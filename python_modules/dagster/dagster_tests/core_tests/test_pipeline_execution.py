@@ -367,7 +367,7 @@ def test_pipeline_subset():
     assert pipeline_result.success
     assert pipeline_result.result_for_solid('add_one').transformed_value() == 2
 
-    env_config = {'solids': {'add_one': {'inputs': {'num': 3}}}}
+    env_config = {'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}}
 
     subset_result = execute_pipeline(pipeline_def, environment=env_config, solid_subset=['add_one'])
 

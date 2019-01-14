@@ -135,7 +135,7 @@ def test_no_outputs_no_inputs_config_schema():
 def test_no_outputs_one_input_config_schema():
     assert create_typed_environment(
         one_input_no_output_pipeline(),
-        {'solids': {'take_input_return_nothing': {'inputs': {'dummy': 'value'}}}},
+        {'solids': {'take_input_return_nothing': {'inputs': {'dummy': {'value': 'value'}}}}},
     )
 
     with pytest.raises(PipelineConfigEvaluationError) as exc_info:
@@ -143,7 +143,10 @@ def test_no_outputs_one_input_config_schema():
             one_input_no_output_pipeline(),
             {
                 'solids': {
-                    'take_input_return_nothing': {'inputs': {'dummy': 'value'}, 'outputs': {}}
+                    'take_input_return_nothing': {
+                        'inputs': {'dummy': {'value': 'value'}},
+                        'outputs': {},
+                    }
                 }
             },
         )
