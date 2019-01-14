@@ -440,7 +440,7 @@ jobs:
       - checkout
 
       - run:
-          name: Install requitements
+          name: Install requirements
           command: sudo pip install -r bin/requirements.txt
 
       # Gruesome, see https://circleci.com/blog/continuously-deploying-python-packages-to-pypi-with-circleci/
