@@ -334,7 +334,8 @@ def git_push(tags=False):
             [
                 'git',
                 'push',
-                '--tags' '-q',
+                '--tags',
+                '-q',
                 'https://mgasner:{github_token}@github.com/dagster-io/dagster.git'.format(
                     github_token=github_token
                 ),
