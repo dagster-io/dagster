@@ -329,29 +329,35 @@ def check_git_status():
 
 def git_push(tags=False):
     github_token = os.getenv('GITHUB_TOKEN')
-    if tags:
-        subprocess.check_output(
-            [
-                'git',
-                'push',
-                '--tags',
-                '-q',
-                'https://mgasner:{github_token}@github.com/dagster-io/dagster.git'.format(
-                    github_token=github_token
-                ),
-            ]
-        )
+    if github_token:
+        if tags:
+            subprocess.check_output(
+                [
+                    'git',
+                    'push',
+                    '--tags',
+                    '-q',
+                    'https://mgasner:{github_token}@github.com/dagster-io/dagster.git'.format(
+                        github_token=github_token
+                    ),
+                ]
+            )
+        else:
+            subprocess.check_output(
+                [
+                    'git',
+                    'push',
+                    '-q',
+                    'https://mgasner:{github_token}@github.com/dagster-io/dagster.git'.format(
+                        github_token=github_token
+                    ),
+                ]
+            )
     else:
-        subprocess.check_output(
-            [
-                'git',
-                'push',
-                '-q',
-                'https://mgasner:{github_token}@github.com/dagster-io/dagster.git'.format(
-                    github_token=github_token
-                ),
-            ]
-        )
+        if tags:
+            subprocess.check_output(['git', 'push', '--tags'])
+        else:
+            subprocess.check_output(['git', 'push'])
 
 
 CLI_HELP = """Tools to help tag and publish releases of the Dagster projects.
