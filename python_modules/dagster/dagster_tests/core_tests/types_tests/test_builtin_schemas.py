@@ -1,17 +1,19 @@
 import pytest
 
 from dagster import (
+    Bool,
+    Float,
     InputDefinition,
     Int,
-    OutputDefinition,
     List,
-    Path,
-    PipelineDefinition,
-    PipelineConfigEvaluationError,
     Nullable,
+    OutputDefinition,
+    Path,
+    PipelineConfigEvaluationError,
+    PipelineDefinition,
     String,
-    lambda_solid,
     execute_pipeline,
+    lambda_solid,
 )
 
 from dagster.utils.test import get_temp_file_name
@@ -42,6 +44,22 @@ def define_test_all_scalars_pipeline():
     def produce_path():
         return '/path/to/foo'
 
+    @lambda_solid(inputs=[InputDefinition('float_number', Float)])
+    def take_float(float_number):
+        return float_number
+
+    @lambda_solid(output=OutputDefinition(Float))
+    def produce_float():
+        return 3.14
+
+    @lambda_solid(inputs=[InputDefinition('bool_value', Bool)])
+    def take_bool(bool_value):
+        return bool_value
+
+    @lambda_solid(output=OutputDefinition(Bool))
+    def produce_bool():
+        return True
+
     @lambda_solid(inputs=[InputDefinition('string_list', List(String))])
     def take_string_list(string_list):
         return string_list
@@ -53,9 +71,13 @@ def define_test_all_scalars_pipeline():
     return PipelineDefinition(
         name='test_all_scalars_pipeline',
         solids=[
+            produce_bool,
+            produce_float,
             produce_int,
             produce_path,
             produce_string,
+            take_bool,
+            take_float,
             take_int,
             take_nullable_string,
             take_path,
@@ -156,6 +178,56 @@ def test_string_input_schema_failure():
 
     assert (
         'Type failure at path "root:solids:take_string:inputs:string:value" on type "String"'
+        in str(exc_info.value)
+    )
+
+
+def test_float_input_schema_value():
+    result = execute_pipeline(
+        define_test_all_scalars_pipeline(),
+        environment=single_input_env('take_float', 'float_number', {'value': 3.34}),
+        solid_subset=['take_float'],
+    )
+
+    assert result.success
+    assert result.result_for_solid('take_float').transformed_value() == 3.34
+
+
+def test_float_input_schema_failure():
+    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
+        execute_pipeline(
+            define_test_all_scalars_pipeline(),
+            environment=single_input_env('take_float', 'float_number', {'value': '3343'}),
+            solid_subset=['take_float'],
+        )
+
+    assert (
+        'Type failure at path "root:solids:take_float:inputs:float_number:value" on type "Float"'
+        in str(exc_info.value)
+    )
+
+
+def test_bool_input_schema_value():
+    result = execute_pipeline(
+        define_test_all_scalars_pipeline(),
+        environment=single_input_env('take_bool', 'bool_value', {'value': True}),
+        solid_subset=['take_bool'],
+    )
+
+    assert result.success
+    assert result.result_for_solid('take_bool').transformed_value() is True
+
+
+def test_bool_input_schema_failure():
+    with pytest.raises(PipelineConfigEvaluationError) as exc_info:
+        execute_pipeline(
+            define_test_all_scalars_pipeline(),
+            environment=single_input_env('take_bool', 'bool_value', {'value': '3343'}),
+            solid_subset=['take_bool'],
+        )
+
+    assert (
+        'Type failure at path "root:solids:take_bool:inputs:bool_value:value" on type "Bool".'
         in str(exc_info.value)
     )
 
@@ -304,3 +376,4 @@ def test_nullable_string_input_without_value():
     assert result.success
 
     assert result.result_for_solid('take_nullable_string').transformed_value() is None
+

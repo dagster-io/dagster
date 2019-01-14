@@ -137,12 +137,11 @@ class Path(BuiltinScalarRuntimeType):
 
 
 class Float(RuntimeType):
-    # TODO
-    # def __init__(self):
-    #     super(String, self).__init__(
-    #         input_schema_cls=config.String,
-    #         output_schema_cls=define_builtin_scalar_output_schema(name='String'),
-    #     )
+    def __init__(self):
+        super(Float, self).__init__(
+            input_schema=BuiltinSchemas.FLOAT_INPUT, output_schema=BuiltinSchemas.FLOAT_OUTPUT
+        )
+
     def coerce_runtime_value(self, value):
         return self.throw_if_false(lambda v: isinstance(v, float), value)
 
@@ -275,10 +274,11 @@ class Stringish(RuntimeType):
 
 _RUNTIME_MAP = {
     BuiltinEnum.ANY: Any.inst(),
-    BuiltinEnum.STRING: String.inst(),
-    BuiltinEnum.INT: Int.inst(),
     BuiltinEnum.BOOL: Bool.inst(),
+    BuiltinEnum.FLOAT: Float.inst(),
+    BuiltinEnum.INT: Int.inst(),
     BuiltinEnum.PATH: Path.inst(),
+    BuiltinEnum.STRING: String.inst(),
 }
 
 

@@ -3,7 +3,7 @@ import pickle
 
 from dagster import check
 
-from .config import ConfigTypeAttributes, Path, Int, String, Bool, Any
+from .config import ConfigTypeAttributes, Path, Int, String, Bool, Any, Float
 from .config_schema import make_bare_input_schema, input_selector_schema, output_selector_schema
 from .field_utils import FieldImpl, Dict, NamedSelector
 
@@ -69,17 +69,20 @@ def define_builtin_scalar_output_schema(scalar_name):
 
 
 class BuiltinSchemas:
+    ANY_INPUT = make_bare_input_schema(Any)
+    ANY_OUTPUT = define_builtin_scalar_output_schema('Any')
+
+    BOOL_INPUT = define_builtin_scalar_input_schema('Bool', Bool.inst())
+    BOOL_OUTPUT = define_builtin_scalar_output_schema('Bool')
+
+    FLOAT_INPUT = define_builtin_scalar_input_schema('Float', Float.inst())
+    FLOAT_OUTPUT = define_builtin_scalar_output_schema('Float')
+
     INT_INPUT = define_builtin_scalar_input_schema('Int', Int.inst())
     INT_OUTPUT = define_builtin_scalar_output_schema('Int')
-
-    STRING_INPUT = define_builtin_scalar_input_schema('String', String.inst())
-    STRING_OUTPUT = define_builtin_scalar_output_schema('String')
 
     PATH_INPUT = make_bare_input_schema(Path)
     PATH_OUTPUT = define_builtin_scalar_output_schema('Path')
 
-    BOOL_INPUT = make_bare_input_schema(Bool)
-    BOOL_OUTPUT = define_builtin_scalar_output_schema('Bool')
-
-    ANY_INPUT = make_bare_input_schema(Any)
-    ANY_OUTPUT = define_builtin_scalar_output_schema('Any')
+    STRING_INPUT = define_builtin_scalar_input_schema('String', String.inst())
+    STRING_OUTPUT = define_builtin_scalar_output_schema('String')
