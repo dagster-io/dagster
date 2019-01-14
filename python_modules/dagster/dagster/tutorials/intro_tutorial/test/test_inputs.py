@@ -4,7 +4,10 @@ from dagster import PipelineConfigEvaluationError, execute_pipeline
 from dagster.tutorials.utils import check_cli_execute_file_pipeline
 from dagster.utils import script_relative_path
 
-from ..inputs import execute_with_another_world, define_hello_typed_inputs_pipeline
+from ..inputs import (
+    execute_with_another_world,
+    define_hello_typed_inputs_pipeline,
+)
 
 
 def test_hello_inputs_parameterized_pipeline():
@@ -26,5 +29,9 @@ def test_hello_typed_inputs():
     with pytest.raises(PipelineConfigEvaluationError):
         execute_pipeline(
             define_hello_typed_inputs_pipeline(),
-            {'solids': {'add_hello_to_word': {'inputs': {'word': {'value': 343}}}}},
+            {
+                'solids': {
+                    'add_hello_to_word': {'inputs': {'word': {'value': 343}}}
+                }
+            },
         )
