@@ -440,24 +440,30 @@ jobs:
       - checkout
 
       - run:
-        name: Install requitements
-        command: sudo pip install -r bin/requirements.txt
+          name: Install requirements
+          command: sudo pip install -r bin/requirements.txt
 
       # Gruesome, see https://circleci.com/blog/continuously-deploying-python-packages-to-pypi-with-circleci/
       # https://github.com/pypa/setuptools/issues/954 and linked issues https://github.com/pypa/setuptools/issues/941,
       # https://github.com/pypa/setuptools/pull/961
       - run:
-        name: Create ~/.pypirc
-        command: |
-          echo -e "[distutils]" >> ~/.pypirc
-          echo -e "index-servers =" >> ~/.pypirc
-          echo -e "  pypi" >> ~/.pypirc
-          echo -e "" >> ~/.pypirc
-          echo -e "[pypi]" >> ~/.pypirc
-          echo -e "repository: https://upload.pypi.org/legacy/" >> ~/.pypirc
-          echo -e "username: $PYPI_USERNAME" >> ~/.pypirc
-          echo -e "password: $PYPI_PASSWORD" >> ~/.pypirc
+          name: Create ~/.pypirc
+          command: |
+            echo -e "[distutils]" >> ~/.pypirc
+            echo -e "index-servers =" >> ~/.pypirc
+            echo -e "  pypi" >> ~/.pypirc
+            echo -e "" >> ~/.pypirc
+            echo -e "[pypi]" >> ~/.pypirc
+            echo -e "repository: https://upload.pypi.org/legacy/" >> ~/.pypirc
+            echo -e "username: $PYPI_USERNAME" >> ~/.pypirc
+            echo -e "password: $PYPI_PASSWORD" >> ~/.pypirc
 
       - run:
-        name: Publish nightlies
-        command: python bin/publish.py --nightlies
+          name: Configure git for push
+          command: |
+            git config --global user.email "$GITHUB_EMAIL"
+            git config --global user.name "$GITHUB_NAME"
+
+      - run:
+          name: Publish nightlies
+          command: python bin/publish.py publish --nightly

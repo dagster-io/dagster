@@ -225,13 +225,15 @@ def check_versions_equal(nightly=False):
 
 def check_versions(nightly=False):
     version = check_versions_equal(nightly)
-    git_tag = get_git_tag()
+    if not nightly:
+        git_tag = get_git_tag()
+        assert (
+            version['__version__'] == git_tag
+        ), 'Version {version} does not match expected git tag {git_tag}'.format(
+            version=version['__version__'], git_tag=git_tag
+        )
 
-    assert (
-        version['__version__'] == git_tag
-    ), 'Version {version} does not match expected git tag {git_tag}'.format(
-        version=version['__version__'], git_tag=git_tag
-    )
+    return version
 
 
 def set_version(module_name, version, nightly):
@@ -262,6 +264,7 @@ def increment_nightly_versions():
     versions = get_versions()
     for module_name in MODULE_NAMES:
         increment_nightly_version(module_name, versions[module_name])
+    return versions[MODULE_NAMES[0]]
 
 
 def set_new_version(version):
@@ -324,6 +327,41 @@ def check_git_status():
         )
 
 
+def git_push(tags=False):
+    github_token = os.getenv('GITHUB_TOKEN')
+    github_username = os.getenv('GITHUB_USERNAME')
+    if github_token and github_username:
+        if tags:
+            subprocess.check_output(
+                [
+                    'git',
+                    'push',
+                    '--tags',
+                    '-q',
+                    'https://{github_username}:{github_token}@github.com/dagster-io/dagster.git'.format(
+                        github_username=github_username,
+                        github_token=github_token
+                    ),
+                ]
+            )
+        else:
+            subprocess.check_output(
+                [
+                    'git',
+                    'push',
+                    '-q',
+                    'https://{github_username}:{github_token}@github.com/dagster-io/dagster.git'.format(
+                        github_username=github_username,
+                        github_token=github_token
+                    ),                ]
+            )
+    else:
+        if tags:
+            subprocess.check_output(['git', 'push', '--tags'])
+        else:
+            subprocess.check_output(['git', 'push'])
+
+
 CLI_HELP = """Tools to help tag and publish releases of the Dagster projects.
 
 By convention, these projects live in a single monorepo, and the submodules are versioned in
@@ -370,10 +408,24 @@ PyPI, preferably in the form of a ~/.pypirc file as follows:
         )
         check_versions()
         check_git_status()
+    else:
+        version = check_versions(nightly=True)
     print('Publishing packages to PyPI...')
-    publish_all(nightly)
     if nightly:
-        increment_nightly_versions()
+        version = increment_nightly_versions()
+        commit_new_version(
+            '{version}{nightly}'.format(
+                version=version['__version__'], nightly=version['__nightly__']
+            )
+        )
+        set_git_tag(
+            '{version}{nightly}'.format(
+                version=version['__version__'], nightly=version['__nightly__']
+            )
+        )
+        git_push()
+        git_push(tags=True)
+    publish_all(nightly)
 
 
 @cli.command()
