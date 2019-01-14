@@ -1,6 +1,7 @@
 import pytest
 
 from dagster import (
+    Any,
     Bool,
     Float,
     InputDefinition,
@@ -60,6 +61,14 @@ def define_test_all_scalars_pipeline():
     def produce_bool():
         return True
 
+    @lambda_solid(inputs=[InputDefinition('any_value', Any)])
+    def take_any(any_value):
+        return any_value
+
+    @lambda_solid(output=OutputDefinition(Any))
+    def produce_any():
+        return True
+
     @lambda_solid(inputs=[InputDefinition('string_list', List(String))])
     def take_string_list(string_list):
         return string_list
@@ -71,11 +80,13 @@ def define_test_all_scalars_pipeline():
     return PipelineDefinition(
         name='test_all_scalars_pipeline',
         solids=[
+            produce_any,
             produce_bool,
             produce_float,
             produce_int,
             produce_path,
             produce_string,
+            take_any,
             take_bool,
             take_float,
             take_int,
@@ -230,6 +241,26 @@ def test_bool_input_schema_failure():
         'Type failure at path "root:solids:take_bool:inputs:bool_value:value" on type "Bool".'
         in str(exc_info.value)
     )
+
+
+def test_any_input_schema_value():
+    result = execute_pipeline(
+        define_test_all_scalars_pipeline(),
+        environment=single_input_env('take_any', 'any_value', {'value': 'ff'}),
+        solid_subset=['take_any'],
+    )
+
+    assert result.success
+    assert result.result_for_solid('take_any').transformed_value() == 'ff'
+
+    result = execute_pipeline(
+        define_test_all_scalars_pipeline(),
+        environment=single_input_env('take_any', 'any_value', {'value': 3843}),
+        solid_subset=['take_any'],
+    )
+
+    assert result.success
+    assert result.result_for_solid('take_any').transformed_value() == 3843
 
 
 def test_none_string_input_schema_failure():

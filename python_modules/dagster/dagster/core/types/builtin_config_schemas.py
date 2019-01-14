@@ -69,7 +69,7 @@ def define_builtin_scalar_output_schema(scalar_name):
 
 
 class BuiltinSchemas:
-    ANY_INPUT = make_bare_input_schema(Any)
+    ANY_INPUT = define_builtin_scalar_input_schema('Any', Any.inst())
     ANY_OUTPUT = define_builtin_scalar_output_schema('Any')
 
     BOOL_INPUT = define_builtin_scalar_input_schema('Bool', Bool.inst())
