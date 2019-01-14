@@ -458,12 +458,11 @@ jobs:
             echo -e "username: $PYPI_USERNAME" >> ~/.pypirc
             echo -e "password: $PYPI_PASSWORD" >> ~/.pypirc
 
-            # Eventually we want a machine user for this
       - run:
           name: Configure git for push
           command: |
-            git config --global user.email "max.gasner@gmail.com"
-            git config --global user.name "Max Gasner"
+            git config --global user.email "$GITHUB_EMAIL"
+            git config --global user.name "$GITHUB_NAME"
 
       - run:
           name: Publish nightlies

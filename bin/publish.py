@@ -329,7 +329,8 @@ def check_git_status():
 
 def git_push(tags=False):
     github_token = os.getenv('GITHUB_TOKEN')
-    if github_token:
+    github_username = os.getenv('GITHUB_USERNAME')
+    if github_token and github_username:
         if tags:
             subprocess.check_output(
                 [
@@ -337,7 +338,8 @@ def git_push(tags=False):
                     'push',
                     '--tags',
                     '-q',
-                    'https://mgasner:{github_token}@github.com/dagster-io/dagster.git'.format(
+                    'https://{github_username}:{github_token}@github.com/dagster-io/dagster.git'.format(
+                        github_username=github_username,
                         github_token=github_token
                     ),
                 ]
@@ -348,10 +350,10 @@ def git_push(tags=False):
                     'git',
                     'push',
                     '-q',
-                    'https://mgasner:{github_token}@github.com/dagster-io/dagster.git'.format(
+                    'https://{github_username}:{github_token}@github.com/dagster-io/dagster.git'.format(
+                        github_username=github_username,
                         github_token=github_token
-                    ),
-                ]
+                    ),                ]
             )
     else:
         if tags:
