@@ -461,4 +461,4 @@ jobs:
 
       - run:
           name: Publish nightlies
-          command: python bin/publish.py --nightly
+          command: python bin/publish.py publish --nightly
