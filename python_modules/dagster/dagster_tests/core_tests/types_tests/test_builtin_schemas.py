@@ -407,4 +407,3 @@ def test_nullable_string_input_without_value():
     assert result.success
 
     assert result.result_for_solid('take_nullable_string').transformed_value() is None
-
