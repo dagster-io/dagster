@@ -264,7 +264,7 @@ def increment_nightly_versions():
     versions = get_versions()
     for module_name in MODULE_NAMES:
         increment_nightly_version(module_name, versions[module_name])
-    return versions[module_name[MODULE_NAMES[0]]]
+    return versions[MODULE_NAMES[0]]
 
 
 def set_new_version(version):
