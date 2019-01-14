@@ -225,13 +225,15 @@ def check_versions_equal(nightly=False):
 
 def check_versions(nightly=False):
     version = check_versions_equal(nightly)
-    git_tag = get_git_tag()
+    if not nightly:
+        git_tag = get_git_tag()
+        assert (
+            version['__version__'] == git_tag
+        ), 'Version {version} does not match expected git tag {git_tag}'.format(
+            version=version['__version__'], git_tag=git_tag
+        )
 
-    assert (
-        version['__version__'] == git_tag
-    ), 'Version {version} does not match expected git tag {git_tag}'.format(
-        version=version['__version__'], git_tag=git_tag
-    )
+    return version
 
 
 def set_version(module_name, version, nightly):
@@ -262,6 +264,7 @@ def increment_nightly_versions():
     versions = get_versions()
     for module_name in MODULE_NAMES:
         increment_nightly_version(module_name, versions[module_name])
+    return versions[module_name[MODULE_NAMES[0]]]
 
 
 def set_new_version(version):
@@ -370,10 +373,20 @@ PyPI, preferably in the form of a ~/.pypirc file as follows:
         )
         check_versions()
         check_git_status()
+    else:
+        version = check_versions(nightly=True)
     print('Publishing packages to PyPI...')
     publish_all(nightly)
     if nightly:
-        increment_nightly_versions()
+        set_git_tag(version)
+        subprocess.check_output(['git', 'push', '--tags'])
+        version = increment_nightly_versions()
+        commit_new_version(
+            '{version}{nightly}'.format(
+                version=version['__version__'], nightly=version['__nightly__']
+            )
+        )
+        subprocess.check_output(['git', 'push'])
 
 
 @cli.command()
