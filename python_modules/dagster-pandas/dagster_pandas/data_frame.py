@@ -1,6 +1,15 @@
 import pandas as pd
 
-from dagster import Dict, Field, Path, Selector, String, check, as_dagster_type
+from dagster import (
+    DagsterInvariantViolationError,
+    Dict,
+    Field,
+    Path,
+    Selector,
+    String,
+    as_dagster_type,
+    check,
+)
 
 from dagster.core.types.config_schema import input_selector_schema, output_selector_schema
 
@@ -63,7 +72,9 @@ def dataframe_input_schema(file_type, file_options):
     elif file_type == 'table':
         return pd.read_table(file_options['path'])
     else:
-        check.failed('Unsupported file_type {file_type}'.format(file_type=file_type))
+        raise DagsterInvariantViolationError(
+            'Unsupported file_type {file_type}'.format(file_type=file_type)
+        )
 
 
 DataFrame = as_dagster_type(
