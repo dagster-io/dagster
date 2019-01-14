@@ -1,3 +1,3 @@
 __version__ = '0.3.0rc8'
 
-__nightly__ = '.dev1'
+__nightly__ = '.dev2'
