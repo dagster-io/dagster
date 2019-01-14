@@ -10,6 +10,7 @@ from dagster import check
 from dagster.utils.logging import CompositeLogger, INFO, define_colored_console_logger
 
 from .events import ExecutionEvents
+from .system_config.objects import ContextConfig
 
 Metric = namedtuple('Metric', 'context_dict metric_name value')
 
@@ -63,7 +64,9 @@ class RuntimeExecutionContext:
             ExecutionContext.
     '''
 
-    def __init__(self, run_id, loggers=None, resources=None, context_stack=None):
+    def __init__(
+        self, run_id, loggers=None, resources=None, context_stack=None, context_config=None
+    ):
 
         if loggers is None:
             loggers = [define_colored_console_logger('dagster')]
@@ -72,6 +75,7 @@ class RuntimeExecutionContext:
         self.resources = resources
         self._run_id = check.str_param(run_id, 'run_id')
         self._context_stack = check.opt_dict_param(context_stack, 'context_stack')
+        self._context_config = check.inst_param(context_config, "context_config", ContextConfig)
         self.events = ExecutionEvents(self)
 
     def _log(self, method, orig_message, message_props):
@@ -216,6 +220,10 @@ class RuntimeExecutionContext:
     @property
     def run_id(self):
         return self._run_id
+
+    @property
+    def context_config(self):
+        return self._context_config
 
 
 class ReentrantInfo(namedtuple('_ReentrantInfo', 'run_id context_stack event_callback')):

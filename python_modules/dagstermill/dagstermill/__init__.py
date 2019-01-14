@@ -5,6 +5,7 @@ import base64
 import json
 import os
 import uuid
+import logging
 
 import six
 
@@ -24,11 +25,19 @@ from dagster import (
     types,
 )
 
+from dagster.core.execution_context import RuntimeExecutionContext
+from dagster.core.execution import create_typed_environment
+from dagster.core.system_config.objects import ContextConfig, EnvironmentConfig
 from dagster.core.definitions import TransformExecutionInfo
 from dagster.core.types.runtime import RuntimeType
+from dagster.utils.logging import construct_single_handler_logger, define_colored_console_logger
+import dagster.utils as utils
+from dagster.core.definitions.dependency import Solid
+from dagster.core.system_config.objects import ContextConfig
 
 # magic incantation for syncing up notebooks to enclosing virtual environment.
 # I don't claim to understand it.
+# Run the following commands *while in* the dagster virtual env
 # ipython kernel install --name "dagster" --user
 # python3 -m ipykernel install --user
 
@@ -41,11 +50,13 @@ class InMemoryDagstermillContext:
 
 
 class RemotedDagstermillContext:
-    def __init__(self, pipeline_def, solid_def, inputs, marshal_dir):
+    def __init__(self, run_id, pipeline_def, solid_def, inputs, marshal_dir, info):
+        self.run_id = run_id
         self.pipeline_def = pipeline_def
         self.solid_def = solid_def
         self.inputs = inputs
         self.marshal_dir = marshal_dir
+        self.info = info  # add check of type TransformExecutionInfo
 
 
 class DagstermillError(Exception):
@@ -62,7 +73,9 @@ class Manager:
 
     def declare_as_solid(self, repository_def, solid_def_name):
         self.repository_def = repository_def
-        self.solid_def = self.repository_def.solid_def_named(solid_def_name)
+        self.solid_def = check.inst_param(
+            self.repository_def.solid_def_named(solid_def_name), "solid_def", SolidDefinition
+        )
         self.solid_def_name = check.str_param(solid_def_name, 'solid_def_name')
 
     def define_context(self, inputs=None):
@@ -141,8 +154,33 @@ def marshal_value(runtime_type, value, target_file):
 MANAGER_FOR_NOTEBOOK_INSTANCE = Manager()
 
 
-def declare_as_solid(pipeline_def, solid_def_name):
-    return MANAGER_FOR_NOTEBOOK_INSTANCE.declare_as_solid(pipeline_def, solid_def_name)
+def declare_as_solid(repo_def, solid_def_name):
+    return MANAGER_FOR_NOTEBOOK_INSTANCE.declare_as_solid(repo_def, solid_def_name)
+
+
+def get_solid_definition():
+    return check.inst_param(MANAGER_FOR_NOTEBOOK_INSTANCE.solid_def, "solid_def", SolidDefinition)
+
+
+def define_info(context_config={}):
+    solid_def = get_solid_definition()
+    solid = Solid("ephemeral notebook solid", solid_def)
+    pipeline_def = PipelineDefinition(solids=[solid_def], name="emphemeral notebook pipeline")
+
+    environment_config = create_typed_environment(pipeline_def, context_config)
+    check.inst_param(environment_config, 'typed_environment', EnvironmentConfig)
+    run_id = ""
+
+    logger_level_str = environment_config.context.config['logging']['log_level']
+    logger_level = utils.logging.level_from_string(logger_level_str)
+
+    logger = define_colored_console_logger("In notebook logger", logger_level)
+    reconstructed_runtime_context = RuntimeExecutionContext(run_id=run_id, loggers=[logger])
+
+    reconstructed_transform_execution_info = TransformExecutionInfo(
+        context=reconstructed_runtime_context, config=None, solid=solid, pipeline_def=pipeline_def
+    )
+    return reconstructed_transform_execution_info
 
 
 def define_context(inputs=None):
@@ -165,15 +203,22 @@ def yield_result(dm_context, value, output_name='result'):
 
 def serialize_dm_context(transform_execution_info, inputs):
     check.inst_param(transform_execution_info, 'transform_execution_info', TransformExecutionInfo)
+
     check.dict_param(inputs, 'inputs', key_type=six.string_types)
 
     run_id = transform_execution_info.context.run_id
+    context_config = check.inst_param(
+        transform_execution_info.context.context_config, 'context config', ContextConfig
+    )
 
     marshal_dir = '/tmp/dagstermill/{run_id}/marshal'.format(run_id=run_id)
     if not os.path.exists(marshal_dir):
         os.makedirs(marshal_dir)
 
     new_inputs_structure = {
+        'run_id': run_id,
+        'context_name': context_config.name,
+        'context_config': context_config.config,
         'pipeline_name': transform_execution_info.pipeline_def.name,
         'solid_def_name': transform_execution_info.solid.definition.name,
         'solid_name': transform_execution_info.solid.name,
@@ -219,6 +264,7 @@ def deserialize_dm_context(serialized_dm_context):
     check.invariant(pipeline_def.has_solid_def(solid_def_name))
 
     solid_def = pipeline_def.solid_def_named(solid_def_name)
+    solid = Solid("Out of process notebook solid", solid_def)
 
     inputs_data = dm_context_data['inputs']
     inputs = {}
@@ -226,11 +272,31 @@ def deserialize_dm_context(serialized_dm_context):
         input_def = solid_def.input_def_named(input_name)
         inputs[input_name] = unmarshal_value(input_def.runtime_type, input_value)
 
+    run_id = dm_context_data['run_id']
+    marshal_dir = dm_context_data['marshal_dir']
+    context_name = dm_context_data['context_name']
+    context_config = dm_context_data['context_config']
+
+    logger_level_str = context_config['logging']['log_level']
+    logger_level = utils.logging.level_from_string(logger_level_str)
+
+    logger_file_name = os.path.join(marshal_dir, 'notebook.log')
+    file_handler = logging.FileHandler(logger_file_name)
+
+    logger = construct_single_handler_logger(
+        name="notebook_log", level=logger_level, handler=file_handler
+    )
+    reconstructed_runtime_context = RuntimeExecutionContext(run_id=run_id, loggers=[logger])
+    reconstructed_transform_execution_info = TransformExecutionInfo(
+        context=reconstructed_runtime_context, config=None, solid=solid, pipeline_def=pipeline_def
+    )
     return RemotedDagstermillContext(
+        run_id=dm_context_data['run_id'],
         pipeline_def=pipeline_def,
         solid_def=solid_def,
         inputs=inputs,
-        marshal_dir=dm_context_data['marshal_dir'],
+        marshal_dir=marshal_dir,
+        info=reconstructed_transform_execution_info,
     )
 
 
@@ -259,6 +325,11 @@ def _dm_solid_transform(name, notebook_path):
             )
 
             output_nb = pm.read_notebook(temp_path)
+
+            output_log_loc = os.path.join(base_dir, 'notebook.log')
+            with open(output_log_loc, 'r') as f:
+                log_content = f.read()
+                info.context.debug(log_content)
 
             info.context.debug(
                 'Notebook execution complete for {name}. Data is {data}'.format(
