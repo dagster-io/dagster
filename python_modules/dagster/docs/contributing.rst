@@ -41,16 +41,16 @@ To run JavaScript tests for the dagit frontend, you can run:
     cd dagster/python_modules/dagit/dagit/webapp
     yarn test
 
-In webapp development it's handy to run `yarn run jest --watch` to have an
+In webapp development it's handy to run ``yarn run jest --watch`` to have an
 interactive test runner.
 
 Some webapp tests use snapshots--auto-generated results to which the test
 render tree is compared. Those tests are supposed to break when you change
 something.
 
-Check that the change is sensible and run `yarn run jest -u` to update the
+Check that the change is sensible and run ``yarn run jest -u`` to update the
 snapshot to the new result. You can also update snapshots interactively
-when you are in `--watch` mode.
+when you are in ``--watch`` mode.
 
 Running dagit webapp in development
 -------------------------------------
@@ -67,7 +67,7 @@ Run the local development (autoreloading, etc.) version of the webapp.
 
 Releasing
 -----------
-Projects are released using the Python script at `dagster/bin/publish.py`.
+Projects are released using the Python script at ``dagster/bin/publish.py``.
 
 Developing docs
 ---------------
