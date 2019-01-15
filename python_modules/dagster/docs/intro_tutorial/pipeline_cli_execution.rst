@@ -8,7 +8,7 @@ a production context.
 Just as in the last part of the tutorial, we'll define a pipeline and a repository, and create
 a yaml file to tell the CLI tool about the repository.
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/pipeline_execution.py
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/pipeline_cli_execution.py
    :linenos:
    :caption: pipeline_execution.py
 
