@@ -144,7 +144,10 @@ def friendly_string_for_error(error):
         )
     elif error.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH:
         return 'Type failure at path "{path}"{type_msg}. Got "{value_rep}". {message}.'.format(
-            path=path, type_msg=type_msg, value_rep=error.error_data.value_rep, message=error.message
+            path=path,
+            type_msg=type_msg,
+            value_rep=error.error_data.value_rep,
+            message=error.message,
         )
     elif error.reason == DagsterEvaluationErrorReason.SELECTOR_FIELD_ERROR:
         if error.error_data.incoming_fields:
