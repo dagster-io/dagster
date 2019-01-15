@@ -1,11 +1,12 @@
 from dagster import (
+    Field,
     PipelineContextDefinition,
     PipelineDefinition,
     ResourceDefinition,
-    execute_pipeline,
-    solid,
-    Field,
     String,
+    execute_pipeline,
+    resource,
+    solid,
 )
 
 
@@ -90,6 +91,57 @@ def test_yield_multiple_resources():
         context_definitions={
             'default': PipelineContextDefinition(
                 resources={'string_one': yield_string_resource, 'string_two': yield_string_resource}
+            )
+        },
+    )
+
+    result = execute_pipeline(
+        pipeline_def,
+        {
+            'context': {
+                'default': {
+                    'resources': {'string_one': {'config': 'foo'}, 'string_two': {'config': 'bar'}}
+                }
+            }
+        },
+    )
+
+    assert result.success
+    assert called['yup']
+    assert len(saw) == 4
+
+    assert 'before yield' in saw[0]
+    assert 'before yield' in saw[1]
+    assert 'after yield' in saw[2]
+    assert 'after yield' in saw[3]
+
+
+def test_resource_decorator():
+    called = {}
+
+    saw = []
+
+    @solid
+    def a_solid(info):
+        called['yup'] = True
+        assert info.context.resources.string_one == 'foo'
+        assert info.context.resources.string_two == 'bar'
+
+    @resource(Field(String))
+    def yielding_string_resource(info):
+        saw.append('before yield ' + info.config)
+        yield info.config
+        saw.append('after yield ' + info.config)
+
+    pipeline_def = PipelineDefinition(
+        name='with_yield_resources',
+        solids=[a_solid],
+        context_definitions={
+            'default': PipelineContextDefinition(
+                resources={
+                    'string_one': yielding_string_resource,
+                    'string_two': yielding_string_resource,
+                }
             )
         },
     )
