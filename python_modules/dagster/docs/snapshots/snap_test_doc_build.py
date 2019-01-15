@@ -255,68 +255,76 @@ development environment.</p>
 <li>You can’t use Python 3.7+ yet because of <a class="reference external" href="https://github.com/apache/arrow/issues/1125">https://github.com/apache/arrow/issues/1125</a></li>
 </ul>
 </div></blockquote>
-<p>2. Create and activate a virtualenv</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python3</span> <span class="o">-</span><span class="n">m</span> <span class="n">venv</span> <span class="n">dagsterenv</span>
-<span class="n">source</span> <span class="n">dagsterenv</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">activate</span>
+<ol class="arabic simple" start="2">
+<li>Create and activate a virtualenv</li>
+</ol>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> python3 -m venv dagsterenv
+<span class="gp">$</span> <span class="nb">source</span> dagsterenv/bin/activate
 </pre></div>
 </div>
-<p>3. Install dagster locally and install dev tools</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">git</span><span class="nd">@github</span><span class="o">.</span><span class="n">com</span><span class="p">:</span><span class="n">dagster</span><span class="o">-</span><span class="n">io</span><span class="o">/</span><span class="n">dagster</span><span class="o">.</span><span class="n">git</span>
-<span class="n">cd</span> <span class="n">dagster</span><span class="o">/</span><span class="n">python_modules</span>
-<span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">e</span> <span class="o">./</span><span class="n">dagit</span>
-<span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">e</span> <span class="o">./</span><span class="n">dagster</span>
-<span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">r</span> <span class="o">./</span><span class="n">dagster</span><span class="o">/</span><span class="n">dev</span><span class="o">-</span><span class="n">requirements</span><span class="o">.</span><span class="n">txt</span>
+<ol class="arabic simple" start="3">
+<li>Install dagster locally and install dev tools</li>
+</ol>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> git clone git@github.com:dagster-io/dagster.git
+<span class="gp">$</span> <span class="nb">cd</span> dagster/python_modules
+<span class="gp">$</span> pip install -e ./dagit
+<span class="gp">$</span> pip install -e ./dagster
+<span class="gp">$</span> pip install -r ./dagster/dev-requirements.txt
 </pre></div>
 </div>
-<p>4. Install dagit webapp dependencies</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="n">dagster</span><span class="o">/</span><span class="n">python_modules</span><span class="o">/</span><span class="n">dagit</span><span class="o">/</span><span class="n">dagit</span><span class="o">/</span><span class="n">webapp</span>
-<span class="n">yarn</span> <span class="n">install</span>
+<ol class="arabic simple" start="4">
+<li>Install dagit webapp dependencies</li>
+</ol>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> dagster/python_modules/dagit/dagit/webapp
+<span class="gp">$</span> yarn install
 </pre></div>
 </div>
-<p>5. Run tests
-We use tox to manage test environments for python.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="n">dagster</span><span class="o">/</span><span class="n">python_modules</span><span class="o">/</span><span class="n">dagster</span>
-<span class="n">tox</span>
-<span class="n">cd</span> <span class="n">dagster</span><span class="o">/</span><span class="n">python_modules</span><span class="o">/</span><span class="n">dagit</span>
-<span class="n">tox</span>
+<ol class="arabic simple" start="5">
+<li>Run tests</li>
+</ol>
+<p>We use tox to manage test environments for python.</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> dagster/python_modules/dagster
+<span class="gp">$</span> tox
+<span class="gp">$</span> <span class="nb">cd</span> dagster/python_modules/dagit
+<span class="gp">$</span> tox
 </pre></div>
 </div>
 <p>To run JavaScript tests for the dagit frontend, you can run:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="n">dagster</span><span class="o">/</span><span class="n">python_modules</span><span class="o">/</span><span class="n">dagit</span><span class="o">/</span><span class="n">dagit</span><span class="o">/</span><span class="n">webapp</span>
-<span class="n">yarn</span> <span class="n">test</span>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> dagster/python_modules/dagit/dagit/webapp
+<span class="gp">$</span> yarn <span class="nb">test</span>
 </pre></div>
 </div>
-<p>In webapp development it’s handy to run <cite>yarn run jest –watch</cite> to have an
+<p>In webapp development it’s handy to run <code class="docutils literal notranslate"><span class="pre">yarn</span> <span class="pre">run</span> <span class="pre">jest</span> <span class="pre">--watch</span></code> to have an
 interactive test runner.</p>
 <p>Some webapp tests use snapshots–auto-generated results to which the test
 render tree is compared. Those tests are supposed to break when you change
 something.</p>
-<p>Check that the change is sensible and run <cite>yarn run jest -u</cite> to update the
+<p>Check that the change is sensible and run <code class="docutils literal notranslate"><span class="pre">yarn</span> <span class="pre">run</span> <span class="pre">jest</span> <span class="pre">-u</span></code> to update the
 snapshot to the new result. You can also update snapshots interactively
-when you are in <cite>–watch</cite> mode.</p>
+when you are in <code class="docutils literal notranslate"><span class="pre">--watch</span></code> mode.</p>
 <div class="section" id="running-dagit-webapp-in-development">
 <h3>Running dagit webapp in development<a class="headerlink" href="#running-dagit-webapp-in-development" title="Permalink to this headline">¶</a></h3>
 <p>For development, run the dagit GraphQL server on a different port than the
 webapp, from any directory that contains a repository.yml file. For example:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="n">dagster</span><span class="o">/</span><span class="n">python_modules</span><span class="o">/</span><span class="n">dagster</span><span class="o">/</span><span class="n">dagster</span><span class="o">/</span><span class="n">dagster_examples</span>
-<span class="n">dagit</span> <span class="o">-</span><span class="n">p</span> <span class="mi">3333</span>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> dagster/python_modules/dagster/dagster/dagster_examples
+<span class="gp">$</span> dagit -p <span class="m">3333</span>
 </pre></div>
 </div>
 <p>Run the local development (autoreloading, etc.) version of the webapp.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="n">dagster</span><span class="o">/</span><span class="n">python_modules</span><span class="o">/</span><span class="n">dagit</span><span class="o">/</span><span class="n">dagit</span><span class="o">/</span><span class="n">webapp</span>
-<span class="n">REACT_APP_GRAPHQL_URI</span><span class="o">=</span><span class="s2">&quot;http://localhost:3333/graphql&quot;</span> <span class="n">yarn</span> <span class="n">start</span>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> dagster/python_modules/dagit/dagit/webapp
+<span class="gp">$</span> <span class="nv">REACT_APP_GRAPHQL_URI</span><span class="o">=</span><span class="s2">&quot;http://localhost:3333/graphql&quot;</span> yarn start
 </pre></div>
 </div>
 </div>
 <div class="section" id="releasing">
 <h3>Releasing<a class="headerlink" href="#releasing" title="Permalink to this headline">¶</a></h3>
-<p>Projects are released using the Python script at <cite>dagster/bin/publish.py</cite>.</p>
+<p>Projects are released using the Python script at <code class="docutils literal notranslate"><span class="pre">dagster/bin/publish.py</span></code>.</p>
 </div>
 <div class="section" id="developing-docs">
 <h3>Developing docs<a class="headerlink" href="#developing-docs" title="Permalink to this headline">¶</a></h3>
 <p>Running a live html version of the docs can expedite documentation development.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="n">python_modules</span><span class="o">/</span><span class="n">dagster</span><span class="o">/</span><span class="n">docs</span>
-<span class="n">make</span> <span class="n">livehtml</span>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> python_modules/dagster/docs
+<span class="gp">$</span> make livehtml
 </pre></div>
 </div>
 </div>
@@ -1804,70 +1812,87 @@ Local development setup
   * You can't use Python 3.7+ yet because of https://github.com/apache/arrow/issues/1125
 
 2. Create and activate a virtualenv
-::
-    python3 -m venv dagsterenv
-    source dagsterenv/bin/activate
+
+.. code-block:: console
+
+    $ python3 -m venv dagsterenv
+    $ source dagsterenv/bin/activate
 
 3. Install dagster locally and install dev tools
-::
-    git clone git@github.com:dagster-io/dagster.git
-    cd dagster/python_modules
-    pip install -e ./dagit
-    pip install -e ./dagster
-    pip install -r ./dagster/dev-requirements.txt
+
+.. code-block:: console
+
+    $ git clone git@github.com:dagster-io/dagster.git
+    $ cd dagster/python_modules
+    $ pip install -e ./dagit
+    $ pip install -e ./dagster
+    $ pip install -r ./dagster/dev-requirements.txt
 
 4. Install dagit webapp dependencies
-::
-    cd dagster/python_modules/dagit/dagit/webapp
-    yarn install
+
+.. code-block:: console
+
+    $ cd dagster/python_modules/dagit/dagit/webapp
+    $ yarn install
 
 5. Run tests
+
 We use tox to manage test environments for python.
-::
-    cd dagster/python_modules/dagster
-    tox
-    cd dagster/python_modules/dagit
-    tox
+
+.. code-block:: console
+
+    $ cd dagster/python_modules/dagster
+    $ tox
+    $ cd dagster/python_modules/dagit
+    $ tox
 
 To run JavaScript tests for the dagit frontend, you can run:
-::
-    cd dagster/python_modules/dagit/dagit/webapp
-    yarn test
 
-In webapp development it's handy to run `yarn run jest --watch` to have an
+.. code-block:: console
+
+    $ cd dagster/python_modules/dagit/dagit/webapp
+    $ yarn test
+
+In webapp development it's handy to run ``yarn run jest --watch`` to have an
 interactive test runner.
 
 Some webapp tests use snapshots--auto-generated results to which the test
 render tree is compared. Those tests are supposed to break when you change
 something.
 
-Check that the change is sensible and run `yarn run jest -u` to update the
+Check that the change is sensible and run ``yarn run jest -u`` to update the
 snapshot to the new result. You can also update snapshots interactively
-when you are in `--watch` mode.
+when you are in ``--watch`` mode.
 
 Running dagit webapp in development
 -------------------------------------
 For development, run the dagit GraphQL server on a different port than the
 webapp, from any directory that contains a repository.yml file. For example:
-::
-    cd dagster/python_modules/dagster/dagster/dagster_examples
-    dagit -p 3333
+
+.. code-block:: console
+
+    $ cd dagster/python_modules/dagster/dagster/dagster_examples
+    $ dagit -p 3333
 
 Run the local development (autoreloading, etc.) version of the webapp.
-::
-    cd dagster/python_modules/dagit/dagit/webapp
-    REACT_APP_GRAPHQL_URI="http://localhost:3333/graphql" yarn start
+
+.. code-block:: console
+
+    $ cd dagster/python_modules/dagit/dagit/webapp
+    $ REACT_APP_GRAPHQL_URI="http://localhost:3333/graphql" yarn start
 
 Releasing
 -----------
-Projects are released using the Python script at `dagster/bin/publish.py`.
+Projects are released using the Python script at ``dagster/bin/publish.py``.
 
 Developing docs
 ---------------
 Running a live html version of the docs can expedite documentation development.
-::
-    cd python_modules/dagster/docs
-    make livehtml
+
+.. code-block:: console
+
+    $ cd python_modules/dagster/docs
+    $ make livehtml
 '''
 
 snapshots['test_build_all_docs 12'] = '''.. image:: https://user-images.githubusercontent.com/28738937/44878798-b6e17e00-ac5c-11e8-8d25-2e47e5a53418.png
@@ -3542,14 +3567,14 @@ topology and see how dagster determines the execution order of a pipeline.
 
 snapshots['test_build_all_docs 29'] = '''Hello, World
 ------------
-See :doc:`../installation` for instructions getting dagster -- the core library -- and dagit --  
-the web UI tool used to visualize your data pipelines -- installed on your platform of choice.
+See :doc:`../installation` for instructions installing dagster (the core library) and dagit (the
+web UI tool used to visualize your data pipelines) on your platform of choice.
 
 Let's write our first pipeline and save it as ``hello_world.py``.
 
 .. literalinclude:: ../../dagster/tutorials/intro_tutorial/hello_world.py
    :linenos:
-   :lines: 1-10
+   :lines: 1-12
    :caption: hello_world.py
 
 This example introduces three concepts:
@@ -3592,7 +3617,7 @@ CLI
 
 There's a lot of information in these log lines (we'll get to how you can use, and customize,
 them later), but you can see that the third message is:
-```Solid hello_world emitted output \\"result\\" value \'hello\'"```. Success!
+``Solid hello_world emitted output \\"result\\" value \'hello\'``. Success!
 
 Dagit
 ~~~~~
@@ -3625,7 +3650,7 @@ at all. Just add a few lines to `hello_world.py` (highlighted in yellow):
 .. literalinclude:: ../../dagster/tutorials/intro_tutorial/hello_world.py
    :linenos:
    :caption: hello_world.py
-   :emphasize-lines: 1,13-15
+   :emphasize-lines: 15-17
 
 Then you can just run:
 
@@ -20693,7 +20718,7 @@ snapshots['test_build_all_docs 53'] = '''
 <dl class="function">
 <dt id="dagster.execute_pipeline">
 <code class="descclassname">dagster.</code><code class="descname">execute_pipeline</code><span class="sig-paren">(</span><em>pipeline</em>, <em>environment=None</em>, <em>throw_on_error=True</em>, <em>reentrant_info=None</em>, <em>solid_subset=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.execute_pipeline" title="Permalink to this definition">¶</a></dt>
-<dd><p>“Synchronous” version of <a href="#id1"><span class="problematic" id="id2">:py:function:`execute_pipeline_iterator`</span></a>.</p>
+<dd><p>“Synchronous” version of <a class="reference internal" href="#dagster.execute_pipeline_iterator" title="dagster.execute_pipeline_iterator"><code class="xref py py-func docutils literal notranslate"><span class="pre">execute_pipeline_iterator()</span></code></a>.</p>
 <p>Note: throw_on_error is very useful in testing contexts when not testing for error conditions</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -20720,7 +20745,7 @@ the py:class:<cite>SolidExecutionResult</cite> in an error-state.</li>
 <dd><p>Returns iterator that yields <a class="reference internal" href="#dagster.SolidExecutionResult" title="dagster.SolidExecutionResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">SolidExecutionResult</span></code></a> for each
 solid executed in the pipeline.</p>
 <p>This is intended to allow the caller to do things between each executed
-node. For the ‘synchronous’ API, see <a href="#id3"><span class="problematic" id="id4">:py:function:`execute_pipeline`</span></a>.</p>
+node. For the ‘synchronous’ API, see <a class="reference internal" href="#dagster.execute_pipeline" title="dagster.execute_pipeline"><code class="xref py py-func docutils literal notranslate"><span class="pre">execute_pipeline()</span></code></a>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -20748,7 +20773,7 @@ node. For the ‘synchronous’ API, see <a href="#id3"><span class="problematic
 <dl class="class">
 <dt id="dagster.PipelineExecutionResult">
 <em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">PipelineExecutionResult</code><span class="sig-paren">(</span><em>pipeline</em>, <em>context</em>, <em>result_list</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.PipelineExecutionResult" title="Permalink to this definition">¶</a></dt>
-<dd><p>Result of execution of the whole pipeline. Returned eg by <a href="#id5"><span class="problematic" id="id6">:py:function:`execute_pipeline`</span></a>.</p>
+<dd><p>Result of execution of the whole pipeline. Returned eg by <a class="reference internal" href="#dagster.execute_pipeline" title="dagster.execute_pipeline"><code class="xref py py-func docutils literal notranslate"><span class="pre">execute_pipeline()</span></code></a>.</p>
 <dl class="attribute">
 <dt id="dagster.PipelineExecutionResult.pipeline">
 <code class="descname">pipeline</code><a class="headerlink" href="#dagster.PipelineExecutionResult.pipeline" title="Permalink to this definition">¶</a></dt>
@@ -23810,8 +23835,8 @@ snapshots['test_build_all_docs 64'] = '''
             
   <div class="section" id="hello-world">
 <h1>Hello, World<a class="headerlink" href="#hello-world" title="Permalink to this headline">¶</a></h1>
-<p>See <a class="reference internal" href="../installation.html"><span class="doc">Installation</span></a> for instructions getting dagster – the core library – and dagit –
-the web UI tool used to visualize your data pipelines – installed on your platform of choice.</p>
+<p>See <a class="reference internal" href="../installation.html"><span class="doc">Installation</span></a> for instructions installing dagster (the core library) and dagit (the
+web UI tool used to visualize your data pipelines) on your platform of choice.</p>
 <p>Let’s write our first pipeline and save it as <code class="docutils literal notranslate"><span class="pre">hello_world.py</span></code>.</p>
 <div class="literal-block-wrapper docutils container" id="id1">
 <div class="code-block-caption"><span class="caption-text">hello_world.py</span><a class="headerlink" href="#id1" title="Permalink to this code">¶</a></div>
@@ -23824,7 +23849,9 @@ the web UI tool used to visualize your data pipelines – installed on your plat
  7
  8
  9
-10</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">dagster</span> <span class="k">import</span> <span class="n">PipelineDefinition</span><span class="p">,</span> <span class="n">execute_pipeline</span><span class="p">,</span> <span class="n">lambda_solid</span>
+10
+11
+12</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">dagster</span> <span class="k">import</span> <span class="n">PipelineDefinition</span><span class="p">,</span> <span class="n">execute_pipeline</span><span class="p">,</span> <span class="n">lambda_solid</span>
 
 
 <span class="nd">@lambda_solid</span>
@@ -23834,6 +23861,8 @@ the web UI tool used to visualize your data pipelines – installed on your plat
 
 <span class="k">def</span> <span class="nf">define_hello_world_pipeline</span><span class="p">():</span>
     <span class="k">return</span> <span class="n">PipelineDefinition</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;hello_world_pipeline&#39;</span><span class="p">,</span> <span class="n">solids</span><span class="o">=</span><span class="p">[</span><span class="n">hello_world</span><span class="p">]</span>
+    <span class="p">)</span>
 </pre></div>
 </td></tr></table></div>
 </div>
@@ -23872,7 +23901,7 @@ different mechanisms:</p>
 </div>
 <p>There’s a lot of information in these log lines (we’ll get to how you can use, and customize,
 them later), but you can see that the third message is:
-<code class="docutils literal notranslate"><span class="pre">`Solid</span> <span class="pre">hello_world</span> <span class="pre">emitted</span> <span class="pre">output</span> <span class="pre">\\&quot;result\\&quot;</span> <span class="pre">value</span> <span class="pre">\'hello\'&quot;`</span></code>. Success!</p>
+<code class="docutils literal notranslate"><span class="pre">Solid</span> <span class="pre">hello_world</span> <span class="pre">emitted</span> <span class="pre">output</span> <span class="pre">\\&quot;result\\&quot;</span> <span class="pre">value</span> <span class="pre">\'hello\'</span></code>. Success!</p>
 </div>
 <div class="section" id="dagit">
 <h3>Dagit<a class="headerlink" href="#dagit" title="Permalink to this headline">¶</a></h3>
@@ -23912,8 +23941,8 @@ at all. Just add a few lines to <cite>hello_world.py</cite> (highlighted in yell
 14
 15
 16
-17</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="hll"><span class="kn">from</span> <span class="nn">dagster</span> <span class="k">import</span> <span class="n">PipelineDefinition</span><span class="p">,</span> <span class="n">execute_pipeline</span><span class="p">,</span> <span class="n">lambda_solid</span>
-</span>
+17</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">dagster</span> <span class="k">import</span> <span class="n">PipelineDefinition</span><span class="p">,</span> <span class="n">execute_pipeline</span><span class="p">,</span> <span class="n">lambda_solid</span>
+
 
 <span class="nd">@lambda_solid</span>
 <span class="k">def</span> <span class="nf">hello_world</span><span class="p">():</span>
@@ -23924,12 +23953,12 @@ at all. Just add a few lines to <cite>hello_world.py</cite> (highlighted in yell
     <span class="k">return</span> <span class="n">PipelineDefinition</span><span class="p">(</span>
         <span class="n">name</span><span class="o">=</span><span class="s1">&#39;hello_world_pipeline&#39;</span><span class="p">,</span> <span class="n">solids</span><span class="o">=</span><span class="p">[</span><span class="n">hello_world</span><span class="p">]</span>
     <span class="p">)</span>
-<span class="hll">
-</span><span class="hll">
-</span><span class="hll"><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
-</span>    <span class="n">result</span> <span class="o">=</span> <span class="n">execute_pipeline</span><span class="p">(</span><span class="n">define_hello_world_pipeline</span><span class="p">())</span>
-    <span class="k">assert</span> <span class="n">result</span><span class="o">.</span><span class="n">success</span>
-</pre></div>
+
+
+<span class="hll"><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+</span><span class="hll">    <span class="n">result</span> <span class="o">=</span> <span class="n">execute_pipeline</span><span class="p">(</span><span class="n">define_hello_world_pipeline</span><span class="p">())</span>
+</span><span class="hll">    <span class="k">assert</span> <span class="n">result</span><span class="o">.</span><span class="n">success</span>
+</span></pre></div>
 </td></tr></table></div>
 </div>
 <p>Then you can just run:</p>
