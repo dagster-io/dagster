@@ -18,10 +18,19 @@ Intro Tutorial
   :maxdepth: 1
   :name: Intro Tutorial
 
+
   intro_tutorial/hello_world
   intro_tutorial/hello_dag
   intro_tutorial/actual_dag
   intro_tutorial/inputs
+  intro_tutorial/types
+
+Old Intro Tutorial To Audit
+===========================
+.. toctree::
+  :maxdepth: 1
+  :name: Intro Tutorial To Audit
+
   intro_tutorial/config
   intro_tutorial/execution_context
   intro_tutorial/repos

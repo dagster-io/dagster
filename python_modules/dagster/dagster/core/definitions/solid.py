@@ -28,26 +28,14 @@ class SolidDefinition(object):
 
     A solid is a generalized abstraction that could take many forms.
 
-    Example:
-
-        .. code-block:: python
-
-            def _read_csv(info, inputs):
-                yield Result(pandas.read_csv(info.config['path']))
-
-            SolidDefinition(
-                name='read_csv',
-                inputs=[],
-                config_field=Field(types.Dict({'path' => types.Path})),
-                outputs=[OutputDefinition()] # default name ('result') and any typed
-                transform_fn
-            )
+    End users should prefer the @solid and @lambda_solid decorator. SolidDefinition
+    is generally used by framework authors.
 
     Attributes:
+
         name (str): Name of the solid.
         input_defs (List[InputDefinition]): Inputs of the solid.
-        transform_fn (callable):
-            Callable with the signature
+        transform_fn (callable): Callable with the signature
             (
                 info: TransformExecutionInfo,
                 inputs: Dict[str, Any],
@@ -55,10 +43,22 @@ class SolidDefinition(object):
         outputs_defs (List[OutputDefinition]): Outputs of the solid.
         config_field (Field): How the solid configured.
         description (str): Description of the solid.
-        metadata (dict):
-            Arbitrary metadata for the solid. Some frameworks expect and require
+        metadata (dict): Arbitrary metadata for the solid. Some frameworks expect and require
             certain metadata to be attached to a solid.
-    '''
+
+    .. code-block:: python
+
+        def _add_one(info, inputs):
+            yield Result(inputs["num"] + 1)
+
+        SolidDefinition(
+            name="add_one",
+            inputs=[InputDefinition("num", Int)],
+            outputs=[OutputDefinition(Int)], # default name ("result")
+            transform_fn=_add_one,
+        )
+
+'''
 
     def __init__(
         self,

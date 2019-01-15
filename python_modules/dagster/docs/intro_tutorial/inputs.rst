@@ -28,8 +28,9 @@ In the Python API, pipeline configuration is specified in the second argument to
 use one of them here: per-solid configuration specified under the key ``solids``:
 
 .. literalinclude:: ../../dagster/tutorials/intro_tutorial/inputs.py
-   :lines: 25,27,29-31
-   :dedent: 8 
+    :linenos:
+    :lines: 25,27,29-31
+    :dedent: 8 
 
 The ``solids`` dict is keyed by solid name, and each solid is configured by a dict that may have
 several sections of its own. In this case we are only interested in the ``inputs`` section, so
@@ -39,7 +40,8 @@ The function ``execute_with_another_world`` demonstrates how one would invoke th
 using the python API:
 
 .. literalinclude:: ../../dagster/tutorials/intro_tutorial/inputs.py
-   :lines: 20-22,25,27,29-32
+    :linenos:
+    :lines: 20-22,25,27,29-32
 
 CLI
 ~~~
@@ -118,7 +120,3 @@ By using typed input instead we can catch this error prior to execution.
 
 .. image:: inputs_figure_four_error_prechecked.png
 
-We've seen how to connect solid inputs and outputs to specify dependencies and the structure of
-our DAG, as well as how to provide inputs at runtime through config. Next, we'll see how we can
-use :doc:`Configuration <config>` to further parametrize our solids' interactions with the
-outside world.
