@@ -1,5 +1,10 @@
-Pipeline Execution
-------------------
+Pipeline CLI Execution
+----------------------
+
+Up until now we've been focusing on using the dagit tool for executing pipeline. However, we
+also have a CLI utility for use in scripting contexts. It has its own features useful for
+production context, which we will go over here.
+
 Just as in the last part of the tutorial, we'll define a pipeline and a repository, and create
 a yaml file to tell the CLI tool about the repository.
 
@@ -27,6 +32,9 @@ name.
 .. code-block:: console
 
     $ dagster pipeline execute demo_pipeline -e env.yml
+
+Config Splitting
+^^^^^^^^^^^^^^^^
 
 Suppose that we want to keep some settings (like our context-level logging config) constant across
 a bunch of our pipeline executions, and vary only pipeline-specific settings. It'd be tedious to
