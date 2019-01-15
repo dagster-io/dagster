@@ -61,7 +61,7 @@ from .system_config.types import construct_environment_config
 
 
 class PipelineExecutionResult(object):
-    '''Result of execution of the whole pipeline. Returned eg by :py:function:`execute_pipeline`.
+    '''Result of execution of the whole pipeline. Returned eg by :py:func:`execute_pipeline`.
 
     Attributes:
         pipeline (PipelineDefinition): Pipeline that was executed
@@ -447,7 +447,7 @@ def execute_pipeline_iterator(
     solid executed in the pipeline.
 
     This is intended to allow the caller to do things between each executed
-    node. For the 'synchronous' API, see :py:function:`execute_pipeline`.
+    node. For the 'synchronous' API, see :py:func:`execute_pipeline`.
 
     Parameters:
       pipeline (PipelineDefinition): pipeline to run
@@ -535,7 +535,7 @@ def execute_pipeline(
     pipeline, environment=None, throw_on_error=True, reentrant_info=None, solid_subset=None
 ):
     '''
-    "Synchronous" version of :py:function:`execute_pipeline_iterator`.
+    "Synchronous" version of :py:func:`execute_pipeline_iterator`.
 
     Note: throw_on_error is very useful in testing contexts when not testing for error conditions
 
