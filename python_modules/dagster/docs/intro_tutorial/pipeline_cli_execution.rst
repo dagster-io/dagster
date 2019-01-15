@@ -10,7 +10,7 @@ a yaml file to tell the CLI tool about the repository.
 
 .. literalinclude:: ../../dagster/tutorials/intro_tutorial/pipeline_cli_execution.py
    :linenos:
-   :caption: pipeline_execution.py
+   :caption: pipeline_cli_execution.py
 
 And now the repository file:
 
