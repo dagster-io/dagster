@@ -41,7 +41,7 @@ resource.
 In order to invoke this pipeline, we pass it the following configuration:
 
 .. literalinclude:: ../../dagster/tutorials/intro_tutorial/resources.py
-   :lines: 104-128
+   :lines: 105-129
    :dedent: 4
 
 Note how we are telling the configuration to create a cloud context by
@@ -74,5 +74,6 @@ Now we can simply change configuration and the "in-memory" version of the
 resource will be used instead of the cloud version:
 
 .. literalinclude:: ../../dagster/tutorials/intro_tutorial/resources.py
-   :lines: 130-143
+   :lines: 131-144
    :emphasize-lines: 4
+   :dedent: 4

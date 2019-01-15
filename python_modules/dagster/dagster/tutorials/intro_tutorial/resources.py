@@ -100,6 +100,7 @@ def define_resource_test_pipeline():
         },
     )
 
+
 if __name__ == '__main__':
     result = execute_pipeline(
         define_resource_test_pipeline(),
@@ -120,7 +121,7 @@ if __name__ == '__main__':
                 'add_ints': {
                     'inputs': {
                         'num_one': {'value': 2},
-                        'num_two': {'value': 6}
+                        'num_two': {'value': 6},
                     }
                 }
             },
@@ -135,7 +136,7 @@ if __name__ == '__main__':
                 'add_ints': {
                     'inputs': {
                         'num_one': {'value': 2},
-                        'num_two': {'value': 6}
+                        'num_two': {'value': 6},
                     }
                 }
             },
