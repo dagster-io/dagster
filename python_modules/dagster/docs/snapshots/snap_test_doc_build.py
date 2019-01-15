@@ -349,12 +349,12 @@ webapp, from any directory that contains a repository.yml file. For example:</p>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/inputs.html">Inputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/resources.html">Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/types.html">User-Defined Types</a></li>
 </ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/pipeline_execution.html">Pipeline Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_nine.html">Custom Contexts</a></li>
@@ -845,12 +845,12 @@ snapshots['test_build_all_docs 4'] = '''
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/inputs.html">Inputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/resources.html">Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/types.html">User-Defined Types</a></li>
 </ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/pipeline_execution.html">Pipeline Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_nine.html">Custom Contexts</a></li>
@@ -959,6 +959,7 @@ snapshots['test_build_all_docs 5'] = '''
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/inputs.html">Inputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/resources.html">Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/types.html">User-Defined Types</a></li>
 </ul>
 </div>
@@ -969,7 +970,6 @@ snapshots['test_build_all_docs 5'] = '''
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/pipeline_execution.html">Pipeline Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_nine.html">Custom Contexts</a></li>
@@ -1023,12 +1023,12 @@ snapshots['test_build_all_docs 5'] = '''
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/inputs.html">Inputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/resources.html">Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/types.html">User-Defined Types</a></li>
 </ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/pipeline_execution.html">Pipeline Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_nine.html">Custom Contexts</a></li>
@@ -1273,12 +1273,12 @@ from Github:</p>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/inputs.html">Inputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/resources.html">Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/types.html">User-Defined Types</a></li>
 </ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/pipeline_execution.html">Pipeline Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_nine.html">Custom Contexts</a></li>
@@ -1472,12 +1472,12 @@ documentation and runtime error checking.</p>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/inputs.html">Inputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/resources.html">Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/types.html">User-Defined Types</a></li>
 </ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/pipeline_execution.html">Pipeline Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_nine.html">Custom Contexts</a></li>
@@ -1625,12 +1625,12 @@ snapshots['test_build_all_docs 8'] = '''
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/inputs.html">Inputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/resources.html">Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/types.html">User-Defined Types</a></li>
 </ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/pipeline_execution.html">Pipeline Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_nine.html">Custom Contexts</a></li>
@@ -1770,12 +1770,12 @@ snapshots['test_build_all_docs 9'] = '''
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/inputs.html">Inputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/resources.html">Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/types.html">User-Defined Types</a></li>
 </ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/pipeline_execution.html">Pipeline Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_nine.html">Custom Contexts</a></li>
@@ -1819,7 +1819,7 @@ snapshots['test_build_all_docs 9'] = '''
   </body>
 </html>'''
 
-snapshots['test_build_all_docs 10'] = 'Search.setIndex({docnames:["apidocs/decorators","apidocs/definitions","apidocs/errors","apidocs/execution","apidocs/types","apidocs/utilities","contributing","guides/028_to_030_new_concepts","guides/028_to_030_upgrade_guide","index","installation","intro_tutorial/actual_dag","intro_tutorial/config","intro_tutorial/configuration_schemas","intro_tutorial/execution_context","intro_tutorial/hello_dag","intro_tutorial/hello_world","intro_tutorial/inputs","intro_tutorial/old_execution_context","intro_tutorial/part_eleven","intro_tutorial/part_fourteen","intro_tutorial/part_nine","intro_tutorial/part_ten","intro_tutorial/part_thirteen","intro_tutorial/part_twelve","intro_tutorial/pipeline_execution","intro_tutorial/repos","intro_tutorial/resources","intro_tutorial/types","principles"],envversion:53,filenames:["apidocs/decorators.rst","apidocs/definitions.rst","apidocs/errors.rst","apidocs/execution.rst","apidocs/types.rst","apidocs/utilities.rst","contributing.rst","guides/028_to_030_new_concepts.md","guides/028_to_030_upgrade_guide.md","index.rst","installation.rst","intro_tutorial/actual_dag.rst","intro_tutorial/config.rst","intro_tutorial/configuration_schemas.rst","intro_tutorial/execution_context.rst","intro_tutorial/hello_dag.rst","intro_tutorial/hello_world.rst","intro_tutorial/inputs.rst","intro_tutorial/old_execution_context.rst","intro_tutorial/part_eleven.rst","intro_tutorial/part_fourteen.rst","intro_tutorial/part_nine.rst","intro_tutorial/part_ten.rst","intro_tutorial/part_thirteen.rst","intro_tutorial/part_twelve.rst","intro_tutorial/pipeline_execution.rst","intro_tutorial/repos.rst","intro_tutorial/resources.rst","intro_tutorial/types.rst","principles.rst"],objects:{"dagster.DependencyDefinition":{description:[1,2,1,""],output:[1,2,1,""],solid:[1,2,1,""]},"dagster.ExpectationDefinition":{description:[1,2,1,""],expectation_fn:[1,2,1,""],name:[1,2,1,""]},"dagster.ExpectationResult":{message:[1,2,1,""],result_context:[1,2,1,""],success:[1,2,1,""]},"dagster.InputDefinition":{description:[1,2,1,""],expectations:[1,2,1,""],name:[1,2,1,""],runtime_type:[1,2,1,""]},"dagster.MultipleResults":{from_dict:[0,4,1,""],results:[0,2,1,""]},"dagster.OutputDefinition":{description:[1,2,1,""],name:[1,2,1,""],runtime_type:[1,2,1,""]},"dagster.PipelineContextDefinition":{passthrough_context_definition:[1,4,1,""]},"dagster.PipelineDefinition":{context_definitions:[1,2,1,""],dependencies:[1,2,1,""],dependency_structure:[1,2,1,""],description:[1,2,1,""],display_name:[1,2,1,""],has_solid:[1,5,1,""],name:[1,2,1,""],solid_named:[1,5,1,""],solids:[1,2,1,""]},"dagster.PipelineExecutionResult":{context:[3,2,1,""],pipeline:[3,2,1,""],result_for_solid:[3,5,1,""],result_list:[3,2,1,""],success:[3,2,1,""]},"dagster.RepositoryDefinition":{get_all_pipelines:[1,5,1,""],get_pipeline:[1,5,1,""],iterate_over_pipelines:[1,5,1,""],name:[1,2,1,""],pipeline_dict:[1,2,1,""]},"dagster.Result":{output_name:[1,2,1,""],value:[1,2,1,""]},"dagster.SolidDefinition":{config_field:[1,2,1,""],description:[1,2,1,""],input_defs:[1,2,1,""],metadata:[1,2,1,""],name:[1,2,1,""],outputs_defs:[1,2,1,""],transform_fn:[1,2,1,""]},"dagster.SolidExecutionResult":{context:[3,2,1,""],dagster_error:[3,2,1,""],solid:[3,2,1,""],success:[3,2,1,""],transformed_value:[3,5,1,""],transformed_values:[3,2,1,""]},"dagster.TransformExecutionInfo":{config:[1,2,1,""],context:[1,2,1,""]},"dagster.core":{types:[4,6,0,"-"]},"dagster.core.types":{Any:[4,2,1,""],Bool:[4,2,1,""],Int:[4,2,1,""],List:[4,3,1,""],Nullable:[4,3,1,""],Path:[4,2,1,""],PythonObjectType:[4,0,1,""],String:[4,2,1,""]},dagster:{ContextCreationExecutionInfo:[1,0,1,""],DagsterExpectationFailedError:[2,1,1,""],DagsterInvalidDefinitionError:[2,1,1,""],DagsterInvariantViolationError:[2,1,1,""],DagsterRuntimeCoercionError:[2,1,1,""],DagsterTypeError:[2,1,1,""],DagsterUserCodeExecutionError:[2,1,1,""],DependencyDefinition:[1,0,1,""],ExecutionContext:[3,0,1,""],ExpectationDefinition:[1,0,1,""],ExpectationExecutionInfo:[1,0,1,""],ExpectationResult:[1,0,1,""],Field:[1,3,1,""],InputDefinition:[1,0,1,""],MultipleResults:[0,0,1,""],OutputDefinition:[1,0,1,""],PipelineConfigEvaluationError:[3,1,1,""],PipelineContextDefinition:[1,0,1,""],PipelineDefinition:[1,0,1,""],PipelineExecutionResult:[3,0,1,""],ReentrantInfo:[3,0,1,""],RepositoryDefinition:[1,0,1,""],ResourceDefinition:[1,0,1,""],Result:[1,0,1,""],SolidDefinition:[1,0,1,""],SolidExecutionResult:[3,0,1,""],SolidInstance:[1,0,1,""],TransformExecutionInfo:[1,0,1,""],execute_pipeline:[3,3,1,""],execute_pipeline_iterator:[3,3,1,""],execute_solid:[5,3,1,""],execute_solids:[5,3,1,""],lambda_solid:[0,3,1,""],solid:[0,3,1,""]}},objnames:{"0":["py","class","Python class"],"1":["py","exception","Python exception"],"2":["py","attribute","Python attribute"],"3":["py","function","Python function"],"4":["py","staticmethod","Python static method"],"5":["py","method","Python method"],"6":["py","module","Python module"]},objtypes:{"0":"py:class","1":"py:exception","2":"py:attribute","3":"py:function","4":"py:staticmethod","5":"py:method","6":"py:module"},terms:{"06c7":16,"0db53fdb":24,"0x11e4fbf60":8,"1563854b":16,"183c":24,"18adec0afdfc":24,"25faadf5":16,"2ee26bc76636":24,"2mxds1r":29,"408a":22,"40a9b608":18,"40ea":19,"424047dd":24,"42b8":19,"43f5":16,"44f6":18,"46cc":16,"477c":24,"47db":22,"48cda39e79a1":19,"497c9d47":18,"49eb":16,"49ef":19,"4a4e":14,"4aa0":18,"4ac0":14,"4ae2":16,"4b3f":22,"4d71":16,"4f15":18,"4f38ba45b8e0":14,"4f75":18,"571a":18,"583d":19,"5878513a":16,"5b233906":18,"5c829421":16,"604dc47c":16,"66b0b6ecdcad":22,"675f905d":24,"677247b1b07b":16,"6b80d12155de":19,"6d6dbe6b296b":19,"744a":16,"758f":16,"7d62dcbf":19,"7e828e37eab8":16,"7f4d":19,"80c2":22,"81ba":16,"88cb":16,"89211a12":18,"8b76":22,"8f24049b0f66":18,"938ab7fa":22,"941f":19,"95af":19,"95ef":19,"97ae58fda0f4":16,"9b36":18,"9ca21f5c":22,"9cbe4fa0f5e6":19,"9de556c1":19,"9f44":22,"9f4a":18,"\\u4e16\\u754c":12,"\\u4f60\\u597d":12,"abstract":[1,7,14],"break":[6,7,8,29],"case":[1,12,13,14,15,17,18,20,22,27,28],"catch":[13,17],"class":[0,1,2,3,4,7,8,19,21,22,24,27],"default":[0,1,7,10,13,14,18,19,21,22,25,26,28],"final":[20,23,25,28],"function":[0,1,3,7,8,12,15,16,17,19,21,23,24,26,27,28],"import":[8,11,12,13,14,15,16,17,18,21,25,26,27,28,29],"instanceof":13,"int":[1,4,7,13,19,20,21,22,23,25,27,28],"long":26,"new":[6,7,8,10,15,18,20,21,26,27],"public":[8,21,27],"return":[0,1,3,7,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28],"short":24,"static":[0,1],"super":24,"switch":[10,12],"throw":[1,2,3,22],"true":[1,3,7,12,28],"try":[11,12,25,26],"while":[7,8,27],And:[7,10,13,14,17,18,21,22,23,24,25,27],But:[17,18,26],For:[1,3,6,7,10,12,17,18,19,24,27],Lying:22,One:[1,8,14,15,18,20,21,22,24,28],That:[7,12,13,24,27],The:[0,1,3,7,8,11,12,13,15,16,17,18,19,20,21,22,24,25,27,28],Then:[12,16],There:[1,8,16,23],These:[1,13,19,23,29],Use:8,Used:1,Useful:[0,27],Using:16,With:[7,19,25],__fieldvaluesentinel:1,__inferoptionalcompositefieldsentinel:1,__init__:[8,21,24,27],__main__:[16,18,19,24],__name__:[16,19,24],_add_on:1,_cleanup_field:7,_conf_field:7,_conn:21,_create_resourc:7,_data_source_run_id_field:7,_info:[1,19,21,22],_kei:21,_log_level_field:7,_name__:18,_valu:21,a04c:18,a1d6:18,a220:18,a29ddb15309a:14,a463:19,a531:16,a801:16,a850a1643b9f:18,a_plus_b:[20,23],aaac:14,aab70a2cb603:18,abid:28,abil:[7,15,20,22],abl:[7,12,14,16,18,21,23,24,26,28,29],about:[1,7,8,12,15,18,22,25,27,28,29],abov:[18,19,21,28],accept:[1,21],access:[1,14,18,21,27],accomplish:21,acronym:1,across:[7,18,25],action:13,activ:[6,10],actual:[9,15,19,29],actual_dag:11,actual_dag_pipelin:11,acycl:[1,15,29],add:[8,16,21,22,27,28],add_hello_to_word:17,add_hello_to_word_typ:17,add_int:[21,22,27],add_on:1,added:22,adder:[20,23],adding:[18,22],addit:[0,12],addition:19,advertis:29,aed8162cc25c:19,aesthet:28,af26:24,aff9:24,afford:12,after:[7,8,11],again:[11,18,24],against:[8,25,27],alia:[1,23],all:[1,3,7,12,16,17,19,26,28],allow:[0,1,3,7,14,15,18,19,21,25,28],allscript:[7,8],allscriptsfileloadresourc:7,aloha:12,along:[20,28],alreadi:[10,20,24,26,27],also:[6,7,8,10,13,17,18,19,20,21,22,24,25,26,28,29],alter:27,altern:28,although:[14,18,26],alwai:[17,18,29],amazon:21,amount:24,anaconda:10,analyst:29,ani:[1,3,4,6,7,8,10,11,13,14,16,17,18,21,24,26,27,28,29],annon:14,annot:[8,12,13,24,28],anoth:[7,8,12,27],anticip:7,anyth:28,apach:6,apart:7,api:[0,1,3,7,12,26,27,28],appear:[14,28],appli:[1,17,28],applic:[22,25],approach:29,appropri:[17,27,29],apt:10,arbitrari:[1,15,19,20,22,28,29],aren:10,arg:[2,3,4],arg_a:11,arg_b:11,arg_c:11,arg_on:15,argument:[0,1,2,8,12,15,17,19,25,26,28],aris:13,arithmet:[21,23],around:[8,19,28],arrai:1,arrang:[1,16,29],arrow:6,articl:29,artifact:[27,29],as_dagster_typ:[8,28],asid:7,aspect:22,assert:[8,16,20,23],asset:[1,16],assign:17,associ:18,assum:[1,16,28],assumpt:[22,29],attach:[1,13,21,22,27],attent:11,attribut:[1,8,21],attributeerror:8,author:[1,14,15,18,21,29],auto:[6,17],automat:17,autoreload:6,avail:1,avoid:12,awai:14,awar:22,awkward:8,aws:7,axes:28,b0cbb1be:14,b150:19,b27fb70a:16,b510:16,b5a8:16,b602e4409f74:16,b757:24,b85c:16,b8e0:14,back:13,bad:21,bake:22,ball:7,bar:[0,25],barb:0,bare:21,base:[17,19],bash:10,basi:[11,18],basic:[14,18],batch:29,beauchemin:29,becaus:[6,7,8,11,14,17,18,19,21,22,24,28,29],becom:[0,7],been:[2,19,20,23,28],befor:[7,8,11,13,17,18],begin:[7,16],behavior:22,behaviour:0,being:[3,8,21,23],besid:13,best:29,better:[17,26],between:[1,3,7,13,15,21,24,29],bigco:27,bin:[6,10],bit:[10,29],bodi:0,boilerpl:[7,28],bool:[1,3,4,7],both:[8,10,11,13,24],bottom:16,branch:19,breakag:29,brew:10,broadli:[20,25],browser:16,bucket:8,bucket_path:7,bug:25,build:[7,8,10,11,15,16,26,28],built:[12,17,24,29],builtin:28,bulk:[7,24],bunch:[14,22,25],burden:29,busi:[18,21],c008:22,c12bdc2d:22,c1f4:24,c25e:19,c28d23a757b:24,c955:22,c98f:18,c_plus_d:[20,23],cach:[1,21],call:[8,15,16,21,22,23,24,28,29],callabl:1,callback:1,caller:[3,8],can:[1,2,6,7,8,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29],cannot:8,capabilti:22,capabitili:15,capabl:[7,8,14,18,20,21,22,27,29],captur:22,caus:[13,22],cb10:19,cb75946b0055:16,cc2ae784:19,certain:1,chang:[6,7,14,18,21,27,29],check:[1,2,6,8,10,13,15,24,28,29],check_posit:22,check_positivevalu:22,choic:16,choos:[15,28],chunk:7,circuit:24,cleali:29,clean_up_dir:7,cleanup_fil:[7,8],clear:[13,22],cli:[25,26],click:17,clone:[6,10],cloud:[21,23,27],cluster:14,code:[2,7,8,12,13,14,21,22,24,27,28,29],coerc:24,coerce_runtime_valu:24,collabor:29,collect:[1,13,25,26],column:28,com:[6,10],combin:18,combo:21,come:[1,7,10,24,28],comfort:18,command:[11,12,15,17,18,25,26],comment:20,common:[7,12,18,27],commonli:28,commun:22,compar:6,compat:12,complet:[1,16,17,21],complex:11,complic:23,compos:[1,7],compris:1,comput:[1,12,14,15,16,18,21,22,24,27,28],computation:29,concaten:15,concept:[7,15,16,21,22],conceptu:[8,12],concis:0,conda:10,condit:3,condition:19,conf:[7,8,21],config:[0,1,8,12,13,14,17,18,19,20,21,22,23,25,26,27,28],config_def:[7,8],config_env:12,config_field:[0,1,7,8,12,13,19,20,21,22,23,25,27],config_valu:[1,3,28],configdefinit:[7,8,19,20,21,22,23],configdictionari:[7,8],configur:[0,1,2,7,8,9,14,17,18,19,21,22,25,27,28,29],configurable_hello:12,configurable_hello_pipelin:12,configuration_schema:13,configuration_schemas_error_1:13,configuration_schemas_error_2:13,conform:[1,13],conn:[21,27],connect:[1,7,11,15,21,23,28],consist:7,consol:[14,17,18],console_log:21,constant:25,constant_env:25,constitut:1,construct:[1,8],consum:[1,13,24,25,29],consume_ssn:24,consume_string_tupl:24,contain:[1,6,7,14,17,20,29],context:[0,1,3,7,8,9,12,13,19,20,22,24,25,27,29],context_definit:[1,21,27],context_fn:[1,7,8,21],context_param:1,context_stack:[7,8],contextcreationexecutioninfo:1,contract:29,contribut:9,control:[1,18,21,22,29],convent:21,cooper_pair:7,copi:[15,25,28],core:[0,1,2,4,8,13,15,16,19,21,22,23,24,27],correct:1,correspond:12,could:[1,7,11,17,21],count:[7,13,25],count_lett:[13,25],coupl:[12,24],creat:[0,1,6,7,8,18,20,21,25,26,27],create_allscripts_fileload_unittest_context:7,create_engin:7,create_single_solid_pipelin:[8,20],create_sub_pipelin:[8,20],creation:[0,7,8,21],cred:21,credenti:[18,21,27],critic:[22,29],csv:28,current:[1,22],custom:[9,16,18],d129552525a4:22,d548ea66:19,d8f41da0:14,dag:[1,9,12,16,20,29],dagit:[10,11,12,13,14,15,18,22,23,24,28],dagster:[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,24,25,26,28,29],dagster_error:3,dagster_exampl:6,dagster_pd:1,dagster_sqlalchemi:8,dagster_typ:[1,7,8,19],dagsterenv:6,dagsterevaluatevalueerror:24,dagsterexpectationfailederror:[2,22],dagsterinvaliddefinitionerror:2,dagsterinvariantviolationerror:[2,13,28],dagsterruntimecoercionerror:2,dagstertyp:[1,7,24],dagstertypeerror:[2,24],dagsterusercodeexecutionerror:2,data:[1,9,15,16,20,21,22,24,28],data_sourc:[7,8],data_source_run_id:[7,8],databas:[1,14,18,21,27],datafram:[1,28],dataframe_input_schema:28,dataframe_output_schema:28,dbname:7,dea6d00d99f0:16,deal:21,debug:[13,14,18,21,22,25],debug_messag:[14,18],declar:[1,7,11,12,18,21,23,26,27,28],decor:[1,9,16,28],deem:29,deep:13,deepli:11,def:[0,1,7,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28],default_output:3,default_valu:[1,7,12,28],defaultcontextconfig:8,defaultdict:[13,25],defin:[0,1,2,7,8,9,12,15,16,21,25,26],define_allscripts_fileload_pipelin:8,define_cloud_store_resourc:27,define_colored_console_logg:[7,8],define_configurable_hello_pipelin:12,define_csv_dict_field:28,define_demo_configuration_schema_pipelin:13,define_demo_configuration_schema_repo:13,define_demo_execution_pipelin:25,define_demo_execution_repo:25,define_diamond_dag_pipelin:11,define_execution_context_pipeline_step_on:[14,18],define_execution_context_pipeline_step_thre:18,define_execution_context_pipeline_step_two:18,define_hello_dag_pipelin:15,define_hello_inputs_pipelin:17,define_hello_world_pipelin:[16,26],define_in_memory_store_resourc:27,define_local_fs_resourc:7,define_part_eleven_step_on:19,define_part_eleven_step_thre:19,define_part_eleven_step_two:19,define_part_fourteen_step_on:20,define_part_nine_step_on:21,define_part_ten_step_on:22,define_part_thirteen_step_on:23,define_part_thirteen_step_thre:23,define_part_thirteen_step_two:23,define_part_twelve_step_on:24,define_part_twelve_step_thre:24,define_part_twelve_step_two:24,define_path_dict_field:28,define_redshift_sa_resourc:7,define_repo:26,define_repo_demo_pipelin:26,define_repositori:14,define_resource_test_pipelin:27,define_stub_solid:[8,20],define_typed_demo_configuration_schema_error_pipelin:13,define_typed_demo_configuration_schema_pipelin:13,define_unittest_context:7,definit:[2,8,9,12,13,21,23,26,27],del:28,deliv:29,demand:1,demo_configuration_schema:13,demo_configuration_schema_repo:13,demo_execution_repo:25,demo_pipelin:25,demo_repo:26,demo_repositori:26,demonstr:[11,17,21],depend:[1,6,7,8,11,12,13,15,17,18,19,20,21,22,23,24,25,29],dependency_structur:1,dependencydefiniion:1,dependencydefinit:[1,11,13,15,19,20,21,22,23,24,25],dependencystructur:1,describ:[7,13,22,24],descript:[0,1,7,8,13,19,24,27,28],design:[1,14,21,29],destruct:1,detail:[8,12,17],deteremin:2,determin:[1,11,15],dev:[1,6],develop:[10,12,18,21,22,27],dfc8165a:16,diagnost:29,dict:[0,1,3,7,8,12,13,15,17,21,25,27,28],dict_param:28,dictionari:[0,1,3,8,11,15,17,28],did:[19,24],differ:[1,6,8,12,14,16,18,21,22,23,24,27,28,29],difficult:[8,20,21,29],dimens:21,dimension:[1,28],direct:[1,15,29],directli:[8,16,17,28],directori:[6,21],discourag:8,discov:29,discuss:20,disk:[1,8,28],displai:1,display_nam:1,distinguish:15,document:[6,10,13,25,29],doe:[1,7,11,14,19,21,24,27],doesn:7,doing:[21,23,28],don:[11,15,18],done:[12,20,29],dot:17,double_the_word:[13,25],double_the_word_with_typed_config:13,download:10,downstream:[19,21],dramat:21,drive:25,dropdown:15,dsl:[18,29],dure:[3,29],dynam:19,dynamodb:21,e257262eab79:22,e476:14,e835:24,each:[1,3,7,11,12,15,16,17,18,21,23,25,28],earlier:[17,25],easier:[1,7,26],easili:29,edg:1,edit:[12,13],editor:[12,17],effect:29,either:[1,3,15,18,19,21,29],element:[25,28],elif:[12,19,28],elimin:[7,8],els:[12,19,28],emit:[16,19,20],emittedoutput:19,enabl:20,encod:[12,15],encourag:[10,29],encout:3,end:[1,19,21],enforce_uniqu:1,engin:[14,15,29],enrich:25,ensur:[1,13,24,28],enter:[17,22],entir:[12,14,17,18,20,21,22],entit:1,entri:11,entropi:29,env:[8,13,21,25],enviro:3,environ:[1,3,5,6,7,8,11,12,14,17,18,21,27,29],error:[3,7,8,9,13,14,15,17,18,22,24,25,29],error_messag:[14,18],especi:26,etc:[1,6,18,23],evalu:[1,13,22],evaluate_valu:24,even:[7,14,18],event_typ:16,ever:13,everi:[1,16,18,21,29],everyth:17,exactli:8,examin:19,exampl:[0,1,6,7,8,11,12,14,16,17,18,19,21,24,26,27,28,29],excel:29,except:[1,2,3,19,24,28,29],excess:8,exclus:7,execut:[1,7,8,9,11,12,13,15,17,19,20,21,22,26,27,28,29],execute_pipelin:[3,8,12,14,16,17,18,19,20,22,23,24,27],execute_pipeline_iter:3,execute_solid:[5,8],execute_with_another_world:17,execution_context:[14,18],execution_context_pipelin:[14,18],execution_plan_step_start:16,execution_plan_step_success:16,executioncontext:[1,3,7,8,18,21],exist:[1,7,8,20,28],expect:[1,2,9,13,21,24,28,29],expectation_fn:[1,22],expectationdefinit:[1,22],expectationexecutioninfo:1,expectationresult:[1,22],expedit:6,expens:[13,22],experi:[13,17],explain:21,explicit:[22,29],explictli:22,explod:0,explor:[11,12,15,16],expos:18,express:[15,18,24,28,29],extern:[1,11,12,14,17,18,21,29],extract:1,f37e:16,f6fd78c5:19,f77205931abb:16,face:[7,8],facil:[12,14,18],fact:15,fail:[17,21,22,24,28],faild:2,failur:[1,2,13],fairli:8,fals:[7,8,22,28],famili:8,far:[17,19,21,23,24],fashion:21,fast:1,fe29:16,featur:[7,10,12,15,22],few:[7,15,16],field:[0,1,7,8,12,13,21,25,27,28],field_util:1,file:[6,7,8,12,13,14,17,18,21,23,25,26,27,28],file_opt:28,file_typ:28,fileload:7,filesystem:21,filter:[16,18],fire:19,first:[8,10,11,12,15,16,19,21,22,24,27],fix:8,flag:17,flexibl:[12,24],flow:[1,13,15,17,21,24,28,29],fly:12,focu:20,foe:21,folder:7,follow:[8,10,12,20,21,23,25,27,28],foo:[0,14,15,18],for_pipeline_run:7,forc:28,forget:15,form:[1,17,19,24],formal:7,format:[14,18,19,21,24,27,28,29],forth:1,fragment:18,frame:[22,28],framework:1,frequent:[1,27],from:[0,1,6,7,8,11,12,13,14,15,16,17,18,19,20,21,22,24,25,26,27,28],from_dict:[0,19],front:24,frontend:6,fulli:[12,28],further:16,futur:22,gener:[1,6,7,8,18,21,23,29],generate_production_execution_context:8,get:[1,3,7,13,16,23,24,26],get_all_pipelin:1,get_pipelin:1,git:[6,10],github:[6,10],give:[14,15],given:[1,3,28,29],glarb:0,glob:25,goal:[21,22],going:[7,21,24,27],gone:7,good:18,got:[8,13,24],grab:28,gradual:1,graph:[1,15,20,23,29],graphql:6,great:7,group:18,guarante:[7,8,13,28],guard:25,gui:16,guid:[7,8],had:[7,19,22],halt:[13,22],handi:6,handl:[1,8,14,21],hang:1,happen:[3,13,14],hard:21,hardcod:[12,15,17],has:[1,2,7,8,16,17,19,20,22,24,27,28,29],has_solid:1,hash:24,have:[0,1,6,7,8,10,11,12,15,17,19,20,21,22,23,24,26,27,28,29],haw:12,header_fil:8,hello:[0,9,12,17],hello_dag:15,hello_dag_pipelin:15,hello_input:17,hello_world:[0,16,26],hello_world_pipelin:16,help:[13,15,24],helper:7,henc:8,here:[7,12,13,17,24,28],heterogen:[28,29],high:8,highlight:16,hit:21,homebrew:10,honua:12,hook:23,host:[7,22,27],how:[1,8,11,12,13,14,15,16,17,18,19,21,23,24,26,27,28,29],howev:[19,21,23,24,28],html:6,http:[6,15,16,17,26,28,29],idea:21,idempot:[1,29],identifi:1,illustr:12,imagin:[13,17,21,22,23,24,27],immatur:22,implement:[0,1,14,19,21,27],implicit:[22,29],implicitli:19,implict:22,importerror:8,improv:[13,17],includ:[7,8,13,14,18,20,21,23,28],incom:[7,24],inde:[7,23,28],indetermin:18,index:[1,9,28],indic:[2,14,21,22],indirect:14,individu:[1,12,18,29],info:[0,1,2,7,12,13,14,16,18,19,20,21,22,23,24,25,27],inform:[1,7,14,15,16,17,18,26,29],infrastructur:[7,14],ingest:[21,22],ingest_a:[21,22],ingest_b:[21,22],inherit:24,inject:20,injected_solid:20,inmemorystor:[21,27],inner_typ:4,input:[0,1,5,8,9,11,12,13,15,16,19,20,21,22,23,24,25,27,29],input_def:1,input_nam:1,input_schema:28,input_selector_schema:28,inputdefinit:[0,1,7,11,13,15,17,19,20,21,22,23,24,25,27,28],inputs_env:17,insert:[21,28],insid:[10,13],inspect:[22,29],inst_param:28,instal:[6,7,8,9,16],instanc:[1,14,15,18,19,21,23],instanti:23,instead:[0,1,7,8,12,13,17,20,26,27,28],instruct:[8,16,28],integr:[1,21,29],intend:3,interact:[1,6,7,11,12,14,17,21,27],interest:[15,17,23],interfac:[16,21,27],intermitt:21,intern:[1,8],internet:21,interpret:10,intro_tutori:[14,26],introduc:[15,16,24],invalid:19,invari:2,invoc:1,invok:[7,17,21,27],involv:[18,23],is_opt:[1,7,12,28],is_posit:1,isinst:24,isn:3,isol:[10,20,21],issu:6,item:28,iter:[1,3,19],iterate_over_pipelin:1,its:[1,7,11,12,13,14,15,16,17,21,27,29],itself:[0,1,19],javascript:6,jest:6,job:22,just:[7,8,10,11,12,15,16,17,19,20,24,25,26],keep:25,kei:[0,1,3,12,14,15,17,21,27,28],kept:18,klass:8,know:[7,17,26,29],known:[17,29],kwarg:[0,2,3,4],label:[23,28],lambda:[0,1,21,22,27],lambda_solid:[0,1,11,12,13,15,16,17,20,23,24,25,26,28],languag:[12,28],last:[11,25],lastli:27,later:[8,10,15,16,21,25],latest:[7,10],layer:[14,15],learn:[12,13,26,27,29],left:[0,20],len:[12,20],less:[7,8,17],let:[7,11,13,14,15,16,17,18,19,20,21,22,24,25,26,27,28,29],letter:[13,25],level:[8,14,16,18,21,25],level_from_str:7,librari:[8,10,28,29],lifecycl:8,like:[0,1,8,10,12,14,17,18,19,21,22,23,24,25,26,28],line:[11,12,15,16,17,18,25,26],link:12,list:[0,1,3,4,11,26,28],littl:26,live:[6,21,27],livehtml:6,load:[17,23,25,26],load_a:23,load_b:23,load_numb:[20,23],local:[7,14,21,27],local_f:7,localfshandleresourc:7,localhost:[6,26],locat:29,log:[0,1,7,16,18,19,21,22,24,25,27],log_level:[7,8,13,14,18,21,22,25],log_message_id:[14,16,18,19,22,24],log_num:19,log_num_squar:19,logger:[7,8],logic:[18,21],longer:[7,8,21,28],look:[11,21,25],lot:[16,18],machin:[7,14,29],made:[13,18,23,24,29],mai:[1,7,12,17,26,29],maintain:29,mainten:29,make:[3,6,7,8,10,13,14,17,18,22,23,26,28,29],malform:22,manag:[6,10,14,18,29],mani:[1,12,15,17,18,23,26,29],manipul:28,manual:[1,7],map:1,mar:17,mark:16,match:24,materi:28,matter:[11,18,25],matur:29,maxim:29,maximum:12,mean:[7,17,24,27],meaning:[18,29],mechan:[8,16,19,20],medium:29,memori:[1,20,21,27,28],merg:7,messag:[1,8,13,14,15,16,18,24],met:26,metadata:[1,13,18,22,24,28,29],method:1,microsoft:10,middl:7,might:[12,13,14,18,28],milli:16,mismatch:2,miss:[13,15],mistak:[13,17],mistyp:13,mode:[6,27],model:[7,9,15,26,27],modifi:19,modul:[8,9,21,26],modulenotfounderror:8,more:[0,7,8,11,12,14,18,19,21,22,23,24,25],most:[8,14,18,26],mostli:1,move:[7,8,21],much:[1,7,8,12,28],mult:21,mult_int:21,multer:[20,23],multi:16,multipl:[0,1,8,9,21,23,25,29],multipleresult:[0,19],must:[1,12,15,17,19,20,21,22,27,28],mutabl:28,my_solid:0,my_solid_from_dict:0,myenv:10,naiv:21,name:[0,1,3,7,8,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28],namedtupl:[7,8,21,24],namespac:8,natur:22,navig:[15,16],necessari:1,need:[0,6,7,8,10,17,21,25,27,28,29],net:8,never:[19,20,24,29],next:[11,12,14,15,16,17,18,19,25,26,27],nice:[18,21],nicer:8,nine:22,node:[3,16,23,24,29],non:1,none:[0,1,3,5,7],none_resourc:7,norm:29,normal:8,not_a_tupl:24,note:[3,7,8,11,17,18,19,21,24,27,28],noth:28,notic:[7,14,15,17,18,19,21,22,23,24,28],notion:[7,8,28],notori:[21,29],now:[7,8,11,12,13,14,15,17,18,20,21,22,23,24,25,26,27,28],nullabl:4,num1:[20,23,28],num2:[20,23,28],num:[1,19,28],num_on:[21,22,27],num_squar:19,num_two:[21,22,27],number:[1,19,21,22,24,28],object:[0,1,8,14,18,19,21,24,28],obvious:23,occur:[14,18,21,24],off:[1,20],offer:27,offici:[7,8],often:[17,29],omit:[0,7],onc:[26,28],one:[1,3,7,8,12,16,17,18,19,20,21,23,24,25,28],onli:[1,2,7,12,14,16,17,18,19,21,22,23,24,25,28],oper:[1,10,13,17,18,21,22,23,27,29],opinion:[9,29],opportun:14,opt:8,option:[1,10,13,15,22,28],order:[7,11,12,15,17,18,21,22,24,25,26,27,28,29],org:28,orig_messag:[14,16,18,19,22,24],origin:28,osx:10,other:[1,7,10,11,14,15,18,19,20,26,27,28,29],other_nam:1,otherwis:0,our:[12,13,15,16,17,18,21,24,25,26,28],out:[7,8,14,18,27,29],out_on:19,out_two:19,outliv:28,output:[0,1,3,7,8,9,11,12,13,15,16,17,18,20,21,22,23,24,27,29],output_nam:[1,3],output_schema:28,output_selector_schema:28,outputdefinit:[0,1,7,13,17,19,20,21,22,23,24,27,28],outputs_def:1,over:[1,28,29],overrid:25,overview:29,own:[7,8,16,17,21,24,28],packag:[10,27],page:9,pair:[14,28],panda:[1,8,28,29],pandas_df:28,pandasdatafram:28,pane:16,parallel:8,param:8,paramet:[0,1,3,12,18,23],parameter:[3,17,27,28],parametercheckerror:8,parameteriz:1,parametr:12,parametriz:29,parquet:28,part:[10,12,22,25,26,29],part_eight:13,part_eleven:19,part_eleven_step_on:19,part_eleven_step_thre:19,part_eleven_step_two:19,part_nin:21,part_seven:25,part_ten:22,part_ten_step_on:22,part_thirteen:23,part_twelv:24,part_twelve_step_on:24,part_twelve_step_thre:24,part_twelve_step_two:24,particular:[3,7,12,18,19,21,23,27,29],particularli:23,partnineresourc:21,pass:[1,7,8,12,13,14,20,21,24,26,27,28],passthrough:1,passthrough_context_definit:1,password:[7,21,27],path:[4,7,8,10,13,28],pathtofil:[7,8],pattern:[18,26],pedogog:28,peopl:[26,29],per:[0,1,8,11,12,17,18,21],perform:[1,22,28,29],persist:28,persona:29,piec:[7,21],pieplin:1,pip:[6,8],pipelin:[1,2,3,7,8,9,11,12,13,14,15,17,18,19,21,22,23,24,26,27,28,29],pipeline_def:5,pipeline_dict:[1,13,25,26],pipeline_execut:25,pipeline_guid:7,pipeline_result:[20,23],pipeline_run_id:[7,8],pipeline_start:16,pipeline_success:16,pipelineconfigevaluationerror:[3,13],pipelinecontextdefinit:[1,7,8,21,27],pipelinedefinit:[1,3,8,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27],pipelinedefiniton:1,pipelinedefint:1,pipelineexecutionresult:3,place:[25,27],plai:28,plain:24,plan:[6,22],platform:[16,26],plu:20,point:[11,19,26],pool:21,poorli:29,pop:[17,18],popd:10,port:[6,7],posit:22,possibl:13,postgresql:7,potenti:[7,28],power:[7,14],practic:[18,29],pre:[1,7],predict:7,prefer:[1,18],present:[1,10,28],prevent:[13,22],previou:[1,7,12,13,19,26],previous:21,primari:[17,21],primer:29,principl:9,print:[0,14,18],prior:[17,29],probabl:1,proce:[12,28],process:[22,24,29],prod:[1,18],produc:[0,1,16,27,28,29],produce_invalid_valu:24,produce_valid_ssn_str:24,produce_valid_valu:24,product:[1,8,12,14,21,27,29],program:[9,15,18,26,29],programmat:26,project:[6,10,18,26],promis:7,prone:[8,17,25],properli:29,properti:[1,8,12,18,21,22],provid:[1,8,12,13,14,15,17,18,19,20,21,27,28,29],publiccloudconn:[21,27],publiccloudstor:[21,27],publish:6,pure:[1,21,28],purpos:[18,23],pushd:10,put:[7,21],py27:12,pydata:28,python3:[6,10],python:[6,8,16,18,19,21,22,24,27,29],python_modul:6,python_packag:10,python_typ:[4,8,24],pythonobjecttyp:[4,8,24],qualiti:[1,8,22],question:28,quickli:29,quit:[7,20,22],quux:13,quuxquux:13,rais:[2,19,24,28],ran:13,rather:[3,7,8,11,15,16,17,18,19,20,23,28,29],raw:8,react_app_graphql_uri:6,read_csv:28,read_parquet:28,read_tabl:28,readili:14,real:7,realiz:8,realli:8,reason:[1,8,21,23],recal:17,receiv:24,recommend:10,record:[21,27],record_valu:[21,27],recours:22,red:17,redistribut:10,redshift:[7,8],reduc:29,reentrant_info:3,reentrantinfo:3,regex:24,regist:28,regret:10,regular:24,rel:[7,21],relat:8,releas:[7,10],relev:[7,24],reliabl:21,remain:28,remov:28,render:6,repeat:24,repetit:26,replac:[7,8,13],repo:26,repo_demo_pipelin:26,report:29,repositori:[1,6,9,10,18,25],repositorydefinit:[1,13,25,26],repostori:26,repr:24,repres:[1,8,27],requir:[0,1,6,7,13,21,22,24,27,28,29],rerun:12,resid:23,resoourc:27,resourc:[1,8,9,14,21],resource_fn:[1,7,27],resource_test_pipelin:27,resourcedefinit:[1,7,27],respect:21,respons:28,rest:7,restrict:18,resuabl:7,result:[0,1,3,6,8,13,16,19,20,21,22,27],result_context:1,result_dict:[0,8],result_for_solid:[3,8,20,23],result_list:[3,20],retriev:1,return_dict_result:19,reus:[7,18,23],reusabl:[7,9,12],rewrit:12,rich:[13,17,29],richer:[14,18],right:[0,8,16,17,22],root:[10,13],rout:[14,18],row:28,rudimentari:21,rule:2,run:[3,7,8,10,12,13,14,15,16,18,19,21,22,24,25,26,28,29],run_id:[7,14,16,18,19,22,24],runner:6,runtim:[2,8,13,15,17,18,24,29],runtime_typ:1,runtimeexecutioncontext:8,runtimeexecutioncontextparam:8,s3filehandl:8,sai:[20,21,22,24,28],salient:12,same:[0,1,7,8,11,12,17,18,19,26,27,29],satisfi:[1,11,20],satisi:7,save:[14,16,24,26],scalar:[1,12],scenario:21,schema:[7,8,9,12,25],scientist:29,scope:[21,23],scratch:21,script:[6,16],seam:21,search:9,second:[8,12,15,17,21],section:[7,12,14,15,17],secur:24,see:[1,3,10,11,13,14,15,16,17,18,19,21,23,28,29],seen:[11,18,28],select:[10,28],selector:[8,28],self:[7,13,21,24,27],semi:[14,18],sens:28,sensibl:6,sep:28,separ:[8,10,15,18],serial:24,serv:[16,17,26,29],server:6,servic:[21,27],service_lines_fil:8,set:[6,16,18,21,25,27],set_value_in_cloud_stor:[21,27],setup:1,sever:[0,17,28],shape:8,share:7,she:28,shell:10,shine:21,shortcut:0,should:[0,1,7,8,10,12,14,15,16,18,19,21,23,24,26,27,28,29],shouldn:23,show:24,side:29,signatur:1,signifi:24,signific:24,silli:24,similar:28,simpl:[0,15,21],simpler:[0,8],simpli:[8,27],simplifi:[0,22],sinc:[11,28],singl:[0,1,7,8,12,16,18,19,20,21,23,27,28,29],site:23,size:28,skip:22,slightli:[7,11,22,24],slow:21,snapshot:[6,8],snapshot_check_result:8,social:24,softwar:[1,7,10,21,22],solid:[0,1,2,3,8,9,11,12,13,14,15,16,17,18,19,20,21,22,24,25,26,27,28],solid_1:1,solid_2:1,solid_a:11,solid_b:11,solid_c:11,solid_d:11,solid_definit:[14,16,18,19],solid_nam:[1,5],solid_on:[15,18],solid_result:[8,23],solid_subset:3,solid_two:[15,18],soliddefinit:[0,1,3],solidexecutionresult:3,solidinst:[1,20,23],some:[1,2,6,7,8,14,21,22,24,25,27,28,29],some_input:1,some_kei:21,some_password:[21,27],some_pwd:21,some_us:[21,27],some_valu:21,someth:[0,6,21],sophist:[11,22],sort:21,sourc:[6,7,18,28],space:2,spark:[14,29],speak:[12,20],special:[7,23],specif:[7,18,19,24,25],specifi:[0,12,13,14,15,17,18,19,21,25,26],specific_env:25,spew:[19,21,22,24],split:25,split_headers_and_service_lin:8,sql:29,sqlalchemi:8,ssd:1,ssn:24,ssnstring:24,ssnstringtyp:24,ssnstringtypeclass:24,stack:24,stacktrac:17,stage:[8,29],start:[6,11,20],state:[3,18,21],step:[3,8,15,16,17,28],step_eleven:19,step_kei:16,step_results_by_tag:3,still:11,storag:[21,23],store:[21,27,28],str:[0,1,7,8,24],str_one:24,str_param:28,str_two:24,str_valu:0,straightforward:7,stream:[1,16],strict:24,string:[0,4,7,8,12,13,15,17,19,21,24,25,27,28],string_tupl:24,stringtupl:24,stringtupletyp:24,strongli:[10,13,25],structur:[1,7,13,14,17,18,24,28,29],stub:8,stub_a:20,stub_b:20,stub_c_plus_d:20,studio:10,sub:8,subdag:20,subfield:28,submodul:8,subpackag:8,subsequ:7,subset:[7,8,20,29],substanti:8,substitut:21,substrat:[14,18],subtl:21,succeed:[16,22],success:[1,3,8,16,20,22,23],suck:21,sudo:10,suffici:29,suitabl:[1,21],sum:28,sum_df:28,sum_solid:28,suppli:1,support:[0,1,7,19,29],suppos:[6,8,25],surfac:[17,21,24],surround:14,swap:27,swappabl:[21,26],sync:25,synchron:3,syntax:18,synthes:7,system:[1,2,4,7,8,10,13,14,18,22,24,27,28,29],tab:16,tabl:[1,8,28],tabular:28,tailor:23,take:[0,1,7,8,12,16,20,21,28],talk:21,target:[1,26],task:[11,15,29],team:29,tediou:[13,25],tell:[15,22,25,26,27],term:[19,22,28],test:[1,3,6,7,8,9,10,12,18,21,22,27,29],test_a_plus_b_final_subdag:20,test_intro_tutorial_part_four:12,test_part_thirteen_step_on:23,test_part_thirteen_step_two:23,testabl:[12,21],than:[3,6,7,8,11,15,17,18,19,20,23,25,28,29],thei:[0,1,7,8,11,18,22,23,24,28,29],them:[8,10,12,16,17,18,21,23,28],thi:[0,1,3,7,8,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,26,27,28,29],thing:[3,7,18,21,23,24,27],think:[23,29],third:[8,16,28],thirteen_step_on:23,thirteen_step_two:23,those:[1,6,8,10,12,21,22,25,28,29],though:[14,18],thought:8,thread:[14,16],three:[16,17,23,28],through:[1,14,17,18,21,24,28,29],throughout:[14,24,28],throw_on_error:[3,22],thrown:[2,24],thu:1,tie:[8,19],tied:23,time:[1,11,12,13,16,17,18,19,21,22,23,26,28,29],timestamp:[14,18],tiresom:26,to_csv:28,to_parquet:28,togeth:[7,11,18,23],toi:24,tool:[6,10,13,16,18,21,22,24,25,26,29],top:8,topolog:[11,15],total:17,touch:[14,18,27],tox:6,trace:[13,24],tradit:22,transform:[0,1,3,16,17,19,21,24],transform_fn:1,transformed_valu:[3,8,20,23],transformexecutioninfo:[1,12],transit:8,tree:6,trigger:19,trivial:[21,24],tupl:24,turn:[11,12,28],tutori:[12,14,19,25,26,28],tutorial_part_thirteen_step_on:20,tutorial_part_thirteen_step_thre:23,tutorial_repositori:14,two:[1,8,15,18,19,20,21,23,25,28],txt:6,type:[0,1,2,7,8,9,12,13,15,18,19,20,21,22,23,25,26],typecheck:[24,28],typed_demo_configuration_schema:13,typed_demo_configuration_schema_error:13,typed_double_the_word:13,typed_double_the_word_error:13,typed_double_word:13,typed_double_word_mismatch:13,typeerror:8,typic:[1,20,22,24],ubuntu:10,undefin:13,under:[12,17,27],unexpect:22,unfamiliar:29,union:28,uniqu:[1,19],unit:[1,7,9,15,16,18,21,29],unittest:[1,7,8,27],univers:[14,18],unlik:22,unmodifi:7,unnam:[1,18,20],unpack:28,unsupport:28,until:17,untyp:17,unzip:[7,23],unzip_fil:[7,8],unzipfileconfig:7,unzipped_fil:8,unzipped_path:8,unzipped_path_valu:8,updat:[6,8,10,22],upgrad:[7,8],upload:[8,23],upload_header_to_s3:8,upload_service_line_to_s3:8,upstream:[7,20],usag:1,use:[1,6,7,8,10,12,14,16,17,18,20,21,25,26,27,28,29],used:[1,7,8,12,13,16,19,21,23,24,27,28],useful:[1,3,14,17,18,20,22,23,24,25,28,29],user:[1,2,7,8,9,12,14,17,18,21,22,27,29],usernam:[21,27],uses:[7,26],using:[6,7,10,12,14,16,17,18,21,23,25,26,27],utf:12,util:[8,9,12,16,28],utility_solid:8,uuid4:[7,8],uuid:[7,8],valid:[13,24,28],valu:[0,1,2,3,8,12,13,14,16,17,19,20,21,22,24,25,27,28,29],value_on:24,value_two:24,vari:[1,21,25],venv:[6,10],verbos:[7,8],veri:[1,3,8,13,15,23,24,28],verifi:24,version:[3,6,19,21,22,27],via:[14,16,17,21,22,27,28],view:[13,16],viewabl:22,violat:[2,13],virtual:8,virtualenv:6,virtualenviron:10,virtualenvwrapp:10,visual:[10,15,16,26],wai:[0,16,17,19,21,22,27,28,29],want:[1,12,14,17,18,20,21,22,24,25,26,27,28],watch:6,wax:7,web:16,webapp:10,welcom:9,well:[2,7,8,24,29],were:[7,8,23],what:[1,7,11,13,15,18,21,22,23,24,28,29],whatev:[8,21],when:[0,1,3,6,11,13,17,21,22,25,26,28,29],whenev:21,where:[1,12,14,15,16,18,20,21,22,27,28],wherea:28,whether:[1,3,10,22,29],which:[1,3,6,7,12,13,14,15,16,17,18,19,21,24,25,26,29],who:[18,29],whole:[3,22,24],whose:[0,1,10,15,17],why:23,wide:[10,21],window:10,wire:[11,24],within:[1,7,8,15,16,17,21,22,23],without:[12,16,17,18,26],won:10,word:[13,17,25],work:[0,13,18,22,26,27],workflow:15,world:[9,12,17],worri:15,worth:11,would:[1,7,8,11,17,21,27,28],wrap:19,write:[7,16],written:29,wrong:[13,24],wrong_word:13,yaml:[8,12,17,18,21,25],yarn:6,yellow:16,yet:6,yield:[0,1,3,7,8,17,19,29],yield_output:19,yml:[6,12,13,14,17,18,21,25,26],you:[1,6,7,8,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28],your:[7,8,10,11,14,16,17,21,22,24,26,27,28],zero:21,zip:7,zip_file_path:[7,8],zipped_fil:[7,8]},titles:["Decorators","Definitions","Errors","Execution","Types","Utilities","Contributing","Resources","Required API Changes","Intro Tutorial","Installation","An actual DAG","Configuration","Configuration Schemas","Execution Context","Hello, DAG","Hello, World","Inputs","Execution Context","Multiple Outputs","Unit-testing Pipelines","Custom Contexts","Expectations","Reusable Solids","User-defined Types","Pipeline Execution","Repositories","Resources","User-Defined Types","Principles"],titleterms:{"function":29,actual:11,agnost:29,api:[8,9,17],audit:9,basic:28,chang:8,cli:[16,17],comput:29,condit:19,config:7,configur:[12,13],context:[14,18,21],contribut:6,creat:10,custom:[21,24],dag:[11,15],dagit:[6,16,17,26],data:29,decor:0,defin:[24,28],definit:[1,4],describ:29,dev:10,develop:6,direct:24,doc:6,environ:10,error:2,execut:[3,14,16,18,25],expect:22,from:10,futur:24,gradual:29,hello:[15,16],indic:9,input:[7,17,28],instal:10,intro:9,level:7,librari:[7,16],local:6,log:14,multipl:19,old:9,option:29,output:[19,28],pip:10,pipelin:[16,20,25],principl:29,pypi:10,python:[10,17],qualiti:29,refer:9,releas:6,repositori:26,requir:8,resourc:[7,27],reusabl:23,run:6,schema:[13,28],self:29,setup:6,solid:[7,23],sourc:10,stabl:10,tabl:9,test:20,testabl:29,tutori:9,type:[4,17,24,28,29],unit:20,user:[24,28],util:5,verifi:29,version:10,virtual:10,virtualenv:10,webapp:6,world:16,yarn:10}})'
+snapshots['test_build_all_docs 10'] = 'Search.setIndex({docnames:["apidocs/decorators","apidocs/definitions","apidocs/errors","apidocs/execution","apidocs/types","apidocs/utilities","contributing","guides/028_to_030_new_concepts","guides/028_to_030_upgrade_guide","index","installation","intro_tutorial/actual_dag","intro_tutorial/config","intro_tutorial/configuration_schemas","intro_tutorial/execution_context","intro_tutorial/hello_dag","intro_tutorial/hello_world","intro_tutorial/inputs","intro_tutorial/old_execution_context","intro_tutorial/part_eleven","intro_tutorial/part_fourteen","intro_tutorial/part_nine","intro_tutorial/part_ten","intro_tutorial/part_thirteen","intro_tutorial/part_twelve","intro_tutorial/pipeline_execution","intro_tutorial/repos","intro_tutorial/resources","intro_tutorial/types","principles"],envversion:53,filenames:["apidocs/decorators.rst","apidocs/definitions.rst","apidocs/errors.rst","apidocs/execution.rst","apidocs/types.rst","apidocs/utilities.rst","contributing.rst","guides/028_to_030_new_concepts.md","guides/028_to_030_upgrade_guide.md","index.rst","installation.rst","intro_tutorial/actual_dag.rst","intro_tutorial/config.rst","intro_tutorial/configuration_schemas.rst","intro_tutorial/execution_context.rst","intro_tutorial/hello_dag.rst","intro_tutorial/hello_world.rst","intro_tutorial/inputs.rst","intro_tutorial/old_execution_context.rst","intro_tutorial/part_eleven.rst","intro_tutorial/part_fourteen.rst","intro_tutorial/part_nine.rst","intro_tutorial/part_ten.rst","intro_tutorial/part_thirteen.rst","intro_tutorial/part_twelve.rst","intro_tutorial/pipeline_execution.rst","intro_tutorial/repos.rst","intro_tutorial/resources.rst","intro_tutorial/types.rst","principles.rst"],objects:{"dagster.DependencyDefinition":{description:[1,2,1,""],output:[1,2,1,""],solid:[1,2,1,""]},"dagster.ExpectationDefinition":{description:[1,2,1,""],expectation_fn:[1,2,1,""],name:[1,2,1,""]},"dagster.ExpectationResult":{message:[1,2,1,""],result_context:[1,2,1,""],success:[1,2,1,""]},"dagster.InputDefinition":{description:[1,2,1,""],expectations:[1,2,1,""],name:[1,2,1,""],runtime_type:[1,2,1,""]},"dagster.MultipleResults":{from_dict:[0,4,1,""],results:[0,2,1,""]},"dagster.OutputDefinition":{description:[1,2,1,""],name:[1,2,1,""],runtime_type:[1,2,1,""]},"dagster.PipelineContextDefinition":{passthrough_context_definition:[1,4,1,""]},"dagster.PipelineDefinition":{context_definitions:[1,2,1,""],dependencies:[1,2,1,""],dependency_structure:[1,2,1,""],description:[1,2,1,""],display_name:[1,2,1,""],has_solid:[1,5,1,""],name:[1,2,1,""],solid_named:[1,5,1,""],solids:[1,2,1,""]},"dagster.PipelineExecutionResult":{context:[3,2,1,""],pipeline:[3,2,1,""],result_for_solid:[3,5,1,""],result_list:[3,2,1,""],success:[3,2,1,""]},"dagster.RepositoryDefinition":{get_all_pipelines:[1,5,1,""],get_pipeline:[1,5,1,""],iterate_over_pipelines:[1,5,1,""],name:[1,2,1,""],pipeline_dict:[1,2,1,""]},"dagster.Result":{output_name:[1,2,1,""],value:[1,2,1,""]},"dagster.SolidDefinition":{config_field:[1,2,1,""],description:[1,2,1,""],input_defs:[1,2,1,""],metadata:[1,2,1,""],name:[1,2,1,""],outputs_defs:[1,2,1,""],transform_fn:[1,2,1,""]},"dagster.SolidExecutionResult":{context:[3,2,1,""],dagster_error:[3,2,1,""],solid:[3,2,1,""],success:[3,2,1,""],transformed_value:[3,5,1,""],transformed_values:[3,2,1,""]},"dagster.TransformExecutionInfo":{config:[1,2,1,""],context:[1,2,1,""]},"dagster.core":{types:[4,6,0,"-"]},"dagster.core.types":{Any:[4,2,1,""],Bool:[4,2,1,""],Int:[4,2,1,""],List:[4,3,1,""],Nullable:[4,3,1,""],Path:[4,2,1,""],PythonObjectType:[4,0,1,""],String:[4,2,1,""]},dagster:{ContextCreationExecutionInfo:[1,0,1,""],DagsterExpectationFailedError:[2,1,1,""],DagsterInvalidDefinitionError:[2,1,1,""],DagsterInvariantViolationError:[2,1,1,""],DagsterRuntimeCoercionError:[2,1,1,""],DagsterTypeError:[2,1,1,""],DagsterUserCodeExecutionError:[2,1,1,""],DependencyDefinition:[1,0,1,""],ExecutionContext:[3,0,1,""],ExpectationDefinition:[1,0,1,""],ExpectationExecutionInfo:[1,0,1,""],ExpectationResult:[1,0,1,""],Field:[1,3,1,""],InputDefinition:[1,0,1,""],MultipleResults:[0,0,1,""],OutputDefinition:[1,0,1,""],PipelineConfigEvaluationError:[3,1,1,""],PipelineContextDefinition:[1,0,1,""],PipelineDefinition:[1,0,1,""],PipelineExecutionResult:[3,0,1,""],ReentrantInfo:[3,0,1,""],RepositoryDefinition:[1,0,1,""],ResourceDefinition:[1,0,1,""],Result:[1,0,1,""],SolidDefinition:[1,0,1,""],SolidExecutionResult:[3,0,1,""],SolidInstance:[1,0,1,""],TransformExecutionInfo:[1,0,1,""],execute_pipeline:[3,3,1,""],execute_pipeline_iterator:[3,3,1,""],execute_solid:[5,3,1,""],execute_solids:[5,3,1,""],lambda_solid:[0,3,1,""],solid:[0,3,1,""]}},objnames:{"0":["py","class","Python class"],"1":["py","exception","Python exception"],"2":["py","attribute","Python attribute"],"3":["py","function","Python function"],"4":["py","staticmethod","Python static method"],"5":["py","method","Python method"],"6":["py","module","Python module"]},objtypes:{"0":"py:class","1":"py:exception","2":"py:attribute","3":"py:function","4":"py:staticmethod","5":"py:method","6":"py:module"},terms:{"06c7":16,"0db53fdb":24,"0x11e4fbf60":8,"1563854b":16,"183c":24,"18adec0afdfc":24,"25faadf5":16,"2ee26bc76636":24,"2mxds1r":29,"408a":22,"40a9b608":18,"40ea":19,"424047dd":24,"42b8":19,"43f5":16,"44f6":18,"46cc":16,"477c":24,"47db":22,"48cda39e79a1":19,"497c9d47":18,"49eb":16,"49ef":19,"4a4e":14,"4aa0":18,"4ac0":14,"4ae2":16,"4b3f":22,"4d71":16,"4f15":18,"4f38ba45b8e0":14,"4f75":18,"571a":18,"583d":19,"5878513a":16,"5b233906":18,"5c829421":16,"604dc47c":16,"66b0b6ecdcad":22,"675f905d":24,"677247b1b07b":16,"6b80d12155de":19,"6d6dbe6b296b":19,"744a":16,"758f":16,"7d62dcbf":19,"7e828e37eab8":16,"7f4d":19,"80c2":22,"81ba":16,"88cb":16,"89211a12":18,"8b76":22,"8f24049b0f66":18,"938ab7fa":22,"941f":19,"95af":19,"95ef":19,"97ae58fda0f4":16,"9b36":18,"9ca21f5c":22,"9cbe4fa0f5e6":19,"9de556c1":19,"9f44":22,"9f4a":18,"\\u4e16\\u754c":12,"\\u4f60\\u597d":12,"abstract":[1,7,14],"break":[6,7,8,29],"case":[1,12,13,14,15,17,18,20,22,27,28],"catch":[13,17],"class":[0,1,2,3,4,7,8,19,21,22,24,27],"default":[0,1,7,10,13,14,18,19,21,22,25,26,28],"final":[20,23,25,28],"function":[0,1,3,7,8,12,15,16,17,19,21,23,24,26,27,28],"import":[8,11,12,13,14,15,16,17,18,21,25,26,27,28,29],"instanceof":13,"int":[1,4,7,13,19,20,21,22,23,25,27,28],"long":26,"new":[6,7,8,10,15,18,20,21,26,27],"public":[8,21,27],"return":[0,1,3,7,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28],"short":24,"static":[0,1],"super":24,"switch":[10,12],"throw":[1,2,3,22],"true":[1,3,7,12,28],"try":[11,12,25,26],"while":[7,8,27],And:[7,10,13,14,17,18,21,22,23,24,25,27],But:[17,18,26],For:[1,3,6,7,10,12,17,18,19,24,27],Lying:22,One:[1,8,14,15,18,20,21,22,24,28],That:[7,12,13,24,27],The:[0,1,3,7,8,11,12,13,15,16,17,18,19,20,21,22,24,25,27,28],Then:[12,16],There:[1,8,16,23],These:[1,13,19,23,29],Use:8,Used:1,Useful:[0,27],Using:16,With:[7,19,25],__fieldvaluesentinel:1,__inferoptionalcompositefieldsentinel:1,__init__:[8,21,24,27],__main__:[16,18,19,24],__name__:[16,19,24],_add_on:1,_cleanup_field:7,_conf_field:7,_conn:21,_create_resourc:7,_data_source_run_id_field:7,_info:[1,19,21,22],_kei:21,_log_level_field:7,_name__:18,_valu:21,a04c:18,a1d6:18,a220:18,a29ddb15309a:14,a463:19,a531:16,a801:16,a850a1643b9f:18,a_plus_b:[20,23],aaac:14,aab70a2cb603:18,abid:28,abil:[7,15,20,22],abl:[7,12,14,16,18,21,23,24,26,28,29],about:[1,7,8,12,15,18,22,25,27,28,29],abov:[18,19,21,28],accept:[1,21],access:[1,14,18,21,27],accomplish:21,acronym:1,across:[7,18,25],action:13,activ:[6,10],actual:[9,15,19,29],actual_dag:11,actual_dag_pipelin:11,acycl:[1,15,29],add:[8,16,21,22,27,28],add_hello_to_word:17,add_hello_to_word_typ:17,add_int:[21,22,27],add_on:1,added:22,adder:[20,23],adding:[18,22],addit:[0,12],addition:19,advertis:29,aed8162cc25c:19,aesthet:28,af26:24,aff9:24,afford:12,after:[7,8,11],again:[11,18,24],against:[8,25,27],alia:[1,23],all:[1,3,7,12,16,17,19,26,28],allow:[0,1,3,7,14,15,18,19,21,25,26,28],allscript:[7,8],allscriptsfileloadresourc:7,aloha:12,along:[20,28],alreadi:[10,20,24,26,27],also:[6,7,8,10,13,17,18,19,20,21,22,24,25,26,28,29],alter:27,altern:28,although:[14,18,26],alwai:[17,18,29],amazon:21,amount:24,anaconda:10,analyst:29,ani:[1,3,4,6,7,8,10,11,13,14,16,17,18,21,24,26,27,28,29],annon:14,annot:[8,12,13,24,28],anoth:[7,8,12,27],anticip:7,anyth:28,apach:6,apart:7,api:[0,1,3,7,12,26,27,28],appear:[14,28],appli:[1,17,28],applic:[22,25],approach:29,appropri:[17,27,29],apt:10,arbitrari:[1,15,19,20,22,28,29],aren:10,arg:[2,3,4],arg_a:11,arg_b:11,arg_c:11,arg_on:15,argument:[0,1,2,8,12,15,17,19,25,28],aris:13,arithmet:[21,23],around:[8,19,28],arrai:1,arrang:[1,16,29],arrow:6,articl:29,artifact:[27,29],as_dagster_typ:[8,28],asid:7,aspect:22,assert:[8,16,20,23],asset:[1,16],assign:17,associ:18,assum:[1,16,28],assumpt:[22,29],attach:[1,13,21,22,27],attent:11,attribut:[1,8,21],attributeerror:8,author:[1,14,15,18,21,29],auto:[6,17],automat:17,autoreload:6,avail:1,avoid:12,awai:14,awar:22,awkward:8,aws:7,axes:28,b0cbb1be:14,b150:19,b27fb70a:16,b510:16,b5a8:16,b602e4409f74:16,b757:24,b85c:16,b8e0:14,back:13,bad:21,bake:22,ball:7,bar:[0,25],barb:0,bare:21,base:[17,19],bash:10,basi:[11,18],basic:[14,18],batch:29,beauchemin:29,becaus:[6,7,8,11,14,17,18,19,21,22,24,28,29],becom:[0,7],been:[2,19,20,23,28],befor:[7,8,11,13,17,18],begin:[7,16],behavior:22,behaviour:0,being:[3,8,21,23],besid:13,best:29,better:[17,26],between:[1,3,7,13,15,21,24,29],bigco:27,bin:[6,10],bit:[10,29],bodi:0,boilerpl:[7,28],bool:[1,3,4,7],both:[8,10,11,13,24],bottom:16,branch:19,breakag:29,brew:10,broadli:[20,25],browser:16,bucket:8,bucket_path:7,bug:25,build:[7,8,10,11,15,16,26,28],built:[12,17,24,29],builtin:28,bulk:[7,24],bunch:[14,22,25],burden:29,busi:[18,21],c008:22,c12bdc2d:22,c1f4:24,c25e:19,c28d23a757b:24,c955:22,c98f:18,c_plus_d:[20,23],cach:[1,21],call:[8,15,16,21,22,23,24,26,28,29],callabl:1,callback:1,caller:[3,8],can:[1,2,6,7,8,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29],cannot:8,capabilti:22,capabitili:15,capabl:[7,8,14,18,20,21,22,27,29],captur:22,caus:[13,22],cb10:19,cb75946b0055:16,cc2ae784:19,certain:1,chang:[6,7,14,18,21,27,29],check:[1,2,6,8,10,13,15,24,28,29],check_posit:22,check_positivevalu:22,choic:16,choos:[15,28],chunk:7,circuit:24,cleali:29,clean_up_dir:7,cleanup_fil:[7,8],clear:[13,22],cli:[25,26],click:17,clone:[6,10],cloud:[21,23,27],cluster:14,code:[2,7,8,12,13,14,21,22,24,27,28,29],coerc:24,coerce_runtime_valu:24,collabor:29,collect:[1,13,25,26],column:28,com:[6,10],combin:18,combo:21,come:[1,7,10,24,28],comfort:18,command:[11,12,15,17,18,25,26],comment:20,common:[7,12,18,27],commonli:28,commun:22,compar:6,compat:12,complet:[1,16,17,21],complex:11,complic:23,compos:[1,7],compris:1,comput:[1,12,14,15,16,18,21,22,24,27,28],computation:29,concaten:15,concept:[7,15,16,21,22],conceptu:[8,12],concis:0,conda:10,condit:3,condition:19,conf:[7,8,21],config:[0,1,8,12,13,14,17,18,19,20,21,22,23,25,26,27,28],config_def:[7,8],config_env:12,config_field:[0,1,7,8,12,13,19,20,21,22,23,25,27],config_valu:[1,3,28],configdefinit:[7,8,19,20,21,22,23],configdictionari:[7,8],configur:[0,1,2,7,8,9,14,17,18,19,21,22,25,27,28,29],configurable_hello:12,configurable_hello_pipelin:12,configuration_schema:13,configuration_schemas_error_1:13,configuration_schemas_error_2:13,conform:[1,13],conn:[21,27],connect:[1,7,11,15,21,23,28],consist:7,consol:[14,17,18],console_log:21,constant:25,constant_env:25,constitut:1,construct:[1,8,26],consum:[1,13,24,25,29],consume_ssn:24,consume_string_tupl:24,contain:[1,6,7,14,17,20,29],context:[0,1,3,7,8,9,12,13,19,20,22,24,25,27,29],context_definit:[1,21,27],context_fn:[1,7,8,21],context_param:1,context_stack:[7,8],contextcreationexecutioninfo:1,contract:29,contribut:9,control:[1,18,21,22,29],convent:21,cooper_pair:7,copi:[15,25,28],core:[0,1,2,4,8,13,15,16,19,21,22,23,24,27],correct:1,correspond:12,could:[1,7,11,17,21],count:[7,13,25],count_lett:[13,25],coupl:[12,24],creat:[0,1,6,7,8,18,20,21,25,26,27],create_allscripts_fileload_unittest_context:7,create_engin:7,create_single_solid_pipelin:[8,20],create_sub_pipelin:[8,20],creation:[0,7,8,21],cred:21,credenti:[18,21,27],critic:[22,29],csv:28,current:[1,22],custom:[9,16,18],d129552525a4:22,d548ea66:19,d8f41da0:14,dag:[1,9,12,16,20,29],dagit:[10,11,12,13,14,15,18,22,23,24,26,28],dagster:[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,24,25,26,28,29],dagster_error:3,dagster_exampl:6,dagster_pd:1,dagster_sqlalchemi:8,dagster_typ:[1,7,8,19],dagsterenv:6,dagsterevaluatevalueerror:24,dagsterexpectationfailederror:[2,22],dagsterinvaliddefinitionerror:2,dagsterinvariantviolationerror:[2,13,28],dagsterruntimecoercionerror:2,dagstertyp:[1,7,24],dagstertypeerror:[2,24],dagsterusercodeexecutionerror:2,data:[1,9,15,16,20,21,22,24,28],data_sourc:[7,8],data_source_run_id:[7,8],databas:[1,14,18,21,27],datafram:[1,28],dataframe_input_schema:28,dataframe_output_schema:28,dbname:7,dea6d00d99f0:16,deal:21,debug:[13,14,18,21,22,25],debug_messag:[14,18],declar:[1,7,11,12,18,21,23,26,27,28],decor:[1,9,16,28],deem:29,deep:13,deepli:11,def:[0,1,7,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28],default_output:3,default_valu:[1,7,12,28],defaultcontextconfig:8,defaultdict:[13,25],defin:[0,1,2,7,8,9,12,15,16,21,25,26],define_allscripts_fileload_pipelin:8,define_cloud_store_resourc:27,define_colored_console_logg:[7,8],define_configurable_hello_pipelin:12,define_csv_dict_field:28,define_demo_configuration_schema_pipelin:13,define_demo_configuration_schema_repo:13,define_demo_execution_pipelin:25,define_demo_execution_repo:25,define_diamond_dag_pipelin:11,define_execution_context_pipeline_step_on:[14,18],define_execution_context_pipeline_step_thre:18,define_execution_context_pipeline_step_two:18,define_hello_dag_pipelin:15,define_hello_inputs_pipelin:17,define_hello_world_pipelin:[16,26],define_in_memory_store_resourc:27,define_local_fs_resourc:7,define_part_eleven_step_on:19,define_part_eleven_step_thre:19,define_part_eleven_step_two:19,define_part_fourteen_step_on:20,define_part_nine_step_on:21,define_part_ten_step_on:22,define_part_thirteen_step_on:23,define_part_thirteen_step_thre:23,define_part_thirteen_step_two:23,define_part_twelve_step_on:24,define_part_twelve_step_thre:24,define_part_twelve_step_two:24,define_path_dict_field:28,define_redshift_sa_resourc:7,define_repo:26,define_repo_demo_pipelin:26,define_repositori:14,define_resource_test_pipelin:27,define_stub_solid:[8,20],define_typed_demo_configuration_schema_error_pipelin:13,define_typed_demo_configuration_schema_pipelin:13,define_unittest_context:7,definit:[2,8,9,12,13,21,23,26,27],del:28,deliv:29,demand:[1,26],demo_configuration_schema:13,demo_configuration_schema_repo:13,demo_execution_repo:25,demo_pipelin:25,demo_repositori:26,demonstr:[11,17,21],depend:[1,6,7,8,11,12,13,15,17,18,19,20,21,22,23,24,25,29],dependency_structur:1,dependencydefiniion:1,dependencydefinit:[1,11,13,15,19,20,21,22,23,24,25],dependencystructur:1,describ:[7,13,22,24],descript:[0,1,7,8,13,19,24,27,28],design:[1,14,21,29],destruct:1,detail:[8,12,17],deteremin:2,determin:[1,11,15],dev:[1,6],develop:[10,12,18,21,22,27],dfc8165a:16,diagnost:29,dict:[0,1,3,7,8,12,13,15,17,21,25,27,28],dict_param:28,dictionari:[0,1,3,8,11,15,17,28],did:[19,24],differ:[1,6,8,12,14,16,18,21,22,23,24,27,28,29],difficult:[8,20,21,29],dimens:21,dimension:[1,28],direct:[1,15,29],directli:[8,16,17,28],directori:[6,21],discourag:8,discov:29,discuss:20,disk:[1,8,28],displai:1,display_nam:1,distinguish:15,document:[6,10,13,25,29],doe:[1,7,11,14,19,21,24,27],doesn:7,doing:[21,23,28],don:[11,15,18],done:[12,20,29],dot:17,double_the_word:[13,25],double_the_word_with_typed_config:13,download:10,downstream:[19,21],dramat:21,drive:25,dropdown:[15,26],dsl:[18,29],dure:[3,29],dynam:19,dynamodb:21,e257262eab79:22,e476:14,e835:24,each:[1,3,7,11,12,15,16,17,18,21,23,25,28],earlier:[17,25],easier:[1,7,26],easili:29,edg:1,edit:[12,13],editor:[12,17],effect:29,either:[1,3,15,18,19,21,29],element:[25,28],elif:[12,19,28],elimin:[7,8],els:[12,19,28],emit:[16,19,20],emittedoutput:19,enabl:20,encod:[12,15],encourag:[10,29],encout:3,end:[1,19,21],enforce_uniqu:1,engin:[14,15,29],enrich:25,ensur:[1,13,24,28],enter:[17,22],entir:[12,14,17,18,20,21,22],entit:1,entri:11,entropi:29,env:[8,13,21,25],enviro:3,environ:[1,3,5,6,7,8,11,12,14,17,18,21,27,29],error:[3,7,8,9,13,14,15,17,18,22,24,25,29],error_messag:[14,18],especi:26,etc:[1,6,18,23],evalu:[1,13,22],evaluate_valu:24,even:[7,14,18],event_typ:16,ever:13,everi:[1,16,18,21,29],everyth:17,exactli:8,examin:19,exampl:[0,1,6,7,8,11,12,14,16,17,18,19,21,24,26,27,28,29],excel:29,except:[1,2,3,19,24,28,29],excess:8,exclus:7,execut:[1,7,8,9,11,12,13,15,17,19,20,21,22,26,27,28,29],execute_pipelin:[3,8,12,14,16,17,18,19,20,22,23,24,27],execute_pipeline_iter:3,execute_solid:[5,8],execute_with_another_world:17,execution_context:[14,18],execution_context_pipelin:[14,18],execution_plan_step_start:16,execution_plan_step_success:16,executioncontext:[1,3,7,8,18,21],exist:[1,7,8,20,28],expect:[1,2,9,13,21,24,28,29],expectation_fn:[1,22],expectationdefinit:[1,22],expectationexecutioninfo:1,expectationresult:[1,22],expedit:6,expens:[13,22],experi:[13,17],explain:21,explicit:[22,29],explictli:22,explod:0,explor:[11,12,15,16],expos:18,express:[15,18,24,28,29],extern:[1,11,12,14,17,18,21,29],extract:1,f37e:16,f6fd78c5:19,f77205931abb:16,face:[7,8],facil:[12,14,18],fact:15,fail:[17,21,22,24,28],faild:2,failur:[1,2,13],fairli:8,fals:[7,8,22,28],famili:8,far:[17,19,21,23,24],fashion:21,fast:1,fe29:16,featur:[7,10,12,15,22],few:[7,15,16],field:[0,1,7,8,12,13,21,25,27,28],field_util:1,file:[6,7,8,12,13,14,17,18,21,23,25,26,27,28],file_opt:28,file_typ:28,fileload:7,filesystem:21,filter:[16,18],fire:19,first:[8,10,11,12,15,16,19,21,22,24,27],fix:8,flag:17,flexibl:[12,24],flow:[1,13,15,17,21,24,28,29],fly:12,focu:20,foe:21,folder:7,follow:[8,10,12,20,21,23,25,27,28],foo:[0,14,15,18],for_pipeline_run:7,forc:28,forget:15,form:[1,17,19,24],formal:7,format:[14,18,19,21,24,27,28,29],forth:1,fragment:18,frame:[22,28],framework:1,frequent:[1,27],from:[0,1,6,7,8,11,12,13,14,15,16,17,18,19,20,21,22,24,25,26,27,28],from_dict:[0,19],front:24,frontend:6,fulli:[12,28],further:16,futur:22,gener:[1,6,7,8,18,21,23,29],generate_production_execution_context:8,get:[1,3,7,13,16,23,24,26],get_all_pipelin:1,get_pipelin:1,git:[6,10],github:[6,10],give:[14,15],given:[1,3,28,29],glarb:0,glob:25,goal:[21,22],going:[7,21,24,27],gone:7,good:18,got:[8,13,24],grab:28,gradual:1,graph:[1,15,20,23,29],graphql:6,great:7,group:18,guarante:[7,8,13,28],guard:25,gui:16,guid:[7,8],had:[7,19,22],halt:[13,22],handi:6,handl:[1,8,14,21],hang:1,happen:[3,13,14],hard:21,hardcod:[12,15,17],has:[1,2,7,8,16,17,19,20,22,24,27,28,29],has_solid:1,hash:24,have:[0,1,6,7,8,10,11,12,15,17,19,20,21,22,23,24,26,27,28,29],haw:12,header_fil:8,hello:[0,9,12,17],hello_dag:15,hello_dag_pipelin:15,hello_input:17,hello_world:[0,16,26],hello_world_pipelin:16,help:[13,15,24],helper:7,henc:8,here:[7,12,13,17,24,28],heterogen:[28,29],high:8,highlight:16,hit:21,homebrew:10,honua:12,hook:23,host:[7,22,27],how:[1,8,11,12,13,14,15,16,17,18,19,21,23,24,26,27,28,29],howev:[19,21,23,24,28],html:6,http:[6,15,16,17,28,29],idea:21,idempot:[1,29],identifi:1,illustr:12,imagin:[13,17,21,22,23,24,27],immatur:22,implement:[0,1,14,19,21,27],implicit:[22,29],implicitli:19,implict:22,importerror:8,improv:[13,17],includ:[7,8,13,14,18,20,21,23,28],incom:[7,24],inde:[7,23,28],indetermin:18,index:[1,9,28],indic:[2,14,21,22],indirect:14,individu:[1,12,18,29],info:[0,1,2,7,12,13,14,16,18,19,20,21,22,23,24,25,27],inform:[1,7,14,15,16,17,18,26,29],infrastructur:[7,14],ingest:[21,22],ingest_a:[21,22],ingest_b:[21,22],inherit:24,inject:20,injected_solid:20,inmemorystor:[21,27],inner_typ:4,input:[0,1,5,8,9,11,12,13,15,16,19,20,21,22,23,24,25,27,29],input_def:1,input_nam:1,input_schema:28,input_selector_schema:28,inputdefinit:[0,1,7,11,13,15,17,19,20,21,22,23,24,25,27,28],inputs_env:17,insert:[21,28],insid:[10,13],inspect:[22,29],inst_param:28,instal:[6,7,8,9,16],instanc:[1,14,15,18,19,21,23],instanti:23,instead:[0,1,7,8,12,13,17,20,26,27,28],instruct:[8,16,28],integr:[1,21,29],intend:3,interact:[1,6,7,11,12,14,17,21,27],interest:[15,17,23],interfac:[16,21,27],intermitt:21,intern:[1,8],internet:21,interpret:10,intro_tutori:[14,26],introduc:[15,16,24],invalid:19,invari:2,invoc:1,invok:[7,17,21,27],involv:[18,23],is_opt:[1,7,12,28],is_posit:1,isinst:24,isn:3,isol:[10,20,21],issu:6,item:28,iter:[1,3,19],iterate_over_pipelin:1,its:[1,7,11,12,13,14,15,16,17,21,27,29],itself:[0,1,19,26],javascript:6,jest:6,job:22,just:[7,8,10,11,12,15,16,17,19,20,24,25,26],keep:25,kei:[0,1,3,12,14,15,17,21,27,28],kept:18,klass:8,know:[7,17,26,29],known:[17,29],kwarg:[0,2,3,4],label:[23,28],lambda:[0,1,21,22,27],lambda_solid:[0,1,11,12,13,15,16,17,20,23,24,25,26,28],languag:[12,28],last:[11,25],lastli:27,later:[8,10,15,16,21,25],latest:[7,10],layer:[14,15],learn:[12,13,26,27,29],left:[0,20],len:[12,20],less:[7,8,17],let:[7,11,13,14,15,16,17,18,19,20,21,22,24,25,26,27,28,29],letter:[13,25],level:[8,14,16,18,21,25],level_from_str:7,librari:[8,10,28,29],lifecycl:8,like:[0,1,8,10,12,14,17,18,19,21,22,23,24,25,26,28],line:[11,12,15,16,17,18,25,26],link:12,list:[0,1,3,4,11,26,28],littl:26,live:[6,21,27],livehtml:6,load:[17,23,25,26],load_a:23,load_b:23,load_numb:[20,23],local:[7,14,21,27],local_f:7,localfshandleresourc:7,localhost:6,locat:29,log:[0,1,7,16,18,19,21,22,24,25,27],log_level:[7,8,13,14,18,21,22,25],log_message_id:[14,16,18,19,22,24],log_num:19,log_num_squar:19,logger:[7,8],logic:[18,21],longer:[7,8,21,28],look:[11,21,25],lot:[16,18],machin:[7,14,29],made:[13,18,23,24,29],mai:[1,7,12,17,26,29],maintain:29,mainten:29,make:[3,6,7,8,10,13,14,17,18,22,23,26,28,29],malform:22,manag:[6,10,14,18,29],mani:[1,12,15,17,18,23,26,29],manipul:28,manual:[1,7],map:1,mar:17,mark:16,match:24,materi:28,matter:[11,18,25],matur:29,maxim:29,maximum:12,mean:[7,17,24,27],meaning:[18,29],mechan:[8,16,19,20],medium:29,memori:[1,20,21,27,28],merg:7,messag:[1,8,13,14,15,16,18,24],met:26,metadata:[1,13,18,22,24,28,29],method:1,microsoft:10,middl:7,might:[12,13,14,18,28],milli:16,mismatch:2,miss:[13,15],mistak:[13,17],mistyp:13,mode:[6,27],model:[7,9,15,26,27],modifi:19,modul:[8,9,21,26],modulenotfounderror:8,more:[0,7,8,11,12,14,18,19,21,22,23,24,25],most:[8,14,18,26],mostli:1,move:[7,8,21],much:[1,7,8,12,28],mult:21,mult_int:21,multer:[20,23],multi:16,multipl:[0,1,8,9,21,23,25,29],multipleresult:[0,19],must:[1,12,15,17,19,20,21,22,27,28],mutabl:28,my_solid:0,my_solid_from_dict:0,myenv:10,naiv:21,name:[0,1,3,7,8,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28],namedtupl:[7,8,21,24],namespac:8,natur:22,navig:[15,16],necessari:1,need:[0,6,7,8,10,17,21,25,27,28,29],net:8,never:[19,20,24,29],next:[11,12,14,15,16,17,18,19,25,26,27],nice:[18,21],nicer:8,nine:22,node:[3,16,23,24,29],non:1,none:[0,1,3,5,7],none_resourc:7,norm:29,normal:8,not_a_tupl:24,note:[3,7,8,11,17,18,19,21,24,26,27,28],noth:28,notic:[7,14,15,17,18,19,21,22,23,24,28],notion:[7,8,28],notori:[21,29],now:[7,8,11,12,13,14,15,17,18,20,21,22,23,24,25,26,27,28],nullabl:4,num1:[20,23,28],num2:[20,23,28],num:[1,19,28],num_on:[21,22,27],num_squar:19,num_two:[21,22,27],number:[1,19,21,22,24,28],object:[0,1,8,14,18,19,21,24,28],obvious:23,occur:[14,18,21,24],off:[1,20],offer:27,offici:[7,8],often:[17,29],omit:[0,7],onc:[26,28],one:[1,3,7,8,12,16,17,18,19,20,21,23,24,25,28],onli:[1,2,7,12,14,16,17,18,19,21,22,23,24,25,28],oper:[1,10,13,17,18,21,22,23,27,29],opinion:[9,29],opportun:14,opt:8,option:[1,10,13,15,22,28],order:[7,11,12,15,17,18,21,22,24,25,26,27,28,29],org:28,orig_messag:[14,16,18,19,22,24],origin:28,osx:10,other:[1,7,10,11,14,15,18,19,20,26,27,28,29],other_nam:1,otherwis:0,our:[12,13,15,16,17,18,21,24,25,26,28],out:[7,8,14,18,27,29],out_on:19,out_two:19,outliv:28,output:[0,1,3,7,8,9,11,12,13,15,16,17,18,20,21,22,23,24,27,29],output_nam:[1,3],output_schema:28,output_selector_schema:28,outputdefinit:[0,1,7,13,17,19,20,21,22,23,24,27,28],outputs_def:1,over:[1,28,29],overrid:25,overview:29,own:[7,8,16,17,21,24,28],packag:[10,27],page:9,pair:[14,28],panda:[1,8,28,29],pandas_df:28,pandasdatafram:28,pane:16,parallel:8,param:8,paramet:[0,1,3,12,18,23],parameter:[3,17,27,28],parametercheckerror:8,parameteriz:1,parametr:12,parametriz:29,parquet:28,part:[10,12,22,25,26,29],part_eight:13,part_eleven:19,part_eleven_step_on:19,part_eleven_step_thre:19,part_eleven_step_two:19,part_nin:21,part_seven:25,part_ten:22,part_ten_step_on:22,part_thirteen:23,part_twelv:24,part_twelve_step_on:24,part_twelve_step_thre:24,part_twelve_step_two:24,particular:[3,7,12,18,19,21,23,27,29],particularli:23,partnineresourc:21,pass:[1,7,8,12,13,14,20,21,24,26,27,28],passthrough:1,passthrough_context_definit:1,password:[7,21,27],path:[4,7,8,10,13,28],pathtofil:[7,8],pattern:18,pedogog:28,peopl:[26,29],per:[0,1,8,11,12,17,18,21],perform:[1,22,28,29],persist:28,persona:29,piec:[7,21],pieplin:1,pip:[6,8],pipelin:[1,2,3,7,8,9,11,12,13,14,15,17,18,19,21,22,23,24,26,27,28,29],pipeline_def:5,pipeline_dict:[1,13,25,26],pipeline_execut:25,pipeline_guid:7,pipeline_result:[20,23],pipeline_run_id:[7,8],pipeline_start:16,pipeline_success:16,pipelineconfigevaluationerror:[3,13],pipelinecontextdefinit:[1,7,8,21,27],pipelinedefinit:[1,3,8,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27],pipelinedefiniton:1,pipelinedefint:1,pipelineexecutionresult:3,place:[25,27],plai:28,plain:24,plan:[6,22],platform:[16,26],plu:20,point:[11,19,26],pool:21,poorli:29,pop:[17,18],popd:10,port:[6,7],posit:22,possibl:13,postgresql:7,potenti:[7,28],power:[7,14],practic:[18,29],pre:[1,7],predict:7,prefer:[1,18],present:[1,10,28],prevent:[13,22],previou:[1,7,12,13,19,26],previous:21,primari:[17,21],primer:29,principl:9,print:[0,14,18],prior:[17,29],probabl:1,proce:[12,28],process:[22,24,29],prod:[1,18],produc:[0,1,16,27,28,29],produce_invalid_valu:24,produce_valid_ssn_str:24,produce_valid_valu:24,product:[1,8,12,14,21,27,29],program:[9,15,18,26,29],programmat:26,project:[6,10,18,26],promis:7,prone:[8,17,25],properli:29,properti:[1,8,12,18,21,22],provid:[1,8,12,13,14,15,17,18,19,20,21,27,28,29],publiccloudconn:[21,27],publiccloudstor:[21,27],publish:6,pure:[1,21,28],purpos:[18,23],pushd:10,put:[7,21],py27:12,pydata:28,python3:[6,10],python:[6,8,16,18,19,21,22,24,27,29],python_modul:6,python_packag:10,python_typ:[4,8,24],pythonobjecttyp:[4,8,24],qualiti:[1,8,22],question:28,quickli:29,quit:[7,20,22],quux:13,quuxquux:13,rais:[2,19,24,28],ran:13,rather:[3,7,8,11,15,16,17,18,19,20,23,26,28,29],raw:8,react_app_graphql_uri:6,read_csv:28,read_parquet:28,read_tabl:28,readili:14,real:7,realiz:8,realli:8,reason:[1,8,21,23],recal:17,receiv:24,recommend:10,record:[21,27],record_valu:[21,27],recours:22,red:17,redistribut:10,redshift:[7,8],reduc:29,reentrant_info:3,reentrantinfo:3,regex:24,regist:28,regret:10,regular:24,rel:[7,21],relat:8,releas:[7,10],relev:[7,24],reliabl:21,remain:28,remov:28,render:6,repeat:24,repetit:26,replac:[7,8,13],repo:26,repo_demo_pipelin:26,report:29,repositori:[1,6,9,10,18,25],repositorydefinit:[1,13,25,26],repostori:26,repr:24,repres:[1,8,27],requir:[0,1,6,7,13,21,22,24,27,28,29],rerun:12,resid:23,resoourc:27,resourc:[1,8,9,14,21],resource_fn:[1,7,27],resource_test_pipelin:27,resourcedefinit:[1,7,27],respect:21,respons:28,rest:7,restrict:18,resuabl:7,result:[0,1,3,6,8,13,16,19,20,21,22,27],result_context:1,result_dict:[0,8],result_for_solid:[3,8,20,23],result_list:[3,20],retriev:1,return_dict_result:19,reus:[7,18,23],reusabl:[7,9,12],rewrit:12,rich:[13,17,29],richer:[14,18],right:[0,8,16,17,22],root:[10,13],rout:[14,18],row:28,rudimentari:21,rule:2,run:[3,7,8,10,12,13,14,15,16,18,19,21,22,24,25,26,28,29],run_id:[7,14,16,18,19,22,24],runner:6,runtim:[2,8,13,15,17,18,24,29],runtime_typ:1,runtimeexecutioncontext:8,runtimeexecutioncontextparam:8,s3filehandl:8,sai:[20,21,22,24,28],salient:12,same:[0,1,7,8,11,12,17,18,19,27,29],satisfi:[1,11,20],satisi:7,save:[14,16,24,26],scalar:[1,12],scenario:21,schema:[7,8,9,12,25],scientist:29,scope:[21,23],scratch:21,script:[6,16],seam:21,search:9,second:[8,12,15,17,21],section:[7,12,14,15,17],secur:24,see:[1,3,10,11,13,14,15,16,17,18,19,21,23,26,28,29],seen:[11,18,28],select:[10,28],selector:[8,28],self:[7,13,21,24,27],semi:[14,18],sens:28,sensibl:6,sep:28,separ:[8,10,15,18],serial:24,serv:[16,17,29],server:6,servic:[21,27],service_lines_fil:8,set:[6,16,18,21,25,27],set_value_in_cloud_stor:[21,27],setup:1,sever:[0,17,28],shape:8,share:7,she:28,shell:10,shine:21,shortcut:0,should:[0,1,7,8,10,12,14,15,16,18,19,21,23,24,26,27,28,29],shouldn:23,show:24,side:29,signatur:1,signifi:24,signific:24,silli:24,similar:28,simpl:[0,15,21],simpler:[0,8],simpli:[8,27],simplifi:[0,22],sinc:[11,28],singl:[0,1,7,8,12,16,18,19,20,21,23,27,28,29],site:23,size:28,skip:22,slightli:[7,11,22,24],slow:21,snapshot:[6,8],snapshot_check_result:8,social:24,softwar:[1,7,10,21,22],solid:[0,1,2,3,8,9,11,12,13,14,15,16,17,18,19,20,21,22,24,25,26,27,28],solid_1:1,solid_2:1,solid_a:11,solid_b:11,solid_c:11,solid_d:11,solid_definit:[14,16,18,19],solid_nam:[1,5],solid_on:[15,18],solid_result:[8,23],solid_subset:3,solid_two:[15,18],soliddefinit:[0,1,3],solidexecutionresult:3,solidinst:[1,20,23],some:[1,2,6,7,8,14,21,22,24,25,27,28,29],some_input:1,some_kei:21,some_password:[21,27],some_pwd:21,some_us:[21,27],some_valu:21,someth:[0,6,21],sophist:[11,22],sort:21,sourc:[6,7,18,28],space:2,spark:[14,29],speak:[12,20],special:[7,23],specif:[7,18,19,24,25],specifi:[0,12,13,14,15,17,18,19,21,25,26],specific_env:25,spew:[19,21,22,24],split:25,split_headers_and_service_lin:8,sql:29,sqlalchemi:8,ssd:1,ssn:24,ssnstring:24,ssnstringtyp:24,ssnstringtypeclass:24,stack:24,stacktrac:17,stage:[8,29],start:[6,11,20],state:[3,18,21],step:[3,8,15,16,17,28],step_eleven:19,step_kei:16,step_results_by_tag:3,still:11,storag:[21,23],store:[21,27,28],str:[0,1,7,8,24],str_one:24,str_param:28,str_two:24,str_valu:0,straightforward:7,stream:[1,16],strict:24,string:[0,4,7,8,12,13,15,17,19,21,24,25,27,28],string_tupl:24,stringtupl:24,stringtupletyp:24,strongli:[10,13,25],structur:[1,7,13,14,17,18,24,28,29],stub:8,stub_a:20,stub_b:20,stub_c_plus_d:20,studio:10,sub:8,subdag:20,subfield:28,submodul:8,subpackag:8,subsequ:7,subset:[7,8,20,29],substanti:8,substitut:21,substrat:[14,18],subtl:21,succeed:[16,22],success:[1,3,8,16,20,22,23],suck:21,sudo:10,suffici:29,suitabl:[1,21],sum:28,sum_df:28,sum_solid:28,suppli:1,support:[0,1,7,19,29],suppos:[6,8,25],surfac:[17,21,24],surround:14,swap:27,swappabl:[21,26],sync:25,synchron:3,syntax:18,synthes:7,system:[1,2,4,7,8,10,13,14,18,22,24,27,28,29],tab:16,tabl:[1,8,28],tabular:28,tailor:23,take:[0,1,7,8,12,16,20,21,28],talk:21,target:[1,26],task:[11,15,29],team:29,tediou:[13,25],tell:[15,22,25,26,27],term:[19,22,28],test:[1,3,6,7,8,9,10,12,18,21,22,27,29],test_a_plus_b_final_subdag:20,test_intro_tutorial_part_four:12,test_part_thirteen_step_on:23,test_part_thirteen_step_two:23,testabl:[12,21],than:[3,6,7,8,11,15,17,18,19,20,23,25,26,28,29],thei:[0,1,7,8,11,18,22,23,24,28,29],them:[8,10,12,16,17,18,21,23,28],thi:[0,1,3,7,8,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,26,27,28,29],thing:[3,7,18,21,23,24,27],think:[23,29],third:[8,16,28],thirteen_step_on:23,thirteen_step_two:23,those:[1,6,8,10,12,21,22,25,28,29],though:[14,18],thought:8,thread:[14,16],three:[16,17,23,28],through:[1,14,17,18,21,24,28,29],throughout:[14,24,28],throw_on_error:[3,22],thrown:[2,24],thu:1,tie:[8,19],tied:23,time:[1,11,12,13,16,17,18,19,21,22,23,26,28,29],timestamp:[14,18],tiresom:26,to_csv:28,to_parquet:28,togeth:[7,11,18,23],toi:24,tool:[6,10,13,16,18,21,22,24,25,26,29],top:[8,26],topolog:[11,15],total:17,touch:[14,18,27],tox:6,trace:[13,24],tradit:22,transform:[0,1,3,16,17,19,21,24],transform_fn:1,transformed_valu:[3,8,20,23],transformexecutioninfo:[1,12],transit:8,tree:6,trigger:19,trivial:[21,24],tupl:24,turn:[11,12,28],tutori:[12,14,19,25,26,28],tutorial_part_thirteen_step_on:20,tutorial_part_thirteen_step_thre:23,tutorial_repositori:14,two:[1,8,15,18,19,20,21,23,25,28],txt:6,type:[0,1,2,7,8,9,12,13,15,18,19,20,21,22,23,25,26],typecheck:[24,28],typed_demo_configuration_schema:13,typed_demo_configuration_schema_error:13,typed_double_the_word:13,typed_double_the_word_error:13,typed_double_word:13,typed_double_word_mismatch:13,typeerror:8,typic:[1,20,22,24],ubuntu:10,undefin:13,under:[12,17,27],unexpect:22,unfamiliar:29,union:28,uniqu:[1,19],unit:[1,7,9,15,16,18,21,29],unittest:[1,7,8,27],univers:[14,18],unlik:22,unmodifi:7,unnam:[1,18,20],unpack:28,unsupport:28,until:17,untyp:17,unzip:[7,23],unzip_fil:[7,8],unzipfileconfig:7,unzipped_fil:8,unzipped_path:8,unzipped_path_valu:8,updat:[6,8,10,22],upgrad:[7,8],upload:[8,23],upload_header_to_s3:8,upload_service_line_to_s3:8,upstream:[7,20],usag:1,use:[1,6,7,8,10,12,14,16,17,18,20,21,25,26,27,28,29],used:[1,7,8,12,13,16,19,21,23,24,27,28],useful:[1,3,14,17,18,20,22,23,24,25,28,29],user:[1,2,7,8,9,12,14,17,18,21,22,27,29],usernam:[21,27],uses:7,using:[6,7,10,12,14,16,17,18,21,23,25,26,27],utf:12,util:[8,9,12,16,28],utility_solid:8,uuid4:[7,8],uuid:[7,8],valid:[13,24,28],valu:[0,1,2,3,8,12,13,14,16,17,19,20,21,22,24,25,27,28,29],value_on:24,value_two:24,vari:[1,21,25],venv:[6,10],verbos:[7,8],veri:[1,3,8,13,15,23,24,28],verifi:24,version:[3,6,19,21,22,27],via:[14,16,17,21,22,26,27,28],view:[13,16],viewabl:22,violat:[2,13],virtual:8,virtualenv:6,virtualenviron:10,virtualenvwrapp:10,visual:[10,15,16,26],wai:[0,16,17,19,21,22,27,28,29],want:[1,12,14,17,18,20,21,22,24,25,26,27,28],watch:6,wax:7,web:16,webapp:10,welcom:9,well:[2,7,8,24,29],were:[7,8,23],what:[1,7,11,13,15,18,21,22,23,24,28,29],whatev:[8,21],when:[0,1,3,6,11,13,17,21,22,25,26,28,29],whenev:21,where:[1,12,14,15,16,18,20,21,22,27,28],wherea:28,whether:[1,3,10,22,29],which:[1,3,6,7,12,13,14,15,16,17,18,19,21,24,25,26,29],who:[18,29],whole:[3,22,24],whose:[0,1,10,15,17],why:23,wide:[10,21],window:10,wire:[11,24],within:[1,7,8,15,16,17,21,22,23],without:[12,16,17,18,26],won:10,word:[13,17,25],work:[0,13,18,22,26,27],workflow:15,world:[9,12,17],worri:15,worth:11,would:[1,7,8,11,17,21,27,28],wrap:19,write:[7,16],written:29,wrong:[13,24],wrong_word:13,yaml:[8,12,17,18,21,25],yarn:6,yellow:16,yet:6,yield:[0,1,3,7,8,17,19,29],yield_output:19,yml:[6,12,13,14,17,18,21,25,26],you:[1,6,7,8,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28],your:[7,8,10,11,14,16,17,21,22,24,27,28],zero:21,zip:7,zip_file_path:[7,8],zipped_fil:[7,8]},titles:["Decorators","Definitions","Errors","Execution","Types","Utilities","Contributing","Resources","Required API Changes","Intro Tutorial","Installation","An actual DAG","Configuration","Configuration Schemas","Execution Context","Hello, DAG","Hello, World","Inputs","Execution Context","Multiple Outputs","Unit-testing Pipelines","Custom Contexts","Expectations","Reusable Solids","User-defined Types","Pipeline Execution","Repositories","Resources","User-Defined Types","Principles"],titleterms:{"function":29,actual:11,agnost:29,api:[8,9,17],audit:9,basic:28,chang:8,cli:[16,17],comput:29,condit:19,config:7,configur:[12,13],context:[14,18,21],contribut:6,creat:10,custom:[21,24],dag:[11,15],dagit:[6,16,17],data:29,decor:0,defin:[24,28],definit:[1,4],describ:29,dev:10,develop:6,direct:24,doc:6,environ:10,error:2,execut:[3,14,16,18,25],expect:22,from:10,futur:24,gradual:29,hello:[15,16],indic:9,input:[7,17,28],instal:10,intro:9,level:7,librari:[7,16],local:6,log:14,multipl:19,old:9,option:29,output:[19,28],pip:10,pipelin:[16,20,25],principl:29,pypi:10,python:[10,17],qualiti:29,refer:9,releas:6,repositori:26,requir:8,resourc:[7,27],reusabl:23,run:6,schema:[13,28],self:29,setup:6,solid:[7,23],sourc:10,stabl:10,tabl:9,test:20,testabl:29,tutori:9,type:[4,17,24,28,29],unit:20,user:[24,28],util:5,verifi:29,version:10,virtual:10,virtualenv:10,webapp:6,world:16,yarn:10}})'
 
 snapshots['test_build_all_docs 11'] = '''Contributing
 ============
@@ -1927,6 +1927,7 @@ Intro Tutorial
   intro_tutorial/inputs
   intro_tutorial/execution_context
   intro_tutorial/resources
+  intro_tutorial/repos
   intro_tutorial/types
 
 Old Intro Tutorial To Audit
@@ -1937,7 +1938,6 @@ Old Intro Tutorial To Audit
 
   intro_tutorial/config
   intro_tutorial/old_execution_context
-  intro_tutorial/repos
   intro_tutorial/pipeline_execution
   intro_tutorial/configuration_schemas
   intro_tutorial/part_nine
@@ -5083,13 +5083,14 @@ Dagster is a not just a programming model for pipelines, it is also a platform f
 tool-building. You've already met the dagster and dagit CLI tools, which let you programmatically
 run and visualize pipelines.
 
-In previous examples we have specified a file (``-f``) and named a pipeline definition function
+In previous examples we have specified a file (``-f``) or a module (``-m``) and named a pipeline definition function
 (``-n``) in order to tell the CLI tools how to load a pipeline, e.g.:
 
 .. code-block:: console
 
-   $ dagit -f hello_world.py -n define_hello_world_pipeline
-   $ dagster pipeline execute -f hello_world.py -n define_hello_world_pipeline
+    $ dagit -f hello_world.py -n define_hello_world_pipeline
+    $ dagster pipeline execute -f hello_world.py \\
+        -n define_hello_world_pipeline
 
 But most of the time, especially when working on long-running projects with other people, we will
 want to be able to target many pipelines at once with our tools. 
@@ -5107,12 +5108,11 @@ If you save this file as ``repos.py``, you can then run the command line tools o
 
 .. code-block:: console
 
-    $ dagster pipeline list -f repos.py -n define_repo
-    Repository demo_repo
-    ************************
-    Pipeline: repo_demo_pipeline
-    Solids: (Execution Order)
-        hello_world
+    $ dagit -f repos.py -n define_repo
+
+Now you can see the list of all pipelines in the repo via the dropdown at the top.
+
+.. image:: repos_figure_one.png 
 
 Typing the name of the file and function defining the repository gets tiresome and repetitive, so
 let's create a declarative config file with this information to make using the command line tools
@@ -5127,32 +5127,13 @@ Now you should be able to list the pipelines in this repo without all the typing
 
 .. code-block:: console
 
-    $ dagster pipeline list
-    Repository demo_repo
-    ************************
-    Pipeline: repo_demo_pipeline
-    Solids: (Execution Order)
-        hello_world
-
+    $ dagit 
 
 You can also specify a module instead of a file in the repository.yml file.
 
 .. literalinclude:: ../../dagster/tutorials/intro_tutorial/repos_2.yml
    :linenos:
    :caption: repository.yml
-
-Dagit
-^^^^^
-Dagit uses the same pattern as the other dagster CLI tools. If you've defined a repository.yml file,
-just run dagit with no arguments, and you can visualize and execute all the pipelines in your
-repository:
-
-.. code-block:: console
-
-    $ dagit
-    Serving on http://localhost:3000
-
-.. image:: repos_figure_one.png
 
 In the next part of the tutorial, we'll get to know :doc:`Pipeline Execution <pipeline_execution>`
 a little better, and learn how to execute pipelines in a repository from the command line by name,
@@ -20454,12 +20435,12 @@ multiple outputs. Useful for solids that have multiple outputs.</li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/inputs.html">Inputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/resources.html">Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/types.html">User-Defined Types</a></li>
 </ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/pipeline_execution.html">Pipeline Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_nine.html">Custom Contexts</a></li>
@@ -21166,12 +21147,12 @@ like the alias.</p>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/inputs.html">Inputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/resources.html">Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/types.html">User-Defined Types</a></li>
 </ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/pipeline_execution.html">Pipeline Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_nine.html">Custom Contexts</a></li>
@@ -21336,12 +21317,12 @@ at runtime.</p>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/inputs.html">Inputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/resources.html">Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/types.html">User-Defined Types</a></li>
 </ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/pipeline_execution.html">Pipeline Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_nine.html">Custom Contexts</a></li>
@@ -21617,12 +21598,12 @@ Returns None if execution result isn’t a success.</p>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/inputs.html">Inputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/resources.html">Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/types.html">User-Defined Types</a></li>
 </ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/pipeline_execution.html">Pipeline Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_nine.html">Custom Contexts</a></li>
@@ -21793,12 +21774,12 @@ snapshots['test_build_all_docs 57'] = '''
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/inputs.html">Inputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/resources.html">Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/types.html">User-Defined Types</a></li>
 </ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/pipeline_execution.html">Pipeline Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_nine.html">Custom Contexts</a></li>
@@ -21934,12 +21915,12 @@ snapshots['test_build_all_docs 58'] = '''
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/inputs.html">Inputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/resources.html">Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/types.html">User-Defined Types</a></li>
 </ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/pipeline_execution.html">Pipeline Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_nine.html">Custom Contexts</a></li>
@@ -22327,12 +22308,12 @@ be modeling such things as inputs.</p>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/inputs.html">Inputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/resources.html">Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/types.html">User-Defined Types</a></li>
 </ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/pipeline_execution.html">Pipeline Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_nine.html">Custom Contexts</a></li>
@@ -22750,12 +22731,12 @@ Third, you do not have to name it. The net result is much nicer:</p>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/inputs.html">Inputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/resources.html">Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/types.html">User-Defined Types</a></li>
 </ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/pipeline_execution.html">Pipeline Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_nine.html">Custom Contexts</a></li>
@@ -22992,12 +22973,12 @@ environment.</p>
 <li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types</a></li>
 </ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pipeline_execution.html">Pipeline Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_nine.html">Custom Contexts</a></li>
@@ -23238,12 +23219,12 @@ execution environment that are common to many solids.</p>
 <li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types</a></li>
 </ul>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pipeline_execution.html">Pipeline Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_nine.html">Custom Contexts</a></li>
@@ -23679,12 +23660,12 @@ dagster.core.errors.DagsterInvariantViolationError: Solid typed_double_word_mism
 <li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types</a></li>
 </ul>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pipeline_execution.html">Pipeline Execution</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_nine.html">Custom Contexts</a></li>
@@ -23882,12 +23863,12 @@ or compute substrates – can be configured using the context.</p>
 <li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types</a></li>
 </ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pipeline_execution.html">Pipeline Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_nine.html">Custom Contexts</a></li>
@@ -24120,12 +24101,12 @@ topology and see how dagster determines the execution order of a pipeline.</p>
 <li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types</a></li>
 </ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pipeline_execution.html">Pipeline Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_nine.html">Custom Contexts</a></li>
@@ -24381,12 +24362,12 @@ at all. Just add a few lines to <cite>hello_world.py</cite> (highlighted in yell
 <li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types</a></li>
 </ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pipeline_execution.html">Pipeline Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_nine.html">Custom Contexts</a></li>
@@ -24719,12 +24700,12 @@ built-in <code class="docutils literal notranslate"><span class="pre">String</sp
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Inputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types</a></li>
 </ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pipeline_execution.html">Pipeline Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_nine.html">Custom Contexts</a></li>
@@ -24809,7 +24790,7 @@ snapshots['test_build_all_docs 68'] = '''
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Repositories" href="repos.html" />
+    <link rel="next" title="Pipeline Execution" href="pipeline_execution.html" />
     <link rel="prev" title="Configuration" href="config.html" />
    
   <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
@@ -24965,12 +24946,12 @@ so that the dagster tools can manage them.</p>
 <li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types</a></li>
 </ul>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pipeline_execution.html">Pipeline Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_nine.html">Custom Contexts</a></li>
@@ -24993,7 +24974,7 @@ so that the dagster tools can manage them.</p>
 <ul>
   <li><a href="../index.html">Documentation overview</a><ul>
       <li>Previous: <a href="config.html" title="previous chapter">Configuration</a></li>
-      <li>Next: <a href="repos.html" title="next chapter">Repositories</a></li>
+      <li>Next: <a href="pipeline_execution.html" title="next chapter">Pipeline Execution</a></li>
   </ul></li>
 </ul>
 </div>
@@ -25263,12 +25244,12 @@ only triggering log_num_squared. log_num will never be executed.</p>
 <li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types</a></li>
 </ul>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pipeline_execution.html">Pipeline Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_nine.html">Custom Contexts</a></li>
@@ -25521,12 +25502,12 @@ provide, instead of from solids upstream in the dependency graph.</p>
 <li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types</a></li>
 </ul>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pipeline_execution.html">Pipeline Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_nine.html">Custom Contexts</a></li>
@@ -26003,12 +25984,12 @@ changes.</p>
 <li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types</a></li>
 </ul>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pipeline_execution.html">Pipeline Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Custom Contexts</a></li>
@@ -26336,12 +26317,12 @@ configure the pipeline to skip expectations entirely.</p>
 <li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types</a></li>
 </ul>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pipeline_execution.html">Pipeline Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_nine.html">Custom Contexts</a></li>
@@ -26636,12 +26617,12 @@ to cloud storage, unzipping files, etc.</p>
 <li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types</a></li>
 </ul>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pipeline_execution.html">Pipeline Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_nine.html">Custom Contexts</a></li>
@@ -26937,12 +26918,12 @@ str was coerced to an SSNString by the dagster type.</p>
 <li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types</a></li>
 </ul>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pipeline_execution.html">Pipeline Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_nine.html">Custom Contexts</a></li>
@@ -27028,7 +27009,7 @@ snapshots['test_build_all_docs 75'] = '''
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Configuration Schemas" href="configuration_schemas.html" />
-    <link rel="prev" title="Repositories" href="repos.html" />
+    <link rel="prev" title="Execution Context" href="old_execution_context.html" />
    
   <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
   
@@ -27235,12 +27216,12 @@ to guard against bugs and enrich pipeline documentation.</p>
 <li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types</a></li>
 </ul>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Pipeline Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_nine.html">Custom Contexts</a></li>
@@ -27262,7 +27243,7 @@ to guard against bugs and enrich pipeline documentation.</p>
 <h3>Related Topics</h3>
 <ul>
   <li><a href="../index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="repos.html" title="previous chapter">Repositories</a></li>
+      <li>Previous: <a href="old_execution_context.html" title="previous chapter">Execution Context</a></li>
       <li>Next: <a href="configuration_schemas.html" title="next chapter">Configuration Schemas</a></li>
   </ul></li>
 </ul>
@@ -27325,8 +27306,8 @@ snapshots['test_build_all_docs 76'] = '''
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Pipeline Execution" href="pipeline_execution.html" />
-    <link rel="prev" title="Execution Context" href="old_execution_context.html" />
+    <link rel="next" title="User-Defined Types" href="types.html" />
+    <link rel="prev" title="Resources" href="resources.html" />
    
   <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
   
@@ -27348,10 +27329,11 @@ snapshots['test_build_all_docs 76'] = '''
 <p>Dagster is a not just a programming model for pipelines, it is also a platform for
 tool-building. You’ve already met the dagster and dagit CLI tools, which let you programmatically
 run and visualize pipelines.</p>
-<p>In previous examples we have specified a file (<code class="docutils literal notranslate"><span class="pre">-f</span></code>) and named a pipeline definition function
+<p>In previous examples we have specified a file (<code class="docutils literal notranslate"><span class="pre">-f</span></code>) or a module (<code class="docutils literal notranslate"><span class="pre">-m</span></code>) and named a pipeline definition function
 (<code class="docutils literal notranslate"><span class="pre">-n</span></code>) in order to tell the CLI tools how to load a pipeline, e.g.:</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> dagit -f hello_world.py -n define_hello_world_pipeline
-<span class="gp">$</span> dagster pipeline execute -f hello_world.py -n define_hello_world_pipeline
+<span class="gp">$</span> dagster pipeline execute -f hello_world.py <span class="se">\\</span>
+    -n define_hello_world_pipeline
 </pre></div>
 </div>
 <p>But most of the time, especially when working on long-running projects with other people, we will
@@ -27377,7 +27359,9 @@ want to be able to target many pipelines at once with our tools.</p>
 14
 15
 16
-17</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">dagster</span> <span class="k">import</span> <span class="n">lambda_solid</span><span class="p">,</span> <span class="n">PipelineDefinition</span><span class="p">,</span> <span class="n">RepositoryDefinition</span>
+17
+18
+19</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">dagster</span> <span class="k">import</span> <span class="n">lambda_solid</span><span class="p">,</span> <span class="n">PipelineDefinition</span><span class="p">,</span> <span class="n">RepositoryDefinition</span>
 
 
 <span class="nd">@lambda_solid</span>
@@ -27392,20 +27376,19 @@ want to be able to target many pipelines at once with our tools.</p>
 <span class="k">def</span> <span class="nf">define_repo</span><span class="p">():</span>
     <span class="k">return</span> <span class="n">RepositoryDefinition</span><span class="p">(</span>
         <span class="n">name</span><span class="o">=</span><span class="s1">&#39;demo_repository&#39;</span><span class="p">,</span>
+        <span class="c1"># Note that we pass the function itself, rather than call the function.</span>
+        <span class="c1"># This allows us to construct pipelines on demand.</span>
         <span class="n">pipeline_dict</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;repo_demo_pipeline&#39;</span><span class="p">:</span> <span class="n">define_repo_demo_pipeline</span><span class="p">},</span>
     <span class="p">)</span>
 </pre></div>
 </td></tr></table></div>
 </div>
 <p>If you save this file as <code class="docutils literal notranslate"><span class="pre">repos.py</span></code>, you can then run the command line tools on it. Try running:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> dagster pipeline list -f repos.py -n define_repo
-<span class="go">Repository demo_repo</span>
-<span class="go">************************</span>
-<span class="go">Pipeline: repo_demo_pipeline</span>
-<span class="go">Solids: (Execution Order)</span>
-<span class="go">    hello_world</span>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> dagit -f repos.py -n define_repo
 </pre></div>
 </div>
+<p>Now you can see the list of all pipelines in the repo via the dropdown at the top.</p>
+<img alt="../_images/repos_figure_one.png" src="../_images/repos_figure_one.png" />
 <p>Typing the name of the file and function defining the repository gets tiresome and repetitive, so
 let’s create a declarative config file with this information to make using the command line tools
 easier. Save this file as <code class="docutils literal notranslate"><span class="pre">repository.yml</span></code>. This is the default name for a repository config file,
@@ -27421,12 +27404,7 @@ although you can tell the CLI tools to use any file you like.</p>
 </td></tr></table></div>
 </div>
 <p>Now you should be able to list the pipelines in this repo without all the typing:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> dagster pipeline list
-<span class="go">Repository demo_repo</span>
-<span class="go">************************</span>
-<span class="go">Pipeline: repo_demo_pipeline</span>
-<span class="go">Solids: (Execution Order)</span>
-<span class="go">    hello_world</span>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> dagit
 </pre></div>
 </div>
 <p>You can also specify a module instead of a file in the repository.yml file.</p>
@@ -27440,20 +27418,9 @@ although you can tell the CLI tools to use any file you like.</p>
 </pre></div>
 </td></tr></table></div>
 </div>
-<div class="section" id="dagit">
-<h2>Dagit<a class="headerlink" href="#dagit" title="Permalink to this headline">¶</a></h2>
-<p>Dagit uses the same pattern as the other dagster CLI tools. If you’ve defined a repository.yml file,
-just run dagit with no arguments, and you can visualize and execute all the pipelines in your
-repository:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> dagit
-<span class="go">Serving on http://localhost:3000</span>
-</pre></div>
-</div>
-<img alt="../_images/repos_figure_one.png" src="../_images/repos_figure_one.png" />
 <p>In the next part of the tutorial, we’ll get to know <a class="reference internal" href="pipeline_execution.html"><span class="doc">Pipeline Execution</span></a>
 a little better, and learn how to execute pipelines in a repository from the command line by name,
 with swappable config.</p>
-</div>
 </div>
 
 
@@ -27469,19 +27436,19 @@ with swappable config.</p>
 <li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
 </ul>
-<ul>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="hello_world.html">Hello, World</a></li>
 <li class="toctree-l1"><a class="reference internal" href="hello_dag.html">Hello, DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="actual_dag.html">An actual DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types</a></li>
 </ul>
-<ul class="current">
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pipeline_execution.html">Pipeline Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_nine.html">Custom Contexts</a></li>
@@ -27503,8 +27470,8 @@ with swappable config.</p>
 <h3>Related Topics</h3>
 <ul>
   <li><a href="../index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="old_execution_context.html" title="previous chapter">Execution Context</a></li>
-      <li>Next: <a href="pipeline_execution.html" title="next chapter">Pipeline Execution</a></li>
+      <li>Previous: <a href="resources.html" title="previous chapter">Resources</a></li>
+      <li>Next: <a href="types.html" title="next chapter">User-Defined Types</a></li>
   </ul></li>
 </ul>
 </div>
@@ -27566,7 +27533,7 @@ snapshots['test_build_all_docs 77'] = '''
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="User-Defined Types" href="types.html" />
+    <link rel="next" title="Repositories" href="repos.html" />
     <link rel="prev" title="Execution Context" href="execution_context.html" />
    
   <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
@@ -27783,12 +27750,12 @@ resource will be used instead of the cloud version:</p>
 <li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types</a></li>
 </ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pipeline_execution.html">Pipeline Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_nine.html">Custom Contexts</a></li>
@@ -27811,7 +27778,7 @@ resource will be used instead of the cloud version:</p>
 <ul>
   <li><a href="../index.html">Documentation overview</a><ul>
       <li>Previous: <a href="execution_context.html" title="previous chapter">Execution Context</a></li>
-      <li>Next: <a href="types.html" title="next chapter">User-Defined Types</a></li>
+      <li>Next: <a href="repos.html" title="next chapter">Repositories</a></li>
   </ul></li>
 </ul>
 </div>
@@ -27874,7 +27841,7 @@ snapshots['test_build_all_docs 78'] = '''
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Configuration" href="config.html" />
-    <link rel="prev" title="Resources" href="resources.html" />
+    <link rel="prev" title="Repositories" href="repos.html" />
    
   <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
   
@@ -28121,12 +28088,12 @@ given output any number of times in any number of formats.</p>
 <li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">User-Defined Types</a></li>
 </ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pipeline_execution.html">Pipeline Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_nine.html">Custom Contexts</a></li>
@@ -28148,7 +28115,7 @@ given output any number of times in any number of formats.</p>
 <h3>Related Topics</h3>
 <ul>
   <li><a href="../index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="resources.html" title="previous chapter">Resources</a></li>
+      <li>Previous: <a href="repos.html" title="previous chapter">Repositories</a></li>
       <li>Next: <a href="config.html" title="next chapter">Configuration</a></li>
   </ul></li>
 </ul>

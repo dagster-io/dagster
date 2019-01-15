@@ -4,13 +4,14 @@ Dagster is a not just a programming model for pipelines, it is also a platform f
 tool-building. You've already met the dagster and dagit CLI tools, which let you programmatically
 run and visualize pipelines.
 
-In previous examples we have specified a file (``-f``) and named a pipeline definition function
+In previous examples we have specified a file (``-f``) or a module (``-m``) and named a pipeline definition function
 (``-n``) in order to tell the CLI tools how to load a pipeline, e.g.:
 
 .. code-block:: console
 
-   $ dagit -f hello_world.py -n define_hello_world_pipeline
-   $ dagster pipeline execute -f hello_world.py -n define_hello_world_pipeline
+    $ dagit -f hello_world.py -n define_hello_world_pipeline
+    $ dagster pipeline execute -f hello_world.py \
+        -n define_hello_world_pipeline
 
 But most of the time, especially when working on long-running projects with other people, we will
 want to be able to target many pipelines at once with our tools. 
@@ -28,12 +29,11 @@ If you save this file as ``repos.py``, you can then run the command line tools o
 
 .. code-block:: console
 
-    $ dagster pipeline list -f repos.py -n define_repo
-    Repository demo_repo
-    ************************
-    Pipeline: repo_demo_pipeline
-    Solids: (Execution Order)
-        hello_world
+    $ dagit -f repos.py -n define_repo
+
+Now you can see the list of all pipelines in the repo via the dropdown at the top.
+
+.. image:: repos_figure_one.png 
 
 Typing the name of the file and function defining the repository gets tiresome and repetitive, so
 let's create a declarative config file with this information to make using the command line tools
@@ -48,32 +48,13 @@ Now you should be able to list the pipelines in this repo without all the typing
 
 .. code-block:: console
 
-    $ dagster pipeline list
-    Repository demo_repo
-    ************************
-    Pipeline: repo_demo_pipeline
-    Solids: (Execution Order)
-        hello_world
-
+    $ dagit 
 
 You can also specify a module instead of a file in the repository.yml file.
 
 .. literalinclude:: ../../dagster/tutorials/intro_tutorial/repos_2.yml
    :linenos:
    :caption: repository.yml
-
-Dagit
-^^^^^
-Dagit uses the same pattern as the other dagster CLI tools. If you've defined a repository.yml file,
-just run dagit with no arguments, and you can visualize and execute all the pipelines in your
-repository:
-
-.. code-block:: console
-
-    $ dagit
-    Serving on http://localhost:3000
-
-.. image:: repos_figure_one.png
 
 In the next part of the tutorial, we'll get to know :doc:`Pipeline Execution <pipeline_execution>`
 a little better, and learn how to execute pipelines in a repository from the command line by name,

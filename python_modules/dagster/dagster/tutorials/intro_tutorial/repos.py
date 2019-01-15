@@ -13,5 +13,7 @@ def define_repo_demo_pipeline():
 def define_repo():
     return RepositoryDefinition(
         name='demo_repository',
+        # Note that we pass the function itself, rather than call the function.
+        # This allows us to construct pipelines on demand.
         pipeline_dict={'repo_demo_pipeline': define_repo_demo_pipeline},
     )
