@@ -1,0 +1,8 @@
+solids:
+  add_ints:
+    inputs:
+      num_one:
+        value: -2
+      num_two:
+        value: 3
+
