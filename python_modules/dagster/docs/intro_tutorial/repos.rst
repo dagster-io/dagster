@@ -55,6 +55,7 @@ You can also specify a module instead of a file in the repository.yml file.
 
 .. literalinclude:: ../../dagster/tutorials/intro_tutorial/repos_2.yml
    :linenos:
+   :language: YAML
    :caption: repository.yml
 
 In the next part of the tutorial, we'll get to know :doc:`Pipeline Execution <pipeline_execution>`
