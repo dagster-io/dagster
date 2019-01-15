@@ -1,3 +1,4 @@
+import contextlib
 import inspect
 import os
 import re
@@ -38,3 +39,13 @@ def single_item(ddict):
     check.dict_param(ddict, 'ddict')
     check.param_invariant(len(ddict) == 1, 'ddict')
     return list(ddict.items())[0]
+
+
+@contextlib.contextmanager
+def pushd(path):
+    old_cwd = os.getcwd()
+    os.chdir(path)
+    try:
+        yield path
+    finally:
+        os.chdir(old_cwd)
