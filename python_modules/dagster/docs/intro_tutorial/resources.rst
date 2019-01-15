@@ -77,3 +77,6 @@ resource will be used instead of the cloud version:
    :lines: 131-144
    :emphasize-lines: 4
    :dedent: 4
+
+In the next section, we'll see how to declaratively specify :doc:`Repositories <repos>` to 
+manage collections of multiple dagster pipelines.
