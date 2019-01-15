@@ -81,9 +81,9 @@ def define_cloud_store_resource():
     outputs=[OutputDefinition(Int)],
 )
 def add_ints(info, num_one, num_two):
-    result = num_one + num_two
-    info.context.resources.store.record_value(info.context, 'add', result)
-    return result
+    sum_ints = num_one + num_two
+    info.context.resources.store.record_value(info.context, 'add', sum_ints)
+    return sum_ints
 
 
 def define_resource_test_pipeline():
