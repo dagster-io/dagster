@@ -1,83 +1,30 @@
 Resources
 =========
 
-We've already learned about execution context logging. Another important capability
-of execution context is resources. Pipelines frequently need access to the file system,
-databases, or other cloud services. Access to these things should be modelled as resources.
+We've already learned about logging through the execution context. We can also use the execution
+context to manage pipelines' access to resources like the file system, databases, or cloud services.
+In general, interactions with features of the external environment like these should be modeled
+as resources.
 
 Let's imagine that we are using a key value offered by a cloud service that has a python API.
 We are going to record the results of computations in that key value store.
 
-We are going to model this key value store as a "Resource".
+We are going to model this key value store as a resource.
 
-.. code-block:: python
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/resources.py
+   :lines: 1-2, 17-28, 53-64
+   :caption: resources.py
 
-    from bigco import PublicCloudConn, set_value_in_cloud_store
+The core of a resource are the definition of its configuration (the ``config_field``)
+and then the function that can actually construct the resource. Notice that all of the
+configuration specified for a given resource is passed to its constructor under the ``config``
+key of the ``info`` parameter.
 
-    class PublicCloudStore:
-        def __init__(self, username, password):
-            # create credential and store it
-            self.conn = PublicCloudConn(username, password)
+Let's now attach this resource to a pipeline and use it in a solid.
 
-        def record_value(self, context, key, value):
-            context.info(
-                'Setting key={key} value={value} in cloud'.format(
-                    key=key, value=value
-                )
-            )
-            set_value_in_cloud_store(self.conn, key, value)
-
-    def define_cloud_store_resource():
-        return ResourceDefinition(
-            resource_fn=lambda info: PublicCloudStore(
-                info.config['username'],
-                info.config['password'],
-            ),
-            config_field=Field(
-                Dict({
-                    'username': Field(String),
-                    'password': Field(String)
-                })
-            ),
-            description='''This represents some cloud-hosted key
-            value store. Username and password must be provided
-            via configuration for this to work''',
-    )
-
-The core of a resource are the definition of its configuration (the `config_field`)
-and then the function that can produce the resource.
-
-Let us now attach this to a pipeline and use this resource in a solid.
-
-.. code-block:: python
-
-    @solid(
-        inputs=[
-            InputDefinition('num_one', Int),
-            InputDefinition('num_two', Int)
-        ],
-        outputs=[OutputDefinition(Int)],
-    )
-    def add_ints(info, num_one, num_two):
-        result = num_one + num_two
-        info.context.resources.store.record_value(
-            info.context, 'add', result
-        )
-        return result
-
-
-    def define_resource_test_pipeline():
-        return PipelineDefinition(
-            name='resource_test_pipeline',
-            solids=[add_ints],
-            context_definitions={
-                'cloud': PipelineContextDefinition(
-                    resources={
-                        'store': define_cloud_store_resource()
-                    }
-                )
-            }
-        )
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/resources.py
+   :lines: 67-89
+   :caption: resources.py
 
 Resources are attached to pipeline context definitions. A pipeline context
 definition is way that a pipeline can declare the different "modes" it can

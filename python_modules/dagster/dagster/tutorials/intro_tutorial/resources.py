@@ -1,3 +1,5 @@
+from bigco import PublicCloudConn, set_value_in_cloud_store
+
 from dagster import (
     Dict,
     Field,
@@ -10,17 +12,6 @@ from dagster import (
     String,
     solid,
 )
-
-
-class PublicCloudConn:
-    def __init__(self, username, password):
-        self.username = username
-        self.password = password
-
-
-def set_value_in_cloud_store(_conn, _key, _value):
-    # imagine this doing something
-    pass
 
 
 class PublicCloudStore:
@@ -67,8 +58,9 @@ def define_cloud_store_resource():
         config_field=Field(
             Dict({'username': Field(String), 'password': Field(String)})
         ),
-        description='''This represents some cloud-hosted key value store. Username and password
-        must be provided via configuration for this to work''',
+        description='''This represents some cloud-hosted key value store.
+        Username and password must be provided via configuration for this to
+        work''',
     )
 
 
