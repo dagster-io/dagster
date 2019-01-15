@@ -42,8 +42,7 @@ def test_hello_typed():
     with pytest.raises(
         PipelineConfigEvaluationError,
         match=(
-            'Type failure at path "root:solids:add_hello_to_word_typed:inputs:word". Got '
-            '"set([\'Foobar Baz\'])". Value for selector type String.InputSchema must be a dict got '
+            'Value for selector type String.InputSchema must be a dict got '
             'set([\'Foobar Baz\']).'
         ),
     ):
@@ -64,4 +63,3 @@ def test_hello_typed_bad_structure():
         result.result_for_solid('add_hello_to_word_typed').transformed_value()
         == 'Hello, Foobar Baz!'
     )
-
