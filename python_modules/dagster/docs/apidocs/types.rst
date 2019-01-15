@@ -1,7 +1,7 @@
 Types
 =========
 
-.. module:: dagster.core.types
+.. module:: dagster
 
 Dagster type system.
 

@@ -30,28 +30,28 @@ class MultipleResults(namedtuple('_MultipleResults', 'results')):
 
     Examples:
 
-    .. code-block:: python
+        .. code-block:: python
 
-        @solid(outputs=[
-            OutputDefinition(name='foo'),
-            OutputDefinition(name='bar'),
-        ])
-        def my_solid():
-            return MultipleResults(
-                Result('Barb', 'foo'),
-                Result('Glarb', 'bar'),
-            )
+            @solid(outputs=[
+                OutputDefinition(name='foo'),
+                OutputDefinition(name='bar'),
+            ])
+            def my_solid():
+                return MultipleResults(
+                    Result('Barb', 'foo'),
+                    Result('Glarb', 'bar'),
+                )
 
 
-        @solid(outputs=[
-            OutputDefinition(name='foo'),
-            OutputDefinition(name='bar'),
-        ])
-        def my_solid_from_dict():
-            return MultipleResults.from_dict({
-              'foo': 'Barb',
-              'bar': 'Glarb',
-            })
+            @solid(outputs=[
+                OutputDefinition(name='foo'),
+                OutputDefinition(name='bar'),
+            ])
+            def my_solid_from_dict():
+                return MultipleResults.from_dict({
+                'foo': 'Barb',
+                'bar': 'Glarb',
+                })
 
     '''
 
@@ -72,7 +72,7 @@ class MultipleResults(namedtuple('_MultipleResults', 'results')):
             result_dict (dict) - The dictionary to unpack.
         
         Returns:
-            :py:class:`MultipleResults <dagster.MultipleResults>`
+            (:py:class:`MultipleResults <dagster.MultipleResults>`) A new ``MultipleResults`` object
 
         '''
         check.dict_param(result_dict, 'result_dict', key_type=str)
@@ -150,15 +150,15 @@ def lambda_solid(name=None, inputs=None, output=None, description=None):
 
     Examples:
 
-    .. code-block:: python
+        .. code-block:: python
 
-        @lambda_solid
-        def hello_world():
-            return 'hello'
+            @lambda_solid
+            def hello_world():
+                return 'hello'
 
-        @lambda_solid(inputs=[InputDefinition(name='foo')])
-        def hello_world(foo):
-            return foo
+            @lambda_solid(inputs=[InputDefinition(name='foo')])
+            def hello_world(foo):
+                return foo
 
     '''
     output = output or OutputDefinition()
@@ -198,61 +198,61 @@ def solid(name=None, inputs=None, outputs=None, config_field=None, description=N
 
     Examples:
 
-    .. code-block:: python
+        .. code-block:: python
 
-        @solid
-        def hello_world(info):
-            print('hello')
+            @solid
+            def hello_world(info):
+                print('hello')
 
-        @solid()
-        def hello_world(info):
-            print('hello')
+            @solid()
+            def hello_world(info):
+                print('hello')
 
-        @solid(outputs=[OutputDefinition()])
-        def hello_world(info):
-            return {'foo': 'bar'}
+            @solid(outputs=[OutputDefinition()])
+            def hello_world(info):
+                return {'foo': 'bar'}
 
-        @solid(outputs=[OutputDefinition()])
-        def hello_world(info):
-            return Result(value={'foo': 'bar'})
+            @solid(outputs=[OutputDefinition()])
+            def hello_world(info):
+                return Result(value={'foo': 'bar'})
 
-        @solid(outputs=[OutputDefinition()])
-        def hello_world(info):
-            yield Result(value={'foo': 'bar'})
+            @solid(outputs=[OutputDefinition()])
+            def hello_world(info):
+                yield Result(value={'foo': 'bar'})
 
-        @solid(outputs=[
-            OutputDefinition(name="left"),
-            OutputDefinition(name="right"),
-        ])
-        def hello_world(info):
-            return MultipleResults.from_dict({
-                'left': {'foo': 'left'},
-                'right': {'foo': 'right'},
-            })
+            @solid(outputs=[
+                OutputDefinition(name="left"),
+                OutputDefinition(name="right"),
+            ])
+            def hello_world(info):
+                return MultipleResults.from_dict({
+                    'left': {'foo': 'left'},
+                    'right': {'foo': 'right'},
+                })
 
-        @solid(
-            inputs=[InputDefinition(name="foo")],
-            outputs=[OutputDefinition()]
-        )
-        def hello_world(info, foo):
-            return foo
+            @solid(
+                inputs=[InputDefinition(name="foo")],
+                outputs=[OutputDefinition()]
+            )
+            def hello_world(info, foo):
+                return foo
 
-        @solid(
-            inputs=[InputDefinition(name="foo")],
-            outputs=[OutputDefinition()],
-        )
-        def hello_world(info, foo):
-            info.context.info('log something')
-            return foo
+            @solid(
+                inputs=[InputDefinition(name="foo")],
+                outputs=[OutputDefinition()],
+            )
+            def hello_world(info, foo):
+                info.context.info('log something')
+                return foo
 
-        @solid(
-            inputs=[InputDefinition(name="foo")],
-            outputs=[OutputDefinition()],
-            config_field=Field(types.Dict({'str_value' : Field(types.String)})),
-        )
-        def hello_world(info, foo):
-            # info.config is a dictionary with 'str_value' key
-            return foo + info.config['str_value']
+            @solid(
+                inputs=[InputDefinition(name="foo")],
+                outputs=[OutputDefinition()],
+                config_field=Field(types.Dict({'str_value' : Field(types.String)})),
+            )
+            def hello_world(info, foo):
+                # info.config is a dictionary with 'str_value' key
+                return foo + info.config['str_value']
 
     '''
     if callable(name):

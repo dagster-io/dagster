@@ -122,7 +122,8 @@ the iterator form.)
 
 ... and you'll see the same log spew around outputs in this version:
 
-.. code-block:: sh
+.. code-block:: console
+
     $ python part_eleven.py
     2018-11-08 10:54:15 - dagster - INFO - orig_message="Solid yield_outputs emitted output \"out_one\" value 23" log_message_id="5e1cc181-b74d-47f8-8d32-bc262d555b73" run_id="4bee891c-e04f-4221-be77-17576abb9da2" pipeline="part_eleven_step_two" solid="yield_outputs" solid_definition="yield_outputs"
     2018-11-08 10:54:15 - dagster - INFO - orig_message="Solid yield_outputs emitted output \"out_two\" value 45" log_message_id="8da32946-596d-4783-b7c5-4edbb3a1dbc2" run_id="4bee891c-e04f-4221-be77-17576abb9da2" pipeline="part_eleven_step_two" solid="yield_outputs" solid_definition="yield_outputs"
