@@ -41,10 +41,7 @@ def test_hello_typed_inputs():
 def test_hello_typed():
     with pytest.raises(
         PipelineConfigEvaluationError,
-        match=(
-            'Value for selector type String.InputSchema must be a dict got '
-            'set([\'Foobar Baz\']).'
-        ),
+        match=('Value for selector type String.InputSchema must be a dict got '),
     ):
         result = execute_pipeline(
             define_hello_typed_inputs_pipeline(),
