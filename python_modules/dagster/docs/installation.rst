@@ -1,4 +1,3 @@
-.. _installation:
 Installation
 =======================
 
@@ -52,14 +51,14 @@ And on Python 2.7:
     $ sudo pip install -U virtualenv  # system-wide install
 
 On Windows (Python 3):
-- Install the *Microsoft Visual C++ 2015 Redistributable Update 3*. This
-  comes with *Visual Studio 2015* but can be installed separately as follows:
-    1. Go to the Visual Studio downloads,
-    2. Select *Redistributables and Build Tools*,
-    3. Download and install the *Microsoft Visual C++ 2015 Redistributable
-       Update 3*.
-- Install the 64-bit Python 3 release for Windows (select ``pip`` as an
-  optional feature).
+- Install the *Microsoft Visual C++ 2015 Redistributable Update 3*. This comes with 
+*Visual Studio 2015* but can be installed separately as follows:
+
+  1. Go to the Visual Studio downloads,
+  2. Select *Redistributables and Build Tools*,
+  3. Download and install the *Microsoft Visual C++ 2015 Redistributable Update 3*.
+
+- Install the 64-bit Python 3 release for Windows (select ``pip`` as an optional feature).
 
 To use the dagit tool, you will also need to
 `install yarn <https://yarnpkg.com/lang/en/docs/install/>`_.
