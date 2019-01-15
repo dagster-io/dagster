@@ -1,7 +1,7 @@
 Hello, World
 ------------
-See :doc:`../installation` for instructions getting dagster -- the core library -- and dagit --  
-the web UI tool used to visualize your data pipelines -- installed on your platform of choice.
+See :doc:`../installation` for instructions installing dagster (the core library) and dagit (the
+web UI tool used to visualize your data pipelines) on your platform of choice.
 
 Let's write our first pipeline and save it as ``hello_world.py``.
 
