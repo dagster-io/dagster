@@ -23,6 +23,7 @@ Intro Tutorial
   intro_tutorial/hello_dag
   intro_tutorial/actual_dag
   intro_tutorial/inputs
+  intro_tutorial/configuration_schemas
   intro_tutorial/execution_context
   intro_tutorial/resources
   intro_tutorial/repos
@@ -37,7 +38,6 @@ Old Intro Tutorial To Audit
 
   intro_tutorial/config
   intro_tutorial/old_execution_context
-  intro_tutorial/configuration_schemas
   intro_tutorial/part_nine
   intro_tutorial/part_ten
   intro_tutorial/part_eleven
