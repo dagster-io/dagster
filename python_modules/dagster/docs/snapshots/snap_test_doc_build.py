@@ -347,6 +347,7 @@ webapp, from any directory that contains a repository.yml file. For example:</p>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/hello_dag.html">Hello, DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/actual_dag.html">An actual DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/resources.html">Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/repos.html">Repositories</a></li>
@@ -356,7 +357,6 @@ webapp, from any directory that contains a repository.yml file. For example:</p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_nine.html">Custom Contexts</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_ten.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_eleven.html">Multiple Outputs</a></li>
@@ -843,6 +843,7 @@ snapshots['test_build_all_docs 4'] = '''
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/hello_dag.html">Hello, DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/actual_dag.html">An actual DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/resources.html">Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/repos.html">Repositories</a></li>
@@ -852,7 +853,6 @@ snapshots['test_build_all_docs 4'] = '''
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_nine.html">Custom Contexts</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_ten.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_eleven.html">Multiple Outputs</a></li>
@@ -957,6 +957,7 @@ snapshots['test_build_all_docs 5'] = '''
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/hello_dag.html">Hello, DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/actual_dag.html">An actual DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/resources.html">Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/repos.html">Repositories</a></li>
@@ -971,7 +972,6 @@ snapshots['test_build_all_docs 5'] = '''
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_nine.html">Custom Contexts</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_ten.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_eleven.html">Multiple Outputs</a></li>
@@ -1021,6 +1021,7 @@ snapshots['test_build_all_docs 5'] = '''
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/hello_dag.html">Hello, DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/actual_dag.html">An actual DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/resources.html">Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/repos.html">Repositories</a></li>
@@ -1030,7 +1031,6 @@ snapshots['test_build_all_docs 5'] = '''
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_nine.html">Custom Contexts</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_ten.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_eleven.html">Multiple Outputs</a></li>
@@ -1271,6 +1271,7 @@ from Github:</p>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/hello_dag.html">Hello, DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/actual_dag.html">An actual DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/resources.html">Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/repos.html">Repositories</a></li>
@@ -1280,7 +1281,6 @@ from Github:</p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_nine.html">Custom Contexts</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_ten.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_eleven.html">Multiple Outputs</a></li>
@@ -1470,6 +1470,7 @@ documentation and runtime error checking.</p>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/hello_dag.html">Hello, DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/actual_dag.html">An actual DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/resources.html">Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/repos.html">Repositories</a></li>
@@ -1479,7 +1480,6 @@ documentation and runtime error checking.</p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_nine.html">Custom Contexts</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_ten.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_eleven.html">Multiple Outputs</a></li>
@@ -1623,6 +1623,7 @@ snapshots['test_build_all_docs 8'] = '''
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/hello_dag.html">Hello, DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/actual_dag.html">An actual DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/resources.html">Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/repos.html">Repositories</a></li>
@@ -1632,7 +1633,6 @@ snapshots['test_build_all_docs 8'] = '''
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_nine.html">Custom Contexts</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_ten.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_eleven.html">Multiple Outputs</a></li>
@@ -1768,6 +1768,7 @@ snapshots['test_build_all_docs 9'] = '''
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/hello_dag.html">Hello, DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/actual_dag.html">An actual DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/resources.html">Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/repos.html">Repositories</a></li>
@@ -1777,7 +1778,6 @@ snapshots['test_build_all_docs 9'] = '''
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_nine.html">Custom Contexts</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_ten.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_eleven.html">Multiple Outputs</a></li>
@@ -1925,6 +1925,7 @@ Intro Tutorial
   intro_tutorial/hello_dag
   intro_tutorial/actual_dag
   intro_tutorial/inputs
+  intro_tutorial/configuration_schemas
   intro_tutorial/execution_context
   intro_tutorial/resources
   intro_tutorial/repos
@@ -1939,7 +1940,6 @@ Old Intro Tutorial To Audit
 
   intro_tutorial/config
   intro_tutorial/old_execution_context
-  intro_tutorial/configuration_schemas
   intro_tutorial/part_nine
   intro_tutorial/part_ten
   intro_tutorial/part_eleven
@@ -20433,6 +20433,7 @@ multiple outputs. Useful for solids that have multiple outputs.</li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/hello_dag.html">Hello, DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/actual_dag.html">An actual DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/resources.html">Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/repos.html">Repositories</a></li>
@@ -20442,7 +20443,6 @@ multiple outputs. Useful for solids that have multiple outputs.</li>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_nine.html">Custom Contexts</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_ten.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_eleven.html">Multiple Outputs</a></li>
@@ -21145,6 +21145,7 @@ like the alias.</p>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/hello_dag.html">Hello, DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/actual_dag.html">An actual DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/resources.html">Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/repos.html">Repositories</a></li>
@@ -21154,7 +21155,6 @@ like the alias.</p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_nine.html">Custom Contexts</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_ten.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_eleven.html">Multiple Outputs</a></li>
@@ -21315,6 +21315,7 @@ at runtime.</p>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/hello_dag.html">Hello, DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/actual_dag.html">An actual DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/resources.html">Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/repos.html">Repositories</a></li>
@@ -21324,7 +21325,6 @@ at runtime.</p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_nine.html">Custom Contexts</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_ten.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_eleven.html">Multiple Outputs</a></li>
@@ -21596,6 +21596,7 @@ Returns None if execution result isn’t a success.</p>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/hello_dag.html">Hello, DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/actual_dag.html">An actual DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/resources.html">Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/repos.html">Repositories</a></li>
@@ -21605,7 +21606,6 @@ Returns None if execution result isn’t a success.</p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_nine.html">Custom Contexts</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_ten.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_eleven.html">Multiple Outputs</a></li>
@@ -21772,6 +21772,7 @@ snapshots['test_build_all_docs 57'] = '''
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/hello_dag.html">Hello, DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/actual_dag.html">An actual DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/resources.html">Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/repos.html">Repositories</a></li>
@@ -21781,7 +21782,6 @@ snapshots['test_build_all_docs 57'] = '''
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_nine.html">Custom Contexts</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_ten.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_eleven.html">Multiple Outputs</a></li>
@@ -21913,6 +21913,7 @@ snapshots['test_build_all_docs 58'] = '''
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/hello_dag.html">Hello, DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/actual_dag.html">An actual DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/resources.html">Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/repos.html">Repositories</a></li>
@@ -21922,7 +21923,6 @@ snapshots['test_build_all_docs 58'] = '''
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_nine.html">Custom Contexts</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_ten.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_eleven.html">Multiple Outputs</a></li>
@@ -22306,6 +22306,7 @@ be modeling such things as inputs.</p>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/hello_dag.html">Hello, DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/actual_dag.html">An actual DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/resources.html">Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/repos.html">Repositories</a></li>
@@ -22315,7 +22316,6 @@ be modeling such things as inputs.</p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_nine.html">Custom Contexts</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_ten.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_eleven.html">Multiple Outputs</a></li>
@@ -22729,6 +22729,7 @@ Third, you do not have to name it. The net result is much nicer:</p>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/hello_dag.html">Hello, DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/actual_dag.html">An actual DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/resources.html">Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/repos.html">Repositories</a></li>
@@ -22738,7 +22739,6 @@ Third, you do not have to name it. The net result is much nicer:</p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_nine.html">Custom Contexts</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_ten.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_eleven.html">Multiple Outputs</a></li>
@@ -22971,6 +22971,7 @@ environment.</p>
 <li class="toctree-l1"><a class="reference internal" href="hello_dag.html">Hello, DAG</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">An actual DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
@@ -22980,7 +22981,6 @@ environment.</p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_nine.html">Custom Contexts</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_ten.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_eleven.html">Multiple Outputs</a></li>
@@ -23217,6 +23217,7 @@ execution environment that are common to many solids.</p>
 <li class="toctree-l1"><a class="reference internal" href="hello_dag.html">Hello, DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="actual_dag.html">An actual DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
@@ -23226,7 +23227,6 @@ execution environment that are common to many solids.</p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_nine.html">Custom Contexts</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_ten.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_eleven.html">Multiple Outputs</a></li>
@@ -23309,8 +23309,8 @@ snapshots['test_build_all_docs 63'] = '''
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Custom Contexts" href="part_nine.html" />
-    <link rel="prev" title="Execution Context" href="old_execution_context.html" />
+    <link rel="next" title="Execution Context" href="execution_context.html" />
+    <link rel="prev" title="Inputs" href="inputs.html" />
    
   <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
   
@@ -23692,21 +23692,21 @@ actionable error message before the pipeline is ever executed.</p>
 <li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
 </ul>
-<ul>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="hello_world.html">Hello, World</a></li>
 <li class="toctree-l1"><a class="reference internal" href="hello_dag.html">Hello, DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="actual_dag.html">An actual DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pipeline_cli_execution.html">Pipeline CLI Execution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types</a></li>
 </ul>
-<ul class="current">
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_nine.html">Custom Contexts</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_ten.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_eleven.html">Multiple Outputs</a></li>
@@ -23726,8 +23726,8 @@ actionable error message before the pipeline is ever executed.</p>
 <h3>Related Topics</h3>
 <ul>
   <li><a href="../index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="old_execution_context.html" title="previous chapter">Execution Context</a></li>
-      <li>Next: <a href="part_nine.html" title="next chapter">Custom Contexts</a></li>
+      <li>Previous: <a href="inputs.html" title="previous chapter">Inputs</a></li>
+      <li>Next: <a href="execution_context.html" title="next chapter">Execution Context</a></li>
   </ul></li>
 </ul>
 </div>
@@ -23790,7 +23790,7 @@ snapshots['test_build_all_docs 64'] = '''
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Resources" href="resources.html" />
-    <link rel="prev" title="Inputs" href="inputs.html" />
+    <link rel="prev" title="Configuration Schemas" href="configuration_schemas.html" />
    
   <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
   
@@ -23900,6 +23900,7 @@ or compute substrates – can be configured using the context.</p>
 <li class="toctree-l1"><a class="reference internal" href="hello_dag.html">Hello, DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="actual_dag.html">An actual DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
@@ -23909,7 +23910,6 @@ or compute substrates – can be configured using the context.</p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_nine.html">Custom Contexts</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_ten.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_eleven.html">Multiple Outputs</a></li>
@@ -23929,7 +23929,7 @@ or compute substrates – can be configured using the context.</p>
 <h3>Related Topics</h3>
 <ul>
   <li><a href="../index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="inputs.html" title="previous chapter">Inputs</a></li>
+      <li>Previous: <a href="configuration_schemas.html" title="previous chapter">Configuration Schemas</a></li>
       <li>Next: <a href="resources.html" title="next chapter">Resources</a></li>
   </ul></li>
 </ul>
@@ -24138,6 +24138,7 @@ topology and see how dagster determines the execution order of a pipeline.</p>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Hello, DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="actual_dag.html">An actual DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
@@ -24147,7 +24148,6 @@ topology and see how dagster determines the execution order of a pipeline.</p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_nine.html">Custom Contexts</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_ten.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_eleven.html">Multiple Outputs</a></li>
@@ -24399,6 +24399,7 @@ at all. Just add a few lines to <cite>hello_world.py</cite> (highlighted in yell
 <li class="toctree-l1"><a class="reference internal" href="hello_dag.html">Hello, DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="actual_dag.html">An actual DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
@@ -24408,7 +24409,6 @@ at all. Just add a few lines to <cite>hello_world.py</cite> (highlighted in yell
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_nine.html">Custom Contexts</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_ten.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_eleven.html">Multiple Outputs</a></li>
@@ -24491,7 +24491,7 @@ snapshots['test_build_all_docs 67'] = '''
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Execution Context" href="execution_context.html" />
+    <link rel="next" title="Configuration Schemas" href="configuration_schemas.html" />
     <link rel="prev" title="An actual DAG" href="actual_dag.html" />
    
   <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
@@ -24737,6 +24737,7 @@ built-in <code class="docutils literal notranslate"><span class="pre">String</sp
 <li class="toctree-l1"><a class="reference internal" href="hello_dag.html">Hello, DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="actual_dag.html">An actual DAG</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
@@ -24746,7 +24747,6 @@ built-in <code class="docutils literal notranslate"><span class="pre">String</sp
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_nine.html">Custom Contexts</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_ten.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_eleven.html">Multiple Outputs</a></li>
@@ -24767,7 +24767,7 @@ built-in <code class="docutils literal notranslate"><span class="pre">String</sp
 <ul>
   <li><a href="../index.html">Documentation overview</a><ul>
       <li>Previous: <a href="actual_dag.html" title="previous chapter">An actual DAG</a></li>
-      <li>Next: <a href="execution_context.html" title="next chapter">Execution Context</a></li>
+      <li>Next: <a href="configuration_schemas.html" title="next chapter">Configuration Schemas</a></li>
   </ul></li>
 </ul>
 </div>
@@ -24829,7 +24829,7 @@ snapshots['test_build_all_docs 68'] = '''
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Configuration Schemas" href="configuration_schemas.html" />
+    <link rel="next" title="Custom Contexts" href="part_nine.html" />
     <link rel="prev" title="Configuration" href="config.html" />
    
   <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
@@ -24983,6 +24983,7 @@ so that the dagster tools can manage them.</p>
 <li class="toctree-l1"><a class="reference internal" href="hello_dag.html">Hello, DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="actual_dag.html">An actual DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
@@ -24992,7 +24993,6 @@ so that the dagster tools can manage them.</p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_nine.html">Custom Contexts</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_ten.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_eleven.html">Multiple Outputs</a></li>
@@ -25013,7 +25013,7 @@ so that the dagster tools can manage them.</p>
 <ul>
   <li><a href="../index.html">Documentation overview</a><ul>
       <li>Previous: <a href="config.html" title="previous chapter">Configuration</a></li>
-      <li>Next: <a href="configuration_schemas.html" title="next chapter">Configuration Schemas</a></li>
+      <li>Next: <a href="part_nine.html" title="next chapter">Custom Contexts</a></li>
   </ul></li>
 </ul>
 </div>
@@ -25281,6 +25281,7 @@ only triggering log_num_squared. log_num will never be executed.</p>
 <li class="toctree-l1"><a class="reference internal" href="hello_dag.html">Hello, DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="actual_dag.html">An actual DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
@@ -25290,7 +25291,6 @@ only triggering log_num_squared. log_num will never be executed.</p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_nine.html">Custom Contexts</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_ten.html">Expectations</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Multiple Outputs</a></li>
@@ -25539,6 +25539,7 @@ provide, instead of from solids upstream in the dependency graph.</p>
 <li class="toctree-l1"><a class="reference internal" href="hello_dag.html">Hello, DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="actual_dag.html">An actual DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
@@ -25548,7 +25549,6 @@ provide, instead of from solids upstream in the dependency graph.</p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_nine.html">Custom Contexts</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_ten.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_eleven.html">Multiple Outputs</a></li>
@@ -25632,7 +25632,7 @@ snapshots['test_build_all_docs 71'] = '''
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Expectations" href="part_ten.html" />
-    <link rel="prev" title="Configuration Schemas" href="configuration_schemas.html" />
+    <link rel="prev" title="Execution Context" href="old_execution_context.html" />
    
   <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
   
@@ -26021,6 +26021,7 @@ changes.</p>
 <li class="toctree-l1"><a class="reference internal" href="hello_dag.html">Hello, DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="actual_dag.html">An actual DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
@@ -26030,7 +26031,6 @@ changes.</p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Custom Contexts</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_ten.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_eleven.html">Multiple Outputs</a></li>
@@ -26050,7 +26050,7 @@ changes.</p>
 <h3>Related Topics</h3>
 <ul>
   <li><a href="../index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="configuration_schemas.html" title="previous chapter">Configuration Schemas</a></li>
+      <li>Previous: <a href="old_execution_context.html" title="previous chapter">Execution Context</a></li>
       <li>Next: <a href="part_ten.html" title="next chapter">Expectations</a></li>
   </ul></li>
 </ul>
@@ -26354,6 +26354,7 @@ configure the pipeline to skip expectations entirely.</p>
 <li class="toctree-l1"><a class="reference internal" href="hello_dag.html">Hello, DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="actual_dag.html">An actual DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
@@ -26363,7 +26364,6 @@ configure the pipeline to skip expectations entirely.</p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_nine.html">Custom Contexts</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_eleven.html">Multiple Outputs</a></li>
@@ -26654,6 +26654,7 @@ to cloud storage, unzipping files, etc.</p>
 <li class="toctree-l1"><a class="reference internal" href="hello_dag.html">Hello, DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="actual_dag.html">An actual DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
@@ -26663,7 +26664,6 @@ to cloud storage, unzipping files, etc.</p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_nine.html">Custom Contexts</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_ten.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_eleven.html">Multiple Outputs</a></li>
@@ -26955,6 +26955,7 @@ str was coerced to an SSNString by the dagster type.</p>
 <li class="toctree-l1"><a class="reference internal" href="hello_dag.html">Hello, DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="actual_dag.html">An actual DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
@@ -26964,7 +26965,6 @@ str was coerced to an SSNString by the dagster type.</p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_nine.html">Custom Contexts</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_ten.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_eleven.html">Multiple Outputs</a></li>
@@ -27175,6 +27175,7 @@ to guard against bugs and enrich pipeline documentation.</p>
 <li class="toctree-l1"><a class="reference internal" href="hello_dag.html">Hello, DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="actual_dag.html">An actual DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
@@ -27184,7 +27185,6 @@ to guard against bugs and enrich pipeline documentation.</p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_nine.html">Custom Contexts</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_ten.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_eleven.html">Multiple Outputs</a></li>
@@ -27402,6 +27402,7 @@ with swappable config.</p>
 <li class="toctree-l1"><a class="reference internal" href="hello_dag.html">Hello, DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="actual_dag.html">An actual DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Repositories</a></li>
@@ -27411,7 +27412,6 @@ with swappable config.</p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_nine.html">Custom Contexts</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_ten.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_eleven.html">Multiple Outputs</a></li>
@@ -27709,6 +27709,7 @@ resource will be used instead of the cloud version:</p>
 <li class="toctree-l1"><a class="reference internal" href="hello_dag.html">Hello, DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="actual_dag.html">An actual DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
@@ -27718,7 +27719,6 @@ resource will be used instead of the cloud version:</p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_nine.html">Custom Contexts</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_ten.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_eleven.html">Multiple Outputs</a></li>
@@ -28047,6 +28047,7 @@ given output any number of times in any number of formats.</p>
 <li class="toctree-l1"><a class="reference internal" href="hello_dag.html">Hello, DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="actual_dag.html">An actual DAG</a></li>
 <li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
@@ -28056,7 +28057,6 @@ given output any number of times in any number of formats.</p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="old_execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_nine.html">Custom Contexts</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_ten.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_eleven.html">Multiple Outputs</a></li>
