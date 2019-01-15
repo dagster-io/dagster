@@ -42,6 +42,7 @@ although you can tell the CLI tools to use any file you like.
 
 .. literalinclude:: ../../dagster/tutorials/intro_tutorial/repos_1.yml
    :linenos:
+   :language: YAML
    :caption: repository.yml
 
 Now you should be able to list the pipelines in this repo without all the typing:

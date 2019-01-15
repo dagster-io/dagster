@@ -4417,6 +4417,7 @@ although you can tell the CLI tools to use any file you like.
 
 .. literalinclude:: ../../dagster/tutorials/intro_tutorial/repos_1.yml
    :linenos:
+   :language: YAML
    :caption: repository.yml
 
 Now you should be able to list the pipelines in this repo without all the typing:
@@ -25565,11 +25566,11 @@ easier. Save this file as <code class="docutils literal notranslate"><span class
 although you can tell the CLI tools to use any file you like.</p>
 <div class="literal-block-wrapper docutils container" id="id2">
 <div class="code-block-caption"><span class="caption-text">repository.yml</span><a class="headerlink" href="#id2" title="Permalink to this code">¶</a></div>
-<div class="highlight-default notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+<div class="highlight-YAML notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
 2
-3</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="n">repository</span><span class="p">:</span>
-  <span class="n">file</span><span class="p">:</span> <span class="n">repos</span><span class="o">.</span><span class="n">py</span>
-  <span class="n">fn</span><span class="p">:</span> <span class="n">define_repo</span>
+3</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="nt">repository</span><span class="p">:</span>
+  <span class="nt">file</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">repos.py</span>
+  <span class="nt">fn</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">define_repo</span>
 </pre></div>
 </td></tr></table></div>
 </div>
