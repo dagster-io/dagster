@@ -26,6 +26,7 @@ Intro Tutorial
   intro_tutorial/execution_context
   intro_tutorial/resources
   intro_tutorial/repos
+  intro_tutorial/pipeline_cli_execution
   intro_tutorial/types
 
 Old Intro Tutorial To Audit
@@ -36,7 +37,6 @@ Old Intro Tutorial To Audit
 
   intro_tutorial/config
   intro_tutorial/old_execution_context
-  intro_tutorial/pipeline_execution
   intro_tutorial/configuration_schemas
   intro_tutorial/part_nine
   intro_tutorial/part_ten
