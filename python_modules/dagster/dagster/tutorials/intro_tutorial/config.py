@@ -1,4 +1,5 @@
 # encoding: utf-8
+# py27 compat
 
 from dagster import Field, PipelineDefinition, execute_pipeline, solid, types
 
