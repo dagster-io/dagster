@@ -12,7 +12,7 @@ We are going to record the results of computations in that key value store.
 We are going to model this key value store as a resource.
 
 .. literalinclude:: ../../dagster/tutorials/intro_tutorial/resources.py
-   :lines: 1-2, 17-28, 53-64
+   :lines: 1-2, 16-29, 52-64
    :caption: resources.py
 
 The core of a resource are the definition of its configuration (the ``config_field``)
