@@ -7,7 +7,7 @@ Let's write our first pipeline and save it as ``hello_world.py``.
 
 .. literalinclude:: ../../dagster/tutorials/intro_tutorial/hello_world.py
    :linenos:
-   :lines: 1-10
+   :lines: 1-12
    :caption: hello_world.py
 
 This example introduces three concepts:
