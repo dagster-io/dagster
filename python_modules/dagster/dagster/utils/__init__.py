@@ -20,7 +20,7 @@ def script_relative_path(file_path):
 
     check.str_param(file_path, 'file_path')
     scriptdir = inspect.stack()[1][1]
-    return os.path.join(os.path.dirname(os.path.abspath(scriptdir)), file_path)
+    return os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(scriptdir)), file_path))
 
 
 # Adapted from https://github.com/okunishinishi/python-stringcase/blob/master/stringcase.py
