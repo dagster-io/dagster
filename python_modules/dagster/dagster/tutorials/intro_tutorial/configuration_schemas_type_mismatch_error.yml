@@ -4,9 +4,9 @@ context:
       log_level: DEBUG
 
 solids:
-  multiply_the_word:
+  typed_multiply_the_word:
     inputs:
       word:
-        value: quux
+        value: kdjfkd
     config:
-      factor: 2
+      factor: "not_a_number"

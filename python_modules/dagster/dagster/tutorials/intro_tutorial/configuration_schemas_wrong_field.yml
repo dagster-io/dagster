@@ -4,9 +4,9 @@ context:
       log_level: DEBUG
 
 solids:
-  typed_multiply_the_word:
+  multiply_the_word_with_typed_config:
     config:
-      factor: 2
+      wrong_factor: 1
     inputs:
       word:
-        value: quux
+        value: "bkjdf"

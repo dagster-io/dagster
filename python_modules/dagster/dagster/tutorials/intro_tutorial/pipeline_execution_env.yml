@@ -4,6 +4,9 @@ context:
       log_level: DEBUG
 
 solids:
-  double_the_word:
+  multiply_the_word:
+    inputs:
+      word:
+        value: bar
     config:
-      word: bar
+      factor: 2
