@@ -23,6 +23,7 @@ Intro Tutorial
   intro_tutorial/hello_dag
   intro_tutorial/actual_dag
   intro_tutorial/inputs
+  intro_tutorial/config
   intro_tutorial/configuration_schemas
   intro_tutorial/execution_context
   intro_tutorial/resources
@@ -36,7 +37,6 @@ Old Intro Tutorial To Audit
   :maxdepth: 1
   :name: Intro Tutorial To Audit
 
-  intro_tutorial/config
   intro_tutorial/part_ten
   intro_tutorial/part_eleven
   intro_tutorial/part_thirteen

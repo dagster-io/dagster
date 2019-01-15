@@ -67,6 +67,5 @@ config editor. Try switching languages and rerunning the pipeline!
 
 .. image:: config_figure_one.png
 
-Next, we'll learn about another part of the ``info`` parameter, the
-:doc:`Execution Context <execution_context>`, which we'll use to parametrize features of the pipeline
-execution environment that are common to many solids.
+Next, we'll learn about configuration schemas and how the type system can help with the management
+of config: :doc:`Configuration Schemas <configuration_schemas>`.
