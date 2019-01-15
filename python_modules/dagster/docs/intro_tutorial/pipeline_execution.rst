@@ -26,7 +26,7 @@ name.
 
 .. code-block:: console
 
-    $ dagster pipeline execute part_seven -e env.yml
+    $ dagster pipeline execute demo_pipeline -e env.yml
 
 Suppose that we want to keep some settings (like our context-level logging config) constant across
 a bunch of our pipeline executions, and vary only pipeline-specific settings. It'd be tedious to

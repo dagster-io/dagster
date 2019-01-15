@@ -2,19 +2,25 @@
 Installation
 =======================
 
-Dagster is tested on Python 3.6.6, 3.5.6, and 2.7.15. Python 3 is strongly
+Dagster is tested on Python 3.7.2, 3.6.6, 3.5.6, and 2.7.15. Python 3 is strongly
 encouraged -- if you can, you won't regret making the switch!
 
 Installing Python, pip, virtualenv, and yarn
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To check that Python, the pip package manager, and virtualenv (highly
-recommended) are already installed, you can run:
+To check that Python and the pip package manager are already installed, you can run:
 
 .. code-block:: console
 
     $ python --version
     $ pip --version
+
+If you're running Python 3.3 or later, you already have the venv package for managing
+virtualenvs. On Python 2.7, you can check whether you have the virtualenv tool installed by
+running:
+
+.. code-block:: console
+
     $ virtualenv --version
 
 If these tools aren't present on your system, you can install them as follows:
@@ -25,7 +31,12 @@ On Ubuntu:
 
     $ sudo apt update
     $ sudo apt install python3-dev python3-pip
-    $ sudo pip3 install -U virtualenv  # system-wide install
+
+And on Python 2.7:
+
+.. code-block:: console
+
+    $ sudo pip install -U virtualenv  # system-wide install
 
 On OSX, using `Homebrew <https://brew.sh/>`_:
 
@@ -33,7 +44,12 @@ On OSX, using `Homebrew <https://brew.sh/>`_:
 
     $ brew update
     $ brew install python  # Python 3
-    $ sudo pip3 install -U virtualenv  # system-wide install
+
+And on Python 2.7:
+
+.. code-block:: console
+
+    $ sudo pip install -U virtualenv  # system-wide install
 
 On Windows (Python 3):
 - Install the *Microsoft Visual C++ 2015 Redistributable Update 3*. This
@@ -44,7 +60,6 @@ On Windows (Python 3):
        Update 3*.
 - Install the 64-bit Python 3 release for Windows (select ``pip`` as an
   optional feature).
-- Then run ``pip3 install -U pip virtualenv``
 
 To use the dagit tool, you will also need to
 `install yarn <https://yarnpkg.com/lang/en/docs/install/>`_.
