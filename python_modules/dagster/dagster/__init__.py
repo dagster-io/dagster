@@ -77,8 +77,8 @@ __all__ = [
     'PipelineDefinition',
     'RepositoryDefinition',
     'ResourceDefinition',
-    'SolidDefinition',
     'Result',
+    'SolidDefinition',
     'SolidInstance',
     # Infos
     'ContextCreationExecutionInfo',
@@ -96,13 +96,14 @@ __all__ = [
     'ReentrantInfo',
     'SolidExecutionResult',
     # Errors
+    'DagsterEvaluateConfigValueError',
+    'DagsterExpectationFailedError',
     'DagsterInvalidDefinitionError',
     'DagsterInvariantViolationError',
-    'DagsterTypeError',
     'DagsterRuntimeCoercionError',
+    'DagsterTypeError',
     'DagsterUserCodeExecutionError',
-    'DagsterExpectationFailedError',
-    'DagsterEvaluateConfigValueError',
+    'PipelineConfigEvaluationError',
     # Utilities
     'execute_solid',
     'execute_solids',
@@ -116,6 +117,7 @@ __all__ = [
     'NamedDict',
     'Nullable',
     'Path',
+    'PythonObjectType',
     'String',
     # type creation
     'as_dagster_type',

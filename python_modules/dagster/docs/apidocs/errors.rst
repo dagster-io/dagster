@@ -16,3 +16,5 @@ Core dagster error classes.
 .. autoexception:: DagsterTypeError
 
 .. autoexception:: DagsterUserCodeExecutionError
+
+.. autoexception:: PipelineConfigEvaluationError
