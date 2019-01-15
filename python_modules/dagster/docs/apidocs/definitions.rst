@@ -3,7 +3,7 @@ Definitions
 
 .. currentmodule:: dagster
 
-Core API to define Solids and Pipelines.
+Core API for defining solids and pipelines.
 
 .. autoclass:: ContextCreationExecutionInfo
     :members:

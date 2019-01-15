@@ -482,7 +482,11 @@ snapshots['test_build_all_docs 4'] = '''
 <h2 id="A">A</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/types.html#dagster.core.types.Any">Any (in module dagster.core.types)</a>
+      <li><a href="apidocs/types.html#dagster.Any">Any (in module dagster)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="apidocs/types.html#dagster.as_dagster_type">as_dagster_type() (in module dagster)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -490,7 +494,7 @@ snapshots['test_build_all_docs 4'] = '''
 <h2 id="B">B</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/types.html#dagster.core.types.Bool">Bool (in module dagster.core.types)</a>
+      <li><a href="apidocs/types.html#dagster.Bool">Bool (in module dagster)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -500,7 +504,13 @@ snapshots['test_build_all_docs 4'] = '''
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="apidocs/definitions.html#dagster.TransformExecutionInfo.config">config (dagster.TransformExecutionInfo attribute)</a>
 </li>
-      <li><a href="apidocs/definitions.html#dagster.SolidDefinition.config_field">config_field (dagster.SolidDefinition attribute)</a>
+      <li><a href="apidocs/definitions.html#dagster.PipelineContextDefinition.config_field">config_field (dagster.PipelineContextDefinition attribute)</a>
+
+      <ul>
+        <li><a href="apidocs/definitions.html#dagster.SolidDefinition.config_field">(dagster.SolidDefinition attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="apidocs/types.html#dagster.ConfigType">ConfigType (class in dagster)</a>
 </li>
       <li><a href="apidocs/execution.html#dagster.PipelineExecutionResult.context">context (dagster.PipelineExecutionResult attribute)</a>
 
@@ -514,6 +524,8 @@ snapshots['test_build_all_docs 4'] = '''
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="apidocs/definitions.html#dagster.PipelineDefinition.context_definitions">context_definitions (dagster.PipelineDefinition attribute)</a>
 </li>
+      <li><a href="apidocs/definitions.html#dagster.PipelineContextDefinition.context_fn">context_fn (dagster.PipelineContextDefinition attribute)</a>
+</li>
       <li><a href="apidocs/definitions.html#dagster.ContextCreationExecutionInfo">ContextCreationExecutionInfo (class in dagster)</a>
 </li>
   </ul></td>
@@ -522,9 +534,11 @@ snapshots['test_build_all_docs 4'] = '''
 <h2 id="D">D</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/types.html#module-dagster.core.types">dagster.core.types (module)</a>
+      <li><a href="apidocs/types.html#module-dagster">dagster (module)</a>
 </li>
       <li><a href="apidocs/execution.html#dagster.SolidExecutionResult.dagster_error">dagster_error (dagster.SolidExecutionResult attribute)</a>
+</li>
+      <li><a href="apidocs/types.html#dagster.dagster_type">dagster_type() (in module dagster)</a>
 </li>
       <li><a href="apidocs/errors.html#dagster.DagsterExpectationFailedError">DagsterExpectationFailedError</a>
 </li>
@@ -555,11 +569,15 @@ snapshots['test_build_all_docs 4'] = '''
 </li>
         <li><a href="apidocs/definitions.html#dagster.OutputDefinition.description">(dagster.OutputDefinition attribute)</a>
 </li>
+        <li><a href="apidocs/definitions.html#dagster.PipelineContextDefinition.description">(dagster.PipelineContextDefinition attribute)</a>
+</li>
         <li><a href="apidocs/definitions.html#dagster.PipelineDefinition.description">(dagster.PipelineDefinition attribute)</a>
 </li>
         <li><a href="apidocs/definitions.html#dagster.SolidDefinition.description">(dagster.SolidDefinition attribute)</a>
 </li>
       </ul></li>
+      <li><a href="apidocs/types.html#dagster.Dict">Dict() (in module dagster)</a>
+</li>
       <li><a href="apidocs/definitions.html#dagster.PipelineDefinition.display_name">display_name (dagster.PipelineDefinition attribute)</a>
 </li>
   </ul></td>
@@ -634,7 +652,7 @@ snapshots['test_build_all_docs 4'] = '''
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/types.html#dagster.core.types.Int">Int (in module dagster.core.types)</a>
+      <li><a href="apidocs/types.html#dagster.Int">Int (in module dagster)</a>
 </li>
       <li><a href="apidocs/definitions.html#dagster.RepositoryDefinition.iterate_over_pipelines">iterate_over_pipelines() (dagster.RepositoryDefinition method)</a>
 </li>
@@ -648,7 +666,7 @@ snapshots['test_build_all_docs 4'] = '''
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/types.html#dagster.core.types.List">List() (in module dagster.core.types)</a>
+      <li><a href="apidocs/types.html#dagster.List">List() (in module dagster)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -686,7 +704,9 @@ snapshots['test_build_all_docs 4'] = '''
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/types.html#dagster.core.types.Nullable">Nullable() (in module dagster.core.types)</a>
+      <li><a href="apidocs/types.html#dagster.NamedDict">NamedDict() (in module dagster)</a>
+</li>
+      <li><a href="apidocs/types.html#dagster.Nullable">Nullable() (in module dagster)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -712,7 +732,7 @@ snapshots['test_build_all_docs 4'] = '''
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="apidocs/definitions.html#dagster.PipelineContextDefinition.passthrough_context_definition">passthrough_context_definition() (dagster.PipelineContextDefinition static method)</a>
 </li>
-      <li><a href="apidocs/types.html#dagster.core.types.Path">Path (in module dagster.core.types)</a>
+      <li><a href="apidocs/types.html#dagster.Path">Path (in module dagster)</a>
 </li>
       <li><a href="apidocs/execution.html#dagster.PipelineExecutionResult.pipeline">pipeline (dagster.PipelineExecutionResult attribute)</a>
 </li>
@@ -720,7 +740,7 @@ snapshots['test_build_all_docs 4'] = '''
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="apidocs/execution.html#dagster.PipelineConfigEvaluationError">PipelineConfigEvaluationError</a>
+      <li><a href="apidocs/errors.html#dagster.PipelineConfigEvaluationError">PipelineConfigEvaluationError</a>
 </li>
       <li><a href="apidocs/definitions.html#dagster.PipelineContextDefinition">PipelineContextDefinition (class in dagster)</a>
 </li>
@@ -728,7 +748,7 @@ snapshots['test_build_all_docs 4'] = '''
 </li>
       <li><a href="apidocs/execution.html#dagster.PipelineExecutionResult">PipelineExecutionResult (class in dagster)</a>
 </li>
-      <li><a href="apidocs/types.html#dagster.core.types.PythonObjectType">PythonObjectType (class in dagster.core.types)</a>
+      <li><a href="apidocs/types.html#dagster.PythonObjectType">PythonObjectType (class in dagster)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -760,6 +780,8 @@ snapshots['test_build_all_docs 4'] = '''
         <li><a href="apidocs/definitions.html#dagster.OutputDefinition.runtime_type">(dagster.OutputDefinition attribute)</a>
 </li>
       </ul></li>
+      <li><a href="apidocs/types.html#dagster.RuntimeType">RuntimeType (class in dagster)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -786,7 +808,7 @@ snapshots['test_build_all_docs 4'] = '''
 </li>
       <li><a href="apidocs/definitions.html#dagster.PipelineDefinition.solids">solids (dagster.PipelineDefinition attribute)</a>, <a href="apidocs/definitions.html#dagster.PipelineDefinition.solids">[1]</a>
 </li>
-      <li><a href="apidocs/types.html#dagster.core.types.String">String (in module dagster.core.types)</a>
+      <li><a href="apidocs/types.html#dagster.String">String (in module dagster)</a>
 </li>
       <li><a href="apidocs/definitions.html#dagster.ExpectationResult.success">success (dagster.ExpectationResult attribute)</a>
 
@@ -1554,6 +1576,10 @@ snapshots['test_build_all_docs 8'] = '''
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
 
+    <script type="text/javascript">
+      DOCUMENTATION_OPTIONS.COLLAPSE_INDEX = true;
+    </script>
+
 
   </head><body>
   
@@ -1577,15 +1603,9 @@ snapshots['test_build_all_docs 8'] = '''
      <tr class="cap" id="cap-d"><td></td><td>
        <strong>d</strong></td><td></td></tr>
      <tr>
-       <td><img src="_static/minus.png" class="toggler"
-              id="toggle-1" style="display: none" alt="-" /></td>
-       <td>
-       <code class="xref">dagster</code></td><td>
-       <em></em></td></tr>
-     <tr class="cg-1">
        <td></td>
-       <td>&#160;&#160;&#160;
-       <a href="apidocs/types.html#module-dagster.core.types"><code class="xref">dagster.core.types</code></a></td><td>
+       <td>
+       <a href="apidocs/types.html#module-dagster"><code class="xref">dagster</code></a></td><td>
        <em></em></td></tr>
    </table>
 
@@ -1797,7 +1817,7 @@ snapshots['test_build_all_docs 9'] = '''
   </body>
 </html>'''
 
-snapshots['test_build_all_docs 10'] = 'Search.setIndex({docnames:["apidocs/decorators","apidocs/definitions","apidocs/errors","apidocs/execution","apidocs/types","apidocs/utilities","contributing","guides/028_to_030_new_concepts","guides/028_to_030_upgrade_guide","index","installation","intro_tutorial/actual_dag","intro_tutorial/config","intro_tutorial/configuration_schemas","intro_tutorial/execution_context","intro_tutorial/expectations","intro_tutorial/hello_dag","intro_tutorial/hello_world","intro_tutorial/inputs","intro_tutorial/part_eleven","intro_tutorial/part_fourteen","intro_tutorial/part_thirteen","intro_tutorial/pipeline_cli_execution","intro_tutorial/repos","intro_tutorial/resources","intro_tutorial/types","principles"],envversion:53,filenames:["apidocs/decorators.rst","apidocs/definitions.rst","apidocs/errors.rst","apidocs/execution.rst","apidocs/types.rst","apidocs/utilities.rst","contributing.rst","guides/028_to_030_new_concepts.md","guides/028_to_030_upgrade_guide.md","index.rst","installation.rst","intro_tutorial/actual_dag.rst","intro_tutorial/config.rst","intro_tutorial/configuration_schemas.rst","intro_tutorial/execution_context.rst","intro_tutorial/expectations.rst","intro_tutorial/hello_dag.rst","intro_tutorial/hello_world.rst","intro_tutorial/inputs.rst","intro_tutorial/part_eleven.rst","intro_tutorial/part_fourteen.rst","intro_tutorial/part_thirteen.rst","intro_tutorial/pipeline_cli_execution.rst","intro_tutorial/repos.rst","intro_tutorial/resources.rst","intro_tutorial/types.rst","principles.rst"],objects:{"dagster.DependencyDefinition":{description:[1,2,1,""],output:[1,2,1,""],solid:[1,2,1,""]},"dagster.ExpectationDefinition":{description:[1,2,1,""],expectation_fn:[1,2,1,""],name:[1,2,1,""]},"dagster.ExpectationResult":{message:[1,2,1,""],result_context:[1,2,1,""],success:[1,2,1,""]},"dagster.InputDefinition":{description:[1,2,1,""],expectations:[1,2,1,""],name:[1,2,1,""],runtime_type:[1,2,1,""]},"dagster.MultipleResults":{from_dict:[0,4,1,""],results:[0,2,1,""]},"dagster.OutputDefinition":{description:[1,2,1,""],name:[1,2,1,""],runtime_type:[1,2,1,""]},"dagster.PipelineContextDefinition":{passthrough_context_definition:[1,4,1,""]},"dagster.PipelineDefinition":{context_definitions:[1,2,1,""],dependencies:[1,2,1,""],dependency_structure:[1,2,1,""],description:[1,2,1,""],display_name:[1,2,1,""],has_solid:[1,5,1,""],name:[1,2,1,""],solid_named:[1,5,1,""],solids:[1,2,1,""]},"dagster.PipelineExecutionResult":{context:[3,2,1,""],pipeline:[3,2,1,""],result_for_solid:[3,5,1,""],result_list:[3,2,1,""],success:[3,2,1,""]},"dagster.RepositoryDefinition":{get_all_pipelines:[1,5,1,""],get_pipeline:[1,5,1,""],iterate_over_pipelines:[1,5,1,""],name:[1,2,1,""],pipeline_dict:[1,2,1,""]},"dagster.Result":{output_name:[1,2,1,""],value:[1,2,1,""]},"dagster.SolidDefinition":{config_field:[1,2,1,""],description:[1,2,1,""],input_defs:[1,2,1,""],metadata:[1,2,1,""],name:[1,2,1,""],outputs_defs:[1,2,1,""],transform_fn:[1,2,1,""]},"dagster.SolidExecutionResult":{context:[3,2,1,""],dagster_error:[3,2,1,""],solid:[3,2,1,""],success:[3,2,1,""],transformed_value:[3,5,1,""],transformed_values:[3,2,1,""]},"dagster.TransformExecutionInfo":{config:[1,2,1,""],context:[1,2,1,""]},"dagster.core":{types:[4,6,0,"-"]},"dagster.core.types":{Any:[4,2,1,""],Bool:[4,2,1,""],Int:[4,2,1,""],List:[4,3,1,""],Nullable:[4,3,1,""],Path:[4,2,1,""],PythonObjectType:[4,0,1,""],String:[4,2,1,""]},dagster:{ContextCreationExecutionInfo:[1,0,1,""],DagsterExpectationFailedError:[2,1,1,""],DagsterInvalidDefinitionError:[2,1,1,""],DagsterInvariantViolationError:[2,1,1,""],DagsterRuntimeCoercionError:[2,1,1,""],DagsterTypeError:[2,1,1,""],DagsterUserCodeExecutionError:[2,1,1,""],DependencyDefinition:[1,0,1,""],ExecutionContext:[3,0,1,""],ExpectationDefinition:[1,0,1,""],ExpectationExecutionInfo:[1,0,1,""],ExpectationResult:[1,0,1,""],Field:[1,3,1,""],InputDefinition:[1,0,1,""],MultipleResults:[0,0,1,""],OutputDefinition:[1,0,1,""],PipelineConfigEvaluationError:[3,1,1,""],PipelineContextDefinition:[1,0,1,""],PipelineDefinition:[1,0,1,""],PipelineExecutionResult:[3,0,1,""],ReentrantInfo:[3,0,1,""],RepositoryDefinition:[1,0,1,""],ResourceDefinition:[1,0,1,""],Result:[1,0,1,""],SolidDefinition:[1,0,1,""],SolidExecutionResult:[3,0,1,""],SolidInstance:[1,0,1,""],TransformExecutionInfo:[1,0,1,""],execute_pipeline:[3,3,1,""],execute_pipeline_iterator:[3,3,1,""],execute_solid:[5,3,1,""],execute_solids:[5,3,1,""],lambda_solid:[0,3,1,""],solid:[0,3,1,""]}},objnames:{"0":["py","class","Python class"],"1":["py","exception","Python exception"],"2":["py","attribute","Python attribute"],"3":["py","function","Python function"],"4":["py","staticmethod","Python static method"],"5":["py","method","Python method"],"6":["py","module","Python module"]},objtypes:{"0":"py:class","1":"py:exception","2":"py:attribute","3":"py:function","4":"py:staticmethod","5":"py:method","6":"py:module"},terms:{"06c7":17,"0x11e4fbf60":8,"1563854b":17,"25faadf5":17,"2mxds1r":26,"408a":15,"40ea":19,"42b8":19,"43f5":17,"46cc":17,"47db":15,"48cda39e79a1":19,"49eb":17,"49ef":19,"4a4e":14,"4ac0":14,"4ae2":17,"4b3f":15,"4d71":17,"4f38ba45b8e0":14,"583d":19,"5878513a":17,"5c829421":17,"604dc47c":17,"66b0b6ecdcad":15,"677247b1b07b":17,"6b80d12155de":19,"6d6dbe6b296b":19,"744a":17,"758f":17,"7d62dcbf":19,"7e828e37eab8":17,"7f4d":19,"80c2":15,"81ba":17,"88cb":17,"8b76":15,"938ab7fa":15,"941f":19,"95af":19,"95ef":19,"97ae58fda0f4":17,"9ca21f5c":15,"9cbe4fa0f5e6":19,"9de556c1":19,"9f44":15,"\\u4e16\\u754c":12,"\\u4f60\\u597d":12,"abstract":[1,7,14],"break":[6,7,8,26],"case":[1,12,14,15,16,18,20,24,25],"catch":[13,18],"class":[0,1,2,3,4,7,8,15,19,24],"default":[0,1,7,10,13,14,15,19,22,23,25],"final":[20,21,22,25],"function":[0,1,3,7,8,12,16,17,18,19,21,23,24,25],"import":[8,11,12,13,14,16,17,18,22,23,24,25,26],"int":[1,4,7,13,15,19,20,21,22,24,25],"long":23,"new":[6,7,8,10,16,20,23,24],"public":[8,24],"return":[0,1,3,7,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25],"static":[0,1],"switch":[10,12],"throw":[1,2,3,15],"true":[1,3,7,12,25],"try":[11,12,22,23],"while":[7,8,24],And:[7,10,13,14,15,18,21,22,24],But:[18,23],For:[1,3,6,7,10,12,18,19,24],Lying:15,One:[1,8,14,15,16,20,25],That:[7,12,24],The:[0,1,3,7,8,11,12,13,14,15,16,17,18,19,20,22,24,25],Then:[12,17],There:[1,8,17,21],These:[1,13,14,19,21,26],Use:8,Used:1,Useful:[0,24],Using:[14,17],With:[7,19,22],__fieldvaluesentinel:1,__inferoptionalcompositefieldsentinel:1,__init__:[8,24],__main__:[17,19],__name__:[17,19],_add_on:1,_cleanup_field:7,_conf_field:7,_create_resourc:7,_data_source_run_id_field:7,_info:[1,15,19],_log_level_field:7,a29ddb15309a:14,a463:19,a531:17,a801:17,a_plus_b:[20,21],aaac:14,abid:25,abil:[7,15,16,20],abl:[7,12,14,17,21,23,25,26],about:[1,7,8,12,15,16,22,24,25,26],abov:[19,25],accept:1,access:[1,14,24],acronym:1,across:[7,22],action:13,activ:[6,10],actual:[9,16,19,24,26],actual_dag:11,actual_dag_pipelin:11,acycl:[1,16,26],add:[8,15,17,24,25],add_hello_to_word:18,add_hello_to_word_typ:18,add_int:[15,24],add_on:1,added:15,adder:[20,21],adding:15,addit:[0,12],addition:19,advertis:26,aed8162cc25c:19,aesthet:25,afford:12,after:[7,8,11],again:11,against:[8,24],alia:[1,21],all:[1,3,7,12,17,18,19,23,24,25],allow:[0,1,3,7,14,16,19,22,23,25],allscript:[7,8],allscriptsfileloadresourc:7,aloha:12,along:[20,25],alreadi:[10,20,23,24],also:[6,7,8,10,15,18,19,20,22,23,24,25,26],alter:24,altern:25,although:[14,23],alwai:[18,26],anaconda:10,analyst:26,ani:[1,3,4,6,7,8,10,11,13,14,17,18,23,24,25,26],annon:14,annot:[8,12,25],anoth:[7,8],anticip:7,anyth:25,apach:6,apart:7,api:[0,1,3,7,12,23,24,25],appear:[14,25],appli:[1,18,25],applic:[15,22],approach:26,appropri:[18,24,26],apt:10,arbitrari:[1,15,16,19,20,25,26],aren:10,arg:[2,3,4],arg_a:11,arg_b:11,arg_c:11,arg_on:16,argument:[0,1,2,8,12,16,18,19,22,25],aris:13,arithmet:21,around:[8,19,25],arrai:1,arrang:[1,17,26],arrow:6,articl:26,artifact:[24,26],as_dagster_typ:[8,25],asid:7,aspect:15,assert:[8,17,20,21],asset:[1,17],assign:18,assum:[1,17,25],assumpt:[15,26],attach:[1,15,24],attent:11,attribut:[1,8],attributeerror:8,author:[1,14,16,26],auto:[6,18],automat:18,autoreload:6,avail:1,avoid:12,awai:14,awar:15,awkward:8,aws:7,axes:25,b0cbb1be:14,b150:19,b27fb70a:17,b510:17,b5a8:17,b602e4409f74:17,b85c:17,b8e0:14,back:13,bake:15,ball:7,bar:[0,22],barb:0,base:[18,19],bash:10,basi:11,basic:14,batch:26,beauchemin:26,becaus:[6,7,8,11,14,15,18,19,25,26],becom:[0,7],been:[2,19,20,21,22,25],befor:[7,8,11,13,18],begin:[7,17],behavior:15,behaviour:0,being:[3,8,21],best:26,better:[18,23],between:[1,3,7,16,26],bigco:24,bin:[6,10],bit:[10,26],bkjdf:13,bodi:0,boilerpl:[7,25],bool:[1,3,4,7],both:[8,10,11],bottom:17,branch:19,breakag:26,brew:10,broadli:[20,22],browser:17,bucket:8,bucket_path:7,build:[7,8,10,11,16,17,23,25],built:[12,18,26],builtin:25,bulk:7,bunch:[14,15,22],burden:26,c008:15,c12bdc2d:15,c25e:19,c955:15,c_plus_d:[20,21],cach:1,call:[8,15,16,17,21,23,25,26],callabl:1,callback:1,caller:[3,8],can:[1,2,6,7,8,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26],cannot:8,capabilti:15,capabitili:16,capabl:[7,8,14,15,20,26],captur:15,caught:13,caus:[13,15],cb10:19,cb75946b0055:17,cc2ae784:19,certain:1,chang:[6,7,14,24,26],check:[1,2,6,8,10,16,25,26],check_posit:15,check_positivevalu:15,choic:17,choos:[16,25],chunk:7,cleali:26,clean_up_dir:7,cleanup_fil:[7,8],clear:[13,15],cli:[9,23],click:18,clone:[6,10],cloud:[21,24],cluster:14,code:[2,7,8,12,14,15,24,25,26],collabor:26,collect:[1,13,22,23,24],column:25,com:[6,10],come:[1,7,10,25],command:[11,12,16,18,22,23],comment:20,common:[7,24],commonli:25,commun:15,compar:6,compat:12,complet:[1,17,18],complex:11,complic:21,compos:[1,7],compris:1,comput:[1,12,14,15,16,17,24,25],computation:26,concaten:16,concept:[7,15,16,17],conceptu:[8,12],concis:0,conda:10,condit:3,condition:19,conf:[7,8],config:[0,1,8,12,13,14,15,18,19,20,21,23,24,25],config_def:[7,8],config_env:12,config_field:[0,1,7,8,12,13,15,19,20,21,22,24],config_valu:[1,3,25],configdefinit:[7,8,15,19,20,21],configdictionari:[7,8],configur:[0,1,2,7,8,9,14,15,18,19,24,25,26],configurable_hello:12,configurable_hello_pipelin:12,configuration_schema:13,configuration_schemas_error_2:13,configuration_schemas_runtime_error:13,configuration_schemas_type_mismatch_error:13,configuration_schemas_wrong_field:13,conform:1,conn:24,connect:[1,7,11,16,21,25],consist:7,consol:[14,18],constant:22,constant_env:22,constitut:1,construct:[1,8,23,24],constructor:24,consum:[1,13,22,26],contain:[1,6,7,14,18,20,26],context:[0,1,3,7,8,9,13,15,18,19,20,22,24,26],context_definit:[1,24],context_fn:[1,7,8],context_param:1,context_stack:[7,8],contextcreationexecutioninfo:1,contract:26,contribut:9,control:[1,15,26],cooper_pair:7,copi:[16,22,25],core:[0,1,2,4,8,13,15,16,17,19,21,24],correct:1,correspond:12,could:[1,7,11,18],count:[7,13,22],count_lett:[13,22],coupl:12,creat:[0,1,6,7,8,20,22,23,24],create_allscripts_fileload_unittest_context:7,create_engin:7,create_single_solid_pipelin:[8,20],create_sub_pipelin:[8,20],creation:[0,7,8],credenti:24,critic:[15,26],csv:25,current:[1,15],custom:17,d129552525a4:15,d548ea66:19,d8f41da0:14,dag:[1,9,12,17,20,26],dagit:[10,11,12,14,15,16,21,22,23,25],dagster:[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,22,23,24,25,26],dagster_error:3,dagster_exampl:6,dagster_pd:1,dagster_sqlalchemi:8,dagster_typ:[1,7,8,19],dagsterenv:6,dagsterexpectationfailederror:[2,15],dagsterinvaliddefinitionerror:2,dagsterinvariantviolationerror:[2,25],dagsterruntimecoercionerror:2,dagstertyp:[1,7],dagstertypeerror:2,dagsterusercodeexecutionerror:2,data:[1,9,15,16,17,20,25],data_sourc:[7,8],data_source_run_id:[7,8],databas:[1,14,24],datafram:[1,25],dataframe_input_schema:25,dataframe_output_schema:25,dbname:7,dea6d00d99f0:17,debug:[13,14,15,22],debug_messag:14,declar:[1,7,11,12,21,23,24,25],decor:[1,9,17,25],deem:26,deep:13,deepli:11,def:[0,1,7,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25],default_output:3,default_valu:[1,7,12,25],defaultcontextconfig:8,defaultdict:[13,22],defin:[0,1,2,7,8,9,12,16,17,22,23],define_allscripts_fileload_pipelin:8,define_cloud_store_resourc:24,define_colored_console_logg:[7,8],define_configurable_hello_pipelin:12,define_csv_dict_field:25,define_demo_configuration_schema_pipelin:13,define_demo_configuration_schema_repo:13,define_demo_execution_pipelin:22,define_demo_execution_repo:22,define_diamond_dag_pipelin:11,define_execution_context_pipeline_step_on:14,define_hello_dag_pipelin:16,define_hello_inputs_pipelin:18,define_hello_world_pipelin:[17,23],define_in_memory_store_resourc:24,define_local_fs_resourc:7,define_part_eleven_step_on:19,define_part_eleven_step_thre:19,define_part_eleven_step_two:19,define_part_fourteen_step_on:20,define_part_ten_step_on:15,define_part_thirteen_step_on:21,define_part_thirteen_step_thre:21,define_part_thirteen_step_two:21,define_path_dict_field:25,define_redshift_sa_resourc:7,define_repo:23,define_repo_demo_pipelin:23,define_repositori:14,define_resource_test_pipelin:24,define_stub_solid:[8,20],define_typed_demo_configuration_schema_error_pipelin:13,define_typed_demo_configuration_schema_pipelin:13,define_unittest_context:7,definit:[2,8,9,12,13,21,23,24],del:25,deliv:26,demand:[1,23],demo_configuration_schema:13,demo_configuration_schema_repo:13,demo_execution_repo:22,demo_pipelin:22,demo_repositori:23,demonstr:[11,18],depend:[1,6,7,8,11,12,13,15,16,18,19,20,21,22,26],dependency_structur:1,dependencydefiniion:1,dependencydefinit:[1,11,13,15,16,19,20,21,22],dependencystructur:1,describ:[7,13,15],descript:[0,1,7,8,13,19,24,25],design:[1,14,26],destruct:1,detail:[8,12,18],deteremin:2,determin:[1,11,16],dev:[1,6],develop:[10,12,15,24],dfc8165a:17,diagnost:26,dict:[0,1,3,7,8,12,13,16,18,22,24,25],dict_param:25,dictionari:[0,1,3,8,11,16,18,25],did:19,differ:[1,6,8,12,14,15,17,21,24,25,26],difficult:[8,20,26],dimension:[1,25],direct:[1,16,26],directli:[8,17,18,25],directori:6,discourag:8,discov:26,discuss:20,disk:[1,8,25],displai:1,display_nam:1,distinguish:16,document:[6,10,13,22,26],doe:[1,7,11,14,19,24],doesn:7,doing:[21,25],don:[11,16],done:[12,20,26],dot:18,download:10,downstream:19,drive:22,dropdown:[16,23],dsl:26,dure:[3,26],dynam:19,e257262eab79:15,e476:14,each:[1,3,7,11,12,14,16,17,18,21,22,25],earlier:[18,22],easier:[1,7,23],easili:26,edg:1,edit:[12,13],editor:[12,18],effect:26,either:[1,3,16,19,26],element:[22,25],elif:[12,19,25],elimin:[7,8],els:[12,19,25],emit:[14,17,19,20],emittedoutput:19,enabl:20,encod:[12,16],encourag:[10,26],encout:3,end:[1,19],enforce_uniqu:1,engin:[14,16,26],enrich:22,ensur:[1,25],enter:[15,18],entir:[12,14,15,18,20],entit:1,entri:11,entropi:26,env:[8,13,22],enviro:3,environ:[1,3,5,6,7,8,11,12,14,18,24,26],error:[3,7,8,9,13,14,15,16,18,22,26],error_messag:14,especi:23,etc:[1,6,21],evalu:[1,15],even:[7,14],event_typ:17,ever:13,everi:[1,17,26],everyth:18,exactli:8,examin:19,exampl:[0,1,6,7,8,11,12,14,17,18,19,23,24,25,26],excel:26,except:[1,2,3,19,25,26],excess:8,exclus:7,execut:[1,7,8,9,11,12,13,15,16,18,19,20,23,24,25,26],execute_pipelin:[3,8,12,14,15,17,18,19,20,21,24],execute_pipeline_iter:3,execute_solid:[5,8],execute_with_another_world:18,execution_context:14,execution_context_pipelin:14,execution_plan_step_start:17,execution_plan_step_success:17,executioncontext:[1,3,7,8],exist:[1,7,8,20,25],expect:[1,2,9,25,26],expectation_fn:[1,15],expectationdefinit:[1,15],expectationexecutioninfo:1,expectationresult:[1,15],expedit:6,expens:[13,15],experi:[13,18],explicit:[15,26],explictli:15,explod:0,explor:[11,12,16,17],express:[16,25,26],extern:[1,11,12,14,18,24,26],extract:1,f37e:17,f6fd78c5:19,f77205931abb:17,face:[7,8],facil:[12,14],fact:16,factor:[13,22],fail:[15,18,25],faild:2,failur:[1,2,13],fairli:8,fals:[7,8,15,25],famili:8,far:[18,19,21],fast:1,fe29:17,featur:[7,10,12,15,16,22,24],few:[7,16,17],field:[0,1,7,8,12,13,22,24,25],field_util:1,file:[6,7,8,12,13,14,18,21,22,23,24,25],file_opt:25,file_typ:25,fileload:7,filter:17,fire:19,first:[8,10,11,12,15,16,17,19,24],fix:8,flag:18,flexibl:12,flow:[1,16,18,25,26],fly:12,focu:20,focus:22,folder:7,follow:[8,10,12,20,21,22,24,25],foo:[0,14,16],for_pipeline_run:7,forc:25,forget:16,form:[1,18,19],formal:7,format:[14,19,24,25,26],forth:1,frame:[15,25],framework:1,frequent:1,from:[0,1,6,7,8,11,12,13,14,15,16,17,18,19,20,22,23,24,25],from_dict:[0,19],frontend:6,fulli:[12,25],further:17,futur:15,gener:[1,6,7,8,21,24,26],generate_production_execution_context:8,get:[1,3,7,13,17,21,23],get_all_pipelin:1,get_pipelin:1,git:[6,10],github:[6,10],give:[14,16],given:[1,3,24,25,26],glarb:0,glob:22,goal:15,going:[7,24],gone:7,got:[8,13],grab:25,gradual:1,graph:[1,16,20,21,26],graphql:6,great:7,guarante:[7,8,25],gui:17,guid:[7,8],had:[7,15,19],halt:15,handi:6,handl:[1,8,14],hang:1,happen:[3,13,14],hardcod:[12,16,18],has:[1,2,7,8,15,17,18,19,20,22,24,25,26],has_solid:1,have:[0,1,6,7,8,10,11,12,15,16,18,19,20,21,22,23,24,25,26],haw:12,header_fil:8,hello:[0,9,12,18],hello_dag:16,hello_dag_pipelin:16,hello_input:18,hello_world:[0,17,23],hello_world_pipelin:17,help:[12,13,16],helper:7,henc:8,here:[7,12,18,25],heterogen:[25,26],high:8,highlight:17,homebrew:10,honua:12,hook:21,host:[7,15,24],how:[1,8,11,12,13,14,16,17,18,19,21,22,23,24,25,26],howev:[19,21,22,25],html:6,http:[6,16,17,18,25,26],idempot:[1,26],identifi:1,illustr:12,imagin:[13,15,18,21,24],immatur:15,implement:[0,1,14,19,24],implicit:[15,26],implicitli:19,implict:15,importerror:8,improv:[13,18],includ:[7,8,13,14,20,21,25],incom:7,inde:[7,21,25],index:[1,9,25],indic:[2,14,15],indirect:14,individu:[1,12,26],info:[0,1,2,7,12,13,14,15,17,19,20,21,22,24],inform:[1,7,14,16,17,18,23,26],infrastructur:[7,14],ingest:15,ingest_a:15,ingest_b:15,inject:20,injected_solid:20,inmemorystor:24,inner_typ:4,input:[0,1,5,8,9,11,12,13,15,16,17,19,20,21,22,24,26],input_def:1,input_nam:1,input_schema:25,input_selector_schema:25,inputdefinit:[0,1,7,11,13,15,16,18,19,20,21,22,24,25],inputs_env:18,inputs_env_bad:18,insert:25,insid:[10,13],inspect:[15,26],inst_param:25,instal:[6,7,8,9,17],instanc:[1,14,16,19,21],instanti:21,instead:[0,1,7,8,12,13,18,20,23,24,25],instruct:[8,17,25],integr:[1,26],intend:3,interact:[1,6,7,11,12,14,18,24],interest:[16,18,21],interfac:[17,24],intern:[1,8],interpret:10,intro_tutori:[14,23],introduc:[16,17],invalid:19,invari:2,invoc:1,invok:[7,18,24],involv:21,is_opt:[1,7,12,25],is_posit:1,isn:3,isol:[10,20],issu:6,item:25,iter:[1,3,19],iterate_over_pipelin:1,its:[1,7,11,12,13,14,16,17,18,22,24,26],itself:[0,1,19,23],javascript:6,jest:6,job:15,just:[7,8,10,11,12,16,17,18,19,20,22,23],kdjfkd:13,keep:22,kei:[0,1,3,12,14,16,18,24,25],klass:8,know:[7,18,23,26],known:26,kwarg:[0,2,3,4],label:[21,25],lambda:[0,1,15,24],lambda_solid:[0,1,11,12,13,16,17,18,20,21,22,23,25],languag:[12,25],last:[11,22],lastli:24,later:[8,10,16,17,22],latest:[7,10],layer:[14,16],learn:[12,13,23,24,26],left:[0,20],len:[12,20],less:[7,8,18],let:[7,11,13,14,15,16,17,18,19,20,22,23,24,25,26],letter:[13,22],level:[8,14,17,22],level_from_str:7,librari:[8,10,25,26],lifecycl:8,like:[0,1,8,10,12,14,15,18,19,21,22,23,24,25],line:[11,12,13,16,17,18,22,23],link:12,list:[0,1,3,4,11,23,25],littl:23,live:[6,24],livehtml:6,load:[18,21,22,23],load_a:21,load_b:21,load_numb:[20,21],local:[7,14,24],local_f:7,localfshandleresourc:7,localhost:6,locat:26,log:[0,1,7,15,17,19,22,24],log_level:[7,8,13,14,15,22],log_message_id:[14,15,17,19],log_num:19,log_num_squar:19,logger:[7,8],longer:[7,8,25],look:[11,22],lot:17,machin:[7,14,26],made:[13,21,26],mai:[1,7,12,18,23,26],maintain:26,mainten:26,make:[3,6,7,8,10,13,14,15,18,21,23,25,26],malform:15,manag:[6,10,12,14,24,26],mani:[1,12,16,18,21,23,26],manipul:25,manual:[1,7],map:1,mar:18,mark:17,materi:25,matter:[11,22],matur:26,maxim:26,maximum:12,mean:[7,18,24],meaning:26,mechan:[8,17,19,20],medium:26,memori:[1,20,24,25],merg:7,messag:[1,8,13,14,16,17],met:23,metadata:[1,15,25,26],method:1,microsoft:10,middl:7,might:[12,13,14,25],milli:17,mismatch:2,miss:[13,16],mistak:[13,18],mode:[6,24],model:[7,9,16,23,24],modifi:19,modul:[8,9,23],modulenotfounderror:8,more:[0,7,8,11,12,15,19,21,22],most:[8,14,23],mostli:1,move:[7,8],much:[1,7,8,12,25],multer:[20,21],multi:17,multipl:[0,1,8,9,21,22,24,26],multipleresult:[0,19],multipli:13,multiply_the_word:[13,22],multiply_the_word_with_typed_config:13,must:[1,12,15,16,18,19,20,24,25],mutabl:25,my_solid:0,my_solid_from_dict:0,myenv:10,name:[0,1,3,7,8,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25],namedtupl:[7,8],namespac:8,natur:15,navig:[16,17],necessari:1,need:[0,6,7,8,10,18,22,24,25,26],net:8,never:[19,20,26],next:[11,12,14,16,17,18,19,22,23,24],nice:13,nicer:8,node:[3,17,21,26],non:[1,13],none:[0,1,3,5,7],none_resourc:7,norm:26,normal:8,not_a_num:13,not_a_numb:13,note:[3,7,8,11,18,19,23,24,25],noth:25,notic:[7,14,15,16,18,19,21,24,25],notion:[7,8,25],notori:26,now:[7,8,11,12,13,14,15,16,18,20,21,22,23,24,25],nullabl:4,num1:[20,21,25],num2:[20,21,25],num:[1,19,25],num_on:[15,24],num_squar:19,num_two:[15,24],number:[1,15,19,25],object:[0,1,8,14,19,25],obvious:21,occur:14,off:[1,20],offer:24,offici:[7,8],often:[18,26],omit:[0,7],onc:[23,25],one:[1,3,7,8,12,17,18,19,20,21,22,25],onli:[1,2,7,12,14,15,17,18,19,21,22,25],oper:[1,10,13,15,18,21,24,26],opinion:[9,26],opportun:14,opt:8,option:[1,10,15,16,25],order:[7,11,12,13,15,16,18,22,23,24,25,26],org:25,orig_messag:[14,15,17,19],origin:25,osx:10,other:[1,7,10,11,14,16,19,20,23,25,26],other_nam:1,otherwis:0,our:[12,13,16,17,18,22,23,25],out:[7,8,14,24,26],out_on:19,out_two:19,outliv:25,output:[0,1,3,7,8,9,11,12,15,16,17,18,20,21,24,26],output_nam:[1,3],output_schema:25,output_selector_schema:25,outputdefinit:[0,1,7,15,18,19,20,21,24,25],outputs_def:1,over:[1,25,26],overrid:22,overview:26,own:[7,8,17,18,22,25],packag:[10,24],page:9,pair:[14,25],panda:[1,8,25,26],pandas_df:25,pandasdatafram:25,pane:17,parallel:8,param:8,paramet:[0,1,3,12,21,24],parameter:[3,18,24,25],parametercheckerror:8,parameteriz:1,parametr:12,parametriz:26,parquet:25,part:[10,22,23,26],part_eleven:19,part_eleven_step_on:19,part_eleven_step_thre:19,part_eleven_step_two:19,part_seven:22,part_ten:15,part_ten_step_on:15,part_thirteen:21,particular:[3,7,12,19,21,24,26],particularli:21,pass:[1,7,8,12,13,14,20,23,24,25],passthrough:1,passthrough_context_definit:1,password:[7,24],path:[4,7,8,10,13,25],pathtofil:[7,8],pedogog:25,peopl:[23,26],per:[0,1,8,11,12,18],perform:[1,15,25,26],persist:25,persona:26,piec:7,pieplin:1,pip:[6,8],pipelin:[1,2,3,7,8,9,11,12,13,14,15,16,18,19,21,23,24,25,26],pipeline_cli_execut:22,pipeline_def:5,pipeline_dict:[1,13,22,23],pipeline_execut:22,pipeline_guid:7,pipeline_result:[20,21],pipeline_run_id:[7,8],pipeline_start:17,pipeline_success:17,pipelineconfigevaluationerror:[3,13],pipelinecontextdefinit:[1,7,8,24],pipelinedefinit:[1,3,8,11,12,13,14,15,16,17,18,19,20,21,22,23,24],pipelinedefiniton:1,pipelinedefint:1,pipelineexecutionresult:3,place:[22,24],plai:25,plan:[6,15],platform:[17,23],plu:20,point:[11,19,23],poorli:26,pop:18,popd:10,port:[6,7],posit:15,possibl:13,postgresql:7,potenti:[7,25],power:[7,14],practic:26,pre:[1,7],predict:7,prefer:[1,13],present:[1,10,25],prevent:[13,15],previou:[1,7,12,13,19,23],primari:18,primer:26,principl:9,print:[0,14],prior:[13,18,26],probabl:1,proce:[12,25],process:[15,26],prod:1,produc:[0,1,17,25,26],product:[1,8,12,14,22,24,26],program:[9,16,23,26],programmat:23,project:[6,10,23],promis:7,prone:[8,18,22],properli:26,properti:[1,8,12,15],provid:[1,8,12,14,16,18,19,20,24,25,26],publiccloudconn:24,publiccloudstor:24,publish:6,pure:[1,25],purpos:21,pushd:10,put:7,py27:12,pydata:25,python3:[6,10],python:[6,8,15,17,19,24,26],python_modul:6,python_packag:10,python_typ:[4,8],pythonobjecttyp:[4,8],qualiti:[1,8,15],question:25,quickli:26,quit:[7,15,20],quux:13,rais:[2,19,25],ran:13,rather:[3,7,8,11,16,17,18,19,20,21,23,25,26],raw:8,react_app_graphql_uri:6,read_csv:25,read_parquet:25,read_tabl:25,readili:14,real:7,realiz:8,realli:8,reason:[1,8,21],recal:18,recommend:10,record:24,record_valu:24,recours:15,red:18,redistribut:10,redshift:[7,8],reduc:26,reentrant_info:3,reentrantinfo:3,regist:25,regret:10,rel:7,relat:8,releas:[7,10],relev:7,remain:25,remov:25,render:6,repetit:23,replac:[7,8,13],repo:23,repo_demo_pipelin:23,report:26,repositori:[1,6,9,10,22,24],repositorydefinit:[1,13,22,23],repostori:23,repres:[1,8,24],requir:[0,1,6,7,13,15,24,25,26],rerun:12,resid:21,resoourc:24,resourc:[1,8,9,14],resource_fn:[1,7,24],resource_test_pipelin:24,resourcedefinit:[1,7,24],respons:25,rest:7,resuabl:7,result:[0,1,3,6,8,15,17,19,20,24],result_context:1,result_dict:[0,8],result_for_solid:[3,8,20,21],result_list:[3,20],retriev:1,return_dict_result:19,reus:[7,21],reusabl:[7,9,12],rewrit:12,rich:[13,18,26],richer:14,right:[0,8,15,17,18],root:[10,13],rout:14,row:25,rule:2,run:[3,7,8,10,12,13,14,15,16,17,19,22,23,25,26],run_id:[7,14,15,17,19],runner:6,runtim:[2,8,13,16,18,26],runtime_typ:1,runtimeexecutioncontext:8,runtimeexecutioncontextparam:8,s3filehandl:8,safeti:22,sai:[15,20,25],salient:12,same:[0,1,7,8,11,12,18,19,24,26],satisfi:[1,11,20],satisi:7,save:[14,17,23],scalar:[1,12],schema:[7,8,9,12],scientist:26,scope:21,script:[6,17,22],search:9,second:[8,12,16,18],section:[7,12,14,16,18,24],see:[1,3,10,11,13,14,16,17,18,19,21,23,24,25,26],seen:[11,25],select:[10,25],selector:[8,25],self:[7,13,24],semi:14,sens:25,sensibl:6,sep:25,separ:[8,10,16],sequenc:13,serv:[17,18,26],server:6,servic:24,service_lines_fil:8,set:[6,17,22,24],set_value_in_cloud_stor:24,setup:1,sever:[0,18,25],shape:8,share:7,she:25,shell:10,shortcut:0,should:[0,1,7,8,10,12,14,16,17,19,21,23,24,25,26],shouldn:21,side:26,signatur:1,similar:25,simpl:[0,16],simpler:[0,8],simpli:[8,24],simplifi:0,sinc:[11,25],singl:[0,1,7,8,12,17,19,20,21,24,25,26],site:21,size:25,skip:15,slightli:[7,11],snapshot:[6,8],snapshot_check_result:8,softwar:[1,7,10,15],solid:[0,1,2,3,8,9,11,12,13,14,15,16,17,18,19,20,22,23,24,25],solid_1:1,solid_2:1,solid_a:11,solid_b:11,solid_c:11,solid_d:11,solid_definit:[14,17,19],solid_nam:[1,5],solid_on:16,solid_result:[8,21],solid_subset:3,solid_two:16,soliddefinit:[0,1,3],solidexecutionresult:3,solidinst:[1,20,21],some:[1,2,6,7,8,14,15,22,24,25,26],some_input:1,some_password:24,some_us:24,someth:[0,6],sophist:[11,15],sourc:[6,7,25],space:2,spark:[14,26],speak:[12,20],special:[7,21],specif:[7,19,22],specifi:[0,12,14,16,18,19,22,23,24],specific_env:22,spew:[15,19],split_headers_and_service_lin:8,sql:26,sqlalchemi:8,ssd:1,stacktrac:18,stage:[8,26],start:[6,11,20],state:3,step:[3,8,16,17,18,25],step_eleven:19,step_kei:17,step_results_by_tag:3,still:11,storag:21,store:[24,25],str:[0,1,7,8,13],str_param:25,str_valu:0,straightforward:7,stream:[1,17],string:[0,4,7,8,12,13,16,18,19,22,24,25],strongli:[10,13],structur:[1,7,13,14,18,25,26],stub:8,stub_a:20,stub_b:20,stub_c_plus_d:20,studio:10,sub:8,subdag:20,subfield:25,submodul:8,subpackag:8,subsequ:7,subset:[7,8,20,26],substanti:8,substrat:14,succeed:[15,17],success:[1,3,8,15,17,20,21],sudo:10,suffici:26,suitabl:1,sum:25,sum_df:25,sum_int:24,sum_solid:25,suppli:1,support:[0,1,7,19,26],suppos:[6,8,22],surfac:18,surround:14,swap:24,swappabl:23,sync:22,synchron:3,synthes:7,system:[1,2,4,7,8,10,12,13,14,15,24,25,26],tab:17,tabl:[1,8,25],tabular:25,tailor:21,take:[0,1,7,8,12,17,20,25],target:[1,23],task:[11,16,26],team:26,tediou:[13,22],tell:[15,16,22,23,24],term:[15,19,25],test:[1,3,6,7,8,9,10,12,15,24,26],test_a_plus_b_final_subdag:20,test_intro_tutorial_part_four:12,test_part_thirteen_step_on:21,test_part_thirteen_step_two:21,testabl:12,than:[3,6,7,8,11,16,18,19,20,21,22,23,25,26],thei:[0,1,7,8,11,15,21,25,26],them:[8,10,12,17,18,21,25],therefor:13,thi:[0,1,3,7,8,10,11,12,13,14,15,16,17,18,19,20,21,23,24,25,26],thing:[3,7,21],think:[21,26],third:[8,17,25],thirteen_step_on:21,thirteen_step_two:21,those:[1,6,8,10,12,15,22,25,26],though:14,thought:8,thread:[14,17],three:[17,18,21,25],through:[1,14,18,24,25,26],throughout:[14,25],throw_on_error:[3,15],thrown:2,thu:1,tie:[8,19],tied:21,time:[1,11,12,13,15,17,18,19,21,23,25,26],timestamp:14,tiresom:23,to_csv:25,to_parquet:25,togeth:[7,11,21],tool:[6,10,15,17,22,23,26],top:[8,23],topolog:[11,16],total:18,touch:[14,24],tox:6,trace:13,tradit:15,transform:[0,1,3,17,18,19],transform_fn:1,transformed_valu:[3,8,20,21],transformexecutioninfo:[1,12],transit:8,tree:6,trigger:19,turn:[11,12,25],tutori:[12,14,19,22,23,25],tutorial_part_thirteen_step_on:20,tutorial_part_thirteen_step_thre:21,tutorial_repositori:14,two:[1,8,16,19,20,21,22,25],txt:6,type:[0,1,2,7,8,9,12,13,15,16,19,20,21,22,23],typecheck:[13,25],typed_demo_configuration_schema:13,typed_demo_configuration_schema_error:13,typed_multiply_the_word:13,typed_multiply_the_word_error:13,typeerror:[8,13],typic:[1,15,20],ubuntu:10,undefin:13,under:[12,18,24],unexpect:15,unfamiliar:26,union:25,uniqu:[1,19],unit:[1,7,9,16,17,26],unittest:[1,7,8,24],univers:14,unlik:15,unmodifi:7,unnam:[1,20],unpack:25,unsupport:25,until:[18,22],untyp:18,unzip:[7,21],unzip_fil:[7,8],unzipfileconfig:7,unzipped_fil:8,unzipped_path:8,unzipped_path_valu:8,updat:[6,8,10,15],upgrad:[7,8],upload:[8,21],upload_header_to_s3:8,upload_service_line_to_s3:8,upstream:[7,20],usag:1,use:[1,6,7,8,10,12,13,14,17,18,20,22,23,24,25,26],used:[1,7,8,12,17,19,21,24,25],useful:[1,3,14,15,18,20,21,22,25,26],user:[1,2,7,8,9,12,14,15,18,22,24,26],usernam:24,uses:7,using:[6,7,10,12,14,17,18,21,22,23,24],utf:12,util:[8,9,12,17,22,25],utility_solid:8,uuid4:[7,8],uuid:[7,8],valid:[13,25],valu:[0,1,2,3,8,12,13,14,15,17,18,19,20,22,24,25,26],vari:[1,22],venv:[6,10],verbos:[7,8],veri:[1,3,8,13,16,21,25],version:[3,6,19,24],via:[14,15,17,18,23,24,25],view:17,viewabl:15,violat:2,virtual:8,virtualenv:6,virtualenviron:10,virtualenvwrapp:10,visual:[10,16,17,23],wai:[0,15,17,18,19,24,25,26],want:[1,12,14,15,18,20,22,23,24,25],watch:6,wax:7,web:17,webapp:10,welcom:9,well:[2,7,8,26],were:[7,8,21],what:[1,7,11,13,15,16,21,25,26],whatev:8,when:[0,1,3,6,11,13,15,18,22,23,25,26],where:[1,12,14,15,16,17,20,24,25],wherea:25,whether:[1,3,10,15,26],which:[1,3,6,7,12,13,16,17,18,19,22,23,26],who:26,whole:[3,15],whose:[0,1,10,16,18],why:21,wide:10,window:10,wire:11,within:[1,7,8,15,16,17,18,21],without:[12,17,18,23],won:10,word:[13,18,22],work:[0,13,15,23,24],workflow:16,world:[9,12,18],worri:16,worth:11,would:[1,7,8,11,13,18,24,25],wrap:19,write:[7,17],written:26,wrong:13,wrong_factor:13,yaml:[8,12,18,22],yarn:6,yellow:17,yet:6,yield:[0,1,3,7,8,18,19,26],yield_output:19,yml:[6,12,13,14,18,22,23],you:[1,6,7,8,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25],your:[7,8,10,11,14,15,17,18,24,25],zip:7,zip_file_path:[7,8],zipped_fil:[7,8]},titles:["Decorators","Definitions","Errors","Execution","Types","Utilities","Contributing","Resources","Required API Changes","Intro Tutorial","Installation","An actual DAG","Configuration","Configuration Schemas","Execution Context","Expectations","Hello, DAG","Hello, World","Inputs","Multiple Outputs","Unit-testing Pipelines","Reusable Solids","Pipeline CLI Execution","Repositories","Resources","User-Defined Types","Principles"],titleterms:{"function":26,actual:11,agnost:26,api:[8,9,18],audit:9,basic:25,chang:8,cli:[17,18,22],comput:26,condit:19,config:[7,22],configur:[12,13],context:14,contribut:6,creat:10,dag:[11,16],dagit:[6,17,18],data:26,decor:0,defin:25,definit:[1,4],describ:26,dev:10,develop:6,doc:6,environ:10,error:2,execut:[3,14,17,22],expect:15,from:10,gradual:26,hello:[16,17],indic:9,input:[7,18,25],instal:10,intro:9,level:7,librari:[7,17],local:6,log:14,multipl:19,old:9,option:26,output:[19,25],pip:10,pipelin:[17,20,22],principl:26,pypi:10,python:[10,18],qualiti:26,refer:9,releas:6,repositori:23,requir:8,resourc:[7,24],reusabl:21,run:6,schema:[13,25],self:26,setup:6,solid:[7,21],sourc:10,split:22,stabl:10,tabl:9,test:20,testabl:26,tutori:9,type:[4,18,25,26],unit:20,user:25,util:5,verifi:26,version:10,virtual:10,virtualenv:10,webapp:6,world:17,yarn:10}})'
+snapshots['test_build_all_docs 10'] = 'Search.setIndex({docnames:["apidocs/decorators","apidocs/definitions","apidocs/errors","apidocs/execution","apidocs/types","apidocs/utilities","contributing","guides/028_to_030_new_concepts","guides/028_to_030_upgrade_guide","index","installation","intro_tutorial/actual_dag","intro_tutorial/config","intro_tutorial/configuration_schemas","intro_tutorial/execution_context","intro_tutorial/expectations","intro_tutorial/hello_dag","intro_tutorial/hello_world","intro_tutorial/inputs","intro_tutorial/part_eleven","intro_tutorial/part_fourteen","intro_tutorial/part_thirteen","intro_tutorial/pipeline_cli_execution","intro_tutorial/repos","intro_tutorial/resources","intro_tutorial/types","principles"],envversion:53,filenames:["apidocs/decorators.rst","apidocs/definitions.rst","apidocs/errors.rst","apidocs/execution.rst","apidocs/types.rst","apidocs/utilities.rst","contributing.rst","guides/028_to_030_new_concepts.md","guides/028_to_030_upgrade_guide.md","index.rst","installation.rst","intro_tutorial/actual_dag.rst","intro_tutorial/config.rst","intro_tutorial/configuration_schemas.rst","intro_tutorial/execution_context.rst","intro_tutorial/expectations.rst","intro_tutorial/hello_dag.rst","intro_tutorial/hello_world.rst","intro_tutorial/inputs.rst","intro_tutorial/part_eleven.rst","intro_tutorial/part_fourteen.rst","intro_tutorial/part_thirteen.rst","intro_tutorial/pipeline_cli_execution.rst","intro_tutorial/repos.rst","intro_tutorial/resources.rst","intro_tutorial/types.rst","principles.rst"],objects:{"":{dagster:[4,0,0,"-"]},"dagster.DependencyDefinition":{description:[1,1,1,""],output:[1,1,1,""],solid:[1,1,1,""]},"dagster.ExpectationDefinition":{description:[1,1,1,""],expectation_fn:[1,1,1,""],name:[1,1,1,""]},"dagster.ExpectationResult":{message:[1,1,1,""],result_context:[1,1,1,""],success:[1,1,1,""]},"dagster.InputDefinition":{description:[1,1,1,""],expectations:[1,1,1,""],name:[1,1,1,""],runtime_type:[1,1,1,""]},"dagster.MultipleResults":{from_dict:[0,5,1,""],results:[0,1,1,""]},"dagster.OutputDefinition":{description:[1,1,1,""],name:[1,1,1,""],runtime_type:[1,1,1,""]},"dagster.PipelineContextDefinition":{config_field:[1,1,1,""],context_fn:[1,1,1,""],description:[1,1,1,""],passthrough_context_definition:[1,5,1,""]},"dagster.PipelineDefinition":{context_definitions:[1,1,1,""],dependencies:[1,1,1,""],dependency_structure:[1,1,1,""],description:[1,1,1,""],display_name:[1,1,1,""],has_solid:[1,6,1,""],name:[1,1,1,""],solid_named:[1,6,1,""],solids:[1,1,1,""]},"dagster.PipelineExecutionResult":{context:[3,1,1,""],pipeline:[3,1,1,""],result_for_solid:[3,6,1,""],result_list:[3,1,1,""],success:[3,1,1,""]},"dagster.RepositoryDefinition":{get_all_pipelines:[1,6,1,""],get_pipeline:[1,6,1,""],iterate_over_pipelines:[1,6,1,""],name:[1,1,1,""],pipeline_dict:[1,1,1,""]},"dagster.Result":{output_name:[1,1,1,""],value:[1,1,1,""]},"dagster.SolidDefinition":{config_field:[1,1,1,""],description:[1,1,1,""],input_defs:[1,1,1,""],metadata:[1,1,1,""],name:[1,1,1,""],outputs_defs:[1,1,1,""],transform_fn:[1,1,1,""]},"dagster.SolidExecutionResult":{context:[3,1,1,""],dagster_error:[3,1,1,""],solid:[3,1,1,""],success:[3,1,1,""],transformed_value:[3,6,1,""],transformed_values:[3,1,1,""]},"dagster.TransformExecutionInfo":{config:[1,1,1,""],context:[1,1,1,""]},dagster:{Any:[4,1,1,""],Bool:[4,1,1,""],ConfigType:[4,2,1,""],ContextCreationExecutionInfo:[1,2,1,""],DagsterExpectationFailedError:[2,3,1,""],DagsterInvalidDefinitionError:[2,3,1,""],DagsterInvariantViolationError:[2,3,1,""],DagsterRuntimeCoercionError:[2,3,1,""],DagsterTypeError:[2,3,1,""],DagsterUserCodeExecutionError:[2,3,1,""],DependencyDefinition:[1,2,1,""],Dict:[4,4,1,""],ExecutionContext:[3,2,1,""],ExpectationDefinition:[1,2,1,""],ExpectationExecutionInfo:[1,2,1,""],ExpectationResult:[1,2,1,""],Field:[1,4,1,""],InputDefinition:[1,2,1,""],Int:[4,1,1,""],List:[4,4,1,""],MultipleResults:[0,2,1,""],NamedDict:[4,4,1,""],Nullable:[4,4,1,""],OutputDefinition:[1,2,1,""],Path:[4,1,1,""],PipelineConfigEvaluationError:[2,3,1,""],PipelineContextDefinition:[1,2,1,""],PipelineDefinition:[1,2,1,""],PipelineExecutionResult:[3,2,1,""],PythonObjectType:[4,2,1,""],ReentrantInfo:[3,2,1,""],RepositoryDefinition:[1,2,1,""],ResourceDefinition:[1,2,1,""],Result:[1,2,1,""],RuntimeType:[4,2,1,""],SolidDefinition:[1,2,1,""],SolidExecutionResult:[3,2,1,""],SolidInstance:[1,2,1,""],String:[4,1,1,""],TransformExecutionInfo:[1,2,1,""],as_dagster_type:[4,4,1,""],dagster_type:[4,4,1,""],execute_pipeline:[3,4,1,""],execute_pipeline_iterator:[3,4,1,""],execute_solid:[5,4,1,""],execute_solids:[5,4,1,""],lambda_solid:[0,4,1,""],solid:[0,4,1,""]}},objnames:{"0":["py","module","Python module"],"1":["py","attribute","Python attribute"],"2":["py","class","Python class"],"3":["py","exception","Python exception"],"4":["py","function","Python function"],"5":["py","staticmethod","Python static method"],"6":["py","method","Python method"]},objtypes:{"0":"py:module","1":"py:attribute","2":"py:class","3":"py:exception","4":"py:function","5":"py:staticmethod","6":"py:method"},terms:{"06c7":17,"0x11e4fbf60":8,"1563854b":17,"17576abb9da2":19,"25faadf5":17,"2mxds1r":26,"408a":15,"40ea":19,"42b8":19,"43f5":17,"46cc":17,"47db":15,"47f8":19,"48cda39e79a1":19,"49eb":17,"49ef":19,"4a4e":14,"4ac0":14,"4ae2":17,"4b3f":15,"4bee891c":19,"4d71":17,"4edbb3a1dbc2":19,"4f38ba45b8e0":14,"583d":19,"5878513a":17,"596d":19,"5c829421":17,"5e1cc181":19,"604dc47c":17,"66b0b6ecdcad":15,"677247b1b07b":17,"6b80d12155de":19,"6d6dbe6b296b":19,"744a":17,"758f":17,"7d62dcbf":19,"7e828e37eab8":17,"7f4d":19,"80c2":15,"81ba":17,"88cb":17,"8b76":15,"8d32":19,"8da32946":19,"938ab7fa":15,"941f":19,"95af":19,"95ef":19,"97ae58fda0f4":17,"9ca21f5c":15,"9cbe4fa0f5e6":19,"9de556c1":19,"9f44":15,"\\u4e16\\u754c":12,"\\u4f60\\u597d":12,"abstract":[1,7,14],"break":[6,7,8,26],"case":[1,12,14,15,16,18,20,24,25],"catch":[13,18],"class":[0,1,2,3,4,7,8,15,19,24],"default":[0,1,7,10,13,14,15,19,22,23,25],"final":[20,21,22,25],"function":[0,1,3,7,8,12,16,17,18,19,21,23,24,25],"import":[8,11,12,13,14,16,17,18,22,23,24,25,26],"int":[1,4,7,13,15,19,20,21,22,24,25],"long":23,"new":[0,6,7,8,10,16,20,23,24],"public":[8,24],"return":[0,1,3,7,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25],"static":[0,1],"switch":[10,12],"throw":[1,2,3,15],"true":[1,3,4,7,12,25],"try":[11,12,22,23],"while":[7,8,24],And:[7,10,13,14,15,18,21,22,24],But:[18,23],For:[1,3,6,7,10,12,18,19,24],Lying:15,One:[1,8,14,15,16,20,25],That:[7,12,24],The:[0,1,3,7,8,11,12,13,14,15,16,17,18,19,20,22,24,25],Then:[12,17],There:[1,8,17,21],These:[1,13,14,19,21,26],Use:8,Used:1,Useful:[0,24],Using:[14,17],With:[7,19,22],__fieldvaluesentinel:1,__inferoptionalcompositefieldsentinel:1,__init__:[8,24],__main__:[17,19],__name__:[17,19],_add_on:1,_cleanup_field:7,_conf_field:7,_create_resourc:7,_data_source_run_id_field:7,_info:[1,15,19],_log_level_field:7,a29ddb15309a:14,a463:19,a531:17,a801:17,a_plus_b:[20,21],aaac:14,abid:25,abil:[7,15,16,20],abl:[7,12,14,17,21,23,25,26],about:[1,7,8,12,15,16,22,24,25,26],abov:[19,25],accept:1,access:[1,14,24],acronym:1,across:[7,22],action:13,activ:[6,10],actual:[9,16,19,24,26],actual_dag:11,actual_dag_pipelin:11,acycl:[1,16,26],add:[8,15,17,24,25],add_hello_to_word:18,add_hello_to_word_typ:18,add_int:[15,24],add_on:1,added:15,adder:[20,21],adding:15,addit:[0,12],addition:19,advertis:26,aed8162cc25c:19,aesthet:25,afford:12,after:[7,8,11],again:11,against:[8,24],alia:[1,21],all:[1,3,7,12,17,18,19,23,24,25],allow:[0,1,3,7,14,16,19,22,23,25],allscript:[7,8],allscriptsfileloadresourc:7,aloha:12,along:[20,25],alreadi:[10,20,23,24],also:[6,7,8,10,15,18,19,20,22,23,24,25,26],alter:24,altern:[0,25],although:[14,23],alwai:[18,26],anaconda:10,analyst:26,ani:[1,3,4,6,7,8,10,11,13,14,17,18,23,24,25,26],annon:14,annot:[8,12,25],anoth:[7,8],anticip:7,anyth:25,apach:6,apart:7,api:[0,1,3,7,12,23,24,25],appear:[14,25],appli:[1,18,25],applic:[15,22],approach:26,appropri:[18,24,26],apt:10,arbitrari:[1,15,16,19,20,25,26],aren:10,arg:[2,4],arg_a:11,arg_b:11,arg_c:11,arg_on:16,argument:[0,1,2,8,12,16,18,19,22,25],aris:13,arithmet:21,around:[8,19,25],arrai:1,arrang:[1,17,26],arrow:6,articl:26,artifact:[24,26],as_dagster_typ:[4,8,25],asid:7,aspect:15,assert:[8,17,20,21],asset:[1,17],assign:18,assum:[1,17,25],assumpt:[15,26],attach:[1,15,24],attent:11,attribut:8,attributeerror:8,author:[1,14,16,26],auto:[6,18],automat:18,autoreload:6,avail:[0,1],avoid:12,awai:14,awar:15,awkward:8,aws:7,axes:25,b0cbb1be:14,b150:19,b27fb70a:17,b510:17,b5a8:17,b602e4409f74:17,b74d:19,b7c5:19,b85c:17,b8e0:14,back:13,bake:15,ball:7,bar:[0,22],barb:0,base:[18,19],bash:10,basi:11,basic:14,batch:26,bc262d555b73:19,be77:19,beauchemin:26,becaus:[6,7,8,11,14,15,18,19,25,26],becom:7,been:[2,19,20,21,22,25],befor:[7,8,11,13,18],begin:[7,17],behavior:15,behaviour:0,being:[3,8,21],best:26,better:[18,23],between:[1,3,7,16,26],bigco:24,bin:[6,10],bit:[10,26],bkjdf:13,bodi:0,boilerpl:[7,25],bool:[1,3,4,7],both:[8,10,11],bottom:17,branch:19,breakag:26,brew:10,broadli:[20,22],browser:17,bucket:8,bucket_path:7,build:[7,8,10,11,16,17,23,25],built:[12,18,26],builtin:25,bulk:7,bunch:[14,15,22],burden:26,c008:15,c12bdc2d:15,c25e:19,c955:15,c_plus_d:[20,21],cach:1,call:[8,15,16,17,21,23,25,26],callabl:1,callback:1,caller:[3,8],can:[1,2,6,7,8,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26],cannot:8,capabilti:15,capabitili:16,capabl:[7,8,14,15,20,26],captur:15,caught:13,caus:[13,15],cb10:19,cb75946b0055:17,cc2ae784:19,certain:1,chang:[6,7,14,24,26],check:[1,2,6,8,10,16,25,26],check_posit:15,check_positivevalu:15,choic:17,choos:[16,25],chunk:7,cleali:26,clean_up_dir:7,cleanup_fil:[7,8],clear:[13,15],cli:[9,23],click:18,clone:[6,10],cloud:[21,24],cluster:14,code:[2,7,8,12,14,15,24,25,26],collabor:26,collect:[1,13,22,23,24],column:25,com:[6,10],come:[1,7,10,25],command:[11,12,16,18,22,23],comment:20,common:[7,24],commonli:25,commun:15,compar:6,compat:12,complet:[1,17,18],complex:11,complic:21,compos:[1,7],compris:1,comput:[1,12,14,15,16,17,24,25],computation:26,concaten:16,concept:[7,15,16,17],conceptu:[8,12],concis:0,conda:10,condit:3,condition:19,conf:[7,8],config:[0,1,8,12,13,14,15,18,19,20,21,23,24,25],config_def:[7,8],config_env:12,config_field:[0,1,7,8,12,13,15,19,20,21,22,24],config_valu:[1,2,25],configdefinit:[7,8,15,19,20,21],configdictionari:[7,8],configtyp:4,configtypeattribut:4,configur:[0,1,2,7,8,9,14,15,18,19,24,25,26],configurable_hello:12,configurable_hello_pipelin:12,configuration_schema:13,configuration_schemas_error_2:13,configuration_schemas_runtime_error:13,configuration_schemas_type_mismatch_error:13,configuration_schemas_wrong_field:13,conform:1,conn:24,connect:[1,7,11,16,21,25],consist:7,consol:[14,18],constant:22,constant_env:22,constitut:1,construct:[1,8,23,24],constructor:24,consum:[1,13,22,26],contain:[1,6,7,14,18,20,26],context:[0,1,3,7,8,9,13,15,18,19,20,22,24,26],context_definit:[1,24],context_fn:[1,7,8],context_param:1,context_stack:[7,8],contextcreationexecutioninfo:1,contract:26,contribut:9,control:[1,15,26],cooper_pair:7,copi:[16,22,25],core:[0,1,2,8,13,15,16,17,19,21,24],correct:1,correspond:12,could:[1,7,11,18],count:[7,13,22],count_lett:[13,22],coupl:12,creat:[0,1,6,7,8,20,22,23,24],create_allscripts_fileload_unittest_context:7,create_engin:7,create_single_solid_pipelin:[8,20],create_sub_pipelin:[8,20],creation:[0,7,8],credenti:24,critic:[15,26],csv:25,current:[1,15],custom:17,d129552525a4:15,d548ea66:19,d8f41da0:14,dag:[1,9,12,17,20,26],dagit:[10,11,12,14,15,16,21,22,23,25],dagster:[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,22,23,24,25,26],dagster_error:3,dagster_exampl:6,dagster_panda:1,dagster_sqlalchemi:8,dagster_typ:[1,4,7,8,19],dagsterenv:6,dagsterexpectationfailederror:[2,15],dagsterinvaliddefinitionerror:2,dagsterinvariantviolationerror:[2,25],dagsterruntimecoercionerror:2,dagstertyp:[1,7],dagstertypeerror:2,dagsterusercodeexecutionerror:2,data:[1,9,15,16,17,20,25],data_sourc:[7,8],data_source_run_id:[7,8],databas:[1,14,24],datafram:[1,25],dataframe_input_schema:25,dataframe_output_schema:25,dbname:7,dea6d00d99f0:17,debug:[13,14,15,22],debug_messag:14,declar:[1,7,11,12,21,23,24,25],decor:[1,9,17,25],deem:26,deep:13,deepli:11,def:[0,1,7,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25],default_output:3,default_valu:[1,7,12,25],defaultcontextconfig:8,defaultdict:[13,22],defin:[0,1,2,7,8,9,12,16,17,22,23],define_allscripts_fileload_pipelin:8,define_cloud_store_resourc:24,define_colored_console_logg:[7,8],define_configurable_hello_pipelin:12,define_csv_dict_field:25,define_demo_configuration_schema_pipelin:13,define_demo_configuration_schema_repo:13,define_demo_execution_pipelin:22,define_demo_execution_repo:22,define_diamond_dag_pipelin:11,define_execution_context_pipeline_step_on:14,define_hello_dag_pipelin:16,define_hello_inputs_pipelin:18,define_hello_world_pipelin:[17,23],define_in_memory_store_resourc:24,define_local_fs_resourc:7,define_part_eleven_step_on:19,define_part_eleven_step_thre:19,define_part_eleven_step_two:19,define_part_fourteen_step_on:20,define_part_ten_step_on:15,define_part_thirteen_step_on:21,define_part_thirteen_step_thre:21,define_part_thirteen_step_two:21,define_path_dict_field:25,define_redshift_sa_resourc:7,define_repo:23,define_repo_demo_pipelin:23,define_repositori:14,define_resource_test_pipelin:24,define_stub_solid:[8,20],define_typed_demo_configuration_schema_error_pipelin:13,define_typed_demo_configuration_schema_pipelin:13,define_unittest_context:7,definit:[2,8,9,12,13,21,23,24],del:25,deliv:26,demand:[1,23],demo_configuration_schema:13,demo_configuration_schema_repo:13,demo_execution_repo:22,demo_pipelin:22,demo_repositori:23,demonstr:[11,18],depend:[1,6,7,8,11,12,13,15,16,18,19,20,21,22,26],dependency_structur:1,dependencydefiniion:1,dependencydefinit:[1,11,13,15,16,19,20,21,22],dependencystructur:1,describ:[7,13,15],descript:[0,1,4,7,8,13,19,24,25],design:[1,14,26],destruct:1,detail:[8,12,18],deteremin:2,determin:[1,11,16],dev:[1,6],develop:[10,12,15,24],dfc8165a:17,diagnost:26,dict:[0,1,3,4,7,8,12,13,16,18,22,24,25],dict_param:25,dictionari:[0,1,3,8,11,16,18,25],did:19,differ:[1,6,8,12,14,15,17,21,24,25,26],difficult:[8,20,26],dimension:[1,25],direct:[1,16,26],directli:[0,8,17,18,25],directori:6,discourag:8,discov:26,discuss:20,disk:[1,8,25],displai:1,display_nam:1,distinguish:16,document:[6,10,13,22,26],doe:[0,1,7,11,14,19,24],doesn:7,doing:[21,25],don:[11,16],done:[12,20,26],dot:18,download:10,downstream:19,drive:22,dropdown:[16,23],dsl:26,dure:[3,26],dynam:19,e04f:19,e257262eab79:15,e476:14,each:[1,3,7,11,12,14,16,17,18,21,22,25],earlier:[18,22],easier:[1,7,23],easili:26,edg:1,edit:[12,13],editor:[12,18],effect:26,either:[1,3,16,19,26],element:[22,25],elif:[12,19,25],elimin:[7,8],els:[12,19,25],emit:[14,17,19,20],emittedoutput:19,enabl:20,encod:[12,16],encourag:[10,26],encout:3,end:[1,19],enforce_uniqu:1,engin:[14,16,26],enrich:22,ensur:[1,25],enter:[15,18],entir:[12,14,15,18,20],entit:1,entri:11,entropi:26,env:[8,13,22],enviro:3,environ:[1,3,5,6,7,8,11,12,14,18,24,26],error:[3,7,8,9,13,14,15,16,18,22,26],error_messag:14,especi:23,etc:[1,6,21],evalu:[1,15],even:[7,14],event_typ:17,ever:13,everi:[1,17,26],everyth:18,exactli:8,examin:19,exampl:[0,1,6,7,8,11,12,14,17,18,19,23,24,25,26],excel:26,except:[1,2,3,19,25,26],excess:8,exclus:7,execut:[1,7,8,9,11,12,13,15,16,18,19,20,23,24,25,26],execute_pipelin:[3,8,12,14,15,17,18,19,20,21,24],execute_pipeline_iter:3,execute_solid:[5,8],execute_with_another_world:18,execution_context:14,execution_context_pipelin:14,execution_plan_step_start:17,execution_plan_step_success:17,executioncontext:[1,3,7,8],exist:[1,7,8,20,25],existing_typ:4,expect:[1,2,9,25,26],expectation_fn:[1,15],expectationdefinit:[1,15],expectationexecutioninfo:1,expectationresult:[1,15],expedit:6,expens:[13,15],experi:[13,18],explicit:[15,26],explictli:15,explod:0,explor:[11,12,16,17],express:[16,25,26],extern:[1,11,12,14,18,24,26],extract:1,f37e:17,f6fd78c5:19,f77205931abb:17,face:[7,8],facil:[12,14],fact:16,factor:[13,22],fail:[15,18,25],faild:2,failur:[1,2,13],fairli:8,fals:[4,7,8,15,25],famili:8,far:[18,19,21],fast:1,fe29:17,featur:[7,10,12,15,16,22,24],few:[7,16,17],field:[0,1,4,7,8,12,13,22,24,25],field_util:1,file:[6,7,8,12,13,14,18,21,22,23,24,25],file_opt:25,file_typ:25,fileload:7,filter:17,fire:19,first:[8,10,11,12,15,16,17,19,24],fix:8,flag:18,flexibl:12,flow:[1,16,18,25,26],fly:12,focu:20,focus:22,folder:7,follow:[8,10,12,20,21,22,24,25],foo:[0,14,16],for_pipeline_run:7,forc:25,forget:16,form:[1,18,19],formal:7,format:[14,19,24,25,26],forth:1,frame:[15,25],framework:1,frequent:1,from:[0,1,6,7,8,11,12,13,14,15,16,17,18,19,20,22,23,24,25],from_dict:[0,19],frontend:6,fulli:[12,25],further:17,futur:15,gener:[1,6,7,8,21,24,26],generate_production_execution_context:8,get:[1,3,7,13,17,21,23],get_all_pipelin:1,get_pipelin:1,git:[6,10],github:[6,10],give:[14,16],given:[1,3,24,25,26],glarb:0,glob:22,goal:15,going:[7,24],gone:7,got:[8,13],grab:25,gradual:1,graph:[1,16,20,21,26],graphql:6,great:7,guarante:[7,8,25],gui:17,guid:[7,8],had:[7,15,19],halt:15,handi:6,handl:[1,8,14],hang:1,happen:[3,13,14],hardcod:[12,16,18],has:[1,2,7,8,15,17,18,19,20,22,24,25,26],has_solid:1,have:[0,1,6,7,8,10,11,12,15,16,18,19,20,21,22,23,24,25,26],haw:12,header_fil:8,hello:[0,9,12,18],hello_dag:16,hello_dag_pipelin:16,hello_input:18,hello_world:[0,17,23],hello_world_pipelin:17,help:[12,13,16],helper:7,henc:8,here:[7,12,18,25],heterogen:[25,26],high:8,highlight:17,homebrew:10,honua:12,hook:21,host:[7,15,24],how:[1,8,11,12,13,14,16,17,18,19,21,22,23,24,25,26],howev:[19,21,22,25],html:6,http:[6,16,17,18,25,26],idempot:[1,26],identifi:1,illustr:12,imagin:[13,15,18,21,24],immatur:15,implement:[0,1,14,19,24],implicit:[15,26],implicitli:19,implict:15,importerror:8,improv:[13,18],includ:[7,8,13,14,20,21,25],incom:7,inde:[7,21,25],index:[1,9,25],indic:[2,14,15],indirect:14,individu:[1,12,26],info:[0,1,2,7,12,13,14,15,17,19,20,21,22,24],inform:[1,7,14,16,17,18,23,26],infrastructur:[7,14],ingest:15,ingest_a:15,ingest_b:15,inject:20,injected_solid:20,inmemorystor:24,inner_typ:4,input:[0,1,5,8,9,11,12,13,15,16,17,19,20,21,22,24,26],input_def:1,input_nam:1,input_schema:[4,25],input_selector_schema:25,inputdefinit:[0,1,7,11,13,15,16,18,19,20,21,22,24,25],inputs_env:18,inputs_env_bad:18,insert:25,insid:[10,13],inspect:[15,26],inst_param:25,instal:[6,7,8,9,17],instanc:[0,1,14,16,19,21],instanti:21,instead:[0,1,7,8,12,13,18,20,23,24,25],instruct:[8,17,25],integr:[1,26],intend:3,interact:[1,6,7,11,12,14,18,24],interest:[16,18,21],interfac:[17,24],intern:[1,8],interpret:10,intro_tutori:[14,23],introduc:[16,17],invalid:19,invari:2,invoc:1,invok:[7,18,24],involv:21,is_builtin:4,is_nam:4,is_opt:[1,7,12,25],is_posit:1,is_system_config:4,isn:3,isol:[10,20],issu:6,item:25,iter:[1,3,19],iterate_over_pipelin:1,its:[1,7,11,12,13,14,16,17,18,22,24,26],itself:[1,19,23],javascript:6,jest:6,job:15,just:[7,8,10,11,12,16,17,18,19,20,22,23],kdjfkd:13,keep:22,kei:[0,1,3,12,14,16,18,24,25],klass:8,know:[7,18,23,26],known:26,kwarg:[0,2,4],label:[21,25],lambda:[0,1,15,24],lambda_solid:[0,1,11,12,13,16,17,18,20,21,22,23,25],languag:[12,25],last:[11,22],lastli:24,later:[8,10,16,17,22],latest:[7,10],layer:[14,16],learn:[12,13,23,24,26],left:[0,20],len:[12,20],less:[7,8,18],let:[7,11,13,14,15,16,17,18,19,20,22,23,24,25,26],letter:[13,22],level:[8,14,17,22],level_from_str:7,librari:[8,10,25,26],lifecycl:8,like:[0,1,8,10,12,14,15,18,19,21,22,23,24,25],line:[11,12,13,16,17,18,22,23],link:12,list:[0,1,3,4,11,23,25],littl:23,live:[6,24],livehtml:6,load:[18,21,22,23],load_a:21,load_b:21,load_numb:[20,21],local:[7,14,24],local_f:7,localfshandleresourc:7,localhost:6,locat:26,log:[0,1,7,15,17,19,22,24],log_level:[7,8,13,14,15,22],log_message_id:[14,15,17,19],log_num:19,log_num_squar:19,logger:[7,8],longer:[7,8,25],look:[11,22],lot:17,machin:[7,14,26],made:[13,21,26],mai:[0,1,7,12,18,23,26],maintain:26,mainten:26,make:[3,6,7,8,10,13,14,15,18,21,23,25,26],malform:15,manag:[6,10,12,14,24,26],mani:[1,12,16,18,21,23,26],manipul:25,manual:[1,7],map:1,mar:18,mark:17,marshalling_strategi:4,materi:25,matter:[11,22],matur:26,maxim:26,maximum:12,mean:[7,18,24],meaning:26,mechan:[8,17,19,20],medium:26,memori:[1,20,24,25],merg:7,messag:[1,8,13,14,16,17],met:23,metadata:[1,15,25,26],method:1,microsoft:10,middl:7,might:[12,13,14,25],milli:17,mismatch:2,miss:[13,16],mistak:[13,18],mode:[6,24],model:[7,9,16,23,24],modifi:19,modul:[8,9,23],modulenotfounderror:8,more:[0,7,8,11,12,15,19,21,22],most:[8,14,23],mostli:1,move:[7,8],much:[1,7,8,12,25],multer:[20,21],multi:17,multipl:[0,1,8,9,21,22,24,26],multipleresult:[0,19],multipli:13,multiply_the_word:[13,22],multiply_the_word_with_typed_config:13,must:[1,12,15,16,18,19,20,24,25],mutabl:25,my_solid:0,my_solid_from_dict:0,myenv:10,name:[0,1,3,4,7,8,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25],nameddict:4,namedtupl:[7,8],namespac:8,natur:15,navig:[16,17],necessari:1,need:[0,6,7,8,10,18,22,24,25,26],net:8,never:[19,20,26],next:[11,12,14,16,17,18,19,22,23,24],nice:13,nicer:8,node:[3,17,21,26],non:[1,13],none:[0,1,3,4,5,7],none_resourc:7,norm:26,normal:8,not_a_num:13,not_a_numb:13,note:[3,7,8,11,18,19,23,24,25],noth:25,notic:[7,14,15,16,18,19,21,24,25],notion:[7,8,25],notori:26,now:[7,8,11,12,13,14,15,16,18,20,21,22,23,24,25],nullabl:4,num1:[20,21,25],num2:[20,21,25],num:[1,19,25],num_on:[15,24],num_squar:19,num_two:[15,24],number:[1,15,19,25],object:[0,1,8,14,19,25],obvious:21,occur:14,off:[1,20],offer:24,offici:[7,8],often:[18,26],omit:[0,7],onc:[23,25],one:[1,3,7,8,12,17,18,19,20,21,22,25],onli:[1,2,7,12,14,15,17,18,19,21,22,25],oper:[1,10,13,15,18,21,24,26],opinion:[9,26],opportun:14,opt:8,option:[1,10,15,16,25],order:[7,11,12,13,15,16,18,22,23,24,25,26],org:25,orig_messag:[14,15,17,19],origin:25,osx:10,other:[1,7,10,11,14,16,19,20,23,25,26],other_nam:1,otherwis:0,our:[12,13,16,17,18,22,23,25],out:[7,8,14,24,26],out_on:19,out_two:19,outliv:25,output:[0,1,3,7,8,9,11,12,15,16,17,18,20,21,24,26],output_nam:[1,3],output_schema:[4,25],output_selector_schema:25,outputdefinit:[0,1,7,15,18,19,20,21,24,25],outputs_def:1,over:[1,25,26],overrid:22,overview:26,own:[7,8,17,18,22,25],packag:[10,24],page:9,pair:[14,25],panda:[1,8,25,26],pandas_df:25,pandasdatafram:25,pane:17,parallel:8,param:8,paramet:[0,1,3,12,21,24],parameter:[3,18,24,25],parametercheckerror:8,parameteriz:1,parametr:12,parametriz:26,parquet:25,part:[10,22,23,26],part_eleven:19,part_eleven_step_on:19,part_eleven_step_thre:19,part_eleven_step_two:19,part_seven:22,part_ten:15,part_ten_step_on:15,part_thirteen:21,particular:[3,7,12,19,21,24,26],particularli:21,pass:[1,7,8,12,13,14,20,23,24,25],passthrough:1,passthrough_context_definit:1,password:[7,24],path:[4,7,8,10,13,25],pathtofil:[7,8],pedogog:25,peopl:[23,26],per:[1,8,11,12,18],perform:[1,15,25,26],persist:25,persona:26,piec:7,pieplin:1,pip:[6,8],pipelin:[1,2,3,7,8,9,11,12,13,14,15,16,18,19,21,23,24,25,26],pipeline_cli_execut:22,pipeline_def:5,pipeline_dict:[1,13,22,23],pipeline_execut:22,pipeline_guid:7,pipeline_result:[20,21],pipeline_run_id:[7,8],pipeline_start:17,pipeline_success:17,pipelineconfigevaluationerror:[2,13],pipelinecontextdefinit:[1,7,8,24],pipelinedefinit:[1,3,8,11,12,13,14,15,16,17,18,19,20,21,22,23,24],pipelinedefiniton:1,pipelinedefint:1,pipelineexecutionresult:3,place:[22,24],plai:25,plan:[6,15],platform:[17,23],plu:20,point:[11,19,23],poorli:26,pop:18,popd:10,port:[6,7],posit:15,possibl:13,postgresql:7,potenti:[7,25],power:[7,14],practic:26,pre:[1,7],predict:7,prefer:[1,13],present:[1,10,25],prevent:[13,15],previou:[1,7,12,13,19,23],primari:18,primer:26,principl:9,print:[0,14],prior:[13,18,26],probabl:1,proce:[12,25],process:[15,26],prod:1,produc:[0,1,17,25,26],product:[1,8,12,14,22,24,26],program:[9,16,23,26],programmat:23,project:[6,10,23],promis:7,prone:[8,18,22],properli:26,properti:[1,8,12,15],provid:[1,8,12,14,16,18,19,20,24,25,26],publiccloudconn:24,publiccloudstor:24,publish:6,pure:[1,25],purpos:21,pushd:10,put:7,py27:12,pydata:25,python3:[6,10],python:[6,8,15,17,19,24,26],python_modul:6,python_packag:10,python_typ:[4,8],pythonobjecttyp:[4,8],qualiti:[1,8,15],question:25,quickli:26,quit:[7,15,20],quux:13,rais:[2,19,25],ran:13,rather:[3,7,8,11,16,17,18,19,20,21,23,25,26],raw:8,react_app_graphql_uri:6,read_csv:25,read_parquet:25,read_tabl:25,readili:14,real:7,realiz:8,realli:8,reason:[1,8,21],recal:18,recommend:10,record:24,record_valu:24,recours:15,red:18,redistribut:10,redshift:[7,8],reduc:26,reentrant_info:3,reentrantinfo:3,regist:25,regret:10,rel:7,relat:8,releas:[7,10],relev:7,remain:25,remov:25,render:6,repetit:23,replac:[7,8,13],repo:23,repo_demo_pipelin:23,report:26,repositori:[1,6,9,10,22,24],repositorydefinit:[1,13,22,23],repostori:23,repres:[1,8,24],requir:[0,1,6,7,13,15,24,25,26],rerun:12,resid:21,resoourc:24,resourc:[1,8,9,14],resource_fn:[1,7,24],resource_test_pipelin:24,resourcedefinit:[1,7,24],respons:25,rest:7,resuabl:7,result:[0,1,3,6,8,15,17,19,20,24],result_context:1,result_dict:[0,8],result_for_solid:[3,8,20,21],result_list:[3,20],retriev:1,return_dict_result:19,reus:[7,21],reusabl:[7,9,12],rewrit:12,rich:[13,18,26],richer:14,right:[0,8,15,17,18],root:[10,13],rout:14,row:25,rule:2,run:[3,7,8,10,12,13,14,15,16,17,19,22,23,25,26],run_id:[7,14,15,17,19],runner:6,runtim:[2,8,13,16,18,26],runtime_typ:1,runtimeexecutioncontext:8,runtimeexecutioncontextparam:8,runtimetyp:4,s3filehandl:8,safeti:22,sai:[15,20,25],salient:12,same:[0,1,7,8,11,12,18,19,24,26],satisfi:[1,11,20],satisi:7,save:[14,17,23],scalar:[1,12],schema:[7,8,9,12],scientist:26,scope:21,script:[6,17,22],search:9,second:[8,12,16,18],section:[7,12,14,16,18,24],see:[1,3,10,11,13,14,16,17,18,19,21,23,24,25,26],seen:[11,25],select:[10,25],selector:[8,25],self:[7,13,24],semi:14,sens:25,sensibl:6,sep:25,separ:[8,10,16],sequenc:13,serv:[17,18,26],server:6,servic:24,service_lines_fil:8,set:[6,17,22,24],set_value_in_cloud_stor:24,setup:1,sever:[0,18,25],shape:8,share:7,she:25,shell:10,shortcut:0,should:[0,1,7,8,10,12,14,16,17,19,21,23,24,25,26],shouldn:21,side:26,signatur:1,similar:25,simpl:[0,16],simpler:[0,8],simpli:[8,24],simplifi:0,sinc:[11,25],singl:[0,1,7,8,12,17,19,20,21,24,25,26],site:21,size:25,skip:15,slightli:[7,11],snapshot:[6,8],snapshot_check_result:8,softwar:[1,7,10,15],solid:[0,1,2,3,8,9,11,12,13,14,15,16,17,18,19,20,22,23,24,25],solid_1:1,solid_2:1,solid_a:11,solid_b:11,solid_c:11,solid_d:11,solid_definit:[14,17,19],solid_nam:[1,5],solid_on:16,solid_result:[8,21],solid_subset:3,solid_two:16,soliddefinit:[0,1,3],solidexecutionresult:3,solidinst:[1,20,21],some:[1,2,6,7,8,14,15,22,24,25,26],some_input:1,some_password:24,some_us:24,someth:[0,6],sophist:[11,15],sourc:[6,7,25],space:2,spark:[14,26],speak:[12,20],special:[7,21],specif:[7,19,22],specifi:[0,12,14,16,18,19,22,23,24],specific_env:22,spew:[15,19],split_headers_and_service_lin:8,sql:26,sqlalchemi:8,ssd:1,stacktrac:18,stage:[8,26],start:[6,11,20],state:3,step:[3,8,16,17,18,25],step_eleven:19,step_kei:17,step_results_by_tag:3,still:11,storag:21,store:[24,25],str:[0,1,7,8,13],str_param:25,str_valu:0,straightforward:7,stream:[1,17],string:[0,4,7,8,12,13,16,18,19,22,24,25],strongli:[10,13],structur:[1,7,13,14,18,25,26],stub:8,stub_a:20,stub_b:20,stub_c_plus_d:20,studio:10,sub:8,subdag:20,subfield:25,submodul:8,subpackag:8,subsequ:7,subset:[7,8,20,26],substanti:8,substrat:14,succeed:[15,17],success:[1,3,8,15,17,20,21],sudo:10,suffici:26,suitabl:1,sum:25,sum_df:25,sum_int:24,sum_solid:25,suppli:1,support:[1,7,19,26],suppos:[6,8,22],surfac:18,surround:14,swap:24,swappabl:23,sync:22,synchron:3,synthes:7,system:[1,2,4,7,8,10,12,13,14,15,24,25,26],tab:17,tabl:[1,8,25],tabular:25,tailor:21,take:[0,1,7,8,12,17,20,25],target:[1,23],task:[11,16,26],team:26,tediou:[13,22],tell:[15,16,22,23,24],term:[15,19,25],test:[1,3,6,7,8,9,10,12,15,24,26],test_a_plus_b_final_subdag:20,test_intro_tutorial_part_four:12,test_part_thirteen_step_on:21,test_part_thirteen_step_two:21,testabl:12,than:[3,6,7,8,11,16,18,19,20,21,22,23,25,26],thei:[0,1,7,8,11,15,21,25,26],them:[8,10,12,17,18,21,25],therefor:13,thi:[0,1,3,7,8,10,11,12,13,14,15,16,17,18,19,20,21,23,24,25,26],thing:[3,7,21],think:[21,26],third:[8,17,25],thirteen_step_on:21,thirteen_step_two:21,those:[1,6,8,10,12,15,22,25,26],though:14,thought:8,thread:[14,17],three:[17,18,21,25],through:[1,14,18,24,25,26],throughout:[14,25],throw_on_error:[3,15],thrown:2,thu:1,tie:[8,19],tied:21,time:[1,11,12,13,15,17,18,19,21,23,25,26],timestamp:14,tiresom:23,to_csv:25,to_parquet:25,togeth:[7,11,21],tool:[6,10,15,17,22,23,26],top:[8,23],topolog:[11,16],total:18,touch:[14,24],tox:6,trace:13,tradit:15,transform:[0,1,3,17,18,19],transform_fn:1,transformed_valu:[3,8,20,21],transformexecutioninfo:[1,12],transit:8,tree:6,trigger:19,turn:[11,12,25],tutori:[12,14,19,22,23,25],tutorial_part_thirteen_step_on:20,tutorial_part_thirteen_step_thre:21,tutorial_repositori:14,two:[1,8,16,19,20,21,22,25],txt:6,type:[0,1,2,7,8,9,12,13,15,16,19,20,21,22,23],type_attribut:4,typecheck:[13,25],typed_demo_configuration_schema:13,typed_demo_configuration_schema_error:13,typed_multiply_the_word:13,typed_multiply_the_word_error:13,typeerror:[8,13],typic:[1,15,20],ubuntu:10,undefin:13,under:[12,18,24],unexpect:15,unfamiliar:26,union:25,uniqu:[1,19],unit:[1,7,9,16,17,26],unittest:[1,7,8,24],univers:14,unlik:[0,15],unmodifi:7,unnam:[1,20],unpack:[0,25],unsupport:25,until:[18,22],untyp:18,unzip:[7,21],unzip_fil:[7,8],unzipfileconfig:7,unzipped_fil:8,unzipped_path:8,unzipped_path_valu:8,updat:[6,8,10,15],upgrad:[7,8],upload:[8,21],upload_header_to_s3:8,upload_service_line_to_s3:8,upstream:[7,20],usag:1,use:[6,7,8,10,12,13,14,17,18,20,22,23,24,25,26],used:[0,1,7,8,12,17,19,21,24,25],useful:[1,3,14,15,18,20,21,22,25,26],user:[1,2,7,8,9,12,14,15,18,22,24,26],usernam:24,uses:7,using:[0,6,7,10,12,14,17,18,21,22,23,24],utf:12,util:[8,9,12,17,22,25],utility_solid:8,uuid4:[7,8],uuid:[7,8],valid:[13,25],valu:[0,1,2,3,8,12,13,14,15,17,18,19,20,22,24,25,26],vari:[1,22],venv:[6,10],verbos:[7,8],veri:[1,3,8,13,16,21,25],version:[3,6,19,24],via:[14,15,17,18,23,24,25],view:17,viewabl:15,violat:2,virtual:8,virtualenv:6,virtualenviron:10,virtualenvwrapp:10,visual:[10,16,17,23],wai:[0,15,17,18,19,24,25,26],want:[1,12,14,15,18,20,22,23,24,25],watch:6,wax:7,web:17,webapp:10,welcom:9,well:[2,7,8,26],were:[7,8,21],what:[1,7,11,13,15,16,21,25,26],whatev:8,when:[0,1,3,6,11,13,15,18,22,23,25,26],where:[1,12,14,15,16,17,20,24,25],wherea:25,whether:[1,3,10,15,26],which:[1,3,6,7,12,13,16,17,18,19,22,23,26],who:26,whole:[3,15],whose:[0,1,10,16,18],why:21,wide:10,window:10,wire:11,within:[1,7,8,15,16,17,18,21],without:[12,17,18,23],won:10,word:[13,18,22],work:[0,13,15,23,24],workflow:16,world:[9,12,18],worri:16,worth:11,would:[1,7,8,11,13,18,24,25],wrap:19,write:[7,17],written:26,wrong:13,wrong_factor:13,yaml:[8,12,18,22],yarn:6,yellow:17,yet:6,yield:[0,1,3,7,8,18,19,26],yield_output:19,yml:[6,12,13,14,18,22,23],you:[0,1,6,7,8,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25],your:[7,8,10,11,14,15,17,18,24,25],zip:7,zip_file_path:[7,8],zipped_fil:[7,8]},titles:["Decorators","Definitions","Errors","Execution","Types","Utilities","Contributing","Resources","Required API Changes","Intro Tutorial","Installation","An actual DAG","Configuration","Configuration Schemas","Execution Context","Expectations","Hello, DAG","Hello, World","Inputs","Multiple Outputs","Unit-testing Pipelines","Reusable Solids","Pipeline CLI Execution","Repositories","Resources","User-Defined Types","Principles"],titleterms:{"function":26,actual:11,agnost:26,api:[8,9,18],audit:9,basic:25,chang:8,cli:[17,18,22],comput:26,condit:19,config:[7,22],configur:[12,13],context:14,contribut:6,creat:10,dag:[11,16],dagit:[6,17,18],data:26,decor:0,defin:25,definit:[1,4],describ:26,dev:10,develop:6,doc:6,environ:10,error:2,execut:[3,14,17,22],expect:15,from:10,gradual:26,hello:[16,17],indic:9,input:[7,18,25],instal:10,intro:9,level:7,librari:[7,17],local:6,log:14,multipl:19,old:9,option:26,output:[19,25],pip:10,pipelin:[17,20,22],principl:26,pypi:10,python:[10,18],qualiti:26,refer:9,releas:6,repositori:23,requir:8,resourc:[7,24],reusabl:21,run:6,schema:[13,25],self:26,setup:6,solid:[7,21],sourc:10,split:22,stabl:10,tabl:9,test:20,testabl:26,tutori:9,type:[4,18,25,26],unit:20,user:25,util:5,verifi:26,version:10,virtual:10,virtualenv:10,webapp:6,world:17,yarn:10}})'
 
 snapshots['test_build_all_docs 11'] = '''Contributing
 ============
@@ -2198,7 +2218,7 @@ snapshots['test_build_all_docs 16'] = '''Definitions
 
 .. currentmodule:: dagster
 
-Core API to define Solids and Pipelines.
+Core API for defining solids and pipelines.
 
 .. autoclass:: ContextCreationExecutionInfo
     :members:
@@ -2265,6 +2285,8 @@ Core dagster error classes.
 .. autoexception:: DagsterTypeError
 
 .. autoexception:: DagsterUserCodeExecutionError
+
+.. autoexception:: PipelineConfigEvaluationError
 '''
 
 snapshots['test_build_all_docs 18'] = '''Execution
@@ -2281,8 +2303,6 @@ Executing pipelines and solids.
 .. autoclass:: ExecutionContext
    :members:
 
-.. autoexception:: PipelineConfigEvaluationError
-
 .. autoclass:: PipelineExecutionResult
    :members:
 
@@ -2296,28 +2316,40 @@ Executing pipelines and solids.
 snapshots['test_build_all_docs 19'] = '''Types
 =========
 
-.. module:: dagster.core.types
+.. module:: dagster
 
 Dagster type system.
 
 Type definitions
 -----------------
 
-.. autoclass:: PythonObjectType
-
 .. autoclass:: Any
 
-.. autofunction:: Nullable
+.. autofunction:: as_dagster_type
 
-.. autofunction:: List
+.. autoclass:: Bool
 
-.. autoclass:: String
+.. autofunction:: dagster_type
 
-.. autoclass:: Path
+.. autoclass:: ConfigType
+
+.. autofunction:: Dict
 
 .. autoclass:: Int
 
-.. autoclass:: Bool
+.. autofunction:: List
+
+.. autofunction:: NamedDict
+
+.. autofunction:: Nullable
+
+.. autoclass:: Path
+
+.. autoclass:: PythonObjectType
+
+.. autoclass:: RuntimeType
+
+.. autoclass:: String
 '''
 
 snapshots['test_build_all_docs 20'] = '''Utilities
@@ -3911,7 +3943,8 @@ the iterator form.)
 
 ... and you'll see the same log spew around outputs in this version:
 
-.. code-block:: sh
+.. code-block:: console
+
     $ python part_eleven.py
     2018-11-08 10:54:15 - dagster - INFO - orig_message="Solid yield_outputs emitted output \\"out_one\\" value 23" log_message_id="5e1cc181-b74d-47f8-8d32-bc262d555b73" run_id="4bee891c-e04f-4221-be77-17576abb9da2" pipeline="part_eleven_step_two" solid="yield_outputs" solid_definition="yield_outputs"
     2018-11-08 10:54:15 - dagster - INFO - orig_message="Solid yield_outputs emitted output \\"out_two\\" value 45" log_message_id="8da32946-596d-4783-b7c5-4edbb3a1dbc2" run_id="4bee891c-e04f-4221-be77-17576abb9da2" pipeline="part_eleven_step_two" solid="yield_outputs" solid_definition="yield_outputs"
@@ -4439,9 +4472,9 @@ You can also specify a module instead of a file in the repository.yml file.
    :language: YAML
    :caption: repository.yml
 
-In the next part of the tutorial, we'll get to know :doc:`Pipeline Execution <pipeline_execution>`
-a little better, and learn how to execute pipelines in a repository from the command line by name,
-with swappable config.
+In the next part of the tutorial, we'll get to know
+:doc:`Pipeline CLI Execution <pipeline_cli_execution>` a little better, and learn how to execute
+pipelines in a repository from the command line by name, with swappable config.
 '''
 
 snapshots['test_build_all_docs 36'] = '''Resources
@@ -4531,12 +4564,12 @@ manage collections of multiple dagster pipelines.
 snapshots['test_build_all_docs 37'] = """User-Defined Types
 ------------------
 
-Throughout the the tutorial you have seen the use of builtins such as `Int` and `String` for types.
-However you will want to be able to define your own dagster types to fully utilize the system. We'll
-go over that here.
+Throughout the the tutorial you have seen the use of builtins such as :py:class:`Int <dagster.Int>`
+and :py:class:`String <dagster.String>` for types. However you will want to be able to define your
+own dagster types to fully utilize the system. We'll go over that here.
 
-As a pedogogical example, we will go over the code used to the define the PandasDataFrame type in the
-dagster-pandas library, building it step by step along the way.
+As a pedogogical example, we will go over the code used to the define the ``PandasDataFrame`` type
+in the dagster-pandas library, building it step by step along the way.
 
 Basic Typing
 ^^^^^^^^^^^^
@@ -4550,8 +4583,8 @@ Basic Typing
         pd.DataFrame,
         name='PandasDataFrame',
         description='''Two-dimensional size-mutable, potentially
-    heterogeneous tabular data structure with labeled axes 
-    (rows and columns). See http://pandas.pydata.org/'''
+        heterogeneous tabular data structure with labeled axes 
+        (rows and columns). See http://pandas.pydata.org/'''
     )
 
 What this code doing is annotating/registering an existing type as a dagster type. Now one can include
@@ -19440,30 +19473,31 @@ snapshots['test_build_all_docs 50'] = '''
 <dl class="function">
 <dt id="dagster.lambda_solid">
 <code class="descclassname">dagster.</code><code class="descname">lambda_solid</code><span class="sig-paren">(</span><em>name=None</em>, <em>inputs=None</em>, <em>output=None</em>, <em>description=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.lambda_solid" title="Permalink to this definition">¶</a></dt>
-<dd><p>(decorator) Create a simple solid</p>
+<dd><p>(decorator) Create a simple solid.</p>
 <p>This shortcut allows the creation of simple solids that do not require
 configuration and whose implementations do not require a context.</p>
-<p>Lambda solids take inputs an and produce an output. The body of the function
+<p>Lambda solids take inputs and produce a single output. The body of the function
 should return a single value.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>name</strong> (<em>str</em>) – Name of solid</li>
-<li><strong>inputs</strong> (<em>List</em><em>[</em><a class="reference internal" href="definitions.html#dagster.InputDefinition" title="dagster.InputDefinition"><em>InputDefinition</em></a><em>]</em>) – List of inputs</li>
-<li><strong>output</strong> (<a class="reference internal" href="definitions.html#dagster.OutputDefinition" title="dagster.OutputDefinition"><em>OutputDefinition</em></a>) – The output of the solid. Defaults to OutputDefinition()</li>
-<li><strong>description</strong> (<em>str</em>) – Solid description</li>
+<li><strong>name</strong> (<em>str</em>) – Name of solid.</li>
+<li><strong>inputs</strong> (<em>list</em><em>[</em><a class="reference internal" href="definitions.html#dagster.InputDefinition" title="dagster.InputDefinition"><em>InputDefinition</em></a><em>]</em>) – List of inputs.</li>
+<li><strong>output</strong> (<a class="reference internal" href="definitions.html#dagster.OutputDefinition" title="dagster.OutputDefinition"><em>OutputDefinition</em></a>) – The output of the solid. Defaults to <code class="docutils literal notranslate"><span class="pre">OutputDefinition()</span></code>.</li>
+<li><strong>description</strong> (<em>str</em>) – Solid description.</li>
 </ul>
 </td>
 </tr>
 </tbody>
 </table>
+<p class="rubric">Examples</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@lambda_solid</span>
 <span class="k">def</span> <span class="nf">hello_world</span><span class="p">():</span>
     <span class="k">return</span> <span class="s1">&#39;hello&#39;</span>
 
-<span class="nd">@lambda_solid</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;foo&quot;</span><span class="p">)])</span>
+<span class="nd">@lambda_solid</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;foo&#39;</span><span class="p">)])</span>
 <span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">foo</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">foo</span>
 </pre></div>
@@ -19474,15 +19508,16 @@ should return a single value.</p>
 <dt id="dagster.solid">
 <code class="descclassname">dagster.</code><code class="descname">solid</code><span class="sig-paren">(</span><em>name=None</em>, <em>inputs=None</em>, <em>outputs=None</em>, <em>config_field=None</em>, <em>description=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.solid" title="Permalink to this definition">¶</a></dt>
 <dd><p>(decorator) Create a solid with specified parameters.</p>
-<p>This shortcut simplifies core solid API by exploding arguments into kwargs of the
+<p>This shortcut simplifies the core solid API by exploding arguments into kwargs of the
 transform function and omitting additional parameters when they are not needed.
-Parameters are otherwise as per <a class="reference internal" href="definitions.html#dagster.SolidDefinition" title="dagster.SolidDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">SolidDefinition</span></code></a>.</p>
-<p>Decorated function is the transform function itself. Instead of having to yield
-result objects, transform support multiple simpler output types.</p>
+Parameters are otherwise as in the core API, <a class="reference internal" href="definitions.html#dagster.SolidDefinition" title="dagster.SolidDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">SolidDefinition</span></code></a>.</p>
+<p>The decorated function will be used as the solid’s transform function. Unlike in the core API,
+the transform function does not have to yield <a class="reference internal" href="definitions.html#dagster.Result" title="dagster.Result"><code class="xref py py-class docutils literal notranslate"><span class="pre">Result</span></code></a> object directly. Several
+simpler alternatives are available:</p>
 <ol class="arabic simple">
 <li>Return a value. This is returned as a <a class="reference internal" href="definitions.html#dagster.Result" title="dagster.Result"><code class="xref py py-class docutils literal notranslate"><span class="pre">Result</span></code></a> for a single output solid.</li>
 <li>Return a <a class="reference internal" href="definitions.html#dagster.Result" title="dagster.Result"><code class="xref py py-class docutils literal notranslate"><span class="pre">Result</span></code></a>. Works like yielding result.</li>
-<li>Return a <a class="reference internal" href="#dagster.MultipleResults" title="dagster.MultipleResults"><code class="xref py py-class docutils literal notranslate"><span class="pre">MultipleResults</span></code></a>. Works like yielding several results for
+<li>Return an instance of <a class="reference internal" href="#dagster.MultipleResults" title="dagster.MultipleResults"><code class="xref py py-class docutils literal notranslate"><span class="pre">MultipleResults</span></code></a>. Works like yielding several results for
 multiple outputs. Useful for solids that have multiple outputs.</li>
 <li>Yield <a class="reference internal" href="definitions.html#dagster.Result" title="dagster.Result"><code class="xref py py-class docutils literal notranslate"><span class="pre">Result</span></code></a>. Same as default transform behaviour.</li>
 </ol>
@@ -19491,9 +19526,9 @@ multiple outputs. Useful for solids that have multiple outputs.</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>name</strong> (<em>str</em>) – Name of solid</li>
-<li><strong>inputs</strong> (<em>List</em><em>[</em><a class="reference internal" href="definitions.html#dagster.InputDefinition" title="dagster.InputDefinition"><em>InputDefinition</em></a><em>]</em>) – List of inputs</li>
-<li><strong>outputs</strong> (<em>List</em><em>[</em><a class="reference internal" href="definitions.html#dagster.OutputDefinition" title="dagster.OutputDefinition"><em>OutputDefinition</em></a><em>]</em>) – List of outputs</li>
+<li><strong>name</strong> (<em>str</em>) – Name of solid.</li>
+<li><strong>inputs</strong> (<em>list</em><em>[</em><a class="reference internal" href="definitions.html#dagster.InputDefinition" title="dagster.InputDefinition"><em>InputDefinition</em></a><em>]</em>) – List of inputs.</li>
+<li><strong>outputs</strong> (<em>list</em><em>[</em><a class="reference internal" href="definitions.html#dagster.OutputDefinition" title="dagster.OutputDefinition"><em>OutputDefinition</em></a><em>]</em>) – List of outputs.</li>
 <li><strong>config_field</strong> (<em>Field</em>) – The configuration for this solid.</li>
 <li><strong>description</strong> (<em>str</em>) – Description of this solid.</li>
 </ul>
@@ -19501,7 +19536,7 @@ multiple outputs. Useful for solids that have multiple outputs.</li>
 </tr>
 </tbody>
 </table>
-<p>Examples:</p>
+<p class="rubric">Examples</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@solid</span>
 <span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">info</span><span class="p">):</span>
     <span class="k">print</span><span class="p">(</span><span class="s1">&#39;hello&#39;</span><span class="p">)</span>
@@ -19563,13 +19598,15 @@ multiple outputs. Useful for solids that have multiple outputs.</li>
 <dt id="dagster.MultipleResults">
 <em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">MultipleResults</code><a class="headerlink" href="#dagster.MultipleResults" title="Permalink to this definition">¶</a></dt>
 <dd><p>A shortcut to output multiple results.</p>
+<p>When using the <a class="reference internal" href="#dagster.solid" title="dagster.solid"><code class="xref py py-func docutils literal notranslate"><span class="pre">&#64;solid</span></code></a> API, you may return an instance of
+<code class="docutils literal notranslate"><span class="pre">MultipleResults</span></code> from a decorated transform function instead of yielding multiple results.</p>
 <dl class="attribute">
 <dt id="dagster.MultipleResults.results">
 <code class="descname">results</code><a class="headerlink" href="#dagster.MultipleResults.results" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>list[Result]</em> – list of <a class="reference internal" href="definitions.html#dagster.Result" title="dagster.Result"><code class="xref py py-class docutils literal notranslate"><span class="pre">Result</span></code></a></p>
 </dd></dl>
 
-<p>Example:</p>
+<p class="rubric">Examples</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@solid</span><span class="p">(</span><span class="n">outputs</span><span class="o">=</span><span class="p">[</span>
     <span class="n">OutputDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;foo&#39;</span><span class="p">),</span>
     <span class="n">OutputDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;bar&#39;</span><span class="p">),</span>
@@ -19587,15 +19624,26 @@ multiple outputs. Useful for solids that have multiple outputs.</li>
 <span class="p">])</span>
 <span class="k">def</span> <span class="nf">my_solid_from_dict</span><span class="p">():</span>
     <span class="k">return</span> <span class="n">MultipleResults</span><span class="o">.</span><span class="n">from_dict</span><span class="p">({</span>
-      <span class="s1">&#39;foo&#39;</span><span class="p">:</span> <span class="s1">&#39;Barb&#39;</span><span class="p">,</span>
-      <span class="s1">&#39;bar&#39;</span><span class="p">:</span> <span class="s1">&#39;Glarb&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;foo&#39;</span><span class="p">:</span> <span class="s1">&#39;Barb&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;bar&#39;</span><span class="p">:</span> <span class="s1">&#39;Glarb&#39;</span><span class="p">,</span>
     <span class="p">})</span>
 </pre></div>
 </div>
 <dl class="staticmethod">
 <dt id="dagster.MultipleResults.from_dict">
 <em class="property">static </em><code class="descname">from_dict</code><span class="sig-paren">(</span><em>result_dict</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.MultipleResults.from_dict" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create MultipleResults object from a dictionary. Keys become result names</p>
+<dd><p>Create a new <code class="docutils literal notranslate"><span class="pre">MultipleResults</span></code> object from a dictionary.</p>
+<p>Keys of the dictionary are unpacked into result names.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>result_dict</strong> (<em>dict</em>) – </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">(<a class="reference internal" href="#dagster.MultipleResults" title="dagster.MultipleResults"><code class="xref py py-class docutils literal notranslate"><span class="pre">MultipleResults</span></code></a>) A new <code class="docutils literal notranslate"><span class="pre">MultipleResults</span></code> object</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>
@@ -19729,7 +19777,7 @@ snapshots['test_build_all_docs 51'] = '''
             
   <div class="section" id="definitions">
 <h1>Definitions<a class="headerlink" href="#definitions" title="Permalink to this headline">¶</a></h1>
-<p>Core API to define Solids and Pipelines.</p>
+<p>Core API for defining solids and pipelines.</p>
 <dl class="class">
 <dt id="dagster.ContextCreationExecutionInfo">
 <em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">ContextCreationExecutionInfo</code><a class="headerlink" href="#dagster.ContextCreationExecutionInfo" title="Permalink to this definition">¶</a></dt>
@@ -19778,13 +19826,12 @@ to see if a given input or output satisfies the expectation.</p>
 <dl class="attribute">
 <dt id="dagster.ExpectationDefinition.expectation_fn">
 <code class="descname">expectation_fn</code><a class="headerlink" href="#dagster.ExpectationDefinition.expectation_fn" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>callable</em> – This is the implementation of expectation computation. It should be a callback
-of the form.</p>
-<p>(context: ExecutionContext, info: ExpectationExecutionInfo, value: Any)
-: ExpectationResult</p>
+<dd><p><em>callable</em> – This is the implementation of an expectation computation. It should be a callback
+with the signature (<strong>context</strong>: <cite>ExecutionContext</cite>, <strong>info</strong>:
+<cite>ExpectationExecutionInfo</cite>, <strong>value</strong>: <cite>Any</cite>) : <cite>ExpectationResult</cite>.</p>
 <p>“value” conforms to the type check performed within the Dagster type system.</p>
-<p>e.g. If the expectation is declare on an input of type dagster_pd.DataFrame, you can
-assume that value is a pandas.DataFrame</p>
+<p>e.g. If the expectation is declared on an input of type <code class="docutils literal notranslate"><span class="pre">dagster_pandas.DataFrame</span></code>,
+you can assume that value is a <code class="docutils literal notranslate"><span class="pre">pandas.DataFrame</span></code>.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -19793,7 +19840,7 @@ assume that value is a pandas.DataFrame</p>
 <dd><p><em>str</em> – Description of expectation. Optional.</p>
 </dd></dl>
 
-<p>Example:</p>
+<p class="rubric">Examples</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;some_input&#39;</span><span class="p">,</span> <span class="n">types</span><span class="o">.</span><span class="n">Int</span><span class="p">,</span> <span class="n">expectations</span><span class="o">=</span><span class="p">[</span>
     <span class="n">ExpectationDefinition</span><span class="p">(</span>
         <span class="n">name</span><span class="o">=</span><span class="s1">&#39;is_positive&#39;</span><span class="p">,</span>
@@ -19815,7 +19862,8 @@ assume that value is a pandas.DataFrame</p>
 <dl class="class">
 <dt id="dagster.ExpectationResult">
 <em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">ExpectationResult</code><span class="sig-paren">(</span><em>success</em>, <em>message=None</em>, <em>result_context=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.ExpectationResult" title="Permalink to this definition">¶</a></dt>
-<dd><p>When Expectations are evaluated in the callback passed to ExpectationDefinitions,
+<dd><p>Result of an expectation callback.</p>
+<p>When Expectations are evaluated in the callback passed to ExpectationDefinitions,
 the user must return an ExpectationResult object from the callback.</p>
 <dl class="attribute">
 <dt id="dagster.ExpectationResult.success">
@@ -19909,30 +19957,37 @@ the default name of “result”.</p>
 <dl class="class">
 <dt id="dagster.PipelineContextDefinition">
 <em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">PipelineContextDefinition</code><span class="sig-paren">(</span><em>context_fn=None</em>, <em>config_field=None</em>, <em>resources=None</em>, <em>description=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.PipelineContextDefinition" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="docutils">
-<dt>Pipelines declare the different context types they support, in the form</dt>
-<dd><p class="first">of PipelineContextDefinitions. For example a pipeline could declare a context
+<dd><p>Defines a context type supported by a pipeline.</p>
+<p>Pipelines declare the different context types they support, in the form
+of PipelineContextDefinitions. For example a pipeline could declare a context
 definition for different operating environments: unittest, integration tests,
-production and so forth. The use provides context function that returns an
-ExecutionContext that is passed to every solid. One can hang resources
+production and so forth. The user provides a context function that returns an
+<code class="docutils literal notranslate"><span class="pre">ExecutionContext</span></code> that is passed to every solid. One can hang resources
 (such as db connections) off of that context. Thus the pipeline author
 has complete control over how the author of each individual solid within
 the pipeline interacts with its operating environment.</p>
-<p>The PipelineContextDefinition is passed to the PipelineDefinition in
-a dictionary key’ed by its name so the name is not present in this object.</p>
-<dl class="last docutils">
-<dt>Attributes:</dt>
-<dd>config_field (Field): The configuration for the pipeline context.</dd>
-</dl>
-</dd>
-<dt>context_fn (callable):</dt>
-<dd><blockquote class="first">
-<div><p>Signature is (pipeline: PipelineDefintion, config_value: Any) =&gt; ExecutionContext</p>
-<p>A callable that either returns <em>or</em> yields an ExecutionContext.</p>
-</div></blockquote>
-<p class="last">description (str): A description of what this context represents</p>
-</dd>
-</dl>
+<p>The <code class="docutils literal notranslate"><span class="pre">PipelineContextDefinition</span></code> is passed to the <code class="docutils literal notranslate"><span class="pre">PipelineDefinition</span></code> in
+a dictionary keyed by its name so the name is not present in this object.</p>
+<dl class="attribute">
+<dt id="dagster.PipelineContextDefinition.config_field">
+<code class="descname">config_field</code><a class="headerlink" href="#dagster.PipelineContextDefinition.config_field" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>Field</em> – The configuration for the pipeline context.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="dagster.PipelineContextDefinition.context_fn">
+<code class="descname">context_fn</code><a class="headerlink" href="#dagster.PipelineContextDefinition.context_fn" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>callable</em> – Signature is (<strong>pipeline</strong>: <cite>PipelineDefintion</cite>, <strong>config_value</strong>: <cite>Any</cite>) :
+<cite>ExecutionContext</cite>.</p>
+<p>A callable that either returns <em>or</em> yields an <code class="docutils literal notranslate"><span class="pre">ExecutionContext</span></code>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="dagster.PipelineContextDefinition.description">
+<code class="descname">description</code><a class="headerlink" href="#dagster.PipelineContextDefinition.description" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em> – A description of what this context represents</p>
+</dd></dl>
+
 <dl class="staticmethod">
 <dt id="dagster.PipelineContextDefinition.passthrough_context_definition">
 <em class="property">static </em><code class="descname">passthrough_context_definition</code><span class="sig-paren">(</span><em>context_params</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.PipelineContextDefinition.passthrough_context_definition" title="Permalink to this definition">¶</a></dt>
@@ -20476,6 +20531,11 @@ at runtime.</p>
 <dd><p>Indicates that user space code has raised an error</p>
 </dd></dl>
 
+<dl class="exception">
+<dt id="dagster.PipelineConfigEvaluationError">
+<em class="property">exception </em><code class="descclassname">dagster.</code><code class="descname">PipelineConfigEvaluationError</code><span class="sig-paren">(</span><em>pipeline</em>, <em>errors</em>, <em>config_value</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.PipelineConfigEvaluationError" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </div>
 
 
@@ -20654,11 +20714,6 @@ node. For the ‘synchronous’ API, see <a class="reference internal" href="#da
 <dl class="class">
 <dt id="dagster.ExecutionContext">
 <em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">ExecutionContext</code><a class="headerlink" href="#dagster.ExecutionContext" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="exception">
-<dt id="dagster.PipelineConfigEvaluationError">
-<em class="property">exception </em><code class="descclassname">dagster.</code><code class="descname">PipelineConfigEvaluationError</code><span class="sig-paren">(</span><em>pipeline</em>, <em>errors</em>, <em>config_value</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.PipelineConfigEvaluationError" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="class">
@@ -20881,49 +20936,79 @@ snapshots['test_build_all_docs 54'] = '''
 
           <div class="body" role="main">
             
-  <div class="section" id="module-dagster.core.types">
-<span id="types"></span><h1>Types<a class="headerlink" href="#module-dagster.core.types" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="module-dagster">
+<span id="types"></span><h1>Types<a class="headerlink" href="#module-dagster" title="Permalink to this headline">¶</a></h1>
 <p>Dagster type system.</p>
 <div class="section" id="type-definitions">
 <h2>Type definitions<a class="headerlink" href="#type-definitions" title="Permalink to this headline">¶</a></h2>
+<dl class="attribute">
+<dt id="dagster.Any">
+<code class="descclassname">dagster.</code><code class="descname">Any</code><a class="headerlink" href="#dagster.Any" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="dagster.as_dagster_type">
+<code class="descclassname">dagster.</code><code class="descname">as_dagster_type</code><span class="sig-paren">(</span><em>existing_type</em>, <em>name=None</em>, <em>description=None</em>, <em>input_schema=None</em>, <em>output_schema=None</em>, <em>marshalling_strategy=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.as_dagster_type" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="dagster.Bool">
+<code class="descclassname">dagster.</code><code class="descname">Bool</code><a class="headerlink" href="#dagster.Bool" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="dagster.dagster_type">
+<code class="descclassname">dagster.</code><code class="descname">dagster_type</code><span class="sig-paren">(</span><em>name=None</em>, <em>description=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.dagster_type" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="class">
-<dt id="dagster.core.types.PythonObjectType">
-<em class="property">class </em><code class="descclassname">dagster.core.types.</code><code class="descname">PythonObjectType</code><span class="sig-paren">(</span><em>python_type</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.core.types.PythonObjectType" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="dagster.core.types.Any">
-<code class="descclassname">dagster.core.types.</code><code class="descname">Any</code><a class="headerlink" href="#dagster.core.types.Any" title="Permalink to this definition">¶</a></dt>
+<dt id="dagster.ConfigType">
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">ConfigType</code><span class="sig-paren">(</span><em>name=None</em>, <em>type_attributes=ConfigTypeAttributes(is_builtin=False</em>, <em>is_system_config=False</em>, <em>is_named=True)</em>, <em>description=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.ConfigType" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
-<dt id="dagster.core.types.Nullable">
-<code class="descclassname">dagster.core.types.</code><code class="descname">Nullable</code><span class="sig-paren">(</span><em>inner_type</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.core.types.Nullable" title="Permalink to this definition">¶</a></dt>
+<dt id="dagster.Dict">
+<code class="descclassname">dagster.</code><code class="descname">Dict</code><span class="sig-paren">(</span><em>fields</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.Dict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="dagster.Int">
+<code class="descclassname">dagster.</code><code class="descname">Int</code><a class="headerlink" href="#dagster.Int" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
-<dt id="dagster.core.types.List">
-<code class="descclassname">dagster.core.types.</code><code class="descname">List</code><span class="sig-paren">(</span><em>inner_type</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.core.types.List" title="Permalink to this definition">¶</a></dt>
+<dt id="dagster.List">
+<code class="descclassname">dagster.</code><code class="descname">List</code><span class="sig-paren">(</span><em>inner_type</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.List" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="dagster.NamedDict">
+<code class="descclassname">dagster.</code><code class="descname">NamedDict</code><span class="sig-paren">(</span><em>name</em>, <em>fields</em>, <em>description=None</em>, <em>type_attributes=ConfigTypeAttributes(is_builtin=False</em>, <em>is_system_config=False</em>, <em>is_named=True)</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.NamedDict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="dagster.Nullable">
+<code class="descclassname">dagster.</code><code class="descname">Nullable</code><span class="sig-paren">(</span><em>inner_type</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.Nullable" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="dagster.core.types.String">
-<code class="descclassname">dagster.core.types.</code><code class="descname">String</code><a class="headerlink" href="#dagster.core.types.String" title="Permalink to this definition">¶</a></dt>
+<dt id="dagster.Path">
+<code class="descclassname">dagster.</code><code class="descname">Path</code><a class="headerlink" href="#dagster.Path" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="dagster.PythonObjectType">
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">PythonObjectType</code><span class="sig-paren">(</span><em>python_type</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.PythonObjectType" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="dagster.RuntimeType">
+<em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">RuntimeType</code><span class="sig-paren">(</span><em>name=None</em>, <em>description=None</em>, <em>input_schema=None</em>, <em>output_schema=None</em>, <em>marshalling_strategy=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.RuntimeType" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="dagster.core.types.Path">
-<code class="descclassname">dagster.core.types.</code><code class="descname">Path</code><a class="headerlink" href="#dagster.core.types.Path" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="dagster.core.types.Int">
-<code class="descclassname">dagster.core.types.</code><code class="descname">Int</code><a class="headerlink" href="#dagster.core.types.Int" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="dagster.core.types.Bool">
-<code class="descclassname">dagster.core.types.</code><code class="descname">Bool</code><a class="headerlink" href="#dagster.core.types.Bool" title="Permalink to this definition">¶</a></dt>
+<dt id="dagster.String">
+<code class="descclassname">dagster.</code><code class="descname">String</code><a class="headerlink" href="#dagster.String" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </div>
@@ -24405,6 +24490,11 @@ the iterator form.)</p>
 </pre></div>
 </div>
 <p>… and you’ll see the same log spew around outputs in this version:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> python part_eleven.py
+<span class="go">2018-11-08 10:54:15 - dagster - INFO - orig_message=&quot;Solid yield_outputs emitted output \\&quot;out_one\\&quot; value 23&quot; log_message_id=&quot;5e1cc181-b74d-47f8-8d32-bc262d555b73&quot; run_id=&quot;4bee891c-e04f-4221-be77-17576abb9da2&quot; pipeline=&quot;part_eleven_step_two&quot; solid=&quot;yield_outputs&quot; solid_definition=&quot;yield_outputs&quot;</span>
+<span class="go">2018-11-08 10:54:15 - dagster - INFO - orig_message=&quot;Solid yield_outputs emitted output \\&quot;out_two\\&quot; value 45&quot; log_message_id=&quot;8da32946-596d-4783-b7c5-4edbb3a1dbc2&quot; run_id=&quot;4bee891c-e04f-4221-be77-17576abb9da2&quot; pipeline=&quot;part_eleven_step_two&quot; solid=&quot;yield_outputs&quot; solid_definition=&quot;yield_outputs&quot;</span>
+</pre></div>
+</div>
 <div class="section" id="conditional-outputs">
 <h2>Conditional Outputs<a class="headerlink" href="#conditional-outputs" title="Permalink to this headline">¶</a></h2>
 <p>Multiple outputs are the mechanism by which we implement branching or conditional execution.</p>
@@ -25558,9 +25648,9 @@ although you can tell the CLI tools to use any file you like.</p>
 </pre></div>
 </td></tr></table></div>
 </div>
-<p>In the next part of the tutorial, we’ll get to know <span class="xref std std-doc">Pipeline Execution</span>
-a little better, and learn how to execute pipelines in a repository from the command line by name,
-with swappable config.</p>
+<p>In the next part of the tutorial, we’ll get to know
+<a class="reference internal" href="pipeline_cli_execution.html"><span class="doc">Pipeline CLI Execution</span></a> a little better, and learn how to execute
+pipelines in a repository from the command line by name, with swappable config.</p>
 </div>
 
 
@@ -25989,11 +26079,11 @@ snapshots['test_build_all_docs 72'] = '''
             
   <div class="section" id="user-defined-types">
 <h1>User-Defined Types<a class="headerlink" href="#user-defined-types" title="Permalink to this headline">¶</a></h1>
-<p>Throughout the the tutorial you have seen the use of builtins such as <cite>Int</cite> and <cite>String</cite> for types.
-However you will want to be able to define your own dagster types to fully utilize the system. We’ll
-go over that here.</p>
-<p>As a pedogogical example, we will go over the code used to the define the PandasDataFrame type in the
-dagster-pandas library, building it step by step along the way.</p>
+<p>Throughout the the tutorial you have seen the use of builtins such as <a class="reference internal" href="../apidocs/types.html#dagster.Int" title="dagster.Int"><code class="xref py py-class docutils literal notranslate"><span class="pre">Int</span></code></a>
+and <a class="reference internal" href="../apidocs/types.html#dagster.String" title="dagster.String"><code class="xref py py-class docutils literal notranslate"><span class="pre">String</span></code></a> for types. However you will want to be able to define your
+own dagster types to fully utilize the system. We’ll go over that here.</p>
+<p>As a pedogogical example, we will go over the code used to the define the <code class="docutils literal notranslate"><span class="pre">PandasDataFrame</span></code> type
+in the dagster-pandas library, building it step by step along the way.</p>
 <div class="section" id="basic-typing">
 <h2>Basic Typing<a class="headerlink" href="#basic-typing" title="Permalink to this headline">¶</a></h2>
 <div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
@@ -26003,8 +26093,8 @@ dagster-pandas library, building it step by step along the way.</p>
     <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">name</span><span class="o">=</span><span class="s1">&#39;PandasDataFrame&#39;</span><span class="p">,</span>
     <span class="n">description</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;Two-dimensional size-mutable, potentially</span>
-<span class="s1">heterogeneous tabular data structure with labeled axes</span>
-<span class="s1">(rows and columns). See http://pandas.pydata.org/&#39;&#39;&#39;</span>
+<span class="s1">    heterogeneous tabular data structure with labeled axes</span>
+<span class="s1">    (rows and columns). See http://pandas.pydata.org/&#39;&#39;&#39;</span>
 <span class="p">)</span>
 </pre></div>
 </div>

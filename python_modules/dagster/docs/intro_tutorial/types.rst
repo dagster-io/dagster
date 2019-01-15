@@ -1,12 +1,12 @@
 User-Defined Types
 ------------------
 
-Throughout the the tutorial you have seen the use of builtins such as `Int` and `String` for types.
-However you will want to be able to define your own dagster types to fully utilize the system. We'll
-go over that here.
+Throughout the the tutorial you have seen the use of builtins such as :py:class:`Int <dagster.Int>`
+and :py:class:`String <dagster.String>` for types. However you will want to be able to define your
+own dagster types to fully utilize the system. We'll go over that here.
 
-As a pedogogical example, we will go over the code used to the define the PandasDataFrame type in the
-dagster-pandas library, building it step by step along the way.
+As a pedogogical example, we will go over the code used to the define the ``PandasDataFrame`` type
+in the dagster-pandas library, building it step by step along the way.
 
 Basic Typing
 ^^^^^^^^^^^^
@@ -20,8 +20,8 @@ Basic Typing
         pd.DataFrame,
         name='PandasDataFrame',
         description='''Two-dimensional size-mutable, potentially
-    heterogeneous tabular data structure with labeled axes 
-    (rows and columns). See http://pandas.pydata.org/'''
+        heterogeneous tabular data structure with labeled axes 
+        (rows and columns). See http://pandas.pydata.org/'''
     )
 
 What this code doing is annotating/registering an existing type as a dagster type. Now one can include

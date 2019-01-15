@@ -1,25 +1,37 @@
 Types
 =========
 
-.. module:: dagster.core.types
+.. module:: dagster
 
 Dagster type system.
 
 Type definitions
 -----------------
 
-.. autoclass:: PythonObjectType
-
 .. autoclass:: Any
 
-.. autofunction:: Nullable
+.. autofunction:: as_dagster_type
 
-.. autofunction:: List
+.. autoclass:: Bool
 
-.. autoclass:: String
+.. autofunction:: dagster_type
 
-.. autoclass:: Path
+.. autoclass:: ConfigType
+
+.. autofunction:: Dict
 
 .. autoclass:: Int
 
-.. autoclass:: Bool
+.. autofunction:: List
+
+.. autofunction:: NamedDict
+
+.. autofunction:: Nullable
+
+.. autoclass:: Path
+
+.. autoclass:: PythonObjectType
+
+.. autoclass:: RuntimeType
+
+.. autoclass:: String

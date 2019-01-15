@@ -22,33 +22,37 @@ else:
 class MultipleResults(namedtuple('_MultipleResults', 'results')):
     '''A shortcut to output multiple results.
 
+    When using the :py:func:`@solid <dagster.solid>` API, you may return an instance of
+    ``MultipleResults`` from a decorated transform function instead of yielding multiple results.
+
     Attributes:
       results (list[Result]): list of :py:class:`Result`
 
-    Example:
+    Examples:
 
-    .. code-block:: python
+        .. code-block:: python
 
-        @solid(outputs=[
-            OutputDefinition(name='foo'),
-            OutputDefinition(name='bar'),
-        ])
-        def my_solid():
-            return MultipleResults(
-                Result('Barb', 'foo'),
-                Result('Glarb', 'bar'),
-            )
+            @solid(outputs=[
+                OutputDefinition(name='foo'),
+                OutputDefinition(name='bar'),
+            ])
+            def my_solid():
+                return MultipleResults(
+                    Result('Barb', 'foo'),
+                    Result('Glarb', 'bar'),
+                )
 
 
-        @solid(outputs=[
-            OutputDefinition(name='foo'),
-            OutputDefinition(name='bar'),
-        ])
-        def my_solid_from_dict():
-            return MultipleResults.from_dict({
-              'foo': 'Barb',
-              'bar': 'Glarb',
-            })
+            @solid(outputs=[
+                OutputDefinition(name='foo'),
+                OutputDefinition(name='bar'),
+            ])
+            def my_solid_from_dict():
+                return MultipleResults.from_dict({
+                'foo': 'Barb',
+                'bar': 'Glarb',
+                })
+
     '''
 
     def __new__(cls, *results):
@@ -60,7 +64,17 @@ class MultipleResults(namedtuple('_MultipleResults', 'results')):
 
     @staticmethod
     def from_dict(result_dict):
-        '''Create MultipleResults object from a dictionary. Keys become result names'''
+        '''Create a new ``MultipleResults`` object from a dictionary.
+        
+        Keys of the dictionary are unpacked into result names.
+        
+        Args:
+            result_dict (dict) - The dictionary to unpack.
+        
+        Returns:
+            (:py:class:`MultipleResults <dagster.MultipleResults>`) A new ``MultipleResults`` object
+
+        '''
         check.dict_param(result_dict, 'result_dict', key_type=str)
         results = []
         for name, value in result_dict.items():
@@ -120,29 +134,31 @@ class _Solid(object):
 
 
 def lambda_solid(name=None, inputs=None, output=None, description=None):
-    '''(decorator) Create a simple solid
+    '''(decorator) Create a simple solid.
 
     This shortcut allows the creation of simple solids that do not require
     configuration and whose implementations do not require a context.
 
-    Lambda solids take inputs an and produce an output. The body of the function
+    Lambda solids take inputs and produce a single output. The body of the function
     should return a single value.
 
     Args:
-        name (str): Name of solid
-        inputs (List[InputDefinition]): List of inputs
-        output (OutputDefinition): The output of the solid. Defaults to OutputDefinition()
-        description (str): Solid description
+        name (str): Name of solid.
+        inputs (list[InputDefinition]): List of inputs.
+        output (OutputDefinition): The output of the solid. Defaults to ``OutputDefinition()``.
+        description (str): Solid description.
 
-    .. code-block:: python
+    Examples:
 
-        @lambda_solid
-        def hello_world():
-            return 'hello'
+        .. code-block:: python
 
-        @lambda_solid(inputs=[InputDefinition(name="foo")])
-        def hello_world(foo):
-            return foo
+            @lambda_solid
+            def hello_world():
+                return 'hello'
+
+            @lambda_solid(inputs=[InputDefinition(name='foo')])
+            def hello_world(foo):
+                return foo
 
     '''
     output = output or OutputDefinition()
@@ -158,84 +174,85 @@ def lambda_solid(name=None, inputs=None, output=None, description=None):
 def solid(name=None, inputs=None, outputs=None, config_field=None, description=None):
     '''(decorator) Create a solid with specified parameters.
 
-    This shortcut simplifies core solid API by exploding arguments into kwargs of the
+    This shortcut simplifies the core solid API by exploding arguments into kwargs of the
     transform function and omitting additional parameters when they are not needed.
-    Parameters are otherwise as per :py:class:`SolidDefinition`.
+    Parameters are otherwise as in the core API, :py:class:`SolidDefinition`.
 
-    Decorated function is the transform function itself. Instead of having to yield
-    result objects, transform support multiple simpler output types.
+    The decorated function will be used as the solid's transform function. Unlike in the core API,
+    the transform function does not have to yield :py:class:`Result` object directly. Several
+    simpler alternatives are available:
 
     1. Return a value. This is returned as a :py:class:`Result` for a single output solid.
     2. Return a :py:class:`Result`. Works like yielding result.
-    3. Return a :py:class:`MultipleResults`. Works like yielding several results for
+    3. Return an instance of :py:class:`MultipleResults`. Works like yielding several results for
        multiple outputs. Useful for solids that have multiple outputs.
     4. Yield :py:class:`Result`. Same as default transform behaviour.
 
     Args:
-        name (str): Name of solid
-        inputs (List[InputDefinition]): List of inputs
-        outputs (List[OutputDefinition]): List of outputs
+        name (str): Name of solid.
+        inputs (list[InputDefinition]): List of inputs.
+        outputs (list[OutputDefinition]): List of outputs.
         config_field (Field):
             The configuration for this solid.
         description (str): Description of this solid.
 
     Examples:
 
-    .. code-block:: python
+        .. code-block:: python
 
-        @solid
-        def hello_world(info):
-            print('hello')
+            @solid
+            def hello_world(info):
+                print('hello')
 
-        @solid()
-        def hello_world(info):
-            print('hello')
+            @solid()
+            def hello_world(info):
+                print('hello')
 
-        @solid(outputs=[OutputDefinition()])
-        def hello_world(info):
-            return {'foo': 'bar'}
+            @solid(outputs=[OutputDefinition()])
+            def hello_world(info):
+                return {'foo': 'bar'}
 
-        @solid(outputs=[OutputDefinition()])
-        def hello_world(info):
-            return Result(value={'foo': 'bar'})
+            @solid(outputs=[OutputDefinition()])
+            def hello_world(info):
+                return Result(value={'foo': 'bar'})
 
-        @solid(outputs=[OutputDefinition()])
-        def hello_world(info):
-            yield Result(value={'foo': 'bar'})
+            @solid(outputs=[OutputDefinition()])
+            def hello_world(info):
+                yield Result(value={'foo': 'bar'})
 
-        @solid(outputs=[
-            OutputDefinition(name="left"),
-            OutputDefinition(name="right"),
-        ])
-        def hello_world(info):
-            return MultipleResults.from_dict({
-                'left': {'foo': 'left'},
-                'right': {'foo': 'right'},
-            })
+            @solid(outputs=[
+                OutputDefinition(name="left"),
+                OutputDefinition(name="right"),
+            ])
+            def hello_world(info):
+                return MultipleResults.from_dict({
+                    'left': {'foo': 'left'},
+                    'right': {'foo': 'right'},
+                })
 
-        @solid(
-            inputs=[InputDefinition(name="foo")],
-            outputs=[OutputDefinition()]
-        )
-        def hello_world(info, foo):
-            return foo
+            @solid(
+                inputs=[InputDefinition(name="foo")],
+                outputs=[OutputDefinition()]
+            )
+            def hello_world(info, foo):
+                return foo
 
-        @solid(
-            inputs=[InputDefinition(name="foo")],
-            outputs=[OutputDefinition()],
-        )
-        def hello_world(info, foo):
-            info.context.info('log something')
-            return foo
+            @solid(
+                inputs=[InputDefinition(name="foo")],
+                outputs=[OutputDefinition()],
+            )
+            def hello_world(info, foo):
+                info.context.info('log something')
+                return foo
 
-        @solid(
-            inputs=[InputDefinition(name="foo")],
-            outputs=[OutputDefinition()],
-            config_field=Field(types.Dict({'str_value' : Field(types.String)})),
-        )
-        def hello_world(info, foo):
-            # info.config is a dictionary with 'str_value' key
-            return foo + info.config['str_value']
+            @solid(
+                inputs=[InputDefinition(name="foo")],
+                outputs=[OutputDefinition()],
+                config_field=Field(types.Dict({'str_value' : Field(types.String)})),
+            )
+            def hello_world(info, foo):
+                # info.config is a dictionary with 'str_value' key
+                return foo + info.config['str_value']
 
     '''
     if callable(name):
@@ -355,26 +372,35 @@ def _validate_transform_fn(solid_name, transform_fn, inputs, expected_positional
     except FunctionValidationError as e:
         if e.error_type == FunctionValidationError.TYPES['vararg']:
             raise DagsterInvalidDefinitionError(
-                "solid '{solid_name}' transform function has positional vararg parameter '{e.param}'. Transform functions should only have keyword arguments that match input names and a first positional parameter named 'info'.".format(
+                "solid '{solid_name}' transform function has positional vararg parameter "
+                "'{e.param}'. Transform functions should only have keyword arguments that match "
+                "input names and a first positional parameter named 'info'.".format(
                     solid_name=solid_name, e=e
                 )
             )
         elif e.error_type == FunctionValidationError.TYPES['missing_name']:
             raise DagsterInvalidDefinitionError(
-                "solid '{solid_name}' transform function has parameter '{e.param}' that is not one of the solid inputs. Transform functions should only have keyword arguments that match input names and a first positional parameter named 'info'.".format(
+                "solid '{solid_name}' transform function has parameter '{e.param}' that is not "
+                "one of the solid inputs. Transform functions should only have keyword arguments "
+                "that match input names and a first positional parameter named 'info'.".format(
                     solid_name=solid_name, e=e
                 )
             )
         elif e.error_type == FunctionValidationError.TYPES['missing_positional']:
             raise DagsterInvalidDefinitionError(
-                "solid '{solid_name}' transform function do not have required positional parameter '{e.param}'. Transform functions should only have keyword arguments that match input names and a first positional parameter named 'info'.".format(
+                "solid '{solid_name}' transform function do not have required positional "
+                "parameter '{e.param}'. Transform functions should only have keyword arguments "
+                "that match input names and a first positional parameter named 'info'.".format(
                     solid_name=solid_name, e=e
                 )
             )
         elif e.error_type == FunctionValidationError.TYPES['extra']:
             undeclared_inputs_printed = ", '".join(e.missing_names)
             raise DagsterInvalidDefinitionError(
-                "solid '{solid_name}' transform function do not have parameter(s) '{undeclared_inputs_printed}', which are in solid's inputs. Transform functions should only have keyword arguments that match input names and a first positional parameter named 'info'.".format(
+                "solid '{solid_name}' transform function do not have parameter(s) "
+                "'{undeclared_inputs_printed}', which are in solid's inputs. Transform functions "
+                "should only have keyword arguments that match input names and a first positional "
+                "parameter named 'info'.".format(
                     solid_name=solid_name, undeclared_inputs_printed=undeclared_inputs_printed
                 )
             )
