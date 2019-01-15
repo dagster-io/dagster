@@ -96,6 +96,10 @@ class PipelineDefinition(object):
         self.environment_cls = define_environment_cls(self)
         self.environment_type = self.environment_cls.inst()
 
+        from dagster.core.system_config.types import context_cls_inst
+
+        self.context_type = context_cls_inst(self)
+
         self._config_type_dict = construct_config_type_dictionary(
             solids, self.context_definitions, self.environment_type
         )

@@ -172,6 +172,19 @@ def define_environment_cls(pipeline_def):
     )
 
 
+def context_cls_inst(pipeline_def):
+    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
+    pipeline_name = camelcase(pipeline_def.name)
+    return SystemNamedDict(
+        name='{pipeline_name}.Context'.format(pipeline_name=pipeline_name),
+        fields={
+            'context': define_maybe_optional_selector_field(
+                define_context_context_cls(pipeline_name, pipeline_def.context_definitions)
+            )
+        },
+    ).inst()
+
+
 def define_expectations_config_cls(name):
     check.str_param(name, 'name')
 
@@ -302,3 +315,4 @@ def construct_solid_dictionary(solid_dict_value):
         )
         for key, value in solid_dict_value.items()
     }
+

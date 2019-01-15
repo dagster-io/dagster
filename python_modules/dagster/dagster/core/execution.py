@@ -57,7 +57,7 @@ from .execution_plan.objects import (
 from .execution_plan.simple_engine import execute_plan_core
 
 from .system_config.objects import EnvironmentConfig
-from .system_config.types import construct_environment_config
+from .system_config.types import construct_environment_config, construct_context_config
 
 
 class PipelineExecutionResult(object):
@@ -342,6 +342,7 @@ def yield_context(pipeline, environment, reentrant_info=None):
                 loggers=loggers,
                 resources=resources,
                 context_stack=get_context_stack(execution_context, reentrant_info),
+                context_config=environment.context,
             )
 
 
@@ -633,3 +634,15 @@ def create_typed_environment(pipeline, environment=None):
         raise PipelineConfigEvaluationError(pipeline, result.errors, environment)
 
     return construct_environment_config(result.value)
+
+
+def create_typed_context(pipeline, environment=None):
+    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+    check.opt_dict_param(environment, 'environment')
+
+    result = evaluate_config_value(pipeline.context_type, environment)
+
+    if not result.success:
+        raise PipelineConfigEvaluationError(pipeline, result.errors, environment)
+
+    return construct_context_config(result.value['context'])

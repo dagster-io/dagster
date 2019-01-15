@@ -26,7 +26,7 @@ from dagster import (
 )
 
 from dagster.core.execution_context import RuntimeExecutionContext
-from dagster.core.execution import create_typed_environment
+from dagster.core.execution import create_typed_context
 from dagster.core.system_config.objects import ContextConfig, EnvironmentConfig
 from dagster.core.definitions import TransformExecutionInfo
 from dagster.core.types.runtime import RuntimeType
@@ -43,10 +43,11 @@ from dagster.core.system_config.objects import ContextConfig
 
 
 class InMemoryDagstermillContext:
-    def __init__(self, pipeline_def, solid_def, inputs):
+    def __init__(self, pipeline_def, solid_def, inputs, info):
         self.pipeline_def = pipeline_def
         self.solid_def = solid_def
         self.inputs = inputs
+        self.info = info
 
 
 class RemotedDagstermillContext:
@@ -78,11 +79,12 @@ class Manager:
         )
         self.solid_def_name = check.str_param(solid_def_name, 'solid_def_name')
 
-    def define_context(self, inputs=None):
+    def define_context(self, inputs=None, config=None):
         return InMemoryDagstermillContext(
             pipeline_def=None,
             solid_def=self.solid_def,
             inputs=check.opt_dict_param(inputs, 'inputs'),
+            info=define_info(config),
         )
 
     def get_pipeline(self, name):
@@ -116,6 +118,10 @@ class Manager:
     def get_inputs(self, context_or_serialized, *input_names):
         ctx = self._get_cached_dagstermill_context(context_or_serialized)
         return tuple([ctx.inputs[input_name] for input_name in input_names])
+
+    def get_info(self, context_or_serialized):
+        ctx = self._get_cached_dagstermill_context(context_or_serialized)
+        return ctx.info
 
     def yield_result(self, context_or_serialized, value, output_name='result'):
         dm_context = self._get_cached_dagstermill_context(context_or_serialized)
@@ -162,15 +168,17 @@ def get_solid_definition():
     return check.inst_param(MANAGER_FOR_NOTEBOOK_INSTANCE.solid_def, "solid_def", SolidDefinition)
 
 
-def define_info(context_config={}):
+def define_info(context_config):
+    if not context_config:
+        context_config = {}
     solid_def = get_solid_definition()
-    pipeline_def = PipelineDefinition(solids=[solid_def], name="emphemeral notebook pipeline")
+    solid = Solid("ephemeral notebook solid", solid_def)
+    pipeline_def = PipelineDefinition(solids=[solid_def], name="ephemeral notebook pipeline")
 
-    environment_config = create_typed_environment(pipeline_def, context_config)
-    check.inst_param(environment_config, 'typed_environment', EnvironmentConfig)
+    context_config = create_typed_context(pipeline_def, context_config)
     run_id = ""
 
-    logger_level_str = environment_config.context.config['log_level']
+    logger_level_str = context_config.config['log_level']
     logger_level = utils.logging.level_from_string(logger_level_str)
 
     logger = define_colored_console_logger("In notebook logger", logger_level)
@@ -182,8 +190,12 @@ def define_info(context_config={}):
     return reconstructed_transform_execution_info
 
 
-def define_context(inputs=None):
-    return MANAGER_FOR_NOTEBOOK_INSTANCE.define_context(inputs)
+def define_context(inputs=None, config=None):
+    return MANAGER_FOR_NOTEBOOK_INSTANCE.define_context(inputs, config)
+
+
+def get_info(dm_context):
+    return MANAGER_FOR_NOTEBOOK_INSTANCE.get_info(dm_context)
 
 
 def get_input(dm_context, input_name):
@@ -207,7 +219,7 @@ def serialize_dm_context(transform_execution_info, inputs):
 
     run_id = transform_execution_info.context.run_id
     context_config = check.inst_param(
-        transform_execution_info.context.context_config, 'context config', ContextConfig
+        transform_execution_info.context.context_config, 'context_config', ContextConfig
     )
 
     base_dir = '/tmp/dagstermill/{run_id}/'.format(run_id=run_id)
