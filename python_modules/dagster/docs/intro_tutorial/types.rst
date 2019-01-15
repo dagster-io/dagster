@@ -33,8 +33,8 @@ Now one can use it to define a solid:
 .. code-block:: py
 
     @lambda_solid(
-        inputs=[InputDefinition('num', dagster_pd.DataFrame)],
-        output=OutputDefinition(dagster_pd.DataFrame),
+        inputs=[InputDefinition('num', DataFrame)],
+        output=OutputDefinition(DataFrame),
     )
     def sum_solid(num):
         sum_df = num.copy()
@@ -83,7 +83,9 @@ Let us now add the input schema:
         )
     )
     def dataframe_input_schema(config_value):
-        # config_value is dictionary with a single element
+        # Because the config type passed into the input_schema
+        # above is a Selector, config_value is guaranteed to be
+        # a dictionary with a single element
         file_type, file_options = list(config_value.items())[0]
 
         if file_type == 'csv':
@@ -104,12 +106,12 @@ Let us now add the input schema:
 Any input schema is define by a decorated function with a single argument. The argument is the
 format the input schema takes. In this case it is a `Selector`. Selectors are used when you want
 to be able present several different options to the user but force them to select one. In this case,
-for example, it would not make much sense to allow them to say that a single input should be source
+for example, it would not make much sense to allow them to say that a single input should be sourced
 from a csv and a parquet file: They must choose. (In other type systems this might be called an "input
 union.")
 
 Note our selector provides three keys: `csv`, `parquet`, and `table`. Each of these in turn has
-their own subfield selections. You'll note that these are `Dict` require the user to provide all
+their own subfield selections. You'll note that these are `Dict` requiring the user to provide all
 required fields, rather than only one.
 
 The remaining step here is that the user must provide code that takes those validated configurated
@@ -118,7 +120,9 @@ type. The user can assume the value abides by the provided schema and that any a
 values have been applied.
 
 Selectors are very commonly used for these type of schemas, so we've also provided an alternative
-API that removes some boilerplate.
+API that removes some boilerplate around manipulating the config_value dictionary. Instead, the
+user-provided function takes the unpacked key and value of config_value directly, since in the
+case of a selector, the config_value dictionary has only 1 (key, value) pair.
 
 .. code-block:: py
 
