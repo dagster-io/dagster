@@ -69,4 +69,5 @@ on the capabilities of the context. Any pipeline-level facilities that pipeline 
 to make configurable for different environments -- for instance, access to file systems, databases,
 or compute substrates -- can be configured using the context.
 
-We'll see how to use some of these other capabilities in the next section: Resources.
+We'll see how to use some of these other capabilities in the next section:
+:doc:`Resources <resources>`.
