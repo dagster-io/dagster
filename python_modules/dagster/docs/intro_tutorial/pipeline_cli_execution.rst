@@ -66,5 +66,5 @@ Order matters when specifying yaml files to use -- values specified in later fil
 values in earlier files, which can be useful. You can also use globs in the CLI arguments to consume
 multiple yaml files.
 
-Next, we'll look at defining strongly-typed :doc:`Configuration Schemas <configuration_schemas>`
-to guard against bugs and enrich pipeline documentation.
+Next, we'll look at how :doc:`User-Defined Types <types>` can enrich documentation and type-safety
+in pipelines.
