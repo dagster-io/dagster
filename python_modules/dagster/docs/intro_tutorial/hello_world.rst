@@ -83,7 +83,7 @@ at all. Just add a few lines to `hello_world.py` (highlighted in yellow):
 .. literalinclude:: ../../dagster/tutorials/intro_tutorial/hello_world.py
    :linenos:
    :caption: hello_world.py
-   :emphasize-lines: 1,13-15
+   :emphasize-lines: 15-17
 
 Then you can just run:
 
