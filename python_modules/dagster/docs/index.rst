@@ -31,6 +31,7 @@ Intro Tutorial
   intro_tutorial/pipeline_cli_execution
   intro_tutorial/types
   intro_tutorial/expectations
+  intro_tutorial/multiple_outputs
 
 Old Intro Tutorial To Audit
 ===========================
@@ -38,7 +39,6 @@ Old Intro Tutorial To Audit
   :maxdepth: 1
   :name: Intro Tutorial To Audit
 
-  intro_tutorial/multiple_outputs
   intro_tutorial/part_thirteen
   intro_tutorial/part_fourteen
 

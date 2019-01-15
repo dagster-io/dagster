@@ -71,7 +71,9 @@ the iterator form.)
 
 .. code-block:: console
 
-    $ python part_eleven.py
+    $ dagster pipeline execute -f multiple_outputs.py \
+    -n define_multiple_outputs_step_two_pipeline
+
     2018-11-08 10:54:15 - dagster - INFO - orig_message="Solid yield_outputs emitted output \"out_one\" value 23" log_message_id="5e1cc181-b74d-47f8-8d32-bc262d555b73" run_id="4bee891c-e04f-4221-be77-17576abb9da2" pipeline="part_eleven_step_two" solid="yield_outputs" solid_definition="yield_outputs"
     2018-11-08 10:54:15 - dagster - INFO - orig_message="Solid yield_outputs emitted output \"out_two\" value 45" log_message_id="8da32946-596d-4783-b7c5-4edbb3a1dbc2" run_id="4bee891c-e04f-4221-be77-17576abb9da2" pipeline="part_eleven_step_two" solid="yield_outputs" solid_definition="yield_outputs"
 
@@ -101,14 +103,10 @@ And then run it.
     $ dagster pipeline execute -f multiple_outputs.py \
     -n define_multiple_outputs_step_three_pipeline \
     -e conditional_outputs.yml
-
-Note that we are configuring this solid to *only* emit out_two which will end up
-only triggering log_num_squared. log_num will never be executed.
-
-.. code-block:: sh
-
-    $ python part_eleven.py
     ... log spew
     2018-09-16 18:58:32 - dagster - INFO - orig_message="Solid conditional emitted output \"out_two\" value 45" log_message_id="f6fd78c5-c25e-40ea-95ef-6b80d12155de" pipeline="part_eleven_step_three" solid="conditional"
     2018-09-16 18:58:32 - dagster - INFO - orig_message="Solid conditional did not fire outputs {'out_one'}" log_message_id="d548ea66-cb10-42b8-b150-aed8162cc25c" pipeline="part_eleven_step_three" solid="conditional"    
     ... log spew
+
+Note that we are configuring this solid to *only* emit out_two which will end up
+only triggering log_num_squared. log_num will never be executed.
