@@ -27,36 +27,31 @@ def test_demo_configuration_schema_pipeline_correct_yaml():
     assert set(count_letters_result.keys()) == set(expected_value.keys())
     for key, value in expected_value.items():
         assert count_letters_result[key] == value
-    assert result.result_for_solid('double_the_word').transformed_value() == 'quuxquux'
+    assert result.result_for_solid('multiply_the_word').transformed_value() == 'quuxquux'
 
 
-def test_demo_configuration_schema_pipeline_bad_yaml_1():
-    with pytest.raises(
-        PipelineConfigEvaluationError,
-        match=(
-            'Type failure at path "root:solids:double_the_word:config:word" ' 'on type "String".'
-        ),
-    ):
+def test_demo_configuration_schema_pipeline_runtime_error():
+    with pytest.raises(TypeError):
         execute_pipeline(
             define_demo_configuration_schema_pipeline(),
             load_yaml_from_path(
                 script_relative_path(
-                    '../../../dagster/tutorials/intro_tutorial/configuration_schemas_error_1.yml'
+                    '../../../dagster/tutorials/intro_tutorial/configuration_schemas_runtime_error.yml'
                 )
             ),
         )
 
 
-def test_demo_configuration_schema_pipeline_bad_yaml_2():
+def test_demo_configuration_schema_pipeline_wrong_field():
     with pytest.raises(
         PipelineConfigEvaluationError,
-        match=('Undefined field "double_the_word_with_typed_config" at path ' 'root:solids'),
+        match=('Undefined field "multiply_the_word_with_typed_config" at path ' 'root:solids'),
     ):
         execute_pipeline(
             define_demo_configuration_schema_pipeline(),
             load_yaml_from_path(
                 script_relative_path(
-                    '../../../dagster/tutorials/intro_tutorial/configuration_schemas_error_2.yml'
+                    '../../../dagster/tutorials/intro_tutorial/configuration_schemas_wrong_field.yml'
                 )
             ),
         )
@@ -78,19 +73,25 @@ def test_typed_demo_configuration_schema_pipeline_correct_yaml():
     assert set(count_letters_result.keys()) == set(expected_value.keys())
     for key, value in expected_value.items():
         assert count_letters_result[key] == value
-    assert result.result_for_solid('typed_double_the_word').transformed_value() == 'quuxquux'
+    assert result.result_for_solid('typed_multiply_the_word').transformed_value() == 'quuxquux'
 
 
-def test_typed_demo_configuration_schema_error_pipeline_correct_yaml():
+def test_typed_demo_configuration_schema_type_mismatch_error():
     with pytest.raises(
-        DagsterInvariantViolationError,
-        match='type failure: Expected valid value for Int but got \'quuxquux\'',
+        PipelineConfigEvaluationError,
+        match=(
+            'Type failure at path "root:solids:typed_multiply_the_word:config:factor" on type '
+            '"Int". Got "\'not_a_number\'"'
+        ),
     ):
         execute_pipeline(
-            define_typed_demo_configuration_schema_error_pipeline(),
+            define_typed_demo_configuration_schema_pipeline(),
             load_yaml_from_path(
                 script_relative_path(
-                    '../../../dagster/tutorials/intro_tutorial/configuration_schemas_typed_error.yml'
+                    (
+                        '../../../dagster/tutorials/intro_tutorial/'
+                        'configuration_schemas_type_mismatch_error.yml'
+                    )
                 )
             ),
         )

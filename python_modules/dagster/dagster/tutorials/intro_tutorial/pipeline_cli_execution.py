@@ -5,6 +5,7 @@ from dagster import (
     Dict,
     Field,
     InputDefinition,
+    Int,
     PipelineDefinition,
     RepositoryDefinition,
     String,
@@ -13,9 +14,12 @@ from dagster import (
 )
 
 
-@solid(config_field=Field(Dict({'word': Field(String)})))
-def double_the_word(info):
-    return info.config['word'] * 2
+@solid(
+    inputs=[InputDefinition('word', String)],
+    config_field=Field(Dict({'factor': Field(Int)})),
+)
+def multiply_the_word(info, word):
+    return word * info.config['factor']
 
 
 @lambda_solid(inputs=[InputDefinition('word')])
@@ -29,9 +33,11 @@ def count_letters(word):
 def define_demo_execution_pipeline():
     return PipelineDefinition(
         name='demo_pipeline',
-        solids=[double_the_word, count_letters],
+        solids=[multiply_the_word, count_letters],
         dependencies={
-            'count_letters': {'word': DependencyDefinition('double_the_word')}
+            'count_letters': {
+                'word': DependencyDefinition('multiply_the_word')
+            }
         },
     )
 
