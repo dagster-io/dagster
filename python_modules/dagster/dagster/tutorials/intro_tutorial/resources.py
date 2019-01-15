@@ -1,7 +1,8 @@
-from bigco import PublicCloudConn, set_value_in_cloud_store
+# from bigco import PublicCloudConn, set_value_in_cloud_store
 
 from dagster import (
     Dict,
+    execute_pipeline,
     Field,
     InputDefinition,
     Int,
@@ -12,6 +13,17 @@ from dagster import (
     String,
     solid,
 )
+
+
+class PublicCloudConn:
+    def __init__(self, username, password):
+        self.username = username
+        self.password = password
+
+
+def set_value_in_cloud_store(_conn, _key, _value):
+    # imagine this doing something
+    pass
 
 
 class PublicCloudStore:
@@ -85,5 +97,47 @@ def define_resource_test_pipeline():
             'cloud': PipelineContextDefinition(
                 resources={'store': define_cloud_store_resource()}
             ),
+        },
+    )
+
+if __name__ == '__main__':
+    result = execute_pipeline(
+        define_resource_test_pipeline(),
+        environment={
+            'context': {
+                'cloud': {
+                    'resources': {
+                        'store': {
+                            'config': {
+                                'username': 'some_user',
+                                'password': 'some_password',
+                            }
+                        }
+                    }
+                }
+            },
+            'solids': {
+                'add_ints': {
+                    'inputs': {
+                        'num_one': {'value': 2},
+                        'num_two': {'value': 6}
+                    }
+                }
+            },
+        },
+    )
+
+    result = execute_pipeline(
+        define_resource_test_pipeline(),
+        environment={
+            'context': {'local': {}},
+            'solids': {
+                'add_ints': {
+                    'inputs': {
+                        'num_one': {'value': 2},
+                        'num_two': {'value': 6}
+                    }
+                }
+            },
         },
     )

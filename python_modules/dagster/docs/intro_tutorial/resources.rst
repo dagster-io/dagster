@@ -12,8 +12,11 @@ We are going to record the results of computations in that key value store.
 We are going to model this key value store as a resource.
 
 .. literalinclude:: ../../dagster/tutorials/intro_tutorial/resources.py
-   :lines: 1-2, 16-29, 52-64
-   :caption: resources.py
+   :lines: 1
+   :dedent: 2
+
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/resources.py
+   :lines: 28-41, 64-76
 
 The core of a resource are the definition of its configuration (the ``config_field``)
 and then the function that can actually construct the resource. Notice that all of the
@@ -23,8 +26,7 @@ key of the ``info`` parameter.
 Let's now attach this resource to a pipeline and use it in a solid.
 
 .. literalinclude:: ../../dagster/tutorials/intro_tutorial/resources.py
-   :lines: 67-89
-   :caption: resources.py
+   :lines: 79-93, 97-101
 
 Resources are attached to pipeline context definitions. A pipeline context
 definition is way that a pipeline can declare the different "modes" it can
@@ -38,33 +40,9 @@ resource.
 
 In order to invoke this pipeline, we pass it the following configuration:
 
-.. code-block:: python
-
-    result = execute_pipeline(
-        define_resource_test_pipeline(),
-        environment={
-            'context': {
-                'cloud': {
-                    'resources': {
-                        'store': {
-                            'config': {
-                                'username': 'some_user',
-                                'password': 'some_password',
-                            }
-                        }
-                    }
-                }
-            },
-            'solids': {
-                'add_ints': {
-                    'inputs': {
-                        'num_one': {'value': 2},
-                        'num_two': {'value': 6}
-                    }
-                }
-            },
-        },
-    )
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/resources.py
+   :lines: 104-128
+   :dedent: 4
 
 Note how we are telling the configuration to create a cloud context by
 using the ``cloud`` key under ``context`` and then parameterizing the store resource
@@ -78,69 +56,23 @@ public cloud version.
 First we need a version of the store that implements the same interface that can be used
 in testing contexts but does not touch the public cloud:
 
-.. code-block:: python
-
-    class InMemoryStore:
-        def __init__(self):
-            self.values = {}
-
-        def record_value(self, context, key, value):
-            context.info(
-                'Setting key={key} value={value} in memory'.format(
-                    key=key, value=value
-                )
-            )
-            self.values[key] = value
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/resources.py
+   :lines: 43-53
 
 Next we package this up as a resource.
 
-.. code-block:: python
-
-    def define_in_memory_store_resource():
-        return ResourceDefinition(
-            resource_fn=lambda _: InMemoryStore(),
-            description='''An in-memory key value store that 
-            requires no configuration. Useful for unittesting.''',
-        )
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/resources.py
+   :lines: 56-62
 
 And lastly add a new context definition to represent this new operating "mode":
 
-.. code-block:: python
-
-    def define_resource_test_pipeline():
-        return PipelineDefinition(
-            name='resource_test_pipeline',
-            solids=[add_ints],
-            context_definitions={
-                'cloud': PipelineContextDefinition(
-                    resources={
-                        'store': define_cloud_store_resource()
-                    }
-                ),
-                'local': PipelineContextDefinition(
-                    resources={
-                        'store': define_in_memory_store_resource()
-                    }
-                ),
-            }
-        )
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/resources.py
+   :lines: 89-101
+   :emphasize-lines: 6-8
 
 Now we can simply change configuration and the "in-memory" version of the
 resource will be used instead of the cloud version:
 
-.. code-block:: python
-
-    result = execute_pipeline(
-        define_resource_test_pipeline(),
-        environment={
-            'context': {'local': {}},
-            'solids': {
-                'add_ints': {
-                    'inputs': {
-                        'num_one': {'value': 2},
-                        'num_two': {'value': 6}
-                    }
-                }
-            },
-        },
-
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/resources.py
+   :lines: 130-143
+   :emphasize-lines: 4
