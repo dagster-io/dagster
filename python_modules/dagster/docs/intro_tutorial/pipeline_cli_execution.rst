@@ -52,7 +52,7 @@ Let's split up our env.yml into two parts:
    :caption: constant_env.yml
 
 .. literalinclude:: ../../dagster/tutorials/intro_tutorial/pipeline_execution_env.yml
-   :lines: 6-9
+   :lines: 6-12
    :language: YAML
    :caption: specific_env.yml
 
