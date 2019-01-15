@@ -1,0 +1,5 @@
+solids:
+  add_hello_to_word:
+    inputs:
+      word:
+        value: 2343
