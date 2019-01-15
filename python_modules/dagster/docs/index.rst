@@ -37,7 +37,6 @@ Old Intro Tutorial To Audit
   :name: Intro Tutorial To Audit
 
   intro_tutorial/config
-  intro_tutorial/old_execution_context
   intro_tutorial/part_nine
   intro_tutorial/part_ten
   intro_tutorial/part_eleven
