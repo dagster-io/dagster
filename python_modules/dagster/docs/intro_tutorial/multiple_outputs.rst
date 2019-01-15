@@ -8,31 +8,13 @@ allowing for multiple outputs to conditionally fire -- this also ends up
 supporting dynamic branching and conditional execution of pipelines.
 
 
-.. code-block:: python
+``MultipleResults`` Class
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    @solid(
-        outputs=[
-            OutputDefinition(dagster_type=types.Int, name='out_one'),
-            OutputDefinition(dagster_type=types.Int, name='out_two'),
-        ],
-    )
-    def return_dict_results(_info):
-        return MultipleResults.from_dict({
-            'out_one': 23,
-            'out_two': 45,
-        })
-
-    @solid(inputs=[InputDefinition('num', dagster_type=types.Int)])
-    def log_num(info, num):
-        info.context.info('num {num}'.format(num=num))
-        return num
-
-    @solid(inputs=[InputDefinition('num', dagster_type=types.Int)])
-    def log_num_squared(info, num):
-        info.context.info(
-            'num_squared {num_squared}'.format(num_squared=num * num)
-        )
-        return num * num
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/multiple_outputs.py
+   :linenos:
+   :caption: multiple_outputs.py
+   :lines: 26-33
 
 Notice how ``return_dict_results`` has two outputs. For the first time
 we have provided the name argument to an :py:class:`OutputDefinition`. (It
@@ -47,27 +29,11 @@ all outputs from this transform.
 
 Next let's examine the :py:class:`PipelineDefinition`:
 
-.. code-block:: python
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/multiple_outputs.py
+   :linenos:
+   :caption: multiple_outputs.py
+   :lines: 64-73
 
-    def define_part_eleven_step_one():
-        return PipelineDefinition(
-            name='part_eleven_step_one',
-            solids=[return_dict_results, log_num, log_num_squared],
-            dependencies={
-                'log_num': {
-                    'num': DependencyDefinition(
-                        'return_dict_results',
-                        'out_one',
-                    ),
-                },
-                'log_num_squared': {
-                    'num': DependencyDefinition(
-                        'return_dict_results',
-                        'out_two',
-                    ),
-                },
-            },
-        )
 
 Just like this tutorial is the first example of an :py:class:`OutputDefinition` with
 a name, this is also the first time that a :py:class:`DependencyDefinition` has
@@ -79,46 +45,27 @@ With this we can run the pipeline:
 
 .. code-block:: sh
 
-    python step_eleven.py
+    $ dagster pipeline execute -f multiple_outputs.py \
+    -n define_multiple_outputs_step_one_pipeline
+
     ... log spew
-    2018-11-08 10:52:06 - dagster - INFO - orig_message="Solid return_dict_results emittedoutput \"out_one\" value 23" log_message_id="7d62dcbf-583d-4640-941f-48cda39e79a1" run_id="9de556c1-7f4d-4702-95af-6d6dbe6b296b" pipeline="part_eleven_step_one" solid="return_dict_results" solid_definition="return_dict_results"
-    2018-11-08 10:52:06 - dagster - INFO - orig_message="Solid return_dict_results emittedoutput \"out_two\" value 45" log_message_id="cc2ae784-6861-49ef-a463-9cbe4fa0f5e6" run_id="9de556c1-7f4d-4702-95af-6d6dbe6b296b" pipeline="part_eleven_step_one" solid="return_dict_results" solid_definition="return_dict_results"
+    2019-01-15 15:44:36 - dagster - INFO - orig_message="Solid return_dict_results emitted output \"out_one\" value 23" log_message_id="f7d90092-523e-41c3-ac43-f9124ea896ad" run_id="50733509-1dfb-4e1b-9f12-fc6be42f2376" pipeline="multiple_outputs_step_one_pipeline" solid="return_dict_results" solid_definition="return_dict_results"
+    2019-01-15 15:44:36 - dagster - INFO - orig_message="Solid return_dict_results emitted output \"out_two\" value 45" log_message_id="343ac9fb-4afd-4b96-85a6-0e15a1b22a6e" run_id="50733509-1dfb-4e1b-9f12-fc6be42f2376" pipeline="multiple_outputs_step_one_pipeline" solid="return_dict_results" solid_definition="return_dict_results"
     ... more log spew
+
+Iterator of ``Result``
+^^^^^^^^^^^^^^^^^^^^^^
 
 The :py:class:`MultipleResults` class is not the only way to return multiple
 results from a solid transform function. You can also yield multiple instances
-of the `Result` object. (Note: this is actually the core specification
+of the ``Result`` object. (Note: this is actually the core specification
 of the transform function: all other forms are implemented in terms of
 the iterator form.)
 
-.. code-block:: python
-
-    @solid(
-        outputs=[
-            OutputDefinition(dagster_type=types.Int, name='out_one'),
-            OutputDefinition(dagster_type=types.Int, name='out_two'),
-        ],
-    )
-    def yield_outputs(_info):
-        yield Result(23, 'out_one')
-        yield Result(45, 'out_two')
-
-    def define_part_eleven_step_two():
-        return PipelineDefinition(
-            name='part_eleven_step_two',
-            solids=[yield_outputs, log_num, log_num_squared],
-            dependencies={
-                'log_num': {
-                    'num': DependencyDefinition('yield_outputs', 'out_one')
-                },
-                'log_num_squared': {
-                    'num': DependencyDefinition('yield_outputs', 'out_two')
-                },
-            },
-        )
-
-    if __name__ == '__main__':
-        execute_pipeline(define_part_eleven_step_two())
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/multiple_outputs.py
+   :linenos:
+   :caption: multiple_outputs.py
+   :lines: 15-24,75-84
 
 ... and you'll see the same log spew around outputs in this version:
 
@@ -136,49 +83,24 @@ Multiple outputs are the mechanism by which we implement branching or conditiona
 Let's modify the first solid above to conditionally emit one output or the other based on config
 and then execute that pipeline.
 
-.. code-block:: python
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/multiple_outputs.py
+    :linenos:
+    :caption: multiple_outputs.py
+    :lines: 36-51,86-94
 
-    @solid(
-        config_field=ConfigDefinition(types.String, description='Should be either out_one or out_two'),
-        outputs=[
-            OutputDefinition(dagster_type=types.Int, name='out_one'),
-            OutputDefinition(dagster_type=types.Int, name='out_two'),
-        ],
-    )
-    def conditional(info):
-        if info.config == 'out_one':
-            yield Result(23, 'out_one')
-        elif info.config == 'out_two':
-            yield Result(45, 'out_two')
-        else:
-            raise Exception('invalid config')
+You must create a config file
 
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/conditional_outputs.yml
+    :linenos:
+    :caption: conditional_outputs.yml
 
-    def define_part_eleven_step_three():
-        return PipelineDefinition(
-            name='part_eleven_step_three',
-            solids=[conditional, log_num, log_num_squared],
-            dependencies={
-                'log_num': {
-                    'num': DependencyDefinition('conditional', 'out_one')
-                },
-                'log_num_squared': {
-                    'num': DependencyDefinition('conditional', 'out_two')
-                },
-            },
-        )
+And then run it.
 
-    if __name__ == '__main__':
-        execute_pipeline(
-            define_part_eleven_step_three(),
-            {
-                'solids': {
-                    'conditional': {
-                        'config': 'out_two'
-                    },
-                },
-            },
-        ) 
+.. code-block:: console
+
+    $ dagster pipeline execute -f multiple_outputs.py \
+    -n define_multiple_outputs_step_three_pipeline \
+    -e conditional_outputs.yml
 
 Note that we are configuring this solid to *only* emit out_two which will end up
 only triggering log_num_squared. log_num will never be executed.

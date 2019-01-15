@@ -34,7 +34,9 @@ def return_dict_results(_info):
 
 
 @solid(
-    config_field=Field(String, description='Should be either out_one or out_two'),
+    config_field=Field(
+        String, description='Should be either out_one or out_two'
+    ),
     outputs=[
         OutputDefinition(dagster_type=Int, name='out_one'),
         OutputDefinition(dagster_type=Int, name='out_two'),
@@ -57,7 +59,9 @@ def log_num(info, num):
 
 @solid(inputs=[InputDefinition('num', dagster_type=Int)])
 def log_num_squared(info, num):
-    info.context.info('num_squared {num_squared}'.format(num_squared=num * num))
+    info.context.info(
+        'num_squared {num_squared}'.format(num_squared=num * num)
+    )
     return num * num
 
 
@@ -66,8 +70,12 @@ def define_multiple_outputs_step_one_pipeline():
         name='multiple_outputs_step_one_pipeline',
         solids=[return_dict_results, log_num, log_num_squared],
         dependencies={
-            'log_num': {'num': DependencyDefinition('return_dict_results', 'out_one')},
-            'log_num_squared': {'num': DependencyDefinition('return_dict_results', 'out_two')},
+            'log_num': {
+                'num': DependencyDefinition('return_dict_results', 'out_one')
+            },
+            'log_num_squared': {
+                'num': DependencyDefinition('return_dict_results', 'out_two')
+            },
         },
     )
 
@@ -77,8 +85,12 @@ def define_multiple_outputs_step_two_pipeline():
         name='multiple_outputs_step_two_pipeline',
         solids=[yield_outputs, log_num, log_num_squared],
         dependencies={
-            'log_num': {'num': DependencyDefinition('yield_outputs', 'out_one')},
-            'log_num_squared': {'num': DependencyDefinition('yield_outputs', 'out_two')},
+            'log_num': {
+                'num': DependencyDefinition('yield_outputs', 'out_one')
+            },
+            'log_num_squared': {
+                'num': DependencyDefinition('yield_outputs', 'out_two')
+            },
         },
     )
 
@@ -89,6 +101,8 @@ def define_multiple_outputs_step_three_pipeline():
         solids=[conditional, log_num, log_num_squared],
         dependencies={
             'log_num': {'num': DependencyDefinition('conditional', 'out_one')},
-            'log_num_squared': {'num': DependencyDefinition('conditional', 'out_two')},
+            'log_num_squared': {
+                'num': DependencyDefinition('conditional', 'out_two')
+            },
         },
     )
