@@ -50,7 +50,7 @@ CLI
 
 There's a lot of information in these log lines (we'll get to how you can use, and customize,
 them later), but you can see that the third message is:
-``Solid hello_world emitted output \"result\" value 'hello'"``. Success!
+``Solid hello_world emitted output \"result\" value 'hello'``. Success!
 
 Dagit
 ~~~~~
