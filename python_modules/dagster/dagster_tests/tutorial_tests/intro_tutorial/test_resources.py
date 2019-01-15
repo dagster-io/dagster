@@ -1,7 +1,5 @@
 from dagster import execute_pipeline, ReentrantInfo
-from dagster.tutorials.intro_tutorial.resources import (
-    define_resource_test_pipeline,
-)
+from dagster.tutorials.intro_tutorial.resources import define_resource_test_pipeline
 
 
 def has_message(events, message):
@@ -22,14 +20,7 @@ def test_run_local():
         define_resource_test_pipeline(),
         environment={
             'context': {'local': {}},
-            'solids': {
-                'add_ints': {
-                    'inputs': {
-                        'num_one': {'value': 2},
-                        'num_two': {'value': 3},
-                    }
-                }
-            },
+            'solids': {'add_ints': {'inputs': {'num_one': {'value': 2}, 'num_two': {'value': 3}}}},
         },
         reentrant_info=ReentrantInfo(event_callback=_event_callback),
     )
@@ -53,23 +44,11 @@ def test_run_cloud():
             'context': {
                 'cloud': {
                     'resources': {
-                        'store': {
-                            'config': {
-                                'username': 'some_user',
-                                'password': 'some_password',
-                            }
-                        }
+                        'store': {'config': {'username': 'some_user', 'password': 'some_password'}}
                     }
                 }
             },
-            'solids': {
-                'add_ints': {
-                    'inputs': {
-                        'num_one': {'value': 2},
-                        'num_two': {'value': 6},
-                    }
-                }
-            },
+            'solids': {'add_ints': {'inputs': {'num_one': {'value': 2}, 'num_two': {'value': 6}}}},
         },
         reentrant_info=ReentrantInfo(event_callback=_event_callback),
     )

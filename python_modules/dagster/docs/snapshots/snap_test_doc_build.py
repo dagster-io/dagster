@@ -122,12 +122,12 @@ snapshots['test_build_all_docs 1'] = [
             'config.rst.txt',
             'configuration_schemas.rst.txt',
             'execution_context.rst.txt',
+            'expectations.rst.txt',
             'hello_dag.rst.txt',
             'hello_world.rst.txt',
             'inputs.rst.txt',
             'part_eleven.rst.txt',
             'part_fourteen.rst.txt',
-            'part_ten.rst.txt',
             'part_thirteen.rst.txt',
             'pipeline_cli_execution.rst.txt',
             'repos.rst.txt',
@@ -185,12 +185,12 @@ snapshots['test_build_all_docs 1'] = [
             'config.html',
             'configuration_schemas.html',
             'execution_context.html',
+            'expectations.html',
             'hello_dag.html',
             'hello_world.html',
             'inputs.html',
             'part_eleven.html',
             'part_fourteen.html',
-            'part_ten.html',
             'part_thirteen.html',
             'pipeline_cli_execution.html',
             'repos.html',
@@ -350,7 +350,7 @@ webapp, from any directory that contains a repository.yml file. For example:</p>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/types.html">User-Defined Types</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_ten.html">Expectations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/expectations.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_eleven.html">Multiple Outputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_thirteen.html">Reusable Solids</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_fourteen.html">Unit-testing Pipelines</a></li>
@@ -843,7 +843,7 @@ snapshots['test_build_all_docs 4'] = '''
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/types.html">User-Defined Types</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_ten.html">Expectations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/expectations.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_eleven.html">Multiple Outputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_thirteen.html">Reusable Solids</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_fourteen.html">Unit-testing Pipelines</a></li>
@@ -959,7 +959,7 @@ snapshots['test_build_all_docs 5'] = '''
 <h1>Old Intro Tutorial To Audit<a class="headerlink" href="#old-intro-tutorial-to-audit" title="Permalink to this headline">¶</a></h1>
 <div class="toctree-wrapper compound" id="intro-tutorial-to-audit">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_ten.html">Expectations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/expectations.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_eleven.html">Multiple Outputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_thirteen.html">Reusable Solids</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_fourteen.html">Unit-testing Pipelines</a></li>
@@ -1015,7 +1015,7 @@ snapshots['test_build_all_docs 5'] = '''
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/types.html">User-Defined Types</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_ten.html">Expectations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/expectations.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_eleven.html">Multiple Outputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_thirteen.html">Reusable Solids</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_fourteen.html">Unit-testing Pipelines</a></li>
@@ -1262,7 +1262,7 @@ from Github:</p>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/types.html">User-Defined Types</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_ten.html">Expectations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/expectations.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_eleven.html">Multiple Outputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_thirteen.html">Reusable Solids</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_fourteen.html">Unit-testing Pipelines</a></li>
@@ -1458,7 +1458,7 @@ documentation and runtime error checking.</p>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/types.html">User-Defined Types</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_ten.html">Expectations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/expectations.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_eleven.html">Multiple Outputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_thirteen.html">Reusable Solids</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_fourteen.html">Unit-testing Pipelines</a></li>
@@ -1608,7 +1608,7 @@ snapshots['test_build_all_docs 8'] = '''
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/types.html">User-Defined Types</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_ten.html">Expectations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/expectations.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_eleven.html">Multiple Outputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_thirteen.html">Reusable Solids</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_fourteen.html">Unit-testing Pipelines</a></li>
@@ -1750,7 +1750,7 @@ snapshots['test_build_all_docs 9'] = '''
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/types.html">User-Defined Types</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_ten.html">Expectations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intro_tutorial/expectations.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_eleven.html">Multiple Outputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_thirteen.html">Reusable Solids</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro_tutorial/part_fourteen.html">Unit-testing Pipelines</a></li>
@@ -1789,7 +1789,7 @@ snapshots['test_build_all_docs 9'] = '''
   </body>
 </html>'''
 
-snapshots['test_build_all_docs 10'] = 'Search.setIndex({docnames:["apidocs/decorators","apidocs/definitions","apidocs/errors","apidocs/execution","apidocs/types","apidocs/utilities","contributing","guides/028_to_030_new_concepts","guides/028_to_030_upgrade_guide","index","installation","intro_tutorial/actual_dag","intro_tutorial/config","intro_tutorial/configuration_schemas","intro_tutorial/execution_context","intro_tutorial/hello_dag","intro_tutorial/hello_world","intro_tutorial/inputs","intro_tutorial/part_eleven","intro_tutorial/part_fourteen","intro_tutorial/part_ten","intro_tutorial/part_thirteen","intro_tutorial/pipeline_cli_execution","intro_tutorial/repos","intro_tutorial/resources","intro_tutorial/types","principles"],envversion:53,filenames:["apidocs/decorators.rst","apidocs/definitions.rst","apidocs/errors.rst","apidocs/execution.rst","apidocs/types.rst","apidocs/utilities.rst","contributing.rst","guides/028_to_030_new_concepts.md","guides/028_to_030_upgrade_guide.md","index.rst","installation.rst","intro_tutorial/actual_dag.rst","intro_tutorial/config.rst","intro_tutorial/configuration_schemas.rst","intro_tutorial/execution_context.rst","intro_tutorial/hello_dag.rst","intro_tutorial/hello_world.rst","intro_tutorial/inputs.rst","intro_tutorial/part_eleven.rst","intro_tutorial/part_fourteen.rst","intro_tutorial/part_ten.rst","intro_tutorial/part_thirteen.rst","intro_tutorial/pipeline_cli_execution.rst","intro_tutorial/repos.rst","intro_tutorial/resources.rst","intro_tutorial/types.rst","principles.rst"],objects:{"dagster.DependencyDefinition":{description:[1,2,1,""],output:[1,2,1,""],solid:[1,2,1,""]},"dagster.ExpectationDefinition":{description:[1,2,1,""],expectation_fn:[1,2,1,""],name:[1,2,1,""]},"dagster.ExpectationResult":{message:[1,2,1,""],result_context:[1,2,1,""],success:[1,2,1,""]},"dagster.InputDefinition":{description:[1,2,1,""],expectations:[1,2,1,""],name:[1,2,1,""],runtime_type:[1,2,1,""]},"dagster.MultipleResults":{from_dict:[0,4,1,""],results:[0,2,1,""]},"dagster.OutputDefinition":{description:[1,2,1,""],name:[1,2,1,""],runtime_type:[1,2,1,""]},"dagster.PipelineContextDefinition":{passthrough_context_definition:[1,4,1,""]},"dagster.PipelineDefinition":{context_definitions:[1,2,1,""],dependencies:[1,2,1,""],dependency_structure:[1,2,1,""],description:[1,2,1,""],display_name:[1,2,1,""],has_solid:[1,5,1,""],name:[1,2,1,""],solid_named:[1,5,1,""],solids:[1,2,1,""]},"dagster.PipelineExecutionResult":{context:[3,2,1,""],pipeline:[3,2,1,""],result_for_solid:[3,5,1,""],result_list:[3,2,1,""],success:[3,2,1,""]},"dagster.RepositoryDefinition":{get_all_pipelines:[1,5,1,""],get_pipeline:[1,5,1,""],iterate_over_pipelines:[1,5,1,""],name:[1,2,1,""],pipeline_dict:[1,2,1,""]},"dagster.Result":{output_name:[1,2,1,""],value:[1,2,1,""]},"dagster.SolidDefinition":{config_field:[1,2,1,""],description:[1,2,1,""],input_defs:[1,2,1,""],metadata:[1,2,1,""],name:[1,2,1,""],outputs_defs:[1,2,1,""],transform_fn:[1,2,1,""]},"dagster.SolidExecutionResult":{context:[3,2,1,""],dagster_error:[3,2,1,""],solid:[3,2,1,""],success:[3,2,1,""],transformed_value:[3,5,1,""],transformed_values:[3,2,1,""]},"dagster.TransformExecutionInfo":{config:[1,2,1,""],context:[1,2,1,""]},"dagster.core":{types:[4,6,0,"-"]},"dagster.core.types":{Any:[4,2,1,""],Bool:[4,2,1,""],Int:[4,2,1,""],List:[4,3,1,""],Nullable:[4,3,1,""],Path:[4,2,1,""],PythonObjectType:[4,0,1,""],String:[4,2,1,""]},dagster:{ContextCreationExecutionInfo:[1,0,1,""],DagsterExpectationFailedError:[2,1,1,""],DagsterInvalidDefinitionError:[2,1,1,""],DagsterInvariantViolationError:[2,1,1,""],DagsterRuntimeCoercionError:[2,1,1,""],DagsterTypeError:[2,1,1,""],DagsterUserCodeExecutionError:[2,1,1,""],DependencyDefinition:[1,0,1,""],ExecutionContext:[3,0,1,""],ExpectationDefinition:[1,0,1,""],ExpectationExecutionInfo:[1,0,1,""],ExpectationResult:[1,0,1,""],Field:[1,3,1,""],InputDefinition:[1,0,1,""],MultipleResults:[0,0,1,""],OutputDefinition:[1,0,1,""],PipelineConfigEvaluationError:[3,1,1,""],PipelineContextDefinition:[1,0,1,""],PipelineDefinition:[1,0,1,""],PipelineExecutionResult:[3,0,1,""],ReentrantInfo:[3,0,1,""],RepositoryDefinition:[1,0,1,""],ResourceDefinition:[1,0,1,""],Result:[1,0,1,""],SolidDefinition:[1,0,1,""],SolidExecutionResult:[3,0,1,""],SolidInstance:[1,0,1,""],TransformExecutionInfo:[1,0,1,""],execute_pipeline:[3,3,1,""],execute_pipeline_iterator:[3,3,1,""],execute_solid:[5,3,1,""],execute_solids:[5,3,1,""],lambda_solid:[0,3,1,""],solid:[0,3,1,""]}},objnames:{"0":["py","class","Python class"],"1":["py","exception","Python exception"],"2":["py","attribute","Python attribute"],"3":["py","function","Python function"],"4":["py","staticmethod","Python static method"],"5":["py","method","Python method"],"6":["py","module","Python module"]},objtypes:{"0":"py:class","1":"py:exception","2":"py:attribute","3":"py:function","4":"py:staticmethod","5":"py:method","6":"py:module"},terms:{"06c7":16,"0x11e4fbf60":8,"1563854b":16,"25faadf5":16,"2mxds1r":26,"408a":20,"40ea":18,"42b8":18,"43f5":16,"46cc":16,"47db":20,"48cda39e79a1":18,"49eb":16,"49ef":18,"4a4e":14,"4ac0":14,"4ae2":16,"4b3f":20,"4d71":16,"4f38ba45b8e0":14,"583d":18,"5878513a":16,"5c829421":16,"604dc47c":16,"66b0b6ecdcad":20,"677247b1b07b":16,"6b80d12155de":18,"6d6dbe6b296b":18,"744a":16,"758f":16,"7d62dcbf":18,"7e828e37eab8":16,"7f4d":18,"80c2":20,"81ba":16,"88cb":16,"8b76":20,"938ab7fa":20,"941f":18,"95af":18,"95ef":18,"97ae58fda0f4":16,"9ca21f5c":20,"9cbe4fa0f5e6":18,"9de556c1":18,"9f44":20,"\\u4e16\\u754c":12,"\\u4f60\\u597d":12,"abstract":[1,7,14],"break":[6,7,8,26],"case":[1,12,14,15,17,19,20,24,25],"catch":[13,17],"class":[0,1,2,3,4,7,8,18,20,24],"default":[0,1,7,10,13,14,18,20,22,23,25],"final":[19,21,22,25],"function":[0,1,3,7,8,12,15,16,17,18,21,23,24,25],"import":[8,11,12,13,14,15,16,17,23,24,25,26],"int":[1,4,7,13,18,19,20,21,24,25],"long":23,"new":[6,7,8,10,15,19,23,24],"public":[8,24],"return":[0,1,3,7,11,12,13,14,15,16,17,18,19,20,21,23,24,25],"static":[0,1],"switch":[10,12],"throw":[1,2,3,20],"true":[1,3,7,12,25],"try":[11,12,22,23],"while":[7,8,24],And:[7,10,13,14,17,20,21,22,24],But:[17,23],For:[1,3,6,7,10,12,17,18,24],Lying:20,One:[1,8,14,15,19,20,25],That:[7,12,24],The:[0,1,3,7,8,11,12,13,15,16,17,18,19,20,22,24,25],Then:[12,16],There:[1,8,16,21],These:[1,13,18,21,26],Use:8,Used:1,Useful:[0,24],Using:16,With:[7,18,22],__fieldvaluesentinel:1,__inferoptionalcompositefieldsentinel:1,__init__:[8,24],__main__:[16,18],__name__:[16,18],_add_on:1,_cleanup_field:7,_conf_field:7,_create_resourc:7,_data_source_run_id_field:7,_info:[1,18,20],_log_level_field:7,a29ddb15309a:14,a463:18,a531:16,a801:16,a_plus_b:[19,21],aaac:14,abid:25,abil:[7,15,19,20],abl:[7,12,14,16,21,23,25,26],about:[1,7,8,12,15,20,22,24,25,26],abov:[18,25],accept:1,access:[1,14,24],acronym:1,across:[7,22],action:13,activ:[6,10],actual:[9,15,18,26],actual_dag:11,actual_dag_pipelin:11,acycl:[1,15,26],add:[8,16,20,24,25],add_hello_to_word:17,add_hello_to_word_typ:17,add_int:[20,24],add_on:1,added:20,adder:[19,21],adding:20,addit:[0,12],addition:18,advertis:26,aed8162cc25c:18,aesthet:25,afford:12,after:[7,8,11],again:11,against:[8,22,24],alia:[1,21],all:[1,3,7,12,16,17,18,23,25],allow:[0,1,3,7,14,15,18,22,23,25],allscript:[7,8],allscriptsfileloadresourc:7,aloha:12,along:[19,25],alreadi:[10,19,23,24],also:[6,7,8,10,17,18,19,20,22,23,25,26],alter:24,altern:25,although:[14,23],alwai:[17,26],anaconda:10,analyst:26,ani:[1,3,4,6,7,8,10,11,13,14,16,17,23,24,25,26],annon:14,annot:[8,12,25],anoth:[7,8,24],anticip:7,anyth:25,apach:6,apart:7,api:[0,1,3,7,12,23,24,25],appear:[14,25],appli:[1,17,25],applic:[20,22],approach:26,appropri:[17,24,26],apt:10,arbitrari:[1,15,18,19,20,25,26],aren:10,arg:[2,3,4],arg_a:11,arg_b:11,arg_c:11,arg_on:15,argument:[0,1,2,8,12,15,17,18,22,25],aris:13,arithmet:21,around:[8,18,25],arrai:1,arrang:[1,16,26],arrow:6,articl:26,artifact:[24,26],as_dagster_typ:[8,25],asid:7,aspect:20,assert:[8,16,19,21],asset:[1,16],assign:17,assum:[1,16,25],assumpt:[20,26],attach:[1,20,24],attent:11,attribut:[1,8],attributeerror:8,author:[1,14,15,26],auto:[6,17],automat:17,autoreload:6,avail:1,avoid:12,awai:14,awar:20,awkward:8,aws:7,axes:25,b0cbb1be:14,b150:18,b27fb70a:16,b510:16,b5a8:16,b602e4409f74:16,b85c:16,b8e0:14,back:13,bake:20,ball:7,bar:[0,22],barb:0,base:[17,18],bash:10,basi:11,basic:14,batch:26,beauchemin:26,becaus:[6,7,8,11,14,17,18,20,25,26],becom:[0,7],been:[2,18,19,21,22,25],befor:[7,8,11,13,17],begin:[7,16],behavior:20,behaviour:0,being:[3,8,21],best:26,better:[17,23],between:[1,3,7,15,26],bigco:24,bin:[6,10],bit:[10,26],bkjdf:13,bodi:0,boilerpl:[7,25],bool:[1,3,4,7],both:[8,10,11],bottom:16,branch:18,breakag:26,brew:10,broadli:[19,22],browser:16,bucket:8,bucket_path:7,bug:22,build:[7,8,10,11,15,16,23,25],built:[12,17,26],builtin:25,bulk:7,bunch:[14,20,22],burden:26,c008:20,c12bdc2d:20,c25e:18,c955:20,c_plus_d:[19,21],cach:1,call:[8,15,16,20,21,23,25,26],callabl:1,callback:1,caller:[3,8],can:[1,2,6,7,8,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26],cannot:8,capabilti:20,capabitili:15,capabl:[7,8,14,19,20,24,26],captur:20,caught:13,caus:[13,20],cb10:18,cb75946b0055:16,cc2ae784:18,certain:1,chang:[6,7,14,24,26],check:[1,2,6,8,10,15,25,26],check_posit:20,check_positivevalu:20,choic:16,choos:[15,25],chunk:7,cleali:26,clean_up_dir:7,cleanup_fil:[7,8],clear:[13,20],cli:[9,23],click:17,clone:[6,10],cloud:[21,24],cluster:14,code:[2,7,8,12,14,20,24,25,26],collabor:26,collect:[1,13,23],column:25,com:[6,10],come:[1,7,10,25],command:[11,12,15,17,22,23],comment:19,common:[7,24],commonli:25,commun:20,compar:6,compat:12,complet:[1,16,17],complex:11,complic:21,compos:[1,7],compris:1,comput:[1,12,14,15,16,20,24,25],computation:26,concaten:15,concept:[7,15,16,20],conceptu:[8,12],concis:0,conda:10,condit:3,condition:18,conf:[7,8],config:[0,1,8,12,13,14,17,18,19,20,21,23,24,25],config_def:[7,8],config_env:12,config_field:[0,1,7,8,12,13,18,19,20,21,24],config_valu:[1,3,25],configdefinit:[7,8,18,19,20,21],configdictionari:[7,8],configur:[0,1,2,7,8,9,14,17,18,20,22,24,25,26],configurable_hello:12,configurable_hello_pipelin:12,configuration_schema:13,configuration_schemas_error_2:13,configuration_schemas_runtime_error:13,configuration_schemas_type_mismatch_error:13,configuration_schemas_wrong_field:13,conform:1,conn:24,connect:[1,7,11,15,21,25],consist:7,consol:[14,17],constant:22,constant_env:22,constitut:1,construct:[1,8,23],consum:[1,13,22,26],contain:[1,6,7,14,17,19,26],context:[0,1,3,7,8,9,13,18,19,20,22,24,26],context_definit:[1,24],context_fn:[1,7,8],context_param:1,context_stack:[7,8],contextcreationexecutioninfo:1,contract:26,contribut:9,control:[1,20,26],cooper_pair:7,copi:[15,22,25],core:[0,1,2,4,8,13,15,16,18,20,21,24],correct:1,correspond:12,could:[1,7,11,17],count:[7,13],count_lett:13,coupl:12,creat:[0,1,6,7,8,19,22,23,24],create_allscripts_fileload_unittest_context:7,create_engin:7,create_single_solid_pipelin:[8,19],create_sub_pipelin:[8,19],creation:[0,7,8],credenti:24,critic:[20,26],csv:25,current:[1,20],custom:16,d129552525a4:20,d548ea66:18,d8f41da0:14,dag:[1,9,12,16,19,26],dagit:[10,11,12,14,15,20,21,22,23,25],dagster:[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,22,23,25,26],dagster_error:3,dagster_exampl:6,dagster_pd:1,dagster_sqlalchemi:8,dagster_typ:[1,7,8,18],dagsterenv:6,dagsterexpectationfailederror:[2,20],dagsterinvaliddefinitionerror:2,dagsterinvariantviolationerror:[2,25],dagsterruntimecoercionerror:2,dagstertyp:[1,7],dagstertypeerror:2,dagsterusercodeexecutionerror:2,data:[1,9,15,16,19,20,25],data_sourc:[7,8],data_source_run_id:[7,8],databas:[1,14,24],datafram:[1,25],dataframe_input_schema:25,dataframe_output_schema:25,dbname:7,dea6d00d99f0:16,debug:[13,14,20,22],debug_messag:14,declar:[1,7,11,12,21,23,24,25],decor:[1,9,16,25],deem:26,deep:13,deepli:11,def:[0,1,7,11,12,13,14,15,16,17,18,19,20,21,23,24,25],default_output:3,default_valu:[1,7,12,25],defaultcontextconfig:8,defaultdict:13,defin:[0,1,2,7,8,9,12,15,16,22,23],define_allscripts_fileload_pipelin:8,define_cloud_store_resourc:24,define_colored_console_logg:[7,8],define_configurable_hello_pipelin:12,define_csv_dict_field:25,define_demo_configuration_schema_pipelin:13,define_demo_configuration_schema_repo:13,define_demo_execution_repo:22,define_diamond_dag_pipelin:11,define_execution_context_pipeline_step_on:14,define_hello_dag_pipelin:15,define_hello_inputs_pipelin:17,define_hello_world_pipelin:[16,23],define_in_memory_store_resourc:24,define_local_fs_resourc:7,define_part_eleven_step_on:18,define_part_eleven_step_thre:18,define_part_eleven_step_two:18,define_part_fourteen_step_on:19,define_part_ten_step_on:20,define_part_thirteen_step_on:21,define_part_thirteen_step_thre:21,define_part_thirteen_step_two:21,define_path_dict_field:25,define_redshift_sa_resourc:7,define_repo:23,define_repo_demo_pipelin:23,define_repositori:14,define_resource_test_pipelin:24,define_stub_solid:[8,19],define_typed_demo_configuration_schema_error_pipelin:13,define_typed_demo_configuration_schema_pipelin:13,define_unittest_context:7,definit:[2,8,9,12,13,21,23,24],del:25,deliv:26,demand:[1,23],demo_configuration_schema:13,demo_configuration_schema_repo:13,demo_pipelin:22,demo_repositori:23,demonstr:[11,17],depend:[1,6,7,8,11,12,13,15,17,18,19,20,21,26],dependency_structur:1,dependencydefiniion:1,dependencydefinit:[1,11,13,15,18,19,20,21],dependencystructur:1,describ:[7,13,20],descript:[0,1,7,8,13,18,24,25],design:[1,14,26],destruct:1,detail:[8,12,17],deteremin:2,determin:[1,11,15],dev:[1,6],develop:[10,12,20,24],dfc8165a:16,diagnost:26,dict:[0,1,3,7,8,12,13,15,17,24,25],dict_param:25,dictionari:[0,1,3,8,11,15,17,25],did:18,differ:[1,6,8,12,14,16,20,21,24,25,26],difficult:[8,19,26],dimension:[1,25],direct:[1,15,26],directli:[8,16,17,25],directori:6,discourag:8,discov:26,discuss:19,disk:[1,8,25],displai:1,display_nam:1,distinguish:15,document:[6,10,13,22,26],doe:[1,7,11,14,18,24],doesn:7,doing:[21,25],don:[11,15],done:[12,19,26],dot:17,download:10,downstream:18,drive:22,dropdown:[15,23],dsl:26,dure:[3,26],dynam:18,e257262eab79:20,e476:14,each:[1,3,7,11,12,15,16,17,21,22,25],earlier:[17,22],easier:[1,7,23],easili:26,edg:1,edit:[12,13],editor:[12,17],effect:26,either:[1,3,15,18,26],element:[22,25],elif:[12,18,25],elimin:[7,8],els:[12,18,25],emit:[16,18,19],emittedoutput:18,enabl:19,encod:[12,15],encourag:[10,26],encout:3,end:[1,18],enforce_uniqu:1,engin:[14,15,26],enrich:22,ensur:[1,25],enter:[17,20],entir:[12,14,17,19,20],entit:1,entri:11,entropi:26,env:[8,13,22],enviro:3,environ:[1,3,5,6,7,8,11,12,14,17,24,26],error:[3,7,8,9,13,14,15,17,20,22,26],error_messag:14,especi:23,etc:[1,6,21],evalu:[1,20],even:[7,14],event_typ:16,ever:13,everi:[1,16,26],everyth:17,exactli:8,examin:18,exampl:[0,1,6,7,8,11,12,14,16,17,18,23,24,25,26],excel:26,except:[1,2,3,18,25,26],excess:8,exclus:7,execut:[1,7,8,9,11,12,13,15,17,18,19,20,23,24,25,26],execute_pipelin:[3,8,12,14,16,17,18,19,20,21,24],execute_pipeline_iter:3,execute_solid:[5,8],execute_with_another_world:17,execution_context:14,execution_context_pipelin:14,execution_plan_step_start:16,execution_plan_step_success:16,executioncontext:[1,3,7,8],exist:[1,7,8,19,25],expect:[1,2,9,25,26],expectation_fn:[1,20],expectationdefinit:[1,20],expectationexecutioninfo:1,expectationresult:[1,20],expedit:6,expens:[13,20],experi:[13,17],explicit:[20,26],explictli:20,explod:0,explor:[11,12,15,16],express:[15,25,26],extern:[1,11,12,14,17,26],extract:1,f37e:16,f6fd78c5:18,f77205931abb:16,face:[7,8],facil:[12,14],fact:15,factor:[13,22],fail:[17,20,25],faild:2,failur:[1,2,13],fairli:8,fals:[7,8,20,25],famili:8,far:[17,18,21],fast:1,fe29:16,featur:[7,10,12,15,20,22],few:[7,15,16],field:[0,1,7,8,12,13,24,25],field_util:1,file:[6,7,8,12,13,14,17,21,22,23,24,25],file_opt:25,file_typ:25,fileload:7,filter:16,fire:18,first:[8,10,11,12,15,16,18,20,24],fix:8,flag:17,flexibl:12,flow:[1,15,17,25,26],fly:12,focu:19,focus:22,folder:7,follow:[8,10,12,19,21,22,24,25],foo:[0,14,15],for_pipeline_run:7,forc:25,forget:15,form:[1,17,18],formal:7,format:[14,18,24,25,26],forth:1,frame:[20,25],framework:1,frequent:[1,24],from:[0,1,6,7,8,11,12,13,14,15,16,17,18,19,20,22,23,24,25],from_dict:[0,18],frontend:6,fulli:[12,25],further:16,futur:20,gener:[1,6,7,8,21,26],generate_production_execution_context:8,get:[1,3,7,13,16,21,23],get_all_pipelin:1,get_pipelin:1,git:[6,10],github:[6,10],give:[14,15],given:[1,3,25,26],glarb:0,glob:22,goal:20,going:[7,24],gone:7,got:[8,13],grab:25,gradual:1,graph:[1,15,19,21,26],graphql:6,great:7,guarante:[7,8,25],guard:22,gui:16,guid:[7,8],had:[7,18,20],halt:20,handi:6,handl:[1,8,14],hang:1,happen:[3,13,14],hardcod:[12,15,17],has:[1,2,7,8,16,17,18,19,20,22,24,25,26],has_solid:1,have:[0,1,6,7,8,10,11,12,15,17,18,19,20,21,22,23,24,25,26],haw:12,header_fil:8,hello:[0,9,12,17],hello_dag:15,hello_dag_pipelin:15,hello_input:17,hello_world:[0,16,23],hello_world_pipelin:16,help:[12,13,15],helper:7,henc:8,here:[7,12,17,22,25],heterogen:[25,26],high:8,highlight:16,homebrew:10,honua:12,hook:21,host:[7,20,24],how:[1,8,11,12,13,14,15,16,17,18,21,23,24,25,26],howev:[18,21,22,25],html:6,http:[6,15,16,17,25,26],idempot:[1,26],identifi:1,illustr:12,imagin:[13,17,20,21,24],immatur:20,implement:[0,1,14,18,24],implicit:[20,26],implicitli:18,implict:20,importerror:8,improv:[13,17],includ:[7,8,13,14,19,21,25],incom:7,inde:[7,21,25],index:[1,9,25],indic:[2,14,20],indirect:14,individu:[1,12,26],info:[0,1,2,7,12,13,14,16,18,19,20,21,24],inform:[1,7,14,15,16,17,23,26],infrastructur:[7,14],ingest:20,ingest_a:20,ingest_b:20,inject:19,injected_solid:19,inmemorystor:24,inner_typ:4,input:[0,1,5,8,9,11,12,13,15,16,18,19,20,21,22,24,26],input_def:1,input_nam:1,input_schema:25,input_selector_schema:25,inputdefinit:[0,1,7,11,13,15,17,18,19,20,21,24,25],inputs_env:17,insert:25,insid:[10,13],inspect:[20,26],inst_param:25,instal:[6,7,8,9,16],instanc:[1,14,15,18,21],instanti:21,instead:[0,1,7,8,12,13,17,19,23,24,25],instruct:[8,16,25],integr:[1,26],intend:3,interact:[1,6,7,11,12,14,17,24],interest:[15,17,21],interfac:[16,24],intern:[1,8],interpret:10,intro_tutori:[14,23],introduc:[15,16],invalid:18,invari:2,invoc:1,invok:[7,17,24],involv:21,is_opt:[1,7,12,25],is_posit:1,isn:3,isol:[10,19],issu:6,item:25,iter:[1,3,18],iterate_over_pipelin:1,its:[1,7,11,12,13,14,15,16,17,22,24,26],itself:[0,1,18,23],javascript:6,jest:6,job:20,just:[7,8,10,11,12,15,16,17,18,19,22,23],kdjfkd:13,keep:22,kei:[0,1,3,12,14,15,17,24,25],klass:8,know:[7,17,23,26],known:[17,26],kwarg:[0,2,3,4],label:[21,25],lambda:[0,1,20,24],lambda_solid:[0,1,11,12,13,15,16,17,19,21,23,25],languag:[12,25],last:[11,22],lastli:24,later:[8,10,15,16,22],latest:[7,10],layer:[14,15],learn:[12,13,23,24,26],left:[0,19],len:[12,19],less:[7,8,17],let:[7,11,13,14,15,16,17,18,19,20,22,23,24,25,26],letter:13,level:[8,14,16,22],level_from_str:7,librari:[8,10,25,26],lifecycl:8,like:[0,1,8,10,12,14,17,18,20,21,22,23,25],line:[11,12,13,15,16,17,22,23],link:12,list:[0,1,3,4,11,23,25],littl:23,live:[6,24],livehtml:6,load:[17,21,22,23],load_a:21,load_b:21,load_numb:[19,21],local:[7,14,24],local_f:7,localfshandleresourc:7,localhost:6,locat:26,log:[0,1,7,16,18,20,22,24],log_level:[7,8,13,14,20,22],log_message_id:[14,16,18,20],log_num:18,log_num_squar:18,logger:[7,8],longer:[7,8,25],look:[11,22],lot:16,machin:[7,14,26],made:[13,21,26],mai:[1,7,12,17,23,26],maintain:26,mainten:26,make:[3,6,7,8,10,13,14,17,20,21,23,25,26],malform:20,manag:[6,10,12,14,26],mani:[1,12,15,17,21,23,26],manipul:25,manual:[1,7],map:1,mar:17,mark:16,materi:25,matter:[11,22],matur:26,maxim:26,maximum:12,mean:[7,17,24],meaning:26,mechan:[8,16,18,19],medium:26,memori:[1,19,24,25],merg:7,messag:[1,8,13,14,15,16],met:23,metadata:[1,20,25,26],method:1,microsoft:10,middl:7,might:[12,13,14,25],milli:16,mismatch:2,miss:[13,15],mistak:[13,17],mode:[6,24],model:[7,9,15,23,24],modifi:18,modul:[8,9,23],modulenotfounderror:8,more:[0,7,8,11,12,14,18,20,21,22],most:[8,14,23],mostli:1,move:[7,8],much:[1,7,8,12,25],multer:[19,21],multi:16,multipl:[0,1,8,9,21,22,26],multipleresult:[0,18],multipli:13,multiply_the_word:[13,22],multiply_the_word_with_typed_config:13,must:[1,12,15,17,18,19,20,24,25],mutabl:25,my_solid:0,my_solid_from_dict:0,myenv:10,name:[0,1,3,7,8,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25],namedtupl:[7,8],namespac:8,natur:20,navig:[15,16],necessari:1,need:[0,6,7,8,10,17,22,24,25,26],net:8,never:[18,19,26],next:[11,12,14,15,16,17,18,22,23,24],nice:13,nicer:8,nine:20,node:[3,16,21,26],non:[1,13],none:[0,1,3,5,7],none_resourc:7,norm:26,normal:8,not_a_num:13,not_a_numb:13,note:[3,7,8,11,17,18,23,24,25],noth:25,notic:[7,14,15,17,18,20,21,25],notion:[7,8,25],notori:26,now:[7,8,11,12,13,14,15,17,19,20,21,22,23,24,25],nullabl:4,num1:[19,21,25],num2:[19,21,25],num:[1,18,25],num_on:[20,24],num_squar:18,num_two:[20,24],number:[1,18,20,25],object:[0,1,8,14,18,25],obvious:21,occur:14,off:[1,19],offer:24,offici:[7,8],often:[17,26],omit:[0,7],onc:[23,25],one:[1,3,7,8,12,16,17,18,19,21,22,25],onli:[1,2,7,12,14,16,17,18,20,21,22,25],oper:[1,10,13,17,20,21,24,26],opinion:[9,26],opportun:14,opt:8,option:[1,10,15,20,25],order:[7,11,12,13,15,17,20,22,23,24,25,26],org:25,orig_messag:[14,16,18,20],origin:25,osx:10,other:[1,7,10,11,14,15,18,19,23,24,25,26],other_nam:1,otherwis:0,our:[12,13,15,16,17,22,23,25],out:[7,8,14,24,26],out_on:18,out_two:18,outliv:25,output:[0,1,3,7,8,9,11,12,15,16,17,19,20,21,24,26],output_nam:[1,3],output_schema:25,output_selector_schema:25,outputdefinit:[0,1,7,17,18,19,20,21,24,25],outputs_def:1,over:[1,22,25,26],overrid:22,overview:26,own:[7,8,16,17,22,25],packag:[10,24],page:9,pair:[14,25],panda:[1,8,25,26],pandas_df:25,pandasdatafram:25,pane:16,parallel:8,param:8,paramet:[0,1,3,12,21],parameter:[3,17,24,25],parametercheckerror:8,parameteriz:1,parametr:12,parametriz:26,parquet:25,part:[10,20,22,23,26],part_eleven:18,part_eleven_step_on:18,part_eleven_step_thre:18,part_eleven_step_two:18,part_seven:22,part_ten:20,part_ten_step_on:20,part_thirteen:21,particular:[3,7,12,18,21,24,26],particularli:21,pass:[1,7,8,12,13,14,19,23,24,25],passthrough:1,passthrough_context_definit:1,password:[7,24],path:[4,7,8,10,13,25],pathtofil:[7,8],pedogog:25,peopl:[23,26],per:[0,1,8,11,12,17],perform:[1,20,25,26],persist:25,persona:26,piec:7,pieplin:1,pip:[6,8],pipelin:[1,2,3,7,8,9,11,12,13,14,15,17,18,20,21,23,24,25,26],pipeline_cli_execut:22,pipeline_def:5,pipeline_dict:[1,13,23],pipeline_guid:7,pipeline_result:[19,21],pipeline_run_id:[7,8],pipeline_start:16,pipeline_success:16,pipelineconfigevaluationerror:[3,13],pipelinecontextdefinit:[1,7,8,24],pipelinedefinit:[1,3,8,11,12,13,14,15,16,17,18,19,20,21,23,24],pipelinedefiniton:1,pipelinedefint:1,pipelineexecutionresult:3,place:[22,24],plai:25,plan:[6,20],platform:[16,23],plu:19,point:[11,18,23],poorli:26,pop:17,popd:10,port:[6,7],posit:20,possibl:13,postgresql:7,potenti:[7,25],power:[7,14],practic:26,pre:[1,7],predict:7,prefer:[1,13],present:[1,10,25],prevent:[13,20],previou:[1,7,12,13,18,23],primari:17,primer:26,principl:9,print:[0,14],prior:[13,17,26],probabl:1,proce:[12,25],process:[20,26],prod:1,produc:[0,1,16,24,25,26],product:[1,8,12,14,22,24,26],program:[9,15,23,26],programmat:23,project:[6,10,23],promis:7,prone:[8,17,22],properli:26,properti:[1,8,12,20],provid:[1,8,12,14,15,17,18,19,24,25,26],publiccloudconn:24,publiccloudstor:24,publish:6,pure:[1,25],purpos:21,pushd:10,put:7,py27:12,pydata:25,python3:[6,10],python:[6,8,16,18,20,24,26],python_modul:6,python_packag:10,python_typ:[4,8],pythonobjecttyp:[4,8],qualiti:[1,8,20],question:25,quickli:26,quit:[7,19,20],quux:13,rais:[2,18,25],ran:13,rather:[3,7,8,11,15,16,17,18,19,21,23,25,26],raw:8,react_app_graphql_uri:6,read_csv:25,read_parquet:25,read_tabl:25,readili:14,real:7,realiz:8,realli:8,reason:[1,8,21],recal:17,recommend:10,record:24,record_valu:24,recours:20,red:17,redistribut:10,redshift:[7,8],reduc:26,reentrant_info:3,reentrantinfo:3,regist:25,regret:10,rel:7,relat:8,releas:[7,10],relev:7,remain:25,remov:25,render:6,repetit:23,replac:[7,8,13],repo:23,repo_demo_pipelin:23,report:26,repositori:[1,6,9,10,22],repositorydefinit:[1,13,23],repostori:23,repres:[1,8,24],requir:[0,1,6,7,13,20,24,25,26],rerun:12,resid:21,resoourc:24,resourc:[1,8,9,14],resource_fn:[1,7,24],resource_test_pipelin:24,resourcedefinit:[1,7,24],respons:25,rest:7,resuabl:7,result:[0,1,3,6,8,16,18,19,20,24],result_context:1,result_dict:[0,8],result_for_solid:[3,8,19,21],result_list:[3,19],retriev:1,return_dict_result:18,reus:[7,21],reusabl:[7,9,12],rewrit:12,rich:[13,17,26],richer:14,right:[0,8,16,17,20],root:[10,13],rout:14,row:25,rule:2,run:[3,7,8,10,12,13,14,15,16,18,20,22,23,25,26],run_id:[7,14,16,18,20],runner:6,runtim:[2,8,13,15,17,26],runtime_typ:1,runtimeexecutioncontext:8,runtimeexecutioncontextparam:8,s3filehandl:8,sai:[19,20,25],salient:12,same:[0,1,7,8,11,12,17,18,24,26],satisfi:[1,11,19],satisi:7,save:[14,16,23],scalar:[1,12],schema:[7,8,9,12,22],scientist:26,scope:21,script:[6,16,22],search:9,second:[8,12,15,17],section:[7,12,14,15,17],see:[1,3,10,11,13,14,15,16,17,18,21,23,25,26],seen:[11,25],select:[10,25],selector:[8,25],self:[7,13,24],semi:14,sens:25,sensibl:6,sep:25,separ:[8,10,15],sequenc:13,serv:[16,17,26],server:6,servic:24,service_lines_fil:8,set:[6,16,22,24],set_value_in_cloud_stor:24,setup:1,sever:[0,17,25],shape:8,share:7,she:25,shell:10,shortcut:0,should:[0,1,7,8,10,12,14,15,16,18,21,23,24,25,26],shouldn:21,side:26,signatur:1,similar:25,simpl:[0,15],simpler:[0,8],simpli:[8,24],simplifi:[0,20],sinc:[11,25],singl:[0,1,7,8,12,16,18,19,21,24,25,26],site:21,size:25,skip:20,slightli:[7,11,20],snapshot:[6,8],snapshot_check_result:8,softwar:[1,7,10,20],solid:[0,1,2,3,8,9,11,12,13,14,15,16,17,18,19,20,22,23,24,25],solid_1:1,solid_2:1,solid_a:11,solid_b:11,solid_c:11,solid_d:11,solid_definit:[14,16,18],solid_nam:[1,5],solid_on:15,solid_result:[8,21],solid_subset:3,solid_two:15,soliddefinit:[0,1,3],solidexecutionresult:3,solidinst:[1,19,21],some:[1,2,6,7,8,14,20,22,24,25,26],some_input:1,some_password:24,some_us:24,someth:[0,6],sophist:[11,20],sourc:[6,7,25],space:2,spark:[14,26],speak:[12,19],special:[7,21],specif:[7,18,22],specifi:[0,12,14,15,17,18,22,23],specific_env:22,spew:[18,20],split_headers_and_service_lin:8,sql:26,sqlalchemi:8,ssd:1,stacktrac:17,stage:[8,26],start:[6,11,19],state:3,step:[3,8,15,16,17,25],step_eleven:18,step_kei:16,step_results_by_tag:3,still:11,storag:21,store:[24,25],str:[0,1,7,8,13],str_param:25,str_valu:0,straightforward:7,stream:[1,16],string:[0,4,7,8,12,13,15,17,18,24,25],strongli:[10,13,22],structur:[1,7,13,14,17,25,26],stub:8,stub_a:19,stub_b:19,stub_c_plus_d:19,studio:10,sub:8,subdag:19,subfield:25,submodul:8,subpackag:8,subsequ:7,subset:[7,8,19,26],substanti:8,substrat:14,succeed:[16,20],success:[1,3,8,16,19,20,21],sudo:10,suffici:26,suitabl:1,sum:25,sum_df:25,sum_solid:25,suppli:1,support:[0,1,7,18,26],suppos:[6,8,22],surfac:17,surround:14,swap:24,swappabl:23,sync:22,synchron:3,synthes:7,system:[1,2,4,7,8,10,12,13,14,20,24,25,26],tab:16,tabl:[1,8,25],tabular:25,tailor:21,take:[0,1,7,8,12,16,19,25],target:[1,23],task:[11,15,26],team:26,tediou:[13,22],tell:[15,20,22,23,24],term:[18,20,25],test:[1,3,6,7,8,9,10,12,20,24,26],test_a_plus_b_final_subdag:19,test_intro_tutorial_part_four:12,test_part_thirteen_step_on:21,test_part_thirteen_step_two:21,testabl:12,than:[3,6,7,8,11,15,17,18,19,21,22,23,25,26],thei:[0,1,7,8,11,20,21,25,26],them:[8,10,12,16,17,21,25],therefor:13,thi:[0,1,3,7,8,10,11,12,13,14,15,16,17,18,19,20,21,23,24,25,26],thing:[3,7,21,24],think:[21,26],third:[8,16,25],thirteen_step_on:21,thirteen_step_two:21,those:[1,6,8,10,12,20,22,25,26],though:14,thought:8,thread:[14,16],three:[16,17,21,25],through:[1,14,17,25,26],throughout:[14,25],throw_on_error:[3,20],thrown:2,thu:1,tie:[8,18],tied:21,time:[1,11,12,13,16,17,18,20,21,23,25,26],timestamp:14,tiresom:23,to_csv:25,to_parquet:25,togeth:[7,11,21],tool:[6,10,16,20,22,23,26],top:[8,23],topolog:[11,15],total:17,touch:[14,24],tox:6,trace:13,tradit:20,transform:[0,1,3,16,17,18],transform_fn:1,transformed_valu:[3,8,19,21],transformexecutioninfo:[1,12],transit:8,tree:6,trigger:18,turn:[11,12,25],tutori:[12,14,18,22,23,25],tutorial_part_thirteen_step_on:19,tutorial_part_thirteen_step_thre:21,tutorial_repositori:14,two:[1,8,15,18,19,21,22,25],txt:6,type:[0,1,2,7,8,9,12,13,15,18,19,20,21,22,23],typecheck:[13,25],typed_demo_configuration_schema:13,typed_demo_configuration_schema_error:13,typed_multiply_the_word:13,typed_multiply_the_word_error:13,typeerror:[8,13],typic:[1,19,20],ubuntu:10,undefin:13,under:[12,17,24],unexpect:20,unfamiliar:26,union:25,uniqu:[1,18],unit:[1,7,9,15,16,26],unittest:[1,7,8,24],univers:14,unlik:20,unmodifi:7,unnam:[1,19],unpack:25,unsupport:25,until:[17,22],untyp:17,unzip:[7,21],unzip_fil:[7,8],unzipfileconfig:7,unzipped_fil:8,unzipped_path:8,unzipped_path_valu:8,updat:[6,8,10,20],upgrad:[7,8],upload:[8,21],upload_header_to_s3:8,upload_service_line_to_s3:8,upstream:[7,19],usag:1,use:[1,6,7,8,10,12,13,14,16,17,19,22,23,24,25,26],used:[1,7,8,12,16,18,21,24,25],useful:[1,3,14,17,19,20,21,22,25,26],user:[1,2,7,8,9,12,14,17,20,24,26],usernam:24,uses:7,using:[6,7,10,12,14,16,17,21,22,23,24],utf:12,util:[8,9,12,16,22,25],utility_solid:8,uuid4:[7,8],uuid:[7,8],valid:[13,25],valu:[0,1,2,3,8,12,13,14,16,17,18,19,20,22,24,25,26],vari:[1,22],venv:[6,10],verbos:[7,8],veri:[1,3,8,13,15,21,25],version:[3,6,18,20,24],via:[14,16,17,20,23,24,25],view:16,viewabl:20,violat:2,virtual:8,virtualenv:6,virtualenviron:10,virtualenvwrapp:10,visual:[10,15,16,23],wai:[0,16,17,18,20,24,25,26],want:[1,12,14,17,19,20,22,23,24,25],watch:6,wax:7,web:16,webapp:10,welcom:9,well:[2,7,8,26],were:[7,8,21],what:[1,7,11,13,15,20,21,25,26],whatev:8,when:[0,1,3,6,11,13,17,20,22,23,25,26],where:[1,12,14,15,16,19,20,24,25],wherea:25,whether:[1,3,10,20,26],which:[1,3,6,7,12,13,14,15,16,17,18,22,23,26],who:26,whole:[3,20],whose:[0,1,10,15,17],why:21,wide:10,window:10,wire:11,within:[1,7,8,15,16,17,20,21],without:[12,16,17,23],won:10,word:[13,17,22],work:[0,13,20,23,24],workflow:15,world:[9,12,17],worri:15,worth:11,would:[1,7,8,11,13,17,24,25],wrap:18,write:[7,16],written:26,wrong:13,wrong_factor:13,yaml:[8,12,17,22],yarn:6,yellow:16,yet:6,yield:[0,1,3,7,8,17,18,26],yield_output:18,yml:[6,12,13,14,17,22,23],you:[1,6,7,8,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25],your:[7,8,10,11,14,16,17,20,24,25],zip:7,zip_file_path:[7,8],zipped_fil:[7,8]},titles:["Decorators","Definitions","Errors","Execution","Types","Utilities","Contributing","Resources","Required API Changes","Intro Tutorial","Installation","An actual DAG","Configuration","Configuration Schemas","Execution Context","Hello, DAG","Hello, World","Inputs","Multiple Outputs","Unit-testing Pipelines","Expectations","Reusable Solids","Pipeline CLI Execution","Repositories","Resources","User-Defined Types","Principles"],titleterms:{"function":26,actual:11,agnost:26,api:[8,9,17],audit:9,basic:25,chang:8,cli:[16,17,22],comput:26,condit:18,config:[7,22],configur:[12,13],context:14,contribut:6,creat:10,dag:[11,15],dagit:[6,16,17],data:26,decor:0,defin:25,definit:[1,4],describ:26,dev:10,develop:6,doc:6,environ:10,error:2,execut:[3,14,16,22],expect:20,from:10,gradual:26,hello:[15,16],indic:9,input:[7,17,25],instal:10,intro:9,level:7,librari:[7,16],local:6,log:14,multipl:18,old:9,option:26,output:[18,25],pip:10,pipelin:[16,19,22],principl:26,pypi:10,python:[10,17],qualiti:26,refer:9,releas:6,repositori:23,requir:8,resourc:[7,24],reusabl:21,run:6,schema:[13,25],self:26,setup:6,solid:[7,21],sourc:10,split:22,stabl:10,tabl:9,test:19,testabl:26,tutori:9,type:[4,17,25,26],unit:19,user:25,util:5,verifi:26,version:10,virtual:10,virtualenv:10,webapp:6,world:16,yarn:10}})'
+snapshots['test_build_all_docs 10'] = 'Search.setIndex({docnames:["apidocs/decorators","apidocs/definitions","apidocs/errors","apidocs/execution","apidocs/types","apidocs/utilities","contributing","guides/028_to_030_new_concepts","guides/028_to_030_upgrade_guide","index","installation","intro_tutorial/actual_dag","intro_tutorial/config","intro_tutorial/configuration_schemas","intro_tutorial/execution_context","intro_tutorial/expectations","intro_tutorial/hello_dag","intro_tutorial/hello_world","intro_tutorial/inputs","intro_tutorial/part_eleven","intro_tutorial/part_fourteen","intro_tutorial/part_thirteen","intro_tutorial/pipeline_cli_execution","intro_tutorial/repos","intro_tutorial/resources","intro_tutorial/types","principles"],envversion:53,filenames:["apidocs/decorators.rst","apidocs/definitions.rst","apidocs/errors.rst","apidocs/execution.rst","apidocs/types.rst","apidocs/utilities.rst","contributing.rst","guides/028_to_030_new_concepts.md","guides/028_to_030_upgrade_guide.md","index.rst","installation.rst","intro_tutorial/actual_dag.rst","intro_tutorial/config.rst","intro_tutorial/configuration_schemas.rst","intro_tutorial/execution_context.rst","intro_tutorial/expectations.rst","intro_tutorial/hello_dag.rst","intro_tutorial/hello_world.rst","intro_tutorial/inputs.rst","intro_tutorial/part_eleven.rst","intro_tutorial/part_fourteen.rst","intro_tutorial/part_thirteen.rst","intro_tutorial/pipeline_cli_execution.rst","intro_tutorial/repos.rst","intro_tutorial/resources.rst","intro_tutorial/types.rst","principles.rst"],objects:{"dagster.DependencyDefinition":{description:[1,2,1,""],output:[1,2,1,""],solid:[1,2,1,""]},"dagster.ExpectationDefinition":{description:[1,2,1,""],expectation_fn:[1,2,1,""],name:[1,2,1,""]},"dagster.ExpectationResult":{message:[1,2,1,""],result_context:[1,2,1,""],success:[1,2,1,""]},"dagster.InputDefinition":{description:[1,2,1,""],expectations:[1,2,1,""],name:[1,2,1,""],runtime_type:[1,2,1,""]},"dagster.MultipleResults":{from_dict:[0,4,1,""],results:[0,2,1,""]},"dagster.OutputDefinition":{description:[1,2,1,""],name:[1,2,1,""],runtime_type:[1,2,1,""]},"dagster.PipelineContextDefinition":{passthrough_context_definition:[1,4,1,""]},"dagster.PipelineDefinition":{context_definitions:[1,2,1,""],dependencies:[1,2,1,""],dependency_structure:[1,2,1,""],description:[1,2,1,""],display_name:[1,2,1,""],has_solid:[1,5,1,""],name:[1,2,1,""],solid_named:[1,5,1,""],solids:[1,2,1,""]},"dagster.PipelineExecutionResult":{context:[3,2,1,""],pipeline:[3,2,1,""],result_for_solid:[3,5,1,""],result_list:[3,2,1,""],success:[3,2,1,""]},"dagster.RepositoryDefinition":{get_all_pipelines:[1,5,1,""],get_pipeline:[1,5,1,""],iterate_over_pipelines:[1,5,1,""],name:[1,2,1,""],pipeline_dict:[1,2,1,""]},"dagster.Result":{output_name:[1,2,1,""],value:[1,2,1,""]},"dagster.SolidDefinition":{config_field:[1,2,1,""],description:[1,2,1,""],input_defs:[1,2,1,""],metadata:[1,2,1,""],name:[1,2,1,""],outputs_defs:[1,2,1,""],transform_fn:[1,2,1,""]},"dagster.SolidExecutionResult":{context:[3,2,1,""],dagster_error:[3,2,1,""],solid:[3,2,1,""],success:[3,2,1,""],transformed_value:[3,5,1,""],transformed_values:[3,2,1,""]},"dagster.TransformExecutionInfo":{config:[1,2,1,""],context:[1,2,1,""]},"dagster.core":{types:[4,6,0,"-"]},"dagster.core.types":{Any:[4,2,1,""],Bool:[4,2,1,""],Int:[4,2,1,""],List:[4,3,1,""],Nullable:[4,3,1,""],Path:[4,2,1,""],PythonObjectType:[4,0,1,""],String:[4,2,1,""]},dagster:{ContextCreationExecutionInfo:[1,0,1,""],DagsterExpectationFailedError:[2,1,1,""],DagsterInvalidDefinitionError:[2,1,1,""],DagsterInvariantViolationError:[2,1,1,""],DagsterRuntimeCoercionError:[2,1,1,""],DagsterTypeError:[2,1,1,""],DagsterUserCodeExecutionError:[2,1,1,""],DependencyDefinition:[1,0,1,""],ExecutionContext:[3,0,1,""],ExpectationDefinition:[1,0,1,""],ExpectationExecutionInfo:[1,0,1,""],ExpectationResult:[1,0,1,""],Field:[1,3,1,""],InputDefinition:[1,0,1,""],MultipleResults:[0,0,1,""],OutputDefinition:[1,0,1,""],PipelineConfigEvaluationError:[3,1,1,""],PipelineContextDefinition:[1,0,1,""],PipelineDefinition:[1,0,1,""],PipelineExecutionResult:[3,0,1,""],ReentrantInfo:[3,0,1,""],RepositoryDefinition:[1,0,1,""],ResourceDefinition:[1,0,1,""],Result:[1,0,1,""],SolidDefinition:[1,0,1,""],SolidExecutionResult:[3,0,1,""],SolidInstance:[1,0,1,""],TransformExecutionInfo:[1,0,1,""],execute_pipeline:[3,3,1,""],execute_pipeline_iterator:[3,3,1,""],execute_solid:[5,3,1,""],execute_solids:[5,3,1,""],lambda_solid:[0,3,1,""],solid:[0,3,1,""]}},objnames:{"0":["py","class","Python class"],"1":["py","exception","Python exception"],"2":["py","attribute","Python attribute"],"3":["py","function","Python function"],"4":["py","staticmethod","Python static method"],"5":["py","method","Python method"],"6":["py","module","Python module"]},objtypes:{"0":"py:class","1":"py:exception","2":"py:attribute","3":"py:function","4":"py:staticmethod","5":"py:method","6":"py:module"},terms:{"06c7":17,"0x11e4fbf60":8,"1563854b":17,"25faadf5":17,"2mxds1r":26,"408a":15,"40ea":19,"42b8":19,"43f5":17,"46cc":17,"47db":15,"48cda39e79a1":19,"49eb":17,"49ef":19,"4a4e":14,"4ac0":14,"4ae2":17,"4b3f":15,"4d71":17,"4f38ba45b8e0":14,"583d":19,"5878513a":17,"5c829421":17,"604dc47c":17,"66b0b6ecdcad":15,"677247b1b07b":17,"6b80d12155de":19,"6d6dbe6b296b":19,"744a":17,"758f":17,"7d62dcbf":19,"7e828e37eab8":17,"7f4d":19,"80c2":15,"81ba":17,"88cb":17,"8b76":15,"938ab7fa":15,"941f":19,"95af":19,"95ef":19,"97ae58fda0f4":17,"9ca21f5c":15,"9cbe4fa0f5e6":19,"9de556c1":19,"9f44":15,"\\u4e16\\u754c":12,"\\u4f60\\u597d":12,"abstract":[1,7,14],"break":[6,7,8,26],"case":[1,12,14,15,16,18,20,24,25],"catch":[13,18],"class":[0,1,2,3,4,7,8,15,19,24],"default":[0,1,7,10,13,14,15,19,22,23,25],"final":[20,21,22,25],"function":[0,1,3,7,8,12,16,17,18,19,21,23,24,25],"import":[8,11,12,13,14,16,17,18,23,24,25,26],"int":[1,4,7,13,15,19,20,21,24,25],"long":23,"new":[6,7,8,10,16,20,23,24],"public":[8,24],"return":[0,1,3,7,11,12,13,14,15,16,17,18,19,20,21,23,24,25],"static":[0,1],"switch":[10,12],"throw":[1,2,3,15],"true":[1,3,7,12,25],"try":[11,12,22,23],"while":[7,8,24],And:[7,10,13,14,15,18,21,22,24],But:[18,23],For:[1,3,6,7,10,12,18,19,24],Lying:15,One:[1,8,14,15,16,20,25],That:[7,12,24],The:[0,1,3,7,8,11,12,13,15,16,17,18,19,20,22,24,25],Then:[12,17],There:[1,8,17,21],These:[1,13,19,21,26],Use:8,Used:1,Useful:[0,24],Using:17,With:[7,19,22],__fieldvaluesentinel:1,__inferoptionalcompositefieldsentinel:1,__init__:[8,24],__main__:[17,19],__name__:[17,19],_add_on:1,_cleanup_field:7,_conf_field:7,_create_resourc:7,_data_source_run_id_field:7,_info:[1,15,19],_log_level_field:7,a29ddb15309a:14,a463:19,a531:17,a801:17,a_plus_b:[20,21],aaac:14,abid:25,abil:[7,15,16,20],abl:[7,12,14,17,21,23,25,26],about:[1,7,8,12,15,16,22,24,25,26],abov:[19,25],accept:1,access:[1,14,24],acronym:1,across:[7,22],action:13,activ:[6,10],actual:[9,16,19,26],actual_dag:11,actual_dag_pipelin:11,acycl:[1,16,26],add:[8,15,17,24,25],add_hello_to_word:18,add_hello_to_word_typ:18,add_int:[15,24],add_on:1,added:15,adder:[20,21],adding:15,addit:[0,12],addition:19,advertis:26,aed8162cc25c:19,aesthet:25,afford:12,after:[7,8,11],again:11,against:[8,22,24],alia:[1,21],all:[1,3,7,12,17,18,19,23,25],allow:[0,1,3,7,14,16,19,22,23,25],allscript:[7,8],allscriptsfileloadresourc:7,aloha:12,along:[20,25],alreadi:[10,20,23,24],also:[6,7,8,10,15,18,19,20,22,23,25,26],alter:24,altern:25,although:[14,23],alwai:[18,26],anaconda:10,analyst:26,ani:[1,3,4,6,7,8,10,11,13,14,17,18,23,24,25,26],annon:14,annot:[8,12,25],anoth:[7,8,24],anticip:7,anyth:25,apach:6,apart:7,api:[0,1,3,7,12,23,24,25],appear:[14,25],appli:[1,18,25],applic:[15,22],approach:26,appropri:[18,24,26],apt:10,arbitrari:[1,15,16,19,20,25,26],aren:10,arg:[2,3,4],arg_a:11,arg_b:11,arg_c:11,arg_on:16,argument:[0,1,2,8,12,16,18,19,22,25],aris:13,arithmet:21,around:[8,19,25],arrai:1,arrang:[1,17,26],arrow:6,articl:26,artifact:[24,26],as_dagster_typ:[8,25],asid:7,aspect:15,assert:[8,17,20,21],asset:[1,17],assign:18,assum:[1,17,25],assumpt:[15,26],attach:[1,15,24],attent:11,attribut:[1,8],attributeerror:8,author:[1,14,16,26],auto:[6,18],automat:18,autoreload:6,avail:1,avoid:12,awai:14,awar:15,awkward:8,aws:7,axes:25,b0cbb1be:14,b150:19,b27fb70a:17,b510:17,b5a8:17,b602e4409f74:17,b85c:17,b8e0:14,back:13,bake:15,ball:7,bar:[0,22],barb:0,base:[18,19],bash:10,basi:11,basic:14,batch:26,beauchemin:26,becaus:[6,7,8,11,14,15,18,19,25,26],becom:[0,7],been:[2,19,20,21,22,25],befor:[7,8,11,13,18],begin:[7,17],behavior:15,behaviour:0,being:[3,8,21],best:26,better:[18,23],between:[1,3,7,16,26],bigco:24,bin:[6,10],bit:[10,26],bkjdf:13,bodi:0,boilerpl:[7,25],bool:[1,3,4,7],both:[8,10,11],bottom:17,branch:19,breakag:26,brew:10,broadli:[20,22],browser:17,bucket:8,bucket_path:7,bug:22,build:[7,8,10,11,16,17,23,25],built:[12,18,26],builtin:25,bulk:7,bunch:[14,15,22],burden:26,c008:15,c12bdc2d:15,c25e:19,c955:15,c_plus_d:[20,21],cach:1,call:[8,15,16,17,21,23,25,26],callabl:1,callback:1,caller:[3,8],can:[1,2,6,7,8,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26],cannot:8,capabilti:15,capabitili:16,capabl:[7,8,14,15,20,24,26],captur:15,caught:13,caus:[13,15],cb10:19,cb75946b0055:17,cc2ae784:19,certain:1,chang:[6,7,14,24,26],check:[1,2,6,8,10,16,25,26],check_posit:15,check_positivevalu:15,choic:17,choos:[16,25],chunk:7,cleali:26,clean_up_dir:7,cleanup_fil:[7,8],clear:[13,15],cli:[9,23],click:18,clone:[6,10],cloud:[21,24],cluster:14,code:[2,7,8,12,14,15,24,25,26],collabor:26,collect:[1,13,23],column:25,com:[6,10],come:[1,7,10,25],command:[11,12,16,18,22,23],comment:20,common:[7,24],commonli:25,commun:15,compar:6,compat:12,complet:[1,17,18],complex:11,complic:21,compos:[1,7],compris:1,comput:[1,12,14,15,16,17,24,25],computation:26,concaten:16,concept:[7,15,16,17],conceptu:[8,12],concis:0,conda:10,condit:3,condition:19,conf:[7,8],config:[0,1,8,12,13,14,15,18,19,20,21,23,24,25],config_def:[7,8],config_env:12,config_field:[0,1,7,8,12,13,15,19,20,21,24],config_valu:[1,3,25],configdefinit:[7,8,15,19,20,21],configdictionari:[7,8],configur:[0,1,2,7,8,9,14,15,18,19,22,24,25,26],configurable_hello:12,configurable_hello_pipelin:12,configuration_schema:13,configuration_schemas_error_2:13,configuration_schemas_runtime_error:13,configuration_schemas_type_mismatch_error:13,configuration_schemas_wrong_field:13,conform:1,conn:24,connect:[1,7,11,16,21,25],consist:7,consol:[14,18],constant:22,constant_env:22,constitut:1,construct:[1,8,23],consum:[1,13,22,26],contain:[1,6,7,14,18,20,26],context:[0,1,3,7,8,9,13,15,19,20,22,24,26],context_definit:[1,24],context_fn:[1,7,8],context_param:1,context_stack:[7,8],contextcreationexecutioninfo:1,contract:26,contribut:9,control:[1,15,26],cooper_pair:7,copi:[16,22,25],core:[0,1,2,4,8,13,15,16,17,19,21,24],correct:1,correspond:12,could:[1,7,11,18],count:[7,13],count_lett:13,coupl:12,creat:[0,1,6,7,8,20,22,23,24],create_allscripts_fileload_unittest_context:7,create_engin:7,create_single_solid_pipelin:[8,20],create_sub_pipelin:[8,20],creation:[0,7,8],credenti:24,critic:[15,26],csv:25,current:[1,15],custom:17,d129552525a4:15,d548ea66:19,d8f41da0:14,dag:[1,9,12,17,20,26],dagit:[10,11,12,14,15,16,21,22,23,25],dagster:[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,22,23,25,26],dagster_error:3,dagster_exampl:6,dagster_pd:1,dagster_sqlalchemi:8,dagster_typ:[1,7,8,19],dagsterenv:6,dagsterexpectationfailederror:[2,15],dagsterinvaliddefinitionerror:2,dagsterinvariantviolationerror:[2,25],dagsterruntimecoercionerror:2,dagstertyp:[1,7],dagstertypeerror:2,dagsterusercodeexecutionerror:2,data:[1,9,15,16,17,20,25],data_sourc:[7,8],data_source_run_id:[7,8],databas:[1,14,24],datafram:[1,25],dataframe_input_schema:25,dataframe_output_schema:25,dbname:7,dea6d00d99f0:17,debug:[13,14,15,22],debug_messag:14,declar:[1,7,11,12,21,23,24,25],decor:[1,9,17,25],deem:26,deep:13,deepli:11,def:[0,1,7,11,12,13,14,15,16,17,18,19,20,21,23,24,25],default_output:3,default_valu:[1,7,12,25],defaultcontextconfig:8,defaultdict:13,defin:[0,1,2,7,8,9,12,16,17,22,23],define_allscripts_fileload_pipelin:8,define_cloud_store_resourc:24,define_colored_console_logg:[7,8],define_configurable_hello_pipelin:12,define_csv_dict_field:25,define_demo_configuration_schema_pipelin:13,define_demo_configuration_schema_repo:13,define_demo_execution_repo:22,define_diamond_dag_pipelin:11,define_execution_context_pipeline_step_on:14,define_hello_dag_pipelin:16,define_hello_inputs_pipelin:18,define_hello_world_pipelin:[17,23],define_in_memory_store_resourc:24,define_local_fs_resourc:7,define_part_eleven_step_on:19,define_part_eleven_step_thre:19,define_part_eleven_step_two:19,define_part_fourteen_step_on:20,define_part_ten_step_on:15,define_part_thirteen_step_on:21,define_part_thirteen_step_thre:21,define_part_thirteen_step_two:21,define_path_dict_field:25,define_redshift_sa_resourc:7,define_repo:23,define_repo_demo_pipelin:23,define_repositori:14,define_resource_test_pipelin:24,define_stub_solid:[8,20],define_typed_demo_configuration_schema_error_pipelin:13,define_typed_demo_configuration_schema_pipelin:13,define_unittest_context:7,definit:[2,8,9,12,13,21,23,24],del:25,deliv:26,demand:[1,23],demo_configuration_schema:13,demo_configuration_schema_repo:13,demo_pipelin:22,demo_repositori:23,demonstr:[11,18],depend:[1,6,7,8,11,12,13,15,16,18,19,20,21,26],dependency_structur:1,dependencydefiniion:1,dependencydefinit:[1,11,13,15,16,19,20,21],dependencystructur:1,describ:[7,13,15],descript:[0,1,7,8,13,19,24,25],design:[1,14,26],destruct:1,detail:[8,12,18],deteremin:2,determin:[1,11,16],dev:[1,6],develop:[10,12,15,24],dfc8165a:17,diagnost:26,dict:[0,1,3,7,8,12,13,16,18,24,25],dict_param:25,dictionari:[0,1,3,8,11,16,18,25],did:19,differ:[1,6,8,12,14,15,17,21,24,25,26],difficult:[8,20,26],dimension:[1,25],direct:[1,16,26],directli:[8,17,18,25],directori:6,discourag:8,discov:26,discuss:20,disk:[1,8,25],displai:1,display_nam:1,distinguish:16,document:[6,10,13,22,26],doe:[1,7,11,14,19,24],doesn:7,doing:[21,25],don:[11,16],done:[12,20,26],dot:18,download:10,downstream:19,drive:22,dropdown:[16,23],dsl:26,dure:[3,26],dynam:19,e257262eab79:15,e476:14,each:[1,3,7,11,12,16,17,18,21,22,25],earlier:[18,22],easier:[1,7,23],easili:26,edg:1,edit:[12,13],editor:[12,18],effect:26,either:[1,3,16,19,26],element:[22,25],elif:[12,19,25],elimin:[7,8],els:[12,19,25],emit:[17,19,20],emittedoutput:19,enabl:20,encod:[12,16],encourag:[10,26],encout:3,end:[1,19],enforce_uniqu:1,engin:[14,16,26],enrich:22,ensur:[1,25],enter:[15,18],entir:[12,14,15,18,20],entit:1,entri:11,entropi:26,env:[8,13,22],enviro:3,environ:[1,3,5,6,7,8,11,12,14,18,24,26],error:[3,7,8,9,13,14,15,16,18,22,26],error_messag:14,especi:23,etc:[1,6,21],evalu:[1,15],even:[7,14],event_typ:17,ever:13,everi:[1,17,26],everyth:18,exactli:8,examin:19,exampl:[0,1,6,7,8,11,12,14,17,18,19,23,24,25,26],excel:26,except:[1,2,3,19,25,26],excess:8,exclus:7,execut:[1,7,8,9,11,12,13,15,16,18,19,20,23,24,25,26],execute_pipelin:[3,8,12,14,15,17,18,19,20,21,24],execute_pipeline_iter:3,execute_solid:[5,8],execute_with_another_world:18,execution_context:14,execution_context_pipelin:14,execution_plan_step_start:17,execution_plan_step_success:17,executioncontext:[1,3,7,8],exist:[1,7,8,20,25],expect:[1,2,9,25,26],expectation_fn:[1,15],expectationdefinit:[1,15],expectationexecutioninfo:1,expectationresult:[1,15],expedit:6,expens:[13,15],experi:[13,18],explicit:[15,26],explictli:15,explod:0,explor:[11,12,16,17],express:[16,25,26],extern:[1,11,12,14,18,26],extract:1,f37e:17,f6fd78c5:19,f77205931abb:17,face:[7,8],facil:[12,14],fact:16,factor:[13,22],fail:[15,18,25],faild:2,failur:[1,2,13],fairli:8,fals:[7,8,15,25],famili:8,far:[18,19,21],fast:1,fe29:17,featur:[7,10,12,15,16,22],few:[7,16,17],field:[0,1,7,8,12,13,24,25],field_util:1,file:[6,7,8,12,13,14,18,21,22,23,24,25],file_opt:25,file_typ:25,fileload:7,filter:17,fire:19,first:[8,10,11,12,15,16,17,19,24],fix:8,flag:18,flexibl:12,flow:[1,16,18,25,26],fly:12,focu:20,focus:22,folder:7,follow:[8,10,12,20,21,22,24,25],foo:[0,14,16],for_pipeline_run:7,forc:25,forget:16,form:[1,18,19],formal:7,format:[14,19,24,25,26],forth:1,frame:[15,25],framework:1,frequent:[1,24],from:[0,1,6,7,8,11,12,13,14,15,16,17,18,19,20,22,23,24,25],from_dict:[0,19],frontend:6,fulli:[12,25],further:17,futur:15,gener:[1,6,7,8,21,26],generate_production_execution_context:8,get:[1,3,7,13,17,21,23],get_all_pipelin:1,get_pipelin:1,git:[6,10],github:[6,10],give:[14,16],given:[1,3,25,26],glarb:0,glob:22,goal:15,going:[7,24],gone:7,got:[8,13],grab:25,gradual:1,graph:[1,16,20,21,26],graphql:6,great:7,guarante:[7,8,25],guard:22,gui:17,guid:[7,8],had:[7,15,19],halt:15,handi:6,handl:[1,8,14],hang:1,happen:[3,13,14],hardcod:[12,16,18],has:[1,2,7,8,15,17,18,19,20,22,24,25,26],has_solid:1,have:[0,1,6,7,8,10,11,12,15,16,18,19,20,21,22,23,24,25,26],haw:12,header_fil:8,hello:[0,9,12,18],hello_dag:16,hello_dag_pipelin:16,hello_input:18,hello_world:[0,17,23],hello_world_pipelin:17,help:[12,13,16],helper:7,henc:8,here:[7,12,18,22,25],heterogen:[25,26],high:8,highlight:17,homebrew:10,honua:12,hook:21,host:[7,15,24],how:[1,8,11,12,13,14,16,17,18,19,21,23,24,25,26],howev:[19,21,22,25],html:6,http:[6,16,17,18,25,26],idempot:[1,26],identifi:1,illustr:12,imagin:[13,15,18,21,24],immatur:15,implement:[0,1,14,19,24],implicit:[15,26],implicitli:19,implict:15,importerror:8,improv:[13,18],includ:[7,8,13,14,20,21,25],incom:7,inde:[7,21,25],index:[1,9,25],indic:[2,14,15],indirect:14,individu:[1,12,26],info:[0,1,2,7,12,13,14,15,17,19,20,21,24],inform:[1,7,14,16,17,18,23,26],infrastructur:[7,14],ingest:15,ingest_a:15,ingest_b:15,inject:20,injected_solid:20,inmemorystor:24,inner_typ:4,input:[0,1,5,8,9,11,12,13,15,16,17,19,20,21,22,24,26],input_def:1,input_nam:1,input_schema:25,input_selector_schema:25,inputdefinit:[0,1,7,11,13,15,16,18,19,20,21,24,25],inputs_env:18,insert:25,insid:[10,13],inspect:[15,26],inst_param:25,instal:[6,7,8,9,17],instanc:[1,14,16,19,21],instanti:21,instead:[0,1,7,8,12,13,18,20,23,24,25],instruct:[8,17,25],integr:[1,26],intend:3,interact:[1,6,7,11,12,14,18,24],interest:[16,18,21],interfac:[17,24],intern:[1,8],interpret:10,intro_tutori:[14,23],introduc:[16,17],invalid:19,invari:2,invoc:1,invok:[7,18,24],involv:21,is_opt:[1,7,12,25],is_posit:1,isn:3,isol:[10,20],issu:6,item:25,iter:[1,3,19],iterate_over_pipelin:1,its:[1,7,11,12,13,14,16,17,18,22,24,26],itself:[0,1,19,23],javascript:6,jest:6,job:15,just:[7,8,10,11,12,16,17,18,19,20,22,23],kdjfkd:13,keep:22,kei:[0,1,3,12,14,16,18,24,25],klass:8,know:[7,18,23,26],known:[18,26],kwarg:[0,2,3,4],label:[21,25],lambda:[0,1,15,24],lambda_solid:[0,1,11,12,13,16,17,18,20,21,23,25],languag:[12,25],last:[11,22],lastli:24,later:[8,10,16,17,22],latest:[7,10],layer:[14,16],learn:[12,13,23,24,26],left:[0,20],len:[12,20],less:[7,8,18],let:[7,11,13,14,15,16,17,18,19,20,22,23,24,25,26],letter:13,level:[8,14,17,22],level_from_str:7,librari:[8,10,25,26],lifecycl:8,like:[0,1,8,10,12,14,15,18,19,21,22,23,25],line:[11,12,13,16,17,18,22,23],link:12,list:[0,1,3,4,11,23,25],littl:23,live:[6,24],livehtml:6,load:[18,21,22,23],load_a:21,load_b:21,load_numb:[20,21],local:[7,14,24],local_f:7,localfshandleresourc:7,localhost:6,locat:26,log:[0,1,7,15,17,19,22,24],log_level:[7,8,13,14,15,22],log_message_id:[14,15,17,19],log_num:19,log_num_squar:19,logger:[7,8],longer:[7,8,25],look:[11,22],lot:17,machin:[7,14,26],made:[13,21,26],mai:[1,7,12,18,23,26],maintain:26,mainten:26,make:[3,6,7,8,10,13,14,15,18,21,23,25,26],malform:15,manag:[6,10,12,14,26],mani:[1,12,16,18,21,23,26],manipul:25,manual:[1,7],map:1,mar:18,mark:17,materi:25,matter:[11,22],matur:26,maxim:26,maximum:12,mean:[7,18,24],meaning:26,mechan:[8,17,19,20],medium:26,memori:[1,20,24,25],merg:7,messag:[1,8,13,14,16,17],met:23,metadata:[1,15,25,26],method:1,microsoft:10,middl:7,might:[12,13,14,25],milli:17,mismatch:2,miss:[13,16],mistak:[13,18],mode:[6,24],model:[7,9,16,23,24],modifi:19,modul:[8,9,23],modulenotfounderror:8,more:[0,7,8,11,12,14,15,19,21,22],most:[8,14,23],mostli:1,move:[7,8],much:[1,7,8,12,25],multer:[20,21],multi:17,multipl:[0,1,8,9,21,22,26],multipleresult:[0,19],multipli:13,multiply_the_word:[13,22],multiply_the_word_with_typed_config:13,must:[1,12,15,16,18,19,20,24,25],mutabl:25,my_solid:0,my_solid_from_dict:0,myenv:10,name:[0,1,3,7,8,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25],namedtupl:[7,8],namespac:8,natur:15,navig:[16,17],necessari:1,need:[0,6,7,8,10,18,22,24,25,26],net:8,never:[19,20,26],next:[11,12,14,16,17,18,19,22,23,24],nice:13,nicer:8,node:[3,17,21,26],non:[1,13],none:[0,1,3,5,7],none_resourc:7,norm:26,normal:8,not_a_num:13,not_a_numb:13,note:[3,7,8,11,18,19,23,24,25],noth:25,notic:[7,14,15,16,18,19,21,25],notion:[7,8,25],notori:26,now:[7,8,11,12,13,14,15,16,18,20,21,22,23,24,25],nullabl:4,num1:[20,21,25],num2:[20,21,25],num:[1,19,25],num_on:[15,24],num_squar:19,num_two:[15,24],number:[1,15,19,25],object:[0,1,8,14,19,25],obvious:21,occur:14,off:[1,20],offer:24,offici:[7,8],often:[18,26],omit:[0,7],onc:[23,25],one:[1,3,7,8,12,17,18,19,20,21,22,25],onli:[1,2,7,12,14,15,17,18,19,21,22,25],oper:[1,10,13,15,18,21,24,26],opinion:[9,26],opportun:14,opt:8,option:[1,10,15,16,25],order:[7,11,12,13,15,16,18,22,23,24,25,26],org:25,orig_messag:[14,15,17,19],origin:25,osx:10,other:[1,7,10,11,14,16,19,20,23,24,25,26],other_nam:1,otherwis:0,our:[12,13,16,17,18,22,23,25],out:[7,8,14,24,26],out_on:19,out_two:19,outliv:25,output:[0,1,3,7,8,9,11,12,15,16,17,18,20,21,24,26],output_nam:[1,3],output_schema:25,output_selector_schema:25,outputdefinit:[0,1,7,15,18,19,20,21,24,25],outputs_def:1,over:[1,22,25,26],overrid:22,overview:26,own:[7,8,17,18,22,25],packag:[10,24],page:9,pair:[14,25],panda:[1,8,25,26],pandas_df:25,pandasdatafram:25,pane:17,parallel:8,param:8,paramet:[0,1,3,12,21],parameter:[3,18,24,25],parametercheckerror:8,parameteriz:1,parametr:12,parametriz:26,parquet:25,part:[10,22,23,26],part_eleven:19,part_eleven_step_on:19,part_eleven_step_thre:19,part_eleven_step_two:19,part_seven:22,part_ten:15,part_ten_step_on:15,part_thirteen:21,particular:[3,7,12,19,21,24,26],particularli:21,pass:[1,7,8,12,13,14,20,23,24,25],passthrough:1,passthrough_context_definit:1,password:[7,24],path:[4,7,8,10,13,25],pathtofil:[7,8],pedogog:25,peopl:[23,26],per:[0,1,8,11,12,18],perform:[1,15,25,26],persist:25,persona:26,piec:7,pieplin:1,pip:[6,8],pipelin:[1,2,3,7,8,9,11,12,13,14,15,16,18,19,21,23,24,25,26],pipeline_cli_execut:22,pipeline_def:5,pipeline_dict:[1,13,23],pipeline_guid:7,pipeline_result:[20,21],pipeline_run_id:[7,8],pipeline_start:17,pipeline_success:17,pipelineconfigevaluationerror:[3,13],pipelinecontextdefinit:[1,7,8,24],pipelinedefinit:[1,3,8,11,12,13,14,15,16,17,18,19,20,21,23,24],pipelinedefiniton:1,pipelinedefint:1,pipelineexecutionresult:3,place:[22,24],plai:25,plan:[6,15],platform:[17,23],plu:20,point:[11,19,23],poorli:26,pop:18,popd:10,port:[6,7],posit:15,possibl:13,postgresql:7,potenti:[7,25],power:[7,14],practic:26,pre:[1,7],predict:7,prefer:[1,13],present:[1,10,25],prevent:[13,15],previou:[1,7,12,13,19,23],primari:18,primer:26,principl:9,print:[0,14],prior:[13,18,26],probabl:1,proce:[12,25],process:[15,26],prod:1,produc:[0,1,17,24,25,26],product:[1,8,12,14,22,24,26],program:[9,16,23,26],programmat:23,project:[6,10,23],promis:7,prone:[8,18,22],properli:26,properti:[1,8,12,15],provid:[1,8,12,14,16,18,19,20,24,25,26],publiccloudconn:24,publiccloudstor:24,publish:6,pure:[1,25],purpos:21,pushd:10,put:7,py27:12,pydata:25,python3:[6,10],python:[6,8,15,17,19,24,26],python_modul:6,python_packag:10,python_typ:[4,8],pythonobjecttyp:[4,8],qualiti:[1,8,15],question:25,quickli:26,quit:[7,15,20],quux:13,rais:[2,19,25],ran:13,rather:[3,7,8,11,16,17,18,19,20,21,23,25,26],raw:8,react_app_graphql_uri:6,read_csv:25,read_parquet:25,read_tabl:25,readili:14,real:7,realiz:8,realli:8,reason:[1,8,21],recal:18,recommend:10,record:24,record_valu:24,recours:15,red:18,redistribut:10,redshift:[7,8],reduc:26,reentrant_info:3,reentrantinfo:3,regist:25,regret:10,rel:7,relat:8,releas:[7,10],relev:7,remain:25,remov:25,render:6,repetit:23,replac:[7,8,13],repo:23,repo_demo_pipelin:23,report:26,repositori:[1,6,9,10,22],repositorydefinit:[1,13,23],repostori:23,repres:[1,8,24],requir:[0,1,6,7,13,15,24,25,26],rerun:12,resid:21,resoourc:24,resourc:[1,8,9,14],resource_fn:[1,7,24],resource_test_pipelin:24,resourcedefinit:[1,7,24],respons:25,rest:7,resuabl:7,result:[0,1,3,6,8,15,17,19,20,24],result_context:1,result_dict:[0,8],result_for_solid:[3,8,20,21],result_list:[3,20],retriev:1,return_dict_result:19,reus:[7,21],reusabl:[7,9,12],rewrit:12,rich:[13,18,26],richer:14,right:[0,8,15,17,18],root:[10,13],rout:14,row:25,rule:2,run:[3,7,8,10,12,13,14,15,16,17,19,22,23,25,26],run_id:[7,14,15,17,19],runner:6,runtim:[2,8,13,16,18,26],runtime_typ:1,runtimeexecutioncontext:8,runtimeexecutioncontextparam:8,s3filehandl:8,sai:[15,20,25],salient:12,same:[0,1,7,8,11,12,18,19,24,26],satisfi:[1,11,20],satisi:7,save:[14,17,23],scalar:[1,12],schema:[7,8,9,12,22],scientist:26,scope:21,script:[6,17,22],search:9,second:[8,12,16,18],section:[7,12,14,16,18],see:[1,3,10,11,13,14,16,17,18,19,21,23,25,26],seen:[11,25],select:[10,25],selector:[8,25],self:[7,13,24],semi:14,sens:25,sensibl:6,sep:25,separ:[8,10,16],sequenc:13,serv:[17,18,26],server:6,servic:24,service_lines_fil:8,set:[6,17,22,24],set_value_in_cloud_stor:24,setup:1,sever:[0,18,25],shape:8,share:7,she:25,shell:10,shortcut:0,should:[0,1,7,8,10,12,14,16,17,19,21,23,24,25,26],shouldn:21,side:26,signatur:1,similar:25,simpl:[0,16],simpler:[0,8],simpli:[8,24],simplifi:0,sinc:[11,25],singl:[0,1,7,8,12,17,19,20,21,24,25,26],site:21,size:25,skip:15,slightli:[7,11],snapshot:[6,8],snapshot_check_result:8,softwar:[1,7,10,15],solid:[0,1,2,3,8,9,11,12,13,14,15,16,17,18,19,20,22,23,24,25],solid_1:1,solid_2:1,solid_a:11,solid_b:11,solid_c:11,solid_d:11,solid_definit:[14,17,19],solid_nam:[1,5],solid_on:16,solid_result:[8,21],solid_subset:3,solid_two:16,soliddefinit:[0,1,3],solidexecutionresult:3,solidinst:[1,20,21],some:[1,2,6,7,8,14,15,22,24,25,26],some_input:1,some_password:24,some_us:24,someth:[0,6],sophist:[11,15],sourc:[6,7,25],space:2,spark:[14,26],speak:[12,20],special:[7,21],specif:[7,19,22],specifi:[0,12,14,16,18,19,22,23],specific_env:22,spew:[15,19],split_headers_and_service_lin:8,sql:26,sqlalchemi:8,ssd:1,stacktrac:18,stage:[8,26],start:[6,11,20],state:3,step:[3,8,16,17,18,25],step_eleven:19,step_kei:17,step_results_by_tag:3,still:11,storag:21,store:[24,25],str:[0,1,7,8,13],str_param:25,str_valu:0,straightforward:7,stream:[1,17],string:[0,4,7,8,12,13,16,18,19,24,25],strongli:[10,13,22],structur:[1,7,13,14,18,25,26],stub:8,stub_a:20,stub_b:20,stub_c_plus_d:20,studio:10,sub:8,subdag:20,subfield:25,submodul:8,subpackag:8,subsequ:7,subset:[7,8,20,26],substanti:8,substrat:14,succeed:[15,17],success:[1,3,8,15,17,20,21],sudo:10,suffici:26,suitabl:1,sum:25,sum_df:25,sum_solid:25,suppli:1,support:[0,1,7,19,26],suppos:[6,8,22],surfac:18,surround:14,swap:24,swappabl:23,sync:22,synchron:3,synthes:7,system:[1,2,4,7,8,10,12,13,14,15,24,25,26],tab:17,tabl:[1,8,25],tabular:25,tailor:21,take:[0,1,7,8,12,17,20,25],target:[1,23],task:[11,16,26],team:26,tediou:[13,22],tell:[15,16,22,23,24],term:[15,19,25],test:[1,3,6,7,8,9,10,12,15,24,26],test_a_plus_b_final_subdag:20,test_intro_tutorial_part_four:12,test_part_thirteen_step_on:21,test_part_thirteen_step_two:21,testabl:12,than:[3,6,7,8,11,16,18,19,20,21,22,23,25,26],thei:[0,1,7,8,11,15,21,25,26],them:[8,10,12,17,18,21,25],therefor:13,thi:[0,1,3,7,8,10,11,12,13,14,15,16,17,18,19,20,21,23,24,25,26],thing:[3,7,21,24],think:[21,26],third:[8,17,25],thirteen_step_on:21,thirteen_step_two:21,those:[1,6,8,10,12,15,22,25,26],though:14,thought:8,thread:[14,17],three:[17,18,21,25],through:[1,14,18,25,26],throughout:[14,25],throw_on_error:[3,15],thrown:2,thu:1,tie:[8,19],tied:21,time:[1,11,12,13,15,17,18,19,21,23,25,26],timestamp:14,tiresom:23,to_csv:25,to_parquet:25,togeth:[7,11,21],tool:[6,10,15,17,22,23,26],top:[8,23],topolog:[11,16],total:18,touch:[14,24],tox:6,trace:13,tradit:15,transform:[0,1,3,17,18,19],transform_fn:1,transformed_valu:[3,8,20,21],transformexecutioninfo:[1,12],transit:8,tree:6,trigger:19,turn:[11,12,25],tutori:[12,14,19,22,23,25],tutorial_part_thirteen_step_on:20,tutorial_part_thirteen_step_thre:21,tutorial_repositori:14,two:[1,8,16,19,20,21,22,25],txt:6,type:[0,1,2,7,8,9,12,13,15,16,19,20,21,22,23],typecheck:[13,25],typed_demo_configuration_schema:13,typed_demo_configuration_schema_error:13,typed_multiply_the_word:13,typed_multiply_the_word_error:13,typeerror:[8,13],typic:[1,15,20],ubuntu:10,undefin:13,under:[12,18,24],unexpect:15,unfamiliar:26,union:25,uniqu:[1,19],unit:[1,7,9,16,17,26],unittest:[1,7,8,24],univers:14,unlik:15,unmodifi:7,unnam:[1,20],unpack:25,unsupport:25,until:[18,22],untyp:18,unzip:[7,21],unzip_fil:[7,8],unzipfileconfig:7,unzipped_fil:8,unzipped_path:8,unzipped_path_valu:8,updat:[6,8,10,15],upgrad:[7,8],upload:[8,21],upload_header_to_s3:8,upload_service_line_to_s3:8,upstream:[7,20],usag:1,use:[1,6,7,8,10,12,13,14,17,18,20,22,23,24,25,26],used:[1,7,8,12,17,19,21,24,25],useful:[1,3,14,15,18,20,21,22,25,26],user:[1,2,7,8,9,12,14,15,18,24,26],usernam:24,uses:7,using:[6,7,10,12,14,17,18,21,22,23,24],utf:12,util:[8,9,12,17,22,25],utility_solid:8,uuid4:[7,8],uuid:[7,8],valid:[13,25],valu:[0,1,2,3,8,12,13,14,15,17,18,19,20,22,24,25,26],vari:[1,22],venv:[6,10],verbos:[7,8],veri:[1,3,8,13,16,21,25],version:[3,6,19,24],via:[14,15,17,18,23,24,25],view:17,viewabl:15,violat:2,virtual:8,virtualenv:6,virtualenviron:10,virtualenvwrapp:10,visual:[10,16,17,23],wai:[0,15,17,18,19,24,25,26],want:[1,12,14,15,18,20,22,23,24,25],watch:6,wax:7,web:17,webapp:10,welcom:9,well:[2,7,8,26],were:[7,8,21],what:[1,7,11,13,15,16,21,25,26],whatev:8,when:[0,1,3,6,11,13,15,18,22,23,25,26],where:[1,12,14,15,16,17,20,24,25],wherea:25,whether:[1,3,10,15,26],which:[1,3,6,7,12,13,14,16,17,18,19,22,23,26],who:26,whole:[3,15],whose:[0,1,10,16,18],why:21,wide:10,window:10,wire:11,within:[1,7,8,15,16,17,18,21],without:[12,17,18,23],won:10,word:[13,18,22],work:[0,13,15,23,24],workflow:16,world:[9,12,18],worri:16,worth:11,would:[1,7,8,11,13,18,24,25],wrap:19,write:[7,17],written:26,wrong:13,wrong_factor:13,yaml:[8,12,18,22],yarn:6,yellow:17,yet:6,yield:[0,1,3,7,8,18,19,26],yield_output:19,yml:[6,12,13,14,18,22,23],you:[1,6,7,8,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25],your:[7,8,10,11,14,15,17,18,24,25],zip:7,zip_file_path:[7,8],zipped_fil:[7,8]},titles:["Decorators","Definitions","Errors","Execution","Types","Utilities","Contributing","Resources","Required API Changes","Intro Tutorial","Installation","An actual DAG","Configuration","Configuration Schemas","Execution Context","Expectations","Hello, DAG","Hello, World","Inputs","Multiple Outputs","Unit-testing Pipelines","Reusable Solids","Pipeline CLI Execution","Repositories","Resources","User-Defined Types","Principles"],titleterms:{"function":26,actual:11,agnost:26,api:[8,9,18],audit:9,basic:25,chang:8,cli:[17,18,22],comput:26,condit:19,config:[7,22],configur:[12,13],context:14,contribut:6,creat:10,dag:[11,16],dagit:[6,17,18],data:26,decor:0,defin:25,definit:[1,4],describ:26,dev:10,develop:6,doc:6,environ:10,error:2,execut:[3,14,17,22],expect:15,from:10,gradual:26,hello:[16,17],indic:9,input:[7,18,25],instal:10,intro:9,level:7,librari:[7,17],local:6,log:14,multipl:19,old:9,option:26,output:[19,25],pip:10,pipelin:[17,20,22],principl:26,pypi:10,python:[10,18],qualiti:26,refer:9,releas:6,repositori:23,requir:8,resourc:[7,24],reusabl:21,run:6,schema:[13,25],self:26,setup:6,solid:[7,21],sourc:10,split:22,stabl:10,tabl:9,test:20,testabl:26,tutori:9,type:[4,18,25,26],unit:20,user:25,util:5,verifi:26,version:10,virtual:10,virtualenv:10,webapp:6,world:17,yarn:10}})'
 
 snapshots['test_build_all_docs 11'] = '''Contributing
 ============
@@ -1909,7 +1909,7 @@ Old Intro Tutorial To Audit
   :maxdepth: 1
   :name: Intro Tutorial To Audit
 
-  intro_tutorial/part_ten
+  intro_tutorial/expectations
   intro_tutorial/part_eleven
   intro_tutorial/part_thirteen
   intro_tutorial/part_fourteen
@@ -3245,627 +3245,7 @@ or compute substrates -- can be configured using the context.
 
 We'll see how to use more other capabilities in the next section: Resources.'''
 
-snapshots['test_build_all_docs 27'] = '''Hello, DAG
-----------
-One of the core capabitilies of dagster is the ability to express data pipelines as arbitrary
-directed acyclic graphs (DAGs) of solids.
-
-We'll define a very simple two-solid pipeline whose first solid returns a hardcoded string,
-and whose second solid concatenates two copies of its input. The output of the pipeline should be
-two concatenated copies of the hardcoded string.
-
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/hello_dag.py
-   :linenos:
-   :caption: hello_dag.py
-
-This pipeline introduces a few new concepts.
-
-1.  Solids can have **inputs** defined by instances of
-    :py:class:`InputDefinition <dagster.InputDefinition>`. Inputs allow us to connect solids to
-    each other, and give dagster information about solids' dependencies on each other (and, as
-    we'll see later, optionally let dagster check the types of the inputs at runtime).
-
-2.  Solids' **dependencies** on each other are expressed by instances of 
-    :py:class:`DependencyDefinition <dagster.DependencyDefinition>`.
-    You'll notice the new argument to :py:class:`PipelineDefinition <dagster.PipelineDefinition>`
-    called ``dependencies``, which is a dict that defines the connections between solids in a
-    pipeline's DAG.
-
-    .. literalinclude::  ../../dagster/tutorials/intro_tutorial/hello_dag.py
-       :lines: 22-26
-       :dedent: 8
-
-    The first layer of keys in this dict are the *names* of solids in the pipeline. The second layer
-    of keys are the *names* of the inputs to each solid. Each input in the DAG must be provided a
-    :py:class:`DependencyDefinition <dagster.DependencyDefinition>`. (Don't worry -- if you forget
-    to specify an input, a helpful error message will tell you what you missed.)
-    
-    In this case the dictionary encodes the fact that the input ``arg_one`` of solid ``solid_two``
-    should flow from the output of ``solid_one``.
-
-Let's visualize the DAG we've just defined in dagit.
-
-.. code-block:: console
-
-   $ dagit -f hello_dag.py -n define_hello_dag_pipeline
-
-Navigate to http://127.0.0.1:3000/hello_dag_pipeline/explore or choose the hello_dag_pipeline
-from the dropdown:
-
-.. image:: hello_dag_figure_one.png
-
-One of the distinguishing features of dagster that separates it from many workflow engines is that
-dependencies connect *inputs* and *outputs* rather than just *tasks*. An author of a dagster
-pipeline defines the flow of execution by defining the flow of *data* within that
-execution. This is core to the the programming model of dagster, where each step in the pipeline
--- the solid -- is a *functional* unit of computation. 
-
-Now run the pipeline we've just defined, either from dagit or from the command line:
-
-.. code-block:: console
-
-\t$ dagster pipeline execute -f hello_dag.py -n define_hello_dag_pipeline
-
-In the next section, :doc:`An actual DAG <actual_dag>`, we'll build our first DAG with interesting
-topology and see how dagster determines the execution order of a pipeline.
-'''
-
-snapshots['test_build_all_docs 28'] = '''Hello, World
-------------
-See :doc:`../installation` for instructions getting dagster -- the core library -- and dagit --  
-the web UI tool used to visualize your data pipelines -- installed on your platform of choice.
-
-Let's write our first pipeline and save it as ``hello_world.py``.
-
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/hello_world.py
-   :linenos:
-   :lines: 1-10
-   :caption: hello_world.py
-
-This example introduces three concepts:
-
-1.  A **solid** is a functional unit of computation in a data pipeline. In this example, we use the
-    decorator :py:func:`@lambda_solid <dagster.lambda_solid>` to mark the function ``hello_world``
-    as a solid: a functional unit which takes no inputs and returns the output ``'hello'`` every
-    time it's run.
-
-2.  A **pipeline** is a set of solids arranged into a DAG of computation that produces data assets.
-    In this example, the call to :py:class:`PipelineDefinition <dagster.PipelineDefinition>` defines
-    a pipeline with a single solid.
-
-3.  We **execute** the pipeline by running :py:func:`execute_pipeline <dagster.execute_pipeline>`.
-    Dagster will call into each solid in the pipeline, functionally transforming its inputs, if any,
-    and threading its outputs to solids further on in the DAG.
-
-Pipeline Execution
-^^^^^^^^^^^^^^^^^^
-
-Assuming you've saved this pipeline as ``hello_world.py``, we can execute it via any of three
-different mechanisms:
-
-1. The CLI utility `dagster`
-2. The GUI tool `dagit`
-3. Using dagster as a library within your own script.
-
-CLI
-~~~
-
-.. code-block:: console
-
-    $ dagster pipeline execute -f hello_world.py -n define_hello_world_pipeline
-    2019-01-08 11:23:57 - dagster - INFO - orig_message="Beginning execution of pipeline hello_world_pipeline" log_message_id="5c829421-06c7-49eb-9195-7e828e37eab8" run_id="dfc8165a-f37e-43f5-a801-b602e4409f74" pipeline="hello_world_pipeline" event_type="PIPELINE_START"
-    2019-01-08 11:23:57 - dagster - INFO - orig_message="Beginning execution of hello_world.transform" log_message_id="5878513a-b510-4837-88cb-f77205931abb" run_id="dfc8165a-f37e-43f5-a801-b602e4409f74" pipeline="hello_world_pipeline" solid="hello_world" solid_definition="hello_world" event_type="EXECUTION_PLAN_STEP_START" step_key="hello_world.transform"
-    2019-01-08 11:23:57 - dagster - INFO - orig_message="Solid hello_world emitted output \\"result\\" value \'hello\'" log_message_id="b27fb70a-744a-46cc-81ba-677247b1b07b" run_id="dfc8165a-f37e-43f5-a801-b602e4409f74" pipeline="hello_world_pipeline" solid="hello_world" solid_definition="hello_world"
-    2019-01-08 11:23:57 - dagster - INFO - orig_message="Execution of hello_world.transform succeeded in 0.9558200836181641" log_message_id="25faadf5-b5a8-4251-b85c-dea6d00d99f0" run_id="dfc8165a-f37e-43f5-a801-b602e4409f74" pipeline="hello_world_pipeline" solid="hello_world" solid_definition="hello_world" event_type="EXECUTION_PLAN_STEP_SUCCESS" millis=0.9558200836181641 step_key="hello_world.transform"
-    2019-01-08 11:23:57 - dagster - INFO - orig_message="Step hello_world.transform emitted \'hello\' for output result" log_message_id="604dc47c-fe29-4d71-a531-97ae58fda0f4" run_id="dfc8165a-f37e-43f5-a801-b602e4409f74" pipeline="hello_world_pipeline"
-    2019-01-08 11:23:57 - dagster - INFO - orig_message="Completing successful execution of pipeline hello_world_pipeline" log_message_id="1563854b-758f-4ae2-8399-cb75946b0055" run_id="dfc8165a-f37e-43f5-a801-b602e4409f74" pipeline="hello_world_pipeline" event_type="PIPELINE_SUCCESS"
-
-There's a lot of information in these log lines (we'll get to how you can use, and customize,
-them later), but you can see that the third message is:
-```Solid hello_world emitted output \\"result\\" value \'hello\'"```. Success!
-
-Dagit
-~~~~~
-
-To visualize your pipeline (which only has one node) in dagit, you can run:
-
-.. code-block:: console
-
-   $ dagit -f hello_world.py -n define_hello_world_pipeline
-   Serving on http://127.0.0.1:3000
-
-You should be able to navigate to http://127.0.0.1:3000/hello_world_pipeline/explore in your web
-browser and view your pipeline.
-
-.. image:: hello_world_figure_one.png
-
-There are lots of ways to execute dagster pipelines. If you navigate to the "Execute"
-tab (http://127.0.0.1:3000/hello_world_pipeline/execute), you can execute your pipeline directly
-from dagit. Logs will stream into the bottom right pane of the interface, where you can filter them
-by log level.
-
-.. image:: hello_world_figure_two.png
-
-Library
-~~~~~~~
-
-If you'd rather execute your pipelines as a script, you can do that without using the dagster CLI
-at all. Just add a few lines to `hello_world.py` (highlighted in yellow):
-
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/hello_world.py
-   :linenos:
-   :caption: hello_world.py
-   :emphasize-lines: 1,13-15
-
-Then you can just run:
-
-.. code-block:: console
-
-    $ python hello_world.py
-
-Next, let's build our first multi-solid DAG in :doc:`Hello, DAG <hello_dag>`!
-'''
-
-snapshots['test_build_all_docs 29'] = '''Inputs
-------
-So far we have only demonstrated pipelines whose solids yield hardcoded values and then flow them
-through the pipeline. In order to be useful a pipeline must also interact with its external
-environment.
-
-Let's return to our hello world example. But this time, we'll make the string
-the solid returns be parameterized based on inputs.
-
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/inputs.py
-   :lines: 1-38
-   :linenos:
-   :caption: inputs.py
-
-Note that the input ``word`` to solid ``add_hello_to_word`` has no dependency specified. This
-means that the operator of the pipeline must specify the input at pipeline execution
-time.
-
-Recall that there are three primary ways to execute a pipeline: using the python API, from 
-the command line, and from dagit. We'll go through each of these and see how to specify the input
-in each case.
-
-Python API
-~~~~~~~~~~
-In the Python API, pipeline configuration is specified in the second argument to
-:py:func:`execute_pipeline <dagster.execute_pipeline>`, which must be a dict. This dict contains
-*all* of the configuration to execute an entire pipeline. It may have many sections, but we'll only
-use one of them here: per-solid configuration specified under the key ``solids``:
-
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/inputs.py
-    :linenos:
-    :lines: 25,27,29-31
-    :dedent: 8 
-
-The ``solids`` dict is keyed by solid name, and each solid is configured by a dict that may have
-several sections of its own. In this case we are only interested in the ``inputs`` section, so
-that we can specify that value of the input ``word``.
-
-The function ``execute_with_another_world`` demonstrates how one would invoke this pipeline
-using the python API:
-
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/inputs.py
-    :linenos:
-    :lines: 20-22,25,27,29-32
-
-CLI
-~~~
-
-Next let's use the CLI. In order to do that we'll need to provide the environment
-information via a config file. We'll use the same values as before, but in the form
-of YAML rather than python dictionaries:
-
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/inputs_env.yml
-   :linenos:
-   :caption: inputs_env.yml
-
-And now specify that config file via the ``-e`` flag.
-
-.. code-block:: console
-
-    $ dagster pipeline execute -f inputs.py \\
-    -n define_hello_inputs_pipeline -e inputs_env.yml 
-
-Dagit
-~~~~~
-
-As always, you can load the pipeline and execute it within dagit.
-
-.. code-block:: console
-
-   $ dagit -f inputs.py -n define_hello_inputs_pipeline
-   Serving on http://127.0.0.1:3000
-
-From the execute console, you can enter your config directly like so:
-
-.. image:: inputs_figure_one.png
-
-You'll notice that the config editor is auto-completing. Because it knows the structure
-of the config, the editor can provide rich error information. We can improve the experience of
-using the editor by appropriately typing the inputs, making everything less error-prone.
-
-Typing
-^^^^^^
-
-Right now the inputs and outputs of this solid are totally untyped. (Any input or output
-without a type is automatically assigned the ``Any`` type.) This means that mistakes
-are often not surfaced until the pipeline is executed.
-
-For example, imagine if our environment for our pipeline was:
-
-.. code-block:: YAML
-
-    solids:
-        add_hello_to_word:
-            inputs:
-                word: 2343
-
-If we execute this pipeline with this config, it'll fail at runtime.
-
-Enter this config in dagit and execute and you'll see the transform fail:
-
-.. image:: inputs_figure_two_untyped_execution.png
-
-Click on the red dot on the execution step that failed and a detailed stacktrace will pop up.
-
-.. image:: inputs_figure_three_error_modal.png
-
-It would be better if we could catch this error earlier, when we specify the config. So let's
-make the inputs typed.
-
-A user can apply types to inputs and outputs. In this case we just want to type them as the
-built-in ``String``.
-
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/inputs.py
-   :lines: 35-40
-   :emphasize-lines: 2-3
-   :caption: inputs.py
-
-By using typed input instead we can catch this error prior to execution.
-
-.. image:: inputs_figure_four_error_prechecked.png
-
-'''
-
-snapshots['test_build_all_docs 30'] = '''Multiple Outputs
-----------------
-
-So far all of the examples have been solids that have a single output. However
-solids support an arbitrary number of outputs. This allows for downstream
-solids to only tie their dependency to a single output. Additionally -- by
-allowing for multiple outputs to conditionally fire -- this also ends up
-supporting dynamic branching and conditional execution of pipelines.
-
-
-.. code-block:: python
-
-    @solid(
-        outputs=[
-            OutputDefinition(dagster_type=types.Int, name='out_one'),
-            OutputDefinition(dagster_type=types.Int, name='out_two'),
-        ],
-    )
-    def return_dict_results(_info):
-        return MultipleResults.from_dict({
-            'out_one': 23,
-            'out_two': 45,
-        })
-
-    @solid(inputs=[InputDefinition('num', dagster_type=types.Int)])
-    def log_num(info, num):
-        info.context.info('num {num}'.format(num=num))
-        return num
-
-    @solid(inputs=[InputDefinition('num', dagster_type=types.Int)])
-    def log_num_squared(info, num):
-        info.context.info(
-            'num_squared {num_squared}'.format(num_squared=num * num)
-        )
-        return num * num
-
-Notice how ``return_dict_results`` has two outputs. For the first time
-we have provided the name argument to an :py:class:`OutputDefinition`. (It
-defaults to ``'result'``, as it does in a :py:class:`DependencyDefinition`)
-These names must be unique and results returns by a solid transform function
-must be named one of these inputs. (In all previous examples the value returned
-by the transform had been implicitly wrapped in a :py:class:`Result` object
-with the name ``'result'``.)
-
-So from ``return_dict_results`` we used :py:class:`MultipleResults` to return
-all outputs from this transform.
-
-Next let's examine the :py:class:`PipelineDefinition`:
-
-.. code-block:: python
-
-    def define_part_eleven_step_one():
-        return PipelineDefinition(
-            name='part_eleven_step_one',
-            solids=[return_dict_results, log_num, log_num_squared],
-            dependencies={
-                'log_num': {
-                    'num': DependencyDefinition(
-                        'return_dict_results',
-                        'out_one',
-                    ),
-                },
-                'log_num_squared': {
-                    'num': DependencyDefinition(
-                        'return_dict_results',
-                        'out_two',
-                    ),
-                },
-            },
-        )
-
-Just like this tutorial is the first example of an :py:class:`OutputDefinition` with
-a name, this is also the first time that a :py:class:`DependencyDefinition` has
-specified name, because dependencies point to a particular **output** of a solid,
-rather than to the solid itself. In previous examples the name of output has
-defaulted to ``'result'``.
-
-With this we can run the pipeline:
-
-.. code-block:: sh
-
-    python step_eleven.py
-    ... log spew
-    2018-11-08 10:52:06 - dagster - INFO - orig_message="Solid return_dict_results emittedoutput \\"out_one\\" value 23" log_message_id="7d62dcbf-583d-4640-941f-48cda39e79a1" run_id="9de556c1-7f4d-4702-95af-6d6dbe6b296b" pipeline="part_eleven_step_one" solid="return_dict_results" solid_definition="return_dict_results"
-    2018-11-08 10:52:06 - dagster - INFO - orig_message="Solid return_dict_results emittedoutput \\"out_two\\" value 45" log_message_id="cc2ae784-6861-49ef-a463-9cbe4fa0f5e6" run_id="9de556c1-7f4d-4702-95af-6d6dbe6b296b" pipeline="part_eleven_step_one" solid="return_dict_results" solid_definition="return_dict_results"
-    ... more log spew
-
-The :py:class:`MultipleResults` class is not the only way to return multiple
-results from a solid transform function. You can also yield multiple instances
-of the `Result` object. (Note: this is actually the core specification
-of the transform function: all other forms are implemented in terms of
-the iterator form.)
-
-.. code-block:: python
-
-    @solid(
-        outputs=[
-            OutputDefinition(dagster_type=types.Int, name='out_one'),
-            OutputDefinition(dagster_type=types.Int, name='out_two'),
-        ],
-    )
-    def yield_outputs(_info):
-        yield Result(23, 'out_one')
-        yield Result(45, 'out_two')
-
-    def define_part_eleven_step_two():
-        return PipelineDefinition(
-            name='part_eleven_step_two',
-            solids=[yield_outputs, log_num, log_num_squared],
-            dependencies={
-                'log_num': {
-                    'num': DependencyDefinition('yield_outputs', 'out_one')
-                },
-                'log_num_squared': {
-                    'num': DependencyDefinition('yield_outputs', 'out_two')
-                },
-            },
-        )
-
-    if __name__ == '__main__':
-        execute_pipeline(define_part_eleven_step_two())
-
-... and you'll see the same log spew around outputs in this version:
-
-.. code-block:: sh
-    $ python part_eleven.py
-    2018-11-08 10:54:15 - dagster - INFO - orig_message="Solid yield_outputs emitted output \\"out_one\\" value 23" log_message_id="5e1cc181-b74d-47f8-8d32-bc262d555b73" run_id="4bee891c-e04f-4221-be77-17576abb9da2" pipeline="part_eleven_step_two" solid="yield_outputs" solid_definition="yield_outputs"
-    2018-11-08 10:54:15 - dagster - INFO - orig_message="Solid yield_outputs emitted output \\"out_two\\" value 45" log_message_id="8da32946-596d-4783-b7c5-4edbb3a1dbc2" run_id="4bee891c-e04f-4221-be77-17576abb9da2" pipeline="part_eleven_step_two" solid="yield_outputs" solid_definition="yield_outputs"
-
-Conditional Outputs
-^^^^^^^^^^^^^^^^^^^
-
-Multiple outputs are the mechanism by which we implement branching or conditional execution.
-
-Let's modify the first solid above to conditionally emit one output or the other based on config
-and then execute that pipeline.
-
-.. code-block:: python
-
-    @solid(
-        config_field=ConfigDefinition(types.String, description='Should be either out_one or out_two'),
-        outputs=[
-            OutputDefinition(dagster_type=types.Int, name='out_one'),
-            OutputDefinition(dagster_type=types.Int, name='out_two'),
-        ],
-    )
-    def conditional(info):
-        if info.config == 'out_one':
-            yield Result(23, 'out_one')
-        elif info.config == 'out_two':
-            yield Result(45, 'out_two')
-        else:
-            raise Exception('invalid config')
-
-
-    def define_part_eleven_step_three():
-        return PipelineDefinition(
-            name='part_eleven_step_three',
-            solids=[conditional, log_num, log_num_squared],
-            dependencies={
-                'log_num': {
-                    'num': DependencyDefinition('conditional', 'out_one')
-                },
-                'log_num_squared': {
-                    'num': DependencyDefinition('conditional', 'out_two')
-                },
-            },
-        )
-
-    if __name__ == '__main__':
-        execute_pipeline(
-            define_part_eleven_step_three(),
-            {
-                'solids': {
-                    'conditional': {
-                        'config': 'out_two'
-                    },
-                },
-            },
-        ) 
-
-Note that we are configuring this solid to *only* emit out_two which will end up
-only triggering log_num_squared. log_num will never be executed.
-
-.. code-block:: sh
-
-    $ python part_eleven.py
-    ... log spew
-    2018-09-16 18:58:32 - dagster - INFO - orig_message="Solid conditional emitted output \\"out_two\\" value 45" log_message_id="f6fd78c5-c25e-40ea-95ef-6b80d12155de" pipeline="part_eleven_step_three" solid="conditional"
-    2018-09-16 18:58:32 - dagster - INFO - orig_message="Solid conditional did not fire outputs {\'out_one\'}" log_message_id="d548ea66-cb10-42b8-b150-aed8162cc25c" pipeline="part_eleven_step_three" solid="conditional"    
-    ... log spew
-'''
-
-snapshots['test_build_all_docs 31'] = '''Unit-testing Pipelines
-----------------------
-
-Unit testing data pipelines is, broadly speaking, quite difficult. As a result, it is typically
-never done.
-
-One of the mechanisms included in dagster to enable testing has already been discussed: contexts.
-The other mechanism is the ability to execute arbitrary subsets of a DAG. (This capability is
-useful for other use cases but we will focus on unit testing for now).
-
-Let us start where we left off.
-
-We have the following pipeline:
-
-.. code-block:: python
-
-    @solid(
-        config_field=ConfigDefinition(types.Int),
-        outputs=[OutputDefinition(types.Int)],
-    )
-    def load_number(info):
-        return info.config
-
-
-    @lambda_solid(
-        inputs=[
-            InputDefinition('num1', types.Int),
-            InputDefinition('num2', types.Int),
-        ],
-        output=OutputDefinition(types.Int),
-    )
-    def adder(num1, num2):
-        return num1 + num2
-
-
-    @lambda_solid(
-        inputs=[
-            InputDefinition('num1', types.Int),
-            InputDefinition('num2', types.Int),
-        ],
-        output=OutputDefinition(types.Int),
-    )
-    def multer(num1, num2):
-        return num1 * num2
-
-
-    def define_part_fourteen_step_one():
-        # (a + b) * (c + d)
-
-        return PipelineDefinition(
-            name='tutorial_part_thirteen_step_one',
-            solids=[load_number, adder, multer],
-            dependencies={
-                SolidInstance(load_number.name, 'a'): {},
-                SolidInstance(load_number.name, 'b'): {},
-                SolidInstance(load_number.name, 'c'): {},
-                SolidInstance(load_number.name, 'd'): {},
-                SolidInstance(adder.name, 'a_plus_b'): {
-                    'num1': DependencyDefinition('a'),
-                    'num2': DependencyDefinition('b'),
-                },
-                SolidInstance(adder.name, 'c_plus_d'): {
-                    'num1': DependencyDefinition('c'),
-                    'num2': DependencyDefinition('d'),
-                },
-                SolidInstance(multer.name, 'final'): {
-                    'num1': DependencyDefinition('a_plus_b'),
-                    'num2': DependencyDefinition('c_plus_d'),
-                },
-            },
-        )
-
-Let's say we wanted to test *one* of these solids in isolation.
-
-We want to do is isolate that solid and execute with inputs we
-provide, instead of from solids upstream in the dependency graph.
-
-So let's do that. Follow along in the comments:
-
-.. code-block:: python
-
-    # The pipeline returned is a new unnamed, pipeline
-    # that contains the isolated solid plus the injected solids
-    # that will satisfy it inputs
-    pipeline = PipelineDefinition.create_single_solid_pipeline(
-        #
-        # This takes an existing pipeline
-        #
-        define_part_fourteen_step_one(),
-        #
-        # Isolates a single solid. In this case "final"
-        #
-        'final',
-        #
-        # Final has two inputs, num1 and num2. You must provide
-        # values for this. So we create solids in memory to provide
-        # values. The solids we are just emit the passed in values
-        # as an output
-        #
-        injected_solids={
-            'final': {
-                'num1': define_stub_solid('stub_a', 3),
-                'num2': define_stub_solid('stub_b', 4),
-            }
-        }
-    )
-
-    result = execute_pipeline(pipeline)
-
-    assert result.success
-    assert len(result.result_list) == 3
-    assert result.result_for_solid('stub_a').transformed_value() == 3
-    assert result.result_for_solid('stub_b').transformed_value() == 4
-    assert result.result_for_solid('final').transformed_value() == 12
-
-We can also execute entire arbitrary subdags rather than a single solid.
-
-
-.. code-block:: python
-
-    def test_a_plus_b_final_subdag():
-        pipeline = PipelineDefinition.create_sub_pipeline(
-            define_part_fourteen_step_one(),
-            ['a_plus_b', 'final'],
-            ['final'],
-            injected_solids={
-                'a_plus_b': {
-                    'num1': define_stub_solid('stub_a', 2),
-                    'num2': define_stub_solid('stub_b', 4),
-                },
-                'final': {
-                    'num2': define_stub_solid('stub_c_plus_d', 6),
-                }
-            },
-        )
-
-        pipeline_result = execute_pipeline(pipeline)
-
-        assert pipeline_result.result_for_solid('a_plus_b').transformed_value() == 6
-        assert pipeline_result.result_for_solid('final').transformed_value() == 36
-'''
-
-snapshots['test_build_all_docs 32'] = '''Expectations
+snapshots['test_build_all_docs 27'] = '''Expectations
 ============
 
 Dagster has a first-class concept to capture data quality tests. We call these
@@ -3882,8 +3262,6 @@ assumptions about the nature of the data. One way to frame the goal of
 expectations is to say that they make those implict assumption explicit.
 And by making these a first class concept they can be described with metadata,
 inspected, and configured to run in different ways.
-
-Let us return to a slightly simplified version of the data pipeline from part nine.
 
 .. code-block:: python
 
@@ -4095,6 +3473,626 @@ configure the pipeline to skip expectations entirely.
     ... expectations will not in the log spew 
 
 We plan on adding more sophisticated capabilties to this in the future.
+'''
+
+snapshots['test_build_all_docs 28'] = '''Hello, DAG
+----------
+One of the core capabitilies of dagster is the ability to express data pipelines as arbitrary
+directed acyclic graphs (DAGs) of solids.
+
+We'll define a very simple two-solid pipeline whose first solid returns a hardcoded string,
+and whose second solid concatenates two copies of its input. The output of the pipeline should be
+two concatenated copies of the hardcoded string.
+
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/hello_dag.py
+   :linenos:
+   :caption: hello_dag.py
+
+This pipeline introduces a few new concepts.
+
+1.  Solids can have **inputs** defined by instances of
+    :py:class:`InputDefinition <dagster.InputDefinition>`. Inputs allow us to connect solids to
+    each other, and give dagster information about solids' dependencies on each other (and, as
+    we'll see later, optionally let dagster check the types of the inputs at runtime).
+
+2.  Solids' **dependencies** on each other are expressed by instances of 
+    :py:class:`DependencyDefinition <dagster.DependencyDefinition>`.
+    You'll notice the new argument to :py:class:`PipelineDefinition <dagster.PipelineDefinition>`
+    called ``dependencies``, which is a dict that defines the connections between solids in a
+    pipeline's DAG.
+
+    .. literalinclude::  ../../dagster/tutorials/intro_tutorial/hello_dag.py
+       :lines: 22-26
+       :dedent: 8
+
+    The first layer of keys in this dict are the *names* of solids in the pipeline. The second layer
+    of keys are the *names* of the inputs to each solid. Each input in the DAG must be provided a
+    :py:class:`DependencyDefinition <dagster.DependencyDefinition>`. (Don't worry -- if you forget
+    to specify an input, a helpful error message will tell you what you missed.)
+    
+    In this case the dictionary encodes the fact that the input ``arg_one`` of solid ``solid_two``
+    should flow from the output of ``solid_one``.
+
+Let's visualize the DAG we've just defined in dagit.
+
+.. code-block:: console
+
+   $ dagit -f hello_dag.py -n define_hello_dag_pipeline
+
+Navigate to http://127.0.0.1:3000/hello_dag_pipeline/explore or choose the hello_dag_pipeline
+from the dropdown:
+
+.. image:: hello_dag_figure_one.png
+
+One of the distinguishing features of dagster that separates it from many workflow engines is that
+dependencies connect *inputs* and *outputs* rather than just *tasks*. An author of a dagster
+pipeline defines the flow of execution by defining the flow of *data* within that
+execution. This is core to the the programming model of dagster, where each step in the pipeline
+-- the solid -- is a *functional* unit of computation. 
+
+Now run the pipeline we've just defined, either from dagit or from the command line:
+
+.. code-block:: console
+
+\t$ dagster pipeline execute -f hello_dag.py -n define_hello_dag_pipeline
+
+In the next section, :doc:`An actual DAG <actual_dag>`, we'll build our first DAG with interesting
+topology and see how dagster determines the execution order of a pipeline.
+'''
+
+snapshots['test_build_all_docs 29'] = '''Hello, World
+------------
+See :doc:`../installation` for instructions getting dagster -- the core library -- and dagit --  
+the web UI tool used to visualize your data pipelines -- installed on your platform of choice.
+
+Let's write our first pipeline and save it as ``hello_world.py``.
+
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/hello_world.py
+   :linenos:
+   :lines: 1-10
+   :caption: hello_world.py
+
+This example introduces three concepts:
+
+1.  A **solid** is a functional unit of computation in a data pipeline. In this example, we use the
+    decorator :py:func:`@lambda_solid <dagster.lambda_solid>` to mark the function ``hello_world``
+    as a solid: a functional unit which takes no inputs and returns the output ``'hello'`` every
+    time it's run.
+
+2.  A **pipeline** is a set of solids arranged into a DAG of computation that produces data assets.
+    In this example, the call to :py:class:`PipelineDefinition <dagster.PipelineDefinition>` defines
+    a pipeline with a single solid.
+
+3.  We **execute** the pipeline by running :py:func:`execute_pipeline <dagster.execute_pipeline>`.
+    Dagster will call into each solid in the pipeline, functionally transforming its inputs, if any,
+    and threading its outputs to solids further on in the DAG.
+
+Pipeline Execution
+^^^^^^^^^^^^^^^^^^
+
+Assuming you've saved this pipeline as ``hello_world.py``, we can execute it via any of three
+different mechanisms:
+
+1. The CLI utility `dagster`
+2. The GUI tool `dagit`
+3. Using dagster as a library within your own script.
+
+CLI
+~~~
+
+.. code-block:: console
+
+    $ dagster pipeline execute -f hello_world.py -n define_hello_world_pipeline
+    2019-01-08 11:23:57 - dagster - INFO - orig_message="Beginning execution of pipeline hello_world_pipeline" log_message_id="5c829421-06c7-49eb-9195-7e828e37eab8" run_id="dfc8165a-f37e-43f5-a801-b602e4409f74" pipeline="hello_world_pipeline" event_type="PIPELINE_START"
+    2019-01-08 11:23:57 - dagster - INFO - orig_message="Beginning execution of hello_world.transform" log_message_id="5878513a-b510-4837-88cb-f77205931abb" run_id="dfc8165a-f37e-43f5-a801-b602e4409f74" pipeline="hello_world_pipeline" solid="hello_world" solid_definition="hello_world" event_type="EXECUTION_PLAN_STEP_START" step_key="hello_world.transform"
+    2019-01-08 11:23:57 - dagster - INFO - orig_message="Solid hello_world emitted output \\"result\\" value \'hello\'" log_message_id="b27fb70a-744a-46cc-81ba-677247b1b07b" run_id="dfc8165a-f37e-43f5-a801-b602e4409f74" pipeline="hello_world_pipeline" solid="hello_world" solid_definition="hello_world"
+    2019-01-08 11:23:57 - dagster - INFO - orig_message="Execution of hello_world.transform succeeded in 0.9558200836181641" log_message_id="25faadf5-b5a8-4251-b85c-dea6d00d99f0" run_id="dfc8165a-f37e-43f5-a801-b602e4409f74" pipeline="hello_world_pipeline" solid="hello_world" solid_definition="hello_world" event_type="EXECUTION_PLAN_STEP_SUCCESS" millis=0.9558200836181641 step_key="hello_world.transform"
+    2019-01-08 11:23:57 - dagster - INFO - orig_message="Step hello_world.transform emitted \'hello\' for output result" log_message_id="604dc47c-fe29-4d71-a531-97ae58fda0f4" run_id="dfc8165a-f37e-43f5-a801-b602e4409f74" pipeline="hello_world_pipeline"
+    2019-01-08 11:23:57 - dagster - INFO - orig_message="Completing successful execution of pipeline hello_world_pipeline" log_message_id="1563854b-758f-4ae2-8399-cb75946b0055" run_id="dfc8165a-f37e-43f5-a801-b602e4409f74" pipeline="hello_world_pipeline" event_type="PIPELINE_SUCCESS"
+
+There's a lot of information in these log lines (we'll get to how you can use, and customize,
+them later), but you can see that the third message is:
+```Solid hello_world emitted output \\"result\\" value \'hello\'"```. Success!
+
+Dagit
+~~~~~
+
+To visualize your pipeline (which only has one node) in dagit, you can run:
+
+.. code-block:: console
+
+   $ dagit -f hello_world.py -n define_hello_world_pipeline
+   Serving on http://127.0.0.1:3000
+
+You should be able to navigate to http://127.0.0.1:3000/hello_world_pipeline/explore in your web
+browser and view your pipeline.
+
+.. image:: hello_world_figure_one.png
+
+There are lots of ways to execute dagster pipelines. If you navigate to the "Execute"
+tab (http://127.0.0.1:3000/hello_world_pipeline/execute), you can execute your pipeline directly
+from dagit. Logs will stream into the bottom right pane of the interface, where you can filter them
+by log level.
+
+.. image:: hello_world_figure_two.png
+
+Library
+~~~~~~~
+
+If you'd rather execute your pipelines as a script, you can do that without using the dagster CLI
+at all. Just add a few lines to `hello_world.py` (highlighted in yellow):
+
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/hello_world.py
+   :linenos:
+   :caption: hello_world.py
+   :emphasize-lines: 1,13-15
+
+Then you can just run:
+
+.. code-block:: console
+
+    $ python hello_world.py
+
+Next, let's build our first multi-solid DAG in :doc:`Hello, DAG <hello_dag>`!
+'''
+
+snapshots['test_build_all_docs 30'] = '''Inputs
+------
+So far we have only demonstrated pipelines whose solids yield hardcoded values and then flow them
+through the pipeline. In order to be useful a pipeline must also interact with its external
+environment.
+
+Let's return to our hello world example. But this time, we'll make the string
+the solid returns be parameterized based on inputs.
+
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/inputs.py
+   :lines: 1-38
+   :linenos:
+   :caption: inputs.py
+
+Note that the input ``word`` to solid ``add_hello_to_word`` has no dependency specified. This
+means that the operator of the pipeline must specify the input at pipeline execution
+time.
+
+Recall that there are three primary ways to execute a pipeline: using the python API, from 
+the command line, and from dagit. We'll go through each of these and see how to specify the input
+in each case.
+
+Python API
+~~~~~~~~~~
+In the Python API, pipeline configuration is specified in the second argument to
+:py:func:`execute_pipeline <dagster.execute_pipeline>`, which must be a dict. This dict contains
+*all* of the configuration to execute an entire pipeline. It may have many sections, but we'll only
+use one of them here: per-solid configuration specified under the key ``solids``:
+
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/inputs.py
+    :linenos:
+    :lines: 25,27,29-31
+    :dedent: 8 
+
+The ``solids`` dict is keyed by solid name, and each solid is configured by a dict that may have
+several sections of its own. In this case we are only interested in the ``inputs`` section, so
+that we can specify that value of the input ``word``.
+
+The function ``execute_with_another_world`` demonstrates how one would invoke this pipeline
+using the python API:
+
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/inputs.py
+    :linenos:
+    :lines: 20-22,25,27,29-32
+
+CLI
+~~~
+
+Next let's use the CLI. In order to do that we'll need to provide the environment
+information via a config file. We'll use the same values as before, but in the form
+of YAML rather than python dictionaries:
+
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/inputs_env.yml
+   :linenos:
+   :caption: inputs_env.yml
+
+And now specify that config file via the ``-e`` flag.
+
+.. code-block:: console
+
+    $ dagster pipeline execute -f inputs.py \\
+    -n define_hello_inputs_pipeline -e inputs_env.yml 
+
+Dagit
+~~~~~
+
+As always, you can load the pipeline and execute it within dagit.
+
+.. code-block:: console
+
+   $ dagit -f inputs.py -n define_hello_inputs_pipeline
+   Serving on http://127.0.0.1:3000
+
+From the execute console, you can enter your config directly like so:
+
+.. image:: inputs_figure_one.png
+
+You'll notice that the config editor is auto-completing. Because it knows the structure
+of the config, the editor can provide rich error information. We can improve the experience of
+using the editor by appropriately typing the inputs, making everything less error-prone.
+
+Typing
+^^^^^^
+
+Right now the inputs and outputs of this solid are totally untyped. (Any input or output
+without a type is automatically assigned the ``Any`` type.) This means that mistakes
+are often not surfaced until the pipeline is executed.
+
+For example, imagine if our environment for our pipeline was:
+
+.. code-block:: YAML
+
+    solids:
+        add_hello_to_word:
+            inputs:
+                word: 2343
+
+If we execute this pipeline with this config, it'll fail at runtime.
+
+Enter this config in dagit and execute and you'll see the transform fail:
+
+.. image:: inputs_figure_two_untyped_execution.png
+
+Click on the red dot on the execution step that failed and a detailed stacktrace will pop up.
+
+.. image:: inputs_figure_three_error_modal.png
+
+It would be better if we could catch this error earlier, when we specify the config. So let's
+make the inputs typed.
+
+A user can apply types to inputs and outputs. In this case we just want to type them as the
+built-in ``String``.
+
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/inputs.py
+   :lines: 35-40
+   :emphasize-lines: 2-3
+   :caption: inputs.py
+
+By using typed input instead we can catch this error prior to execution.
+
+.. image:: inputs_figure_four_error_prechecked.png
+
+'''
+
+snapshots['test_build_all_docs 31'] = '''Multiple Outputs
+----------------
+
+So far all of the examples have been solids that have a single output. However
+solids support an arbitrary number of outputs. This allows for downstream
+solids to only tie their dependency to a single output. Additionally -- by
+allowing for multiple outputs to conditionally fire -- this also ends up
+supporting dynamic branching and conditional execution of pipelines.
+
+
+.. code-block:: python
+
+    @solid(
+        outputs=[
+            OutputDefinition(dagster_type=types.Int, name='out_one'),
+            OutputDefinition(dagster_type=types.Int, name='out_two'),
+        ],
+    )
+    def return_dict_results(_info):
+        return MultipleResults.from_dict({
+            'out_one': 23,
+            'out_two': 45,
+        })
+
+    @solid(inputs=[InputDefinition('num', dagster_type=types.Int)])
+    def log_num(info, num):
+        info.context.info('num {num}'.format(num=num))
+        return num
+
+    @solid(inputs=[InputDefinition('num', dagster_type=types.Int)])
+    def log_num_squared(info, num):
+        info.context.info(
+            'num_squared {num_squared}'.format(num_squared=num * num)
+        )
+        return num * num
+
+Notice how ``return_dict_results`` has two outputs. For the first time
+we have provided the name argument to an :py:class:`OutputDefinition`. (It
+defaults to ``'result'``, as it does in a :py:class:`DependencyDefinition`)
+These names must be unique and results returns by a solid transform function
+must be named one of these inputs. (In all previous examples the value returned
+by the transform had been implicitly wrapped in a :py:class:`Result` object
+with the name ``'result'``.)
+
+So from ``return_dict_results`` we used :py:class:`MultipleResults` to return
+all outputs from this transform.
+
+Next let's examine the :py:class:`PipelineDefinition`:
+
+.. code-block:: python
+
+    def define_part_eleven_step_one():
+        return PipelineDefinition(
+            name='part_eleven_step_one',
+            solids=[return_dict_results, log_num, log_num_squared],
+            dependencies={
+                'log_num': {
+                    'num': DependencyDefinition(
+                        'return_dict_results',
+                        'out_one',
+                    ),
+                },
+                'log_num_squared': {
+                    'num': DependencyDefinition(
+                        'return_dict_results',
+                        'out_two',
+                    ),
+                },
+            },
+        )
+
+Just like this tutorial is the first example of an :py:class:`OutputDefinition` with
+a name, this is also the first time that a :py:class:`DependencyDefinition` has
+specified name, because dependencies point to a particular **output** of a solid,
+rather than to the solid itself. In previous examples the name of output has
+defaulted to ``'result'``.
+
+With this we can run the pipeline:
+
+.. code-block:: sh
+
+    python step_eleven.py
+    ... log spew
+    2018-11-08 10:52:06 - dagster - INFO - orig_message="Solid return_dict_results emittedoutput \\"out_one\\" value 23" log_message_id="7d62dcbf-583d-4640-941f-48cda39e79a1" run_id="9de556c1-7f4d-4702-95af-6d6dbe6b296b" pipeline="part_eleven_step_one" solid="return_dict_results" solid_definition="return_dict_results"
+    2018-11-08 10:52:06 - dagster - INFO - orig_message="Solid return_dict_results emittedoutput \\"out_two\\" value 45" log_message_id="cc2ae784-6861-49ef-a463-9cbe4fa0f5e6" run_id="9de556c1-7f4d-4702-95af-6d6dbe6b296b" pipeline="part_eleven_step_one" solid="return_dict_results" solid_definition="return_dict_results"
+    ... more log spew
+
+The :py:class:`MultipleResults` class is not the only way to return multiple
+results from a solid transform function. You can also yield multiple instances
+of the `Result` object. (Note: this is actually the core specification
+of the transform function: all other forms are implemented in terms of
+the iterator form.)
+
+.. code-block:: python
+
+    @solid(
+        outputs=[
+            OutputDefinition(dagster_type=types.Int, name='out_one'),
+            OutputDefinition(dagster_type=types.Int, name='out_two'),
+        ],
+    )
+    def yield_outputs(_info):
+        yield Result(23, 'out_one')
+        yield Result(45, 'out_two')
+
+    def define_part_eleven_step_two():
+        return PipelineDefinition(
+            name='part_eleven_step_two',
+            solids=[yield_outputs, log_num, log_num_squared],
+            dependencies={
+                'log_num': {
+                    'num': DependencyDefinition('yield_outputs', 'out_one')
+                },
+                'log_num_squared': {
+                    'num': DependencyDefinition('yield_outputs', 'out_two')
+                },
+            },
+        )
+
+    if __name__ == '__main__':
+        execute_pipeline(define_part_eleven_step_two())
+
+... and you'll see the same log spew around outputs in this version:
+
+.. code-block:: sh
+    $ python part_eleven.py
+    2018-11-08 10:54:15 - dagster - INFO - orig_message="Solid yield_outputs emitted output \\"out_one\\" value 23" log_message_id="5e1cc181-b74d-47f8-8d32-bc262d555b73" run_id="4bee891c-e04f-4221-be77-17576abb9da2" pipeline="part_eleven_step_two" solid="yield_outputs" solid_definition="yield_outputs"
+    2018-11-08 10:54:15 - dagster - INFO - orig_message="Solid yield_outputs emitted output \\"out_two\\" value 45" log_message_id="8da32946-596d-4783-b7c5-4edbb3a1dbc2" run_id="4bee891c-e04f-4221-be77-17576abb9da2" pipeline="part_eleven_step_two" solid="yield_outputs" solid_definition="yield_outputs"
+
+Conditional Outputs
+^^^^^^^^^^^^^^^^^^^
+
+Multiple outputs are the mechanism by which we implement branching or conditional execution.
+
+Let's modify the first solid above to conditionally emit one output or the other based on config
+and then execute that pipeline.
+
+.. code-block:: python
+
+    @solid(
+        config_field=ConfigDefinition(types.String, description='Should be either out_one or out_two'),
+        outputs=[
+            OutputDefinition(dagster_type=types.Int, name='out_one'),
+            OutputDefinition(dagster_type=types.Int, name='out_two'),
+        ],
+    )
+    def conditional(info):
+        if info.config == 'out_one':
+            yield Result(23, 'out_one')
+        elif info.config == 'out_two':
+            yield Result(45, 'out_two')
+        else:
+            raise Exception('invalid config')
+
+
+    def define_part_eleven_step_three():
+        return PipelineDefinition(
+            name='part_eleven_step_three',
+            solids=[conditional, log_num, log_num_squared],
+            dependencies={
+                'log_num': {
+                    'num': DependencyDefinition('conditional', 'out_one')
+                },
+                'log_num_squared': {
+                    'num': DependencyDefinition('conditional', 'out_two')
+                },
+            },
+        )
+
+    if __name__ == '__main__':
+        execute_pipeline(
+            define_part_eleven_step_three(),
+            {
+                'solids': {
+                    'conditional': {
+                        'config': 'out_two'
+                    },
+                },
+            },
+        ) 
+
+Note that we are configuring this solid to *only* emit out_two which will end up
+only triggering log_num_squared. log_num will never be executed.
+
+.. code-block:: sh
+
+    $ python part_eleven.py
+    ... log spew
+    2018-09-16 18:58:32 - dagster - INFO - orig_message="Solid conditional emitted output \\"out_two\\" value 45" log_message_id="f6fd78c5-c25e-40ea-95ef-6b80d12155de" pipeline="part_eleven_step_three" solid="conditional"
+    2018-09-16 18:58:32 - dagster - INFO - orig_message="Solid conditional did not fire outputs {\'out_one\'}" log_message_id="d548ea66-cb10-42b8-b150-aed8162cc25c" pipeline="part_eleven_step_three" solid="conditional"    
+    ... log spew
+'''
+
+snapshots['test_build_all_docs 32'] = '''Unit-testing Pipelines
+----------------------
+
+Unit testing data pipelines is, broadly speaking, quite difficult. As a result, it is typically
+never done.
+
+One of the mechanisms included in dagster to enable testing has already been discussed: contexts.
+The other mechanism is the ability to execute arbitrary subsets of a DAG. (This capability is
+useful for other use cases but we will focus on unit testing for now).
+
+Let us start where we left off.
+
+We have the following pipeline:
+
+.. code-block:: python
+
+    @solid(
+        config_field=ConfigDefinition(types.Int),
+        outputs=[OutputDefinition(types.Int)],
+    )
+    def load_number(info):
+        return info.config
+
+
+    @lambda_solid(
+        inputs=[
+            InputDefinition('num1', types.Int),
+            InputDefinition('num2', types.Int),
+        ],
+        output=OutputDefinition(types.Int),
+    )
+    def adder(num1, num2):
+        return num1 + num2
+
+
+    @lambda_solid(
+        inputs=[
+            InputDefinition('num1', types.Int),
+            InputDefinition('num2', types.Int),
+        ],
+        output=OutputDefinition(types.Int),
+    )
+    def multer(num1, num2):
+        return num1 * num2
+
+
+    def define_part_fourteen_step_one():
+        # (a + b) * (c + d)
+
+        return PipelineDefinition(
+            name='tutorial_part_thirteen_step_one',
+            solids=[load_number, adder, multer],
+            dependencies={
+                SolidInstance(load_number.name, 'a'): {},
+                SolidInstance(load_number.name, 'b'): {},
+                SolidInstance(load_number.name, 'c'): {},
+                SolidInstance(load_number.name, 'd'): {},
+                SolidInstance(adder.name, 'a_plus_b'): {
+                    'num1': DependencyDefinition('a'),
+                    'num2': DependencyDefinition('b'),
+                },
+                SolidInstance(adder.name, 'c_plus_d'): {
+                    'num1': DependencyDefinition('c'),
+                    'num2': DependencyDefinition('d'),
+                },
+                SolidInstance(multer.name, 'final'): {
+                    'num1': DependencyDefinition('a_plus_b'),
+                    'num2': DependencyDefinition('c_plus_d'),
+                },
+            },
+        )
+
+Let's say we wanted to test *one* of these solids in isolation.
+
+We want to do is isolate that solid and execute with inputs we
+provide, instead of from solids upstream in the dependency graph.
+
+So let's do that. Follow along in the comments:
+
+.. code-block:: python
+
+    # The pipeline returned is a new unnamed, pipeline
+    # that contains the isolated solid plus the injected solids
+    # that will satisfy it inputs
+    pipeline = PipelineDefinition.create_single_solid_pipeline(
+        #
+        # This takes an existing pipeline
+        #
+        define_part_fourteen_step_one(),
+        #
+        # Isolates a single solid. In this case "final"
+        #
+        'final',
+        #
+        # Final has two inputs, num1 and num2. You must provide
+        # values for this. So we create solids in memory to provide
+        # values. The solids we are just emit the passed in values
+        # as an output
+        #
+        injected_solids={
+            'final': {
+                'num1': define_stub_solid('stub_a', 3),
+                'num2': define_stub_solid('stub_b', 4),
+            }
+        }
+    )
+
+    result = execute_pipeline(pipeline)
+
+    assert result.success
+    assert len(result.result_list) == 3
+    assert result.result_for_solid('stub_a').transformed_value() == 3
+    assert result.result_for_solid('stub_b').transformed_value() == 4
+    assert result.result_for_solid('final').transformed_value() == 12
+
+We can also execute entire arbitrary subdags rather than a single solid.
+
+
+.. code-block:: python
+
+    def test_a_plus_b_final_subdag():
+        pipeline = PipelineDefinition.create_sub_pipeline(
+            define_part_fourteen_step_one(),
+            ['a_plus_b', 'final'],
+            ['final'],
+            injected_solids={
+                'a_plus_b': {
+                    'num1': define_stub_solid('stub_a', 2),
+                    'num2': define_stub_solid('stub_b', 4),
+                },
+                'final': {
+                    'num2': define_stub_solid('stub_c_plus_d', 6),
+                }
+            },
+        )
+
+        pipeline_result = execute_pipeline(pipeline)
+
+        assert pipeline_result.result_for_solid('a_plus_b').transformed_value() == 6
+        assert pipeline_result.result_for_solid('final').transformed_value() == 36
 '''
 
 snapshots['test_build_all_docs 33'] = '''Reusable Solids
@@ -19715,7 +19713,7 @@ multiple outputs. Useful for solids that have multiple outputs.</li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/types.html">User-Defined Types</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_ten.html">Expectations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/expectations.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_eleven.html">Multiple Outputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_thirteen.html">Reusable Solids</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_fourteen.html">Unit-testing Pipelines</a></li>
@@ -20424,7 +20422,7 @@ like the alias.</p>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/types.html">User-Defined Types</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_ten.html">Expectations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/expectations.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_eleven.html">Multiple Outputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_thirteen.html">Reusable Solids</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_fourteen.html">Unit-testing Pipelines</a></li>
@@ -20591,7 +20589,7 @@ at runtime.</p>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/types.html">User-Defined Types</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_ten.html">Expectations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/expectations.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_eleven.html">Multiple Outputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_thirteen.html">Reusable Solids</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_fourteen.html">Unit-testing Pipelines</a></li>
@@ -20869,7 +20867,7 @@ Returns None if execution result isn’t a success.</p>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/types.html">User-Defined Types</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_ten.html">Expectations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/expectations.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_eleven.html">Multiple Outputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_thirteen.html">Reusable Solids</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_fourteen.html">Unit-testing Pipelines</a></li>
@@ -21042,7 +21040,7 @@ snapshots['test_build_all_docs 54'] = '''
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/types.html">User-Defined Types</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_ten.html">Expectations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/expectations.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_eleven.html">Multiple Outputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_thirteen.html">Reusable Solids</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_fourteen.html">Unit-testing Pipelines</a></li>
@@ -21180,7 +21178,7 @@ snapshots['test_build_all_docs 55'] = '''
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/types.html">User-Defined Types</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_ten.html">Expectations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/expectations.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_eleven.html">Multiple Outputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_thirteen.html">Reusable Solids</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_fourteen.html">Unit-testing Pipelines</a></li>
@@ -21570,7 +21568,7 @@ be modeling such things as inputs.</p>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/types.html">User-Defined Types</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_ten.html">Expectations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/expectations.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_eleven.html">Multiple Outputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_thirteen.html">Reusable Solids</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_fourteen.html">Unit-testing Pipelines</a></li>
@@ -21990,7 +21988,7 @@ Third, you do not have to name it. The net result is much nicer:</p>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/types.html">User-Defined Types</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_ten.html">Expectations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/expectations.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_eleven.html">Multiple Outputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_thirteen.html">Reusable Solids</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro_tutorial/part_fourteen.html">Unit-testing Pipelines</a></li>
@@ -22229,7 +22227,7 @@ environment.</p>
 <li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="part_ten.html">Expectations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="expectations.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_eleven.html">Multiple Outputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_thirteen.html">Reusable Solids</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_fourteen.html">Unit-testing Pipelines</a></li>
@@ -22471,7 +22469,7 @@ of config: <a class="reference internal" href="configuration_schemas.html"><span
 <li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="part_ten.html">Expectations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="expectations.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_eleven.html">Multiple Outputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_thirteen.html">Reusable Solids</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_fourteen.html">Unit-testing Pipelines</a></li>
@@ -22948,7 +22946,7 @@ actionable error message before the pipeline is ever executed.</p>
 <li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="part_ten.html">Expectations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="expectations.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_eleven.html">Multiple Outputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_thirteen.html">Reusable Solids</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_fourteen.html">Unit-testing Pipelines</a></li>
@@ -23148,7 +23146,7 @@ or compute substrates – can be configured using the context.</p>
 <li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="part_ten.html">Expectations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="expectations.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_eleven.html">Multiple Outputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_thirteen.html">Reusable Solids</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_fourteen.html">Unit-testing Pipelines</a></li>
@@ -23212,6 +23210,335 @@ or compute substrates – can be configured using the context.</p>
 </html>'''
 
 snapshots['test_build_all_docs 62'] = '''
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Expectations &#8212; Dagster  documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Multiple Outputs" href="part_eleven.html" />
+    <link rel="prev" title="User-Defined Types" href="types.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="expectations">
+<h1>Expectations<a class="headerlink" href="#expectations" title="Permalink to this headline">¶</a></h1>
+<p>Dagster has a first-class concept to capture data quality tests. We call these
+data quality tests expectations.</p>
+<p>Data pipelines have the property that they typically do not control
+what data they ingest. Unlike a traditional application where you can
+prevent users from entering malformed data, data pipelines do not have
+that option. When unexpected data enters a pipeline and causes a software
+error, typically the only recourse is to update your code.</p>
+<p>Lying within the code of data pipelines are a whole host of implicit
+assumptions about the nature of the data. One way to frame the goal of
+expectations is to say that they make those implict assumption explicit.
+And by making these a first class concept they can be described with metadata,
+inspected, and configured to run in different ways.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@solid</span><span class="p">(</span>
+    <span class="n">config_field</span><span class="o">=</span><span class="n">ConfigDefinition</span><span class="p">(</span><span class="n">types</span><span class="o">.</span><span class="n">Int</span><span class="p">),</span>
+    <span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">OutputDefinition</span><span class="p">(</span><span class="n">types</span><span class="o">.</span><span class="n">Int</span><span class="p">)],</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">ingest_a</span><span class="p">(</span><span class="n">info</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">info</span><span class="o">.</span><span class="n">config</span>
+
+
+<span class="nd">@solid</span><span class="p">(</span>
+    <span class="n">config_field</span><span class="o">=</span><span class="n">ConfigDefinition</span><span class="p">(</span><span class="n">types</span><span class="o">.</span><span class="n">Int</span><span class="p">),</span>
+    <span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">OutputDefinition</span><span class="p">(</span><span class="n">types</span><span class="o">.</span><span class="n">Int</span><span class="p">)],</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">ingest_b</span><span class="p">(</span><span class="n">info</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">info</span><span class="o">.</span><span class="n">config</span>
+
+<span class="nd">@solid</span><span class="p">(</span>
+    <span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;num_one&#39;</span><span class="p">,</span> <span class="n">types</span><span class="o">.</span><span class="n">Int</span><span class="p">),</span>
+            <span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;num_two&#39;</span><span class="p">,</span> <span class="n">types</span><span class="o">.</span><span class="n">Int</span><span class="p">)],</span>
+    <span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">OutputDefinition</span><span class="p">(</span><span class="n">types</span><span class="o">.</span><span class="n">Int</span><span class="p">)],</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">add_ints</span><span class="p">(</span><span class="n">_info</span><span class="p">,</span> <span class="n">num_one</span><span class="p">,</span> <span class="n">num_two</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">num_one</span> <span class="o">+</span> <span class="n">num_two</span>
+
+
+<span class="k">def</span> <span class="nf">define_part_ten_step_one</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">PipelineDefinition</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;part_ten_step_one&#39;</span><span class="p">,</span>
+        <span class="n">solids</span><span class="o">=</span><span class="p">[</span><span class="n">ingest_a</span><span class="p">,</span> <span class="n">ingest_b</span><span class="p">,</span> <span class="n">add_ints</span><span class="p">],</span>
+        <span class="n">dependencies</span><span class="o">=</span><span class="p">{</span>
+            <span class="s1">&#39;add_ints&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;num_one&#39;</span><span class="p">:</span> <span class="n">DependencyDefinition</span><span class="p">(</span><span class="s1">&#39;ingest_a&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;num_two&#39;</span><span class="p">:</span> <span class="n">DependencyDefinition</span><span class="p">(</span><span class="s1">&#39;ingest_b&#39;</span><span class="p">),</span>
+            <span class="p">},</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+<p>Imagine that we had assumptions baked into the code of this pipeline such that the code only
+worked on positive numbers, and we wanted to communicate that requirement to the user
+in clear terms. We’ll add an expectation in order to do this.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@solid</span><span class="p">(</span>
+    <span class="n">config_field</span><span class="o">=</span><span class="n">ConfigDefinition</span><span class="p">(</span><span class="n">types</span><span class="o">.</span><span class="n">Int</span><span class="p">),</span>
+    <span class="n">outputs</span><span class="o">=</span><span class="p">[</span>
+        <span class="n">OutputDefinition</span><span class="p">(</span>
+            <span class="n">types</span><span class="o">.</span><span class="n">Int</span><span class="p">,</span>
+            <span class="n">expectations</span><span class="o">=</span><span class="p">[</span>
+                <span class="n">ExpectationDefinition</span><span class="p">(</span>
+                    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;check_positive&quot;</span><span class="p">,</span>
+                    <span class="n">expectation_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">_info</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">ExpectationResult</span><span class="p">(</span><span class="n">success</span><span class="o">=</span><span class="n">value</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="p">),</span>
+            <span class="p">],</span>
+        <span class="p">),</span>
+    <span class="p">],</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">ingest_a</span><span class="p">(</span><span class="n">info</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">info</span><span class="o">.</span><span class="n">config</span>
+</pre></div>
+</div>
+<p>You’ll notice that we added an ExpectationDefinition to the output of ingest_a. Expectations
+can be attached to inputs or outputs and operate on the value of that input or output.</p>
+<p>Expectations perform arbitrary computation on that value and then return an ExpectationResult.
+The user communicates whether or not the expectation succeeded via this return value.</p>
+<p>If you run this pipeline, you’ll notice some logging that indicates that the expectation
+was processed:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">execute_pipeline</span><span class="p">(</span>
+    <span class="n">define_part_ten_step_one</span><span class="p">(),</span>
+    <span class="p">{</span>
+        <span class="s1">&#39;context&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;default&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;config&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s1">&#39;log_level&#39;</span><span class="p">:</span> <span class="s1">&#39;DEBUG&#39;</span><span class="p">,</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;solids&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;ingest_a&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;config&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="s1">&#39;ingest_b&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;config&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+            <span class="p">},</span>
+        <span class="p">}</span>
+    <span class="p">},</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>And run it…</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>$ python part_ten.py
+... log spew
+<span class="m">2018</span>-09-14 <span class="m">13</span>:13:13 - dagster - DEBUG - <span class="nv">orig_message</span><span class="o">=</span><span class="s2">&quot;Expectation ingest_a.result.expectation.check_positive succeeded on 2.&quot;</span> <span class="nv">log_message_id</span><span class="o">=</span><span class="s2">&quot;938ab7fa-c955-408a-9f44-66b0b6ecdcad&quot;</span> <span class="nv">pipeline</span><span class="o">=</span><span class="s2">&quot;part_ten_step_one&quot;</span> <span class="nv">solid</span><span class="o">=</span><span class="s2">&quot;ingest_a&quot;</span> <span class="nv">output</span><span class="o">=</span><span class="s2">&quot;result&quot;</span> <span class="nv">expectation</span><span class="o">=</span><span class="s2">&quot;check_positive&quot;</span>
+... more log spew
+</pre></div>
+</div>
+<p>Now let’s make this fail. Currently the default behavior is to throw an error and halt execution
+when an expectation fails. So:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">execute_pipeline</span><span class="p">(</span>
+    <span class="n">define_part_ten_step_one</span><span class="p">(),</span>
+    <span class="p">{</span>
+        <span class="s1">&#39;context&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;default&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;config&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s1">&#39;log_level&#39;</span><span class="p">:</span> <span class="s1">&#39;DEBUG&#39;</span><span class="p">,</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;solids&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;ingest_a&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;config&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">5</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="s1">&#39;ingest_b&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;config&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+            <span class="p">},</span>
+        <span class="p">}</span>
+    <span class="p">},</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>And then:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>$ python part_ten.py
+... bunch of log spew
+dagster.core.errors.DagsterExpectationFailedError: DagsterExpectationFailedError<span class="o">(</span><span class="nv">solid</span><span class="o">=</span>add_ints, <span class="nv">output</span><span class="o">=</span>result, <span class="nv">expectation</span><span class="o">=</span><span class="nv">check_positivevalue</span><span class="o">=</span>-2<span class="o">)</span>
+</pre></div>
+</div>
+<p>We can also tell execute_pipeline to not throw on error:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">execute_pipeline</span><span class="p">(</span>
+    <span class="n">define_part_ten_step_one</span><span class="p">(),</span>
+    <span class="p">{</span>
+        <span class="s1">&#39;context&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;default&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;config&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s1">&#39;log_level&#39;</span><span class="p">:</span> <span class="s1">&#39;DEBUG&#39;</span><span class="p">,</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;solids&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;ingest_a&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;config&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">5</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="s1">&#39;ingest_b&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;config&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+            <span class="p">},</span>
+        <span class="p">}</span>
+    <span class="p">},</span>
+    <span class="n">throw_on_error</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>$ python part_ten.py
+... log spew
+<span class="m">2018</span>-11-08 <span class="m">10</span>:38:28 - dagster - DEBUG - <span class="nv">orig_message</span><span class="o">=</span><span class="s2">&quot;Expectation add_ints.result.expectation.check_positive failed on -2.&quot;</span> <span class="nv">log_message_id</span><span class="o">=</span><span class="s2">&quot;9ca21f5c-0578-4b3f-80c2-d129552525a4&quot;</span> <span class="nv">run_id</span><span class="o">=</span><span class="s2">&quot;c12bdc2d-c008-47db-8b76-e257262eab79&quot;</span> <span class="nv">pipeline</span><span class="o">=</span><span class="s2">&quot;part_ten_step_one&quot;</span> <span class="nv">solid</span><span class="o">=</span><span class="s2">&quot;add_ints&quot;</span> <span class="nv">output</span><span class="o">=</span><span class="s2">&quot;result&quot;</span> <span class="nv">expectation</span><span class="o">=</span><span class="s2">&quot;check_positive&quot;</span>
+</pre></div>
+</div>
+<p>Because the system is explictly aware of these expectations they are viewable in tools like dagit.
+It can also configure the execution of these expectations. The capabilities of this aspect of the
+system are currently quite immature, but we expect to develop these more in the future. The only
+feature right now is the ability to skip expectations entirely. This is useful in a case where
+expectations are expensive and you have a time-critical job you must. In that case you can
+configure the pipeline to skip expectations entirely.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">execute_pipeline</span><span class="p">(</span>
+    <span class="n">define_part_ten_step_one</span><span class="p">(),</span>
+    <span class="p">{</span>
+        <span class="s1">&#39;context&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;default&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;config&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s1">&#39;log_level&#39;</span><span class="p">:</span> <span class="s1">&#39;DEBUG&#39;</span><span class="p">,</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;solids&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;ingest_a&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;config&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="s1">&#39;ingest_b&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;config&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+            <span class="p">},</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;expectations&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;evaluate&#39;</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">},</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>$ python part_ten.py
+... expectations will not in the log spew
+</pre></div>
+</div>
+<p>We plan on adding more sophisticated capabilties to this in the future.</p>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="../index.html">Table Of Contents</a></h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../principles.html">Principles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="hello_world.html">Hello, World</a></li>
+<li class="toctree-l1"><a class="reference internal" href="hello_dag.html">Hello, DAG</a></li>
+<li class="toctree-l1"><a class="reference internal" href="actual_dag.html">An actual DAG</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
+<li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
+<li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipeline_cli_execution.html">Pipeline CLI Execution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Expectations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="part_eleven.html">Multiple Outputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="part_thirteen.html">Reusable Solids</a></li>
+<li class="toctree-l1"><a class="reference internal" href="part_fourteen.html">Unit-testing Pipelines</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../apidocs/definitions.html">Definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../apidocs/decorators.html">Decorators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../apidocs/execution.html">Execution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../apidocs/errors.html">Errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../apidocs/types.html">Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../apidocs/utilities.html">Utilities</a></li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="types.html" title="previous chapter">User-Defined Types</a></li>
+      <li>Next: <a href="part_eleven.html" title="next chapter">Multiple Outputs</a></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/intro_tutorial/expectations.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$(\'#searchbox\').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Elementl, Inc.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/intro_tutorial/expectations.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>'''
+
+snapshots['test_build_all_docs 63'] = '''
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -23383,7 +23710,7 @@ topology and see how dagster determines the execution order of a pipeline.</p>
 <li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="part_ten.html">Expectations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="expectations.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_eleven.html">Multiple Outputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_thirteen.html">Reusable Solids</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_fourteen.html">Unit-testing Pipelines</a></li>
@@ -23446,7 +23773,7 @@ topology and see how dagster determines the execution order of a pipeline.</p>
   </body>
 </html>'''
 
-snapshots['test_build_all_docs 63'] = '''
+snapshots['test_build_all_docs 64'] = '''
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -23641,7 +23968,7 @@ at all. Just add a few lines to <cite>hello_world.py</cite> (highlighted in yell
 <li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="part_ten.html">Expectations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="expectations.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_eleven.html">Multiple Outputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_thirteen.html">Reusable Solids</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_fourteen.html">Unit-testing Pipelines</a></li>
@@ -23704,7 +24031,7 @@ at all. Just add a few lines to <cite>hello_world.py</cite> (highlighted in yell
   </body>
 </html>'''
 
-snapshots['test_build_all_docs 64'] = '''
+snapshots['test_build_all_docs 65'] = '''
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -23976,7 +24303,7 @@ built-in <code class="docutils literal notranslate"><span class="pre">String</sp
 <li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="part_ten.html">Expectations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="expectations.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_eleven.html">Multiple Outputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_thirteen.html">Reusable Solids</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_fourteen.html">Unit-testing Pipelines</a></li>
@@ -24039,7 +24366,7 @@ built-in <code class="docutils literal notranslate"><span class="pre">String</sp
   </body>
 </html>'''
 
-snapshots['test_build_all_docs 65'] = '''
+snapshots['test_build_all_docs 66'] = '''
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -24057,7 +24384,7 @@ snapshots['test_build_all_docs 65'] = '''
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Reusable Solids" href="part_thirteen.html" />
-    <link rel="prev" title="Expectations" href="part_ten.html" />
+    <link rel="prev" title="Expectations" href="expectations.html" />
    
   <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
   
@@ -24271,7 +24598,7 @@ only triggering log_num_squared. log_num will never be executed.</p>
 <li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types</a></li>
 </ul>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="part_ten.html">Expectations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="expectations.html">Expectations</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Multiple Outputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_thirteen.html">Reusable Solids</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_fourteen.html">Unit-testing Pipelines</a></li>
@@ -24288,7 +24615,7 @@ only triggering log_num_squared. log_num will never be executed.</p>
 <h3>Related Topics</h3>
 <ul>
   <li><a href="../index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="part_ten.html" title="previous chapter">Expectations</a></li>
+      <li>Previous: <a href="expectations.html" title="previous chapter">Expectations</a></li>
       <li>Next: <a href="part_thirteen.html" title="next chapter">Reusable Solids</a></li>
   </ul></li>
 </ul>
@@ -24334,7 +24661,7 @@ only triggering log_num_squared. log_num will never be executed.</p>
   </body>
 </html>'''
 
-snapshots['test_build_all_docs 66'] = '''
+snapshots['test_build_all_docs 67'] = '''
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -24526,7 +24853,7 @@ provide, instead of from solids upstream in the dependency graph.</p>
 <li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types</a></li>
 </ul>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="part_ten.html">Expectations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="expectations.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_eleven.html">Multiple Outputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_thirteen.html">Reusable Solids</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Unit-testing Pipelines</a></li>
@@ -24580,336 +24907,6 @@ provide, instead of from solids upstream in the dependency graph.</p>
       
       |
       <a href="../_sources/intro_tutorial/part_fourteen.rst.txt"
-          rel="nofollow">Page source</a>
-    </div>
-
-    
-
-    
-  </body>
-</html>'''
-
-snapshots['test_build_all_docs 67'] = '''
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
-<html xmlns="http://www.w3.org/1999/xhtml">
-  <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Expectations &#8212; Dagster  documentation</title>
-    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../_static/jquery.js"></script>
-    <script type="text/javascript" src="../_static/underscore.js"></script>
-    <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Multiple Outputs" href="part_eleven.html" />
-    <link rel="prev" title="User-Defined Types" href="types.html" />
-   
-  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
-  
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
-
-  </head><body>
-  
-
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
-          
-
-          <div class="body" role="main">
-            
-  <div class="section" id="expectations">
-<h1>Expectations<a class="headerlink" href="#expectations" title="Permalink to this headline">¶</a></h1>
-<p>Dagster has a first-class concept to capture data quality tests. We call these
-data quality tests expectations.</p>
-<p>Data pipelines have the property that they typically do not control
-what data they ingest. Unlike a traditional application where you can
-prevent users from entering malformed data, data pipelines do not have
-that option. When unexpected data enters a pipeline and causes a software
-error, typically the only recourse is to update your code.</p>
-<p>Lying within the code of data pipelines are a whole host of implicit
-assumptions about the nature of the data. One way to frame the goal of
-expectations is to say that they make those implict assumption explicit.
-And by making these a first class concept they can be described with metadata,
-inspected, and configured to run in different ways.</p>
-<p>Let us return to a slightly simplified version of the data pipeline from part nine.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@solid</span><span class="p">(</span>
-    <span class="n">config_field</span><span class="o">=</span><span class="n">ConfigDefinition</span><span class="p">(</span><span class="n">types</span><span class="o">.</span><span class="n">Int</span><span class="p">),</span>
-    <span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">OutputDefinition</span><span class="p">(</span><span class="n">types</span><span class="o">.</span><span class="n">Int</span><span class="p">)],</span>
-<span class="p">)</span>
-<span class="k">def</span> <span class="nf">ingest_a</span><span class="p">(</span><span class="n">info</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">info</span><span class="o">.</span><span class="n">config</span>
-
-
-<span class="nd">@solid</span><span class="p">(</span>
-    <span class="n">config_field</span><span class="o">=</span><span class="n">ConfigDefinition</span><span class="p">(</span><span class="n">types</span><span class="o">.</span><span class="n">Int</span><span class="p">),</span>
-    <span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">OutputDefinition</span><span class="p">(</span><span class="n">types</span><span class="o">.</span><span class="n">Int</span><span class="p">)],</span>
-<span class="p">)</span>
-<span class="k">def</span> <span class="nf">ingest_b</span><span class="p">(</span><span class="n">info</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">info</span><span class="o">.</span><span class="n">config</span>
-
-<span class="nd">@solid</span><span class="p">(</span>
-    <span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;num_one&#39;</span><span class="p">,</span> <span class="n">types</span><span class="o">.</span><span class="n">Int</span><span class="p">),</span>
-            <span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;num_two&#39;</span><span class="p">,</span> <span class="n">types</span><span class="o">.</span><span class="n">Int</span><span class="p">)],</span>
-    <span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">OutputDefinition</span><span class="p">(</span><span class="n">types</span><span class="o">.</span><span class="n">Int</span><span class="p">)],</span>
-<span class="p">)</span>
-<span class="k">def</span> <span class="nf">add_ints</span><span class="p">(</span><span class="n">_info</span><span class="p">,</span> <span class="n">num_one</span><span class="p">,</span> <span class="n">num_two</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">num_one</span> <span class="o">+</span> <span class="n">num_two</span>
-
-
-<span class="k">def</span> <span class="nf">define_part_ten_step_one</span><span class="p">():</span>
-    <span class="k">return</span> <span class="n">PipelineDefinition</span><span class="p">(</span>
-        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;part_ten_step_one&#39;</span><span class="p">,</span>
-        <span class="n">solids</span><span class="o">=</span><span class="p">[</span><span class="n">ingest_a</span><span class="p">,</span> <span class="n">ingest_b</span><span class="p">,</span> <span class="n">add_ints</span><span class="p">],</span>
-        <span class="n">dependencies</span><span class="o">=</span><span class="p">{</span>
-            <span class="s1">&#39;add_ints&#39;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s1">&#39;num_one&#39;</span><span class="p">:</span> <span class="n">DependencyDefinition</span><span class="p">(</span><span class="s1">&#39;ingest_a&#39;</span><span class="p">),</span>
-                <span class="s1">&#39;num_two&#39;</span><span class="p">:</span> <span class="n">DependencyDefinition</span><span class="p">(</span><span class="s1">&#39;ingest_b&#39;</span><span class="p">),</span>
-            <span class="p">},</span>
-        <span class="p">},</span>
-    <span class="p">)</span>
-</pre></div>
-</div>
-<p>Imagine that we had assumptions baked into the code of this pipeline such that the code only
-worked on positive numbers, and we wanted to communicate that requirement to the user
-in clear terms. We’ll add an expectation in order to do this.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@solid</span><span class="p">(</span>
-    <span class="n">config_field</span><span class="o">=</span><span class="n">ConfigDefinition</span><span class="p">(</span><span class="n">types</span><span class="o">.</span><span class="n">Int</span><span class="p">),</span>
-    <span class="n">outputs</span><span class="o">=</span><span class="p">[</span>
-        <span class="n">OutputDefinition</span><span class="p">(</span>
-            <span class="n">types</span><span class="o">.</span><span class="n">Int</span><span class="p">,</span>
-            <span class="n">expectations</span><span class="o">=</span><span class="p">[</span>
-                <span class="n">ExpectationDefinition</span><span class="p">(</span>
-                    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;check_positive&quot;</span><span class="p">,</span>
-                    <span class="n">expectation_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">_info</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">ExpectationResult</span><span class="p">(</span><span class="n">success</span><span class="o">=</span><span class="n">value</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
-                <span class="p">),</span>
-            <span class="p">],</span>
-        <span class="p">),</span>
-    <span class="p">],</span>
-<span class="p">)</span>
-<span class="k">def</span> <span class="nf">ingest_a</span><span class="p">(</span><span class="n">info</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">info</span><span class="o">.</span><span class="n">config</span>
-</pre></div>
-</div>
-<p>You’ll notice that we added an ExpectationDefinition to the output of ingest_a. Expectations
-can be attached to inputs or outputs and operate on the value of that input or output.</p>
-<p>Expectations perform arbitrary computation on that value and then return an ExpectationResult.
-The user communicates whether or not the expectation succeeded via this return value.</p>
-<p>If you run this pipeline, you’ll notice some logging that indicates that the expectation
-was processed:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">execute_pipeline</span><span class="p">(</span>
-    <span class="n">define_part_ten_step_one</span><span class="p">(),</span>
-    <span class="p">{</span>
-        <span class="s1">&#39;context&#39;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s1">&#39;default&#39;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s1">&#39;config&#39;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s1">&#39;log_level&#39;</span><span class="p">:</span> <span class="s1">&#39;DEBUG&#39;</span><span class="p">,</span>
-                <span class="p">}</span>
-            <span class="p">}</span>
-        <span class="p">},</span>
-        <span class="s1">&#39;solids&#39;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s1">&#39;ingest_a&#39;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s1">&#39;config&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
-            <span class="p">},</span>
-            <span class="s1">&#39;ingest_b&#39;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s1">&#39;config&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
-            <span class="p">},</span>
-        <span class="p">}</span>
-    <span class="p">},</span>
-<span class="p">)</span>
-</pre></div>
-</div>
-<p>And run it…</p>
-<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>$ python part_ten.py
-... log spew
-<span class="m">2018</span>-09-14 <span class="m">13</span>:13:13 - dagster - DEBUG - <span class="nv">orig_message</span><span class="o">=</span><span class="s2">&quot;Expectation ingest_a.result.expectation.check_positive succeeded on 2.&quot;</span> <span class="nv">log_message_id</span><span class="o">=</span><span class="s2">&quot;938ab7fa-c955-408a-9f44-66b0b6ecdcad&quot;</span> <span class="nv">pipeline</span><span class="o">=</span><span class="s2">&quot;part_ten_step_one&quot;</span> <span class="nv">solid</span><span class="o">=</span><span class="s2">&quot;ingest_a&quot;</span> <span class="nv">output</span><span class="o">=</span><span class="s2">&quot;result&quot;</span> <span class="nv">expectation</span><span class="o">=</span><span class="s2">&quot;check_positive&quot;</span>
-... more log spew
-</pre></div>
-</div>
-<p>Now let’s make this fail. Currently the default behavior is to throw an error and halt execution
-when an expectation fails. So:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">execute_pipeline</span><span class="p">(</span>
-    <span class="n">define_part_ten_step_one</span><span class="p">(),</span>
-    <span class="p">{</span>
-        <span class="s1">&#39;context&#39;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s1">&#39;default&#39;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s1">&#39;config&#39;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s1">&#39;log_level&#39;</span><span class="p">:</span> <span class="s1">&#39;DEBUG&#39;</span><span class="p">,</span>
-                <span class="p">}</span>
-            <span class="p">}</span>
-        <span class="p">},</span>
-        <span class="s1">&#39;solids&#39;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s1">&#39;ingest_a&#39;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s1">&#39;config&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">5</span><span class="p">,</span>
-            <span class="p">},</span>
-            <span class="s1">&#39;ingest_b&#39;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s1">&#39;config&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
-            <span class="p">},</span>
-        <span class="p">}</span>
-    <span class="p">},</span>
-<span class="p">)</span>
-</pre></div>
-</div>
-<p>And then:</p>
-<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>$ python part_ten.py
-... bunch of log spew
-dagster.core.errors.DagsterExpectationFailedError: DagsterExpectationFailedError<span class="o">(</span><span class="nv">solid</span><span class="o">=</span>add_ints, <span class="nv">output</span><span class="o">=</span>result, <span class="nv">expectation</span><span class="o">=</span><span class="nv">check_positivevalue</span><span class="o">=</span>-2<span class="o">)</span>
-</pre></div>
-</div>
-<p>We can also tell execute_pipeline to not throw on error:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">execute_pipeline</span><span class="p">(</span>
-    <span class="n">define_part_ten_step_one</span><span class="p">(),</span>
-    <span class="p">{</span>
-        <span class="s1">&#39;context&#39;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s1">&#39;default&#39;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s1">&#39;config&#39;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s1">&#39;log_level&#39;</span><span class="p">:</span> <span class="s1">&#39;DEBUG&#39;</span><span class="p">,</span>
-                <span class="p">}</span>
-            <span class="p">}</span>
-        <span class="p">},</span>
-        <span class="s1">&#39;solids&#39;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s1">&#39;ingest_a&#39;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s1">&#39;config&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">5</span><span class="p">,</span>
-            <span class="p">},</span>
-            <span class="s1">&#39;ingest_b&#39;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s1">&#39;config&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
-            <span class="p">},</span>
-        <span class="p">}</span>
-    <span class="p">},</span>
-    <span class="n">throw_on_error</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
-<span class="p">)</span>
-</pre></div>
-</div>
-<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>$ python part_ten.py
-... log spew
-<span class="m">2018</span>-11-08 <span class="m">10</span>:38:28 - dagster - DEBUG - <span class="nv">orig_message</span><span class="o">=</span><span class="s2">&quot;Expectation add_ints.result.expectation.check_positive failed on -2.&quot;</span> <span class="nv">log_message_id</span><span class="o">=</span><span class="s2">&quot;9ca21f5c-0578-4b3f-80c2-d129552525a4&quot;</span> <span class="nv">run_id</span><span class="o">=</span><span class="s2">&quot;c12bdc2d-c008-47db-8b76-e257262eab79&quot;</span> <span class="nv">pipeline</span><span class="o">=</span><span class="s2">&quot;part_ten_step_one&quot;</span> <span class="nv">solid</span><span class="o">=</span><span class="s2">&quot;add_ints&quot;</span> <span class="nv">output</span><span class="o">=</span><span class="s2">&quot;result&quot;</span> <span class="nv">expectation</span><span class="o">=</span><span class="s2">&quot;check_positive&quot;</span>
-</pre></div>
-</div>
-<p>Because the system is explictly aware of these expectations they are viewable in tools like dagit.
-It can also configure the execution of these expectations. The capabilities of this aspect of the
-system are currently quite immature, but we expect to develop these more in the future. The only
-feature right now is the ability to skip expectations entirely. This is useful in a case where
-expectations are expensive and you have a time-critical job you must. In that case you can
-configure the pipeline to skip expectations entirely.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">execute_pipeline</span><span class="p">(</span>
-    <span class="n">define_part_ten_step_one</span><span class="p">(),</span>
-    <span class="p">{</span>
-        <span class="s1">&#39;context&#39;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s1">&#39;default&#39;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s1">&#39;config&#39;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s1">&#39;log_level&#39;</span><span class="p">:</span> <span class="s1">&#39;DEBUG&#39;</span><span class="p">,</span>
-                <span class="p">}</span>
-            <span class="p">}</span>
-        <span class="p">},</span>
-        <span class="s1">&#39;solids&#39;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s1">&#39;ingest_a&#39;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s1">&#39;config&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
-            <span class="p">},</span>
-            <span class="s1">&#39;ingest_b&#39;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s1">&#39;config&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
-            <span class="p">},</span>
-        <span class="p">},</span>
-        <span class="s1">&#39;expectations&#39;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s1">&#39;evaluate&#39;</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
-        <span class="p">},</span>
-    <span class="p">},</span>
-<span class="p">)</span>
-</pre></div>
-</div>
-<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>$ python part_ten.py
-... expectations will not in the log spew
-</pre></div>
-</div>
-<p>We plan on adding more sophisticated capabilties to this in the future.</p>
-</div>
-
-
-          </div>
-          
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<h3><a href="../index.html">Table Of Contents</a></h3>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../principles.html">Principles</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="hello_world.html">Hello, World</a></li>
-<li class="toctree-l1"><a class="reference internal" href="hello_dag.html">Hello, DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="actual_dag.html">An actual DAG</a></li>
-<li class="toctree-l1"><a class="reference internal" href="inputs.html">Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="config.html">Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="configuration_schemas.html">Configuration Schemas</a></li>
-<li class="toctree-l1"><a class="reference internal" href="execution_context.html">Execution Context</a></li>
-<li class="toctree-l1"><a class="reference internal" href="resources.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="repos.html">Repositories</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pipeline_cli_execution.html">Pipeline CLI Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types</a></li>
-</ul>
-<ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Expectations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="part_eleven.html">Multiple Outputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="part_thirteen.html">Reusable Solids</a></li>
-<li class="toctree-l1"><a class="reference internal" href="part_fourteen.html">Unit-testing Pipelines</a></li>
-</ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/definitions.html">Definitions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/decorators.html">Decorators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/execution.html">Execution</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/errors.html">Errors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/types.html">Types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../apidocs/utilities.html">Utilities</a></li>
-</ul>
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="../index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="types.html" title="previous chapter">User-Defined Types</a></li>
-      <li>Next: <a href="part_eleven.html" title="next chapter">Multiple Outputs</a></li>
-  </ul></li>
-</ul>
-</div>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="../_sources/intro_tutorial/part_ten.rst.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
-    </div>
-</div>
-<script type="text/javascript">$(\'#searchbox\').show(0);</script>
-        </div>
-      </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="footer">
-      &copy;2018, Elementl, Inc.
-      
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.5</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
-      
-      |
-      <a href="../_sources/intro_tutorial/part_ten.rst.txt"
           rel="nofollow">Page source</a>
     </div>
 
@@ -25153,7 +25150,7 @@ to cloud storage, unzipping files, etc.</p>
 <li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types</a></li>
 </ul>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="part_ten.html">Expectations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="expectations.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_eleven.html">Multiple Outputs</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Reusable Solids</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_fourteen.html">Unit-testing Pipelines</a></li>
@@ -25370,7 +25367,7 @@ to guard against bugs and enrich pipeline documentation.</p>
 <li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="part_ten.html">Expectations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="expectations.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_eleven.html">Multiple Outputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_thirteen.html">Reusable Solids</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_fourteen.html">Unit-testing Pipelines</a></li>
@@ -25594,7 +25591,7 @@ with swappable config.</p>
 <li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="part_ten.html">Expectations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="expectations.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_eleven.html">Multiple Outputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_thirteen.html">Reusable Solids</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_fourteen.html">Unit-testing Pipelines</a></li>
@@ -25898,7 +25895,7 @@ resource will be used instead of the cloud version:</p>
 <li class="toctree-l1"><a class="reference internal" href="types.html">User-Defined Types</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="part_ten.html">Expectations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="expectations.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_eleven.html">Multiple Outputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_thirteen.html">Reusable Solids</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_fourteen.html">Unit-testing Pipelines</a></li>
@@ -25978,7 +25975,7 @@ snapshots['test_build_all_docs 72'] = '''
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Expectations" href="part_ten.html" />
+    <link rel="next" title="Expectations" href="expectations.html" />
     <link rel="prev" title="Pipeline CLI Execution" href="pipeline_cli_execution.html" />
    
   <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
@@ -26233,7 +26230,7 @@ given output any number of times in any number of formats.</p>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">User-Defined Types</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="part_ten.html">Expectations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="expectations.html">Expectations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_eleven.html">Multiple Outputs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_thirteen.html">Reusable Solids</a></li>
 <li class="toctree-l1"><a class="reference internal" href="part_fourteen.html">Unit-testing Pipelines</a></li>
@@ -26251,7 +26248,7 @@ given output any number of times in any number of formats.</p>
 <ul>
   <li><a href="../index.html">Documentation overview</a><ul>
       <li>Previous: <a href="pipeline_cli_execution.html" title="previous chapter">Pipeline CLI Execution</a></li>
-      <li>Next: <a href="part_ten.html" title="next chapter">Expectations</a></li>
+      <li>Next: <a href="expectations.html" title="next chapter">Expectations</a></li>
   </ul></li>
 </ul>
 </div>

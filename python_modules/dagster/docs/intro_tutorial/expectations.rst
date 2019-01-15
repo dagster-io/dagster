@@ -16,8 +16,6 @@ expectations is to say that they make those implict assumption explicit.
 And by making these a first class concept they can be described with metadata,
 inspected, and configured to run in different ways.
 
-Let us return to a slightly simplified version of the data pipeline from part nine.
-
 .. code-block:: python
 
     @solid(
