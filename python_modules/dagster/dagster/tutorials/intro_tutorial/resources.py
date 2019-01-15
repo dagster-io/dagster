@@ -1,5 +1,8 @@
+# from bigco import PublicCloudConn, set_value_in_cloud_store
+
 from dagster import (
     Dict,
+    execute_pipeline,
     Field,
     InputDefinition,
     Int,
@@ -67,8 +70,9 @@ def define_cloud_store_resource():
         config_field=Field(
             Dict({'username': Field(String), 'password': Field(String)})
         ),
-        description='''This represents some cloud-hosted key value store. Username and password
-        must be provided via configuration for this to work''',
+        description='''This represents some cloud-hosted key value store.
+        Username and password must be provided via configuration for this to
+        work''',
     )
 
 
@@ -77,9 +81,9 @@ def define_cloud_store_resource():
     outputs=[OutputDefinition(Int)],
 )
 def add_ints(info, num_one, num_two):
-    result = num_one + num_two
-    info.context.resources.store.record_value(info.context, 'add', result)
-    return result
+    sum_ints = num_one + num_two
+    info.context.resources.store.record_value(info.context, 'add', sum_ints)
+    return sum_ints
 
 
 def define_resource_test_pipeline():
@@ -93,5 +97,48 @@ def define_resource_test_pipeline():
             'cloud': PipelineContextDefinition(
                 resources={'store': define_cloud_store_resource()}
             ),
+        },
+    )
+
+
+if __name__ == '__main__':
+    result = execute_pipeline(
+        define_resource_test_pipeline(),
+        environment={
+            'context': {
+                'cloud': {
+                    'resources': {
+                        'store': {
+                            'config': {
+                                'username': 'some_user',
+                                'password': 'some_password',
+                            }
+                        }
+                    }
+                }
+            },
+            'solids': {
+                'add_ints': {
+                    'inputs': {
+                        'num_one': {'value': 2},
+                        'num_two': {'value': 6},
+                    }
+                }
+            },
+        },
+    )
+
+    result = execute_pipeline(
+        define_resource_test_pipeline(),
+        environment={
+            'context': {'local': {}},
+            'solids': {
+                'add_ints': {
+                    'inputs': {
+                        'num_one': {'value': 2},
+                        'num_two': {'value': 6},
+                    }
+                }
+            },
         },
     )

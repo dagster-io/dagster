@@ -1,14 +1,14 @@
 Pipeline CLI Execution
 ----------------------
 
-Up until now we've been focusing on using the dagit tool for executing pipeline. However, we
-also have a CLI utility for use in scripting contexts. It has its own features useful for
-production context, which we will go over here.
+Up until now we've been focusing on using the dagit tool for executing pipelines. However, we
+also have a CLI utility for use in scripting contexts. It has its own features which are useful in
+a production context.
 
 Just as in the last part of the tutorial, we'll define a pipeline and a repository, and create
 a yaml file to tell the CLI tool about the repository.
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/pipeline_execution.py
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/pipeline_cli_execution.py
    :linenos:
    :caption: pipeline_execution.py
 
@@ -16,6 +16,7 @@ And now the repository file:
 
 .. literalinclude:: ../../dagster/tutorials/intro_tutorial/pipeline_execution_repository.yml
    :linenos:
+   :language: YAML
    :caption: repository.yml
 
 Finally, we'll need to define the pipeline config in a yaml file in order to
@@ -23,10 +24,11 @@ execute our pipeline from the command line.
 
 .. literalinclude:: ../../dagster/tutorials/intro_tutorial/pipeline_execution_env.yml
    :linenos:
+   :language: YAML
    :caption: env.yml
 
 With these elements in place we can now drive execution from the CLI specifying only the pipeline
-name. The tool loads the repository using the `repository.yml` file and looks up the pipeline by
+name. The tool loads the repository using the ``repository.yml`` file and looks up the pipeline by
 name.
 
 .. code-block:: console
@@ -46,10 +48,12 @@ Let's split up our env.yml into two parts:
 
 .. literalinclude:: ../../dagster/tutorials/intro_tutorial/pipeline_execution_env.yml
    :lines: 1-4
+   :language: YAML
    :caption: constant_env.yml
 
 .. literalinclude:: ../../dagster/tutorials/intro_tutorial/pipeline_execution_env.yml
-   :lines: 6-9
+   :lines: 6-12
+   :language: YAML
    :caption: specific_env.yml
 
 Now we can run our pipeline as follows:
@@ -62,5 +66,5 @@ Order matters when specifying yaml files to use -- values specified in later fil
 values in earlier files, which can be useful. You can also use globs in the CLI arguments to consume
 multiple yaml files.
 
-Next, we'll look at defining strongly-typed :doc:`Configuration Schemas <configuration_schemas>`
-to guard against bugs and enrich pipeline documentation.
+Next, we'll look at how :doc:`User-Defined Types <types>` can enrich documentation and type-safety
+in pipelines.

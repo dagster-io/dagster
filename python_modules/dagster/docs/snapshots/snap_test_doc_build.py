@@ -255,68 +255,76 @@ development environment.</p>
 <li>You can’t use Python 3.7+ yet because of <a class="reference external" href="https://github.com/apache/arrow/issues/1125">https://github.com/apache/arrow/issues/1125</a></li>
 </ul>
 </div></blockquote>
-<p>2. Create and activate a virtualenv</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python3</span> <span class="o">-</span><span class="n">m</span> <span class="n">venv</span> <span class="n">dagsterenv</span>
-<span class="n">source</span> <span class="n">dagsterenv</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">activate</span>
+<ol class="arabic simple" start="2">
+<li>Create and activate a virtualenv</li>
+</ol>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> python3 -m venv dagsterenv
+<span class="gp">$</span> <span class="nb">source</span> dagsterenv/bin/activate
 </pre></div>
 </div>
-<p>3. Install dagster locally and install dev tools</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">git</span><span class="nd">@github</span><span class="o">.</span><span class="n">com</span><span class="p">:</span><span class="n">dagster</span><span class="o">-</span><span class="n">io</span><span class="o">/</span><span class="n">dagster</span><span class="o">.</span><span class="n">git</span>
-<span class="n">cd</span> <span class="n">dagster</span><span class="o">/</span><span class="n">python_modules</span>
-<span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">e</span> <span class="o">./</span><span class="n">dagit</span>
-<span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">e</span> <span class="o">./</span><span class="n">dagster</span>
-<span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">r</span> <span class="o">./</span><span class="n">dagster</span><span class="o">/</span><span class="n">dev</span><span class="o">-</span><span class="n">requirements</span><span class="o">.</span><span class="n">txt</span>
+<ol class="arabic simple" start="3">
+<li>Install dagster locally and install dev tools</li>
+</ol>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> git clone git@github.com:dagster-io/dagster.git
+<span class="gp">$</span> <span class="nb">cd</span> dagster/python_modules
+<span class="gp">$</span> pip install -e ./dagit
+<span class="gp">$</span> pip install -e ./dagster
+<span class="gp">$</span> pip install -r ./dagster/dev-requirements.txt
 </pre></div>
 </div>
-<p>4. Install dagit webapp dependencies</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="n">dagster</span><span class="o">/</span><span class="n">python_modules</span><span class="o">/</span><span class="n">dagit</span><span class="o">/</span><span class="n">dagit</span><span class="o">/</span><span class="n">webapp</span>
-<span class="n">yarn</span> <span class="n">install</span>
+<ol class="arabic simple" start="4">
+<li>Install dagit webapp dependencies</li>
+</ol>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> dagster/python_modules/dagit/dagit/webapp
+<span class="gp">$</span> yarn install
 </pre></div>
 </div>
-<p>5. Run tests
-We use tox to manage test environments for python.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="n">dagster</span><span class="o">/</span><span class="n">python_modules</span><span class="o">/</span><span class="n">dagster</span>
-<span class="n">tox</span>
-<span class="n">cd</span> <span class="n">dagster</span><span class="o">/</span><span class="n">python_modules</span><span class="o">/</span><span class="n">dagit</span>
-<span class="n">tox</span>
+<ol class="arabic simple" start="5">
+<li>Run tests</li>
+</ol>
+<p>We use tox to manage test environments for python.</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> dagster/python_modules/dagster
+<span class="gp">$</span> tox
+<span class="gp">$</span> <span class="nb">cd</span> dagster/python_modules/dagit
+<span class="gp">$</span> tox
 </pre></div>
 </div>
 <p>To run JavaScript tests for the dagit frontend, you can run:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="n">dagster</span><span class="o">/</span><span class="n">python_modules</span><span class="o">/</span><span class="n">dagit</span><span class="o">/</span><span class="n">dagit</span><span class="o">/</span><span class="n">webapp</span>
-<span class="n">yarn</span> <span class="n">test</span>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> dagster/python_modules/dagit/dagit/webapp
+<span class="gp">$</span> yarn <span class="nb">test</span>
 </pre></div>
 </div>
-<p>In webapp development it’s handy to run <cite>yarn run jest –watch</cite> to have an
+<p>In webapp development it’s handy to run <code class="docutils literal notranslate"><span class="pre">yarn</span> <span class="pre">run</span> <span class="pre">jest</span> <span class="pre">--watch</span></code> to have an
 interactive test runner.</p>
 <p>Some webapp tests use snapshots–auto-generated results to which the test
 render tree is compared. Those tests are supposed to break when you change
 something.</p>
-<p>Check that the change is sensible and run <cite>yarn run jest -u</cite> to update the
+<p>Check that the change is sensible and run <code class="docutils literal notranslate"><span class="pre">yarn</span> <span class="pre">run</span> <span class="pre">jest</span> <span class="pre">-u</span></code> to update the
 snapshot to the new result. You can also update snapshots interactively
-when you are in <cite>–watch</cite> mode.</p>
+when you are in <code class="docutils literal notranslate"><span class="pre">--watch</span></code> mode.</p>
 <div class="section" id="running-dagit-webapp-in-development">
 <h3>Running dagit webapp in development<a class="headerlink" href="#running-dagit-webapp-in-development" title="Permalink to this headline">¶</a></h3>
 <p>For development, run the dagit GraphQL server on a different port than the
 webapp, from any directory that contains a repository.yml file. For example:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="n">dagster</span><span class="o">/</span><span class="n">python_modules</span><span class="o">/</span><span class="n">dagster</span><span class="o">/</span><span class="n">dagster</span><span class="o">/</span><span class="n">dagster_examples</span>
-<span class="n">dagit</span> <span class="o">-</span><span class="n">p</span> <span class="mi">3333</span>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> dagster/python_modules/dagster/dagster/dagster_examples
+<span class="gp">$</span> dagit -p <span class="m">3333</span>
 </pre></div>
 </div>
 <p>Run the local development (autoreloading, etc.) version of the webapp.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="n">dagster</span><span class="o">/</span><span class="n">python_modules</span><span class="o">/</span><span class="n">dagit</span><span class="o">/</span><span class="n">dagit</span><span class="o">/</span><span class="n">webapp</span>
-<span class="n">REACT_APP_GRAPHQL_URI</span><span class="o">=</span><span class="s2">&quot;http://localhost:3333/graphql&quot;</span> <span class="n">yarn</span> <span class="n">start</span>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> dagster/python_modules/dagit/dagit/webapp
+<span class="gp">$</span> <span class="nv">REACT_APP_GRAPHQL_URI</span><span class="o">=</span><span class="s2">&quot;http://localhost:3333/graphql&quot;</span> yarn start
 </pre></div>
 </div>
 </div>
 <div class="section" id="releasing">
 <h3>Releasing<a class="headerlink" href="#releasing" title="Permalink to this headline">¶</a></h3>
-<p>Projects are released using the Python script at <cite>dagster/bin/publish.py</cite>.</p>
+<p>Projects are released using the Python script at <code class="docutils literal notranslate"><span class="pre">dagster/bin/publish.py</span></code>.</p>
 </div>
 <div class="section" id="developing-docs">
 <h3>Developing docs<a class="headerlink" href="#developing-docs" title="Permalink to this headline">¶</a></h3>
 <p>Running a live html version of the docs can expedite documentation development.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="n">python_modules</span><span class="o">/</span><span class="n">dagster</span><span class="o">/</span><span class="n">docs</span>
-<span class="n">make</span> <span class="n">livehtml</span>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> <span class="nb">cd</span> python_modules/dagster/docs
+<span class="gp">$</span> make livehtml
 </pre></div>
 </div>
 </div>
@@ -1789,7 +1797,7 @@ snapshots['test_build_all_docs 9'] = '''
   </body>
 </html>'''
 
-snapshots['test_build_all_docs 10'] = 'Search.setIndex({docnames:["apidocs/decorators","apidocs/definitions","apidocs/errors","apidocs/execution","apidocs/types","apidocs/utilities","contributing","guides/028_to_030_new_concepts","guides/028_to_030_upgrade_guide","index","installation","intro_tutorial/actual_dag","intro_tutorial/config","intro_tutorial/configuration_schemas","intro_tutorial/execution_context","intro_tutorial/expectations","intro_tutorial/hello_dag","intro_tutorial/hello_world","intro_tutorial/inputs","intro_tutorial/part_eleven","intro_tutorial/part_fourteen","intro_tutorial/part_thirteen","intro_tutorial/pipeline_cli_execution","intro_tutorial/repos","intro_tutorial/resources","intro_tutorial/types","principles"],envversion:53,filenames:["apidocs/decorators.rst","apidocs/definitions.rst","apidocs/errors.rst","apidocs/execution.rst","apidocs/types.rst","apidocs/utilities.rst","contributing.rst","guides/028_to_030_new_concepts.md","guides/028_to_030_upgrade_guide.md","index.rst","installation.rst","intro_tutorial/actual_dag.rst","intro_tutorial/config.rst","intro_tutorial/configuration_schemas.rst","intro_tutorial/execution_context.rst","intro_tutorial/expectations.rst","intro_tutorial/hello_dag.rst","intro_tutorial/hello_world.rst","intro_tutorial/inputs.rst","intro_tutorial/part_eleven.rst","intro_tutorial/part_fourteen.rst","intro_tutorial/part_thirteen.rst","intro_tutorial/pipeline_cli_execution.rst","intro_tutorial/repos.rst","intro_tutorial/resources.rst","intro_tutorial/types.rst","principles.rst"],objects:{"dagster.DependencyDefinition":{description:[1,2,1,""],output:[1,2,1,""],solid:[1,2,1,""]},"dagster.ExpectationDefinition":{description:[1,2,1,""],expectation_fn:[1,2,1,""],name:[1,2,1,""]},"dagster.ExpectationResult":{message:[1,2,1,""],result_context:[1,2,1,""],success:[1,2,1,""]},"dagster.InputDefinition":{description:[1,2,1,""],expectations:[1,2,1,""],name:[1,2,1,""],runtime_type:[1,2,1,""]},"dagster.MultipleResults":{from_dict:[0,4,1,""],results:[0,2,1,""]},"dagster.OutputDefinition":{description:[1,2,1,""],name:[1,2,1,""],runtime_type:[1,2,1,""]},"dagster.PipelineContextDefinition":{passthrough_context_definition:[1,4,1,""]},"dagster.PipelineDefinition":{context_definitions:[1,2,1,""],dependencies:[1,2,1,""],dependency_structure:[1,2,1,""],description:[1,2,1,""],display_name:[1,2,1,""],has_solid:[1,5,1,""],name:[1,2,1,""],solid_named:[1,5,1,""],solids:[1,2,1,""]},"dagster.PipelineExecutionResult":{context:[3,2,1,""],pipeline:[3,2,1,""],result_for_solid:[3,5,1,""],result_list:[3,2,1,""],success:[3,2,1,""]},"dagster.RepositoryDefinition":{get_all_pipelines:[1,5,1,""],get_pipeline:[1,5,1,""],iterate_over_pipelines:[1,5,1,""],name:[1,2,1,""],pipeline_dict:[1,2,1,""]},"dagster.Result":{output_name:[1,2,1,""],value:[1,2,1,""]},"dagster.SolidDefinition":{config_field:[1,2,1,""],description:[1,2,1,""],input_defs:[1,2,1,""],metadata:[1,2,1,""],name:[1,2,1,""],outputs_defs:[1,2,1,""],transform_fn:[1,2,1,""]},"dagster.SolidExecutionResult":{context:[3,2,1,""],dagster_error:[3,2,1,""],solid:[3,2,1,""],success:[3,2,1,""],transformed_value:[3,5,1,""],transformed_values:[3,2,1,""]},"dagster.TransformExecutionInfo":{config:[1,2,1,""],context:[1,2,1,""]},"dagster.core":{types:[4,6,0,"-"]},"dagster.core.types":{Any:[4,2,1,""],Bool:[4,2,1,""],Int:[4,2,1,""],List:[4,3,1,""],Nullable:[4,3,1,""],Path:[4,2,1,""],PythonObjectType:[4,0,1,""],String:[4,2,1,""]},dagster:{ContextCreationExecutionInfo:[1,0,1,""],DagsterExpectationFailedError:[2,1,1,""],DagsterInvalidDefinitionError:[2,1,1,""],DagsterInvariantViolationError:[2,1,1,""],DagsterRuntimeCoercionError:[2,1,1,""],DagsterTypeError:[2,1,1,""],DagsterUserCodeExecutionError:[2,1,1,""],DependencyDefinition:[1,0,1,""],ExecutionContext:[3,0,1,""],ExpectationDefinition:[1,0,1,""],ExpectationExecutionInfo:[1,0,1,""],ExpectationResult:[1,0,1,""],Field:[1,3,1,""],InputDefinition:[1,0,1,""],MultipleResults:[0,0,1,""],OutputDefinition:[1,0,1,""],PipelineConfigEvaluationError:[3,1,1,""],PipelineContextDefinition:[1,0,1,""],PipelineDefinition:[1,0,1,""],PipelineExecutionResult:[3,0,1,""],ReentrantInfo:[3,0,1,""],RepositoryDefinition:[1,0,1,""],ResourceDefinition:[1,0,1,""],Result:[1,0,1,""],SolidDefinition:[1,0,1,""],SolidExecutionResult:[3,0,1,""],SolidInstance:[1,0,1,""],TransformExecutionInfo:[1,0,1,""],execute_pipeline:[3,3,1,""],execute_pipeline_iterator:[3,3,1,""],execute_solid:[5,3,1,""],execute_solids:[5,3,1,""],lambda_solid:[0,3,1,""],solid:[0,3,1,""]}},objnames:{"0":["py","class","Python class"],"1":["py","exception","Python exception"],"2":["py","attribute","Python attribute"],"3":["py","function","Python function"],"4":["py","staticmethod","Python static method"],"5":["py","method","Python method"],"6":["py","module","Python module"]},objtypes:{"0":"py:class","1":"py:exception","2":"py:attribute","3":"py:function","4":"py:staticmethod","5":"py:method","6":"py:module"},terms:{"06c7":17,"0x11e4fbf60":8,"1563854b":17,"25faadf5":17,"2mxds1r":26,"408a":15,"40ea":19,"42b8":19,"43f5":17,"46cc":17,"47db":15,"48cda39e79a1":19,"49eb":17,"49ef":19,"4a4e":14,"4ac0":14,"4ae2":17,"4b3f":15,"4d71":17,"4f38ba45b8e0":14,"583d":19,"5878513a":17,"5c829421":17,"604dc47c":17,"66b0b6ecdcad":15,"677247b1b07b":17,"6b80d12155de":19,"6d6dbe6b296b":19,"744a":17,"758f":17,"7d62dcbf":19,"7e828e37eab8":17,"7f4d":19,"80c2":15,"81ba":17,"88cb":17,"8b76":15,"938ab7fa":15,"941f":19,"95af":19,"95ef":19,"97ae58fda0f4":17,"9ca21f5c":15,"9cbe4fa0f5e6":19,"9de556c1":19,"9f44":15,"\\u4e16\\u754c":12,"\\u4f60\\u597d":12,"abstract":[1,7,14],"break":[6,7,8,26],"case":[1,12,14,15,16,18,20,24,25],"catch":[13,18],"class":[0,1,2,3,4,7,8,15,19,24],"default":[0,1,7,10,13,14,15,19,22,23,25],"final":[20,21,22,25],"function":[0,1,3,7,8,12,16,17,18,19,21,23,24,25],"import":[8,11,12,13,14,16,17,18,23,24,25,26],"int":[1,4,7,13,15,19,20,21,24,25],"long":23,"new":[6,7,8,10,16,20,23,24],"public":[8,24],"return":[0,1,3,7,11,12,13,14,15,16,17,18,19,20,21,23,24,25],"static":[0,1],"switch":[10,12],"throw":[1,2,3,15],"true":[1,3,7,12,25],"try":[11,12,22,23],"while":[7,8,24],And:[7,10,13,14,15,18,21,22,24],But:[18,23],For:[1,3,6,7,10,12,18,19,24],Lying:15,One:[1,8,14,15,16,20,25],That:[7,12,24],The:[0,1,3,7,8,11,12,13,15,16,17,18,19,20,22,24,25],Then:[12,17],There:[1,8,17,21],These:[1,13,19,21,26],Use:8,Used:1,Useful:[0,24],Using:17,With:[7,19,22],__fieldvaluesentinel:1,__inferoptionalcompositefieldsentinel:1,__init__:[8,24],__main__:[17,19],__name__:[17,19],_add_on:1,_cleanup_field:7,_conf_field:7,_create_resourc:7,_data_source_run_id_field:7,_info:[1,15,19],_log_level_field:7,a29ddb15309a:14,a463:19,a531:17,a801:17,a_plus_b:[20,21],aaac:14,abid:25,abil:[7,15,16,20],abl:[7,12,14,17,21,23,25,26],about:[1,7,8,12,15,16,22,24,25,26],abov:[19,25],accept:1,access:[1,14,24],acronym:1,across:[7,22],action:13,activ:[6,10],actual:[9,16,19,26],actual_dag:11,actual_dag_pipelin:11,acycl:[1,16,26],add:[8,15,17,24,25],add_hello_to_word:18,add_hello_to_word_typ:18,add_int:[15,24],add_on:1,added:15,adder:[20,21],adding:15,addit:[0,12],addition:19,advertis:26,aed8162cc25c:19,aesthet:25,afford:12,after:[7,8,11],again:11,against:[8,22,24],alia:[1,21],all:[1,3,7,12,17,18,19,23,25],allow:[0,1,3,7,14,16,19,22,23,25],allscript:[7,8],allscriptsfileloadresourc:7,aloha:12,along:[20,25],alreadi:[10,20,23,24],also:[6,7,8,10,15,18,19,20,22,23,25,26],alter:24,altern:25,although:[14,23],alwai:[18,26],anaconda:10,analyst:26,ani:[1,3,4,6,7,8,10,11,13,14,17,18,23,24,25,26],annon:14,annot:[8,12,25],anoth:[7,8,24],anticip:7,anyth:25,apach:6,apart:7,api:[0,1,3,7,12,23,24,25],appear:[14,25],appli:[1,18,25],applic:[15,22],approach:26,appropri:[18,24,26],apt:10,arbitrari:[1,15,16,19,20,25,26],aren:10,arg:[2,3,4],arg_a:11,arg_b:11,arg_c:11,arg_on:16,argument:[0,1,2,8,12,16,18,19,22,25],aris:13,arithmet:21,around:[8,19,25],arrai:1,arrang:[1,17,26],arrow:6,articl:26,artifact:[24,26],as_dagster_typ:[8,25],asid:7,aspect:15,assert:[8,17,20,21],asset:[1,17],assign:18,assum:[1,17,25],assumpt:[15,26],attach:[1,15,24],attent:11,attribut:[1,8],attributeerror:8,author:[1,14,16,26],auto:[6,18],automat:18,autoreload:6,avail:1,avoid:12,awai:14,awar:15,awkward:8,aws:7,axes:25,b0cbb1be:14,b150:19,b27fb70a:17,b510:17,b5a8:17,b602e4409f74:17,b85c:17,b8e0:14,back:13,bake:15,ball:7,bar:[0,22],barb:0,base:[18,19],bash:10,basi:11,basic:14,batch:26,beauchemin:26,becaus:[6,7,8,11,14,15,18,19,25,26],becom:[0,7],been:[2,19,20,21,22,25],befor:[7,8,11,13,18],begin:[7,17],behavior:15,behaviour:0,being:[3,8,21],best:26,better:[18,23],between:[1,3,7,16,26],bigco:24,bin:[6,10],bit:[10,26],bkjdf:13,bodi:0,boilerpl:[7,25],bool:[1,3,4,7],both:[8,10,11],bottom:17,branch:19,breakag:26,brew:10,broadli:[20,22],browser:17,bucket:8,bucket_path:7,bug:22,build:[7,8,10,11,16,17,23,25],built:[12,18,26],builtin:25,bulk:7,bunch:[14,15,22],burden:26,c008:15,c12bdc2d:15,c25e:19,c955:15,c_plus_d:[20,21],cach:1,call:[8,15,16,17,21,23,25,26],callabl:1,callback:1,caller:[3,8],can:[1,2,6,7,8,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26],cannot:8,capabilti:15,capabitili:16,capabl:[7,8,14,15,20,24,26],captur:15,caught:13,caus:[13,15],cb10:19,cb75946b0055:17,cc2ae784:19,certain:1,chang:[6,7,14,24,26],check:[1,2,6,8,10,16,25,26],check_posit:15,check_positivevalu:15,choic:17,choos:[16,25],chunk:7,cleali:26,clean_up_dir:7,cleanup_fil:[7,8],clear:[13,15],cli:[9,23],click:18,clone:[6,10],cloud:[21,24],cluster:14,code:[2,7,8,12,14,15,24,25,26],collabor:26,collect:[1,13,23],column:25,com:[6,10],come:[1,7,10,25],command:[11,12,16,18,22,23],comment:20,common:[7,24],commonli:25,commun:15,compar:6,compat:12,complet:[1,17,18],complex:11,complic:21,compos:[1,7],compris:1,comput:[1,12,14,15,16,17,24,25],computation:26,concaten:16,concept:[7,15,16,17],conceptu:[8,12],concis:0,conda:10,condit:3,condition:19,conf:[7,8],config:[0,1,8,12,13,14,15,18,19,20,21,23,24,25],config_def:[7,8],config_env:12,config_field:[0,1,7,8,12,13,15,19,20,21,24],config_valu:[1,3,25],configdefinit:[7,8,15,19,20,21],configdictionari:[7,8],configur:[0,1,2,7,8,9,14,15,18,19,22,24,25,26],configurable_hello:12,configurable_hello_pipelin:12,configuration_schema:13,configuration_schemas_error_2:13,configuration_schemas_runtime_error:13,configuration_schemas_type_mismatch_error:13,configuration_schemas_wrong_field:13,conform:1,conn:24,connect:[1,7,11,16,21,25],consist:7,consol:[14,18],constant:22,constant_env:22,constitut:1,construct:[1,8,23],consum:[1,13,22,26],contain:[1,6,7,14,18,20,26],context:[0,1,3,7,8,9,13,15,19,20,22,24,26],context_definit:[1,24],context_fn:[1,7,8],context_param:1,context_stack:[7,8],contextcreationexecutioninfo:1,contract:26,contribut:9,control:[1,15,26],cooper_pair:7,copi:[16,22,25],core:[0,1,2,4,8,13,15,16,17,19,21,24],correct:1,correspond:12,could:[1,7,11,18],count:[7,13],count_lett:13,coupl:12,creat:[0,1,6,7,8,20,22,23,24],create_allscripts_fileload_unittest_context:7,create_engin:7,create_single_solid_pipelin:[8,20],create_sub_pipelin:[8,20],creation:[0,7,8],credenti:24,critic:[15,26],csv:25,current:[1,15],custom:17,d129552525a4:15,d548ea66:19,d8f41da0:14,dag:[1,9,12,17,20,26],dagit:[10,11,12,14,15,16,21,22,23,25],dagster:[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,22,23,25,26],dagster_error:3,dagster_exampl:6,dagster_pd:1,dagster_sqlalchemi:8,dagster_typ:[1,7,8,19],dagsterenv:6,dagsterexpectationfailederror:[2,15],dagsterinvaliddefinitionerror:2,dagsterinvariantviolationerror:[2,25],dagsterruntimecoercionerror:2,dagstertyp:[1,7],dagstertypeerror:2,dagsterusercodeexecutionerror:2,data:[1,9,15,16,17,20,25],data_sourc:[7,8],data_source_run_id:[7,8],databas:[1,14,24],datafram:[1,25],dataframe_input_schema:25,dataframe_output_schema:25,dbname:7,dea6d00d99f0:17,debug:[13,14,15,22],debug_messag:14,declar:[1,7,11,12,21,23,24,25],decor:[1,9,17,25],deem:26,deep:13,deepli:11,def:[0,1,7,11,12,13,14,15,16,17,18,19,20,21,23,24,25],default_output:3,default_valu:[1,7,12,25],defaultcontextconfig:8,defaultdict:13,defin:[0,1,2,7,8,9,12,16,17,22,23],define_allscripts_fileload_pipelin:8,define_cloud_store_resourc:24,define_colored_console_logg:[7,8],define_configurable_hello_pipelin:12,define_csv_dict_field:25,define_demo_configuration_schema_pipelin:13,define_demo_configuration_schema_repo:13,define_demo_execution_repo:22,define_diamond_dag_pipelin:11,define_execution_context_pipeline_step_on:14,define_hello_dag_pipelin:16,define_hello_inputs_pipelin:18,define_hello_world_pipelin:[17,23],define_in_memory_store_resourc:24,define_local_fs_resourc:7,define_part_eleven_step_on:19,define_part_eleven_step_thre:19,define_part_eleven_step_two:19,define_part_fourteen_step_on:20,define_part_ten_step_on:15,define_part_thirteen_step_on:21,define_part_thirteen_step_thre:21,define_part_thirteen_step_two:21,define_path_dict_field:25,define_redshift_sa_resourc:7,define_repo:23,define_repo_demo_pipelin:23,define_repositori:14,define_resource_test_pipelin:24,define_stub_solid:[8,20],define_typed_demo_configuration_schema_error_pipelin:13,define_typed_demo_configuration_schema_pipelin:13,define_unittest_context:7,definit:[2,8,9,12,13,21,23,24],del:25,deliv:26,demand:[1,23],demo_configuration_schema:13,demo_configuration_schema_repo:13,demo_pipelin:22,demo_repositori:23,demonstr:[11,18],depend:[1,6,7,8,11,12,13,15,16,18,19,20,21,26],dependency_structur:1,dependencydefiniion:1,dependencydefinit:[1,11,13,15,16,19,20,21],dependencystructur:1,describ:[7,13,15],descript:[0,1,7,8,13,19,24,25],design:[1,14,26],destruct:1,detail:[8,12,18],deteremin:2,determin:[1,11,16],dev:[1,6],develop:[10,12,15,24],dfc8165a:17,diagnost:26,dict:[0,1,3,7,8,12,13,16,18,24,25],dict_param:25,dictionari:[0,1,3,8,11,16,18,25],did:19,differ:[1,6,8,12,14,15,17,21,24,25,26],difficult:[8,20,26],dimension:[1,25],direct:[1,16,26],directli:[8,17,18,25],directori:6,discourag:8,discov:26,discuss:20,disk:[1,8,25],displai:1,display_nam:1,distinguish:16,document:[6,10,13,22,26],doe:[1,7,11,14,19,24],doesn:7,doing:[21,25],don:[11,16],done:[12,20,26],dot:18,download:10,downstream:19,drive:22,dropdown:[16,23],dsl:26,dure:[3,26],dynam:19,e257262eab79:15,e476:14,each:[1,3,7,11,12,16,17,18,21,22,25],earlier:[18,22],easier:[1,7,23],easili:26,edg:1,edit:[12,13],editor:[12,18],effect:26,either:[1,3,16,19,26],element:[22,25],elif:[12,19,25],elimin:[7,8],els:[12,19,25],emit:[17,19,20],emittedoutput:19,enabl:20,encod:[12,16],encourag:[10,26],encout:3,end:[1,19],enforce_uniqu:1,engin:[14,16,26],enrich:22,ensur:[1,25],enter:[15,18],entir:[12,14,15,18,20],entit:1,entri:11,entropi:26,env:[8,13,22],enviro:3,environ:[1,3,5,6,7,8,11,12,14,18,24,26],error:[3,7,8,9,13,14,15,16,18,22,26],error_messag:14,especi:23,etc:[1,6,21],evalu:[1,15],even:[7,14],event_typ:17,ever:13,everi:[1,17,26],everyth:18,exactli:8,examin:19,exampl:[0,1,6,7,8,11,12,14,17,18,19,23,24,25,26],excel:26,except:[1,2,3,19,25,26],excess:8,exclus:7,execut:[1,7,8,9,11,12,13,15,16,18,19,20,23,24,25,26],execute_pipelin:[3,8,12,14,15,17,18,19,20,21,24],execute_pipeline_iter:3,execute_solid:[5,8],execute_with_another_world:18,execution_context:14,execution_context_pipelin:14,execution_plan_step_start:17,execution_plan_step_success:17,executioncontext:[1,3,7,8],exist:[1,7,8,20,25],expect:[1,2,9,25,26],expectation_fn:[1,15],expectationdefinit:[1,15],expectationexecutioninfo:1,expectationresult:[1,15],expedit:6,expens:[13,15],experi:[13,18],explicit:[15,26],explictli:15,explod:0,explor:[11,12,16,17],express:[16,25,26],extern:[1,11,12,14,18,26],extract:1,f37e:17,f6fd78c5:19,f77205931abb:17,face:[7,8],facil:[12,14],fact:16,factor:[13,22],fail:[15,18,25],faild:2,failur:[1,2,13],fairli:8,fals:[7,8,15,25],famili:8,far:[18,19,21],fast:1,fe29:17,featur:[7,10,12,15,16,22],few:[7,16,17],field:[0,1,7,8,12,13,24,25],field_util:1,file:[6,7,8,12,13,14,18,21,22,23,24,25],file_opt:25,file_typ:25,fileload:7,filter:17,fire:19,first:[8,10,11,12,15,16,17,19,24],fix:8,flag:18,flexibl:12,flow:[1,16,18,25,26],fly:12,focu:20,focus:22,folder:7,follow:[8,10,12,20,21,22,24,25],foo:[0,14,16],for_pipeline_run:7,forc:25,forget:16,form:[1,18,19],formal:7,format:[14,19,24,25,26],forth:1,frame:[15,25],framework:1,frequent:[1,24],from:[0,1,6,7,8,11,12,13,14,15,16,17,18,19,20,22,23,24,25],from_dict:[0,19],frontend:6,fulli:[12,25],further:17,futur:15,gener:[1,6,7,8,21,26],generate_production_execution_context:8,get:[1,3,7,13,17,21,23],get_all_pipelin:1,get_pipelin:1,git:[6,10],github:[6,10],give:[14,16],given:[1,3,25,26],glarb:0,glob:22,goal:15,going:[7,24],gone:7,got:[8,13],grab:25,gradual:1,graph:[1,16,20,21,26],graphql:6,great:7,guarante:[7,8,25],guard:22,gui:17,guid:[7,8],had:[7,15,19],halt:15,handi:6,handl:[1,8,14],hang:1,happen:[3,13,14],hardcod:[12,16,18],has:[1,2,7,8,15,17,18,19,20,22,24,25,26],has_solid:1,have:[0,1,6,7,8,10,11,12,15,16,18,19,20,21,22,23,24,25,26],haw:12,header_fil:8,hello:[0,9,12,18],hello_dag:16,hello_dag_pipelin:16,hello_input:18,hello_world:[0,17,23],hello_world_pipelin:17,help:[12,13,16],helper:7,henc:8,here:[7,12,18,22,25],heterogen:[25,26],high:8,highlight:17,homebrew:10,honua:12,hook:21,host:[7,15,24],how:[1,8,11,12,13,14,16,17,18,19,21,23,24,25,26],howev:[19,21,22,25],html:6,http:[6,16,17,18,25,26],idempot:[1,26],identifi:1,illustr:12,imagin:[13,15,18,21,24],immatur:15,implement:[0,1,14,19,24],implicit:[15,26],implicitli:19,implict:15,importerror:8,improv:[13,18],includ:[7,8,13,14,20,21,25],incom:7,inde:[7,21,25],index:[1,9,25],indic:[2,14,15],indirect:14,individu:[1,12,26],info:[0,1,2,7,12,13,14,15,17,19,20,21,24],inform:[1,7,14,16,17,18,23,26],infrastructur:[7,14],ingest:15,ingest_a:15,ingest_b:15,inject:20,injected_solid:20,inmemorystor:24,inner_typ:4,input:[0,1,5,8,9,11,12,13,15,16,17,19,20,21,22,24,26],input_def:1,input_nam:1,input_schema:25,input_selector_schema:25,inputdefinit:[0,1,7,11,13,15,16,18,19,20,21,24,25],inputs_env:18,insert:25,insid:[10,13],inspect:[15,26],inst_param:25,instal:[6,7,8,9,17],instanc:[1,14,16,19,21],instanti:21,instead:[0,1,7,8,12,13,18,20,23,24,25],instruct:[8,17,25],integr:[1,26],intend:3,interact:[1,6,7,11,12,14,18,24],interest:[16,18,21],interfac:[17,24],intern:[1,8],interpret:10,intro_tutori:[14,23],introduc:[16,17],invalid:19,invari:2,invoc:1,invok:[7,18,24],involv:21,is_opt:[1,7,12,25],is_posit:1,isn:3,isol:[10,20],issu:6,item:25,iter:[1,3,19],iterate_over_pipelin:1,its:[1,7,11,12,13,14,16,17,18,22,24,26],itself:[0,1,19,23],javascript:6,jest:6,job:15,just:[7,8,10,11,12,16,17,18,19,20,22,23],kdjfkd:13,keep:22,kei:[0,1,3,12,14,16,18,24,25],klass:8,know:[7,18,23,26],known:[18,26],kwarg:[0,2,3,4],label:[21,25],lambda:[0,1,15,24],lambda_solid:[0,1,11,12,13,16,17,18,20,21,23,25],languag:[12,25],last:[11,22],lastli:24,later:[8,10,16,17,22],latest:[7,10],layer:[14,16],learn:[12,13,23,24,26],left:[0,20],len:[12,20],less:[7,8,18],let:[7,11,13,14,15,16,17,18,19,20,22,23,24,25,26],letter:13,level:[8,14,17,22],level_from_str:7,librari:[8,10,25,26],lifecycl:8,like:[0,1,8,10,12,14,15,18,19,21,22,23,25],line:[11,12,13,16,17,18,22,23],link:12,list:[0,1,3,4,11,23,25],littl:23,live:[6,24],livehtml:6,load:[18,21,22,23],load_a:21,load_b:21,load_numb:[20,21],local:[7,14,24],local_f:7,localfshandleresourc:7,localhost:6,locat:26,log:[0,1,7,15,17,19,22,24],log_level:[7,8,13,14,15,22],log_message_id:[14,15,17,19],log_num:19,log_num_squar:19,logger:[7,8],longer:[7,8,25],look:[11,22],lot:17,machin:[7,14,26],made:[13,21,26],mai:[1,7,12,18,23,26],maintain:26,mainten:26,make:[3,6,7,8,10,13,14,15,18,21,23,25,26],malform:15,manag:[6,10,12,14,26],mani:[1,12,16,18,21,23,26],manipul:25,manual:[1,7],map:1,mar:18,mark:17,materi:25,matter:[11,22],matur:26,maxim:26,maximum:12,mean:[7,18,24],meaning:26,mechan:[8,17,19,20],medium:26,memori:[1,20,24,25],merg:7,messag:[1,8,13,14,16,17],met:23,metadata:[1,15,25,26],method:1,microsoft:10,middl:7,might:[12,13,14,25],milli:17,mismatch:2,miss:[13,16],mistak:[13,18],mode:[6,24],model:[7,9,16,23,24],modifi:19,modul:[8,9,23],modulenotfounderror:8,more:[0,7,8,11,12,14,15,19,21,22],most:[8,14,23],mostli:1,move:[7,8],much:[1,7,8,12,25],multer:[20,21],multi:17,multipl:[0,1,8,9,21,22,26],multipleresult:[0,19],multipli:13,multiply_the_word:[13,22],multiply_the_word_with_typed_config:13,must:[1,12,15,16,18,19,20,24,25],mutabl:25,my_solid:0,my_solid_from_dict:0,myenv:10,name:[0,1,3,7,8,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25],namedtupl:[7,8],namespac:8,natur:15,navig:[16,17],necessari:1,need:[0,6,7,8,10,18,22,24,25,26],net:8,never:[19,20,26],next:[11,12,14,16,17,18,19,22,23,24],nice:13,nicer:8,node:[3,17,21,26],non:[1,13],none:[0,1,3,5,7],none_resourc:7,norm:26,normal:8,not_a_num:13,not_a_numb:13,note:[3,7,8,11,18,19,23,24,25],noth:25,notic:[7,14,15,16,18,19,21,25],notion:[7,8,25],notori:26,now:[7,8,11,12,13,14,15,16,18,20,21,22,23,24,25],nullabl:4,num1:[20,21,25],num2:[20,21,25],num:[1,19,25],num_on:[15,24],num_squar:19,num_two:[15,24],number:[1,15,19,25],object:[0,1,8,14,19,25],obvious:21,occur:14,off:[1,20],offer:24,offici:[7,8],often:[18,26],omit:[0,7],onc:[23,25],one:[1,3,7,8,12,17,18,19,20,21,22,25],onli:[1,2,7,12,14,15,17,18,19,21,22,25],oper:[1,10,13,15,18,21,24,26],opinion:[9,26],opportun:14,opt:8,option:[1,10,15,16,25],order:[7,11,12,13,15,16,18,22,23,24,25,26],org:25,orig_messag:[14,15,17,19],origin:25,osx:10,other:[1,7,10,11,14,16,19,20,23,24,25,26],other_nam:1,otherwis:0,our:[12,13,16,17,18,22,23,25],out:[7,8,14,24,26],out_on:19,out_two:19,outliv:25,output:[0,1,3,7,8,9,11,12,15,16,17,18,20,21,24,26],output_nam:[1,3],output_schema:25,output_selector_schema:25,outputdefinit:[0,1,7,15,18,19,20,21,24,25],outputs_def:1,over:[1,22,25,26],overrid:22,overview:26,own:[7,8,17,18,22,25],packag:[10,24],page:9,pair:[14,25],panda:[1,8,25,26],pandas_df:25,pandasdatafram:25,pane:17,parallel:8,param:8,paramet:[0,1,3,12,21],parameter:[3,18,24,25],parametercheckerror:8,parameteriz:1,parametr:12,parametriz:26,parquet:25,part:[10,22,23,26],part_eleven:19,part_eleven_step_on:19,part_eleven_step_thre:19,part_eleven_step_two:19,part_seven:22,part_ten:15,part_ten_step_on:15,part_thirteen:21,particular:[3,7,12,19,21,24,26],particularli:21,pass:[1,7,8,12,13,14,20,23,24,25],passthrough:1,passthrough_context_definit:1,password:[7,24],path:[4,7,8,10,13,25],pathtofil:[7,8],pedogog:25,peopl:[23,26],per:[0,1,8,11,12,18],perform:[1,15,25,26],persist:25,persona:26,piec:7,pieplin:1,pip:[6,8],pipelin:[1,2,3,7,8,9,11,12,13,14,15,16,18,19,21,23,24,25,26],pipeline_cli_execut:22,pipeline_def:5,pipeline_dict:[1,13,23],pipeline_guid:7,pipeline_result:[20,21],pipeline_run_id:[7,8],pipeline_start:17,pipeline_success:17,pipelineconfigevaluationerror:[3,13],pipelinecontextdefinit:[1,7,8,24],pipelinedefinit:[1,3,8,11,12,13,14,15,16,17,18,19,20,21,23,24],pipelinedefiniton:1,pipelinedefint:1,pipelineexecutionresult:3,place:[22,24],plai:25,plan:[6,15],platform:[17,23],plu:20,point:[11,19,23],poorli:26,pop:18,popd:10,port:[6,7],posit:15,possibl:13,postgresql:7,potenti:[7,25],power:[7,14],practic:26,pre:[1,7],predict:7,prefer:[1,13],present:[1,10,25],prevent:[13,15],previou:[1,7,12,13,19,23],primari:18,primer:26,principl:9,print:[0,14],prior:[13,18,26],probabl:1,proce:[12,25],process:[15,26],prod:1,produc:[0,1,17,24,25,26],product:[1,8,12,14,22,24,26],program:[9,16,23,26],programmat:23,project:[6,10,23],promis:7,prone:[8,18,22],properli:26,properti:[1,8,12,15],provid:[1,8,12,14,16,18,19,20,24,25,26],publiccloudconn:24,publiccloudstor:24,publish:6,pure:[1,25],purpos:21,pushd:10,put:7,py27:12,pydata:25,python3:[6,10],python:[6,8,15,17,19,24,26],python_modul:6,python_packag:10,python_typ:[4,8],pythonobjecttyp:[4,8],qualiti:[1,8,15],question:25,quickli:26,quit:[7,15,20],quux:13,rais:[2,19,25],ran:13,rather:[3,7,8,11,16,17,18,19,20,21,23,25,26],raw:8,react_app_graphql_uri:6,read_csv:25,read_parquet:25,read_tabl:25,readili:14,real:7,realiz:8,realli:8,reason:[1,8,21],recal:18,recommend:10,record:24,record_valu:24,recours:15,red:18,redistribut:10,redshift:[7,8],reduc:26,reentrant_info:3,reentrantinfo:3,regist:25,regret:10,rel:7,relat:8,releas:[7,10],relev:7,remain:25,remov:25,render:6,repetit:23,replac:[7,8,13],repo:23,repo_demo_pipelin:23,report:26,repositori:[1,6,9,10,22],repositorydefinit:[1,13,23],repostori:23,repres:[1,8,24],requir:[0,1,6,7,13,15,24,25,26],rerun:12,resid:21,resoourc:24,resourc:[1,8,9,14],resource_fn:[1,7,24],resource_test_pipelin:24,resourcedefinit:[1,7,24],respons:25,rest:7,resuabl:7,result:[0,1,3,6,8,15,17,19,20,24],result_context:1,result_dict:[0,8],result_for_solid:[3,8,20,21],result_list:[3,20],retriev:1,return_dict_result:19,reus:[7,21],reusabl:[7,9,12],rewrit:12,rich:[13,18,26],richer:14,right:[0,8,15,17,18],root:[10,13],rout:14,row:25,rule:2,run:[3,7,8,10,12,13,14,15,16,17,19,22,23,25,26],run_id:[7,14,15,17,19],runner:6,runtim:[2,8,13,16,18,26],runtime_typ:1,runtimeexecutioncontext:8,runtimeexecutioncontextparam:8,s3filehandl:8,sai:[15,20,25],salient:12,same:[0,1,7,8,11,12,18,19,24,26],satisfi:[1,11,20],satisi:7,save:[14,17,23],scalar:[1,12],schema:[7,8,9,12,22],scientist:26,scope:21,script:[6,17,22],search:9,second:[8,12,16,18],section:[7,12,14,16,18],see:[1,3,10,11,13,14,16,17,18,19,21,23,25,26],seen:[11,25],select:[10,25],selector:[8,25],self:[7,13,24],semi:14,sens:25,sensibl:6,sep:25,separ:[8,10,16],sequenc:13,serv:[17,18,26],server:6,servic:24,service_lines_fil:8,set:[6,17,22,24],set_value_in_cloud_stor:24,setup:1,sever:[0,18,25],shape:8,share:7,she:25,shell:10,shortcut:0,should:[0,1,7,8,10,12,14,16,17,19,21,23,24,25,26],shouldn:21,side:26,signatur:1,similar:25,simpl:[0,16],simpler:[0,8],simpli:[8,24],simplifi:0,sinc:[11,25],singl:[0,1,7,8,12,17,19,20,21,24,25,26],site:21,size:25,skip:15,slightli:[7,11],snapshot:[6,8],snapshot_check_result:8,softwar:[1,7,10,15],solid:[0,1,2,3,8,9,11,12,13,14,15,16,17,18,19,20,22,23,24,25],solid_1:1,solid_2:1,solid_a:11,solid_b:11,solid_c:11,solid_d:11,solid_definit:[14,17,19],solid_nam:[1,5],solid_on:16,solid_result:[8,21],solid_subset:3,solid_two:16,soliddefinit:[0,1,3],solidexecutionresult:3,solidinst:[1,20,21],some:[1,2,6,7,8,14,15,22,24,25,26],some_input:1,some_password:24,some_us:24,someth:[0,6],sophist:[11,15],sourc:[6,7,25],space:2,spark:[14,26],speak:[12,20],special:[7,21],specif:[7,19,22],specifi:[0,12,14,16,18,19,22,23],specific_env:22,spew:[15,19],split_headers_and_service_lin:8,sql:26,sqlalchemi:8,ssd:1,stacktrac:18,stage:[8,26],start:[6,11,20],state:3,step:[3,8,16,17,18,25],step_eleven:19,step_kei:17,step_results_by_tag:3,still:11,storag:21,store:[24,25],str:[0,1,7,8,13],str_param:25,str_valu:0,straightforward:7,stream:[1,17],string:[0,4,7,8,12,13,16,18,19,24,25],strongli:[10,13,22],structur:[1,7,13,14,18,25,26],stub:8,stub_a:20,stub_b:20,stub_c_plus_d:20,studio:10,sub:8,subdag:20,subfield:25,submodul:8,subpackag:8,subsequ:7,subset:[7,8,20,26],substanti:8,substrat:14,succeed:[15,17],success:[1,3,8,15,17,20,21],sudo:10,suffici:26,suitabl:1,sum:25,sum_df:25,sum_solid:25,suppli:1,support:[0,1,7,19,26],suppos:[6,8,22],surfac:18,surround:14,swap:24,swappabl:23,sync:22,synchron:3,synthes:7,system:[1,2,4,7,8,10,12,13,14,15,24,25,26],tab:17,tabl:[1,8,25],tabular:25,tailor:21,take:[0,1,7,8,12,17,20,25],target:[1,23],task:[11,16,26],team:26,tediou:[13,22],tell:[15,16,22,23,24],term:[15,19,25],test:[1,3,6,7,8,9,10,12,15,24,26],test_a_plus_b_final_subdag:20,test_intro_tutorial_part_four:12,test_part_thirteen_step_on:21,test_part_thirteen_step_two:21,testabl:12,than:[3,6,7,8,11,16,18,19,20,21,22,23,25,26],thei:[0,1,7,8,11,15,21,25,26],them:[8,10,12,17,18,21,25],therefor:13,thi:[0,1,3,7,8,10,11,12,13,14,15,16,17,18,19,20,21,23,24,25,26],thing:[3,7,21,24],think:[21,26],third:[8,17,25],thirteen_step_on:21,thirteen_step_two:21,those:[1,6,8,10,12,15,22,25,26],though:14,thought:8,thread:[14,17],three:[17,18,21,25],through:[1,14,18,25,26],throughout:[14,25],throw_on_error:[3,15],thrown:2,thu:1,tie:[8,19],tied:21,time:[1,11,12,13,15,17,18,19,21,23,25,26],timestamp:14,tiresom:23,to_csv:25,to_parquet:25,togeth:[7,11,21],tool:[6,10,15,17,22,23,26],top:[8,23],topolog:[11,16],total:18,touch:[14,24],tox:6,trace:13,tradit:15,transform:[0,1,3,17,18,19],transform_fn:1,transformed_valu:[3,8,20,21],transformexecutioninfo:[1,12],transit:8,tree:6,trigger:19,turn:[11,12,25],tutori:[12,14,19,22,23,25],tutorial_part_thirteen_step_on:20,tutorial_part_thirteen_step_thre:21,tutorial_repositori:14,two:[1,8,16,19,20,21,22,25],txt:6,type:[0,1,2,7,8,9,12,13,15,16,19,20,21,22,23],typecheck:[13,25],typed_demo_configuration_schema:13,typed_demo_configuration_schema_error:13,typed_multiply_the_word:13,typed_multiply_the_word_error:13,typeerror:[8,13],typic:[1,15,20],ubuntu:10,undefin:13,under:[12,18,24],unexpect:15,unfamiliar:26,union:25,uniqu:[1,19],unit:[1,7,9,16,17,26],unittest:[1,7,8,24],univers:14,unlik:15,unmodifi:7,unnam:[1,20],unpack:25,unsupport:25,until:[18,22],untyp:18,unzip:[7,21],unzip_fil:[7,8],unzipfileconfig:7,unzipped_fil:8,unzipped_path:8,unzipped_path_valu:8,updat:[6,8,10,15],upgrad:[7,8],upload:[8,21],upload_header_to_s3:8,upload_service_line_to_s3:8,upstream:[7,20],usag:1,use:[1,6,7,8,10,12,13,14,17,18,20,22,23,24,25,26],used:[1,7,8,12,17,19,21,24,25],useful:[1,3,14,15,18,20,21,22,25,26],user:[1,2,7,8,9,12,14,15,18,24,26],usernam:24,uses:7,using:[6,7,10,12,14,17,18,21,22,23,24],utf:12,util:[8,9,12,17,22,25],utility_solid:8,uuid4:[7,8],uuid:[7,8],valid:[13,25],valu:[0,1,2,3,8,12,13,14,15,17,18,19,20,22,24,25,26],vari:[1,22],venv:[6,10],verbos:[7,8],veri:[1,3,8,13,16,21,25],version:[3,6,19,24],via:[14,15,17,18,23,24,25],view:17,viewabl:15,violat:2,virtual:8,virtualenv:6,virtualenviron:10,virtualenvwrapp:10,visual:[10,16,17,23],wai:[0,15,17,18,19,24,25,26],want:[1,12,14,15,18,20,22,23,24,25],watch:6,wax:7,web:17,webapp:10,welcom:9,well:[2,7,8,26],were:[7,8,21],what:[1,7,11,13,15,16,21,25,26],whatev:8,when:[0,1,3,6,11,13,15,18,22,23,25,26],where:[1,12,14,15,16,17,20,24,25],wherea:25,whether:[1,3,10,15,26],which:[1,3,6,7,12,13,14,16,17,18,19,22,23,26],who:26,whole:[3,15],whose:[0,1,10,16,18],why:21,wide:10,window:10,wire:11,within:[1,7,8,15,16,17,18,21],without:[12,17,18,23],won:10,word:[13,18,22],work:[0,13,15,23,24],workflow:16,world:[9,12,18],worri:16,worth:11,would:[1,7,8,11,13,18,24,25],wrap:19,write:[7,17],written:26,wrong:13,wrong_factor:13,yaml:[8,12,18,22],yarn:6,yellow:17,yet:6,yield:[0,1,3,7,8,18,19,26],yield_output:19,yml:[6,12,13,14,18,22,23],you:[1,6,7,8,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25],your:[7,8,10,11,14,15,17,18,24,25],zip:7,zip_file_path:[7,8],zipped_fil:[7,8]},titles:["Decorators","Definitions","Errors","Execution","Types","Utilities","Contributing","Resources","Required API Changes","Intro Tutorial","Installation","An actual DAG","Configuration","Configuration Schemas","Execution Context","Expectations","Hello, DAG","Hello, World","Inputs","Multiple Outputs","Unit-testing Pipelines","Reusable Solids","Pipeline CLI Execution","Repositories","Resources","User-Defined Types","Principles"],titleterms:{"function":26,actual:11,agnost:26,api:[8,9,18],audit:9,basic:25,chang:8,cli:[17,18,22],comput:26,condit:19,config:[7,22],configur:[12,13],context:14,contribut:6,creat:10,dag:[11,16],dagit:[6,17,18],data:26,decor:0,defin:25,definit:[1,4],describ:26,dev:10,develop:6,doc:6,environ:10,error:2,execut:[3,14,17,22],expect:15,from:10,gradual:26,hello:[16,17],indic:9,input:[7,18,25],instal:10,intro:9,level:7,librari:[7,17],local:6,log:14,multipl:19,old:9,option:26,output:[19,25],pip:10,pipelin:[17,20,22],principl:26,pypi:10,python:[10,18],qualiti:26,refer:9,releas:6,repositori:23,requir:8,resourc:[7,24],reusabl:21,run:6,schema:[13,25],self:26,setup:6,solid:[7,21],sourc:10,split:22,stabl:10,tabl:9,test:20,testabl:26,tutori:9,type:[4,18,25,26],unit:20,user:25,util:5,verifi:26,version:10,virtual:10,virtualenv:10,webapp:6,world:17,yarn:10}})'
+snapshots['test_build_all_docs 10'] = 'Search.setIndex({docnames:["apidocs/decorators","apidocs/definitions","apidocs/errors","apidocs/execution","apidocs/types","apidocs/utilities","contributing","guides/028_to_030_new_concepts","guides/028_to_030_upgrade_guide","index","installation","intro_tutorial/actual_dag","intro_tutorial/config","intro_tutorial/configuration_schemas","intro_tutorial/execution_context","intro_tutorial/expectations","intro_tutorial/hello_dag","intro_tutorial/hello_world","intro_tutorial/inputs","intro_tutorial/part_eleven","intro_tutorial/part_fourteen","intro_tutorial/part_thirteen","intro_tutorial/pipeline_cli_execution","intro_tutorial/repos","intro_tutorial/resources","intro_tutorial/types","principles"],envversion:53,filenames:["apidocs/decorators.rst","apidocs/definitions.rst","apidocs/errors.rst","apidocs/execution.rst","apidocs/types.rst","apidocs/utilities.rst","contributing.rst","guides/028_to_030_new_concepts.md","guides/028_to_030_upgrade_guide.md","index.rst","installation.rst","intro_tutorial/actual_dag.rst","intro_tutorial/config.rst","intro_tutorial/configuration_schemas.rst","intro_tutorial/execution_context.rst","intro_tutorial/expectations.rst","intro_tutorial/hello_dag.rst","intro_tutorial/hello_world.rst","intro_tutorial/inputs.rst","intro_tutorial/part_eleven.rst","intro_tutorial/part_fourteen.rst","intro_tutorial/part_thirteen.rst","intro_tutorial/pipeline_cli_execution.rst","intro_tutorial/repos.rst","intro_tutorial/resources.rst","intro_tutorial/types.rst","principles.rst"],objects:{"dagster.DependencyDefinition":{description:[1,2,1,""],output:[1,2,1,""],solid:[1,2,1,""]},"dagster.ExpectationDefinition":{description:[1,2,1,""],expectation_fn:[1,2,1,""],name:[1,2,1,""]},"dagster.ExpectationResult":{message:[1,2,1,""],result_context:[1,2,1,""],success:[1,2,1,""]},"dagster.InputDefinition":{description:[1,2,1,""],expectations:[1,2,1,""],name:[1,2,1,""],runtime_type:[1,2,1,""]},"dagster.MultipleResults":{from_dict:[0,4,1,""],results:[0,2,1,""]},"dagster.OutputDefinition":{description:[1,2,1,""],name:[1,2,1,""],runtime_type:[1,2,1,""]},"dagster.PipelineContextDefinition":{passthrough_context_definition:[1,4,1,""]},"dagster.PipelineDefinition":{context_definitions:[1,2,1,""],dependencies:[1,2,1,""],dependency_structure:[1,2,1,""],description:[1,2,1,""],display_name:[1,2,1,""],has_solid:[1,5,1,""],name:[1,2,1,""],solid_named:[1,5,1,""],solids:[1,2,1,""]},"dagster.PipelineExecutionResult":{context:[3,2,1,""],pipeline:[3,2,1,""],result_for_solid:[3,5,1,""],result_list:[3,2,1,""],success:[3,2,1,""]},"dagster.RepositoryDefinition":{get_all_pipelines:[1,5,1,""],get_pipeline:[1,5,1,""],iterate_over_pipelines:[1,5,1,""],name:[1,2,1,""],pipeline_dict:[1,2,1,""]},"dagster.Result":{output_name:[1,2,1,""],value:[1,2,1,""]},"dagster.SolidDefinition":{config_field:[1,2,1,""],description:[1,2,1,""],input_defs:[1,2,1,""],metadata:[1,2,1,""],name:[1,2,1,""],outputs_defs:[1,2,1,""],transform_fn:[1,2,1,""]},"dagster.SolidExecutionResult":{context:[3,2,1,""],dagster_error:[3,2,1,""],solid:[3,2,1,""],success:[3,2,1,""],transformed_value:[3,5,1,""],transformed_values:[3,2,1,""]},"dagster.TransformExecutionInfo":{config:[1,2,1,""],context:[1,2,1,""]},"dagster.core":{types:[4,6,0,"-"]},"dagster.core.types":{Any:[4,2,1,""],Bool:[4,2,1,""],Int:[4,2,1,""],List:[4,3,1,""],Nullable:[4,3,1,""],Path:[4,2,1,""],PythonObjectType:[4,0,1,""],String:[4,2,1,""]},dagster:{ContextCreationExecutionInfo:[1,0,1,""],DagsterExpectationFailedError:[2,1,1,""],DagsterInvalidDefinitionError:[2,1,1,""],DagsterInvariantViolationError:[2,1,1,""],DagsterRuntimeCoercionError:[2,1,1,""],DagsterTypeError:[2,1,1,""],DagsterUserCodeExecutionError:[2,1,1,""],DependencyDefinition:[1,0,1,""],ExecutionContext:[3,0,1,""],ExpectationDefinition:[1,0,1,""],ExpectationExecutionInfo:[1,0,1,""],ExpectationResult:[1,0,1,""],Field:[1,3,1,""],InputDefinition:[1,0,1,""],MultipleResults:[0,0,1,""],OutputDefinition:[1,0,1,""],PipelineConfigEvaluationError:[3,1,1,""],PipelineContextDefinition:[1,0,1,""],PipelineDefinition:[1,0,1,""],PipelineExecutionResult:[3,0,1,""],ReentrantInfo:[3,0,1,""],RepositoryDefinition:[1,0,1,""],ResourceDefinition:[1,0,1,""],Result:[1,0,1,""],SolidDefinition:[1,0,1,""],SolidExecutionResult:[3,0,1,""],SolidInstance:[1,0,1,""],TransformExecutionInfo:[1,0,1,""],execute_pipeline:[3,3,1,""],execute_pipeline_iterator:[3,3,1,""],execute_solid:[5,3,1,""],execute_solids:[5,3,1,""],lambda_solid:[0,3,1,""],solid:[0,3,1,""]}},objnames:{"0":["py","class","Python class"],"1":["py","exception","Python exception"],"2":["py","attribute","Python attribute"],"3":["py","function","Python function"],"4":["py","staticmethod","Python static method"],"5":["py","method","Python method"],"6":["py","module","Python module"]},objtypes:{"0":"py:class","1":"py:exception","2":"py:attribute","3":"py:function","4":"py:staticmethod","5":"py:method","6":"py:module"},terms:{"06c7":17,"0x11e4fbf60":8,"1563854b":17,"25faadf5":17,"2mxds1r":26,"408a":15,"40ea":19,"42b8":19,"43f5":17,"46cc":17,"47db":15,"48cda39e79a1":19,"49eb":17,"49ef":19,"4a4e":14,"4ac0":14,"4ae2":17,"4b3f":15,"4d71":17,"4f38ba45b8e0":14,"583d":19,"5878513a":17,"5c829421":17,"604dc47c":17,"66b0b6ecdcad":15,"677247b1b07b":17,"6b80d12155de":19,"6d6dbe6b296b":19,"744a":17,"758f":17,"7d62dcbf":19,"7e828e37eab8":17,"7f4d":19,"80c2":15,"81ba":17,"88cb":17,"8b76":15,"938ab7fa":15,"941f":19,"95af":19,"95ef":19,"97ae58fda0f4":17,"9ca21f5c":15,"9cbe4fa0f5e6":19,"9de556c1":19,"9f44":15,"\\u4e16\\u754c":12,"\\u4f60\\u597d":12,"abstract":[1,7,14],"break":[6,7,8,26],"case":[1,12,14,15,16,18,20,24,25],"catch":[13,18],"class":[0,1,2,3,4,7,8,15,19,24],"default":[0,1,7,10,13,14,15,19,22,23,25],"final":[20,21,22,25],"function":[0,1,3,7,8,12,16,17,18,19,21,23,24,25],"import":[8,11,12,13,14,16,17,18,22,23,24,25,26],"int":[1,4,7,13,15,19,20,21,22,24,25],"long":23,"new":[6,7,8,10,16,20,23,24],"public":[8,24],"return":[0,1,3,7,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25],"static":[0,1],"switch":[10,12],"throw":[1,2,3,15],"true":[1,3,7,12,25],"try":[11,12,22,23],"while":[7,8,24],And:[7,10,13,14,15,18,21,22,24],But:[18,23],For:[1,3,6,7,10,12,18,19,24],Lying:15,One:[1,8,14,15,16,20,25],That:[7,12,24],The:[0,1,3,7,8,11,12,13,14,15,16,17,18,19,20,22,24,25],Then:[12,17],There:[1,8,17,21],These:[1,13,14,19,21,26],Use:8,Used:1,Useful:[0,24],Using:[14,17],With:[7,19,22],__fieldvaluesentinel:1,__inferoptionalcompositefieldsentinel:1,__init__:[8,24],__main__:[17,19],__name__:[17,19],_add_on:1,_cleanup_field:7,_conf_field:7,_create_resourc:7,_data_source_run_id_field:7,_info:[1,15,19],_log_level_field:7,a29ddb15309a:14,a463:19,a531:17,a801:17,a_plus_b:[20,21],aaac:14,abid:25,abil:[7,15,16,20],abl:[7,12,14,17,21,23,25,26],about:[1,7,8,12,15,16,22,24,25,26],abov:[19,25],accept:1,access:[1,14,24],acronym:1,across:[7,22],action:13,activ:[6,10],actual:[9,16,19,24,26],actual_dag:11,actual_dag_pipelin:11,acycl:[1,16,26],add:[8,15,17,24,25],add_hello_to_word:18,add_hello_to_word_typ:18,add_int:[15,24],add_on:1,added:15,adder:[20,21],adding:15,addit:[0,12],addition:19,advertis:26,aed8162cc25c:19,aesthet:25,afford:12,after:[7,8,11],again:11,against:[8,24],alia:[1,21],all:[1,3,7,12,17,18,19,23,24,25],allow:[0,1,3,7,14,16,19,22,23,25],allscript:[7,8],allscriptsfileloadresourc:7,aloha:12,along:[20,25],alreadi:[10,20,23,24],also:[6,7,8,10,15,18,19,20,22,23,24,25,26],alter:24,altern:25,although:[14,23],alwai:[18,26],anaconda:10,analyst:26,ani:[1,3,4,6,7,8,10,11,13,14,17,18,23,24,25,26],annon:14,annot:[8,12,25],anoth:[7,8],anticip:7,anyth:25,apach:6,apart:7,api:[0,1,3,7,12,23,24,25],appear:[14,25],appli:[1,18,25],applic:[15,22],approach:26,appropri:[18,24,26],apt:10,arbitrari:[1,15,16,19,20,25,26],aren:10,arg:[2,3,4],arg_a:11,arg_b:11,arg_c:11,arg_on:16,argument:[0,1,2,8,12,16,18,19,22,25],aris:13,arithmet:21,around:[8,19,25],arrai:1,arrang:[1,17,26],arrow:6,articl:26,artifact:[24,26],as_dagster_typ:[8,25],asid:7,aspect:15,assert:[8,17,20,21],asset:[1,17],assign:18,assum:[1,17,25],assumpt:[15,26],attach:[1,15,24],attent:11,attribut:[1,8],attributeerror:8,author:[1,14,16,26],auto:[6,18],automat:18,autoreload:6,avail:1,avoid:12,awai:14,awar:15,awkward:8,aws:7,axes:25,b0cbb1be:14,b150:19,b27fb70a:17,b510:17,b5a8:17,b602e4409f74:17,b85c:17,b8e0:14,back:13,bake:15,ball:7,bar:[0,22],barb:0,base:[18,19],bash:10,basi:11,basic:14,batch:26,beauchemin:26,becaus:[6,7,8,11,14,15,18,19,25,26],becom:[0,7],been:[2,19,20,21,22,25],befor:[7,8,11,13,18],begin:[7,17],behavior:15,behaviour:0,being:[3,8,21],best:26,better:[18,23],between:[1,3,7,16,26],bigco:24,bin:[6,10],bit:[10,26],bkjdf:13,bodi:0,boilerpl:[7,25],bool:[1,3,4,7],both:[8,10,11],bottom:17,branch:19,breakag:26,brew:10,broadli:[20,22],browser:17,bucket:8,bucket_path:7,build:[7,8,10,11,16,17,23,25],built:[12,18,26],builtin:25,bulk:7,bunch:[14,15,22],burden:26,c008:15,c12bdc2d:15,c25e:19,c955:15,c_plus_d:[20,21],cach:1,call:[8,15,16,17,21,23,25,26],callabl:1,callback:1,caller:[3,8],can:[1,2,6,7,8,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26],cannot:8,capabilti:15,capabitili:16,capabl:[7,8,14,15,20,26],captur:15,caught:13,caus:[13,15],cb10:19,cb75946b0055:17,cc2ae784:19,certain:1,chang:[6,7,14,24,26],check:[1,2,6,8,10,16,25,26],check_posit:15,check_positivevalu:15,choic:17,choos:[16,25],chunk:7,cleali:26,clean_up_dir:7,cleanup_fil:[7,8],clear:[13,15],cli:[9,23],click:18,clone:[6,10],cloud:[21,24],cluster:14,code:[2,7,8,12,14,15,24,25,26],collabor:26,collect:[1,13,22,23,24],column:25,com:[6,10],come:[1,7,10,25],command:[11,12,16,18,22,23],comment:20,common:[7,24],commonli:25,commun:15,compar:6,compat:12,complet:[1,17,18],complex:11,complic:21,compos:[1,7],compris:1,comput:[1,12,14,15,16,17,24,25],computation:26,concaten:16,concept:[7,15,16,17],conceptu:[8,12],concis:0,conda:10,condit:3,condition:19,conf:[7,8],config:[0,1,8,12,13,14,15,18,19,20,21,23,24,25],config_def:[7,8],config_env:12,config_field:[0,1,7,8,12,13,15,19,20,21,22,24],config_valu:[1,3,25],configdefinit:[7,8,15,19,20,21],configdictionari:[7,8],configur:[0,1,2,7,8,9,14,15,18,19,24,25,26],configurable_hello:12,configurable_hello_pipelin:12,configuration_schema:13,configuration_schemas_error_2:13,configuration_schemas_runtime_error:13,configuration_schemas_type_mismatch_error:13,configuration_schemas_wrong_field:13,conform:1,conn:24,connect:[1,7,11,16,21,25],consist:7,consol:[14,18],constant:22,constant_env:22,constitut:1,construct:[1,8,23,24],constructor:24,consum:[1,13,22,26],contain:[1,6,7,14,18,20,26],context:[0,1,3,7,8,9,13,15,18,19,20,22,24,26],context_definit:[1,24],context_fn:[1,7,8],context_param:1,context_stack:[7,8],contextcreationexecutioninfo:1,contract:26,contribut:9,control:[1,15,26],cooper_pair:7,copi:[16,22,25],core:[0,1,2,4,8,13,15,16,17,19,21,24],correct:1,correspond:12,could:[1,7,11,18],count:[7,13,22],count_lett:[13,22],coupl:12,creat:[0,1,6,7,8,20,22,23,24],create_allscripts_fileload_unittest_context:7,create_engin:7,create_single_solid_pipelin:[8,20],create_sub_pipelin:[8,20],creation:[0,7,8],credenti:24,critic:[15,26],csv:25,current:[1,15],custom:17,d129552525a4:15,d548ea66:19,d8f41da0:14,dag:[1,9,12,17,20,26],dagit:[10,11,12,14,15,16,21,22,23,25],dagster:[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,22,23,24,25,26],dagster_error:3,dagster_exampl:6,dagster_pd:1,dagster_sqlalchemi:8,dagster_typ:[1,7,8,19],dagsterenv:6,dagsterexpectationfailederror:[2,15],dagsterinvaliddefinitionerror:2,dagsterinvariantviolationerror:[2,25],dagsterruntimecoercionerror:2,dagstertyp:[1,7],dagstertypeerror:2,dagsterusercodeexecutionerror:2,data:[1,9,15,16,17,20,25],data_sourc:[7,8],data_source_run_id:[7,8],databas:[1,14,24],datafram:[1,25],dataframe_input_schema:25,dataframe_output_schema:25,dbname:7,dea6d00d99f0:17,debug:[13,14,15,22],debug_messag:14,declar:[1,7,11,12,21,23,24,25],decor:[1,9,17,25],deem:26,deep:13,deepli:11,def:[0,1,7,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25],default_output:3,default_valu:[1,7,12,25],defaultcontextconfig:8,defaultdict:[13,22],defin:[0,1,2,7,8,9,12,16,17,22,23],define_allscripts_fileload_pipelin:8,define_cloud_store_resourc:24,define_colored_console_logg:[7,8],define_configurable_hello_pipelin:12,define_csv_dict_field:25,define_demo_configuration_schema_pipelin:13,define_demo_configuration_schema_repo:13,define_demo_execution_pipelin:22,define_demo_execution_repo:22,define_diamond_dag_pipelin:11,define_execution_context_pipeline_step_on:14,define_hello_dag_pipelin:16,define_hello_inputs_pipelin:18,define_hello_world_pipelin:[17,23],define_in_memory_store_resourc:24,define_local_fs_resourc:7,define_part_eleven_step_on:19,define_part_eleven_step_thre:19,define_part_eleven_step_two:19,define_part_fourteen_step_on:20,define_part_ten_step_on:15,define_part_thirteen_step_on:21,define_part_thirteen_step_thre:21,define_part_thirteen_step_two:21,define_path_dict_field:25,define_redshift_sa_resourc:7,define_repo:23,define_repo_demo_pipelin:23,define_repositori:14,define_resource_test_pipelin:24,define_stub_solid:[8,20],define_typed_demo_configuration_schema_error_pipelin:13,define_typed_demo_configuration_schema_pipelin:13,define_unittest_context:7,definit:[2,8,9,12,13,21,23,24],del:25,deliv:26,demand:[1,23],demo_configuration_schema:13,demo_configuration_schema_repo:13,demo_execution_repo:22,demo_pipelin:22,demo_repositori:23,demonstr:[11,18],depend:[1,6,7,8,11,12,13,15,16,18,19,20,21,22,26],dependency_structur:1,dependencydefiniion:1,dependencydefinit:[1,11,13,15,16,19,20,21,22],dependencystructur:1,describ:[7,13,15],descript:[0,1,7,8,13,19,24,25],design:[1,14,26],destruct:1,detail:[8,12,18],deteremin:2,determin:[1,11,16],dev:[1,6],develop:[10,12,15,24],dfc8165a:17,diagnost:26,dict:[0,1,3,7,8,12,13,16,18,22,24,25],dict_param:25,dictionari:[0,1,3,8,11,16,18,25],did:19,differ:[1,6,8,12,14,15,17,21,24,25,26],difficult:[8,20,26],dimension:[1,25],direct:[1,16,26],directli:[8,17,18,25],directori:6,discourag:8,discov:26,discuss:20,disk:[1,8,25],displai:1,display_nam:1,distinguish:16,document:[6,10,13,22,26],doe:[1,7,11,14,19,24],doesn:7,doing:[21,25],don:[11,16],done:[12,20,26],dot:18,download:10,downstream:19,drive:22,dropdown:[16,23],dsl:26,dure:[3,26],dynam:19,e257262eab79:15,e476:14,each:[1,3,7,11,12,14,16,17,18,21,22,25],earlier:[18,22],easier:[1,7,23],easili:26,edg:1,edit:[12,13],editor:[12,18],effect:26,either:[1,3,16,19,26],element:[22,25],elif:[12,19,25],elimin:[7,8],els:[12,19,25],emit:[14,17,19,20],emittedoutput:19,enabl:20,encod:[12,16],encourag:[10,26],encout:3,end:[1,19],enforce_uniqu:1,engin:[14,16,26],enrich:22,ensur:[1,25],enter:[15,18],entir:[12,14,15,18,20],entit:1,entri:11,entropi:26,env:[8,13,22],enviro:3,environ:[1,3,5,6,7,8,11,12,14,18,24,26],error:[3,7,8,9,13,14,15,16,18,22,26],error_messag:14,especi:23,etc:[1,6,21],evalu:[1,15],even:[7,14],event_typ:17,ever:13,everi:[1,17,26],everyth:18,exactli:8,examin:19,exampl:[0,1,6,7,8,11,12,14,17,18,19,23,24,25,26],excel:26,except:[1,2,3,19,25,26],excess:8,exclus:7,execut:[1,7,8,9,11,12,13,15,16,18,19,20,23,24,25,26],execute_pipelin:[3,8,12,14,15,17,18,19,20,21,24],execute_pipeline_iter:3,execute_solid:[5,8],execute_with_another_world:18,execution_context:14,execution_context_pipelin:14,execution_plan_step_start:17,execution_plan_step_success:17,executioncontext:[1,3,7,8],exist:[1,7,8,20,25],expect:[1,2,9,25,26],expectation_fn:[1,15],expectationdefinit:[1,15],expectationexecutioninfo:1,expectationresult:[1,15],expedit:6,expens:[13,15],experi:[13,18],explicit:[15,26],explictli:15,explod:0,explor:[11,12,16,17],express:[16,25,26],extern:[1,11,12,14,18,24,26],extract:1,f37e:17,f6fd78c5:19,f77205931abb:17,face:[7,8],facil:[12,14],fact:16,factor:[13,22],fail:[15,18,25],faild:2,failur:[1,2,13],fairli:8,fals:[7,8,15,25],famili:8,far:[18,19,21],fast:1,fe29:17,featur:[7,10,12,15,16,22,24],few:[7,16,17],field:[0,1,7,8,12,13,22,24,25],field_util:1,file:[6,7,8,12,13,14,18,21,22,23,24,25],file_opt:25,file_typ:25,fileload:7,filter:17,fire:19,first:[8,10,11,12,15,16,17,19,24],fix:8,flag:18,flexibl:12,flow:[1,16,18,25,26],fly:12,focu:20,focus:22,folder:7,follow:[8,10,12,20,21,22,24,25],foo:[0,14,16],for_pipeline_run:7,forc:25,forget:16,form:[1,18,19],formal:7,format:[14,19,24,25,26],forth:1,frame:[15,25],framework:1,frequent:1,from:[0,1,6,7,8,11,12,13,14,15,16,17,18,19,20,22,23,24,25],from_dict:[0,19],frontend:6,fulli:[12,25],further:17,futur:15,gener:[1,6,7,8,21,24,26],generate_production_execution_context:8,get:[1,3,7,13,17,21,23],get_all_pipelin:1,get_pipelin:1,git:[6,10],github:[6,10],give:[14,16],given:[1,3,24,25,26],glarb:0,glob:22,goal:15,going:[7,24],gone:7,got:[8,13],grab:25,gradual:1,graph:[1,16,20,21,26],graphql:6,great:7,guarante:[7,8,25],gui:17,guid:[7,8],had:[7,15,19],halt:15,handi:6,handl:[1,8,14],hang:1,happen:[3,13,14],hardcod:[12,16,18],has:[1,2,7,8,15,17,18,19,20,22,24,25,26],has_solid:1,have:[0,1,6,7,8,10,11,12,15,16,18,19,20,21,22,23,24,25,26],haw:12,header_fil:8,hello:[0,9,12,18],hello_dag:16,hello_dag_pipelin:16,hello_input:18,hello_world:[0,17,23],hello_world_pipelin:17,help:[12,13,16],helper:7,henc:8,here:[7,12,18,25],heterogen:[25,26],high:8,highlight:17,homebrew:10,honua:12,hook:21,host:[7,15,24],how:[1,8,11,12,13,14,16,17,18,19,21,22,23,24,25,26],howev:[19,21,22,25],html:6,http:[6,16,17,18,25,26],idempot:[1,26],identifi:1,illustr:12,imagin:[13,15,18,21,24],immatur:15,implement:[0,1,14,19,24],implicit:[15,26],implicitli:19,implict:15,importerror:8,improv:[13,18],includ:[7,8,13,14,20,21,25],incom:7,inde:[7,21,25],index:[1,9,25],indic:[2,14,15],indirect:14,individu:[1,12,26],info:[0,1,2,7,12,13,14,15,17,19,20,21,22,24],inform:[1,7,14,16,17,18,23,26],infrastructur:[7,14],ingest:15,ingest_a:15,ingest_b:15,inject:20,injected_solid:20,inmemorystor:24,inner_typ:4,input:[0,1,5,8,9,11,12,13,15,16,17,19,20,21,22,24,26],input_def:1,input_nam:1,input_schema:25,input_selector_schema:25,inputdefinit:[0,1,7,11,13,15,16,18,19,20,21,22,24,25],inputs_env:18,inputs_env_bad:18,insert:25,insid:[10,13],inspect:[15,26],inst_param:25,instal:[6,7,8,9,17],instanc:[1,14,16,19,21],instanti:21,instead:[0,1,7,8,12,13,18,20,23,24,25],instruct:[8,17,25],integr:[1,26],intend:3,interact:[1,6,7,11,12,14,18,24],interest:[16,18,21],interfac:[17,24],intern:[1,8],interpret:10,intro_tutori:[14,23],introduc:[16,17],invalid:19,invari:2,invoc:1,invok:[7,18,24],involv:21,is_opt:[1,7,12,25],is_posit:1,isn:3,isol:[10,20],issu:6,item:25,iter:[1,3,19],iterate_over_pipelin:1,its:[1,7,11,12,13,14,16,17,18,22,24,26],itself:[0,1,19,23],javascript:6,jest:6,job:15,just:[7,8,10,11,12,16,17,18,19,20,22,23],kdjfkd:13,keep:22,kei:[0,1,3,12,14,16,18,24,25],klass:8,know:[7,18,23,26],known:26,kwarg:[0,2,3,4],label:[21,25],lambda:[0,1,15,24],lambda_solid:[0,1,11,12,13,16,17,18,20,21,22,23,25],languag:[12,25],last:[11,22],lastli:24,later:[8,10,16,17,22],latest:[7,10],layer:[14,16],learn:[12,13,23,24,26],left:[0,20],len:[12,20],less:[7,8,18],let:[7,11,13,14,15,16,17,18,19,20,22,23,24,25,26],letter:[13,22],level:[8,14,17,22],level_from_str:7,librari:[8,10,25,26],lifecycl:8,like:[0,1,8,10,12,14,15,18,19,21,22,23,24,25],line:[11,12,13,16,17,18,22,23],link:12,list:[0,1,3,4,11,23,25],littl:23,live:[6,24],livehtml:6,load:[18,21,22,23],load_a:21,load_b:21,load_numb:[20,21],local:[7,14,24],local_f:7,localfshandleresourc:7,localhost:6,locat:26,log:[0,1,7,15,17,19,22,24],log_level:[7,8,13,14,15,22],log_message_id:[14,15,17,19],log_num:19,log_num_squar:19,logger:[7,8],longer:[7,8,25],look:[11,22],lot:17,machin:[7,14,26],made:[13,21,26],mai:[1,7,12,18,23,26],maintain:26,mainten:26,make:[3,6,7,8,10,13,14,15,18,21,23,25,26],malform:15,manag:[6,10,12,14,24,26],mani:[1,12,16,18,21,23,26],manipul:25,manual:[1,7],map:1,mar:18,mark:17,materi:25,matter:[11,22],matur:26,maxim:26,maximum:12,mean:[7,18,24],meaning:26,mechan:[8,17,19,20],medium:26,memori:[1,20,24,25],merg:7,messag:[1,8,13,14,16,17],met:23,metadata:[1,15,25,26],method:1,microsoft:10,middl:7,might:[12,13,14,25],milli:17,mismatch:2,miss:[13,16],mistak:[13,18],mode:[6,24],model:[7,9,16,23,24],modifi:19,modul:[8,9,23],modulenotfounderror:8,more:[0,7,8,11,12,15,19,21,22],most:[8,14,23],mostli:1,move:[7,8],much:[1,7,8,12,25],multer:[20,21],multi:17,multipl:[0,1,8,9,21,22,24,26],multipleresult:[0,19],multipli:13,multiply_the_word:[13,22],multiply_the_word_with_typed_config:13,must:[1,12,15,16,18,19,20,24,25],mutabl:25,my_solid:0,my_solid_from_dict:0,myenv:10,name:[0,1,3,7,8,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25],namedtupl:[7,8],namespac:8,natur:15,navig:[16,17],necessari:1,need:[0,6,7,8,10,18,22,24,25,26],net:8,never:[19,20,26],next:[11,12,14,16,17,18,19,22,23,24],nice:13,nicer:8,node:[3,17,21,26],non:[1,13],none:[0,1,3,5,7],none_resourc:7,norm:26,normal:8,not_a_num:13,not_a_numb:13,note:[3,7,8,11,18,19,23,24,25],noth:25,notic:[7,14,15,16,18,19,21,24,25],notion:[7,8,25],notori:26,now:[7,8,11,12,13,14,15,16,18,20,21,22,23,24,25],nullabl:4,num1:[20,21,25],num2:[20,21,25],num:[1,19,25],num_on:[15,24],num_squar:19,num_two:[15,24],number:[1,15,19,25],object:[0,1,8,14,19,25],obvious:21,occur:14,off:[1,20],offer:24,offici:[7,8],often:[18,26],omit:[0,7],onc:[23,25],one:[1,3,7,8,12,17,18,19,20,21,22,25],onli:[1,2,7,12,14,15,17,18,19,21,22,25],oper:[1,10,13,15,18,21,24,26],opinion:[9,26],opportun:14,opt:8,option:[1,10,15,16,25],order:[7,11,12,13,15,16,18,22,23,24,25,26],org:25,orig_messag:[14,15,17,19],origin:25,osx:10,other:[1,7,10,11,14,16,19,20,23,25,26],other_nam:1,otherwis:0,our:[12,13,16,17,18,22,23,25],out:[7,8,14,24,26],out_on:19,out_two:19,outliv:25,output:[0,1,3,7,8,9,11,12,15,16,17,18,20,21,24,26],output_nam:[1,3],output_schema:25,output_selector_schema:25,outputdefinit:[0,1,7,15,18,19,20,21,24,25],outputs_def:1,over:[1,25,26],overrid:22,overview:26,own:[7,8,17,18,22,25],packag:[10,24],page:9,pair:[14,25],panda:[1,8,25,26],pandas_df:25,pandasdatafram:25,pane:17,parallel:8,param:8,paramet:[0,1,3,12,21,24],parameter:[3,18,24,25],parametercheckerror:8,parameteriz:1,parametr:12,parametriz:26,parquet:25,part:[10,22,23,26],part_eleven:19,part_eleven_step_on:19,part_eleven_step_thre:19,part_eleven_step_two:19,part_seven:22,part_ten:15,part_ten_step_on:15,part_thirteen:21,particular:[3,7,12,19,21,24,26],particularli:21,pass:[1,7,8,12,13,14,20,23,24,25],passthrough:1,passthrough_context_definit:1,password:[7,24],path:[4,7,8,10,13,25],pathtofil:[7,8],pedogog:25,peopl:[23,26],per:[0,1,8,11,12,18],perform:[1,15,25,26],persist:25,persona:26,piec:7,pieplin:1,pip:[6,8],pipelin:[1,2,3,7,8,9,11,12,13,14,15,16,18,19,21,23,24,25,26],pipeline_cli_execut:22,pipeline_def:5,pipeline_dict:[1,13,22,23],pipeline_execut:22,pipeline_guid:7,pipeline_result:[20,21],pipeline_run_id:[7,8],pipeline_start:17,pipeline_success:17,pipelineconfigevaluationerror:[3,13],pipelinecontextdefinit:[1,7,8,24],pipelinedefinit:[1,3,8,11,12,13,14,15,16,17,18,19,20,21,22,23,24],pipelinedefiniton:1,pipelinedefint:1,pipelineexecutionresult:3,place:[22,24],plai:25,plan:[6,15],platform:[17,23],plu:20,point:[11,19,23],poorli:26,pop:18,popd:10,port:[6,7],posit:15,possibl:13,postgresql:7,potenti:[7,25],power:[7,14],practic:26,pre:[1,7],predict:7,prefer:[1,13],present:[1,10,25],prevent:[13,15],previou:[1,7,12,13,19,23],primari:18,primer:26,principl:9,print:[0,14],prior:[13,18,26],probabl:1,proce:[12,25],process:[15,26],prod:1,produc:[0,1,17,25,26],product:[1,8,12,14,22,24,26],program:[9,16,23,26],programmat:23,project:[6,10,23],promis:7,prone:[8,18,22],properli:26,properti:[1,8,12,15],provid:[1,8,12,14,16,18,19,20,24,25,26],publiccloudconn:24,publiccloudstor:24,publish:6,pure:[1,25],purpos:21,pushd:10,put:7,py27:12,pydata:25,python3:[6,10],python:[6,8,15,17,19,24,26],python_modul:6,python_packag:10,python_typ:[4,8],pythonobjecttyp:[4,8],qualiti:[1,8,15],question:25,quickli:26,quit:[7,15,20],quux:13,rais:[2,19,25],ran:13,rather:[3,7,8,11,16,17,18,19,20,21,23,25,26],raw:8,react_app_graphql_uri:6,read_csv:25,read_parquet:25,read_tabl:25,readili:14,real:7,realiz:8,realli:8,reason:[1,8,21],recal:18,recommend:10,record:24,record_valu:24,recours:15,red:18,redistribut:10,redshift:[7,8],reduc:26,reentrant_info:3,reentrantinfo:3,regist:25,regret:10,rel:7,relat:8,releas:[7,10],relev:7,remain:25,remov:25,render:6,repetit:23,replac:[7,8,13],repo:23,repo_demo_pipelin:23,report:26,repositori:[1,6,9,10,22,24],repositorydefinit:[1,13,22,23],repostori:23,repres:[1,8,24],requir:[0,1,6,7,13,15,24,25,26],rerun:12,resid:21,resoourc:24,resourc:[1,8,9,14],resource_fn:[1,7,24],resource_test_pipelin:24,resourcedefinit:[1,7,24],respons:25,rest:7,resuabl:7,result:[0,1,3,6,8,15,17,19,20,24],result_context:1,result_dict:[0,8],result_for_solid:[3,8,20,21],result_list:[3,20],retriev:1,return_dict_result:19,reus:[7,21],reusabl:[7,9,12],rewrit:12,rich:[13,18,26],richer:14,right:[0,8,15,17,18],root:[10,13],rout:14,row:25,rule:2,run:[3,7,8,10,12,13,14,15,16,17,19,22,23,25,26],run_id:[7,14,15,17,19],runner:6,runtim:[2,8,13,16,18,26],runtime_typ:1,runtimeexecutioncontext:8,runtimeexecutioncontextparam:8,s3filehandl:8,safeti:22,sai:[15,20,25],salient:12,same:[0,1,7,8,11,12,18,19,24,26],satisfi:[1,11,20],satisi:7,save:[14,17,23],scalar:[1,12],schema:[7,8,9,12],scientist:26,scope:21,script:[6,17,22],search:9,second:[8,12,16,18],section:[7,12,14,16,18,24],see:[1,3,10,11,13,14,16,17,18,19,21,23,24,25,26],seen:[11,25],select:[10,25],selector:[8,25],self:[7,13,24],semi:14,sens:25,sensibl:6,sep:25,separ:[8,10,16],sequenc:13,serv:[17,18,26],server:6,servic:24,service_lines_fil:8,set:[6,17,22,24],set_value_in_cloud_stor:24,setup:1,sever:[0,18,25],shape:8,share:7,she:25,shell:10,shortcut:0,should:[0,1,7,8,10,12,14,16,17,19,21,23,24,25,26],shouldn:21,side:26,signatur:1,similar:25,simpl:[0,16],simpler:[0,8],simpli:[8,24],simplifi:0,sinc:[11,25],singl:[0,1,7,8,12,17,19,20,21,24,25,26],site:21,size:25,skip:15,slightli:[7,11],snapshot:[6,8],snapshot_check_result:8,softwar:[1,7,10,15],solid:[0,1,2,3,8,9,11,12,13,14,15,16,17,18,19,20,22,23,24,25],solid_1:1,solid_2:1,solid_a:11,solid_b:11,solid_c:11,solid_d:11,solid_definit:[14,17,19],solid_nam:[1,5],solid_on:16,solid_result:[8,21],solid_subset:3,solid_two:16,soliddefinit:[0,1,3],solidexecutionresult:3,solidinst:[1,20,21],some:[1,2,6,7,8,14,15,22,24,25,26],some_input:1,some_password:24,some_us:24,someth:[0,6],sophist:[11,15],sourc:[6,7,25],space:2,spark:[14,26],speak:[12,20],special:[7,21],specif:[7,19,22],specifi:[0,12,14,16,18,19,22,23,24],specific_env:22,spew:[15,19],split_headers_and_service_lin:8,sql:26,sqlalchemi:8,ssd:1,stacktrac:18,stage:[8,26],start:[6,11,20],state:3,step:[3,8,16,17,18,25],step_eleven:19,step_kei:17,step_results_by_tag:3,still:11,storag:21,store:[24,25],str:[0,1,7,8,13],str_param:25,str_valu:0,straightforward:7,stream:[1,17],string:[0,4,7,8,12,13,16,18,19,22,24,25],strongli:[10,13],structur:[1,7,13,14,18,25,26],stub:8,stub_a:20,stub_b:20,stub_c_plus_d:20,studio:10,sub:8,subdag:20,subfield:25,submodul:8,subpackag:8,subsequ:7,subset:[7,8,20,26],substanti:8,substrat:14,succeed:[15,17],success:[1,3,8,15,17,20,21],sudo:10,suffici:26,suitabl:1,sum:25,sum_df:25,sum_int:24,sum_solid:25,suppli:1,support:[0,1,7,19,26],suppos:[6,8,22],surfac:18,surround:14,swap:24,swappabl:23,sync:22,synchron:3,synthes:7,system:[1,2,4,7,8,10,12,13,14,15,24,25,26],tab:17,tabl:[1,8,25],tabular:25,tailor:21,take:[0,1,7,8,12,17,20,25],target:[1,23],task:[11,16,26],team:26,tediou:[13,22],tell:[15,16,22,23,24],term:[15,19,25],test:[1,3,6,7,8,9,10,12,15,24,26],test_a_plus_b_final_subdag:20,test_intro_tutorial_part_four:12,test_part_thirteen_step_on:21,test_part_thirteen_step_two:21,testabl:12,than:[3,6,7,8,11,16,18,19,20,21,22,23,25,26],thei:[0,1,7,8,11,15,21,25,26],them:[8,10,12,17,18,21,25],therefor:13,thi:[0,1,3,7,8,10,11,12,13,14,15,16,17,18,19,20,21,23,24,25,26],thing:[3,7,21],think:[21,26],third:[8,17,25],thirteen_step_on:21,thirteen_step_two:21,those:[1,6,8,10,12,15,22,25,26],though:14,thought:8,thread:[14,17],three:[17,18,21,25],through:[1,14,18,24,25,26],throughout:[14,25],throw_on_error:[3,15],thrown:2,thu:1,tie:[8,19],tied:21,time:[1,11,12,13,15,17,18,19,21,23,25,26],timestamp:14,tiresom:23,to_csv:25,to_parquet:25,togeth:[7,11,21],tool:[6,10,15,17,22,23,26],top:[8,23],topolog:[11,16],total:18,touch:[14,24],tox:6,trace:13,tradit:15,transform:[0,1,3,17,18,19],transform_fn:1,transformed_valu:[3,8,20,21],transformexecutioninfo:[1,12],transit:8,tree:6,trigger:19,turn:[11,12,25],tutori:[12,14,19,22,23,25],tutorial_part_thirteen_step_on:20,tutorial_part_thirteen_step_thre:21,tutorial_repositori:14,two:[1,8,16,19,20,21,22,25],txt:6,type:[0,1,2,7,8,9,12,13,15,16,19,20,21,22,23],typecheck:[13,25],typed_demo_configuration_schema:13,typed_demo_configuration_schema_error:13,typed_multiply_the_word:13,typed_multiply_the_word_error:13,typeerror:[8,13],typic:[1,15,20],ubuntu:10,undefin:13,under:[12,18,24],unexpect:15,unfamiliar:26,union:25,uniqu:[1,19],unit:[1,7,9,16,17,26],unittest:[1,7,8,24],univers:14,unlik:15,unmodifi:7,unnam:[1,20],unpack:25,unsupport:25,until:[18,22],untyp:18,unzip:[7,21],unzip_fil:[7,8],unzipfileconfig:7,unzipped_fil:8,unzipped_path:8,unzipped_path_valu:8,updat:[6,8,10,15],upgrad:[7,8],upload:[8,21],upload_header_to_s3:8,upload_service_line_to_s3:8,upstream:[7,20],usag:1,use:[1,6,7,8,10,12,13,14,17,18,20,22,23,24,25,26],used:[1,7,8,12,17,19,21,24,25],useful:[1,3,14,15,18,20,21,22,25,26],user:[1,2,7,8,9,12,14,15,18,22,24,26],usernam:24,uses:7,using:[6,7,10,12,14,17,18,21,22,23,24],utf:12,util:[8,9,12,17,22,25],utility_solid:8,uuid4:[7,8],uuid:[7,8],valid:[13,25],valu:[0,1,2,3,8,12,13,14,15,17,18,19,20,22,24,25,26],vari:[1,22],venv:[6,10],verbos:[7,8],veri:[1,3,8,13,16,21,25],version:[3,6,19,24],via:[14,15,17,18,23,24,25],view:17,viewabl:15,violat:2,virtual:8,virtualenv:6,virtualenviron:10,virtualenvwrapp:10,visual:[10,16,17,23],wai:[0,15,17,18,19,24,25,26],want:[1,12,14,15,18,20,22,23,24,25],watch:6,wax:7,web:17,webapp:10,welcom:9,well:[2,7,8,26],were:[7,8,21],what:[1,7,11,13,15,16,21,25,26],whatev:8,when:[0,1,3,6,11,13,15,18,22,23,25,26],where:[1,12,14,15,16,17,20,24,25],wherea:25,whether:[1,3,10,15,26],which:[1,3,6,7,12,13,16,17,18,19,22,23,26],who:26,whole:[3,15],whose:[0,1,10,16,18],why:21,wide:10,window:10,wire:11,within:[1,7,8,15,16,17,18,21],without:[12,17,18,23],won:10,word:[13,18,22],work:[0,13,15,23,24],workflow:16,world:[9,12,18],worri:16,worth:11,would:[1,7,8,11,13,18,24,25],wrap:19,write:[7,17],written:26,wrong:13,wrong_factor:13,yaml:[8,12,18,22],yarn:6,yellow:17,yet:6,yield:[0,1,3,7,8,18,19,26],yield_output:19,yml:[6,12,13,14,18,22,23],you:[1,6,7,8,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25],your:[7,8,10,11,14,15,17,18,24,25],zip:7,zip_file_path:[7,8],zipped_fil:[7,8]},titles:["Decorators","Definitions","Errors","Execution","Types","Utilities","Contributing","Resources","Required API Changes","Intro Tutorial","Installation","An actual DAG","Configuration","Configuration Schemas","Execution Context","Expectations","Hello, DAG","Hello, World","Inputs","Multiple Outputs","Unit-testing Pipelines","Reusable Solids","Pipeline CLI Execution","Repositories","Resources","User-Defined Types","Principles"],titleterms:{"function":26,actual:11,agnost:26,api:[8,9,18],audit:9,basic:25,chang:8,cli:[17,18,22],comput:26,condit:19,config:[7,22],configur:[12,13],context:14,contribut:6,creat:10,dag:[11,16],dagit:[6,17,18],data:26,decor:0,defin:25,definit:[1,4],describ:26,dev:10,develop:6,doc:6,environ:10,error:2,execut:[3,14,17,22],expect:15,from:10,gradual:26,hello:[16,17],indic:9,input:[7,18,25],instal:10,intro:9,level:7,librari:[7,17],local:6,log:14,multipl:19,old:9,option:26,output:[19,25],pip:10,pipelin:[17,20,22],principl:26,pypi:10,python:[10,18],qualiti:26,refer:9,releas:6,repositori:23,requir:8,resourc:[7,24],reusabl:21,run:6,schema:[13,25],self:26,setup:6,solid:[7,21],sourc:10,split:22,stabl:10,tabl:9,test:20,testabl:26,tutori:9,type:[4,18,25,26],unit:20,user:25,util:5,verifi:26,version:10,virtual:10,virtualenv:10,webapp:6,world:17,yarn:10}})'
 
 snapshots['test_build_all_docs 11'] = '''Contributing
 ============
@@ -1804,70 +1812,87 @@ Local development setup
   * You can't use Python 3.7+ yet because of https://github.com/apache/arrow/issues/1125
 
 2. Create and activate a virtualenv
-::
-    python3 -m venv dagsterenv
-    source dagsterenv/bin/activate
+
+.. code-block:: console
+
+    $ python3 -m venv dagsterenv
+    $ source dagsterenv/bin/activate
 
 3. Install dagster locally and install dev tools
-::
-    git clone git@github.com:dagster-io/dagster.git
-    cd dagster/python_modules
-    pip install -e ./dagit
-    pip install -e ./dagster
-    pip install -r ./dagster/dev-requirements.txt
+
+.. code-block:: console
+
+    $ git clone git@github.com:dagster-io/dagster.git
+    $ cd dagster/python_modules
+    $ pip install -e ./dagit
+    $ pip install -e ./dagster
+    $ pip install -r ./dagster/dev-requirements.txt
 
 4. Install dagit webapp dependencies
-::
-    cd dagster/python_modules/dagit/dagit/webapp
-    yarn install
+
+.. code-block:: console
+
+    $ cd dagster/python_modules/dagit/dagit/webapp
+    $ yarn install
 
 5. Run tests
+
 We use tox to manage test environments for python.
-::
-    cd dagster/python_modules/dagster
-    tox
-    cd dagster/python_modules/dagit
-    tox
+
+.. code-block:: console
+
+    $ cd dagster/python_modules/dagster
+    $ tox
+    $ cd dagster/python_modules/dagit
+    $ tox
 
 To run JavaScript tests for the dagit frontend, you can run:
-::
-    cd dagster/python_modules/dagit/dagit/webapp
-    yarn test
 
-In webapp development it's handy to run `yarn run jest --watch` to have an
+.. code-block:: console
+
+    $ cd dagster/python_modules/dagit/dagit/webapp
+    $ yarn test
+
+In webapp development it's handy to run ``yarn run jest --watch`` to have an
 interactive test runner.
 
 Some webapp tests use snapshots--auto-generated results to which the test
 render tree is compared. Those tests are supposed to break when you change
 something.
 
-Check that the change is sensible and run `yarn run jest -u` to update the
+Check that the change is sensible and run ``yarn run jest -u`` to update the
 snapshot to the new result. You can also update snapshots interactively
-when you are in `--watch` mode.
+when you are in ``--watch`` mode.
 
 Running dagit webapp in development
 -------------------------------------
 For development, run the dagit GraphQL server on a different port than the
 webapp, from any directory that contains a repository.yml file. For example:
-::
-    cd dagster/python_modules/dagster/dagster/dagster_examples
-    dagit -p 3333
+
+.. code-block:: console
+
+    $ cd dagster/python_modules/dagster/dagster/dagster_examples
+    $ dagit -p 3333
 
 Run the local development (autoreloading, etc.) version of the webapp.
-::
-    cd dagster/python_modules/dagit/dagit/webapp
-    REACT_APP_GRAPHQL_URI="http://localhost:3333/graphql" yarn start
+
+.. code-block:: console
+
+    $ cd dagster/python_modules/dagit/dagit/webapp
+    $ REACT_APP_GRAPHQL_URI="http://localhost:3333/graphql" yarn start
 
 Releasing
 -----------
-Projects are released using the Python script at `dagster/bin/publish.py`.
+Projects are released using the Python script at ``dagster/bin/publish.py``.
 
 Developing docs
 ---------------
 Running a live html version of the docs can expedite documentation development.
-::
-    cd python_modules/dagster/docs
-    make livehtml
+
+.. code-block:: console
+
+    $ cd python_modules/dagster/docs
+    $ make livehtml
 '''
 
 snapshots['test_build_all_docs 12'] = '''.. image:: https://user-images.githubusercontent.com/28738937/44878798-b6e17e00-ac5c-11e8-8d25-2e47e5a53418.png
@@ -3174,15 +3199,15 @@ And then run the pipeline:
 snapshots['test_build_all_docs 26'] = '''Execution Context
 =================
 
-One of the most important objects in the system is the execution context. Threaded
-throughout the entire computation (accessed via the `info` object passed to user code)
-that contains handles to logging facilities and external resources. Interactions
-with logging systems, databases, external clusters (e.g. a Spark cluster) should
+One of the most important objects in the system is the execution context. The execution
+context is threaded throughout the entire computation (via the ``info`` object passed to
+user code) and contains handles to logging facilities and external resources. Interactions
+with logging systems, databases, and external clusters (e.g. a Spark cluster) should
 be managed through the context. 
 
 This provides a powerful layer of indirection that allows a solid to abstract
-away its surrounding environment. This will allow the system and pipeline
-infrastructure to provide different implementations for these different environments,
+away its surrounding environment. Using an execution context allows the system and pipeline
+infrastructure to provide different implementations for different environments,
 giving the engineer the opportunity to design pipelines that can be executed
 on your local machine or your CI/CD pipeline as readily as your production
 cluster environment.
@@ -3200,7 +3225,7 @@ Run this example pipeline in dagit:
 
 .. code-block:: console
 
-    dagster pipeline execute -m dagster.tutorials.intro_tutorial.tutorial_repository -n define_repository execution_context_pipeline 
+    $ dagster pipeline execute -m dagster.tutorials.intro_tutorial.tutorial_repository -n define_repository execution_context_pipeline 
 
 And you'll notice log messages like this:
 
@@ -3208,42 +3233,43 @@ And you'll notice log messages like this:
 
     2019-01-15 04:59:37 - dagster - ERROR - orig_message="An error occurred." log_message_id="b0cbb1be-e476-4a4e-aaac-a29ddb15309a" run_id="d8f41da0-3825-4ac0-b8e0-4f38ba45b8e0" pipeline="execution_context_pipeline" solid="error_message" solid_definition="error_message"
 
-Which are annonated with a bunch of key value pairs that indicate where in the computation
-this log occured. This happened because we logged through the execution context.
+These log messages are annonated with a bunch of key value pairs that indicate where in the
+computation each log message was emitted. This happened because we logged through the execution
+context.
 
 Notice that even though the user only logged the message "An error occurred", by routing logging
 through the context we are able to provide richer error information -- including the name of the
 solid and a timestamp -- in a semi-structured format.
 
-You'll notice that the `'A debug message.'` does not appear in the execution logs. This
-is because the default log level if `INFO` and so debug level messages will not appear.
+You'll notice that `'A debug message.'` does not appear in the execution logs. This
+is because the default log level is ``INFO``, so debug-level messages will not appear.
 
 Let's change that by specifying some config.
 
-.. code-block:: yaml
-
-    context:
-        default:
-            config:
-                log_level: DEBUG
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/execution_context.yml
+   :language: YAML
+   :linenos:
+   :caption: execution_context.yml
 
 Save it as execution_context.yml and then run:
 
 .. code-block:: console
 
-    dagster pipeline execute  \\
+    $ dagster pipeline execute  \\
     -m dagster.tutorials.intro_tutorial.tutorial_repository \\
     -n define_repository execution_context_pipeline \\
     -e execution_context.yml
 
-You'll see now that there are debug messages print out to the console.
+You'll see now that debug messages print out to the console.
 
 Although logging is a universally useful case for the execution context, this example only touches
 on the capabilities of the context. Any pipeline-level facilities that pipeline authors might want
 to make configurable for different environments -- for instance, access to file systems, databases,
 or compute substrates -- can be configured using the context.
 
-We'll see how to use more other capabilities in the next section: Resources.'''
+We'll see how to use some of these other capabilities in the next section:
+:doc:`Resources <resources>`.
+'''
 
 snapshots['test_build_all_docs 27'] = '''Expectations
 ============
@@ -3502,7 +3528,7 @@ This pipeline introduces a few new concepts.
     pipeline's DAG.
 
     .. literalinclude::  ../../dagster/tutorials/intro_tutorial/hello_dag.py
-       :lines: 22-26
+       :lines: 23-25
        :dedent: 8
 
     The first layer of keys in this dict are the *names* of solids in the pipeline. The second layer
@@ -3542,14 +3568,14 @@ topology and see how dagster determines the execution order of a pipeline.
 
 snapshots['test_build_all_docs 29'] = '''Hello, World
 ------------
-See :doc:`../installation` for instructions getting dagster -- the core library -- and dagit --  
-the web UI tool used to visualize your data pipelines -- installed on your platform of choice.
+See :doc:`../installation` for instructions installing dagster (the core library) and dagit (the
+web UI tool used to visualize your data pipelines) on your platform of choice.
 
 Let's write our first pipeline and save it as ``hello_world.py``.
 
 .. literalinclude:: ../../dagster/tutorials/intro_tutorial/hello_world.py
    :linenos:
-   :lines: 1-10
+   :lines: 1-12
    :caption: hello_world.py
 
 This example introduces three concepts:
@@ -3592,7 +3618,7 @@ CLI
 
 There's a lot of information in these log lines (we'll get to how you can use, and customize,
 them later), but you can see that the third message is:
-```Solid hello_world emitted output \\"result\\" value \'hello\'"```. Success!
+``Solid hello_world emitted output \\"result\\" value \'hello\'``. Success!
 
 Dagit
 ~~~~~
@@ -3625,7 +3651,7 @@ at all. Just add a few lines to `hello_world.py` (highlighted in yellow):
 .. literalinclude:: ../../dagster/tutorials/intro_tutorial/hello_world.py
    :linenos:
    :caption: hello_world.py
-   :emphasize-lines: 1,13-15
+   :emphasize-lines: 15-17
 
 Then you can just run:
 
@@ -3646,7 +3672,7 @@ Let's return to our hello world example. But this time, we'll make the string
 the solid returns be parameterized based on inputs.
 
 .. literalinclude:: ../../dagster/tutorials/intro_tutorial/inputs.py
-   :lines: 1-38
+   :lines: 1-17
    :linenos:
    :caption: inputs.py
 
@@ -3689,6 +3715,7 @@ information via a config file. We'll use the same values as before, but in the f
 of YAML rather than python dictionaries:
 
 .. literalinclude:: ../../dagster/tutorials/intro_tutorial/inputs_env.yml
+   :language: YAML
    :linenos:
    :caption: inputs_env.yml
 
@@ -3726,12 +3753,10 @@ are often not surfaced until the pipeline is executed.
 
 For example, imagine if our environment for our pipeline was:
 
-.. code-block:: YAML
-
-    solids:
-        add_hello_to_word:
-            inputs:
-                word: 2343
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/inputs_env_bad.yml
+   :language: YAML
+   :linenos:
+   :caption: inputs_env_bad.yml
 
 If we execute this pipeline with this config, it'll fail at runtime.
 
@@ -3758,6 +3783,8 @@ By using typed input instead we can catch this error prior to execution.
 
 .. image:: inputs_figure_four_error_prechecked.png
 
+Next, we'll see how to use the  :doc:`Execution Context <execution_context>` to configure how
+pipeline execution interacts with its environment.
 '''
 
 snapshots['test_build_all_docs 31'] = '''Multiple Outputs
@@ -4283,14 +4310,14 @@ to cloud storage, unzipping files, etc.
 snapshots['test_build_all_docs 34'] = '''Pipeline CLI Execution
 ----------------------
 
-Up until now we've been focusing on using the dagit tool for executing pipeline. However, we
-also have a CLI utility for use in scripting contexts. It has its own features useful for
-production context, which we will go over here.
+Up until now we've been focusing on using the dagit tool for executing pipelines. However, we
+also have a CLI utility for use in scripting contexts. It has its own features which are useful in
+a production context.
 
 Just as in the last part of the tutorial, we'll define a pipeline and a repository, and create
 a yaml file to tell the CLI tool about the repository.
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/pipeline_execution.py
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/pipeline_cli_execution.py
    :linenos:
    :caption: pipeline_execution.py
 
@@ -4298,6 +4325,7 @@ And now the repository file:
 
 .. literalinclude:: ../../dagster/tutorials/intro_tutorial/pipeline_execution_repository.yml
    :linenos:
+   :language: YAML
    :caption: repository.yml
 
 Finally, we'll need to define the pipeline config in a yaml file in order to
@@ -4305,10 +4333,11 @@ execute our pipeline from the command line.
 
 .. literalinclude:: ../../dagster/tutorials/intro_tutorial/pipeline_execution_env.yml
    :linenos:
+   :language: YAML
    :caption: env.yml
 
 With these elements in place we can now drive execution from the CLI specifying only the pipeline
-name. The tool loads the repository using the `repository.yml` file and looks up the pipeline by
+name. The tool loads the repository using the ``repository.yml`` file and looks up the pipeline by
 name.
 
 .. code-block:: console
@@ -4328,10 +4357,12 @@ Let's split up our env.yml into two parts:
 
 .. literalinclude:: ../../dagster/tutorials/intro_tutorial/pipeline_execution_env.yml
    :lines: 1-4
+   :language: YAML
    :caption: constant_env.yml
 
 .. literalinclude:: ../../dagster/tutorials/intro_tutorial/pipeline_execution_env.yml
-   :lines: 6-9
+   :lines: 6-12
+   :language: YAML
    :caption: specific_env.yml
 
 Now we can run our pipeline as follows:
@@ -4344,8 +4375,8 @@ Order matters when specifying yaml files to use -- values specified in later fil
 values in earlier files, which can be useful. You can also use globs in the CLI arguments to consume
 multiple yaml files.
 
-Next, we'll look at defining strongly-typed :doc:`Configuration Schemas <configuration_schemas>`
-to guard against bugs and enrich pipeline documentation.
+Next, we'll look at how :doc:`User-Defined Types <types>` can enrich documentation and type-safety
+in pipelines.
 '''
 
 snapshots['test_build_all_docs 35'] = '''Repositories
@@ -4392,6 +4423,7 @@ although you can tell the CLI tools to use any file you like.
 
 .. literalinclude:: ../../dagster/tutorials/intro_tutorial/repos_1.yml
    :linenos:
+   :language: YAML
    :caption: repository.yml
 
 Now you should be able to list the pipelines in this repo without all the typing:
@@ -4404,6 +4436,7 @@ You can also specify a module instead of a file in the repository.yml file.
 
 .. literalinclude:: ../../dagster/tutorials/intro_tutorial/repos_2.yml
    :linenos:
+   :language: YAML
    :caption: repository.yml
 
 In the next part of the tutorial, we'll get to know :doc:`Pipeline Execution <pipeline_execution>`
@@ -4411,86 +4444,35 @@ a little better, and learn how to execute pipelines in a repository from the com
 with swappable config.
 '''
 
-snapshots['test_build_all_docs 36'] = """Resources
+snapshots['test_build_all_docs 36'] = '''Resources
 =========
 
-We've already learned about execution context logging. Another important capability
-of execution context is resources. Pipelines frequently need access to the file system,
-databases, or other cloud services. Access to these things should be modelled as resources.
+We've already learned about logging through the execution context. We can also use the execution
+context to manage pipelines' access to resources like the file system, databases, or cloud services.
+In general, interactions with features of the external environment like these should be modeled
+as resources.
 
 Let's imagine that we are using a key value offered by a cloud service that has a python API.
 We are going to record the results of computations in that key value store.
 
-We are going to model this key value store as a "Resource".
+We are going to model this key value store as a resource.
 
-.. code-block:: python
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/resources.py
+   :lines: 1
+   :dedent: 2
 
-    from bigco import PublicCloudConn, set_value_in_cloud_store
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/resources.py
+   :lines: 28-41, 64-76
 
-    class PublicCloudStore:
-        def __init__(self, username, password):
-            # create credential and store it
-            self.conn = PublicCloudConn(username, password)
+The core of a resource are the definition of its configuration (the ``config_field``)
+and then the function that can actually construct the resource. Notice that all of the
+configuration specified for a given resource is passed to its constructor under the ``config``
+key of the ``info`` parameter.
 
-        def record_value(self, context, key, value):
-            context.info(
-                'Setting key={key} value={value} in cloud'.format(
-                    key=key, value=value
-                )
-            )
-            set_value_in_cloud_store(self.conn, key, value)
+Let's now attach this resource to a pipeline and use it in a solid.
 
-    def define_cloud_store_resource():
-        return ResourceDefinition(
-            resource_fn=lambda info: PublicCloudStore(
-                info.config['username'],
-                info.config['password'],
-            ),
-            config_field=Field(
-                Dict({
-                    'username': Field(String),
-                    'password': Field(String)
-                })
-            ),
-            description='''This represents some cloud-hosted key
-            value store. Username and password must be provided
-            via configuration for this to work''',
-    )
-
-The core of a resource are the definition of its configuration (the `config_field`)
-and then the function that can produce the resource.
-
-Let us now attach this to a pipeline and use this resource in a solid.
-
-.. code-block:: python
-
-    @solid(
-        inputs=[
-            InputDefinition('num_one', Int),
-            InputDefinition('num_two', Int)
-        ],
-        outputs=[OutputDefinition(Int)],
-    )
-    def add_ints(info, num_one, num_two):
-        result = num_one + num_two
-        info.context.resources.store.record_value(
-            info.context, 'add', result
-        )
-        return result
-
-
-    def define_resource_test_pipeline():
-        return PipelineDefinition(
-            name='resource_test_pipeline',
-            solids=[add_ints],
-            context_definitions={
-                'cloud': PipelineContextDefinition(
-                    resources={
-                        'store': define_cloud_store_resource()
-                    }
-                )
-            }
-        )
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/resources.py
+   :lines: 79-93, 97-101
 
 Resources are attached to pipeline context definitions. A pipeline context
 definition is way that a pipeline can declare the different "modes" it can
@@ -4504,33 +4486,9 @@ resource.
 
 In order to invoke this pipeline, we pass it the following configuration:
 
-.. code-block:: python
-
-    result = execute_pipeline(
-        define_resource_test_pipeline(),
-        environment={
-            'context': {
-                'cloud': {
-                    'resources': {
-                        'store': {
-                            'config': {
-                                'username': 'some_user',
-                                'password': 'some_password',
-                            }
-                        }
-                    }
-                }
-            },
-            'solids': {
-                'add_ints': {
-                    'inputs': {
-                        'num_one': {'value': 2},
-                        'num_two': {'value': 6}
-                    }
-                }
-            },
-        },
-    )
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/resources.py
+   :lines: 105-129
+   :dedent: 4
 
 Note how we are telling the configuration to create a cloud context by
 using the ``cloud`` key under ``context`` and then parameterizing the store resource
@@ -4544,73 +4502,31 @@ public cloud version.
 First we need a version of the store that implements the same interface that can be used
 in testing contexts but does not touch the public cloud:
 
-.. code-block:: python
-
-    class InMemoryStore:
-        def __init__(self):
-            self.values = {}
-
-        def record_value(self, context, key, value):
-            context.info(
-                'Setting key={key} value={value} in memory'.format(
-                    key=key, value=value
-                )
-            )
-            self.values[key] = value
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/resources.py
+   :lines: 43-53
 
 Next we package this up as a resource.
 
-.. code-block:: python
-
-    def define_in_memory_store_resource():
-        return ResourceDefinition(
-            resource_fn=lambda _: InMemoryStore(),
-            description='''An in-memory key value store that 
-            requires no configuration. Useful for unittesting.''',
-        )
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/resources.py
+   :lines: 56-62
 
 And lastly add a new context definition to represent this new operating "mode":
 
-.. code-block:: python
-
-    def define_resource_test_pipeline():
-        return PipelineDefinition(
-            name='resource_test_pipeline',
-            solids=[add_ints],
-            context_definitions={
-                'cloud': PipelineContextDefinition(
-                    resources={
-                        'store': define_cloud_store_resource()
-                    }
-                ),
-                'local': PipelineContextDefinition(
-                    resources={
-                        'store': define_in_memory_store_resource()
-                    }
-                ),
-            }
-        )
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/resources.py
+   :lines: 89-101
+   :emphasize-lines: 6-8
 
 Now we can simply change configuration and the "in-memory" version of the
 resource will be used instead of the cloud version:
 
-.. code-block:: python
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/resources.py
+   :lines: 131-144
+   :emphasize-lines: 4
+   :dedent: 4
 
-    result = execute_pipeline(
-        define_resource_test_pipeline(),
-        environment={
-            'context': {'local': {}},
-            'solids': {
-                'add_ints': {
-                    'inputs': {
-                        'num_one': {'value': 2},
-                        'num_two': {'value': 6}
-                    }
-                }
-            },
-        },
-
-"""
+In the next section, we'll see how to declaratively specify :doc:`Repositories <repos>` to 
+manage collections of multiple dagster pipelines.
+'''
 
 snapshots['test_build_all_docs 37'] = """User-Defined Types
 ------------------
@@ -20693,7 +20609,7 @@ snapshots['test_build_all_docs 53'] = '''
 <dl class="function">
 <dt id="dagster.execute_pipeline">
 <code class="descclassname">dagster.</code><code class="descname">execute_pipeline</code><span class="sig-paren">(</span><em>pipeline</em>, <em>environment=None</em>, <em>throw_on_error=True</em>, <em>reentrant_info=None</em>, <em>solid_subset=None</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.execute_pipeline" title="Permalink to this definition">¶</a></dt>
-<dd><p>“Synchronous” version of <a href="#id1"><span class="problematic" id="id2">:py:function:`execute_pipeline_iterator`</span></a>.</p>
+<dd><p>“Synchronous” version of <a class="reference internal" href="#dagster.execute_pipeline_iterator" title="dagster.execute_pipeline_iterator"><code class="xref py py-func docutils literal notranslate"><span class="pre">execute_pipeline_iterator()</span></code></a>.</p>
 <p>Note: throw_on_error is very useful in testing contexts when not testing for error conditions</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -20720,7 +20636,7 @@ the py:class:<cite>SolidExecutionResult</cite> in an error-state.</li>
 <dd><p>Returns iterator that yields <a class="reference internal" href="#dagster.SolidExecutionResult" title="dagster.SolidExecutionResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">SolidExecutionResult</span></code></a> for each
 solid executed in the pipeline.</p>
 <p>This is intended to allow the caller to do things between each executed
-node. For the ‘synchronous’ API, see <a href="#id3"><span class="problematic" id="id4">:py:function:`execute_pipeline`</span></a>.</p>
+node. For the ‘synchronous’ API, see <a class="reference internal" href="#dagster.execute_pipeline" title="dagster.execute_pipeline"><code class="xref py py-func docutils literal notranslate"><span class="pre">execute_pipeline()</span></code></a>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -20748,7 +20664,7 @@ node. For the ‘synchronous’ API, see <a href="#id3"><span class="problematic
 <dl class="class">
 <dt id="dagster.PipelineExecutionResult">
 <em class="property">class </em><code class="descclassname">dagster.</code><code class="descname">PipelineExecutionResult</code><span class="sig-paren">(</span><em>pipeline</em>, <em>context</em>, <em>result_list</em><span class="sig-paren">)</span><a class="headerlink" href="#dagster.PipelineExecutionResult" title="Permalink to this definition">¶</a></dt>
-<dd><p>Result of execution of the whole pipeline. Returned eg by <a href="#id5"><span class="problematic" id="id6">:py:function:`execute_pipeline`</span></a>.</p>
+<dd><p>Result of execution of the whole pipeline. Returned eg by <a class="reference internal" href="#dagster.execute_pipeline" title="dagster.execute_pipeline"><code class="xref py py-func docutils literal notranslate"><span class="pre">execute_pipeline()</span></code></a>.</p>
 <dl class="attribute">
 <dt id="dagster.PipelineExecutionResult.pipeline">
 <code class="descname">pipeline</code><a class="headerlink" href="#dagster.PipelineExecutionResult.pipeline" title="Permalink to this definition">¶</a></dt>
@@ -23046,14 +22962,14 @@ snapshots['test_build_all_docs 61'] = '''
             
   <div class="section" id="execution-context">
 <h1>Execution Context<a class="headerlink" href="#execution-context" title="Permalink to this headline">¶</a></h1>
-<p>One of the most important objects in the system is the execution context. Threaded
-throughout the entire computation (accessed via the <cite>info</cite> object passed to user code)
-that contains handles to logging facilities and external resources. Interactions
-with logging systems, databases, external clusters (e.g. a Spark cluster) should
+<p>One of the most important objects in the system is the execution context. The execution
+context is threaded throughout the entire computation (via the <code class="docutils literal notranslate"><span class="pre">info</span></code> object passed to
+user code) and contains handles to logging facilities and external resources. Interactions
+with logging systems, databases, and external clusters (e.g. a Spark cluster) should
 be managed through the context.</p>
 <p>This provides a powerful layer of indirection that allows a solid to abstract
-away its surrounding environment. This will allow the system and pipeline
-infrastructure to provide different implementations for these different environments,
+away its surrounding environment. Using an execution context allows the system and pipeline
+infrastructure to provide different implementations for different environments,
 giving the engineer the opportunity to design pipelines that can be executed
 on your local machine or your CI/CD pipeline as readily as your production
 cluster environment.</p>
@@ -23082,40 +22998,48 @@ cluster environment.</p>
 </div>
 </div>
 <p>Run this example pipeline in dagit:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">dagster pipeline execute -m dagster.tutorials.intro_tutorial.tutorial_repository -n define_repository execution_context_pipeline</span>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> dagster pipeline execute -m dagster.tutorials.intro_tutorial.tutorial_repository -n define_repository execution_context_pipeline
 </pre></div>
 </div>
 <p>And you’ll notice log messages like this:</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">2019-01-15 04:59:37 - dagster - ERROR - orig_message=&quot;An error occurred.&quot; log_message_id=&quot;b0cbb1be-e476-4a4e-aaac-a29ddb15309a&quot; run_id=&quot;d8f41da0-3825-4ac0-b8e0-4f38ba45b8e0&quot; pipeline=&quot;execution_context_pipeline&quot; solid=&quot;error_message&quot; solid_definition=&quot;error_message&quot;</span>
 </pre></div>
 </div>
-<p>Which are annonated with a bunch of key value pairs that indicate where in the computation
-this log occured. This happened because we logged through the execution context.</p>
+<p>These log messages are annonated with a bunch of key value pairs that indicate where in the
+computation each log message was emitted. This happened because we logged through the execution
+context.</p>
 <p>Notice that even though the user only logged the message “An error occurred”, by routing logging
 through the context we are able to provide richer error information – including the name of the
 solid and a timestamp – in a semi-structured format.</p>
-<p>You’ll notice that the <cite>‘A debug message.’</cite> does not appear in the execution logs. This
-is because the default log level if <cite>INFO</cite> and so debug level messages will not appear.</p>
+<p>You’ll notice that <cite>‘A debug message.’</cite> does not appear in the execution logs. This
+is because the default log level is <code class="docutils literal notranslate"><span class="pre">INFO</span></code>, so debug-level messages will not appear.</p>
 <p>Let’s change that by specifying some config.</p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">context</span><span class="p">:</span>
-    <span class="nt">default</span><span class="p">:</span>
-        <span class="nt">config</span><span class="p">:</span>
-            <span class="nt">log_level</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">DEBUG</span>
+<div class="literal-block-wrapper docutils container" id="id2">
+<div class="code-block-caption"><span class="caption-text">execution_context.yml</span><a class="headerlink" href="#id2" title="Permalink to this code">¶</a></div>
+<div class="highlight-YAML notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2
+3
+4</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="nt">context</span><span class="p">:</span>
+  <span class="nt">default</span><span class="p">:</span>
+    <span class="nt">config</span><span class="p">:</span>
+      <span class="nt">log_level</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">DEBUG</span>
 </pre></div>
+</td></tr></table></div>
 </div>
 <p>Save it as execution_context.yml and then run:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">dagster pipeline execute  \\</span>
-<span class="go">-m dagster.tutorials.intro_tutorial.tutorial_repository \\</span>
-<span class="go">-n define_repository execution_context_pipeline \\</span>
-<span class="go">-e execution_context.yml</span>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> dagster pipeline execute  <span class="se">\\</span>
+-m dagster.tutorials.intro_tutorial.tutorial_repository <span class="se">\\</span>
+-n define_repository execution_context_pipeline <span class="se">\\</span>
+-e execution_context.yml
 </pre></div>
 </div>
-<p>You’ll see now that there are debug messages print out to the console.</p>
+<p>You’ll see now that debug messages print out to the console.</p>
 <p>Although logging is a universally useful case for the execution context, this example only touches
 on the capabilities of the context. Any pipeline-level facilities that pipeline authors might want
 to make configurable for different environments – for instance, access to file systems, databases,
 or compute substrates – can be configured using the context.</p>
-<p>We’ll see how to use more other capabilities in the next section: Resources.</p>
+<p>We’ll see how to use some of these other capabilities in the next section:
+<a class="reference internal" href="resources.html"><span class="doc">Resources</span></a>.</p>
 </div>
 </div>
 
@@ -23648,11 +23572,9 @@ we’ll see later, optionally let dagster check the types of the inputs at runti
 You’ll notice the new argument to <a class="reference internal" href="../apidocs/definitions.html#dagster.PipelineDefinition" title="dagster.PipelineDefinition"><code class="xref py py-class docutils literal notranslate"><span class="pre">PipelineDefinition</span></code></a>
 called <code class="docutils literal notranslate"><span class="pre">dependencies</span></code>, which is a dict that defines the connections between solids in a
 pipeline’s DAG.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">solids</span><span class="o">=</span><span class="p">[</span><span class="n">solid_one</span><span class="p">,</span> <span class="n">solid_two</span><span class="p">],</span>
-<span class="n">dependencies</span><span class="o">=</span><span class="p">{</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dependencies</span><span class="o">=</span><span class="p">{</span>
     <span class="s1">&#39;solid_two&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;arg_one&#39;</span><span class="p">:</span> <span class="n">DependencyDefinition</span><span class="p">(</span><span class="s1">&#39;solid_one&#39;</span><span class="p">)}</span>
 <span class="p">},</span>
-
 </pre></div>
 </div>
 <p>The first layer of keys in this dict are the <em>names</em> of solids in the pipeline. The second layer
@@ -23810,8 +23732,8 @@ snapshots['test_build_all_docs 64'] = '''
             
   <div class="section" id="hello-world">
 <h1>Hello, World<a class="headerlink" href="#hello-world" title="Permalink to this headline">¶</a></h1>
-<p>See <a class="reference internal" href="../installation.html"><span class="doc">Installation</span></a> for instructions getting dagster – the core library – and dagit –
-the web UI tool used to visualize your data pipelines – installed on your platform of choice.</p>
+<p>See <a class="reference internal" href="../installation.html"><span class="doc">Installation</span></a> for instructions installing dagster (the core library) and dagit (the
+web UI tool used to visualize your data pipelines) on your platform of choice.</p>
 <p>Let’s write our first pipeline and save it as <code class="docutils literal notranslate"><span class="pre">hello_world.py</span></code>.</p>
 <div class="literal-block-wrapper docutils container" id="id1">
 <div class="code-block-caption"><span class="caption-text">hello_world.py</span><a class="headerlink" href="#id1" title="Permalink to this code">¶</a></div>
@@ -23824,7 +23746,9 @@ the web UI tool used to visualize your data pipelines – installed on your plat
  7
  8
  9
-10</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">dagster</span> <span class="k">import</span> <span class="n">PipelineDefinition</span><span class="p">,</span> <span class="n">execute_pipeline</span><span class="p">,</span> <span class="n">lambda_solid</span>
+10
+11
+12</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">dagster</span> <span class="k">import</span> <span class="n">PipelineDefinition</span><span class="p">,</span> <span class="n">execute_pipeline</span><span class="p">,</span> <span class="n">lambda_solid</span>
 
 
 <span class="nd">@lambda_solid</span>
@@ -23834,6 +23758,8 @@ the web UI tool used to visualize your data pipelines – installed on your plat
 
 <span class="k">def</span> <span class="nf">define_hello_world_pipeline</span><span class="p">():</span>
     <span class="k">return</span> <span class="n">PipelineDefinition</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;hello_world_pipeline&#39;</span><span class="p">,</span> <span class="n">solids</span><span class="o">=</span><span class="p">[</span><span class="n">hello_world</span><span class="p">]</span>
+    <span class="p">)</span>
 </pre></div>
 </td></tr></table></div>
 </div>
@@ -23872,7 +23798,7 @@ different mechanisms:</p>
 </div>
 <p>There’s a lot of information in these log lines (we’ll get to how you can use, and customize,
 them later), but you can see that the third message is:
-<code class="docutils literal notranslate"><span class="pre">`Solid</span> <span class="pre">hello_world</span> <span class="pre">emitted</span> <span class="pre">output</span> <span class="pre">\\&quot;result\\&quot;</span> <span class="pre">value</span> <span class="pre">\'hello\'&quot;`</span></code>. Success!</p>
+<code class="docutils literal notranslate"><span class="pre">Solid</span> <span class="pre">hello_world</span> <span class="pre">emitted</span> <span class="pre">output</span> <span class="pre">\\&quot;result\\&quot;</span> <span class="pre">value</span> <span class="pre">\'hello\'</span></code>. Success!</p>
 </div>
 <div class="section" id="dagit">
 <h3>Dagit<a class="headerlink" href="#dagit" title="Permalink to this headline">¶</a></h3>
@@ -23912,8 +23838,8 @@ at all. Just add a few lines to <cite>hello_world.py</cite> (highlighted in yell
 14
 15
 16
-17</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="hll"><span class="kn">from</span> <span class="nn">dagster</span> <span class="k">import</span> <span class="n">PipelineDefinition</span><span class="p">,</span> <span class="n">execute_pipeline</span><span class="p">,</span> <span class="n">lambda_solid</span>
-</span>
+17</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">dagster</span> <span class="k">import</span> <span class="n">PipelineDefinition</span><span class="p">,</span> <span class="n">execute_pipeline</span><span class="p">,</span> <span class="n">lambda_solid</span>
+
 
 <span class="nd">@lambda_solid</span>
 <span class="k">def</span> <span class="nf">hello_world</span><span class="p">():</span>
@@ -23924,12 +23850,12 @@ at all. Just add a few lines to <cite>hello_world.py</cite> (highlighted in yell
     <span class="k">return</span> <span class="n">PipelineDefinition</span><span class="p">(</span>
         <span class="n">name</span><span class="o">=</span><span class="s1">&#39;hello_world_pipeline&#39;</span><span class="p">,</span> <span class="n">solids</span><span class="o">=</span><span class="p">[</span><span class="n">hello_world</span><span class="p">]</span>
     <span class="p">)</span>
-<span class="hll">
-</span><span class="hll">
-</span><span class="hll"><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
-</span>    <span class="n">result</span> <span class="o">=</span> <span class="n">execute_pipeline</span><span class="p">(</span><span class="n">define_hello_world_pipeline</span><span class="p">())</span>
-    <span class="k">assert</span> <span class="n">result</span><span class="o">.</span><span class="n">success</span>
-</pre></div>
+
+
+<span class="hll"><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+</span><span class="hll">    <span class="n">result</span> <span class="o">=</span> <span class="n">execute_pipeline</span><span class="p">(</span><span class="n">define_hello_world_pipeline</span><span class="p">())</span>
+</span><span class="hll">    <span class="k">assert</span> <span class="n">result</span><span class="o">.</span><span class="n">success</span>
+</span></pre></div>
 </td></tr></table></div>
 </div>
 <p>Then you can just run:</p>
@@ -24091,28 +24017,7 @@ the solid returns be parameterized based on inputs.</p>
 14
 15
 16
-17
-18
-19
-20
-21
-22
-23
-24
-25
-26
-27
-28
-29
-30
-31
-32
-33
-34
-35
-36
-37
-38</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">dagster</span> <span class="k">import</span> <span class="p">(</span>
+17</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">dagster</span> <span class="k">import</span> <span class="p">(</span>
     <span class="n">InputDefinition</span><span class="p">,</span>
     <span class="n">OutputDefinition</span><span class="p">,</span>
     <span class="n">PipelineDefinition</span><span class="p">,</span>
@@ -24129,27 +24034,6 @@ the solid returns be parameterized based on inputs.</p>
 
 <span class="k">def</span> <span class="nf">define_hello_inputs_pipeline</span><span class="p">():</span>
     <span class="k">return</span> <span class="n">PipelineDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;hello_inputs&#39;</span><span class="p">,</span> <span class="n">solids</span><span class="o">=</span><span class="p">[</span><span class="n">add_hello_to_word</span><span class="p">])</span>
-
-
-<span class="k">def</span> <span class="nf">execute_with_another_world</span><span class="p">():</span>
-    <span class="k">return</span> <span class="n">execute_pipeline</span><span class="p">(</span>
-        <span class="n">define_hello_inputs_pipeline</span><span class="p">(),</span>
-        <span class="c1"># This entire dictionary is known as the &#39;environment&#39;.</span>
-        <span class="c1"># It has many sections.</span>
-        <span class="p">{</span>
-            <span class="c1"># This is the &#39;solids&#39; section</span>
-            <span class="s1">&#39;solids&#39;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="c1"># Configuration for the add_hello_to_word solid</span>
-                <span class="s1">&#39;add_hello_to_word&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;inputs&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;word&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="s1">&#39;Mars&#39;</span><span class="p">}}}</span>
-            <span class="p">}</span>
-        <span class="p">},</span>
-    <span class="p">)</span>
-
-
-<span class="nd">@lambda_solid</span><span class="p">(</span>
-    <span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;word&#39;</span><span class="p">,</span> <span class="n">types</span><span class="o">.</span><span class="n">String</span><span class="p">)],</span>
-    <span class="n">output</span><span class="o">=</span><span class="n">OutputDefinition</span><span class="p">(</span><span class="n">types</span><span class="o">.</span><span class="n">String</span><span class="p">),</span>
-<span class="p">)</span>
 </pre></div>
 </td></tr></table></div>
 </div>
@@ -24208,15 +24092,15 @@ information via a config file. We’ll use the same values as before, but in the
 of YAML rather than python dictionaries:</p>
 <div class="literal-block-wrapper docutils container" id="id2">
 <div class="code-block-caption"><span class="caption-text">inputs_env.yml</span><a class="headerlink" href="#id2" title="Permalink to this code">¶</a></div>
-<div class="highlight-default notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+<div class="highlight-YAML notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
 2
 3
 4
-5</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="n">solids</span><span class="p">:</span>
-  <span class="n">add_hello_to_word</span><span class="p">:</span>
-    <span class="n">inputs</span><span class="p">:</span>
-      <span class="n">word</span><span class="p">:</span>
-        <span class="n">value</span><span class="p">:</span> <span class="s2">&quot;Mars&quot;</span>
+5</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="nt">solids</span><span class="p">:</span>
+  <span class="nt">add_hello_to_word</span><span class="p">:</span>
+    <span class="nt">inputs</span><span class="p">:</span>
+      <span class="nt">word</span><span class="p">:</span>
+        <span class="nt">value</span><span class="p">:</span> <span class="s">&quot;Mars&quot;</span>
 </pre></div>
 </td></tr></table></div>
 </div>
@@ -24244,11 +24128,19 @@ using the editor by appropriately typing the inputs, making everything less erro
 without a type is automatically assigned the <code class="docutils literal notranslate"><span class="pre">Any</span></code> type.) This means that mistakes
 are often not surfaced until the pipeline is executed.</p>
 <p>For example, imagine if our environment for our pipeline was:</p>
-<div class="highlight-YAML notranslate"><div class="highlight"><pre><span></span><span class="nt">solids</span><span class="p">:</span>
-    <span class="nt">add_hello_to_word</span><span class="p">:</span>
-        <span class="nt">inputs</span><span class="p">:</span>
-            <span class="nt">word</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">2343</span>
+<div class="literal-block-wrapper docutils container" id="id3">
+<div class="code-block-caption"><span class="caption-text">inputs_env_bad.yml</span><a class="headerlink" href="#id3" title="Permalink to this code">¶</a></div>
+<div class="highlight-YAML notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2
+3
+4
+5</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="nt">solids</span><span class="p">:</span>
+  <span class="nt">add_hello_to_word</span><span class="p">:</span>
+    <span class="nt">inputs</span><span class="p">:</span>
+      <span class="nt">word</span><span class="p">:</span>
+        <span class="nt">value</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">2343</span>
 </pre></div>
+</td></tr></table></div>
 </div>
 <p>If we execute this pipeline with this config, it’ll fail at runtime.</p>
 <p>Enter this config in dagit and execute and you’ll see the transform fail:</p>
@@ -24259,8 +24151,8 @@ are often not surfaced until the pipeline is executed.</p>
 make the inputs typed.</p>
 <p>A user can apply types to inputs and outputs. In this case we just want to type them as the
 built-in <code class="docutils literal notranslate"><span class="pre">String</span></code>.</p>
-<div class="literal-block-wrapper docutils container" id="id3">
-<div class="code-block-caption"><span class="caption-text">inputs.py</span><a class="headerlink" href="#id3" title="Permalink to this code">¶</a></div>
+<div class="literal-block-wrapper docutils container" id="id4">
+<div class="code-block-caption"><span class="caption-text">inputs.py</span><a class="headerlink" href="#id4" title="Permalink to this code">¶</a></div>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@lambda_solid</span><span class="p">(</span>
 <span class="hll">    <span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;word&#39;</span><span class="p">,</span> <span class="n">types</span><span class="o">.</span><span class="n">String</span><span class="p">)],</span>
 </span><span class="hll">    <span class="n">output</span><span class="o">=</span><span class="n">OutputDefinition</span><span class="p">(</span><span class="n">types</span><span class="o">.</span><span class="n">String</span><span class="p">),</span>
@@ -24272,6 +24164,8 @@ built-in <code class="docutils literal notranslate"><span class="pre">String</sp
 </div>
 <p>By using typed input instead we can catch this error prior to execution.</p>
 <img alt="../_images/inputs_figure_four_error_prechecked.png" src="../_images/inputs_figure_four_error_prechecked.png" />
+<p>Next, we’ll see how to use the  <a class="reference internal" href="execution_context.html"><span class="doc">Execution Context</span></a> to configure how
+pipeline execution interacts with its environment.</p>
 </div>
 </div>
 </div>
@@ -25250,26 +25144,13 @@ snapshots['test_build_all_docs 69'] = '''
             
   <div class="section" id="pipeline-cli-execution">
 <h1>Pipeline CLI Execution<a class="headerlink" href="#pipeline-cli-execution" title="Permalink to this headline">¶</a></h1>
-<p>Up until now we’ve been focusing on using the dagit tool for executing pipeline. However, we
-also have a CLI utility for use in scripting contexts. It has its own features useful for
-production context, which we will go over here.</p>
+<p>Up until now we’ve been focusing on using the dagit tool for executing pipelines. However, we
+also have a CLI utility for use in scripting contexts. It has its own features which are useful in
+a production context.</p>
 <p>Just as in the last part of the tutorial, we’ll define a pipeline and a repository, and create
 a yaml file to tell the CLI tool about the repository.</p>
-<p>And now the repository file:</p>
 <div class="literal-block-wrapper docutils container" id="id1">
-<div class="code-block-caption"><span class="caption-text">repository.yml</span><a class="headerlink" href="#id1" title="Permalink to this code">¶</a></div>
-<div class="highlight-default notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
-2
-3</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="n">repository</span><span class="p">:</span>
-  <span class="n">file</span><span class="p">:</span> <span class="n">pipeline_cli_execution</span><span class="o">.</span><span class="n">py</span>
-  <span class="n">fn</span><span class="p">:</span> <span class="n">define_demo_execution_repo</span>
-</pre></div>
-</td></tr></table></div>
-</div>
-<p>Finally, we’ll need to define the pipeline config in a yaml file in order to
-execute our pipeline from the command line.</p>
-<div class="literal-block-wrapper docutils container" id="id2">
-<div class="code-block-caption"><span class="caption-text">env.yml</span><a class="headerlink" href="#id2" title="Permalink to this code">¶</a></div>
+<div class="code-block-caption"><span class="caption-text">pipeline_execution.py</span><a class="headerlink" href="#id1" title="Permalink to this code">¶</a></div>
 <div class="highlight-default notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
  2
  3
@@ -25281,23 +25162,138 @@ execute our pipeline from the command line.</p>
  9
 10
 11
-12</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="n">context</span><span class="p">:</span>
-  <span class="n">default</span><span class="p">:</span>
-    <span class="n">config</span><span class="p">:</span>
-      <span class="n">log_level</span><span class="p">:</span> <span class="n">DEBUG</span>
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">defaultdict</span>
 
-<span class="n">solids</span><span class="p">:</span>
-  <span class="n">multiply_the_word</span><span class="p">:</span>
-    <span class="n">inputs</span><span class="p">:</span>
-      <span class="n">word</span><span class="p">:</span>
-        <span class="n">value</span><span class="p">:</span> <span class="n">bar</span>
-    <span class="n">config</span><span class="p">:</span>
-      <span class="n">factor</span><span class="p">:</span> <span class="mi">2</span>
+<span class="kn">from</span> <span class="nn">dagster</span> <span class="k">import</span> <span class="p">(</span>
+    <span class="n">DependencyDefinition</span><span class="p">,</span>
+    <span class="n">Dict</span><span class="p">,</span>
+    <span class="n">Field</span><span class="p">,</span>
+    <span class="n">InputDefinition</span><span class="p">,</span>
+    <span class="n">Int</span><span class="p">,</span>
+    <span class="n">PipelineDefinition</span><span class="p">,</span>
+    <span class="n">RepositoryDefinition</span><span class="p">,</span>
+    <span class="n">String</span><span class="p">,</span>
+    <span class="n">lambda_solid</span><span class="p">,</span>
+    <span class="n">solid</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="nd">@solid</span><span class="p">(</span>
+    <span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;word&#39;</span><span class="p">,</span> <span class="n">String</span><span class="p">)],</span>
+    <span class="n">config_field</span><span class="o">=</span><span class="n">Field</span><span class="p">(</span><span class="n">Dict</span><span class="p">({</span><span class="s1">&#39;factor&#39;</span><span class="p">:</span> <span class="n">Field</span><span class="p">(</span><span class="n">Int</span><span class="p">)})),</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">multiply_the_word</span><span class="p">(</span><span class="n">info</span><span class="p">,</span> <span class="n">word</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">word</span> <span class="o">*</span> <span class="n">info</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;factor&#39;</span><span class="p">]</span>
+
+
+<span class="nd">@lambda_solid</span><span class="p">(</span><span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;word&#39;</span><span class="p">)])</span>
+<span class="k">def</span> <span class="nf">count_letters</span><span class="p">(</span><span class="n">word</span><span class="p">):</span>
+    <span class="n">counts</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">letter</span> <span class="ow">in</span> <span class="n">word</span><span class="p">:</span>
+        <span class="n">counts</span><span class="p">[</span><span class="n">letter</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">counts</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">define_demo_execution_pipeline</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">PipelineDefinition</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;demo_pipeline&#39;</span><span class="p">,</span>
+        <span class="n">solids</span><span class="o">=</span><span class="p">[</span><span class="n">multiply_the_word</span><span class="p">,</span> <span class="n">count_letters</span><span class="p">],</span>
+        <span class="n">dependencies</span><span class="o">=</span><span class="p">{</span>
+            <span class="s1">&#39;count_letters&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;word&#39;</span><span class="p">:</span> <span class="n">DependencyDefinition</span><span class="p">(</span><span class="s1">&#39;multiply_the_word&#39;</span><span class="p">)</span>
+            <span class="p">}</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">define_demo_execution_repo</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">RepositoryDefinition</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;demo_execution_repo&#39;</span><span class="p">,</span>
+        <span class="n">pipeline_dict</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;demo_pipeline&#39;</span><span class="p">:</span> <span class="n">define_demo_execution_pipeline</span><span class="p">},</span>
+    <span class="p">)</span>
+</pre></div>
+</td></tr></table></div>
+</div>
+<p>And now the repository file:</p>
+<div class="literal-block-wrapper docutils container" id="id2">
+<div class="code-block-caption"><span class="caption-text">repository.yml</span><a class="headerlink" href="#id2" title="Permalink to this code">¶</a></div>
+<div class="highlight-YAML notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2
+3</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="nt">repository</span><span class="p">:</span>
+  <span class="nt">file</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">pipeline_cli_execution.py</span>
+  <span class="nt">fn</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">define_demo_execution_repo</span>
+</pre></div>
+</td></tr></table></div>
+</div>
+<p>Finally, we’ll need to define the pipeline config in a yaml file in order to
+execute our pipeline from the command line.</p>
+<div class="literal-block-wrapper docutils container" id="id3">
+<div class="code-block-caption"><span class="caption-text">env.yml</span><a class="headerlink" href="#id3" title="Permalink to this code">¶</a></div>
+<div class="highlight-YAML notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="nt">context</span><span class="p">:</span>
+  <span class="nt">default</span><span class="p">:</span>
+    <span class="nt">config</span><span class="p">:</span>
+      <span class="nt">log_level</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">DEBUG</span>
+
+<span class="nt">solids</span><span class="p">:</span>
+  <span class="nt">multiply_the_word</span><span class="p">:</span>
+    <span class="nt">inputs</span><span class="p">:</span>
+      <span class="nt">word</span><span class="p">:</span>
+        <span class="nt">value</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">bar</span>
+    <span class="nt">config</span><span class="p">:</span>
+      <span class="nt">factor</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">2</span>
 </pre></div>
 </td></tr></table></div>
 </div>
 <p>With these elements in place we can now drive execution from the CLI specifying only the pipeline
-name. The tool loads the repository using the <cite>repository.yml</cite> file and looks up the pipeline by
+name. The tool loads the repository using the <code class="docutils literal notranslate"><span class="pre">repository.yml</span></code> file and looks up the pipeline by
 name.</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> dagster pipeline execute demo_pipeline -e env.yml
 </pre></div>
@@ -25310,21 +25306,24 @@ copy the broadly-applicable settings into each of our config yamls, and error-pr
 those copies in sync. So the command line tools allow us to specify more than one yaml file to use
 for config.</p>
 <p>Let’s split up our env.yml into two parts:</p>
-<div class="literal-block-wrapper docutils container" id="id3">
-<div class="code-block-caption"><span class="caption-text">constant_env.yml</span><a class="headerlink" href="#id3" title="Permalink to this code">¶</a></div>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">context</span><span class="p">:</span>
-  <span class="n">default</span><span class="p">:</span>
-    <span class="n">config</span><span class="p">:</span>
-      <span class="n">log_level</span><span class="p">:</span> <span class="n">DEBUG</span>
+<div class="literal-block-wrapper docutils container" id="id4">
+<div class="code-block-caption"><span class="caption-text">constant_env.yml</span><a class="headerlink" href="#id4" title="Permalink to this code">¶</a></div>
+<div class="highlight-YAML notranslate"><div class="highlight"><pre><span></span><span class="nt">context</span><span class="p">:</span>
+  <span class="nt">default</span><span class="p">:</span>
+    <span class="nt">config</span><span class="p">:</span>
+      <span class="nt">log_level</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">DEBUG</span>
 </pre></div>
 </div>
 </div>
-<div class="literal-block-wrapper docutils container" id="id4">
-<div class="code-block-caption"><span class="caption-text">specific_env.yml</span><a class="headerlink" href="#id4" title="Permalink to this code">¶</a></div>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">solids</span><span class="p">:</span>
-  <span class="n">multiply_the_word</span><span class="p">:</span>
-    <span class="n">inputs</span><span class="p">:</span>
-      <span class="n">word</span><span class="p">:</span>
+<div class="literal-block-wrapper docutils container" id="id5">
+<div class="code-block-caption"><span class="caption-text">specific_env.yml</span><a class="headerlink" href="#id5" title="Permalink to this code">¶</a></div>
+<div class="highlight-YAML notranslate"><div class="highlight"><pre><span></span><span class="nt">solids</span><span class="p">:</span>
+  <span class="nt">multiply_the_word</span><span class="p">:</span>
+    <span class="nt">inputs</span><span class="p">:</span>
+      <span class="nt">word</span><span class="p">:</span>
+        <span class="nt">value</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">bar</span>
+    <span class="nt">config</span><span class="p">:</span>
+      <span class="nt">factor</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">2</span>
 </pre></div>
 </div>
 </div>
@@ -25335,8 +25334,8 @@ for config.</p>
 <p>Order matters when specifying yaml files to use – values specified in later files will override
 values in earlier files, which can be useful. You can also use globs in the CLI arguments to consume
 multiple yaml files.</p>
-<p>Next, we’ll look at defining strongly-typed <a class="reference internal" href="configuration_schemas.html"><span class="doc">Configuration Schemas</span></a>
-to guard against bugs and enrich pipeline documentation.</p>
+<p>Next, we’ll look at how <a class="reference internal" href="types.html"><span class="doc">User-Defined Types</span></a> can enrich documentation and type-safety
+in pipelines.</p>
 </div>
 </div>
 
@@ -25536,11 +25535,11 @@ easier. Save this file as <code class="docutils literal notranslate"><span class
 although you can tell the CLI tools to use any file you like.</p>
 <div class="literal-block-wrapper docutils container" id="id2">
 <div class="code-block-caption"><span class="caption-text">repository.yml</span><a class="headerlink" href="#id2" title="Permalink to this code">¶</a></div>
-<div class="highlight-default notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+<div class="highlight-YAML notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
 2
-3</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="n">repository</span><span class="p">:</span>
-  <span class="n">file</span><span class="p">:</span> <span class="n">repos</span><span class="o">.</span><span class="n">py</span>
-  <span class="n">fn</span><span class="p">:</span> <span class="n">define_repo</span>
+3</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="nt">repository</span><span class="p">:</span>
+  <span class="nt">file</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">repos.py</span>
+  <span class="nt">fn</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">define_repo</span>
 </pre></div>
 </td></tr></table></div>
 </div>
@@ -25551,11 +25550,11 @@ although you can tell the CLI tools to use any file you like.</p>
 <p>You can also specify a module instead of a file in the repository.yml file.</p>
 <div class="literal-block-wrapper docutils container" id="id3">
 <div class="code-block-caption"><span class="caption-text">repository.yml</span><a class="headerlink" href="#id3" title="Permalink to this code">¶</a></div>
-<div class="highlight-default notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+<div class="highlight-YAML notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
 2
-3</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="n">repository</span><span class="p">:</span>
-    <span class="n">module</span><span class="p">:</span> <span class="n">dagster</span><span class="o">.</span><span class="n">tutorials</span><span class="o">.</span><span class="n">intro_tutorial</span><span class="o">.</span><span class="n">repos</span>
-    <span class="n">fn</span><span class="p">:</span> <span class="n">define_repo</span> 
+3</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="nt">repository</span><span class="p">:</span>
+    <span class="nt">module</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">dagster.tutorials.intro_tutorial.repos</span>
+    <span class="nt">fn</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">define_repo</span> 
 </pre></div>
 </td></tr></table></div>
 </div>
@@ -25691,61 +25690,58 @@ snapshots['test_build_all_docs 71'] = '''
             
   <div class="section" id="resources">
 <h1>Resources<a class="headerlink" href="#resources" title="Permalink to this headline">¶</a></h1>
-<p>We’ve already learned about execution context logging. Another important capability
-of execution context is resources. Pipelines frequently need access to the file system,
-databases, or other cloud services. Access to these things should be modelled as resources.</p>
+<p>We’ve already learned about logging through the execution context. We can also use the execution
+context to manage pipelines’ access to resources like the file system, databases, or cloud services.
+In general, interactions with features of the external environment like these should be modeled
+as resources.</p>
 <p>Let’s imagine that we are using a key value offered by a cloud service that has a python API.
 We are going to record the results of computations in that key value store.</p>
-<p>We are going to model this key value store as a “Resource”.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">bigco</span> <span class="kn">import</span> <span class="n">PublicCloudConn</span><span class="p">,</span> <span class="n">set_value_in_cloud_store</span>
-
+<p>We are going to model this key value store as a resource.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">bigco</span> <span class="k">import</span> <span class="n">PublicCloudConn</span><span class="p">,</span> <span class="n">set_value_in_cloud_store</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>
 <span class="k">class</span> <span class="nc">PublicCloudStore</span><span class="p">:</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">):</span>
         <span class="c1"># create credential and store it</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">conn</span> <span class="o">=</span> <span class="n">PublicCloudConn</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">record_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="n">context</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="s1">&#39;Setting key={key} value={value} in cloud&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="s1">&#39;Setting key=</span><span class="si">{key}</span><span class="s1"> value=</span><span class="si">{value}</span><span class="s1"> in cloud&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
                 <span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">value</span>
             <span class="p">)</span>
         <span class="p">)</span>
         <span class="n">set_value_in_cloud_store</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
 
+
 <span class="k">def</span> <span class="nf">define_cloud_store_resource</span><span class="p">():</span>
     <span class="k">return</span> <span class="n">ResourceDefinition</span><span class="p">(</span>
         <span class="n">resource_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">info</span><span class="p">:</span> <span class="n">PublicCloudStore</span><span class="p">(</span>
-            <span class="n">info</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;username&#39;</span><span class="p">],</span>
-            <span class="n">info</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;password&#39;</span><span class="p">],</span>
+            <span class="n">info</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;username&#39;</span><span class="p">],</span> <span class="n">info</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;password&#39;</span><span class="p">]</span>
         <span class="p">),</span>
         <span class="n">config_field</span><span class="o">=</span><span class="n">Field</span><span class="p">(</span>
-            <span class="n">Dict</span><span class="p">({</span>
-                <span class="s1">&#39;username&#39;</span><span class="p">:</span> <span class="n">Field</span><span class="p">(</span><span class="n">String</span><span class="p">),</span>
-                <span class="s1">&#39;password&#39;</span><span class="p">:</span> <span class="n">Field</span><span class="p">(</span><span class="n">String</span><span class="p">)</span>
-            <span class="p">})</span>
+            <span class="n">Dict</span><span class="p">({</span><span class="s1">&#39;username&#39;</span><span class="p">:</span> <span class="n">Field</span><span class="p">(</span><span class="n">String</span><span class="p">),</span> <span class="s1">&#39;password&#39;</span><span class="p">:</span> <span class="n">Field</span><span class="p">(</span><span class="n">String</span><span class="p">)})</span>
         <span class="p">),</span>
-        <span class="n">description</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;This represents some cloud-hosted key</span>
-<span class="s1">        value store. Username and password must be provided</span>
-<span class="s1">        via configuration for this to work&#39;&#39;&#39;</span><span class="p">,</span>
-<span class="p">)</span>
+        <span class="n">description</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;This represents some cloud-hosted key value store.</span>
+<span class="s1">        Username and password must be provided via configuration for this to</span>
+<span class="s1">        work&#39;&#39;&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
 </pre></div>
 </div>
-<p>The core of a resource are the definition of its configuration (the <cite>config_field</cite>)
-and then the function that can produce the resource.</p>
-<p>Let us now attach this to a pipeline and use this resource in a solid.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@solid</span><span class="p">(</span>
-    <span class="n">inputs</span><span class="o">=</span><span class="p">[</span>
-        <span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;num_one&#39;</span><span class="p">,</span> <span class="n">Int</span><span class="p">),</span>
-        <span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;num_two&#39;</span><span class="p">,</span> <span class="n">Int</span><span class="p">)</span>
-    <span class="p">],</span>
+<p>The core of a resource are the definition of its configuration (the <code class="docutils literal notranslate"><span class="pre">config_field</span></code>)
+and then the function that can actually construct the resource. Notice that all of the
+configuration specified for a given resource is passed to its constructor under the <code class="docutils literal notranslate"><span class="pre">config</span></code>
+key of the <code class="docutils literal notranslate"><span class="pre">info</span></code> parameter.</p>
+<p>Let’s now attach this resource to a pipeline and use it in a solid.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@solid</span><span class="p">(</span>
+    <span class="n">inputs</span><span class="o">=</span><span class="p">[</span><span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;num_one&#39;</span><span class="p">,</span> <span class="n">Int</span><span class="p">),</span> <span class="n">InputDefinition</span><span class="p">(</span><span class="s1">&#39;num_two&#39;</span><span class="p">,</span> <span class="n">Int</span><span class="p">)],</span>
     <span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="n">OutputDefinition</span><span class="p">(</span><span class="n">Int</span><span class="p">)],</span>
 <span class="p">)</span>
 <span class="k">def</span> <span class="nf">add_ints</span><span class="p">(</span><span class="n">info</span><span class="p">,</span> <span class="n">num_one</span><span class="p">,</span> <span class="n">num_two</span><span class="p">):</span>
-    <span class="n">result</span> <span class="o">=</span> <span class="n">num_one</span> <span class="o">+</span> <span class="n">num_two</span>
-    <span class="n">info</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">record_value</span><span class="p">(</span>
-        <span class="n">info</span><span class="o">.</span><span class="n">context</span><span class="p">,</span> <span class="s1">&#39;add&#39;</span><span class="p">,</span> <span class="n">result</span>
-    <span class="p">)</span>
-    <span class="k">return</span> <span class="n">result</span>
+    <span class="n">sum_ints</span> <span class="o">=</span> <span class="n">num_one</span> <span class="o">+</span> <span class="n">num_two</span>
+    <span class="n">info</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">resources</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">record_value</span><span class="p">(</span><span class="n">info</span><span class="o">.</span><span class="n">context</span><span class="p">,</span> <span class="s1">&#39;add&#39;</span><span class="p">,</span> <span class="n">sum_ints</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">sum_ints</span>
 
 
 <span class="k">def</span> <span class="nf">define_resource_test_pipeline</span><span class="p">():</span>
@@ -25754,11 +25750,9 @@ and then the function that can produce the resource.</p>
         <span class="n">solids</span><span class="o">=</span><span class="p">[</span><span class="n">add_ints</span><span class="p">],</span>
         <span class="n">context_definitions</span><span class="o">=</span><span class="p">{</span>
             <span class="s1">&#39;cloud&#39;</span><span class="p">:</span> <span class="n">PipelineContextDefinition</span><span class="p">(</span>
-                <span class="n">resources</span><span class="o">=</span><span class="p">{</span>
-                    <span class="s1">&#39;store&#39;</span><span class="p">:</span> <span class="n">define_cloud_store_resource</span><span class="p">()</span>
-                <span class="p">}</span>
-            <span class="p">)</span>
-        <span class="p">}</span>
+                <span class="n">resources</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;store&#39;</span><span class="p">:</span> <span class="n">define_cloud_store_resource</span><span class="p">()}</span>
+            <span class="p">),</span>
+        <span class="p">},</span>
     <span class="p">)</span>
 </pre></div>
 </div>
@@ -25771,7 +25765,7 @@ by altering configuration, while not changing your code.</p>
 <p>In this case we have a single context definition “cloud” and that has a single
 resource.</p>
 <p>In order to invoke this pipeline, we pass it the following configuration:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="n">execute_pipeline</span><span class="p">(</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="n">execute_pipeline</span><span class="p">(</span>
     <span class="n">define_resource_test_pipeline</span><span class="p">(),</span>
     <span class="n">environment</span><span class="o">=</span><span class="p">{</span>
         <span class="s1">&#39;context&#39;</span><span class="p">:</span> <span class="p">{</span>
@@ -25790,7 +25784,7 @@ resource.</p>
             <span class="s1">&#39;add_ints&#39;</span><span class="p">:</span> <span class="p">{</span>
                 <span class="s1">&#39;inputs&#39;</span><span class="p">:</span> <span class="p">{</span>
                     <span class="s1">&#39;num_one&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">},</span>
-                    <span class="s1">&#39;num_two&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="mi">6</span><span class="p">}</span>
+                    <span class="s1">&#39;num_two&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="mi">6</span><span class="p">},</span>
                 <span class="p">}</span>
             <span class="p">}</span>
         <span class="p">},</span>
@@ -25807,13 +25801,13 @@ with an in memory version of that key value store and not develop against the li
 public cloud version.</p>
 <p>First we need a version of the store that implements the same interface that can be used
 in testing contexts but does not touch the public cloud:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">InMemoryStore</span><span class="p">:</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">InMemoryStore</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="k">def</span> <span class="nf">record_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="n">context</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="s1">&#39;Setting key={key} value={value} in memory&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="s1">&#39;Setting key=</span><span class="si">{key}</span><span class="s1"> value=</span><span class="si">{value}</span><span class="s1"> in memory&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
                 <span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">value</span>
             <span class="p">)</span>
         <span class="p">)</span>
@@ -25821,51 +25815,51 @@ in testing contexts but does not touch the public cloud:</p>
 </pre></div>
 </div>
 <p>Next we package this up as a resource.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">define_in_memory_store_resource</span><span class="p">():</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">define_in_memory_store_resource</span><span class="p">():</span>
     <span class="k">return</span> <span class="n">ResourceDefinition</span><span class="p">(</span>
         <span class="n">resource_fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">_</span><span class="p">:</span> <span class="n">InMemoryStore</span><span class="p">(),</span>
-        <span class="n">description</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;An in-memory key value store that</span>
-<span class="s1">        requires no configuration. Useful for unittesting.&#39;&#39;&#39;</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;</span>
+<span class="s1">    An in-memory key value store that requires no configuration. Useful for unittesting.</span>
+<span class="s1">    &#39;&#39;&#39;</span><span class="p">,</span>
     <span class="p">)</span>
 </pre></div>
 </div>
 <p>And lastly add a new context definition to represent this new operating “mode”:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">define_resource_test_pipeline</span><span class="p">():</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">define_resource_test_pipeline</span><span class="p">():</span>
     <span class="k">return</span> <span class="n">PipelineDefinition</span><span class="p">(</span>
         <span class="n">name</span><span class="o">=</span><span class="s1">&#39;resource_test_pipeline&#39;</span><span class="p">,</span>
         <span class="n">solids</span><span class="o">=</span><span class="p">[</span><span class="n">add_ints</span><span class="p">],</span>
         <span class="n">context_definitions</span><span class="o">=</span><span class="p">{</span>
-            <span class="s1">&#39;cloud&#39;</span><span class="p">:</span> <span class="n">PipelineContextDefinition</span><span class="p">(</span>
-                <span class="n">resources</span><span class="o">=</span><span class="p">{</span>
-                    <span class="s1">&#39;store&#39;</span><span class="p">:</span> <span class="n">define_cloud_store_resource</span><span class="p">()</span>
-                <span class="p">}</span>
+<span class="hll">            <span class="s1">&#39;local&#39;</span><span class="p">:</span> <span class="n">PipelineContextDefinition</span><span class="p">(</span>
+</span><span class="hll">                <span class="n">resources</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;store&#39;</span><span class="p">:</span> <span class="n">define_in_memory_store_resource</span><span class="p">()}</span>
+</span><span class="hll">            <span class="p">),</span>
+</span>            <span class="s1">&#39;cloud&#39;</span><span class="p">:</span> <span class="n">PipelineContextDefinition</span><span class="p">(</span>
+                <span class="n">resources</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;store&#39;</span><span class="p">:</span> <span class="n">define_cloud_store_resource</span><span class="p">()}</span>
             <span class="p">),</span>
-            <span class="s1">&#39;local&#39;</span><span class="p">:</span> <span class="n">PipelineContextDefinition</span><span class="p">(</span>
-                <span class="n">resources</span><span class="o">=</span><span class="p">{</span>
-                    <span class="s1">&#39;store&#39;</span><span class="p">:</span> <span class="n">define_in_memory_store_resource</span><span class="p">()</span>
-                <span class="p">}</span>
-            <span class="p">),</span>
-        <span class="p">}</span>
+        <span class="p">},</span>
     <span class="p">)</span>
 </pre></div>
 </div>
 <p>Now we can simply change configuration and the “in-memory” version of the
 resource will be used instead of the cloud version:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="n">execute_pipeline</span><span class="p">(</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="n">execute_pipeline</span><span class="p">(</span>
     <span class="n">define_resource_test_pipeline</span><span class="p">(),</span>
     <span class="n">environment</span><span class="o">=</span><span class="p">{</span>
-        <span class="s1">&#39;context&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;local&#39;</span><span class="p">:</span> <span class="p">{}},</span>
-        <span class="s1">&#39;solids&#39;</span><span class="p">:</span> <span class="p">{</span>
+<span class="hll">        <span class="s1">&#39;context&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;local&#39;</span><span class="p">:</span> <span class="p">{}},</span>
+</span>        <span class="s1">&#39;solids&#39;</span><span class="p">:</span> <span class="p">{</span>
             <span class="s1">&#39;add_ints&#39;</span><span class="p">:</span> <span class="p">{</span>
                 <span class="s1">&#39;inputs&#39;</span><span class="p">:</span> <span class="p">{</span>
                     <span class="s1">&#39;num_one&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">},</span>
-                    <span class="s1">&#39;num_two&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="mi">6</span><span class="p">}</span>
+                    <span class="s1">&#39;num_two&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="mi">6</span><span class="p">},</span>
                 <span class="p">}</span>
             <span class="p">}</span>
         <span class="p">},</span>
     <span class="p">},</span>
+<span class="p">)</span>
 </pre></div>
 </div>
+<p>In the next section, we’ll see how to declaratively specify <a class="reference internal" href="repos.html"><span class="doc">Repositories</span></a> to
+manage collections of multiple dagster pipelines.</p>
 </div>
 
 

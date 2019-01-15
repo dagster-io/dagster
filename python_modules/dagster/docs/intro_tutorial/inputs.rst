@@ -8,7 +8,7 @@ Let's return to our hello world example. But this time, we'll make the string
 the solid returns be parameterized based on inputs.
 
 .. literalinclude:: ../../dagster/tutorials/intro_tutorial/inputs.py
-   :lines: 1-38
+   :lines: 1-17
    :linenos:
    :caption: inputs.py
 
@@ -51,6 +51,7 @@ information via a config file. We'll use the same values as before, but in the f
 of YAML rather than python dictionaries:
 
 .. literalinclude:: ../../dagster/tutorials/intro_tutorial/inputs_env.yml
+   :language: YAML
    :linenos:
    :caption: inputs_env.yml
 
@@ -88,12 +89,10 @@ are often not surfaced until the pipeline is executed.
 
 For example, imagine if our environment for our pipeline was:
 
-.. code-block:: YAML
-
-    solids:
-        add_hello_to_word:
-            inputs:
-                word: 2343
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/inputs_env_bad.yml
+   :language: YAML
+   :linenos:
+   :caption: inputs_env_bad.yml
 
 If we execute this pipeline with this config, it'll fail at runtime.
 
@@ -120,3 +119,5 @@ By using typed input instead we can catch this error prior to execution.
 
 .. image:: inputs_figure_four_error_prechecked.png
 
+Next, we'll see how to use the  :doc:`Execution Context <execution_context>` to configure how
+pipeline execution interacts with its environment.

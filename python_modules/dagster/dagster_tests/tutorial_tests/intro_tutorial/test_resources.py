@@ -1,3 +1,5 @@
+import runpy
+
 from dagster import execute_pipeline, ReentrantInfo
 from dagster.tutorials.intro_tutorial.resources import define_resource_test_pipeline
 
@@ -58,3 +60,7 @@ def test_run_cloud():
 
     assert not has_message(events, 'Setting key=add value=8 in memory')
     assert has_message(events, 'Setting key=add value=8 in cloud')
+
+
+def test_resources():
+    runpy.run_module('dagster.tutorials.intro_tutorial.resources', run_name='__main__')

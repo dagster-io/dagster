@@ -1,13 +1,13 @@
 Hello, World
 ------------
-See :doc:`../installation` for instructions getting dagster -- the core library -- and dagit --  
-the web UI tool used to visualize your data pipelines -- installed on your platform of choice.
+See :doc:`../installation` for instructions installing dagster (the core library) and dagit (the
+web UI tool used to visualize your data pipelines) on your platform of choice.
 
 Let's write our first pipeline and save it as ``hello_world.py``.
 
 .. literalinclude:: ../../dagster/tutorials/intro_tutorial/hello_world.py
    :linenos:
-   :lines: 1-10
+   :lines: 1-12
    :caption: hello_world.py
 
 This example introduces three concepts:
@@ -50,7 +50,7 @@ CLI
 
 There's a lot of information in these log lines (we'll get to how you can use, and customize,
 them later), but you can see that the third message is:
-```Solid hello_world emitted output \"result\" value 'hello'"```. Success!
+``Solid hello_world emitted output \"result\" value 'hello'``. Success!
 
 Dagit
 ~~~~~
@@ -83,7 +83,7 @@ at all. Just add a few lines to `hello_world.py` (highlighted in yellow):
 .. literalinclude:: ../../dagster/tutorials/intro_tutorial/hello_world.py
    :linenos:
    :caption: hello_world.py
-   :emphasize-lines: 1,13-15
+   :emphasize-lines: 15-17
 
 Then you can just run:
 
