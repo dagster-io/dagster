@@ -21,3 +21,13 @@ class ResourceDefinition(object):
             config_field=Field(String),
             description=description,
         )
+
+
+# for next version
+# def resource(config_field=None, description=None):
+#     def _wrap(func):
+#         return ResourceDefinition(
+#             resource_fn=func, config_field=config_field, description=description
+#         )
+
+#     return _wrap

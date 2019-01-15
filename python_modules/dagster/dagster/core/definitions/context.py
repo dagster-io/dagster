@@ -75,6 +75,10 @@ context_fn (callable):
 
             description (str): Description of the context definition.
         '''
+        if config_field is None and context_fn is None:
+            config_field = _default_config_field()
+            context_fn = _default_context_fn
+
         self.config_field = check_opt_field_param(config_field, 'config_field')
         self.context_fn = check.opt_callable_param(
             context_fn, 'context_fn', lambda *args, **kwargs: ExecutionContext()
@@ -86,18 +90,21 @@ context_fn (callable):
         self.resources_type = namedtuple('Resources', list(resources.keys())) if resources else None
 
 
-def default_pipeline_context_definitions():
-    def _default_context_fn(info):
-        log_level = level_from_string(info.config['log_level'])
-        context = ExecutionContext(
-            loggers=[define_colored_console_logger('dagster', level=log_level)]
-        )
-        return context
+def _default_context_fn(info):
+    log_level = level_from_string(info.config['log_level'])
+    context = ExecutionContext(loggers=[define_colored_console_logger('dagster', level=log_level)])
+    return context
 
-    default_context_def = PipelineContextDefinition(
-        config_field=Field(
-            Dict({'log_level': Field(dagster_type=String, is_optional=True, default_value='INFO')})
-        ),
-        context_fn=_default_context_fn,
+
+def _default_config_field():
+    return Field(
+        Dict({'log_level': Field(dagster_type=String, is_optional=True, default_value='INFO')})
     )
-    return {DEFAULT_CONTEXT_NAME: default_context_def}
+
+
+def default_pipeline_context_definitions():
+    return {
+        DEFAULT_CONTEXT_NAME: PipelineContextDefinition(
+            config_field=_default_config_field(), context_fn=_default_context_fn
+        )
+    }

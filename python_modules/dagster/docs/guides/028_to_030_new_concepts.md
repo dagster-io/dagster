@@ -10,7 +10,7 @@ Let's take the unittest context in the allscripts_fileload pipeline as an exampl
 
 Before:
 
-```
+```py
 def define_unittest_context():
     return PipelineContextDefinition(
         config_field=Field(
@@ -62,7 +62,7 @@ That's quite the ball of wax for what should be relatively straightforward. And 
 
 The only real reusable resource here is the LocalFsHandleResource, so let's break that out into it's own `ResourceDefinition`.
 
-```
+```py
 def define_local_fs_resource():
     def _create_resource(info):
         resource = LocalFsHandleResource.for_pipeline_run(info.run_id)
@@ -86,7 +86,7 @@ The rest of the "resources" in the unittesting context are None, and we have a s
 
 Let's put it all together:
 
-```
+```py
 def define_unittest_context():
     return PipelineContextDefinition(
         config_field=Field(Dict({
@@ -132,7 +132,7 @@ The configuration schema changes, as each resource has it's own section.
 
 Before:
 
-```
+```py
 environment = {
     'context':{
         'unittest' : {
@@ -156,7 +156,7 @@ environment = {
 
 In particular we need to move `cleanup_files` to a resource section of the config.
 
-```
+```py
 environment = {
     'context':{
         'unittest' : {
@@ -191,7 +191,7 @@ The real promise of resources to build a library of resuable, composable resourc
 
 For example, here would be a resource to create a redshift connection.
 
-```
+```py
 def define_redshift_sa_resource():
     def _create_resource(info):
         user = info.config['user']
@@ -218,3 +218,85 @@ def define_redshift_sa_resource():
 ```
 
 This could be used -- unmodified -- across all your pipelines. This will also make it easier to write reusable solids as they can know that they will be using the same resource. Indeed, we may formalize this in subsequent releases, allowing solids to formally declare their dependencies on specific resource types.
+
+## Solid-Level Configs to Inputs
+
+With the new ability to source inputs from the environment config files, we anticipate that solid-level configuration will become much less common, and instead that we will uses inputs and outputs exclusively.
+
+Let's use another example from the allscripts_fileload pipeline.
+
+Before:
+
+```py
+@solid(
+    name='unzip_file',
+    inputs=[],
+    outputs=[OutputDefinition(dagster_type=DagsterTypes.PathToFile)],
+    description='''
+This takes a single, pre-existing zip folder with a single file and unzips it,
+and then outputs the path to that file.
+''',
+    config_def=ConfigDefinition(
+        types.ConfigDictionary('UnzipFileConfig', {'zipped_file' : Field(types.Path)}),
+    ),
+)
+def unzip_file(info):
+    context = info.context
+    zipped_file = info.config['zipped_file']
+```
+
+You'll note that in 0.2.8 we have to model the incoming zipped file as config rather than an input because `unzip_file` had no upstream dependencies and inputs
+had to come from previous solids. In 0.3.0 this is no longer true. Inputs
+can be sourced from the config file now, which means that by default you should
+be modeling such things as inputs.
+
+After:
+
+```py
+@solid(
+    name='unzip_file',
+    inputs=[InputDefinition('zipped_file', Path)],
+    outputs=[OutputDefinition(Path)],
+    description='''
+This takes a single, pre-existing zip folder with a single file and unzips it,
+and then outputs the path to that file.
+''',
+)
+def unzip_file(info, zipped_file):
+    # ...
+    pass
+```
+
+In order to invoke a pipeline that contains this solid, you need to satisy this input in the environment config.
+
+Before:
+
+```py
+    environment = {
+        # .. context section omitted
+        'solids': {
+            'unzip_file': {
+                'config' : {
+                    'zipped_file': ZIP_FILE_PATH,
+                }
+            }
+        }
+    }
+```
+
+After:
+
+```py
+    environment = {
+        # .. context section omitted
+        'solids': {
+            'unzip_file': {
+                'inputs' : {
+                    'zipped_file': ZIP_FILE_PATH,
+                }
+            }
+        }
+    }
+```
+
+What's great about this new input structure is that now the unzip_file is more reusable as it could be reused in the middle of a pipeline with its input coming from a previous solid, or as a solid at the beginning of a pipeline.

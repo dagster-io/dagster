@@ -113,7 +113,7 @@ built-in ``String``.
 
 .. literalinclude:: ../../dagster/tutorials/intro_tutorial/inputs.py
    :lines: 35-40
-   :emphasize-lines: 36-37
+   :emphasize-lines: 2-3
    :caption: inputs.py
 
 By using typed input instead we can catch this error prior to execution.
