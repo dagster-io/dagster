@@ -18,14 +18,15 @@ conditional execution of downstream sub-DAGs.
 
 Notice how ``return_dict_results`` has two outputs. For the first time
 we have provided the name argument to an :py:class:`OutputDefinition <dagster.OutputDefinition>`.
-(It defaults to ``'result'``, as it does in a :py:class:`DependencyDefinition <dagster.DependencyDefinition>`)
-These names must be unique and results returns by a solid transform function
-must be named one of these inputs. (In all previous examples the value returned
-by the transform had been implicitly wrapped in a :py:class:`Result <dagster.Result>` object
-with the name ``'result'``.)
+(The name of an output defaults to ``'result'``, as it does for a
+:py:class:`DependencyDefinition <dagster.DependencyDefinition>`) Output names must be unique
+and each result returned by a solid's transform function must have a name that corresponds to
+one of these inputs. (In all previous examples the value returned by the transform had been
+implicitly wrapped by the system in a :py:class:`Result <dagster.Result>` object with the
+name ``'result'``.)
 
-So from ``return_dict_results`` we used :py:class:`MultipleResults <dagster.MultipleResults>` to return
-all outputs from this transform.
+So from ``return_dict_results`` we used :py:class:`MultipleResults <dagster.MultipleResults>`
+to return all outputs from this transform.
 
 Next let's examine the :py:class:`PipelineDefinition <dagster.PipelineDefinition>`:
 
@@ -37,9 +38,9 @@ Next let's examine the :py:class:`PipelineDefinition <dagster.PipelineDefinition
 
 Just as this tutorial gives us the first example of a named
 :py:class:`OutputDefinition <dagster.OutputDefinition>`, this is also the first time that we've
-seen a named :py:class:`DependencyDefinition <dagster.OutputDefinition>`, because dependencies
+seen a named :py:class:`DependencyDefinition <dagster.OutputDefinition>`. Recall that dependencies
 point to a particular **output** of a solid, rather than to the solid itself. In previous
-examples the name of output has defaulted to ``'result'``.
+examples the name of solids' single output has defaulted to ``'result'``.
 
 With this we can run the pipeline:
 
