@@ -1,11 +1,11 @@
 Multiple Outputs
 ----------------
 
-So far all of the examples have been solids that have a single output. However
-solids support an arbitrary number of outputs. This allows for downstream
-solids to only tie their dependency to a single output. Additionally -- by
-allowing for multiple outputs to conditionally fire -- this also ends up
-supporting dynamic branching and conditional execution of pipelines.
+So far all of our examples have been solids that have a single output. But
+solids can have an arbitrary number of outputs. This lets downstream
+solids depend only on a single output of an upstream solid. When multiple
+outputs fire conditionally, we can also implement dynamic branching and
+conditional execution of downstream sub-DAGs.
 
 
 ``MultipleResults`` Class
@@ -17,17 +17,18 @@ supporting dynamic branching and conditional execution of pipelines.
    :lines: 26-33
 
 Notice how ``return_dict_results`` has two outputs. For the first time
-we have provided the name argument to an :py:class:`OutputDefinition`. (It
-defaults to ``'result'``, as it does in a :py:class:`DependencyDefinition`)
-These names must be unique and results returns by a solid transform function
-must be named one of these inputs. (In all previous examples the value returned
-by the transform had been implicitly wrapped in a :py:class:`Result` object
-with the name ``'result'``.)
+we have provided the name argument to an :py:class:`OutputDefinition <dagster.OutputDefinition>`.
+(The name of an output defaults to ``'result'``, as it does for a
+:py:class:`DependencyDefinition <dagster.DependencyDefinition>`) Output names must be unique
+and each result returned by a solid's transform function must have a name that corresponds to
+one of these inputs. (In all previous examples the value returned by the transform had been
+implicitly wrapped by the system in a :py:class:`Result <dagster.Result>` object with the
+name ``'result'``.)
 
-So from ``return_dict_results`` we used :py:class:`MultipleResults` to return
-all outputs from this transform.
+So from ``return_dict_results`` we used :py:class:`MultipleResults <dagster.MultipleResults>`
+to return all outputs from this transform.
 
-Next let's examine the :py:class:`PipelineDefinition`:
+Next let's examine the :py:class:`PipelineDefinition <dagster.PipelineDefinition>`:
 
 .. literalinclude:: ../../dagster/tutorials/intro_tutorial/multiple_outputs.py
    :linenos:
@@ -35,15 +36,15 @@ Next let's examine the :py:class:`PipelineDefinition`:
    :lines: 64-73
 
 
-Just like this tutorial is the first example of an :py:class:`OutputDefinition` with
-a name, this is also the first time that a :py:class:`DependencyDefinition` has
-specified name, because dependencies point to a particular **output** of a solid,
-rather than to the solid itself. In previous examples the name of output has
-defaulted to ``'result'``.
+Just as this tutorial gives us the first example of a named
+:py:class:`OutputDefinition <dagster.OutputDefinition>`, this is also the first time that we've
+seen a named :py:class:`DependencyDefinition <dagster.OutputDefinition>`. Recall that dependencies
+point to a particular **output** of a solid, rather than to the solid itself. In previous
+examples the name of solids' single output has defaulted to ``'result'``.
 
 With this we can run the pipeline:
 
-.. code-block:: sh
+.. code-block:: console
 
     $ dagster pipeline execute -f multiple_outputs.py \
     -n define_multiple_outputs_step_one_pipeline
@@ -56,10 +57,10 @@ With this we can run the pipeline:
 Iterator of ``Result``
 ^^^^^^^^^^^^^^^^^^^^^^
 
-The :py:class:`MultipleResults` class is not the only way to return multiple
-results from a solid transform function. You can also yield multiple instances
-of the ``Result`` object. (Note: this is actually the core specification
-of the transform function: all other forms are implemented in terms of
+The :py:class:`MultipleResults <dagster.MultipleResults>` class is not the only way
+to return multiple results from a solid transform function. You can also yield
+multiple instances of the ``Result`` object. (Note: this is actually the core
+specification of the transform function: all other forms are implemented in terms of
 the iterator form.)
 
 .. literalinclude:: ../../dagster/tutorials/intro_tutorial/multiple_outputs.py
