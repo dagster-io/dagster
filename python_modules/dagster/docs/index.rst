@@ -32,16 +32,8 @@ Intro Tutorial
   intro_tutorial/types
   intro_tutorial/expectations
   intro_tutorial/multiple_outputs
-
-Old Intro Tutorial To Audit
-===========================
-.. toctree::
-  :maxdepth: 1
-  :name: Intro Tutorial To Audit
-
   intro_tutorial/reusable_solids
-  intro_tutorial/part_fourteen
-
+  intro_tutorial/unittesting
 
 API Reference
 ================
