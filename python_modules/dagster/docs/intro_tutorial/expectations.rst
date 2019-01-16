@@ -80,7 +80,7 @@ feature right now is the ability to skip expectations entirely. This is useful i
 expectations are expensive and you have a time-critical job you must. In that case you can
 configure the pipeline to skip expectations entirely.
 
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/expectations_skip_fail.yml
+.. literalinclude:: ../../dagster/tutorials/intro_tutorial/expectations_skip_failed.yml
    :linenos:
    :caption: expectations_skip_fail.yml
 
