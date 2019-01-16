@@ -29,7 +29,7 @@ def define_reusable_solids_pipeline():
     # (a + b) * (c + d)
 
     return PipelineDefinition(
-        name='reusable_solids_step_three_pipeline',
+        name='reusable_solid_pipeline',
         solids=[adder, multer],
         dependencies={
             SolidInstance('adder', 'a_plus_b'): {},
