@@ -13,112 +13,6 @@ export interface PipelinePageFragment_PythonError {
   stack: string[];
 }
 
-export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_LogMessageEvent {
-  message: string;
-  timestamp: string;
-  level: LogLevel;
-  __typename: "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "PipelineFailureEvent" | "PipelineProcessStartEvent";
-}
-
-export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepFailureEvent_step {
-  name: string;
-}
-
-export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepFailureEvent_error {
-  stack: string[];
-  message: string;
-}
-
-export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepFailureEvent {
-  message: string;
-  timestamp: string;
-  level: LogLevel;
-  __typename: "ExecutionStepFailureEvent";
-  step: PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepFailureEvent_step;
-  error: PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepFailureEvent_error;
-}
-
-export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_PipelineProcessStartedEvent {
-  message: string;
-  timestamp: string;
-  level: LogLevel;
-  __typename: "PipelineProcessStartedEvent";
-  processId: number;
-}
-
-export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepStartEvent_step {
-  name: string;
-}
-
-export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepStartEvent {
-  message: string;
-  timestamp: string;
-  level: LogLevel;
-  __typename: "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent";
-  step: PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepStartEvent_step;
-}
-
-export type PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes = PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_LogMessageEvent | PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepFailureEvent | PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_PipelineProcessStartedEvent | PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes_ExecutionStepStartEvent;
-
-export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs_pageInfo {
-  lastCursor: any | null;
-}
-
-export interface PipelinePageFragment_PipelineConnection_nodes_runs_logs {
-  nodes: PipelinePageFragment_PipelineConnection_nodes_runs_logs_nodes[];
-  pageInfo: PipelinePageFragment_PipelineConnection_nodes_runs_logs_pageInfo;
-}
-
-export interface PipelinePageFragment_PipelineConnection_nodes_runs_executionPlan_steps_solid {
-  name: string;
-}
-
-export interface PipelinePageFragment_PipelineConnection_nodes_runs_executionPlan_steps {
-  name: string;
-  solid: PipelinePageFragment_PipelineConnection_nodes_runs_executionPlan_steps_solid;
-  tag: StepTag;
-}
-
-export interface PipelinePageFragment_PipelineConnection_nodes_runs_executionPlan {
-  steps: PipelinePageFragment_PipelineConnection_nodes_runs_executionPlan_steps[];
-}
-
-export interface PipelinePageFragment_PipelineConnection_nodes_runs {
-  runId: string;
-  status: PipelineRunStatus;
-  logs: PipelinePageFragment_PipelineConnection_nodes_runs_logs;
-  executionPlan: PipelinePageFragment_PipelineConnection_nodes_runs_executionPlan;
-}
-
-export interface PipelinePageFragment_PipelineConnection_nodes_environmentType {
-  name: string;
-}
-
-export interface PipelinePageFragment_PipelineConnection_nodes_types_RegularType {
-  __typename: "RegularType";
-  name: string;
-  isSelector: boolean;
-}
-
-export interface PipelinePageFragment_PipelineConnection_nodes_types_CompositeType_fields_type {
-  name: string;
-}
-
-export interface PipelinePageFragment_PipelineConnection_nodes_types_CompositeType_fields {
-  name: string;
-  isOptional: boolean;
-  type: PipelinePageFragment_PipelineConnection_nodes_types_CompositeType_fields_type;
-}
-
-export interface PipelinePageFragment_PipelineConnection_nodes_types_CompositeType {
-  __typename: "CompositeType";
-  name: string;
-  isSelector: boolean;
-  fields: PipelinePageFragment_PipelineConnection_nodes_types_CompositeType_fields[];
-}
-
-export type PipelinePageFragment_PipelineConnection_nodes_types = PipelinePageFragment_PipelineConnection_nodes_types_RegularType | PipelinePageFragment_PipelineConnection_nodes_types_CompositeType;
-
 export interface PipelinePageFragment_PipelineConnection_nodes_contexts_config_type_RegularType_innerTypes_RegularType_innerTypes {
   name: string;
 }
@@ -484,8 +378,8 @@ export interface PipelinePageFragment_PipelineConnection_nodes_solids_definition
 }
 
 export interface PipelinePageFragment_PipelineConnection_nodes_solids_definition_configDefinition_type_RegularType {
-  description: string | null;
   name: string;
+  description: string | null;
   isDict: boolean;
   isList: boolean;
   isNullable: boolean;
@@ -559,8 +453,8 @@ export interface PipelinePageFragment_PipelineConnection_nodes_solids_definition
 }
 
 export interface PipelinePageFragment_PipelineConnection_nodes_solids_definition_configDefinition_type_CompositeType {
-  description: string | null;
   name: string;
+  description: string | null;
   isDict: boolean;
   isList: boolean;
   isNullable: boolean;
@@ -663,14 +557,16 @@ export interface PipelinePageFragment_PipelineConnection_nodes_solids {
   outputs: PipelinePageFragment_PipelineConnection_nodes_solids_outputs[];
 }
 
+export interface PipelinePageFragment_PipelineConnection_nodes_environmentType {
+  name: string;
+}
+
 export interface PipelinePageFragment_PipelineConnection_nodes {
   name: string;
-  runs: PipelinePageFragment_PipelineConnection_nodes_runs[];
-  environmentType: PipelinePageFragment_PipelineConnection_nodes_environmentType;
-  types: PipelinePageFragment_PipelineConnection_nodes_types[];
   description: string | null;
   contexts: PipelinePageFragment_PipelineConnection_nodes_contexts[];
   solids: PipelinePageFragment_PipelineConnection_nodes_solids[];
+  environmentType: PipelinePageFragment_PipelineConnection_nodes_environmentType;
 }
 
 export interface PipelinePageFragment_PipelineConnection {

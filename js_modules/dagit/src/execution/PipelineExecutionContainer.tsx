@@ -30,6 +30,8 @@ interface IPipelineExecutionContainerProps {
   pipeline: PipelineExecutionContainerFragment;
   data: IStorageData;
   onSave: (data: IStorageData) => void;
+  solidSubset: string[];
+  onChangeSolidSubset: (solidSubset: string[]) => void;
 }
 
 export default class PipelineExecutionContainer extends React.Component<
@@ -240,6 +242,8 @@ export default class PipelineExecutionContainer extends React.Component<
           return (
             <PipelineExecution
               pipeline={this.props.pipeline}
+              solidSubset={this.props.solidSubset}
+              onChangeSolidSubset={this.props.onChangeSolidSubset}
               activeRun={activeRun}
               sessions={this.props.data.sessions}
               currentSession={this.props.data.sessions[this.props.data.current]}

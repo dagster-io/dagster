@@ -618,9 +618,10 @@ def execute_reentrant_pipeline(pipeline, typed_environment, throw_on_error, reen
 
 
 def get_subset_pipeline(pipeline, solid_subset):
+    print(solid_subset)
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
-    return pipeline if solid_subset is None else build_sub_pipeline(pipeline, solid_subset)
+    return pipeline if not solid_subset else build_sub_pipeline(pipeline, solid_subset)
 
 
 def create_typed_environment(pipeline, environment=None):

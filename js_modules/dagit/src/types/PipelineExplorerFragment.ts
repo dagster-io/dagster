@@ -318,6 +318,7 @@ export interface PipelineExplorerFragment_solids_definition_metadata {
 }
 
 export interface PipelineExplorerFragment_solids_definition_configDefinition_type {
+  name: string;
   description: string | null;
 }
 

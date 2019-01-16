@@ -42,6 +42,7 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
           }
           configDefinition {
             type {
+              name
               description
             }
           }

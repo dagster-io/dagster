@@ -13,6 +13,7 @@ export interface PipelineGraphFragment_solids_definition_metadata {
 }
 
 export interface PipelineGraphFragment_solids_definition_configDefinition_type {
+  name: string;
   description: string | null;
 }
 

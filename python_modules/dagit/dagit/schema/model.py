@@ -207,7 +207,7 @@ def _pipeline_or_error_from_repository(info, repository, pipeline_name, solid_su
         )
     else:
         orig_pipeline = repository.get_pipeline(pipeline_name)
-        if solid_subset is not None:
+        if solid_subset:
             for solid_name in solid_subset:
                 if not orig_pipeline.has_solid(solid_name):
                     return EitherError(

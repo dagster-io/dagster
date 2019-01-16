@@ -10,7 +10,7 @@ import { IExecutionSession } from "../LocalStorage";
 import { PipelineRun, PipelineRunEmpty } from "./PipelineRun";
 import { ExecutionTabs, ExecutionTab } from "./ExecutionTabs";
 import { PanelDivider } from "../PanelDivider";
-
+import PipelineSolidSelector from "./PipelineSolidSelector";
 import ConfigEditor from "../configeditor/ConfigEditor";
 import {
   CONFIG_EDITOR_PIPELINE_FRAGMENT,
@@ -28,6 +28,8 @@ interface IPipelineExecutionProps {
   sessions: { [name: string]: IExecutionSession };
   currentSession: IExecutionSession;
   isExecuting: boolean;
+  solidSubset: string[];
+  onChangeSolidSubset: (solidSubset: string[]) => void;
   onSelectSession: (session: string) => void;
   onRenameSession: (session: string, title: string) => void;
   onSaveSession: (session: string, config: any) => void;
@@ -91,6 +93,8 @@ export default class PipelineExecution extends React.Component<
   render() {
     const {
       sessions,
+      solidSubset,
+      onChangeSolidSubset,
       pipeline,
       activeRun,
       isExecuting,
@@ -103,71 +107,80 @@ export default class PipelineExecution extends React.Component<
 
     return (
       <PipelineExecutionWrapper>
-        <Split width={this.state.editorVW}>
-          <ExecutionTabs>
-            {Object.keys(sessions).map(key => (
-              <ExecutionTab
-                key={key}
-                active={key === currentSession.key}
-                title={sessions[key].name}
-                onClick={() => this.props.onSelectSession(key)}
-                onChange={title => this.props.onRenameSession(key, title)}
-                onRemove={
-                  Object.keys(sessions).length > 1
-                    ? () => this.props.onRemoveSession(key)
-                    : undefined
-                }
-              />
-            ))}
-            <ExecutionTab
-              title={"Add..."}
-              onClick={() => {
-                this.props.onCreateSession(scaffoldConfig(pipeline));
-              }}
-            />
-          </ExecutionTabs>
-          <ApolloConsumer>
-            {client => (
-              <ConfigEditor
-                configCode={currentSession.config}
-                onConfigChange={this.onConfigChange}
-                typeConfig={createTypeConfig(pipeline)}
-                checkConfig={json => checkConfig(client, pipeline.name, json)}
-              />
-            )}
-          </ApolloConsumer>
-          <IconWrapper
-            role="button"
-            disabled={isExecuting}
-            onClick={async event => {
-              if (isExecuting) return;
-              let config = {};
-              try {
-                config = yaml.parse(currentSession.config);
-              } catch (err) {
-                alert(`Fix the errors in your config YAML and try again.`);
-                return;
-              }
-              this.props.onExecute(config);
-            }}
-          >
-            <Icon
-              icon={isExecuting ? IconNames.REFRESH : IconNames.PLAY}
-              iconSize={40}
-            />
-          </IconWrapper>
-        </Split>
-        <PanelDivider
-          axis="horizontal"
-          onMove={(vw: number) => this.setState({ editorVW: vw })}
+        <PipelineSolidSelector
+          pipelineName={pipeline.name}
+          value={solidSubset}
+          onChange={onChangeSolidSubset}
         />
-        <Split>
-          {activeRun ? (
-            <PipelineRun pipelineRun={activeRun} />
-          ) : (
-            <PipelineRunEmpty />
-          )}
-        </Split>
+        <PipelineExecutionPanels>
+          <Split width={this.state.editorVW}>
+            <ExecutionTabs>
+              {Object.keys(sessions).map(key => (
+                <ExecutionTab
+                  key={key}
+                  active={key === currentSession.key}
+                  title={sessions[key].name}
+                  onClick={() => this.props.onSelectSession(key)}
+                  onChange={title => this.props.onRenameSession(key, title)}
+                  onRemove={
+                    Object.keys(sessions).length > 1
+                      ? () => this.props.onRemoveSession(key)
+                      : undefined
+                  }
+                />
+              ))}
+              <ExecutionTab
+                title={"Add..."}
+                onClick={() => {
+                  debugger;
+
+                  this.props.onCreateSession(scaffoldConfig(pipeline));
+                }}
+              />
+            </ExecutionTabs>
+            <ApolloConsumer>
+              {client => (
+                <ConfigEditor
+                  configCode={currentSession.config}
+                  onConfigChange={this.onConfigChange}
+                  typeConfig={createTypeConfig(pipeline)}
+                  checkConfig={json => checkConfig(client, pipeline.name, json)}
+                />
+              )}
+            </ApolloConsumer>
+            <IconWrapper
+              role="button"
+              disabled={isExecuting}
+              onClick={async event => {
+                if (isExecuting) return;
+                let config = {};
+                try {
+                  config = yaml.parse(currentSession.config);
+                } catch (err) {
+                  alert(`Fix the errors in your config YAML and try again.`);
+                  return;
+                }
+                this.props.onExecute(config);
+              }}
+            >
+              <Icon
+                icon={isExecuting ? IconNames.REFRESH : IconNames.PLAY}
+                iconSize={40}
+              />
+            </IconWrapper>
+          </Split>
+          <PanelDivider
+            axis="horizontal"
+            onMove={(vw: number) => this.setState({ editorVW: vw })}
+          />
+          <Split>
+            {activeRun ? (
+              <PipelineRun pipelineRun={activeRun} />
+            ) : (
+              <PipelineRunEmpty />
+            )}
+          </Split>
+        </PipelineExecutionPanels>
       </PipelineExecutionWrapper>
     );
   }
@@ -176,11 +189,18 @@ export default class PipelineExecution extends React.Component<
 const PipelineExecutionWrapper = styled.div`
   flex: 1 1;
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   width: 100%;
   height: 100vh;
   position: absolute;
   padding-top: 50px;
+`;
+
+const PipelineExecutionPanels = styled.div`
+  flex: 1 1;
+  display: flex;
+  flex-direction: row;
+  width: 100%;
 `;
 
 const IconWrapper = styled.div<{ disabled: boolean }>`

@@ -13,6 +13,7 @@ export interface SolidNodeFragment_definition_metadata {
 }
 
 export interface SolidNodeFragment_definition_configDefinition_type {
+  name: string;
   description: string | null;
 }
 
