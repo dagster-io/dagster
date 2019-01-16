@@ -13,7 +13,6 @@ We are going to model this key value store as a resource.
 
 .. literalinclude:: ../../dagster/tutorials/intro_tutorial/resources.py
    :lines: 1
-   :dedent: 2
 
 .. literalinclude:: ../../dagster/tutorials/intro_tutorial/resources.py
    :lines: 28-41, 64-76
