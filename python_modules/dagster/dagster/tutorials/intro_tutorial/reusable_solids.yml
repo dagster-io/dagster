@@ -1,0 +1,13 @@
+solids:
+  a_plus_b:
+    inputs:
+      num1:
+        value: 2
+      num2:
+        value: 6
+  c_plus_d:
+    inputs:
+      num1:
+        value: 4
+      num2:
+        value: 8

@@ -16,7 +16,7 @@ Basic Typing
 
 What this code doing is annotating/registering an existing type as a dagster type. Now one can
 include this type and use it as an input or output of a solid. The system will do a typecheck
-to ensure that the object is of type ``pd.DataFrame`.
+to ensure that the object is of type ``pd.DataFrame``.
 
 Now one can use it to define a solid:
 
