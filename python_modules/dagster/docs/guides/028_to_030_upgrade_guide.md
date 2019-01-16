@@ -223,7 +223,7 @@ Before:
 
 ```py
     pipeline = PipelineDefinition.create_single_solid_pipeline(
-        define_allscripts_fileload_pipeline(),
+        define_fileload_pipeline(),
         'unzip_file',
     )
 
@@ -238,7 +238,7 @@ After:
 
 ```py
     solid_result = execute_solid(
-        define_allscripts_fileload_pipeline(),
+        define_fileload_pipeline(),
         'unzip_file',
         environment=environment
     )
@@ -251,7 +251,7 @@ Before (with stubbed inputs):
 
 ```py
     pipeline = PipelineDefinition.create_single_solid_pipeline(
-        define_allscripts_fileload_pipeline(),
+        define_fileload_pipeline(),
         'split_headers_and_service_lines',
         {
             'split_headers_and_service_lines': {
@@ -273,7 +273,7 @@ After (with stubbed inputs):
 
 ```py
     solid_result = execute_solid(
-        define_allscripts_fileload_pipeline(),
+        define_fileload_pipeline(),
         'split_headers_and_service_lines',
         inputs={
             'unzipped_file': unzipped_path,
@@ -289,7 +289,7 @@ Before (subset execution):
 
 ```py
     pipeline = PipelineDefinition.create_sub_pipeline(
-        define_allscripts_fileload_pipeline(),
+        define_fileload_pipeline(),
         ['unzip_file'],
         ['split_headers_and_service_lines'],
         {},
@@ -307,7 +307,7 @@ After (subset execution):
 
 ```py
     result_dict = execute_solids(
-        define_allscripts_fileload_pipeline(),
+        define_pipeline(),
         ['unzip_file', 'split_headers_and_service_lines'],
         environment=environment,
     )
@@ -329,7 +329,7 @@ Before:
 
 ```py
     with context.value('data_source_run_id', data_source_run_id),\
-        context.value('data_source', 'allscripts'),\
+        context.value('data_source', 'new_data'),\
         context.value('pipeline_run_id', pipeline_run_id):
 
         yield ExecutionContext(
@@ -346,7 +346,7 @@ After:
         resources=resources,
         context_stack={
             'data_source_run_id': data_source_run_id,
-            'data_source': 'allscripts',
+            'data_source': 'new_data',
             'pipeline_run_id': pipeline_run_id,
         },
     )

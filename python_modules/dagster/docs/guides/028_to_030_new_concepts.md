@@ -8,7 +8,7 @@ In 0.2.0 the notion of resources were relatively informal. This is no longer tru
 
 **Defining a Resource**
 
-Let's take the unittest context in the allscripts_fileload pipeline as an example.
+Let's take a typical unittest context.
 
 Before:
 
@@ -25,7 +25,7 @@ def define_unittest_context():
                 },
             )
         ),
-        context_fn=create_allscripts_fileload_unittest_context,
+        context_fn=create_fileload_unittest_context,
         description='''
 Context for use in unit tests. It does not allow for any interaction with aws
 or s3, and can only be used for a subset of the pipeline that can execute on a
@@ -35,18 +35,17 @@ This context does not log to file and also has a configurable log_level.
         '''
     )
 
-def create_allscripts_fileload_unittest_context(info):
+def create_fileload_unittest_context(info):
     data_source_run_id = info.config['data_source_run_id']
     log_level = level_from_string(info.config['log_level'])
     pipeline_run_id = str(uuid.uuid4())
 
-    resources = AllscriptsFileloadResources(
+    resources = FileloadResources(
         aws=None,
         redshift=None,
         bucket_path=None,
         local_fs=LocalFsHandleResource.for_pipeline_run(pipeline_run_id),
         sa=None,
-        cooper_pair=None,
         pipeline_guid=data_source_run_id)
 
     yield ExecutionContext(
@@ -54,13 +53,13 @@ def create_allscripts_fileload_unittest_context(info):
         resources=resources,
         context_stack={
             'data_source_run_id': data_source_run_id,
-            'data_source': 'allscripts',
+            'data_source': 'new_data',
             'pipeline_run_id': pipeline_run_id,
         },
     )
 ```
 
-That's quite the ball of wax for what should be relatively straightforward. And this doesn't even include the boilerplate `AllScriptsFileloadResources` class as well. We're going to break this apart using the `ResourceDefinition` abstraction and eliminate the need for that class.
+That's quite the ball of wax for what should be relatively straightforward. And this doesn't even include the boilerplate `FileloadResources` class as well. We're going to break this apart using the `ResourceDefinition` abstraction and eliminate the need for that class.
 
 The only real reusable resource here is the LocalFsHandleResource, so let's break that out into it's own `ResourceDefinition`.
 
@@ -101,9 +100,8 @@ def define_unittest_context():
             'redshift': ResourceDefinition.none_resource(),
             'bucket_path': ResourceDefinition.none_resource(),
             'sa': ResourceDefinition.none_resource(),
-            'cooper_pair': ResourceDefinition.none_resource(),
         },
-        context_fn=create_allscripts_fileload_unittest_context,
+        context_fn=create_fileload_unittest_context,
         description='''
 Context for use in unit tests. It does not allow for any interaction with aws
 or s3, and can only be used for a subset of the pipeline that can execute on a
@@ -113,7 +111,7 @@ This context does not log to file and also has a configurable log_level.
         '''
     )
 
-def create_allscripts_fileload_unittest_context(info):
+def create_fileload_unittest_context(info):
     data_source_run_id = info.config['data_source_run_id']
     log_level = level_from_string(info.config['log_level'])
 
@@ -121,12 +119,12 @@ def create_allscripts_fileload_unittest_context(info):
         loggers=[define_colored_console_logger('dagster', log_level)],
         context_stack={
             'data_source_run_id': data_source_run_id,
-            'data_source': 'allscripts',
+            'data_source': 'new_data',
         },
     )
 ```
 
-Notice a few things. The bulk of the context creation function is now gone. Instead of having to manually create the `AllscriptsFileloadResources`, that is replaced by a class (a `namedtuple`) that is system-synthesized. Predictably it has N fields, one for each resource. The pipeline-code-facing API is the same, it just requires less boilerplate within the pipeline infrastructure.
+Notice a few things. The bulk of the context creation function is now gone. Instead of having to manually create the `FileloadResources`, that is replaced by a class (a `namedtuple`) that is system-synthesized. Predictably it has N fields, one for each resource. The pipeline-code-facing API is the same, it just requires less boilerplate within the pipeline infrastructure.
 
 **Configuring a Resource**
 
@@ -225,7 +223,7 @@ This could be used -- unmodified -- across all your pipelines. This will also ma
 
 With the new ability to source inputs from the environment config files, we anticipate that solid-level configuration will become much less common, and instead that we will uses inputs and outputs exclusively.
 
-Let's use another example from the allscripts_fileload pipeline.
+Let's use another example from the a typical fileload pipeline.
 
 Before:
 
