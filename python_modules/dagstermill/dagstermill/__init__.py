@@ -4,8 +4,10 @@ from builtins import *  # pylint: disable=W0622,W0401
 import base64
 import json
 import os
+import sys
 import uuid
 import logging
+import subprocess
 
 import six
 
@@ -30,10 +32,9 @@ from dagster.core.execution import create_typed_context
 from dagster.core.system_config.objects import ContextConfig, EnvironmentConfig
 from dagster.core.definitions import TransformExecutionInfo
 from dagster.core.types.runtime import RuntimeType
-from dagster.utils.logging import construct_single_handler_logger, define_colored_console_logger
+from dagster.utils.logging import define_json_file_logger, define_colored_console_logger
 import dagster.utils as utils
 from dagster.core.definitions.dependency import Solid
-from dagster.core.system_config.objects import ContextConfig
 
 # magic incantation for syncing up notebooks to enclosing virtual environment.
 # I don't claim to understand it.
@@ -57,7 +58,7 @@ class RemotedDagstermillContext:
         self.solid_def = solid_def
         self.inputs = inputs
         self.marshal_dir = marshal_dir
-        self.info = info  # add check of type TransformExecutionInfo
+        self.info = info
 
 
 class DagstermillError(Exception):
@@ -277,7 +278,7 @@ def deserialize_dm_context(serialized_dm_context):
     check.invariant(pipeline_def.has_solid_def(solid_def_name))
 
     solid_def = pipeline_def.solid_def_named(solid_def_name)
-    solid = Solid("Out of process notebook solid", solid_def)
+    solid = Solid("out of process notebook solid", solid_def)
 
     inputs_data = dm_context_data['inputs']
     inputs = {}
@@ -287,7 +288,6 @@ def deserialize_dm_context(serialized_dm_context):
 
     run_id = dm_context_data['run_id']
     base_dir = dm_context_data['base_dir']
-    context_name = dm_context_data['context_name']
     context_config = dm_context_data['context_config']
 
     logger_level_str = context_config['log_level']
@@ -295,12 +295,14 @@ def deserialize_dm_context(serialized_dm_context):
 
     logger_file_name = os.path.join(base_dir, 'notebook.log')
     assert os.path.exists(logger_file_name), "Notebok log file doesn't exist!"
-    file_handler = logging.FileHandler(logger_file_name)
 
-    logger = construct_single_handler_logger(
-        name="notebook_log", level=logger_level, handler=file_handler
+    logger = define_json_file_logger(
+        name="notebook_log", json_path=logger_file_name, level=logger_level
     )
-    reconstructed_runtime_context = RuntimeExecutionContext(run_id=run_id, loggers=[logger])
+
+    reconstructed_runtime_context = RuntimeExecutionContext(
+        run_id=run_id, loggers=[logger], log_args_to_json=True
+    )
     reconstructed_transform_execution_info = TransformExecutionInfo(
         context=reconstructed_runtime_context, config=None, solid=solid, pipeline_def=pipeline_def
     )
@@ -336,17 +338,32 @@ def _dm_solid_transform(name, notebook_path):
             with open(output_log_path, 'a') as f:
                 f.close()
 
-            _source_nb = pm.execute_notebook(
-                notebook_path,
-                temp_path,
-                parameters=dict(dm_context=serialize_dm_context(info, inputs)),
+            process = subprocess.Popen(
+                [
+                    "papermill",
+                    notebook_path,
+                    temp_path,
+                    "-p",
+                    "dm_context",
+                    serialize_dm_context(info, inputs),
+                ]
             )
 
-            output_nb = pm.read_notebook(temp_path)
-
             with open(output_log_path, 'r') as f:
-                log_content = f.read()
-                info.context.debug(log_content)
+                current_time = os.path.getmtime(output_log_path)
+                while process.poll() is None:
+                    new_time = os.path.getmtime(output_log_path)
+                    if new_time != current_time:
+                        line = f.readline()
+                        if not line:
+                            break
+                        log_args = json.loads(line)['msg']
+                        info.context._log(
+                            log_args['method'], log_args['orig_message'], log_args['message_props']
+                        )
+                        current_time = new_time
+
+            output_nb = pm.read_notebook(temp_path)
 
             info.context.debug(
                 'Notebook execution complete for {name}. Data is {data}'.format(
