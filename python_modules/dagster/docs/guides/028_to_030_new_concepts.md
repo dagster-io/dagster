@@ -1,3 +1,5 @@
+# New Concepts in 0.3.0
+
 The upgrade guide describes the changes you are _require_ to make to install 0.3.0. This guide describes the changes you _should_ make in order to use the latest capabilities. The new concepts take some getting used to, but are quite powerful.
 
 ## Resources
