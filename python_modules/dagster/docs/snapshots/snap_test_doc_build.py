@@ -372,10 +372,8 @@ webapp, from any directory that contains a repository.yml file. For example:</p>
 <li class="toctree-l1"><a class="reference internal" href="apidocs/utilities.html">Utilities</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_new_concepts.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_new_concepts.html#resource-libraries">Resource Libraries</a></li>
-<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_new_concepts.html#solid-level-configs-to-inputs">Solid-Level Configs to Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_upgrade_guide.html">Required API Changes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
 </ul>
 <div class="relations">
 <h3>Related Topics</h3>
@@ -901,10 +899,8 @@ snapshots['test_build_all_docs 4'] = '''
 <li class="toctree-l1"><a class="reference internal" href="apidocs/utilities.html">Utilities</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_new_concepts.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_new_concepts.html#resource-libraries">Resource Libraries</a></li>
-<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_new_concepts.html#solid-level-configs-to-inputs">Solid-Level Configs to Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_upgrade_guide.html">Required API Changes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
 </ul>
 <div class="relations">
 <h3>Related Topics</h3>
@@ -1033,10 +1029,8 @@ snapshots['test_build_all_docs 5'] = '''
 <h1>Guides<a class="headerlink" href="#guides" title="Permalink to this headline">¶</a></h1>
 <div class="toctree-wrapper compound" id="id3">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_new_concepts.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_new_concepts.html#resource-libraries">Resource Libraries</a></li>
-<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_new_concepts.html#solid-level-configs-to-inputs">Solid-Level Configs to Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_upgrade_guide.html">Required API Changes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
 </ul>
 </div>
 </div>
@@ -1090,10 +1084,8 @@ snapshots['test_build_all_docs 5'] = '''
 <li class="toctree-l1"><a class="reference internal" href="apidocs/utilities.html">Utilities</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_new_concepts.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_new_concepts.html#resource-libraries">Resource Libraries</a></li>
-<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_new_concepts.html#solid-level-configs-to-inputs">Solid-Level Configs to Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_upgrade_guide.html">Required API Changes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
 </ul>
 <div class="relations">
 <h3>Related Topics</h3>
@@ -1338,10 +1330,8 @@ from Github:</p>
 <li class="toctree-l1"><a class="reference internal" href="apidocs/utilities.html">Utilities</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_new_concepts.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_new_concepts.html#resource-libraries">Resource Libraries</a></li>
-<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_new_concepts.html#solid-level-configs-to-inputs">Solid-Level Configs to Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_upgrade_guide.html">Required API Changes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
 </ul>
 <div class="relations">
 <h3>Related Topics</h3>
@@ -1540,10 +1530,8 @@ documentation and runtime error checking.</p>
 <li class="toctree-l1"><a class="reference internal" href="apidocs/utilities.html">Utilities</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_new_concepts.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_new_concepts.html#resource-libraries">Resource Libraries</a></li>
-<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_new_concepts.html#solid-level-configs-to-inputs">Solid-Level Configs to Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_upgrade_guide.html">Required API Changes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
 </ul>
 <div class="relations">
 <h3>Related Topics</h3>
@@ -1694,10 +1682,8 @@ snapshots['test_build_all_docs 8'] = '''
 <li class="toctree-l1"><a class="reference internal" href="apidocs/utilities.html">Utilities</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_new_concepts.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_new_concepts.html#resource-libraries">Resource Libraries</a></li>
-<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_new_concepts.html#solid-level-configs-to-inputs">Solid-Level Configs to Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_upgrade_guide.html">Required API Changes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
 </ul>
 <div class="relations">
 <h3>Related Topics</h3>
@@ -1842,10 +1828,8 @@ snapshots['test_build_all_docs 9'] = '''
 <li class="toctree-l1"><a class="reference internal" href="apidocs/utilities.html">Utilities</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_new_concepts.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_new_concepts.html#resource-libraries">Resource Libraries</a></li>
-<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_new_concepts.html#solid-level-configs-to-inputs">Solid-Level Configs to Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_upgrade_guide.html">Required API Changes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
 </ul>
 <div class="relations">
 <h3>Related Topics</h3>
@@ -1873,7 +1857,7 @@ snapshots['test_build_all_docs 9'] = '''
   </body>
 </html>'''
 
-snapshots['test_build_all_docs 10'] = 'Search.setIndex({docnames:["apidocs/decorators","apidocs/definitions","apidocs/errors","apidocs/execution","apidocs/types","apidocs/utilities","contributing","guides/028_to_030_new_concepts","guides/028_to_030_upgrade_guide","index","installation","intro_tutorial/actual_dag","intro_tutorial/config","intro_tutorial/configuration_schemas","intro_tutorial/execution_context","intro_tutorial/expectations","intro_tutorial/hello_dag","intro_tutorial/hello_world","intro_tutorial/inputs","intro_tutorial/multiple_outputs","intro_tutorial/part_fourteen","intro_tutorial/part_thirteen","intro_tutorial/pipeline_cli_execution","intro_tutorial/repos","intro_tutorial/resources","intro_tutorial/types","principles"],envversion:53,filenames:["apidocs/decorators.rst","apidocs/definitions.rst","apidocs/errors.rst","apidocs/execution.rst","apidocs/types.rst","apidocs/utilities.rst","contributing.rst","guides/028_to_030_new_concepts.md","guides/028_to_030_upgrade_guide.md","index.rst","installation.rst","intro_tutorial/actual_dag.rst","intro_tutorial/config.rst","intro_tutorial/configuration_schemas.rst","intro_tutorial/execution_context.rst","intro_tutorial/expectations.rst","intro_tutorial/hello_dag.rst","intro_tutorial/hello_world.rst","intro_tutorial/inputs.rst","intro_tutorial/multiple_outputs.rst","intro_tutorial/part_fourteen.rst","intro_tutorial/part_thirteen.rst","intro_tutorial/pipeline_cli_execution.rst","intro_tutorial/repos.rst","intro_tutorial/resources.rst","intro_tutorial/types.rst","principles.rst"],objects:{"":{dagster:[4,0,0,"-"]},"dagster.DependencyDefinition":{description:[1,1,1,""],output:[1,1,1,""],solid:[1,1,1,""]},"dagster.ExpectationDefinition":{description:[1,1,1,""],expectation_fn:[1,1,1,""],name:[1,1,1,""]},"dagster.ExpectationResult":{message:[1,1,1,""],result_context:[1,1,1,""],success:[1,1,1,""]},"dagster.InputDefinition":{description:[1,1,1,""],expectations:[1,1,1,""],name:[1,1,1,""],runtime_type:[1,1,1,""]},"dagster.MultipleResults":{from_dict:[0,5,1,""],results:[0,1,1,""]},"dagster.OutputDefinition":{description:[1,1,1,""],name:[1,1,1,""],runtime_type:[1,1,1,""]},"dagster.PipelineContextDefinition":{config_field:[1,1,1,""],context_fn:[1,1,1,""],description:[1,1,1,""],passthrough_context_definition:[1,5,1,""]},"dagster.PipelineDefinition":{context_definitions:[1,1,1,""],dependencies:[1,1,1,""],dependency_structure:[1,1,1,""],description:[1,1,1,""],display_name:[1,1,1,""],has_solid:[1,6,1,""],name:[1,1,1,""],solid_named:[1,6,1,""],solids:[1,1,1,""]},"dagster.PipelineExecutionResult":{context:[3,1,1,""],pipeline:[3,1,1,""],result_for_solid:[3,6,1,""],result_list:[3,1,1,""],success:[3,1,1,""]},"dagster.RepositoryDefinition":{get_all_pipelines:[1,6,1,""],get_pipeline:[1,6,1,""],iterate_over_pipelines:[1,6,1,""],name:[1,1,1,""],pipeline_dict:[1,1,1,""]},"dagster.Result":{output_name:[1,1,1,""],value:[1,1,1,""]},"dagster.SolidDefinition":{config_field:[1,1,1,""],description:[1,1,1,""],input_defs:[1,1,1,""],metadata:[1,1,1,""],name:[1,1,1,""],outputs_defs:[1,1,1,""],transform_fn:[1,1,1,""]},"dagster.SolidExecutionResult":{context:[3,1,1,""],dagster_error:[3,1,1,""],solid:[3,1,1,""],success:[3,1,1,""],transformed_value:[3,6,1,""],transformed_values:[3,1,1,""]},"dagster.TransformExecutionInfo":{config:[1,1,1,""],context:[1,1,1,""]},dagster:{Any:[4,1,1,""],Bool:[4,1,1,""],ConfigType:[4,2,1,""],ContextCreationExecutionInfo:[1,2,1,""],DagsterExpectationFailedError:[2,3,1,""],DagsterInvalidDefinitionError:[2,3,1,""],DagsterInvariantViolationError:[2,3,1,""],DagsterRuntimeCoercionError:[2,3,1,""],DagsterTypeError:[2,3,1,""],DagsterUserCodeExecutionError:[2,3,1,""],DependencyDefinition:[1,2,1,""],Dict:[4,4,1,""],ExecutionContext:[3,2,1,""],ExpectationDefinition:[1,2,1,""],ExpectationExecutionInfo:[1,2,1,""],ExpectationResult:[1,2,1,""],Field:[1,4,1,""],InputDefinition:[1,2,1,""],Int:[4,1,1,""],List:[4,4,1,""],MultipleResults:[0,2,1,""],NamedDict:[4,4,1,""],Nullable:[4,4,1,""],OutputDefinition:[1,2,1,""],Path:[4,1,1,""],PipelineConfigEvaluationError:[2,3,1,""],PipelineContextDefinition:[1,2,1,""],PipelineDefinition:[1,2,1,""],PipelineExecutionResult:[3,2,1,""],PythonObjectType:[4,2,1,""],ReentrantInfo:[3,2,1,""],RepositoryDefinition:[1,2,1,""],ResourceDefinition:[1,2,1,""],Result:[1,2,1,""],RuntimeType:[4,2,1,""],SolidDefinition:[1,2,1,""],SolidExecutionResult:[3,2,1,""],SolidInstance:[1,2,1,""],String:[4,1,1,""],TransformExecutionInfo:[1,2,1,""],as_dagster_type:[4,4,1,""],dagster_type:[4,4,1,""],execute_pipeline:[3,4,1,""],execute_pipeline_iterator:[3,4,1,""],execute_solid:[5,4,1,""],execute_solids:[5,4,1,""],input_schema:[4,4,1,""],input_selector_schema:[4,4,1,""],lambda_solid:[0,4,1,""],output_schema:[4,4,1,""],output_selector_schema:[4,4,1,""],solid:[0,4,1,""]}},objnames:{"0":["py","module","Python module"],"1":["py","attribute","Python attribute"],"2":["py","class","Python class"],"3":["py","exception","Python exception"],"4":["py","function","Python function"],"5":["py","staticmethod","Python static method"],"6":["py","method","Python method"]},objtypes:{"0":"py:module","1":"py:attribute","2":"py:class","3":"py:exception","4":"py:function","5":"py:staticmethod","6":"py:method"},terms:{"06c7":17,"0e15a1b22a6":19,"0x11e4fbf60":8,"10115a01783f":15,"1563854b":17,"17576abb9da2":19,"1c10":15,"1dfb":19,"25faadf5":17,"2mxds1r":26,"343ac9fb":19,"40ea":19,"41c3":19,"42b8":19,"42ff":15,"43f5":17,"46cc":17,"47f8":19,"49eb":17,"4a4e":14,"4a8b":15,"4ac0":14,"4ae2":17,"4afd":19,"4b96":19,"4bee891c":19,"4d71":17,"4e1b":19,"4edbb3a1dbc2":19,"4f38ba45b8e0":14,"523e":19,"5878513a":17,"596d":19,"5c829421":17,"5e1cc181":19,"604dc47c":17,"677247b1b07b":17,"6b80d12155de":19,"71affcec":15,"744a":17,"758f":17,"7e828e37eab8":17,"81ba":17,"85a6":19,"88cb":17,"8d32":19,"8da32946":19,"95ef":19,"97ae58fda0f4":17,"9f12":19,"\\u4e16\\u754c":12,"\\u4f60\\u597d":12,"abstract":[1,7,14],"break":[6,7,8,26],"case":[1,12,14,15,16,18,20,24,25],"catch":[13,18],"class":[0,1,2,3,4,7,8,15,24],"default":[0,1,7,10,13,14,15,19,22,23,25],"final":[20,21,22,25],"function":[0,1,3,7,8,12,15,16,17,18,19,21,23,24,25],"import":[8,11,12,13,14,15,16,17,18,22,23,24,25,26],"int":[1,4,7,13,15,19,20,21,22,24,25],"long":23,"new":[0,6,7,8,10,15,16,20,23,24],"null":15,"public":[8,24],"return":[0,1,3,7,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25],"static":[0,1],"switch":[10,12],"throw":[1,2,3,15],"true":[1,3,4,7,12,25],"try":[11,12,22,23],"while":[7,8,24],And:[7,10,13,14,15,18,19,21,22,24],But:[18,23],For:[1,3,6,7,10,12,18,19,24],Lying:15,One:[1,8,14,15,16,20,25],That:[7,12,24],The:[0,1,3,7,8,11,12,13,14,15,16,17,18,19,20,22,24,25],Then:[12,17],There:[1,8,17,21],These:[1,13,14,19,21,26],Use:8,Used:1,Useful:[0,24],Using:[14,17],With:[7,19,22],__fieldvaluesentinel:1,__inferoptionalcompositefieldsentinel:1,__init__:[8,24],__main__:17,__name__:17,_add_on:1,_cleanup_field:7,_conf_field:7,_create_resourc:7,_data_source_run_id_field:7,_info:[1,15,19],_log_level_field:7,a29ddb15309a:14,a531:17,a801:17,a_plus_b:[20,21],aaac:14,abid:25,abil:[7,15,16,20],abl:[7,12,14,17,21,23,25,26],about:[1,7,8,12,15,16,22,24,25,26],abov:19,ac43:19,accept:1,access:[1,14,24],acronym:1,across:[7,22],action:13,activ:[6,10],actual:[9,16,19,24,26],actual_dag:11,actual_dag_pipelin:11,acycl:[1,16,26],add:[8,17,24,25],add_hello_to_word:18,add_hello_to_word_typ:18,add_int:[15,24],add_on:1,adder:[20,21],addit:[0,12],addition:19,advertis:26,aed8162cc25c:19,aesthet:25,afford:12,after:[7,8,11],again:11,against:[8,24],alia:[1,21],all:[1,3,7,12,17,18,19,23,24,25],allow:[0,1,3,7,14,16,19,22,23,25],allscript:[7,8],allscriptsfileloadresourc:7,aloha:12,along:[20,25],alreadi:[10,20,23,24],also:[6,7,8,10,15,18,19,20,22,23,24,25,26],alter:24,altern:[0,25],although:[14,23],alwai:[18,26],anaconda:10,analyst:26,ani:[1,3,4,6,7,8,10,11,13,14,17,18,23,24,25,26],annon:14,annot:[8,12,25],anoth:[7,8],anticip:7,anyth:25,anywher:15,apach:6,apart:7,api:[0,1,3,7,12,23,24,25],appear:[14,25],appli:[1,15,18,25],applic:[15,22],approach:26,appropri:[18,24,26],apt:10,arbitrari:[1,16,19,20,25,26],aren:10,arg:[2,4],arg_a:11,arg_b:11,arg_c:11,arg_on:16,argument:[0,1,2,8,12,16,18,19,22,25],aris:13,arithmet:21,around:[8,19,25],arrai:1,arrang:[1,17,26],arrow:6,articl:26,artifact:[24,26],as_dagster_typ:[4,8,25],asid:7,aspect:15,assert:[8,17,20,21],asset:[1,17],assign:18,assum:[1,17,25],assumpt:[15,26],attach:[1,24],attent:11,attribut:8,attributeerror:8,author:[1,14,16,26],auto:[6,18],automat:18,autoreload:6,avail:[0,1],avoid:12,awai:14,awar:15,awkward:8,aws:7,axes:25,b0cbb1be:14,b150:19,b17dea553fba:15,b27fb70a:17,b510:17,b5a8:17,b602e4409f74:17,b74d:19,b7c5:19,b85c:17,b8e0:14,back:13,ball:7,bar:[0,22],barb:0,base:[18,19],bash:10,basi:11,basic:14,batch:26,bc262d555b73:19,be77:19,beauchemin:26,becaus:[6,7,8,11,14,15,18,19,26],becom:7,been:[2,19,20,21,22,25],befor:[7,8,11,13,18],begin:[7,17],behavior:15,behaviour:0,being:[3,8,21],best:26,better:[18,23],between:[1,3,7,16,26],bigco:24,bin:[6,10],bit:[10,26],bkjdf:13,bodi:0,boilerpl:[7,25],bool:[1,3,4,7],both:[8,10,11],bottom:17,branch:19,breakag:26,brew:10,broadli:[20,22],browser:17,bucket:8,bucket_path:7,build:[7,8,10,11,16,17,23,25],built:[12,18,26],builtin:25,bulk:7,bunch:[14,22],burden:26,c25e:19,c_plus_d:[20,21],cach:1,call:[8,15,16,17,21,23,25,26],callabl:1,callback:1,caller:[3,8],can:[1,2,6,7,8,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26],cannot:8,capabitili:16,capabl:[7,8,14,15,20,26],captur:15,caught:13,caus:[13,15],cb10:19,cb75946b0055:17,certain:1,chang:[6,7,9,14,24,26],check:[1,2,6,8,10,15,16,25,26],check_posit:15,choic:17,choos:[16,25],chunk:7,cleali:26,clean_up_dir:7,cleanup_fil:[7,8],clear:13,cli:[9,23],click:18,clone:[6,10],cloud:[21,24],cluster:14,code:[2,7,8,12,14,15,24,25,26],collabor:26,collect:[1,13,22,23,24],column:25,com:[6,10],come:[1,7,10,25],command:[11,12,16,18,22,23],comment:20,common:[7,24],commonli:25,compar:6,compat:12,complet:[1,17,18],complex:11,complic:21,compos:[1,7],compris:1,comput:[1,12,14,16,17,24,25],computation:26,concaten:16,concept:[7,15,16,17],conceptu:[8,12],concis:0,conda:10,condit:3,condition:19,conditional_output:19,conf:[7,8],config:[0,1,8,9,12,13,14,15,18,19,20,21,23,24,25],config_cl:4,config_def:[7,8],config_env:12,config_field:[0,1,7,8,12,13,19,20,21,22,24],config_valu:[1,2,25],configdefinit:[7,8,20,21],configdictionari:[7,8],configtyp:4,configtypeattribut:4,configur:[0,1,2,7,8,9,14,15,18,19,24,25,26],configurable_hello:12,configurable_hello_pipelin:12,configuration_schema:13,configuration_schemas_error_2:13,configuration_schemas_runtime_error:13,configuration_schemas_type_mismatch_error:13,configuration_schemas_wrong_field:13,conform:1,conn:24,connect:[1,7,11,16,21,25],consist:7,consol:[14,18],constant:22,constant_env:22,constitut:1,construct:[1,8,23,24],constructor:24,consum:[1,13,22,26],contain:[1,6,7,14,18,20,26],context:[0,1,3,7,8,9,13,18,20,22,24,26],context_definit:[1,24],context_fn:[1,7,8],context_param:1,context_stack:[7,8],contextcreationexecutioninfo:1,contract:26,contribut:9,control:[1,15,26],cooper_pair:7,copi:[16,22,25],core:[0,1,2,8,13,15,16,17,19,21,24],correct:1,correspond:12,could:[1,7,11,18],count:[7,13,22],count_lett:[13,22],coupl:12,creat:[0,1,6,7,8,19,20,22,23,24],create_allscripts_fileload_unittest_context:7,create_engin:7,create_single_solid_pipelin:[8,20],create_sub_pipelin:[8,20],creation:[0,7,8],credenti:24,critic:[15,26],csv:25,current:[1,15],custom:17,d548ea66:19,d8f41da0:14,dag:[1,9,12,17,20,26],dagit:[10,11,12,14,15,16,21,22,23,25],dagster:[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,22,23,24,25,26],dagster_error:3,dagster_exampl:6,dagster_panda:1,dagster_sqlalchemi:8,dagster_typ:[1,4,7,8,19],dagsterenv:6,dagsterexpectationfailederror:[2,15],dagsterinvaliddefinitionerror:2,dagsterinvariantviolationerror:[2,25],dagsterruntimecoercionerror:2,dagstertyp:[1,7],dagstertypeerror:2,dagsterusercodeexecutionerror:2,data:[1,9,15,16,17,20,25],data_sourc:[7,8],data_source_run_id:[7,8],databas:[1,14,24],datafram:[1,25],dataframe_input_schema:25,dataframe_output_schema:25,dbname:7,dea6d00d99f0:17,debug:[13,14,22],debug_messag:14,declar:[1,7,11,12,21,23,24,25],decor:[1,9,17,25],deem:26,deep:13,deepli:11,def:[0,1,7,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25],default_output:3,default_valu:[1,7,12,25],defaultcontextconfig:8,defaultdict:[13,22],defin:[0,1,2,7,8,9,12,16,17,22,23],define_allscripts_fileload_pipelin:8,define_cloud_store_resourc:24,define_colored_console_logg:[7,8],define_configurable_hello_pipelin:12,define_csv_dict_field:25,define_demo_configuration_schema_pipelin:13,define_demo_configuration_schema_repo:13,define_demo_execution_pipelin:22,define_demo_execution_repo:22,define_diamond_dag_pipelin:11,define_execution_context_pipeline_step_on:14,define_expectations_tutorial_pipelin:15,define_hello_dag_pipelin:16,define_hello_inputs_pipelin:18,define_hello_world_pipelin:[17,23],define_in_memory_store_resourc:24,define_local_fs_resourc:7,define_multiple_outputs_step_one_pipelin:19,define_multiple_outputs_step_three_pipelin:19,define_multiple_outputs_step_two_pipelin:19,define_part_fourteen_step_on:20,define_part_thirteen_step_on:21,define_part_thirteen_step_thre:21,define_part_thirteen_step_two:21,define_path_dict_field:25,define_redshift_sa_resourc:7,define_repo:23,define_repo_demo_pipelin:23,define_repositori:14,define_resource_test_pipelin:24,define_stub_solid:[8,20],define_typed_demo_configuration_schema_error_pipelin:13,define_typed_demo_configuration_schema_pipelin:13,define_unittest_context:7,definit:[2,8,9,12,13,21,23,24],del:25,deliv:26,demand:[1,23],demo_configuration_schema:13,demo_configuration_schema_repo:13,demo_execution_repo:22,demo_pipelin:22,demo_repositori:23,demonstr:[11,18],depend:[1,6,7,8,11,12,13,16,18,19,20,21,22,26],dependency_structur:1,dependencydefiniion:1,dependencydefinit:[1,11,13,16,19,20,21,22],dependencystructur:1,describ:[7,13,15],descript:[0,1,4,7,8,13,19,24,25],design:[1,14,26],destruct:1,detail:[8,12,18],deteremin:2,determin:[1,11,16],dev:[1,6],develop:[10,12,15,24],dfc8165a:17,diagnost:26,dict:[0,1,3,4,7,8,12,13,16,18,22,24,25],dict_param:25,dictionari:[0,1,3,8,11,16,18,25],did:19,differ:[1,6,8,12,14,15,17,21,24,25,26],difficult:[8,20,26],dimension:[1,25],direct:[1,16,26],directli:[0,8,17,18,25],directori:6,discourag:8,discov:26,discuss:20,disk:[1,8,25],displai:1,display_nam:1,distinguish:16,distrbut:15,document:[6,10,13,22,26],doe:[0,1,7,11,14,19,24],doesn:7,doing:[21,25],don:[11,16],done:[12,20,26],dot:18,download:10,downstream:19,drive:22,dropdown:[16,23],dsl:26,dure:[3,26],dynam:19,e04f:19,e476:14,e529:15,e903e121:15,each:[1,3,7,11,12,14,16,17,18,21,22,25],earlier:[18,22],easier:[1,7,23],easili:26,edg:1,edit:[12,13],editor:[12,18],effect:26,either:[1,3,15,16,19,26],element:22,elif:[12,19,25],elimin:[7,8],els:[12,19,25],emit:[14,17,19,20],enabl:20,encod:[12,16],encourag:[10,26],encout:3,end:[1,19],enforce_uniqu:1,engin:[14,16,26],enrich:22,ensur:[1,25],enter:[15,18],entir:[12,14,15,18,20],entit:1,entri:11,entropi:26,env:[8,13,22],enviro:3,environ:[1,3,5,6,7,8,11,12,14,18,24,26],error:[3,7,8,9,13,14,15,16,18,22,26],error_messag:14,especi:23,etc:[1,6,21],evalu:1,even:[7,14],event_typ:[15,17],ever:13,everi:[1,17,26],everyth:18,exactli:8,examin:19,exampl:[0,1,6,7,8,11,12,14,17,18,19,23,24,25,26],excel:26,except:[1,2,3,19,25,26],excess:8,exclus:7,execut:[1,7,8,9,11,12,13,15,16,18,19,20,23,24,25,26],execute_pipelin:[3,8,12,14,17,18,20,21,24],execute_pipeline_iter:3,execute_solid:[5,8],execute_with_another_world:18,execution_context:14,execution_context_pipelin:14,execution_plan_step_start:17,execution_plan_step_success:[15,17],executioncontext:[1,3,7,8],exist:[1,7,8,20,25],existing_typ:4,expecat:15,expect:[1,2,9,25,26],expectation_fn:[1,15],expectationdefinit:[1,15],expectationexecutioninfo:1,expectationresult:[1,15],expectations_fail:15,expectations_pass:15,expectations_skip_fail:15,expectations_tutorial_pipelin:15,expedit:6,expens:[13,15],experi:[13,18],explicit:[15,26],explictli:15,explod:0,explor:[11,12,16,17],express:[16,25,26],extern:[1,11,12,14,18,24,26],extract:1,f37e:17,f6fd78c5:19,f77205931abb:17,f7d90092:19,f9124ea896ad:19,face:[7,8],facil:[12,14],fact:16,factor:[13,22],fail:[15,18,25],faild:2,failur:[1,2,13],fairli:8,fals:[4,7,8,25],famili:8,far:[18,19,21],fast:1,fc6be42f2376:19,fe29:17,featur:[7,10,12,15,16,22,24],few:[7,16,17],field:[0,1,4,7,8,12,13,19,22,24,25],field_util:1,file:[6,7,8,12,13,14,15,18,19,21,22,23,24,25],file_opt:25,file_typ:25,fileload:7,filter:17,fire:19,first:[8,10,11,12,15,16,17,19,24],fix:8,flag:18,flexibl:12,flow:[1,16,18,25,26],fly:12,focu:20,focus:22,folder:7,follow:[8,10,12,20,21,22,24,25],foo:[0,14,16],for_pipeline_run:7,forc:25,forget:16,form:[1,18,19],formal:7,format:[14,24,25,26],forth:1,frame:[15,25],framework:1,frequent:1,from:[0,1,6,7,8,11,12,13,14,15,16,17,18,19,20,22,23,24,25],from_dict:[0,19],frontend:6,fulli:[12,25],further:17,futur:15,gener:[1,6,7,8,15,21,24,26],generate_production_execution_context:8,get:[1,3,7,13,17,21,23],get_all_pipelin:1,get_pipelin:1,git:[6,10],github:[6,10],give:[14,16],given:[1,3,24,25,26],glarb:0,glob:22,goal:15,going:[7,24],gone:7,got:[8,13],grab:25,gradual:1,graph:[1,16,20,21,26],graphql:6,great:7,guarante:[7,8],gui:17,guid:[7,8],had:[7,19],halt:15,handi:6,handl:[1,8,14],hang:1,happen:[3,13,14],hardcod:[12,16,18],has:[1,2,7,8,15,17,18,19,20,22,24,25,26],has_solid:1,have:[0,1,6,7,8,10,11,12,15,16,18,19,20,21,22,23,24,25,26],haw:12,header_fil:8,hello:[0,9,12,18],hello_dag:16,hello_dag_pipelin:16,hello_input:18,hello_world:[0,17,23],hello_world_pipelin:17,help:[12,13,16],helper:7,henc:8,here:[7,12,18,25],heterogen:[25,26],high:8,highlight:17,homebrew:10,honua:12,hook:21,host:[7,15,24],how:[1,8,11,12,13,14,16,17,18,19,21,22,23,24,25,26],howev:[19,21,22,25],html:6,http:[6,16,17,18,25,26],idempot:[1,26],identifi:1,illustr:12,imagin:[13,18,21,24],immatur:15,implement:[0,1,14,19,24],implicit:[15,26],implicitli:19,implict:15,importerror:8,improv:[13,18],includ:[7,8,13,14,20,21,25],incom:7,inde:[7,21,25],index:[1,9,25],indic:[2,14,15],indirect:14,individu:[1,12,26],info:[0,1,2,7,12,13,14,15,17,19,20,21,22,24],inform:[1,7,14,16,17,18,23,26],infrastructur:[7,14],ingest:15,inject:20,injected_solid:20,inmemorystor:24,inner_typ:4,input:[0,1,5,8,9,11,12,13,15,16,17,19,20,21,22,24,26],input_def:1,input_nam:1,input_schema:[4,25],input_selector_schema:[4,25],inputdefinit:[0,1,7,11,13,15,16,18,20,21,22,24,25],inputs_env:18,inputs_env_bad:18,insert:25,insid:[10,13],inspect:[15,26],inst_param:25,instal:[6,7,8,9,17],instanc:[0,1,14,16,19,21],instanti:21,instead:[0,1,7,8,12,13,18,20,23,24,25],instruct:[8,17,25],integr:[1,26],intend:3,interact:[1,6,7,11,12,14,18,24],interest:[16,18,21],interfac:[17,24],intern:[1,8],interpret:10,intro_tutori:[14,23],introduc:[16,17],invalid:19,invari:2,invoc:1,invok:[7,18,24],involv:21,is_builtin:4,is_nam:4,is_opt:[1,7,12,25],is_posit:1,is_system_config:4,isn:3,isol:[10,20],issu:6,iter:[1,3],iterate_over_pipelin:1,its:[1,7,11,12,13,14,15,16,17,18,22,24,26],itself:[1,19,23],javascript:6,jest:6,job:15,just:[7,8,10,11,12,16,17,18,19,20,22,23],kdjfkd:13,keep:22,kei:[0,1,3,12,14,16,18,24,25],klass:8,know:[7,18,23,26],known:26,kwarg:[0,2,4],label:[21,25],lambda:[0,1,15,24],lambda_solid:[0,1,11,12,13,15,16,17,18,20,21,22,23,25],languag:[12,25],last:[11,22],lastli:24,later:[8,10,16,17,22],latest:[7,10],layer:[14,16],learn:[12,13,23,24,26],left:[0,20],len:[12,20],less:[7,8,18],let:[7,11,13,14,15,16,17,18,19,20,22,23,24,25,26],letter:[13,22],level:[8,9,14,17,22],level_from_str:7,librari:[8,9,10,25,26],lifecycl:8,like:[0,1,8,10,12,14,15,18,19,21,22,23,24,25],line:[11,12,13,16,17,18,22,23],link:12,list:[0,1,3,4,11,23,25],littl:23,live:[6,24],livehtml:6,load:[18,21,22,23],load_a:21,load_b:21,load_numb:[20,21],local:[7,14,24],local_f:7,localfshandleresourc:7,localhost:6,locat:26,log:[0,1,7,15,17,19,22,24],log_level:[7,8,13,14,22],log_message_id:[14,15,17,19],log_num:19,log_num_squar:19,logger:[7,8],longer:[7,8,25],look:[11,22],lookup:15,lot:17,machin:[7,14,26],made:[13,21,26],mai:[0,1,7,12,18,23,26],maintain:26,mainten:26,make:[3,6,7,8,10,13,14,15,18,21,23,25,26],malform:15,manag:[6,10,12,14,24,26],mani:[1,12,16,18,21,23,26],manipul:25,manual:[1,7],map:1,mar:18,mark:17,marshalling_strategi:4,materi:25,matter:[11,22],matur:26,maxim:26,maximum:12,mean:[7,18,24],meaning:26,mechan:[8,17,19,20],medium:26,memori:[1,20,24,25],merg:7,messag:[1,8,13,14,16,17],met:23,metadata:[1,15,25,26],method:1,microsoft:10,middl:7,might:[12,13,14,25],milli:[15,17],mismatch:2,miss:[13,16],mistak:[13,18],mode:[6,24],model:[7,9,16,23,24],modifi:19,modul:[8,9,23],modulenotfounderror:8,more:[0,7,8,11,12,15,19,21,22],most:[8,14,23],mostli:1,move:[7,8],much:[1,7,8,12,25],multer:[20,21],multi:17,multipl:[0,1,8,9,21,22,24,26],multiple_output:19,multiple_outputs_step_one_pipelin:19,multipleresult:0,multipli:13,multiply_the_word:[13,22],multiply_the_word_with_typed_config:13,must:[1,12,15,16,18,19,20,24,25],mutabl:25,my_solid:0,my_solid_from_dict:0,myenv:10,name:[0,1,3,4,7,8,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25],nameddict:4,namedtupl:[7,8],namespac:8,natur:15,navig:[16,17],necessari:1,need:[0,6,7,8,10,18,22,24,25,26],net:8,never:[19,20,26],next:[11,12,14,16,17,18,19,22,23,24],nice:13,nicer:8,node:[3,17,21,26],non:[1,13],none:[0,1,3,4,5,7],none_resourc:7,norm:26,normal:8,not_a_num:13,not_a_numb:13,note:[3,7,8,11,15,18,19,23,24,25],noth:25,notic:[7,14,15,16,18,19,21,24,25],notion:[7,8,25],notori:26,now:[7,8,11,12,13,14,15,16,18,20,21,22,23,24,25],nullabl:4,num1:[20,21,25],num2:[20,21,25],num:[1,19,25],num_on:[15,24],num_two:[15,24],number:[1,19,25],object:[0,1,8,14,19,25],obvious:21,occur:14,off:[1,20],offer:24,offici:[7,8],often:[18,26],omit:[0,7],onc:[23,25],one:[1,3,7,8,12,17,18,19,20,21,22,25],onli:[1,2,7,12,14,15,17,18,19,21,22,25],oper:[1,10,13,18,21,24,26],opinion:[9,26],opportun:14,opt:8,option:[1,10,15,16,25],order:[7,11,12,13,16,18,22,23,24,25,26],org:25,orig_messag:[14,15,17,19],origin:25,osx:10,other:[1,7,10,11,14,16,19,20,23,25,26],other_nam:1,otherwis:0,our:[12,13,16,17,18,22,23,25],out:[7,8,14,24,26],out_on:19,out_two:19,outliv:25,output:[0,1,3,7,8,9,11,12,15,16,17,18,20,21,24,26],output_nam:[1,3],output_schema:[4,25],output_selector_schema:[4,25],outputdefinit:[0,1,7,15,18,19,20,21,24,25],outputs_def:1,over:[1,25,26],overrid:22,overview:26,own:[7,8,17,18,22,25],packag:[10,24],page:9,pair:[14,25],panda:[1,8,25,26],pandas_df:25,pandasdatafram:25,pane:17,parallel:8,param:8,paramet:[0,1,3,12,21,24],parameter:[3,18,24,25],parametercheckerror:8,parameteriz:1,parametr:12,parametriz:26,parquet:25,part:[10,22,23,26],part_eleven_step_thre:19,part_eleven_step_two:19,part_seven:22,part_thirteen:21,particular:[3,7,12,19,21,24,26],particularli:21,pass:[1,7,8,12,13,14,15,20,23,24],passthrough:1,passthrough_context_definit:1,password:[7,24],path:[4,7,8,10,13,25],pathtofil:[7,8],pedogog:25,peopl:[23,26],per:[1,8,11,12,18],perform:[1,25,26],persist:25,persona:26,piec:7,pieplin:1,pip:[6,8],pipelin:[1,2,3,7,8,9,11,12,13,14,15,16,18,19,21,23,24,25,26],pipeline_cli_execut:22,pipeline_def:5,pipeline_dict:[1,13,22,23],pipeline_guid:7,pipeline_result:[20,21],pipeline_run_id:[7,8],pipeline_start:17,pipeline_success:17,pipelineconfigevaluationerror:[2,13],pipelinecontextdefinit:[1,7,8,24],pipelinedefinit:[1,3,8,11,12,13,14,15,16,17,18,19,20,21,22,23,24],pipelinedefiniton:1,pipelinedefint:1,pipelineexecutionresult:3,place:[22,24],plai:25,plan:6,platform:[17,23],plu:20,point:[11,19,23],poorli:26,pop:18,popd:10,port:[6,7],possibl:13,postgresql:7,potenti:[7,25],power:[7,14],practic:26,pre:[1,7],predict:7,prefer:[1,13],present:[1,10,25],prevent:[13,15],previou:[1,7,12,13,19,23],primari:18,primer:26,principl:9,print:[0,14],prior:[13,18,26],probabl:1,proce:[12,25],process:[15,26],prod:1,produc:[0,1,17,25,26],product:[1,8,12,14,22,24,26],program:[9,16,23,26],programmat:23,project:[6,10,23],promis:7,prone:[8,18,22],properli:26,properti:[1,8,12,15],provid:[1,8,12,14,16,18,19,20,24,25,26],publiccloudconn:24,publiccloudstor:24,publish:6,pure:[1,25],purpos:21,pushd:10,put:7,py27:12,pydata:25,python3:[6,10],python:[6,8,17,24,26],python_modul:6,python_packag:10,python_typ:[4,8],pythonobjecttyp:[4,8],qualiti:[1,8,15],queri:15,question:25,quickli:26,quit:[7,15,20],quux:13,rais:[2,19,25],ran:13,rather:[3,7,8,11,16,17,18,19,20,21,23,25,26],raw:8,react_app_graphql_uri:6,read_csv:25,read_parquet:25,read_tabl:25,readili:14,real:7,realiz:8,realli:8,reason:[1,8,21],recal:18,recommend:10,record:24,record_valu:24,recours:15,red:18,redistribut:10,redshift:[7,8],reduc:26,reentrant_info:3,reentrantinfo:3,regist:25,regret:10,rel:7,relat:8,releas:[7,10],relev:7,remain:25,remov:25,render:6,repetit:23,replac:[7,8,13],repo:23,repo_demo_pipelin:23,report:26,repositori:[1,6,9,10,22,24],repositorydefinit:[1,13,22,23],repostori:23,repres:[1,8,24],requir:[0,1,6,7,9,13,24,25,26],rerun:12,resid:21,resoourc:24,resourc:[1,8,9,14],resource_fn:[1,7,24],resource_test_pipelin:24,resourcedefinit:[1,7,24],respons:25,rest:7,resuabl:7,result:[0,1,3,6,8,17,20,24],result_context:1,result_dict:[0,8],result_for_solid:[3,8,20,21],result_list:[3,20],retriev:1,return_dict_result:19,reus:[7,21],reusabl:[7,9,12],rewrit:12,rich:[13,18,26],richer:14,right:[0,8,15,17,18],root:[10,13],rout:14,row:25,rule:2,run:[3,7,8,10,12,13,14,15,16,17,19,22,23,25,26],run_id:[7,14,15,17,19],runner:6,runtim:[2,8,13,16,18,26],runtime_typ:1,runtimeexecutioncontext:8,runtimeexecutioncontextparam:8,runtimetyp:4,s3filehandl:8,safeti:22,sai:[15,20,25],salient:12,same:[0,1,7,8,11,12,18,19,24,26],satisfi:[1,11,20],satisi:7,save:[14,17,23],scalar:[1,12],schema:[7,8,9,12],scientist:26,scope:21,script:[6,17,22],search:9,second:[8,12,16,18],section:[7,12,14,16,18,24],see:[1,3,10,11,13,14,16,17,18,19,21,23,24,25,26],seen:[11,25],select:[10,25],selector:[8,25],self:[7,13,24],semi:14,sens:25,sensibl:6,sep:25,separ:[8,10,16],sequenc:13,serv:[17,18,26],server:6,servic:24,service_lines_fil:8,set:[6,17,22,24],set_value_in_cloud_stor:24,setup:1,sever:[0,18,25],shape:8,share:7,she:25,shell:10,shortcut:0,should:[0,1,7,8,10,12,14,16,17,19,21,23,24,25,26],shouldn:21,side:26,signatur:1,similar:25,simpl:[0,15,16],simpler:[0,8],simpli:[8,24],simplifi:0,sinc:[11,25],singl:[0,1,7,8,12,17,19,20,21,24,25,26],site:21,size:25,skip:15,slightli:[7,11],snapshot:[6,8],snapshot_check_result:8,softwar:[1,7,10,15],solid:[0,1,2,3,8,9,11,12,13,14,15,16,17,18,19,20,22,23,24,25],solid_1:1,solid_2:1,solid_a:11,solid_b:11,solid_c:11,solid_d:11,solid_definit:[14,15,17,19],solid_nam:[1,5],solid_on:16,solid_result:[8,21],solid_subset:3,solid_two:16,soliddefinit:[0,1,3],solidexecutionresult:3,solidinst:[1,20,21],some:[1,2,6,7,8,14,15,22,24,25,26],some_input:1,some_password:24,some_us:24,someth:[0,6],sophist:[11,15],sourc:[6,7,25],space:2,spark:[14,26],speak:[12,20],special:[7,21],specif:[7,19,22],specifi:[0,12,14,16,18,19,22,23,24],specific_env:22,spew:19,split_headers_and_service_lin:8,sql:26,sqlalchemi:8,ssd:1,stacktrac:18,stage:[8,26],start:[6,11,20],state:3,step:[3,8,16,17,18,25],step_kei:[15,17],step_results_by_tag:3,still:11,storag:21,store:[24,25],str:[0,1,7,8,13],str_param:25,str_valu:0,straightforward:7,stream:[1,17],string:[0,4,7,8,12,13,16,18,19,22,24,25],strongli:[10,13],structur:[1,7,13,14,18,25,26],stub:8,stub_a:20,stub_b:20,stub_c_plus_d:20,studio:10,sub:8,subdag:20,subfield:25,submodul:8,subpackag:8,subsequ:7,subset:[7,8,20,26],substanti:8,substrat:14,succeed:[15,17],success:[1,3,8,15,17,20,21],sudo:10,suffici:26,suitabl:1,sum:25,sum_df:25,sum_int:24,sum_solid:25,suppli:1,support:[1,7,19,26],suppos:[6,8,22],surfac:18,surround:14,swap:24,swappabl:23,sync:22,synchron:3,synthes:7,system:[1,2,4,7,8,10,12,13,14,15,24,25,26],tab:17,tabl:[1,8,15,25],tabular:25,tailor:21,take:[0,1,7,8,12,17,20,25],target:[1,23],task:[11,16,26],team:26,tediou:[13,22],tell:[16,22,23,24],term:[19,25],test:[1,3,6,7,8,9,10,12,15,24,26],test_a_plus_b_final_subdag:20,test_intro_tutorial_part_four:12,test_part_thirteen_step_on:21,test_part_thirteen_step_two:21,testabl:12,than:[3,6,7,8,11,16,18,19,20,21,22,23,25,26],thei:[0,1,7,8,11,15,21,25,26],them:[8,10,12,17,18,21,25],therefor:13,thi:[0,1,3,7,8,10,11,12,13,14,15,16,17,18,19,20,21,23,24,25,26],thing:[3,7,21],think:[21,26],third:[8,17,25],thirteen_step_on:21,thirteen_step_two:21,those:[1,6,8,10,12,15,22,25,26],though:14,thought:8,thread:[14,17],three:[17,18,21,25],threshold:15,through:[1,14,18,24,25,26],throughout:[14,25],throw_on_error:3,thrown:2,thu:1,tie:[8,19],tied:21,time:[1,11,12,13,15,17,18,19,21,23,25,26],timestamp:14,tiresom:23,to_csv:25,to_parquet:25,togeth:[7,11,21],tool:[6,10,15,17,22,23,26],top:[8,23],topolog:[11,16],total:18,touch:[14,24],tox:6,trace:13,tradit:15,transform:[0,1,3,17,18,19],transform_fn:1,transformed_valu:[3,8,20,21],transformexecutioninfo:[1,12],transit:8,tree:6,trigger:19,turn:[11,12,25],tutori:[12,14,19,22,23,25],tutorial_part_thirteen_step_on:20,tutorial_part_thirteen_step_thre:21,tutorial_repositori:14,two:[1,8,16,19,20,21,22,25],txt:6,type:[0,1,2,7,8,9,12,13,15,16,20,21,22,23],type_attribut:4,typecheck:[13,25],typed_demo_configuration_schema:13,typed_demo_configuration_schema_error:13,typed_multiply_the_word:13,typed_multiply_the_word_error:13,typeerror:[8,13],typic:[1,15,20],ubuntu:10,undefin:13,under:[12,18,24],unexpect:15,unfamiliar:26,union:25,uniqu:[1,19],unit:[1,7,9,16,17,26],unittest:[1,7,8,24],univers:14,unlik:[0,15],unmodifi:7,unnam:[1,20],unpack:[0,25],unsupport:25,until:[18,22],untyp:18,unzip:[7,21],unzip_fil:[7,8],unzipfileconfig:7,unzipped_fil:8,unzipped_path:8,unzipped_path_valu:8,updat:[6,8,10,15],upgrad:[7,8],upload:[8,21],upload_header_to_s3:8,upload_service_line_to_s3:8,upstream:[7,20],usag:1,use:[6,7,8,10,12,13,14,15,17,18,20,22,23,24,25,26],used:[0,1,7,8,12,17,19,21,24,25],useful:[1,3,14,15,18,20,21,22,25,26],user:[1,2,7,8,9,12,14,15,18,22,24,26],usernam:24,uses:7,using:[0,6,7,10,12,14,17,18,21,22,23,24],utf:12,util:[8,9,12,17,22,25],utility_solid:8,uuid4:[7,8],uuid:[7,8],valid:[13,25],valu:[0,1,2,3,8,12,13,14,15,17,18,19,20,22,24,25,26],vari:[1,22],venv:[6,10],verbos:[7,8],veri:[1,3,8,13,16,21,25],version:[3,6,19,24],via:[14,17,18,23,24,25],view:17,viewabl:15,violat:2,virtual:8,virtualenv:6,virtualenviron:10,virtualenvwrapp:10,visual:[10,16,17,23],wai:[0,15,17,18,19,24,25,26],want:[1,12,14,15,18,20,22,23,24,25],watch:6,wax:7,web:17,webapp:10,welcom:9,well:[2,7,8,26],were:[7,8,21],what:[1,7,11,13,15,16,21,25,26],whatev:8,when:[0,1,3,6,11,13,15,18,22,23,25,26],where:[1,12,14,15,16,17,20,24,25],wherea:25,whether:[1,3,10,26],which:[1,3,6,7,12,13,16,17,18,19,22,23,26],who:26,whole:[3,15],whose:[0,1,10,16,18],why:21,wide:10,window:10,wire:11,within:[1,7,8,15,16,17,18,21],without:[12,17,18,23],won:10,word:[13,18,22],work:[0,13,23,24],workflow:16,world:[9,12,18],worri:16,worth:11,would:[1,7,8,11,13,18,24,25],wrap:19,write:[7,17],written:26,wrong:13,wrong_factor:13,yaml:[8,12,18,22],yarn:6,yellow:17,yet:6,yield:[0,1,3,7,8,18,19,26],yield_output:19,yml:[6,12,13,14,15,18,19,22,23],you:[0,1,6,7,8,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25],your:[7,8,10,11,14,15,17,18,24,25],zip:7,zip_file_path:[7,8],zipped_fil:[7,8]},titles:["Decorators","Definitions","Errors","Execution","Types","Utilities","Contributing","Resources","Required API Changes","Intro Tutorial","Installation","An actual DAG","Configuration","Configuration Schemas","Execution Context","Expectations","Hello, DAG","Hello, World","Inputs","Multiple Outputs","Unit-testing Pipelines","Reusable Solids","Pipeline CLI Execution","Repositories","Resources","User-Defined Types","Principles"],titleterms:{"class":19,"function":26,actual:11,agnost:26,api:[8,9,18],audit:9,basic:25,chang:8,cli:[17,18,22],comput:26,condit:19,config:[7,22],configur:[12,13],context:14,contribut:6,creat:10,dag:[11,16],dagit:[6,17,18],data:26,decor:0,defin:25,definit:[1,4],describ:26,dev:10,develop:6,doc:6,environ:10,error:2,execut:[3,14,17,22],expect:15,from:10,gradual:26,guid:9,hello:[16,17],indic:9,input:[7,18,25],instal:10,intro:9,iter:19,level:7,librari:[7,17],local:6,log:14,multipl:19,multipleresult:19,old:9,option:26,output:[19,25],pip:10,pipelin:[17,20,22],principl:26,pypi:10,python:[10,18],qualiti:26,refer:9,releas:6,repositori:23,requir:8,resourc:[7,24],result:19,reusabl:21,run:6,schema:[13,25],self:26,setup:6,solid:[7,21],sourc:10,split:22,stabl:10,tabl:9,test:20,testabl:26,tutori:9,type:[4,18,25,26],unit:20,user:25,util:5,verifi:26,version:10,virtual:10,virtualenv:10,webapp:6,world:17,yarn:10}})'
+snapshots['test_build_all_docs 10'] = 'Search.setIndex({docnames:["apidocs/decorators","apidocs/definitions","apidocs/errors","apidocs/execution","apidocs/types","apidocs/utilities","contributing","guides/028_to_030_new_concepts","guides/028_to_030_upgrade_guide","index","installation","intro_tutorial/actual_dag","intro_tutorial/config","intro_tutorial/configuration_schemas","intro_tutorial/execution_context","intro_tutorial/expectations","intro_tutorial/hello_dag","intro_tutorial/hello_world","intro_tutorial/inputs","intro_tutorial/multiple_outputs","intro_tutorial/part_fourteen","intro_tutorial/part_thirteen","intro_tutorial/pipeline_cli_execution","intro_tutorial/repos","intro_tutorial/resources","intro_tutorial/types","principles"],envversion:53,filenames:["apidocs/decorators.rst","apidocs/definitions.rst","apidocs/errors.rst","apidocs/execution.rst","apidocs/types.rst","apidocs/utilities.rst","contributing.rst","guides/028_to_030_new_concepts.md","guides/028_to_030_upgrade_guide.md","index.rst","installation.rst","intro_tutorial/actual_dag.rst","intro_tutorial/config.rst","intro_tutorial/configuration_schemas.rst","intro_tutorial/execution_context.rst","intro_tutorial/expectations.rst","intro_tutorial/hello_dag.rst","intro_tutorial/hello_world.rst","intro_tutorial/inputs.rst","intro_tutorial/multiple_outputs.rst","intro_tutorial/part_fourteen.rst","intro_tutorial/part_thirteen.rst","intro_tutorial/pipeline_cli_execution.rst","intro_tutorial/repos.rst","intro_tutorial/resources.rst","intro_tutorial/types.rst","principles.rst"],objects:{"":{dagster:[4,0,0,"-"]},"dagster.DependencyDefinition":{description:[1,1,1,""],output:[1,1,1,""],solid:[1,1,1,""]},"dagster.ExpectationDefinition":{description:[1,1,1,""],expectation_fn:[1,1,1,""],name:[1,1,1,""]},"dagster.ExpectationResult":{message:[1,1,1,""],result_context:[1,1,1,""],success:[1,1,1,""]},"dagster.InputDefinition":{description:[1,1,1,""],expectations:[1,1,1,""],name:[1,1,1,""],runtime_type:[1,1,1,""]},"dagster.MultipleResults":{from_dict:[0,5,1,""],results:[0,1,1,""]},"dagster.OutputDefinition":{description:[1,1,1,""],name:[1,1,1,""],runtime_type:[1,1,1,""]},"dagster.PipelineContextDefinition":{config_field:[1,1,1,""],context_fn:[1,1,1,""],description:[1,1,1,""],passthrough_context_definition:[1,5,1,""]},"dagster.PipelineDefinition":{context_definitions:[1,1,1,""],dependencies:[1,1,1,""],dependency_structure:[1,1,1,""],description:[1,1,1,""],display_name:[1,1,1,""],has_solid:[1,6,1,""],name:[1,1,1,""],solid_named:[1,6,1,""],solids:[1,1,1,""]},"dagster.PipelineExecutionResult":{context:[3,1,1,""],pipeline:[3,1,1,""],result_for_solid:[3,6,1,""],result_list:[3,1,1,""],success:[3,1,1,""]},"dagster.RepositoryDefinition":{get_all_pipelines:[1,6,1,""],get_pipeline:[1,6,1,""],iterate_over_pipelines:[1,6,1,""],name:[1,1,1,""],pipeline_dict:[1,1,1,""]},"dagster.Result":{output_name:[1,1,1,""],value:[1,1,1,""]},"dagster.SolidDefinition":{config_field:[1,1,1,""],description:[1,1,1,""],input_defs:[1,1,1,""],metadata:[1,1,1,""],name:[1,1,1,""],outputs_defs:[1,1,1,""],transform_fn:[1,1,1,""]},"dagster.SolidExecutionResult":{context:[3,1,1,""],dagster_error:[3,1,1,""],solid:[3,1,1,""],success:[3,1,1,""],transformed_value:[3,6,1,""],transformed_values:[3,1,1,""]},"dagster.TransformExecutionInfo":{config:[1,1,1,""],context:[1,1,1,""]},dagster:{Any:[4,1,1,""],Bool:[4,1,1,""],ConfigType:[4,2,1,""],ContextCreationExecutionInfo:[1,2,1,""],DagsterExpectationFailedError:[2,3,1,""],DagsterInvalidDefinitionError:[2,3,1,""],DagsterInvariantViolationError:[2,3,1,""],DagsterRuntimeCoercionError:[2,3,1,""],DagsterTypeError:[2,3,1,""],DagsterUserCodeExecutionError:[2,3,1,""],DependencyDefinition:[1,2,1,""],Dict:[4,4,1,""],ExecutionContext:[3,2,1,""],ExpectationDefinition:[1,2,1,""],ExpectationExecutionInfo:[1,2,1,""],ExpectationResult:[1,2,1,""],Field:[1,4,1,""],InputDefinition:[1,2,1,""],Int:[4,1,1,""],List:[4,4,1,""],MultipleResults:[0,2,1,""],NamedDict:[4,4,1,""],Nullable:[4,4,1,""],OutputDefinition:[1,2,1,""],Path:[4,1,1,""],PipelineConfigEvaluationError:[2,3,1,""],PipelineContextDefinition:[1,2,1,""],PipelineDefinition:[1,2,1,""],PipelineExecutionResult:[3,2,1,""],PythonObjectType:[4,2,1,""],ReentrantInfo:[3,2,1,""],RepositoryDefinition:[1,2,1,""],ResourceDefinition:[1,2,1,""],Result:[1,2,1,""],RuntimeType:[4,2,1,""],SolidDefinition:[1,2,1,""],SolidExecutionResult:[3,2,1,""],SolidInstance:[1,2,1,""],String:[4,1,1,""],TransformExecutionInfo:[1,2,1,""],as_dagster_type:[4,4,1,""],dagster_type:[4,4,1,""],execute_pipeline:[3,4,1,""],execute_pipeline_iterator:[3,4,1,""],execute_solid:[5,4,1,""],execute_solids:[5,4,1,""],input_schema:[4,4,1,""],input_selector_schema:[4,4,1,""],lambda_solid:[0,4,1,""],output_schema:[4,4,1,""],output_selector_schema:[4,4,1,""],solid:[0,4,1,""]}},objnames:{"0":["py","module","Python module"],"1":["py","attribute","Python attribute"],"2":["py","class","Python class"],"3":["py","exception","Python exception"],"4":["py","function","Python function"],"5":["py","staticmethod","Python static method"],"6":["py","method","Python method"]},objtypes:{"0":"py:module","1":"py:attribute","2":"py:class","3":"py:exception","4":"py:function","5":"py:staticmethod","6":"py:method"},terms:{"06c7":17,"0e15a1b22a6":19,"0x11e4fbf60":8,"10115a01783f":15,"1563854b":17,"17576abb9da2":19,"1c10":15,"1dfb":19,"25faadf5":17,"2mxds1r":26,"343ac9fb":19,"40ea":19,"41c3":19,"42b8":19,"42ff":15,"43f5":17,"46cc":17,"47f8":19,"49eb":17,"4a4e":14,"4a8b":15,"4ac0":14,"4ae2":17,"4afd":19,"4b96":19,"4bee891c":19,"4d71":17,"4e1b":19,"4edbb3a1dbc2":19,"4f38ba45b8e0":14,"523e":19,"5878513a":17,"596d":19,"5c829421":17,"5e1cc181":19,"604dc47c":17,"677247b1b07b":17,"6b80d12155de":19,"71affcec":15,"744a":17,"758f":17,"7e828e37eab8":17,"81ba":17,"85a6":19,"88cb":17,"8d32":19,"8da32946":19,"95ef":19,"97ae58fda0f4":17,"9f12":19,"\\u4e16\\u754c":12,"\\u4f60\\u597d":12,"abstract":[1,7,14],"break":[6,7,8,26],"case":[1,12,14,15,16,18,20,24,25],"catch":[13,18],"class":[0,1,2,3,4,7,8,15,24],"default":[0,1,7,10,13,14,15,19,22,23,25],"final":[20,21,22,25],"function":[0,1,3,7,8,12,15,16,17,18,19,21,23,24,25],"import":[8,11,12,13,14,15,16,17,18,22,23,24,25,26],"int":[1,4,7,13,15,19,20,21,22,24,25],"long":23,"new":[0,6,8,9,10,15,16,20,23,24],"null":15,"public":[8,24],"return":[0,1,3,7,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25],"static":[0,1],"switch":[10,12],"throw":[1,2,3,15],"true":[1,3,4,7,12,25],"try":[11,12,22,23],"while":[7,8,24],And:[7,10,13,14,15,18,19,21,22,24],But:[18,23],For:[1,3,6,7,10,12,18,19,24],Lying:15,One:[1,8,14,15,16,20,25],That:[7,12,24],The:[0,1,3,7,8,11,12,13,14,15,16,17,18,19,20,22,24,25],Then:[12,17],There:[1,8,17,21],These:[1,13,14,19,21,26],Use:8,Used:1,Useful:[0,24],Using:[14,17],With:[7,19,22],__fieldvaluesentinel:1,__inferoptionalcompositefieldsentinel:1,__init__:[8,24],__main__:17,__name__:17,_add_on:1,_cleanup_field:7,_conf_field:7,_create_resourc:7,_data_source_run_id_field:7,_info:[1,15,19],_log_level_field:7,a29ddb15309a:14,a531:17,a801:17,a_plus_b:[20,21],aaac:14,abid:25,abil:[7,15,16,20],abl:[7,12,14,17,21,23,25,26],about:[1,7,8,12,15,16,22,24,25,26],abov:19,ac43:19,accept:1,access:[1,14,24],acronym:1,across:[7,22],action:13,activ:[6,10],actual:[9,16,19,24,26],actual_dag:11,actual_dag_pipelin:11,acycl:[1,16,26],add:[8,17,24,25],add_hello_to_word:18,add_hello_to_word_typ:18,add_int:[15,24],add_on:1,adder:[20,21],addit:[0,12],addition:19,advertis:26,aed8162cc25c:19,aesthet:25,afford:12,after:[7,8,11],again:11,against:[8,24],alia:[1,21],all:[1,3,7,12,17,18,19,23,24,25],allow:[0,1,3,7,14,16,19,22,23,25],allscript:[7,8],allscriptsfileloadresourc:7,aloha:12,along:[20,25],alreadi:[10,20,23,24],also:[6,7,8,10,15,18,19,20,22,23,24,25,26],alter:24,altern:[0,25],although:[14,23],alwai:[18,26],anaconda:10,analyst:26,ani:[1,3,4,6,7,8,10,11,13,14,17,18,23,24,25,26],annon:14,annot:[8,12,25],anoth:[7,8],anticip:7,anyth:25,anywher:15,apach:6,apart:7,api:[0,1,3,7,12,23,24,25],appear:[14,25],appli:[1,15,18,25],applic:[15,22],approach:26,appropri:[18,24,26],apt:10,arbitrari:[1,16,19,20,25,26],aren:10,arg:[2,4],arg_a:11,arg_b:11,arg_c:11,arg_on:16,argument:[0,1,2,8,12,16,18,19,22,25],aris:13,arithmet:21,around:[8,19,25],arrai:1,arrang:[1,17,26],arrow:6,articl:26,artifact:[24,26],as_dagster_typ:[4,8,25],asid:7,aspect:15,assert:[8,17,20,21],asset:[1,17],assign:18,assum:[1,17,25],assumpt:[15,26],attach:[1,24],attent:11,attribut:8,attributeerror:8,author:[1,14,16,26],auto:[6,18],automat:18,autoreload:6,avail:[0,1],avoid:12,awai:14,awar:15,awkward:8,aws:7,axes:25,b0cbb1be:14,b150:19,b17dea553fba:15,b27fb70a:17,b510:17,b5a8:17,b602e4409f74:17,b74d:19,b7c5:19,b85c:17,b8e0:14,back:13,ball:7,bar:[0,22],barb:0,base:[18,19],bash:10,basi:11,basic:14,batch:26,bc262d555b73:19,be77:19,beauchemin:26,becaus:[6,7,8,11,14,15,18,19,26],becom:7,been:[2,19,20,21,22,25],befor:[7,8,11,13,18],begin:[7,17],behavior:15,behaviour:0,being:[3,8,21],best:26,better:[18,23],between:[1,3,7,16,26],bigco:24,bin:[6,10],bit:[10,26],bkjdf:13,bodi:0,boilerpl:[7,25],bool:[1,3,4,7],both:[8,10,11],bottom:17,branch:19,breakag:26,brew:10,broadli:[20,22],browser:17,bucket:8,bucket_path:7,build:[7,8,10,11,16,17,23,25],built:[12,18,26],builtin:25,bulk:7,bunch:[14,22],burden:26,c25e:19,c_plus_d:[20,21],cach:1,call:[8,15,16,17,21,23,25,26],callabl:1,callback:1,caller:[3,8],can:[1,2,6,7,8,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26],cannot:8,capabitili:16,capabl:[7,8,14,15,20,26],captur:15,caught:13,caus:[13,15],cb10:19,cb75946b0055:17,certain:1,chang:[6,7,14,24,26],check:[1,2,6,8,10,15,16,25,26],check_posit:15,choic:17,choos:[16,25],chunk:7,cleali:26,clean_up_dir:7,cleanup_fil:[7,8],clear:13,cli:[9,23],click:18,clone:[6,10],cloud:[21,24],cluster:14,code:[2,7,8,12,14,15,24,25,26],collabor:26,collect:[1,13,22,23,24],column:25,com:[6,10],come:[1,7,10,25],command:[11,12,16,18,22,23],comment:20,common:[7,24],commonli:25,compar:6,compat:12,complet:[1,17,18],complex:11,complic:21,compos:[1,7],compris:1,comput:[1,12,14,16,17,24,25],computation:26,concaten:16,concept:[9,15,16,17],conceptu:[8,12],concis:0,conda:10,condit:3,condition:19,conditional_output:19,conf:[7,8],config:[0,1,8,12,13,14,15,18,19,20,21,23,24,25],config_cl:4,config_def:[7,8],config_env:12,config_field:[0,1,7,8,12,13,19,20,21,22,24],config_valu:[1,2,25],configdefinit:[7,8,20,21],configdictionari:[7,8],configtyp:4,configtypeattribut:4,configur:[0,1,2,7,8,9,14,15,18,19,24,25,26],configurable_hello:12,configurable_hello_pipelin:12,configuration_schema:13,configuration_schemas_error_2:13,configuration_schemas_runtime_error:13,configuration_schemas_type_mismatch_error:13,configuration_schemas_wrong_field:13,conform:1,conn:24,connect:[1,7,11,16,21,25],consist:7,consol:[14,18],constant:22,constant_env:22,constitut:1,construct:[1,8,23,24],constructor:24,consum:[1,13,22,26],contain:[1,6,7,14,18,20,26],context:[0,1,3,7,8,9,13,18,20,22,24,26],context_definit:[1,24],context_fn:[1,7,8],context_param:1,context_stack:[7,8],contextcreationexecutioninfo:1,contract:26,contribut:9,control:[1,15,26],cooper_pair:7,copi:[16,22,25],core:[0,1,2,8,13,15,16,17,19,21,24],correct:1,correspond:12,could:[1,7,11,18],count:[7,13,22],count_lett:[13,22],coupl:12,creat:[0,1,6,7,8,19,20,22,23,24],create_allscripts_fileload_unittest_context:7,create_engin:7,create_single_solid_pipelin:[8,20],create_sub_pipelin:[8,20],creation:[0,7,8],credenti:24,critic:[15,26],csv:25,current:[1,15],custom:17,d548ea66:19,d8f41da0:14,dag:[1,9,12,17,20,26],dagit:[10,11,12,14,15,16,21,22,23,25],dagster:[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,22,23,24,25,26],dagster_error:3,dagster_exampl:6,dagster_panda:1,dagster_sqlalchemi:8,dagster_typ:[1,4,7,8,19],dagsterenv:6,dagsterexpectationfailederror:[2,15],dagsterinvaliddefinitionerror:2,dagsterinvariantviolationerror:[2,25],dagsterruntimecoercionerror:2,dagstertyp:[1,7],dagstertypeerror:2,dagsterusercodeexecutionerror:2,data:[1,9,15,16,17,20,25],data_sourc:[7,8],data_source_run_id:[7,8],databas:[1,14,24],datafram:[1,25],dataframe_input_schema:25,dataframe_output_schema:25,dbname:7,dea6d00d99f0:17,debug:[13,14,22],debug_messag:14,declar:[1,7,11,12,21,23,24,25],decor:[1,9,17,25],deem:26,deep:13,deepli:11,def:[0,1,7,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25],default_output:3,default_valu:[1,7,12,25],defaultcontextconfig:8,defaultdict:[13,22],defin:[0,1,2,7,8,9,12,16,17,22,23],define_allscripts_fileload_pipelin:8,define_cloud_store_resourc:24,define_colored_console_logg:[7,8],define_configurable_hello_pipelin:12,define_csv_dict_field:25,define_demo_configuration_schema_pipelin:13,define_demo_configuration_schema_repo:13,define_demo_execution_pipelin:22,define_demo_execution_repo:22,define_diamond_dag_pipelin:11,define_execution_context_pipeline_step_on:14,define_expectations_tutorial_pipelin:15,define_hello_dag_pipelin:16,define_hello_inputs_pipelin:18,define_hello_world_pipelin:[17,23],define_in_memory_store_resourc:24,define_local_fs_resourc:7,define_multiple_outputs_step_one_pipelin:19,define_multiple_outputs_step_three_pipelin:19,define_multiple_outputs_step_two_pipelin:19,define_part_fourteen_step_on:20,define_part_thirteen_step_on:21,define_part_thirteen_step_thre:21,define_part_thirteen_step_two:21,define_path_dict_field:25,define_redshift_sa_resourc:7,define_repo:23,define_repo_demo_pipelin:23,define_repositori:14,define_resource_test_pipelin:24,define_stub_solid:[8,20],define_typed_demo_configuration_schema_error_pipelin:13,define_typed_demo_configuration_schema_pipelin:13,define_unittest_context:7,definit:[2,8,9,12,13,21,23,24],del:25,deliv:26,demand:[1,23],demo_configuration_schema:13,demo_configuration_schema_repo:13,demo_execution_repo:22,demo_pipelin:22,demo_repositori:23,demonstr:[11,18],depend:[1,6,7,8,11,12,13,16,18,19,20,21,22,26],dependency_structur:1,dependencydefiniion:1,dependencydefinit:[1,11,13,16,19,20,21,22],dependencystructur:1,describ:[7,13,15],descript:[0,1,4,7,8,13,19,24,25],design:[1,14,26],destruct:1,detail:[8,12,18],deteremin:2,determin:[1,11,16],dev:[1,6],develop:[10,12,15,24],dfc8165a:17,diagnost:26,dict:[0,1,3,4,7,8,12,13,16,18,22,24,25],dict_param:25,dictionari:[0,1,3,8,11,16,18,25],did:19,differ:[1,6,8,12,14,15,17,21,24,25,26],difficult:[8,20,26],dimension:[1,25],direct:[1,16,26],directli:[0,8,17,18,25],directori:6,discourag:8,discov:26,discuss:20,disk:[1,8,25],displai:1,display_nam:1,distinguish:16,distrbut:15,document:[6,10,13,22,26],doe:[0,1,7,11,14,19,24],doesn:7,doing:[21,25],don:[11,16],done:[12,20,26],dot:18,download:10,downstream:19,drive:22,dropdown:[16,23],dsl:26,dure:[3,26],dynam:19,e04f:19,e476:14,e529:15,e903e121:15,each:[1,3,7,11,12,14,16,17,18,21,22,25],earlier:[18,22],easier:[1,7,23],easili:26,edg:1,edit:[12,13],editor:[12,18],effect:26,either:[1,3,15,16,19,26],element:22,elif:[12,19,25],elimin:[7,8],els:[12,19,25],emit:[14,17,19,20],enabl:20,encod:[12,16],encourag:[10,26],encout:3,end:[1,19],enforce_uniqu:1,engin:[14,16,26],enrich:22,ensur:[1,25],enter:[15,18],entir:[12,14,15,18,20],entit:1,entri:11,entropi:26,env:[8,13,22],enviro:3,environ:[1,3,5,6,7,8,11,12,14,18,24,26],error:[3,7,8,9,13,14,15,16,18,22,26],error_messag:14,especi:23,etc:[1,6,21],evalu:1,even:[7,14],event_typ:[15,17],ever:13,everi:[1,17,26],everyth:18,exactli:8,examin:19,exampl:[0,1,6,7,8,11,12,14,17,18,19,23,24,25,26],excel:26,except:[1,2,3,19,25,26],excess:8,exclus:7,execut:[1,7,8,9,11,12,13,15,16,18,19,20,23,24,25,26],execute_pipelin:[3,8,12,14,17,18,20,21,24],execute_pipeline_iter:3,execute_solid:[5,8],execute_with_another_world:18,execution_context:14,execution_context_pipelin:14,execution_plan_step_start:17,execution_plan_step_success:[15,17],executioncontext:[1,3,7,8],exist:[1,7,8,20,25],existing_typ:4,expecat:15,expect:[1,2,9,25,26],expectation_fn:[1,15],expectationdefinit:[1,15],expectationexecutioninfo:1,expectationresult:[1,15],expectations_fail:15,expectations_pass:15,expectations_skip_fail:15,expectations_tutorial_pipelin:15,expedit:6,expens:[13,15],experi:[13,18],explicit:[15,26],explictli:15,explod:0,explor:[11,12,16,17],express:[16,25,26],extern:[1,11,12,14,18,24,26],extract:1,f37e:17,f6fd78c5:19,f77205931abb:17,f7d90092:19,f9124ea896ad:19,face:[7,8],facil:[12,14],fact:16,factor:[13,22],fail:[15,18,25],faild:2,failur:[1,2,13],fairli:8,fals:[4,7,8,25],famili:8,far:[18,19,21],fast:1,fc6be42f2376:19,fe29:17,featur:[7,10,12,15,16,22,24],few:[7,16,17],field:[0,1,4,7,8,12,13,19,22,24,25],field_util:1,file:[6,7,8,12,13,14,15,18,19,21,22,23,24,25],file_opt:25,file_typ:25,fileload:7,filter:17,fire:19,first:[8,10,11,12,15,16,17,19,24],fix:8,flag:18,flexibl:12,flow:[1,16,18,25,26],fly:12,focu:20,focus:22,folder:7,follow:[8,10,12,20,21,22,24,25],foo:[0,14,16],for_pipeline_run:7,forc:25,forget:16,form:[1,18,19],formal:7,format:[14,24,25,26],forth:1,frame:[15,25],framework:1,frequent:1,from:[0,1,6,7,8,11,12,13,14,15,16,17,18,19,20,22,23,24,25],from_dict:[0,19],frontend:6,fulli:[12,25],further:17,futur:15,gener:[1,6,7,8,15,21,24,26],generate_production_execution_context:8,get:[1,3,7,13,17,21,23],get_all_pipelin:1,get_pipelin:1,git:[6,10],github:[6,10],give:[14,16],given:[1,3,24,25,26],glarb:0,glob:22,goal:15,going:[7,24],gone:7,got:[8,13],grab:25,gradual:1,graph:[1,16,20,21,26],graphql:6,great:7,guarante:[7,8],gui:17,guid:[7,8],had:[7,19],halt:15,handi:6,handl:[1,8,14],hang:1,happen:[3,13,14],hardcod:[12,16,18],has:[1,2,7,8,15,17,18,19,20,22,24,25,26],has_solid:1,have:[0,1,6,7,8,10,11,12,15,16,18,19,20,21,22,23,24,25,26],haw:12,header_fil:8,hello:[0,9,12,18],hello_dag:16,hello_dag_pipelin:16,hello_input:18,hello_world:[0,17,23],hello_world_pipelin:17,help:[12,13,16],helper:7,henc:8,here:[7,12,18,25],heterogen:[25,26],high:8,highlight:17,homebrew:10,honua:12,hook:21,host:[7,15,24],how:[1,8,11,12,13,14,16,17,18,19,21,22,23,24,25,26],howev:[19,21,22,25],html:6,http:[6,16,17,18,25,26],idempot:[1,26],identifi:1,illustr:12,imagin:[13,18,21,24],immatur:15,implement:[0,1,14,19,24],implicit:[15,26],implicitli:19,implict:15,importerror:8,improv:[13,18],includ:[7,8,13,14,20,21,25],incom:7,inde:[7,21,25],index:[1,9,25],indic:[2,14,15],indirect:14,individu:[1,12,26],info:[0,1,2,7,12,13,14,15,17,19,20,21,22,24],inform:[1,7,14,16,17,18,23,26],infrastructur:[7,14],ingest:15,inject:20,injected_solid:20,inmemorystor:24,inner_typ:4,input:[0,1,5,8,9,11,12,13,15,16,17,19,20,21,22,24,26],input_def:1,input_nam:1,input_schema:[4,25],input_selector_schema:[4,25],inputdefinit:[0,1,7,11,13,15,16,18,20,21,22,24,25],inputs_env:18,inputs_env_bad:18,insert:25,insid:[10,13],inspect:[15,26],inst_param:25,instal:[6,7,8,9,17],instanc:[0,1,14,16,19,21],instanti:21,instead:[0,1,7,8,12,13,18,20,23,24,25],instruct:[8,17,25],integr:[1,26],intend:3,interact:[1,6,7,11,12,14,18,24],interest:[16,18,21],interfac:[17,24],intern:[1,8],interpret:10,intro_tutori:[14,23],introduc:[16,17],invalid:19,invari:2,invoc:1,invok:[7,18,24],involv:21,is_builtin:4,is_nam:4,is_opt:[1,7,12,25],is_posit:1,is_system_config:4,isn:3,isol:[10,20],issu:6,iter:[1,3],iterate_over_pipelin:1,its:[1,7,11,12,13,14,15,16,17,18,22,24,26],itself:[1,19,23],javascript:6,jest:6,job:15,just:[7,8,10,11,12,16,17,18,19,20,22,23],kdjfkd:13,keep:22,kei:[0,1,3,12,14,16,18,24,25],klass:8,know:[7,18,23,26],known:26,kwarg:[0,2,4],label:[21,25],lambda:[0,1,15,24],lambda_solid:[0,1,11,12,13,15,16,17,18,20,21,22,23,25],languag:[12,25],last:[11,22],lastli:24,later:[8,10,16,17,22],latest:[7,10],layer:[14,16],learn:[12,13,23,24,26],left:[0,20],len:[12,20],less:[7,8,18],let:[7,11,13,14,15,16,17,18,19,20,22,23,24,25,26],letter:[13,22],level:[8,14,17,22],level_from_str:7,librari:[8,10,25,26],lifecycl:8,like:[0,1,8,10,12,14,15,18,19,21,22,23,24,25],line:[11,12,13,16,17,18,22,23],link:12,list:[0,1,3,4,11,23,25],littl:23,live:[6,24],livehtml:6,load:[18,21,22,23],load_a:21,load_b:21,load_numb:[20,21],local:[7,14,24],local_f:7,localfshandleresourc:7,localhost:6,locat:26,log:[0,1,7,15,17,19,22,24],log_level:[7,8,13,14,22],log_message_id:[14,15,17,19],log_num:19,log_num_squar:19,logger:[7,8],longer:[7,8,25],look:[11,22],lookup:15,lot:17,machin:[7,14,26],made:[13,21,26],mai:[0,1,7,12,18,23,26],maintain:26,mainten:26,make:[3,6,7,8,10,13,14,15,18,21,23,25,26],malform:15,manag:[6,10,12,14,24,26],mani:[1,12,16,18,21,23,26],manipul:25,manual:[1,7],map:1,mar:18,mark:17,marshalling_strategi:4,materi:25,matter:[11,22],matur:26,maxim:26,maximum:12,mean:[7,18,24],meaning:26,mechan:[8,17,19,20],medium:26,memori:[1,20,24,25],merg:7,messag:[1,8,13,14,16,17],met:23,metadata:[1,15,25,26],method:1,microsoft:10,middl:7,might:[12,13,14,25],milli:[15,17],mismatch:2,miss:[13,16],mistak:[13,18],mode:[6,24],model:[7,9,16,23,24],modifi:19,modul:[8,9,23],modulenotfounderror:8,more:[0,7,8,11,12,15,19,21,22],most:[8,14,23],mostli:1,move:[7,8],much:[1,7,8,12,25],multer:[20,21],multi:17,multipl:[0,1,8,9,21,22,24,26],multiple_output:19,multiple_outputs_step_one_pipelin:19,multipleresult:0,multipli:13,multiply_the_word:[13,22],multiply_the_word_with_typed_config:13,must:[1,12,15,16,18,19,20,24,25],mutabl:25,my_solid:0,my_solid_from_dict:0,myenv:10,name:[0,1,3,4,7,8,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25],nameddict:4,namedtupl:[7,8],namespac:8,natur:15,navig:[16,17],necessari:1,need:[0,6,7,8,10,18,22,24,25,26],net:8,never:[19,20,26],next:[11,12,14,16,17,18,19,22,23,24],nice:13,nicer:8,node:[3,17,21,26],non:[1,13],none:[0,1,3,4,5,7],none_resourc:7,norm:26,normal:8,not_a_num:13,not_a_numb:13,note:[3,7,8,11,15,18,19,23,24,25],noth:25,notic:[7,14,15,16,18,19,21,24,25],notion:[7,8,25],notori:26,now:[7,8,11,12,13,14,15,16,18,20,21,22,23,24,25],nullabl:4,num1:[20,21,25],num2:[20,21,25],num:[1,19,25],num_on:[15,24],num_two:[15,24],number:[1,19,25],object:[0,1,8,14,19,25],obvious:21,occur:14,off:[1,20],offer:24,offici:[7,8],often:[18,26],omit:[0,7],onc:[23,25],one:[1,3,7,8,12,17,18,19,20,21,22,25],onli:[1,2,7,12,14,15,17,18,19,21,22,25],oper:[1,10,13,18,21,24,26],opinion:[9,26],opportun:14,opt:8,option:[1,10,15,16,25],order:[7,11,12,13,16,18,22,23,24,25,26],org:25,orig_messag:[14,15,17,19],origin:25,osx:10,other:[1,7,10,11,14,16,19,20,23,25,26],other_nam:1,otherwis:0,our:[12,13,16,17,18,22,23,25],out:[7,8,14,24,26],out_on:19,out_two:19,outliv:25,output:[0,1,3,7,8,9,11,12,15,16,17,18,20,21,24,26],output_nam:[1,3],output_schema:[4,25],output_selector_schema:[4,25],outputdefinit:[0,1,7,15,18,19,20,21,24,25],outputs_def:1,over:[1,25,26],overrid:22,overview:26,own:[7,8,17,18,22,25],packag:[10,24],page:9,pair:[14,25],panda:[1,8,25,26],pandas_df:25,pandasdatafram:25,pane:17,parallel:8,param:8,paramet:[0,1,3,12,21,24],parameter:[3,18,24,25],parametercheckerror:8,parameteriz:1,parametr:12,parametriz:26,parquet:25,part:[10,22,23,26],part_eleven_step_thre:19,part_eleven_step_two:19,part_seven:22,part_thirteen:21,particular:[3,7,12,19,21,24,26],particularli:21,pass:[1,7,8,12,13,14,15,20,23,24],passthrough:1,passthrough_context_definit:1,password:[7,24],path:[4,7,8,10,13,25],pathtofil:[7,8],pedogog:25,peopl:[23,26],per:[1,8,11,12,18],perform:[1,25,26],persist:25,persona:26,piec:7,pieplin:1,pip:[6,8],pipelin:[1,2,3,7,8,9,11,12,13,14,15,16,18,19,21,23,24,25,26],pipeline_cli_execut:22,pipeline_def:5,pipeline_dict:[1,13,22,23],pipeline_guid:7,pipeline_result:[20,21],pipeline_run_id:[7,8],pipeline_start:17,pipeline_success:17,pipelineconfigevaluationerror:[2,13],pipelinecontextdefinit:[1,7,8,24],pipelinedefinit:[1,3,8,11,12,13,14,15,16,17,18,19,20,21,22,23,24],pipelinedefiniton:1,pipelinedefint:1,pipelineexecutionresult:3,place:[22,24],plai:25,plan:6,platform:[17,23],plu:20,point:[11,19,23],poorli:26,pop:18,popd:10,port:[6,7],possibl:13,postgresql:7,potenti:[7,25],power:[7,14],practic:26,pre:[1,7],predict:7,prefer:[1,13],present:[1,10,25],prevent:[13,15],previou:[1,7,12,13,19,23],primari:18,primer:26,principl:9,print:[0,14],prior:[13,18,26],probabl:1,proce:[12,25],process:[15,26],prod:1,produc:[0,1,17,25,26],product:[1,8,12,14,22,24,26],program:[9,16,23,26],programmat:23,project:[6,10,23],promis:7,prone:[8,18,22],properli:26,properti:[1,8,12,15],provid:[1,8,12,14,16,18,19,20,24,25,26],publiccloudconn:24,publiccloudstor:24,publish:6,pure:[1,25],purpos:21,pushd:10,put:7,py27:12,pydata:25,python3:[6,10],python:[6,8,17,24,26],python_modul:6,python_packag:10,python_typ:[4,8],pythonobjecttyp:[4,8],qualiti:[1,8,15],queri:15,question:25,quickli:26,quit:[7,15,20],quux:13,rais:[2,19,25],ran:13,rather:[3,7,8,11,16,17,18,19,20,21,23,25,26],raw:8,react_app_graphql_uri:6,read_csv:25,read_parquet:25,read_tabl:25,readili:14,real:7,realiz:8,realli:8,reason:[1,8,21],recal:18,recommend:10,record:24,record_valu:24,recours:15,red:18,redistribut:10,redshift:[7,8],reduc:26,reentrant_info:3,reentrantinfo:3,regist:25,regret:10,rel:7,relat:8,releas:[7,10],relev:7,remain:25,remov:25,render:6,repetit:23,replac:[7,8,13],repo:23,repo_demo_pipelin:23,report:26,repositori:[1,6,9,10,22,24],repositorydefinit:[1,13,22,23],repostori:23,repres:[1,8,24],requir:[0,1,6,7,13,24,25,26],rerun:12,resid:21,resoourc:24,resourc:[1,8,9,14],resource_fn:[1,7,24],resource_test_pipelin:24,resourcedefinit:[1,7,24],respons:25,rest:7,resuabl:7,result:[0,1,3,6,8,17,20,24],result_context:1,result_dict:[0,8],result_for_solid:[3,8,20,21],result_list:[3,20],retriev:1,return_dict_result:19,reus:[7,21],reusabl:[7,9,12],rewrit:12,rich:[13,18,26],richer:14,right:[0,8,15,17,18],root:[10,13],rout:14,row:25,rule:2,run:[3,7,8,10,12,13,14,15,16,17,19,22,23,25,26],run_id:[7,14,15,17,19],runner:6,runtim:[2,8,13,16,18,26],runtime_typ:1,runtimeexecutioncontext:8,runtimeexecutioncontextparam:8,runtimetyp:4,s3filehandl:8,safeti:22,sai:[15,20,25],salient:12,same:[0,1,7,8,11,12,18,19,24,26],satisfi:[1,11,20],satisi:7,save:[14,17,23],scalar:[1,12],schema:[7,8,9,12],scientist:26,scope:21,script:[6,17,22],search:9,second:[8,12,16,18],section:[7,12,14,16,18,24],see:[1,3,10,11,13,14,16,17,18,19,21,23,24,25,26],seen:[11,25],select:[10,25],selector:[8,25],self:[7,13,24],semi:14,sens:25,sensibl:6,sep:25,separ:[8,10,16],sequenc:13,serv:[17,18,26],server:6,servic:24,service_lines_fil:8,set:[6,17,22,24],set_value_in_cloud_stor:24,setup:1,sever:[0,18,25],shape:8,share:7,she:25,shell:10,shortcut:0,should:[0,1,7,8,10,12,14,16,17,19,21,23,24,25,26],shouldn:21,side:26,signatur:1,similar:25,simpl:[0,15,16],simpler:[0,8],simpli:[8,24],simplifi:0,sinc:[11,25],singl:[0,1,7,8,12,17,19,20,21,24,25,26],site:21,size:25,skip:15,slightli:[7,11],snapshot:[6,8],snapshot_check_result:8,softwar:[1,7,10,15],solid:[0,1,2,3,8,9,11,12,13,14,15,16,17,18,19,20,22,23,24,25],solid_1:1,solid_2:1,solid_a:11,solid_b:11,solid_c:11,solid_d:11,solid_definit:[14,15,17,19],solid_nam:[1,5],solid_on:16,solid_result:[8,21],solid_subset:3,solid_two:16,soliddefinit:[0,1,3],solidexecutionresult:3,solidinst:[1,20,21],some:[1,2,6,7,8,14,15,22,24,25,26],some_input:1,some_password:24,some_us:24,someth:[0,6],sophist:[11,15],sourc:[6,7,25],space:2,spark:[14,26],speak:[12,20],special:[7,21],specif:[7,19,22],specifi:[0,12,14,16,18,19,22,23,24],specific_env:22,spew:19,split_headers_and_service_lin:8,sql:26,sqlalchemi:8,ssd:1,stacktrac:18,stage:[8,26],start:[6,11,20],state:3,step:[3,8,16,17,18,25],step_kei:[15,17],step_results_by_tag:3,still:11,storag:21,store:[24,25],str:[0,1,7,8,13],str_param:25,str_valu:0,straightforward:7,stream:[1,17],string:[0,4,7,8,12,13,16,18,19,22,24,25],strongli:[10,13],structur:[1,7,13,14,18,25,26],stub:8,stub_a:20,stub_b:20,stub_c_plus_d:20,studio:10,sub:8,subdag:20,subfield:25,submodul:8,subpackag:8,subsequ:7,subset:[7,8,20,26],substanti:8,substrat:14,succeed:[15,17],success:[1,3,8,15,17,20,21],sudo:10,suffici:26,suitabl:1,sum:25,sum_df:25,sum_int:24,sum_solid:25,suppli:1,support:[1,7,19,26],suppos:[6,8,22],surfac:18,surround:14,swap:24,swappabl:23,sync:22,synchron:3,synthes:7,system:[1,2,4,7,8,10,12,13,14,15,24,25,26],tab:17,tabl:[1,8,15,25],tabular:25,tailor:21,take:[0,1,7,8,12,17,20,25],target:[1,23],task:[11,16,26],team:26,tediou:[13,22],tell:[16,22,23,24],term:[19,25],test:[1,3,6,7,8,9,10,12,15,24,26],test_a_plus_b_final_subdag:20,test_intro_tutorial_part_four:12,test_part_thirteen_step_on:21,test_part_thirteen_step_two:21,testabl:12,than:[3,6,7,8,11,16,18,19,20,21,22,23,25,26],thei:[0,1,7,8,11,15,21,25,26],them:[8,10,12,17,18,21,25],therefor:13,thi:[0,1,3,7,8,10,11,12,13,14,15,16,17,18,19,20,21,23,24,25,26],thing:[3,7,21],think:[21,26],third:[8,17,25],thirteen_step_on:21,thirteen_step_two:21,those:[1,6,8,10,12,15,22,25,26],though:14,thought:8,thread:[14,17],three:[17,18,21,25],threshold:15,through:[1,14,18,24,25,26],throughout:[14,25],throw_on_error:3,thrown:2,thu:1,tie:[8,19],tied:21,time:[1,11,12,13,15,17,18,19,21,23,25,26],timestamp:14,tiresom:23,to_csv:25,to_parquet:25,togeth:[7,11,21],tool:[6,10,15,17,22,23,26],top:[8,23],topolog:[11,16],total:18,touch:[14,24],tox:6,trace:13,tradit:15,transform:[0,1,3,17,18,19],transform_fn:1,transformed_valu:[3,8,20,21],transformexecutioninfo:[1,12],transit:8,tree:6,trigger:19,turn:[11,12,25],tutori:[12,14,19,22,23,25],tutorial_part_thirteen_step_on:20,tutorial_part_thirteen_step_thre:21,tutorial_repositori:14,two:[1,8,16,19,20,21,22,25],txt:6,type:[0,1,2,7,8,9,12,13,15,16,20,21,22,23],type_attribut:4,typecheck:[13,25],typed_demo_configuration_schema:13,typed_demo_configuration_schema_error:13,typed_multiply_the_word:13,typed_multiply_the_word_error:13,typeerror:[8,13],typic:[1,15,20],ubuntu:10,undefin:13,under:[12,18,24],unexpect:15,unfamiliar:26,union:25,uniqu:[1,19],unit:[1,7,9,16,17,26],unittest:[1,7,8,24],univers:14,unlik:[0,15],unmodifi:7,unnam:[1,20],unpack:[0,25],unsupport:25,until:[18,22],untyp:18,unzip:[7,21],unzip_fil:[7,8],unzipfileconfig:7,unzipped_fil:8,unzipped_path:8,unzipped_path_valu:8,updat:[6,8,10,15],upgrad:[7,9],upload:[8,21],upload_header_to_s3:8,upload_service_line_to_s3:8,upstream:[7,20],usag:1,use:[6,7,8,10,12,13,14,15,17,18,20,22,23,24,25,26],used:[0,1,7,8,12,17,19,21,24,25],useful:[1,3,14,15,18,20,21,22,25,26],user:[1,2,7,8,9,12,14,15,18,22,24,26],usernam:24,uses:7,using:[0,6,7,10,12,14,17,18,21,22,23,24],utf:12,util:[8,9,12,17,22,25],utility_solid:8,uuid4:[7,8],uuid:[7,8],valid:[13,25],valu:[0,1,2,3,8,12,13,14,15,17,18,19,20,22,24,25,26],vari:[1,22],venv:[6,10],verbos:[7,8],veri:[1,3,8,13,16,21,25],version:[3,6,19,24],via:[14,17,18,23,24,25],view:17,viewabl:15,violat:2,virtual:8,virtualenv:6,virtualenviron:10,virtualenvwrapp:10,visual:[10,16,17,23],wai:[0,15,17,18,19,24,25,26],want:[1,12,14,15,18,20,22,23,24,25],watch:6,wax:7,web:17,webapp:10,welcom:9,well:[2,7,8,26],were:[7,8,21],what:[1,7,11,13,15,16,21,25,26],whatev:8,when:[0,1,3,6,11,13,15,18,22,23,25,26],where:[1,12,14,15,16,17,20,24,25],wherea:25,whether:[1,3,10,26],which:[1,3,6,7,12,13,16,17,18,19,22,23,26],who:26,whole:[3,15],whose:[0,1,10,16,18],why:21,wide:10,window:10,wire:11,within:[1,7,8,15,16,17,18,21],without:[12,17,18,23],won:10,word:[13,18,22],work:[0,13,23,24],workflow:16,world:[9,12,18],worri:16,worth:11,would:[1,7,8,11,13,18,24,25],wrap:19,write:[7,17],written:26,wrong:13,wrong_factor:13,yaml:[8,12,18,22],yarn:6,yellow:17,yet:6,yield:[0,1,3,7,8,18,19,26],yield_output:19,yml:[6,12,13,14,15,18,19,22,23],you:[0,1,6,7,8,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25],your:[7,8,10,11,14,15,17,18,24,25],zip:7,zip_file_path:[7,8],zipped_fil:[7,8]},titles:["Decorators","Definitions","Errors","Execution","Types","Utilities","Contributing","New Concepts in 0.3.0","Upgrading to 0.3.0","Intro Tutorial","Installation","An actual DAG","Configuration","Configuration Schemas","Execution Context","Expectations","Hello, DAG","Hello, World","Inputs","Multiple Outputs","Unit-testing Pipelines","Reusable Solids","Pipeline CLI Execution","Repositories","Resources","User-Defined Types","Principles"],titleterms:{"class":19,"function":26,"new":7,actual:11,agnost:26,api:[8,9,18],audit:9,basic:25,chang:8,cli:[17,18,22],comput:26,concept:7,condit:19,config:[7,22],configur:[12,13],context:14,contribut:6,creat:10,dag:[11,16],dagit:[6,17,18],data:26,decor:0,defin:25,definit:[1,4],describ:26,dev:10,develop:6,doc:6,environ:10,error:2,execut:[3,14,17,22],expect:15,from:10,gradual:26,guid:9,hello:[16,17],indic:9,input:[7,18,25],instal:10,intro:9,iter:19,level:7,librari:[7,17],local:6,log:14,multipl:19,multipleresult:19,old:9,option:26,output:[19,25],pip:10,pipelin:[17,20,22],principl:26,pypi:10,python:[10,18],qualiti:26,refer:9,releas:6,repositori:23,requir:8,resourc:[7,24],result:19,reusabl:21,run:6,schema:[13,25],self:26,setup:6,solid:[7,21],sourc:10,split:22,stabl:10,tabl:9,test:20,testabl:26,tutori:9,type:[4,18,25,26],unit:20,upgrad:8,user:25,util:5,verifi:26,version:10,virtual:10,virtualenv:10,webapp:6,world:17,yarn:10}})'
 
 snapshots['test_build_all_docs 11'] = '''Contributing
 ============
@@ -2435,7 +2419,9 @@ snapshots['test_build_all_docs 20'] = '''Utilities
 .. autofunction:: execute_solids
 '''
 
-snapshots['test_build_all_docs 21'] = """The upgrade guide describes the changes you are _require_ to make to install 0.3.0. This guide describes the changes you _should_ make in order to use the latest capabilities. The new concepts take some getting used to, but are quite powerful.
+snapshots['test_build_all_docs 21'] = """# New Concepts in 0.3.0
+
+The upgrade guide describes the changes you are _require_ to make to install 0.3.0. This guide describes the changes you _should_ make in order to use the latest capabilities. The new concepts take some getting used to, but are quite powerful.
 
 ## Resources
 
@@ -2739,7 +2725,9 @@ After:
 What's great about this new input structure is that now the unzip_file is more reusable as it could be reused in the middle of a pipeline with its input coming from a previous solid, or as a solid at the beginning of a pipeline.
 """
 
-snapshots['test_build_all_docs 22'] = """This guide is a step-by-step guide for upgrading from dagster 0.2.x to 0.3.0. This represents a substantial upgrade in capabilities but also some breaking API changes. We'll detail them, provide context and reasoning, and instructions about how to upgrade.
+snapshots['test_build_all_docs 22'] = """# Upgrading to 0.3.0
+
+This guide is a step-by-step guide for upgrading from dagster 0.2.x to 0.3.0. This represents a substantial upgrade in capabilities but also some breaking API changes. We'll detail them, provide context and reasoning, and instructions about how to upgrade.
 
 ## Required API Changes
 
@@ -19439,10 +19427,8 @@ multiple outputs. Useful for solids that have multiple outputs.</li>
 <li class="toctree-l1"><a class="reference internal" href="utilities.html">Utilities</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html#resource-libraries">Resource Libraries</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html#solid-level-configs-to-inputs">Solid-Level Configs to Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Required API Changes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
 </ul>
 <div class="relations">
 <h3>Related Topics</h3>
@@ -20158,10 +20144,8 @@ like the alias.</p>
 <li class="toctree-l1"><a class="reference internal" href="utilities.html">Utilities</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html#resource-libraries">Resource Libraries</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html#solid-level-configs-to-inputs">Solid-Level Configs to Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Required API Changes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
 </ul>
 <div class="relations">
 <h3>Related Topics</h3>
@@ -20336,10 +20320,8 @@ at runtime.</p>
 <li class="toctree-l1"><a class="reference internal" href="utilities.html">Utilities</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html#resource-libraries">Resource Libraries</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html#solid-level-configs-to-inputs">Solid-Level Configs to Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Required API Changes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
 </ul>
 <div class="relations">
 <h3>Related Topics</h3>
@@ -20615,10 +20597,8 @@ Returns None if execution result isn’t a success.</p>
 <li class="toctree-l1"><a class="reference internal" href="utilities.html">Utilities</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html#resource-libraries">Resource Libraries</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html#solid-level-configs-to-inputs">Solid-Level Configs to Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Required API Changes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
 </ul>
 <div class="relations">
 <h3>Related Topics</h3>
@@ -20844,10 +20824,8 @@ snapshots['test_build_all_docs 54'] = '''
 <li class="toctree-l1"><a class="reference internal" href="utilities.html">Utilities</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html#resource-libraries">Resource Libraries</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html#solid-level-configs-to-inputs">Solid-Level Configs to Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Required API Changes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
 </ul>
 <div class="relations">
 <h3>Related Topics</h3>
@@ -20916,7 +20894,7 @@ snapshots['test_build_all_docs 55'] = '''
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Resources" href="../guides/028_to_030_new_concepts.html" />
+    <link rel="next" title="New Concepts in 0.3.0" href="../guides/028_to_030_new_concepts.html" />
     <link rel="prev" title="Types" href="types.html" />
    
   <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
@@ -20989,17 +20967,15 @@ snapshots['test_build_all_docs 55'] = '''
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Utilities</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html#resource-libraries">Resource Libraries</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html#solid-level-configs-to-inputs">Solid-Level Configs to Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Required API Changes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
 </ul>
 <div class="relations">
 <h3>Related Topics</h3>
 <ul>
   <li><a href="../index.html">Documentation overview</a><ul>
       <li>Previous: <a href="types.html" title="previous chapter">Types</a></li>
-      <li>Next: <a href="../guides/028_to_030_new_concepts.html" title="next chapter">Resources</a></li>
+      <li>Next: <a href="../guides/028_to_030_new_concepts.html" title="next chapter">New Concepts in 0.3.0</a></li>
   </ul></li>
 </ul>
 </div>
@@ -21052,7 +21028,7 @@ snapshots['test_build_all_docs 56'] = '''
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Resources &#8212; Dagster  documentation</title>
+    <title>New Concepts in 0.3.0 &#8212; Dagster  documentation</title>
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
@@ -21061,7 +21037,7 @@ snapshots['test_build_all_docs 56'] = '''
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Required API Changes" href="028_to_030_upgrade_guide.html" />
+    <link rel="next" title="Upgrading to 0.3.0" href="028_to_030_upgrade_guide.html" />
     <link rel="prev" title="Utilities" href="../apidocs/utilities.html" />
    
   <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
@@ -21079,9 +21055,11 @@ snapshots['test_build_all_docs 56'] = '''
 
           <div class="body" role="main">
             
-  <p>The upgrade guide describes the changes you are <em>require</em> to make to install 0.3.0. This guide describes the changes you <em>should</em> make in order to use the latest capabilities. The new concepts take some getting used to, but are quite powerful.</p>
+  <div class="section" id="new-concepts-in-0-3-0">
+<span id="new-concepts-in-0-3-0"></span><h1>New Concepts in 0.3.0<a class="headerlink" href="#new-concepts-in-0-3-0" title="Permalink to this headline">¶</a></h1>
+<p>The upgrade guide describes the changes you are <em>require</em> to make to install 0.3.0. This guide describes the changes you <em>should</em> make in order to use the latest capabilities. The new concepts take some getting used to, but are quite powerful.</p>
 <div class="section" id="resources">
-<span id="resources"></span><h1>Resources<a class="headerlink" href="#resources" title="Permalink to this headline">¶</a></h1>
+<span id="resources"></span><h2>Resources<a class="headerlink" href="#resources" title="Permalink to this headline">¶</a></h2>
 <p>In 0.2.0 the notion of resources were relatively informal. This is no longer true: They are now an officially supported abstraction. They break apart context creation into composable, reusable chunks of software.</p>
 <p><strong>Defining a Resource</strong></p>
 <p>Let’s take the unittest context in the allscripts_fileload pipeline as an example.</p>
@@ -21246,7 +21224,7 @@ snapshots['test_build_all_docs 56'] = '''
 <p>While slightly more verbose, you will be able to count on more consistent of configuration between pipelines as you reuse resources, and you an even potentially share resource configuration <em>between</em> pipelines using the configuration file merging feature of 0.3.0</p>
 </div>
 <div class="section" id="resource-libraries">
-<span id="resource-libraries"></span><h1>Resource Libraries<a class="headerlink" href="#resource-libraries" title="Permalink to this headline">¶</a></h1>
+<span id="resource-libraries"></span><h2>Resource Libraries<a class="headerlink" href="#resource-libraries" title="Permalink to this headline">¶</a></h2>
 <p>The real promise of resources to build a library of resuable, composable resources.</p>
 <p>For example, here would be a resource to create a redshift connection.</p>
 <div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">define_redshift_sa_resource</span><span class="p">():</span>
@@ -21277,7 +21255,7 @@ snapshots['test_build_all_docs 56'] = '''
 <p>This could be used – unmodified – across all your pipelines. This will also make it easier to write reusable solids as they can know that they will be using the same resource. Indeed, we may formalize this in subsequent releases, allowing solids to formally declare their dependencies on specific resource types.</p>
 </div>
 <div class="section" id="solid-level-configs-to-inputs">
-<span id="solid-level-configs-to-inputs"></span><h1>Solid-Level Configs to Inputs<a class="headerlink" href="#solid-level-configs-to-inputs" title="Permalink to this headline">¶</a></h1>
+<span id="solid-level-configs-to-inputs"></span><h2>Solid-Level Configs to Inputs<a class="headerlink" href="#solid-level-configs-to-inputs" title="Permalink to this headline">¶</a></h2>
 <p>With the new ability to source inputs from the environment config files, we anticipate that solid-level configuration will become much less common, and instead that we will uses inputs and outputs exclusively.</p>
 <p>Let’s use another example from the allscripts_fileload pipeline.</p>
 <p>Before:</p>
@@ -21346,6 +21324,7 @@ be modeling such things as inputs.</p>
 </div>
 <p>What’s great about this new input structure is that now the unzip_file is more reusable as it could be reused in the middle of a pipeline with its input coming from a previous solid, or as a solid at the beginning of a pipeline.</p>
 </div>
+</div>
 
 
           </div>
@@ -21388,17 +21367,15 @@ be modeling such things as inputs.</p>
 <li class="toctree-l1"><a class="reference internal" href="../apidocs/utilities.html">Utilities</a></li>
 </ul>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="#resource-libraries">Resource Libraries</a></li>
-<li class="toctree-l1"><a class="reference internal" href="#solid-level-configs-to-inputs">Solid-Level Configs to Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="028_to_030_upgrade_guide.html">Required API Changes</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">New Concepts in 0.3.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
 </ul>
 <div class="relations">
 <h3>Related Topics</h3>
 <ul>
   <li><a href="../index.html">Documentation overview</a><ul>
       <li>Previous: <a href="../apidocs/utilities.html" title="previous chapter">Utilities</a></li>
-      <li>Next: <a href="028_to_030_upgrade_guide.html" title="next chapter">Required API Changes</a></li>
+      <li>Next: <a href="028_to_030_upgrade_guide.html" title="next chapter">Upgrading to 0.3.0</a></li>
   </ul></li>
 </ul>
 </div>
@@ -21451,7 +21428,7 @@ snapshots['test_build_all_docs 57'] = '''
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Required API Changes &#8212; Dagster  documentation</title>
+    <title>Upgrading to 0.3.0 &#8212; Dagster  documentation</title>
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
@@ -21460,7 +21437,7 @@ snapshots['test_build_all_docs 57'] = '''
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="prev" title="Resources" href="028_to_030_new_concepts.html" />
+    <link rel="prev" title="New Concepts in 0.3.0" href="028_to_030_new_concepts.html" />
    
   <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
   
@@ -21477,9 +21454,11 @@ snapshots['test_build_all_docs 57'] = '''
 
           <div class="body" role="main">
             
-  <p>This guide is a step-by-step guide for upgrading from dagster 0.2.x to 0.3.0. This represents a substantial upgrade in capabilities but also some breaking API changes. We’ll detail them, provide context and reasoning, and instructions about how to upgrade.</p>
+  <div class="section" id="upgrading-to-0-3-0">
+<span id="upgrading-to-0-3-0"></span><h1>Upgrading to 0.3.0<a class="headerlink" href="#upgrading-to-0-3-0" title="Permalink to this headline">¶</a></h1>
+<p>This guide is a step-by-step guide for upgrading from dagster 0.2.x to 0.3.0. This represents a substantial upgrade in capabilities but also some breaking API changes. We’ll detail them, provide context and reasoning, and instructions about how to upgrade.</p>
 <div class="section" id="required-api-changes">
-<span id="required-api-changes"></span><h1>Required API Changes<a class="headerlink" href="#required-api-changes" title="Permalink to this headline">¶</a></h1>
+<span id="required-api-changes"></span><h2>Required API Changes<a class="headerlink" href="#required-api-changes" title="Permalink to this headline">¶</a></h2>
 <ol class="simple">
 <li><strong>No more top level config subpackage.</strong></li>
 </ol>
@@ -21775,6 +21754,7 @@ Third, you do not have to name it. The net result is much nicer:</p>
 </div>
 <p>\x11\x12\x12</p>
 </div>
+</div>
 
 
           </div>
@@ -21817,16 +21797,14 @@ Third, you do not have to name it. The net result is much nicer:</p>
 <li class="toctree-l1"><a class="reference internal" href="../apidocs/utilities.html">Utilities</a></li>
 </ul>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="028_to_030_new_concepts.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="028_to_030_new_concepts.html#resource-libraries">Resource Libraries</a></li>
-<li class="toctree-l1"><a class="reference internal" href="028_to_030_new_concepts.html#solid-level-configs-to-inputs">Solid-Level Configs to Inputs</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Required API Changes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Upgrading to 0.3.0</a></li>
 </ul>
 <div class="relations">
 <h3>Related Topics</h3>
 <ul>
   <li><a href="../index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="028_to_030_new_concepts.html" title="previous chapter">Resources</a></li>
+      <li>Previous: <a href="028_to_030_new_concepts.html" title="previous chapter">New Concepts in 0.3.0</a></li>
   </ul></li>
 </ul>
 </div>
@@ -22063,10 +22041,8 @@ environment.</p>
 <li class="toctree-l1"><a class="reference internal" href="../apidocs/utilities.html">Utilities</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html#resource-libraries">Resource Libraries</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html#solid-level-configs-to-inputs">Solid-Level Configs to Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Required API Changes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
 </ul>
 <div class="relations">
 <h3>Related Topics</h3>
@@ -22314,10 +22290,8 @@ of config: <a class="reference internal" href="configuration_schemas.html"><span
 <li class="toctree-l1"><a class="reference internal" href="../apidocs/utilities.html">Utilities</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html#resource-libraries">Resource Libraries</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html#solid-level-configs-to-inputs">Solid-Level Configs to Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Required API Changes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
 </ul>
 <div class="relations">
 <h3>Related Topics</h3>
@@ -22797,10 +22771,8 @@ actionable error message before the pipeline is ever executed.</p>
 <li class="toctree-l1"><a class="reference internal" href="../apidocs/utilities.html">Utilities</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html#resource-libraries">Resource Libraries</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html#solid-level-configs-to-inputs">Solid-Level Configs to Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Required API Changes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
 </ul>
 <div class="relations">
 <h3>Related Topics</h3>
@@ -23011,10 +22983,8 @@ or compute substrates – can be configured using the context.</p>
 <li class="toctree-l1"><a class="reference internal" href="../apidocs/utilities.html">Utilities</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html#resource-libraries">Resource Libraries</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html#solid-level-configs-to-inputs">Solid-Level Configs to Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Required API Changes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
 </ul>
 <div class="relations">
 <h3>Related Topics</h3>
@@ -23318,10 +23288,8 @@ configure the pipeline to skip expectations entirely.</p>
 <li class="toctree-l1"><a class="reference internal" href="../apidocs/utilities.html">Utilities</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html#resource-libraries">Resource Libraries</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html#solid-level-configs-to-inputs">Solid-Level Configs to Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Required API Changes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
 </ul>
 <div class="relations">
 <h3>Related Topics</h3>
@@ -23557,10 +23525,8 @@ topology and see how dagster determines the execution order of a pipeline.</p>
 <li class="toctree-l1"><a class="reference internal" href="../apidocs/utilities.html">Utilities</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html#resource-libraries">Resource Libraries</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html#solid-level-configs-to-inputs">Solid-Level Configs to Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Required API Changes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
 </ul>
 <div class="relations">
 <h3>Related Topics</h3>
@@ -23825,10 +23791,8 @@ at all. Just add a few lines to <cite>hello_world.py</cite> (highlighted in yell
 <li class="toctree-l1"><a class="reference internal" href="../apidocs/utilities.html">Utilities</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html#resource-libraries">Resource Libraries</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html#solid-level-configs-to-inputs">Solid-Level Configs to Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Required API Changes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
 </ul>
 <div class="relations">
 <h3>Related Topics</h3>
@@ -24134,10 +24098,8 @@ pipeline execution interacts with its environment.</p>
 <li class="toctree-l1"><a class="reference internal" href="../apidocs/utilities.html">Utilities</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html#resource-libraries">Resource Libraries</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html#solid-level-configs-to-inputs">Solid-Level Configs to Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Required API Changes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
 </ul>
 <div class="relations">
 <h3>Related Topics</h3>
@@ -24489,10 +24451,8 @@ only triggering log_num_squared. log_num will never be executed.</p>
 <li class="toctree-l1"><a class="reference internal" href="../apidocs/utilities.html">Utilities</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html#resource-libraries">Resource Libraries</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html#solid-level-configs-to-inputs">Solid-Level Configs to Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Required API Changes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
 </ul>
 <div class="relations">
 <h3>Related Topics</h3>
@@ -24750,10 +24710,8 @@ provide, instead of from solids upstream in the dependency graph.</p>
 <li class="toctree-l1"><a class="reference internal" href="../apidocs/utilities.html">Utilities</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html#resource-libraries">Resource Libraries</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html#solid-level-configs-to-inputs">Solid-Level Configs to Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Required API Changes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
 </ul>
 <div class="relations">
 <h3>Related Topics</h3>
@@ -25053,10 +25011,8 @@ to cloud storage, unzipping files, etc.</p>
 <li class="toctree-l1"><a class="reference internal" href="../apidocs/utilities.html">Utilities</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html#resource-libraries">Resource Libraries</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html#solid-level-configs-to-inputs">Solid-Level Configs to Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Required API Changes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
 </ul>
 <div class="relations">
 <h3>Related Topics</h3>
@@ -25381,10 +25337,8 @@ in pipelines.</p>
 <li class="toctree-l1"><a class="reference internal" href="../apidocs/utilities.html">Utilities</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html#resource-libraries">Resource Libraries</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html#solid-level-configs-to-inputs">Solid-Level Configs to Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Required API Changes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
 </ul>
 <div class="relations">
 <h3>Related Topics</h3>
@@ -25611,10 +25565,8 @@ with swappable config.</p>
 <li class="toctree-l1"><a class="reference internal" href="../apidocs/utilities.html">Utilities</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html#resource-libraries">Resource Libraries</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html#solid-level-configs-to-inputs">Solid-Level Configs to Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Required API Changes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
 </ul>
 <div class="relations">
 <h3>Related Topics</h3>
@@ -25916,10 +25868,8 @@ manage collections of multiple dagster pipelines.</p>
 <li class="toctree-l1"><a class="reference internal" href="../apidocs/utilities.html">Utilities</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html#resource-libraries">Resource Libraries</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html#solid-level-configs-to-inputs">Solid-Level Configs to Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Required API Changes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
 </ul>
 <div class="relations">
 <h3>Related Topics</h3>
@@ -26249,10 +26199,8 @@ given output any number of times in any number of formats.</p>
 <li class="toctree-l1"><a class="reference internal" href="../apidocs/utilities.html">Utilities</a></li>
 </ul>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">Resources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html#resource-libraries">Resource Libraries</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html#solid-level-configs-to-inputs">Solid-Level Configs to Inputs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Required API Changes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_new_concepts.html">New Concepts in 0.3.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/028_to_030_upgrade_guide.html">Upgrading to 0.3.0</a></li>
 </ul>
 <div class="relations">
 <h3>Related Topics</h3>
