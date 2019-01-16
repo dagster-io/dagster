@@ -14,9 +14,9 @@ Basic Typing
 .. literalinclude:: ../../../dagster-pandas/dagster_pandas/data_frame.py
    :lines: 1, 79-85, 88
 
-What this code doing is annotating/registering an existing type as a dagster type. Now one can include
-this type and use it as an input or output of a solid. The system will do a typecheck to ensure
-that the object is of type ``pd.DataFrame`.
+What this code doing is annotating/registering an existing type as a dagster type. Now one can
+include this type and use it as an input or output of a solid. The system will do a typecheck
+to ensure that the object is of type ``pd.DataFrame`.
 
 Now one can use it to define a solid:
 
