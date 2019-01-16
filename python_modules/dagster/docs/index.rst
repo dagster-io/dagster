@@ -57,6 +57,16 @@ API Reference
   apidocs/types
   apidocs/utilities
 
+Guides
+================
+
+.. toctree::
+  :maxdepth: 1
+  :name: Guides
+
+  guides/028_to_030_new_concepts
+  guides/028_to_030_upgrade_guide
+
 Indices and tables
 ==================
 

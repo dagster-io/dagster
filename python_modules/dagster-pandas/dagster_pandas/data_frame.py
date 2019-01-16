@@ -1,17 +1,17 @@
 import pandas as pd
 
 from dagster import (
+    as_dagster_type,
+    check,
     DagsterInvariantViolationError,
     Dict,
     Field,
+    input_selector_schema,
+    output_selector_schema,
     Path,
     Selector,
     String,
-    as_dagster_type,
-    check,
 )
-
-from dagster.core.types.config_schema import input_selector_schema, output_selector_schema
 
 
 def define_path_dict_field():
@@ -81,7 +81,8 @@ DataFrame = as_dagster_type(
     pd.DataFrame,
     name='PandasDataFrame',
     description='''Two-dimensional size-mutable, potentially heterogeneous
-tabular data structure with labeled axes (rows and columns). See http://pandas.pydata.org/''',
+    tabular data structure with labeled axes (rows and columns).
+    See http://pandas.pydata.org/''',
     input_schema=dataframe_input_schema,
     output_schema=dataframe_output_schema,
 )

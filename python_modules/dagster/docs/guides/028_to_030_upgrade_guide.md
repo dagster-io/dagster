@@ -1,3 +1,5 @@
+# Upgrading to 0.3.0
+
 This guide is a step-by-step guide for upgrading from dagster 0.2.x to 0.3.0. This represents a substantial upgrade in capabilities but also some breaking API changes. We'll detail them, provide context and reasoning, and instructions about how to upgrade.
 
 ## Required API Changes

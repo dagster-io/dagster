@@ -20,6 +20,10 @@ Type definitions
 
 .. autofunction:: Dict
 
+.. autofunction:: input_schema
+
+.. autofunction:: input_selector_schema
+
 .. autoclass:: Int
 
 .. autofunction:: List
@@ -27,6 +31,10 @@ Type definitions
 .. autofunction:: NamedDict
 
 .. autofunction:: Nullable
+
+.. autofunction:: output_schema
+
+.. autofunction:: output_selector_schema
 
 .. autoclass:: Path
 
