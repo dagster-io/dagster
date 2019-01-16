@@ -33,96 +33,71 @@ from dagster.core.types.runtime import RuntimeType
 # python3 -m ipykernel install --user
 
 
-class InMemoryDagstermillContext:
-    def __init__(self, pipeline_def, solid_def, inputs):
-        self.pipeline_def = pipeline_def
-        self.solid_def = solid_def
-        self.inputs = inputs
-
-
-class RemotedDagstermillContext:
-    def __init__(self, pipeline_def, solid_def, inputs, marshal_dir):
-        self.pipeline_def = pipeline_def
-        self.solid_def = solid_def
-        self.inputs = inputs
-        self.marshal_dir = marshal_dir
-
-
 class DagstermillError(Exception):
     pass
 
 
 class Manager:
     def __init__(self):
-        self.serialized_context = None
-        self.cached_context = None
         self.repository_def = None
         self.solid_def_name = None
         self.solid_def = None
+        self.populated_by_papermill = False
+        self.marshal_dir = None
 
     def declare_as_solid(self, repository_def, solid_def_name):
         self.repository_def = repository_def
         self.solid_def = self.repository_def.solid_def_named(solid_def_name)
         self.solid_def_name = check.str_param(solid_def_name, 'solid_def_name')
 
-    def define_context(self, inputs=None):
-        return InMemoryDagstermillContext(
-            pipeline_def=None,
-            solid_def=self.solid_def,
-            inputs=check.opt_dict_param(inputs, 'inputs'),
-        )
-
     def get_pipeline(self, name):
         check.str_param(name, 'name')
         return self.repository_def.get_pipeline(name)
 
-    def _get_cached_dagstermill_context(self, context_or_serialized):
-        # inputs is either a 1) InMemoryInputs (the in-notebook experience)
-        # or a serialized dictionary (json-encoded) that is used to
-        # to marshal inputs into the notebook process
-        if isinstance(context_or_serialized, InMemoryDagstermillContext):
-            return context_or_serialized
-
-        serialized_context = context_or_serialized
-
-        if self.serialized_context is None:
-            self.serialized_context = context_or_serialized
-        else:
-            check.invariant(self.serialized_context == serialized_context)
-
-        if self.cached_context is not None:
-            return self.cached_context
-
-        self.cached_context = deserialize_dm_context(serialized_context)
-        return self.cached_context
-
-    def get_input(self, context_or_serialized, input_name):
-        ctx = self._get_cached_dagstermill_context(context_or_serialized)
-        return ctx.inputs[input_name]
-
-    def get_inputs(self, context_or_serialized, *input_names):
-        ctx = self._get_cached_dagstermill_context(context_or_serialized)
-        return tuple([ctx.inputs[input_name] for input_name in input_names])
-
-    def yield_result(self, context_or_serialized, value, output_name='result'):
-        dm_context = self._get_cached_dagstermill_context(context_or_serialized)
-
-        if isinstance(dm_context, InMemoryDagstermillContext):
-            return value
-
-        solid_def = dm_context.solid_def
-
-        if not solid_def.has_output(output_name):
+    def yield_result(self, value, output_name):
+        if not self.solid_def.has_output(output_name):
             raise DagstermillError(
                 'Solid {solid_name} does not have output named {output_name}'.format(
-                    solid_name=solid_def.name, output_name=output_name
+                    solid_name=self.solid_def.name, output_name=output_name
                 )
             )
+        if not self.populated_by_papermill:
+            return value
 
-        runtime_type = solid_def.output_def_named(output_name).runtime_type
+        runtime_type = self.solid_def.output_def_named(output_name).runtime_type
 
-        out_file = os.path.join(dm_context.marshal_dir, 'output-{}'.format(output_name))
+        out_file = os.path.join(self.marshal_dir, 'output-{}'.format(output_name))
         pm.record(output_name, marshal_value(runtime_type, value, out_file))
+
+
+class DagsterTranslator(pm.translators.PythonTranslator):
+    @classmethod
+    def codify(cls, parameters):
+        assert "dm_context" in parameters
+        content = '{}\n'.format(cls.comment('Parameters'))
+        content += '{}\n'.format(
+            'dm.populate_context({dm_context})'.format(dm_context=parameters['dm_context'])
+        )
+
+        for name, val in parameters.items():
+            if name == "dm_context":
+                continue
+            dm_unmarshal_call = 'dm.load_parameter("{name}", {val})'.format(name=name, val=val)
+            content += '{}\n'.format(cls.assign(name, dm_unmarshal_call))
+
+        return content
+
+
+MANAGER_FOR_NOTEBOOK_INSTANCE = Manager()
+pm.translators.papermill_translators.register("python", DagsterTranslator)
+
+
+def is_json_serializable(value):
+    try:
+        json.dumps(value)
+        return True
+    except TypeError:
+        return False
 
 
 def marshal_value(runtime_type, value, target_file):
@@ -138,59 +113,30 @@ def marshal_value(runtime_type, value, target_file):
         check.failed('Unsupported type {name}'.format(name=runtime_type.name))
 
 
-MANAGER_FOR_NOTEBOOK_INSTANCE = Manager()
+def declare_as_solid(repo_def, solid_def_name):
+    return MANAGER_FOR_NOTEBOOK_INSTANCE.declare_as_solid(repo_def, solid_def_name)
 
 
-def declare_as_solid(pipeline_def, solid_def_name):
-    return MANAGER_FOR_NOTEBOOK_INSTANCE.declare_as_solid(pipeline_def, solid_def_name)
+def yield_result(value, output_name='result'):
+    return MANAGER_FOR_NOTEBOOK_INSTANCE.yield_result(value, output_name)
 
 
-def define_context(inputs=None):
-    return MANAGER_FOR_NOTEBOOK_INSTANCE.define_context(inputs)
+def populate_context(dm_context):
+    dm_context_data = dm_context
+    pipeline_def = MANAGER_FOR_NOTEBOOK_INSTANCE.get_pipeline(dm_context_data['pipeline_name'])
+    check.inst(pipeline_def, PipelineDefinition)
+    solid_def_name = dm_context_data['solid_def_name']
+    check.invariant(pipeline_def.has_solid_def(solid_def_name))
+    solid_def = pipeline_def.solid_def_named(solid_def_name)
+    MANAGER_FOR_NOTEBOOK_INSTANCE.solid_def = solid_def
+    MANAGER_FOR_NOTEBOOK_INSTANCE.populated_by_papermill = True
+    MANAGER_FOR_NOTEBOOK_INSTANCE.marshal_dir = dm_context_data['marshal_dir']
 
 
-def get_input(dm_context, input_name):
-    check.param_invariant(isinstance(dm_context, (InMemoryDagstermillContext, str)), 'dm_context')
-    return MANAGER_FOR_NOTEBOOK_INSTANCE.get_input(dm_context, input_name)
-
-
-def get_inputs(dm_context, *input_names):
-    check.param_invariant(isinstance(dm_context, (InMemoryDagstermillContext, str)), 'dm_context')
-    return MANAGER_FOR_NOTEBOOK_INSTANCE.get_inputs(dm_context, *input_names)
-
-
-def yield_result(dm_context, value, output_name='result'):
-    return MANAGER_FOR_NOTEBOOK_INSTANCE.yield_result(dm_context, value, output_name)
-
-
-def serialize_dm_context(transform_execution_info, inputs):
-    check.inst_param(transform_execution_info, 'transform_execution_info', TransformExecutionInfo)
-    check.dict_param(inputs, 'inputs', key_type=six.string_types)
-
-    run_id = transform_execution_info.context.run_id
-
-    marshal_dir = '/tmp/dagstermill/{run_id}/marshal'.format(run_id=run_id)
-    if not os.path.exists(marshal_dir):
-        os.makedirs(marshal_dir)
-
-    new_inputs_structure = {
-        'pipeline_name': transform_execution_info.pipeline_def.name,
-        'solid_def_name': transform_execution_info.solid.definition.name,
-        'solid_name': transform_execution_info.solid.name,
-        'inputs': {},
-        'marshal_dir': marshal_dir,
-    }
-
-    input_defs = transform_execution_info.solid_def.input_defs
-    input_def_dict = {inp.name: inp for inp in input_defs}
-    for input_name, input_value in inputs.items():
-        runtime_type = input_def_dict[input_name].runtime_type
-
-        new_inputs_structure['inputs'][input_name] = marshal_value(
-            runtime_type, input_value, os.path.join(marshal_dir, 'input-{}'.format(input_name))
-        )
-
-    return json.dumps(new_inputs_structure)
+def load_parameter(input_name, input_value):
+    solid_def = MANAGER_FOR_NOTEBOOK_INSTANCE.solid_def
+    input_def = solid_def.input_def_named(input_name)
+    return unmarshal_value(input_def.runtime_type, input_value)
 
 
 def unmarshal_value(runtime_type, value):
@@ -205,33 +151,35 @@ def unmarshal_value(runtime_type, value):
         check.failed('Unsupported type {name}'.format(name=runtime_type.name))
 
 
-def deserialize_dm_context(serialized_dm_context):
-    check.str_param(serialized_dm_context, 'inputs_str')
+def get_papermill_parameters(transform_execution_info, inputs):
+    check.inst_param(transform_execution_info, 'transform_execution_info', TransformExecutionInfo)
+    check.dict_param(inputs, 'inputs', key_type=six.string_types)
 
-    dm_context_data = json.loads(serialized_dm_context)
+    run_id = transform_execution_info.context.run_id
 
-    pipeline_def = MANAGER_FOR_NOTEBOOK_INSTANCE.get_pipeline(dm_context_data['pipeline_name'])
+    marshal_dir = '/tmp/dagstermill/{run_id}/marshal'.format(run_id=run_id)
+    if not os.path.exists(marshal_dir):
+        os.makedirs(marshal_dir)
 
-    check.inst(pipeline_def, PipelineDefinition)
+    dm_context_dict = {
+        'pipeline_name': transform_execution_info.pipeline_def.name,
+        'solid_def_name': transform_execution_info.solid.definition.name,
+        'marshal_dir': marshal_dir,
+    }
 
-    solid_def_name = dm_context_data['solid_def_name']
+    parameters = dict(dm_context=json.dumps(dm_context_dict))
 
-    check.invariant(pipeline_def.has_solid_def(solid_def_name))
+    input_defs = transform_execution_info.solid_def.input_defs
+    input_def_dict = {inp.name: inp for inp in input_defs}
+    for input_name, input_value in inputs.items():
+        assert input_name != "dm_context", "Protected input name!"
+        runtime_type = input_def_dict[input_name].runtime_type
+        parameter_value = marshal_value(
+            runtime_type, input_value, os.path.join(marshal_dir, 'input-{}'.format(input_name))
+        )
+        parameters[input_name] = parameter_value
 
-    solid_def = pipeline_def.solid_def_named(solid_def_name)
-
-    inputs_data = dm_context_data['inputs']
-    inputs = {}
-    for input_name, input_value in inputs_data.items():
-        input_def = solid_def.input_def_named(input_name)
-        inputs[input_name] = unmarshal_value(input_def.runtime_type, input_value)
-
-    return RemotedDagstermillContext(
-        pipeline_def=pipeline_def,
-        solid_def=solid_def,
-        inputs=inputs,
-        marshal_dir=dm_context_data['marshal_dir'],
-    )
+    return parameters
 
 
 def _dm_solid_transform(name, notebook_path):
@@ -253,9 +201,7 @@ def _dm_solid_transform(name, notebook_path):
 
         try:
             _source_nb = pm.execute_notebook(
-                notebook_path,
-                temp_path,
-                parameters=dict(dm_context=serialize_dm_context(info, inputs)),
+                notebook_path, temp_path, parameters=get_papermill_parameters(info, inputs)
             )
 
             output_nb = pm.read_notebook(temp_path)
@@ -280,14 +226,6 @@ def _dm_solid_transform(name, notebook_path):
                 os.remove(temp_path)
 
     return _t_fn
-
-
-def is_json_serializable(value):
-    try:
-        json.dumps(value)
-        return True
-    except TypeError:
-        return False
 
 
 def define_dagstermill_solid(name, notebook_path, inputs=None, outputs=None, config_field=None):
