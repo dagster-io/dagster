@@ -1,4 +1,6 @@
 import runpy
+import sys
+import warnings
 
 from dagster import execute_pipeline, ReentrantInfo
 from dagster.tutorials.intro_tutorial.resources import define_resource_test_pipeline
@@ -63,4 +65,10 @@ def test_run_cloud():
 
 
 def test_resources():
+    # Why?!? Because
+    # http://python-notes.curiousefficiency.org/en/latest/python_concepts/import_traps.html#the-double-import-trap
+    # (Nothing to see here)
+    if not sys.warnoptions:  # allow overriding with `-W` option
+        warnings.filterwarnings('ignore', category=RuntimeWarning, module='runpy')
+
     runpy.run_module('dagster.tutorials.intro_tutorial.resources', run_name='__main__')

@@ -119,5 +119,4 @@ By using typed input instead we can catch this error prior to execution.
 
 .. image:: inputs_figure_four_error_prechecked.png
 
-Next, we'll see how to use the  :doc:`Execution Context <execution_context>` to configure how
-pipeline execution interacts with its environment.
+Next, we'll look at a closely allied concept -- :doc:`Configuration <config>` values.
