@@ -5,13 +5,16 @@ import base64
 import json
 import os
 import uuid
+import copy
+import nbformat
 
 import six
 
 from future.utils import raise_from
 
 import papermill as pm
-
+from papermill.translators import translate_parameters
+from papermill.iorw import load_notebook_node, write_ipynb
 from dagster import (
     DagsterRuntimeCoercionError,
     InputDefinition,
@@ -193,6 +196,53 @@ def get_papermill_parameters(transform_execution_info, inputs):
     return parameters
 
 
+def replace_parameters(nb, parameters):
+    """Assigned parameters into the appropiate place in the input notebook
+    Args:
+        nb (NotebookNode): Executable notebook object
+        parameters (dict): Arbitrary keyword arguments to pass to the notebook parameters.
+    """
+
+    # Copy the nb object to avoid polluting the input
+    nb = copy.deepcopy(nb)
+
+    kernel_name = nb.metadata.kernelspec.name
+    language = nb.metadata.kernelspec.language
+
+    # Generate parameter content based on the kernel_name
+
+    param_content = DagsterTranslator.codify(parameters)
+    # translate_parameters(kernel_name, language, parameters)
+
+    newcell = nbformat.v4.new_code_cell(source=param_content)
+    newcell.metadata['tags'] = ['injected-parameters']
+
+    from papermill.execute import _find_first_tagged_cell_index
+
+    param_cell_index = _find_first_tagged_cell_index(nb, 'parameters')
+    injected_cell_index = _find_first_tagged_cell_index(nb, 'injected-parameters')
+    if injected_cell_index >= 0:
+        # Replace the injected cell with a new version
+        before = nb.cells[:injected_cell_index]
+        after = nb.cells[injected_cell_index + 1 :]
+        assert (
+            param_cell_index == -1
+        )  # if we've injected-parameters, we should have blown away the parameters cell from before
+    elif param_cell_index >= 0:
+        # Replace the parameter cell with the injected-parameters cell
+        before = nb.cells[:param_cell_index]
+        after = nb.cells[param_cell_index + 1 :]
+    else:
+        # Inject to the top of the notebook
+        before = []
+        after = nb.cells
+
+    nb.cells = before + [newcell] + after
+    nb.metadata.papermill['parameters'] = parameters
+
+    return nb
+
+
 def _dm_solid_transform(name, notebook_path):
     check.str_param(name, 'name')
     check.str_param(notebook_path, 'notebook_path')
@@ -211,9 +261,14 @@ def _dm_solid_transform(name, notebook_path):
         )
 
         try:
-            _source_nb = pm.execute_notebook(
-                notebook_path, temp_path, parameters=get_papermill_parameters(info, inputs)
+            nb = load_notebook_node(notebook_path)
+            nb = replace_parameters(nb, get_papermill_parameters(info, inputs))
+            intermediate_path = os.path.join(
+                output_notebook_dir, '{prefix}-inter.ipynb'.format(prefix=str(uuid.uuid4()))
             )
+            write_ipynb(nb, intermediate_path)
+
+            _source_nb = pm.execute_notebook(intermediate_path, temp_path)
 
             output_nb = pm.read_notebook(temp_path)
 
