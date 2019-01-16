@@ -39,7 +39,7 @@ Old Intro Tutorial To Audit
   :maxdepth: 1
   :name: Intro Tutorial To Audit
 
-  intro_tutorial/part_thirteen
+  intro_tutorial/reusable_solids
   intro_tutorial/part_fourteen
 
 
