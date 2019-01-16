@@ -10,18 +10,9 @@ interface IPipelineExecutionRootProps {
   pipeline: string;
 }
 
-interface IPipelineExecutionRootState {
-  solidSubset: string[];
-}
-
 export default class PipelineExecutionRoot extends React.Component<
-  IPipelineExecutionRootProps,
-  IPipelineExecutionRootState
+  IPipelineExecutionRootProps
 > {
-  state = {
-    solidSubset: []
-  };
-
   render() {
     return (
       <ApolloConsumer>
@@ -34,7 +25,7 @@ export default class PipelineExecutionRoot extends React.Component<
                 partialRefetch={true}
                 variables={{
                   name: this.props.pipeline,
-                  solidSubset: this.state.solidSubset
+                  solidSubset: data.sessions[data.current].solidSubset
                 }}
               >
                 {(
@@ -47,10 +38,7 @@ export default class PipelineExecutionRoot extends React.Component<
                         onSave={onSave}
                         client={client}
                         pipeline={result.pipeline}
-                        solidSubset={this.state.solidSubset}
-                        onChangeSolidSubset={solidSubset =>
-                          this.setState({ solidSubset })
-                        }
+                        currentSession={data.sessions[data.current]}
                       />
                     )}
                   </Loading>

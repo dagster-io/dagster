@@ -5,12 +5,13 @@ import { DataProxy } from "apollo-cache";
 import produce from "immer";
 import { Mutation, FetchResult } from "react-apollo";
 import {
-  applyConfigToSession,
+  applyChangesToSession,
   applySelectSession,
-  applyNameToSession,
   applyRemoveSession,
   applyCreateSession,
-  IStorageData
+  IStorageData,
+  IExecutionSession,
+  IExecutionSessionChanges
 } from "../LocalStorage";
 import PipelineExecution from "./PipelineExecution";
 import {
@@ -28,10 +29,9 @@ import { PipelineRunLogsUpdateFragment } from "./types/PipelineRunLogsUpdateFrag
 interface IPipelineExecutionContainerProps {
   client: ApolloClient<any>;
   pipeline: PipelineExecutionContainerFragment;
+  currentSession: IExecutionSession;
   data: IStorageData;
   onSave: (data: IStorageData) => void;
-  solidSubset: string[];
-  onChangeSolidSubset: (solidSubset: string[]) => void;
 }
 
 export default class PipelineExecutionContainer extends React.Component<
@@ -122,16 +122,12 @@ export default class PipelineExecutionContainer extends React.Component<
     this.props.onSave(applySelectSession(this.props.data, session));
   };
 
-  handleSaveSession = (session: string, config: string) => {
-    this.props.onSave(applyConfigToSession(this.props.data, session, config));
+  handleSaveSession = (session: string, changes: IExecutionSessionChanges) => {
+    this.props.onSave(applyChangesToSession(this.props.data, session, changes));
   };
 
-  handleRenameSession = (session: string, title: string) => {
-    this.props.onSave(applyNameToSession(this.props.data, session, title));
-  };
-
-  handleCreateSession = (config: string) => {
-    this.props.onSave(applyCreateSession(this.props.data, config));
+  handleCreateSession = () => {
+    this.props.onSave(applyCreateSession(this.props.data));
   };
 
   handleRemoveSession = (session: string) => {
@@ -241,15 +237,12 @@ export default class PipelineExecutionContainer extends React.Component<
         {(startPipelineExecution, { loading }) => {
           return (
             <PipelineExecution
-              pipeline={this.props.pipeline}
-              solidSubset={this.props.solidSubset}
-              onChangeSolidSubset={this.props.onChangeSolidSubset}
               activeRun={activeRun}
-              sessions={this.props.data.sessions}
-              currentSession={this.props.data.sessions[this.props.data.current]}
               isExecuting={loading}
+              pipeline={this.props.pipeline}
+              sessions={this.props.data.sessions}
+              currentSession={this.props.currentSession}
               onSelectSession={this.handleSelectSession}
-              onRenameSession={this.handleRenameSession}
               onSaveSession={this.handleSaveSession}
               onCreateSession={this.handleCreateSession}
               onRemoveSession={this.handleRemoveSession}

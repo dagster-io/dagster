@@ -27,16 +27,30 @@ export interface IExecutionSessionRun {
   executionPlan: IExecutionSessionPlan;
   runId: string;
 }
+
 export interface IExecutionSession {
   key: string;
   name: string;
   config: string;
+  solidSubset: string[];
 }
+
+export interface IExecutionSessionChanges {
+  name?: string;
+  config?: string;
+  solidSubset?: string[];
+}
+
+// When we create a new session, we insert a placeholder config that is swapped
+// with a scaffold when the pipeline with the desired solidSubset has loaded
+// and we're able to assemble the YAML.
+export const SESSION_CONFIG_PLACEHOLDER = "SCAFFOLD-PLACEHOLDER";
 
 const DEFAULT_SESSION: IExecutionSession = {
   key: "default",
-  name: "Default",
-  config: "# This is config editor. Enjoy!"
+  name: "Untitled",
+  config: SESSION_CONFIG_PLACEHOLDER,
+  solidSubset: []
 };
 
 export function applySelectSession(data: IStorageData, key: string) {
@@ -54,31 +68,18 @@ export function applyRemoveSession(data: IStorageData, key: string) {
   return data;
 }
 
-export function applyNameToSession(
+export function applyChangesToSession(
   data: IStorageData,
   key: string,
-  newName: string
+  changes: IExecutionSessionChanges
 ) {
-  data.sessions[key].name = newName;
+  Object.assign(data.sessions[key], changes);
   return data;
 }
 
-export function applyConfigToSession(
-  data: IStorageData,
-  key: string,
-  config: string
-) {
-  data.sessions[key].config = config;
-  return data;
-}
-
-export function applyCreateSession(data: IStorageData, config: string) {
+export function applyCreateSession(data: IStorageData) {
   const key = `s${Date.now()}`;
-  data.sessions[key] = Object.assign({}, DEFAULT_SESSION, {
-    key,
-    name: "Untitled",
-    config: config
-  });
+  data.sessions[key] = Object.assign({}, DEFAULT_SESSION, { key });
   data.current = key;
   return data;
 }

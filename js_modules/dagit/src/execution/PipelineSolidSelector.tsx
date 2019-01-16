@@ -14,6 +14,7 @@ import {
   pointsToBox
 } from "../graph/getFullSolidLayout";
 import SVGViewport from "../graph/SVGViewport";
+import { IconNames } from "@blueprintjs/icons";
 
 interface IPipelineSolidSelectorProps {
   pipelineName: string;
@@ -38,6 +39,54 @@ interface IPipelineSolidSelectorState {
   toolRectEnd: null | { x: number; y: number };
 }
 
+function subsetDescription(
+  solidSubset: string[],
+  pipeline: PipelineExecutionRootQuery_pipeline
+) {
+  if (
+    solidSubset.length === 0 ||
+    solidSubset.length === pipeline.solids.length
+  ) {
+    return "All Solids";
+  }
+  if (solidSubset.length === 1) {
+    return solidSubset[0];
+  }
+
+  // try to find a start solid that can get us to all the solids without
+  // any others in the path, indicating that an range label (eg "A -> B")
+  // would fit. TODO: Bidirectional A-star?!
+  const rangeDescription = solidSubset
+    .map(startName => {
+      let solidName = startName;
+      let rest = solidSubset.filter(s => s !== solidName);
+
+      while (rest.length > 0) {
+        const solid = pipeline.solids.find(s => s.name === solidName);
+        if (!solid) return false;
+
+        const downstreamSolidNames = solid.outputs.reduce(
+          (v: string[], o) => v.concat(o.dependedBy.map(s => s.solid.name)),
+          []
+        );
+
+        const nextSolidName = downstreamSolidNames.find(
+          n => rest.indexOf(n) !== -1
+        );
+        if (!nextSolidName) return false;
+        rest = rest.filter(s => s !== nextSolidName);
+        solidName = nextSolidName;
+      }
+      return `${startName} → ${solidName}`;
+    })
+    .find(n => n !== false);
+
+  if (rangeDescription) {
+    return rangeDescription;
+  }
+  return `${solidSubset.length} solids`;
+}
+
 class PipelineSolidSelector extends React.Component<
   IPipelineSolidSelectorInnerProps,
   IPipelineSolidSelectorState
@@ -55,16 +104,6 @@ class PipelineSolidSelector extends React.Component<
     highlighted: [],
     toolRectStart: null,
     toolRectEnd: null
-  };
-
-  handleClickSolid = (solidName: string) => {
-    const { highlighted } = this.state;
-
-    if (highlighted.indexOf(solidName) !== -1) {
-      this.setState({ highlighted: highlighted.filter(s => s !== solidName) });
-    } else {
-      this.setState({ highlighted: [...highlighted, solidName] });
-    }
   };
 
   handleSVGMouseDown = (
@@ -98,9 +137,24 @@ class PipelineSolidSelector extends React.Component<
       viewport.screenToSVGCoords(toolRectStart),
       viewport.screenToSVGCoords(toolRectEnd)
     );
-    const highlighted = Object.keys(layout.solids).filter(name =>
+    let highlighted = Object.keys(layout.solids).filter(name =>
       layoutsIntersect(svgToolBox, layout.solids[name].boundingBox)
     );
+
+    // If you clicked a single solid, toggle the selection. Otherwise,
+    // we blow away the ccurrently highlighted solids in favor of the new selection
+    if (
+      highlighted.length === 1 &&
+      toolRectEnd.x === toolRectStart.x &&
+      toolRectEnd.y === toolRectStart.y
+    ) {
+      const clickedSolid = highlighted[0];
+      if (this.state.highlighted.indexOf(clickedSolid) !== -1) {
+        highlighted = this.state.highlighted.filter(s => s !== clickedSolid);
+      } else {
+        highlighted = [...this.state.highlighted, clickedSolid];
+      }
+    }
 
     this.setState({
       toolRectEnd: null,
@@ -128,7 +182,7 @@ class PipelineSolidSelector extends React.Component<
           icon="info-sign"
           onClose={() => this.setState({ open: false })}
           style={{ width: "80vw", maxWidth: 1400, height: "80vh" }}
-          title={"Select Solids"}
+          title={"Select Solids to Execute"}
           usePortal={true}
           isOpen={open}
         >
@@ -162,7 +216,6 @@ class PipelineSolidSelector extends React.Component<
                   );
                 }
               }}
-              onClickSolid={this.handleClickSolid}
               layout={getDagrePipelineLayout(pipeline)}
               highlightedSolids={pipeline.solids.filter(
                 (s: any) => highlighted.indexOf(s.name) !== -1
@@ -184,9 +237,9 @@ class PipelineSolidSelector extends React.Component<
             </div>
           </div>
         </Dialog>
-        <a onClick={this.handleOpen}>
-          {this.props.value.length ? this.props.value.join(", ") : "All Solids"}
-        </a>
+        <Button icon={IconNames.SEARCH_AROUND} onClick={this.handleOpen}>
+          {subsetDescription(this.props.value, this.props.pipeline)}
+        </Button>
       </div>
     );
   }

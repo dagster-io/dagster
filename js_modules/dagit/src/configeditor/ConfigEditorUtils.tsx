@@ -155,8 +155,8 @@ export function scaffoldConfig(pipeline: ConfigEditorPipelineFragment): string {
   const placeholders = {
     Path: "/path/to/file",
     String: "value",
-    Int: `0`,
-    Boolean: `false`
+    Int: 1,
+    Boolean: "false"
   };
 
   const configPlaceholderFor = (
@@ -203,6 +203,12 @@ export function scaffoldConfig(pipeline: ConfigEditorPipelineFragment): string {
       .join("");
     return `\n${preWhitespace} #${postWhitespace}`;
   });
+
+  // It's unclear why YAML.stringify returns an empty object when the provided
+  // input is empty, but we'd rather just display nothing in the editor.
+  if (str === "{}\n") {
+    str = "";
+  }
 
   return `
 # This config has been auto-generated with required fields.
