@@ -65,13 +65,20 @@ class RuntimeExecutionContext:
     '''
 
     def __init__(
-        self, run_id, loggers=None, resources=None, context_stack=None, context_config=None
+        self,
+        run_id,
+        loggers=None,
+        resources=None,
+        context_stack=None,
+        context_config=None,
+        log_args_to_json=False,
     ):
 
         if loggers is None:
             loggers = [define_colored_console_logger('dagster')]
 
         self._logger = CompositeLogger(loggers=loggers)
+        self._log_args_to_json = log_args_to_json
         self.resources = resources
         self._run_id = check.str_param(run_id, 'run_id')
         self._context_stack = check.opt_dict_param(context_stack, 'context_stack')
@@ -82,6 +89,15 @@ class RuntimeExecutionContext:
         check.str_param(method, 'method')
         check.str_param(orig_message, 'orig_message')
         check.dict_param(message_props, 'message_props')
+
+        if self._log_args_to_json:
+            json_dict = {
+                'method': method,
+                'orig_message': orig_message,
+                'message_props': message_props,
+            }
+            self._logger.info(json_dict)
+            return
 
         check.invariant(
             'extra' not in message_props, 'do not allow until explicit support is handled'

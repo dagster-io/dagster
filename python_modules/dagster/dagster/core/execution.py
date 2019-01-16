@@ -636,13 +636,13 @@ def create_typed_environment(pipeline, environment=None):
     return construct_environment_config(result.value)
 
 
-def create_typed_context(pipeline, environment=None):
+def create_typed_context(pipeline, context=None):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    check.opt_dict_param(environment, 'environment')
+    check.opt_dict_param(context, 'context')
 
-    result = evaluate_config_value(pipeline.context_type, environment)
+    result = evaluate_config_value(pipeline.context_type, context)
 
     if not result.success:
-        raise PipelineConfigEvaluationError(pipeline, result.errors, environment)
+        raise PipelineConfigEvaluationError(pipeline, result.errors, context)
 
     return construct_context_config(result.value['context'])
