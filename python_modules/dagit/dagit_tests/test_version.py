@@ -9,4 +9,3 @@ def test_version():
     assert subprocess.check_output(['dagit', '--version']) == bytes(
         'dagit, version {version}\n'.format(version=__version__), 'utf-8'
     )
-
