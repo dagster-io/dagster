@@ -352,7 +352,7 @@ After:
     )
 ```
 
-10. ** Non-null by default **
+10. **Non-null by default**
 
 Error:
 
@@ -367,8 +367,8 @@ Error:
 E           dagster.core.errors.DagsterRuntimeCoercionError: Expected valid value for PandasDataFrame but got None
 ```
 
-You have encountered a type error (with a crappy error message). Likely it is because in 0.2.8, types could
-accept None by default, and this is no longer. You have to opt into accepting nulls.
+You have encountered a type error (with a crappy error message [tracking here https://github.com/dagster-io/dagster/issues/658]). Likely it is because in 0.2.8, types could
+accept None by default, and this is no longer true in 0.3.0. You have to opt into accepting nulls.
 
 Before:
 
