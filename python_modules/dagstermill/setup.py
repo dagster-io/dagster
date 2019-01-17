@@ -32,6 +32,14 @@ def _do_setup(name='dagstermill'):
         author='Elementl',
         license='Apache-2.0',
         packages=find_packages(exclude=['dagstermill_tests']),
+        classifiers=[
+            'Programming Language :: Python :: 2.7',
+            'Programming Language :: Python :: 3.5',
+            'Programming Language :: Python :: 3.6',
+            'Programming Language :: Python :: 3.7',
+            'License :: OSI Approved :: Apache Software License',
+            'Operating System :: OS Independent',
+        ],
         install_requires=[
             # standard python 2/3 compatability things
             'enum34>=1.1.6',
