@@ -45,15 +45,37 @@ the configuration language in order to parameterize the computation.
 
 Let us now add the input schema:
 
-.. literalinclude:: ../../../dagster-pandas/dagster_pandas/data_frame.py
-   :lines: 17-25
-
 .. code-block:: py
 
     @input_schema(
+        Selector(
+            {
+                'csv': define_csv_dict_field(),
+                'parquet': define_path_dict_field(),
+                'table': define_path_dict_field(),
+            }
+        )
+    )
+    def dataframe_input_schema(config_value):
+        file_type, file_options = list(config_value.items())[0]
+        check.str_param(file_type, 'file_type')
+        check.dict_param(file_options, 'file_options')
 
-.. literalinclude:: ../../../dagster-pandas/dagster_pandas/data_frame.py
-   :lines: 54-77
+        if file_type == 'csv':
+            path = file_options['path']
+            del file_options['path']
+            return pd.read_csv(path, **file_options)
+        elif file_type == 'parquet':
+            return pd.read_parquet(file_options['path'])
+        elif file_type == 'table':
+            return pd.read_table(file_options['path'])
+        else:
+            raise DagsterInvariantViolationError(
+                'Unsupported file_type {file_type}'.format(
+                    file_type=file_type
+                )
+            )
+
 
 Any input schema is define by a decorated function with a single argument. The argument is the
 format the input schema takes. In this case it is a `Selector`. Selectors are used when you want
@@ -78,7 +100,6 @@ case of a selector, the config_value dictionary has only 1 (key, value) pair.
 
 .. literalinclude:: ../../../dagster-pandas/dagster_pandas/data_frame.py
    :lines: 53-77
-   :emphasize-lines: 1
 
 You'll note that we no longer need to manipulate the config_value dictionary. It grabs
 that key and value for you and calls the provided function.
@@ -86,7 +107,7 @@ that key and value for you and calls the provided function.
 Finally insert this into the original declaration:
 
 .. literalinclude:: ../../../dagster-pandas/dagster_pandas/data_frame.py
-   :lines: 80-86, 88
+   :lines: 80-89 
    :emphasize-lines: 7
 
 Now if you run a pipeline with this solid from dagit you will be able to provide sources for
