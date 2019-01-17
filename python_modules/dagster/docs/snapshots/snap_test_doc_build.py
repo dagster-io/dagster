@@ -3062,9 +3062,11 @@ After:
             'pipeline_run_id': pipeline_run_id,
         },
     )
+
 ```
 
-\x11\x12\x1210. **Non-null by default**
+
+10. **Non-null by default**
 
 Error:
 
@@ -21537,9 +21539,12 @@ Third, you do not have to name it. The net result is much nicer:</p>
             <span class="s1">&#39;pipeline_run_id&#39;</span><span class="p">:</span> <span class="n">pipeline_run_id</span><span class="p">,</span>
         <span class="p">},</span>
     <span class="p">)</span>
+
 </pre></div>
 </div>
-<p>\x11\x12\x1210. <strong>Non-null by default</strong></p>
+<ol class="simple">
+<li><strong>Non-null by default</strong></li>
+</ol>
 <p>Error:</p>
 <div class="highlight-py notranslate"><div class="highlight"><pre><span></span>    <span class="k">def</span> <span class="nf">throw_if_false</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fn</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">fn</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
