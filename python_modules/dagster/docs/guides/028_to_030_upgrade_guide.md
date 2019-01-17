@@ -353,23 +353,15 @@ After:
 
 ```
 
-
 10. **Non-null by default**
 
 Error:
 
-```py
-    def throw_if_false(self, fn, value):
-        if not fn(value):
-            raise DagsterRuntimeCoercionError(
-                'Expected valid value for {type_name} but got {value}'.format(
->                   type_name=self.name, value=repr(value)
-                )
-            )
-E           dagster.core.errors.DagsterRuntimeCoercionError: Expected valid value for PandasDataFrame but got None
+```
+E   dagster.core.errors.DagsterTypeError: Solid solid_name input input_name received value None which does not pass the typecheck for Dagster type PandasDataFrame. Step solid_name.transform
 ```
 
-You have encountered a type error (with a crappy error message [tracking here https://github.com/dagster-io/dagster/issues/658]). Likely it is because in 0.2.8, types could
+You have encountered a type error. Likely it is because in 0.2.8, types could
 accept None by default, and this is no longer true in 0.3.0. You have to opt into accepting nulls.
 
 Before:
