@@ -3,12 +3,18 @@
 
 .. docs-include
 
+.. image:: https://badge.fury.io/py/dagster.svg
+   :target: https://badge.fury.io/py/dagster
 .. image:: https://coveralls.io/repos/github/dagster-io/dagster/badge.svg?branch=master
    :target: https://coveralls.io/github/dagster-io/dagster?branch=master
 .. image:: https://circleci.com/gh/dagster-io/dagster.svg?style=svg
    :target: https://circleci.com/gh/dagster-io/dagster
 .. image:: https://readthedocs.org/projects/dagster/badge/?version=master
    :target: https://dagster.readthedocs.io/en/master/
+.. image:: https://img.shields.io/pypi/l/dagster.svg
+   :target: http://www.apache.org/licenses/LICENSE-2.0.txt
+.. image:: https://img.shields.io/pypi/pyversions/dagster.svg
+   :target: https://pypi.org/project/dagster/
 
 ============
 Introduction
