@@ -383,7 +383,7 @@ def cli():
 def publish(nightly):
     """Publishes (uploads) all submodules to PyPI.
 
-    Appropriate credentials must be available to twin, e.g. in a ~/.pypirc file, and users must
+    Appropriate credentials must be available to twine, e.g. in a ~/.pypirc file, and users must
     be permissioned as maintainers on the PyPI projects. Publishing will fail if versions (git
     tags and Python versions) are not in lockstep, if the current commit is not tagged, or if
     there are untracked changes.
