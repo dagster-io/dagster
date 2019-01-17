@@ -208,10 +208,11 @@ class RuntimeExecutionContext:
             check.invariant(not key in self._context_stack, 'Should not be in context')
             self._context_stack[key] = value
 
-        yield
-
-        for key in ddict.keys():
-            self._context_stack.pop(key)
+        try:
+            yield
+        finally:
+            for key in ddict.keys():
+                self._context_stack.pop(key)
 
     @property
     def run_id(self):
