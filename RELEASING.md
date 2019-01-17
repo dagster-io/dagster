@@ -5,7 +5,7 @@ Dagster versions follow the guidelines in [PEP 440](https://www.python.org/dev/p
 To make dependency management easier in the context of a monorepo with many installable projects,
 package versions move in lockstep with each other and with git tags. 
 
-As the API is still in flux, we aren't following strict semver rules at this point, but roughly
+As the API is still in flux, we aren't following strict semantic versioning rules at this point, but roughly
 intend micro versions to reflect a regular release schedule and minor versions to reflect
 milestones in the framework's capability.
 
