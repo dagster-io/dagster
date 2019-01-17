@@ -288,7 +288,7 @@ def commit_new_version(version):
                 stderr=subprocess.STDOUT,
             )
         subprocess.check_output(
-            ['git', 'commit', '--no-verify', '-m', '\'{version}\''.format(version=version)],
+            ['git', 'commit', '--no-verify', '-m', '{version}'.format(version=version)],
             stderr=subprocess.STDOUT,
         )
     except subprocess.CalledProcessError as exc_info:
