@@ -15,4 +15,4 @@ def create_dagster_cli():
 
 def main():
     cli = create_dagster_cli()
-    cli(obj={})
+    cli(obj={})  # pylint:disable=E1123
