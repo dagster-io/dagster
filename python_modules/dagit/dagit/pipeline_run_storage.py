@@ -241,7 +241,13 @@ class DebouncingLogQueue(object):
             # else has emptied the queue without another event
             # being *enqueued*
             if queue_timeout is None:
-                check.invariant(len(self._log_sequence) == 0)
+                check.invariant(
+                    not self._log_sequence,
+                    (
+                        'queue_timeout is None should correspond to the state where another '
+                        'greenlet has emptied the queue and no one other greenlet has enqueued'
+                    ),
+                )
                 return LogSequence()
             else:
                 if (time.time() - queue_timeout) >= self._timeout_length:
