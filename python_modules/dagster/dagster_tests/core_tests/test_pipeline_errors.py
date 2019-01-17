@@ -158,4 +158,3 @@ def test_user_error_propogation():
 
     with pytest.raises(UserError):
         execute_pipeline(pipeline_def)
-
