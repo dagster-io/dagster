@@ -4208,7 +4208,7 @@ that key and value for you and calls the provided function.
 Finally insert this into the original declaration:
 
 .. literalinclude:: ../../../dagster-pandas/dagster_pandas/data_frame.py
-   :lines: 111-120
+   :lines: 80-89 
    :emphasize-lines: 7
 
 Now if you run a pipeline with this solid from dagit you will be able to provide sources for
@@ -25421,13 +25421,13 @@ in the dagster-pandas library, building it step by step along the way.</p>
 <h2>Basic Typing<a class="headerlink" href="#basic-typing" title="Permalink to this headline">¶</a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
-<span class="kn">from</span> <span class="nn">dagster</span> <span class="k">import</span> <span class="n">input_schema</span>
-
-
-<span class="nd">@input_schema</span><span class="p">(</span>
-    <span class="n">Selector</span><span class="p">(</span>
-        <span class="p">{</span>
-            <span class="s1">&#39;table&#39;</span><span class="p">:</span> <span class="n">define_path_dict_field</span><span class="p">(),</span>
+<span class="n">DataFrame</span> <span class="o">=</span> <span class="n">as_dagster_type</span><span class="p">(</span>
+    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">name</span><span class="o">=</span><span class="s1">&#39;PandasDataFrame&#39;</span><span class="p">,</span>
+    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;Two-dimensional size-mutable, potentially heterogeneous</span>
+<span class="s1">    tabular data structure with labeled axes (rows and columns).</span>
+<span class="s1">    See http://pandas.pydata.org/&#39;&#39;&#39;</span><span class="p">,</span>
+<span class="p">)</span>
 </pre></div>
 </div>
 <p>What this code doing is annotating/registering an existing type as a dagster type. Now one can
@@ -25584,15 +25584,15 @@ it takes a third argument, <cite>pandas_df</cite> (it can be named anything), th
 outputted from the solid in question. It then takes the configuration data as “instructions” as to
 how to materialize the value.</p>
 <p>One connects the output schema to the type as follows:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">dagster</span> <span class="k">import</span> <span class="n">input_schema</span>
-
-
-<span class="nd">@input_schema</span><span class="p">(</span>
-    <span class="n">Selector</span><span class="p">(</span>
-        <span class="p">{</span>
-            <span class="s1">&#39;csv&#39;</span><span class="p">:</span> <span class="n">define_csv_dict_field</span><span class="p">(),</span>
-<span class="hll">            <span class="s1">&#39;parquet&#39;</span><span class="p">:</span> <span class="n">define_path_dict_field</span><span class="p">(),</span>
-</span>            <span class="s1">&#39;table&#39;</span><span class="p">:</span> <span class="n">define_path_dict_field</span><span class="p">(),</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">DataFrame</span> <span class="o">=</span> <span class="n">as_dagster_type</span><span class="p">(</span>
+    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">name</span><span class="o">=</span><span class="s1">&#39;PandasDataFrame&#39;</span><span class="p">,</span>
+    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;Two-dimensional size-mutable, potentially heterogeneous</span>
+<span class="s1">    tabular data structure with labeled axes (rows and columns).</span>
+<span class="s1">    See http://pandas.pydata.org/&#39;&#39;&#39;</span><span class="p">,</span>
+    <span class="n">input_schema</span><span class="o">=</span><span class="n">dataframe_input_schema</span><span class="p">,</span>
+<span class="hll">    <span class="n">output_schema</span><span class="o">=</span><span class="n">dataframe_output_schema</span><span class="p">,</span>
+</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Now we can provide a list of materializations to a given execution.</p>
