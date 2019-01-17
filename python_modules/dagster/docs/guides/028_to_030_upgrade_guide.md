@@ -352,4 +352,36 @@ After:
     )
 ```
 
-
+10. ** Non-null by default **
+
+Error:
+
+```py
+    def throw_if_false(self, fn, value):
+        if not fn(value):
+            raise DagsterRuntimeCoercionError(
+                'Expected valid value for {type_name} but got {value}'.format(
+>                   type_name=self.name, value=repr(value)
+                )
+            )
+E           dagster.core.errors.DagsterRuntimeCoercionError: Expected valid value for PandasDataFrame but got None
+```
+
+You have encountered a type error (with a crappy error message). Likely it is because in 0.2.8, types could
+accept None by default, and this is no longer. You have to opt into accepting nulls.
+
+Before:
+
+```py
+@solid(outputs=[OutputDefinition(dagster_type=dagster_pd.DataFrame)])
+def return_none(info):
+    return None # None no longer allowed, would break at runtime
+```
+
+After
+
+```py
+@solid(outputs=[OutputDefinition(dagster_type=Nullable(dagster_pd.DataFrame))])
+def return_none(info):
+    return None # Because of Nullable wrapper, this is ok
+```
