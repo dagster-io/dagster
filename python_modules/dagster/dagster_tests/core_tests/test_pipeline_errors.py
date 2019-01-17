@@ -12,6 +12,7 @@ from dagster import (
     SolidDefinition,
     check,
     execute_pipeline,
+    lambda_solid,
 )
 
 from dagster.core.test_utils import execute_single_solid_in_isolation, single_output_transform
@@ -131,3 +132,29 @@ def test_single_transform_returning_result():
 
     with pytest.raises(DagsterInvariantViolationError):
         execute_single_solid_in_isolation(ExecutionContext(), solid_inst)
+
+
+def test_user_error_propogation():
+    class UserError(Exception):
+        pass
+
+    @lambda_solid
+    def throws_user_error():
+        raise UserError()
+
+    @lambda_solid
+    def return_one():
+        return 1
+
+    @lambda_solid(inputs=[InputDefinition('num')])
+    def add_one(num):
+        return num + 1
+
+    pipeline_def = PipelineDefinition(
+        name='test_user_error_propogation',
+        solids=[throws_user_error, return_one, add_one],
+        dependencies={'add_one': {'num': DependencyDefinition('return_one')}},
+    )
+
+    with pytest.raises(UserError):
+        execute_pipeline(pipeline_def)
