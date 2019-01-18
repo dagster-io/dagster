@@ -20,7 +20,7 @@ def define_repository():
             'configurable_hello_pipeline': define_configurable_hello_pipeline,
             'execution_context_pipeline': define_execution_context_pipeline_step_two,
             'resource_test_pipeline': define_resource_test_pipeline,
-            'reusable_solid_pipeline': define_reusable_solids_pipeline,
             'multiple_outputs_step_one_pipeline': define_multiple_outputs_step_one_pipeline,
+            'reusable_solids_pipeline': define_reusable_solids_pipeline,
         },
     )
