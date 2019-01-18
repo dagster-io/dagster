@@ -71,10 +71,14 @@ def define_multiple_outputs_step_one_pipeline():
         solids=[return_dict_results, log_num, log_num_squared],
         dependencies={
             'log_num': {
-                'num': DependencyDefinition('return_dict_results', 'out_one')
+                'num': DependencyDefinition(
+                    solid='return_dict_results', output='out_one'
+                )
             },
             'log_num_squared': {
-                'num': DependencyDefinition('return_dict_results', 'out_two')
+                'num': DependencyDefinition(
+                    solid='return_dict_results', output='out_two'
+                )
             },
         },
     )
