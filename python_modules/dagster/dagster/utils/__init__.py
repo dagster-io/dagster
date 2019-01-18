@@ -49,3 +49,10 @@ def pushd(path):
         yield path
     finally:
         os.chdir(old_cwd)
+
+
+def safe_isfile(path):
+    try:
+        return os.path.isfile(path)
+    except ValueError:
+        return False

@@ -10,6 +10,8 @@ from pyspark.sql import DataFrame
 
 from dagster import dagster_type, as_dagster_type
 from dagster.core.types.runtime import PythonObjectType, Stringish
+from dagster.utils import safe_isfile
+
 
 AirlineDemoResources = namedtuple(
     'AirlineDemoResources',
@@ -39,4 +41,4 @@ class FileExistsAtPath(Stringish):
 
     def coerce_runtime_value(self, value):
         value = super(FileExistsAtPath, self).coerce_runtime_value(value)
-        return self.throw_if_false(os.path.isfile, value)
+        return self.throw_if_false(safe_isfile, value)
