@@ -14,6 +14,7 @@ from dagster.cli.dynamic_loader import (
     ModuleTargetFunction,
     InvalidRepositoryLoadingComboError,
 )
+from dagster.utils import safe_isfile
 
 
 def get_module_target_function(info):
@@ -124,7 +125,7 @@ def execute_create_notebook(notebook, solid_name, force_overwrite, **kwargs):
     if not os.path.exists(notebook_dir):
         os.makedirs(notebook_dir)
 
-    if not force_overwrite and os.path.isfile(notebook_path):
+    if not force_overwrite and safe_isfile(notebook_path):
         click.confirm(
             (
                 'Warning, {notebook_path} already exists and continuing '

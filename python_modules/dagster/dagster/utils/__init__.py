@@ -49,3 +49,18 @@ def pushd(path):
         yield path
     finally:
         os.chdir(old_cwd)
+
+
+def safe_isfile(path):
+    '''"Backport of Python 3.8 os.path.isfile behavior.
+    
+    This is intended to backport https://docs.python.org/dev/whatsnew/3.8.html#os-path. I'm not
+    sure that there are other ways to provoke this behavior on Unix other than the null byte,
+    but there are certainly other ways to do it on Windows. Afaict, we won't mask other
+    ValueErrors, and the behavior in the status quo ante is rough because we risk throwing an
+    unexpected, uncaught ValueError from very deep in our logic.
+    '''
+    try:
+        return os.path.isfile(path)
+    except ValueError:
+        return False
