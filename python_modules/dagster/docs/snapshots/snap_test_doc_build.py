@@ -3745,7 +3745,7 @@ snapshots['test_build_all_docs 31'] = '''Multiple Outputs
 
 So far all of our examples have been solids that have a single output. But
 solids can have an arbitrary number of outputs. Downstream solids can 
-depend on any number of these inputs. Additionally, these outputs do
+depend on any number of these outputs. Additionally, these outputs do
 not *necessarily* have to be fired, therefore unlocking the ability for
 downstream solids to be invoked conditionally based on something that
 happened during the computation.
@@ -23979,7 +23979,7 @@ snapshots['test_build_all_docs 66'] = '''
 <h1>Multiple Outputs<a class="headerlink" href="#multiple-outputs" title="Permalink to this headline">¶</a></h1>
 <p>So far all of our examples have been solids that have a single output. But
 solids can have an arbitrary number of outputs. Downstream solids can
-depend on any number of these inputs. Additionally, these outputs do
+depend on any number of these outputs. Additionally, these outputs do
 not <em>necessarily</em> have to be fired, therefore unlocking the ability for
 downstream solids to be invoked conditionally based on something that
 happened during the computation.</p>
