@@ -249,9 +249,10 @@ export default class PipelineExecutionContainer extends React.Component<
               onExecute={config =>
                 startPipelineExecution({
                   variables: {
-                    executionParams: {
-                      pipelineName: this.props.pipeline.name,
-                      config
+                    config,
+                    pipeline: {
+                      name: this.props.pipeline.name,
+                      solidSubset: this.props.currentSession.solidSubset
                     }
                   }
                 })
@@ -265,8 +266,11 @@ export default class PipelineExecutionContainer extends React.Component<
 }
 
 const START_PIPELINE_EXECUTION_MUTATION = gql`
-  mutation StartPipelineExecution($executionParams: PipelineExecutionParams!) {
-    startPipelineExecution(executionParams: $executionParams) {
+  mutation StartPipelineExecution(
+    $pipeline: ExecutionSelector!
+    $config: PipelineConfig!
+  ) {
+    startPipelineExecution(pipeline: $pipeline, config: $config) {
       __typename
 
       ... on StartPipelineExecutionSuccess {

@@ -4,9 +4,9 @@ import gql from "graphql-tag";
 import PipelineGraph from "../graph/PipelineGraph";
 import { QueryResult, Query } from "react-apollo";
 import {
-  PipelineExecutionRootQuery,
-  PipelineExecutionRootQuery_pipeline
-} from "./types/PipelineExecutionRootQuery";
+  PipelineSolidSelectorQuery,
+  PipelineSolidSelectorQuery_pipeline
+} from "./types/PipelineSolidSelectorQuery";
 import Loading from "../Loading";
 import {
   getDagrePipelineLayout,
@@ -23,7 +23,7 @@ interface IPipelineSolidSelectorProps {
 }
 
 interface IPipelineSolidSelectorInnerProps extends IPipelineSolidSelectorProps {
-  pipeline: PipelineExecutionRootQuery_pipeline;
+  pipeline: PipelineSolidSelectorQuery_pipeline;
 }
 
 interface IPipelineSolidSelectorState {
@@ -41,7 +41,7 @@ interface IPipelineSolidSelectorState {
 
 function subsetDescription(
   solidSubset: string[],
-  pipeline: PipelineExecutionRootQuery_pipeline
+  pipeline: PipelineSolidSelectorQuery_pipeline
 ) {
   if (
     solidSubset.length === 0 ||
@@ -91,14 +91,6 @@ class PipelineSolidSelector extends React.Component<
   IPipelineSolidSelectorInnerProps,
   IPipelineSolidSelectorState
 > {
-  static fragments = {
-    PipelineSolidSelectorFragment: gql`
-      fragment PipelineSolidSelectorFragment on Pipeline {
-        ...PipelineGraphFragment
-      }
-    `
-  };
-
   state: IPipelineSolidSelectorState = {
     open: false,
     highlighted: [],
@@ -247,8 +239,11 @@ class PipelineSolidSelector extends React.Component<
 
 export const PIPELINE_SOLID_SELECTOR_QUERY = gql`
   query PipelineSolidSelectorQuery($name: String!) {
-    pipeline(name: $name) {
+    pipeline(params: { name: $name }) {
       name
+      solids {
+        name
+      }
       ...PipelineGraphFragment
     }
   }
@@ -260,7 +255,7 @@ export default (props: IPipelineSolidSelectorProps) => (
     query={PIPELINE_SOLID_SELECTOR_QUERY}
     variables={{ name: props.pipelineName }}
   >
-    {(queryResult: QueryResult<PipelineExecutionRootQuery, any>) => (
+    {(queryResult: QueryResult<PipelineSolidSelectorQuery, any>) => (
       <Loading queryResult={queryResult}>
         {result => (
           <PipelineSolidSelector {...props} pipeline={result.pipeline} />

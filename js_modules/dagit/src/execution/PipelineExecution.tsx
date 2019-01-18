@@ -94,19 +94,12 @@ export default class PipelineExecution extends React.Component<
   }
 
   ensureSessionStateValid() {
-    const {
-      onSaveSession,
-      onCreateSession,
-      currentSession,
-      pipeline
-    } = this.props;
+    const { onSaveSession, currentSession, pipeline } = this.props;
 
     // We have to initialize the sessions in local storage here because the app
     // needs to have the pieline (with the correct subset) in order to scaffold
     // the config YAML. In the future this could go in some sort of HOC I suppose.
-    if (!currentSession) {
-      onCreateSession();
-    } else if (currentSession.config === SESSION_CONFIG_PLACEHOLDER) {
+    if (currentSession.config === SESSION_CONFIG_PLACEHOLDER) {
       onSaveSession(currentSession.key, { config: scaffoldConfig(pipeline) });
     }
   }
@@ -168,7 +161,12 @@ export default class PipelineExecution extends React.Component<
                 configCode={currentSession.config}
                 onConfigChange={this.onConfigChange}
                 typeConfig={createTypeConfig(pipeline)}
-                checkConfig={json => checkConfig(client, pipeline.name, json)}
+                checkConfig={json =>
+                  checkConfig(client, json, {
+                    name: pipeline.name,
+                    solidSubset: currentSession.solidSubset
+                  })
+                }
               />
             )}
           </ApolloConsumer>

@@ -113,93 +113,11 @@ export interface PipelineExecutionContainerFragment_types_CompositeType {
 
 export type PipelineExecutionContainerFragment_types = PipelineExecutionContainerFragment_types_RegularType | PipelineExecutionContainerFragment_types_CompositeType;
 
-export interface PipelineExecutionContainerFragment_solids_definition_metadata {
-  key: string;
-  value: string;
-}
-
-export interface PipelineExecutionContainerFragment_solids_definition_configDefinition_type {
-  name: string;
-  description: string | null;
-}
-
-export interface PipelineExecutionContainerFragment_solids_definition_configDefinition {
-  type: PipelineExecutionContainerFragment_solids_definition_configDefinition_type;
-}
-
-export interface PipelineExecutionContainerFragment_solids_definition {
-  metadata: PipelineExecutionContainerFragment_solids_definition_metadata[];
-  configDefinition: PipelineExecutionContainerFragment_solids_definition_configDefinition | null;
-}
-
-export interface PipelineExecutionContainerFragment_solids_inputs_definition_type {
-  name: string;
-}
-
-export interface PipelineExecutionContainerFragment_solids_inputs_definition {
-  name: string;
-  type: PipelineExecutionContainerFragment_solids_inputs_definition_type;
-}
-
-export interface PipelineExecutionContainerFragment_solids_inputs_dependsOn_definition {
-  name: string;
-}
-
-export interface PipelineExecutionContainerFragment_solids_inputs_dependsOn_solid {
-  name: string;
-}
-
-export interface PipelineExecutionContainerFragment_solids_inputs_dependsOn {
-  definition: PipelineExecutionContainerFragment_solids_inputs_dependsOn_definition;
-  solid: PipelineExecutionContainerFragment_solids_inputs_dependsOn_solid;
-}
-
-export interface PipelineExecutionContainerFragment_solids_inputs {
-  definition: PipelineExecutionContainerFragment_solids_inputs_definition;
-  dependsOn: PipelineExecutionContainerFragment_solids_inputs_dependsOn | null;
-}
-
-export interface PipelineExecutionContainerFragment_solids_outputs_definition_type {
-  name: string;
-}
-
-export interface PipelineExecutionContainerFragment_solids_outputs_definition_expectations {
-  name: string;
-  description: string | null;
-}
-
-export interface PipelineExecutionContainerFragment_solids_outputs_definition {
-  name: string;
-  type: PipelineExecutionContainerFragment_solids_outputs_definition_type;
-  expectations: PipelineExecutionContainerFragment_solids_outputs_definition_expectations[];
-}
-
-export interface PipelineExecutionContainerFragment_solids_outputs_dependedBy_solid {
-  name: string;
-}
-
-export interface PipelineExecutionContainerFragment_solids_outputs_dependedBy {
-  solid: PipelineExecutionContainerFragment_solids_outputs_dependedBy_solid;
-}
-
-export interface PipelineExecutionContainerFragment_solids_outputs {
-  definition: PipelineExecutionContainerFragment_solids_outputs_definition;
-  dependedBy: PipelineExecutionContainerFragment_solids_outputs_dependedBy[];
-}
-
-export interface PipelineExecutionContainerFragment_solids {
-  name: string;
-  definition: PipelineExecutionContainerFragment_solids_definition;
-  inputs: PipelineExecutionContainerFragment_solids_inputs[];
-  outputs: PipelineExecutionContainerFragment_solids_outputs[];
-}
-
 export interface PipelineExecutionContainerFragment {
   name: string;
   runs: PipelineExecutionContainerFragment_runs[];
   environmentType: PipelineExecutionContainerFragment_environmentType;
   types: PipelineExecutionContainerFragment_types[];
-  solids: PipelineExecutionContainerFragment_solids[];
 }
 
 /* tslint:disable */
@@ -245,11 +163,12 @@ export enum StepTag {
 }
 
 /**
- * 
+ * This type represents the fields necessary to identify a
+ *         pipeline or pipeline subset.
  */
-export interface PipelineExecutionParams {
-  pipelineName: string;
-  config?: any | null;
+export interface ExecutionSelector {
+  name: string;
+  solidSubset?: string[] | null;
 }
 
 //==============================================================

@@ -7,7 +7,11 @@ from graphql.execution.base import ResolveInfo
 from dagster import check
 from dagster.core.types.evaluator import evaluate_config_value
 from dagster.core.system_config.types import construct_environment_config
-from dagster.core.execution import create_execution_plan_with_typed_environment, get_subset_pipeline
+from dagster.core.execution import (
+    ExecutionSelector,
+    create_execution_plan_with_typed_environment,
+    get_subset_pipeline,
+)
 
 from dagster.utils.error import serializable_error_info_from_exc_info
 
@@ -39,23 +43,18 @@ def _get_pipelines(info):
     return repository_or_error.chain(process_pipelines)
 
 
-def get_pipeline(info, name, solid_subset):
+def get_pipeline(info, selector):
+    return _get_pipeline(info, selector).value()
+
+
+def get_pipeline_or_raise(info, selector):
+    return _get_pipeline(info, selector).value_or_raise()
+
+
+def _get_pipeline(info, selector):
     check.inst_param(info, 'info', ResolveInfo)
-    return _get_pipeline(info, name, solid_subset).value()
-
-
-def get_pipeline_or_raise(info, name, solid_subset=None):
-    check.inst_param(info, 'info', ResolveInfo)
-    return _get_pipeline(info, name, solid_subset).value_or_raise()
-
-
-def _get_pipeline(info, name, solid_subset):
-    check.inst_param(info, 'info', ResolveInfo)
-    check.str_param(name, 'name')
-    check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
-    return _pipeline_or_error_from_container(
-        info, info.context.repository_container, name, solid_subset
-    )
+    check.inst_param(selector, 'selector', ExecutionSelector)
+    return _pipeline_or_error_from_container(info, info.context.repository_container, selector)
 
 
 def get_pipeline_type(info, pipelineName, typeName):
@@ -82,9 +81,9 @@ def get_runs(info):
     return [info.schema.type_named('PipelineRun')(run) for run in pipeline_run_storage.all_runs()]
 
 
-def validate_pipeline_config(info, pipelineName, config):
+def validate_pipeline_config(info, selector, config):
     check.inst_param(info, 'info', ResolveInfo)
-    check.str_param(pipelineName, 'pipelineName')
+    check.inst_param(selector, 'selector', ExecutionSelector)
 
     def do_validation(pipeline):
         config_or_error = _config_or_error_from_pipeline(info, pipeline, config)
@@ -93,14 +92,14 @@ def validate_pipeline_config(info, pipelineName, config):
         )
 
     pipeline_or_error = _pipeline_or_error_from_container(
-        info, info.context.repository_container, pipelineName
+        info, info.context.repository_container, selector
     )
     return pipeline_or_error.chain(do_validation).value()
 
 
-def get_execution_plan(info, pipelineName, config):
+def get_execution_plan(info, selector, config):
     check.inst_param(info, 'info', ResolveInfo)
-    check.str_param(pipelineName, 'pipelineName')
+    check.inst_param(selector, 'selector', ExecutionSelector)
 
     def create_plan(pipeline):
         config_or_error = _config_or_error_from_pipeline(info, pipeline, config)
@@ -115,14 +114,14 @@ def get_execution_plan(info, pipelineName, config):
         )
 
     pipeline_or_error = _pipeline_or_error_from_container(
-        info, info.context.repository_container, pipelineName
+        info, info.context.repository_container, selector
     )
     return pipeline_or_error.chain(create_plan).value()
 
 
-def start_pipeline_execution(info, pipelineName, config):
+def start_pipeline_execution(info, selector, config):
     check.inst_param(info, 'info', ResolveInfo)
-    check.str_param(pipelineName, 'pipelineName')
+    check.inst_param(selector, 'selector', ExecutionSelector)
     pipeline_run_storage = info.context.pipeline_runs
     env_config = config
 
@@ -134,7 +133,7 @@ def start_pipeline_execution(info, pipelineName, config):
                 construct_environment_config(validated_config_either.value),
             )
             run = pipeline_run_storage.create_run(
-                new_run_id, pipelineName, env_config, execution_plan
+                new_run_id, selector.name, env_config, execution_plan
             )
             pipeline_run_storage.add_run(run)
             info.context.execution_manager.execute_pipeline(
@@ -148,7 +147,7 @@ def start_pipeline_execution(info, pipelineName, config):
         return config_or_error.chain(start_execution)
 
     pipeline_or_error = _pipeline_or_error_from_container(
-        info, info.context.repository_container, pipelineName
+        info, info.context.repository_container, selector
     )
     return pipeline_or_error.chain(get_config_and_start_execution).value()
 
@@ -177,7 +176,7 @@ def get_pipeline_run_observable(info, run_id, after=None):
 
     return (
         _pipeline_or_error_from_container(
-            info, info.context.repository_container, pipeline_name, solid_subset=None
+            info, info.context.repository_container, ExecutionSelector(pipeline_name)
         )
         .chain(get_observable)
         .value_or_raise()
@@ -200,29 +199,27 @@ def _repository_or_error_from_container(info, container):
         )
 
 
-def _pipeline_or_error_from_repository(info, repository, pipeline_name, solid_subset):
-    if not repository.has_pipeline(pipeline_name):
+def _pipeline_or_error_from_repository(info, repository, selector):
+    if not repository.has_pipeline(selector.name):
         return EitherError(
-            info.schema.type_named('PipelineNotFoundError')(pipeline_name=pipeline_name)
+            info.schema.type_named('PipelineNotFoundError')(pipeline_name=selector.name)
         )
     else:
-        orig_pipeline = repository.get_pipeline(pipeline_name)
-        if solid_subset:
-            for solid_name in solid_subset:
+        orig_pipeline = repository.get_pipeline(selector.name)
+        if selector.solid_subset:
+            for solid_name in selector.solid_subset:
                 if not orig_pipeline.has_solid(solid_name):
                     return EitherError(
                         info.schema.type_named('SolidNotFoundError')(solid_name=solid_name)
                     )
-        pipeline = get_subset_pipeline(orig_pipeline, solid_subset)
+        pipeline = get_subset_pipeline(orig_pipeline, selector.solid_subset)
 
         return EitherValue(info.schema.type_named('Pipeline')(pipeline))
 
 
-def _pipeline_or_error_from_container(info, container, pipeline_name, solid_subset=None):
+def _pipeline_or_error_from_container(info, container, selector):
     return _repository_or_error_from_container(info, container).chain(
-        lambda repository: _pipeline_or_error_from_repository(
-            info, repository, pipeline_name, solid_subset
-        )
+        lambda repository: _pipeline_or_error_from_repository(info, repository, selector)
     )
 
 

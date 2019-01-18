@@ -113,93 +113,11 @@ export interface PipelineExecutionRootQuery_pipeline_types_CompositeType {
 
 export type PipelineExecutionRootQuery_pipeline_types = PipelineExecutionRootQuery_pipeline_types_RegularType | PipelineExecutionRootQuery_pipeline_types_CompositeType;
 
-export interface PipelineExecutionRootQuery_pipeline_solids_definition_metadata {
-  key: string;
-  value: string;
-}
-
-export interface PipelineExecutionRootQuery_pipeline_solids_definition_configDefinition_type {
-  name: string;
-  description: string | null;
-}
-
-export interface PipelineExecutionRootQuery_pipeline_solids_definition_configDefinition {
-  type: PipelineExecutionRootQuery_pipeline_solids_definition_configDefinition_type;
-}
-
-export interface PipelineExecutionRootQuery_pipeline_solids_definition {
-  metadata: PipelineExecutionRootQuery_pipeline_solids_definition_metadata[];
-  configDefinition: PipelineExecutionRootQuery_pipeline_solids_definition_configDefinition | null;
-}
-
-export interface PipelineExecutionRootQuery_pipeline_solids_inputs_definition_type {
-  name: string;
-}
-
-export interface PipelineExecutionRootQuery_pipeline_solids_inputs_definition {
-  name: string;
-  type: PipelineExecutionRootQuery_pipeline_solids_inputs_definition_type;
-}
-
-export interface PipelineExecutionRootQuery_pipeline_solids_inputs_dependsOn_definition {
-  name: string;
-}
-
-export interface PipelineExecutionRootQuery_pipeline_solids_inputs_dependsOn_solid {
-  name: string;
-}
-
-export interface PipelineExecutionRootQuery_pipeline_solids_inputs_dependsOn {
-  definition: PipelineExecutionRootQuery_pipeline_solids_inputs_dependsOn_definition;
-  solid: PipelineExecutionRootQuery_pipeline_solids_inputs_dependsOn_solid;
-}
-
-export interface PipelineExecutionRootQuery_pipeline_solids_inputs {
-  definition: PipelineExecutionRootQuery_pipeline_solids_inputs_definition;
-  dependsOn: PipelineExecutionRootQuery_pipeline_solids_inputs_dependsOn | null;
-}
-
-export interface PipelineExecutionRootQuery_pipeline_solids_outputs_definition_type {
-  name: string;
-}
-
-export interface PipelineExecutionRootQuery_pipeline_solids_outputs_definition_expectations {
-  name: string;
-  description: string | null;
-}
-
-export interface PipelineExecutionRootQuery_pipeline_solids_outputs_definition {
-  name: string;
-  type: PipelineExecutionRootQuery_pipeline_solids_outputs_definition_type;
-  expectations: PipelineExecutionRootQuery_pipeline_solids_outputs_definition_expectations[];
-}
-
-export interface PipelineExecutionRootQuery_pipeline_solids_outputs_dependedBy_solid {
-  name: string;
-}
-
-export interface PipelineExecutionRootQuery_pipeline_solids_outputs_dependedBy {
-  solid: PipelineExecutionRootQuery_pipeline_solids_outputs_dependedBy_solid;
-}
-
-export interface PipelineExecutionRootQuery_pipeline_solids_outputs {
-  definition: PipelineExecutionRootQuery_pipeline_solids_outputs_definition;
-  dependedBy: PipelineExecutionRootQuery_pipeline_solids_outputs_dependedBy[];
-}
-
-export interface PipelineExecutionRootQuery_pipeline_solids {
-  name: string;
-  definition: PipelineExecutionRootQuery_pipeline_solids_definition;
-  inputs: PipelineExecutionRootQuery_pipeline_solids_inputs[];
-  outputs: PipelineExecutionRootQuery_pipeline_solids_outputs[];
-}
-
 export interface PipelineExecutionRootQuery_pipeline {
   name: string;
   runs: PipelineExecutionRootQuery_pipeline_runs[];
   environmentType: PipelineExecutionRootQuery_pipeline_environmentType;
   types: PipelineExecutionRootQuery_pipeline_types[];
-  solids: PipelineExecutionRootQuery_pipeline_solids[];
 }
 
 export interface PipelineExecutionRootQuery {
@@ -254,11 +172,12 @@ export enum StepTag {
 }
 
 /**
- * 
+ * This type represents the fields necessary to identify a
+ *         pipeline or pipeline subset.
  */
-export interface PipelineExecutionParams {
-  pipelineName: string;
-  config?: any | null;
+export interface ExecutionSelector {
+  name: string;
+  solidSubset?: string[] | null;
 }
 
 //==============================================================

@@ -5,8 +5,6 @@ import * as React from "react";
 export interface IStorageData {
   sessions: { [name: string]: IExecutionSession };
   current: string;
-
-  currentSession: () => IExecutionSession;
 }
 
 export interface IExecutionSessionPlan {
@@ -104,11 +102,7 @@ export class StorageProvider extends React.Component<
 > {
   public state: IStorageProviderState = {
     sessions: {},
-    current: "",
-
-    currentSession() {
-      return this.sessions[this.current];
-    }
+    current: ""
   };
 
   constructor(props: IStorageProviderProps) {
@@ -123,6 +117,15 @@ export class StorageProvider extends React.Component<
       }
     } catch (err) {
       // noop
+    }
+
+    // Ensure the data is consistent and that there is always a "current" session
+    // if loading has
+    if (Object.keys(this.state.sessions).length === 0) {
+      this.state = applyCreateSession(this.state);
+    }
+    if (!this.state.sessions[this.state.current]) {
+      this.state.current = Object.keys(this.state.sessions)[0];
     }
   }
 

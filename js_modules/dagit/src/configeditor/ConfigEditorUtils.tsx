@@ -33,9 +33,10 @@ export const CONFIG_EDITOR_PIPELINE_FRAGMENT = gql`
 
 export const CONFIG_EDITOR_CHECK_CONFIG_QUERY = gql`
   query ConfigEditorCheckConfigQuery(
-    $executionParams: PipelineExecutionParams!
+    $pipeline: ExecutionSelector!
+    $config: PipelineConfig!
   ) {
-    isPipelineConfigValid(executionParams: $executionParams) {
+    isPipelineConfigValid(pipeline: $pipeline, config: $config) {
       __typename
 
       ... on PipelineConfigValidationInvalid {
@@ -97,8 +98,8 @@ export function createTypeConfig({
 
 export async function checkConfig(
   client: ApolloClient<any>,
-  pipelineName: string,
-  config: any
+  config: any,
+  pipeline: { name: string; solidSubset: string[] }
 ): Promise<ValidationResult> {
   if (config === null) {
     return { isValid: true };
@@ -110,12 +111,7 @@ export async function checkConfig(
     ConfigEditorCheckConfigQueryVariables
   >({
     query: CONFIG_EDITOR_CHECK_CONFIG_QUERY,
-    variables: {
-      executionParams: {
-        pipelineName: pipelineName,
-        config: config
-      }
-    },
+    variables: { pipeline, config },
     fetchPolicy: "no-cache"
   });
 

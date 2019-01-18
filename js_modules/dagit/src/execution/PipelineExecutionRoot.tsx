@@ -54,7 +54,7 @@ export default class PipelineExecutionRoot extends React.Component<
 
 export const PIPELINE_EXECUTION_ROOT_QUERY = gql`
   query PipelineExecutionRootQuery($name: String!, $solidSubset: [String!]) {
-    pipeline(name: $name, solidSubset: $solidSubset) {
+    pipeline(params: { name: $name, solidSubset: $solidSubset }) {
       name
       ...PipelineExecutionContainerFragment
     }

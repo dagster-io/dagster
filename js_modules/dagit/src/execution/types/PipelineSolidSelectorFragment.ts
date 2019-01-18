@@ -89,8 +89,8 @@ export interface PipelineSolidSelectorFragment_solids {
 }
 
 export interface PipelineSolidSelectorFragment {
-  name: string;
   solids: PipelineSolidSelectorFragment_solids[];
+  name: string;
 }
 
 /* tslint:disable */
@@ -136,11 +136,12 @@ export enum StepTag {
 }
 
 /**
- * 
+ * This type represents the fields necessary to identify a
+ *         pipeline or pipeline subset.
  */
-export interface PipelineExecutionParams {
-  pipelineName: string;
-  config?: any | null;
+export interface ExecutionSelector {
+  name: string;
+  solidSubset?: string[] | null;
 }
 
 //==============================================================
