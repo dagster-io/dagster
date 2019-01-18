@@ -21,13 +21,13 @@ from dagster.core.definitions import (
     PipelineContextDefinition,
     PipelineDefinition,
     RepositoryDefinition,
-    ResourceDefinition,
     Result,
     SolidDefinition,
     SolidInstance,
     TransformExecutionInfo,
 )
 
+from dagster.core.definitions.resource import ResourceDefinition, resource
 from dagster.core.definitions.decorators import MultipleResults, lambda_solid, solid
 
 from dagster.core.errors import (
@@ -81,6 +81,7 @@ __all__ = [
     'PipelineDefinition',
     'RepositoryDefinition',
     'ResourceDefinition',
+    'resource',
     'Result',
     'SolidDefinition',
     'SolidInstance',
