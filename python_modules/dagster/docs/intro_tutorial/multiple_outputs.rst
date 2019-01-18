@@ -2,45 +2,41 @@ Multiple Outputs
 ----------------
 
 So far all of our examples have been solids that have a single output. But
-solids can have an arbitrary number of outputs. This lets downstream
-solids depend only on a single output of an upstream solid. When multiple
-outputs fire conditionally, we can also implement dynamic branching and
-conditional execution of downstream sub-DAGs.
-
+solids can have an arbitrary number of outputs. Downstream solids can 
+depend on any number of these outputs. Additionally, these outputs do
+not *necessarily* have to be fired, therefore unlocking the ability for
+downstream solids to be invoked conditionally based on something that
+happened during the computation.
 
 ``MultipleResults`` Class
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Here we present an example of a solid that has multiple outputs within a pipeline:
+
 .. literalinclude:: ../../dagster/tutorials/intro_tutorial/multiple_outputs.py
    :linenos:
    :caption: multiple_outputs.py
-   :lines: 26-33
+   :lines: 53-67, 26-34, 67-84
+
+This can be visualized in dagit:
+
+.. image:: multiple_results_figure_one.png
+
 
 Notice how ``return_dict_results`` has two outputs. For the first time
 we have provided the name argument to an :py:class:`OutputDefinition <dagster.OutputDefinition>`.
 (The name of an output defaults to ``'result'``, as it does for a
 :py:class:`DependencyDefinition <dagster.DependencyDefinition>`) Output names must be unique
 and each result returned by a solid's transform function must have a name that corresponds to
-one of these inputs. (In all previous examples the value returned by the transform had been
-implicitly wrapped by the system in a :py:class:`Result <dagster.Result>` object with the
-name ``'result'``.)
+one of these outputs.
 
 So from ``return_dict_results`` we used :py:class:`MultipleResults <dagster.MultipleResults>`
 to return all outputs from this transform.
 
-Next let's examine the :py:class:`PipelineDefinition <dagster.PipelineDefinition>`:
-
-.. literalinclude:: ../../dagster/tutorials/intro_tutorial/multiple_outputs.py
-   :linenos:
-   :caption: multiple_outputs.py
-   :lines: 64-73
-
-
 Just as this tutorial gives us the first example of a named
 :py:class:`OutputDefinition <dagster.OutputDefinition>`, this is also the first time that we've
-seen a named :py:class:`DependencyDefinition <dagster.OutputDefinition>`. Recall that dependencies
-point to a particular **output** of a solid, rather than to the solid itself. In previous
-examples the name of solids' single output has defaulted to ``'result'``.
+seen a named :py:class:`DependencyDefinition <dagster.DependencyDefinition>`. Recall that dependencies
+point to a particular **output** of a solid, rather than to the solid itself. 
 
 With this we can run the pipeline:
 
@@ -66,7 +62,7 @@ the iterator form.)
 .. literalinclude:: ../../dagster/tutorials/intro_tutorial/multiple_outputs.py
    :linenos:
    :caption: multiple_outputs.py
-   :lines: 15-24,75-84
+   :lines: 15-24
 
 ... and you'll see the same log spew around outputs in this version:
 
@@ -89,7 +85,7 @@ and then execute that pipeline.
 .. literalinclude:: ../../dagster/tutorials/intro_tutorial/multiple_outputs.py
     :linenos:
     :caption: multiple_outputs.py
-    :lines: 36-51,86-94
+    :lines: 36-52,86-99
 
 You must create a config file
 
@@ -109,5 +105,5 @@ And then run it.
     2018-09-16 18:58:32 - dagster - INFO - orig_message="Solid conditional did not fire outputs {'out_one'}" log_message_id="d548ea66-cb10-42b8-b150-aed8162cc25c" pipeline="part_eleven_step_three" solid="conditional"    
     ... log spew
 
-Note that we are configuring this solid to *only* emit out_two which will end up
-only triggering log_num_squared. log_num will never be executed.
+Note that we are configuring this solid to *only* emit ``out_two`` which will end up
+only triggering ``log_num_squared``. The solid ``log_num`` will never be executed.

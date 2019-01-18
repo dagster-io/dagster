@@ -7,6 +7,7 @@ from .config import define_configurable_hello_pipeline
 from .execution_context import define_execution_context_pipeline_step_two
 from .resources import define_resource_test_pipeline
 from .reusable_solids import define_reusable_solids_pipeline
+from .multiple_outputs import define_multiple_outputs_step_one_pipeline
 
 
 def define_repository():
@@ -20,5 +21,6 @@ def define_repository():
             'execution_context_pipeline': define_execution_context_pipeline_step_two,
             'resource_test_pipeline': define_resource_test_pipeline,
             'reusable_solid_pipeline': define_reusable_solids_pipeline,
+            'multiple_outputs_step_one_pipeline': define_multiple_outputs_step_one_pipeline,
         },
     )
