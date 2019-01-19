@@ -4,11 +4,14 @@ Unit-testing Pipelines
 Unit testing data pipelines is, broadly speaking, quite difficult. As a result, it is typically
 never done.
 
-One of the mechanisms included in dagster to enable testing has already been discussed: contexts.
-The other mechanism is the ability to execute arbitrary subsets of a DAG. (This capability is
-useful for other use cases but we will focus on unit testing for now).
+One of the mechanisms included in dagster to enable testing has already been discussed: the
+:doc:`Execution Context <execution_context>`. Recall that the context allows us to configure the
+pipeline-level execution environment while keeping all of the code in our pipelines unchanged.
 
-Let us start where we left off.
+The other important testing mechanism is the ability to execute arbitrary subsets of a DAG. (This
+capability is useful for other use cases but we will focus on unit testing for now).
+
+Let's start where we left off.
 
 We have the following pipeline:
 
