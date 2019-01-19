@@ -101,13 +101,13 @@ case of a selector, the config_value dictionary has only 1 (key, value) pair.
 .. literalinclude:: ../../../dagster-pandas/dagster_pandas/data_frame.py
    :lines: 53-77
 
-You'll note that we no longer need to manipulate the config_value dictionary. It grabs
+You'll note that we no longer need to manipulate the ``config_value`` dictionary. It grabs
 that key and value for you and calls the provided function.
 
 Finally insert this into the original declaration:
 
 .. literalinclude:: ../../../dagster-pandas/dagster_pandas/data_frame.py
-   :lines: 80-89 
+   :lines: 80-86,88 
    :emphasize-lines: 7
 
 Now if you run a pipeline with this solid from dagit you will be able to provide sources for
