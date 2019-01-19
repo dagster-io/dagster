@@ -72,7 +72,7 @@ workflows:
           filters:
             branches:
               only:
-                - master
+                - nightly
     jobs:
       - nightly
 
@@ -438,6 +438,14 @@ jobs:
 
     steps:
       - checkout
+
+      - run:
+        name: Merge master
+        command: |
+          git checkout master
+          git pull
+          git checkout nightly
+          git merge master
 
       - run:
           name: Install requirements
