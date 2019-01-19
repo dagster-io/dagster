@@ -6,7 +6,7 @@ context to manage pipelines' access to resources like the file system, databases
 In general, interactions with features of the external environment like these should be modeled
 as resources.
 
-Let's imagine that we are using a key value offered by a cloud service that has a python API.
+Let's imagine that we are using a key value store offered by a cloud service that has a python API.
 We are going to record the results of computations in that key value store.
 
 We are going to model this key value store as a resource.
