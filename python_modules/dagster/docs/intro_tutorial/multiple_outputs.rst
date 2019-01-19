@@ -107,3 +107,6 @@ And then run it.
 
 Note that we are configuring this solid to *only* emit ``out_two`` which will end up
 only triggering ``log_num_squared``. The solid ``log_num`` will never be executed.
+
+Next, let's look at writing :doc:`Reusable Solids <reusable_solids>` so we can avoid duplicating
+common data pipeline work.
