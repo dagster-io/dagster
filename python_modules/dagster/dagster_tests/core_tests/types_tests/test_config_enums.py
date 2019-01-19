@@ -25,6 +25,16 @@ def test_config_enums():
     assert not list(validate_config(define_test_enum_type(), 'VALUE_ONE'))
 
 
+def test_config_enum_error_none():
+    errors = list(validate_config(define_test_enum_type(), None))
+    assert len(errors) == 1
+
+
+def test_config_enum_error_wrong_type():
+    errors = list(validate_config(define_test_enum_type(), 384934))
+    assert len(errors) == 1
+
+
 def test_config_enum_error():
     errors = list(validate_config(define_test_enum_type(), 'NOT_PRESENT'))
     assert len(errors) == 1
