@@ -440,12 +440,12 @@ jobs:
       - checkout
 
       - run:
-        name: Merge master
-        command: |
-          git checkout master
-          git pull
-          git checkout nightly
-          git merge master
+          name: Merge master
+          command: |
+            git checkout master
+            git pull
+            git checkout nightly
+            git merge master
 
       - run:
           name: Install requirements
