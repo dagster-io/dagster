@@ -31,7 +31,7 @@ class DauphinQuery(dauphin.ObjectType):
         dauphin.NonNull('PipelineConfigValidationResult'),
         args={
             'pipeline': dauphin.Argument(dauphin.NonNull('ExecutionSelector')),
-            'config': dauphin.Argument(dauphin.NonNull('PipelineConfig')),
+            'config': dauphin.Argument('PipelineConfig'),
         },
     )
 
@@ -39,7 +39,7 @@ class DauphinQuery(dauphin.ObjectType):
         dauphin.NonNull('ExecutionPlanResult'),
         args={
             'pipeline': dauphin.Argument(dauphin.NonNull('ExecutionSelector')),
-            'config': dauphin.Argument(dauphin.NonNull('PipelineConfig')),
+            'config': dauphin.Argument('PipelineConfig'),
         },
     )
 
@@ -80,12 +80,15 @@ class StartPipelineExecutionMutation(dauphin.Mutation):
 
     class Arguments:
         pipeline = dauphin.NonNull('ExecutionSelector')
-        config = dauphin.NonNull('PipelineConfig')
+        config = dauphin.Argument('PipelineConfig')
 
     Output = dauphin.NonNull('StartPipelineExecutionResult')
 
-    def mutate(self, info, pipeline, config):
-        return model.start_pipeline_execution(info, pipeline.to_selector(), config)
+    def mutate(self, info, **kwargs):
+        config = None
+        if "config" in kwargs:
+            config = kwargs['config']
+        return model.start_pipeline_execution(info, kwargs['pipeline'].to_selector(), config)
 
 
 class DauphinMutation(dauphin.ObjectType):
@@ -128,12 +131,4 @@ class DauphinExecutionSelector(dauphin.InputObjectType):
 
     def to_selector(self):
         return ExecutionSelector(self.name, self.solidSubset)
-
-
-class DauphinPipelineExecutionParams(dauphin.InputObjectType):
-    class Meta:
-        name = 'PipelineExecutionParams'
-
-    pipeline = dauphin.Field('ExecutionSelector')
-    config = dauphin.Field('PipelineConfig')
 

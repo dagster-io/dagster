@@ -62,7 +62,7 @@ def get_pipeline_type(info, pipelineName, typeName):
     check.str_param(pipelineName, 'pipelineName')
     check.str_param(typeName, 'typeName')
     pipeline_or_error = _pipeline_or_error_from_container(
-        info, info.context.repository_container, pipelineName
+        info, info.context.repository_container, ExecutionSelector(pipelineName)
     )
     return pipeline_or_error.chain(lambda pip: pip.get_type(info, typeName)).value_or_raise()
 
