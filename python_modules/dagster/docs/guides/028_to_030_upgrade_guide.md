@@ -37,7 +37,7 @@ Error:
 ImportError: cannot import name 'ConfigDefinition'
 ```
 
-We have eliminated a separate notion of a ConfigDefinition. Instead, we realized the the user provided config in a solid, resource, or context is just a `Field` that you would use to build a `Dict` or `Selector`. So replace `ConfigDefinition` with Field. (Generally `config_def=ConfigDefinition` is now `config_field=Field`)
+We have eliminated a separate notion of a ConfigDefinition. Instead, we realized the user provided config in a solid, resource, or context is just a `Field` that you would use to build a `Dict` or `Selector`. So replace `ConfigDefinition` with Field. (Generally `config_def=ConfigDefinition` is now `config_field=Field`)
 
 Before:
 

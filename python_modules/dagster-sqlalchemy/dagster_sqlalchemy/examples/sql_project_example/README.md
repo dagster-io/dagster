@@ -19,7 +19,7 @@ $ python3 pipelines.py pipelines
 Pipeline: full_pipeline Description: Runs entire pipeline, both setup and running the transform
 Pipeline: setup_pipeline Description: Creates all tables and then populates source table
 Pipeline: truncate_all_derived_tables Description: Truncates all tables that are populated by the pipeline. Preserves source tables
-Pipeline: rerun_pipeline Description: Rerun the pipeline, populating the the derived tables. Assumes pipeline is setup
+Pipeline: rerun_pipeline Description: Rerun the pipeline, populating the derived tables. Assumes pipeline is setup
 ```
 
 So there are four pipelines that you can script. Descriptions are provided by the developer and exposed to tooling.

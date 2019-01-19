@@ -1,7 +1,7 @@
 User-Defined Types
 ------------------
 
-Throughout the the tutorial you have seen the use of builtins such as :py:class:`Int <dagster.Int>`
+Throughout the tutorial you have seen the use of builtins such as :py:class:`Int <dagster.Int>`
 and :py:class:`String <dagster.String>` for types. However you will want to be able to define your
 own dagster types to fully utilize the system. We'll go over that here.
 
