@@ -9,6 +9,8 @@ def apply_default_values(config_type, config_value):
 
     if config_type.is_scalar:
         return config_value
+    elif config_type.is_enum:
+        return config_type.to_python_value(config_value)
     elif config_type.is_selector:
         return apply_default_values_to_selector(config_type, config_value)
     elif config_type.is_composite:

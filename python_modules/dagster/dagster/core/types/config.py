@@ -97,6 +97,10 @@ class ConfigType(object):
     def inner_types(self):
         return []
 
+    @property
+    def is_enum(self):
+        return False
+
 
 # Scalars, Composites, Selectors, Lists, Nullable, Any
 
@@ -223,6 +227,49 @@ def List(inner_type):
             )
 
     return _List
+
+
+class EnumValue:
+    def __init__(self, config_value, python_value=None, description=None):
+        self.config_value = check.str_param(config_value, 'config_value')
+        self.python_value = config_value if python_value is None else python_value
+        self.description = check.opt_str_param(description, 'description')
+
+
+class ConfigEnum(ConfigType):
+    def __init__(self, name, enum_values):
+        super(ConfigEnum, self).__init__(name=check.str_param(name, 'name'))
+        self.enum_values = check.list_param(enum_values, 'enum_values', of_type=EnumValue)
+        self._valid_python_values = {ev.python_value for ev in enum_values}
+        check.invariant(len(self._valid_python_values) == len(enum_values))
+        self._valid_config_values = {ev.config_value for ev in enum_values}
+        check.invariant(len(self._valid_config_values) == len(enum_values))
+
+    @property
+    def values(self):
+        return [ev.value for ev in self.enum_values]
+
+    @property
+    def is_enum(self):
+        return True
+
+    def is_valid_config_enum_value(self, config_value):
+        return config_value in self._valid_config_values
+
+    def to_python_value(self, config_value):
+        for ev in self.enum_values:
+            if ev.config_value == config_value:
+                return ev.python_value
+
+        check.failed('should never reach this. config_value should be pre-validated')
+
+
+def Enum(name, enum_values):
+    class _EnumType(ConfigEnum):
+        def __init__(self):
+            super(_EnumType, self).__init__(name=name, enum_values=enum_values)
+
+    return _EnumType
 
 
 _CONFIG_MAP = {
