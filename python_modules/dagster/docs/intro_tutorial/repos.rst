@@ -25,6 +25,10 @@ Repostories are declared using a new API,
    :linenos:
    :caption: repos.py
 
+Note that the name of the pipeline in the `RepositoryDefinition` must match the name we declared
+for it in its `PipelineDefinition`. Don't worry, if these names don't match, you'll see a helpful
+error message.
+ 
 If you save this file as ``repos.py``, you can then run the command line tools on it. Try running:
 
 .. code-block:: console
@@ -58,6 +62,6 @@ You can also specify a module instead of a file in the repository.yml file.
    :language: YAML
    :caption: repository.yml
 
-In the next part of the tutorial, we'll get to know :doc:`Pipeline Execution <pipeline_execution>`
+In the next part of the tutorial, we'll get to know :doc:`Pipeline Execution <pipeline_cli_execution>`
 a little better, and learn how to execute pipelines in a repository from the command line by name,
 with swappable config.

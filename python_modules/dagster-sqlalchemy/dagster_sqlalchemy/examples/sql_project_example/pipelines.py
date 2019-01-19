@@ -69,7 +69,7 @@ def define_rerun_pipeline():
 
     return dagster.PipelineDefinition(
         name='rerun_pipeline',
-        description='Rerun the pipeline, populating the the derived tables. Assumes pipeline is setup',
+        description='Rerun the pipeline, populating the derived tables. Assumes pipeline is setup',
         solids=[insert_into_sum_table_solid, insert_into_sum_sq_table_solid],
         dependencies={
             insert_into_sum_sq_table_solid.name: {

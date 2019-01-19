@@ -3,6 +3,8 @@
 
 .. docs-include
 
+.. image:: https://badge.fury.io/py/dagster.svg
+   :target: https://badge.fury.io/py/dagster
 .. image:: https://coveralls.io/repos/github/dagster-io/dagster/badge.svg?branch=master
    :target: https://coveralls.io/github/dagster-io/dagster?branch=master
 .. image:: https://circleci.com/gh/dagster-io/dagster.svg?style=svg
@@ -28,15 +30,16 @@ This repository contains a number of distinct subprojects:
   config editor, and a streaming execution interface.
 - **dagster-ge**: A Dagster integration with Great Expectations. (see
   https://github.com/great-expectations/great_expectations)
+- **dagster-pandas**: A Dagster integration with Pandas.
+- **dagster-sqlalchemy**: A Dagster integration with SQLAlchemy.
 - **dagstermill**: An experimental prototype for integrating productionized notebooks into
   dagster pipelines. Built on the papermill library (https://github.com/nteract/papermill).
-- **dagster-contrib**: A growing library of components for using Dagster with common data
-  tools like Pandas and SQLAlchemy, along with worked examples.
 - **airline-demo**: A substantial demo project illustrating how these tools can be used together
   to manage a realistic data pipeline.
 - **js_modules/dagit** - a web app that is a ui for dagit
+- **dagma** - An experimental execution engine for Dagster built on top of AWS Lambda.
 
-Go to https://dagster.readthedocs.io/en/latest/ for complete documentation, including a
+Go to https://dagster.readthedocs.io/ for complete documentation, including a
 step-by-step tutorial and notes on the demo project.
 
 For details on contributing or running the project for development, see

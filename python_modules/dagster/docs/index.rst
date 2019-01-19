@@ -30,18 +30,10 @@ Intro Tutorial
   intro_tutorial/repos
   intro_tutorial/pipeline_cli_execution
   intro_tutorial/types
-
-Old Intro Tutorial To Audit
-===========================
-.. toctree::
-  :maxdepth: 1
-  :name: Intro Tutorial To Audit
-
   intro_tutorial/expectations
-  intro_tutorial/part_eleven
-  intro_tutorial/part_thirteen
-  intro_tutorial/part_fourteen
-
+  intro_tutorial/multiple_outputs
+  intro_tutorial/reusable_solids
+  intro_tutorial/unittesting
 
 API Reference
 ================
@@ -56,6 +48,16 @@ API Reference
   apidocs/errors
   apidocs/types
   apidocs/utilities
+
+Guides
+================
+
+.. toctree::
+  :maxdepth: 1
+  :name: Guides
+
+  guides/028_to_030_new_concepts
+  guides/028_to_030_upgrade_guide
 
 Indices and tables
 ==================

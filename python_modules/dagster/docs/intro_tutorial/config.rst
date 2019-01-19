@@ -24,26 +24,34 @@ This time, we'll use a more fully-featured API to define our solid --
    :caption: config.py
 
 We will be exploring the :py:func:`@solid <dagster.solid>` API in much more detail as this tutorial
-proceeds. For now, the only salient difference is that the annotated function takes an additional
-first parameter, ``info``, which is of type
-:py:class:`TransformExecutionInfo <dagster.TransformExecutionInfo>`. The property ``info.config``
-is the configuration passed into each individual solid.
+proceeds. For now, the salient differences are:
 
-That configuration is specified in the second argument to
-:py:func:`execute_pipeline <dagster.execute_pipeline>`, which must be a dict. This dict specifies
-*all* of the configuration to execute an entire pipeline. It may have many sections, but we're only
-using one of them here: per-solid configuration specified under the key ``solids``:
+1. The :py:func:`@solid <dagster.solid>` API takes an additional parameter, `config_field`, which
+   defines the structure and type of configuration values that can be set on each execution of the
+   solid. This parameter should be a :py:func:`Field <dagster.Field>`, which tells the dagster
+   machinery how to translate config values into runtime values available to the solid.
+2. The function annotated by the :py:func:`@solid <dagster.solid>` API receives an additional first
+   parameter, ``info``, of type :py:class:`TransformExecutionInfo <dagster.TransformExecutionInfo>`.
+   The configuration passed into each solid is available to the annotated function as ``info.config``.
+
+Configuration values are passed in a dict as the second argument to
+:py:func:`execute_pipeline <dagster.execute_pipeline>`. This dict specifies *all* of the
+configuration to execute an entire pipeline. It may have many sections, but we're only
+using one of them here: per-solid configuration specified under the key ``solids``.
 
 .. literalinclude:: ../../dagster/tutorials/intro_tutorial/config.py
-   :lines: 31
+   :lines: 28
    :dedent: 8
 
 The ``solids`` dict is keyed by solid name, and each of its values in turn defines a ``config``
-key corresponding to the user-defined configuration schema for each particular solid. In this case,
-that's a single scalar string value.
+key corresponding to the user-defined configuration schema for each particular solid (which we set
+before using the ``config_field`` parameter). If these values don't match the user-defined schema,
+we'll get a helpful error message.
 
-Run this from the command line utility. In order to do this you must provide
-a yaml config file:
+In this case, we've defined a single scalar string value as config.
+
+Let's see how to run this pipeline, with config, from the command line. In order to do this you 
+must provide config in the form of a yaml file:
 
 .. literalinclude:: ../../dagster/tutorials/intro_tutorial/config_env.yml
    :linenos:

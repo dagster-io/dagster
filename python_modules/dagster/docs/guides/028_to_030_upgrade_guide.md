@@ -1,3 +1,5 @@
+# Upgrading to 0.3.0
+
 This guide is a step-by-step guide for upgrading from dagster 0.2.x to 0.3.0. This represents a substantial upgrade in capabilities but also some breaking API changes. We'll detail them, provide context and reasoning, and instructions about how to upgrade.
 
 ## Required API Changes
@@ -35,7 +37,7 @@ Error:
 ImportError: cannot import name 'ConfigDefinition'
 ```
 
-We have eliminated a separate notion of a ConfigDefinition. Instead, we realized the the user provided config in a solid, resource, or context is just a `Field` that you would use to build a `Dict` or `Selector`. So replace `ConfigDefinition` with Field. (Generally `config_def=ConfigDefinition` is now `config_field=Field`)
+We have eliminated a separate notion of a ConfigDefinition. Instead, we realized the user provided config in a solid, resource, or context is just a `Field` that you would use to build a `Dict` or `Selector`. So replace `ConfigDefinition` with Field. (Generally `config_def=ConfigDefinition` is now `config_field=Field`)
 
 Before:
 
@@ -221,7 +223,7 @@ Before:
 
 ```py
     pipeline = PipelineDefinition.create_single_solid_pipeline(
-        define_allscripts_fileload_pipeline(),
+        define_fileload_pipeline(),
         'unzip_file',
     )
 
@@ -236,7 +238,7 @@ After:
 
 ```py
     solid_result = execute_solid(
-        define_allscripts_fileload_pipeline(),
+        define_fileload_pipeline(),
         'unzip_file',
         environment=environment
     )
@@ -249,7 +251,7 @@ Before (with stubbed inputs):
 
 ```py
     pipeline = PipelineDefinition.create_single_solid_pipeline(
-        define_allscripts_fileload_pipeline(),
+        define_fileload_pipeline(),
         'split_headers_and_service_lines',
         {
             'split_headers_and_service_lines': {
@@ -271,7 +273,7 @@ After (with stubbed inputs):
 
 ```py
     solid_result = execute_solid(
-        define_allscripts_fileload_pipeline(),
+        define_fileload_pipeline(),
         'split_headers_and_service_lines',
         inputs={
             'unzipped_file': unzipped_path,
@@ -287,7 +289,7 @@ Before (subset execution):
 
 ```py
     pipeline = PipelineDefinition.create_sub_pipeline(
-        define_allscripts_fileload_pipeline(),
+        define_fileload_pipeline(),
         ['unzip_file'],
         ['split_headers_and_service_lines'],
         {},
@@ -305,7 +307,7 @@ After (subset execution):
 
 ```py
     result_dict = execute_solids(
-        define_allscripts_fileload_pipeline(),
+        define_pipeline(),
         ['unzip_file', 'split_headers_and_service_lines'],
         environment=environment,
     )
@@ -327,7 +329,7 @@ Before:
 
 ```py
     with context.value('data_source_run_id', data_source_run_id),\
-        context.value('data_source', 'allscripts'),\
+        context.value('data_source', 'new_data'),\
         context.value('pipeline_run_id', pipeline_run_id):
 
         yield ExecutionContext(
@@ -344,10 +346,36 @@ After:
         resources=resources,
         context_stack={
             'data_source_run_id': data_source_run_id,
-            'data_source': 'allscripts',
+            'data_source': 'new_data',
             'pipeline_run_id': pipeline_run_id,
         },
     )
+
 ```
 
-
+10. **Non-null by default**
+
+Error:
+
+```
+E   dagster.core.errors.DagsterTypeError: Solid solid_name input input_name received value None which does not pass the typecheck for Dagster type PandasDataFrame. Step solid_name.transform
+```
+
+You have encountered a type error. Likely it is because in 0.2.8, types could
+accept None by default, and this is no longer true in 0.3.0. You have to opt into accepting nulls.
+
+Before:
+
+```py
+@solid(outputs=[OutputDefinition(dagster_type=dagster_pd.DataFrame)])
+def return_none(info):
+    return None # None no longer allowed, would break at runtime
+```
+
+After
+
+```py
+@solid(outputs=[OutputDefinition(dagster_type=Nullable(dagster_pd.DataFrame))])
+def return_none(info):
+    return None # Because of Nullable wrapper, this is ok
+```

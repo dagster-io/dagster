@@ -288,7 +288,7 @@ def commit_new_version(version):
                 stderr=subprocess.STDOUT,
             )
         subprocess.check_output(
-            ['git', 'commit', '--no-verify', '-m', '\'{version}\''.format(version=version)],
+            ['git', 'commit', '--no-verify', '-m', '{version}'.format(version=version)],
             stderr=subprocess.STDOUT,
         )
     except subprocess.CalledProcessError as exc_info:
@@ -383,7 +383,7 @@ def cli():
 def publish(nightly):
     """Publishes (uploads) all submodules to PyPI.
 
-    Appropriate credentials must be available to twin, e.g. in a ~/.pypirc file, and users must
+    Appropriate credentials must be available to twine, e.g. in a ~/.pypirc file, and users must
     be permissioned as maintainers on the PyPI projects. Publishing will fail if versions (git
     tags and Python versions) are not in lockstep, if the current commit is not tagged, or if
     there are untracked changes.

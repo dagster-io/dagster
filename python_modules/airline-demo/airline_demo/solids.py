@@ -21,6 +21,7 @@ from dagster import (
     check,
     solid,
 )
+from dagster.utils import safe_isfile
 from dagstermill import define_dagstermill_solid
 
 from .types import FileExistsAtPath, SparkDataFrameType, SqlAlchemyEngineType, SqlTableName
@@ -219,7 +220,7 @@ def download_from_s3(info):
         if target_path is None:
             target_path = info.context.resources.tempfile.tempfile().name
 
-        if file_['skip_if_present'] and os.path.isfile(target_path):
+        if file_['skip_if_present'] and safe_isfile(target_path):
             info.context.info(
                 'Skipping download, file already present at {target_path}'.format(
                     target_path=target_path
@@ -349,7 +350,7 @@ def unzip_file(
         with zipfile.ZipFile(archive_path, 'r') as zip_ref:
             if archive_member is not None:
                 target_path = os.path.join(destination_dir, archive_member)
-                is_file = os.path.isfile(target_path)
+                is_file = safe_isfile(target_path)
                 is_dir = os.path.isdir(target_path)
                 if not (info.config['skip_if_present'] and (is_file or is_dir)):
                     zip_ref.extract(archive_member, destination_dir)

@@ -1,6 +1,5 @@
 from dagster import (
     DependencyDefinition,
-    Field,
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
@@ -8,14 +7,8 @@ from dagster import (
     execute_solid,
     execute_solids,
     lambda_solid,
-    solid,
     Int,
 )
-
-
-@solid(config_field=Field(Int), outputs=[OutputDefinition(Int)])
-def load_number(info):
-    return info.config
 
 
 @lambda_solid(
@@ -39,20 +32,10 @@ def define_part_fourteen_step_one_pipeline():
 
     return PipelineDefinition(
         name='part_fourteen_step_one_pipeline',
-        solids=[load_number, adder, multer],
+        solids=[adder, multer],
         dependencies={
-            SolidInstance(load_number.name, 'a'): {},
-            SolidInstance(load_number.name, 'b'): {},
-            SolidInstance(load_number.name, 'c'): {},
-            SolidInstance(load_number.name, 'd'): {},
-            SolidInstance(adder.name, 'a_plus_b'): {
-                'num1': DependencyDefinition('a'),
-                'num2': DependencyDefinition('b'),
-            },
-            SolidInstance(adder.name, 'c_plus_d'): {
-                'num1': DependencyDefinition('c'),
-                'num2': DependencyDefinition('d'),
-            },
+            SolidInstance(adder.name, 'a_plus_b'): {},
+            SolidInstance(adder.name, 'c_plus_d'): {},
             SolidInstance(multer.name, 'final'): {
                 'num1': DependencyDefinition('a_plus_b'),
                 'num2': DependencyDefinition('c_plus_d'),
@@ -61,7 +44,7 @@ def define_part_fourteen_step_one_pipeline():
     )
 
 
-def test_only_final():
+def execute_test_only_final():
     solid_result = execute_solid(
         define_part_fourteen_step_one_pipeline(),
         'final',
@@ -71,11 +54,12 @@ def test_only_final():
     assert solid_result.transformed_value() == 12
 
 
-def test_a_plus_b_final_subdag():
+def execute_test_a_plus_b_final_subdag():
     results = execute_solids(
         define_part_fourteen_step_one_pipeline(),
         ['a_plus_b', 'final'],
         inputs={'a_plus_b': {'num1': 2, 'num2': 4}, 'final': {'num2': 6}},
     )
+
     assert results['a_plus_b'].transformed_value() == 6
     assert results['final'].transformed_value() == 36

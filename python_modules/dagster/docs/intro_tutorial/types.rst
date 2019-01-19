@@ -1,36 +1,27 @@
 User-Defined Types
 ------------------
 
-Throughout the the tutorial you have seen the use of builtins such as `Int` and `String` for types.
-However you will want to be able to define your own dagster types to fully utilize the system. We'll
-go over that here.
+Throughout the tutorial you have seen the use of builtins such as :py:class:`Int <dagster.Int>`
+and :py:class:`String <dagster.String>` for types. However you will want to be able to define your
+own dagster types to fully utilize the system. We'll go over that here.
 
-As a pedogogical example, we will go over the code used to the define the PandasDataFrame type in the
-dagster-pandas library, building it step by step along the way.
+As a pedogogical example, we will go over the code used to the define the ``PandasDataFrame`` type
+in the dagster-pandas library, building it step by step along the way.
 
 Basic Typing
 ^^^^^^^^^^^^
 
-.. code-block:: py
+.. literalinclude:: ../../../dagster-pandas/dagster_pandas/data_frame.py
+   :lines: 1, 79-85, 88
 
-    import pandas as pd
-    from dagster import as_dagster_type
-
-    DataFrame = as_dagster_type(
-        pd.DataFrame,
-        name='PandasDataFrame',
-        description='''Two-dimensional size-mutable, potentially
-    heterogeneous tabular data structure with labeled axes 
-    (rows and columns). See http://pandas.pydata.org/'''
-    )
-
-What this code doing is annotating/registering an existing type as a dagster type. Now one can include
-this type and use it as an input or output of a solid. The system will do a typecheck to ensure
-that the object is of type `pd.DataFrame`.
+What this code doing is annotating/registering an existing type as a dagster type. Now one can
+include this type and use it as an input or output of a solid. The system will do a typecheck
+to ensure that the object is of type ``pd.DataFrame``.
 
 Now one can use it to define a solid:
 
 .. code-block:: py
+   :emphasize-lines: 2-3
 
     @lambda_solid(
         inputs=[InputDefinition('num', DataFrame)],
@@ -56,23 +47,6 @@ Let us now add the input schema:
 
 .. code-block:: py
 
-    def define_path_dict_field():
-        return Field(Dict({'path': Field(Path)}))
-
-    def define_csv_dict_field():
-        return Field(
-            Dict(
-                {
-                    'path': Field(Path), 
-                    'sep': Field(
-                        String,
-                        is_optional=True,
-                        default_value=','
-                    )
-                }
-            )
-        )
-
     @input_schema(
         Selector(
             {
@@ -83,10 +57,9 @@ Let us now add the input schema:
         )
     )
     def dataframe_input_schema(config_value):
-        # Because the config type passed into the input_schema
-        # above is a Selector, config_value is guaranteed to be
-        # a dictionary with a single element
         file_type, file_options = list(config_value.items())[0]
+        check.str_param(file_type, 'file_type')
+        check.dict_param(file_options, 'file_options')
 
         if file_type == 'csv':
             path = file_options['path']
@@ -102,6 +75,7 @@ Let us now add the input schema:
                     file_type=file_type
                 )
             )
+
 
 Any input schema is define by a decorated function with a single argument. The argument is the
 format the input schema takes. In this case it is a `Selector`. Selectors are used when you want
@@ -124,48 +98,17 @@ API that removes some boilerplate around manipulating the config_value dictionar
 user-provided function takes the unpacked key and value of config_value directly, since in the
 case of a selector, the config_value dictionary has only 1 (key, value) pair.
 
-.. code-block:: py
+.. literalinclude:: ../../../dagster-pandas/dagster_pandas/data_frame.py
+   :lines: 53-77
 
-    @input_selector_schema(
-        Selector(
-            {
-                'csv': define_csv_dict_field(),
-                'parquet': define_path_dict_field(),
-                'table': define_path_dict_field(),
-            }
-        )
-    )
-    def dataframe_input_schema(file_type, file_options):
-        if file_type == 'csv':
-            path = file_options['path']
-            del file_options['path']
-            return pd.read_csv(path, **file_options)
-        elif file_type == 'parquet':
-            return pd.read_parquet(file_options['path'])
-        elif file_type == 'table':
-            return pd.read_table(file_options['path'])
-        else:
-            raise DagsterInvariantViolationError('
-                'Unsupported file_type {file_type}'.format(
-                    file_type=file_type
-                )
-            )
-
-You'll note that we no longer need to manipulate the config_value dictionary. It grabs
+You'll note that we no longer need to manipulate the ``config_value`` dictionary. It grabs
 that key and value for you and calls the provided function.
 
 Finally insert this into the original declaration:
 
-.. code-block:: py
-
-    DataFrame = as_dagster_type(
-        pd.DataFrame,
-        name='PandasDataFrame',
-        description='''Two-dimensional size-mutable, potentially
-    heterogeneous tabular data structure with labeled axes 
-    (rows and columns). See http://pandas.pydata.org/'''
-        input_schema=dataframe_input_schema,
-    )
+.. literalinclude:: ../../../dagster-pandas/dagster_pandas/data_frame.py
+   :lines: 80-86,88 
+   :emphasize-lines: 7
 
 Now if you run a pipeline with this solid from dagit you will be able to provide sources for
 these inputs via config:
@@ -181,32 +124,9 @@ persistent store. Outputs are purely *optional* for any computation, whereas inp
 for a computation to proceed. You will likely want outputs as for a pipeline to be useful it
 should produce some materialization that outlives the computation.
 
-.. code-block:: py
-
-    @output_selector_schema(
-        Selector(
-            {
-                'csv': define_csv_dict_field(),
-                'parquet': define_path_dict_field(),
-                'table': define_path_dict_field(),
-            }
-        )
-    )
-    def dataframe_output_schema(file_type, file_options, pandas_df):
-        check.str_param(file_type, 'file_type')
-        check.dict_param(file_options, 'file_options')
-        check.inst_param(pandas_df, 'pandas_df', DataFrame)
-
-        if file_type == 'csv':
-            path = file_options['path']
-            del file_options['path']
-            return pandas_df.to_csv(path, index=False, **file_options)
-        elif file_type == 'parquet':
-            return pandas_df.to_parquet(file_options['path'])
-        elif file_type == 'table':
-            return pandas_df.to_csv(file_options['path'], sep='\t', index=False)
-        else:
-            check.failed('Unsupported file_type {file_type}'.format(file_type=file_type))
+.. literalinclude:: ../../../dagster-pandas/dagster_pandas/data_frame.py
+   :lines: 27-50
+   :emphasize-lines: 1
 
 This has a similar aesthetic to an input schema but performs a different function. Notice that
 it takes a third argument, `pandas_df` (it can be named anything), that is the value that was
@@ -215,17 +135,9 @@ how to materialize the value.
 
 One connects the output schema to the type as follows:
 
-.. code-block:: py
-
-    DataFrame = as_dagster_type(
-        pd.DataFrame,
-        name='PandasDataFrame',
-        description='''Two-dimensional size-mutable, potentially
-    heterogeneous tabular data structure with labeled axes 
-    (rows and columns). See http://pandas.pydata.org/'''
-        input_schema=dataframe_input_schema,
-        output_schema=dataframe_output_schema,
-    )
+.. literalinclude:: ../../../dagster-pandas/dagster_pandas/data_frame.py
+   :lines: 80-88
+   :emphasize-lines: 8
  
 Now we can provide a list of materializations to a given execution.
 

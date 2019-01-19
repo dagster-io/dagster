@@ -21,13 +21,13 @@ from dagster.core.definitions import (
     PipelineContextDefinition,
     PipelineDefinition,
     RepositoryDefinition,
-    ResourceDefinition,
     Result,
     SolidDefinition,
     SolidInstance,
     TransformExecutionInfo,
 )
 
+from dagster.core.definitions.resource import ResourceDefinition, resource
 from dagster.core.definitions.decorators import MultipleResults, lambda_solid, solid
 
 from dagster.core.errors import (
@@ -46,10 +46,14 @@ from dagster.core.types import (
     Dict,
     Field,
     Float,
+    input_schema,
+    input_selector_schema,
     Int,
     List,
     NamedDict,
     Nullable,
+    output_schema,
+    output_selector_schema,
     Path,
     PythonObjectType,
     Selector,
@@ -57,7 +61,7 @@ from dagster.core.types import (
 )
 
 from dagster.core.types.decorator import dagster_type, as_dagster_type
-from dagster.core.types.config import ConfigType
+from dagster.core.types.config import ConfigType, Enum, EnumValue
 from dagster.core.types.evaluator import DagsterEvaluateConfigValueError
 from dagster.core.types.runtime import RuntimeType
 
@@ -77,8 +81,9 @@ __all__ = [
     'PipelineDefinition',
     'RepositoryDefinition',
     'ResourceDefinition',
-    'SolidDefinition',
+    'resource',
     'Result',
+    'SolidDefinition',
     'SolidInstance',
     # Infos
     'ContextCreationExecutionInfo',
@@ -96,26 +101,32 @@ __all__ = [
     'ReentrantInfo',
     'SolidExecutionResult',
     # Errors
+    'DagsterEvaluateConfigValueError',
+    'DagsterExpectationFailedError',
     'DagsterInvalidDefinitionError',
     'DagsterInvariantViolationError',
-    'DagsterTypeError',
     'DagsterRuntimeCoercionError',
+    'DagsterTypeError',
     'DagsterUserCodeExecutionError',
-    'DagsterExpectationFailedError',
-    'DagsterEvaluateConfigValueError',
+    'PipelineConfigEvaluationError',
     # Utilities
     'execute_solid',
     'execute_solids',
     # types
     'Any',
     'Bool',
+    'input_schema',
+    'input_selector_schema',
     'Dict',
     'Float',
     'Int',
     'List',
     'NamedDict',
     'Nullable',
+    'output_schema',
+    'output_selector_schema',
     'Path',
+    'PythonObjectType',
     'String',
     # type creation
     'as_dagster_type',

@@ -19,9 +19,15 @@ IGNORE_FILES = [
     '[A-Z0-9a-z_-]*\\.gif',
     '[A-Z0-9a-z_-]*\\.doctree',
     '[A-Z0-9a-z_-]*\\.pickle',
+    'searchindex.js',
 ]
 
 
+# Right now, these tests fail as soon as a snapshot fails -- and there is no way to see *all* of
+# the snapshot failures associated with a diff. We should probably break doc build into a fixture,
+# and then figure out a way to either dynamically generate a test case for each snapshot
+# (probably hard since tests are collected before fixtures are executed -- but maybe we can lever
+# the checked-in snapshots for this) or collect the test failures and display all of them.
 def test_build_all_docs(snapshot):
     pwd = os.getcwd()
     try:

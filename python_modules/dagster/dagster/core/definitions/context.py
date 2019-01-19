@@ -13,25 +13,28 @@ from .resource import ResourceDefinition
 
 
 class PipelineContextDefinition(object):
-    '''Pipelines declare the different context types they support, in the form
+    '''Defines a context type supported by a pipeline.
+
+    Pipelines declare the different context types they support, in the form
     of PipelineContextDefinitions. For example a pipeline could declare a context
     definition for different operating environments: unittest, integration tests,
-    production and so forth. The use provides context function that returns an
-    ExecutionContext that is passed to every solid. One can hang resources
+    production and so forth. The user provides a context function that returns an
+    ``ExecutionContext`` that is passed to every solid. One can hang resources
     (such as db connections) off of that context. Thus the pipeline author
     has complete control over how the author of each individual solid within
     the pipeline interacts with its operating environment.
 
-    The PipelineContextDefinition is passed to the PipelineDefinition in
-    a dictionary key'ed by its name so the name is not present in this object.
+    The ``PipelineContextDefinition`` is passed to the ``PipelineDefinition`` in
+    a dictionary keyed by its name so the name is not present in this object.
 
     Attributes:
         config_field (Field): The configuration for the pipeline context.
 
-context_fn (callable):
-            Signature is (pipeline: PipelineDefintion, config_value: Any) => ExecutionContext
+        context_fn (callable):
+            Signature is (**pipeline**: `PipelineDefintion`, **config_value**: `Any`) :
+            `ExecutionContext`.
 
-            A callable that either returns *or* yields an ExecutionContext.
+            A callable that either returns *or* yields an ``ExecutionContext``.
 
         description (str): A description of what this context represents
     '''

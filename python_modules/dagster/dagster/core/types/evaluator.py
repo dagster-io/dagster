@@ -1,6 +1,8 @@
 from collections import namedtuple
 from enum import Enum
 
+import six
+
 from dagster import check
 
 from dagster.core.errors import DagsterError
@@ -297,11 +299,49 @@ def _validate_config(config_type, config_value, stack):
             if config_value is None
             else _validate_config(config_type.inner_type, config_value, stack)
         )
+    elif config_type.is_enum:
+        errors = validate_enum_value(config_type, config_value, stack)
     else:
         check.failed('Unsupported type {name}'.format(name=config_type.name))
 
     for error in errors:
         yield error
+
+
+def validate_enum_value(enum_type, config_value, stack):
+    check.param_invariant(enum_type.is_enum, 'enum_type')
+    check.inst_param(stack, 'stack', EvaluationStack)
+
+    if not isinstance(config_value, six.string_types):
+        yield EvaluationError(
+            stack=stack,
+            reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
+            message='Value for enum type {type_name} must be a string got {value}'.format(
+                type_name=enum_type.name, value=config_value
+            ),
+            error_data=RuntimeMismatchErrorData(
+                config_type=enum_type, value_rep=repr(config_value)
+            ),
+        )
+        return
+
+    if not enum_type.is_valid_config_enum_value(config_value):
+        yield EvaluationError(
+            stack=stack,
+            reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
+            message=(
+                'Value not in enum type {type_name}. Got: {value}. '
+                'Possible values: {possible_values}.'
+            ).format(
+                type_name=enum_type.name,
+                value=repr(config_value),
+                possible_values=enum_type.config_values,
+            ),
+            error_data=RuntimeMismatchErrorData(
+                config_type=enum_type, value_rep=repr(config_value)
+            ),
+        )
+        return
 
 
 ## Selectors

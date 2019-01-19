@@ -11,6 +11,7 @@ from dagster.cli.dynamic_loader import repository_target_argument, load_target_i
 
 from .app import create_app, RepositoryContainer
 from .pipeline_run_storage import PipelineRunStorage, LogFilePipelineRun, InMemoryPipelineRun
+from .version import __version__
 
 
 def create_dagit_cli():
@@ -59,6 +60,7 @@ REPO_TARGET_WARNING = (
 @click.option('--sync', is_flag=True, help='Use the synchronous execution manager')
 @click.option('--log', is_flag=False, help='Record logs of pipeline runs')
 @click.option('--log-dir', help="Directory to record logs to", default='dagit_run_logs/')
+@click.version_option(version=__version__)
 def ui(host, port, watch, sync, log, log_dir, **kwargs):
     repository_target_info = load_target_info_from_cli_args(kwargs)
 

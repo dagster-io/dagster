@@ -35,29 +35,26 @@ class SolidDefinition(object):
 
         name (str): Name of the solid.
         input_defs (List[InputDefinition]): Inputs of the solid.
-        transform_fn (callable): Callable with the signature
-            (
-                info: TransformExecutionInfo,
-                inputs: Dict[str, Any],
-            ) : Iterable<Result>
+        transform_fn (callable): Callable with the signature (**info**: `TransformExecutionInfo`,
+            **inputs**: `Dict[str, Any]`) : `Iterable<Result>`
         outputs_defs (List[OutputDefinition]): Outputs of the solid.
         config_field (Field): How the solid configured.
         description (str): Description of the solid.
         metadata (dict): Arbitrary metadata for the solid. Some frameworks expect and require
             certain metadata to be attached to a solid.
 
-    .. code-block:: python
+    Examples:
+        .. code-block:: python
 
-        def _add_one(info, inputs):
-            yield Result(inputs["num"] + 1)
+            def _add_one(info, inputs):
+                yield Result(inputs["num"] + 1)
 
-        SolidDefinition(
-            name="add_one",
-            inputs=[InputDefinition("num", Int)],
-            outputs=[OutputDefinition(Int)], # default name ("result")
-            transform_fn=_add_one,
-        )
-
+            SolidDefinition(
+                name="add_one",
+                inputs=[InputDefinition("num", Int)],
+                outputs=[OutputDefinition(Int)], # default name ("result")
+                transform_fn=_add_one,
+            )
 
 '''
 

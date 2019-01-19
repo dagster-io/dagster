@@ -12,8 +12,6 @@ Executing pipelines and solids.
 .. autoclass:: ExecutionContext
    :members:
 
-.. autoexception:: PipelineConfigEvaluationError
-
 .. autoclass:: PipelineExecutionResult
    :members:
 
