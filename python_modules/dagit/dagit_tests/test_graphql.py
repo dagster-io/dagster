@@ -7,6 +7,8 @@ from dagster import (
     Bool,
     DependencyDefinition,
     Dict,
+    Enum,
+    EnumValue,
     Field,
     InputDefinition,
     Int,
@@ -21,6 +23,7 @@ from dagster import (
     String,
     check,
     lambda_solid,
+    solid,
 )
 
 from dagster.utils import script_relative_path
@@ -327,6 +330,18 @@ def define_scalar_output_pipeline():
     )
 
 
+def define_pipeline_with_enum_config():
+    @solid(
+        config_field=Field(
+            Enum('TestEnum', [EnumValue(config_value='ENUM_VALUE', description='An enum value.')])
+        )
+    )
+    def takes_an_enum(_info):
+        pass
+
+    return PipelineDefinition(name='pipeline_with_enum_config', solids=[takes_an_enum])
+
+
 def define_repository():
     return RepositoryDefinition(
         name='test',
@@ -340,6 +355,7 @@ def define_repository():
             'pandas_hello_world_df_input': define_pipeline_with_pandas_df_input,
             'no_config_pipeline': define_no_config_pipeline,
             'scalar_output_pipeline': define_scalar_output_pipeline,
+            'pipeline_with_enum_config': define_pipeline_with_enum_config,
         },
     )
 
@@ -468,6 +484,44 @@ def test_pandas_hello_world_pipeline_or_error_subset_wrong_solid_name():
     assert result.data
     assert result.data['pipelineOrError']['__typename'] == 'SolidNotFoundError'
     assert result.data['pipelineOrError']['solidName'] == 'nope'
+
+
+def test_enum_query():
+    ENUM_QUERY = '''{
+  pipeline(name:"pipeline_with_enum_config"){
+    name
+    types {
+      __typename
+      name
+      ... on EnumType {
+        values
+        {
+          value
+          description
+        }
+      }
+    }
+  }
+}
+'''
+
+    result = execute_dagster_graphql(define_context(), ENUM_QUERY)
+    if result.errors:
+        raise Exception(result.errors)
+
+    assert not result.errors
+    assert result.data
+
+    enum_type_data = None
+
+    for td in result.data['pipeline']['types']:
+        if td['name'] == 'TestEnum':
+            enum_type_data = td
+            break
+
+    assert enum_type_data
+    assert enum_type_data['name'] == 'TestEnum'
+    assert enum_type_data['values'] == [{'value': 'ENUM_VALUE', 'description': 'An enum value.'}]
 
 
 def do_test_subset(query, top_key):
