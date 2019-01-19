@@ -7,7 +7,7 @@ Functional
 ^^^^^^^^^^
 Data pipelines should be expressed as DAGs (directed acyclic graphs) of functional, idempotent
 computations. Individual nodes in the graph consume their inputs, perform some computation, and
-yield outputs, either with no side effects or with clealy advertised side effects. Given the
+yield outputs, either with no side effects or with clearly advertised side effects. Given the
 same inputs and configuration, the computation should always produce the same output. If these 
 computations have external dependencies, these should be parametrizable, so that the computations
 may execute in different environments.

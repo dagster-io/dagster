@@ -50,7 +50,7 @@ from the dropdown:
 One of the distinguishing features of dagster that separates it from many workflow engines is that
 dependencies connect *inputs* and *outputs* rather than just *tasks*. An author of a dagster
 pipeline defines the flow of execution by defining the flow of *data* within that
-execution. This is core to the the programming model of dagster, where each step in the pipeline
+execution. This is core to the programming model of dagster, where each step in the pipeline
 -- the solid -- is a *functional* unit of computation. 
 
 Now run the pipeline we've just defined, either from dagit or from the command line:
