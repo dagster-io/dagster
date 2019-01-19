@@ -333,7 +333,9 @@ def validate_enum_value(enum_type, config_value, stack):
                 'Value not in enum type {type_name}. Got: {value}. '
                 'Possible values: {possible_values}.'
             ).format(
-                type_name=enum_type.name, value=repr(config_value), possible_values=enum_type.values
+                type_name=enum_type.name,
+                value=repr(config_value),
+                possible_values=enum_type.config_values,
             ),
             error_data=RuntimeMismatchErrorData(
                 config_type=enum_type, value_rep=repr(config_value)

@@ -246,8 +246,8 @@ class ConfigEnum(ConfigType):
         check.invariant(len(self._valid_config_values) == len(enum_values))
 
     @property
-    def values(self):
-        return [ev.value for ev in self.enum_values]
+    def config_values(self):
+        return [ev.config_value for ev in self.enum_values]
 
     @property
     def is_enum(self):

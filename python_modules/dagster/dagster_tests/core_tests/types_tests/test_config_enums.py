@@ -1,11 +1,10 @@
-from enum import Enum
+from enum import Enum as PythonEnum
 
 import pytest
 
-from dagster import Enum as DagsterEnum
-
 from dagster import (
     Dict,
+    Enum,
     EnumValue,
     Field,
     Int,
@@ -39,7 +38,7 @@ def test_enum_in_pipeline_execution():
             Dict(
                 {
                     'int_field': Field(Int),
-                    'enum_field': Field(DagsterEnum('AnEnum', [EnumValue('ENUM_VALUE')])),
+                    'enum_field': Field(Enum('AnEnum', [EnumValue('ENUM_VALUE')])),
                 }
             )
         )
@@ -70,13 +69,13 @@ def test_enum_in_pipeline_execution():
     )
 
 
-class NativeEnum(Enum):
+class NativeEnum(PythonEnum):
     FOO = 1
     BAR = 2
 
 
 def test_native_enum_dagster_enum():
-    dagster_enum = DagsterEnum(
+    dagster_enum = Enum(
         'DagsterNativeEnum',
         [
             EnumValue(config_value='FOO', python_value=NativeEnum.FOO),
