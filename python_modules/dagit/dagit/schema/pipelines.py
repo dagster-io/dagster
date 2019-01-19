@@ -415,6 +415,8 @@ class DauphinType(dauphin.Interface):
     def to_dauphin_type(cls, info, config_or_runtime_type):
         if isinstance(config_or_runtime_type, ConfigType) and config_or_runtime_type.has_fields:
             return info.schema.type_named('CompositeType')(config_or_runtime_type)
+        elif isinstance(config_or_runtime_type, ConfigType) and config_or_runtime_type.is_enum:
+            return info.schema.type_named('EnumType')(config_or_runtime_type)
         else:
             return info.schema.type_named('RegularType')(config_or_runtime_type)
 
@@ -454,24 +456,24 @@ def all_types(pipeline):
     return list(all_types_dicts.values())
 
 
-def ctor_kwargs(runtime_type):
-    if isinstance(runtime_type, RuntimeType):
+def ctor_kwargs(runtime_or_config_type):
+    if isinstance(runtime_or_config_type, RuntimeType):
         return dict(
-            name=runtime_type.name,
-            description=runtime_type.description,
+            name=runtime_or_config_type.name,
+            description=runtime_or_config_type.description,
             is_dict=False,
             is_selector=False,
-            is_nullable=runtime_type.is_nullable,
-            is_list=runtime_type.is_list,
+            is_nullable=runtime_or_config_type.is_nullable,
+            is_list=runtime_or_config_type.is_list,
         )
-    elif isinstance(runtime_type, ConfigType):
+    elif isinstance(runtime_or_config_type, ConfigType):
         return dict(
-            name=runtime_type.name,
-            description=runtime_type.description,
-            is_dict=check.bool_param(runtime_type.has_fields, 'is_dict'),
-            is_selector=runtime_type.is_selector,
-            is_nullable=runtime_type.is_nullable,
-            is_list=runtime_type.is_list,
+            name=runtime_or_config_type.name,
+            description=runtime_or_config_type.description,
+            is_dict=runtime_or_config_type.has_fields,
+            is_selector=runtime_or_config_type.is_selector,
+            is_nullable=runtime_or_config_type.is_nullable,
+            is_list=runtime_or_config_type.is_list,
         )
     else:
         check.failed('Not a valid type inst')
@@ -516,21 +518,53 @@ class DauphinCompositeType(dauphin.ObjectType):
 
     fields = dauphin.non_null_list('TypeField')
 
-    def __init__(self, runtime_type):
-        super(DauphinCompositeType, self).__init__(**ctor_kwargs(runtime_type))
-        self._runtime_type = runtime_type
+    def __init__(self, type_with_fields):
+        super(DauphinCompositeType, self).__init__(**ctor_kwargs(type_with_fields))
+        self._type_with_fields = type_with_fields
 
     def resolve_inner_types(self, info):
-        return inner_types(info, self._runtime_type)
+        return inner_types(info, self._type_with_fields)
 
     def resolve_type_attributes(self, _info):
-        return type_attributes(self._runtime_type)
+        return type_attributes(self._type_with_fields)
 
     def resolve_fields(self, info):
         return [
             info.schema.type_named('TypeField')(name=k, field=v)
-            for k, v in self._runtime_type.fields.items()
+            for k, v in self._type_with_fields.fields.items()
         ]
+
+
+class DauphinEnumValue(dauphin.ObjectType):
+    class Meta:
+        name = 'EnumValue'
+
+    value = dauphin.NonNull(dauphin.String)
+    description = dauphin.String()
+
+
+class DauphinEnumType(dauphin.ObjectType):
+    class Meta:
+        name = 'EnumType'
+        interfaces = [DauphinType]
+
+    values = dauphin.non_null_list('EnumValue')
+
+    def __init__(self, enum_type):
+        super(DauphinEnumType, self).__init__(**ctor_kwargs(enum_type))
+        self._enum_type = enum_type
+
+    def resolve_values(self, info):
+        return [
+            info.schema.type_named('EnumValue')(value=ev.config_value, description=ev.description)
+            for ev in self._enum_type.enum_values
+        ]
+
+    def resolve_inner_types(self, info):
+        return inner_types(info, self._enum_type)
+
+    def resolve_type_attributes(self, _info):
+        return type_attributes(self._enum_type)
 
 
 class DauphinTypeField(dauphin.ObjectType):
