@@ -6,3 +6,4 @@
 
    - API Additions:
       - New decorated-based @resource API as a more concise alternative to ResourceDefinition
+      - Dagster config type system now supports enum types. (dagster.Enum and dagster.EnumType)
