@@ -12,7 +12,7 @@ export interface ConfigEditorPipelineFragment_environmentType {
 }
 
 export interface ConfigEditorPipelineFragment_types_RegularType {
-  __typename: "RegularType";
+  __typename: "RegularType" | "EnumType";
   name: string;
   isSelector: boolean;
 }

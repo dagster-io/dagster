@@ -89,7 +89,7 @@ export interface PipelineExecutionRootQuery_pipeline_environmentType {
 }
 
 export interface PipelineExecutionRootQuery_pipeline_types_RegularType {
-  __typename: "RegularType";
+  __typename: "RegularType" | "EnumType";
   name: string;
   isSelector: boolean;
 }

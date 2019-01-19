@@ -1,3 +1,12 @@
+Pending Release
+
+   - New Features
+      - Dagit's Execute tab now supports partial pipeline execution via a solid selector in the bottom left.
+   
+   - Notes:
+      - GraphQL queries and mutations taking a pipeline name now take both a pipeline name and an optional
+        solid subset and have slightly improved call signatures.
+
 0.3.1
 
    - Bug fixes

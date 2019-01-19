@@ -12,7 +12,7 @@ export interface PipelineExecutionPipelineFragment_environmentType {
 }
 
 export interface PipelineExecutionPipelineFragment_types_RegularType {
-  __typename: "RegularType";
+  __typename: "RegularType" | "EnumType";
   name: string;
   isSelector: boolean;
 }
