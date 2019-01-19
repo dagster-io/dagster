@@ -19,6 +19,7 @@ IGNORE_FILES = [
     '[A-Z0-9a-z_-]*\\.gif',
     '[A-Z0-9a-z_-]*\\.doctree',
     '[A-Z0-9a-z_-]*\\.pickle',
+    'searchindex.js',
 ]
 
 
