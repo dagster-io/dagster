@@ -2,7 +2,6 @@ from __future__ import absolute_import
 
 from dagster import check
 from dagster.core.events import EventRecord, EventType
-from dagster.core.execution import ExecutionSelector
 from dagster.utils.logging import CRITICAL, DEBUG, ERROR, INFO, WARNING, check_valid_level_param
 
 from dagster.utils.error import SerializableErrorInfo
@@ -30,9 +29,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
         self._pipeline_run = check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
 
     def resolve_pipeline(self, info):
-        return model.get_pipeline_or_raise(
-            info, ExecutionSelector(self._pipeline_run.pipeline_name)
-        )
+        return model.get_pipeline_or_raise(info, self._pipeline_run.selector)
 
     def resolve_logs(self, info):
         return info.schema.type_named('LogMessageConnection')(self._pipeline_run)
@@ -93,9 +90,7 @@ class DauphinLogMessageConnection(dauphin.ObjectType):
         self._logs = self._pipeline_run.all_logs()
 
     def resolve_nodes(self, info):
-        pipeline = model.get_pipeline_or_raise(
-            info, ExecutionSelector(self._pipeline_run.pipeline_name)
-        )
+        pipeline = model.get_pipeline_or_raise(info, self._pipeline_run.selector)
         return [
             info.schema.type_named('PipelineRunEvent').from_dagster_event(info, log, pipeline)
             for log in self._logs

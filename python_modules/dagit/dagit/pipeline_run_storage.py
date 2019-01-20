@@ -12,7 +12,7 @@ import pyrsistent
 
 from dagster import check
 from dagster.core.events import EventRecord, EventType
-
+from dagster.core.execution import ExecutionSelector
 from dagster.core.execution_plan.objects import ExecutionPlan
 
 
@@ -51,12 +51,12 @@ class PipelineRunStorage(object):
 
 
 class PipelineRun(object):
-    def __init__(self, run_id, pipeline_name, env_config, execution_plan):
+    def __init__(self, run_id, selector, env_config, execution_plan):
         self.__subscribers = []
 
         self._status = PipelineRunStatus.NOT_STARTED
         self._run_id = check.str_param(run_id, 'run_id')
-        self._pipeline_name = check.str_param(pipeline_name, 'pipeline_name')
+        self._selector = check.inst_param(selector, 'selector', ExecutionSelector)
         self._env_config = check.opt_dict_param(env_config, 'environment_config', key_type=str)
         self._execution_plan = check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
 
@@ -70,7 +70,11 @@ class PipelineRun(object):
 
     @property
     def pipeline_name(self):
-        return self._pipeline_name
+        return self._selector.name
+
+    @property
+    def selector(self):
+        return self._selector
 
     @property
     def config(self):
@@ -153,7 +157,8 @@ class LogFilePipelineRun(InMemoryPipelineRun):
                 json.dumps(
                     {
                         'run_id': self.run_id,
-                        'pipeline_name': self.pipeline_name,
+                        'pipeline_name': self.selector.name,
+                        'pipeline_solid_subset': self.selector.solid_subset,
                         'config': self.config,
                         'execution_plan': 'TODO',
                     }

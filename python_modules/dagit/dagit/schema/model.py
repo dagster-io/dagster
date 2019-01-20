@@ -132,10 +132,9 @@ def start_pipeline_execution(info, selector, config):
                 pipeline.get_dagster_pipeline(),
                 construct_environment_config(validated_config_either.value),
             )
-            run = pipeline_run_storage.create_run(
-                new_run_id, selector.name, env_config, execution_plan
-            )
+            run = pipeline_run_storage.create_run(new_run_id, selector, env_config, execution_plan)
             pipeline_run_storage.add_run(run)
+
             info.context.execution_manager.execute_pipeline(
                 info.context.repository_container, pipeline.get_dagster_pipeline(), run
             )
@@ -161,8 +160,6 @@ def get_pipeline_run_observable(info, run_id, after=None):
     if not run:
         raise Exception('No run with such id: {run_id}'.format(run_id=run_id))
 
-    pipeline_name = run.pipeline_name
-
     def get_observable(pipeline):
         pipeline_run_event_type = info.schema.type_named('PipelineRunEvent')
         return run.observable_after_cursor(after).map(
@@ -175,9 +172,7 @@ def get_pipeline_run_observable(info, run_id, after=None):
         )
 
     return (
-        _pipeline_or_error_from_container(
-            info, info.context.repository_container, ExecutionSelector(pipeline_name)
-        )
+        _pipeline_or_error_from_container(info, info.context.repository_container, run.selector)
         .chain(get_observable)
         .value_or_raise()
     )

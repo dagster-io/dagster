@@ -9,7 +9,11 @@ import time
 import gevent
 
 from dagster import check, ReentrantInfo, PipelineDefinition
-from dagster.core.execution import create_typed_environment, execute_reentrant_pipeline
+from dagster.core.execution import (
+    create_typed_environment,
+    execute_reentrant_pipeline,
+    get_subset_pipeline,
+)
 from dagster.core.events import PipelineEventRecord, EventType
 from dagster.core.types.evaluator import evaluate_config_value
 from dagster.core.system_config.types import construct_environment_config
@@ -85,6 +89,7 @@ class PipelineProcessStartedEvent(PipelineEventRecord):
 class SynchronousExecutionManager(PipelineExecutionManager):
     def execute_pipeline(self, repository_container, pipeline, pipeline_run):
         check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+        print('SynchronousExecutionManager')
         try:
             return execute_reentrant_pipeline(
                 pipeline,
@@ -213,10 +218,20 @@ class MultiprocessingExecutionManager(PipelineExecutionManager):
             gevent.sleep(0.1)
 
     def execute_pipeline(self, repository_container, pipeline, pipeline_run):
+        print('MultiprocessingExecutionManager')
+        # print(len(pipeline.get_dagster_pipeline().solids))
+        # print(len(run.execution_plan.steps))
+        # print(selector.solid_subset)
+
         message_queue = self._multiprocessing_context.Queue()
         p = self._multiprocessing_context.Process(
             target=execute_pipeline_through_queue,
-            args=(repository_container.repository_info, pipeline.name, pipeline_run.config),
+            args=(
+                repository_container.repository_info,
+                pipeline_run.selector.name,
+                pipeline_run.selector.solid_subset,
+                pipeline_run.config,
+            ),
             kwargs={'run_id': pipeline_run.run_id, 'message_queue': message_queue},
         )
 
@@ -235,7 +250,9 @@ class RunProcessWrapper(namedtuple('RunProcessWrapper', 'pipeline_run process me
         )
 
 
-def execute_pipeline_through_queue(repository_info, pipeline_name, config, run_id, message_queue):
+def execute_pipeline_through_queue(
+    repository_info, pipeline_name, pipeline_solid_subset, config, run_id, message_queue
+):
     """
     Execute pipeline using message queue as a transport
     """
@@ -256,6 +273,8 @@ def execute_pipeline_through_queue(repository_info, pipeline_name, config, run_i
         return
 
     pipeline = repository_container.repository.get_pipeline(pipeline_name)
+    pipeline = get_subset_pipeline(pipeline, pipeline_solid_subset)
+
     typed_environment = construct_environment_config(
         evaluate_config_value(pipeline.environment_type, config).value
     )
