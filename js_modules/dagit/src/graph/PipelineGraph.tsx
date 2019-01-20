@@ -3,7 +3,7 @@ import gql from "graphql-tag";
 import styled from "styled-components";
 import { Colors } from "@blueprintjs/core";
 import { LinkVertical as Link } from "@vx/shape";
-import PanAndZoom from "./PanAndZoom";
+import SVGViewport, { SVGViewportInteractor } from "./SVGViewport";
 import SolidNode from "./SolidNode";
 import {
   IPoint,
@@ -19,6 +19,7 @@ interface IPipelineGraphProps {
   layout: IFullPipelineLayout;
   selectedSolid?: PipelineGraphSolidFragment;
   highlightedSolids: Array<PipelineGraphSolidFragment>;
+  interactor?: SVGViewportInteractor;
   onClickSolid?: (solidName: string) => void;
   onDoubleClickSolid?: (solidName: string) => void;
   onClickBackground?: () => void;
@@ -127,8 +128,7 @@ class PipelineGraphContents extends React.PureComponent<
 }
 
 export default class PipelineGraph extends React.Component<
-  IPipelineGraphProps,
-  {}
+  IPipelineGraphProps
 > {
   static fragments = {
     PipelineGraphFragment: gql`
@@ -151,7 +151,7 @@ export default class PipelineGraph extends React.Component<
     `
   };
 
-  viewportEl: React.RefObject<PanAndZoom> = React.createRef();
+  viewportEl: React.RefObject<SVGViewport> = React.createRef();
 
   focusOnSolid = (solidName: string) => {
     const solidLayout = this.props.layout.solids[solidName];
@@ -223,12 +223,18 @@ export default class PipelineGraph extends React.Component<
   };
 
   render() {
-    const { layout, onClickBackground } = this.props;
+    const {
+      layout,
+      interactor,
+      onClickBackground,
+      onDoubleClickSolid
+    } = this.props;
 
     return (
-      <PanAndZoom
-        key={this.props.pipeline.name}
+      <SVGViewport
         ref={this.viewportEl}
+        key={this.props.pipeline.name}
+        interactor={interactor || SVGViewport.Interactors.PanAndZoom}
         graphWidth={layout.width}
         graphHeight={layout.height}
         onKeyDown={this.onKeyDown}
@@ -243,12 +249,12 @@ export default class PipelineGraph extends React.Component<
             <PipelineGraphContents
               layout={layout}
               minified={scale < 0.99}
-              onDoubleClickSolid={this.focusOnSolid}
+              onDoubleClickSolid={onDoubleClickSolid || this.focusOnSolid}
               {...this.props}
             />
           </SVGContainer>
         )}
-      </PanAndZoom>
+      </SVGViewport>
     );
   }
 }

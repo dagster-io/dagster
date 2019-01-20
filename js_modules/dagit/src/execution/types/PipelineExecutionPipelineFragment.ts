@@ -12,7 +12,7 @@ export interface PipelineExecutionPipelineFragment_environmentType {
 }
 
 export interface PipelineExecutionPipelineFragment_types_RegularType {
-  __typename: "RegularType";
+  __typename: "RegularType" | "EnumType";
   name: string;
   isSelector: boolean;
 }
@@ -85,11 +85,12 @@ export enum StepTag {
 }
 
 /**
- * 
+ * This type represents the fields necessary to identify a
+ *         pipeline or pipeline subset.
  */
-export interface PipelineExecutionParams {
-  pipelineName: string;
-  config?: any | null;
+export interface ExecutionSelector {
+  name: string;
+  solidSubset?: string[] | null;
 }
 
 //==============================================================

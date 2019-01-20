@@ -33,9 +33,10 @@ export const CONFIG_EDITOR_PIPELINE_FRAGMENT = gql`
 
 export const CONFIG_EDITOR_CHECK_CONFIG_QUERY = gql`
   query ConfigEditorCheckConfigQuery(
-    $executionParams: PipelineExecutionParams!
+    $pipeline: ExecutionSelector!
+    $config: PipelineConfig!
   ) {
-    isPipelineConfigValid(executionParams: $executionParams) {
+    isPipelineConfigValid(pipeline: $pipeline, config: $config) {
       __typename
 
       ... on PipelineConfigValidationInvalid {
@@ -97,8 +98,8 @@ export function createTypeConfig({
 
 export async function checkConfig(
   client: ApolloClient<any>,
-  pipelineName: string,
-  config: any
+  config: any,
+  pipeline: { name: string; solidSubset: string[] | null }
 ): Promise<ValidationResult> {
   if (config === null) {
     return { isValid: true };
@@ -110,12 +111,7 @@ export async function checkConfig(
     ConfigEditorCheckConfigQueryVariables
   >({
     query: CONFIG_EDITOR_CHECK_CONFIG_QUERY,
-    variables: {
-      executionParams: {
-        pipelineName: pipelineName,
-        config: config
-      }
-    },
+    variables: { pipeline, config },
     fetchPolicy: "no-cache"
   });
 
@@ -155,8 +151,8 @@ export function scaffoldConfig(pipeline: ConfigEditorPipelineFragment): string {
   const placeholders = {
     Path: "/path/to/file",
     String: "value",
-    Int: `0`,
-    Boolean: `false`
+    Int: 1,
+    Boolean: "false"
   };
 
   const configPlaceholderFor = (
@@ -203,6 +199,12 @@ export function scaffoldConfig(pipeline: ConfigEditorPipelineFragment): string {
       .join("");
     return `\n${preWhitespace} #${postWhitespace}`;
   });
+
+  // It's unclear why YAML.stringify returns an empty object when the provided
+  // input is empty, but we'd rather just display nothing in the editor.
+  if (str === "{}\n") {
+    str = "";
+  }
 
   return `
 # This config has been auto-generated with required fields.

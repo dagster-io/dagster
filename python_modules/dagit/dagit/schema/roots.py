@@ -1,5 +1,6 @@
 from dagit.schema import dauphin
 from dagit.schema import model
+from dagster.core.execution import ExecutionSelector
 from ..version import __version__
 
 
@@ -9,14 +10,10 @@ class DauphinQuery(dauphin.ObjectType):
 
     version = dauphin.NonNull(dauphin.String)
     pipelineOrError = dauphin.Field(
-        dauphin.NonNull('PipelineOrError'),
-        name=dauphin.NonNull(dauphin.String),
-        solidSubset=dauphin.Argument(dauphin.List(dauphin.NonNull(dauphin.String)), required=False),
+        dauphin.NonNull('PipelineOrError'), params=dauphin.NonNull('ExecutionSelector')
     )
     pipeline = dauphin.Field(
-        dauphin.NonNull('Pipeline'),
-        name=dauphin.NonNull(dauphin.String),
-        solidSubset=dauphin.Argument(dauphin.List(dauphin.NonNull(dauphin.String)), required=False),
+        dauphin.NonNull('Pipeline'), params=dauphin.NonNull('ExecutionSelector')
     )
     pipelinesOrError = dauphin.NonNull('PipelinesOrError')
     pipelines = dauphin.Field(dauphin.NonNull('PipelineConnection'))
@@ -32,22 +29,28 @@ class DauphinQuery(dauphin.ObjectType):
 
     isPipelineConfigValid = dauphin.Field(
         dauphin.NonNull('PipelineConfigValidationResult'),
-        args={'executionParams': dauphin.Argument(dauphin.NonNull('PipelineExecutionParams'))},
+        args={
+            'pipeline': dauphin.Argument(dauphin.NonNull('ExecutionSelector')),
+            'config': dauphin.Argument('PipelineConfig'),
+        },
     )
 
     executionPlan = dauphin.Field(
         dauphin.NonNull('ExecutionPlanResult'),
-        args={'executionParams': dauphin.Argument(dauphin.NonNull('PipelineExecutionParams'))},
+        args={
+            'pipeline': dauphin.Argument(dauphin.NonNull('ExecutionSelector')),
+            'config': dauphin.Argument('PipelineConfig'),
+        },
     )
 
     def resolve_version(self, _info):
         return __version__
 
     def resolve_pipelineOrError(self, info, **kwargs):
-        return model.get_pipeline(info, kwargs['name'], kwargs.get('solidSubset'))
+        return model.get_pipeline(info, kwargs['params'].to_selector())
 
     def resolve_pipeline(self, info, **kwargs):
-        return model.get_pipeline_or_raise(info, kwargs['name'], kwargs.get('solidSubset'))
+        return model.get_pipeline_or_raise(info, kwargs['params'].to_selector())
 
     def resolve_pipelinesOrError(self, info):
         return model.get_pipelines(info)
@@ -64,11 +67,11 @@ class DauphinQuery(dauphin.ObjectType):
     def resolve_pipelineRun(self, info, runId):
         return model.get_run(info, runId)
 
-    def resolve_isPipelineConfigValid(self, info, executionParams):
-        return model.validate_pipeline_config(info, **executionParams)
+    def resolve_isPipelineConfigValid(self, info, pipeline, config):
+        return model.validate_pipeline_config(info, pipeline.to_selector(), config)
 
-    def resolve_executionPlan(self, info, executionParams):
-        return model.get_execution_plan(info, **executionParams)
+    def resolve_executionPlan(self, info, pipeline, config):
+        return model.get_execution_plan(info, pipeline.to_selector(), config)
 
 
 class StartPipelineExecutionMutation(dauphin.Mutation):
@@ -76,12 +79,16 @@ class StartPipelineExecutionMutation(dauphin.Mutation):
         name = 'StartPipelineExecutionMutation'
 
     class Arguments:
-        executionParams = dauphin.NonNull('PipelineExecutionParams')
+        pipeline = dauphin.NonNull('ExecutionSelector')
+        config = dauphin.Argument('PipelineConfig')
 
     Output = dauphin.NonNull('StartPipelineExecutionResult')
 
-    def mutate(self, info, executionParams):
-        return model.start_pipeline_execution(info, **executionParams)
+    def mutate(self, info, **kwargs):
+        config = None
+        if 'config' in kwargs:
+            config = kwargs['config']
+        return model.start_pipeline_execution(info, kwargs['pipeline'].to_selector(), config)
 
 
 class DauphinMutation(dauphin.ObjectType):
@@ -105,17 +112,22 @@ class DauphinSubscription(dauphin.ObjectType):
         return model.get_pipeline_run_observable(info, runId, after)
 
 
-class DauphinPipelineExecutionParams(dauphin.InputObjectType):
-    class Meta:
-        name = 'PipelineExecutionParams'
-
-    pipelineName = dauphin.NonNull(dauphin.String)
-    config = dauphin.Field('PipelineConfig')
-
-
 class DauphinPipelineConfig(dauphin.GenericScalar, dauphin.Scalar):
     class Meta:
         name = 'PipelineConfig'
         description = '''This type is used when passing in a configuration object
         for pipeline configuration. This is any-typed in the GraphQL type system,
         but must conform to the constraints of the dagster config type system'''
+
+
+class DauphinExecutionSelector(dauphin.InputObjectType):
+    class Meta:
+        name = 'ExecutionSelector'
+        description = '''This type represents the fields necessary to identify a
+        pipeline or pipeline subset.'''
+
+    name = dauphin.NonNull(dauphin.String)
+    solidSubset = dauphin.List(dauphin.NonNull(dauphin.String))
+
+    def to_selector(self):
+        return ExecutionSelector(self.name, self.solidSubset)

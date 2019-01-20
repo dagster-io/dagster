@@ -67,8 +67,8 @@ export interface PipelineExplorerSolidFragment_definition_configDefinition_type_
 }
 
 export interface PipelineExplorerSolidFragment_definition_configDefinition_type_RegularType {
-  description: string | null;
   name: string;
+  description: string | null;
   isDict: boolean;
   isList: boolean;
   isNullable: boolean;
@@ -142,8 +142,8 @@ export interface PipelineExplorerSolidFragment_definition_configDefinition_type_
 }
 
 export interface PipelineExplorerSolidFragment_definition_configDefinition_type_CompositeType {
-  description: string | null;
   name: string;
+  description: string | null;
   isDict: boolean;
   isList: boolean;
   isNullable: boolean;
@@ -289,11 +289,12 @@ export enum StepTag {
 }
 
 /**
- * 
+ * This type represents the fields necessary to identify a
+ *         pipeline or pipeline subset.
  */
-export interface PipelineExecutionParams {
-  pipelineName: string;
-  config?: any | null;
+export interface ExecutionSelector {
+  name: string;
+  solidSubset?: string[] | null;
 }
 
 //==============================================================
