@@ -108,7 +108,7 @@ export default class PipelineExecution extends React.Component<
     this.props.onSaveSession(this.props.currentSession.key, { config });
   };
 
-  onSolidSubsetChange = (solidSubset: string[]) => {
+  onSolidSubsetChange = (solidSubset: string[] | null) => {
     const changes: IExecutionSessionChanges = { solidSubset };
     if (confirm(CONFIRM_RESET_TO_SCAFFOLD)) {
       changes.config = SESSION_CONFIG_PLACEHOLDER;
@@ -173,7 +173,7 @@ export default class PipelineExecution extends React.Component<
           <SessionSettingsFooter className="bp3-dark">
             <PipelineSolidSelector
               pipelineName={pipeline.name}
-              value={currentSession.solidSubset || []}
+              value={currentSession.solidSubset || null}
               onChange={this.onSolidSubsetChange}
             />
           </SessionSettingsFooter>

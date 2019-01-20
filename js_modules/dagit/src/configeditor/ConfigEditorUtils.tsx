@@ -99,7 +99,7 @@ export function createTypeConfig({
 export async function checkConfig(
   client: ApolloClient<any>,
   config: any,
-  pipeline: { name: string; solidSubset: string[] }
+  pipeline: { name: string; solidSubset: string[] | null }
 ): Promise<ValidationResult> {
   if (config === null) {
     return { isValid: true };

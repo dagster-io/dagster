@@ -18,8 +18,8 @@ import { IconNames } from "@blueprintjs/icons";
 
 interface IPipelineSolidSelectorProps {
   pipelineName: string;
-  value: string[];
-  onChange: (value: string[]) => void;
+  value: string[] | null;
+  onChange: (value: string[] | null) => void;
 }
 
 interface IPipelineSolidSelectorInnerProps extends IPipelineSolidSelectorProps {
@@ -40,10 +40,11 @@ interface IPipelineSolidSelectorState {
 }
 
 function subsetDescription(
-  solidSubset: string[],
+  solidSubset: string[] | null,
   pipeline: PipelineSolidSelectorQuery_pipeline
 ) {
   if (
+    !solidSubset ||
     solidSubset.length === 0 ||
     solidSubset.length === pipeline.solids.length
   ) {
@@ -155,12 +156,16 @@ class PipelineSolidSelector extends React.Component<
     });
   };
 
+  // Note: Having no elements highlighted means the entire pipeline executes.
+  // The equivalent solidSubset is `null`, not `[]`, so we do some conversion here.
+
   handleOpen = () => {
-    this.setState({ open: true, highlighted: this.props.value });
+    this.setState({ open: true, highlighted: this.props.value || [] });
   };
 
   handleSave = () => {
-    this.props.onChange(this.state.highlighted);
+    const { highlighted } = this.state;
+    this.props.onChange(highlighted.length > 0 ? highlighted : null);
     this.setState({ open: false, highlighted: [] });
   };
 

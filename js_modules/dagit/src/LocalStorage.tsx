@@ -30,13 +30,13 @@ export interface IExecutionSession {
   key: string;
   name: string;
   config: string;
-  solidSubset: string[];
+  solidSubset: string[] | null;
 }
 
 export interface IExecutionSessionChanges {
   name?: string;
   config?: string;
-  solidSubset?: string[];
+  solidSubset?: string[] | null;
 }
 
 // When we create a new session, we insert a placeholder config that is swapped
@@ -48,7 +48,7 @@ const DEFAULT_SESSION: IExecutionSession = {
   key: "default",
   name: "Untitled",
   config: SESSION_CONFIG_PLACEHOLDER,
-  solidSubset: []
+  solidSubset: null
 };
 
 export function applySelectSession(data: IStorageData, key: string) {
