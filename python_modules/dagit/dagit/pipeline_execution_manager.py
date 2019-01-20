@@ -89,7 +89,6 @@ class PipelineProcessStartedEvent(PipelineEventRecord):
 class SynchronousExecutionManager(PipelineExecutionManager):
     def execute_pipeline(self, repository_container, pipeline, pipeline_run):
         check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-        print('SynchronousExecutionManager')
         try:
             return execute_reentrant_pipeline(
                 pipeline,
@@ -218,11 +217,6 @@ class MultiprocessingExecutionManager(PipelineExecutionManager):
             gevent.sleep(0.1)
 
     def execute_pipeline(self, repository_container, pipeline, pipeline_run):
-        print('MultiprocessingExecutionManager')
-        # print(len(pipeline.get_dagster_pipeline().solids))
-        # print(len(run.execution_plan.steps))
-        # print(selector.solid_subset)
-
         message_queue = self._multiprocessing_context.Queue()
         p = self._multiprocessing_context.Process(
             target=execute_pipeline_through_queue,

@@ -620,7 +620,7 @@ def execute_reentrant_pipeline(pipeline, typed_environment, throw_on_error, reen
 def get_subset_pipeline(pipeline, solid_subset):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
-    return pipeline if not solid_subset else build_sub_pipeline(pipeline, solid_subset)
+    return pipeline if solid_subset is None else build_sub_pipeline(pipeline, solid_subset)
 
 
 def create_typed_environment(pipeline, environment=None):
@@ -638,4 +638,7 @@ def create_typed_environment(pipeline, environment=None):
 class ExecutionSelector(object):
     def __init__(self, name, solid_subset=None):
         self.name = check.str_param(name, 'name')
-        self.solid_subset = check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
+        if solid_subset is None:
+            self.solid_subset = None
+        else:
+            self.solid_subset = check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
