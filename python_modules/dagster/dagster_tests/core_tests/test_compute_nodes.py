@@ -14,12 +14,11 @@ from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.execution import create_execution_plan
 
 from dagster.core.execution_plan.create import (
-    ExecutionPlanInfo,
     create_execution_plan_core,
     create_execution_plan_from_steps,
 )
 
-from dagster.core.execution_plan.objects import ExecutionStep, StepKind, StepBuilderState
+from dagster.core.execution_plan.objects import ExecutionStep, StepKind, CreateExecutionPlanInfo
 
 from dagster.core.execution_plan.simple_engine import execute_step
 
@@ -45,7 +44,7 @@ def test_compute_noop_node_core():
     environment = EnvironmentConfig()
 
     plan = create_execution_plan_core(
-        ExecutionPlanInfo(create_test_runtime_execution_context(), pipeline, environment),
+        CreateExecutionPlanInfo(create_test_runtime_execution_context(), pipeline, environment),
         ExecutionMetadata(),
     )
 
@@ -74,6 +73,7 @@ def test_duplicate_steps():
 
     with pytest.raises(check.CheckError):
         create_execution_plan_from_steps(
+            'kdjfkjdkfe',
             [
                 ExecutionStep(
                     'same_name',
@@ -82,12 +82,7 @@ def test_duplicate_steps():
                     lambda *args, **kwargs: None,
                     StepKind.TRANSFORM,
                     foo,
-                    StepBuilderState(
-                        pipeline_name='dummy',
-                        initial_tags=dict(
-                            pipeline='dummy', solid='dummy', solid_definition='dummy'
-                        ),
-                    ).get_tags(),
+                    {'pipeline': 'dummy', 'solid': 'dummy', 'solid_definition': 'dummy'},
                 ),
                 ExecutionStep(
                     'same_name',
@@ -96,12 +91,7 @@ def test_duplicate_steps():
                     lambda *args, **kwargs: None,
                     StepKind.TRANSFORM,
                     foo,
-                    StepBuilderState(
-                        pipeline_name='dummy',
-                        initial_tags=dict(
-                            pipeline='dummy', solid='dummy', solid_definition='dummy'
-                        ),
-                    ).get_tags(),
+                    {'pipeline': 'dummy', 'solid': 'dummy', 'solid_definition': 'dummy'},
                 ),
-            ]
+            ],
         )

@@ -4,18 +4,18 @@ from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution_context import RuntimeExecutionContext
 
 from .objects import (
-    ExecutionPlanInfo,
+    CreateExecutionPlanInfo,
     ExecutionStep,
-    StepBuilderState,
+    PlanBuilder,
     StepInput,
     StepKind,
     StepOutput,
 )
 
 
-def create_transform_step(execution_info, state, solid, step_inputs, conf):
-    check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
-    check.inst_param(state, 'state', StepBuilderState)
+def create_transform_step(execution_info, plan_builder, solid, step_inputs, conf):
+    check.inst_param(execution_info, 'execution_info', CreateExecutionPlanInfo)
+    check.inst_param(plan_builder, 'state', PlanBuilder)
     check.inst_param(solid, 'solid', Solid)
     check.list_param(step_inputs, 'step_inputs', of_type=StepInput)
 
@@ -31,7 +31,7 @@ def create_transform_step(execution_info, state, solid, step_inputs, conf):
         ),
         kind=StepKind.TRANSFORM,
         solid=solid,
-        tags=state.get_tags(),
+        tags=plan_builder.get_tags(),
     )
 
 
@@ -74,7 +74,7 @@ def _execute_core_transform(execution_info, context, step, conf, inputs):
     Execute the user-specified transform for the solid. Wrap in an error boundary and do
     all relevant logging and metrics tracking
     '''
-    check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
+    check.inst_param(execution_info, 'execution_info', CreateExecutionPlanInfo)
     check.inst_param(context, 'context', RuntimeExecutionContext)
     check.inst_param(step, 'step', ExecutionStep)
     check.dict_param(inputs, 'inputs', key_type=str)

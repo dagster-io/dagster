@@ -9,7 +9,7 @@ from .objects import (
     StepOutput,
     StepOutputHandle,
     StepKind,
-    StepBuilderState,
+    PlanBuilder,
 )
 
 JOIN_OUTPUT = 'join_output'
@@ -19,8 +19,8 @@ def __join_lambda(_context, _step, inputs):
     yield Result(output_name=JOIN_OUTPUT, value=list(inputs.values())[0])
 
 
-def create_join_step(state, solid, step_key, prev_steps, prev_output_name):
-    check.inst_param(state, 'state', StepBuilderState)
+def create_join_step(plan_builder, solid, step_key, prev_steps, prev_output_name):
+    check.inst_param(plan_builder, 'plan_builder', PlanBuilder)
     check.inst_param(solid, 'solid', Solid)
     check.str_param(step_key, 'step_key')
     check.list_param(prev_steps, 'prev_steps', of_type=ExecutionStep)
@@ -37,7 +37,7 @@ def create_join_step(state, solid, step_key, prev_steps, prev_output_name):
         else:
             check.invariant(seen_runtime_type == prev_step_output.runtime_type)
 
-        output_handle = StepOutputHandle(prev_step, prev_output_name)
+        output_handle = StepOutputHandle.create(prev_step, prev_output_name)
 
         step_inputs.append(StepInput(prev_step.key, prev_step_output.runtime_type, output_handle))
 
@@ -48,11 +48,13 @@ def create_join_step(state, solid, step_key, prev_steps, prev_output_name):
         compute_fn=__join_lambda,
         kind=StepKind.JOIN,
         solid=solid,
-        tags=state.get_tags(),
+        tags=plan_builder.get_tags(),
     )
 
 
-def create_joining_subplan(state, solid, join_step_key, parallel_steps, parallel_step_output):
+def create_joining_value_subplan(
+    plan_builder, solid, join_step_key, parallel_steps, parallel_step_output
+):
     '''
     This captures a common pattern of fanning out a single value to N steps,
     where each step has similar structure. The strict requirement here is that each step
@@ -65,7 +67,7 @@ def create_joining_subplan(state, solid, join_step_key, parallel_steps, parallel
     to be seen if there should be any work or verification done in this step, especially
     in multi-process environments that require persistence between steps.
     '''
-    check.inst_param(state, 'state', StepBuilderState)
+    check.inst_param(plan_builder, 'plan_builder', PlanBuilder)
     check.inst_param(solid, 'solid', Solid)
     check.str_param(join_step_key, 'join_step_key')
     check.list_param(parallel_steps, 'parallel_steps', of_type=ExecutionStep)
@@ -74,19 +76,21 @@ def create_joining_subplan(state, solid, join_step_key, parallel_steps, parallel
     for parallel_step in parallel_steps:
         check.invariant(parallel_step.has_step_output(parallel_step_output))
 
-    join_step = create_join_step(state, solid, join_step_key, parallel_steps, parallel_step_output)
+    join_step = create_join_step(
+        plan_builder, solid, join_step_key, parallel_steps, parallel_step_output
+    )
 
     output_name = join_step.step_outputs[0].name
     return ExecutionValueSubplan(
-        parallel_steps + [join_step], StepOutputHandle(join_step, output_name)
+        parallel_steps + [join_step], StepOutputHandle.create(join_step, output_name)
     )
 
 
 VALUE_OUTPUT = 'value_output'
 
 
-def create_value_thunk_step(state, solid, runtime_type, step_key, value):
-    check.inst_param(state, 'state', StepBuilderState)
+def create_value_thunk_step(plan_builder, solid, runtime_type, step_key, value):
+    check.inst_param(plan_builder, 'plan_builder', PlanBuilder)
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(runtime_type, 'runtime_type', RuntimeType)
     check.str_param(step_key, 'step_key')
@@ -94,7 +98,7 @@ def create_value_thunk_step(state, solid, runtime_type, step_key, value):
     def _fn(_context, _step, _inputs):
         yield Result(value, VALUE_OUTPUT)
 
-    return StepOutputHandle(
+    return StepOutputHandle.create(
         ExecutionStep(
             key=step_key,
             step_inputs=[],
@@ -102,7 +106,7 @@ def create_value_thunk_step(state, solid, runtime_type, step_key, value):
             compute_fn=_fn,
             kind=StepKind.VALUE_THUNK,
             solid=solid,
-            tags=state.get_tags(),
+            tags=plan_builder.get_tags(),
         ),
         VALUE_OUTPUT,
     )

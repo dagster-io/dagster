@@ -35,7 +35,6 @@ from .definitions import (
     PipelineDefinition,
     Solid,
     SolidInstance,
-    solids_in_topological_order,
 )
 
 from .definitions.utils import check_opt_two_dim_str_dict
@@ -58,12 +57,11 @@ from .events import construct_event_logger
 from .execution_plan.create import create_execution_plan_core, create_subplan
 
 from .execution_plan.objects import (
+    CreateExecutionPlanInfo,
     ExecutionPlan,
-    ExecutionPlanInfo,
     ExecutionPlanSubsetInfo,
-    StepBuilderState,
-    StepResult,
     StepKind,
+    StepResult,
 )
 
 from .execution_plan.simple_engine import execute_plan_core
@@ -260,7 +258,7 @@ def create_execution_plan_with_typed_environment(pipeline, typed_environment, ex
 
     with yield_context(pipeline, typed_environment, execution_metadata) as context:
         return create_execution_plan_core(
-            ExecutionPlanInfo(context, pipeline, typed_environment), execution_metadata
+            CreateExecutionPlanInfo(context, pipeline, typed_environment), execution_metadata
         )
 
 
@@ -440,7 +438,7 @@ def _do_iterate_pipeline(
     context.events.pipeline_start()
 
     execution_plan = create_execution_plan_core(
-        ExecutionPlanInfo(context, pipeline, typed_environment), execution_metadata
+        CreateExecutionPlanInfo(context, pipeline, typed_environment), execution_metadata
     )
 
     steps = execution_plan.topological_steps()
@@ -522,11 +520,9 @@ def _process_step_results(context, pipeline, step_results):
     for step_result in step_results:
         step_results_by_solid_name[step_result.step.solid.name].append(step_result)
 
-    for topo_solid in solids_in_topological_order(pipeline):
-        if topo_solid.name in step_results_by_solid_name:
-            yield SolidExecutionResult.from_results(
-                context, step_results_by_solid_name[topo_solid.name]
-            )
+    for solid in pipeline.solids:
+        if solid.name in step_results_by_solid_name:
+            yield SolidExecutionResult.from_results(context, step_results_by_solid_name[solid.name])
 
 
 class PipelineConfigEvaluationError(Exception):
@@ -577,7 +573,7 @@ def execute_externalized_plan(
     with yield_context(pipeline, typed_environment, execution_metadata) as context:
 
         execution_plan = create_execution_plan_core(
-            ExecutionPlanInfo(context, pipeline, typed_environment),
+            CreateExecutionPlanInfo(context, pipeline, typed_environment),
             execution_metadata=execution_metadata,
         )
 
@@ -731,8 +727,9 @@ def _do_execute_plan(context, pipeline, execution_plan, typed_environment, subse
 
     plan_to_execute = (
         create_subplan(
-            ExecutionPlanInfo(context=context, pipeline=pipeline, environment=typed_environment),
-            StepBuilderState(pipeline.name),
+            CreateExecutionPlanInfo(
+                context=context, pipeline=pipeline, environment=typed_environment
+            ),
             execution_plan,
             subset_info,
         )
@@ -798,7 +795,7 @@ def build_sub_pipeline(pipeline_def, solid_names):
 
     def _out_handle_of_inp(input_handle):
         if pipeline_def.dependency_structure.has_dep(input_handle):
-            output_handle = pipeline_def.dependency_structure.get_dep(input_handle)
+            output_handle = pipeline_def.dependency_structure.get_dep_output_handle(input_handle)
             if output_handle.solid.name in solid_name_set:
                 return output_handle
         return None

@@ -17,9 +17,7 @@ from dagster import (
 
 from dagster.core.types import Nullable, List, String
 
-from dagster.core.definitions import Solid, solids_in_topological_order
-
-from dagster.core.definitions.dependency import DependencyStructure
+from dagster.core.definitions.dependency import DependencyStructure, Solid
 
 from dagster.core.definitions.pipeline import _create_adjacency_lists
 
@@ -179,13 +177,7 @@ def create_diamond_pipeline():
 
 
 def test_diamond_toposort():
-    assert [s.name for s in solids_in_topological_order(create_diamond_pipeline())] == [
-        'A_source',
-        'A',
-        'B',
-        'C',
-        'D',
-    ]
+    assert [s.name for s in create_diamond_pipeline().solids] == ['A_source', 'A', 'B', 'C', 'D']
 
 
 def input_set(name):

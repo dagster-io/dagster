@@ -5,16 +5,16 @@ from dagster.core.definitions import Result, Solid, OutputDefinition
 from dagster.core.types.runtime import RuntimeType
 
 from .objects import (
-    ExecutionPlanInfo,
+    CreateExecutionPlanInfo,
     ExecutionStep,
     ExecutionValueSubplan,
-    StepBuilderState,
+    PlanBuilder,
     StepInput,
     StepOutput,
     StepKind,
 )
 
-from .utility import create_joining_subplan
+from .utility import create_joining_value_subplan
 
 MATERIALIZATION_THUNK_INPUT = 'materialization_thunk_input'
 MATERIALIZATION_THUNK_OUTPUT = 'materialization_thunk_output'
@@ -41,9 +41,9 @@ def configs_for_output(solid, solid_config, output_def):
             yield output_spec
 
 
-def decorate_with_output_materializations(execution_info, state, solid, output_def, subplan):
-    check.inst_param(execution_info, 'execution_info', ExecutionPlanInfo)
-    check.inst_param(state, 'state', StepBuilderState)
+def decorate_with_output_materializations(execution_info, plan_builder, solid, output_def, subplan):
+    check.inst_param(execution_info, 'execution_info', CreateExecutionPlanInfo)
+    check.inst_param(plan_builder, 'plan_builder', PlanBuilder)
     check.inst_param(solid, 'solid', Solid)
     check.inst_param(output_def, 'output_def', OutputDefinition)
     check.inst_param(subplan, 'subplan', ExecutionValueSubplan)
@@ -76,12 +76,12 @@ def decorate_with_output_materializations(execution_info, state, solid, output_d
                 kind=StepKind.MATERIALIZATION_THUNK,
                 solid=solid,
                 compute_fn=_create_materialization_lambda(output_def.runtime_type, output_spec),
-                tags=state.get_tags(),
+                tags=plan_builder.get_tags(),
             )
         )
 
-    return create_joining_subplan(
-        state,
+    return create_joining_value_subplan(
+        plan_builder,
         solid,
         '{solid}.materialization.output.{output}.join'.format(
             solid=solid.name, output=output_def.name

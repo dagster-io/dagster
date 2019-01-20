@@ -813,7 +813,7 @@ snapshots['test_build_all_docs 4'] = '''
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="apidocs/definitions.html#dagster.SolidInstance">SolidInstance (class in dagster)</a>
 </li>
-      <li><a href="apidocs/definitions.html#dagster.PipelineDefinition.solids">solids (dagster.PipelineDefinition attribute)</a>, <a href="apidocs/definitions.html#dagster.PipelineDefinition.solids">[1]</a>
+      <li><a href="apidocs/definitions.html#dagster.PipelineDefinition.solids">solids (dagster.PipelineDefinition attribute)</a>
 </li>
       <li><a href="apidocs/types.html#dagster.String">String (in module dagster)</a>
 </li>
@@ -19654,22 +19654,6 @@ is unnamed the method with return “&lt;&lt;unnamed&gt;&gt;”.</p>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">SolidDefinition with correct name.</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#dagster.SolidDefinition" title="dagster.SolidDefinition">SolidDefinition</a></td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="attribute">
-<dt>
-<code class="descname">solids</code></dt>
-<dd><p>Return the solids in the pipeline.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">List of solids.</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">List[<a class="reference internal" href="#dagster.SolidDefinition" title="dagster.SolidDefinition">SolidDefinition</a>]</td>
 </tr>
 </tbody>
 </table>

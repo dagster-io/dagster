@@ -14,6 +14,7 @@ import dagster.core.types as types
 from dagster import (
     DependencyDefinition,
     ExecutionContext,
+    ExecutionMetadata,
     InputDefinition,
     lambda_solid,
     PipelineContextDefinition,
@@ -23,10 +24,10 @@ from dagster import (
 )
 from dagster.core.execution import (
     create_execution_plan_core,
-    ExecutionPlanInfo,
     create_typed_environment,
     yield_context,
 )
+from dagster.core.execution_plan import CreateExecutionPlanInfo
 from dagma import execute_plan, define_dagma_resource
 
 
@@ -99,7 +100,7 @@ def run_test_pipeline(pipeline):
     execution_metadata = ExecutionMetadata(run_id=str(uuid.uuid4()))
     with yield_context(pipeline, typed_environment, execution_metadata) as context:
         execution_plan = create_execution_plan_core(
-            ExecutionPlanInfo(context, pipeline, typed_environment)
+            CreateExecutionPlanInfo(context, pipeline, typed_environment), ExecutionMetadata()
         )
         return execute_plan(context, execution_plan)
 
