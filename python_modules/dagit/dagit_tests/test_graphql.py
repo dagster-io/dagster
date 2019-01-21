@@ -397,7 +397,7 @@ def sum_sq_solid(sum_df):
 PIPELINE_OR_ERROR_SUBSET_QUERY = '''
 query PipelineQuery($name: String! $solidSubset: [String!])
 {
-    pipelineOrError(name: $name, solidSubset: $solidSubset) {
+    pipelineOrError(params: { name: $name, solidSubset: $solidSubset }) {
         __typename
         ... on Pipeline {
             name
@@ -429,7 +429,7 @@ query PipelineQuery($name: String! $solidSubset: [String!])
 PIPELINE_SUBSET_QUERY = '''
 query PipelineQuery($name: String! $solidSubset: [String!])
 {
-    pipeline(name: $name, solidSubset: $solidSubset) {
+    pipeline(params: { name: $name, solidSubset: $solidSubset }) {
         name
         solids {
             name
@@ -488,7 +488,7 @@ def test_pandas_hello_world_pipeline_or_error_subset_wrong_solid_name():
 
 def test_enum_query():
     ENUM_QUERY = '''{
-  pipeline(name:"pipeline_with_enum_config"){
+  pipeline(params: { name:"pipeline_with_enum_config" }){
     name
     types {
       __typename
@@ -627,9 +627,9 @@ def define_more_complicated_config():
 
 
 CONFIG_VALIDATION_QUERY = '''
-query PipelineQuery($executionParams: PipelineExecutionParams!)
+query PipelineQuery($config: PipelineConfig, $pipeline: ExecutionSelector!)
 {
-    isPipelineConfigValid(executionParams: $executionParams) {
+    isPipelineConfigValid(config: $config, pipeline: $pipeline) {
         __typename
         ... on PipelineConfigValidationValid {
             pipeline { name }
@@ -683,7 +683,7 @@ def execute_config_graphql(pipeline_name, env_config):
     return execute_dagster_graphql(
         define_context(),
         CONFIG_VALIDATION_QUERY,
-        {'executionParams': {'pipelineName': pipeline_name, 'config': env_config}},
+        {'config': env_config, 'pipeline': {'name': pipeline_name}},
     )
 
 
@@ -882,7 +882,7 @@ fragment innerInfo on Type {
 }
 
 {
-  pipeline(name: "more_complicated_nested_config") { 
+  pipeline(params: { name: "more_complicated_nested_config" }) { 
     name
     solids {
       name
@@ -933,7 +933,7 @@ def define_context_config_pipeline():
 
 RESOURCE_QUERY = '''
 {
-  pipeline(name: "context_config_pipeline") {
+  pipeline(params: { name: "context_config_pipeline" }) {
     contexts {
       name
       resources {
@@ -1222,7 +1222,7 @@ def test_pipeline_by_name():
         define_context(),
         '''
     {
-        pipeline(name: "pandas_hello_world_two") {
+        pipeline(params: {name: "pandas_hello_world_two"}) {
             name
         }
     }''',
@@ -1238,7 +1238,7 @@ def test_pipeline_or_error_by_name():
         define_context(),
         '''
     {
-        pipelineOrError(name: "pandas_hello_world_two") {
+        pipelineOrError(params: { name: "pandas_hello_world_two" }) {
           ... on Pipeline {
              name
            }
@@ -1252,8 +1252,8 @@ def test_pipeline_or_error_by_name():
 
 
 EXECUTION_PLAN_QUERY = '''
-query PipelineQuery($executionParams: PipelineExecutionParams!) {
-  executionPlan(executionParams: $executionParams) {
+query PipelineQuery($config: PipelineConfig, $pipeline: ExecutionSelector!) {
+  executionPlan(config: $config, pipeline: $pipeline) {
     __typename
     ... on ExecutionPlan {
       pipeline { name }
@@ -1292,7 +1292,7 @@ def test_query_execution_plan_errors():
     result = execute_dagster_graphql(
         define_context(),
         EXECUTION_PLAN_QUERY,
-        {'executionParams': {'pipelineName': 'pandas_hello_world', 'config': 2334893}},
+        {'config': 2334893, 'pipeline': {'name': 'pandas_hello_world'}},
     )
 
     assert not result.errors
@@ -1300,9 +1300,7 @@ def test_query_execution_plan_errors():
     assert result.data['executionPlan']['__typename'] == 'PipelineConfigValidationInvalid'
 
     result = execute_dagster_graphql(
-        define_context(),
-        EXECUTION_PLAN_QUERY,
-        {'executionParams': {'pipelineName': 'nope', 'config': 2334893}},
+        define_context(), EXECUTION_PLAN_QUERY, {'config': 2334893, 'pipeline': {'name': 'nope'}}
     )
 
     assert not result.errors
@@ -1315,12 +1313,7 @@ def test_query_execution_plan_snapshot(snapshot):
     result = execute_dagster_graphql(
         define_context(),
         EXECUTION_PLAN_QUERY,
-        {
-            'executionParams': {
-                'pipelineName': 'pandas_hello_world',
-                'config': pandas_hello_world_solids_config(),
-            }
-        },
+        {'config': pandas_hello_world_solids_config(), 'pipeline': {'name': 'pandas_hello_world'}},
     )
 
     assert not result.errors
@@ -1333,12 +1326,7 @@ def test_query_execution_plan():
     result = execute_dagster_graphql(
         define_context(),
         EXECUTION_PLAN_QUERY,
-        {
-            'executionParams': {
-                'pipelineName': 'pandas_hello_world',
-                'config': pandas_hello_world_solids_config(),
-            }
-        },
+        {'config': pandas_hello_world_solids_config(), 'pipeline': {'name': 'pandas_hello_world'}},
     )
 
     if result.errors:
@@ -1437,9 +1425,9 @@ def test_single_type_query():
 
 
 MUTATION_QUERY = '''
-mutation ($executionParams: PipelineExecutionParams!) {
+mutation ($config: PipelineConfig, $pipeline: ExecutionSelector!) {
     startPipelineExecution(
-        executionParams: $executionParams
+        config: $config, pipeline: $pipeline
     ) {
         __typename
         ... on StartPipelineExecutionSuccess {
@@ -1465,10 +1453,8 @@ def test_basic_start_pipeline_execution():
         define_context(),
         MUTATION_QUERY,
         variables={
-            'executionParams': {
-                'pipelineName': 'pandas_hello_world',
-                'config': pandas_hello_world_solids_config(),
-            }
+            'pipeline': {'name': 'pandas_hello_world'},
+            'config': pandas_hello_world_solids_config(),
         },
     )
 
@@ -1489,12 +1475,8 @@ def test_basic_start_pipeline_execution_config_failure():
         define_context(),
         MUTATION_QUERY,
         variables={
-            'executionParams': {
-                'pipelineName': 'pandas_hello_world',
-                'config': {
-                    'solids': {'sum_solid': {'inputs': {'num': {'csv': {'path': 384938439}}}}}
-                },
-            }
+            'pipeline': {'name': 'pandas_hello_world'},
+            'config': {'solids': {'sum_solid': {'inputs': {'num': {'csv': {'path': 384938439}}}}}},
         },
     )
 
@@ -1508,12 +1490,8 @@ def test_basis_start_pipeline_not_found_error():
         define_context(),
         MUTATION_QUERY,
         variables={
-            'executionParams': {
-                'pipelineName': 'sjkdfkdjkf',
-                'config': {
-                    'solids': {'sum_solid': {'inputs': {'num': {'csv': {'path': 'test.csv'}}}}}
-                },
-            }
+            'pipeline': {'name': 'sjkdfkdjkf'},
+            'config': {'solids': {'sum_solid': {'inputs': {'num': {'csv': {'path': 'test.csv'}}}}}},
         },
     )
 
@@ -1535,16 +1513,14 @@ def test_basic_start_pipeline_execution_and_subscribe():
         context,
         MUTATION_QUERY,
         variables={
-            'executionParams': {
-                'pipelineName': 'pandas_hello_world',
-                'config': {
-                    'solids': {
-                        'sum_solid': {
-                            'inputs': {'num': {'csv': {'path': script_relative_path('num.csv')}}}
-                        }
+            'pipeline': {'name': 'pandas_hello_world'},
+            'config': {
+                'solids': {
+                    'sum_solid': {
+                        'inputs': {'num': {'csv': {'path': script_relative_path('num.csv')}}}
                     }
-                },
-            }
+                }
+            },
         },
     )
 
@@ -1583,7 +1559,7 @@ def test_basic_sync_execution_no_config():
     result = execute_dagster_graphql(
         context,
         SYNC_MUTATION_QUERY,
-        variables={'executionParams': {'pipelineName': 'no_config_pipeline', 'config': None}},
+        variables={'pipeline': {'name': 'no_config_pipeline'}, 'config': None},
     )
 
     assert not result.errors
@@ -1601,10 +1577,8 @@ def test_basic_sync_execution():
         context,
         SYNC_MUTATION_QUERY,
         variables={
-            'executionParams': {
-                'pipelineName': 'pandas_hello_world',
-                'config': pandas_hello_world_solids_config(),
-            }
+            'config': pandas_hello_world_solids_config(),
+            'pipeline': {'name': 'pandas_hello_world'},
         },
     )
 
@@ -1632,10 +1606,8 @@ def has_event_of_type(logs, message_type):
 
 
 SYNC_MUTATION_QUERY = '''
-mutation ($executionParams: PipelineExecutionParams!) {
-    startPipelineExecution(
-        executionParams: $executionParams
-    ) {
+mutation ($pipeline: ExecutionSelector!, $config: PipelineConfig) {
+    startPipelineExecution(pipeline: $pipeline, config: $config) {
         __typename
         ... on StartPipelineExecutionSuccess {
             run {

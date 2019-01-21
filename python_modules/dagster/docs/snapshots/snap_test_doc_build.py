@@ -3281,7 +3281,7 @@ And then run the pipeline:
 .. code-block:: console
 
     $ dagster pipeline execute -f configuration_schemas.py \\
-    -n define_demo_configuration_schema_pipeline -e configuration_schemas_error_2.yml
+    -n define_demo_configuration_schema_pipeline -e configuration_schemas_wrong_field.yml
     ...
     dagster.core.execution.PipelineConfigEvaluationError: Pipeline "demo_configuration_schema" config errors:
         Error 1: Undefined field "multiply_the_word_with_typed_config" at path root:solids
@@ -4008,7 +4008,7 @@ context to manage pipelines' access to resources like the file system, databases
 In general, interactions with features of the external environment like these should be modeled
 as resources.
 
-Let's imagine that we are using a key value offered by a cloud service that has a python API.
+Let's imagine that we are using a key value store offered by a cloud service that has a python API.
 We are going to record the results of computations in that key value store.
 
 We are going to model this key value store as a resource.
@@ -22520,7 +22520,7 @@ actionable error message before the pipeline is ever executed.</p>
 </div>
 <p>And then run the pipeline:</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> dagster pipeline execute -f configuration_schemas.py <span class="se">\\</span>
--n define_demo_configuration_schema_pipeline -e configuration_schemas_error_2.yml
+-n define_demo_configuration_schema_pipeline -e configuration_schemas_wrong_field.yml
 <span class="go">...</span>
 <span class="go">dagster.core.execution.PipelineConfigEvaluationError: Pipeline &quot;demo_configuration_schema&quot; config errors:</span>
 <span class="go">    Error 1: Undefined field &quot;multiply_the_word_with_typed_config&quot; at path root:solids</span>
@@ -24947,7 +24947,7 @@ snapshots['test_build_all_docs 68'] = '''
 context to manage pipelines’ access to resources like the file system, databases, or cloud services.
 In general, interactions with features of the external environment like these should be modeled
 as resources.</p>
-<p>Let’s imagine that we are using a key value offered by a cloud service that has a python API.
+<p>Let’s imagine that we are using a key value store offered by a cloud service that has a python API.
 We are going to record the results of computations in that key value store.</p>
 <p>We are going to model this key value store as a resource.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># from bigco import PublicCloudConn, set_value_in_cloud_store</span>

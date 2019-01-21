@@ -46,7 +46,7 @@ export default class TypeListContainer extends React.Component<
 
 export const TYPE_LIST_CONTAINER_QUERY = gql`
   query TypeListContainerQuery($pipelineName: String!) {
-    pipelineOrError(name: $pipelineName) {
+    pipelineOrError(params: { name: $pipelineName }) {
       __typename
       ... on Pipeline {
         types {

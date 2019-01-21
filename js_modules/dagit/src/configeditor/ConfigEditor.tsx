@@ -116,6 +116,7 @@ export default class ConfigEditor extends React.Component<IConfigEditorProps> {
 
 injectGlobal`
   .react-codemirror2 {
+    overflow-y: scroll;
     && {
       width: 100%;
       flex: 1;

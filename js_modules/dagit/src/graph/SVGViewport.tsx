@@ -2,14 +2,24 @@ import * as React from "react";
 import animate from "amator";
 import { Colors } from "@blueprintjs/core";
 
-interface PanAndZoomProps {
-  graphWidth: number;
-  graphHeight: number;
-  onKeyDown: (event: React.KeyboardEvent<HTMLDivElement>) => void;
-  children: (state: PanAndZoomState) => React.ReactNode;
+export interface SVGViewportInteractor {
+  onMouseDown(
+    viewport: SVGViewport,
+    event: React.MouseEvent<HTMLDivElement>
+  ): void;
+  onWheel(viewport: SVGViewport, event: React.MouseEvent<HTMLDivElement>): void;
+  render?(props: SVGViewportProps): React.ReactElement<any> | null;
 }
 
-interface PanAndZoomState {
+interface SVGViewportProps {
+  graphWidth: number;
+  graphHeight: number;
+  interactor: SVGViewportInteractor;
+  onKeyDown: (event: React.KeyboardEvent<HTMLDivElement>) => void;
+  children: (state: SVGViewportState) => React.ReactNode;
+}
+
+interface SVGViewportState {
   x: number;
   y: number;
   scale: number;
@@ -24,10 +34,65 @@ interface Point {
 const DETAIL_ZOOM = 1;
 const MAX_OVERVIEW_ZOOM = 0.39;
 
-export default class PanAndZoom extends React.Component<
-  PanAndZoomProps,
-  PanAndZoomState
+const PanAndZoomInteractor: SVGViewportInteractor = {
+  onMouseDown(viewport: SVGViewport, event: React.MouseEvent<HTMLDivElement>) {
+    if (viewport._animation) {
+      viewport._animation.cancel();
+    }
+
+    const start = viewport.getOffsetXY(event);
+    let lastX: number = start.x;
+    let lastY: number = start.y;
+
+    const onMove = (e: MouseEvent) => {
+      const offset = viewport.getOffsetXY(e);
+      const delta = { x: offset.x - lastX, y: offset.y - lastY };
+      viewport.setState({
+        x: viewport.state.x + delta.x,
+        y: viewport.state.y + delta.y
+      });
+      lastX = offset.x;
+      lastY = offset.y;
+    };
+
+    const onUp = () => {
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    };
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+    event.stopPropagation();
+  },
+
+  onWheel(viewport: SVGViewport, event: React.WheelEvent<HTMLDivElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    // Because of inertial scrolling on macOS, we receive wheel events for ~1000ms
+    // after we trigger the zoom and this can cause a second zoom.
+    const wheelWasIdle = Date.now() - viewport._lastWheelTime > 2000;
+    const wheelChangedDir = viewport._lastWheelDir !== Math.sign(event.deltaY);
+    if (wheelWasIdle || wheelChangedDir) {
+      if (event.deltaY > 0) {
+        viewport.onZoomAndCenter(event);
+      } else {
+        viewport.autocenter(true);
+      }
+    }
+
+    viewport._lastWheelTime = Date.now();
+    viewport._lastWheelDir = Math.sign(event.deltaY);
+  }
+};
+
+export default class SVGViewport extends React.Component<
+  SVGViewportProps,
+  SVGViewportState
 > {
+  static Interactors = {
+    PanAndZoom: PanAndZoomInteractor
+  };
+
   element: React.RefObject<HTMLDivElement> = React.createRef();
   panzoom: any;
 
@@ -122,65 +187,16 @@ export default class PanAndZoom extends React.Component<
     }
   };
 
-  onMouseDown = (event: React.MouseEvent<HTMLDivElement>) => {
-    if (this._animation) {
-      this._animation.cancel();
-    }
-
-    const start = this.getOffsetXY(event);
-    let lastX: number = start.x;
-    let lastY: number = start.y;
-
-    const onMove = (e: MouseEvent) => {
-      const offset = this.getOffsetXY(e);
-      const delta = { x: offset.x - lastX, y: offset.y - lastY };
-      this.setState({
-        x: this.state.x + delta.x,
-        y: this.state.y + delta.y
-      });
-      lastX = offset.x;
-      lastY = offset.y;
-    };
-
-    const onUp = () => {
-      document.removeEventListener("mousemove", onMove);
-      document.removeEventListener("mouseup", onUp);
-    };
-    document.addEventListener("mousemove", onMove);
-    document.addEventListener("mouseup", onUp);
-    event.stopPropagation();
-  };
-
-  onWheel = (event: React.WheelEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
-
-    // Because of inertial scrolling on macOS, we receive wheel events for ~1000ms
-    // after we trigger the zoom and this can cause a second zoom.
-    const wheelWasIdle = Date.now() - this._lastWheelTime > 2000;
-    const wheelChangedDir = this._lastWheelDir !== Math.sign(event.deltaY);
-    if (wheelWasIdle || wheelChangedDir) {
-      if (event.deltaY > 0) {
-        this.onZoomAndCenter(event);
-      } else {
-        this.autocenter(true);
-      }
-    }
-
-    this._lastWheelTime = Date.now();
-    this._lastWheelDir = Math.sign(event.deltaY);
-  };
-
   render() {
-    const { children, onKeyDown } = this.props;
+    const { children, onKeyDown, interactor } = this.props;
     const { x, y, scale } = this.state;
 
     return (
       <div
         ref={this.element}
-        style={PanAndZoomStyles}
-        onMouseDown={this.onMouseDown}
-        onWheel={this.onWheel}
+        style={SVGViewportStyles}
+        onMouseDown={e => interactor.onMouseDown(this, e)}
+        onWheel={e => interactor.onWheel(this, e)}
         onKeyDown={onKeyDown}
         tabIndex={-1}
       >
@@ -192,6 +208,7 @@ export default class PanAndZoom extends React.Component<
         >
           {children(this.state)}
         </div>
+        {interactor.render && interactor.render(this.props)}
       </div>
     );
   }
@@ -201,7 +218,7 @@ export default class PanAndZoom extends React.Component<
 BG: Not using styled-components here because I need a `ref` to an actual DOM element.
 Styled-component with a ref returns a React component we need to findDOMNode to use.
 */
-const PanAndZoomStyles: React.CSSProperties = {
+const SVGViewportStyles: React.CSSProperties = {
   width: "100%",
   height: "100%",
   position: "relative",

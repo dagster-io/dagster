@@ -8,7 +8,7 @@ from dagster import (
 )
 from dagster.cli.dynamic_loader import RepositoryTargetInfo
 from dagster.core.events import EventType
-from dagster.core.execution import create_execution_plan
+from dagster.core.execution import create_execution_plan, ExecutionSelector
 from dagster.utils import script_relative_path
 import dagster_pandas as dagster_pd
 
@@ -37,8 +37,9 @@ def test_running():
             'sum_solid': {'inputs': {'num': {'csv': {'path': script_relative_path('num.csv')}}}}
         }
     }
+    selector = ExecutionSelector('pandas_hello_world')
     pipeline_run = InMemoryPipelineRun(
-        run_id, 'pandas_hello_world', env_config, create_execution_plan(pipeline, env_config)
+        run_id, selector, env_config, create_execution_plan(pipeline, env_config)
     )
     execution_manager = MultiprocessingExecutionManager()
     execution_manager.execute_pipeline(repository_container, pipeline, pipeline_run)
@@ -70,8 +71,9 @@ def test_failing():
             'sum_solid': {'inputs': {'num': {'csv': {'path': script_relative_path('num.csv')}}}}
         }
     }
+    selector = ExecutionSelector('pandas_hello_world')
     pipeline_run = InMemoryPipelineRun(
-        run_id, 'pandas_hello_world', env_config, create_execution_plan(pipeline, env_config)
+        run_id, selector, env_config, create_execution_plan(pipeline, env_config)
     )
     execution_manager = MultiprocessingExecutionManager()
     execution_manager.execute_pipeline(repository_container, pipeline, pipeline_run)
@@ -96,8 +98,9 @@ def test_execution_crash():
             'sum_solid': {'inputs': {'num': {'csv': {'path': script_relative_path('num.csv')}}}}
         }
     }
+    selector = ExecutionSelector('pandas_hello_world')
     pipeline_run = InMemoryPipelineRun(
-        run_id, 'pandas_hello_world', env_config, create_execution_plan(pipeline, env_config)
+        run_id, selector, env_config, create_execution_plan(pipeline, env_config)
     )
     execution_manager = MultiprocessingExecutionManager()
     execution_manager.execute_pipeline(repository_container, pipeline, pipeline_run)

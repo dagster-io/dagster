@@ -6,12 +6,16 @@ import { Icon, Colors } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
 import { ApolloConsumer } from "react-apollo";
 
-import { IExecutionSession } from "../LocalStorage";
 import { PipelineRun, PipelineRunEmpty } from "./PipelineRun";
 import { ExecutionTabs, ExecutionTab } from "./ExecutionTabs";
 import { PanelDivider } from "../PanelDivider";
-
+import PipelineSolidSelector from "./PipelineSolidSelector";
 import ConfigEditor from "../configeditor/ConfigEditor";
+import {
+  IExecutionSession,
+  IExecutionSessionChanges,
+  SESSION_CONFIG_PLACEHOLDER
+} from "../LocalStorage";
 import {
   CONFIG_EDITOR_PIPELINE_FRAGMENT,
   createTypeConfig,
@@ -22,6 +26,10 @@ import {
 import { PipelineExecutionPipelineFragment } from "./types/PipelineExecutionPipelineFragment";
 import { PipelineExecutionPipelineRunFragment } from "./types/PipelineExecutionPipelineRunFragment";
 
+const CONFIRM_RESET_TO_SCAFFOLD = `Would you like to reset your config to a scaffold based on this subset of the pipeline?`;
+
+const YAML_SYNTAX_INVALID = `The YAML you provided couldn't be parsed. Please fix the syntax errors and try again.`;
+
 interface IPipelineExecutionProps {
   pipeline: PipelineExecutionPipelineFragment;
   activeRun: PipelineExecutionPipelineRunFragment | null;
@@ -29,9 +37,8 @@ interface IPipelineExecutionProps {
   currentSession: IExecutionSession;
   isExecuting: boolean;
   onSelectSession: (session: string) => void;
-  onRenameSession: (session: string, title: string) => void;
-  onSaveSession: (session: string, config: any) => void;
-  onCreateSession: (config: any) => void;
+  onSaveSession: (session: string, changes: IExecutionSessionChanges) => void;
+  onCreateSession: () => void;
   onRemoveSession: (session: string) => void;
   onExecute: (config: any) => void;
 }
@@ -79,13 +86,35 @@ export default class PipelineExecution extends React.Component<
   };
 
   componentDidMount() {
-    if (!this.props.currentSession) {
-      this.props.onCreateSession(scaffoldConfig(this.props.pipeline));
+    this.ensureSessionStateValid();
+  }
+
+  componentDidUpdate() {
+    this.ensureSessionStateValid();
+  }
+
+  ensureSessionStateValid() {
+    const { onSaveSession, currentSession, pipeline } = this.props;
+
+    // We have to initialize the sessions in local storage here because the app
+    // needs to have the pieline (with the correct subset) in order to scaffold
+    // the config YAML. In the future this could go in some sort of HOC I suppose.
+    if (currentSession.config === SESSION_CONFIG_PLACEHOLDER) {
+      onSaveSession(currentSession.key, { config: scaffoldConfig(pipeline) });
     }
   }
 
   onConfigChange = (config: any) => {
-    this.props.onSaveSession(this.props.currentSession.key, config);
+    this.props.onSaveSession(this.props.currentSession.key, { config });
+  };
+
+  onSolidSubsetChange = (solidSubset: string[] | null) => {
+    const changes: IExecutionSessionChanges = { solidSubset };
+    if (confirm(CONFIRM_RESET_TO_SCAFFOLD)) {
+      changes.config = SESSION_CONFIG_PLACEHOLDER;
+    }
+
+    this.props.onSaveSession(this.props.currentSession.key, changes);
   };
 
   render() {
@@ -111,7 +140,7 @@ export default class PipelineExecution extends React.Component<
                 active={key === currentSession.key}
                 title={sessions[key].name}
                 onClick={() => this.props.onSelectSession(key)}
-                onChange={title => this.props.onRenameSession(key, title)}
+                onChange={name => this.props.onSaveSession(key, { name })}
                 onRemove={
                   Object.keys(sessions).length > 1
                     ? () => this.props.onRemoveSession(key)
@@ -122,7 +151,7 @@ export default class PipelineExecution extends React.Component<
             <ExecutionTab
               title={"Add..."}
               onClick={() => {
-                this.props.onCreateSession(scaffoldConfig(pipeline));
+                this.props.onCreateSession();
               }}
             />
           </ExecutionTabs>
@@ -132,10 +161,22 @@ export default class PipelineExecution extends React.Component<
                 configCode={currentSession.config}
                 onConfigChange={this.onConfigChange}
                 typeConfig={createTypeConfig(pipeline)}
-                checkConfig={json => checkConfig(client, pipeline.name, json)}
+                checkConfig={json =>
+                  checkConfig(client, json, {
+                    name: pipeline.name,
+                    solidSubset: currentSession.solidSubset
+                  })
+                }
               />
             )}
           </ApolloConsumer>
+          <SessionSettingsFooter className="bp3-dark">
+            <PipelineSolidSelector
+              pipelineName={pipeline.name}
+              value={currentSession.solidSubset || null}
+              onChange={this.onSolidSubsetChange}
+            />
+          </SessionSettingsFooter>
           <IconWrapper
             role="button"
             disabled={isExecuting}
@@ -145,7 +186,7 @@ export default class PipelineExecution extends React.Component<
               try {
                 config = yaml.parse(currentSession.config);
               } catch (err) {
-                alert(`Fix the errors in your config YAML and try again.`);
+                alert(YAML_SYNTAX_INVALID);
                 return;
               }
               this.props.onExecute(config);
@@ -206,6 +247,16 @@ const IconWrapper = styled.div<{ disabled: boolean }>`
   &:active {
     background-color: ${Colors.GRAY3};
   }
+`;
+
+const SessionSettingsFooter = styled.div`
+  color: white;
+  display: flex;
+  border-top: 1px solid ${Colors.DARK_GRAY5};
+  background-color: ${Colors.DARK_GRAY2};
+  align-items: center;
+  padding: 8px;
+}
 `;
 
 const Split = styled.div<{ width?: number }>`

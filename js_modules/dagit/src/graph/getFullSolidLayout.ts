@@ -266,3 +266,20 @@ function layoutSolid(solid: ILayoutSolid, root: IPoint): IFullSolidLayout {
     outputs: outputLayouts
   };
 }
+
+export function pointsToBox(a: IPoint, b: IPoint): ILayout {
+  return {
+    x: Math.min(a.x, b.x),
+    y: Math.min(a.y, b.y),
+    width: Math.abs(a.x - b.x),
+    height: Math.abs(a.y - b.y)
+  };
+}
+export function layoutsIntersect(a: ILayout, b: ILayout) {
+  return (
+    a.x + a.width >= b.x &&
+    b.x + b.width >= a.x &&
+    a.y + a.height >= b.y &&
+    b.y + b.height >= a.y
+  );
+}

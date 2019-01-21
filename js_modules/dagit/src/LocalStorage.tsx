@@ -5,8 +5,6 @@ import * as React from "react";
 export interface IStorageData {
   sessions: { [name: string]: IExecutionSession };
   current: string;
-
-  currentSession: () => IExecutionSession;
 }
 
 export interface IExecutionSessionPlan {
@@ -27,16 +25,30 @@ export interface IExecutionSessionRun {
   executionPlan: IExecutionSessionPlan;
   runId: string;
 }
+
 export interface IExecutionSession {
   key: string;
   name: string;
   config: string;
+  solidSubset: string[] | null;
 }
+
+export interface IExecutionSessionChanges {
+  name?: string;
+  config?: string;
+  solidSubset?: string[] | null;
+}
+
+// When we create a new session, we insert a placeholder config that is swapped
+// with a scaffold when the pipeline with the desired solidSubset has loaded
+// and we're able to assemble the YAML.
+export const SESSION_CONFIG_PLACEHOLDER = "SCAFFOLD-PLACEHOLDER";
 
 const DEFAULT_SESSION: IExecutionSession = {
   key: "default",
-  name: "Default",
-  config: "# This is config editor. Enjoy!"
+  name: "Untitled",
+  config: SESSION_CONFIG_PLACEHOLDER,
+  solidSubset: null
 };
 
 export function applySelectSession(data: IStorageData, key: string) {
@@ -54,31 +66,18 @@ export function applyRemoveSession(data: IStorageData, key: string) {
   return data;
 }
 
-export function applyNameToSession(
+export function applyChangesToSession(
   data: IStorageData,
   key: string,
-  newName: string
+  changes: IExecutionSessionChanges
 ) {
-  data.sessions[key].name = newName;
+  Object.assign(data.sessions[key], changes);
   return data;
 }
 
-export function applyConfigToSession(
-  data: IStorageData,
-  key: string,
-  config: string
-) {
-  data.sessions[key].config = config;
-  return data;
-}
-
-export function applyCreateSession(data: IStorageData, config: string) {
+export function applyCreateSession(data: IStorageData) {
   const key = `s${Date.now()}`;
-  data.sessions[key] = Object.assign({}, DEFAULT_SESSION, {
-    key,
-    name: "Untitled",
-    config: config
-  });
+  data.sessions[key] = Object.assign({}, DEFAULT_SESSION, { key });
   data.current = key;
   return data;
 }
@@ -103,11 +102,7 @@ export class StorageProvider extends React.Component<
 > {
   public state: IStorageProviderState = {
     sessions: {},
-    current: "",
-
-    currentSession() {
-      return this.sessions[this.current];
-    }
+    current: ""
   };
 
   constructor(props: IStorageProviderProps) {
@@ -122,6 +117,15 @@ export class StorageProvider extends React.Component<
       }
     } catch (err) {
       // noop
+    }
+
+    // Ensure the data is consistent and that there is always a "current" session
+    // if loading has
+    if (Object.keys(this.state.sessions).length === 0) {
+      this.state = applyCreateSession(this.state);
+    }
+    if (!this.state.sessions[this.state.current]) {
+      this.state.current = Object.keys(this.state.sessions)[0];
     }
   }
 

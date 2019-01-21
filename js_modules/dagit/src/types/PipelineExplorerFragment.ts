@@ -318,6 +318,7 @@ export interface PipelineExplorerFragment_solids_definition_metadata {
 }
 
 export interface PipelineExplorerFragment_solids_definition_configDefinition_type {
+  name: string;
   description: string | null;
 }
 
@@ -447,11 +448,12 @@ export enum StepTag {
 }
 
 /**
- * 
+ * This type represents the fields necessary to identify a
+ *         pipeline or pipeline subset.
  */
-export interface PipelineExecutionParams {
-  pipelineName: string;
-  config?: any | null;
+export interface ExecutionSelector {
+  name: string;
+  solidSubset?: string[] | null;
 }
 
 //==============================================================
