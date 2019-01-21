@@ -3281,7 +3281,7 @@ And then run the pipeline:
 .. code-block:: console
 
     $ dagster pipeline execute -f configuration_schemas.py \\
-    -n define_demo_configuration_schema_pipeline -e configuration_schemas_error_2.yml
+    -n define_demo_configuration_schema_pipeline -e configuration_schemas_wrong_field.yml
     ...
     dagster.core.execution.PipelineConfigEvaluationError: Pipeline "demo_configuration_schema" config errors:
         Error 1: Undefined field "multiply_the_word_with_typed_config" at path root:solids
@@ -22520,7 +22520,7 @@ actionable error message before the pipeline is ever executed.</p>
 </div>
 <p>And then run the pipeline:</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> dagster pipeline execute -f configuration_schemas.py <span class="se">\\</span>
--n define_demo_configuration_schema_pipeline -e configuration_schemas_error_2.yml
+-n define_demo_configuration_schema_pipeline -e configuration_schemas_wrong_field.yml
 <span class="go">...</span>
 <span class="go">dagster.core.execution.PipelineConfigEvaluationError: Pipeline &quot;demo_configuration_schema&quot; config errors:</span>
 <span class="go">    Error 1: Undefined field &quot;multiply_the_word_with_typed_config&quot; at path root:solids</span>
