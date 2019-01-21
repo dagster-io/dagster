@@ -65,7 +65,6 @@ workflows:
             - airline-demo-py35
             - airline-demo-py27
           context: coveralls
-      - nightly
   nightly:
     triggers:
       - schedule:
