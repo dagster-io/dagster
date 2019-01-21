@@ -452,7 +452,7 @@ jobs:
             git checkout master
             git pull
             git checkout nightly
-            git merge --no-edit master
+            GIT_MERGE_AUTOEDIT=no git merge master
 
       - run:
           name: Install requirements
