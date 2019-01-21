@@ -440,6 +440,12 @@ jobs:
       - checkout
 
       - run:
+          name: Configure git
+          command: |
+            git config --global user.email "$GITHUB_EMAIL"
+            git config --global user.name "$GITHUB_NAME"
+
+      - run:
           name: Merge master
           command: |
             git checkout master
@@ -465,12 +471,6 @@ jobs:
             echo -e "repository: https://upload.pypi.org/legacy/" >> ~/.pypirc
             echo -e "username: $PYPI_USERNAME" >> ~/.pypirc
             echo -e "password: $PYPI_PASSWORD" >> ~/.pypirc
-
-      - run:
-          name: Configure git for push
-          command: |
-            git config --global user.email "$GITHUB_EMAIL"
-            git config --global user.name "$GITHUB_NAME"
 
       - run:
           name: Publish nightlies
