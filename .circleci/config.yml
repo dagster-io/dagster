@@ -690,3 +690,7 @@ jobs:
       - run:
           name: Publish nightlies
           command: python bin/publish.py publish --nightly
+
+      - run:
+          name: Test dev setup script
+          command: . dev_env_setup.sh
