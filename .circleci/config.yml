@@ -62,6 +62,14 @@ workflows:
           context: coveralls
       - dagster-ge-py27:
           context: coveralls
+      - dagma-py37:
+          context: coveralls
+      - dagma-py36:
+          context: coveralls
+      - dagma-py35:
+          context: coveralls
+      - dagma-py27:
+          context: coveralls
       - airline-demo-py37:
           context: coveralls
       - airline-demo-py36:
