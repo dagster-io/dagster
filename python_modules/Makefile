@@ -19,7 +19,7 @@ black:
 
 
 pylint:
-	pylint --disable=R,C dagster/dagster dagit/dagit dagstermill/dagstermill dagster-pandas/dagster_pandas dagster-sqlalchemy/dagster_sqlalchemy
+	pylint -j 0 --disable=R,C dagster/dagster dagit/dagit dagstermill/dagstermill dagster-pandas/dagster_pandas dagster-sqlalchemy/dagster_sqlalchemy
 
 reinstall:
 	pip uninstall dagit
