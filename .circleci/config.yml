@@ -72,7 +72,7 @@ workflows:
           filters:
             branches:
               only:
-                - master
+                - nightly
     jobs:
       - nightly
 
@@ -440,6 +440,21 @@ jobs:
       - checkout
 
       - run:
+          name: Configure git
+          command: |
+            git config --global user.email "$GITHUB_EMAIL"
+            git config --global user.name "$GITHUB_NAME"
+
+      - run:
+          name: Merge master
+          command: |
+            git fetch --all
+            git checkout master
+            git reset --hard origin/master
+            git checkout nightly
+            GIT_MERGE_AUTOEDIT=no git merge master
+
+      - run:
           name: Install requirements
           command: sudo pip install -r bin/requirements.txt
 
@@ -457,12 +472,6 @@ jobs:
             echo -e "repository: https://upload.pypi.org/legacy/" >> ~/.pypirc
             echo -e "username: $PYPI_USERNAME" >> ~/.pypirc
             echo -e "password: $PYPI_PASSWORD" >> ~/.pypirc
-
-      - run:
-          name: Configure git for push
-          command: |
-            git config --global user.email "$GITHUB_EMAIL"
-            git config --global user.name "$GITHUB_NAME"
 
       - run:
           name: Publish nightlies
