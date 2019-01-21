@@ -449,8 +449,9 @@ jobs:
       - run:
           name: Merge master
           command: |
+            git fetch --all
             git checkout master
-            git pull
+            git reset --hard origin/master
             git checkout nightly
             GIT_MERGE_AUTOEDIT=no git merge master
 
