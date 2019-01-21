@@ -85,7 +85,7 @@ And then run the pipeline:
 .. code-block:: console
 
     $ dagster pipeline execute -f configuration_schemas.py \
-    -n define_demo_configuration_schema_pipeline -e configuration_schemas_error_2.yml
+    -n define_demo_configuration_schema_pipeline -e configuration_schemas_wrong_field.yml
     ...
     dagster.core.execution.PipelineConfigEvaluationError: Pipeline "demo_configuration_schema" config errors:
         Error 1: Undefined field "multiply_the_word_with_typed_config" at path root:solids
