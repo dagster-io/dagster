@@ -30,13 +30,37 @@ workflows:
       - lint
       - dagit-py27:
           context: coveralls
-      - dagster-aux-modules-py37:
+      - dagstermill-py37:
           context: coveralls
-      - dagster-aux-modules-py36:
+      - dagstermill-py36:
           context: coveralls
-      - dagster-aux-modules-py35:
+      - dagstermill-py35:
           context: coveralls
-      - dagster-aux-modules-py27:
+      - dagstermill-py27:
+          context: coveralls
+      - dagster-pandas-py37:
+          context: coveralls
+      - dagster-pandas-py36:
+          context: coveralls
+      - dagster-pandas-py35:
+          context: coveralls
+      - dagster-pandas-py27:
+          context: coveralls
+      - dagster-sqlalchemy-py37:
+          context: coveralls
+      - dagster-sqlalchemy-py36:
+          context: coveralls
+      - dagster-sqlalchemy-py35:
+          context: coveralls
+      - dagster-sqlalchemy-py27:
+          context: coveralls
+      - dagster-ge-py37:
+          context: coveralls
+      - dagster-ge-py36:
+          context: coveralls
+      - dagster-ge-py35:
+          context: coveralls
+      - dagster-ge-py27:
           context: coveralls
       - airline-demo-py37:
           context: coveralls
@@ -56,10 +80,25 @@ workflows:
             - dagit-py36
             - dagit-py35
             - dagit-py27
-            - dagster-aux-modules-py37
-            - dagster-aux-modules-py36
-            - dagster-aux-modules-py35
-            - dagster-aux-modules-py27
+            - dagstermill-py37
+            - dagstermill-py36
+            - dagstermill-py35
+            - dagstermill-py27
+            - dagster-pandas-py37
+            - dagster-pandas-py36
+            - dagster-pandas-py35
+            - dagster-pandas-py27
+            - dagster-sqlalchemy-py37
+            - dagster-sqlalchemy-py36
+            - dagster-sqlalchemy-py35
+            - dagster-sqlalchemy-py27
+            - dagster-ge-py37
+            - dagster-ge-py36
+            - dagster-ge-py35
+            - dagster-ge-py27
+            - dagma-py37
+            - dagma-py36
+            - dagma-py35
             - airline-demo-py37
             - airline-demo-py36
             - airline-demo-py35
@@ -186,48 +225,131 @@ jobs:
           paths:
             - .coverage*
 
-  dagster-aux-modules-py36: &dagster-aux-modules-template
+  dagstermill-py36: &dagstermill-template
     docker:
       - image: circleci/python:3.6.6
     environment:
       TOXENV: py36
     working_directory: ~/repo
-
     steps:
       - checkout
-
       - run:
           name: Install Dependencies
           command: |
             sudo pip install tox
-
       - run:
           name: Run Dagster Tests
           command: |
             pushd python_modules/dagstermill
             tox -e $TOXENV
             popd
-            pushd python_modules/dagster-pandas
-            tox -e $TOXENV
-            popd
-            pushd python_modules/dagster-sqlalchemy
-            tox -e $TOXENV
-            popd
-            pushd python_modules/dagster-ge
-            tox -e $TOXENV
-            popd
-            pushd python_modules/dagma
-            tox -e $TOXENV
-            popd
-
       - run:
           command: |
             mv python_modules/dagstermill/.coverage python_modules/.coverage.dagstermill.${CIRCLE_BUILD_NUM}
-            mv python_modules/dagster-pandas/.coverage python_modules/.coverage.dagster-pandas.${CIRCLE_BUILD_NUM}
-            mv python_modules/dagster-sqlalchemy/.coverage python_modules/.coverage.dagster-sqlalchemy.${CIRCLE_BUILD_NUM}
-            mv python_modules/dagster-ge/.coverage python_modules/.coverage.dagster-ge.${CIRCLE_BUILD_NUM}
-            mv python_modules/dagma/.coverage python_modules/.coverage.dagma.${CIRCLE_BUILD_NUM}
+      - persist_to_workspace:
+          root: python_modules/
+          paths:
+            - .coverage*
 
+  dagster-pandas-py36: &dagster-pandas-template
+    docker:
+      - image: circleci/python:3.6.6
+    environment:
+      TOXENV: py36
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - run:
+          name: Install Dependencies
+          command: |
+            sudo pip install tox
+      - run:
+          name: Run Dagster Tests
+          command: |
+            pushd python_modules/dagster-pandas
+            tox -e $TOXENV
+            popd
+      - run:
+          command: |
+            mv python_modules/dagster-pandas/.coverage python_modules/.coverage.dagster-pandas.${CIRCLE_BUILD_NUM}
+      - persist_to_workspace:
+          root: python_modules/
+          paths:
+            - .coverage*
+
+  dagster-sqlalchemy-py36: &dagster-sqlalchemy-template
+    docker:
+      - image: circleci/python:3.6.6
+    environment:
+      TOXENV: py36
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - run:
+          name: Install Dependencies
+          command: |
+            sudo pip install tox
+      - run:
+          name: Run Dagster Tests
+          command: |
+            pushd python_modules/dagster-sqlalchemy
+            tox -e $TOXENV
+            popd
+      - run:
+          command: |
+            mv python_modules/dagster-sqlalchemy/.coverage python_modules/.coverage.dagster-sqlalchemy.${CIRCLE_BUILD_NUM}
+      - persist_to_workspace:
+          root: python_modules/
+          paths:
+            - .coverage*
+
+  dagster-ge-py36: &dagster-ge-template
+    docker:
+      - image: circleci/python:3.6.6
+    environment:
+      TOXENV: py36
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - run:
+          name: Install Dependencies
+          command: |
+            sudo pip install tox
+      - run:
+          name: Run Dagster Tests
+          command: |
+            pushd python_modules/dagster-ge
+            tox -e $TOXENV
+            popd
+      - run:
+          command: |
+            mv python_modules/dagster-ge/.coverage python_modules/.coverage.dagster-ge.${CIRCLE_BUILD_NUM}
+      - persist_to_workspace:
+          root: python_modules/
+          paths:
+            - .coverage*
+
+  dagma-py36: &dagma-template
+    docker:
+      - image: circleci/python:3.6.6
+    environment:
+      TOXENV: py36
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - run:
+          name: Install Dependencies
+          command: |
+            sudo pip install tox
+      - run:
+          name: Run Dagster Tests
+          command: |
+            pushd python_modules/dagma
+            tox -e $TOXENV
+            popd
+      - run:
+          command: |
+            mv python_modules/dagma/.coverage python_modules/.coverage.dagma.${CIRCLE_BUILD_NUM}
       - persist_to_workspace:
           root: python_modules/
           paths:
@@ -275,22 +397,106 @@ jobs:
     environment:
       TOXENV: py27
 
-  dagster-aux-modules-py37:
-    <<: *dagster-aux-modules-template
+  dagstermill-py37:
+    <<: *dagstermill-template
     docker:
       - image: circleci/python:3.7.2
     environment:
       TOXENV: py37
 
-  dagster-aux-modules-py35:
-    <<: *dagster-aux-modules-template
+  dagstermill-py35:
+    <<: *dagstermill-template
     docker:
       - image: circleci/python:3.5.6
     environment:
       TOXENV: py35
 
-  dagster-aux-modules-py27:
-    <<: *dagster-aux-modules-template
+  dagstermill-py27:
+    <<: *dagstermill-template
+    docker:
+      - image: circleci/python:2.7.15
+    environment:
+      TOXENV: py27
+
+  dagster-pandas-py37:
+    <<: *dagster-pandas-template
+    docker:
+      - image: circleci/python:3.7.2
+    environment:
+      TOXENV: py37
+
+  dagster-pandas-py35:
+    <<: *dagster-pandas-template
+    docker:
+      - image: circleci/python:3.5.6
+    environment:
+      TOXENV: py35
+
+  dagster-pandas-py27:
+    <<: *dagster-pandas-template
+    docker:
+      - image: circleci/python:2.7.15
+    environment:
+      TOXENV: py27
+
+  dagster-sqlalchemy-py37:
+    <<: *dagster-sqlalchemy-template
+    docker:
+      - image: circleci/python:3.7.2
+    environment:
+      TOXENV: py37
+
+  dagster-sqlalchemy-py35:
+    <<: *dagster-sqlalchemy-template
+    docker:
+      - image: circleci/python:3.5.6
+    environment:
+      TOXENV: py35
+
+  dagster-sqlalchemy-py27:
+    <<: *dagster-sqlalchemy-template
+    docker:
+      - image: circleci/python:2.7.15
+    environment:
+      TOXENV: py27
+
+  dagster-ge-py37:
+    <<: *dagster-ge-template
+    docker:
+      - image: circleci/python:3.7.2
+    environment:
+      TOXENV: py37
+
+  dagster-ge-py35:
+    <<: *dagster-ge-template
+    docker:
+      - image: circleci/python:3.5.6
+    environment:
+      TOXENV: py35
+
+  dagster-ge-py27:
+    <<: *dagster-ge-template
+    docker:
+      - image: circleci/python:2.7.15
+    environment:
+      TOXENV: py27
+
+  dagma-py37:
+    <<: *dagma-template
+    docker:
+      - image: circleci/python:3.7.2
+    environment:
+      TOXENV: py37
+
+  dagma-py35:
+    <<: *dagma-template
+    docker:
+      - image: circleci/python:3.5.6
+    environment:
+      TOXENV: py35
+
+  dagma-py27:
+    <<: *dagma-template
     docker:
       - image: circleci/python:2.7.15
     environment:
