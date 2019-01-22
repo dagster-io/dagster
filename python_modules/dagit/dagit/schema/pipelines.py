@@ -379,4 +379,3 @@ class DauphinExpectation(dauphin.ObjectType):
         super(DauphinExpectation, self).__init__(
             name=expectation.name, description=expectation.description
         )
-

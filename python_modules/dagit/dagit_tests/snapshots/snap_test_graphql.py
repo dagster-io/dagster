@@ -140,13 +140,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'ContextConfigPipeline.ContextDefinitionConfig.ContextWithResources.Resources'
                             },
                             {
+                                'name': 'Int'
+                            },
+                            {
                                 'name': 'Dict.115'
                             },
                             {
                                 'name': 'ContextConfigPipeline.ContextDefinitionConfig.ContextOne.Resources'
-                            },
-                            {
-                                'name': 'Int'
                             },
                             {
                                 'name': 'ContextConfigPipeline.ContextDefinitionConfig.ContextWithResources'
@@ -194,10 +194,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'String'
+                                'name': 'ContextConfigPipeline.ContextDefinitionConfig.ContextOne.Resources'
                             },
                             {
-                                'name': 'ContextConfigPipeline.ContextDefinitionConfig.ContextOne.Resources'
+                                'name': 'String'
                             }
                         ],
                         'isBuiltin': False,
@@ -297,10 +297,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'ContextConfigPipeline.ContextDefinitionConfig.ContextWithResources.Resources'
                             },
                             {
-                                'name': 'Dict.115'
+                                'name': 'Int'
                             },
                             {
-                                'name': 'Int'
+                                'name': 'Dict.115'
                             },
                             {
                                 'name': 'String'
@@ -414,19 +414,19 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'ContextConfigPipeline.ContextDefinitionConfig.ContextWithResources.Resources'
                             },
                             {
-                                'name': 'Bool'
+                                'name': 'ContextConfigPipeline.ContextDefinitionConfig.ContextOne'
                             },
                             {
                                 'name': 'ContextConfigPipeline.SolidsConfigDictionary'
+                            },
+                            {
+                                'name': 'Int'
                             },
                             {
                                 'name': 'Dict.115'
                             },
                             {
                                 'name': 'ContextConfigPipeline.ContextDefinitionConfig.ContextOne.Resources'
-                            },
-                            {
-                                'name': 'Int'
                             },
                             {
                                 'name': 'ContextConfigPipeline.ContextDefinitionConfig.ContextWithResources'
@@ -436,9 +436,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                             },
                             {
                                 'name': 'String'
-                            },
-                            {
-                                'name': 'ContextConfigPipeline.ContextDefinitionConfig.ContextOne'
                             },
                             {
                                 'name': 'ContextConfigPipeline.ExpectationsConfig'
@@ -451,6 +448,9 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                             },
                             {
                                 'name': 'ContextConfigPipeline.ExecutionConfig'
+                            },
+                            {
+                                'name': 'Bool'
                             }
                         ],
                         'isBuiltin': False,
@@ -702,10 +702,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'String'
+                                'name': 'MoreComplicatedConfig.ContextDefinitionConfig.Default.Resources'
                             },
                             {
-                                'name': 'MoreComplicatedConfig.ContextDefinitionConfig.Default.Resources'
+                                'name': 'String'
                             },
                             {
                                 'name': 'Dict.117'
@@ -777,22 +777,19 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'MoreComplicatedConfig.SolidsConfigDictionary'
                             },
                             {
-                                'name': 'Bool'
-                            },
-                            {
                                 'name': 'MoreComplicatedConfig.ExecutionConfig'
                             },
                             {
                                 'name': 'MoreComplicatedConfig.SolidConfig.ASolidWithThreeFieldConfig'
                             },
                             {
-                                'name': 'MoreComplicatedConfig.ContextDefinitionConfig.Default'
+                                'name': 'String'
                             },
                             {
                                 'name': 'Dict.117'
                             },
                             {
-                                'name': 'String'
+                                'name': 'MoreComplicatedConfig.ContextDefinitionConfig.Default'
                             },
                             {
                                 'name': 'MoreComplicatedConfig.ContextConfig'
@@ -802,6 +799,9 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                             },
                             {
                                 'name': 'MoreComplicatedConfig.ContextDefinitionConfig.Default.Resources'
+                            },
+                            {
+                                'name': 'Bool'
                             }
                         ],
                         'isBuiltin': False,
@@ -972,13 +972,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'List.Nullable.Int'
                             },
                             {
+                                'name': 'Nullable.Int'
+                            },
+                            {
                                 'name': 'String'
                             },
                             {
                                 'name': 'Int'
-                            },
-                            {
-                                'name': 'Nullable.Int'
                             }
                         ],
                         'isBuiltin': True,
@@ -1027,7 +1027,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Dict.118'
+                                'name': 'List.Nullable.Int'
                             },
                             {
                                 'name': 'Int'
@@ -1036,10 +1036,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'String'
                             },
                             {
-                                'name': 'List.Nullable.Int'
+                                'name': 'Nullable.Int'
                             },
                             {
-                                'name': 'Nullable.Int'
+                                'name': 'Dict.118'
                             }
                         ],
                         'isBuiltin': True,
@@ -1101,16 +1101,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Dict.120'
-                            },
-                            {
                                 'name': 'String'
                             },
                             {
-                                'name': 'MoreComplicatedNestedConfig.ContextDefinitionConfig.Default.Resources'
+                                'name': 'Dict.120'
                             },
                             {
                                 'name': 'MoreComplicatedNestedConfig.ContextDefinitionConfig.Default'
+                            },
+                            {
+                                'name': 'MoreComplicatedNestedConfig.ContextDefinitionConfig.Default.Resources'
                             }
                         ],
                         'isBuiltin': False,
@@ -1143,10 +1143,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Dict.120'
+                                'name': 'String'
                             },
                             {
-                                'name': 'String'
+                                'name': 'Dict.120'
                             },
                             {
                                 'name': 'MoreComplicatedNestedConfig.ContextDefinitionConfig.Default.Resources'
@@ -1212,49 +1212,49 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'MoreComplicatedNestedConfig.SolidConfig.ASolidWithMultilayeredConfig'
-                            },
-                            {
-                                'name': 'Bool'
-                            },
-                            {
-                                'name': 'Dict.118'
+                                'name': 'MoreComplicatedNestedConfig.SolidsConfigDictionary'
                             },
                             {
                                 'name': 'Dict.119'
                             },
                             {
-                                'name': 'Dict.120'
-                            },
-                            {
-                                'name': 'Int'
-                            },
-                            {
-                                'name': 'MoreComplicatedNestedConfig.ContextDefinitionConfig.Default'
-                            },
-                            {
-                                'name': 'MoreComplicatedNestedConfig.ContextConfig'
-                            },
-                            {
-                                'name': 'String'
-                            },
-                            {
                                 'name': 'List.Nullable.Int'
-                            },
-                            {
-                                'name': 'MoreComplicatedNestedConfig.ExpectationsConfig'
-                            },
-                            {
-                                'name': 'Nullable.Int'
-                            },
-                            {
-                                'name': 'MoreComplicatedNestedConfig.ExecutionConfig'
                             },
                             {
                                 'name': 'MoreComplicatedNestedConfig.ContextDefinitionConfig.Default.Resources'
                             },
                             {
-                                'name': 'MoreComplicatedNestedConfig.SolidsConfigDictionary'
+                                'name': 'Int'
+                            },
+                            {
+                                'name': 'MoreComplicatedNestedConfig.SolidConfig.ASolidWithMultilayeredConfig'
+                            },
+                            {
+                                'name': 'String'
+                            },
+                            {
+                                'name': 'MoreComplicatedNestedConfig.ContextConfig'
+                            },
+                            {
+                                'name': 'Nullable.Int'
+                            },
+                            {
+                                'name': 'Dict.118'
+                            },
+                            {
+                                'name': 'MoreComplicatedNestedConfig.ExpectationsConfig'
+                            },
+                            {
+                                'name': 'Dict.120'
+                            },
+                            {
+                                'name': 'MoreComplicatedNestedConfig.ExecutionConfig'
+                            },
+                            {
+                                'name': 'MoreComplicatedNestedConfig.ContextDefinitionConfig.Default'
+                            },
+                            {
+                                'name': 'Bool'
                             }
                         ],
                         'isBuiltin': False,
@@ -1318,10 +1318,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Dict.118'
+                                'name': 'Dict.119'
                             },
                             {
-                                'name': 'Dict.119'
+                                'name': 'List.Nullable.Int'
                             },
                             {
                                 'name': 'Int'
@@ -1330,10 +1330,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'String'
                             },
                             {
-                                'name': 'List.Nullable.Int'
+                                'name': 'Nullable.Int'
                             },
                             {
-                                'name': 'Nullable.Int'
+                                'name': 'Dict.118'
                             }
                         ],
                         'isBuiltin': False,
@@ -1358,25 +1358,25 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'MoreComplicatedNestedConfig.SolidConfig.ASolidWithMultilayeredConfig'
-                            },
-                            {
-                                'name': 'Dict.118'
-                            },
-                            {
                                 'name': 'Dict.119'
-                            },
-                            {
-                                'name': 'Int'
-                            },
-                            {
-                                'name': 'String'
                             },
                             {
                                 'name': 'List.Nullable.Int'
                             },
                             {
+                                'name': 'Int'
+                            },
+                            {
+                                'name': 'MoreComplicatedNestedConfig.SolidConfig.ASolidWithMultilayeredConfig'
+                            },
+                            {
+                                'name': 'String'
+                            },
+                            {
                                 'name': 'Nullable.Int'
+                            },
+                            {
+                                'name': 'Dict.118'
                             }
                         ],
                         'isBuiltin': False,
@@ -1463,10 +1463,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'String'
+                                'name': 'Path'
                             },
                             {
-                                'name': 'Path'
+                                'name': 'String'
                             }
                         ],
                         'isBuiltin': True,
@@ -1549,10 +1549,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'String'
+                                'name': 'Path'
                             },
                             {
-                                'name': 'Path'
+                                'name': 'String'
                             }
                         ],
                         'isBuiltin': True,
@@ -1669,10 +1669,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'String'
+                                'name': 'PandasHelloWorld.ContextDefinitionConfig.Default.Resources'
                             },
                             {
-                                'name': 'PandasHelloWorld.ContextDefinitionConfig.Default.Resources'
+                                'name': 'String'
                             },
                             {
                                 'name': 'Dict.121'
@@ -1744,9 +1744,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'PandasHelloWorld.ExpectationsConfig'
                             },
                             {
-                                'name': 'Dict.23'
-                            },
-                            {
                                 'name': 'PandasHelloWorld.ExecutionConfig'
                             },
                             {
@@ -1756,22 +1753,22 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'PandasHelloWorld.ContextDefinitionConfig.Default'
                             },
                             {
+                                'name': 'Dict.23'
+                            },
+                            {
                                 'name': 'PandasHelloWorld.ContextConfig'
                             },
                             {
                                 'name': 'PandasHelloWorld.SolidsConfigDictionary'
                             },
                             {
-                                'name': 'Dict.25'
-                            },
-                            {
                                 'name': 'PandasHelloWorld.SolidConfig.SumSolid'
                             },
                             {
-                                'name': 'Selector.26'
+                                'name': 'PandasHelloWorld.SumSolid.Inputs'
                             },
                             {
-                                'name': 'PandasHelloWorld.SumSolid.Inputs'
+                                'name': 'Dict.25'
                             },
                             {
                                 'name': 'PandasHelloWorld.SumSolid.Outputs'
@@ -1780,10 +1777,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'List.PandasHelloWorld.SumSolid.Outputs'
                             },
                             {
-                                'name': 'Dict.27'
+                                'name': 'Selector.26'
                             },
                             {
-                                'name': 'Dict.28'
+                                'name': 'Dict.27'
                             },
                             {
                                 'name': 'Bool'
@@ -1792,22 +1789,25 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'PandasHelloWorld.SolidConfig.SumSqSolid'
                             },
                             {
-                                'name': 'PandasHelloWorld.SumSqSolid.Outputs'
-                            },
-                            {
                                 'name': 'Path'
                             },
                             {
-                                'name': 'Dict.29'
-                            },
-                            {
-                                'name': 'List.PandasHelloWorld.SumSqSolid.Outputs'
+                                'name': 'PandasHelloWorld.SumSqSolid.Outputs'
                             },
                             {
                                 'name': 'String'
                             },
                             {
+                                'name': 'Dict.28'
+                            },
+                            {
+                                'name': 'List.PandasHelloWorld.SumSqSolid.Outputs'
+                            },
+                            {
                                 'name': 'Dict.121'
+                            },
+                            {
+                                'name': 'Dict.29'
                             },
                             {
                                 'name': 'Selector.30'
@@ -1885,40 +1885,40 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'PandasHelloWorld.SumSolid.Inputs'
                             },
                             {
-                                'name': 'Selector.26'
-                            },
-                            {
                                 'name': 'PandasHelloWorld.SumSolid.Outputs'
-                            },
-                            {
-                                'name': 'List.PandasHelloWorld.SumSolid.Outputs'
-                            },
-                            {
-                                'name': 'Path'
-                            },
-                            {
-                                'name': 'Dict.29'
-                            },
-                            {
-                                'name': 'Dict.27'
-                            },
-                            {
-                                'name': 'String'
-                            },
-                            {
-                                'name': 'Dict.23'
-                            },
-                            {
-                                'name': 'Dict.24'
-                            },
-                            {
-                                'name': 'Selector.30'
                             },
                             {
                                 'name': 'Dict.25'
                             },
                             {
+                                'name': 'Path'
+                            },
+                            {
+                                'name': 'List.PandasHelloWorld.SumSolid.Outputs'
+                            },
+                            {
+                                'name': 'String'
+                            },
+                            {
                                 'name': 'Dict.28'
+                            },
+                            {
+                                'name': 'Selector.26'
+                            },
+                            {
+                                'name': 'Selector.30'
+                            },
+                            {
+                                'name': 'Dict.29'
+                            },
+                            {
+                                'name': 'Dict.24'
+                            },
+                            {
+                                'name': 'Dict.23'
+                            },
+                            {
+                                'name': 'Dict.27'
                             }
                         ],
                         'isBuiltin': False,
@@ -1943,7 +1943,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Selector.26'
+                                'name': 'Dict.25'
                             },
                             {
                                 'name': 'PandasHelloWorld.SumSqSolid.Outputs'
@@ -1952,19 +1952,19 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'Path'
                             },
                             {
-                                'name': 'List.PandasHelloWorld.SumSqSolid.Outputs'
-                            },
-                            {
                                 'name': 'String'
                             },
                             {
-                                'name': 'Dict.23'
+                                'name': 'List.PandasHelloWorld.SumSqSolid.Outputs'
+                            },
+                            {
+                                'name': 'Selector.26'
                             },
                             {
                                 'name': 'Dict.24'
                             },
                             {
-                                'name': 'Dict.25'
+                                'name': 'Dict.23'
                             }
                         ],
                         'isBuiltin': False,
@@ -1997,16 +1997,19 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Selector.26'
-                            },
-                            {
                                 'name': 'PandasHelloWorld.SumSolid.Inputs'
                             },
                             {
                                 'name': 'PandasHelloWorld.SolidConfig.SumSqSolid'
                             },
                             {
+                                'name': 'Dict.25'
+                            },
+                            {
                                 'name': 'PandasHelloWorld.SumSolid.Outputs'
+                            },
+                            {
+                                'name': 'Path'
                             },
                             {
                                 'name': 'List.PandasHelloWorld.SumSolid.Outputs'
@@ -2015,37 +2018,34 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'PandasHelloWorld.SumSqSolid.Outputs'
                             },
                             {
-                                'name': 'Path'
+                                'name': 'String'
                             },
                             {
-                                'name': 'Dict.29'
+                                'name': 'Dict.28'
                             },
                             {
                                 'name': 'List.PandasHelloWorld.SumSqSolid.Outputs'
                             },
                             {
+                                'name': 'Selector.26'
+                            },
+                            {
                                 'name': 'Dict.27'
                             },
                             {
-                                'name': 'String'
-                            },
-                            {
-                                'name': 'Dict.23'
+                                'name': 'Dict.29'
                             },
                             {
                                 'name': 'Dict.24'
                             },
                             {
-                                'name': 'Selector.30'
-                            },
-                            {
-                                'name': 'Dict.25'
-                            },
-                            {
                                 'name': 'PandasHelloWorld.SolidConfig.SumSolid'
                             },
                             {
-                                'name': 'Dict.28'
+                                'name': 'Dict.23'
+                            },
+                            {
+                                'name': 'Selector.30'
                             }
                         ],
                         'isBuiltin': False,
@@ -2073,19 +2073,19 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'Path'
                             },
                             {
-                                'name': 'Dict.29'
+                                'name': 'String'
+                            },
+                            {
+                                'name': 'Dict.28'
                             },
                             {
                                 'name': 'Dict.27'
                             },
                             {
-                                'name': 'String'
+                                'name': 'Dict.29'
                             },
                             {
                                 'name': 'Selector.30'
-                            },
-                            {
-                                'name': 'Dict.28'
                             }
                         ],
                         'isBuiltin': False,
@@ -2110,7 +2110,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Selector.26'
+                                'name': 'Dict.25'
                             },
                             {
                                 'name': 'Path'
@@ -2119,13 +2119,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'String'
                             },
                             {
-                                'name': 'Dict.23'
+                                'name': 'Selector.26'
                             },
                             {
                                 'name': 'Dict.24'
                             },
                             {
-                                'name': 'Dict.25'
+                                'name': 'Dict.23'
                             }
                         ],
                         'isBuiltin': False,
@@ -2150,7 +2150,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Selector.26'
+                                'name': 'Dict.25'
                             },
                             {
                                 'name': 'Path'
@@ -2159,13 +2159,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'String'
                             },
                             {
-                                'name': 'Dict.23'
+                                'name': 'Selector.26'
                             },
                             {
                                 'name': 'Dict.24'
                             },
                             {
-                                'name': 'Dict.25'
+                                'name': 'Dict.23'
                             }
                         ],
                         'isBuiltin': False,
@@ -2218,19 +2218,19 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
+                                'name': 'Dict.25'
+                            },
+                            {
                                 'name': 'Path'
                             },
                             {
                                 'name': 'String'
                             },
                             {
-                                'name': 'Dict.23'
-                            },
-                            {
                                 'name': 'Dict.24'
                             },
                             {
-                                'name': 'Dict.25'
+                                'name': 'Dict.23'
                             }
                         ],
                         'isBuiltin': True,
@@ -2274,16 +2274,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'Path'
                             },
                             {
-                                'name': 'Dict.29'
-                            },
-                            {
-                                'name': 'Dict.27'
+                                'name': 'Dict.28'
                             },
                             {
                                 'name': 'String'
                             },
                             {
-                                'name': 'Dict.28'
+                                'name': 'Dict.29'
+                            },
+                            {
+                                'name': 'Dict.27'
                             }
                         ],
                         'isBuiltin': True,
@@ -2370,10 +2370,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'String'
+                                'name': 'Path'
                             },
                             {
-                                'name': 'Path'
+                                'name': 'String'
                             }
                         ],
                         'isBuiltin': True,
@@ -2456,10 +2456,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'String'
+                                'name': 'Path'
                             },
                             {
-                                'name': 'Path'
+                                'name': 'String'
                             }
                         ],
                         'isBuiltin': True,
@@ -2537,10 +2537,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'Dict.122'
                             },
                             {
-                                'name': 'String'
+                                'name': 'PandasHelloWorldTwo.ContextDefinitionConfig.Default.Resources'
                             },
                             {
-                                'name': 'PandasHelloWorldTwo.ContextDefinitionConfig.Default.Resources'
+                                'name': 'String'
                             },
                             {
                                 'name': 'PandasHelloWorldTwo.ContextDefinitionConfig.Default'
@@ -2579,10 +2579,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'Dict.122'
                             },
                             {
-                                'name': 'String'
+                                'name': 'PandasHelloWorldTwo.ContextDefinitionConfig.Default.Resources'
                             },
                             {
-                                'name': 'PandasHelloWorldTwo.ContextDefinitionConfig.Default.Resources'
+                                'name': 'String'
                             }
                         ],
                         'isBuiltin': False,
@@ -2648,10 +2648,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'List.PandasHelloWorldTwo.SumSolid.Outputs'
                             },
                             {
-                                'name': 'Dict.23'
+                                'name': 'Dict.24'
                             },
                             {
-                                'name': 'Dict.24'
+                                'name': 'Dict.23'
                             },
                             {
                                 'name': 'PandasHelloWorldTwo.ExpectationsConfig'
@@ -2663,52 +2663,52 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'Dict.122'
                             },
                             {
-                                'name': 'Dict.25'
-                            },
-                            {
                                 'name': 'PandasHelloWorldTwo.ContextDefinitionConfig.Default.Resources'
                             },
                             {
-                                'name': 'Selector.26'
+                                'name': 'Dict.25'
                             },
                             {
                                 'name': 'PandasHelloWorldTwo.ContextDefinitionConfig.Default'
                             },
                             {
-                                'name': 'Dict.27'
+                                'name': 'Selector.26'
                             },
                             {
                                 'name': 'PandasHelloWorldTwo.ContextConfig'
                             },
                             {
-                                'name': 'Dict.28'
-                            },
-                            {
-                                'name': 'PandasHelloWorldTwo.SolidsConfigDictionary'
+                                'name': 'Dict.27'
                             },
                             {
                                 'name': 'Bool'
                             },
                             {
-                                'name': 'Path'
+                                'name': 'PandasHelloWorldTwo.SolidsConfigDictionary'
                             },
                             {
-                                'name': 'Dict.29'
+                                'name': 'Path'
                             },
                             {
                                 'name': 'String'
                             },
                             {
+                                'name': 'Dict.28'
+                            },
+                            {
                                 'name': 'PandasHelloWorldTwo.SumSolid.Inputs'
                             },
                             {
-                                'name': 'Selector.30'
+                                'name': 'Dict.29'
                             },
                             {
                                 'name': 'PandasHelloWorldTwo.SolidConfig.SumSolid'
                             },
                             {
                                 'name': 'PandasHelloWorldTwo.SumSolid.Outputs'
+                            },
+                            {
+                                'name': 'Selector.30'
                             }
                         ],
                         'isBuiltin': False,
@@ -2780,7 +2780,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Selector.26'
+                                'name': 'Dict.25'
                             },
                             {
                                 'name': 'List.PandasHelloWorldTwo.SumSolid.Outputs'
@@ -2789,34 +2789,34 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'Path'
                             },
                             {
-                                'name': 'Dict.29'
-                            },
-                            {
-                                'name': 'Dict.27'
-                            },
-                            {
                                 'name': 'String'
                             },
                             {
-                                'name': 'Dict.23'
+                                'name': 'Dict.28'
+                            },
+                            {
+                                'name': 'Selector.26'
                             },
                             {
                                 'name': 'PandasHelloWorldTwo.SumSolid.Inputs'
                             },
                             {
-                                'name': 'Dict.24'
-                            },
-                            {
                                 'name': 'Selector.30'
                             },
                             {
-                                'name': 'Dict.25'
+                                'name': 'Dict.29'
+                            },
+                            {
+                                'name': 'Dict.24'
                             },
                             {
                                 'name': 'PandasHelloWorldTwo.SumSolid.Outputs'
                             },
                             {
-                                'name': 'Dict.28'
+                                'name': 'Dict.23'
+                            },
+                            {
+                                'name': 'Dict.27'
                             }
                         ],
                         'isBuiltin': False,
@@ -2841,7 +2841,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Selector.26'
+                                'name': 'Dict.25'
                             },
                             {
                                 'name': 'List.PandasHelloWorldTwo.SumSolid.Outputs'
@@ -2850,19 +2850,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'Path'
                             },
                             {
-                                'name': 'Dict.29'
-                            },
-                            {
-                                'name': 'Dict.25'
-                            },
-                            {
-                                'name': 'Dict.27'
-                            },
-                            {
                                 'name': 'String'
                             },
                             {
-                                'name': 'Dict.23'
+                                'name': 'Dict.28'
+                            },
+                            {
+                                'name': 'Selector.26'
                             },
                             {
                                 'name': 'PandasHelloWorldTwo.SumSolid.Inputs'
@@ -2871,16 +2865,22 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'Dict.24'
                             },
                             {
-                                'name': 'Selector.30'
+                                'name': 'Dict.29'
                             },
                             {
                                 'name': 'PandasHelloWorldTwo.SolidConfig.SumSolid'
                             },
                             {
+                                'name': 'Dict.27'
+                            },
+                            {
                                 'name': 'PandasHelloWorldTwo.SumSolid.Outputs'
                             },
                             {
-                                'name': 'Dict.28'
+                                'name': 'Dict.23'
+                            },
+                            {
+                                'name': 'Selector.30'
                             }
                         ],
                         'isBuiltin': False,
@@ -2908,19 +2908,19 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'Path'
                             },
                             {
-                                'name': 'Dict.29'
+                                'name': 'String'
+                            },
+                            {
+                                'name': 'Dict.28'
                             },
                             {
                                 'name': 'Dict.27'
                             },
                             {
-                                'name': 'String'
+                                'name': 'Dict.29'
                             },
                             {
                                 'name': 'Selector.30'
-                            },
-                            {
-                                'name': 'Dict.28'
                             }
                         ],
                         'isBuiltin': False,
@@ -2945,7 +2945,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Selector.26'
+                                'name': 'Dict.25'
                             },
                             {
                                 'name': 'Path'
@@ -2954,13 +2954,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'String'
                             },
                             {
-                                'name': 'Dict.23'
+                                'name': 'Selector.26'
                             },
                             {
                                 'name': 'Dict.24'
                             },
                             {
-                                'name': 'Dict.25'
+                                'name': 'Dict.23'
                             }
                         ],
                         'isBuiltin': False,
@@ -3013,19 +3013,19 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
+                                'name': 'Dict.25'
+                            },
+                            {
                                 'name': 'Path'
                             },
                             {
                                 'name': 'String'
                             },
                             {
-                                'name': 'Dict.23'
-                            },
-                            {
                                 'name': 'Dict.24'
                             },
                             {
-                                'name': 'Dict.25'
+                                'name': 'Dict.23'
                             }
                         ],
                         'isBuiltin': True,
@@ -3069,16 +3069,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'Path'
                             },
                             {
-                                'name': 'Dict.29'
-                            },
-                            {
-                                'name': 'Dict.27'
+                                'name': 'Dict.28'
                             },
                             {
                                 'name': 'String'
                             },
                             {
-                                'name': 'Dict.28'
+                                'name': 'Dict.29'
+                            },
+                            {
+                                'name': 'Dict.27'
                             }
                         ],
                         'isBuiltin': True,
@@ -3280,10 +3280,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Bool'
+                                'name': 'PipelineWithList.SolidsConfigDictionary'
                             },
                             {
-                                'name': 'PipelineWithList.SolidsConfigDictionary'
+                                'name': 'Int'
                             },
                             {
                                 'name': 'List.Int'
@@ -3292,10 +3292,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'PipelineWithList.SolidConfig.SolidWithList'
                             },
                             {
-                                'name': 'Int'
+                                'name': 'PipelineWithList.ExecutionConfig'
                             },
                             {
-                                'name': 'PipelineWithList.ExecutionConfig'
+                                'name': 'String'
                             },
                             {
                                 'name': 'Dict.123'
@@ -3304,7 +3304,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'PipelineWithList.ContextDefinitionConfig.Default'
                             },
                             {
-                                'name': 'String'
+                                'name': 'Bool'
                             },
                             {
                                 'name': 'PipelineWithList.ContextConfig'
@@ -3498,10 +3498,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'String'
+                                'name': 'Path'
                             },
                             {
-                                'name': 'Path'
+                                'name': 'String'
                             }
                         ],
                         'isBuiltin': True,
@@ -3584,10 +3584,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'String'
+                                'name': 'Path'
                             },
                             {
-                                'name': 'Path'
+                                'name': 'String'
                             }
                         ],
                         'isBuiltin': True,
@@ -3665,10 +3665,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'PandasHelloWorldDfInput.ContextDefinitionConfig.Default'
                             },
                             {
-                                'name': 'String'
+                                'name': 'Dict.124'
                             },
                             {
-                                'name': 'Dict.124'
+                                'name': 'String'
                             },
                             {
                                 'name': 'PandasHelloWorldDfInput.ContextDefinitionConfig.Default.Resources'
@@ -3776,9 +3776,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'PandasHelloWorldDfInput.SolidConfig.SumSolid'
                             },
                             {
-                                'name': 'Dict.23'
-                            },
-                            {
                                 'name': 'PandasHelloWorldDfInput.SumSolid.Outputs'
                             },
                             {
@@ -3788,10 +3785,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'List.PandasHelloWorldDfInput.SumSolid.Outputs'
                             },
                             {
-                                'name': 'PandasHelloWorldDfInput.SolidConfig.SumSqSolid'
+                                'name': 'Dict.23'
                             },
                             {
-                                'name': 'Dict.25'
+                                'name': 'PandasHelloWorldDfInput.SolidConfig.SumSqSolid'
                             },
                             {
                                 'name': 'PandasHelloWorldDfInput.SumSqSolid.Outputs'
@@ -3800,22 +3797,22 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'List.PandasHelloWorldDfInput.SumSqSolid.Outputs'
                             },
                             {
-                                'name': 'Selector.26'
+                                'name': 'Dict.124'
                             },
                             {
-                                'name': 'Dict.124'
+                                'name': 'Dict.25'
                             },
                             {
                                 'name': 'PandasHelloWorldDfInput.ContextDefinitionConfig.Default.Resources'
                             },
                             {
-                                'name': 'Dict.27'
+                                'name': 'Selector.26'
                             },
                             {
                                 'name': 'PandasHelloWorldDfInput.ExpectationsConfig'
                             },
                             {
-                                'name': 'Dict.28'
+                                'name': 'Dict.27'
                             },
                             {
                                 'name': 'Bool'
@@ -3830,22 +3827,25 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'Path'
                             },
                             {
-                                'name': 'Dict.29'
+                                'name': 'String'
+                            },
+                            {
+                                'name': 'Dict.28'
                             },
                             {
                                 'name': 'PandasHelloWorldDfInput.ContextConfig'
                             },
                             {
-                                'name': 'String'
-                            },
-                            {
-                                'name': 'Selector.30'
+                                'name': 'Dict.29'
                             },
                             {
                                 'name': 'PandasHelloWorldDfInput.SolidsConfigDictionary'
                             },
                             {
                                 'name': 'PandasHelloWorldDfInput.SumSolid.Inputs'
+                            },
+                            {
+                                'name': 'Selector.30'
                             }
                         ],
                         'isBuiltin': False,
@@ -3917,43 +3917,43 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Selector.26'
+                                'name': 'Dict.25'
                             },
                             {
                                 'name': 'Path'
                             },
                             {
-                                'name': 'Dict.29'
-                            },
-                            {
-                                'name': 'Dict.25'
-                            },
-                            {
-                                'name': 'Dict.27'
-                            },
-                            {
                                 'name': 'String'
                             },
                             {
-                                'name': 'Dict.23'
+                                'name': 'Dict.28'
+                            },
+                            {
+                                'name': 'Selector.26'
                             },
                             {
                                 'name': 'PandasHelloWorldDfInput.SumSolid.Outputs'
                             },
                             {
-                                'name': 'Dict.24'
+                                'name': 'Selector.30'
                             },
                             {
-                                'name': 'Selector.30'
+                                'name': 'Dict.29'
                             },
                             {
                                 'name': 'List.PandasHelloWorldDfInput.SumSolid.Outputs'
                             },
                             {
+                                'name': 'Dict.24'
+                            },
+                            {
                                 'name': 'PandasHelloWorldDfInput.SumSolid.Inputs'
                             },
                             {
-                                'name': 'Dict.28'
+                                'name': 'Dict.23'
+                            },
+                            {
+                                'name': 'Dict.27'
                             }
                         ],
                         'isBuiltin': False,
@@ -3978,19 +3978,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Selector.26'
+                                'name': 'Dict.25'
                             },
                             {
                                 'name': 'Path'
                             },
                             {
-                                'name': 'Dict.25'
-                            },
-                            {
                                 'name': 'String'
                             },
                             {
-                                'name': 'Dict.23'
+                                'name': 'Selector.26'
                             },
                             {
                                 'name': 'Dict.24'
@@ -4000,6 +3997,9 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                             },
                             {
                                 'name': 'List.PandasHelloWorldDfInput.SumSqSolid.Outputs'
+                            },
+                            {
+                                'name': 'Dict.23'
                             }
                         ],
                         'isBuiltin': False,
@@ -4032,28 +4032,22 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Selector.26'
-                            },
-                            {
-                                'name': 'PandasHelloWorldDfInput.SumSqSolid.Outputs'
-                            },
-                            {
-                                'name': 'PandasHelloWorldDfInput.SolidConfig.SumSolid'
+                                'name': 'Dict.25'
                             },
                             {
                                 'name': 'Path'
                             },
                             {
-                                'name': 'Dict.29'
+                                'name': 'PandasHelloWorldDfInput.SolidConfig.SumSolid'
                             },
                             {
-                                'name': 'Dict.27'
+                                'name': 'Dict.28'
                             },
                             {
                                 'name': 'String'
                             },
                             {
-                                'name': 'Dict.23'
+                                'name': 'Selector.26'
                             },
                             {
                                 'name': 'PandasHelloWorldDfInput.SolidConfig.SumSqSolid'
@@ -4065,13 +4059,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'Dict.24'
                             },
                             {
-                                'name': 'Selector.30'
-                            },
-                            {
-                                'name': 'Dict.25'
+                                'name': 'Dict.29'
                             },
                             {
                                 'name': 'List.PandasHelloWorldDfInput.SumSolid.Outputs'
+                            },
+                            {
+                                'name': 'Dict.27'
+                            },
+                            {
+                                'name': 'PandasHelloWorldDfInput.SumSqSolid.Outputs'
                             },
                             {
                                 'name': 'List.PandasHelloWorldDfInput.SumSqSolid.Outputs'
@@ -4080,7 +4077,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'PandasHelloWorldDfInput.SumSolid.Inputs'
                             },
                             {
-                                'name': 'Dict.28'
+                                'name': 'Dict.23'
+                            },
+                            {
+                                'name': 'Selector.30'
                             }
                         ],
                         'isBuiltin': False,
@@ -4108,19 +4108,19 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'Path'
                             },
                             {
-                                'name': 'Dict.29'
+                                'name': 'String'
+                            },
+                            {
+                                'name': 'Dict.28'
                             },
                             {
                                 'name': 'Dict.27'
                             },
                             {
-                                'name': 'String'
+                                'name': 'Dict.29'
                             },
                             {
                                 'name': 'Selector.30'
-                            },
-                            {
-                                'name': 'Dict.28'
                             }
                         ],
                         'isBuiltin': False,
@@ -4145,7 +4145,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Selector.26'
+                                'name': 'Dict.25'
                             },
                             {
                                 'name': 'Path'
@@ -4154,13 +4154,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'String'
                             },
                             {
-                                'name': 'Dict.23'
+                                'name': 'Selector.26'
                             },
                             {
                                 'name': 'Dict.24'
                             },
                             {
-                                'name': 'Dict.25'
+                                'name': 'Dict.23'
                             }
                         ],
                         'isBuiltin': False,
@@ -4185,7 +4185,7 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Selector.26'
+                                'name': 'Dict.25'
                             },
                             {
                                 'name': 'Path'
@@ -4194,13 +4194,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'String'
                             },
                             {
-                                'name': 'Dict.23'
+                                'name': 'Selector.26'
                             },
                             {
                                 'name': 'Dict.24'
                             },
                             {
-                                'name': 'Dict.25'
+                                'name': 'Dict.23'
                             }
                         ],
                         'isBuiltin': False,
@@ -4253,19 +4253,19 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
+                                'name': 'Dict.25'
+                            },
+                            {
                                 'name': 'Path'
                             },
                             {
                                 'name': 'String'
                             },
                             {
-                                'name': 'Dict.23'
-                            },
-                            {
                                 'name': 'Dict.24'
                             },
                             {
-                                'name': 'Dict.25'
+                                'name': 'Dict.23'
                             }
                         ],
                         'isBuiltin': True,
@@ -4309,16 +4309,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'Path'
                             },
                             {
-                                'name': 'Dict.29'
-                            },
-                            {
-                                'name': 'Dict.27'
+                                'name': 'Dict.28'
                             },
                             {
                                 'name': 'String'
                             },
                             {
-                                'name': 'Dict.28'
+                                'name': 'Dict.29'
+                            },
+                            {
+                                'name': 'Dict.27'
                             }
                         ],
                         'isBuiltin': True,
@@ -4388,9 +4388,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Dict.2'
-                            },
-                            {
                                 'name': 'Dict.1'
                             },
                             {
@@ -4398,6 +4395,9 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                             },
                             {
                                 'name': 'Any'
+                            },
+                            {
+                                'name': 'Dict.2'
                             }
                         ],
                         'isBuiltin': False,
@@ -4430,13 +4430,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
+                                'name': 'Path'
+                            },
+                            {
                                 'name': 'Dict.3'
                             },
                             {
                                 'name': 'Dict.4'
-                            },
-                            {
-                                'name': 'Path'
                             }
                         ],
                         'isBuiltin': False,
@@ -4598,13 +4598,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'String'
-                            },
-                            {
                                 'name': 'NoConfigPipeline.ContextDefinitionConfig.Default'
                             },
                             {
                                 'name': 'NoConfigPipeline.ContextDefinitionConfig.Default.Resources'
+                            },
+                            {
+                                'name': 'String'
                             },
                             {
                                 'name': 'Dict.125'
@@ -4640,10 +4640,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'String'
+                                'name': 'NoConfigPipeline.ContextDefinitionConfig.Default.Resources'
                             },
                             {
-                                'name': 'NoConfigPipeline.ContextDefinitionConfig.Default.Resources'
+                                'name': 'String'
                             },
                             {
                                 'name': 'Dict.125'
@@ -4715,9 +4715,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'NoConfigPipeline.ContextDefinitionConfig.Default'
                             },
                             {
-                                'name': 'Dict.4'
-                            },
-                            {
                                 'name': 'NoConfigPipeline.ExpectationsConfig'
                             },
                             {
@@ -4727,22 +4724,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'Dict.125'
                             },
                             {
-                                'name': 'Bool'
-                            },
-                            {
                                 'name': 'List.NoConfigPipeline.ReturnHello.Outputs'
-                            },
-                            {
-                                'name': 'NoConfigPipeline.ContextConfig'
                             },
                             {
                                 'name': 'Path'
                             },
                             {
-                                'name': 'NoConfigPipeline.ExecutionConfig'
-                            },
-                            {
-                                'name': 'Any.MaterializationSchema'
+                                'name': 'NoConfigPipeline.ContextConfig'
                             },
                             {
                                 'name': 'String'
@@ -4751,10 +4739,22 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'Dict.3'
                             },
                             {
+                                'name': 'Any.MaterializationSchema'
+                            },
+                            {
+                                'name': 'NoConfigPipeline.ExecutionConfig'
+                            },
+                            {
                                 'name': 'NoConfigPipeline.ContextDefinitionConfig.Default.Resources'
                             },
                             {
+                                'name': 'Bool'
+                            },
+                            {
                                 'name': 'NoConfigPipeline.SolidsConfigDictionary'
+                            },
+                            {
+                                'name': 'Dict.4'
                             }
                         ],
                         'isBuiltin': False,
@@ -4818,16 +4818,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Any.MaterializationSchema'
+                                'name': 'Path'
                             },
                             {
                                 'name': 'Dict.3'
                             },
                             {
-                                'name': 'Dict.4'
+                                'name': 'Any.MaterializationSchema'
                             },
                             {
-                                'name': 'Path'
+                                'name': 'Dict.4'
                             }
                         ],
                         'isBuiltin': False,
@@ -4852,9 +4852,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Dict.4'
-                            },
-                            {
                                 'name': 'NoConfigPipeline.ReturnHello.Outputs'
                             },
                             {
@@ -4864,10 +4861,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'Path'
                             },
                             {
+                                'name': 'Dict.3'
+                            },
+                            {
                                 'name': 'Any.MaterializationSchema'
                             },
                             {
-                                'name': 'Dict.3'
+                                'name': 'Dict.4'
                             }
                         ],
                         'isBuiltin': False,
@@ -4895,9 +4895,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'NoConfigPipeline.SolidConfig.ReturnHello'
                             },
                             {
-                                'name': 'Dict.4'
-                            },
-                            {
                                 'name': 'NoConfigPipeline.ReturnHello.Outputs'
                             },
                             {
@@ -4907,10 +4904,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'Path'
                             },
                             {
+                                'name': 'Dict.3'
+                            },
+                            {
                                 'name': 'Any.MaterializationSchema'
                             },
                             {
-                                'name': 'Dict.3'
+                                'name': 'Dict.4'
                             }
                         ],
                         'isBuiltin': False,
@@ -4992,9 +4992,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Dict.2'
-                            },
-                            {
                                 'name': 'Dict.1'
                             },
                             {
@@ -5002,6 +4999,9 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                             },
                             {
                                 'name': 'Any'
+                            },
+                            {
+                                'name': 'Dict.2'
                             }
                         ],
                         'isBuiltin': False,
@@ -5034,13 +5034,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
+                                'name': 'Path'
+                            },
+                            {
                                 'name': 'Dict.3'
                             },
                             {
                                 'name': 'Dict.4'
-                            },
-                            {
-                                'name': 'Path'
                             }
                         ],
                         'isBuiltin': False,
@@ -5093,16 +5093,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Dict.5'
-                            },
-                            {
-                                'name': 'Bool'
+                                'name': 'Dict.6'
                             },
                             {
                                 'name': 'Path'
                             },
                             {
-                                'name': 'Dict.6'
+                                'name': 'Dict.5'
+                            },
+                            {
+                                'name': 'Bool'
                             }
                         ],
                         'isBuiltin': False,
@@ -5135,13 +5135,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
+                                'name': 'Path'
+                            },
+                            {
                                 'name': 'Dict.7'
                             },
                             {
                                 'name': 'Dict.8'
-                            },
-                            {
-                                'name': 'Path'
                             }
                         ],
                         'isBuiltin': False,
@@ -5619,16 +5619,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Int'
-                            },
-                            {
-                                'name': 'Dict.13'
-                            },
-                            {
                                 'name': 'Dict.14'
                             },
                             {
                                 'name': 'Path'
+                            },
+                            {
+                                'name': 'Int'
+                            },
+                            {
+                                'name': 'Dict.13'
                             }
                         ],
                         'isBuiltin': False,
@@ -5661,13 +5661,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Dict.15'
-                            },
-                            {
                                 'name': 'Dict.16'
                             },
                             {
                                 'name': 'Path'
+                            },
+                            {
+                                'name': 'Dict.15'
                             }
                         ],
                         'isBuiltin': False,
@@ -5704,10 +5704,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Dict.126'
+                                'name': 'String'
                             },
                             {
-                                'name': 'String'
+                                'name': 'Dict.126'
                             },
                             {
                                 'name': 'ScalarOutputPipeline.ContextDefinitionConfig.Default'
@@ -5746,10 +5746,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'String'
+                                'name': 'ScalarOutputPipeline.ContextDefinitionConfig.Default.Resources'
                             },
                             {
-                                'name': 'ScalarOutputPipeline.ContextDefinitionConfig.Default.Resources'
+                                'name': 'String'
                             },
                             {
                                 'name': 'Dict.126'
@@ -5815,9 +5815,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Dict.4'
-                            },
-                            {
                                 'name': 'ScalarOutputPipeline.ExecutionConfig'
                             },
                             {
@@ -5830,10 +5827,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'ScalarOutputPipeline.SolidConfig.ReturnInt'
                             },
                             {
-                                'name': 'ScalarOutputPipeline.ReturnInt.Outputs'
+                                'name': 'Dict.7'
                             },
                             {
-                                'name': 'Dict.7'
+                                'name': 'ScalarOutputPipeline.ReturnInt.Outputs'
                             },
                             {
                                 'name': 'List.ScalarOutputPipeline.ReturnInt.Outputs'
@@ -5854,10 +5851,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'ScalarOutputPipeline.SolidConfig.ReturnBool'
                             },
                             {
-                                'name': 'ScalarOutputPipeline.ReturnBool.Outputs'
+                                'name': 'Bool.MaterializationSchema'
                             },
                             {
-                                'name': 'Bool.MaterializationSchema'
+                                'name': 'ScalarOutputPipeline.ReturnBool.Outputs'
                             },
                             {
                                 'name': 'List.ScalarOutputPipeline.ReturnBool.Outputs'
@@ -5884,10 +5881,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'ScalarOutputPipeline.ContextConfig'
                             },
                             {
-                                'name': 'Dict.22'
+                                'name': 'Bool'
                             },
                             {
-                                'name': 'Bool'
+                                'name': 'Dict.22'
                             },
                             {
                                 'name': 'ScalarOutputPipeline.SolidsConfigDictionary'
@@ -5896,13 +5893,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'Path'
                             },
                             {
-                                'name': 'String.MaterializationSchema'
-                            },
-                            {
                                 'name': 'String'
                             },
                             {
                                 'name': 'Dict.3'
+                            },
+                            {
+                                'name': 'String.MaterializationSchema'
                             },
                             {
                                 'name': 'ScalarOutputPipeline.SolidConfig.ReturnStr'
@@ -5915,6 +5912,9 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                             },
                             {
                                 'name': 'List.ScalarOutputPipeline.ReturnStr.Outputs'
+                            },
+                            {
+                                'name': 'Dict.4'
                             }
                         ],
                         'isBuiltin': False,
@@ -5978,16 +5978,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Any.MaterializationSchema'
+                                'name': 'Path'
                             },
                             {
                                 'name': 'Dict.3'
                             },
                             {
-                                'name': 'Dict.4'
+                                'name': 'Any.MaterializationSchema'
                             },
                             {
-                                'name': 'Path'
+                                'name': 'Dict.4'
                             }
                         ],
                         'isBuiltin': False,
@@ -6012,16 +6012,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Bool.MaterializationSchema'
-                            },
-                            {
-                                'name': 'Dict.8'
-                            },
-                            {
                                 'name': 'Path'
                             },
                             {
+                                'name': 'Bool.MaterializationSchema'
+                            },
+                            {
                                 'name': 'Dict.7'
+                            },
+                            {
+                                'name': 'Dict.8'
                             }
                         ],
                         'isBuiltin': False,
@@ -6046,16 +6046,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Int.MaterializationSchema'
-                            },
-                            {
-                                'name': 'Dict.15'
-                            },
-                            {
                                 'name': 'Dict.16'
                             },
                             {
                                 'name': 'Path'
+                            },
+                            {
+                                'name': 'Int.MaterializationSchema'
+                            },
+                            {
+                                'name': 'Dict.15'
                             }
                         ],
                         'isBuiltin': False,
@@ -6083,10 +6083,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'Dict.22'
                             },
                             {
-                                'name': 'Dict.21'
+                                'name': 'Path'
                             },
                             {
-                                'name': 'Path'
+                                'name': 'Dict.21'
                             },
                             {
                                 'name': 'String.MaterializationSchema'
@@ -6114,9 +6114,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Dict.4'
-                            },
-                            {
                                 'name': 'Path'
                             },
                             {
@@ -6130,6 +6127,9 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                             },
                             {
                                 'name': 'List.ScalarOutputPipeline.ReturnAny.Outputs'
+                            },
+                            {
+                                'name': 'Dict.4'
                             }
                         ],
                         'isBuiltin': False,
@@ -6160,13 +6160,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'Path'
                             },
                             {
+                                'name': 'Bool.MaterializationSchema'
+                            },
+                            {
                                 'name': 'Dict.7'
                             },
                             {
                                 'name': 'ScalarOutputPipeline.ReturnBool.Outputs'
-                            },
-                            {
-                                'name': 'Bool.MaterializationSchema'
                             },
                             {
                                 'name': 'List.ScalarOutputPipeline.ReturnBool.Outputs'
@@ -6298,9 +6298,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Dict.4'
-                            },
-                            {
                                 'name': 'Any.MaterializationSchema'
                             },
                             {
@@ -6310,10 +6307,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'ScalarOutputPipeline.SolidConfig.ReturnInt'
                             },
                             {
-                                'name': 'ScalarOutputPipeline.ReturnInt.Outputs'
+                                'name': 'Dict.7'
                             },
                             {
-                                'name': 'Dict.7'
+                                'name': 'ScalarOutputPipeline.ReturnInt.Outputs'
                             },
                             {
                                 'name': 'List.ScalarOutputPipeline.ReturnInt.Outputs'
@@ -6331,10 +6328,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'ScalarOutputPipeline.SolidConfig.ReturnBool'
                             },
                             {
-                                'name': 'ScalarOutputPipeline.ReturnBool.Outputs'
+                                'name': 'Bool.MaterializationSchema'
                             },
                             {
-                                'name': 'Bool.MaterializationSchema'
+                                'name': 'ScalarOutputPipeline.ReturnBool.Outputs'
                             },
                             {
                                 'name': 'List.ScalarOutputPipeline.ReturnBool.Outputs'
@@ -6358,10 +6355,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'Path'
                             },
                             {
-                                'name': 'String.MaterializationSchema'
+                                'name': 'Dict.3'
                             },
                             {
-                                'name': 'Dict.3'
+                                'name': 'String.MaterializationSchema'
                             },
                             {
                                 'name': 'ScalarOutputPipeline.SolidConfig.ReturnStr'
@@ -6371,6 +6368,9 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                             },
                             {
                                 'name': 'List.ScalarOutputPipeline.ReturnStr.Outputs'
+                            },
+                            {
+                                'name': 'Dict.4'
                             }
                         ],
                         'isBuiltin': False,
@@ -6423,13 +6423,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'String'
+                                'name': 'Path'
                             },
                             {
                                 'name': 'Dict.19'
                             },
                             {
-                                'name': 'Path'
+                                'name': 'String'
                             },
                             {
                                 'name': 'Dict.20'
@@ -6529,9 +6529,6 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Dict.2'
-                            },
-                            {
                                 'name': 'Dict.1'
                             },
                             {
@@ -6539,6 +6536,9 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                             },
                             {
                                 'name': 'Any'
+                            },
+                            {
+                                'name': 'Dict.2'
                             }
                         ],
                         'isBuiltin': False,
@@ -6571,13 +6571,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
+                                'name': 'Path'
+                            },
+                            {
                                 'name': 'Dict.3'
                             },
                             {
                                 'name': 'Dict.4'
-                            },
-                            {
-                                'name': 'Path'
                             }
                         ],
                         'isBuiltin': False,
@@ -6757,10 +6757,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'Dict.127'
                             },
                             {
-                                'name': 'String'
+                                'name': 'PipelineWithEnumConfig.ContextDefinitionConfig.Default.Resources'
                             },
                             {
-                                'name': 'PipelineWithEnumConfig.ContextDefinitionConfig.Default.Resources'
+                                'name': 'String'
                             }
                         ],
                         'isBuiltin': False,
@@ -6793,13 +6793,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'String'
-                            },
-                            {
                                 'name': 'Dict.127'
                             },
                             {
                                 'name': 'PipelineWithEnumConfig.ContextDefinitionConfig.Default.Resources'
+                            },
+                            {
+                                'name': 'String'
                             }
                         ],
                         'isBuiltin': False,
@@ -6862,19 +6862,19 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Dict.4'
-                            },
-                            {
                                 'name': 'Dict.127'
                             },
                             {
                                 'name': 'PipelineWithEnumConfig.SolidsConfigDictionary'
                             },
                             {
-                                'name': 'Bool'
+                                'name': 'Path'
                             },
                             {
-                                'name': 'Path'
+                                'name': 'String'
+                            },
+                            {
+                                'name': 'Dict.3'
                             },
                             {
                                 'name': 'PipelineWithEnumConfig.SolidConfig.TakesAnEnum'
@@ -6886,19 +6886,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'PipelineWithEnumConfig.ContextDefinitionConfig.Default'
                             },
                             {
-                                'name': 'String'
-                            },
-                            {
                                 'name': 'PipelineWithEnumConfig.TakesAnEnum.Outputs'
                             },
                             {
-                                'name': 'Dict.3'
+                                'name': 'PipelineWithEnumConfig.ExpectationsConfig'
                             },
                             {
                                 'name': 'List.PipelineWithEnumConfig.TakesAnEnum.Outputs'
                             },
                             {
-                                'name': 'PipelineWithEnumConfig.ExpectationsConfig'
+                                'name': 'Bool'
                             },
                             {
                                 'name': 'PipelineWithEnumConfig.ContextConfig'
@@ -6911,6 +6908,9 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                             },
                             {
                                 'name': 'TestEnum'
+                            },
+                            {
+                                'name': 'Dict.4'
                             }
                         ],
                         'isBuiltin': False,
@@ -6982,10 +6982,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Dict.4'
+                                'name': 'Path'
                             },
                             {
-                                'name': 'Path'
+                                'name': 'Dict.3'
                             },
                             {
                                 'name': 'Any.MaterializationSchema'
@@ -6994,13 +6994,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'PipelineWithEnumConfig.TakesAnEnum.Outputs'
                             },
                             {
-                                'name': 'Dict.3'
-                            },
-                            {
                                 'name': 'List.PipelineWithEnumConfig.TakesAnEnum.Outputs'
                             },
                             {
                                 'name': 'TestEnum'
+                            },
+                            {
+                                'name': 'Dict.4'
                             }
                         ],
                         'isBuiltin': False,
@@ -7025,10 +7025,10 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Dict.4'
+                                'name': 'Path'
                             },
                             {
-                                'name': 'Path'
+                                'name': 'Dict.3'
                             },
                             {
                                 'name': 'PipelineWithEnumConfig.SolidConfig.TakesAnEnum'
@@ -7040,13 +7040,13 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                                 'name': 'PipelineWithEnumConfig.TakesAnEnum.Outputs'
                             },
                             {
-                                'name': 'Dict.3'
-                            },
-                            {
                                 'name': 'List.PipelineWithEnumConfig.TakesAnEnum.Outputs'
                             },
                             {
                                 'name': 'TestEnum'
+                            },
+                            {
+                                'name': 'Dict.4'
                             }
                         ],
                         'isBuiltin': False,
@@ -7071,16 +7071,16 @@ snapshots['test_smoke_test_config_type_system 1'] = {
                         ],
                         'innerTypes': [
                             {
-                                'name': 'Any.MaterializationSchema'
+                                'name': 'Path'
                             },
                             {
                                 'name': 'Dict.3'
                             },
                             {
-                                'name': 'Dict.4'
+                                'name': 'Any.MaterializationSchema'
                             },
                             {
-                                'name': 'Path'
+                                'name': 'Dict.4'
                             }
                         ],
                         'isBuiltin': False,
