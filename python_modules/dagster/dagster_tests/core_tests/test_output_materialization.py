@@ -16,7 +16,10 @@ from dagster import (
 
 from dagster.utils.test import get_temp_file_name, get_temp_file_names
 
-from dagster.core.system_config.types import solid_has_config_entry, solid_has_configurable_outputs
+from dagster.core.definitions.environment_configs import (
+    solid_has_config_entry,
+    solid_has_configurable_outputs,
+)
 
 from dagster.core.execution import create_typed_environment, create_execution_plan
 

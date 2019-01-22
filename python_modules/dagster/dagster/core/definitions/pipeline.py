@@ -2,6 +2,8 @@ from toposort import toposort_flatten
 
 from dagster import check
 
+from .environment_configs import EnvironmentClassCreationData, define_environment_cls
+
 from .context import PipelineContextDefinition, default_pipeline_context_definitions
 
 from .dependency import DependencyDefinition, DependencyStructure, Solid
@@ -91,9 +93,14 @@ class PipelineDefinition(object):
         self._solid_dict = pipeline_solid_dict
         self.dependency_structure = dependency_structure
 
-        from dagster.core.system_config.types import define_environment_cls
-
-        self.environment_cls = define_environment_cls(self)
+        self.environment_cls = define_environment_cls(
+            EnvironmentClassCreationData(
+                self.name,
+                list(self._solid_dict.values()),
+                context_definitions,
+                dependency_structure,
+            )
+        )
         self.environment_type = self.environment_cls.inst()
 
         self._config_type_dict = construct_config_type_dictionary(

@@ -21,6 +21,7 @@ from dagster import (
     types,
 )
 
+
 from dagster.core.system_config.objects import (
     ContextConfig,
     EnvironmentConfig,
@@ -28,7 +29,7 @@ from dagster.core.system_config.objects import (
     SolidConfig,
 )
 
-from dagster.core.system_config.types import (
+from dagster.core.definitions.environment_configs import (
     construct_context_config,
     construct_environment_config,
     construct_solid_dictionary,
@@ -36,11 +37,21 @@ from dagster.core.system_config.types import (
     define_expectations_config_cls,
     define_solid_config_cls,
     define_solid_dictionary_cls,
+    EnvironmentClassCreationData,
 )
 
 from dagster.core.types.evaluator import evaluate_config_value
 
 from dagster.core.test_utils import throwing_evaluate_config_value
+
+
+def create_creation_data(pipeline_def):
+    return EnvironmentClassCreationData(
+        pipeline_def.name,
+        list(pipeline_def._solid_dict.values()),
+        pipeline_def.context_definitions,
+        pipeline_def.dependency_structure,
+    )
 
 
 def test_context_config_any():
@@ -270,7 +281,9 @@ def test_expectations_config():
 def test_solid_dictionary_type():
     pipeline_def = define_test_solids_config_pipeline()
 
-    solid_dict_type = define_solid_dictionary_cls('foobar', pipeline_def).inst()
+    solid_dict_type = define_solid_dictionary_cls(
+        'foobar', create_creation_data(pipeline_def)
+    ).inst()
 
     value = construct_solid_dictionary(
         throwing_evaluate_config_value(
@@ -353,7 +366,9 @@ def test_solid_dictionary_some_no_config():
         ]
     )
 
-    solid_dict_type = define_solid_dictionary_cls('foobar', pipeline_def).inst()
+    solid_dict_type = define_solid_dictionary_cls(
+        'foobar', create_creation_data(pipeline_def)
+    ).inst()
 
     value = construct_solid_dictionary(
         throwing_evaluate_config_value(solid_dict_type, {'int_config_solid': {'config': 1}})
@@ -414,7 +429,7 @@ def test_whole_environment():
 
 def test_solid_config_error():
     solid_dict_type = define_solid_dictionary_cls(
-        'slkdfjkjdsf', define_test_solids_config_pipeline()
+        'slkdfjkjdsf', create_creation_data(define_test_solids_config_pipeline())
     ).inst()
 
     int_solid_config_type = solid_dict_type.fields['int_config_solid'].config_type
